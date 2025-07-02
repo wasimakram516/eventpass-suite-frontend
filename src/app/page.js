@@ -1,95 +1,143 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+"use client";
 
-export default function Home() {
+import {
+  Box,
+  Button,
+  Typography,
+  Stack,
+  Divider,
+} from "@mui/material";
+import { useRouter } from "next/navigation";
+import PollIcon from "@mui/icons-material/Poll";
+import SportsEsportsIcon from "@mui/icons-material/SportsEsports";
+import QuizIcon from "@mui/icons-material/Quiz";
+import ForumIcon from "@mui/icons-material/Forum";
+import ImageIcon from "@mui/icons-material/Image";
+import AssignmentIcon from "@mui/icons-material/Assignment";
+import HowToRegIcon from "@mui/icons-material/HowToReg";
+import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
+
+export default function HomePage() {
+  const router = useRouter();
+
+  const handleCmsClick = () => {
+    router.push("/cms");
+  };
+
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol>
-          <li>
-            Get started by editing <code>src/app/page.js</code>.
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <Box
+      sx={{
+        height: "calc(100vh -64px)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        p: { xs: 2, sm: 4 },
+        textAlign: "center",
+      }}
+    >
+      <Box
+        sx={{
+          width: "100%",
+          maxWidth: 720,
+          backgroundColor: "white",
+          p: { xs: 3, sm: 5 },
+          borderRadius: 4,
+          boxShadow: 6,
+          animation: "fadeInUp 0.6s ease",
+        }}
+      >
+        {/* Small Tagline */}
+        <Typography
+          variant="overline"
+          fontWeight="bold"
+          color="primary"
+          letterSpacing={3}
+          gutterBottom
+        >
+          Unified Event Engagement Suite
+        </Typography>
 
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+        {/* Main Heading */}
+        <Typography variant="h1" fontWeight="bold" gutterBottom>
+          EventPass
+        </Typography>
+
+        {/* Description */}
+        <Typography variant="body1" color="text.secondary" mb={4}>
+          Run interactive quizzes, real-time polls, photo walls, audience Q&A, registration and check-in — all in one place.
+        </Typography>
+
+        {/* CMS Access Button */}
+        <Stack direction="row" justifyContent="center" mb={4}>
+          <Button
+            variant="outlined"
+            color="primary"
+            size="large"
+            onClick={handleCmsClick}
+            sx={{
+              px: 4,
+              py: 1.5,
+              fontWeight: "bold",
+              borderRadius: 3,
+              ":hover": {
+                borderColor: "primary.main",
+                backgroundColor: "primary.light",
+                color: "white",
+              },
+            }}
           >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.secondary}
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className={styles.footer}>
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+            Go to CMS
+          </Button>
+        </Stack>
+
+        <Divider sx={{ mb: 4 }} />
+
+        {/* Features Grid */}
+        <Stack
+          spacing={2}
+          direction={{ xs: "column", sm: "row" }}
+          flexWrap="wrap"
+          justifyContent="center"
+          alignItems="center"
+          textAlign="center"
+          rowGap={3}
         >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+          <Feature icon={<QuizIcon color="primary" fontSize="large" />} label="Quiznest" />
+          <Feature icon={<SportsEsportsIcon color="secondary" fontSize="large" />} label="Event Duel" />
+          <Feature icon={<PollIcon color="success" fontSize="large" />} label="VoteCast" />
+          <Feature icon={<ForumIcon color="warning" fontSize="large" />} label="StageQ" />
+          <Feature icon={<ImageIcon sx={{ color: "#6d4c41" }} fontSize="large" />} label="MosaicWall" />
+          <Feature icon={<AssignmentIcon sx={{ color: "#00838f" }} fontSize="large" />} label="Event Reg" />
+          <Feature icon={<HowToRegIcon color="info" fontSize="large" />} label="Check-In" />
+          <Feature icon={<EmojiEventsIcon color="error" fontSize="large" />} label="Event Wheel" />
+        </Stack>
+      </Box>
+
+      {/* Animation Keyframes */}
+      <style jsx global>{`
+        @keyframes fadeInUp {
+          0% {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+      `}</style>
+    </Box>
+  );
+}
+
+// Sub-component for feature icons + label
+function Feature({ icon, label }) {
+  return (
+    <Stack alignItems="center" spacing={1} width={120}>
+      {icon}
+      <Typography variant="subtitle2" fontWeight="bold">
+        {label}
+      </Typography>
+    </Stack>
   );
 }
