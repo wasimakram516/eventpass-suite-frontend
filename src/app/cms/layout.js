@@ -15,7 +15,7 @@ export default function CmsLayout({ children }) {
     if (!loading && !user) {
       router.replace("/auth/login");
     }
-  }, [loading, user]);
+  }, [loading, user, router]);
 
   if (loading || !user) {
     return (

@@ -4,7 +4,6 @@ import { useLanguage } from "@/contexts/LanguageContext";
 
 const LanguageSelector = ({ top, right }) => {
   const { language, toggleLanguage } = useLanguage();
-  console.log(top,right);
   
   const isFloating = typeof top !== "undefined" && typeof right !== "undefined";
 

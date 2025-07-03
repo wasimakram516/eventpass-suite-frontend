@@ -168,7 +168,7 @@ export default function Modules() {
         <Grid container spacing={3} justifyContent="center">
           {modules.map((mod, i) => (
             <DashboardCard
-              key={mod.title}
+              key={mod.title || i}
               title={mod.title}
               description={mod.description}
               buttonLabel={mod.buttonLabel}

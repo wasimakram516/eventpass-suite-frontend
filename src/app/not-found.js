@@ -37,7 +37,8 @@ export default function NotFoundPage() {
         Page Not Found
       </Typography>
       <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-        Sorry, the page you're looking for doesn’t exist or may have been moved.
+        Sorry, the page you&apos;re looking for doesn&apos;t exist or may have
+        been moved.
       </Typography>
 
       {/* Actions */}
