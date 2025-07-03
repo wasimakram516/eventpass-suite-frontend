@@ -1,19 +1,23 @@
 import { Box, Button } from "@mui/material";
 import { motion } from "framer-motion";
-import { useLanguage } from "@/app/context/LanguageContext"; // Use global language state
+import { useLanguage } from "@/contexts/LanguageContext";
 
-const LanguageSelector = () => {
+const LanguageSelector = ({ top, right }) => {
   const { language, toggleLanguage } = useLanguage();
+  console.log(top,right);
+  
+  const isFloating = typeof top !== "undefined" && typeof right !== "undefined";
 
   return (
     <Box
       sx={{
+        position: isFloating ? "absolute" : "relative",
+        top: isFloating ? top : "auto",
+        right: isFloating ? right : "auto",
         display: "inline-block",
-        position: "absolute",
-        width: "80px",
-        height: "40px",
-        top: 10, 
-        right: 30,
+        zIndex: 10,
+        width: "66px",
+        height: "50px",
       }}
     >
       {/* Inactive Button (Behind) */}
@@ -25,14 +29,14 @@ const LanguageSelector = () => {
           position: "absolute",
           width: "100%",
           zIndex: 1,
-          pointerEvents: "none", // Prevent clicks on the inactive button
+          pointerEvents: "none", 
         }}
       >
         <Button
           variant="contained"
           sx={{
             width: "100%",
-            backgroundColor: "#6CA8D9", // Lighter blue
+            backgroundColor: "#6CA8D9",
             color: "white",
             borderRadius: "16px",
             fontSize: "12px",
@@ -47,7 +51,7 @@ const LanguageSelector = () => {
 
       {/* Active Button (On Top) */}
       <motion.div
-        key={language} // Makes sure animation happens on language switch
+        key={language} 
         initial={{ y: 8 }}
         animate={{ y: 0 }}
         exit={{ y: -8 }}
@@ -60,10 +64,10 @@ const LanguageSelector = () => {
       >
         <Button
           variant="contained"
-          onClick={toggleLanguage} // Now uses global context
+          onClick={toggleLanguage}
           sx={{
             width: "100%",
-            backgroundColor: "#0077B6", // Darker blue
+            backgroundColor: "#0077B6",
             color: "white",
             borderRadius: "16px",
             fontSize: "12px",

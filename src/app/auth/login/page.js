@@ -49,18 +49,28 @@ export default function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
-
+  
     setLoading(true);
     try {
-      const response = await login(form.email, form.password);
-      setUser(response.user);
-      router.push("/cms");
+      // const response = await login(form.email, form.password);
+      // setUser(response.user);
+
+      // Simulate dummy login success
+      const dummyUser = {
+        name: "Admin User",
+        email: form.email,
+        role: "admin",
+      };
+  
+      setUser(dummyUser); 
+      router.push("/cms"); 
     } catch (err) {
-      showMessage("Invalid credentials. Please try again.", "error");
+      showMessage("Login failed. Please try again.", "error");
     } finally {
       setLoading(false);
     }
   };
+  
 
   return (
     <Container maxWidth="sm">

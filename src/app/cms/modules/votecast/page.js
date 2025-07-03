@@ -1,10 +1,12 @@
 "use client";
 
-import { Box, Typography, Divider, Button, Stack } from "@mui/material";
+import BreadcrumbsNav from "@/components/BreadcrumbsNav";
+import { Box, Typography, Divider, Button, Stack, Container } from "@mui/material";
 
 export default function VoteCastCMSPage() {
   return (
-    <Box>
+    <Container>
+      <BreadcrumbsNav/>
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
         <Box>
           <Typography variant="h5" fontWeight="bold">VoteCast</Typography>
@@ -18,6 +20,6 @@ export default function VoteCastCMSPage() {
       <Typography variant="body1" color="text.secondary">
         This is the main CMS content area for VoteCast.
       </Typography>
-    </Box>
+    </Container>
   );
 }

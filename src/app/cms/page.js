@@ -1,122 +1,197 @@
 "use client";
 
 import { Box, Typography, Grid, Container } from "@mui/material";
-import DashboardCard from "@/components/DashboardCard";
-import { useRouter } from "next/navigation";
-
-// Icons
-import QuizIcon from "@mui/icons-material/Quiz";
-import SportsEsportsIcon from "@mui/icons-material/SportsEsports";
-import PollIcon from "@mui/icons-material/Poll";
-import ForumIcon from "@mui/icons-material/Forum";
-import ImageIcon from "@mui/icons-material/Image";
-import AssignmentIcon from "@mui/icons-material/Assignment";
-import HowToRegIcon from "@mui/icons-material/HowToReg";
-import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
+import StatsCard from "@/components/StatsCard";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function HomePage() {
-  const router = useRouter();
+  const { language } = useLanguage();
 
-  const modules = [
-    {
-      title: "Quiznest",
-      description: "Create and manage single-player quiz games.",
-      icon: <QuizIcon />,
-      color: "#0d47a1", // dark blue
-      route: "/cms/quiznest",
-      buttonLabel: "Manage Quizzes",
+  const isArabic = language === "ar";
+  const dir = isArabic ? "rtl" : "ltr";
+  const align = isArabic ? "right" : "left";
+
+  const translations = {
+    en: {
+      title: "Welcome to EventPass Suite",
+      subtitle:
+        "Manage all your interactive event tools in one place — quizzes, polls, audience engagement, registration, and more.",
+      stats: [
+        {
+          title: "Quiznest",
+          subtitle: "Games Played",
+          centerValue: 230,
+          data: [
+            { name: "Active Games", value: 40 },
+            { name: "Archived", value: 90 },
+          ],
+        },
+        {
+          title: "VoteCast",
+          subtitle: "Poll Participation",
+          centerValue: "65%",
+          data: [
+            { name: "Active", value: 30 },
+            { name: "Archived", value: 60 },
+          ],
+        },
+        {
+          title: "StageQ",
+          subtitle: "Questions Submitted",
+          centerValue: 48,
+          data: [
+            { name: "Answered", value: 30 },
+            { name: "Pending", value: 18 },
+          ],
+        },
+        {
+          title: "MosaicWall",
+          subtitle: "Live Submissions",
+          centerValue: 120,
+          data: [
+            { name: "Photos", value: 90 },
+            { name: "Photos with Text", value: 30 },
+          ],
+        },
+        {
+          title: "Event Reg",
+          subtitle: "Registrations Collected",
+          centerValue: 340,
+          data: [
+            { name: "Events", value: 10 },
+            { name: "Registrations", value: 70 },
+          ],
+        },
+        {
+          title: "Check-In",
+          subtitle: "Guests Checked In",
+          centerValue: 282,
+          data: [
+            { name: "Events", value: 10 },
+            { name: "Check-ins", value: 70 },
+          ],
+        },
+        {
+          title: "Event Duel",
+          subtitle: "Duels Played",
+          centerValue: 74,
+          data: [
+            { name: "Total", value: 40 },
+            { name: "Wins", value: 20 },
+            { name: "Losses", value: 14 },
+          ],
+        },
+        {
+          title: "Event Wheel",
+          subtitle: "Spins Completed",
+          centerValue: 212,
+          data: [{ name: "Total Spins", value: 212 }],
+        },
+      ],
     },
-    {
-      title: "Event Duel",
-      description: "Run real-time 1v1 quiz competitions.",
-      icon: <SportsEsportsIcon />,
-      color: "#5e35b1", // muted purple
-      route: "/cms/eventduel",
-      buttonLabel: "Launch Duels",
+
+    ar: {
+      title: "مرحبًا بك في مجموعة EventPass",
+      subtitle:
+        "قم بإدارة جميع أدوات الفعاليات التفاعلية في مكان واحد — الاختبارات، الاستطلاعات، تفاعل الجمهور، التسجيل والمزيد.",
+      stats: [
+        {
+          title: "كويز نيست",
+          subtitle: "عدد الألعاب المنفذة",
+          centerValue: 230,
+          data: [
+            { name: "ألعاب نشطة", value: 40 },
+            { name: "مؤرشفة", value: 90 },
+          ],
+        },
+        {
+          title: "تصويت كاست",
+          subtitle: "مشاركة الجمهور",
+          centerValue: "65%",
+          data: [
+            { name: "نشطة", value: 30 },
+            { name: "مؤرشفة", value: 60 },
+          ],
+        },
+        {
+          title: "ستيج كيو",
+          subtitle: "الأسئلة المقدمة",
+          centerValue: 48,
+          data: [
+            { name: "تمت الإجابة", value: 30 },
+            { name: "قيد الانتظار", value: 18 },
+          ],
+        },
+        {
+          title: "جدار الفسيفساء",
+          subtitle: "المشاركات الحية",
+          centerValue: 120,
+          data: [
+            { name: "صور", value: 90 },
+            { name: "صور مع نص", value: 30 },
+          ],
+        },
+        {
+          title: "تسجيل الفعالية",
+          subtitle: "طلبات التسجيل",
+          centerValue: 340,
+          data: [
+            { name: "الفعاليات", value: 10 },
+            { name: "التسجيلات", value: 70 },
+          ],
+        },
+        {
+          title: "تسجيل الدخول",
+          subtitle: "الضيوف المسجلين",
+          centerValue: 282,
+          data: [
+            { name: "الفعاليات", value: 10 },
+            { name: "عمليات الدخول", value: 70 },
+          ],
+        },
+        {
+          title: "المبارزة",
+          subtitle: "عدد المبارزات",
+          centerValue: 74,
+          data: [
+            { name: "الإجمالي", value: 40 },
+            { name: "فوز", value: 20 },
+            { name: "خسارة", value: 14 },
+          ],
+        },
+        {
+          title: "عجلة الفعالية",
+          subtitle: "مرات التدوير",
+          centerValue: 212,
+          data: [{ name: "إجمالي التدوير", value: 212 }],
+        },
+      ],
     },
-    {
-      title: "VoteCast",
-      description: "Create and track audience polls.",
-      icon: <PollIcon />,
-      color: "#00695c", // teal green
-      route: "/cms/votecast",
-      buttonLabel: "View Polls",
-    },
-    {
-      title: "StageQ",
-      description: "Display visitor-submitted questions as bubbles.",
-      icon: <ForumIcon />,
-      color: "#ef6c00", // deep orange
-      route: "/cms/stageq",
-      buttonLabel: "Open Questions",
-    },
-    {
-      title: "MosaicWall",
-      description: "Show photo & text submissions in real time.",
-      icon: <ImageIcon />,
-      color: "#4e342e", // dark brown
-      route: "/cms/mosaicwall",
-      buttonLabel: "View Submissions",
-    },
-    {
-      title: "Event Reg",
-      description: "Build custom registration forms for events.",
-      icon: <AssignmentIcon />,
-      color: "#006064", // cyan dark
-      route: "/cms/eventreg",
-      buttonLabel: "Manage Forms",
-    },
-    {
-      title: "Check-In",
-      description: "Track and verify guest entries.",
-      icon: <HowToRegIcon />,
-      color: "#0277bd", // soft blue
-      route: "/cms/checkin",
-      buttonLabel: "Start Check-In",
-    },
-    {
-      title: "Event Wheel",
-      description: "Spin-to-win prize game for attendees.",
-      icon: <EmojiEventsIcon />,
-      color: "#c62828", // muted red
-      route: "/cms/eventwheel",
-      buttonLabel: "Run Spin Wheel",
-    },
-  ];  
+  };
+
+  const { title, subtitle, stats } = translations[language];
 
   return (
-  <Box
-    sx={{
-      pb: 8,
-      bgcolor: "background.default",
-    }}
-  >
-    <Container maxWidth="lg">
-      {/* Heading */}
-      <Box sx={{ textAlign: "center", mb: 3 }}>
-        <Typography variant="h4" fontWeight="bold" gutterBottom>
-          Welcome to EventPass Suite
-        </Typography>
-        <Typography variant="body1" color="text.secondary">
-          Manage all your interactive event tools in one place — quizzes, polls, audience engagement, registration, and more.
-        </Typography>
-      </Box>
+    <Box sx={{ pb: 4, bgcolor: "background.default" }} dir={dir}>
+      <Container>
+        <Box sx={{ textAlign: "center", mb: 3 }}>
+          <Typography variant="h2" fontWeight="bold" gutterBottom>
+            {title}
+          </Typography>
+          <Typography variant="body1" color="text.secondary">
+            {subtitle}
+          </Typography>
+        </Box>
 
-      <Grid container spacing={3} justifyContent="center">
-        {modules.map((mod) => (
-          <DashboardCard
-          key={mod.title}
-          title={mod.title}
-          description={mod.description}
-          icon={mod.icon}
-          color={mod.color}
-          buttonLabel={mod.buttonLabel}
-          route={mod.route}
-        />        
-        ))}
-      </Grid>
-    </Container>
-  </Box>
-);
-
+        {/* Stat Cards */}
+        <Grid container spacing={3} justifyContent="center">
+          {stats.map((stat, i) => (
+            <Grid item key={i}>
+              <StatsCard {...stat} />
+            </Grid>
+          ))}
+        </Grid>
+      </Container>
+    </Box>
+  );
 }

@@ -1,38 +1,34 @@
 "use client";
 
-import { Box, Typography, Divider, Button, Stack } from "@mui/material";
+import BreadcrumbsNav from "@/components/BreadcrumbsNav";
+import { Box, Typography, Divider, Button, Stack, Container } from "@mui/material";
 
-export default function QuiznestCMSPage() {
+export default function CheckInCMSPage() {
   return (
-    <Box>
-      {/* Header */}
+    <Container>
+      <BreadcrumbsNav />
       <Stack
         direction="row"
         justifyContent="space-between"
         alignItems="center"
-        spacing={2}
         sx={{ mb: 2 }}
       >
         <Box>
           <Typography variant="h5" fontWeight="bold">
-            Quiznest
+            Check-In
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Manage single-player quizzes, questions, and timers.
+            Monitor and control attendee check-in process.
           </Typography>
         </Box>
-
         <Button variant="contained" color="primary">
-          Create Quiz
+          Start Check-In
         </Button>
       </Stack>
-
       <Divider sx={{ mb: 3 }} />
-
-      {/* Main Content Here */}
       <Typography variant="body1" color="text.secondary">
-        This is the main CMS content area for Quiznest.
+        This is the main CMS content area for Check-In.
       </Typography>
-    </Box>
+    </Container>
   );
 }

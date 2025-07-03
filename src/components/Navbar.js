@@ -17,6 +17,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import LoginRoundedIcon from "@mui/icons-material/LoginRounded";
 import Image from "next/image";
 import ConfirmationDialog from "@/components/ConfirmationDialog";
+import LanguageSelector from "./LanguageSelector";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
@@ -75,7 +76,7 @@ export default function Navbar() {
             </Stack>
           </Link>
 
-          <Box>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             {!user ? (
               <Link href="/auth/login">
                 <Button
@@ -110,6 +111,7 @@ export default function Navbar() {
                 </Menu>
               </>
             )}
+            <LanguageSelector/>
           </Box>
         </Toolbar>
       </AppBar>
@@ -120,7 +122,7 @@ export default function Navbar() {
         onClose={() => setConfirmLogout(false)}
         onConfirm={logout}
         title="Confirm Logout"
-        message="Are you sure you want to log out of your VoteCast account?"
+        message="Are you sure you want to log out of your account?"
         confirmButtonText="Logout"
       />
     </Box>

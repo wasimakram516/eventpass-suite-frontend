@@ -1,10 +1,12 @@
 "use client";
 
-import { Box, Typography, Divider, Button, Stack } from "@mui/material";
+import BreadcrumbsNav from "@/components/BreadcrumbsNav";
+import { Box, Typography, Divider, Button, Stack, Container } from "@mui/material";
 
 export default function EventRegCMSPage() {
   return (
-    <Box>
+    <Container>
+      <BreadcrumbsNav/>
       <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
         <Box>
           <Typography variant="h5" fontWeight="bold">Event Reg</Typography>
@@ -18,6 +20,6 @@ export default function EventRegCMSPage() {
       <Typography variant="body1" color="text.secondary">
         This is the main CMS content area for Event Reg.
       </Typography>
-    </Box>
+    </Container>
   );
 }

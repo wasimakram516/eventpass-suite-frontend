@@ -1,38 +1,14 @@
 "use client";
 
-import {
-  Drawer,
-  List,
-  ListItem,
-  Tooltip,
-  IconButton,
-} from "@mui/material";
+import { Drawer, List, ListItem, Tooltip, IconButton } from "@mui/material";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Home,
-  Quiz,
-  SportsEsports,
-  BarChart,
-  Forum,
-  Image,
-  Assignment,
-  HowToReg,
-  Group,
-  EmojiEvents,
-} from "@mui/icons-material";
+import { Home, ViewModule, Settings } from "@mui/icons-material";
 
 const navItems = [
-  { label: "Dashboard", icon: Home, path: "/cms" },
-  { label: "Quiznest", icon: Quiz, path: "/cms/quiznest" },
-  { label: "Event Duel", icon: SportsEsports, path: "/cms/eventduel" },
-  { label: "VoteCast", icon: BarChart, path: "/cms/votecast" },
-  { label: "StageQ", icon: Forum, path: "/cms/stageq" },
-  { label: "MosaicWall", icon: Image, path: "/cms/mosaicwall" },
-  { label: "Event Reg", icon: Assignment, path: "/cms/eventreg" },
-  { label: "Check-In", icon: HowToReg, path: "/cms/checkin" },
-  { label: "Event Wheel", icon: EmojiEvents, path: "/cms/eventwheel" },
-  { label: "Users", icon: Group, path: "/cms/users" },
+  { label: "Home", icon: Home, path: "/cms" },
+  { label: "Modules", icon: ViewModule, path: "/cms/modules" },
+  { label: "Settings", icon: Settings, path: "/cms/settings" },
 ];
 
 export default function Sidebar() {
@@ -62,18 +38,30 @@ export default function Sidebar() {
     >
       <List>
         {navItems.map((item) => {
-          const isActive = pathname === item.path;
+          const isActive =
+            item.path === "/cms"
+              ? pathname === "/cms"
+              : pathname.startsWith(item.path);
+
           const Icon = item.icon;
 
           return (
             <Tooltip title={item.label} placement="right" key={item.label}>
-              <ListItem disablePadding sx={{ justifyContent: "center" }}>
+              <ListItem
+                disablePadding
+                sx={{
+                  justifyContent: "center",
+                  mb: 2
+                }}
+              >
                 <Link href={item.path} passHref>
                   <IconButton
                     size="large"
                     sx={{
                       color: isActive ? "white" : "text.secondary",
-                      backgroundColor: isActive ? "primary.light" : "transparent",
+                      backgroundColor: isActive
+                        ? "primary.light"
+                        : "transparent",
                       ":hover": {
                         backgroundColor: "action.hover",
                         color: "primary.main",

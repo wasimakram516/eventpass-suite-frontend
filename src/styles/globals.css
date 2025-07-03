@@ -3,8 +3,9 @@ html, body {
   padding: 0;
   height: 100%;
   overflow-x: auto;
+  user-select: none;
 }
 
 body {
-  overflow-y: auto; /* or hidden, if layout handles scroll */
+  overflow-y: auto; 
 }
