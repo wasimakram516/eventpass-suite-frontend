@@ -52,9 +52,12 @@ export default function GamesPage() {
       choicesCount: 4,
       countdownTimer: 30,
       gameSessionTimer: 120,
-      coverImage: "",
-      nameImage: "",
-      backgroundImage: "",
+      coverImage:
+        "https://res.cloudinary.com/dwva39slo/image/upload/v1746877190/QuizNest/images/hbbvlxqal0kju1b6iqdx.gif",
+      nameImage:
+        "https://res.cloudinary.com/dwva39slo/image/upload/v1746877191/QuizNest/images/agourikpmhm9beasbjaz.gif",
+      backgroundImage:
+        "https://res.cloudinary.com/dwva39slo/image/upload/v1746877192/QuizNest/images/uvkzet5yuxsfscikg5ky.png",
     },
     {
       _id: "g2",
@@ -63,9 +66,12 @@ export default function GamesPage() {
       choicesCount: 3,
       countdownTimer: 25,
       gameSessionTimer: 90,
-      coverImage: "",
-      nameImage: "",
-      backgroundImage: "",
+      coverImage:
+        "https://res.cloudinary.com/dwva39slo/image/upload/v1746877190/QuizNest/images/hbbvlxqal0kju1b6iqdx.gif",
+      nameImage:
+        "https://res.cloudinary.com/dwva39slo/image/upload/v1746877191/QuizNest/images/agourikpmhm9beasbjaz.gif",
+      backgroundImage:
+        "https://res.cloudinary.com/dwva39slo/image/upload/v1746877192/QuizNest/images/uvkzet5yuxsfscikg5ky.png",
     },
   ];
   const dummyBusiness = { name: "Demo Corp" };

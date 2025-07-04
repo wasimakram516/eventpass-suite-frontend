@@ -56,17 +56,17 @@ export default function LoginPage() {
       // setUser(response.user);
 
       // Simulate dummy login success
-      const dummyUser = {
-        name: "Admin",
-        email: "admin@wwds.com",
-        role: "admin",
-      };
       // const dummyUser = {
-      //   name: "Business User",
-      //   email: "business@wwds.com",
-      //   role: "business",
-      //   businessSlug: "demo-corp",
+      //   name: "Admin",
+      //   email: "admin@wwds.com",
+      //   role: "admin",
       // };
+      const dummyUser = {
+        name: "Business User",
+        email: "business@wwds.com",
+        role: "business",
+        businessSlug: "demo-corp",
+      };
       
       setUser(dummyUser); 
       router.push("/cms"); 

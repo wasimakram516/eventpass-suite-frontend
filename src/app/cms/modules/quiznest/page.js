@@ -2,31 +2,22 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function QuiznestCMSPage() {
   const router = useRouter();
+  const { user } = useAuth(); // use user stored in context
 
-  // ADDED: Fast, contentless redirect logic
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const userStr = sessionStorage.getItem("user");
-      if (userStr) {
-        try {
-          const user = JSON.parse(userStr);
-          if (user.role === "admin") {
-            router.replace("/cms/modules/quiznest/businesses");
-          } else if (user.role === "business" && user.businessSlug) {
-            router.replace(
-              `/cms/modules/quiznest/businesses/${user.businessSlug}/games`
-            );
-          }
-        } catch (e) {
-          // Optionally handle JSON parse error
-        }
+      if (user.role === "admin") {
+        router.replace("/cms/modules/quiznest/businesses");
+      } else if (user.role === "business" && user.businessSlug) {
+        router.replace(
+          `/cms/modules/quiznest/businesses/${user.businessSlug}/games`
+        );
       }
     }
   }, [router]);
-
-  // Renders nothing
   return null;
 }
