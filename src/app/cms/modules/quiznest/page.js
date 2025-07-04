@@ -1,39 +1,32 @@
 "use client";
 
-import BreadcrumbsNav from "@/components/BreadcrumbsNav";
-import { Box, Typography, Divider, Button, Stack, Container } from "@mui/material";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function QuiznestCMSPage() {
-  return (
-    <Container>
-      <BreadcrumbsNav/>
-      <Stack
-        direction="row"
-        justifyContent="space-between"
-        alignItems="center"
-        spacing={2}
-        sx={{ mb: 2 }}
-      >
-        <Box>
-          <Typography variant="h5" fontWeight="bold">
-            Quiznest
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Manage single-player quizzes, questions, and timers.
-          </Typography>
-        </Box>
+  const router = useRouter();
 
-        <Button variant="contained" color="primary">
-          Create Quiz
-        </Button>
-      </Stack>
+  // ADDED: Fast, contentless redirect logic
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const userStr = sessionStorage.getItem("user");
+      if (userStr) {
+        try {
+          const user = JSON.parse(userStr);
+          if (user.role === "admin") {
+            router.replace("/cms/modules/quiznest/businesses");
+          } else if (user.role === "business" && user.businessSlug) {
+            router.replace(
+              `/cms/modules/quiznest/businesses/${user.businessSlug}/games`
+            );
+          }
+        } catch (e) {
+          // Optionally handle JSON parse error
+        }
+      }
+    }
+  }, [router]);
 
-      <Divider sx={{ mb: 3 }} />
-
-      {/* Main Content Here */}
-      <Typography variant="body1" color="text.secondary">
-        This is the main CMS content area for Quiznest.
-      </Typography>
-    </Container>
-  );
+  // Renders nothing
+  return null;
 }
