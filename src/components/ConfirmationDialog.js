@@ -33,6 +33,7 @@ const ConfirmationDialog = ({
     <Dialog
       open={open}
       onClose={loading ? null : onClose}
+      disableScrollLock={true}
       PaperProps={{
         sx: {
           borderRadius: 2,

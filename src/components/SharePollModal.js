@@ -18,7 +18,7 @@ import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import CloseIcon from "@mui/icons-material/Close";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import { useRef } from "react";
-import { useMessage } from "@/app/context/MessageContext";
+import { useMessage } from "@/contexts/MessageContext";
 
 export default function SharePollModal({ open, onClose, poll }) {
   const qrCodeRef = useRef(null);

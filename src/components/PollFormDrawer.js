@@ -21,7 +21,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import UploadIcon from "@mui/icons-material/CloudUpload";
 import { useEffect, useState } from "react";
-import api from "@/app/services/api";
+import api from "@/services/api";
 
 export default function PollFormDrawer({
   open,
