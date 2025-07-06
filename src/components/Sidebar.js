@@ -3,16 +3,22 @@
 import { Drawer, List, ListItem, Tooltip, IconButton } from "@mui/material";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, ViewModule, Settings } from "@mui/icons-material";
-
-const navItems = [
-  { label: "Home", icon: Home, path: "/cms" },
-  { label: "Modules", icon: ViewModule, path: "/cms/modules" },
-  { label: "Settings", icon: Settings, path: "/cms/settings" },
-];
+import { Home, ViewModule, PeopleAlt, Settings } from "@mui/icons-material";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { user } = useAuth(); 
+
+  const navItems = [
+    { label: "Home", icon: Home, path: "/cms" },
+    { label: "Modules", icon: ViewModule, path: "/cms/modules" },
+    // Only show Users item if user is not 'business'
+    ...(user?.role !== "business"
+      ? [{ label: "Users", icon: PeopleAlt, path: "/cms/users" }]
+      : []),
+    { label: "Settings", icon: Settings, path: "/cms/settings" },
+  ];
 
   return (
     <Drawer
@@ -47,21 +53,13 @@ export default function Sidebar() {
 
           return (
             <Tooltip title={item.label} placement="right" key={item.label}>
-              <ListItem
-                disablePadding
-                sx={{
-                  justifyContent: "center",
-                  mb: 2
-                }}
-              >
+              <ListItem disablePadding sx={{ justifyContent: "center", mb: 2 }}>
                 <Link href={item.path} passHref>
                   <IconButton
                     size="large"
                     sx={{
                       color: isActive ? "white" : "text.secondary",
-                      backgroundColor: isActive
-                        ? "primary.light"
-                        : "transparent",
+                      backgroundColor: isActive ? "primary.light" : "transparent",
                       ":hover": {
                         backgroundColor: "action.hover",
                         color: "primary.main",

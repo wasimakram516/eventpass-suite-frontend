@@ -10,24 +10,24 @@ import {
   MenuItem,
   Button,
   Stack,
+  Typography,
 } from "@mui/material";
 import Link from "next/link";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import LoginRoundedIcon from "@mui/icons-material/LoginRounded";
-import Image from "next/image";
 import ConfirmationDialog from "@/components/ConfirmationDialog";
 import LanguageSelector from "./LanguageSelector";
+import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
-
+  const { globalConfig } = useGlobalConfig(); 
   const [anchorEl, setAnchorEl] = useState(null);
   const [confirmLogout, setConfirmLogout] = useState(false);
 
   const handleOpen = (event) => setAnchorEl(event.currentTarget);
   const handleClose = () => setAnchorEl(null);
-
   const openLogoutConfirm = () => {
     handleClose();
     setConfirmLogout(true);
@@ -49,30 +49,18 @@ export default function Navbar() {
             <Stack
               direction="row"
               alignItems="center"
-              spacing={0.5}
-              sx={{
-                cursor: "pointer",
-                width: { xs: 180, sm: "auto" },
-              }}
+              spacing={1}
+              sx={{ cursor: "pointer", width: { xs: 180, sm: "auto" } }}
             >
-              <Box
-                sx={{
-                  width: { xs: 35, sm: 40 },
-                  height: "auto",
-                }}
+              <Typography
+                variant="h6"
+                fontWeight="bold"
+                color="text.primary"
+                noWrap
+                sx={{ display: { xs: "none", sm: "block" } }}
               >
-                <Image
-                  src="/WW.png"
-                  alt="WhiteWall Logo"
-                  width={100}
-                  height={30}
-                  style={{
-                    width: "100%",
-                    height: "auto",
-                    objectFit: "contain",
-                  }}
-                />
-              </Box>
+                {globalConfig?.appName || "EventPass Suite"} 
+              </Typography>
             </Stack>
           </Link>
 
@@ -111,12 +99,11 @@ export default function Navbar() {
                 </Menu>
               </>
             )}
-            <LanguageSelector/>
+            <LanguageSelector />
           </Box>
         </Toolbar>
       </AppBar>
-
-      {/* Confirmation Modal */}
+      
       <ConfirmationDialog
         open={confirmLogout}
         onClose={() => setConfirmLogout(false)}

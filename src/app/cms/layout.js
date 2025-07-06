@@ -47,7 +47,6 @@ export default function CmsLayout({ children }) {
           pr:"30px",
           pt:"50px", 
           minHeight: "calc(100vh - 40px)",
-          overflowY: "auto",
         }}
       >
         {children}

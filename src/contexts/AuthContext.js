@@ -28,13 +28,13 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      await logoutUser(); 
+      await logoutUser();
     } catch (error) {
       console.error("Logout failed:", error);
     } finally {
-      setUser(null); 
+      handleSetUser(null); 
     }
-  };
+  };  
 
   return (
     <AuthContext.Provider value={{ user, setUser: handleSetUser, logout, loading }}>

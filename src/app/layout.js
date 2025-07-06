@@ -4,6 +4,7 @@ import { MessageProvider } from "@/contexts/MessageContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import ClientLayout from "@/utils/ClientLayout";
+import { GlobalConfigProvider } from "@/contexts/GlobalConfigContext";
 
 export const metadata = {
   title: "EventPass – WhiteWall",
@@ -22,6 +23,10 @@ export default function RootLayout({ children }) {
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <meta name="theme-color" content="#033649" />
         <link rel="icon" href="/favicon.ico" type="image/png" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;700&family=Poppins:wght@300;400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
         <title>{metadata.title}</title>
         <meta name="description" content={metadata.description} />
         <meta name="keywords" content={metadata.keywords} />
@@ -29,13 +34,15 @@ export default function RootLayout({ children }) {
       </head>
       <body>
         <LanguageProvider>
-          <ThemeRegistry>
-            <AuthProvider>
-              <MessageProvider>
-                <ClientLayout>{children}</ClientLayout>
-              </MessageProvider>
-            </AuthProvider>
-          </ThemeRegistry>
+          <MessageProvider>
+            <GlobalConfigProvider>
+              <ThemeRegistry>
+                <AuthProvider>
+                  <ClientLayout>{children}</ClientLayout>
+                </AuthProvider>
+              </ThemeRegistry>
+            </GlobalConfigProvider>
+          </MessageProvider>
         </LanguageProvider>
       </body>
     </html>

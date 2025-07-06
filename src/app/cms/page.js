@@ -3,9 +3,19 @@
 import { Box, Typography, Grid, Container } from "@mui/material";
 import StatsCard from "@/components/StatsCard";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
+import { useAuth } from "@/contexts/AuthContext";
+import BusinessAlertModal from "@/components/BusinessAlertModal";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { getAllBusinesses } from "@/services/businessService";
 
 export default function HomePage() {
   const { language } = useLanguage();
+  const { user } = useAuth();
+  const router = useRouter();
+  const [showBusinessModal, setShowBusinessModal] = useState(false);
+  const { globalConfig } = useGlobalConfig();
 
   const isArabic = language === "ar";
   const dir = isArabic ? "rtl" : "ltr";
@@ -13,7 +23,6 @@ export default function HomePage() {
 
   const translations = {
     en: {
-      title: "Welcome to EventPass Suite",
       subtitle:
         "Manage all your interactive event tools in one place — quizzes, polls, audience engagement, registration, and more.",
       stats: [
@@ -91,7 +100,6 @@ export default function HomePage() {
     },
 
     ar: {
-      title: "مرحبًا بك في مجموعة EventPass",
       subtitle:
         "قم بإدارة جميع أدوات الفعاليات التفاعلية في مكان واحد — الاختبارات، الاستطلاعات، تفاعل الجمهور، التسجيل والمزيد.",
       stats: [
@@ -169,15 +177,33 @@ export default function HomePage() {
     },
   };
 
-  const { title, subtitle, stats } = translations[language];
+  const { subtitle, stats } = translations[language];
+
+  useEffect(() => {
+    if (user?.role === "business") {
+      checkBusinessExists();
+    }
+  }, [user]);
+
+  const checkBusinessExists = async () => {
+    const businesses = await getAllBusinesses();
+    const myBusiness = businesses.find((b) => {
+      const ownerId = typeof b.owner === "string" ? b.owner : b.owner?._id;
+      return ownerId === user?.id;
+    });
+    if (!myBusiness) {
+      setShowBusinessModal(true);
+    }
+  };
 
   return (
     <Box sx={{ pb: 4, bgcolor: "background.default" }} dir={dir}>
       <Container>
         <Box sx={{ textAlign: "center", mb: 3 }}>
           <Typography variant="h2" fontWeight="bold" gutterBottom>
-            {title}
+            {globalConfig?.appName || "EventPass Suite"}
           </Typography>
+
           <Typography variant="body1" color="text.secondary">
             {subtitle}
           </Typography>
@@ -192,6 +218,14 @@ export default function HomePage() {
           ))}
         </Grid>
       </Container>
+      <BusinessAlertModal
+        open={showBusinessModal}
+        onClose={() => setShowBusinessModal(false)}
+        onNavigate={() => {
+          router.push("/cms/settings/business");
+          setShowBusinessModal(false);
+        }}
+      />
     </Box>
   );
 }

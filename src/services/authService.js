@@ -23,13 +23,13 @@ export const login = async (email, password) => {
 // **Register New Business User**
 export const registerUser = async (name, email, password) => {
   const { data } = await api.post("/auth/register", { name, email, password });
-  return data;
+  return data.data;
 };
 
 // **Refresh Access Token Using Secure Cookie**
 export async function refreshToken() {
   try {
-    const { data } = await axios.post("/api/auth/refresh", { withCredentials: true }); 
+    const { data } = await api.post("/auth/refresh"); 
     setAccessToken(data.data.accessToken);
     return data.data.accessToken;
   } catch (error) {
@@ -47,7 +47,7 @@ export async function logoutUser() {
   } finally {
     clearTokens();
     
-    // ✅ Prevent multiple redirects
+    // Prevent multiple redirects
     if (window.location.pathname !== "/auth/login") {
       window.location.href = "/auth/login";
     }

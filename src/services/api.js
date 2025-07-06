@@ -1,10 +1,11 @@
 import axios from 'axios';
 import { refreshToken, clearTokens } from './authService';
 
-const API_BASE_URL = "/api";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
+  withCredentials: true,
 });
 
 // Global variables to handle token refresh logic
@@ -72,7 +73,7 @@ api.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError, null);
         clearTokens();
-        window.location.href = "/auth/login"; // Redirect to login
+        window.location.href = "/auth/login"; 
         return Promise.reject(refreshError);
       } finally {
         isRefreshing = false;

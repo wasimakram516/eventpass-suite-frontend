@@ -21,10 +21,48 @@ import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 import { registerUser } from "@/services/authService";
 import { useMessage } from "@/contexts/MessageContext";
+import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
+import useI18nLayout from "@/hooks/useI18nLayout";
+
+const translations = {
+  en: {
+    title: "Register for",
+    subtitle: "Create your account to start creating polls.",
+    name: "Name",
+    email: "Email",
+    password: "Password",
+    requiredName: "Name is required",
+    requiredEmail: "Email is required",
+    requiredPassword: "Password is required",
+    register: "Register",
+    registering: "Creating Account...",
+    alreadyHave: "Already have an account?",
+    loginHere: "Login here",
+    poweredBy: "Powered by",
+  },
+  ar: {
+    title: "سجل في",
+    subtitle: "أنشئ حسابك للبدء في إنشاء الاستطلاعات.",
+    name: "الاسم",
+    email: "البريد الإلكتروني",
+    password: "كلمة المرور",
+    requiredName: "الاسم مطلوب",
+    requiredEmail: "البريد الإلكتروني مطلوب",
+    requiredPassword: "كلمة المرور مطلوبة",
+    register: "سجل",
+    registering: "جاري إنشاء الحساب...",
+    alreadyHave: "هل لديك حساب بالفعل؟",
+    loginHere: "تسجيل الدخول",
+    poweredBy: "مشغل بواسطة",
+  },
+};
 
 export default function RegisterPage() {
   const router = useRouter();
   const { showMessage } = useMessage();
+  const { globalConfig } = useGlobalConfig();
+  const { t, dir, align } = useI18nLayout(translations);
+
   const [form, setForm] = useState({ name: "", email: "", password: "" });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -37,9 +75,9 @@ export default function RegisterPage() {
 
   const validate = () => {
     const newErrors = {};
-    if (!form.name) newErrors.name = "Name is required";
-    if (!form.email) newErrors.email = "Email is required";
-    if (!form.password) newErrors.password = "Password is required";
+    if (!form.name) newErrors.name = t.requiredName;
+    if (!form.email) newErrors.email = t.requiredEmail;
+    if (!form.password) newErrors.password = t.requiredPassword;
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -55,7 +93,9 @@ export default function RegisterPage() {
       router.push("/auth/login");
     } catch (err) {
       showMessage(
-        err?.response?.data?.message || "Registration failed",
+        err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          "Registration failed",
         "error"
       );
     } finally {
@@ -64,7 +104,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <Container maxWidth="sm">
+    <Container maxWidth="sm" dir={dir}>
       <Paper elevation={3} sx={{ p: 4, mt: 4, borderRadius: 3 }}>
         <Stack
           direction="row"
@@ -83,7 +123,7 @@ export default function RegisterPage() {
           textAlign="center"
           gutterBottom
         >
-          Register for EventPass CMS
+          {t.title} {globalConfig?.appName || "EventPass Suite"}
         </Typography>
         <Typography
           variant="body2"
@@ -91,7 +131,7 @@ export default function RegisterPage() {
           textAlign="center"
           sx={{ mb: 3 }}
         >
-          Create your account to start creating polls.
+          {t.subtitle}
         </Typography>
 
         <Box
@@ -100,16 +140,17 @@ export default function RegisterPage() {
           sx={{ display: "flex", flexDirection: "column", gap: 2 }}
         >
           <TextField
-            label="Name"
+            label={t.name}
             name="name"
             fullWidth
             value={form.name}
             onChange={handleChange}
             error={!!errors.name}
             helperText={errors.name}
+            inputProps={{ dir }}
           />
           <TextField
-            label="Email"
+            label={t.email}
             name="email"
             type="email"
             fullWidth
@@ -117,9 +158,10 @@ export default function RegisterPage() {
             onChange={handleChange}
             error={!!errors.email}
             helperText={errors.email}
+            inputProps={{ dir }}
           />
           <TextField
-            label="Password"
+            label={t.password}
             name="password"
             type={showPassword ? "text" : "password"}
             fullWidth
@@ -127,6 +169,7 @@ export default function RegisterPage() {
             onChange={handleChange}
             error={!!errors.password}
             helperText={errors.password}
+            inputProps={{ dir }}
             InputProps={{
               endAdornment: (
                 <InputAdornment position="end">
@@ -154,9 +197,9 @@ export default function RegisterPage() {
               )
             }
             disabled={loading}
-            sx={{ mt: 1 }}
+            sx={{ mt: 1, textTransform: "none", py: 1.5 }}
           >
-            {loading ? "Creating Account..." : "Register"}
+            {loading ? t.registering : t.register}
           </Button>
         </Box>
 
@@ -166,29 +209,34 @@ export default function RegisterPage() {
           align="center"
           sx={{ mt: 2 }}
         >
-          Already have an account?{" "}
-          <a href="/auth/login" style={{ color: "#033649", fontWeight: 500 }}>
-            Login here
+          {t.alreadyHave}{" "}
+          <a
+            href="/auth/login"
+            style={{ color: "inherit", fontWeight: 500, textDecoration: "none" }}
+          >
+            {t.loginHere}
           </a>
         </Typography>
 
         <Divider sx={{ my: 3 }} />
-
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          display="block"
-          textAlign="center"
-        >
-          Powered by{" "}
-          <a
-            href="https://whitewall.om"
-            target="_blank"
-            style={{ color: "#033649" }}
+        {globalConfig?.poweredBy.text && (
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            display="block"
+            textAlign="center"
           >
-            WhiteWall Digital Solutions
-          </a>
-        </Typography>
+            {t.poweredBy}{" "}
+            <a
+              href={globalConfig?.socialLinks?.website}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: "inherit", fontWeight: 500, textDecoration: "none" }}
+            >
+              {globalConfig?.poweredBy.text}
+            </a>
+          </Typography>
+        )}
       </Paper>
     </Container>
   );

@@ -3,50 +3,58 @@ import { createTheme } from "@mui/material/styles";
 const theme = createTheme({
   palette: {
     primary: {
-      main: "#128199", // Deep blue
+      main: "#128199",
     },
     secondary: {
-      main: "#ffcc00", // Golden yellow (from lanterns)
+      main: "#ffcc00",
     },
     background: {
-      default: "#f9f9f9", // Light background
+      default: "#f9f9f9",
       paper: "#ffffff",
     },
     text: {
-      primary: "#033649", // Dark blue for headings
-      secondary: "#555", // Grayish text
+      primary: "#033649",
+      secondary: "#555",
     },
   },
   typography: {
-    fontFamily: "'Poppins', sans-serif",
+    fontFamily: "'Poppins', sans-serif", // default for body
     h1: {
+      fontFamily: "'Comfortaa', cursive",
       fontSize: "3rem",
-      fontWeight: "bold",
+      fontWeight: "700",
     },
     h2: {
+      fontFamily: "'Comfortaa', cursive",
       fontSize: "2rem",
-      fontWeight: "bold",
+      fontWeight: "700",
     },
     h3: {
+      fontFamily: "'Comfortaa', cursive",
       fontSize: "1.75rem",
-      fontWeight: "bold",
+      fontWeight: "700",
     },
     h4: {
+      fontFamily: "'Comfortaa', cursive",
       fontSize: "1.5rem",
-      fontWeight: "bold",
+      fontWeight: "700",
     },
     h5: {
+      fontFamily: "'Comfortaa', cursive",
       fontSize: "1.3rem",
-      fontWeight: "bold",
+      fontWeight: "700",
     },
     h6: {
+      fontFamily: "'Comfortaa', cursive",
       fontSize: "1.25rem",
     },
     body1: {
-      fontSize: "1.175rem",
+      fontSize: "1.075rem",
+      fontFamily: "'Poppins', sans-serif",
     },
     body2: {
       fontSize: "0.95rem",
+      fontFamily: "'Poppins', sans-serif",
     },
     subtitle1: {
       fontSize: "0.9rem",
@@ -62,7 +70,7 @@ const theme = createTheme({
     },
   },
   shape: {
-    borderRadius: 8, 
+    borderRadius: 8,
   },
   components: {
     MuiButton: {

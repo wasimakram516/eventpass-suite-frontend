@@ -12,9 +12,9 @@ export default function QuiznestCMSPage() {
     if (typeof window !== "undefined") {
       if (user.role === "admin") {
         router.replace("/cms/modules/quiznest/businesses");
-      } else if (user.role === "business" && user.businessSlug) {
+      } else if (user.role === "business" && user.business.slug) {
         router.replace(
-          `/cms/modules/quiznest/businesses/${user.businessSlug}/games`
+          `/cms/modules/quiznest/businesses/${user.business.slug}/games`
         );
       }
     }

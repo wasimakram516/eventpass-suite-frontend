@@ -319,7 +319,7 @@ export default function ResultsPage() {
                   color="primary"
                   onClick={() =>
                     window.open(
-                      `/cms/modules/votecast/polls/${selectedBusiness}/results?status=${selectedStatus}`,
+                      `/votecast/polls/${selectedBusiness}/results?status=${selectedStatus}`,
                       "_blank"
                     )
                   }

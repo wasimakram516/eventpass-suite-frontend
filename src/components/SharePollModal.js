@@ -27,7 +27,7 @@ export default function SharePollModal({ open, onClose, poll }) {
   if (!poll) return null;
 
   const origin = typeof window !== "undefined" ? window.location.origin : "";
-  const shareableLink = `${origin}/polls/${poll.business?.slug}/vote`;
+  const shareableLink = `${origin}/votecast/polls/${poll.business?.slug}/vote`;
 
   const handleCopyLink = async () => {
     try {
