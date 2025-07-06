@@ -36,7 +36,7 @@ export default function ResultsPage() {
   const [game, setGame] = useState(null);
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
- const { user } = useAuth();
+  const { user } = useAuth();
   // CHANGED: Dummy game and leaderboard
   const dummyGame = {
     _id: "g1",
@@ -78,8 +78,6 @@ export default function ResultsPage() {
   useEffect(() => {
     if (gameSlug) fetchGameAndResults();
   }, [gameSlug]);
-
-
 
   const { language } = useLanguage(); //Language Usage
   const resultsTranslations = {

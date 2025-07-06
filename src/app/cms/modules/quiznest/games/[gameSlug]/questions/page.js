@@ -1,9 +1,25 @@
 "use client";
 
 import {
-  Box, Button, Container, Grid, Typography, IconButton, CircularProgress,
-  Tooltip, Dialog, DialogTitle, DialogContent, DialogActions, FormControl,
-  InputLabel, Select, MenuItem, FormControlLabel, Checkbox, Divider,
+  Box,
+  Button,
+  Container,
+  Grid,
+  Typography,
+  IconButton,
+  CircularProgress,
+  Tooltip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  FormControlLabel,
+  Checkbox,
+  Divider,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
@@ -76,12 +92,14 @@ export default function QuestionsPage() {
   // CHANGED: Simulate add/edit with local state
   const handleAddEdit = async (values, isEdit) => {
     if (isEdit) {
-      setQuestions(prev =>
-        prev.map(q => (q._id === selectedQuestion._id ? { ...q, ...values } : q))
+      setQuestions((prev) =>
+        prev.map((q) =>
+          q._id === selectedQuestion._id ? { ...q, ...values } : q
+        )
       );
       showMessage("Question updated!", "success");
     } else {
-      setQuestions(prev => [
+      setQuestions((prev) => [
         ...prev,
         { ...values, _id: Date.now().toString() },
       ]);
@@ -92,7 +110,7 @@ export default function QuestionsPage() {
 
   // CHANGED: Simulate delete with local state
   const handleDelete = async () => {
-    setQuestions(prev => prev.filter(q => q._id !== selectedQuestion._id));
+    setQuestions((prev) => prev.filter((q) => q._id !== selectedQuestion._id));
     showMessage("Question deleted!", "success");
     setConfirmOpen(false);
   };
@@ -107,7 +125,6 @@ export default function QuestionsPage() {
     showMessage("Downloaded template! (dummy)", "success");
     setDownloadModalOpen(false);
   };
-
 
   const { language } = useLanguage(); //Language Usage
   const questionsTranslations = {

@@ -2,5 +2,7 @@
 import { redirect } from "next/navigation";
 
 export default function Page({ params }) {
-  return redirect(`/cms/modules/quiznest/businesses/${params.businessSlug}/games`);
+  return redirect(
+    `/cms/modules/quiznest/businesses/${params.businessSlug}/games`
+  );
 }

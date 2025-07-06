@@ -258,7 +258,6 @@ export default function GamesPage() {
             <Typography>{gamesTranslations[language].noGames}</Typography>
           )}
           <Divider sx={{ my: 2 }} />
-        
         </Drawer>
       )}
       <Container maxWidth="lg">
