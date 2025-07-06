@@ -10,15 +10,15 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import DownloadIcon from "@mui/icons-material/Download";
-import BreadcrumbsNav from "../../../../../../../../../components/BreadcrumbsNav";
+import BreadcrumbsNav from "@/components/BreadcrumbsNav";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 // REMOVED: import { getQuestions, addQuestion, updateQuestion, deleteQuestion, uploadExcelQuestions, downloadTemplate } from "@/services/questionService";
 // REMOVED: import { getGameBySlug } from "@/services/gameService";
-import QuestionFormModal from "../../../../../../../../../components/QuestionFormModal";
-import ConfirmationDialog from "../../../../../../../../../components/ConfirmationDialog";
-import { useMessage } from "../../../../../../../../../contexts/MessageContext";
-import { useLanguage } from "../../../../../../../../../contexts/LanguageContext";
+import QuestionFormModal from "@/components/QuestionFormModal";
+import ConfirmationDialog from "@/components/ConfirmationDialog";
+import { useMessage } from "@/contexts/MessageContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function QuestionsPage() {
   const { businessSlug, gameSlug } = useParams();

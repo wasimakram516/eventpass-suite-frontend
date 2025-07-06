@@ -9,15 +9,7 @@ export default function QuiznestCMSPage() {
   const { user } = useAuth(); // use user stored in context
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      if (user.role === "admin") {
-        router.replace("/cms/modules/quiznest/businesses");
-      } else if (user.role === "business" && user.business.slug) {
-        router.replace(
-          `/cms/modules/quiznest/businesses/${user.business.slug}/games`
-        );
-      }
-    }
+    router.replace("/cms/modules/quiznest/games");
   }, [router]);
   return null;
 }

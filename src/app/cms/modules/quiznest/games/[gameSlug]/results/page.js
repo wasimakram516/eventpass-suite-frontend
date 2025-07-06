@@ -1,8 +1,17 @@
 "use client";
 
 import {
-  Box, Button, CircularProgress, Container, Grid, Typography,
-  IconButton, Tooltip, Divider,
+  Box,
+  Button,
+  CircularProgress,
+  Container,
+  Grid,
+  Typography,
+  IconButton,
+  Tooltip,
+  Divider,
+  Drawer, // ADDED: For admin sidebar
+  TextField, // ADDED: For create business
 } from "@mui/material";
 import DownloadIcon from "@mui/icons-material/Download";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
@@ -14,11 +23,12 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import HourglassBottomIcon from "@mui/icons-material/HourglassBottom";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import BreadcrumbsNav from "../../../../../../../../../components/BreadcrumbsNav";
+import BreadcrumbsNav from "@/components/BreadcrumbsNav";
 // REMOVED: import { getGameBySlug } from "@/services/gameService";
 // REMOVED: import { exportResults, getLeaderboard } from "@/services/playerService";
-import { useMessage } from "../../../../../../../../../contexts/MessageContext";
-import { useLanguage } from "../../../../../../../../../contexts/LanguageContext";
+import { useMessage } from "@/contexts/MessageContext";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function ResultsPage() {
   const { businessSlug, gameSlug } = useParams();
@@ -26,7 +36,7 @@ export default function ResultsPage() {
   const [game, setGame] = useState(null);
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
-
+ const { user } = useAuth();
   // CHANGED: Dummy game and leaderboard
   const dummyGame = {
     _id: "g1",
