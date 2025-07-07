@@ -31,7 +31,7 @@ const entryDialogTranslations = {
 export default function NamePage() {
   const { game, loading } = useGame();
   const router = useRouter();
-   const { t, dir, align, language } = useI18nLayout(entryDialogTranslations);
+  const { t, dir, align, language } = useI18nLayout(entryDialogTranslations);
   const [form, setForm] = useState({ name: "", company: "" });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -72,8 +72,6 @@ export default function NamePage() {
     );
   }
 
-
-  
   return (
     <Box sx={{ position: "relative" }}>
       <LanguageSelector />

@@ -173,14 +173,14 @@ export default function QuestionsPage() {
     try {
       const file = e.target.files[0];
       if (!file) return;
-      console.log(game._id,file)
+      console.log(game._id, file);
       await uploadExcelQuestions(game._id, file);
       showMessage(t.questionsUploaded, "success");
       // Refresh questions
       const questionsData = await getQuestions(game._id);
       setQuestions(questionsData || []);
     } catch (err) {
-      console.log(err)
+      console.log(err);
       showMessage(t.errorLoading, "error");
     }
   };

@@ -120,8 +120,8 @@ export default function GamesPage() {
   const [gameToDelete, setGameToDelete] = useState(null);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [gameToShare, setGameToShare] = useState(null);
- const [allBusinesses, setAllBusinesses] = useState([]);
- const [userBusinesses, setUserBusinesses] = useState([]);
+  const [allBusinesses, setAllBusinesses] = useState([]);
+  const [userBusinesses, setUserBusinesses] = useState([]);
 
   // Fetch all businesses on mount
   useEffect(() => {
@@ -209,7 +209,7 @@ export default function GamesPage() {
     setConfirmOpen(false);
     setGameToDelete(null);
   };
-console.log(selectedBusiness);
+  console.log(selectedBusiness);
   return (
     <Box sx={{ position: "relative", display: "inline-block", width: "100%" }}>
       {/* ADDED: Admin sidebar for business selection and create business */}

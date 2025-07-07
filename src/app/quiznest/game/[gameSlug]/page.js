@@ -12,14 +12,14 @@ import { useGame } from "@/contexts/GameContext";
 import LanguageSelector from "@/components/LanguageSelector";
 import useI18nLayout from "@/hooks/useI18nLayout";
 //Language Usage
-  const gameStartTranslations = {
-    en: {
-      startButton: "Start Game",
-    },
-    ar: {
-      startButton: "بدء اللعبة",
-    },
-  };
+const gameStartTranslations = {
+  en: {
+    startButton: "Start Game",
+  },
+  ar: {
+    startButton: "بدء اللعبة",
+  },
+};
 export default function GameHomePage() {
   const { game, loading } = useGame();
   const router = useRouter();

@@ -18,28 +18,28 @@ import useI18nLayout from "@/hooks/useI18nLayout";
 import { translateText } from "@/services/translationService";
 //static translations
 
-  const gameTranslations = {
-    en: {
-      countdown: "sec",
-      question: "Question",
-      of: "of",
-      hint: "Hint",
-      thankYou: "Thank you,",
-      score: "Score",
-      attempted: "Attempted",
-      playAgain: "Play Again",
-    },
-    ar: {
-      countdown: "ثانية",
-      question: "سؤال",
-      of: "من",
-      hint: "تلميح",
-      thankYou: "شكراً لك",
-      score: "النقاط",
-      attempted: "محاولات",
-      playAgain: "العب مرة أخرى",
-    },
-  };
+const gameTranslations = {
+  en: {
+    countdown: "sec",
+    question: "Question",
+    of: "of",
+    hint: "Hint",
+    thankYou: "Thank you,",
+    score: "Score",
+    attempted: "Attempted",
+    playAgain: "Play Again",
+  },
+  ar: {
+    countdown: "ثانية",
+    question: "سؤال",
+    of: "من",
+    hint: "تلميح",
+    thankYou: "شكراً لك",
+    score: "النقاط",
+    attempted: "محاولات",
+    playAgain: "العب مرة أخرى",
+  },
+};
 export default function PlayPage() {
   const { game, loading } = useGame();
   const router = useRouter();
@@ -182,7 +182,7 @@ export default function PlayPage() {
     setEnded(true);
 
     const playerId = localStorage.getItem("playerId");
-  
+
     await submitResult(playerId, {
       score: scoreRef.current,
       attemptedQuestions: attemptedRef.current,

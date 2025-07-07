@@ -95,8 +95,7 @@ export default function HomePage() {
           <Typography variant="body1" color="text.secondary" textAlign="center">
             {t.aboutDescription}
             <br />
-            <strong>QuizNest</strong>{" "}
-            {t.developedBy}{" "}
+            <strong>QuizNest</strong> {t.developedBy}{" "}
             <strong>WhiteWall Digital Solutions, Oman</strong>.
           </Typography>
 

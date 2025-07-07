@@ -19,33 +19,33 @@ import { useEffect, useState } from "react";
 import { useGame } from "@/contexts/GameContext";
 import LanguageSelector from "@/components/LanguageSelector";
 import useI18nLayout from "@/hooks/useI18nLayout";
- const gameInstructionsTranslations = {
-   en: {
-     welcome: "Welcome",
-     instructionsTitle: "Here's what you need to know",
-     questionsCount: "Number of questions:",
-     quizDuration: "Quiz duration:",
-     seconds: "seconds",
-     startButton: "Start Game",
-     backButton: "Back",
-   },
-   ar: {
-     welcome: "أهلاً بك",
-     instructionsTitle: "هذا ما تحتاج معرفته",
-     questionsCount: "عدد الأسئلة:",
-     quizDuration: "مدة الإختبار:",
-     seconds: "ثانية",
-     startButton: "ابدأ اللعبة",
-     backButton: "رجوع",
-   },
- };
+const gameInstructionsTranslations = {
+  en: {
+    welcome: "Welcome",
+    instructionsTitle: "Here's what you need to know",
+    questionsCount: "Number of questions:",
+    quizDuration: "Quiz duration:",
+    seconds: "seconds",
+    startButton: "Start Game",
+    backButton: "Back",
+  },
+  ar: {
+    welcome: "أهلاً بك",
+    instructionsTitle: "هذا ما تحتاج معرفته",
+    questionsCount: "عدد الأسئلة:",
+    quizDuration: "مدة الإختبار:",
+    seconds: "ثانية",
+    startButton: "ابدأ اللعبة",
+    backButton: "رجوع",
+  },
+};
 export default function InstructionsPage() {
   const router = useRouter();
   const { game, loading } = useGame();
   const [playerInfo, setPlayerInfo] = useState(null);
- const { t, dir, align, language } = useI18nLayout(
-   gameInstructionsTranslations
- );
+  const { t, dir, align, language } = useI18nLayout(
+    gameInstructionsTranslations
+  );
   useEffect(() => {
     const stored = localStorage.getItem("playerInfo");
     if (stored) setPlayerInfo(JSON.parse(stored));
@@ -75,7 +75,6 @@ export default function InstructionsPage() {
     );
   }
 
- 
   return (
     <Box sx={{ position: "relative" }}>
       <LanguageSelector />
@@ -131,7 +130,11 @@ export default function InstructionsPage() {
             {game.title}
           </Typography>
 
-          <Typography variant="h4" sx={{ mb: 4 }}dir={language === "ar" ? "rtl" : "ltr"}>
+          <Typography
+            variant="h4"
+            sx={{ mb: 4 }}
+            dir={language === "ar" ? "rtl" : "ltr"}
+          >
             {gameInstructionsTranslations[language].welcome}{" "}
             <Box component="span" fontWeight={600}>
               {playerInfo.name}
