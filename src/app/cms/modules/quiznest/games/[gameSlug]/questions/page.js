@@ -34,9 +34,74 @@ import { useEffect, useState } from "react";
 import QuestionFormModal from "@/components/QuestionFormModal";
 import ConfirmationDialog from "@/components/ConfirmationDialog";
 import { useMessage } from "@/contexts/MessageContext";
-import { useLanguage } from "@/contexts/LanguageContext";
-
+import useI18nLayout from "@/hooks/useI18nLayout";
+import {
+  getQuestions,
+  addQuestion,
+  updateQuestion,
+  deleteQuestion,
+  uploadExcelQuestions,
+  downloadTemplate,
+} from "@/services/quiznest/questionService";
+import { getGameBySlug } from "@/services/quiznest/gameService";
+const translations = {
+  en: {
+    questionsTitle: 'Questions for "{gameTitle}" game',
+    questionsDescription:
+      "Choices per question: {choicesCount} | Countdown: {countdownTimer}s | Quiz Time: {gameSessionTimer}s",
+    downloadTemplate: "Download Template",
+    uploadQuestions: "Upload Questions (.xlsx)",
+    addQuestion: "Add Question",
+    questionLabel: "Question:",
+    optionsLabel: "Options:",
+    correctAnswerLabel: "Correct Answer:",
+    hintLabel: "Hint:",
+    deleteQuestionTitle: "Delete Question?",
+    deleteQuestionMessage: "Are you sure you want to delete this question?",
+    downloadTemplateTitle: "Download Template",
+    numberOptionsLabel: "Number of Options",
+    includeHintLabel: "Include Hint Column",
+    cancelButton: "Cancel",
+    downloadButton: "Download",
+    editTooltip: "Edit",
+    deleteTooltip: "Delete",
+    errorLoading: "Error loading data.",
+    questionAdded: "Question added!",
+    questionUpdated: "Question updated!",
+    questionDeleted: "Question deleted!",
+    questionsUploaded: "Questions uploaded!",
+    templateDownloaded: "Downloaded template!",
+  },
+  ar: {
+    questionsTitle: 'أسئلة لعبة "{gameTitle}"',
+    questionsDescription:
+      "خيارات لكل سؤال: {choicesCount} | العد التنازلي: {countdownTimer}ثانية | وقت الاختبار: {gameSessionTimer}ثانية",
+    downloadTemplate: "تحميل القالب",
+    uploadQuestions: "رفع الأسئلة (.xlsx)",
+    addQuestion: "إضافة سؤال",
+    questionLabel: "السؤال:",
+    optionsLabel: "الخيارات:",
+    correctAnswerLabel: "الإجابة الصحيحة:",
+    hintLabel: "تلميح:",
+    deleteQuestionTitle: "حذف السؤال؟",
+    deleteQuestionMessage: "هل أنت متأكد أنك تريد حذف هذا السؤال؟",
+    downloadTemplateTitle: "تحميل القالب",
+    numberOptionsLabel: "عدد الخيارات",
+    includeHintLabel: "تضمين عمود التلميح",
+    cancelButton: "إلغاء",
+    downloadButton: "تحميل",
+    editTooltip: "تعديل",
+    deleteTooltip: "حذف",
+    errorLoading: "حدث خطأ أثناء تحميل البيانات.",
+    questionAdded: "تمت إضافة السؤال!",
+    questionUpdated: "تم تحديث السؤال!",
+    questionDeleted: "تم حذف السؤال!",
+    questionsUploaded: "تم رفع الأسئلة!",
+    templateDownloaded: "تم تحميل القالب!",
+  },
+};
 export default function QuestionsPage() {
+  const { t, language } = useI18nLayout(translations);
   const { businessSlug, gameSlug } = useParams();
   const { showMessage } = useMessage();
   const [game, setGame] = useState(null);
@@ -50,145 +115,96 @@ export default function QuestionsPage() {
   const [downloadChoices, setDownloadChoices] = useState(4);
   const [includeHint, setIncludeHint] = useState(false);
 
-  // CHANGED: Dummy game and questions
-  const dummyGame = {
-    _id: "g1",
-    title: "General Knowledge",
-    choicesCount: 4,
-    countdownTimer: 30,
-    gameSessionTimer: 120,
-  };
-  const dummyQuestions = [
-    {
-      _id: "q1",
-      question: "What is the capital of France?",
-      answers: ["Berlin", "London", "Paris", "Madrid"],
-      correctAnswerIndex: 2,
-      hint: "It's also called the city of lights.",
-    },
-    {
-      _id: "q2",
-      question: "2 + 2 equals?",
-      answers: ["3", "4", "5", "6"],
-      correctAnswerIndex: 1,
-      hint: "",
-    },
-  ];
-
-  // CHANGED: fetchGameAndQuestions uses dummy data
-  const fetchGameAndQuestions = async () => {
-    setLoading(true);
-    setTimeout(() => {
-      setGame(dummyGame);
-      setQuestions(dummyQuestions);
-      setLoading(false);
-    }, 500);
-  };
-
+  // Fetch game and questions from backend
   useEffect(() => {
+    const fetchGameAndQuestions = async () => {
+      setLoading(true);
+      try {
+        const gameData = await getGameBySlug(gameSlug);
+        setGame(gameData);
+        const questionsData = await getQuestions(gameData._id);
+        setQuestions(questionsData || []);
+      } catch (err) {
+        showMessage(t.errorLoading, "error");
+      } finally {
+        setLoading(false);
+      }
+    };
     if (gameSlug) fetchGameAndQuestions();
-  }, [gameSlug]);
+  }, [gameSlug, t, showMessage]);
 
-  // CHANGED: Simulate add/edit with local state
+  // Add or edit question
   const handleAddEdit = async (values, isEdit) => {
-    if (isEdit) {
-      setQuestions((prev) =>
-        prev.map((q) =>
-          q._id === selectedQuestion._id ? { ...q, ...values } : q
-        )
-      );
-      showMessage("Question updated!", "success");
-    } else {
-      setQuestions((prev) => [
-        ...prev,
-        { ...values, _id: Date.now().toString() },
-      ]);
-      showMessage("Question added!", "success");
+    try {
+      let response;
+      if (isEdit) {
+        response = await updateQuestion(game._id, selectedQuestion._id, values);
+        setQuestions((prev) =>
+          prev.map((q) => (q._id === selectedQuestion._id ? response : q))
+        );
+        showMessage(t.questionUpdated, "success");
+      } else {
+        response = await addQuestion(game._id, values);
+        setQuestions((prev) => [...prev, response]);
+        showMessage(t.questionAdded, "success");
+      }
+    } catch (err) {
+      showMessage(t.errorLoading, "error");
     }
     setOpenModal(false);
   };
 
-  // CHANGED: Simulate delete with local state
+  // Delete question
   const handleDelete = async () => {
-    setQuestions((prev) => prev.filter((q) => q._id !== selectedQuestion._id));
-    showMessage("Question deleted!", "success");
+    try {
+      await deleteQuestion(game._id, selectedQuestion._id);
+      setQuestions((prev) =>
+        prev.filter((q) => q._id !== selectedQuestion._id)
+      );
+      showMessage(t.questionDeleted, "success");
+    } catch (err) {
+      showMessage(t.errorLoading, "error");
+    }
     setConfirmOpen(false);
   };
 
-  // CHANGED: Simulate upload/download with dummy logic
+  // Upload questions via Excel
   const handleUpload = async (e) => {
-    showMessage("Questions uploaded! (dummy)", "success");
-    setTimeout(fetchGameAndQuestions, 500);
+    try {
+      const file = e.target.files[0];
+      if (!file) return;
+      console.log(game._id,file)
+      await uploadExcelQuestions(game._id, file);
+      showMessage(t.questionsUploaded, "success");
+      // Refresh questions
+      const questionsData = await getQuestions(game._id);
+      setQuestions(questionsData || []);
+    } catch (err) {
+      console.log(err)
+      showMessage(t.errorLoading, "error");
+    }
   };
 
+  // Download template
   const handleDownload = async () => {
-    showMessage("Downloaded template! (dummy)", "success");
+    try {
+      const response = await downloadTemplate(downloadChoices, includeHint);
+      const blob = response.data; // Axios returns the blob in .data
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", "questions_template.xlsx");
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      showMessage(t.templateDownloaded, "success");
+    } catch (err) {
+      showMessage(t.errorLoading, "error");
+    }
     setDownloadModalOpen(false);
   };
 
-  const { language } = useLanguage(); //Language Usage
-  const questionsTranslations = {
-    en: {
-      // Header
-      questionsTitle: 'Questions for "{gameTitle}" game',
-      questionsDescription:
-        "Choices per question: <strong>{choicesCount}</strong> | Countdown: <strong>{countdownTimer}s</strong> | Quiz Time: <strong>{gameSessionTimer}s</strong>",
-
-      // Buttons
-      downloadTemplate: "Download Template",
-      uploadQuestions: "Upload Questions (.xlsx)",
-      addQuestion: "Add Question",
-
-      // Question card
-      questionLabel: "Question:",
-      optionsLabel: "Options:",
-      correctAnswerLabel: "Correct Answer:",
-      hintLabel: "Hint:",
-
-      // Modals
-      deleteQuestionTitle: "Delete Question?",
-      deleteQuestionMessage: "Are you sure you want to delete this question?",
-      downloadTemplateTitle: "Download Template",
-      numberOptionsLabel: "Number of Options",
-      includeHintLabel: "Include Hint Column",
-      cancelButton: "Cancel",
-      downloadButton: "Download",
-
-      // Tooltips
-      editTooltip: "Edit",
-      deleteTooltip: "Delete",
-    },
-    ar: {
-      // Header
-      questionsTitle: 'أسئلة لعبة "{gameTitle}"',
-      questionsDescription:
-        "خيارات لكل سؤال: <strong>{choicesCount}</strong> | العد التنازلي: <strong>{countdownTimer}ثانية</strong> | وقت الاختبار: <strong>{gameSessionTimer}ثانية</strong>",
-
-      // Buttons
-      downloadTemplate: "تحميل القالب",
-      uploadQuestions: "رفع الأسئلة (.xlsx)",
-      addQuestion: "إضافة سؤال",
-
-      // Question card
-      questionLabel: "السؤال:",
-      optionsLabel: "الخيارات:",
-      correctAnswerLabel: "الإجابة الصحيحة:",
-      hintLabel: "تلميح:",
-
-      // Modals
-      deleteQuestionTitle: "حذف السؤال؟",
-      deleteQuestionMessage: "هل أنت متأكد أنك تريد حذف هذا السؤال؟",
-      downloadTemplateTitle: "تحميل القالب",
-      numberOptionsLabel: "عدد الخيارات",
-      includeHintLabel: "تضمين عمود التلميح",
-      cancelButton: "إلغاء",
-      downloadButton: "تحميل",
-
-      // Tooltips
-      editTooltip: "تعديل",
-      deleteTooltip: "حذف",
-    },
-  };
   return (
     <Box sx={{ position: "relative", width: "100%" }}>
       <Container maxWidth="lg">
@@ -233,17 +249,12 @@ export default function QuestionsPage() {
                 >
                   <Box>
                     <Typography variant="h5" fontWeight="bold">
-                      {questionsTranslations[language].questionsTitle.replace(
-                        "{gameTitle}",
-                        game?.title
-                      )}
+                      {t.questionsTitle.replace("{gameTitle}", game?.title)}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                       <span
                         dangerouslySetInnerHTML={{
-                          __html: questionsTranslations[
-                            language
-                          ].questionsDescription
+                          __html: t.questionsDescription
                             .replace("{choicesCount}", game?.choicesCount)
                             .replace("{countdownTimer}", game?.countdownTimer)
                             .replace(
@@ -276,7 +287,7 @@ export default function QuestionsPage() {
                     startIcon={<DownloadIcon />}
                     onClick={() => setDownloadModalOpen(true)}
                   >
-                    {questionsTranslations[language].downloadTemplate}
+                    {t.downloadTemplate}
                   </Button>
 
                   <Button
@@ -284,7 +295,7 @@ export default function QuestionsPage() {
                     component="label"
                     startIcon={<UploadFileIcon />}
                   >
-                    {questionsTranslations[language].uploadQuestions}
+                    {t.uploadQuestions}
                     <input
                       hidden
                       type="file"
@@ -305,7 +316,7 @@ export default function QuestionsPage() {
                       setOpenModal(true);
                     }}
                   >
-                    {questionsTranslations[language].addQuestion}
+                    {t.addQuestion}
                   </Button>
                 </Box>
               </Box>
@@ -336,10 +347,7 @@ export default function QuestionsPage() {
                       </Typography>
 
                       <Typography variant="body1" sx={{ mb: 1 }}>
-                        <strong>
-                          {questionsTranslations[language].questionLabel}
-                        </strong>{" "}
-                        {q.question}
+                        <strong>{t.questionLabel}</strong> {q.question}
                       </Typography>
 
                       <Box>
@@ -348,7 +356,7 @@ export default function QuestionsPage() {
                           fontWeight="bold"
                           sx={{ mb: 0.5 }}
                         >
-                          {questionsTranslations[language].optionsLabel}
+                          {t.optionsLabel}
                         </Typography>
                         {q.answers.map((a, i) => (
                           <Typography
@@ -367,9 +375,7 @@ export default function QuestionsPage() {
                       </Box>
 
                       <Typography variant="body2" sx={{ mt: 1 }}>
-                        <strong>
-                          {questionsTranslations[language].correctAnswerLabel}
-                        </strong>{" "}
+                        <strong>{t.correctAnswerLabel}</strong>{" "}
                         <span style={{ color: "green" }}>
                           {String.fromCharCode(65 + q.correctAnswerIndex)}.{" "}
                           {q.answers[q.correctAnswerIndex]}
@@ -382,18 +388,13 @@ export default function QuestionsPage() {
                           color="text.secondary"
                           sx={{ mt: 1, display: "block" }}
                         >
-                          <strong>
-                            {questionsTranslations[language].hintLabel}
-                          </strong>{" "}
-                          {q.hint}
+                          <strong>{t.hintLabel}</strong> {q.hint}
                         </Typography>
                       )}
                     </Box>
 
                     <Box sx={{ display: "flex", gap: 1, mt: 2 }}>
-                      <Tooltip
-                        title={questionsTranslations[language].editTooltip}
-                      >
+                      <Tooltip title={t.editTooltip}>
                         <IconButton
                           color="info"
                           onClick={() => {
@@ -405,9 +406,7 @@ export default function QuestionsPage() {
                           <EditIcon />
                         </IconButton>
                       </Tooltip>
-                      <Tooltip
-                        title={questionsTranslations[language].deleteTooltip}
-                      >
+                      <Tooltip title={t.deleteTooltip}>
                         <IconButton
                           color="error"
                           onClick={() => {
@@ -435,8 +434,8 @@ export default function QuestionsPage() {
 
             <ConfirmationDialog
               open={confirmOpen}
-              title={questionsTranslations[language].deleteQuestionTitle}
-              message={questionsTranslations[language].deleteQuestionMessage}
+              title={t.deleteQuestionTitle}
+              message={t.deleteQuestionMessage}
               onClose={() => setConfirmOpen(false)}
               onConfirm={handleDelete}
             />
@@ -446,20 +445,16 @@ export default function QuestionsPage() {
           open={downloadModalOpen}
           onClose={() => setDownloadModalOpen(false)}
         >
-          <DialogTitle>
-            {questionsTranslations[language].downloadTemplateTitle}
-          </DialogTitle>
+          <DialogTitle>{t.downloadTemplateTitle}</DialogTitle>
           <DialogContent
             sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}
           >
             <FormControl fullWidth>
-              <InputLabel>
-                {questionsTranslations[language].numberOptionsLabel}
-              </InputLabel>
+              <InputLabel>{t.numberOptionsLabel}</InputLabel>
               <Select
                 value={downloadChoices}
                 onChange={(e) => setDownloadChoices(e.target.value)}
-                label={questionsTranslations[language].numberOptionsLabel}
+                label={t.numberOptionsLabel}
               >
                 {[2, 3, 4, 5].map((n) => (
                   <MenuItem key={n} value={n}>
@@ -476,7 +471,7 @@ export default function QuestionsPage() {
                   onChange={(e) => setIncludeHint(e.target.checked)}
                 />
               }
-              label={questionsTranslations[language].includeHintLabel}
+              label={t.includeHintLabel}
             />
           </DialogContent>
 
@@ -485,10 +480,10 @@ export default function QuestionsPage() {
               onClick={() => setDownloadModalOpen(false)}
               variant="outlined"
             >
-              {questionsTranslations[language].cancelButton}
+              {t.cancelButton}
             </Button>
             <Button onClick={handleDownload} variant="contained">
-              {questionsTranslations[language].downloadButton}
+              {t.downloadButton}
             </Button>
           </DialogActions>
         </Dialog>

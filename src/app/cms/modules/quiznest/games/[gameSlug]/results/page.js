@@ -10,8 +10,6 @@ import {
   IconButton,
   Tooltip,
   Divider,
-  Drawer, // ADDED: For admin sidebar
-  TextField, // ADDED: For create business
 } from "@mui/material";
 import DownloadIcon from "@mui/icons-material/Download";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
@@ -24,11 +22,41 @@ import HourglassBottomIcon from "@mui/icons-material/HourglassBottom";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import BreadcrumbsNav from "@/components/BreadcrumbsNav";
-// REMOVED: import { getGameBySlug } from "@/services/gameService";
-// REMOVED: import { exportResults, getLeaderboard } from "@/services/playerService";
+
 import { useMessage } from "@/contexts/MessageContext";
-import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
+import useI18nLayout from "@/hooks/useI18nLayout";
+import { getGameBySlug } from "@/services/quiznest/gameService";
+import {
+  getLeaderboard,
+  exportResults,
+} from "@/services/quiznest/playerService";
+const translations = {
+  en: {
+    resultsTitle: "Results for",
+    totalPlayers: "Total Players:",
+    exportResults: "Export Results",
+    exportTooltip: "Export Results",
+    scoreLabel: "Score:",
+    timeTakenLabel: "Time Taken:",
+    attemptedLabel: "Attempted:",
+    submittedAtLabel: "Submitted At:",
+    errorLoading: "Error loading data.",
+    exported: "Exported results!",
+  },
+  ar: {
+    resultsTitle: "نتائج",
+    totalPlayers: "إجمالي اللاعبين:",
+    exportResults: "تصدير النتائج",
+    exportTooltip: "تصدير النتائج",
+    scoreLabel: "النقاط:",
+    timeTakenLabel: "الوقت المستغرق:",
+    attemptedLabel: "المحاولات:",
+    submittedAtLabel: "تم الإرسال في:",
+    errorLoading: "حدث خطأ أثناء تحميل البيانات.",
+    exported: "تم تصدير النتائج!",
+  },
+};
 
 export default function ResultsPage() {
   const { businessSlug, gameSlug } = useParams();
@@ -37,77 +65,43 @@ export default function ResultsPage() {
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
-  // CHANGED: Dummy game and leaderboard
-  const dummyGame = {
-    _id: "g1",
-    title: "General Knowledge",
-    slug: "general-knowledge",
-  };
-  const dummyLeaderboard = [
-    {
-      name: "Alice",
-      score: 80,
-      timeTaken: 90,
-      attemptedQuestions: 10,
-      updatedAt: new Date().toISOString(),
-    },
-    {
-      name: "Bob",
-      score: 60,
-      timeTaken: 110,
-      attemptedQuestions: 10,
-      updatedAt: new Date().toISOString(),
-    },
-  ];
+  const { t, language } = useI18nLayout(translations);
 
-  // CHANGED: fetchGameAndResults uses dummy data
-  const fetchGameAndResults = async () => {
-    setLoading(true);
-    setTimeout(() => {
-      setGame(dummyGame);
-      setPlayers(dummyLeaderboard);
-      setLoading(false);
-    }, 500);
-  };
-
-  // CHANGED: Simulate export
-  const handleExport = async () => {
-    showMessage("Exported results! (dummy)", "success");
-  };
-
+  // Fetch game and leaderboard from backend
   useEffect(() => {
+    const fetchGameAndResults = async () => {
+      setLoading(true);
+      try {
+        const gameData = await getGameBySlug(gameSlug);
+        setGame(gameData);
+        const leaderboard = await getLeaderboard(gameData._id);
+        setPlayers(leaderboard || []);
+      } catch (err) {
+        showMessage(t.errorLoading, "error");
+      } finally {
+        setLoading(false);
+      }
+    };
     if (gameSlug) fetchGameAndResults();
-  }, [gameSlug]);
-
-  const { language } = useLanguage(); //Language Usage
-  const resultsTranslations = {
-    en: {
-      // Header
-      resultsTitle: "Results for",
-      totalPlayers: "Total Players:",
-      exportResults: "Export Results",
-      exportTooltip: "Export Results",
-
-      // Player Card
-      scoreLabel: "Score:",
-      timeTakenLabel: "Time Taken:",
-      attemptedLabel: "Attempted:",
-      submittedAtLabel: "Submitted At:",
-    },
-    ar: {
-      // Header
-      resultsTitle: "نتائج",
-      totalPlayers: "إجمالي اللاعبين:",
-      exportResults: "تصدير النتائج",
-      exportTooltip: "تصدير النتائج",
-
-      // Player Card
-      scoreLabel: "النقاط:",
-      timeTakenLabel: "الوقت المستغرق:",
-      attemptedLabel: "المحاولات:",
-      submittedAtLabel: "تم الإرسال في:",
-    },
+  }, [gameSlug, t, showMessage]);
+  // Export results as Excel file
+  const handleExport = async () => {
+    try {
+      const blob = await exportResults(game._id);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute("download", `${game?.title || "results"}-results.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      showMessage(t.exported, "success");
+    } catch (err) {
+      showMessage(t.errorLoading, "error");
+    }
   };
+
   return (
     <Box sx={{ position: "relative", width: "100%" }}>
       <Container maxWidth="lg">
@@ -140,10 +134,10 @@ export default function ResultsPage() {
               >
                 <Box>
                   <Typography variant="h5" fontWeight="bold">
-                    {resultsTranslations[language].resultsTitle} "{game?.title}"
+                    {t.resultsTitle} "{game?.title}"
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    {resultsTranslations[language].totalPlayers}
+                    {t.totalPlayers}
                     <strong>{players?.length}</strong>
                   </Typography>
                 </Box>
@@ -154,7 +148,7 @@ export default function ResultsPage() {
                     startIcon={<DownloadIcon />}
                     onClick={handleExport}
                   >
-                    {resultsTranslations[language].exportResults}
+                    {t.exportResults}
                   </Button>
                 </Tooltip>
               </Box>
@@ -228,7 +222,7 @@ export default function ResultsPage() {
                           sx={{ mr: 1, color: "primary.main" }}
                         />
                         <Typography variant="body2">
-                          {resultsTranslations[language].scoreLabel}
+                          {t.scoreLabel}
                           <strong>{p.score}</strong>
                         </Typography>
                       </Box>
@@ -239,7 +233,7 @@ export default function ResultsPage() {
                           sx={{ mr: 1, color: "primary.main" }}
                         />
                         <Typography variant="body2">
-                          {resultsTranslations[language].timeTakenLabel}
+                          {t.timeTakenLabel}
                           <strong>{p.timeTaken}s</strong>
                         </Typography>
                       </Box>
@@ -250,7 +244,7 @@ export default function ResultsPage() {
                           sx={{ mr: 1, color: "primary.main" }}
                         />
                         <Typography variant="body2">
-                          {resultsTranslations[language].attemptedLabel}
+                          {t.attemptedLabel}
                           <strong>{p.attemptedQuestions}</strong>
                         </Typography>
                       </Box>
@@ -265,7 +259,7 @@ export default function ResultsPage() {
                           fontStyle="italic"
                           fontSize="0.85rem"
                         >
-                          {resultsTranslations[language].submittedAtLabel}{" "}
+                          {t.submittedAtLabel}{" "}
                           <strong>
                             {new Date(p.updatedAt).toLocaleString(
                               language === "ar" ? "ar-EG" : "en-GB",

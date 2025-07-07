@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import {
   Box,
   Container,
@@ -11,8 +11,8 @@ import {
   CircularProgress,
   IconButton,
   Divider,
-  Drawer, // ADDED: For admin sidebar
-  TextField, // ADDED: For create business
+  Drawer,
+  TextField,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
@@ -20,20 +20,92 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import QuizIcon from "@mui/icons-material/Quiz";
 import LeaderboardIcon from "@mui/icons-material/Leaderboard";
 import ShareIcon from "@mui/icons-material/Share";
+import BusinessIcon from "@mui/icons-material/Business";
 import ShareGameModal from "@/components/ShareGameModal";
 import GameFormModal from "@/components/GameFormModal";
 import ConfirmationDialog from "@/components/ConfirmationDialog";
-import { useMessage } from "@/contexts/MessageContext";
 import BreadcrumbsNav from "@/components/BreadcrumbsNav";
-import { useLanguage } from "@/contexts/LanguageContext";
+
+// ADDED: Import services and hooks
+import {
+  getGamesByBusiness,
+  createGame,
+  updateGame,
+  deleteGame,
+} from "@/services/quiznest/gameService";
+import { useMessage } from "@/contexts/MessageContext";
 import { useAuth } from "@/contexts/AuthContext";
-import BusinessIcon from "@mui/icons-material/Business";
+import useI18nLayout from "@/hooks/useI18nLayout";
+import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
+import { getAllBusinesses } from "@/services/businessService"; // Use your actual business service
+// ADDED: Translations moved to useI18nLayout format
+const translations = {
+  en: {
+    gamesTitle: "Games for",
+    gamesDescription: "Manage all quiz games created for this business.",
+    createGameButton: "Create Game",
+    slugLabel: "Slug:",
+    optionCountLabel: "Option Count:",
+    countdownTimerLabel: "Countdown Timer:",
+    quizTimeLabel: "Quiz Time:",
+    coverImageLabel: "Cover Image:",
+    nameImageLabel: "Name Image:",
+    backgroundImageLabel: "Background Image:",
+    questionsButton: "Questions",
+    resultsButton: "Results",
+    deleteGameTitle: "Delete Game?",
+    deleteGameMessage: "Are you sure you want to delete",
+    manageGames: "Manage Games",
+    selectBusiness: "Select Business",
+    noGames: "No games found.",
+    businessNameLabel: "Business Name",
+    businessSlugLabel: "Business Slug",
+    createBusiness: "Create Business",
+    businessCreated: "Business created!",
+    gameCreated: "Game created!",
+    gameUpdated: "Game updated!",
+    gameDeleted: "Game deleted!",
+    errorLoading: "Error loading data.",
+  },
+  ar: {
+    gamesTitle: "ألعاب لـ",
+    gamesDescription: ".إدارة جميع ألعاب الاختبارات المنشأة لهذا العمل",
+    createGameButton: "إنشاء لعبة",
+    slugLabel: ":المعر",
+    optionCountLabel: ":عدد الخيارات",
+    countdownTimerLabel: ":عداد التنازلي",
+    quizTimeLabel: ":وقت الاختبار",
+    coverImageLabel: ":صورة الغلاف",
+    nameImageLabel: ":صورة الاسم",
+    backgroundImageLabel: ":صورة الخلفية",
+    questionsButton: "الأسئلة",
+    resultsButton: "النتائج",
+    deleteGameTitle: "حذف اللعبة؟",
+    deleteGameMessage: "هل أنت متأكد أنك تريد حذف",
+    manageGames: "إدارة الألعاب",
+    selectBusiness: "اختر العمل",
+    noGames: "لا توجد ألعاب.",
+    businessNameLabel: "اسم العمل",
+    businessSlugLabel: "معرّف العمل",
+    createBusiness: "إنشاء عمل",
+    businessCreated: "تم إنشاء العمل!",
+    gameCreated: "تم إنشاء اللعبة!",
+    gameUpdated: "تم تحديث اللعبة!",
+    gameDeleted: "تم حذف اللعبة!",
+    errorLoading: "حدث خطأ أثناء تحميل البيانات.",
+  },
+};
 
 export default function GamesPage() {
   const router = useRouter();
   const { showMessage } = useMessage();
   const { user } = useAuth();
+  const { globalConfig } = useGlobalConfig(); // ADDED
+  const { t, dir, align, language } = useI18nLayout(translations); // UPDATED
+
+  // ADDED: State for businesses and games from API
   const [games, setGames] = useState([]);
+  const [businesses, setBusinesses] = useState([]);
   const [business, setBusiness] = useState({});
   const [loading, setLoading] = useState(true);
   const [selectedBusiness, setSelectedBusiness] = useState(null);
@@ -44,141 +116,55 @@ export default function GamesPage() {
   const [openModal, setOpenModal] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [selectedGame, setSelectedGame] = useState(null);
-
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [gameToDelete, setGameToDelete] = useState(null);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [gameToShare, setGameToShare] = useState(null);
+ const [allBusinesses, setAllBusinesses] = useState([]);
+ const [userBusinesses, setUserBusinesses] = useState([]);
 
-  // Dummy data for games and business
-  const dummyGames = [
-    {
-      _id: "g1",
-      title: "General Knowledge",
-      slug: "general-knowledge",
-      choicesCount: 4,
-      countdownTimer: 30,
-      gameSessionTimer: 120,
-      coverImage:
-        "https://res.cloudinary.com/dwva39slo/image/upload/v1746877190/QuizNest/images/hbbvlxqal0kju1b6iqdx.gif",
-      nameImage:
-        "https://res.cloudinary.com/dwva39slo/image/upload/v1746877191/QuizNest/images/agourikpmhm9beasbjaz.gif",
-      backgroundImage:
-        "https://res.cloudinary.com/dwva39slo/image/upload/v1746877192/QuizNest/images/uvkzet5yuxsfscikg5ky.png",
-      businessSlug: "demo-corp",
-    },
-    {
-      _id: "g2",
-      title: "Science Quiz",
-      slug: "science-quiz",
-      choicesCount: 3,
-      countdownTimer: 25,
-      gameSessionTimer: 90,
-      coverImage:
-        "https://res.cloudinary.com/dwva39slo/image/upload/v1746877190/QuizNest/images/hbbvlxqal0kju1b6iqdx.gif",
-      nameImage:
-        "https://res.cloudinary.com/dwva39slo/image/upload/v1746877191/QuizNest/images/agourikpmhm9beasbjaz.gif",
-      backgroundImage:
-        "https://res.cloudinary.com/dwva39slo/image/upload/v1746877192/QuizNest/images/uvkzet5yuxsfscikg5ky.png",
-      businessSlug: "demo-corp",
-    },
-  ];
-  // ADDED: State for businesses, selected business, drawer, and create business
-  const [businesses, setBusinesses] = useState([
-    { _id: "b1", name: "Demo Corp", slug: "demo-corp" },
-    { _id: "b2", name: "OERLive", slug: "oer" },
-  ]);
-
-  const { language } = useLanguage();
-  const gamesTranslations = {
-    en: {
-      gamesTitle: "Games for",
-      gamesDescription: "Manage all quiz games created for this business.",
-      createGameButton: "Create Game",
-      slugLabel: "Slug:",
-      optionCountLabel: "Option Count:",
-      countdownTimerLabel: "Countdown Timer:",
-      quizTimeLabel: "Quiz Time:",
-      coverImageLabel: "Cover Image:",
-      nameImageLabel: "Name Image:",
-      backgroundImageLabel: "Background Image:",
-      questionsButton: "Questions",
-      resultsButton: "Results",
-      deleteGameTitle: "Delete Game?",
-      deleteGameMessage: "Are you sure you want to delete",
-      manageGames: "Manage Games",
-    },
-    ar: {
-      gamesTitle: "ألعاب لـ",
-      gamesDescription: ".إدارة جميع ألعاب الاختبارات المنشأة لهذا العمل",
-      createGameButton: "إنشاء لعبة",
-      slugLabel: ":المعر",
-      optionCountLabel: ":عدد الخيارات",
-      countdownTimerLabel: ":عداد التنازلي",
-      quizTimeLabel: ":وقت الاختبار",
-      coverImageLabel: ":صورة الغلاف",
-      nameImageLabel: ":صورة الاسم",
-      backgroundImageLabel: ":صورة الخلفية",
-      questionsButton: "الأسئلة",
-      resultsButton: "النتائج",
-      deleteGameTitle: "حذف اللعبة؟",
-      deleteGameMessage: "هل أنت متأكد أنك تريد حذف",
-    },
-  };
+  // Fetch all businesses on mount
   useEffect(() => {
-    if (user?.role === "admin") {
-      if (selectedBusiness) {
-        setLoading(true);
-        setTimeout(() => {
-          setGames(
-            dummyGames.filter((g) => g.businessSlug === selectedBusiness)
-          );
-          setBusiness(
-            businesses.find((b) => b.slug === selectedBusiness) || {}
-          );
-          setLoading(false);
-        }, 500);
-      } else {
-        setGames([]);
-        setBusiness({});
-      }
-    } else if (user?.role === "business") {
-      const businessSlug =
-        user?.businessSlug || (businesses.length > 0 ? businesses[0].slug : "");
-      setSelectedBusiness(businessSlug);
-      setLoading(true);
-      setTimeout(() => {
-        setGames(dummyGames.filter((g) => g.businessSlug === businessSlug));
-        setBusiness(businesses.find((b) => b.slug === businessSlug) || {});
-        setLoading(false);
-      }, 500);
+    getAllBusinesses()
+      .then((businesses) => setAllBusinesses(businesses || []))
+      .catch(() => setAllBusinesses([]));
+  }, []);
+  // Filter businesses by owner
+  useEffect(() => {
+    if (user && user.id && Array.isArray(allBusinesses)) {
+      setUserBusinesses(
+        allBusinesses.filter(
+          (b) =>
+            (typeof b.owner === "string" && b.owner === user.id) ||
+            (b.owner && b.owner._id === user.id)
+        )
+      );
     }
-  }, [user, selectedBusiness, businesses]);
-  // ADDED: Handlers for business selection and creation
+    console.log(allBusinesses);
+  }, [allBusinesses, user]);
+
+  // Fetch games for selected business
+  useEffect(() => {
+    if (!selectedBusiness) {
+      setGames([]);
+      return;
+    }
+    setLoading(true);
+    getGamesByBusiness(selectedBusiness)
+      .then((gamesData) => setGames(gamesData || []))
+      .catch(() => {
+        setGames([]);
+        showMessage(t.errorLoading, "error");
+      })
+      .finally(() => setLoading(false));
+  }, [selectedBusiness, t, showMessage]);
+  // UPDATED: Business selection handler
   const handleBusinessSelect = (slug) => {
     setSelectedBusiness(slug);
     setDrawerOpen(false);
   };
-  const handleOpenCreateBusiness = () => {
-    setNewBusinessName("");
-    setNewBusinessSlug("");
-    setCreateBusinessOpen(true);
-  };
 
-  const handleCreateBusiness = () => {
-    if (!newBusinessName || !newBusinessSlug) return;
-    setBusinesses((prev) => [
-      ...prev,
-      {
-        _id: Date.now().toString(),
-        name: newBusinessName,
-        slug: newBusinessSlug,
-      },
-    ]);
-    setCreateBusinessOpen(false);
-    showMessage("Business created!", "success");
-  };
-
+  // UPDATED: Create/Edit Game using API
   const handleOpenCreate = () => {
     setSelectedGame(null);
     setEditMode(false);
@@ -192,40 +178,44 @@ export default function GamesPage() {
   };
 
   const handleSubmitGame = async (formData, isEdit) => {
-    if (isEdit) {
-      setGames((prev) =>
-        prev.map((g) =>
-          g._id === selectedGame._id ? { ...g, ...formData } : g
-        )
-      );
-      showMessage("Game updated!", "success");
-    } else {
-      setGames((prev) => [
-        ...prev,
-        {
-          ...formData,
-          _id: Date.now().toString(),
-          slug: formData.slug,
-          businessSlug: selectedBusiness,
-        },
-      ]);
-      showMessage("Game created!", "success");
+    try {
+      let response;
+      if (isEdit) {
+        response = await updateGame(selectedGame._id, formData);
+        setGames((prev) =>
+          prev.map((g) => (g._id === selectedGame._id ? response : g))
+        );
+        showMessage(t.gameUpdated, "success");
+      } else {
+        response = await createGame(selectedBusiness, formData);
+        setGames((prev) => [...prev, response]);
+        showMessage(t.gameCreated, "success");
+      }
+    } catch (err) {
+      showMessage(err?.message || t.errorLoading, "error");
     }
     setOpenModal(false);
   };
 
+  // UPDATED: Delete Game using API
   const handleDeleteGame = async () => {
-    setGames((prev) => prev.filter((g) => g._id !== gameToDelete._id));
-    showMessage("Game deleted!", "success");
+    try {
+      await deleteGame(gameToDelete._id);
+      setGames((prev) => prev.filter((g) => g._id !== gameToDelete._id));
+      showMessage(t.gameDeleted, "success");
+    } catch (err) {
+      showMessage(err?.message || t.errorLoading, "error");
+    }
     setConfirmOpen(false);
     setGameToDelete(null);
   };
-
+console.log(selectedBusiness);
   return (
     <Box sx={{ position: "relative", display: "inline-block", width: "100%" }}>
       {/* ADDED: Admin sidebar for business selection and create business */}
       {user?.role === "admin" && (
         <Drawer
+          anchor="left"
           open={drawerOpen}
           onClose={() => setDrawerOpen(false)}
           PaperProps={{
@@ -233,15 +223,12 @@ export default function GamesPage() {
           }}
         >
           <Typography variant="h6" sx={{ mb: 2 }}>
-            {gamesTranslations[language].selectBusiness}
+            {t.selectBusiness}
           </Typography>
-          <Divider sx={{ mb: 2 }} />
-          {businesses.length > 0 ? (
-            businesses.map((business) => (
+          {userBusinesses.length > 0 ? (
+            userBusinesses.map((business) => (
               <Button
-                key={business.slug}
-                fullWidth
-                sx={{ px: 2, py: 1, justifyContent: "flex-start", mb: 1 }}
+                key={business._id}
                 onClick={() => handleBusinessSelect(business.slug)}
                 color={
                   selectedBusiness === business.slug ? "primary" : "inherit"
@@ -249,13 +236,15 @@ export default function GamesPage() {
                 variant={
                   selectedBusiness === business.slug ? "contained" : "text"
                 }
+                fullWidth
+                sx={{ mb: 1, justifyContent: "flex-start" }}
                 startIcon={<BusinessIcon />}
               >
                 {business.name}
               </Button>
             ))
           ) : (
-            <Typography>{gamesTranslations[language].noGames}</Typography>
+            <Typography>{t.noGames}</Typography>
           )}
           <Divider sx={{ my: 2 }} />
         </Drawer>
@@ -285,14 +274,12 @@ export default function GamesPage() {
             <Box>
               <Typography variant="h5" fontWeight="bold">
                 {user?.role === "admin" && !selectedBusiness
-                  ? gamesTranslations[language].manageGames
-                  : `${gamesTranslations[language].gamesTitle} "${
-                      business?.name || ""
-                    }"`}
+                  ? t.manageGames
+                  : `${t.gamesTitle} "${selectedBusiness || ""}"`}
               </Typography>
 
               <Typography variant="body2" color="text.secondary">
-                {gamesTranslations[language].gamesDescription}
+                {t.gamesDescription}
               </Typography>
             </Box>
             <Box sx={{ display: "flex", gap: 0 }}>
@@ -303,17 +290,18 @@ export default function GamesPage() {
                   sx={{ mr: 1 }}
                   startIcon={<BusinessIcon />}
                 >
-                  {gamesTranslations[language].selectBusiness ||
-                    "Select Business"}
+                  {t.selectBusiness || "Select Business"}
                 </Button>
               )}
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={handleOpenCreate}
-              >
-                {gamesTranslations[language].createGameButton}
-              </Button>
+              {selectedBusiness && (
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={handleOpenCreate}
+                >
+                  {t.createGameButton}
+                </Button>
+              )}
             </Box>
           </Box>
 
@@ -321,9 +309,7 @@ export default function GamesPage() {
         </Box>
 
         {!selectedBusiness ? (
-          <Typography sx={{ mt: 4 }}>
-            {gamesTranslations[language].selectBusiness}
-          </Typography>
+          <Typography sx={{ mt: 4 }}>{t.selectBusiness}</Typography>
         ) : loading ? (
           <Box sx={{ textAlign: "center", mt: 8 }}>
             <CircularProgress />
@@ -354,33 +340,25 @@ export default function GamesPage() {
                       color="text.secondary"
                       sx={{ wordBreak: "break-word" }}
                     >
-                      <strong>{gamesTranslations[language].slugLabel}</strong>{" "}
-                      {g.slug}
+                      <strong>{t.slugLabel}</strong> {g.slug}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      <strong>
-                        {gamesTranslations[language].optionCountLabel}
-                      </strong>{" "}
-                      {g.choicesCount}
+                      <strong>{t.optionCountLabel}</strong> {g.choicesCount}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      <strong>
-                        {gamesTranslations[language].countdownTimerLabel}
-                      </strong>{" "}
+                      <strong>{t.countdownTimerLabel}</strong>{" "}
                       {g.countdownTimer} sec
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      <strong>
-                        {gamesTranslations[language].quizTimeLabel}
-                      </strong>{" "}
-                      {g.gameSessionTimer} sec
+                      <strong>{t.quizTimeLabel}</strong> {g.gameSessionTimer}{" "}
+                      sec
                     </Typography>
 
                     {["coverImage", "nameImage", "backgroundImage"].map(
                       (imgKey) => (
                         <Box key={imgKey} sx={{ mt: 1 }}>
                           <Typography variant="caption" color="text.secondary">
-                            {gamesTranslations[language][`${imgKey}Label`]}:
+                            {t[`${imgKey}Label`]}:
                           </Typography>
                           <Box
                             component="img"
@@ -420,7 +398,7 @@ export default function GamesPage() {
                         )
                       }
                     >
-                      {gamesTranslations[language].questionsButton}
+                      {t.questionsButton}
                     </Button>
 
                     <Button
@@ -434,7 +412,7 @@ export default function GamesPage() {
                         )
                       }
                     >
-                      {gamesTranslations[language].resultsButton}
+                      {t.resultsButton}
                     </Button>
 
                     <Box sx={{ display: "flex", gap: 1, mt: { xs: 1, sm: 0 } }}>
@@ -487,8 +465,8 @@ export default function GamesPage() {
 
         <ConfirmationDialog
           open={confirmOpen}
-          title={gamesTranslations[language].deleteGameTitle}
-          message={`${gamesTranslations[language].deleteGameMessage} "${gameToDelete?.title}"?`}
+          title={t.deleteGameTitle}
+          message={`${t.deleteGameMessage} "${gameToDelete?.title}"?`}
           onClose={() => setConfirmOpen(false)}
           onConfirm={handleDeleteGame}
         />
