@@ -28,7 +28,7 @@ import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import {
   getActivePollsByBusiness,
   voteOnPoll,
-} from "@/services/pollService";
+} from "@/services/votecast/pollService";
 import { useMessage } from "@/contexts/MessageContext";
 import DemoPoll from "@/components/DemoPoll";
 import { getBusinessBySlug } from "@/services/businessService";

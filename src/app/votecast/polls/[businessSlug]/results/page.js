@@ -7,7 +7,7 @@ import {
   CircularProgress,
   Typography,
 } from "@mui/material";
-import { getResults } from "@/services/pollsResultService";
+import { getResults } from "@/services/votecast/pollsResultService";
 import ResultsChart from "@/components/ResultsChart";
 
 export default function FullScreenResultsPage() {
