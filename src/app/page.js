@@ -98,7 +98,7 @@ export default function HomePage() {
         </Typography>
 
         <Typography variant="h1" fontWeight="bold">
-          {globalConfig?.appName || "EventPass"}
+          {globalConfig?.appName || "EventPass Suite"}
         </Typography>
 
         <Typography variant="body1" color="text.secondary">

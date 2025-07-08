@@ -16,7 +16,7 @@ import { submitResult } from "@/services/quiznest/playerService";
 import LanguageSelector from "@/components/LanguageSelector";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { translateText } from "@/services/translationService";
-//static translations
+import QuizOutlinedIcon from "@mui/icons-material/QuizOutlined";
 
 const gameTranslations = {
   en: {
@@ -28,6 +28,9 @@ const gameTranslations = {
     score: "Score",
     attempted: "Attempted",
     playAgain: "Play Again",
+    noQuestionsTitle: "Please wait...",
+    noQuestionsMessage:
+      "An administrator needs to add questions to this game before you can start playing.",
   },
   ar: {
     countdown: "ثانية",
@@ -38,12 +41,15 @@ const gameTranslations = {
     score: "النقاط",
     attempted: "محاولات",
     playAgain: "العب مرة أخرى",
+    noQuestionsTitle: "الرجاء الانتظار...",
+    noQuestionsMessage:
+      "يجب على المسؤول إضافة أسئلة إلى هذه اللعبة قبل أن تتمكن من البدء.",
   },
 };
 export default function PlayPage() {
   const { game, loading } = useGame();
   const router = useRouter();
-  const { t, dir, align, language } = useI18nLayout(gameTranslations); // UPDATED
+  const { t, dir, align, language } = useI18nLayout(gameTranslations);
   const [playerInfo, setPlayerInfo] = useState(null);
   const [delay, setDelay] = useState(game?.countdownTimer || 3);
   const [timeLeft, setTimeLeft] = useState(game?.gameSessionTimer || 60);
@@ -62,7 +68,7 @@ export default function PlayPage() {
   const scoreRef = useRef(0);
   const attemptedRef = useRef(0);
   const timeLeftRef = useRef(game?.gameSessionTimer || 60);
-  const [randomizedIndexes, setRandomizedIndexes] = useState([]); //random questions
+  const [randomizedIndexes, setRandomizedIndexes] = useState([]);
   const currentQuestion =
     game?.questions?.[randomizedIndexes[questionIndex] ?? questionIndex];
 
@@ -76,7 +82,6 @@ export default function PlayPage() {
   const languageCodeMap = {
     en: "en",
     ar: "ar",
-    // Add more as needed
   };
   const translateQuestion = async (questionObj) => {
     if (!questionObj) return;
@@ -145,6 +150,9 @@ export default function PlayPage() {
 
   //Countdown Before Starting Game
   useEffect(() => {
+    // ⛔ Prevent starting countdown if no questions
+    if (!game?.questions || game.questions.length === 0) return;
+
     if (!loading && delay > 0) {
       const countdown = setInterval(() => {
         setDelay((prev) => prev - 1);
@@ -154,7 +162,7 @@ export default function PlayPage() {
       setStarted(true);
       startSessionTimer();
     }
-  }, [delay, loading]);
+  }, [delay, loading, game?.questions]);
 
   //Start Session Timer (timer of the quiz (60sec))
   const startSessionTimer = () => {
@@ -256,9 +264,52 @@ export default function PlayPage() {
     );
   }
 
+  if (!game?.questions || game.questions.length === 0) {
+    return (
+      <Box dir={dir} sx={{ position: "relative" }}>
+        <LanguageSelector top={20} right={20} />
+        <Box
+          sx={{
+            height: "100vh",
+            width: "100vw",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            backgroundImage: `url(${game.backgroundImage})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundAttachment: "fixed",
+            px: 2,
+          }}
+        >
+          <Paper
+            elevation={6}
+            sx={{
+              maxWidth: 500,
+              p: 4,
+              textAlign: "center",
+              backdropFilter: "blur(6px)",
+              backgroundColor: "rgba(255,255,255,0.6)",
+              borderRadius: 4,
+            }}
+          >
+            <QuizOutlinedIcon color="warning" sx={{ fontSize: 64, mb: 2 }} />
+            <Typography variant="h5" fontWeight="bold" gutterBottom>
+              {t.noQuestionsTitle}
+            </Typography>
+            <Typography variant="body1" color="text.secondary">
+              {t.noQuestionsMessage}
+            </Typography>
+          </Paper>
+        </Box>
+      </Box>
+    );
+  }
+
   if (delay > 0) {
     return (
       <Box
+        dir={dir}
         sx={{
           height: "100vh",
           width: "100vw",
@@ -291,8 +342,8 @@ export default function PlayPage() {
 
   if (ended) {
     return (
-      <Box sx={{ position: "relative" }}>
-        <LanguageSelector />
+      <Box dir={dir} sx={{ position: "relative" }}>
+        <LanguageSelector top={20} right={20} />
         <Box
           sx={{
             height: "100vh",
@@ -346,11 +397,11 @@ export default function PlayPage() {
   }
 
   return (
-    <Box sx={{ position: "relative" }}>
-      <LanguageSelector />
+    <Box dir={dir} sx={{ position: "relative" }}>
+      <LanguageSelector top={20} right={20} />
       <Box
         sx={{
-          minHeight: "100vh",
+          height: "100vh",
           width: "100vw",
           backgroundImage: `url(${game.backgroundImage})`,
           backgroundSize: "cover",
@@ -391,7 +442,7 @@ export default function PlayPage() {
               color: "#000",
               fontStyle: "italic",
               opacity: 0.7,
-              mb: { xs: "0.4rem", sm: "0.6rem" }, // slight bottom align
+              mb: { xs: "0.4rem", sm: "0.6rem" },
             }}
           >
             {translatedContent.uiLabels?.countdownLabel || "sec"}
@@ -400,12 +451,11 @@ export default function PlayPage() {
 
         <Box
           sx={{
-            height: "100vh",
-            width: "100vw",
+            height: "100%",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            px: 2, // some padding on small screens
+            px: 2,
             backgroundImage: `url(${game.backgroundImage})`,
             backgroundSize: "cover",
             backgroundPosition: "center",
@@ -443,8 +493,8 @@ export default function PlayPage() {
                 maxWidth: "600px",
                 mx: "auto",
                 display: "grid",
-                gridTemplateColumns: "repeat(2, 1fr)", // Enforce 2 columns
-                gridAutoRows: "1fr", // Equal height rows
+                gridTemplateColumns: "repeat(2, 1fr)",
+                gridAutoRows: "1fr",
               }}
             >
               {translatedContent.answers.map((opt, i) => {
@@ -464,8 +514,8 @@ export default function PlayPage() {
                     key={i}
                     sx={{
                       display: "flex",
-                      minHeight: "150px", // Minimum height
-                      gridColumn: i === 4 ? "1 / -1" : "auto", // Span full width for 5th option
+                      minHeight: "150px", 
+                      gridColumn: i === 4 ? "1 / -1" : "auto", 
                     }}
                   >
                     <Button

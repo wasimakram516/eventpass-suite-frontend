@@ -7,14 +7,21 @@ import {
   Stack,
   Typography,
   Divider,
+  Link,
 } from "@mui/material";
-import Image from "next/image";
+
+import {
+  Facebook as FacebookIcon,
+  Instagram as InstagramIcon,
+  LinkedIn as LinkedInIcon,
+  Language as LanguageIcon,
+  Email as EmailIcon,
+  Phone as PhoneIcon,
+} from "@mui/icons-material";
 import { useRouter } from "next/navigation";
-import WhatsAppIcon from "@mui/icons-material/WhatsApp";
-import InstagramIcon from "@mui/icons-material/Instagram";
-import EmailIcon from "@mui/icons-material/Email";
 import LanguageSelector from "@/components/LanguageSelector";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
 const landingTranslations = {
   en: {
     welcomeTitle: "Welcome to QuizNest",
@@ -23,12 +30,6 @@ const landingTranslations = {
     platformDescription:
       "This platform is designed for businesses to engage users with interactive quizzes. If you're a player, your admin will provide you with a game link to get started.",
     adminLogin: "Admin Login",
-    aboutTitle: "About WhiteWall",
-    aboutDescription:
-      "We specialize in digital solutions for engagement and interaction.",
-    developedBy:
-      "QuizNest is designed and developed by WhiteWall Digital Solutions, Oman.",
-    contactTitle: "Contact Us",
   },
   ar: {
     welcomeTitle: "مرحبًا بكم في كويزنيست",
@@ -36,21 +37,31 @@ const landingTranslations = {
     platformDescription:
       "تم تصميم هذه المنصة للشركات لإشراك المستخدمين من خلال الاختبارات التفاعلية. إذا كنت لاعبًا، فسيزودك المسؤول برابط اللعبة للبدء.",
     adminLogin: "تسجيل دخول المسؤول",
-    aboutTitle: "عن وايت وول",
-    aboutDescription: "نحن متخصصون في الحلول الرقمية للتفاعل والمشاركة.",
-    developedBy:
-      "تم تصميم وتطوير كويزنيست بواسطة وايت وول للحلول الرقمية، عُمان.",
-    contactTitle: "اتصل بنا",
   },
 };
 export default function HomePage() {
   const router = useRouter();
-  const { t, dir, align, language } = useI18nLayout(landingTranslations);
+
+  const { globalConfig } = useGlobalConfig();
+  const { t, dir, align } = useI18nLayout(landingTranslations);
 
   return (
-    <Box sx={{ position: "relative" }}>
-      <LanguageSelector />
-      <Container maxWidth="md" sx={{ py: 10, textAlign: "center" }}>
+    <Box
+      dir={dir}
+      sx={{
+        position: "relative",
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        alignItems: "center",
+        px: 2,
+        py: 4,
+        textAlign: align,
+      }}
+    >
+      <LanguageSelector top={20} right={20} />
+      <Container maxWidth="md" sx={{ textAlign: "center" }}>
         {/* Header */}
         <Typography variant="h3" fontWeight="bold" gutterBottom>
           {t.welcomeTitle}
@@ -75,70 +86,72 @@ export default function HomePage() {
 
         {/* Divider */}
         <Divider sx={{ my: 6 }} />
+      </Container>
 
-        {/* About & Contact */}
-        <Stack spacing={3} alignItems="center">
-          <Typography variant="h5" fontWeight="bold">
-            {t.aboutTitle}
-          </Typography>
+      {/* === FOOTER === */}
+      {globalConfig && (
+        <Stack spacing={1} mt={6} alignItems="center">
+          {(globalConfig.contact.email || globalConfig.contact.phone) && (
+            <Stack spacing={1} direction="column" alignItems="center">
+              {globalConfig.contact.email && (
+                <Stack direction="row" alignItems="center" spacing={1}>
+                  <EmailIcon fontSize="small" />
+                  <Typography variant="body2">
+                    {globalConfig.contact.email}
+                  </Typography>
+                </Stack>
+              )}
+              {globalConfig.contact.phone && (
+                <Stack direction="row" alignItems="center" spacing={1}>
+                  <PhoneIcon fontSize="small" />
+                  <Typography variant="body2">
+                    {globalConfig.contact.phone}
+                  </Typography>
+                </Stack>
+              )}
+            </Stack>
+          )}
 
-          <Box
-            component="img"
-            src="/WWDS.png"
-            alt="WhiteWall Digital Solutions"
-            sx={{
-              width: 300,
-              height: "auto",
-            }}
-          />
-
-          <Typography variant="body1" color="text.secondary" textAlign="center">
-            {t.aboutDescription}
-            <br />
-            <strong>QuizNest</strong> {t.developedBy}{" "}
-            <strong>WhiteWall Digital Solutions, Oman</strong>.
-          </Typography>
-
-          {/* Contact */}
-          <Stack spacing={1} alignItems="center">
-            <Typography variant="h6" fontWeight="medium">
-              {t.contactTitle}
-            </Typography>
-
-            <Typography variant="body2">
-              <WhatsAppIcon fontSize="small" sx={{ mr: 1 }} />
-              <a href="tel:+96877121757">+968 7712 1757</a>
-            </Typography>
-
-            <Typography variant="body2">
-              <InstagramIcon fontSize="small" sx={{ mr: 1 }} />
-              <a
-                href="https://www.instagram.com/whitewall.om"
+          <Stack direction="row" spacing={2} mt={1}>
+            {globalConfig.socialLinks.facebook && (
+              <Link
+                href={globalConfig.socialLinks.facebook}
                 target="_blank"
-                rel="noopener noreferrer"
+                color="inherit"
               >
-                whitewall.om
-              </a>
-            </Typography>
-
-            <Typography variant="body2">
-              <EmailIcon fontSize="small" sx={{ mr: 1 }} />
-              <a href="mailto:solutions@whitewall.om">solutions@whitewall.om</a>
-            </Typography>
-
-            <Typography variant="body2">
-              🌐{" "}
-              <a
-                href="https://www.whitewall.om"
+                <FacebookIcon />
+              </Link>
+            )}
+            {globalConfig.socialLinks.instagram && (
+              <Link
+                href={globalConfig.socialLinks.instagram}
                 target="_blank"
-                rel="noopener noreferrer"
+                color="inherit"
               >
-                www.whitewall.om
-              </a>
-            </Typography>
+                <InstagramIcon />
+              </Link>
+            )}
+            {globalConfig.socialLinks.linkedin && (
+              <Link
+                href={globalConfig.socialLinks.linkedin}
+                target="_blank"
+                color="inherit"
+              >
+                <LinkedInIcon />
+              </Link>
+            )}
+            {globalConfig.socialLinks.website && (
+              <Link
+                href={globalConfig.socialLinks.website}
+                target="_blank"
+                color="inherit"
+              >
+                <LanguageIcon />
+              </Link>
+            )}
           </Stack>
         </Stack>
-      </Container>
+      )}
     </Box>
   );
 }

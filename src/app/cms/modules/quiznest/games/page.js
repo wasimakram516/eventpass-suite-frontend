@@ -12,11 +12,11 @@ import {
   IconButton,
   Divider,
   Drawer,
-  TextField,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import CloseIcon from "@mui/icons-material/Close";
 import QuizIcon from "@mui/icons-material/Quiz";
 import LeaderboardIcon from "@mui/icons-material/Leaderboard";
 import ShareIcon from "@mui/icons-material/Share";
@@ -26,7 +26,6 @@ import GameFormModal from "@/components/GameFormModal";
 import ConfirmationDialog from "@/components/ConfirmationDialog";
 import BreadcrumbsNav from "@/components/BreadcrumbsNav";
 
-// ADDED: Import services and hooks
 import {
   getGamesByBusiness,
   createGame,
@@ -36,9 +35,9 @@ import {
 import { useMessage } from "@/contexts/MessageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import useI18nLayout from "@/hooks/useI18nLayout";
-import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
-import { getAllBusinesses } from "@/services/businessService"; // Use your actual business service
-// ADDED: Translations moved to useI18nLayout format
+import { getAllBusinesses } from "@/services/businessService";
+import BusinessDrawer from "@/components/BusinessDrawer";
+
 const translations = {
   en: {
     gamesTitle: "Games for",
@@ -58,6 +57,7 @@ const translations = {
     manageGames: "Manage Games",
     selectBusiness: "Select Business",
     noGames: "No games found.",
+    noBusinesses: "No businesses found.",
     businessNameLabel: "Business Name",
     businessSlugLabel: "Business Slug",
     createBusiness: "Create Business",
@@ -85,6 +85,7 @@ const translations = {
     manageGames: "إدارة الألعاب",
     selectBusiness: "اختر العمل",
     noGames: "لا توجد ألعاب.",
+    noBusinesses: "لم يتم العثور على أي عمل.",
     businessNameLabel: "اسم العمل",
     businessSlugLabel: "معرّف العمل",
     createBusiness: "إنشاء عمل",
@@ -100,19 +101,12 @@ export default function GamesPage() {
   const router = useRouter();
   const { showMessage } = useMessage();
   const { user } = useAuth();
-  const { globalConfig } = useGlobalConfig(); // ADDED
-  const { t, dir, align, language } = useI18nLayout(translations); // UPDATED
+  const { t, dir, align, language } = useI18nLayout(translations);
 
-  // ADDED: State for businesses and games from API
   const [games, setGames] = useState([]);
-  const [businesses, setBusinesses] = useState([]);
-  const [business, setBusiness] = useState({});
   const [loading, setLoading] = useState(true);
   const [selectedBusiness, setSelectedBusiness] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [createBusinessOpen, setCreateBusinessOpen] = useState(false);
-  const [newBusinessName, setNewBusinessName] = useState("");
-  const [newBusinessSlug, setNewBusinessSlug] = useState("");
   const [openModal, setOpenModal] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [selectedGame, setSelectedGame] = useState(null);
@@ -121,7 +115,6 @@ export default function GamesPage() {
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [gameToShare, setGameToShare] = useState(null);
   const [allBusinesses, setAllBusinesses] = useState([]);
-  const [userBusinesses, setUserBusinesses] = useState([]);
 
   // Fetch all businesses on mount
   useEffect(() => {
@@ -129,19 +122,12 @@ export default function GamesPage() {
       .then((businesses) => setAllBusinesses(businesses || []))
       .catch(() => setAllBusinesses([]));
   }, []);
-  // Filter businesses by owner
+
   useEffect(() => {
-    if (user && user.id && Array.isArray(allBusinesses)) {
-      setUserBusinesses(
-        allBusinesses.filter(
-          (b) =>
-            (typeof b.owner === "string" && b.owner === user.id) ||
-            (b.owner && b.owner._id === user.id)
-        )
-      );
+    if (user?.role === "business" && user.business?._id) {
+      setSelectedBusiness(user.business.slug);
     }
-    console.log(allBusinesses);
-  }, [allBusinesses, user]);
+  }, [user]);
 
   // Fetch games for selected business
   useEffect(() => {
@@ -211,44 +197,22 @@ export default function GamesPage() {
   };
   console.log(selectedBusiness);
   return (
-    <Box sx={{ position: "relative", display: "inline-block", width: "100%" }}>
-      {/* ADDED: Admin sidebar for business selection and create business */}
+    <Box
+      dir={dir}
+      sx={{ position: "relative", display: "inline-block", width: "100%" }}
+    >
       {user?.role === "admin" && (
-        <Drawer
-          anchor="left"
+        <BusinessDrawer
           open={drawerOpen}
           onClose={() => setDrawerOpen(false)}
-          PaperProps={{
-            sx: { width: 320, p: 2, bgcolor: "background.default" },
-          }}
-        >
-          <Typography variant="h6" sx={{ mb: 2 }}>
-            {t.selectBusiness}
-          </Typography>
-          {userBusinesses.length > 0 ? (
-            userBusinesses.map((business) => (
-              <Button
-                key={business._id}
-                onClick={() => handleBusinessSelect(business.slug)}
-                color={
-                  selectedBusiness === business.slug ? "primary" : "inherit"
-                }
-                variant={
-                  selectedBusiness === business.slug ? "contained" : "text"
-                }
-                fullWidth
-                sx={{ mb: 1, justifyContent: "flex-start" }}
-                startIcon={<BusinessIcon />}
-              >
-                {business.name}
-              </Button>
-            ))
-          ) : (
-            <Typography>{t.noGames}</Typography>
-          )}
-          <Divider sx={{ my: 2 }} />
-        </Drawer>
+          businesses={allBusinesses}
+          selectedBusinessSlug={selectedBusiness}
+          onSelect={handleBusinessSelect}
+          title={t.selectBusiness}
+          noDataText={t.noBusinesses}
+        />
       )}
+      
       <Container maxWidth="lg">
         <Box sx={{ mb: 4 }}>
           <Box
@@ -455,7 +419,7 @@ export default function GamesPage() {
         />
 
         <GameFormModal
-          key={selectedGame?._id || "new"} // Ensures modal resets for each edit
+          key={selectedGame?._id || "new"}
           open={openModal}
           onClose={() => setOpenModal(false)}
           editMode={editMode}

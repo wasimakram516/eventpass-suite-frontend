@@ -1,0 +1,101 @@
+"use client";
+
+import {
+  Box,
+  Typography,
+  Container,
+  Stack,
+  Divider,
+  Button,
+  useTheme,
+} from "@mui/material";
+import { useRouter } from "next/navigation";
+import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
+import useI18nLayout from "@/hooks/useI18nLayout";
+
+export default function ModuleLandingPage({
+  moduleIcon: Icon,
+  ctaHref,
+  translations,
+}) {
+  const { globalConfig } = useGlobalConfig();
+  const { dir, align, t } = useI18nLayout(translations);
+  const theme = useTheme();
+  const router = useRouter();
+
+  return (
+    <Box dir={dir}>
+      <Container maxWidth="md">
+        <Stack spacing={4} alignItems="center">
+          {Icon && (
+            <Box
+              sx={{
+                bgcolor: `${theme.palette.primary.main}20`,
+                p: 3,
+                borderRadius: "50%",
+                display: "inline-flex",
+              }}
+            >
+              <Icon sx={{ fontSize: 60, color: "primary.main" }} />
+            </Box>
+          )}
+
+          <Typography
+            variant="h3"
+            fontWeight="bold"
+            textAlign={align}
+            color="text.primary"
+          >
+            {t.title}
+          </Typography>
+
+          <Divider  sx={{ width: "100%" }} />
+
+          <Stack spacing={2} sx={{ width: "100%" }} textAlign={align}>
+            {t.features.map((feat, i) => (
+              <Typography
+                key={i}
+                variant="body1"
+                color="text.secondary"
+                sx={{ lineHeight: 1.8 }}
+              >
+                • {feat}
+              </Typography>
+            ))}
+          </Stack>
+
+          {t.ctaLabel && ctaHref && (
+            <Button
+              variant="contained"
+              size="large"
+              color="primary"
+              onClick={() => router.push(ctaHref)}
+              sx={{ mt: 4 }}
+            >
+              {t.ctaLabel}
+            </Button>
+          )}
+
+          {globalConfig?.companyLogoUrl && (
+            <Box
+              component="img"
+              src={globalConfig.companyLogoUrl}
+              alt="Company Logo"
+              sx={{ height: 64, mt: 6, opacity: 0.7 }}
+            />
+          )}
+
+          {globalConfig?.poweredBy?.text && (
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ mt: 1 }}
+            >
+              Powered by {globalConfig.poweredBy.text}
+            </Typography>
+          )}
+        </Stack>
+      </Container>
+    </Box>
+  );
+}

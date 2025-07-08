@@ -198,17 +198,19 @@ export default function UsersPage() {
                     <EditIcon />
                   </IconButton>
                 </Tooltip>
-                <Tooltip title={t.delete}>
-                  <IconButton
-                    color="error"
-                    onClick={() => {
-                      setSelectedUser(user);
-                      setDeleteConfirm(true);
-                    }}
-                  >
-                    <DeleteIcon />
-                  </IconButton>
-                </Tooltip>
+                {user.role === "business" && (
+                  <Tooltip title={t.delete}>
+                    <IconButton
+                      color="error"
+                      onClick={() => {
+                        setSelectedUser(user);
+                        setDeleteConfirm(true);
+                      }}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </Tooltip>
+                )}
               </Box>
             </Card>
           </Grid>

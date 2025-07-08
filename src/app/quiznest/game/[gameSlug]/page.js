@@ -23,7 +23,7 @@ const gameStartTranslations = {
 export default function GameHomePage() {
   const { game, loading } = useGame();
   const router = useRouter();
-  const { t, dir, align, language } = useI18nLayout(gameStartTranslations); // UPDATED
+  const { t, dir, align, language } = useI18nLayout(gameStartTranslations); 
 
   const handleStart = () => {
     router.push(`/quiznest/game/${game.slug}/name`);
@@ -88,21 +88,8 @@ export default function GameHomePage() {
           <Button
             variant="contained"
             size="large"
+            fullWidth
             onClick={handleStart}
-            sx={{
-              px: 6,
-              py: 2,
-              fontSize: "1.25rem",
-              fontWeight: 600,
-              borderRadius: 8,
-              textTransform: "none",
-              boxShadow: "0 4px 20px rgba(0,0,0,0.2)",
-              transition: "all 0.3s ease",
-              "&:hover": {
-                transform: "scale(1.05)",
-                boxShadow: "0 6px 24px rgba(0,0,0,0.3)",
-              },
-            }}
           >
             {t.startButton}
           </Button>

@@ -26,6 +26,7 @@ const LanguageSelector = ({ top, right }) => {
         px: 0.5,
         py: 0.5,
         boxShadow: 1,
+        zIndex:999
       }}
     >
       <Box
@@ -71,7 +72,7 @@ const LanguageSelector = ({ top, right }) => {
           height: 28,
           backgroundColor: "#0077B6",
           borderRadius: 14,
-          zIndex: 1,
+          zIndex: 1000,
         }}
       />
     </Box>

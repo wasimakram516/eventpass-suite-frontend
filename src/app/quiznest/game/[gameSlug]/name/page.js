@@ -74,7 +74,7 @@ export default function NamePage() {
 
   return (
     <Box sx={{ position: "relative" }}>
-      <LanguageSelector />
+      <LanguageSelector top={20} right={20} />
       <Box
         sx={{
           display: "flex",
@@ -93,7 +93,7 @@ export default function NamePage() {
       >
         {/* Back Button */}
         <IconButton
-          onClick={() => router.push(`/game/${game.slug}`)}
+          onClick={() => router.push(`/quiznest/game/${game.slug}`)}
           sx={{
             position: "fixed",
             top: 20,
@@ -163,20 +163,6 @@ export default function NamePage() {
             fullWidth
             onClick={handleSubmit}
             disabled={submitting}
-            sx={{
-              px: 6,
-              py: 1.5,
-              fontSize: "1.25rem",
-              fontWeight: 600,
-              borderRadius: 8,
-              textTransform: "none",
-              boxShadow: "0 4px 20px rgba(0,0,0,0.2)",
-              transition: "all 0.3s ease",
-              "&:hover": {
-                transform: "scale(1.05)",
-                boxShadow: "0 6px 24px rgba(0,0,0,0.3)",
-              },
-            }}
           >
             {submitting ? (
               <CircularProgress size={24} color="inherit" />

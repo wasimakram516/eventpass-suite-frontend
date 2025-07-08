@@ -10,11 +10,12 @@ import {
   Box,
   Typography,
   MenuItem,
-  CircularProgress
+  CircularProgress,
 } from "@mui/material";
 import { useState, useEffect } from "react";
 import { useMessage } from "../contexts/MessageContext";
 import { useLanguage } from "../contexts/LanguageContext";
+import slugify from "@/utils/slugify";
 
 const GameFormModal = ({
   open,
@@ -41,7 +42,8 @@ const GameFormModal = ({
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const { showMessage } = useMessage();
-  const { language } = useLanguage(); //Language Usage
+  const { language } = useLanguage();
+
   useEffect(() => {
     if (!open || !initialValues || Object.keys(initialValues).length === 0)
       return;
@@ -49,7 +51,7 @@ const GameFormModal = ({
     setForm({
       title: initialValues.title || "",
       slug: initialValues.slug || "",
-      coverImage: null, // <- only set to file when uploaded
+      coverImage: null,
       coverPreview: initialValues.coverImage || "",
       nameImage: null,
       namePreview: initialValues.nameImage || "",
@@ -65,7 +67,16 @@ const GameFormModal = ({
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+
+    setForm((prev) => {
+      const updated = { ...prev, [name]: value };
+
+      if (name === "title" && !editMode) {
+        updated.slug = slugify(value);
+      }
+
+      return updated;
+    });
   };
 
   const handleFileChange = (e, key) => {
@@ -83,70 +94,70 @@ const GameFormModal = ({
       }));
     }
   };
-const gameDialogTranslations = {
-  en: {
-    dialogTitleUpdate: "Update Game",
-    dialogTitleCreate: "Create Game",
-    gameTitle: "Game Title",
-    slug: "Slug",
-    slugHelper: "Used in URLs (e.g., 'quiz-1')",
-    numberOfOptions: "Number of Options",
-    countdownTime: "Countdown Time (seconds)",
-    quizTime: "Quiz Time (seconds)",
-    coverImage: "Cover Image",
-    nameImage: "Name Image",
-    backgroundImage: "Background Image",
-    currentImage: "Current Image:",
-    preview: "Preview:",
-    cancel: "Cancel",
-    update: "Update",
-    create: "Create",
-    updating: "Updating...",
-    creating: "Creating...",
-    errors: {
-      titleRequired: "Title is required",
-      slugRequired: "Slug is required",
-      optionsRequired: "Option count is required",
-      countdownRequired: "Countdown time is required",
-      quizTimeRequired: "Quiz time is required",
-      coverRequired: "Cover image is required",
-      nameRequired: "Name image is required",
-      backgroundRequired: "Background image is required",
-      invalidImage: "Please upload a valid image file",
+  const gameDialogTranslations = {
+    en: {
+      dialogTitleUpdate: "Update Game",
+      dialogTitleCreate: "Create Game",
+      gameTitle: "Game Title",
+      slug: "Slug",
+      slugHelper: "Used in URLs (e.g., 'quiz-1')",
+      numberOfOptions: "Number of Options",
+      countdownTime: "Countdown Time (seconds)",
+      quizTime: "Quiz Time (seconds)",
+      coverImage: "Cover Image",
+      nameImage: "Name Image",
+      backgroundImage: "Background Image",
+      currentImage: "Current Image:",
+      preview: "Preview:",
+      cancel: "Cancel",
+      update: "Update",
+      create: "Create",
+      updating: "Updating...",
+      creating: "Creating...",
+      errors: {
+        titleRequired: "Title is required",
+        slugRequired: "Slug is required",
+        optionsRequired: "Option count is required",
+        countdownRequired: "Countdown time is required",
+        quizTimeRequired: "Quiz time is required",
+        coverRequired: "Cover image is required",
+        nameRequired: "Name image is required",
+        backgroundRequired: "Background image is required",
+        invalidImage: "Please upload a valid image file",
+      },
     },
-  },
-  ar: {
-    dialogTitleUpdate: "تحديث اللعبة",
-    dialogTitleCreate: "إنشاء لعبة",
-    gameTitle: "عنوان اللعبة",
-    slug: "المعرف",
-    slugHelper: "يستخدم في الروابط (مثال: 'quiz-1')",
-    numberOfOptions: "عدد الخيارات",
-    countdownTime: "وقت العد التنازلي (ثانية)",
-    quizTime: "وقت الاختبار (ثانية)",
-    coverImage: "صورة الغلاف",
-    nameImage: "صورة الاسم",
-    backgroundImage: "صورة الخلفية",
-    currentImage: "الصورة الحالية:",
-    preview: "معاينة:",
-    cancel: "إلغاء",
-    update: "تحديث",
-    create: "إنشاء",
-    updating: "جارٍ التحديث...",
-    creating: "جارٍ الإنشاء...",
-    errors: {
-      titleRequired: "العنوان مطلوب",
-      slugRequired: "المعرف مطلوب",
-      optionsRequired: "عدد الخيارات مطلوب",
-      countdownRequired: "وقت العد التنازلي مطلوب",
-      quizTimeRequired: "وقت الاختبار مطلوب",
-      coverRequired: "صورة الغلاف مطلوبة",
-      nameRequired: "صورة الاسم مطلوبة",
-      backgroundRequired: "صورة الخلفية مطلوبة",
-      invalidImage: "الرجاء رفع صورة صالحة",
+    ar: {
+      dialogTitleUpdate: "تحديث اللعبة",
+      dialogTitleCreate: "إنشاء لعبة",
+      gameTitle: "عنوان اللعبة",
+      slug: "المعرف",
+      slugHelper: "يستخدم في الروابط (مثال: 'quiz-1')",
+      numberOfOptions: "عدد الخيارات",
+      countdownTime: "وقت العد التنازلي (ثانية)",
+      quizTime: "وقت الاختبار (ثانية)",
+      coverImage: "صورة الغلاف",
+      nameImage: "صورة الاسم",
+      backgroundImage: "صورة الخلفية",
+      currentImage: "الصورة الحالية:",
+      preview: "معاينة:",
+      cancel: "إلغاء",
+      update: "تحديث",
+      create: "إنشاء",
+      updating: "جارٍ التحديث...",
+      creating: "جارٍ الإنشاء...",
+      errors: {
+        titleRequired: "العنوان مطلوب",
+        slugRequired: "المعرف مطلوب",
+        optionsRequired: "عدد الخيارات مطلوب",
+        countdownRequired: "وقت العد التنازلي مطلوب",
+        quizTimeRequired: "وقت الاختبار مطلوب",
+        coverRequired: "صورة الغلاف مطلوبة",
+        nameRequired: "صورة الاسم مطلوبة",
+        backgroundRequired: "صورة الخلفية مطلوبة",
+        invalidImage: "الرجاء رفع صورة صالحة",
+      },
     },
-  },
-};
+  };
   const validate = () => {
     const newErrors = {};
     const t = gameDialogTranslations[language].errors;
@@ -227,7 +238,9 @@ const gameDialogTranslations = {
             value={form.slug}
             onChange={handleChange}
             error={!!errors.slug}
-            helperText={errors.slug || gameDialogTranslations[language].slugHelper}
+            helperText={
+              errors.slug || gameDialogTranslations[language].slugHelper
+            }
             fullWidth
             required
           />

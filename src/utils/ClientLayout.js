@@ -2,17 +2,33 @@
 
 import Navbar from "@/components/Navbar";
 import { Box } from "@mui/material";
-import { useParams, usePathname } from "next/navigation";
+import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export default function ClientLayout({ children }) {
   const pathname = usePathname();
-  const { businessSlug } = useParams();
+  const [hasMounted, setHasMounted] = useState(false);
 
-  const hideNavbar =
-    pathname.startsWith(`/polls/${businessSlug}/results`) ||
-    pathname.startsWith(`/queries/${businessSlug}/display`) ||
-    pathname.startsWith(`/queries/${businessSlug}/qr`) ||
-    pathname.startsWith(`/queries/${businessSlug}/ask`);
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
+  if (!hasMounted) return null;
+
+  const modulePrefixes = [
+    "/quiznest",
+    "/votecast",
+    "/stageq",
+    "/eventduel",
+    "/mosaicwall",
+    "/eventreg",
+    "/checkin",
+    "/eventwheel",
+  ];
+
+  const hideNavbar = modulePrefixes.some((prefix) =>
+    pathname.startsWith(prefix)
+  );
 
   return (
     <>
