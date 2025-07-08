@@ -28,7 +28,7 @@ export default function QuizNestHome() {
   return (
     <ModuleLandingPage
       moduleIcon={QuizIcon}
-      ctaLabel="Manage Quiz Games"
+      ctaLabel={translations.en.ctaLabel}
       ctaHref="/cms/modules/quiznest/games"
       translations={translations}
     />

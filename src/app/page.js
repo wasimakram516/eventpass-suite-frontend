@@ -137,22 +137,54 @@ export default function HomePage() {
           spacing={4}
           rowGap={4}
         >
-          <Feature icon={<QuizIcon color="primary" />} label={t.features.quiz} />
-          <Feature icon={<SportsEsportsIcon color="secondary" />} label={t.features.duel} />
-          <Feature icon={<PollIcon color="success" />} label={t.features.poll} />
-          <Feature icon={<ForumIcon color="warning" />} label={t.features.qna} />
-          <Feature icon={<ImageIcon sx={{ color: "#6d4c41" }} />} label={t.features.wall} />
-          <Feature icon={<AssignmentIcon sx={{ color: "#00838f" }} />} label={t.features.reg} />
-          <Feature icon={<HowToRegIcon color="info" />} label={t.features.checkin} />
-          <Feature icon={<EmojiEventsIcon color="error" />} label={t.features.wheel} />
+          <Feature
+            icon={<QuizIcon color="primary" />}
+            label={t.features.quiz}
+          />
+          <Feature
+            icon={<SportsEsportsIcon color="secondary" />}
+            label={t.features.duel}
+          />
+          <Feature
+            icon={<PollIcon color="success" />}
+            label={t.features.poll}
+          />
+          <Feature
+            icon={<ForumIcon color="warning" />}
+            label={t.features.qna}
+          />
+          <Feature
+            icon={<ImageIcon sx={{ color: "#6d4c41" }} />}
+            label={t.features.wall}
+          />
+          <Feature
+            icon={<AssignmentIcon sx={{ color: "#00838f" }} />}
+            label={t.features.reg}
+          />
+          <Feature
+            icon={<HowToRegIcon color="info" />}
+            label={t.features.checkin}
+          />
+          <Feature
+            icon={<EmojiEventsIcon color="error" />}
+            label={t.features.wheel}
+          />
         </Stack>
       </Stack>
 
       {/* === FOOTER === */}
       {globalConfig && (
-        <Stack spacing={1} mt={6} alignItems="center">
+        <Stack spacing={1} mt={6} direction="column" alignItems="center">
+          {globalConfig?.companyLogoUrl && (
+            <Box
+              component="img"
+              src={globalConfig.companyLogoUrl}
+              alt="Company Logo"
+              sx={{ height: 64, mt: 6, opacity: 0.7 }}
+            />
+          )}
           {(globalConfig.contact.email || globalConfig.contact.phone) && (
-            <Stack spacing={1} direction="column" alignItems="center">
+            <Stack spacing={1} direction="row" alignItems="center">
               {globalConfig.contact.email && (
                 <Stack direction="row" alignItems="center" spacing={1}>
                   <EmailIcon fontSize="small" />
@@ -174,22 +206,38 @@ export default function HomePage() {
 
           <Stack direction="row" spacing={2} mt={1}>
             {globalConfig.socialLinks.facebook && (
-              <MuiLink href={globalConfig.socialLinks.facebook} target="_blank" color="inherit">
+              <MuiLink
+                href={globalConfig.socialLinks.facebook}
+                target="_blank"
+                color="inherit"
+              >
                 <FacebookIcon />
               </MuiLink>
             )}
             {globalConfig.socialLinks.instagram && (
-              <MuiLink href={globalConfig.socialLinks.instagram} target="_blank" color="inherit">
+              <MuiLink
+                href={globalConfig.socialLinks.instagram}
+                target="_blank"
+                color="inherit"
+              >
                 <InstagramIcon />
               </MuiLink>
             )}
             {globalConfig.socialLinks.linkedin && (
-              <MuiLink href={globalConfig.socialLinks.linkedin} target="_blank" color="inherit">
+              <MuiLink
+                href={globalConfig.socialLinks.linkedin}
+                target="_blank"
+                color="inherit"
+              >
                 <LinkedInIcon />
               </MuiLink>
             )}
             {globalConfig.socialLinks.website && (
-              <MuiLink href={globalConfig.socialLinks.website} target="_blank" color="inherit">
+              <MuiLink
+                href={globalConfig.socialLinks.website}
+                target="_blank"
+                color="inherit"
+              >
                 <LanguageIcon />
               </MuiLink>
             )}

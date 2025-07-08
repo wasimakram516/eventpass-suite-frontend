@@ -76,15 +76,6 @@ export default function ModuleLandingPage({
             </Button>
           )}
 
-          {globalConfig?.companyLogoUrl && (
-            <Box
-              component="img"
-              src={globalConfig.companyLogoUrl}
-              alt="Company Logo"
-              sx={{ height: 64, mt: 6, opacity: 0.7 }}
-            />
-          )}
-
           {globalConfig?.poweredBy?.text && (
             <Typography
               variant="caption"
