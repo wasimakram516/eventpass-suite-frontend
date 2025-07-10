@@ -11,12 +11,10 @@ import {
   CircularProgress,
   IconButton,
   Divider,
-  Drawer,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
-import CloseIcon from "@mui/icons-material/Close";
 import QuizIcon from "@mui/icons-material/Quiz";
 import LeaderboardIcon from "@mui/icons-material/Leaderboard";
 import ShareIcon from "@mui/icons-material/Share";

@@ -76,7 +76,7 @@ const theme = createTheme({
     MuiButton: {
       styleOverrides: {
         root: {
-          borderRadius: "999px", // pill shape
+          borderRadius: "999px", 
           fontSize: "1rem",
           padding: "10px 20px",
           fontWeight: 600,
@@ -88,40 +88,37 @@ const theme = createTheme({
         containedPrimary: {
           backgroundColor: "#0077b6",
           color: "#ffffff",
-          boxShadow: "0px 30px 32px rgba(0,0,0,0.1)",
+          boxShadow: "0px 10px 32px rgba(0,0,0,0.1)",
           "&:hover": {
-            backgroundColor: "#005f8d",
-            transform: "scale(1.05)",
+            transform: "scale(1.02)",
             boxShadow: "0 6px 24px rgba(0,0,0,0.3)",
           },
         },
         containedSecondary: {
           backgroundColor: "#ffcc00",
           color: "#333333",
-          boxShadow: "0px 30px 32px rgba(0,0,0,0.1)",
+          boxShadow: "0px 10px 32px rgba(0,0,0,0.1)",
           "&:hover": {
-            backgroundColor: "#e6b800",
-            transform: "scale(1.05)",
+            transform: "scale(1.02)",
             boxShadow: "0 6px 24px rgba(0,0,0,0.3)",
           },
         },
         containedError: {
           backgroundColor: "#d32f2f",
           color: "#ffffff",
-          boxShadow: "0px 30px 32px rgba(0,0,0,0.1)",
+          boxShadow: "0px 10px 32px rgba(0,0,0,0.1)",
           "&:hover": {
-            backgroundColor: "#b71c1c",
-            transform: "scale(1.05)",
+            transform: "scale(1.02)",
             boxShadow: "0 6px 24px rgba(0,0,0,0.3)",
           },
         },
         containedInfo: {
           backgroundColor: "#0288d1",
           color: "#ffffff",
-          boxShadow: "0px 30px 32px rgba(0,0,0,0.1)",
+          boxShadow: "0px 10px 32px rgba(0,0,0,0.1)",
           "&:hover": {
             backgroundColor: "#0277bd",
-            transform: "scale(1.05)",
+            transform: "scale(1.02)",
             boxShadow: "0 6px 24px rgba(0,0,0,0.3)",
           },
         },
@@ -166,7 +163,7 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           "& .MuiInputBase-root": {
-            borderRadius: "999px",
+            borderRadius: "16px",
             backgroundColor: "rgba(255,255,255,0.8)",
           },
         },

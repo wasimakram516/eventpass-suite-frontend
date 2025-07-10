@@ -10,7 +10,6 @@ import {
   useTheme,
 } from "@mui/material";
 import { useRouter } from "next/navigation";
-import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
 import useI18nLayout from "@/hooks/useI18nLayout";
 
 export default function ModuleLandingPage({
@@ -18,7 +17,6 @@ export default function ModuleLandingPage({
   ctaHref,
   translations,
 }) {
-  const { globalConfig } = useGlobalConfig();
   const { dir, align, t } = useI18nLayout(translations);
   const theme = useTheme();
   const router = useRouter();
@@ -74,16 +72,6 @@ export default function ModuleLandingPage({
             >
               {t.ctaLabel}
             </Button>
-          )}
-
-          {globalConfig?.poweredBy?.text && (
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{ mt: 1 }}
-            >
-              Powered by {globalConfig.poweredBy.text}
-            </Typography>
           )}
         </Stack>
       </Container>

@@ -3,7 +3,7 @@ import ModuleLandingPage from "@/components/ModuleLandingPage";
 
 const translations = {
   en: {
-    title: "Quiznest – Single Player Quizzes",
+    title: "QuizNest – Single Player Quizzes",
     features: [
       "Create and share custom single-player quiz links.",
       "Players compete within a defined time frame.",
@@ -13,7 +13,7 @@ const translations = {
     ctaLabel: "Manage Quiz Games",
   },
   ar: {
-    title: "كويزنيست – اختبارات فردية",
+    title: "QuizNest – اختبارات فردية",
     features: [
       "أنشئ وشارك روابط اختبارات فردية مخصصة.",
       "يتنافس اللاعبون ضمن إطار زمني محدد.",

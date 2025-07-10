@@ -1,10 +1,28 @@
-import handleError from "@/utils/errorHandler";
+import { showGlobalMessage } from "@/contexts/MessageContext";
 
-const withApiHandler = (fn) => async (...args) => {
+const withApiHandler = (fn, { showSuccess = false } = {}) => async (...args) => {
   try {
-    return await fn(...args);
+    const response = await fn(...args);
+
+    if (response?.success === false) {
+      showGlobalMessage(response.message || "Something went wrong", "error");
+      return { error: true, message: response.message };
+    }
+
+    if (showSuccess && response?.message) {
+      showGlobalMessage(response.message, "success");
+    }
+
+    return response.data ?? response;
   } catch (err) {
-    handleError(err);
+    const message =
+      err?.response?.data?.message ||
+      err?.response?.data?.data ||
+      err?.message ||
+      "An unknown error occurred";
+
+    showGlobalMessage(message, "error");
+    return { error: true, message };
   }
 };
 

@@ -1,34 +1,36 @@
-"use client";
+import EventAvailableIcon from "@mui/icons-material/EventAvailable";
+import ModuleLandingPage from "@/components/ModuleLandingPage";
 
-import BreadcrumbsNav from "@/components/BreadcrumbsNav";
-import { Box, Typography, Divider, Button, Stack, Container } from "@mui/material";
+const translations = {
+  en: {
+    title: "CheckIn – Employee Event Check-In",
+    features: [
+      "Create private check-in events for your employees.",
+      "Generate links or QR codes for employee check-in.",
+      "Employees check in by entering their Employee ID.",
+      "Display table number and location instantly after check-in.",
+    ],
+    ctaLabel: "Manage CheckIn Events",
+  },
+  ar: {
+    title: "CheckIn – فعاليات تسجيل حضور الموظفين",
+    features: [
+      "أنشئ فعاليات CheckIn خاصة بالموظفين.",
+      "أنشئ روابط أو رموز QR لتسجيل الحضور.",
+      "يقوم الموظفون بتسجيل الحضور باستخدام رقم الموظف.",
+      "عرض رقم الطاولة وموقعها مباشرة بعد تسجيل الحضور.",
+    ],
+    ctaLabel: "إدارة فعاليات CheckIn",
+  },
+};
 
-export default function CheckInCMSPage() {
+export default function CheckInHome() {
   return (
-    <Container>
-      <BreadcrumbsNav />
-      <Stack
-        direction="row"
-        justifyContent="space-between"
-        alignItems="center"
-        sx={{ mb: 2 }}
-      >
-        <Box>
-          <Typography variant="h5" fontWeight="bold">
-            Check-In
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Monitor and control attendee check-in process.
-          </Typography>
-        </Box>
-        <Button variant="contained" color="primary">
-          Start Check-In
-        </Button>
-      </Stack>
-      <Divider sx={{ mb: 3 }} />
-      <Typography variant="body1" color="text.secondary">
-        This is the main CMS content area for Check-In.
-      </Typography>
-    </Container>
+    <ModuleLandingPage
+      moduleIcon={EventAvailableIcon}
+      ctaLabel={translations.en.ctaLabel}
+      ctaHref="/cms/modules/checkin/events"
+      translations={translations}
+    />
   );
 }

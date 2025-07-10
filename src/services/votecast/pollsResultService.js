@@ -6,5 +6,5 @@ export const getResults = withApiHandler(async (businessSlug, status = "active")
   const { data } = await api.get(
     `/votecast/polls/results?businessSlug=${businessSlug}${status ? `&status=${status}` : ""}`
   );
-  return data.data;
+  return data;
 });

@@ -1,25 +1,36 @@
-"use client";
+import EventAvailableIcon from "@mui/icons-material/EventAvailable";
+import ModuleLandingPage from "@/components/ModuleLandingPage";
 
-import BreadcrumbsNav from "@/components/BreadcrumbsNav";
-import { Box, Typography, Divider, Button, Stack, Container } from "@mui/material";
+const translations = {
+  en: {
+    title: "EventReg – Public Event Registration",
+    features: [
+      "Create public event registration forms easily.",
+      "Share event links via plain URL or QR code.",
+      "Participants register by filling in their details.",
+      "Automatically send WhatsApp confirmation messages after successful registration.",
+    ],
+    ctaLabel: "Manage Event Registrations",
+  },
+  ar: {
+    title: "EventReg – التسجيل في الفعاليات العامة",
+    features: [
+      "أنشئ نماذج تسجيل فعاليات عامة بسهولة.",
+      "شارك روابط الفعاليات عبر الرابط المباشر أو رمز QR.",
+      "يسجل المشاركون عن طريق تعبئة بياناتهم.",
+      "إرسال رسالة تأكيد تلقائيًا عبر WhatsApp بعد التسجيل الناجح."
+    ],
+    ctaLabel: "إدارة التسجيلات",
+  },
+};
 
-export default function EventRegCMSPage() {
+export default function EventRegHome() {
   return (
-    <Container>
-      <BreadcrumbsNav/>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-        <Box>
-          <Typography variant="h5" fontWeight="bold">Event Reg</Typography>
-          <Typography variant="body2" color="text.secondary">
-            Build and manage custom registration forms.
-          </Typography>
-        </Box>
-        <Button variant="contained" color="primary">Add Form</Button>
-      </Stack>
-      <Divider sx={{ mb: 3 }} />
-      <Typography variant="body1" color="text.secondary">
-        This is the main CMS content area for Event Reg.
-      </Typography>
-    </Container>
+    <ModuleLandingPage
+      moduleIcon={EventAvailableIcon}
+      ctaLabel={translations.en.ctaLabel}
+      ctaHref="/cms/modules/eventreg/events"
+      translations={translations}
+    />
   );
 }

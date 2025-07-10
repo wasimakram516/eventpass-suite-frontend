@@ -1,31 +1,39 @@
+// services/userService.js
 import api from "./api";
+import withApiHandler from "@/utils/withApiHandler";
 
 // Get all users (admin)
-export const getAllUsers = async () => {
+export const getAllUsers = withApiHandler(async () => {
   const { data } = await api.get("/users");
-  return data.data;
-};
+  return data;
+});
 
 // Get unassigned users (for assigning to new businesses)
-export const getUnassignedUsers = async () => {
+export const getUnassignedUsers = withApiHandler(async () => {
   const { data } = await api.get("/users/unassigned");
-  return data.data;
-};
+  return data;
+});
 
 // Get a single user by ID
-export const getUserById = async (id) => {
+export const getUserById = withApiHandler(async (id) => {
   const { data } = await api.get(`/users/${id}`);
-  return data.data;
-};
+  return data;
+});
 
-// Update a user (admin)
-export const updateUser = async (id, userData) => {
-  const { data } = await api.put(`/users/${id}`, userData);
-  return data.data;
-};
+// Update a user (admin) → show success snackbar on completion
+export const updateUser = withApiHandler(
+  async (id, userData) => {
+    const { data } = await api.put(`/users/${id}`, userData);
+    return data;
+  },
+  { showSuccess: true }
+);
 
-// Delete a user (admin)
-export const deleteUser = async (id) => {
-  const { data } = await api.delete(`/users/${id}`);
-  return data.data;
-};
+// Delete a user (admin) → show success snackbar on completion
+export const deleteUser = withApiHandler(
+  async (id) => {
+    const { data } = await api.delete(`/users/${id}`);
+    return data;
+  },
+  { showSuccess: true }
+);

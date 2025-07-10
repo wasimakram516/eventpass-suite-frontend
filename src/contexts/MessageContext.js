@@ -1,12 +1,20 @@
 "use client";
 
-import React, { createContext, useState, useContext } from "react";
+import React, { createContext, useState, useContext, useEffect } from "react";
 import { Snackbar, Alert } from "@mui/material";
 
 // Create Context
 export const MessageContext = createContext();
 
-// Provider Component
+// === Global reference to call showMessage outside React (e.g. in services) ===
+let globalShowMessage = null;
+export const showGlobalMessage = (text, severity = "error") => {
+  if (typeof globalShowMessage === "function") {
+    globalShowMessage(text, severity);
+  }
+};
+
+// === Provider Component ===
 export const MessageProvider = ({ children }) => {
   const [message, setMessage] = useState(null);
 
@@ -16,6 +24,11 @@ export const MessageProvider = ({ children }) => {
   };
 
   const handleClose = () => setMessage(null);
+
+  // Register the showMessage globally
+  useEffect(() => {
+    globalShowMessage = showMessage;
+  }, []);
 
   return (
     <MessageContext.Provider value={{ message, showMessage }}>
@@ -35,7 +48,7 @@ export const MessageProvider = ({ children }) => {
             onClose={handleClose}
           >
             {message.text || "An error occurred"}
-          </Alert>        
+          </Alert>
         )}
       </Snackbar>
     </MessageContext.Provider>

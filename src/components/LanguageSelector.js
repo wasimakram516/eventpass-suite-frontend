@@ -4,10 +4,15 @@ import { Box, Typography } from "@mui/material";
 import { motion } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
 
+const spring = {
+  type: "spring",
+  stiffness: 500,
+  damping: 30,
+};
+
 const LanguageSelector = ({ top, right }) => {
   const { language, toggleLanguage } = useLanguage();
   const isArabic = language === "ar";
-
   const isFloating = typeof top !== "undefined" && typeof right !== "undefined";
 
   return (
@@ -17,62 +22,64 @@ const LanguageSelector = ({ top, right }) => {
         position: isFloating ? "absolute" : "relative",
         top: isFloating ? top : "auto",
         right: isFloating ? right : "auto",
-        display: "inline-block",
-        width: 70,
+        width: 64,
         height: 32,
-        borderRadius: 16,
-        backgroundColor: "background.default",
+        borderRadius: 32,
+        backgroundColor: "background.paper",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        px: 1,
         cursor: "pointer",
-        px: 0.5,
-        py: 0.5,
-        boxShadow: 1,
-        zIndex:999
+        overflow: "hidden",
+        zIndex: 999,
+        // Inner + Outer Neumorphic Shadows
+        boxShadow: `
+          2px 2px 6px rgba(0, 0, 0, 0.15),
+          -2px -2px 6px rgba(255, 255, 255, 0.5),
+          inset 2px 2px 5px rgba(0, 0, 0, 0.2),
+          inset -2px -2px 5px rgba(255, 255, 255, 0.7)
+        `,
       }}
     >
-      <Box
+      {/* Labels */}
+      <Typography
+        variant="caption"
         sx={{
-          display: "flex",
-          height: "100%",
-          alignItems: "center",
-          justifyContent: "space-between",
-          px: 1,
+          fontWeight: 600,
+          color: !isArabic ? "#fff" : "text.secondary",
+          zIndex: 2,
+          transition: "color 0.3s",
         }}
       >
-        <Typography
-          variant="caption"
-          sx={{
-            color: "primary.main",
-            fontWeight: "bold",
-            fontSize: "0.75rem",
-          }}
-        >
-          EN
-        </Typography>
-        <Typography
-          variant="caption"
-          sx={{
-            color: "primary.main",
-            fontWeight: "bold",
-            fontSize: "0.75rem",
-          }}
-        >
-          AR
-        </Typography>
-      </Box>
+        EN
+      </Typography>
+      <Typography
+        variant="caption"
+        sx={{
+          fontWeight: 600,
+          color: isArabic ? "#fff" : "text.secondary",
+          zIndex: 2,
+          transition: "color 0.3s",
+        }}
+      >
+        AR
+      </Typography>
 
-      {/* Sliding Thumb */}
+      {/* Animated Thumb */}
       <motion.div
         layout
-        transition={{ type: "spring", stiffness: 300, damping: 20 }}
+        transition={spring}
         style={{
           position: "absolute",
-          top: 2,
-          left: isArabic ? 36 : 2,
-          width: 32,
+          width: 28,
           height: 28,
-          backgroundColor: "#0077B6",
-          borderRadius: 14,
-          zIndex: 1000,
+          borderRadius: 999,
+          top: 2,
+          left: isArabic ? 34 : 2,
+          backgroundColor: "#1976d2",
+          zIndex: 1,
+          boxShadow: "0 4px 8px rgba(0, 0, 0, 0.3)", 
         }}
       />
     </Box>

@@ -15,14 +15,14 @@ import {
 import Link from "next/link";
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import LoginRoundedIcon from "@mui/icons-material/LoginRounded";
 import ConfirmationDialog from "@/components/ConfirmationDialog";
 import LanguageSelector from "./LanguageSelector";
 import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
+import ICONS from "@/utils/iconUtil";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
-  const { globalConfig } = useGlobalConfig(); 
+  const { globalConfig } = useGlobalConfig();
   const [anchorEl, setAnchorEl] = useState(null);
   const [confirmLogout, setConfirmLogout] = useState(false);
 
@@ -57,9 +57,8 @@ export default function Navbar() {
                 fontWeight="bold"
                 color="text.primary"
                 noWrap
-                sx={{ display: { xs: "none", sm: "block" } }}
               >
-                {globalConfig?.appName || "EventPass Suite"} 
+                {globalConfig?.appName || "EventPass Suite"}
               </Typography>
             </Stack>
           </Link>
@@ -69,7 +68,7 @@ export default function Navbar() {
               <Link href="/auth/login">
                 <Button
                   color="primary"
-                  startIcon={<LoginRoundedIcon />}
+                  startIcon={<ICONS.login />}
                   sx={{ textTransform: "none" }}
                 >
                   Sign In
@@ -77,8 +76,37 @@ export default function Navbar() {
               </Link>
             ) : (
               <>
-                <IconButton onClick={handleOpen} sx={{ p: 0 }}>
-                  <Avatar sx={{ bgcolor: "white", color: "#033649" }}>
+                <IconButton
+                  onClick={handleOpen}
+                  sx={{
+                    p: 0,
+                    borderRadius: "50%",
+                    backgroundColor: "background.paper",
+                    transition: "box-shadow 0.3s ease",
+                    boxShadow: `
+      2px 2px 6px rgba(0, 0, 0, 0.15),
+      -2px -2px 6px rgba(255, 255, 255, 0.5),
+      inset 2px 2px 5px rgba(0, 0, 0, 0.2),
+      inset -2px -2px 5px rgba(255, 255, 255, 0.7)
+    `,
+                    "&:hover": {
+                      boxShadow: `
+        3px 3px 8px rgba(0, 0, 0, 0.2),
+        -3px -3px 8px rgba(255, 255, 255, 0.6),
+        inset 2px 2px 5px rgba(0, 0, 0, 0.2),
+        inset -2px -2px 5px rgba(255, 255, 255, 0.7)
+      `,
+                    },
+                  }}
+                >
+                  <Avatar
+                    sx={{
+                      bgcolor: "white",
+                      color: "#033649",
+                      fontWeight: "bold",
+                      fontSize: "0.9rem",
+                    }}
+                  >
                     {user.name
                       ?.split(" ")
                       .map((n) => n[0]?.toUpperCase())
@@ -86,16 +114,36 @@ export default function Navbar() {
                       .join("")}
                   </Avatar>
                 </IconButton>
+
                 <Menu
                   anchorEl={anchorEl}
                   open={Boolean(anchorEl)}
                   onClose={handleClose}
-                  PaperProps={{ elevation: 2 }}
+                  PaperProps={{
+                    elevation: 0,
+                    sx: {
+                      mt: 1,
+                      borderRadius: 2,
+                      minWidth: 200,
+                      boxShadow: `
+        2px 2px 6px rgba(0, 0, 0, 0.1),
+        -2px -2px 6px rgba(255, 255, 255, 0.4)
+      `,
+                    },
+                  }}
                 >
                   <MenuItem disabled>
-                    Signed in as <strong>&nbsp;{user.name}</strong>
+                    <Typography variant="body2" color="text.secondary">
+                      Signed in as <strong>&nbsp;{user.name}</strong>
+                    </Typography>
                   </MenuItem>
-                  <MenuItem onClick={openLogoutConfirm}>Logout</MenuItem>
+                  <MenuItem
+                    onClick={openLogoutConfirm}
+                    sx={{ color: "error.main" }}
+                  >
+                    <ICONS.logout fontSize="small" sx={{ mr: 1 }} />
+                    Logout
+                  </MenuItem>
                 </Menu>
               </>
             )}
@@ -103,7 +151,7 @@ export default function Navbar() {
           </Box>
         </Toolbar>
       </AppBar>
-      
+
       <ConfirmationDialog
         open={confirmLogout}
         onClose={() => setConfirmLogout(false)}
