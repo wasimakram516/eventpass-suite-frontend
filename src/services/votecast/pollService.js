@@ -21,10 +21,23 @@ export const getActivePollsByBusiness = withApiHandler(async (businessSlug) => {
   return data;
 });
 
-// Create a new poll
+// Create Poll with images
 export const createPoll = withApiHandler(
-  async (pollData) => {
-    const { data } = await api.post("/votecast/polls", pollData);
+  async (formData) => {
+    const { data } = await api.post("/votecast/polls", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return data;
+  },
+  { showSuccess: true }
+);
+
+// Update Poll with optional new images
+export const updatePoll = withApiHandler(
+  async (id, formData) => {
+    const { data } = await api.put(`/votecast/polls/${id}`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
     return data;
   },
   { showSuccess: true }
@@ -34,15 +47,6 @@ export const createPoll = withApiHandler(
 export const clonePoll = withApiHandler(
   async (pollId) => {
     const { data } = await api.post(`/votecast/polls/${pollId}/clone`);
-    return data;
-  },
-  { showSuccess: true }
-);
-
-// Update an existing poll
-export const updatePoll = withApiHandler(
-  async (id, updatedData) => {
-    const { data } = await api.put(`/votecast/polls/${id}`, updatedData);
     return data;
   },
   { showSuccess: true }
