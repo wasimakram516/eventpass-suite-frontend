@@ -20,20 +20,31 @@ import {
   Checkbox,
   FormControlLabel,
   FormGroup,
+  Chip,
 } from "@mui/material";
+
 import { useEffect, useState } from "react";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import BreadcrumbsNav from "@/components/BreadcrumbsNav";
 import ConfirmationDialog from "@/components/ConfirmationDialog";
-import { getAllUsers, updateUser, deleteUser } from "@/services/userService";
+import {
+  getAllUsers,
+  updateUser,
+  deleteUser,
+  createStaffUser,
+  getAllStaffUsers,
+} from "@/services/userService";
 import { getModules } from "@/services/moduleService";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { useAuth } from "@/contexts/AuthContext";
+import ICONS from "@/utils/iconUtil";
 
 const translations = {
   en: {
     title: "Users",
     subtitle: "View and manage registered users",
+    createStaffUser: "Create Staff User",
     editUser: "Edit User",
     name: "Name",
     email: "Email",
@@ -50,6 +61,7 @@ const translations = {
   ar: {
     title: "المستخدمون",
     subtitle: "عرض وإدارة المستخدمين المسجلين",
+    createStaffUser: "إنشاء مستخدم موظف",
     editUser: "تعديل المستخدم",
     name: "الاسم",
     email: "البريد الإلكتروني",
@@ -66,11 +78,18 @@ const translations = {
 };
 
 export default function UsersPage() {
+  const { user: currentUser } = useAuth();
+  const isBusinessUser = currentUser?.role === "business";
+
+  // State for available modules (for admin) and business user modules
+  const [availableModules, setAvailableModules] = useState([]);
+  const [businessUserModules, setBusinessUserModules] = useState([]);
+
   const { dir, align, language, t } = useI18nLayout(translations);
 
   const [users, setUsers] = useState([]);
-  const [modules, setModules] = useState([]);
-  const [editOpen, setEditOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [form, setForm] = useState({
@@ -86,13 +105,43 @@ export default function UsersPage() {
   }, []);
 
   const fetchUsers = async () => {
-    const data = await getAllUsers();
-    setUsers(data);
+    if (isBusinessUser && currentUser?.business?._id) {
+      const data = await getAllStaffUsers(currentUser.business._id);
+      setUsers(data || []);
+    } else {
+      const data = await getAllUsers();
+      setUsers(data);
+    }
   };
 
   const fetchModules = async () => {
-    const data = await getModules();
-    setModules(data);
+    try {
+      const allModules = await getModules();
+      setAvailableModules(allModules);
+
+      if (isBusinessUser) {
+        // Filter modules to only those the business user has access to
+        const filteredModules = allModules.filter((module) =>
+          currentUser.modulePermissions?.includes(module.key)
+        );
+        setBusinessUserModules(filteredModules);
+      }
+    } catch (error) {
+      console.error("Failed to fetch modules:", error);
+    }
+  };
+
+  const getRoleColor = (role) => {
+    switch (role) {
+      case "admin":
+        return "primary";
+      case "business":
+        return "secondary";
+      case "staff":
+        return "success";
+      default:
+        return "default";
+    }
   };
 
   const handleOpenEdit = (user) => {
@@ -103,20 +152,34 @@ export default function UsersPage() {
       password: "",
       modulePermissions: user.modulePermissions || [],
     });
-    setEditOpen(true);
+    setIsEditMode(true);
+    setModalOpen(true);
   };
 
-  const handleCloseEdit = () => {
+  const handleOpenCreate = () => {
     setSelectedUser(null);
-    setEditOpen(false);
+    setForm({ name: "", email: "", password: "", modulePermissions: [] });
+    setIsEditMode(false);
+    setModalOpen(true);
   };
 
-  const handleEditSave = async () => {
-    const payload = { ...form };
-    if (!form.password) delete payload.password;
-    await updateUser(selectedUser._id, payload);
+  const handleModalSave = async () => {
+    if (isEditMode) {
+      const payload = { ...form };
+      if (!form.password) delete payload.password;
+      await updateUser(selectedUser._id, payload);
+    } else {
+      await createStaffUser(
+        form.name,
+        form.email,
+        form.password,
+        "staff", // Default role for staff users
+        currentUser.business._id
+      );
+    }
+
     await fetchUsers();
-    handleCloseEdit();
+    setModalOpen(false);
   };
 
   const handleDelete = async () => {
@@ -169,12 +232,22 @@ export default function UsersPage() {
             {t.subtitle}
           </Typography>
         </Box>
+
+        {isBusinessUser && (
+          <Button
+            variant="contained"
+            startIcon={<ICONS.add />}
+            onClick={handleOpenCreate}
+          >
+            {t.createStaffUser}
+          </Button>
+        )}
       </Box>
       <Divider sx={{ mb: 3 }} />
 
       {/* User Cards */}
       <Grid container spacing={3}>
-        {users.map((user) => (
+        {users?.map((user) => (
           <Grid item xs={12} sm={6} md={4} key={user._id}>
             <Card elevation={3} sx={{ p: 2 }}>
               <Stack direction="row" spacing={2} alignItems="center">
@@ -184,9 +257,16 @@ export default function UsersPage() {
                   <Typography variant="body2" color="text.secondary">
                     {user.email}
                   </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {t.role}: {user.role}
-                  </Typography>
+                  <Box sx={{ mt: 0.5 }}>
+                    <Chip
+                      label={
+                        user.role.charAt(0).toUpperCase() + user.role.slice(1)
+                      }
+                      color={getRoleColor(user.role)}
+                      size="small"
+                      variant="outlined"
+                    />
+                  </Box>
                 </Box>
               </Stack>
               <Box sx={{ mt: 2, textAlign: "right" }}>
@@ -198,7 +278,10 @@ export default function UsersPage() {
                     <EditIcon />
                   </IconButton>
                 </Tooltip>
-                {user.role === "business" && (
+                {((currentUser?.role === "admin" &&
+                  (user.role === "business" || user.role === "staff")) ||
+                  (currentUser?.role === "business" &&
+                    user.role === "staff")) && (
                   <Tooltip title={t.delete}>
                     <IconButton
                       color="error"
@@ -217,9 +300,15 @@ export default function UsersPage() {
         ))}
       </Grid>
 
-      {/* Edit Modal */}
-      <Dialog open={editOpen} onClose={handleCloseEdit} fullWidth dir={dir}>
-        <DialogTitle>{t.editUser}</DialogTitle>
+      <Dialog
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        fullWidth
+        dir={dir}
+      >
+        <DialogTitle>
+          {isEditMode ? t.editUser : "Create Staff User"}
+        </DialogTitle>
         <DialogContent>
           <TextField
             label={t.name}
@@ -247,31 +336,38 @@ export default function UsersPage() {
             type="password"
           />
 
-          {selectedUser?.role === "business" && (
+          {selectedUser?.role === "business" ||
+          selectedUser?.role === "staff" ? (
             <Box sx={{ mt: 3 }}>
               <Typography variant="subtitle1" gutterBottom textAlign={align}>
                 {t.permissions}
               </Typography>
               <FormGroup>
-                {modules.map((mod) => (
-                  <FormControlLabel
-                    key={mod.key}
-                    control={
-                      <Checkbox
-                        checked={form.modulePermissions.includes(mod.key)}
-                        onChange={() => togglePermission(mod.key)}
-                      />
-                    }
-                    label={mod.labels?.[language] || mod.key}
-                  />
-                ))}
+                {(isBusinessUser ? businessUserModules : availableModules).map(
+                  (mod) => (
+                    <FormControlLabel
+                      key={mod.key}
+                      control={
+                        <Checkbox
+                          checked={form.modulePermissions.includes(mod.key)}
+                          onChange={() => togglePermission(mod.key)}
+                          disabled={
+                            isBusinessUser &&
+                            !currentUser.modulePermissions?.includes(mod.key)
+                          }
+                        />
+                      }
+                      label={mod.labels?.[language] || mod.key}
+                    />
+                  )
+                )}
               </FormGroup>
             </Box>
-          )}
+          ) : null}
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseEdit}>{t.cancel}</Button>
-          <Button variant="contained" onClick={handleEditSave}>
+          <Button onClick={() => setModalOpen(false)}>{t.cancel}</Button>
+          <Button variant="contained" onClick={handleModalSave}>
             {t.save}
           </Button>
         </DialogActions>

@@ -1,6 +1,26 @@
-// services/userService.js
 import api from "./api";
 import withApiHandler from "@/utils/withApiHandler";
+
+// get all staff users
+export const getAllStaffUsers = withApiHandler(async (businessId) => {
+  const { data } = await api.get(`/users/${businessId}/staff`);
+  return data;
+});
+
+// Create a new staff user
+export const createStaffUser = withApiHandler(
+  async (name, email, password, role, business) => {
+    const { data } = await api.post("/users/register/staff", {
+      name,
+      email,
+      password,
+      role,
+      business,
+    });
+    return data;
+  },
+  { showSuccess: true }
+);
 
 // Get all users (admin)
 export const getAllUsers = withApiHandler(async () => {

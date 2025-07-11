@@ -8,15 +8,16 @@ import { useAuth } from "@/contexts/AuthContext";
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const { user } = useAuth(); 
+  const { user } = useAuth();
 
   const navItems = [
     { label: "Home", icon: Home, path: "/cms" },
     { label: "Modules", icon: ViewModule, path: "/cms/modules" },
-    // Only show Users item if user is not 'business'
-    ...(user?.role !== "business"
-      ? [{ label: "Users", icon: PeopleAlt, path: "/cms/users" }]
-      : []),
+    {
+      label: user?.role === "business" ? "Staff" : "Users",
+      icon: PeopleAlt,
+      path: "/cms/users",
+    },
     { label: "Settings", icon: Settings, path: "/cms/settings" },
   ];
 
@@ -59,7 +60,9 @@ export default function Sidebar() {
                     size="large"
                     sx={{
                       color: isActive ? "white" : "text.secondary",
-                      backgroundColor: isActive ? "primary.light" : "transparent",
+                      backgroundColor: isActive
+                        ? "primary.light"
+                        : "transparent",
                       ":hover": {
                         backgroundColor: "action.hover",
                         color: "primary.main",

@@ -12,7 +12,7 @@ export default function CmsLayout({ children }) {
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading && !user) {
+    if ((!loading && !user) || (user && user.role !== "admin" && user.role !== "business")) {
       router.replace("/auth/login");
     }
   }, [loading, user, router]);

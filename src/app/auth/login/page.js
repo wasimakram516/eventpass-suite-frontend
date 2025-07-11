@@ -87,7 +87,15 @@ export default function LoginPage() {
     try {
       const response = await login(form.email, form.password);
       setUser(response.user);
-      router.push("/cms");
+      if (response.user.role === "staff") {
+        router.push("/staff");
+      } else if (
+        response.user.role === "business" ||
+        response.user.role === "admin"
+      ) {
+        router.push("/cms");
+      }
+      showMessage("Login successful!", "success");
     } catch (err) {
       showMessage(
         err?.response?.data?.message ||
