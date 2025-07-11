@@ -6,10 +6,7 @@ import {
   Typography,
   Button,
   CircularProgress,
-  Alert,
-  Paper,
   Stack,
-  Fade,
 } from "@mui/material";
 import { CheckCircle, ErrorOutline, QrCodeScanner } from "@mui/icons-material";
 import QrScanner from "@/components/QrScanner";
@@ -46,13 +43,22 @@ export default function VerifyPage() {
   };
 
   return (
-    <Box p={3} maxWidth={600} mx="auto">
-      <Typography variant="h4" gutterBottom textAlign="center">
+    <Box
+      p={3}
+      maxWidth={500}
+      mx="auto"
+      minHeight="90vh"
+      display="flex"
+      flexDirection="column"
+      justifyContent="center"
+      alignItems="center"
+    >
+      <Typography variant="h5" gutterBottom textAlign="center">
         QR Code Verification
       </Typography>
 
-      {/* Open Scanner Button */}
-      {!token && !showScanner && (
+      {/* Open Scanner */}
+      {!token && !showScanner && !loading && !result && !error && (
         <Box textAlign="center" my={4}>
           <Button
             variant="contained"
@@ -70,9 +76,9 @@ export default function VerifyPage() {
         </Box>
       )}
 
-      {/* QR Scanner View */}
+      {/* QR Scanner */}
       {showScanner && (
-        <Box mb={2}>
+        <Box>
           <QrScanner
             onScanSuccess={handleScanSuccess}
             onError={(err) => {
@@ -89,55 +95,47 @@ export default function VerifyPage() {
         </Box>
       )}
 
-      {/* Loading Spinner */}
+      {/* Loading */}
       {loading && (
-        <Box textAlign="center" mt={3}>
+        <Stack spacing={2} alignItems="center" mt={5}>
           <CircularProgress />
-          <Typography variant="body2" mt={1}>
-            Verifying registration...
-          </Typography>
-        </Box>
+          <Typography variant="body2">Verifying registration...</Typography>
+        </Stack>
       )}
 
-      {/* Error Message */}
-      <Fade in={!!error}>
-        <Box>
-          {error && (
-            <Alert severity="error" icon={<ErrorOutline />} sx={{ mt: 3 }}>
-              {error}
-            </Alert>
+      {/* Success */}
+      {result && (
+        <Stack spacing={2} alignItems="center" textAlign="center" mt={5}>
+          <CheckCircle sx={{ fontSize: 64, color: "success.main" }} />
+          <Typography variant="h6" color="success.main">
+            Registration Verified
+          </Typography>
+          <Typography><strong>Name:</strong> {result.fullName}</Typography>
+          {result.company && (
+            <Typography><strong>Company:</strong> {result.company}</Typography>
           )}
-        </Box>
-      </Fade>
-
-      {/* Success Result */}
-      <Fade in={!!result}>
-        <Box>
-          {result && (
-            <Paper elevation={3} sx={{ mt: 3, p: 3 }}>
-              <Alert severity="success" icon={<CheckCircle />} sx={{ mb: 2 }}>
-                Registration Verified
-              </Alert>
-              <Stack spacing={1}>
-                <Typography><strong>Name:</strong> {result.fullName}</Typography>
-                <Typography><strong>Email:</strong> {result.email}</Typography>
-                <Typography><strong>Phone:</strong> {result.phone}</Typography>
-                <Typography><strong>Company:</strong> {result.company}</Typography>
-                <Typography><strong>Event:</strong> {result.eventName}</Typography>
-                <Typography><strong>Registered At:</strong> {new Date(result.createdAt).toLocaleString()}</Typography>
-              </Stack>
-            </Paper>
-          )}
-        </Box>
-      </Fade>
-
-      {/* Scan Another Button */}
-      {(result || error) && (
-        <Box textAlign="center" mt={4}>
-          <Button variant="outlined" onClick={reset}>
+          <Typography><strong>Event:</strong> {result.eventName}</Typography>
+          <Typography>
+            <strong>Registered At:</strong>{" "}
+            {new Date(result.createdAt).toLocaleString()}
+          </Typography>
+          <Button variant="outlined" onClick={reset} sx={{ mt: 2 }}>
             Scan Another
           </Button>
-        </Box>
+        </Stack>
+      )}
+
+      {/* Error */}
+      {error && (
+        <Stack spacing={2} alignItems="center" textAlign="center" mt={5}>
+          <ErrorOutline sx={{ fontSize: 64, color: "error.main" }} />
+          <Typography variant="h6" color="error.main">
+            {error}
+          </Typography>
+          <Button variant="outlined" color="error" onClick={reset}>
+            Try Again
+          </Button>
+        </Stack>
       )}
     </Box>
   );

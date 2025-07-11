@@ -1,12 +1,19 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import QrScanner from "qr-scanner";
-import { Box, Typography } from "@mui/material";
+import {
+  Box,
+  Typography,
+  CircularProgress,
+  IconButton,
+} from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
 
-export default function QRScanner({ onScanSuccess, onError }) {
+export default function QRScanner({ onScanSuccess, onError, onCancel }) {
   const videoRef = useRef(null);
   const scannerRef = useRef(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let isMounted = true;
@@ -26,12 +33,13 @@ export default function QRScanner({ onScanSuccess, onError }) {
           {
             highlightScanRegion: true,
             highlightCodeOutline: true,
-            preferredCamera: "environment", // Use Rear camera
+            preferredCamera: "environment",
           }
         );
 
         scannerRef.current = scanner;
         await scanner.start();
+        if (isMounted) setLoading(false);
       } catch (err) {
         console.error("QR Scanner error:", err);
         if (onError) {
@@ -57,50 +65,86 @@ export default function QRScanner({ onScanSuccess, onError }) {
   return (
     <Box
       sx={{
-        position: "relative",
-        width: "100%",
-        maxWidth: 400,
-        mx: "auto",
-        borderRadius: 2,
-        boxShadow: 3,
-        overflow: "hidden",
-        backgroundColor: "#000",
+        position: "fixed",
+        top: 0,
+        left: 0,
+        width: "100vw",
+        height: "100vh",
+        bgcolor: "#000",
+        zIndex: 2000,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
       }}
     >
-      <video
-        ref={videoRef}
-        style={{
-          width: "100%",
-          height: "auto",
-          display: "block",
-        }}
-      />
-      <Box
+      {/* Cancel Button */}
+      <IconButton
+        onClick={onCancel}
         sx={{
           position: "absolute",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          border: "2px dashed #00e676",
-          boxSizing: "border-box",
-          pointerEvents: "none",
-        }}
-      />
-      <Box
-        sx={{
-          position: "absolute",
-          bottom: 8,
-          left: 0,
-          width: "100%",
-          textAlign: "center",
+          top: 16,
+          right: 16,
+          zIndex: 2100,
           color: "#fff",
-          background: "rgba(0,0,0,0.5)",
-          py: 0.5,
+          backgroundColor: "rgba(0,0,0,0.4)",
+          "&:hover": {
+            backgroundColor: "rgba(0,0,0,0.6)",
+          },
         }}
       >
-        <Typography variant="body2">Scanning for QR code...</Typography>
-      </Box>
+        <CloseIcon />
+      </IconButton>
+
+      {/* Loading Spinner */}
+      {loading ? (
+        <Box textAlign="center" color="#fff">
+          <CircularProgress color="inherit" />
+          <Typography mt={2}>Initializing camera...</Typography>
+        </Box>
+      ) : (
+        <Box
+          sx={{
+            position: "relative",
+            width: "100vw",
+            height: "100vh",
+          }}
+        >
+          <video
+            ref={videoRef}
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+            }}
+          />
+          <Box
+            sx={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              border: "2px dashed #00e676",
+              boxSizing: "border-box",
+              pointerEvents: "none",
+            }}
+          />
+          <Box
+            sx={{
+              position: "absolute",
+              bottom: 16,
+              left: 0,
+              width: "100%",
+              textAlign: "center",
+              color: "#fff",
+              background: "rgba(0,0,0,0.5)",
+              py: 1,
+            }}
+          >
+            <Typography variant="body2">Scanning for QR code...</Typography>
+          </Box>
+        </Box>
+      )}
     </Box>
   );
 }
