@@ -39,6 +39,8 @@ import { useMessage } from "@/contexts/MessageContext";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import slugify from "@/utils/slugify";
 import ConfirmationDialog from "@/components/ConfirmationDialog";
+import getStartIconSpacing from "@/utils/getStartIconSpacing";
+import ICONS from "@/utils/iconUtil";
 
 const translations = {
   en: {
@@ -54,6 +56,8 @@ const translations = {
     create: "Create New Business",
     edit: "Edit Business",
     delete: "Delete Business",
+    saving: "Saving...",
+    creating: "Creating...",
     confirmDeleteTitle: "Confirm Delete",
     confirmDeleteMessage: (name) => `Are you sure you want to delete ${name}?`,
     confirmDeleteButton: "Delete",
@@ -73,6 +77,8 @@ const translations = {
     create: "إنشاء شركة جديدة",
     edit: "تعديل الشركة",
     delete: "حذف الشركة",
+    saving: "جارٍ الحفظ...",
+    creating: "جارٍ الإنشاء...",
     confirmDeleteTitle: "تأكيد الحذف",
     confirmDeleteMessage: (name) => `هل أنت متأكد أنك تريد حذف ${name}؟`,
     confirmDeleteButton: "حذف",
@@ -150,8 +156,6 @@ export default function BusinessDetailsPage() {
       ]);
     }
 
-    console.log("Opening form with:", biz?.contact);
-
     setForm({
       name: biz?.name ?? "",
       email: biz?.contact?.email ?? "",
@@ -207,44 +211,39 @@ export default function BusinessDetailsPage() {
   };
 
   const handleSave = async () => {
-    try {
-      setLoading(true);
+    setLoading(true);
 
-      const payload = {
-        name: form.name,
-        slug: form.slug,
-        email: form.email,
-        phone: form.phone,
-        address: form.address,
-        ownerId: form.ownerId || user.id,
-      };
+    const payload = {
+      name: form.name,
+      slug: form.slug,
+      email: form.email,
+      phone: form.phone,
+      address: form.address,
+      ownerId: form.ownerId || user.id,
+    };
 
-      const fd = new FormData();
-      Object.entries(payload).forEach(([k, v]) => {
-        fd.append(k, typeof v === "object" ? JSON.stringify(v) : v);
-      });
-      if (form.logoFile) fd.append("file", form.logoFile);
+    const fd = new FormData();
+    Object.entries(payload).forEach(([k, v]) => {
+      fd.append(k, typeof v === "object" ? JSON.stringify(v) : v);
+    });
+    if (form.logoFile) fd.append("file", form.logoFile);
 
-      if (editingBiz?._id) {
-        await updateBusiness(editingBiz._id, fd);
-        showMessage("Business updated successfully", "success");
-      } else {
-        await createBusiness(fd);
-        fetchUnassignedUsers();
-        showMessage("Business created successfully", "success");
-      }
-
-      fetchBusinesses();
-      handleClose();
-    } catch (err) {
-      const message =
-        err?.response?.data?.message ||
-        err?.response?.data?.error ||
-        "Failed to save";
-      showMessage(message, "error");
-    } finally {
-      setLoading(false);
+    let res = null;
+    if (editingBiz?._id) {
+      res = await updateBusiness(editingBiz._id, fd);
+    } else {
+      res = await createBusiness(fd);
     }
+
+    console.log("Business save response:", res);
+
+    if (!res.error) {
+      fetchUnassignedUsers();
+      fetchBusinesses();
+    }
+
+    handleClose();
+    setLoading(false);
   };
 
   // open the delete confirmation dialog
@@ -265,16 +264,15 @@ export default function BusinessDetailsPage() {
         err?.response?.data?.message ||
         err?.response?.data?.error ||
         "Delete failed";
-  
-        showMessage(message, "error");
-      
+
+      showMessage(message, "error");
     } finally {
       setLoading(false);
       setConfirmOpen(false);
       setBizToDelete(null);
     }
   };
-  
+
   return (
     <Container dir={dir}>
       <BreadcrumbsNav />
@@ -303,7 +301,12 @@ export default function BusinessDetailsPage() {
         </Box>
 
         {user.role === "admin" && (
-          <Button variant="contained" onClick={() => handleOpen()}>
+          <Button
+            variant="contained"
+            startIcon={<ICONS.create />}
+            onClick={() => handleOpen()}
+            sx={getStartIconSpacing(dir)}
+          >
             {t.create}
           </Button>
         )}
@@ -468,7 +471,11 @@ export default function BusinessDetailsPage() {
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleClose} disabled={loading}>
+          <Button
+            onClick={handleClose}
+            startIcon={<ICONS.cancel />}
+            disabled={loading}
+          >
             {t.cancel}
           </Button>
           <Button
@@ -476,10 +483,20 @@ export default function BusinessDetailsPage() {
             onClick={handleSave}
             disabled={loading}
             startIcon={
-              loading && <CircularProgress color="inherit" size={20} />
+              loading ? (
+                <CircularProgress color="inherit" size={20} />
+              ) : (
+                <ICONS.save />
+              )
             }
           >
-            {loading ? (editingBiz ? "Updating..." : "Saving...") : t.save}
+            {loading
+              ? editingBiz
+                ? t.saving
+                : t.creating
+              : editingBiz
+              ? t.save
+              : t.create}
           </Button>
         </DialogActions>
       </Dialog>

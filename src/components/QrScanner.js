@@ -7,14 +7,42 @@ import {
   Typography,
   CircularProgress,
   IconButton,
+  Tooltip,
 } from "@mui/material";
 import ICONS from "@/utils/iconUtil";
+import useI18nLayout from "@/hooks/useI18nLayout";
+
+const translations = {
+  en: {
+    initializing: "Initializing camera...",
+    tooltip: {
+      cancel: "Cancel scanning",
+    },
+    errors: {
+      permissionDenied: "Camera permission denied.",
+      noCamera: "No camera found.",
+      generic: "Camera error.",
+    },
+  },
+  ar: {
+    initializing: "جاري تهيئة الكاميرا...",
+    tooltip: {
+      cancel: "إلغاء المسح",
+    },
+    errors: {
+      permissionDenied: "تم رفض إذن الكاميرا.",
+      noCamera: "لم يتم العثور على كاميرا.",
+      generic: "خطأ في الكاميرا.",
+    },
+  },
+};
 
 export default function QRScanner({ onScanSuccess, onError, onCancel }) {
+  const { t, dir } = useI18nLayout(translations);
   const videoRef = useRef(null);
   const scannerRef = useRef(null);
   const [loading, setLoading] = useState(true);
-  const [ready, setReady] = useState(false); 
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     if (!ready) return;
@@ -47,11 +75,11 @@ export default function QRScanner({ onScanSuccess, onError, onCancel }) {
         console.error("QR Scanner error:", err);
         if (onError) {
           if (err.name === "NotAllowedError") {
-            onError("Camera permission denied.");
+            onError(t.errors.permissionDenied);
           } else if (err.name === "NotFoundError") {
-            onError("No camera found.");
+            onError(t.errors.noCamera);
           } else {
-            onError(err.message || "Camera error.");
+            onError(t.errors.generic);
           }
         }
       }
@@ -67,6 +95,7 @@ export default function QRScanner({ onScanSuccess, onError, onCancel }) {
 
   return (
     <Box
+      dir={dir}
       sx={{
         position: "fixed",
         top: 0,
@@ -80,19 +109,21 @@ export default function QRScanner({ onScanSuccess, onError, onCancel }) {
         justifyContent: "center",
       }}
     >
-      {/* Cancel Button */}
-      <IconButton
-        onClick={onCancel}
-        sx={{
-          position: "absolute",
-          top: 16,
-          right: 16,
-          color: "#fff",
-          backgroundColor: "rgba(0,0,0,0.5)",
-        }}
-      >
-        <ICONS.close />
-      </IconButton>
+      {/* Cancel Button with Tooltip */}
+      <Tooltip title={t.tooltip.cancel}>
+        <IconButton
+          onClick={onCancel}
+          sx={{
+            position: "absolute",
+            top: 16,
+            [dir === "rtl" ? "left" : "right"]: 16,
+            color: "#fff",
+            backgroundColor: "rgba(0,0,0,0.5)",
+          }}
+        >
+          <ICONS.close />
+        </IconButton>
+      </Tooltip>
 
       {/* Main Video View */}
       <Box
@@ -108,7 +139,7 @@ export default function QRScanner({ onScanSuccess, onError, onCancel }) {
         <video
           ref={(el) => {
             videoRef.current = el;
-            if (el && !ready) setReady(true); 
+            if (el && !ready) setReady(true);
           }}
           style={{
             width: "100%",
@@ -127,16 +158,16 @@ export default function QRScanner({ onScanSuccess, onError, onCancel }) {
               alignItems: "center",
               justifyContent: "center",
               backgroundColor: "rgba(0,0,0,0.6)",
+              flexDirection: "row",
             }}
           >
             <CircularProgress color="inherit" />
             <Typography ml={2} color="#fff">
-              Initializing camera...
+              {t.initializing}
             </Typography>
           </Box>
         )}
 
-        {/* Optional Scanner Frame */}
         {!loading && (
           <Box
             sx={{

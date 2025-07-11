@@ -10,7 +10,8 @@ import useI18nLayout from "@/hooks/useI18nLayout";
 const translations = {
   en: {
     title: "Settings",
-    subtitle: "Configure business settings, modules, and other platform options.",
+    subtitle:
+      "Configure business settings, modules, and other platform options.",
     cards: [
       {
         title: "Global Configurations",
@@ -63,9 +64,7 @@ export default function SettingsPage() {
   const { dir, align, t } = useI18nLayout(translations);
 
   const cards = t?.cards || [];
-  const filteredCards = cards.filter((card) =>
-    card.roles.includes(user?.role)
-  );
+  const filteredCards = cards.filter((card) => card.roles.includes(user?.role));
 
   return (
     <Box dir={dir}>

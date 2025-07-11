@@ -20,6 +20,7 @@ import {
   TextField,
   CircularProgress,
 } from "@mui/material";
+import getStartIconSpacing from "@/utils/getStartIconSpacing";
 
 import {
   Settings as SettingsIcon,
@@ -43,6 +44,7 @@ import {
 import { useMessage } from "@/contexts/MessageContext";
 import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import ICONS from "@/utils/iconUtil";
 
 const translations = {
   en: {
@@ -145,53 +147,46 @@ export default function GlobalConfigPage() {
   // Load config
   useEffect(() => {
     (async () => {
-      try {
-        const data = await getGlobalConfig();
-        if (data) {
-          setConfig(data);
-          setForm((prev) => ({
-            ...prev,
-            appName: data.appName || "",
-            contact: {
-              email: data.contact?.email || "",
-              phone: data.contact?.phone || "",
-            },
-            support: {
-              email: data.support?.email || "",
-              phone: data.support?.phone || "",
-            },
-            poweredBy: {
-              text: data.poweredBy?.text || "",
-              mediaUrl: data.poweredBy?.mediaUrl || "",
-            },
-            socialLinks: {
-              facebook: data.socialLinks?.facebook || "",
-              instagram: data.socialLinks?.instagram || "",
-              linkedin: data.socialLinks?.linkedin || "",
-              website: data.socialLinks?.website || "",
-            },
-            companyLogoUrl: data.companyLogoUrl || "",
-            brandingMediaUrl: data.brandingMediaUrl || "",
-          }));
-        }
-      } catch (err) {
-        console.error(err);
-        showMessage("Failed to load configuration", "error");
+      const data = await getGlobalConfig();
+      console.log("Global Config Data:", data);
+
+      if (data) {
+        setConfig(data);
+        setForm((prev) => ({
+          ...prev,
+          appName: data.appName || "",
+          contact: {
+            email: data.contact?.email || "",
+            phone: data.contact?.phone || "",
+          },
+          support: {
+            email: data.support?.email || "",
+            phone: data.support?.phone || "",
+          },
+          poweredBy: {
+            text: data.poweredBy?.text || "",
+            mediaUrl: data.poweredBy?.mediaUrl || "",
+          },
+          socialLinks: {
+            facebook: data.socialLinks?.facebook || "",
+            instagram: data.socialLinks?.instagram || "",
+            linkedin: data.socialLinks?.linkedin || "",
+            website: data.socialLinks?.website || "",
+          },
+          companyLogoUrl: data.companyLogoUrl || "",
+          brandingMediaUrl: data.brandingMediaUrl || "",
+        }));
       }
     })();
   }, []);
 
   // Delete handler
   const handleDelete = async () => {
-    try {
-      await deleteGlobalConfig();
+    const res = await deleteGlobalConfig();
+    if (!res.error) {
       setConfig(null);
-      refetchConfig();
-      showMessage("Configuration deleted", "success");
-    } catch (err) {
-      console.error(err);
-      showMessage("Delete failed", "error");
     }
+    refetchConfig();
   };
 
   // Field change
@@ -246,52 +241,36 @@ export default function GlobalConfigPage() {
       );
     }
 
-    try {
-      setLoading(true);
-      const formData = new FormData();
-      formData.append("appName", form.appName);
-      formData.append("contactEmail", form.contact.email);
-      formData.append("contactPhone", form.contact.phone);
-      formData.append("supportEmail", form.support.email);
-      formData.append("supportPhone", form.support.phone);
-      formData.append("poweredByText", form.poweredBy.text);
-      formData.append("facebook", form.socialLinks.facebook);
-      formData.append("instagram", form.socialLinks.instagram);
-      formData.append("linkedin", form.socialLinks.linkedin);
-      formData.append("website", form.socialLinks.website);
+    setLoading(true);
+    const formData = new FormData();
+    formData.append("appName", form.appName);
+    formData.append("contactEmail", form.contact.email);
+    formData.append("contactPhone", form.contact.phone);
+    formData.append("supportEmail", form.support.email);
+    formData.append("supportPhone", form.support.phone);
+    formData.append("poweredByText", form.poweredBy.text);
+    formData.append("facebook", form.socialLinks.facebook);
+    formData.append("instagram", form.socialLinks.instagram);
+    formData.append("linkedin", form.socialLinks.linkedin);
+    formData.append("website", form.socialLinks.website);
 
-      if (form.companyLogoFile)
-        formData.append("companyLogo", form.companyLogoFile);
-      if (form.brandingMediaFile)
-        formData.append("brandingMedia", form.brandingMediaFile);
-      if (form.poweredByMediaFile)
-        formData.append("poweredByMedia", form.poweredByMediaFile);
+    if (form.companyLogoFile)
+      formData.append("companyLogo", form.companyLogoFile);
+    if (form.brandingMediaFile)
+      formData.append("brandingMedia", form.brandingMediaFile);
+    if (form.poweredByMediaFile)
+      formData.append("poweredByMedia", form.poweredByMediaFile);
 
-      const updated = config
-        ? await updateGlobalConfig(formData)
-        : await createGlobalConfig(formData);
+    const updated = config
+      ? await updateGlobalConfig(formData)
+      : await createGlobalConfig(formData);
 
+    if (!updated.error) {
       setConfig(updated);
       refetchConfig();
-      showMessage(
-        config
-          ? t.configUpdated || "Configuration updated"
-          : t.configCreated || "Configuration created",
-        "success"
-      );
-      setOpenEdit(false);
-    } catch (err) {
-      console.error(err);
-      showMessage(
-        err?.response?.data?.message ||
-          err?.response?.data?.error ||
-          t.saveFailed ||
-          "Save failed. Please try again.",
-        "error"
-      );
-    } finally {
-      setLoading(false);
     }
+    setOpenEdit(false);
+    setLoading(false);
   };
 
   return (
@@ -328,16 +307,19 @@ export default function GlobalConfigPage() {
               variant="outlined"
               color="error"
               startIcon={<DeleteIcon />}
+              sx={getStartIconSpacing(dir)}
               onClick={() => setConfirmDeleteOpen(true)}
-              fullWidth={true}
+              fullWidth
             >
               {t.delete}
             </Button>
+
             <Button
               variant="contained"
               startIcon={<EditIcon />}
+              sx={getStartIconSpacing(dir)}
               onClick={() => setOpenEdit(true)}
-              fullWidth={true}
+              fullWidth
             >
               {t.edit}
             </Button>
@@ -668,7 +650,12 @@ export default function GlobalConfigPage() {
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button disabled={loading} onClick={() => setOpenEdit(false)}>
+          <Button
+            disabled={loading}
+            startIcon={<ICONS.cancel />}
+            onClick={() => setOpenEdit(false)}
+            sx={getStartIconSpacing(dir)}
+          >
             {t.cancel}
           </Button>
           <Button
@@ -676,8 +663,13 @@ export default function GlobalConfigPage() {
             onClick={handleSave}
             disabled={loading}
             startIcon={
-              loading ? <CircularProgress size={18} color="inherit" /> : null
+              loading ? (
+                <CircularProgress size={18} color="inherit" />
+              ) : (
+                <ICONS.save />
+              )
             }
+            sx={getStartIconSpacing(dir)}
           >
             {loading
               ? config

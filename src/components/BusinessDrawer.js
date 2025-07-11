@@ -8,9 +8,9 @@ import {
   Drawer,
   Stack,
 } from "@mui/material";
-import BusinessIcon from "@mui/icons-material/Business";
-import CloseIcon from "@mui/icons-material/Close";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import ICONS from "@/utils/iconUtil";
+import getStartIconSpacing from "@/utils/getStartIconSpacing";
 
 export default function BusinessDrawer({
   open,
@@ -58,7 +58,7 @@ export default function BusinessDrawer({
               "&:hover": { bgcolor: "grey.200" },
             }}
           >
-            <CloseIcon />
+            <ICONS.close />
           </IconButton>
         </Box>
 
@@ -76,6 +76,7 @@ export default function BusinessDrawer({
               }
               fullWidth
               sx={{
+                ...getStartIconSpacing(dir),
                 mb: 1.5,
                 justifyContent: "flex-start",
                 borderRadius: 3,
@@ -85,14 +86,14 @@ export default function BusinessDrawer({
                     : "none",
                 transition: "all 0.2s ease-in-out",
               }}
-              startIcon={<BusinessIcon />}
+              startIcon={<ICONS.business />}
             >
               {business.name}
             </Button>
           ))
         ) : (
           <Stack alignItems="center" spacing={2} sx={{ mt: 6 }}>
-            <BusinessIcon sx={{ fontSize: 48, color: "grey.400" }} />
+            <ICONS.business sx={{ fontSize: 48, color: "grey.400" }} />
             <Typography variant="body2" color="text.secondary" align={align}>
               {noDataText}
             </Typography>

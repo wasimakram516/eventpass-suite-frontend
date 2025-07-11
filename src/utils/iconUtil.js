@@ -1,67 +1,97 @@
-import AddIcon from "@mui/icons-material/Add";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
-import ShareIcon from "@mui/icons-material/Share";
-import CloseIcon from "@mui/icons-material/Close";
-import CheckIcon from "@mui/icons-material/Check";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
-import SaveIcon from "@mui/icons-material/Save";
-import VisibilityIcon from "@mui/icons-material/Visibility";
-import VisibilityOffIcon from "@mui/icons-material/VisibilityOff";
-import SearchIcon from "@mui/icons-material/Search";
-import InfoIcon from "@mui/icons-material/Info";
-import WarningIcon from "@mui/icons-material/Warning";
-import LogoutIcon from "@mui/icons-material/Logout";
-import LoginIcon from "@mui/icons-material/Login";
-import RegisterIcon from "@mui/icons-material/PersonAdd";
-import FileDownloadIcon from "@mui/icons-material/FileDownload";
-import FileUploadIcon from "@mui/icons-material/FileUpload";
-import LocationIcon from "@mui/icons-material/LocationOn";
-import EventIcon from "@mui/icons-material/Event";
-import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import TableRestaurantIcon from "@mui/icons-material/TableRestaurant";
-import AppRegistrationIcon from "@mui/icons-material/AppRegistration";
-import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
-import QrCodeScannerIcon from "@mui/icons-material/QrCodeScanner"; 
-import BusinessIcon from "@mui/icons-material/Business";
-import PersonIcon from "@mui/icons-material/Person";
-import ReplayIcon from "@mui/icons-material/Replay";
+import {
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Share as ShareIcon,
+  Close as CloseIcon,
+  Cancel as CancelIcon,
+  Check as CheckIcon,
+  Save as SaveIcon,
+  ArrowBack as ArrowBackIcon,
+  ArrowForward as ArrowForwardIcon,
+  Visibility as VisibilityIcon,
+  VisibilityOff as VisibilityOffIcon,
+  Search as SearchIcon,
+  Info as InfoIcon,
+  Warning as WarningIcon,
+  ErrorOutline as ErrorOutlineIcon,
+  CheckCircle as CheckCircleIcon,
+  CheckCircleOutline as CheckCircleOutlineIcon,
+  Replay as ReplayIcon,
+  Leaderboard as LeaderboardIcon,
+} from "@mui/icons-material";
+
+import {
+  Logout as LogoutIcon,
+  Login as LoginIcon,
+  PersonAdd as RegisterIcon,
+} from "@mui/icons-material";
+
+import {
+  FileDownload as FileDownloadIcon,
+  FileUpload as FileUploadIcon,
+} from "@mui/icons-material";
+
+import {
+  LocationOn as LocationIcon,
+  Event as EventIcon,
+  AccessTime as AccessTimeIcon,
+  TableRestaurant as TableRestaurantIcon,
+  AppRegistration as AppRegistrationIcon,
+  QrCodeScanner as QrCodeScannerIcon,
+  Business as BusinessIcon,
+  Person as PersonIcon,
+  Quiz as QuizIcon,
+} from "@mui/icons-material";
 
 const ICONS = {
+  // General Actions
   add: AddIcon,
+  create: AddIcon,
   edit: EditIcon,
   delete: DeleteIcon,
   share: ShareIcon,
   close: CloseIcon,
+  cancel: CancelIcon,
   check: CheckIcon,
+  save: SaveIcon,
   back: ArrowBackIcon,
   next: ArrowForwardIcon,
-  save: SaveIcon,
   view: VisibilityIcon,
   hide: VisibilityOffIcon,
   search: SearchIcon,
+  replay: ReplayIcon,
+  results: LeaderboardIcon,
+  leaderboard: LeaderboardIcon,
+
+  // Auth
+  login: LoginIcon,
+  logout: LogoutIcon,
+  register: RegisterIcon,
+
+  // File Actions
+  download: FileDownloadIcon,
+  upload: FileUploadIcon,
+
+  // Info & Status
   info: InfoIcon,
   warning: WarningIcon,
-  logout: LogoutIcon,
-  login: LoginIcon,
-  register: RegisterIcon,
-  download: FileDownloadIcon,
-  Upload: FileUploadIcon,
+  errorOutline: ErrorOutlineIcon,
+  checkCircle: CheckCircleIcon,
+  checkCircleOutline: CheckCircleOutlineIcon,
+
+  // Time & Location
   location: LocationIcon,
   event: EventIcon,
   time: AccessTimeIcon,
   diningTable: TableRestaurantIcon,
+
+  // Domain-specific
   appRegister: AppRegistrationIcon,
-  checkCircle: CheckCircleIcon,
-  checkCircleOutline: CheckCircleOutlineIcon,
-  errorOutline: ErrorOutlineIcon,
   qrCodeScanner: QrCodeScannerIcon,
   business: BusinessIcon,
   person: PersonIcon,
-  replay: ReplayIcon,
+  quiz: QuizIcon,
 };
 
 export default ICONS;

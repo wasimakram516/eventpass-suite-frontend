@@ -1,5 +1,6 @@
-import QuizIcon from "@mui/icons-material/Quiz";
+
 import ModuleLandingPage from "@/components/ModuleLandingPage";
+import ICONS from "@/utils/iconUtil";
 
 const translations = {
   en: {
@@ -27,7 +28,7 @@ const translations = {
 export default function QuizNestHome() {
   return (
     <ModuleLandingPage
-      moduleIcon={QuizIcon}
+      moduleIcon={ICONS.quiz}
       ctaLabel={translations.en.ctaLabel}
       ctaHref="/cms/modules/quiznest/games"
       translations={translations}

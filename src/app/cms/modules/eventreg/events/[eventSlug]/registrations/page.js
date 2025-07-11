@@ -18,7 +18,10 @@ import {
   Divider,
   Container,
   Stack,
+  CardActions,
+  Tooltip,
 } from "@mui/material";
+
 import {
   getRegistrationsByEvent,
   deleteRegistration,
@@ -30,6 +33,9 @@ import BreadcrumbsNav from "@/components/BreadcrumbsNav";
 import { formatDate } from "@/utils/dateUtils";
 import { useParams } from "next/navigation";
 import ICONS from "@/utils/iconUtil";
+import WalkInModal from "@/components/WalkInModal";
+import useI18nLayout from "@/hooks/useI18nLayout";
+import getStartIconSpacing from "@/utils/getStartIconSpacing";
 
 const ViewRegistrations = () => {
   const { eventSlug } = useParams();
@@ -41,40 +47,81 @@ const ViewRegistrations = () => {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [totalRegistrations, setTotalRegistrations] = useState(0);
-  const [isPublicEvent, setIsPublicEvent] = useState(false);
+  const [walkInModalOpen, setWalkInModalOpen] = useState(false);
+  const [selectedRegistration, setSelectedRegistration] = useState(null);
+
+  const { dir, align, isArabic, t } = useI18nLayout({
+    en: {
+      title: "Event Details",
+      description:
+        "View event details and manage registrations for this event. Export registration data or delete entries as needed.",
+      export: "Export to CSV",
+      records: "records",
+      noRecords: "No registrations found for this event.",
+      delete: "Delete Registration",
+      deleteMessage: "Are you sure you want to delete this registration?",
+      email: "Email:",
+      phone: "Phone:",
+      company: "Company:",
+      viewWalkIns: "View Walk-in Records",
+      deleteRecord: "Delete Registration",
+      recordsPerPage: "Records per page",
+      showing: "Showing",
+      to: "to",
+      of: "of",
+    },
+    ar: {
+      title: "تفاصيل الحدث",
+      description:
+        "اعرض تفاصيل الحدث وقم بإدارة التسجيلات. يمكنك تصدير البيانات أو حذف السجلات.",
+      export: "تصدير إلى CSV",
+      records: "سجلات",
+      noRecords: "لا توجد تسجيلات لهذا الحدث.",
+      delete: "حذف التسجيل",
+      deleteMessage: "هل أنت متأكد أنك تريد حذف هذا التسجيل؟",
+      email: "البريد الإلكتروني:",
+      phone: "الهاتف:",
+      company: "الشركة:",
+      viewWalkIns: "عرض سجلات الحضور",
+      deleteRecord: "حذف التسجيل",
+      recordsPerPage: "عدد السجلات لكل صفحة",
+      showing: "عرض",
+      to: "إلى",
+      of: "من",
+    },
+  });
 
   useEffect(() => {
-  const fetchData = async () => {
-    setLoading(true);
+    const fetchData = async () => {
+      setLoading(true);
 
-    const [eventResponse, registrationResponse] = await Promise.all([
-      getPublicEventBySlug(eventSlug),
-      getRegistrationsByEvent(eventSlug, page, limit),
-    ]);
+      const [eventResponse, registrationResponse] = await Promise.all([
+        getPublicEventBySlug(eventSlug),
+        getRegistrationsByEvent(eventSlug, page, limit),
+      ]);
 
-    // Handle event data
-    if (!eventResponse?.error) {
-      setEventDetails(eventResponse);
-      setIsPublicEvent(eventResponse.eventType === "public");
+      // Handle event data
+      if (!eventResponse?.error) {
+        setEventDetails(eventResponse);
+      }
+
+      // Handle registration data
+      if (!registrationResponse?.error) {
+        setRegistrations(registrationResponse.data || []);
+        setTotalRegistrations(
+          registrationResponse.pagination?.totalRegistrations || 0
+        );
+      }
+
+      setLoading(false);
+    };
+
+    if (eventSlug) {
+      fetchData();
+    } else {
+      setLoading(false);
     }
-
-    // Handle registration data
-    if (!registrationResponse?.error) {
-      setRegistrations(registrationResponse.data || []);
-      setTotalRegistrations(
-        registrationResponse.pagination?.totalRegistrations || 0
-      );
-    }
-
-    setLoading(false);
-  };
-
-  if (eventSlug) {
-    fetchData();
-  } else {
-    setLoading(false);
-  }
-}, [eventSlug, page, limit]);
+  }, [eventSlug, page, limit]);
 
   const handleDelete = async () => {
     const result = await deleteRegistration(registrationToDelete);
@@ -99,28 +146,12 @@ const ViewRegistrations = () => {
   const exportToCSV = () => {
     if (!eventDetails) return;
 
-    const csvHeaders = isPublicEvent
-      ? ["Name", "Email", "Phone", "Company"]
-      : ["Employee ID", "Employee Name", "Table Number", "Table Image URL"];
+    const csvHeaders = ["Name", "Email", "Phone", "Company"];
+    const csvContent = [];
 
-    const csvRows = registrations.map((reg) =>
-      isPublicEvent
-        ? [
-            reg.employeeName || "N/A",
-            reg.email || "N/A",
-            reg.phone || "N/A",
-            reg.company || "N/A",
-          ]
-        : [
-            reg.employeeId || "N/A",
-            reg.employeeName || "N/A",
-            reg.tableNumber || "N/A",
-            reg.tableImage || "N/A",
-          ]
-    );
-
+    // Event metadata
     const eventMetadata = [
-      ["Event Short Name:", eventDetails.slug || "N/A"],
+      ["Event Slug:", eventDetails.slug || "N/A"],
       ["Event Name:", eventDetails.name || "N/A"],
       ["Event Date:", formatDate(eventDetails.date || "N/A")],
       ["Venue:", eventDetails.venue || "N/A"],
@@ -129,14 +160,41 @@ const ViewRegistrations = () => {
       ["Event Type:", eventDetails.eventType || "N/A"],
       [],
     ];
+    eventMetadata.forEach((row) => csvContent.push(row.join(",")));
 
-    const csvContent = [
-      ...eventMetadata.map((row) => row.join(",")),
-      csvHeaders.join(","),
-      ...csvRows.map((row) => row.join(",")),
-    ].join("\n");
+    // Main headers
+    csvContent.push(csvHeaders.join(","));
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    registrations.forEach((reg, index) => {
+      const mainRow = [
+        reg.fullName || "N/A",
+        reg.email || "N/A",
+        reg.phone || "N/A",
+        reg.company || "N/A",
+      ];
+      csvContent.push(mainRow.join(","));
+
+      if (Array.isArray(reg.walkIns) && reg.walkIns.length > 0) {
+        csvContent.push(
+          `Walk-in Records for ${reg.fullName || `#${index + 1}`}:`
+        );
+        csvContent.push("Scanned At,Scanned By");
+
+        reg.walkIns.forEach((walkin) => {
+          const scannedAt = new Date(walkin.scannedAt).toLocaleString();
+          const scannedBy =
+            walkin.scannedBy?.name || walkin.scannedBy?.email || "Unknown";
+          csvContent.push(`${scannedAt},${scannedBy}`);
+        });
+
+        csvContent.push(""); // blank line after walk-ins
+      }
+    });
+
+    const blob = new Blob([csvContent.join("\n")], {
+      type: "text/csv;charset=utf-8;",
+    });
+
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
     link.download = `${eventDetails.name || "event"}_registrations.csv`;
@@ -159,7 +217,7 @@ const ViewRegistrations = () => {
   }
 
   return (
-    <Container maxWidth="lg">
+    <Container dir={dir} maxWidth="lg">
       <BreadcrumbsNav />
       <Stack
         direction={{ xs: "column", sm: "row" }}
@@ -170,11 +228,10 @@ const ViewRegistrations = () => {
       >
         <Box flex={1}>
           <Typography variant="h4" fontWeight="bold">
-            Event Details
+            {t.title}
           </Typography>
           <Typography variant="body1" sx={{ color: "text.secondary" }}>
-            View event details and manage registrations for this event. Export
-            registration data or delete entries as needed.
+            {t.description}
           </Typography>
         </Box>
 
@@ -185,8 +242,9 @@ const ViewRegistrations = () => {
               onClick={exportToCSV}
               color="primary"
               startIcon={<ICONS.download fontSize="small" />}
+              sx={getStartIconSpacing}
             >
-              Export to CSV
+              {t.export}
             </Button>
           )}
         </Box>
@@ -204,7 +262,9 @@ const ViewRegistrations = () => {
         }}
       >
         <Typography variant="body1">
-          Showing {Math.min((page - 1) * limit + 1, totalRegistrations)}–{Math.min(page * limit, totalRegistrations)} of {totalRegistrations} records
+          {t.showing} {Math.min((page - 1) * limit + 1, totalRegistrations)}–
+          {Math.min(page * limit, totalRegistrations)} {t.of}{" "}
+          {totalRegistrations} {t.records}
         </Typography>
         <FormControl size="small" sx={{ minWidth: 150, ml: 2 }}>
           <InputLabel id="limit-select-label">Records per page</InputLabel>
@@ -225,14 +285,9 @@ const ViewRegistrations = () => {
 
       {registrations.length === 0 ? (
         <Typography
-          sx={{
-            mt: 2,
-            fontSize: "1.2rem",
-            color: "text.secondary",
-            textAlign: "center",
-          }}
+          sx={{ textAlign: "center", color: "text.secondary", mt: 2 }}
         >
-          No registrations found for this event.
+          {t.noRecords}
         </Typography>
       ) : (
         <>
@@ -247,68 +302,63 @@ const ViewRegistrations = () => {
                     position: "relative",
                   }}
                 >
-                  <IconButton
-                    color="error"
-                    sx={{
-                      position: "absolute",
-                      top: "10px",
-                      right: "10px",
-                    }}
-                    onClick={() => {
-                      setRegistrationToDelete(registration._id);
-                      setDeleteDialogOpen(true);
-                    }}
-                  >
-                    <ICONS.delete fontSize="small" />
-                  </IconButton>
                   <CardContent>
-                    {isPublicEvent ? (
-                      <>
-                        <Typography variant="h6" gutterBottom>
-                          {registration.fullName}
-                        </Typography>
-                        <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
-                          <strong>Email:</strong> {registration.email}
-                        </Typography>
-                        <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
-                          <strong>Phone:</strong> {registration.phone}
-                        </Typography>
-                        <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
-                          <strong>Company:</strong> {registration.company || "N/A"}
-                        </Typography>
-                      </>
-                    ) : (
-                      <>
-                        <Typography variant="h6" gutterBottom>
-                          {registration.employeeName}
-                        </Typography>
-                        {registration.employeeId && (
-                          <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
-                            <strong>Employee ID:</strong> {registration.employeeId}
-                          </Typography>
-                        )}
-                        {registration.tableNumber && (
-                          <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
-                            <strong>Table Number:</strong> {registration.tableNumber}
-                          </Typography>
-                        )}
-                        {registration.tableImage && (
-                          <Box sx={{ mt: 2, display: "flex", justifyContent: "center" }}>
-                            <img
-                              src={registration.tableImage}
-                              alt="Table"
-                              style={{
-                                maxWidth: "250px",
-                                height: "auto",
-                                objectFit: "contain",
-                                borderRadius: "8px",
-                              }}
-                            />
-                          </Box>
-                        )}
-                      </>
-                    )}
+                    <Typography variant="h6" gutterBottom>
+                      {registration.fullName}
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      color="textSecondary"
+                      sx={{ mt: 1 }}
+                    >
+                      <strong>{t.email}</strong> {registration.email}
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      color="textSecondary"
+                      sx={{ mt: 1 }}
+                    >
+                      <strong>{t.phone}</strong> {registration.phone}
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      color="textSecondary"
+                      sx={{ mt: 1 }}
+                    >
+                      <strong>{t.company}</strong>{" "}
+                      {registration.company || "N/A"}
+                    </Typography>
                   </CardContent>
+                  <CardActions sx={{ justifyContent: "flex-end", px: 2 }}>
+                    <Tooltip
+                      title={t.viewWalkIns}
+                      placement={isArabic ? "left" : "right"}
+                    >
+                      <IconButton
+                        color="info"
+                        onClick={() => {
+                          setSelectedRegistration(registration);
+                          setWalkInModalOpen(true);
+                        }}
+                      >
+                        <ICONS.view fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip
+                      title={t.deleteRecord}
+                      placement={isArabic ? "left" : "right"}
+                    >
+                      <IconButton
+                        color="error"
+                        onClick={() => {
+                          setRegistrationToDelete(registration._id);
+                          setDeleteDialogOpen(true);
+                        }}
+                      >
+                        <ICONS.delete fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </CardActions>
                 </Card>
               </Grid>
             ))}
@@ -331,6 +381,12 @@ const ViewRegistrations = () => {
         onConfirm={handleDelete}
         title="Delete Registration"
         message="Are you sure you want to delete this registration?"
+      />
+
+      <WalkInModal
+        open={walkInModalOpen}
+        onClose={() => setWalkInModalOpen(false)}
+        registration={selectedRegistration}
       />
     </Container>
   );

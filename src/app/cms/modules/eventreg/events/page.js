@@ -239,7 +239,19 @@ export default function EventsPage() {
         </Box>
 
         {!selectedBusiness ? (
-          <Typography sx={{ mt: 4 }}>{t.selectBusiness}</Typography>
+          <Box
+            sx={{
+              mt: 8,
+              textAlign: "center",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              color: "text.secondary",
+            }}
+          >
+            <ICONS.business sx={{ fontSize: 72, mb: 2 }} />
+            <Typography variant="h6">{t.selectBusiness}</Typography>
+          </Box>
         ) : loading ? (
           <Box sx={{ textAlign: "center", mt: 8 }}>
             <CircularProgress />

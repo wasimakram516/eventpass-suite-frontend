@@ -12,14 +12,6 @@ import {
   IconButton,
   Divider,
 } from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
-import QuizIcon from "@mui/icons-material/Quiz";
-import LeaderboardIcon from "@mui/icons-material/Leaderboard";
-import ShareIcon from "@mui/icons-material/Share";
-import BusinessIcon from "@mui/icons-material/Business";
-import ShareGameModal from "@/components/ShareGameModal";
 import GameFormModal from "@/components/GameFormModal";
 import ConfirmationDialog from "@/components/ConfirmationDialog";
 import BreadcrumbsNav from "@/components/BreadcrumbsNav";
@@ -35,6 +27,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { getAllBusinesses } from "@/services/businessService";
 import BusinessDrawer from "@/components/BusinessDrawer";
+import ShareLinkModal from "@/components/ShareLinkModal";
+import ICONS from "@/utils/iconUtil";
+import getStartIconSpacing from "@/utils/getStartIconSpacing";
 
 const translations = {
   en: {
@@ -114,11 +109,15 @@ export default function GamesPage() {
   const [gameToShare, setGameToShare] = useState(null);
   const [allBusinesses, setAllBusinesses] = useState([]);
 
-  // Fetch all businesses on mount
   useEffect(() => {
-    getAllBusinesses()
-      .then((businesses) => setAllBusinesses(businesses || []))
-      .catch(() => setAllBusinesses([]));
+    const fetchBusinesses = async () => {
+      const businesses = await getAllBusinesses();
+      if (!businesses.error) {
+        setAllBusinesses(businesses ?? []);
+      }
+    };
+
+    fetchBusinesses();
   }, []);
 
   useEffect(() => {
@@ -133,15 +132,18 @@ export default function GamesPage() {
       setGames([]);
       return;
     }
+
     setLoading(true);
-    getGamesByBusiness(selectedBusiness)
-      .then((gamesData) => setGames(gamesData || []))
-      .catch(() => {
+    getGamesByBusiness(selectedBusiness).then((res) => {
+      if (!res.error) {
+        setGames(res || []);
+      } else {
         setGames([]);
-        showMessage(t.errorLoading, "error");
-      })
-      .finally(() => setLoading(false));
-  }, [selectedBusiness, t, showMessage]);
+      }
+      setLoading(false);
+    });
+  }, [selectedBusiness]);
+
   // UPDATED: Business selection handler
   const handleBusinessSelect = (slug) => {
     setSelectedBusiness(slug);
@@ -162,38 +164,32 @@ export default function GamesPage() {
   };
 
   const handleSubmitGame = async (formData, isEdit) => {
-    try {
-      let response;
+    const response = isEdit
+      ? await updateGame(selectedGame._id, formData)
+      : await createGame(selectedBusiness, formData);
+
+    if (!response.error) {
       if (isEdit) {
-        response = await updateGame(selectedGame._id, formData);
         setGames((prev) =>
           prev.map((g) => (g._id === selectedGame._id ? response : g))
         );
-        showMessage(t.gameUpdated, "success");
       } else {
-        response = await createGame(selectedBusiness, formData);
         setGames((prev) => [...prev, response]);
-        showMessage(t.gameCreated, "success");
       }
-    } catch (err) {
-      showMessage(err?.message || t.errorLoading, "error");
+      setOpenModal(false);
     }
-    setOpenModal(false);
   };
 
-  // UPDATED: Delete Game using API
   const handleDeleteGame = async () => {
-    try {
-      await deleteGame(gameToDelete._id);
+    const res = await deleteGame(gameToDelete._id);
+
+    if (!res.error) {
       setGames((prev) => prev.filter((g) => g._id !== gameToDelete._id));
-      showMessage(t.gameDeleted, "success");
-    } catch (err) {
-      showMessage(err?.message || t.errorLoading, "error");
     }
     setConfirmOpen(false);
     setGameToDelete(null);
   };
-  console.log(selectedBusiness);
+
   return (
     <Box
       dir={dir}
@@ -210,7 +206,7 @@ export default function GamesPage() {
           noDataText={t.noBusinesses}
         />
       )}
-      
+
       <Container maxWidth="lg">
         <Box sx={{ mb: 4 }}>
           <Box
@@ -249,8 +245,8 @@ export default function GamesPage() {
                 <Button
                   variant="outlined"
                   onClick={() => setDrawerOpen(true)}
-                  sx={{ mr: 1 }}
-                  startIcon={<BusinessIcon />}
+                  startIcon={<ICONS.business />}
+                  sx={{ ...getStartIconSpacing(dir), mr: 1 }}
                 >
                   {t.selectBusiness || "Select Business"}
                 </Button>
@@ -258,8 +254,9 @@ export default function GamesPage() {
               {selectedBusiness && (
                 <Button
                   variant="contained"
-                  startIcon={<AddIcon />}
+                  startIcon={<ICONS.add />}
                   onClick={handleOpenCreate}
+                  sx={getStartIconSpacing(dir)}
                 >
                   {t.createGameButton}
                 </Button>
@@ -271,7 +268,19 @@ export default function GamesPage() {
         </Box>
 
         {!selectedBusiness ? (
-          <Typography sx={{ mt: 4 }}>{t.selectBusiness}</Typography>
+          <Box
+            sx={{
+              mt: 8,
+              textAlign: "center",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              color: "text.secondary",
+            }}
+          >
+            <ICONS.business sx={{ fontSize: 72, mb: 2 }} />
+            <Typography variant="h6">{t.selectBusiness}</Typography>
+          </Box>
         ) : loading ? (
           <Box sx={{ textAlign: "center", mt: 8 }}>
             <CircularProgress />
@@ -353,12 +362,13 @@ export default function GamesPage() {
                       size="small"
                       variant="outlined"
                       color="primary"
-                      startIcon={<QuizIcon />}
+                      startIcon={<ICONS.quiz />}
                       onClick={() =>
                         router.push(
                           `/cms/modules/quiznest/games/${g.slug}/questions`
                         )
                       }
+                      sx={getStartIconSpacing(dir)}
                     >
                       {t.questionsButton}
                     </Button>
@@ -367,12 +377,13 @@ export default function GamesPage() {
                       size="small"
                       variant="outlined"
                       color="primary"
-                      startIcon={<LeaderboardIcon />}
+                      startIcon={<ICONS.leaderboard />}
                       onClick={() =>
                         router.push(
                           `/cms/modules/quiznest/games/${g.slug}/results`
                         )
                       }
+                      sx={getStartIconSpacing(dir)}
                     >
                       {t.resultsButton}
                     </Button>
@@ -382,7 +393,7 @@ export default function GamesPage() {
                         color="info"
                         onClick={() => handleOpenEdit(g)}
                       >
-                        <EditIcon fontSize="small" />
+                        <ICONS.edit fontSize="small" />
                       </IconButton>
                       <IconButton
                         color="error"
@@ -391,7 +402,7 @@ export default function GamesPage() {
                           setConfirmOpen(true);
                         }}
                       >
-                        <DeleteIcon fontSize="small" />
+                        <ICONS.delete fontSize="small" />
                       </IconButton>
                       <IconButton
                         color="primary"
@@ -400,7 +411,7 @@ export default function GamesPage() {
                           setShareModalOpen(true);
                         }}
                       >
-                        <ShareIcon fontSize="small" />
+                        <ICONS.share fontSize="small" />
                       </IconButton>
                     </Box>
                   </Box>
@@ -410,10 +421,12 @@ export default function GamesPage() {
           </Grid>
         )}
 
-        <ShareGameModal
+        <ShareLinkModal
           open={shareModalOpen}
           onClose={() => setShareModalOpen(false)}
-          gameSlug={gameToShare?.slug}
+          url={`${
+            typeof window !== "undefined" ? window.location.origin : ""
+          }/quiznest/game/${gameToShare?.slug}`}
         />
 
         <GameFormModal

@@ -21,6 +21,8 @@ import { useRef } from "react";
 import { useMessage } from "@/contexts/MessageContext";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import slugify from "@/utils/slugify";
+import ICONS from "@/utils/iconUtil";
+import getStartIconSpacing from "@/utils/getStartIconSpacing";
 
 const translations = {
   en: {
@@ -156,8 +158,9 @@ export default function ShareLinkModal({
           <QRCodeCanvas value={url} size={180} />
           <Button
             variant="contained"
-            startIcon={<FileDownloadIcon />}
+            startIcon={<ICONS.download />}
             onClick={handleDownloadQRCode}
+            sx={getStartIconSpacing(dir)}
           >
             {t.downloadQR}
           </Button>

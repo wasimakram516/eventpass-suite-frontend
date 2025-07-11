@@ -24,8 +24,6 @@ import {
 } from "@mui/material";
 
 import { useEffect, useState } from "react";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
 import BreadcrumbsNav from "@/components/BreadcrumbsNav";
 import ConfirmationDialog from "@/components/ConfirmationDialog";
 import {
@@ -39,6 +37,7 @@ import { getModules } from "@/services/moduleService";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import ICONS from "@/utils/iconUtil";
+import getStartIconSpacing from "@/utils/getStartIconSpacing";
 
 const translations = {
   en: {
@@ -52,6 +51,9 @@ const translations = {
     permissions: "Module Permissions",
     cancel: "Cancel",
     save: "Save",
+    creating: "Creating...",
+    creatingUser: "Creating user...",
+    saving: "Saving...",
     deleteConfirm: "Confirm Deletion",
     deleteMessagePrefix: "Are you sure you want to delete",
     role: "Role",
@@ -69,6 +71,9 @@ const translations = {
     permissions: "صلاحيات الوحدات",
     cancel: "إلغاء",
     save: "حفظ",
+    creating: "جاري الإنشاء...",
+    creatingUser: "جاري إنشاء المستخدم...",
+    saving: "جاري الحفظ...",
     deleteConfirm: "تأكيد الحذف",
     deleteMessagePrefix: "هل أنت متأكد أنك تريد حذف",
     role: "الدور",
@@ -81,10 +86,8 @@ export default function UsersPage() {
   const { user: currentUser } = useAuth();
   const isBusinessUser = currentUser?.role === "business";
 
-  // State for available modules (for admin) and business user modules
   const [availableModules, setAvailableModules] = useState([]);
   const [businessUserModules, setBusinessUserModules] = useState([]);
-
   const { dir, align, language, t } = useI18nLayout(translations);
 
   const [users, setUsers] = useState([]);
@@ -98,6 +101,7 @@ export default function UsersPage() {
     password: "",
     modulePermissions: [],
   });
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -105,29 +109,21 @@ export default function UsersPage() {
   }, []);
 
   const fetchUsers = async () => {
-    if (isBusinessUser && currentUser?.business?._id) {
-      const data = await getAllStaffUsers(currentUser.business._id);
-      setUsers(data || []);
-    } else {
-      const data = await getAllUsers();
-      setUsers(data);
-    }
+    const data =
+      isBusinessUser && currentUser?.business?._id
+        ? await getAllStaffUsers(currentUser.business._id)
+        : await getAllUsers();
+    setUsers(data || []);
   };
 
   const fetchModules = async () => {
-    try {
-      const allModules = await getModules();
-      setAvailableModules(allModules);
-
-      if (isBusinessUser) {
-        // Filter modules to only those the business user has access to
-        const filteredModules = allModules.filter((module) =>
-          currentUser.modulePermissions?.includes(module.key)
-        );
-        setBusinessUserModules(filteredModules);
-      }
-    } catch (error) {
-      console.error("Failed to fetch modules:", error);
+    const allModules = await getModules();
+    setAvailableModules(allModules);
+    if (isBusinessUser) {
+      const filteredModules = allModules.filter((module) =>
+        currentUser.modulePermissions?.includes(module.key)
+      );
+      setBusinessUserModules(filteredModules);
     }
   };
 
@@ -164,27 +160,35 @@ export default function UsersPage() {
   };
 
   const handleModalSave = async () => {
+    setLoading(true);
+    let res = null;
     if (isEditMode) {
       const payload = { ...form };
       if (!form.password) delete payload.password;
-      await updateUser(selectedUser._id, payload);
+      res = await updateUser(selectedUser._id, payload);
     } else {
-      await createStaffUser(
+      res = await createStaffUser(
         form.name,
         form.email,
         form.password,
-        "staff", // Default role for staff users
+        "staff",
         currentUser.business._id
       );
     }
+    if (!res.error) {
+      await fetchUsers();
+    }
 
-    await fetchUsers();
     setModalOpen(false);
+
+    setLoading(false);
   };
 
   const handleDelete = async () => {
-    await deleteUser(selectedUser._id);
-    await fetchUsers();
+    const res = await deleteUser(selectedUser._id);
+    if (!res.error) {
+      await fetchUsers();
+    }
     setDeleteConfirm(false);
   };
 
@@ -208,7 +212,6 @@ export default function UsersPage() {
   return (
     <Container dir={dir}>
       <BreadcrumbsNav />
-
       <Box
         sx={{
           display: "flex",
@@ -232,10 +235,10 @@ export default function UsersPage() {
             {t.subtitle}
           </Typography>
         </Box>
-
         {isBusinessUser && (
           <Button
             variant="contained"
+            sx={getStartIconSpacing(dir)}
             startIcon={<ICONS.add />}
             onClick={handleOpenCreate}
           >
@@ -245,7 +248,6 @@ export default function UsersPage() {
       </Box>
       <Divider sx={{ mb: 3 }} />
 
-      {/* User Cards */}
       <Grid container spacing={3}>
         {users?.map((user) => (
           <Grid item xs={12} sm={6} md={4} key={user._id}>
@@ -275,7 +277,7 @@ export default function UsersPage() {
                     color="primary"
                     onClick={() => handleOpenEdit(user)}
                   >
-                    <EditIcon />
+                    <ICONS.edit />
                   </IconButton>
                 </Tooltip>
                 {((currentUser?.role === "admin" &&
@@ -290,7 +292,7 @@ export default function UsersPage() {
                         setDeleteConfirm(true);
                       }}
                     >
-                      <DeleteIcon />
+                      <ICONS.delete />
                     </IconButton>
                   </Tooltip>
                 )}
@@ -306,9 +308,7 @@ export default function UsersPage() {
         fullWidth
         dir={dir}
       >
-        <DialogTitle>
-          {isEditMode ? t.editUser : "Create Staff User"}
-        </DialogTitle>
+        <DialogTitle>{isEditMode ? t.editUser : t.createStaffUser}</DialogTitle>
         <DialogContent>
           <TextField
             label={t.name}
@@ -336,8 +336,9 @@ export default function UsersPage() {
             type="password"
           />
 
-          {selectedUser?.role === "business" ||
-          selectedUser?.role === "staff" ? (
+          {(selectedUser?.role === "business" ||
+            selectedUser?.role === "staff" ||
+            !selectedUser) && (
             <Box sx={{ mt: 3 }}>
               <Typography variant="subtitle1" gutterBottom textAlign={align}>
                 {t.permissions}
@@ -363,17 +364,29 @@ export default function UsersPage() {
                 )}
               </FormGroup>
             </Box>
-          ) : null}
+          )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setModalOpen(false)}>{t.cancel}</Button>
-          <Button variant="contained" onClick={handleModalSave}>
-            {t.save}
+          <Button
+            disabled={loading}
+            startIcon={<ICONS.cancel />}
+            onClick={() => setModalOpen(false)}
+            sx={getStartIconSpacing(dir)}
+          >
+            {t.cancel}
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleModalSave}
+            disabled={loading}
+            startIcon={<ICONS.save />}
+            sx={getStartIconSpacing(dir)}
+          >
+            {loading ? (isEditMode ? t.saving : t.creating) : t.save}
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Delete Confirmation */}
       <ConfirmationDialog
         open={deleteConfirm}
         title={t.deleteConfirm}

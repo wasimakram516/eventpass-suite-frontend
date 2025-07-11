@@ -46,22 +46,37 @@ export default function Navbar() {
       >
         <Toolbar sx={{ justifyContent: "space-between" }}>
           <Link href="/" style={{ textDecoration: "none" }}>
-            <Stack
-              direction="row"
-              alignItems="center"
-              spacing={1}
-              sx={{ cursor: "pointer", width: { xs: 180, sm: "auto" } }}
-            >
-              <Typography
-                variant="h6"
-                fontWeight="bold"
-                color="text.primary"
-                noWrap
-              >
-                {globalConfig?.appName || "EventPass Suite"}
-              </Typography>
-            </Stack>
-          </Link>
+  <Stack
+    direction="row"
+    alignItems="center"
+    spacing={1}
+    sx={{ cursor: "pointer", width: { xs: 180, sm: "auto" } }}
+  >
+    {/* Logo for mobile devices */}
+    <Box
+      component="img"
+      src="/WW.png"
+      alt="Company Logo"
+      sx={{
+        display: { xs: "block", sm: "none" },
+        height: 20,
+        objectFit: "contain",
+      }}
+    />
+
+    {/* App name for tablets and desktops */}
+    <Typography
+      variant="h6"
+      fontWeight="bold"
+      color="text.primary"
+      noWrap
+      sx={{ display: { xs: "none", sm: "block" } }}
+    >
+      {globalConfig?.appName || "EventPass Suite"}
+    </Typography>
+  </Stack>
+</Link>
+
 
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             {!user ? (

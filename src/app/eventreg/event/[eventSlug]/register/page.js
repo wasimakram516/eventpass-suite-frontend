@@ -41,8 +41,7 @@ export default function Registration() {
     setError("");
   };
 
-  const isValidEmail = (email) =>
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
   const handleSubmit = async () => {
     const { fullName, phone, email, company } = formData;
@@ -108,7 +107,9 @@ export default function Registration() {
             justifyContent: "center",
           }}
         >
-          <ICONS.appRegister sx={{ fontSize: 40, color: "primary.main", mr: 2 }} />
+          <ICONS.appRegister
+            sx={{ fontSize: 40, color: "primary.main", mr: 2 }}
+          />
           <Typography variant="h4" fontWeight="bold">
             Register for the Event
           </Typography>
@@ -169,13 +170,21 @@ export default function Registration() {
         </Button>
       </Paper>
 
-      <Dialog open={showDialog} onClose={handleDialogClose} maxWidth="md" fullWidth>
+      <Dialog
+        open={showDialog}
+        onClose={handleDialogClose}
+        maxWidth="md"
+        fullWidth
+      >
         <DialogTitle sx={{ textAlign: "center" }}>
-          <ICONS.checkCircle sx={{ fontSize: 70, color: "#28a745", mb: 2 }} />
-          <Typography variant="h5" fontWeight="bold">
-            Registration Successful!
-          </Typography>
+          <Box display="flex" flexDirection="column" alignItems="center">
+            <ICONS.checkCircle sx={{ fontSize: 70, color: "#28a745", mb: 2 }} />
+            <Typography variant="h5" fontWeight="bold" component="div">
+              Registration Successful!
+            </Typography>
+          </Box>
         </DialogTitle>
+
         <DialogContent sx={{ textAlign: "center" }}>
           <Typography variant="body1" sx={{ mb: 2 }}>
             Thank you for registering. We look forward to seeing you!
