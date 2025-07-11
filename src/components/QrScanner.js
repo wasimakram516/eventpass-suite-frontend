@@ -2,12 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import QrScanner from "qr-scanner";
-import {
-  Box,
-  Typography,
-  CircularProgress,
-  IconButton,
-} from "@mui/material";
+import { Box, Typography, CircularProgress, IconButton } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 
 export default function QRScanner({ onScanSuccess, onError, onCancel }) {
@@ -54,7 +49,8 @@ export default function QRScanner({ onScanSuccess, onError, onCancel }) {
       }
     };
 
-    startScanner();
+    // Start the scanner
+    requestAnimationFrame(startScanner);
 
     return () => {
       isMounted = false;
