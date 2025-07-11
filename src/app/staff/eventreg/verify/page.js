@@ -86,9 +86,15 @@ export default function VerifyPage() {
               setError(err?.toString() || "Camera error. Try again.");
               setShowScanner(false);
             }}
+            onCancel={() => setShowScanner(false)}
           />
+
           <Box textAlign="center" mt={2}>
-            <Button variant="text" color="error" onClick={() => setShowScanner(false)}>
+            <Button
+              variant="text"
+              color="error"
+              onClick={() => setShowScanner(false)}
+            >
               Cancel
             </Button>
           </Box>
@@ -110,11 +116,17 @@ export default function VerifyPage() {
           <Typography variant="h6" color="success.main">
             Registration Verified
           </Typography>
-          <Typography><strong>Name:</strong> {result.fullName}</Typography>
+          <Typography>
+            <strong>Name:</strong> {result.fullName}
+          </Typography>
           {result.company && (
-            <Typography><strong>Company:</strong> {result.company}</Typography>
+            <Typography>
+              <strong>Company:</strong> {result.company}
+            </Typography>
           )}
-          <Typography><strong>Event:</strong> {result.eventName}</Typography>
+          <Typography>
+            <strong>Event:</strong> {result.eventName}
+          </Typography>
           <Typography>
             <strong>Registered At:</strong>{" "}
             {new Date(result.createdAt).toLocaleString()}

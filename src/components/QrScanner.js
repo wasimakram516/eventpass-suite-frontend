@@ -2,15 +2,23 @@
 
 import { useEffect, useRef, useState } from "react";
 import QrScanner from "qr-scanner";
-import { Box, Typography, CircularProgress, IconButton } from "@mui/material";
+import {
+  Box,
+  Typography,
+  CircularProgress,
+  IconButton,
+} from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 
 export default function QRScanner({ onScanSuccess, onError, onCancel }) {
   const videoRef = useRef(null);
   const scannerRef = useRef(null);
   const [loading, setLoading] = useState(true);
+  const [ready, setReady] = useState(false); // ✅ Ensures video is rendered
 
   useEffect(() => {
+    if (!ready) return;
+
     let isMounted = true;
 
     const startScanner = async () => {
@@ -49,14 +57,13 @@ export default function QRScanner({ onScanSuccess, onError, onCancel }) {
       }
     };
 
-    // Start the scanner
-    requestAnimationFrame(startScanner);
+    startScanner();
 
     return () => {
       isMounted = false;
       scannerRef.current?.stop();
     };
-  }, [onScanSuccess, onError]);
+  }, [onScanSuccess, onError, ready]);
 
   return (
     <Box
@@ -66,8 +73,8 @@ export default function QRScanner({ onScanSuccess, onError, onCancel }) {
         left: 0,
         width: "100vw",
         height: "100vh",
-        bgcolor: "#000",
-        zIndex: 2000,
+        zIndex: 9999,
+        backgroundColor: "#000",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -80,39 +87,57 @@ export default function QRScanner({ onScanSuccess, onError, onCancel }) {
           position: "absolute",
           top: 16,
           right: 16,
-          zIndex: 2100,
           color: "#fff",
-          backgroundColor: "rgba(0,0,0,0.4)",
-          "&:hover": {
-            backgroundColor: "rgba(0,0,0,0.6)",
-          },
+          backgroundColor: "rgba(0,0,0,0.5)",
         }}
       >
         <CloseIcon />
       </IconButton>
 
-      {/* Loading Spinner */}
-      {loading ? (
-        <Box textAlign="center" color="#fff">
-          <CircularProgress color="inherit" />
-          <Typography mt={2}>Initializing camera...</Typography>
-        </Box>
-      ) : (
-        <Box
-          sx={{
-            position: "relative",
-            width: "100vw",
-            height: "100vh",
+      {/* Main Video View */}
+      <Box
+        sx={{
+          width: "90vmin",
+          height: "90vmin",
+          position: "relative",
+          borderRadius: 2,
+          overflow: "hidden",
+          boxShadow: 5,
+        }}
+      >
+        <video
+          ref={(el) => {
+            videoRef.current = el;
+            if (el && !ready) setReady(true); // ✅ Triggers scanner only after video is rendered
           }}
-        >
-          <video
-            ref={videoRef}
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            display: "block",
+          }}
+        />
+
+        {loading && (
+          <Box
+            sx={{
+              position: "absolute",
+              inset: 0,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              backgroundColor: "rgba(0,0,0,0.6)",
             }}
-          />
+          >
+            <CircularProgress color="inherit" />
+            <Typography ml={2} color="#fff">
+              Initializing camera...
+            </Typography>
+          </Box>
+        )}
+
+        {/* Optional Scanner Frame */}
+        {!loading && (
           <Box
             sx={{
               position: "absolute",
@@ -121,26 +146,12 @@ export default function QRScanner({ onScanSuccess, onError, onCancel }) {
               width: "100%",
               height: "100%",
               border: "2px dashed #00e676",
-              boxSizing: "border-box",
               pointerEvents: "none",
+              boxSizing: "border-box",
             }}
           />
-          <Box
-            sx={{
-              position: "absolute",
-              bottom: 16,
-              left: 0,
-              width: "100%",
-              textAlign: "center",
-              color: "#fff",
-              background: "rgba(0,0,0,0.5)",
-              py: 1,
-            }}
-          >
-            <Typography variant="body2">Scanning for QR code...</Typography>
-          </Box>
-        </Box>
-      )}
+        )}
+      </Box>
     </Box>
   );
 }
