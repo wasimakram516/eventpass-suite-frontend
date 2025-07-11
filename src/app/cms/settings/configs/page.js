@@ -361,7 +361,7 @@ export default function GlobalConfigPage() {
             <ListItemIcon>
               <SettingsIcon />
             </ListItemIcon>
-            <ListItemText primary={t.appName} secondary={config.appName} />
+            <ListItemText primary={t.appName} secondary={config?.appName} />
           </ListItem>
           <Divider />
 
@@ -371,14 +371,14 @@ export default function GlobalConfigPage() {
             <ListItemIcon>
               <EmailIcon />
             </ListItemIcon>
-            <ListItemText secondary={config.contact.email} />
+            <ListItemText secondary={config?.contact?.email} />
           </ListItem>
           <Divider component="li" />
           <ListItem>
             <ListItemIcon>
               <PhoneIcon />
             </ListItemIcon>
-            <ListItemText secondary={config.contact.phone} />
+            <ListItemText secondary={config?.contact?.phone} />
           </ListItem>
           <Divider />
 
@@ -388,32 +388,32 @@ export default function GlobalConfigPage() {
             <ListItemIcon>
               <EmailIcon />
             </ListItemIcon>
-            <ListItemText secondary={config.support.email} />
+            <ListItemText secondary={config?.support?.email} />
           </ListItem>
           <Divider component="li" />
           <ListItem>
             <ListItemIcon>
               <PhoneIcon />
             </ListItemIcon>
-            <ListItemText secondary={config.support.phone} />
+            <ListItemText secondary={config?.support?.phone} />
           </ListItem>
           <Divider />
 
           {/* Powered By */}
           <ListSubheader>{t.poweredBy}</ListSubheader>
           <ListItem>
-            <ListItemText secondary={config.poweredBy.text} />
-            {config.poweredBy.mediaUrl &&
-              (isVideo(config.poweredBy.mediaUrl) ? (
+            <ListItemText secondary={config?.poweredBy?.text || t.none} />
+            {config?.poweredBy?.mediaUrl &&
+              (isVideo(config?.poweredBy?.mediaUrl) ? (
                 <Box
                   component="video"
-                  src={config.poweredBy.mediaUrl}
+                  src={config?.poweredBy?.mediaUrl}
                   controls
                   width={100}
                 />
               ) : (
                 <Avatar
-                  src={config.poweredBy.mediaUrl}
+                  src={config?.poweredBy?.mediaUrl}
                   variant="square"
                   sx={{ width: 80, height: 80 }}
                 />
@@ -424,9 +424,9 @@ export default function GlobalConfigPage() {
           {/* Company Logo */}
           <ListSubheader>{t.companyLogo}</ListSubheader>
           <ListItem>
-            {config.companyLogoUrl ? (
+            {config?.companyLogoUrl ? (
               <Avatar
-                src={config.companyLogoUrl}
+                src={config?.companyLogoUrl}
                 variant="square"
                 sx={{ width: 80, height: 80 }}
               />
@@ -439,51 +439,52 @@ export default function GlobalConfigPage() {
           {/* Branding Media */}
           <ListSubheader>{t.brandingMedia}</ListSubheader>
           <ListItem>
-            {config.brandingMediaUrl ? (
-              isVideo(config.brandingMediaUrl) ? (
+            {config?.brandingMediaUrl ? (
+              isVideo(config?.brandingMediaUrl) ? (
                 <Box
                   component="video"
-                  src={config.brandingMediaUrl}
+                  src={config?.brandingMediaUrl}
                   controls
                   width={100}
                 />
               ) : (
                 <Box
                   component="img"
-                  src={config.brandingMediaUrl}
+                  src={config?.brandingMediaUrl}
                   alt="Branding"
                   width={100}
                 />
               )
             ) : (
-              <Typography color="text.secondary">None</Typography>
+              <Typography color="text.secondary">{t.none}</Typography>
             )}
           </ListItem>
           <Divider />
 
           {/* Social Links */}
           <ListSubheader>{t.socialLinks}</ListSubheader>
-          {[
-            { key: "facebook", icon: <FacebookIcon /> },
-            { key: "instagram", icon: <InstagramIcon /> },
-            { key: "linkedin", icon: <LinkedInIcon /> },
-            { key: "website", icon: <LanguageIcon /> },
-          ].map(({ key, icon }) =>
-            config.socialLinks[key] ? (
-              <Box key={key}>
-                <ListItem>
-                  <ListItemIcon>{icon}</ListItemIcon>
-                  <ListItemText
-                    primary={config.socialLinks[key]}
-                    component="a"
-                    href={config.socialLinks[key]}
-                    target="_blank"
-                  />
-                </ListItem>
-                <Divider component="li" />
-              </Box>
-            ) : null
-          )}
+          {config?.socialLinks &&
+            [
+              { key: "facebook", icon: <FacebookIcon /> },
+              { key: "instagram", icon: <InstagramIcon /> },
+              { key: "linkedin", icon: <LinkedInIcon /> },
+              { key: "website", icon: <LanguageIcon /> },
+            ].map(({ key, icon }) =>
+              config.socialLinks?.[key] ? (
+                <Box key={key}>
+                  <ListItem>
+                    <ListItemIcon>{icon}</ListItemIcon>
+                    <ListItemText
+                      primary={config.socialLinks[key]}
+                      component="a"
+                      href={config.socialLinks[key]}
+                      target="_blank"
+                    />
+                  </ListItem>
+                  <Divider component="li" />
+                </Box>
+              ) : null
+            )}
         </List>
       )}
 

@@ -173,39 +173,43 @@ export default function HomePage() {
       </Stack>
 
       {/* === FOOTER === */}
-      {globalConfig && (
-        <Stack spacing={1} mt={6} direction="column" alignItems="center">
-          {globalConfig?.companyLogoUrl && (
-            <Box
-              component="img"
-              src={globalConfig.companyLogoUrl}
-              alt="Company Logo"
-              sx={{ height: 64, mt: 6, opacity: 0.7 }}
-            />
-          )}
-          {(globalConfig.contact.email || globalConfig.contact.phone) && (
-            <Stack spacing={1} direction="row" alignItems="center">
-              {globalConfig.contact.email && (
-                <Stack direction="row" alignItems="center" spacing={1}>
-                  <EmailIcon fontSize="small" />
-                  <Typography variant="body2">
-                    {globalConfig.contact.email}
-                  </Typography>
-                </Stack>
-              )}
-              {globalConfig.contact.phone && (
-                <Stack direction="row" alignItems="center" spacing={1}>
-                  <PhoneIcon fontSize="small" />
-                  <Typography variant="body2">
-                    {globalConfig.contact.phone}
-                  </Typography>
-                </Stack>
-              )}
-            </Stack>
-          )}
+      <Stack spacing={1} mt={6} direction="column" alignItems="center">
+        {globalConfig?.companyLogoUrl && (
+          <Box
+            component="img"
+            src={globalConfig.companyLogoUrl}
+            alt="Company Logo"
+            sx={{ height: 64, mt: 6, opacity: 0.7 }}
+          />
+        )}
 
+        {(globalConfig?.contact?.email || globalConfig?.contact?.phone) && (
+          <Stack spacing={1} direction="row" alignItems="center">
+            {globalConfig?.contact?.email && (
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <EmailIcon fontSize="small" />
+                <Typography variant="body2">
+                  {globalConfig.contact.email}
+                </Typography>
+              </Stack>
+            )}
+            {globalConfig?.contact?.phone && (
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <PhoneIcon fontSize="small" />
+                <Typography variant="body2">
+                  {globalConfig.contact.phone}
+                </Typography>
+              </Stack>
+            )}
+          </Stack>
+        )}
+
+        {(globalConfig?.socialLinks?.facebook ||
+          globalConfig?.socialLinks?.instagram ||
+          globalConfig?.socialLinks?.linkedin ||
+          globalConfig?.socialLinks?.website) && (
           <Stack direction="row" spacing={2} mt={1}>
-            {globalConfig.socialLinks.facebook && (
+            {globalConfig?.socialLinks?.facebook && (
               <MuiLink
                 href={globalConfig.socialLinks.facebook}
                 target="_blank"
@@ -214,7 +218,7 @@ export default function HomePage() {
                 <FacebookIcon />
               </MuiLink>
             )}
-            {globalConfig.socialLinks.instagram && (
+            {globalConfig?.socialLinks?.instagram && (
               <MuiLink
                 href={globalConfig.socialLinks.instagram}
                 target="_blank"
@@ -223,7 +227,7 @@ export default function HomePage() {
                 <InstagramIcon />
               </MuiLink>
             )}
-            {globalConfig.socialLinks.linkedin && (
+            {globalConfig?.socialLinks?.linkedin && (
               <MuiLink
                 href={globalConfig.socialLinks.linkedin}
                 target="_blank"
@@ -232,7 +236,7 @@ export default function HomePage() {
                 <LinkedInIcon />
               </MuiLink>
             )}
-            {globalConfig.socialLinks.website && (
+            {globalConfig?.socialLinks?.website && (
               <MuiLink
                 href={globalConfig.socialLinks.website}
                 target="_blank"
@@ -242,8 +246,8 @@ export default function HomePage() {
               </MuiLink>
             )}
           </Stack>
-        </Stack>
-      )}
+        )}
+      </Stack>
     </Box>
   );
 }

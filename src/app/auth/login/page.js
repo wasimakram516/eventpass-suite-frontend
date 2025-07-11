@@ -218,7 +218,7 @@ export default function LoginPage() {
         </Typography>
 
         <Divider sx={{ my: 3 }} />
-        {globalConfig?.poweredBy.text !== "" && (
+        {globalConfig?.poweredBy?.text && (
           <Typography
             variant="caption"
             color="text.secondary"
@@ -227,7 +227,7 @@ export default function LoginPage() {
           >
             {t.poweredBy}{" "}
             <a
-              href={globalConfig?.socialLinks?.website}
+              href={globalConfig?.socialLinks?.website || "#"}
               target="_blank"
               rel="noopener noreferrer"
               style={{
@@ -236,7 +236,7 @@ export default function LoginPage() {
                 textDecoration: "none",
               }}
             >
-              {globalConfig?.poweredBy.text}
+              {globalConfig?.poweredBy?.text}
             </a>
           </Typography>
         )}

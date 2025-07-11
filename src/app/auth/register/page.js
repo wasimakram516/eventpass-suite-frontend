@@ -212,14 +212,18 @@ export default function RegisterPage() {
           {t.alreadyHave}{" "}
           <a
             href="/auth/login"
-            style={{ color: "inherit", fontWeight: 500, textDecoration: "none" }}
+            style={{
+              color: "inherit",
+              fontWeight: 500,
+              textDecoration: "none",
+            }}
           >
             {t.loginHere}
           </a>
         </Typography>
 
         <Divider sx={{ my: 3 }} />
-        {globalConfig?.poweredBy.text && (
+        {globalConfig?.poweredBy?.text && (
           <Typography
             variant="caption"
             color="text.secondary"
@@ -228,12 +232,16 @@ export default function RegisterPage() {
           >
             {t.poweredBy}{" "}
             <a
-              href={globalConfig?.socialLinks?.website}
+              href={globalConfig?.socialLinks?.website || "#"}
               target="_blank"
               rel="noopener noreferrer"
-              style={{ color: "inherit", fontWeight: 500, textDecoration: "none" }}
+              style={{
+                color: "inherit",
+                fontWeight: 500,
+                textDecoration: "none",
+              }}
             >
-              {globalConfig?.poweredBy.text}
+              {globalConfig?.poweredBy?.text}
             </a>
           </Typography>
         )}
