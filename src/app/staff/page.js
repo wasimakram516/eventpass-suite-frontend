@@ -78,7 +78,7 @@ export default function Modules() {
           <Divider sx={{ my: 2 }} />
         </Box>
 
-        {modules.length === 0 ? (
+        {modules?.length === 0 ? (
           <Stack spacing={2} alignItems="center" sx={{ mt: 5 }}>
             <SupportAgentIcon color="primary" sx={{ fontSize: 64 }} />
             <Typography variant="h6" textAlign="center">
@@ -115,7 +115,7 @@ export default function Modules() {
           </Stack>
         ) : (
           <Grid container spacing={3} justifyContent="center">
-            {modules.map((mod) => (
+            {modules?.map((mod) => (
               <DashboardCard
                 key={mod.key}
                 title={mod.labels[language]}

@@ -22,7 +22,13 @@ import EventIcon from "@mui/icons-material/Event";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import TableRestaurantIcon from "@mui/icons-material/TableRestaurant";
 import AppRegistrationIcon from "@mui/icons-material/AppRegistration";
-import CheckCircleIcon from "@mui/icons-material/CheckCircleOutline";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
+import QrCodeScannerIcon from "@mui/icons-material/QrCodeScanner"; 
+import BusinessIcon from "@mui/icons-material/Business";
+import PersonIcon from "@mui/icons-material/Person";
+import ReplayIcon from "@mui/icons-material/Replay";
 
 const ICONS = {
   add: AddIcon,
@@ -50,6 +56,12 @@ const ICONS = {
   diningTable: TableRestaurantIcon,
   appRegister: AppRegistrationIcon,
   checkCircle: CheckCircleIcon,
+  checkCircleOutline: CheckCircleOutlineIcon,
+  errorOutline: ErrorOutlineIcon,
+  qrCodeScanner: QrCodeScannerIcon,
+  business: BusinessIcon,
+  person: PersonIcon,
+  replay: ReplayIcon,
 };
 
 export default ICONS;

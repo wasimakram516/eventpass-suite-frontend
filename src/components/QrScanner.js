@@ -8,13 +8,13 @@ import {
   CircularProgress,
   IconButton,
 } from "@mui/material";
-import CloseIcon from "@mui/icons-material/Close";
+import ICONS from "@/utils/iconUtil";
 
 export default function QRScanner({ onScanSuccess, onError, onCancel }) {
   const videoRef = useRef(null);
   const scannerRef = useRef(null);
   const [loading, setLoading] = useState(true);
-  const [ready, setReady] = useState(false); // ✅ Ensures video is rendered
+  const [ready, setReady] = useState(false); 
 
   useEffect(() => {
     if (!ready) return;
@@ -91,7 +91,7 @@ export default function QRScanner({ onScanSuccess, onError, onCancel }) {
           backgroundColor: "rgba(0,0,0,0.5)",
         }}
       >
-        <CloseIcon />
+        <ICONS.close />
       </IconButton>
 
       {/* Main Video View */}
@@ -108,7 +108,7 @@ export default function QRScanner({ onScanSuccess, onError, onCancel }) {
         <video
           ref={(el) => {
             videoRef.current = el;
-            if (el && !ready) setReady(true); // ✅ Triggers scanner only after video is rendered
+            if (el && !ready) setReady(true); 
           }}
           style={{
             width: "100%",
