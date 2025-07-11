@@ -21,14 +21,12 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import UploadIcon from "@mui/icons-material/CloudUpload";
 import { useEffect, useState } from "react";
-import api from "@/services/api";
-
 export default function PollFormDrawer({
   open,
   onClose,
   onSubmit,
   initialValues = null,
-  businesses = [],
+  business = "",
 }) {
   const isEdit = !!(initialValues && initialValues._id);
 
@@ -49,7 +47,7 @@ export default function PollFormDrawer({
   useEffect(() => {
     if (open) {
       setForm({
-        businessId: initialValues?.business?._id || "",
+        businessId: initialValues?.business?._id || business._id,
         question: initialValues?.question || "",
         options:
           initialValues?.options?.length > 0
@@ -117,40 +115,36 @@ export default function PollFormDrawer({
     return Object.keys(newErrors).length === 0;
   };
 
-  const uploadImage = async (file) => {
-    const uploadData = new FormData();
-    uploadData.append("file", file);
-    const { data } = await api.post("/upload", uploadData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-    return data.data.url;
-  };
-
+  // Update the handleSubmit function in PollFormDrawer
   const handleSubmit = async () => {
     if (!validate()) return;
     setLoading(true);
 
     try {
-      const preparedOptions = await Promise.all(
-        form.options.map(async (opt) => {
-          let imageUrl = opt.imagePreview;
-          if (opt.imageFile) {
-            const uploaded = await uploadImage(opt.imageFile);
-            imageUrl = uploaded;
-          }
-          return { text: opt.text, imageUrl: imageUrl || undefined };
-        })
-      );
+      const formData = new FormData();
 
-      const payload = {
-        businessId: form.businessId,
-        question: form.question,
-        options: preparedOptions,
-        status: form.status,
-        type: form.type,
-      };
+      // Add basic fields
+      formData.append("businessId", form.businessId);
+      formData.append("question", form.question);
+      formData.append("status", form.status);
+      formData.append("type", form.type);
 
-      await onSubmit(payload, initialValues?._id || null);
+      // Prepare options for JSON
+      const optionsForJson = form.options.map((opt) => ({
+        text: opt.text,
+        imageUrl: opt.imageFile ? undefined : opt.imagePreview, // Keep existing URL if no new file
+      }));
+
+      formData.append("options", JSON.stringify(optionsForJson));
+
+      // Add image files
+      form.options.forEach((opt, index) => {
+        if (opt.imageFile) {
+          formData.append("images", opt.imageFile);
+        }
+      });
+
+      await onSubmit(formData, initialValues?._id || null);
       setLoading(false);
     } catch (error) {
       console.error("Failed to upload/save:", error);
@@ -207,25 +201,7 @@ export default function PollFormDrawer({
           sx={{ mb: 2 }}
         />
 
-        <Stack spacing={2} sx={{ flexGrow: 1, overflowY: "auto",pt:2 }}>
-          <TextField
-            select
-            label="Business"
-            name="businessId"
-            value={form.businessId}
-            onChange={handleChange}
-            error={!!errors.businessId}
-            helperText={errors.businessId}
-            fullWidth
-            disabled={isEdit}
-          >
-            {businesses.map((business) => (
-              <MenuItem key={business._id} value={business._id}>
-                {business.name}
-              </MenuItem>
-            ))}
-          </TextField>
-
+        <Stack spacing={2} sx={{ flexGrow: 1, overflowY: "auto", pt: 2 }}>
           <TextField
             select
             label="Poll Type"

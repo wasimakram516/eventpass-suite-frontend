@@ -2,7 +2,7 @@
 
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { Box, Stack, Typography, Divider, Chip } from "@mui/material";
-
+import useI18nLayout from "@/hooks/useI18nLayout";
 const COLORS = [
   "#8884d8",
   "#82ca9d",

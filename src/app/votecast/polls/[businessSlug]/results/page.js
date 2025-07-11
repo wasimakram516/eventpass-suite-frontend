@@ -1,35 +1,38 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams,useSearchParams } from "next/navigation";
-import {
-  Box,
-  CircularProgress,
-  Typography,
-} from "@mui/material";
+import { useParams, useSearchParams } from "next/navigation";
+import { Box, CircularProgress, Typography } from "@mui/material";
 import { getResults } from "@/services/votecast/pollsResultService";
 import ResultsChart from "@/components/ResultsChart";
-
+import useI18nLayout from "@/hooks/useI18nLayout";
+const translations = {
+  en: {
+    loading: "Loading...",
+    noResults: "No results available.",
+    failedToFetch: "Failed to fetch results",
+  },
+  ar: {
+    loading: "جاري التحميل...",
+    noResults: "لا توجد نتائج متاحة.",
+    failedToFetch: "فشل في جلب النتائج",
+  },
+};
 export default function FullScreenResultsPage() {
   const params = useParams();
-const searchParams = useSearchParams();
-const businessSlug = params.businessSlug;
-const status = searchParams.get("status") || "";
-
+  const { t, dir, align } = useI18nLayout(translations);
+  const searchParams = useSearchParams();
+  const businessSlug = params.businessSlug;
+  const status = searchParams.get("status") || "";
+  console.log("Translation:", t.loading);
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const fetchResults = async () => {
-    try {
-      setLoading(true);
-      
-      const data = await getResults(businessSlug, status);
-      setResults(data);
-    } catch (error) {
-      console.error("Failed to fetch results", error);
-    } finally {
-      setLoading(false);
-    }
+    setLoading(true);
+    const data = await getResults(businessSlug, status);
+    setResults(data);
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -60,6 +63,7 @@ const status = searchParams.get("status") || "";
 
   return (
     <Box
+      dir={dir}
       sx={{
         minHeight: "calc(100vh - 50px)",
         bgcolor: "background.default",
@@ -67,7 +71,6 @@ const status = searchParams.get("status") || "";
         px: { xs: 2, md: 4 },
       }}
     >
-      
       {/* ✅ Results Section */}
       {results.length > 0 ? (
         <Box
@@ -84,8 +87,8 @@ const status = searchParams.get("status") || "";
           ))}
         </Box>
       ) : (
-        <Typography textAlign="center" variant="h6" mt={12}>
-          No results available.
+        <Typography textAlign={align} variant="h6" mt={12}>
+          {t.noResults}
         </Typography>
       )}
     </Box>

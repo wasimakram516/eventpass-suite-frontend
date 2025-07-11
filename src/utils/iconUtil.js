@@ -44,6 +44,8 @@ import {
   Quiz as QuizIcon,
 } from "@mui/icons-material";
 
+import PollIcon from "@mui/icons-material/Poll";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 const ICONS = {
   // General Actions
   add: AddIcon,
@@ -92,6 +94,9 @@ const ICONS = {
   business: BusinessIcon,
   person: PersonIcon,
   quiz: QuizIcon,
+  checkCircle: CheckCircleIcon,
+  poll: PollIcon,
+  copy: ContentCopyIcon,
 };
 
 export default ICONS;

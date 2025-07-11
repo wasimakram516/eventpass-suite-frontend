@@ -22,16 +22,15 @@ import {
   DialogActions,
 } from "@mui/material";
 import { ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-
-import ReplayIcon from "@mui/icons-material/Replay";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import useI18nLayout from "@/hooks/useI18nLayout";
+import ICONS from "@/utils/iconUtil";
 import {
   getActivePollsByBusiness,
   voteOnPoll,
 } from "@/services/votecast/pollService";
-import { useMessage } from "@/contexts/MessageContext";
 import DemoPoll from "@/components/DemoPoll";
 import { getBusinessBySlug } from "@/services/businessService";
+import LanguageSelector from "@/components/LanguageSelector";
 
 export default function BusinessVotingPage() {
   const { businessSlug } = useParams();
@@ -41,12 +40,118 @@ export default function BusinessVotingPage() {
     <RealPoll businessSlug={businessSlug} />
   );
 }
-
+const translations = {
+  en: {
+    voteNow: "Vote Now",
+    chooseOption: "Choose the option that best fits you.",
+    noActivePolls: "No Active Polls",
+    noActivePollsDesc: "Currently there are no active polls for this business.",
+    processing: "Processing...",
+    nextPoll: "Next Poll",
+    finish: "Finish",
+    completed: "Completed",
+    remaining: "Remaining",
+    thankYou: "🎉 Thank You!",
+    voteRecorded: "Your vote has been recorded successfully.",
+    waitForResults: "Please wait for the host/admin to reveal the results.",
+    done: "Done",
+    selectOption: "Please select an option first.",
+    voteSubmitted: "Vote submitted!",
+    voteFailed: "Vote failed",
+    failedToLoad: "Failed to load polls",
+    // ManagePolls translations
+    managePolls: "Manage Polls",
+    selectBusinessDesc: "Select a business to view and manage its polls.",
+    allPolls: "All Polls",
+    activePolls: "Active Polls",
+    archivedPolls: "Archived Polls",
+    selectBusiness: "Select Business",
+    createPoll: "Create Poll",
+    exportPolls: "Export Polls",
+    clone: "Clone",
+    edit: "Edit",
+    delete: "Delete",
+    sharePollLink: "Share Poll Link",
+    deletePoll: "Delete Poll",
+    deleteConfirmation:
+      "Are you sure you want to delete this poll? This action cannot be undone.",
+    noBusiness: "No business",
+    pollCreated: "Poll created successfully",
+    pollUpdated: "Poll updated successfully",
+    pollDeleted: "Poll deleted successfully",
+    pollCloned: "Poll cloned successfully",
+    failedToSave: "Failed to save poll.",
+    failedToDelete: "Failed to delete poll.",
+    failedToClone: "Failed to clone poll",
+    failedToExport: "Failed to export polls.",
+    selectBusinessFirst: "Please select a business first.",
+    selectBusinessToExport: "Please select a business to export polls.",
+    noPermission: "You don't have permission to access this business's polls.",
+    businessNotFound: "Business not found.",
+    failedToFetch: "Failed to fetch polls.",
+    loadingError: "Failed to load businesses.",
+    noBusinessFound:
+      "No business found for your account. Please contact administrator.",
+    noBusinessesAvailable: "No businesses available",
+  },
+  ar: {
+    voteNow: "صوت الآن",
+    chooseOption: "اختر الخيار الذي يناسبك أكثر.",
+    noActivePolls: "لا توجد استطلاعات نشطة",
+    noActivePollsDesc: "حاليًا لا توجد استطلاعات نشطة لهذا العمل.",
+    processing: "جاري المعالجة...",
+    nextPoll: "الاستطلاع التالي",
+    finish: "إنهاء",
+    completed: "مكتمل",
+    remaining: "متبقي",
+    thankYou: "🎉 شكرًا لك!",
+    voteRecorded: "تم تسجيل صوتك بنجاح.",
+    waitForResults: "يرجى انتظار المضيف/المسؤول للكشف عن النتائج.",
+    done: "تم",
+    selectOption: "يرجى اختيار خيار أولاً.",
+    voteSubmitted: "تم إرسال الصوت!",
+    voteFailed: "فشل في التصويت",
+    failedToLoad: "فشل في تحميل الاستطلاعات",
+    // ManagePolls translations
+    managePolls: "إدارة الاستطلاعات",
+    selectBusinessDesc: "اختر عملاً لعرض وإدارة استطلاعاته.",
+    allPolls: "جميع الاستطلاعات",
+    activePolls: "الاستطلاعات النشطة",
+    archivedPolls: "الاستطلاعات المؤرشفة",
+    selectBusiness: "اختر العمل",
+    createPoll: "إنشاء استطلاع",
+    exportPolls: "تصدير الاستطلاعات",
+    clone: "نسخ",
+    edit: "تحرير",
+    delete: "حذف",
+    sharePollLink: "مشاركة رابط الاستطلاع",
+    deletePoll: "حذف الاستطلاع",
+    deleteConfirmation:
+      "هل أنت متأكد من أنك تريد حذف هذا الاستطلاع؟ لا يمكن التراجع عن هذا الإجراء.",
+    noBusiness: "لا يوجد عمل",
+    pollCreated: "تم إنشاء الاستطلاع بنجاح",
+    pollUpdated: "تم تحديث الاستطلاع بنجاح",
+    pollDeleted: "تم حذف الاستطلاع بنجاح",
+    pollCloned: "تم نسخ الاستطلاع بنجاح",
+    failedToSave: "فشل في حفظ الاستطلاع.",
+    failedToDelete: "فشل في حذف الاستطلاع.",
+    failedToClone: "فشل في نسخ الاستطلاع",
+    failedToExport: "فشل في تصدير الاستطلاعات.",
+    selectBusinessFirst: "يرجى اختيار عمل أولاً.",
+    selectBusinessToExport: "يرجى اختيار عمل لتصدير الاستطلاعات.",
+    noPermission: "ليس لديك إذن للوصول إلى استطلاعات هذا العمل.",
+    businessNotFound: "العمل غير موجود.",
+    failedToFetch: "فشل في جلب الاستطلاعات.",
+    loadingError: "فشل في تحميل الأعمال.",
+    noBusinessFound: "لم يتم العثور على عمل لحسابك. يرجى الاتصال بالمسؤول.",
+    noBusinessesAvailable: "لا توجد أعمال متاحة",
+  },
+};
 // ==========================================
 // Real Polls Logic (Dynamic Based on Type)
 // ==========================================
 function RealPoll({ businessSlug }) {
-  const { showMessage } = useMessage();
+  const { t, dir, align } = useI18nLayout(translations);
   const [polls, setPolls] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [sliderValue, setSliderValue] = useState(0);
@@ -74,23 +179,14 @@ function RealPoll({ businessSlug }) {
   };
 
   const fetchBusinessInfo = async () => {
-    try {
-      const data = await getBusinessBySlug(businessSlug);
-      setBusinessInfo(data);
-    } catch (error) {
-      console.error("Failed to fetch business info", error);
-    }
+    const data = await getBusinessBySlug(businessSlug);
+    setBusinessInfo(data);
   };
 
   const fetchPolls = async () => {
-    try {
-      const data = await getActivePollsByBusiness(businessSlug);
-      setPolls(data);
-    } catch {
-      showMessage("Failed to load polls", "error");
-    } finally {
-      setLoading(false);
-    }
+    const data = await getActivePollsByBusiness(businessSlug);
+    setPolls(data);
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -101,35 +197,23 @@ function RealPoll({ businessSlug }) {
   const handleVote = async (selectedIdx = null) => {
     const optionIndex = selectedIdx !== null ? selectedIdx : highlightedOption;
 
-    if (optionIndex === null) {
-      showMessage("Please select an option first.", "warning");
-      return;
-    }
-
     setSubmitting(true);
+    await voteOnPoll(polls[currentIndex]._id, optionIndex);
 
-    try {
-      await voteOnPoll(polls[currentIndex]._id, optionIndex);
-      showMessage("Vote submitted!", "success");
-
-      if (currentIndex < polls.length - 1) {
-        setTimeout(
-          () => {
-            setCurrentIndex((prev) => prev + 1);
-            setSliderValue(0);
-            setHighlightedOption(null);
-            setSubmitting(false);
-          },
-          pollType === "options" ? 1000 : 0
-        );
-      } else {
-        setFinished(true);
-      }
-    } catch {
-      showMessage("Vote failed", "error");
-    } finally {
-      setSubmitting(false);
+    if (currentIndex < polls.length - 1) {
+      setTimeout(
+        () => {
+          setCurrentIndex((prev) => prev + 1);
+          setSliderValue(0);
+          setHighlightedOption(null);
+          setSubmitting(false);
+        },
+        pollType === "options" ? 1000 : 0
+      );
+    } else {
+      setFinished(true);
     }
+    setSubmitting(false);
   };
 
   const handleRestart = () => {
@@ -158,15 +242,15 @@ function RealPoll({ businessSlug }) {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          textAlign: "center",
+          textAlign: align,
         }}
       >
         <Box>
           <Typography variant="h5" fontWeight="bold" gutterBottom>
-            No Active Polls
+            {t.noActivePolls}
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Currently there are no active polls for this business.
+            {t.noActivePollsDesc}
           </Typography>
         </Box>
       </Container>
@@ -179,7 +263,8 @@ function RealPoll({ businessSlug }) {
 
   return (
     <>
-      <Box sx={{ minHeight: "calc(100vh - 235px)", p: 2 }}>
+      <Box dir={dir} sx={{ minHeight: "calc(100vh - 235px)", p: 2 }}>
+        <LanguageSelector top={18} right={20} />
         {/* Top Header */}
         <Stack
           direction="row"
@@ -190,16 +275,16 @@ function RealPoll({ businessSlug }) {
         >
           <Box>
             <Typography variant="h4" fontWeight="bold">
-              Vote Now
+              {t.voteNow}
             </Typography>
             <Typography variant="body2" color="text.secondary" mt={0.5}>
-              Choose the option that best fits you.
+              {t.chooseOption}
             </Typography>
           </Box>
 
           {/* Restart Icon */}
           <IconButton onClick={handleRestart} color="primary">
-            <ReplayIcon fontSize="large" />
+            <ICONS.business fontSize="large" />
           </IconButton>
         </Stack>
 
@@ -230,7 +315,7 @@ function RealPoll({ businessSlug }) {
               titleTypographyProps={{
                 fontWeight: "bold",
                 fontSize: "1.4rem",
-                textAlign: "center",
+                textAlign: align,
               }}
               sx={{ bgcolor: "primary.main", color: "white", py: 3 }}
             />
@@ -322,7 +407,7 @@ function RealPoll({ businessSlug }) {
                         {/* Text */}
                         <Typography
                           variant="caption"
-                          textAlign="center"
+                          textAlign={align}
                           fontWeight="bold"
                           color={
                             highlightedOption === idx
@@ -433,7 +518,7 @@ function RealPoll({ businessSlug }) {
                           (submitting ? (
                             <CircularProgress size={24} color="primary" />
                           ) : (
-                            <CheckCircleIcon color="primary" />
+                            <ICONS.checkCircle fontSize="small" />
                           ))}
                       </Box>
                     );
@@ -451,19 +536,12 @@ function RealPoll({ businessSlug }) {
                   startIcon={
                     submitting && <CircularProgress size={20} color="inherit" />
                   }
-                  sx={{
-                    width: "100%",
-                    py: 1.5,
-                    fontWeight: "bold",
-                    fontSize: "1rem",
-                    mt: 4,
-                  }}
                 >
                   {submitting
-                    ? "Processing..."
+                    ? t.processing
                     : currentIndex < polls.length - 1
-                    ? "Next Poll"
-                    : "Finish"}
+                    ? t.nextPoll
+                    : t.finish}
                 </Button>
               )}
             </CardContent>
@@ -510,7 +588,7 @@ function RealPoll({ businessSlug }) {
               top: "50%",
               left: "50%",
               transform: "translate(-50%, -50%)",
-              textAlign: "center",
+              textAlign: align,
             }}
           >
             <Typography variant="h6" fontWeight="bold">
@@ -555,7 +633,7 @@ function RealPoll({ businessSlug }) {
             p: 3,
             maxWidth: 420,
             mx: "auto",
-            textAlign: "center",
+            textAlign: align,
             boxShadow: 6,
           },
         }}
@@ -569,7 +647,7 @@ function RealPoll({ businessSlug }) {
             pb: 1,
           }}
         >
-          🎉 Thank You!
+          🎉 {t.thankYou}
         </DialogTitle>
 
         {/* Dialog Content */}
@@ -580,10 +658,10 @@ function RealPoll({ businessSlug }) {
             color="text.secondary"
             sx={{ mb: 2 }}
           >
-            Your vote has been recorded successfully.
+            {t.voteRecorded}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
-            Please wait for the host/admin to reveal the results.
+            {t.waitForResults}
           </Typography>
         </DialogContent>
 
@@ -594,19 +672,8 @@ function RealPoll({ businessSlug }) {
             mt: 4,
           }}
         >
-          <Button
-            variant="contained"
-            size="large"
-            onClick={handleRestart}
-            sx={{
-              px: 6,
-              py: 1.5,
-              fontWeight: "bold",
-              fontSize: "1rem",
-              borderRadius: 6,
-            }}
-          >
-            Done
+          <Button variant="contained" size="large" onClick={handleRestart}>
+            {t.done}
           </Button>
         </DialogActions>
       </Dialog>
