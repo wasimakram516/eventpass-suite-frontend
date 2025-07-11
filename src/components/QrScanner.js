@@ -26,7 +26,7 @@ export default function QRScanner({ onScanSuccess, onError }) {
           {
             highlightScanRegion: true,
             highlightCodeOutline: true,
-            preferredCamera: "environment", // Rear camera
+            preferredCamera: "environment", // Use Rear camera
           }
         );
 
