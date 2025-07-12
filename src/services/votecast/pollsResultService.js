@@ -1,4 +1,4 @@
-import api from "../api";
+import api from "@/services/api";
 import withApiHandler from "@/utils/withApiHandler";
 
 // Get results of all active polls for a business

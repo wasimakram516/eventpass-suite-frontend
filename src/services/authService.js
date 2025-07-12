@@ -1,5 +1,4 @@
-import api from "./api";
-import axios from "axios";
+import api from "@/services/api";
 import withApiHandler from "@/utils/withApiHandler";
 
 // Store only access token, refresh token stays in cookies

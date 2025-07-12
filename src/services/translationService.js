@@ -1,4 +1,4 @@
-import api from "./api";
+import api from "@/services/api";
 import withApiHandler from "@/utils/withApiHandler";
 
 export const translateText = withApiHandler(async (text, targetLang) => {
