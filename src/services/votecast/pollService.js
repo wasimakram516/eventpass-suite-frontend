@@ -11,10 +11,9 @@ export const getPolls = withApiHandler(
     const { data } = await api.get(
       `/votecast/polls${params.toString() ? `?${params.toString()}` : ""}`
     );
-    return data;
+    return data.data || data; // Handle both response formats
   }
 );
-
 // Get active polls for voting (public route)
 export const getActivePollsByBusiness = withApiHandler(async (businessSlug) => {
   const { data } = await api.get(`/votecast/polls/public/${businessSlug}`);
@@ -27,7 +26,7 @@ export const createPoll = withApiHandler(
     const { data } = await api.post("/votecast/polls", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
-    return data;
+    return data.data; // Return the actual poll data
   },
   { showSuccess: true }
 );
@@ -38,7 +37,7 @@ export const updatePoll = withApiHandler(
     const { data } = await api.put(`/votecast/polls/${id}`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
-    return data;
+    return data.data; // Return the actual poll data
   },
   { showSuccess: true }
 );
@@ -47,7 +46,7 @@ export const updatePoll = withApiHandler(
 export const clonePoll = withApiHandler(
   async (pollId) => {
     const { data } = await api.post(`/votecast/polls/${pollId}/clone`);
-    return data;
+    return data.data || data; // Return the actual poll data
   },
   { showSuccess: true }
 );
@@ -85,31 +84,37 @@ export const resetVotes = withApiHandler(
 );
 
 // Export polls to Excel
-export const exportPollsToExcel = async (businessSlug, status = "") => {
-  try {
-    const response = await api.post(
-      "/votecast/polls/export",
-      { businessSlug, status },
-      {
-        responseType: "blob",
-      }
-    );
+export const exportPollsToExcel = withApiHandler(
+  async (businessSlug, status = "") => {
+    try {
+      const response = await api.post(
+        "/votecast/polls/export",
+        { businessSlug, status },
+        {
+          responseType: "blob",
+          headers: {
+            Accept:
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          },
+        }
+      );
 
-    const blob = new Blob([response.data], {
-      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    });
+      const blob = new Blob([response.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
 
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute(
-      "download",
-      `${businessSlug}-polls-${status || "all"}.xlsx`
-    );
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-  } catch (err) {
-    console.error("Failed to export polls to Excel:", err);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.setAttribute(
+        "download",
+        `${businessSlug}-polls-${status || "all"}.xlsx`
+      );
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      console.error("Failed to export polls to Excel:", err);
+    }
   }
-};
+);

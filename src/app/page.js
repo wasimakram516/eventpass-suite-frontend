@@ -211,7 +211,7 @@ export default function HomePage() {
           <Stack direction="row" spacing={2} mt={1}>
             {globalConfig?.socialLinks?.facebook && (
               <MuiLink
-                href={globalConfig.socialLinks.facebook}
+                href={globalConfig.socialLinks?.facebook}
                 target="_blank"
                 color="inherit"
               >
@@ -220,7 +220,7 @@ export default function HomePage() {
             )}
             {globalConfig?.socialLinks?.instagram && (
               <MuiLink
-                href={globalConfig.socialLinks.instagram}
+                href={globalConfig.socialLinks?.instagram}
                 target="_blank"
                 color="inherit"
               >
@@ -229,7 +229,7 @@ export default function HomePage() {
             )}
             {globalConfig?.socialLinks?.linkedin && (
               <MuiLink
-                href={globalConfig.socialLinks.linkedin}
+                href={globalConfig.socialLinks?.linkedin}
                 target="_blank"
                 color="inherit"
               >
@@ -238,7 +238,7 @@ export default function HomePage() {
             )}
             {globalConfig?.socialLinks?.website && (
               <MuiLink
-                href={globalConfig.socialLinks.website}
+                href={globalConfig.socialLinks?.website}
                 target="_blank"
                 color="inherit"
               >

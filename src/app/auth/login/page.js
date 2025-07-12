@@ -218,7 +218,7 @@ export default function LoginPage() {
         </Typography>
 
         <Divider sx={{ my: 3 }} />
-        {globalConfig?.poweredBy?.text && (
+        {globalConfig?.poweredBy?.text !== "" && (
           <Typography
             variant="caption"
             color="text.secondary"
