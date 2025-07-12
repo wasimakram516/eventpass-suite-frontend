@@ -5,20 +5,37 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, ViewModule, PeopleAlt, Settings } from "@mui/icons-material";
 import { useAuth } from "@/contexts/AuthContext";
+import useI18nLayout from "@/hooks/useI18nLayout";
 
 export default function Sidebar() {
   const pathname = usePathname();
   const { user } = useAuth();
+  const { t } = useI18nLayout({
+    en: {
+      home: "Home",
+      modules: "Modules",
+      staff: "Staff",
+      users: "Users",
+      settings: "Settings"
+    },
+    ar: {
+      home: "الرئيسية",
+      modules: "الوحدات",
+      staff: "الموظفون",
+      users: "المستخدمون",
+      settings: "الإعدادات"
+    }
+  });
 
   const navItems = [
-    { label: "Home", icon: Home, path: "/cms" },
-    { label: "Modules", icon: ViewModule, path: "/cms/modules" },
+    { label: t.home, icon: Home, path: "/cms" },
+    { label: t.modules, icon: ViewModule, path: "/cms/modules" },
     {
-      label: user?.role === "business" ? "Staff" : "Users",
+      label: user?.role === "business" ? t.staff : t.users,
       icon: PeopleAlt,
       path: "/cms/users",
     },
-    { label: "Settings", icon: Settings, path: "/cms/settings" },
+    { label: t.settings, icon: Settings, path: "/cms/settings" },
   ];
 
   return (
