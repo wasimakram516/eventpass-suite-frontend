@@ -257,7 +257,16 @@ export default function ManagePollsPage() {
             </Typography>
           </Box>
 
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+          <Stack direction={{ sm: "column", md:"row" }} spacing={2}>
+            {user?.role === "admin" && (
+              <Button
+                variant="outlined"
+                onClick={() => setDrawerOpen(true)}
+                startIcon={<ICONS.business fontSize="small" />}
+              >
+                {t.selectBusiness}
+              </Button>
+            )}
             {(user?.role === "business" ||
               (user?.role === "admin" && selectedBusiness)) && (
               <Select
@@ -278,15 +287,7 @@ export default function ManagePollsPage() {
                 <MenuItem value="archived">{t.archivedPolls}</MenuItem>
               </Select>
             )}
-            {user?.role === "admin" && (
-              <Button
-                variant="outlined"
-                onClick={() => setDrawerOpen(true)}
-                startIcon={<ICONS.business fontSize="small" />}
-              >
-                {t.selectBusiness}
-              </Button>
-            )}
+            
             {selectedBusiness && (
               <>
                 <Button
@@ -334,13 +335,22 @@ export default function ManagePollsPage() {
         <Divider sx={{ mb: 4 }} />
 
         {/* Polls Display */}
-        {loading ? (
+        {!selectedBusiness ? (
           <Box
-            minHeight="40vh"
-            display="flex"
-            justifyContent="center"
-            alignItems="center"
+            sx={{
+              mt: 8,
+              textAlign: "center",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              color: "text.secondary",
+            }}
           >
+            <ICONS.business sx={{ fontSize: 72, mb: 2 }} />
+            <Typography variant="h6">{t.selectBusiness}</Typography>
+          </Box>
+        ) : loading ? (
+          <Box sx={{ textAlign: "center", mt: 8 }}>
             <CircularProgress />
           </Box>
         ) : (

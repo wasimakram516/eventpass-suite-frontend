@@ -166,7 +166,17 @@ export default function ResultsPage() {
               </Typography>
             </Box>
 
-            <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+            <Stack direction={{ sm: "column", md:"row" }} spacing={2}>
+              {user?.role === "admin" && (
+                <Button
+                  variant="outlined"
+                  onClick={() => setDrawerOpen(true)}
+                  startIcon={<ICONS.business fontSize="small" />}
+                >
+                  {t.selectBusiness}
+                </Button>
+              )}
+
               {(user?.role === "business" ||
                 (user?.role === "admin" && selectedBusiness)) && (
                 <Select
@@ -182,16 +192,6 @@ export default function ResultsPage() {
                   <MenuItem value="active">{t.activePolls}</MenuItem>
                   <MenuItem value="archived">{t.archivedPolls}</MenuItem>
                 </Select>
-              )}
-
-              {user?.role === "admin" && (
-                <Button
-                  variant="outlined"
-                  onClick={() => setDrawerOpen(true)}
-                  startIcon={<ICONS.business fontSize="small" />}
-                >
-                  {t.selectBusiness}
-                </Button>
               )}
 
               {results.length > 0 && selectedBusiness && (
@@ -225,16 +225,25 @@ export default function ResultsPage() {
 
           <Divider sx={{ mb: 4 }} />
 
-          {loading ? (
-            <Box
-              minHeight="40vh"
-              display="flex"
-              justifyContent="center"
-              alignItems="center"
-            >
-              <CircularProgress />
-            </Box>
-          ) : (
+          {!selectedBusiness ? (
+          <Box
+            sx={{
+              mt: 8,
+              textAlign: "center",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              color: "text.secondary",
+            }}
+          >
+            <ICONS.business sx={{ fontSize: 72, mb: 2 }} />
+            <Typography variant="h6">{t.selectBusiness}</Typography>
+          </Box>
+        ) : loading ? (
+          <Box sx={{ textAlign: "center", mt: 8 }}>
+            <CircularProgress />
+          </Box>
+        ) : (
             results.length > 0 && (
               <Box
                 sx={{

@@ -263,14 +263,15 @@ function RealPoll({ businessSlug }) {
 
   return (
     <>
+    <LanguageSelector top={20} right={20} />
       <Box dir={dir} sx={{ minHeight: "calc(100vh - 235px)", p: 2 }}>
-        <LanguageSelector top={18} right={20} />
+        
         {/* Top Header */}
         <Stack
           direction="row"
           justifyContent="space-between"
           alignItems="center"
-          mt={4}
+          mt={5}
           mb={2}
         >
           <Box>
@@ -284,7 +285,7 @@ function RealPoll({ businessSlug }) {
 
           {/* Restart Icon */}
           <IconButton onClick={handleRestart} color="primary">
-            <ICONS.business fontSize="large" />
+            <ICONS.replay fontSize="large" />
           </IconButton>
         </Stack>
 
