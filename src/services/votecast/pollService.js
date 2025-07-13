@@ -26,7 +26,7 @@ export const createPoll = withApiHandler(
     const { data } = await api.post("/votecast/polls", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
-    return data.data; // Return the actual poll data
+    return data.data; 
   },
   { showSuccess: true }
 );
@@ -37,7 +37,7 @@ export const updatePoll = withApiHandler(
     const { data } = await api.put(`/votecast/polls/${id}`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
-    return data.data; // Return the actual poll data
+    return data.data; 
   },
   { showSuccess: true }
 );
@@ -46,7 +46,7 @@ export const updatePoll = withApiHandler(
 export const clonePoll = withApiHandler(
   async (pollId) => {
     const { data } = await api.post(`/votecast/polls/${pollId}/clone`);
-    return data.data || data; // Return the actual poll data
+    return data.data || data; 
   },
   { showSuccess: true }
 );
@@ -84,7 +84,7 @@ export const resetVotes = withApiHandler(
 );
 
 // Export polls to Excel
-export const exportPollsToExcel = withApiHandler(
+export const exportPollsToExcel = 
   async (businessSlug, status = "") => {
     try {
       const response = await api.post(
@@ -117,4 +117,4 @@ export const exportPollsToExcel = withApiHandler(
       console.error("Failed to export polls to Excel:", err);
     }
   }
-);
+;

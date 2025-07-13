@@ -1,4 +1,5 @@
 import {
+  Home as HomeIcon,
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
@@ -7,6 +8,8 @@ import {
   Cancel as CancelIcon,
   Check as CheckIcon,
   Save as SaveIcon,
+  Settings as SettingsIcon,
+  FilterAlt as FilterIcon,
   ArrowBack as ArrowBackIcon,
   ArrowForward as ArrowForwardIcon,
   Visibility as VisibilityIcon,
@@ -41,13 +44,17 @@ import {
   QrCodeScanner as QrCodeScannerIcon,
   Business as BusinessIcon,
   Person as PersonIcon,
+  PeopleAlt as PeopleAltIcon,
   Quiz as QuizIcon,
+  Poll as PollIcon,
+  ContentCopy as ContentCopyIcon,
+  ViewModule as ModuleIcon,
+  Menu as MenuIcon,
 } from "@mui/icons-material";
 
-import PollIcon from "@mui/icons-material/Poll";
-import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 const ICONS = {
   // General Actions
+  home: HomeIcon,
   add: AddIcon,
   create: AddIcon,
   edit: EditIcon,
@@ -55,6 +62,8 @@ const ICONS = {
   share: ShareIcon,
   close: CloseIcon,
   cancel: CancelIcon,
+  settings: SettingsIcon,
+  filter: FilterIcon,
   check: CheckIcon,
   save: SaveIcon,
   back: ArrowBackIcon,
@@ -92,11 +101,15 @@ const ICONS = {
   appRegister: AppRegistrationIcon,
   qrCodeScanner: QrCodeScannerIcon,
   business: BusinessIcon,
+
   person: PersonIcon,
+  peopleAlt: PeopleAltIcon,
   quiz: QuizIcon,
   checkCircle: CheckCircleIcon,
   poll: PollIcon,
   copy: ContentCopyIcon,
+  module: ModuleIcon,
+  menu: MenuIcon,
 };
 
 export default ICONS;

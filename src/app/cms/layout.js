@@ -12,7 +12,10 @@ export default function CmsLayout({ children }) {
   const router = useRouter();
 
   useEffect(() => {
-    if ((!loading && !user) || (user && user.role !== "admin" && user.role !== "business")) {
+    if (
+      (!loading && !user) ||
+      (user && user.role !== "admin" && user.role !== "business")
+    ) {
       router.replace("/auth/login");
     }
   }, [loading, user, router]);
@@ -43,10 +46,10 @@ export default function CmsLayout({ children }) {
         sx={{
           flexGrow: 1,
           bgcolor: "background.default",
-          pl: "90px",
-          pr:"30px",
-          pt:"50px", 
-          pb: "20px",
+          pl: { xs: 2, sm: 3, md: "90px" }, 
+          pr: { xs: 2, sm: 3, md: "30px" },
+          pt: "50px" , 
+          pb: { xs: 4, sm: 3, md: "20px" }, 
           minHeight: "calc(100vh - 40px)",
         }}
       >

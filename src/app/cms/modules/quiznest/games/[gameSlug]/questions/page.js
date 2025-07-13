@@ -16,6 +16,7 @@ import {
   FormControl,
   InputLabel,
   Select,
+  Menu,
   MenuItem,
   FormControlLabel,
   Checkbox,
@@ -26,11 +27,11 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import DownloadIcon from "@mui/icons-material/Download";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+
 import BreadcrumbsNav from "@/components/BreadcrumbsNav";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
-// REMOVED: import { getQuestions, addQuestion, updateQuestion, deleteQuestion, uploadExcelQuestions, downloadTemplate } from "@/services/questionService";
-// REMOVED: import { getGameBySlug } from "@/services/gameService";
 import QuestionFormModal from "@/components/QuestionFormModal";
 import ConfirmationDialog from "@/components/ConfirmationDialog";
 import { useMessage } from "@/contexts/MessageContext";
@@ -71,6 +72,10 @@ const translations = {
     questionDeleted: "Question deleted!",
     questionsUploaded: "Questions uploaded!",
     templateDownloaded: "Downloaded template!",
+    moreOptions: "More",
+    downloadTemplate: "Download Template",
+    uploadQuestions: "Upload Questions",
+    addQuestion: "Add Question",
   },
   ar: {
     questionsTitle: 'أسئلة لعبة "{gameTitle}"',
@@ -98,6 +103,10 @@ const translations = {
     questionDeleted: "تم حذف السؤال!",
     questionsUploaded: "تم رفع الأسئلة!",
     templateDownloaded: "تم تحميل القالب!",
+    moreOptions: "خيارات",
+    downloadTemplate: "تحميل النموذج",
+    uploadQuestions: "تحميل الأسئلة",
+    addQuestion: "إضافة سؤال",
   },
 };
 export default function QuestionsPage() {
@@ -114,6 +123,10 @@ export default function QuestionsPage() {
   const [downloadModalOpen, setDownloadModalOpen] = useState(false);
   const [downloadChoices, setDownloadChoices] = useState(4);
   const [includeHint, setIncludeHint] = useState(false);
+  const [anchorEl, setAnchorEl] = useState(null);
+  const openMenu = Boolean(anchorEl);
+  const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
+  const handleMenuClose = () => setAnchorEl(null);
 
   // Fetch game and questions from backend
   useEffect(() => {
@@ -218,109 +231,101 @@ export default function QuestionsPage() {
               sx={{
                 display: "flex",
                 justifyContent: "space-between",
-                alignItems: "center",
-                mb: 4,
+                alignItems: "flex-start",
                 flexWrap: "wrap",
-                gap: 2,
-                width: "100%",
+                rowGap: 2,
+                mb: 3,
               }}
             >
-              <Box sx={{ mb: 4, width: "100%" }}>
-                {/* Header row with breadcrumbs and language selector */}
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    mb: 2, // Add some margin below this row
-                  }}
-                >
-                  <BreadcrumbsNav />
-                </Box>
+              <BreadcrumbsNav />
 
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "flex-start",
-                    flexWrap: "wrap",
-                    rowGap: 2,
-                  }}
-                >
-                  <Box>
-                    <Typography variant="h5" fontWeight="bold">
-                      {t.questionsTitle.replace("{gameTitle}", game?.title)}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      <span
-                        dangerouslySetInnerHTML={{
-                          __html: t.questionsDescription
-                            .replace("{choicesCount}", game?.choicesCount)
-                            .replace("{countdownTimer}", game?.countdownTimer)
-                            .replace(
-                              "{gameSessionTimer}",
-                              game?.gameSessionTimer
-                            ),
-                        }}
-                      />
-                    </Typography>
-                  </Box>
-                </Box>
-
-                <Divider sx={{ mt: 2 }} />
+              {/* Title + Description */}
+              <Box sx={{ flex: { xs: "1 1 100%", sm: "auto" } }}>
+                <Typography variant="h5" fontWeight="bold">
+                  {t.questionsTitle.replace("{gameTitle}", game?.title)}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  <span
+                    dangerouslySetInnerHTML={{
+                      __html: t.questionsDescription
+                        .replace("{choicesCount}", game?.choicesCount)
+                        .replace("{countdownTimer}", game?.countdownTimer)
+                        .replace("{gameSessionTimer}", game?.gameSessionTimer),
+                    }}
+                  />
+                </Typography>
               </Box>
+
+              {/* Buttons Block */}
               <Box
                 sx={{
                   display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  flexWrap: "wrap",
-                  gap: 2,
-                  mb: 2,
-                  width: "100%",
+                  alignItems: "stretch",
+                  gap: 1,
+                  flexDirection: { xs: "column", sm: "row" },
+                  width: { xs: "100%", sm: "auto" },
                 }}
               >
-                {/* Left Side: Download + Upload */}
-                <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
+                
+                {/* Add Question */}
+                <Button
+                  fullWidth
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={() => {
+                    setEditMode(false);
+                    setSelectedQuestion(null);
+                    setOpenModal(true);
+                  }}
+                >
+                  {t.addQuestion}
+                </Button>
+
+                {/* More Menu (Download + Upload) */}
+                <Box sx={{ width: { xs: "100%", sm: "auto" } }}>
                   <Button
                     variant="outlined"
-                    startIcon={<DownloadIcon />}
-                    onClick={() => setDownloadModalOpen(true)}
+                    fullWidth
+                    startIcon={<MoreVertIcon />}
+                    onClick={handleMenuOpen}
                   >
-                    {t.downloadTemplate}
+                    {t.moreOptions}
                   </Button>
-
-                  <Button
-                    variant="outlined"
-                    component="label"
-                    startIcon={<UploadFileIcon />}
+                  <Menu
+                    anchorEl={anchorEl}
+                    open={openMenu}
+                    onClose={handleMenuClose}
                   >
-                    {t.uploadQuestions}
-                    <input
-                      hidden
-                      type="file"
-                      accept=".xlsx"
-                      onChange={handleUpload}
-                    />
-                  </Button>
-                </Box>
-
-                {/* Right Side: Add Button aligned right */}
-                <Box sx={{ ml: "auto" }}>
-                  <Button
-                    variant="contained"
-                    startIcon={<AddIcon />}
-                    onClick={() => {
-                      setEditMode(false);
-                      setSelectedQuestion(null);
-                      setOpenModal(true);
-                    }}
-                  >
-                    {t.addQuestion}
-                  </Button>
+                    <MenuItem
+                      onClick={() => {
+                        setDownloadModalOpen(true);
+                        handleMenuClose();
+                      }}
+                    >
+                      <DownloadIcon fontSize="small" sx={{ mr: 1 }} />
+                      {t.downloadTemplate}
+                    </MenuItem>
+                    <MenuItem>
+                      <UploadFileIcon fontSize="small" sx={{ mr: 1 }} />
+                      <label style={{ cursor: "pointer" }}>
+                        {t.uploadQuestions}
+                        <input
+                          type="file"
+                          hidden
+                          accept=".xlsx"
+                          onChange={(e) => {
+                            handleUpload(e);
+                            handleMenuClose();
+                          }}
+                        />
+                      </label>
+                    </MenuItem>
+                  </Menu>
                 </Box>
               </Box>
             </Box>
+
+            <Divider sx={{ mb: 3 }} />
 
             <Grid container spacing={3}>
               {questions?.map((q, idx) => (

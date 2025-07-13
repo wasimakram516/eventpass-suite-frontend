@@ -11,6 +11,7 @@ import {
   CircularProgress,
   IconButton,
   Divider,
+  Stack,
 } from "@mui/material";
 import GameFormModal from "@/components/GameFormModal";
 import ConfirmationDialog from "@/components/ConfirmationDialog";
@@ -223,36 +224,46 @@ export default function GamesPage() {
           <Box
             sx={{
               display: "flex",
+              flexDirection: { xs: "column", sm: "row" },
               justifyContent: "space-between",
-              alignItems: "center",
-              flexWrap: "wrap",
-              rowGap: 2,
+              alignItems: { xs: "stretch", sm: "center" },
+              gap: 2,
+              mb: 3,
             }}
           >
+            {/* Heading + Subheading */}
             <Box>
               <Typography variant="h5" fontWeight="bold">
                 {user?.role === "admin" && !selectedBusiness
                   ? t.manageGames
                   : `${t.gamesTitle} "${selectedBusiness || ""}"`}
               </Typography>
-
               <Typography variant="body2" color="text.secondary">
                 {t.gamesDescription}
               </Typography>
             </Box>
-            <Box sx={{ display: "flex", gap: 0 }}>
+
+            {/* Buttons */}
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              spacing={1}
+              sx={{ width: { xs: "100%", sm: "auto" } }}
+            >
               {user?.role === "admin" && (
                 <Button
+                  fullWidth
                   variant="outlined"
                   onClick={() => setDrawerOpen(true)}
                   startIcon={<ICONS.business />}
-                  sx={{ ...getStartIconSpacing(dir), mr: 1 }}
+                  sx={getStartIconSpacing(dir)}
                 >
                   {t.selectBusiness || "Select Business"}
                 </Button>
               )}
+
               {selectedBusiness && (
                 <Button
+                  fullWidth
                   variant="contained"
                   startIcon={<ICONS.add />}
                   onClick={handleOpenCreate}
@@ -261,7 +272,7 @@ export default function GamesPage() {
                   {t.createGameButton}
                 </Button>
               )}
-            </Box>
+            </Stack>
           </Box>
 
           <Divider sx={{ mt: 2 }} />

@@ -11,6 +11,8 @@ import {
   Divider,
   Select,
   MenuItem,
+  FormControl,
+  InputLabel,
 } from "@mui/material";
 import ResultsChart from "@/components/ResultsChart";
 import BreadcrumbsNav from "@/components/BreadcrumbsNav";
@@ -23,6 +25,7 @@ import { resetVotes } from "@/services/votecast/pollService";
 import { getAllBusinesses } from "@/services/businessService";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import ICONS from "@/utils/iconUtil";
+import FilterDrawer from "@/components/FilterModal";
 
 const translations = {
   en: {
@@ -32,6 +35,9 @@ const translations = {
     allPolls: "All Polls",
     activePolls: "Active Polls",
     archivedPolls: "Archived Polls",
+    moreFilters: "More Filters",
+    filters: "Filters",
+    pollStatus: "Poll Status",
     resetVotes: "Reset Votes",
     viewFullScreen: "View Full Screen",
     confirmVoteReset: "Confirm Vote Reset",
@@ -52,6 +58,10 @@ const translations = {
     activePolls: "الاستطلاعات النشطة",
     archivedPolls: "الاستطلاعات المؤرشفة",
     resetVotes: "إعادة تعيين الأصوات",
+    moreFilters: "المزيد من الفلاتر",
+    filters: "الفلاتر",
+    pollStatus: "حالة الاستطلاع",
+
     viewFullScreen: "عرض بملء الشاشة",
     confirmVoteReset: "تأكيد إعادة تعيين الأصوات",
     resetConfirmation:
@@ -75,6 +85,7 @@ export default function ResultsPage() {
   const [selectedBusiness, setSelectedBusiness] = useState(null);
   const [pollStatus, setPollStatus] = useState("all");
   const [confirmReset, setConfirmReset] = useState(false);
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
 
   useEffect(() => {
     const fetchBusinesses = async () => {
@@ -166,7 +177,7 @@ export default function ResultsPage() {
               </Typography>
             </Box>
 
-            <Stack direction={{ sm: "column", md:"row" }} spacing={2}>
+            <Stack direction={{ sm: "column", md: "row" }} spacing={2}>
               {user?.role === "admin" && (
                 <Button
                   variant="outlined"
@@ -177,73 +188,37 @@ export default function ResultsPage() {
                 </Button>
               )}
 
-              {(user?.role === "business" ||
-                (user?.role === "admin" && selectedBusiness)) && (
-                <Select
-                  value={pollStatus}
-                  onChange={handleStatusChange}
-                  size="small"
-                  sx={{ minWidth: 150 }}
-                  MenuProps={{
-                    disableScrollLock: true,
-                  }}
-                >
-                  <MenuItem value="all">{t.allPolls}</MenuItem>
-                  <MenuItem value="active">{t.activePolls}</MenuItem>
-                  <MenuItem value="archived">{t.archivedPolls}</MenuItem>
-                </Select>
-              )}
-
-              {results.length > 0 && selectedBusiness && (
-                <Button
-                  variant="contained"
-                  color="error"
-                  onClick={() => setConfirmReset(true)}
-                >
-                  {t.resetVotes}
-                </Button>
-              )}
-
-              {results.length > 0 && selectedBusiness && (
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={() =>
-                    window.open(
-                      `/votecast/polls/${selectedBusiness}/results?status=${
-                        pollStatus === "all" ? "" : pollStatus
-                      }`,
-                      "_blank"
-                    )
-                  }
-                >
-                  {t.viewFullScreen}
-                </Button>
-              )}
+              <Button
+                variant="outlined"
+                onClick={() => setFilterDrawerOpen(true)}
+                startIcon={<ICONS.filter fontSize="small" />}
+              >
+                {t.moreFilters}
+              </Button>
             </Stack>
           </Stack>
 
           <Divider sx={{ mb: 4 }} />
 
           {!selectedBusiness ? (
-          <Box
-            sx={{
-              mt: 8,
-              textAlign: "center",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              color: "text.secondary",
-            }}
-          >
-            <ICONS.business sx={{ fontSize: 72, mb: 2 }} />
-            <Typography variant="h6">{t.selectBusiness}</Typography>
-          </Box>
-        ) : loading ? (
-          <Box sx={{ textAlign: "center", mt: 8 }}>
-            <CircularProgress />
-          </Box>
-        ) : (
+            <Box
+              sx={{
+                mt: 8,
+                textAlign: "center",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                color: "text.secondary",
+              }}
+            >
+              <ICONS.business sx={{ fontSize: 72, mb: 2 }} />
+              <Typography variant="h6">{t.selectBusiness}</Typography>
+            </Box>
+          ) : loading ? (
+            <Box sx={{ textAlign: "center", mt: 8 }}>
+              <CircularProgress />
+            </Box>
+          ) : (
             results.length > 0 && (
               <Box
                 sx={{
@@ -262,6 +237,65 @@ export default function ResultsPage() {
           )}
         </Container>
       </Box>
+
+      <FilterDrawer
+        open={filterDrawerOpen}
+        onClose={() => setFilterDrawerOpen(false)}
+        title={t.filters}
+      >
+        {selectedBusiness ? (
+          <>
+            <FormControl fullWidth sx={{ mb: 2 }} size="large">
+              <InputLabel id="poll-status-label">{t.pollStatus}</InputLabel>
+              <Select
+                labelId="poll-status-label"
+                value={pollStatus}
+                onChange={handleStatusChange}
+                label={t.pollStatus}
+                MenuProps={{
+                  disableScrollLock: true,
+                  container:
+                    typeof window !== "undefined" ? document.body : undefined,
+                }}
+              >
+                <MenuItem value="all">{t.allPolls}</MenuItem>
+                <MenuItem value="active">{t.activePolls}</MenuItem>
+                <MenuItem value="archived">{t.archivedPolls}</MenuItem>
+              </Select>
+            </FormControl>
+
+            {results.length > 0 && (
+              <>
+                <Button
+                  variant="contained"
+                  color="error"
+                  fullWidth
+                  sx={{ mb: 2 }}
+                  onClick={() => setConfirmReset(true)}
+                >
+                  {t.resetVotes}
+                </Button>
+
+                <Button
+                  variant="contained"
+                  color="primary"
+                  fullWidth
+                  onClick={() =>
+                    window.open(
+                      `/votecast/polls/${selectedBusiness}/results?status=${
+                        pollStatus === "all" ? "" : pollStatus
+                      }`,
+                      "_blank"
+                    )
+                  }
+                >
+                  {t.viewFullScreen}
+                </Button>
+              </>
+            )}
+          </>
+        ) : null}
+      </FilterDrawer>
 
       <ConfirmationDialog
         open={confirmReset}

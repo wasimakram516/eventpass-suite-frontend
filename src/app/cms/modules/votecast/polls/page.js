@@ -28,7 +28,7 @@ const translations = {
   },
 };
 export default function PollsDashboard() {
-   const { t, dir, align } = useI18nLayout(translations);
+  const { t, dir, align } = useI18nLayout(translations);
   return (
     <Container dir={dir} maxWidth="lg">
       <BreadcrumbsNav />
@@ -45,11 +45,7 @@ export default function PollsDashboard() {
       </Stack>
 
       {/* ✅ Cards Grid */}
-      <Grid
-        container
-        spacing={3}
-         justifyContent="center"
-      >
+      <Grid container spacing={3} justifyContent="center">
         <Grid item xs={12} sm={6} md={6}>
           <DashboardCard
             title={t.managePolls}

@@ -222,11 +222,12 @@ const ViewRegistrations = () => {
       <Stack
         direction={{ xs: "column", sm: "row" }}
         justifyContent="space-between"
-        alignItems="flex-start"
-        mb={2}
+        alignItems={{ xs: "stretch", sm: "center" }}
         spacing={2}
+        sx={{ my: 3 }}
       >
-        <Box flex={1}>
+        {/* Left: Title + Description */}
+        <Box sx={{ flex: 1 }}>
           <Typography variant="h4" fontWeight="bold">
             {t.title}
           </Typography>
@@ -235,19 +236,21 @@ const ViewRegistrations = () => {
           </Typography>
         </Box>
 
-        <Box textAlign="right">
-          {totalRegistrations > 0 && (
+        {/* Right: Export Button */}
+        {totalRegistrations > 0 && (
+          <Box sx={{ width: { xs: "100%", sm: "auto" } }}>
             <Button
               variant="contained"
               onClick={exportToCSV}
               color="primary"
               startIcon={<ICONS.download fontSize="small" />}
-              sx={getStartIconSpacing}
+              fullWidth
+              sx={getStartIconSpacing(dir)}
             >
               {t.export}
             </Button>
-          )}
-        </Box>
+          </Box>
+        )}
       </Stack>
 
       <Divider sx={{ my: 3 }} />
@@ -291,15 +294,26 @@ const ViewRegistrations = () => {
         </Typography>
       ) : (
         <>
-          <Grid container spacing={4}>
+          <Grid container spacing={4} justifyContent="center">
             {registrations.map((registration) => (
-              <Grid item xs={12} sm={6} md={4} key={registration._id}>
+              <Grid
+                item
+                xs={12}
+                sm={6}
+                md={4}
+                key={registration._id}
+                sx={{ display: "flex", justifyContent: "center" }}
+              >
                 <Card
                   sx={{
+                    width: "100%",
+                    maxWidth: 360,
                     boxShadow: 3,
                     borderRadius: 2,
                     height: "100%",
-                    position: "relative",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
                   }}
                 >
                   <CardContent>
@@ -329,10 +343,11 @@ const ViewRegistrations = () => {
                       {registration.company || "N/A"}
                     </Typography>
                   </CardContent>
-                  <CardActions sx={{ justifyContent: "flex-end", px: 2 }}>
+
+                  <CardActions sx={{ justifyContent: "center", gap: 1 }}>
                     <Tooltip
                       title={t.viewWalkIns}
-                      placement={isArabic ? "left" : "right"}
+                      placement={isArabic ? "left" : "top"}
                     >
                       <IconButton
                         color="info"
@@ -344,9 +359,10 @@ const ViewRegistrations = () => {
                         <ICONS.view fontSize="small" />
                       </IconButton>
                     </Tooltip>
+
                     <Tooltip
                       title={t.deleteRecord}
-                      placement={isArabic ? "left" : "right"}
+                      placement={isArabic ? "left" : "top"}
                     >
                       <IconButton
                         color="error"

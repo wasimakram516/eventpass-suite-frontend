@@ -19,7 +19,9 @@ import {
   Chip,
   Divider,
   Select,
+  InputLabel,
   MenuItem,
+  FormControl,
 } from "@mui/material";
 import { getAllBusinesses } from "@/services/businessService";
 import { useMessage } from "@/contexts/MessageContext";
@@ -39,6 +41,7 @@ import {
 } from "@/services/votecast/pollService";
 import BusinessDrawer from "@/components/BusinessDrawer";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import FilterModal from "@/components/FilterModal";
 const translations = {
   en: {
     title: "Manage Polls",
@@ -49,6 +52,9 @@ const translations = {
     allPolls: "All Polls",
     activePolls: "Active Polls",
     archivedPolls: "Archived Polls",
+    moreFilters: "More Filters",
+    filters: "Filters",
+    pollStatus: "Poll Status",
     noBusiness: "No business",
     clone: "Clone",
     edit: "Edit",
@@ -89,6 +95,9 @@ const translations = {
     clone: "نسخ",
     edit: "تحرير",
     delete: "حذف",
+    moreFilters: "المزيد من الفلاتر",
+    filters: "الفلاتر",
+    pollStatus: "حالة الاستطلاع",
     sharePollLink: "مشاركة رابط الاستطلاع",
     deletePoll: "حذف الاستطلاع",
     deleteConfirmation:
@@ -130,6 +139,7 @@ export default function ManagePollsPage() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [selectedBusiness, setSelectedBusiness] = useState(null);
   const [pollStatus, setPollStatus] = useState("all"); // "all", "active", "archived"
+  const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
 
   useEffect(() => {
     const fetchBusinesses = async () => {
@@ -241,14 +251,18 @@ export default function ManagePollsPage() {
       {/* Main Content */}
       <Container maxWidth="lg">
         <BreadcrumbsNav />
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          justifyContent="space-between"
-          alignItems={{ xs: "stretch", sm: "left" }}
-          spacing={2}
-          mb={2}
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            flexWrap: "wrap",
+            rowGap: 2,
+            mt: 2,
+          }}
         >
-          <Box>
+          {/* Left: Heading */}
+          <Box sx={{ flex: { xs: "1 1 100%", sm: "auto" } }}>
             <Typography variant="h4" fontWeight="bold">
               {t.title}
             </Typography>
@@ -257,82 +271,53 @@ export default function ManagePollsPage() {
             </Typography>
           </Box>
 
-          <Stack direction={{ sm: "column", md:"row" }} spacing={2}>
+          {/* Right: Main Actions + Filter Toggle */}
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={2}
+            sx={{
+              flexShrink: 0,
+              alignItems: "stretch", // makes buttons 100% in column layout
+              width: { xs: "100%", sm: "auto" }, // full width only on xs
+            }}
+          >
             {user?.role === "admin" && (
               <Button
                 variant="outlined"
                 onClick={() => setDrawerOpen(true)}
                 startIcon={<ICONS.business fontSize="small" />}
+                fullWidth
               >
                 {t.selectBusiness}
               </Button>
             )}
-            {(user?.role === "business" ||
-              (user?.role === "admin" && selectedBusiness)) && (
-              <Select
-                value={pollStatus}
-                onChange={(e) => {
-                  const status = e.target.value;
-                  setPollStatus(status);
-                  fetchPolls(selectedBusiness, status === "all" ? "" : status);
-                }}
-                size="small"
-                sx={{ minWidth: 150 }}
-                MenuProps={{
-                  disableScrollLock: true,
-                }}
-              >
-                <MenuItem value="all">{t.allPolls}</MenuItem>
-                <MenuItem value="active">{t.activePolls}</MenuItem>
-                <MenuItem value="archived">{t.archivedPolls}</MenuItem>
-              </Select>
-            )}
-            
+
             {selectedBusiness && (
-              <>
-                <Button
-                  variant="contained"
-                  startIcon={<ICONS.add fontSize="small" />}
-                  onClick={() => {
-                    setEditPoll(null);
-                    setOpenDrawer(true);
-                  }}
-                >
-                  {t.createPoll}
-                </Button>
-
-                <Button
-                  variant="outlined"
-                  color="success"
-                  disabled={!selectedBusiness}
-                  onClick={async () => {
-                    if (!selectedBusiness) {
-                      showMessage(t.selectBusinessToExport, "warning");
-                      return;
-                    }
-
-                    setLoading(true);
-
-                    const result = await exportPollsToExcel(
-                      selectedBusiness,
-                      pollStatus === "all" ? "" : pollStatus
-                    );
-
-                    if (result?.error) {
-                      showMessage(t.failedToExportPolls, "error");
-                    }
-
-                    setLoading(false);
-                  }}
-                >
-                  {t.exportPolls}
-                </Button>
-              </>
+              <Button
+                variant="contained"
+                startIcon={<ICONS.add fontSize="small" />}
+                onClick={() => {
+                  setEditPoll(null);
+                  setOpenDrawer(true);
+                }}
+                fullWidth
+              >
+                {t.createPoll}
+              </Button>
             )}
-          </Stack>
-        </Stack>
 
-        <Divider sx={{ mb: 4 }} />
+            <Button
+              variant="outlined"
+              onClick={() => setFilterDrawerOpen(true)}
+              startIcon={<ICONS.filter fontSize="small" />}
+              fullWidth
+            >
+              {t.moreFilters}
+            </Button>
+          </Stack>
+        </Box>
+
+        <Divider sx={{ my: 2 }} />
 
         {/* Polls Display */}
         {!selectedBusiness ? (
@@ -474,6 +459,61 @@ export default function ManagePollsPage() {
             </Grid>
           )
         )}
+
+        {/* Drawer with Poll Status and Export Button */}
+        <FilterModal
+          open={filterDrawerOpen}
+          onClose={() => setFilterDrawerOpen(false)}
+          title={t.filters}
+        >
+          {selectedBusiness ? (
+            <>
+              <FormControl fullWidth sx={{ mb: 2 }}size="large">
+                <InputLabel id="poll-status-label">{t.pollStatus}</InputLabel>
+                <Select
+                  labelId="poll-status-label"
+                  value={pollStatus}
+                  onChange={(e) => {
+                    const status = e.target.value;
+                    setPollStatus(status);
+                    fetchPolls(
+                      selectedBusiness,
+                      status === "all" ? "" : status
+                    );
+                  }}
+                  label={t.pollStatus}
+                  size="small"
+                  fullWidth
+                  sx={{ mb: 2 }}
+                  MenuProps={{ disableScrollLock: true }}
+                >
+                  <MenuItem value="all">{t.allPolls}</MenuItem>
+                  <MenuItem value="active">{t.activePolls}</MenuItem>
+                  <MenuItem value="archived">{t.archivedPolls}</MenuItem>
+                </Select>
+              </FormControl>
+
+              <Button
+                variant="outlined"
+                color="success"
+                fullWidth
+                onClick={async () => {
+                  setLoading(true);
+                  const result = await exportPollsToExcel(
+                    selectedBusiness,
+                    pollStatus === "all" ? "" : pollStatus
+                  );
+                  if (result?.error) {
+                    showMessage(t.failedToExportPolls, "error");
+                  }
+                  setLoading(false);
+                }}
+              >
+                {t.exportPolls}
+              </Button>
+            </>
+          ) : null}
+        </FilterModal>
 
         {/* Create/Edit Poll Drawer */}
         <PollFormDrawer

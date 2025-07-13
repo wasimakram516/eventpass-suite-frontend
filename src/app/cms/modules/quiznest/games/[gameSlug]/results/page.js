@@ -112,51 +112,48 @@ export default function ResultsPage() {
         ) : (
           <>
             <Box sx={{ mb: 4 }}>
-              {/* Header row with breadcrumbs and language selector */}
+              <BreadcrumbsNav />
+
               <Box
                 sx={{
                   display: "flex",
                   justifyContent: "space-between",
-                  alignItems: "center",
-                  mb: 2, // Add some margin below this row
-                }}
-              >
-                <BreadcrumbsNav />
-              </Box>
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
+                  alignItems: "flex-start",
                   flexWrap: "wrap",
                   rowGap: 2,
+                  mt: 2,
                 }}
               >
-                <Box>
+                {/* Title + Subtitle */}
+                <Box sx={{ flex: { xs: "1 1 100%", sm: "auto" } }}>
                   <Typography variant="h5" fontWeight="bold">
                     {t.resultsTitle} "{game?.title}"
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    {t.totalPlayers}
-                    <strong>{players?.length}</strong>
+                    {t.totalPlayers} <strong>{players?.length}</strong>
                   </Typography>
                 </Box>
 
-                <Tooltip title="Export Results">
-                  <Button
-                    variant="outlined"
-                    startIcon={<DownloadIcon />}
-                    onClick={handleExport}
-                  >
-                    {t.exportResults}
-                  </Button>
-                </Tooltip>
+                {/* Export Button */}
+                <Box sx={{ width: { xs: "100%", sm: "auto" } }}>
+                  <Tooltip title={t.exportResults}>
+                    <Button
+                      fullWidth
+                      variant="outlined"
+                      startIcon={<DownloadIcon />}
+                      onClick={handleExport}
+                    >
+                      {t.exportResults}
+                    </Button>
+                  </Tooltip>
+                </Box>
               </Box>
+
               <Divider sx={{ mt: 2 }} />
             </Box>
 
             <Grid container spacing={3}>
-              {players.map((p, i) => (
+              {players?.map((p, i) => (
                 <Grid item xs={12} sm={6} md={4} key={p._id || i}>
                   <Box
                     sx={{

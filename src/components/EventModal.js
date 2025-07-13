@@ -13,12 +13,14 @@ import {
   ListItemText,
   Box,
   Typography,
+  IconButton,
 } from "@mui/material";
 import { useState, useEffect } from "react";
 import slugify from "@/utils/slugify";
 import { useMessage } from "@/contexts/MessageContext";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { downloadEmployeeTemplate } from "@/services/checkin/checkinEventService";
+import ICONS from "@/utils/iconUtil";
 
 const translations = {
   en: {
@@ -228,8 +230,29 @@ const EventModal = ({
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth dir={dir}>
-      <DialogTitle sx={{ textAlign: "center", fontWeight: "bold" }}>
-        {initialValues ? t.editTitle : t.createTitle}
+      <DialogTitle
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          fontWeight: "bold",
+          px: 3,
+          pt: 3,
+        }}
+      >
+        <Typography variant="body1" sx={{ fontWeight: "bold", fontSize:"1.25rem" }}>
+          {initialValues ? t.editTitle : t.createTitle}
+        </Typography>
+
+        <IconButton
+          onClick={onClose}
+          sx={{
+            ml: 2,
+            alignSelf: "flex-start",
+          }}
+        >
+          <ICONS.close />
+        </IconButton>
       </DialogTitle>
 
       <DialogContent>
@@ -356,12 +379,20 @@ const EventModal = ({
         </Box>
       </DialogContent>
 
-      <DialogActions sx={{ p: 3 }}>
+      <DialogActions
+        sx={{
+          p: 3,
+          flexDirection: { xs: "column", sm: "row" },
+          gap: 1,
+          alignItems: "stretch",
+        }}
+      >
         <Button
           onClick={onClose}
           variant="outlined"
           color="inherit"
           disabled={loading}
+          fullWidth
         >
           {t.cancel}
         </Button>
@@ -370,6 +401,7 @@ const EventModal = ({
           variant="contained"
           disabled={loading}
           startIcon={loading && <CircularProgress size={20} color="inherit" />}
+          fullWidth
         >
           {loading
             ? initialValues

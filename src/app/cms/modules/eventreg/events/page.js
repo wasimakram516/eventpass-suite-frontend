@@ -194,15 +194,17 @@ export default function EventsPage() {
           <Box
             sx={{
               display: "flex",
+              flexDirection: { xs: "column", sm: "row" },
               justifyContent: "space-between",
-              alignItems: "center",
+              alignItems: { xs: "stretch", sm: "center" },
               mt: 2,
               mb: 1,
-              flexWrap: "wrap",
               gap: 2,
+              flexWrap: "wrap",
             }}
           >
-            <Box>
+            {/* Title + Description */}
+            <Box sx={{ flex: 1 }}>
               <Typography variant="h5" fontWeight="bold">
                 {user?.role === "admin" && !selectedBusiness
                   ? t.pageDescription
@@ -213,12 +215,21 @@ export default function EventsPage() {
               </Typography>
             </Box>
 
-            <Box sx={{ display: "flex", gap: 1 }}>
+            {/* Buttons */}
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: { xs: "column", sm: "row" },
+                gap: 1,
+                width: { xs: "100%", sm: "auto" },
+              }}
+            >
               {user?.role === "admin" && (
                 <Button
                   variant="outlined"
                   onClick={() => setDrawerOpen(true)}
                   startIcon={<BusinessIcon />}
+                  fullWidth
                 >
                   {t.selectBusiness}
                 </Button>
@@ -228,6 +239,7 @@ export default function EventsPage() {
                   variant="contained"
                   startIcon={<ICONS.add />}
                   onClick={handleOpenCreate}
+                  fullWidth
                 >
                   {t.createEvent}
                 </Button>
@@ -257,12 +269,20 @@ export default function EventsPage() {
             <CircularProgress />
           </Box>
         ) : (
-          <Grid container spacing={3}>
+          <Grid container spacing={3} justifyContent="center">
             {events.map((event) => {
               const eventStatus = getEventStatus(event.date);
               return (
                 <Grid item xs={12} sm={6} md={4} key={event._id}>
-                  <Card sx={{ boxShadow: 3, borderRadius: 2 }}>
+                  <Card
+                    sx={{
+                      maxWidth: 360,
+                      width: "100%",
+                      margin: "0 auto",
+                      boxShadow: 3,
+                      borderRadius: 2,
+                    }}
+                  >
                     <CardContent>
                       <Box
                         sx={{
@@ -327,7 +347,7 @@ export default function EventsPage() {
                         </Typography>
                       )}
                     </CardContent>
-                    <CardActions>
+                    <CardActions sx={{ justifyContent: "center" }}>
                       {event.slug && (
                         <IconButton
                           color="primary"
