@@ -9,13 +9,7 @@ import {
   Chip,
   useTheme,
 } from "@mui/material";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
-  Tooltip,
-} from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 
 const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#8dd1e1"];
 
@@ -28,8 +22,10 @@ export default function StatCard({ title, subtitle, data, centerValue }) {
       sx={{
         p: 3,
         borderRadius: 4,
-        width: { xs: "100%", sm: "100%", md: "20rem" }, // 100% on mobile/tablet
-        minHeight: "100%", 
+        width: "100%",
+        maxWidth: "20rem",
+        height: "100%",
+        flexGrow: 1,
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
