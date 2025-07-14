@@ -155,14 +155,14 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* 📱 Mobile Menu Button */}
+      {/* Mobile Menu Button */}
       {isMobile && !mobileOpen && (
         <Box
           sx={{
             position: "fixed",
             top: 72,
             [dir === "rtl" ? "left" : "right"]: 16,
-            zIndex: 1600,
+            zIndex: 2,
             bgcolor: "background.paper",
             borderRadius: "50%",
             boxShadow: 3,
@@ -181,7 +181,7 @@ export default function Sidebar() {
         </Box>
       )}
 
-      {/* 💻 Desktop Sidebar */}
+      {/* Desktop Sidebar */}
       {!isMobile && (
         <Drawer
           variant="permanent"
@@ -205,7 +205,7 @@ export default function Sidebar() {
         </Drawer>
       )}
 
-      {/* 📱 Mobile Drawer */}
+      {/* Mobile Drawer */}
       {isMobile && (
         <Drawer
           anchor={dir === "rtl" ? "right" : "left"}

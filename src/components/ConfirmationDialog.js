@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from "react";
 import {
   Dialog,
@@ -9,6 +11,7 @@ import {
   Box,
   CircularProgress,
 } from "@mui/material";
+import useI18nLayout from "@/hooks/useI18nLayout";
 
 const ConfirmationDialog = ({
   open,
@@ -19,6 +22,19 @@ const ConfirmationDialog = ({
   confirmButtonText,
 }) => {
   const [loading, setLoading] = useState(false);
+
+  const { t, dir } = useI18nLayout({
+    en: {
+      cancel: "Cancel",
+      yes: "Yes",
+      processing: "Processing...",
+    },
+    ar: {
+      cancel: "إلغاء",
+      yes: "نعم",
+      processing: "جارٍ المعالجة...",
+    },
+  });
 
   const handleConfirm = async () => {
     setLoading(true);
@@ -33,6 +49,7 @@ const ConfirmationDialog = ({
     <Dialog
       open={open}
       onClose={loading ? null : onClose}
+      dir={dir}
       disableScrollLock={true}
       PaperProps={{
         sx: {
@@ -92,7 +109,7 @@ const ConfirmationDialog = ({
             padding: "0.5rem 2rem",
           }}
         >
-          Cancel
+          {t.cancel}
         </Button>
         <Button
           onClick={handleConfirm}
@@ -106,7 +123,7 @@ const ConfirmationDialog = ({
             padding: "0.5rem 2rem",
           }}
         >
-          {loading ? "Processing..." : confirmButtonText || "Yes"}
+          {loading ? t.processing : confirmButtonText || t.yes}
         </Button>
       </DialogActions>
     </Dialog>

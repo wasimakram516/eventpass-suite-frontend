@@ -7,6 +7,7 @@ import {
   Grid,
   Card,
   CardContent,
+  CardActions,
   CircularProgress,
   IconButton,
   Button,
@@ -18,6 +19,7 @@ import {
   Divider,
   Container,
   Stack,
+  Tooltip,
 } from "@mui/material";
 import {
   getCheckInRegistrationsByEvent,
@@ -30,6 +32,8 @@ import BreadcrumbsNav from "@/components/BreadcrumbsNav";
 import { formatDate } from "@/utils/dateUtils";
 import { useParams } from "next/navigation";
 import ICONS from "@/utils/iconUtil";
+import useI18nLayout from "@/hooks/useI18nLayout";
+import getStartIconSpacing from "@/utils/getStartIconSpacing";
 
 const ViewRegistrations = () => {
   const { eventSlug } = useParams();
@@ -43,38 +47,83 @@ const ViewRegistrations = () => {
   const [totalRegistrations, setTotalRegistrations] = useState(0);
   const [isPublicEvent, setIsPublicEvent] = useState(false);
 
+  const { dir, align, isArabic, t } = useI18nLayout({
+    en: {
+      title: "Event Details",
+      description:
+        "View event details and manage registrations for this event. Export registration data or delete entries as needed.",
+      export: "Export to CSV",
+      records: "records",
+      noRecords: "No registrations found for this event.",
+      delete: "Delete Registration",
+      deleteMessage: "Are you sure you want to delete this registration?",
+      email: "Email:",
+      phone: "Phone:",
+      company: "Company:",
+      employeeId: "Employee ID:",
+      employeeName: "Employee Name:",
+      tableNumber: "Table Number:",
+      tableImage: "Table Image",
+      recordsPerPage: "Records per page",
+      showing: "Showing",
+      to: "to",
+      of: "of",
+      deleteRecord: "Delete Registration",
+    },
+    ar: {
+      title: "تفاصيل الحدث",
+      description:
+        "اعرض تفاصيل الحدث وقم بإدارة التسجيلات. يمكنك تصدير البيانات أو حذف السجلات.",
+      export: "تصدير إلى CSV",
+      records: "سجلات",
+      noRecords: "لا توجد تسجيلات لهذا الحدث.",
+      delete: "حذف التسجيل",
+      deleteMessage: "هل أنت متأكد أنك تريد حذف هذا التسجيل؟",
+      email: "البريد الإلكتروني:",
+      phone: "الهاتف:",
+      company: "الشركة:",
+      employeeId: "معرف الموظف:",
+      employeeName: "اسم الموظف:",
+      tableNumber: "رقم الطاولة:",
+      tableImage: "صورة الطاولة",
+      recordsPerPage: "عدد السجلات لكل صفحة",
+      showing: "عرض",
+      to: "إلى",
+      of: "من",
+      deleteRecord: "حذف التسجيل",
+    },
+  });
+
   useEffect(() => {
-  const fetchData = async () => {
-    setLoading(true);
+    const fetchData = async () => {
+      setLoading(true);
 
-    const [eventResponse, registrationResponse] = await Promise.all([
-      getCheckInEventBySlug(eventSlug),
-      getCheckInRegistrationsByEvent(eventSlug, page, limit),
-    ]);
+      const [eventResponse, registrationResponse] = await Promise.all([
+        getCheckInEventBySlug(eventSlug),
+        getCheckInRegistrationsByEvent(eventSlug, page, limit),
+      ]);
 
-    // Handle event data
-    if (!eventResponse?.error) {
-      setEventDetails(eventResponse);
-      setIsPublicEvent(eventResponse.eventType === "public");
+      if (!eventResponse?.error) {
+        setEventDetails(eventResponse);
+        setIsPublicEvent(eventResponse.eventType === "public");
+      }
+
+      if (!registrationResponse?.error) {
+        setRegistrations(registrationResponse.data || []);
+        setTotalRegistrations(
+          registrationResponse.pagination?.totalRegistrations || 0
+        );
+      }
+
+      setLoading(false);
+    };
+
+    if (eventSlug) {
+      fetchData();
+    } else {
+      setLoading(false);
     }
-
-    // Handle registration data
-    if (!registrationResponse?.error) {
-      setRegistrations(registrationResponse.data || []);
-      setTotalRegistrations(
-        registrationResponse.pagination?.totalRegistrations || 0
-      );
-    }
-
-    setLoading(false);
-  };
-
-  if (eventSlug) {
-    fetchData();
-  } else {
-    setLoading(false);
-  }
-}, [eventSlug, page, limit]);
+  }, [eventSlug, page, limit]);
 
   const handleDelete = async () => {
     const result = await deleteCheckInRegistration(registrationToDelete);
@@ -120,7 +169,7 @@ const ViewRegistrations = () => {
     );
 
     const eventMetadata = [
-      ["Event Short Name:", eventDetails.slug || "N/A"],
+      ["Event Slug:", eventDetails.slug || "N/A"],
       ["Event Name:", eventDetails.name || "N/A"],
       ["Event Date:", formatDate(eventDetails.date || "N/A")],
       ["Venue:", eventDetails.venue || "N/A"],
@@ -159,40 +208,40 @@ const ViewRegistrations = () => {
   }
 
   return (
-    <Container maxWidth="lg">
+    <Container dir={dir} maxWidth="lg">
       <BreadcrumbsNav />
       <Stack
         direction={{ xs: "column", sm: "row" }}
         justifyContent="space-between"
-        alignItems="flex-start"
-        mb={2}
+        alignItems={{ xs: "stretch", sm: "center" }}
         spacing={2}
+        sx={{ my: 3 }}
       >
-        <Box flex={1}>
-          <Typography variant="h4" fontWeight="bold">
-            Event Details
+        <Box sx={{ flex: 1 }}>
+          <Typography variant="h5" fontWeight="bold">
+            {t.title}
           </Typography>
-          <Typography variant="body1" sx={{ color: "text.secondary" }}>
-            View event details and manage registrations for this event. Export
-            registration data or delete entries as needed.
+          <Typography variant="body2" sx={{ color: "text.secondary" }}>
+            {t.description}
           </Typography>
         </Box>
 
-        <Box textAlign="right">
-          {totalRegistrations > 0 && (
+        {totalRegistrations > 0 && (
+          <Box sx={{ width: { xs: "100%", sm: "auto" } }}>
             <Button
               variant="contained"
               onClick={exportToCSV}
-              color="primary"
               startIcon={<ICONS.download fontSize="small" />}
+              sx={getStartIconSpacing(dir)}
+              fullWidth
             >
-              Export to CSV
+              {t.export}
             </Button>
-          )}
-        </Box>
+          </Box>
+        )}
       </Stack>
 
-      <Divider sx={{ my: 3 }} />
+      <Divider sx={{ mb: 3 }} />
 
       <Box
         sx={{
@@ -204,15 +253,15 @@ const ViewRegistrations = () => {
         }}
       >
         <Typography variant="body1">
-          Showing {Math.min((page - 1) * limit + 1, totalRegistrations)}–{Math.min(page * limit, totalRegistrations)} of {totalRegistrations} records
+          {t.showing} {Math.min((page - 1) * limit + 1, totalRegistrations)}–{Math.min(page * limit, totalRegistrations)} {t.of} {totalRegistrations} {t.records}
         </Typography>
-        <FormControl size="small" sx={{ minWidth: 150, ml: 2 }}>
-          <InputLabel id="limit-select-label">Records per page</InputLabel>
+        <FormControl size="small" sx={{ minWidth: 150 }}>
+          <InputLabel id="limit-select-label">{t.recordsPerPage}</InputLabel>
           <Select
             labelId="limit-select-label"
             value={limit}
             onChange={handleLimitChange}
-            label="Records per page"
+            label={t.recordsPerPage}
           >
             {[5, 10, 20, 50, 100, 250, 500].map((value) => (
               <MenuItem key={value} value={value}>
@@ -225,78 +274,67 @@ const ViewRegistrations = () => {
 
       {registrations.length === 0 ? (
         <Typography
-          sx={{
-            mt: 2,
-            fontSize: "1.2rem",
-            color: "text.secondary",
-            textAlign: "center",
-          }}
+          sx={{ textAlign: "center", color: "text.secondary", mt: 2 }}
         >
-          No registrations found for this event.
+          {t.noRecords}
         </Typography>
       ) : (
         <>
-          <Grid container spacing={4}>
+          <Grid container spacing={4} justifyContent="center">
             {registrations.map((registration) => (
               <Grid item xs={12} sm={6} md={4} key={registration._id}>
                 <Card
                   sx={{
+                    maxWidth: 360,
+                    margin: "0 auto",
+                    height: "100%",
                     boxShadow: 3,
                     borderRadius: 2,
-                    height: "100%",
                     position: "relative",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
                   }}
                 >
-                  <IconButton
-                    color="error"
-                    sx={{
-                      position: "absolute",
-                      top: "10px",
-                      right: "10px",
-                    }}
-                    onClick={() => {
-                      setRegistrationToDelete(registration._id);
-                      setDeleteDialogOpen(true);
-                    }}
-                  >
-                    <ICONS.delete fontSize="small" />
-                  </IconButton>
                   <CardContent>
+                    <Typography variant="h6" gutterBottom>
+                      {registration.employeeName || registration.fullName}
+                    </Typography>
+
                     {isPublicEvent ? (
                       <>
-                        <Typography variant="h6" gutterBottom>
-                          {registration.fullName}
+                        <Typography variant="body2" sx={{ mt: 1 }}>
+                          <strong>{t.email}</strong> {registration.email}
                         </Typography>
-                        <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
-                          <strong>Email:</strong> {registration.email}
+                        <Typography variant="body2" sx={{ mt: 1 }}>
+                          <strong>{t.phone}</strong> {registration.phone}
                         </Typography>
-                        <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
-                          <strong>Phone:</strong> {registration.phone}
-                        </Typography>
-                        <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
-                          <strong>Company:</strong> {registration.company || "N/A"}
+                        <Typography variant="body2" sx={{ mt: 1 }}>
+                          <strong>{t.company}</strong>{" "}
+                          {registration.company || "N/A"}
                         </Typography>
                       </>
                     ) : (
                       <>
-                        <Typography variant="h6" gutterBottom>
-                          {registration.employeeName}
+                        <Typography variant="body2" sx={{ mt: 1 }}>
+                          <strong>{t.employeeId}</strong>{" "}
+                          {registration.employeeId}
                         </Typography>
-                        {registration.employeeId && (
-                          <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
-                            <strong>Employee ID:</strong> {registration.employeeId}
-                          </Typography>
-                        )}
-                        {registration.tableNumber && (
-                          <Typography variant="body2" color="textSecondary" sx={{ mt: 1 }}>
-                            <strong>Table Number:</strong> {registration.tableNumber}
-                          </Typography>
-                        )}
+                        <Typography variant="body2" sx={{ mt: 1 }}>
+                          <strong>{t.tableNumber}</strong>{" "}
+                          {registration.tableNumber}
+                        </Typography>
                         {registration.tableImage && (
-                          <Box sx={{ mt: 2, display: "flex", justifyContent: "center" }}>
+                          <Box
+                            sx={{
+                              mt: 2,
+                              display: "flex",
+                              justifyContent: "center",
+                            }}
+                          >
                             <img
                               src={registration.tableImage}
-                              alt="Table"
+                              alt={t.tableImage}
                               style={{
                                 maxWidth: "250px",
                                 height: "auto",
@@ -309,6 +347,23 @@ const ViewRegistrations = () => {
                       </>
                     )}
                   </CardContent>
+
+                  <CardActions sx={{ justifyContent: "center" }}>
+                    <Tooltip
+                      title={t.deleteRecord}
+                      placement={isArabic ? "left" : "top"}
+                    >
+                      <IconButton
+                        color="error"
+                        onClick={() => {
+                          setRegistrationToDelete(registration._id);
+                          setDeleteDialogOpen(true);
+                        }}
+                      >
+                        <ICONS.delete fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </CardActions>
                 </Card>
               </Grid>
             ))}
@@ -329,8 +384,8 @@ const ViewRegistrations = () => {
         open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
         onConfirm={handleDelete}
-        title="Delete Registration"
-        message="Are you sure you want to delete this registration?"
+        title={t.delete}
+        message={t.deleteMessage}
       />
     </Container>
   );
