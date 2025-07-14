@@ -210,10 +210,10 @@ export default function HomePage() {
         </Box>
 
         {/* Stat Cards */}
-        <Grid container spacing={3} justifyContent="center">
-          {stats.map((stat, i) => (
-            <Grid item key={i}>
-              <StatsCard {...stat} />
+        <Grid container spacing={3} justifyContent={"center"}>
+          {stats.map((s, i) => (
+            <Grid item xs={12} sm={6} md={4} key={i}>
+              <StatsCard {...s} />
             </Grid>
           ))}
         </Grid>

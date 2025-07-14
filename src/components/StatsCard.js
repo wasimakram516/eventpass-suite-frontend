@@ -1,38 +1,53 @@
 "use client";
 
-import { Box, Typography, Paper, Stack, Divider, Chip } from "@mui/material";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import {
+  Box,
+  Typography,
+  Paper,
+  Stack,
+  Divider,
+  Chip,
+  useTheme,
+} from "@mui/material";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+} from "recharts";
 
 const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#8dd1e1"];
 
 export default function StatCard({ title, subtitle, data, centerValue }) {
+  const theme = useTheme();
+
   return (
     <Paper
       elevation={4}
       sx={{
         p: 3,
-        borderRadius: 3,
-        height: 400,
-        width: {
-          xs: "100%",
-          sm: 300,
-        },
-        maxWidth: "100%",
+        borderRadius: 4,
+        width: { xs: "100%", sm: "100%", md: "20rem" }, // 100% on mobile/tablet
+        minHeight: "100%", 
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
+        textAlign: "center",
       }}
     >
-      <Box sx={{ textAlign: "center" }}>
-        <Typography variant="h6" fontWeight="bold" gutterBottom>
+      {/* Header */}
+      <Box>
+        <Typography variant="h6" fontWeight="bold" gutterBottom noWrap>
           {title}
         </Typography>
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" color="text.secondary" noWrap>
           {subtitle}
         </Typography>
       </Box>
 
-      <Box sx={{ height: 200, position: "relative" }}>
+      {/* Pie Chart */}
+      <Box sx={{ position: "relative", height: 200, my: 2 }}>
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -42,10 +57,10 @@ export default function StatCard({ title, subtitle, data, centerValue }) {
               cy="50%"
               outerRadius={70}
               innerRadius={50}
-              labelLine={false}
-              isAnimationActive={true}
-              animationDuration={1000}
+              isAnimationActive
+              animationDuration={800}
               animationEasing="ease-out"
+              labelLine={false}
             >
               {data.map((_, i) => (
                 <Cell key={i} fill={COLORS[i % COLORS.length]} />
@@ -64,35 +79,47 @@ export default function StatCard({ title, subtitle, data, centerValue }) {
             top: "50%",
             left: "50%",
             transform: "translate(-50%, -50%)",
-            color: "primary.main",
+            color: theme.palette.primary.main,
+            whiteSpace: "nowrap",
           }}
         >
           {centerValue}
         </Typography>
       </Box>
 
-      <Divider />
+      <Divider sx={{ my: 1.5 }} />
 
-      <Stack spacing={1} mt={2}>
+      {/* Option breakdown */}
+      <Stack spacing={1}>
         {data.map((item, idx) => (
           <Stack
             key={idx}
             direction="row"
             justifyContent="space-between"
             alignItems="center"
+            sx={{
+              bgcolor: "grey.100",
+              borderRadius: 2,
+              px: 1.5,
+              py: 1,
+              transition: "background 0.3s",
+              "&:hover": { bgcolor: "grey.200" },
+            }}
           >
             <Typography
               variant="body2"
+              fontWeight={500}
               sx={{ color: COLORS[idx % COLORS.length] }}
             >
               {item.name}
             </Typography>
             <Chip
-              label={`${item.value}`}
+              label={item.value}
               size="small"
               sx={{
                 bgcolor: COLORS[idx % COLORS.length],
                 color: "#fff",
+                fontWeight: "bold",
               }}
             />
           </Stack>
