@@ -278,24 +278,23 @@ export default function BusinessDetailsPage() {
       <BreadcrumbsNav />
 
       {/* HEADER: only show “Create” for admins OR business users with no biz */}
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 1,
-        }}
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
+        justifyContent="space-between"
+        alignItems={{ xs: "stretch", sm: "flex-start" }}
+        spacing={2}
+        mb={2}
       >
         <Box>
-          <Typography
-            variant="h4"
-            fontWeight="bold"
-            gutterBottom
-            textAlign={align}
-          >
+          <Typography variant="h4" fontWeight="bold" textAlign={align}>
             {t.title}
           </Typography>
-          <Typography variant="body1" color="text.secondary" textAlign={align}>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            mt={0.5}
+            textAlign={align}
+          >
             {t.subtitle}
           </Typography>
         </Box>
@@ -310,9 +309,8 @@ export default function BusinessDetailsPage() {
             {t.create}
           </Button>
         )}
-      </Box>
-
-      <Divider sx={{ my: 2 }} />
+      </Stack>
+      <Divider sx={{ mb: 2 }} />
 
       {loading && (
         <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
@@ -332,53 +330,90 @@ export default function BusinessDetailsPage() {
         </Box>
       ) : (
         /* ELSE show the grid of businesses (for admin all, for biz user exactly one) */
-        <Grid container spacing={3}>
+        <Grid container spacing={3} justifyContent={"center"}>
           {businesses.map((biz) => (
             <Grid item xs={12} sm={6} md={4} key={biz._id}>
-              <Card elevation={3} sx={{ p: 2 }}>
-                <Stack direction="row" spacing={2} alignItems="center">
-                  <Avatar
-                    src={biz.logoUrl}
-                    alt={biz.name}
-                    sx={{ width: 56, height: 56 }}
+              <Grid item xs={12} sm={6} md={4} lg={3}>
+                <Card
+                  elevation={3}
+                  sx={{
+                    p: 2,
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    borderRadius: 2,
+                    minWidth: 0, // prevent overflow on narrow screens
+                  }}
+                >
+                  <Stack
+                    direction="row"
+                    spacing={2}
+                    alignItems="center"
+                    flexWrap="wrap"
                   >
-                    {biz.name[0]}
-                  </Avatar>
-                  <Box>
-                    <Typography variant="h6">{biz.name}</Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Slug: <strong>{biz.slug}</strong>
-                    </Typography>
-                    <Typography variant="body2">
-                      {biz.contact?.email}
-                    </Typography>
-                    {biz.owner && (
-                      <Typography variant="caption" color="text.secondary">
-                        {t.owner}: {biz.owner.name || biz.owner}
+                    <Avatar
+                      src={biz.logoUrl}
+                      alt={biz.name}
+                      sx={{ width: 56, height: 56, flexShrink: 0 }}
+                    >
+                      {biz.name[0]}
+                    </Avatar>
+
+                    <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                      <Typography variant="h6" fontWeight="bold" noWrap>
+                        {biz.name}
                       </Typography>
-                    )}
-                  </Box>
-                </Stack>
+                      <Typography variant="body2" color="text.secondary" noWrap>
+                        Slug: <strong>{biz.slug}</strong>
+                      </Typography>
+                      <Typography variant="body2" noWrap>
+                        {biz.contact?.email}
+                      </Typography>
+                      {biz.owner && (
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          display="block"
+                          noWrap
+                        >
+                          {t.owner}: {biz.owner.name || biz.owner}
+                        </Typography>
+                      )}
+                    </Box>
+                  </Stack>
 
-                <Box sx={{ mt: 2, textAlign: "right" }}>
-                  <Tooltip title={t.edit}>
-                    <IconButton color="primary" onClick={() => handleOpen(biz)}>
-                      <EditIcon />
-                    </IconButton>
-                  </Tooltip>
-
-                  {user.role === "admin" && (
-                    <Tooltip title={t.delete}>
+                  <Box
+                    sx={{
+                      mt: 2,
+                      display: "flex",
+                      justifyContent: "flex-end",
+                      gap: 1,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <Tooltip title={t.edit}>
                       <IconButton
-                        color="error"
-                        onClick={() => openDeleteConfirm(biz)}
+                        color="primary"
+                        onClick={() => handleOpen(biz)}
                       >
-                        <DeleteIcon />
+                        <EditIcon />
                       </IconButton>
                     </Tooltip>
-                  )}
-                </Box>
-              </Card>
+
+                    {user.role === "admin" && (
+                      <Tooltip title={t.delete}>
+                        <IconButton
+                          color="error"
+                          onClick={() => openDeleteConfirm(biz)}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                  </Box>
+                </Card>
+              </Grid>
             </Grid>
           ))}
         </Grid>

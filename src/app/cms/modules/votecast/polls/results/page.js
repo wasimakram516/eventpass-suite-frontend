@@ -163,35 +163,41 @@ export default function ResultsPage() {
           <Stack
             direction={{ xs: "column", sm: "row" }}
             justifyContent="space-between"
-            alignItems={{ xs: "stretch", sm: "left" }}
+            alignItems={{ xs: "stretch", sm: "center" }}
             spacing={2}
             mb={2}
           >
+            {/* Left: Title + Subtitle */}
             <Box>
               <Typography variant="h4" fontWeight="bold">
                 {t.title}
               </Typography>
               <Typography variant="body2" color="text.secondary" mt={0.5}>
-                {" "}
                 {t.subtitle}
               </Typography>
             </Box>
 
-            <Stack direction={{ sm: "column", md: "row" }} spacing={2}>
+            {/* Right: Buttons */}
+            <Stack
+              direction={{ xs: "column", md: "row" }}
+              spacing={2}
+              alignItems="flex-start"
+            >
               {user?.role === "admin" && (
                 <Button
                   variant="outlined"
                   onClick={() => setDrawerOpen(true)}
                   startIcon={<ICONS.business fontSize="small" />}
+                  fullWidth
                 >
                   {t.selectBusiness}
                 </Button>
               )}
-
               <Button
                 variant="outlined"
                 onClick={() => setFilterDrawerOpen(true)}
                 startIcon={<ICONS.filter fontSize="small" />}
+                fullWidth
               >
                 {t.moreFilters}
               </Button>

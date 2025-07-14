@@ -13,13 +13,17 @@ export default function StatCard({ title, subtitle, data, centerValue }) {
         p: 3,
         borderRadius: 3,
         height: 400,
-        width: 300,
+        width: {
+          xs: "100%",
+          sm: 300,
+        },
+        maxWidth: "100%",
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
       }}
     >
-      <Box sx={{textAlign:"center"}}>
+      <Box sx={{ textAlign: "center" }}>
         <Typography variant="h6" fontWeight="bold" gutterBottom>
           {title}
         </Typography>

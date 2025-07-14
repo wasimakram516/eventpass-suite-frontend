@@ -35,7 +35,11 @@ const DashboardCard = ({
           flexDirection: "column",
           justifyContent: "space-between",
           height: "100%",
-          width: 300,
+          width: {
+            xs: "100%",
+            sm: 300,
+          },
+          maxWidth: "100%",
           transition: "transform 0.2s, box-shadow 0.2s",
           "&:hover": {
             boxShadow: "0px 6px 15px rgba(0, 0, 0, 0.2)",

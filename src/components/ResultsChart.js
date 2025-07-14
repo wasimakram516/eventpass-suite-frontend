@@ -23,7 +23,7 @@ export default function ResultsChart({ poll }) {
 
   return (
     <Box
-      width="20rem"
+      width={{ xs: "100%", sm: "20rem" }}
       minHeight="550px"
       display="flex"
       flexDirection="column"

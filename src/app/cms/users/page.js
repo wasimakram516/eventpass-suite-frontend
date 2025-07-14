@@ -235,6 +235,7 @@ export default function UsersPage() {
             {t.subtitle}
           </Typography>
         </Box>
+
         {isBusinessUser && (
           <Button
             variant="contained"
@@ -246,17 +247,42 @@ export default function UsersPage() {
           </Button>
         )}
       </Box>
+
       <Divider sx={{ mb: 3 }} />
 
       <Grid container spacing={3}>
         {users?.map((user) => (
-          <Grid item xs={12} sm={6} md={4} key={user._id}>
-            <Card elevation={3} sx={{ p: 2 }}>
-              <Stack direction="row" spacing={2} alignItems="center">
+          <Box
+            key={user._id}
+            sx={{
+              width: { xs: "100%", sm: 300 },
+              flexShrink: 0,
+            }}
+          >
+            <Card
+              elevation={3}
+              sx={{
+                p: 2,
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                borderRadius: 2,
+              }}
+            >
+              <Stack
+                direction="row"
+                spacing={2}
+                alignItems="center"
+                flexWrap="wrap"
+              >
                 <Avatar sx={{ width: 56, height: 56 }}>{user.name?.[0]}</Avatar>
-                <Box>
-                  <Typography variant="h6">{user.name}</Typography>
-                  <Typography variant="body2" color="text.secondary">
+
+                <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                  <Typography variant="h6" noWrap>
+                    {user.name}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" noWrap>
                     {user.email}
                   </Typography>
                   <Box sx={{ mt: 0.5 }}>
@@ -271,7 +297,16 @@ export default function UsersPage() {
                   </Box>
                 </Box>
               </Stack>
-              <Box sx={{ mt: 2, textAlign: "right" }}>
+
+              <Box
+                sx={{
+                  mt: 2,
+                  display: "flex",
+                  justifyContent: "flex-end",
+                  gap: 1,
+                  flexWrap: "wrap",
+                }}
+              >
                 <Tooltip title={t.edit}>
                   <IconButton
                     color="primary"
@@ -298,7 +333,7 @@ export default function UsersPage() {
                 )}
               </Box>
             </Card>
-          </Grid>
+          </Box>
         ))}
       </Grid>
 

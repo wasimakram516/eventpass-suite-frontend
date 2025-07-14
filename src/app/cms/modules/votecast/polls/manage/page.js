@@ -340,11 +340,7 @@ export default function ManagePollsPage() {
           </Box>
         ) : (
           selectedBusiness && (
-            <Grid
-              container
-              spacing={3}
-              justifyContent={{ xs: "center", sm: "flex-start" }}
-            >
+            <Grid container spacing={3} justifyContent={"center"}>
               {polls.map((poll) => (
                 <Grid
                   item
@@ -361,32 +357,59 @@ export default function ManagePollsPage() {
                   <Card
                     elevation={3}
                     sx={{
-                      width: "350px",
+                      width: { xs: "100%", sm: 300 },
+                      maxWidth: "100%",
                       display: "flex",
                       flexDirection: "column",
                       justifyContent: "space-between",
+                      height: "100%",
+                      position: "relative",
+                      px: 2,
+                      py: 2,
                     }}
                   >
-                    <CardHeader
-                      avatar={
-                        <Avatar sx={{ bgcolor: "primary.main" }}>
-                          <ICONS.poll fontSize="small" />
-                        </Avatar>
-                      }
-                      title={poll.question}
-                      subheader={poll.business?.name || t.noBusiness}
-                      action={
-                        <Chip
-                          label={poll.status}
-                          color={
-                            poll.status === "active" ? "success" : "default"
-                          }
-                          size="small"
-                          sx={{ mt: 1 }}
-                        />
-                      }
-                    />
-                    <CardContent>
+                    {/* Custom Header Stack */}
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      alignItems="center"
+                      mb={1}
+                    >
+                      <Avatar sx={{ bgcolor: "primary.main" }}>
+                        <ICONS.poll fontSize="small" />
+                      </Avatar>
+                      <Box flexGrow={1}>
+                        <Typography
+                          variant="subtitle2"
+                          fontWeight={600}
+                          sx={{
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            display: "-webkit-box",
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: "vertical",
+                          }}
+                        >
+                          {poll.question}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          noWrap
+                          sx={{ display: "block" }}
+                        >
+                          {poll.business?.name || t.noBusiness}
+                        </Typography>
+                      </Box>
+                      <Chip
+                        label={poll.status}
+                        color={poll.status === "active" ? "success" : "default"}
+                        size="small"
+                      />
+                    </Stack>
+
+                    {/* Options */}
+                    <CardContent sx={{ flexGrow: 1, pt: 1 }}>
                       <Stack spacing={1}>
                         {poll.options.map((opt, idx) => (
                           <Stack
@@ -394,6 +417,7 @@ export default function ManagePollsPage() {
                             direction="row"
                             spacing={1}
                             alignItems="center"
+                            sx={{ overflow: "hidden" }}
                           >
                             {opt.imageUrl && (
                               <Avatar
@@ -403,14 +427,21 @@ export default function ManagePollsPage() {
                                 sx={{ width: 40, height: 40 }}
                               />
                             )}
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography
+                              variant="body2"
+                              color="text.secondary"
+                              noWrap
+                              sx={{ flexGrow: 1 }}
+                            >
                               {opt.text}
                             </Typography>
                           </Stack>
                         ))}
                       </Stack>
                     </CardContent>
-                    <CardActions sx={{ justifyContent: "flex-end" }}>
+
+                    {/* Actions */}
+                    <CardActions sx={{ justifyContent: "center", pt: 1 }}>
                       <Tooltip title={t.clone}>
                         <IconButton
                           color="secondary"
@@ -419,7 +450,6 @@ export default function ManagePollsPage() {
                           <ICONS.copy fontSize="small" />
                         </IconButton>
                       </Tooltip>
-
                       <Tooltip title={t.edit}>
                         <IconButton
                           color="primary"
@@ -468,7 +498,7 @@ export default function ManagePollsPage() {
         >
           {selectedBusiness ? (
             <>
-              <FormControl fullWidth sx={{ mb: 2 }}size="large">
+              <FormControl fullWidth sx={{ mb: 2 }} size="large">
                 <InputLabel id="poll-status-label">{t.pollStatus}</InputLabel>
                 <Select
                   labelId="poll-status-label"
