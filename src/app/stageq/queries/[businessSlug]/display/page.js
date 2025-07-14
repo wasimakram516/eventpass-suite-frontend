@@ -66,10 +66,15 @@ export default function LiveQuestionDisplay() {
     <Box
       sx={{
         minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "flex-start",
+        alignItems: "center",
         bgcolor: "#f0f4f8",
         px: { xs: 2, sm: 4 },
         pt: 2,
-        mb: 10,
+        pb: 10,
+        overflowX: "hidden",
       }}
     >
       {business?.logoUrl && (
@@ -78,9 +83,8 @@ export default function LiveQuestionDisplay() {
             src={business.logoUrl}
             alt={`${business.name} Logo`}
             style={{
-              maxWidth: "250px",
-              width: "70%",
-              height: "auto",
+              width: "auto",
+              height: "100px",
               objectFit: "contain",
             }}
           />

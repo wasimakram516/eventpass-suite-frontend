@@ -1,3 +1,4 @@
+// General UI / Navigation Icons
 import {
   Home as HomeIcon,
   Add as AddIcon,
@@ -15,31 +16,44 @@ import {
   Visibility as VisibilityIcon,
   VisibilityOff as VisibilityOffIcon,
   Search as SearchIcon,
+  Replay as ReplayIcon,
+  Leaderboard as LeaderboardIcon,
+  ViewModule as ModuleIcon,
+  Menu as MenuIcon,
+} from "@mui/icons-material";
+
+// Status & Feedback
+import {
   Info as InfoIcon,
   Warning as WarningIcon,
   ErrorOutline as ErrorOutlineIcon,
   CheckCircle as CheckCircleIcon,
   CheckCircleOutline as CheckCircleOutlineIcon,
-  Replay as ReplayIcon,
-  Leaderboard as LeaderboardIcon,
 } from "@mui/icons-material";
 
+// Authentication Icons
 import {
   Logout as LogoutIcon,
   Login as LoginIcon,
   PersonAdd as RegisterIcon,
 } from "@mui/icons-material";
 
+// File Actions
 import {
   FileDownload as FileDownloadIcon,
   FileUpload as FileUploadIcon,
 } from "@mui/icons-material";
 
+// Time & Location
 import {
   LocationOn as LocationIcon,
   Event as EventIcon,
   AccessTime as AccessTimeIcon,
   TableRestaurant as TableRestaurantIcon,
+} from "@mui/icons-material";
+
+// Domain-Specific / App Functionality
+import {
   AppRegistration as AppRegistrationIcon,
   QrCodeScanner as QrCodeScannerIcon,
   Business as BusinessIcon,
@@ -48,18 +62,20 @@ import {
   Quiz as QuizIcon,
   Poll as PollIcon,
   ContentCopy as ContentCopyIcon,
-  ViewModule as ModuleIcon,
-  Menu as MenuIcon,
 } from "@mui/icons-material";
 
-import PeopleIcon from "@mui/icons-material/People";
-import ForumIcon from "@mui/icons-material/Forum";
-import ThumbUpIcon from "@mui/icons-material/ThumbUp";
-import PhoneIcon from "@mui/icons-material/Phone";
-import EmailIcon from "@mui/icons-material/Email";
-import ThumbUpOffAltIcon from "@mui/icons-material/ThumbUpOffAlt";
+// Miscellaneous Icons
+import {
+  People as PeopleIcon,
+  Forum as ForumIcon,
+  ThumbUp as ThumbUpIcon,
+  ThumbUpOffAlt as ThumbUpOffAltIcon,
+  Phone as PhoneIcon,
+  Email as EmailIcon,
+} from "@mui/icons-material";
+
 const ICONS = {
-  // General Actions
+  // General UI / Navigation
   home: HomeIcon,
   add: AddIcon,
   create: AddIcon,
@@ -78,8 +94,10 @@ const ICONS = {
   hide: VisibilityOffIcon,
   search: SearchIcon,
   replay: ReplayIcon,
-  results: LeaderboardIcon,
   leaderboard: LeaderboardIcon,
+  results: LeaderboardIcon,
+  module: ModuleIcon,
+  menu: MenuIcon,
 
   // Auth
   login: LoginIcon,
@@ -90,7 +108,7 @@ const ICONS = {
   download: FileDownloadIcon,
   upload: FileUploadIcon,
 
-  // Info & Status
+  // Status & Feedback
   info: InfoIcon,
   warning: WarningIcon,
   errorOutline: ErrorOutlineIcon,
@@ -103,25 +121,22 @@ const ICONS = {
   time: AccessTimeIcon,
   diningTable: TableRestaurantIcon,
 
-  // Domain-specific
+  // Domain-Specific / App Features
   appRegister: AppRegistrationIcon,
   qrCodeScanner: QrCodeScannerIcon,
   business: BusinessIcon,
-
   person: PersonIcon,
   peopleAlt: PeopleAltIcon,
   quiz: QuizIcon,
   poll: PollIcon,
   copy: ContentCopyIcon,
+
+  // Miscellaneous
   people: PeopleIcon,
   forum: ForumIcon,
   thumb: ThumbUpIcon,
   thumbOff: ThumbUpOffAltIcon,
   phone: PhoneIcon,
   email: EmailIcon,
-  location: LocationIcon,
-  module: ModuleIcon,
-  menu: MenuIcon,
 };
-
 export default ICONS;

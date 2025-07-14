@@ -5,7 +5,7 @@ import ModuleLandingPage from "@/components/ModuleLandingPage";
 
 const translations = {
   en: {
-    title: "Stageq",
+    title: "StageQ",
     features: [
       "Share your business link or QR code with your audience for instant engagement",
       "Audience members scan the QR to submit new questions or vote on existing ones",
@@ -15,7 +15,7 @@ const translations = {
     ctaLabel: "Manage Event Queries",
   },
   ar: {
-    title: "Stageq",
+    title: "StageQ",
     features: [
       "شارك رابط عملك أو رمز الاستجابة السريعة مع الجمهور للتفاعل الفوري",
       "يقوم أفراد الجمهور بمسح الرمز لإرسال أسئلة جديدة أو التصويت على الأسئلة الموجودة",

@@ -33,6 +33,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import BusinessDrawer from "@/components/BusinessDrawer";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import EmptyBusinessState from "@/components/EmptyBusinessState";
 
 const translations = {
   en: {
@@ -65,9 +66,6 @@ const translations = {
     questionUpdated: "Question updated",
     failedToUpdateQuestion: "Failed to update question",
     failedToUpdateAnsweredStatus: "Failed to update answered status",
-    // Drawer
-    selectBusinessTitle: "Select Business",
-    noBusinessesAvailable: "No businesses available",
   },
   ar: {
     title: "إدارة الأسئلة",
@@ -98,9 +96,6 @@ const translations = {
     questionUpdated: "تم تحديث السؤال",
     failedToUpdateQuestion: "فشل في تحديث السؤال",
     failedToUpdateAnsweredStatus: "فشل في تحديث حالة الإجابة",
-    // Drawer
-    selectBusinessTitle: "اختيار العمل",
-    noBusinessesAvailable: "لا توجد أعمال متاحة",
   },
 };
 export default function ManageQuestionsPage() {
@@ -162,17 +157,6 @@ export default function ManageQuestionsPage() {
 
   return (
     <Box dir={dir} sx={{ display: "flex", minHeight: "100vh" }}>
-      {user?.role === "admin" && (
-        <BusinessDrawer
-          open={drawerOpen}
-          onClose={() => setDrawerOpen(false)}
-          businesses={businesses}
-          selectedBusinessSlug={selectedBusiness}
-          onSelect={handleBusinessSelect}
-          title={t.selectBusinessTitle}
-          noDataText={t.noBusinessesAvailable}
-        />
-      )}
       {/* Main Content */}
       <Container maxWidth="lg">
         <BreadcrumbsNav />
@@ -182,9 +166,10 @@ export default function ManageQuestionsPage() {
           justifyContent="space-between"
           alignItems={{ xs: "stretch", sm: "center" }}
           spacing={2}
-          mb={2}
+          mb={3}
         >
-          <Box>
+          {/* Title + Description */}
+          <Box sx={{ flex: 1 }}>
             <Typography variant="h4" fontWeight="bold">
               {t.title}
             </Typography>
@@ -192,12 +177,20 @@ export default function ManageQuestionsPage() {
               {t.description}
             </Typography>
           </Box>
-          <Stack direction={{ sm: "column", md: "row" }} spacing={2}>
+
+          {/* Buttons */}
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={2}
+            alignItems={{ xs: "stretch", sm: "center" }}
+            sx={{ width: { xs: "100%", sm: "auto" } }}
+          >
             {user?.role === "admin" && (
               <Button
                 variant="outlined"
                 onClick={() => setDrawerOpen(true)}
                 startIcon={<ICONS.business fontSize="small" />}
+                fullWidth={true}
               >
                 {t.selectBusinessButton}
               </Button>
@@ -212,6 +205,7 @@ export default function ManageQuestionsPage() {
                     "_blank"
                   )
                 }
+                fullWidth={true}
               >
                 {t.openFullScreenButton}
               </Button>
@@ -221,7 +215,9 @@ export default function ManageQuestionsPage() {
 
         <Divider sx={{ mb: 4 }} />
 
-        {loading ? (
+        {!selectedBusiness ? (
+          <EmptyBusinessState/>
+        ) : loading ? (
           <Box
             display="flex"
             justifyContent="center"
@@ -231,7 +227,7 @@ export default function ManageQuestionsPage() {
             <CircularProgress />
           </Box>
         ) : (
-          <Grid container spacing={3}>
+          <Grid container spacing={3} justifyContent="center">
             {questions.map((q) => (
               <Grid item xs={12} sm={6} md={4} key={q._id}>
                 <Card
@@ -261,7 +257,7 @@ export default function ManageQuestionsPage() {
                     </Typography>
                   </CardContent>
 
-                  {/* ✅ Visitor Info & Actions Grouped Together */}
+                  {/* Visitor Info & Actions Grouped Together */}
                   <Box
                     sx={{
                       px: 2,
@@ -377,7 +373,7 @@ export default function ManageQuestionsPage() {
           </Grid>
         )}
 
-        {/* ✅ Edit Dialog */}
+        {/* Edit Dialog */}
         <Dialog
           open={editDialogOpen}
           onClose={() => setEditDialogOpen(false)}
@@ -411,7 +407,17 @@ export default function ManageQuestionsPage() {
           </DialogActions>
         </Dialog>
 
-        {/* ✅ Delete Dialog */}
+        {user?.role === "admin" && (
+          <BusinessDrawer
+            open={drawerOpen}
+            onClose={() => setDrawerOpen(false)}
+            businesses={businesses}
+            selectedBusinessSlug={selectedBusiness}
+            onSelect={handleBusinessSelect}
+          />
+        )}
+
+        {/* Delete Dialog */}
         <ConfirmationDialog
           open={confirmDelete.open}
           onClose={() => setConfirmDelete({ open: false, id: null })}

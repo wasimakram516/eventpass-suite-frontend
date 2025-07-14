@@ -20,6 +20,7 @@ import { getAllBusinesses } from "@/services/businessService";
 import BusinessDrawer from "@/components/BusinessDrawer";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import EmptyBusinessState from "@/components/EmptyBusinessState";
 
 const translations = {
   en: {
@@ -118,20 +119,20 @@ export default function VisitorsPage() {
           businesses={businesses}
           selectedBusinessSlug={selectedBusiness}
           onSelect={handleBusinessSelect}
-          title={t.selectBusinessTitle}
-          noDataText={t.noBusinessesAvailable}
         />
       )}
       <Container maxWidth="lg">
         <BreadcrumbsNav />
 
         <Stack
-          direction="row"
+          direction={{ xs: "column", sm: "row" }}
           justifyContent="space-between"
-          alignItems="flex-start"
-          mb={1}
+          alignItems={{ xs: "stretch", sm: "flex-start" }}
+          spacing={2}
+          mb={3}
         >
-          <Stack spacing={1} alignItems="flex-start">
+          {/* Title and Description */}
+          <Stack spacing={1} alignItems="flex-start" flex={1}>
             <Typography variant="h4" fontWeight="bold">
               {t.title}
             </Typography>
@@ -140,12 +141,14 @@ export default function VisitorsPage() {
             </Typography>
           </Stack>
 
-          {/* Select Business button for admin only */}
+          {/* Select Business Button (Admin Only) */}
           {user?.role === "admin" && (
             <Button
               variant="outlined"
               onClick={() => setDrawerOpen(true)}
               startIcon={<ICONS.business fontSize="small" />}
+              fullWidth={{ xs: true, sm: false }}
+              sx={{ alignSelf: { xs: "stretch", sm: "flex-start" } }}
             >
               {t.selectBusinessButton}
             </Button>
@@ -154,12 +157,19 @@ export default function VisitorsPage() {
 
         <Divider sx={{ width: "100%", mb: 4 }} />
 
-        {loading ? (
-          <Box textAlign={align} mt={4}>
+        {!selectedBusiness ? (
+          <EmptyBusinessState />
+        ) : loading ? (
+          <Box
+            display="flex"
+            justifyContent="center"
+            alignItems="center"
+            minHeight="40vh"
+          >
             <CircularProgress />
           </Box>
         ) : (
-          <Grid container spacing={3}>
+          <Grid container spacing={3} justifyContent={"center"}>
             {visitors.map((v) => (
               <Grid item xs={12} sm={6} md={4} key={v._id}>
                 <Card variant="outlined">

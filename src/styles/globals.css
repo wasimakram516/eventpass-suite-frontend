@@ -26,15 +26,20 @@ body {
 }
 
 .question-container {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 32px;
   padding: 32px;
   margin: 0 auto;
+  width: 100%;
+  height: auto;
 }
 
 .bubble-question {
   position: relative;
+  width: 100%;
+  max-width: 300px;
   background: linear-gradient(135deg, #1565c0, #00acc1);
   color: #fff;
   border-radius: 24px;

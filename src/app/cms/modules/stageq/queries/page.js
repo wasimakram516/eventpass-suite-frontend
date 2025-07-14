@@ -58,7 +58,7 @@ export default function QueriesDashboard() {
       <Grid
         container
         spacing={3}
-        justifyContent={{ xs: "center", sm: "flex-start" }}
+        justifyContent={"center"}
       >
         <Grid item xs={12} sm={6} md={4}>
           <DashboardCard

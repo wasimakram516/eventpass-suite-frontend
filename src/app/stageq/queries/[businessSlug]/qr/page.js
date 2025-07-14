@@ -58,8 +58,7 @@ export default function PublicQrPage() {
   }
 
   return (
-    <Container
-      disableGutters
+    <Box
       dir={dir}
       sx={{
         minHeight: "100vh",
@@ -67,70 +66,65 @@ export default function PublicQrPage() {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        textAlign: { align },
-        pb: 4,
+        justifyContent: "center",
+        position: "relative",
         px: 2,
+        pb: 8,
+        textAlign: "center",
+        bgcolor: "background.default",
       }}
     >
       <LanguageSelector top={20} right={20} />
 
+      {/* Logo */}
       {business?.logoUrl && (
-        <Box sx={{ textAlign: align, mt: 2 }}>
+        <Box sx={{ mt: 2 }}>
           <img
             src={business.logoUrl}
             alt={`${business.name} Logo`}
             style={{
-              maxWidth: "250px",
-              width: "70%",
-              height: "auto",
+              width: "auto",
+              height: "100px",
               objectFit: "contain",
             }}
           />
         </Box>
       )}
 
-      <Box sx={{ width: "100%", maxWidth: 800, mt: 4 }}>
-        <Typography
-          variant="h4"
-          fontWeight="bold"
-          gutterBottom
-          sx={{ textAlign: align }}
-        >
+      {/* Title & Description */}
+      <Box sx={{ mt: 4, maxWidth: 800, textAlign: "center" }}>
+        <Typography variant="h4" fontWeight="bold" gutterBottom>
           {t.scanTitle}
         </Typography>
-
-        <Typography
-          variant="body1"
-          color="text.secondary"
-          sx={{ mb: 4, textAlign: align }}
-        >
+        <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
           {t.scanDesc}
         </Typography>
+      </Box>
 
-        <Box
-          sx={{
-            p: 3,
-            borderRadius: 2,
-            backgroundColor: "#fff",
-            boxShadow: 3,
-            width: "100%",
-            maxWidth: 300,
-            mx: "auto",
-            mb: 4,
-          }}
-        >
-          <QRCode
-            value={askPageUrl}
-            size={256}
-            bgColor="#ffffff"
-            fgColor="#000000"
-            style={{ width: "100%", height: "auto" }}
-          />
-        </Box>
+      {/* QR Code */}
+      <Box
+        sx={{
+          p: 3,
+          borderRadius: 2,
+          backgroundColor: "#fff",
+          boxShadow: 3,
+          maxWidth: 300,
+          width: "100%",
+          mx: "auto",
+          mb: 4,
+        }}
+      >
+        <QRCode
+          value={askPageUrl}
+          size={256}
+          bgColor="#ffffff"
+          fgColor="#000000"
+          style={{ width: "100%", height: "auto" }}
+        />
       </Box>
 
       {/* Infographic */}
-      <Box sx={{ width: "70%", mb: 6 }}>
+      <Box sx={{ width: "70%", mb: 4 }}>
         <Image
           src="/info.png"
           alt="Infographic"
@@ -142,6 +136,6 @@ export default function PublicQrPage() {
 
       {/* Footer */}
       <Footer />
-    </Container>
+    </Box>
   );
 }

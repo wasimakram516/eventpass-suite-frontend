@@ -1,27 +1,39 @@
 "use client";
 
-import { Box, Divider } from "@mui/material";
+import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
+import { Box, Divider, Typography } from "@mui/material";
 import Image from "next/image";
 
 export default function Footer() {
+  const appName = useGlobalConfig()?.globalConfig?.appName;
+
   return (
     <Box
+      component="footer"
       sx={{
         position: "fixed",
         bottom: 0,
         left: 0,
-        width: "100%",
+        right: 0,
         bgcolor: "background.default",
         zIndex: 10,
         py: 1,
         px: 4,
         display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        boxShadow: "0px 2px 8px rgba(0,0,0,0.1)",
+        alignItems: "center", 
+        justifyContent: "center", 
+        boxShadow: 1,
       }}
     >
-      <Box sx={{ width: { xs: 35, sm: 40 } }}>
+      {/* Logo */}
+      <Box
+        sx={{
+          width: { xs: 35, sm: 40 },
+          height: 30,
+          display: "flex",
+          alignItems: "center",
+        }}
+      >
         <Image
           src="/WW.png"
           alt="WhiteWall Logo"
@@ -31,21 +43,29 @@ export default function Footer() {
         />
       </Box>
 
-      <Divider
-        orientation="vertical"
-        flexItem
-        sx={{ bgcolor: "grey.400", height: 30, mx: 2 }}
-      />
-
-      <Box sx={{ width: { xs: 90, sm: 90 } }}>
-        <Image
-          src="/voteCast.png"
-          alt="VoteCast Logo"
-          width={120}
-          height={40}
-          style={{ width: "100%", height: "auto", objectFit: "contain" }}
-        />
-      </Box>
+      {/* Divider + App Name */}
+      {appName && (
+        <>
+          <Divider
+            orientation="vertical"
+            flexItem
+            sx={{ mx: 2, height: 30, bgcolor: "grey.400" }}
+          />
+          <Typography
+            variant="body1"
+            sx={{
+              whiteSpace: "nowrap",
+              fontWeight: 500,
+              fontSize: { xs: "0.875rem", sm: "1rem" },
+              display: "flex",
+              alignItems: "center",
+              height: 30,
+            }}
+          >
+            {appName}
+          </Typography>
+        </>
+      )}
     </Box>
   );
 }
