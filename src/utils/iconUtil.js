@@ -52,6 +52,12 @@ import {
   Menu as MenuIcon,
 } from "@mui/icons-material";
 
+import PeopleIcon from "@mui/icons-material/People";
+import ForumIcon from "@mui/icons-material/Forum";
+import ThumbUpIcon from "@mui/icons-material/ThumbUp";
+import PhoneIcon from "@mui/icons-material/Phone";
+import EmailIcon from "@mui/icons-material/Email";
+import ThumbUpOffAltIcon from "@mui/icons-material/ThumbUpOffAlt";
 const ICONS = {
   // General Actions
   home: HomeIcon,
@@ -105,9 +111,15 @@ const ICONS = {
   person: PersonIcon,
   peopleAlt: PeopleAltIcon,
   quiz: QuizIcon,
-  checkCircle: CheckCircleIcon,
   poll: PollIcon,
   copy: ContentCopyIcon,
+  people: PeopleIcon,
+  forum: ForumIcon,
+  thumb: ThumbUpIcon,
+  thumbOff: ThumbUpOffAltIcon,
+  phone: PhoneIcon,
+  email: EmailIcon,
+  location: LocationIcon,
   module: ModuleIcon,
   menu: MenuIcon,
 };
