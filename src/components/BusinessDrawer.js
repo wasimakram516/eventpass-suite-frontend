@@ -18,10 +18,17 @@ export default function BusinessDrawer({
   businesses = [],
   selectedBusinessSlug,
   onSelect,
-  title,
-  noDataText, 
 }) {
-  const { dir, align } = useI18nLayout();
+  const { t, dir, align } = useI18nLayout({
+    en: {
+      title: "Select Business",
+      noBusinessesAvailable: "No businesses available",
+    },
+    ar: {
+      title: "اختيار العمل",
+      noBusinessesAvailable: "لا توجد أعمال متاحة",
+    },
+  });
 
   return (
     <Drawer
@@ -49,7 +56,7 @@ export default function BusinessDrawer({
           }}
         >
           <Typography variant="h6" fontWeight={600}>
-            {title}
+            {t.title}
           </Typography>
           <IconButton
             onClick={onClose}
@@ -95,7 +102,7 @@ export default function BusinessDrawer({
           <Stack alignItems="center" spacing={2} sx={{ mt: 6 }}>
             <ICONS.business sx={{ fontSize: 48, color: "grey.400" }} />
             <Typography variant="body2" color="text.secondary" align={align}>
-              {noDataText}
+              {t.noBusinessesAvailable}
             </Typography>
           </Stack>
         )}

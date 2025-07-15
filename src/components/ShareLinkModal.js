@@ -47,6 +47,7 @@ export default function ShareLinkModal({
   open,
   onClose,
   url = "",
+  qrUrl = "", 
   title,
   description,
   name = "qr-code",
@@ -56,6 +57,7 @@ export default function ShareLinkModal({
   const { t, dir } = useI18nLayout(translations);
 
   const downloadName = `${slugify(name)}.png`;
+  const qrValue = qrUrl || url;
 
   const handleCopyLink = async () => {
     try {
@@ -155,7 +157,7 @@ export default function ShareLinkModal({
             gap: 2,
           }}
         >
-          <QRCodeCanvas value={url} size={180} />
+          <QRCodeCanvas value={qrValue} size={180} />
           <Button
             variant="contained"
             startIcon={<ICONS.download />}

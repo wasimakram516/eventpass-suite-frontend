@@ -148,9 +148,8 @@ export default function GlobalConfigPage() {
   useEffect(() => {
     (async () => {
       const data = await getGlobalConfig();
-      console.log("Global Config Data:", data);
 
-      if (data) {
+      if (data.data) {
         setConfig(data);
         setForm((prev) => ({
           ...prev,

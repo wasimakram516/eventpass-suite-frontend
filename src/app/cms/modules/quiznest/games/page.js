@@ -31,6 +31,7 @@ import BusinessDrawer from "@/components/BusinessDrawer";
 import ShareLinkModal from "@/components/ShareLinkModal";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
+import EmptyBusinessState from "@/components/EmptyBusinessState";
 
 const translations = {
   en: {
@@ -203,8 +204,6 @@ export default function GamesPage() {
           businesses={allBusinesses}
           selectedBusinessSlug={selectedBusiness}
           onSelect={handleBusinessSelect}
-          title={t.selectBusiness}
-          noDataText={t.noBusinesses}
         />
       )}
 
@@ -279,19 +278,7 @@ export default function GamesPage() {
         </Box>
 
         {!selectedBusiness ? (
-          <Box
-            sx={{
-              mt: 8,
-              textAlign: "center",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              color: "text.secondary",
-            }}
-          >
-            <ICONS.business sx={{ fontSize: 72, mb: 2 }} />
-            <Typography variant="h6">{t.selectBusiness}</Typography>
-          </Box>
+          <EmptyBusinessState />
         ) : loading ? (
           <Box sx={{ textAlign: "center", mt: 8 }}>
             <CircularProgress />

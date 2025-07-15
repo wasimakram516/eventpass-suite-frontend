@@ -1,25 +1,37 @@
 "use client";
 
-import BreadcrumbsNav from "@/components/BreadcrumbsNav";
-import { Box, Typography, Divider, Button, Stack, Container } from "@mui/material";
+import PollIcon from "@mui/icons-material/Poll";
+import ModuleLandingPage from "@/components/ModuleLandingPage";
 
-export default function StageQCMSPage() {
+const translations = {
+  en: {
+    title: "StageQ",
+    features: [
+      "Share your business link or QR code with your audience for instant engagement",
+      "Audience members scan the QR to submit new questions or vote on existing ones",
+      "All questions are displayed live on the big screen during your presentation",
+      "Create interactive sessions where your audience drives the conversation",
+    ],
+    ctaLabel: "Manage Event Queries",
+  },
+  ar: {
+    title: "StageQ",
+    features: [
+      "شارك رابط عملك أو رمز الاستجابة السريعة مع الجمهور للتفاعل الفوري",
+      "يقوم أفراد الجمهور بمسح الرمز لإرسال أسئلة جديدة أو التصويت على الأسئلة الموجودة",
+      "يتم عرض جميع الأسئلة مباشرة على الشاشة الكبيرة أثناء عرضك التقديمي",
+      "أنشئ جلسات تفاعلية حيث يقود الجمهور المحادثة",
+    ],
+    ctaLabel: " إدارة استفسارات الفعاليات",
+  },
+};
+export default function VoteCastHome() {
   return (
-    <Container>
-      <BreadcrumbsNav/>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-        <Box>
-          <Typography variant="h5" fontWeight="bold">StageQ</Typography>
-          <Typography variant="body2" color="text.secondary">
-            Review and moderate audience-submitted questions.
-          </Typography>
-        </Box>
-        <Button variant="contained" color="primary">Moderate Queue</Button>
-      </Stack>
-      <Divider sx={{ mb: 3 }} />
-      <Typography variant="body1" color="text.secondary">
-        This is the main CMS content area for StageQ.
-      </Typography>
-    </Container>
+    <ModuleLandingPage
+      moduleIcon={PollIcon}
+      ctaLabel={translations.en.ctaLabel}
+      ctaHref="/cms/modules/stageq/queries"
+      translations={translations}
+    />
   );
 }

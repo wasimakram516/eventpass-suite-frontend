@@ -46,7 +46,7 @@ export default function CmsLayout({ children }) {
         sx={{
           flexGrow: 1,
           bgcolor: "background.default",
-          pl: { xs: 2, sm: 3, md: "90px" }, 
+          pl: { xs: 2, sm: 3, md: "30px" }, 
           pr: { xs: 2, sm: 3, md: "30px" },
           pt: "50px" , 
           pb: { xs: 4, sm: 3, md: "20px" }, 

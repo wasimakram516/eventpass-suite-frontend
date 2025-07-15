@@ -42,6 +42,7 @@ import {
 import BusinessDrawer from "@/components/BusinessDrawer";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import FilterModal from "@/components/FilterModal";
+import EmptyBusinessState from "@/components/EmptyBusinessState";
 const translations = {
   en: {
     title: "Manage Polls",
@@ -244,8 +245,6 @@ export default function ManagePollsPage() {
           businesses={businesses}
           selectedBusinessSlug={selectedBusiness}
           onSelect={handleBusinessSelect}
-          title={t.selectBusiness}
-          noDataText={t.noBusinessesAvailable}
         />
       )}
       {/* Main Content */}
@@ -321,19 +320,7 @@ export default function ManagePollsPage() {
 
         {/* Polls Display */}
         {!selectedBusiness ? (
-          <Box
-            sx={{
-              mt: 8,
-              textAlign: "center",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              color: "text.secondary",
-            }}
-          >
-            <ICONS.business sx={{ fontSize: 72, mb: 2 }} />
-            <Typography variant="h6">{t.selectBusiness}</Typography>
-          </Box>
+          <EmptyBusinessState />
         ) : loading ? (
           <Box sx={{ textAlign: "center", mt: 8 }}>
             <CircularProgress />
