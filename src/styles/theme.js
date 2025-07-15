@@ -218,9 +218,6 @@ const theme = createTheme({
             backgroundColor: "rgba(255,255,255,0.9)",
           },
         },
-        select: {
-          padding: "12px 20px",
-        },
         icon: {
           color: "#128199",
           right: 16,

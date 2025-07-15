@@ -35,7 +35,6 @@ import {
 } from "@/services/businessService";
 import { getUnassignedUsers } from "@/services/userService";
 import { useAuth } from "@/contexts/AuthContext";
-import { useMessage } from "@/contexts/MessageContext";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import slugify from "@/utils/slugify";
 import ConfirmationDialog from "@/components/ConfirmationDialog";
@@ -63,6 +62,13 @@ const translations = {
     confirmDeleteButton: "Delete",
     owner: "Owner",
     noBiz: "You haven't created a business yet.",
+    errors: {
+      name: "Name is required",
+      slug: "Slug is required",
+      email: "Email is required",
+      emailInvalid: "Invalid email format",
+      owner: "Owner is required",
+    },
   },
   ar: {
     title: "تفاصيل العمل",
@@ -84,12 +90,18 @@ const translations = {
     confirmDeleteButton: "حذف",
     owner: "المالك",
     noBiz: "لم تقم بإنشاء أي شركة بعد.",
+    errors: {
+      name: "الاسم مطلوب",
+      slug: "المعرف مطلوب",
+      email: "البريد الإلكتروني مطلوب",
+      emailInvalid: "تنسيق البريد الإلكتروني غير صالح",
+      owner: "المالك مطلوب",
+    },
   },
 };
 
 export default function BusinessDetailsPage() {
   const { user } = useAuth();
-  const { showMessage } = useMessage();
   const { dir, align, language, t } = useI18nLayout(translations);
   const [loading, setLoading] = useState(false);
   const [businesses, setBusinesses] = useState([]);
@@ -98,6 +110,8 @@ export default function BusinessDetailsPage() {
   const [bizToDelete, setBizToDelete] = useState(null);
   const [editingBiz, setEditingBiz] = useState(null);
   const [formOpen, setFormOpen] = useState(false);
+  const [formErrors, setFormErrors] = useState({});
+
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -210,7 +224,28 @@ export default function BusinessDetailsPage() {
     reader.readAsDataURL(file);
   };
 
+  const validateForm = () => {
+    const errors = {};
+
+    if (!form.name.trim()) errors.name = t.errors.name;
+    if (!form.slug.trim()) errors.slug = t.errors.slug;
+
+    if (!form.email.trim()) {
+      errors.email = t.errors.email;
+    } else if (!/\S+@\S+\.\S+/.test(form.email)) {
+      errors.email = t.errors.emailInvalid;
+    }
+
+    if (user.role === "admin" && !form.ownerId) {
+      errors.ownerId = t.errors.owner;
+    }
+
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSave = async () => {
+    if (!validateForm()) return;
     setLoading(true);
 
     const payload = {
@@ -219,7 +254,7 @@ export default function BusinessDetailsPage() {
       email: form.email,
       phone: form.phone,
       address: form.address,
-      ownerId: form.ownerId || user.id,
+      ownerId: form.ownerId,
     };
 
     const fd = new FormData();
@@ -253,24 +288,15 @@ export default function BusinessDetailsPage() {
   };
 
   const handleDeleteConfirmed = async () => {
-    try {
-      setLoading(true);
-      await deleteBusiness(bizToDelete._id);
-      showMessage("Business deleted", "success");
+    setLoading(true);
+    const res = await deleteBusiness(bizToDelete._id);
+    if (!res.error) {
       fetchBusinesses();
       fetchUnassignedUsers();
-    } catch (err) {
-      const message =
-        err?.response?.data?.message ||
-        err?.response?.data?.error ||
-        "Delete failed";
-
-      showMessage(message, "error");
-    } finally {
-      setLoading(false);
-      setConfirmOpen(false);
-      setBizToDelete(null);
     }
+    setLoading(false);
+    setConfirmOpen(false);
+    setBizToDelete(null);
   };
 
   return (
@@ -335,84 +361,89 @@ export default function BusinessDetailsPage() {
             <Grid item xs={12} sm={6} md={4} key={biz._id}>
               <Grid item xs={12} sm={6} md={4} lg={3}>
                 <Card
-                  elevation={3}
-                  sx={{
-                    p: 2,
-                    height: "100%",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "space-between",
-                    borderRadius: 2,
-                    minWidth: 0, // prevent overflow on narrow screens
-                  }}
-                >
-                  <Stack
-                    direction="row"
-                    spacing={2}
-                    alignItems="center"
-                    flexWrap="wrap"
-                  >
-                    <Avatar
-                      src={biz.logoUrl}
-                      alt={biz.name}
-                      sx={{ width: 56, height: 56, flexShrink: 0 }}
-                    >
-                      {biz.name[0]}
-                    </Avatar>
+  elevation={3}
+  sx={{
+    p: 2,
+    height: "100%",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "space-between",
+    borderRadius: 2,
+    width: { xs: "100%", sm: "300px" },
+    wordBreak: "break-word",
+  }}
+>
+  {/* Top Section: Avatar + Info */}
+  <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", mb: 2 }}>
+    <Avatar
+      src={biz.logoUrl}
+      alt={biz.name}
+      sx={{ width: 64, height: 64, mb: 1 }}
+    >
+      {biz.name[0]}
+    </Avatar>
 
-                    <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                      <Typography variant="h6" fontWeight="bold" noWrap>
-                        {biz.name}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary" noWrap>
-                        Slug: <strong>{biz.slug}</strong>
-                      </Typography>
-                      <Typography variant="body2" noWrap>
-                        {biz.contact?.email}
-                      </Typography>
-                      {biz.owner && (
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          display="block"
-                          noWrap
-                        >
-                          {t.owner}: {biz.owner.name || biz.owner}
-                        </Typography>
-                      )}
-                    </Box>
-                  </Stack>
+    <Typography
+      variant="h6"
+      fontWeight="bold"
+      sx={{ whiteSpace: "normal", wordWrap: "break-word" }}
+    >
+      {biz.name}
+    </Typography>
 
-                  <Box
-                    sx={{
-                      mt: 2,
-                      display: "flex",
-                      justifyContent: "flex-end",
-                      gap: 1,
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <Tooltip title={t.edit}>
-                      <IconButton
-                        color="primary"
-                        onClick={() => handleOpen(biz)}
-                      >
-                        <EditIcon />
-                      </IconButton>
-                    </Tooltip>
+    <Typography
+      variant="body2"
+      color="text.secondary"
+      sx={{ whiteSpace: "normal", wordWrap: "break-word" }}
+    >
+      Slug: <strong>{biz.slug}</strong>
+    </Typography>
 
-                    {user.role === "admin" && (
-                      <Tooltip title={t.delete}>
-                        <IconButton
-                          color="error"
-                          onClick={() => openDeleteConfirm(biz)}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </Tooltip>
-                    )}
-                  </Box>
-                </Card>
+    <Typography
+      variant="body2"
+      sx={{ whiteSpace: "normal", wordWrap: "break-word" }}
+    >
+      {biz.contact?.email}
+    </Typography>
+
+    {biz.owner && (
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        display="block"
+        sx={{ whiteSpace: "normal", wordWrap: "break-word" }}
+      >
+        {t.owner}: {biz.owner.name || biz.owner}
+      </Typography>
+    )}
+  </Box>
+
+  {/* Actions */}
+  <Box
+    sx={{
+      mt: "auto",
+      display: "flex",
+      justifyContent: "flex-end",
+      gap: 1,
+      flexWrap: "wrap",
+    }}
+  >
+    <Tooltip title={t.edit}>
+      <IconButton color="primary" onClick={() => handleOpen(biz)}>
+        <EditIcon />
+      </IconButton>
+    </Tooltip>
+
+    {user.role === "admin" && (
+      <Tooltip title={t.delete}>
+        <IconButton color="error" onClick={() => openDeleteConfirm(biz)}>
+          <DeleteIcon />
+        </IconButton>
+      </Tooltip>
+    )}
+  </Box>
+</Card>
+
               </Grid>
             </Grid>
           ))}
@@ -430,6 +461,8 @@ export default function BusinessDetailsPage() {
             onChange={handleChange}
             fullWidth
             margin="normal"
+            error={!!formErrors.name}
+            helperText={formErrors.name}
           />
           <TextField
             label={t.slug}
@@ -438,6 +471,8 @@ export default function BusinessDetailsPage() {
             onChange={handleChange}
             fullWidth
             margin="normal"
+            error={!!formErrors.slug}
+            helperText={formErrors.slug}
           />
           <TextField
             label={t.email}
@@ -446,6 +481,8 @@ export default function BusinessDetailsPage() {
             onChange={handleChange}
             fullWidth
             margin="normal"
+            error={!!formErrors.email}
+            helperText={formErrors.email}
           />
 
           <TextField
@@ -455,18 +492,26 @@ export default function BusinessDetailsPage() {
             onChange={handleChange}
             fullWidth
             margin="normal"
+            type="tel"
+            inputProps={{ pattern: "[0-9]*" }}
+            error={!!formErrors.phone}
+            helperText={formErrors.phone}
           />
           <TextField
             label="Address"
             name="address"
             value={form.address}
             onChange={handleChange}
+            multiline
+            rows={2}
             fullWidth
             margin="normal"
+            error={!!formErrors.address}
+            helperText={formErrors.address}
           />
 
           {user.role === "admin" && (
-            <FormControl fullWidth margin="normal">
+            <FormControl fullWidth margin="normal" error={!!formErrors.ownerId}>
               <InputLabel>{t.owner}</InputLabel>
               <Select
                 name="ownerId"
@@ -480,6 +525,11 @@ export default function BusinessDetailsPage() {
                   </MenuItem>
                 ))}
               </Select>
+              {formErrors.ownerId && (
+                <Typography variant="caption" color="error" mt={0.5}>
+                  {formErrors.ownerId}
+                </Typography>
+              )}
             </FormControl>
           )}
 
