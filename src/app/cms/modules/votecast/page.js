@@ -1,7 +1,5 @@
-"use client";
-
-import PollIcon from "@mui/icons-material/Poll";
 import ModuleLandingPage from "@/components/ModuleLandingPage";
+import ICONS from "@/utils/iconUtil";
 
 const translations = {
   en: {
@@ -29,7 +27,7 @@ const translations = {
 export default function VoteCastHome() {
   return (
     <ModuleLandingPage
-      moduleIcon={PollIcon}
+      moduleIcon={ICONS.poll}
       ctaLabel={translations.en.ctaLabel}
       ctaHref="/cms/modules/votecast/polls"
       translations={translations}

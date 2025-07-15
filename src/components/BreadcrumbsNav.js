@@ -1,69 +1,107 @@
 "use client";
 
-import { Breadcrumbs, Link, Typography, Box } from "@mui/material";
+import { Breadcrumbs, Link, Box } from "@mui/material";
 import { usePathname, useRouter } from "next/navigation";
 
-import HomeIcon from "@mui/icons-material/Home";
-import BusinessIcon from "@mui/icons-material/Business";
-import PollIcon from "@mui/icons-material/Poll";
-import SportsEsportsIcon from "@mui/icons-material/SportsEsports";
-import GroupIcon from "@mui/icons-material/Group";
-import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
-import BarChartIcon from "@mui/icons-material/BarChart";
-import LinkIcon from "@mui/icons-material/Link";
-import PeopleAltIcon from "@mui/icons-material/PeopleAlt";
-import QuestionAnswerIcon from "@mui/icons-material/QuestionAnswer";
+import ICONS from "@/utils/iconUtil";
+import { capitalize } from "@/utils/stringUtil";
 
 const segmentMap = {
   dashboard: {
     label: "Dashboard",
-    icon: <HomeIcon fontSize="small" sx={{ mr: 0.5 }} />,
+    icon: <ICONS.home fontSize="small" sx={{ mr: 0.5 }} />,
   },
   businesses: {
     label: "Businesses",
-    icon: <BusinessIcon fontSize="small" sx={{ mr: 0.5 }} />,
+    icon: <ICONS.business fontSize="small" sx={{ mr: 0.5 }} />,
   },
   polls: {
     label: "Polls",
-    icon: <PollIcon fontSize="small" sx={{ mr: 0.5 }} />,
+    icon: <ICONS.poll fontSize="small" sx={{ mr: 0.5 }} />,
   },
   manage: {
     label: "Manage Polls",
-    icon: <PollIcon fontSize="small" sx={{ mr: 0.5 }} />,
+    icon: <ICONS.poll fontSize="small" sx={{ mr: 0.5 }} />,
   },
   results: {
     label: "Poll Results",
-    icon: <BarChartIcon fontSize="small" sx={{ mr: 0.5 }} />,
+    icon: <ICONS.results fontSize="small" sx={{ mr: 0.5 }} />,
   },
   users: {
     label: "Users",
-    icon: <GroupIcon fontSize="small" sx={{ mr: 0.5 }} />,
+    icon: <ICONS.peopleAlt fontSize="small" sx={{ mr: 0.5 }} />,
   },
   games: {
     label: "Games",
-    icon: <SportsEsportsIcon fontSize="small" sx={{ mr: 0.5 }} />,
+    icon: <ICONS.games fontSize="small" sx={{ mr: 0.5 }} />,
   },
   questions: {
     label: "All Questions",
-    icon: <QuestionAnswerIcon fontSize="small" sx={{ mr: 0.5 }} />,
+    icon: <ICONS.forum fontSize="small" sx={{ mr: 0.5 }} />,
   },
-
-  // ✅ New /cms/queries routes
   queries: {
     label: "Queries",
-    icon: <HelpOutlineIcon fontSize="small" sx={{ mr: 0.5 }} />,
+    icon: <ICONS.info fontSize="small" sx={{ mr: 0.5 }} />,
   },
   "share-link": {
     label: "Share Link",
-    icon: <LinkIcon fontSize="small" sx={{ mr: 0.5 }} />,
+    icon: <ICONS.share fontSize="small" sx={{ mr: 0.5 }} />,
   },
   visitors: {
     label: "Visitors",
-    icon: <PeopleAltIcon fontSize="small" sx={{ mr: 0.5 }} />,
+    icon: <ICONS.people fontSize="small" sx={{ mr: 0.5 }} />,
   },
-};
 
-const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
+  // CMS Modules
+  modules: {
+    label: "Modules",
+    icon: <ICONS.module fontSize="small" sx={{ mr: 0.5 }} />,
+  },
+
+  quiznest: {
+    label: "QuizNest",
+    icon: <ICONS.quiz fontSize="small" sx={{ mr: 0.5 }} />,
+  },
+  eventduel: {
+    label: "Event Duel",
+    icon: <ICONS.games fontSize="small" sx={{ mr: 0.5 }} />,
+  },
+  votecast: {
+    label: "VoteCast",
+    icon: <ICONS.poll fontSize="small" sx={{ mr: 0.5 }} />,
+  },
+  stageq: {
+    label: "StageQ",
+    icon: <ICONS.forum fontSize="small" sx={{ mr: 0.5 }} />,
+  },
+  mosaicwall: {
+    label: "MosaicWall",
+    icon: <ICONS.image fontSize="small" sx={{ mr: 0.5 }} />,
+  },
+  eventreg: {
+    label: "Event Reg",
+    icon: <ICONS.assignment fontSize="small" sx={{ mr: 0.5 }} />,
+  },
+  checkin: {
+    label: "Check-In",
+    icon: <ICONS.checkin fontSize="small" sx={{ mr: 0.5 }} />,
+  },
+  eventwheel: {
+    label: "Event Wheel",
+    icon: <ICONS.trophy fontSize="small" sx={{ mr: 0.5 }} />,
+  },
+  
+  // Sub pages
+  events: {
+    label: "Events",
+    icon: <ICONS.event fontSize="small" sx={{ mr: 0.5 }} />,
+  },
+  registrations: {
+  label: "Registrations",
+  icon: <ICONS.appRegister fontSize="small" sx={{ mr: 0.5 }} />,
+},
+
+};
 
 const formatSegment = (seg) => {
   if (segmentMap[seg]) {
@@ -102,7 +140,7 @@ export default function BreadcrumbsNav() {
           }}
         >
           <Box sx={{ display: "flex", alignItems: "center" }}>
-            <HomeIcon fontSize="small" sx={{ mr: 0.5 }} />
+            <ICONS.home fontSize="small" sx={{ mr: 0.5 }} />
             Dashboard
           </Box>
         </Link>

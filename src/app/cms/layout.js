@@ -6,6 +6,7 @@ import { Box, CircularProgress } from "@mui/material";
 import Navbar from "@/components/Navbar";
 import Sidebar from "@/components/Sidebar";
 import { useEffect } from "react";
+import LoadingState from "@/components/LoadingState";
 
 export default function CmsLayout({ children }) {
   const { user, loading } = useAuth();
@@ -21,21 +22,7 @@ export default function CmsLayout({ children }) {
   }, [loading, user, router]);
 
   if (loading || !user) {
-    return (
-      <Box
-        sx={{
-          minHeight: "calc(100vh - 40px)",
-          bgcolor: "background.default",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          p: 4,
-          textAlign: "center",
-        }}
-      >
-        <CircularProgress />
-      </Box>
-    );
+    return <LoadingState />;
   }
   return (
     <Box sx={{ display: "flex" }}>
@@ -46,10 +33,10 @@ export default function CmsLayout({ children }) {
         sx={{
           flexGrow: 1,
           bgcolor: "background.default",
-          pl: { xs: 2, sm: 3, md: "30px" }, 
+          pl: { xs: 2, sm: 3, md: "30px" },
           pr: { xs: 2, sm: 3, md: "30px" },
-          pt: "50px" , 
-          pb: { xs: 4, sm: 3, md: "20px" }, 
+          pt: "50px",
+          pb: { xs: 4, sm: 3, md: "20px" },
           minHeight: "calc(100vh - 40px)",
         }}
       >

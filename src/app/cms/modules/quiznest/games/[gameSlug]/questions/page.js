@@ -227,6 +227,7 @@ export default function QuestionsPage() {
           </Box>
         ) : (
           <>
+            <BreadcrumbsNav />
             <Box
               sx={{
                 display: "flex",
@@ -237,8 +238,6 @@ export default function QuestionsPage() {
                 mb: 3,
               }}
             >
-              <BreadcrumbsNav />
-
               {/* Title + Description */}
               <Box sx={{ flex: { xs: "1 1 100%", sm: "auto" } }}>
                 <Typography variant="h5" fontWeight="bold">
@@ -266,7 +265,6 @@ export default function QuestionsPage() {
                   width: { xs: "100%", sm: "auto" },
                 }}
               >
-                
                 {/* Add Question */}
                 <Button
                   fullWidth
@@ -327,7 +325,7 @@ export default function QuestionsPage() {
 
             <Divider sx={{ mb: 3 }} />
 
-            <Grid container spacing={3}>
+            <Grid container spacing={3} justifyContent={"center"}>
               {questions?.map((q, idx) => (
                 <Grid item xs={12} sm={6} md={4} key={q._id || idx}>
                   <Box
@@ -398,7 +396,7 @@ export default function QuestionsPage() {
                       )}
                     </Box>
 
-                    <Box sx={{ display: "flex", gap: 1, mt: 2 }}>
+                    <Box sx={{ display: "flex",justifyContent: "flex-end", gap: 1, mt: 2 }}>
                       <Tooltip title={t.editTooltip}>
                         <IconButton
                           color="info"

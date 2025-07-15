@@ -123,7 +123,7 @@ export default function Modules() {
                 buttonLabel={mod.buttons?.[language] || "Manage"}
                 icon={getModuleIcon(mod.icon)}
                 color={mod.color || "primary"}
-                route={`/cms/modules/${mod.key}`}
+                route={mod.route}
               />
             ))}
           </Grid>

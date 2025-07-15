@@ -11,6 +11,7 @@ import {
 } from "@mui/material";
 import { useRouter } from "next/navigation";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import BreadcrumbsNav from "./BreadcrumbsNav";
 
 export default function ModuleLandingPage({
   moduleIcon: Icon,
@@ -22,59 +23,58 @@ export default function ModuleLandingPage({
   const router = useRouter();
 
   return (
-    <Box dir={dir}>
-      <Container maxWidth="md">
-        <Stack spacing={4} alignItems="center">
-          {Icon && (
-            <Box
-              sx={{
-                bgcolor: `${theme.palette.primary.main}20`,
-                p: 3,
-                borderRadius: "50%",
-                display: "inline-flex",
-              }}
-            >
-              <Icon sx={{ fontSize: 60, color: "primary.main" }} />
-            </Box>
-          )}
-
-          <Typography
-            variant="h3"
-            fontWeight="bold"
-            textAlign={align}
-            color="text.primary"
+    <Container maxWidth="lg" dir={dir}>
+      <BreadcrumbsNav />
+      <Stack spacing={4} alignItems="center">
+        {Icon && (
+          <Box
+            sx={{
+              bgcolor: `${theme.palette.primary.main}20`,
+              p: 3,
+              borderRadius: "50%",
+              display: "inline-flex",
+            }}
           >
-            {t.title}
-          </Typography>
+            <Icon sx={{ fontSize: 60, color: "primary.main" }} />
+          </Box>
+        )}
 
-          <Divider  sx={{ width: "100%" }} />
+        <Typography
+          variant="h3"
+          fontWeight="bold"
+          textAlign={align}
+          color="text.primary"
+        >
+          {t.title}
+        </Typography>
 
-          <Stack spacing={2} sx={{ width: "100%" }} textAlign={align}>
-            {t.features.map((feat, i) => (
-              <Typography
-                key={i}
-                variant="body1"
-                color="text.secondary"
-                sx={{ lineHeight: 1.8 }}
-              >
-                • {feat}
-              </Typography>
-            ))}
-          </Stack>
+        <Divider sx={{ width: "100%" }} />
 
-          {t.ctaLabel && ctaHref && (
-            <Button
-              variant="contained"
-              size="large"
-              color="primary"
-              onClick={() => router.push(ctaHref)}
-              sx={{ mt: 4 }}
+        <Stack spacing={2} sx={{ width: "100%" }} textAlign={align}>
+          {t.features.map((feat, i) => (
+            <Typography
+              key={i}
+              variant="body1"
+              color="text.secondary"
+              sx={{ lineHeight: 1.8 }}
             >
-              {t.ctaLabel}
-            </Button>
-          )}
+              • {feat}
+            </Typography>
+          ))}
         </Stack>
-      </Container>
-    </Box>
+
+        {t.ctaLabel && ctaHref && (
+          <Button
+            variant="contained"
+            size="large"
+            color="primary"
+            onClick={() => router.push(ctaHref)}
+            sx={{ mt: 4 }}
+          >
+            {t.ctaLabel}
+          </Button>
+        )}
+      </Stack>
+    </Container>
   );
 }

@@ -5,11 +5,29 @@
  */
 export const formatDate = (dateString) => {
   const date = new Date(dateString);
-  return new Intl.DateTimeFormat("en-US", {
+  return new Intl.DateTimeFormat("en-GB", {
     day: "2-digit",
     month: "long",
     year: "numeric",
   }).format(date);
+};
+
+/**
+ * Formats a date with time in a locale-aware way, including hour and minute.
+ * @param {string} dateString - The date string to format.
+ * @param {"en" | "ar"} language - Language code to determine locale.
+ * @returns {string} - Formatted date and time string.
+ */
+export const formatDateTimeWithLocale = (dateString) => {
+  const date = new Date(dateString);
+  return date.toLocaleString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true,
+  });
 };
 
 /**
@@ -19,10 +37,10 @@ export const formatDate = (dateString) => {
  */
 export const getEventStatus = (eventDate) => {
   const today = new Date();
-  today.setHours(0, 0, 0, 0); 
+  today.setHours(0, 0, 0, 0);
 
   const eventDateObj = new Date(eventDate);
-  eventDateObj.setHours(0, 0, 0, 0); 
+  eventDateObj.setHours(0, 0, 0, 0);
 
   if (eventDateObj < today) {
     return "Expired";

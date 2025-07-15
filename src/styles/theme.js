@@ -159,17 +159,6 @@ const theme = createTheme({
       },
     },
 
-    MuiTextField: {
-      styleOverrides: {
-        root: {
-          "& .MuiInputBase-root": {
-            borderRadius: "16px",
-            backgroundColor: "rgba(255,255,255,0.8)",
-          },
-        },
-      },
-    },
-
     MuiPaper: {
       styleOverrides: {
         root: {},
@@ -194,41 +183,47 @@ const theme = createTheme({
       ],
     },
 
-    MuiSelect: {
+    MuiOutlinedInput: {
       styleOverrides: {
-        select: {
-          borderRadius: "999px",
-          padding: "10px 20px",
-          fontWeight: 500,
-          color: "#128199",
-          "&:focus": {
-            backgroundColor: "rgba(255,255,255,0.9)",
-            borderRadius: "999px",
+        root: {
+          backgroundColor: "rgba(255,255,255,0.8)",
+          borderRadius: "30px",
+          overflow: "hidden",
+
+          "&&.MuiOutlinedInput-multiline": {
+            borderRadius: "16px",
           },
-        },
-        icon: {
-          color: "#128199",
-          right: 16,
+
+          "& .MuiOutlinedInput-notchedOutline": {
+            borderColor: "#128199",
+            borderRadius: "inherit",
+          },
+          "&:hover .MuiOutlinedInput-notchedOutline": {
+            borderColor: "#0077b6",
+          },
+          "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+            borderColor: "#0077b6",
+          },
         },
       },
     },
 
-    MuiOutlinedInput: {
+    MuiSelect: {
       styleOverrides: {
         root: {
-          borderRadius: "999px",
           backgroundColor: "rgba(255,255,255,0.8)",
-          paddingRight: "40px",
-          "& fieldset": {
-            borderColor: "#128199",
-            borderRadius: "999px",
+          borderRadius: "30px",
+          overflow: "hidden",
+          "&:focus": {
+            backgroundColor: "rgba(255,255,255,0.9)",
           },
-          "&:hover fieldset": {
-            borderColor: "#0077b6",
-          },
-          "&.Mui-focused fieldset": {
-            borderColor: "#0077b6",
-          },
+        },
+        select: {
+          padding: "12px 20px",
+        },
+        icon: {
+          color: "#128199",
+          right: 16,
         },
       },
     },

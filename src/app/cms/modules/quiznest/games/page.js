@@ -12,6 +12,7 @@ import {
   IconButton,
   Divider,
   Stack,
+  Tooltip,
 } from "@mui/material";
 import GameFormModal from "@/components/GameFormModal";
 import ConfirmationDialog from "@/components/ConfirmationDialog";
@@ -61,6 +62,9 @@ const translations = {
     gameUpdated: "Game updated!",
     gameDeleted: "Game deleted!",
     errorLoading: "Error loading data.",
+    editTooltip: "Edit Game",
+    deleteTooltip: "Delete Game",
+    shareTooltip: "Share Game Link",
   },
   ar: {
     gamesTitle: "ألعاب لـ",
@@ -89,6 +93,9 @@ const translations = {
     gameUpdated: "تم تحديث اللعبة!",
     gameDeleted: "تم حذف اللعبة!",
     errorLoading: "حدث خطأ أثناء تحميل البيانات.",
+    editTooltip: "تعديل اللعبة",
+    deleteTooltip: "حذف اللعبة",
+    shareTooltip: "مشاركة رابط اللعبة",
   },
 };
 
@@ -284,7 +291,7 @@ export default function GamesPage() {
             <CircularProgress />
           </Box>
         ) : (
-          <Grid container spacing={3}>
+          <Grid container spacing={3} justifyContent={"center"}>
             {games.map((g) => (
               <Grid item xs={12} sm={6} md={4} lg={3} key={g._id}>
                 <Box
@@ -293,6 +300,7 @@ export default function GamesPage() {
                     boxShadow: 3,
                     p: 2,
                     height: "100%",
+                    maxWidth: "350px",
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "space-between",
@@ -351,66 +359,91 @@ export default function GamesPage() {
                     sx={{
                       mt: 2,
                       display: "flex",
-                      justifyContent: "space-between",
-                      flexWrap: "wrap",
-                      gap: 2,
+                      flexDirection: "column",
+                      gap: 1,
+                      width: "100%",
                     }}
                   >
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      color="primary"
-                      startIcon={<ICONS.quiz />}
-                      onClick={() =>
-                        router.push(
-                          `/cms/modules/quiznest/games/${g.slug}/questions`
-                        )
-                      }
-                      sx={getStartIconSpacing(dir)}
+                    {/* Row for the two main buttons */}
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        flexWrap: "wrap",
+                        gap: 2,
+                      }}
                     >
-                      {t.questionsButton}
-                    </Button>
-
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      color="primary"
-                      startIcon={<ICONS.leaderboard />}
-                      onClick={() =>
-                        router.push(
-                          `/cms/modules/quiznest/games/${g.slug}/results`
-                        )
-                      }
-                      sx={getStartIconSpacing(dir)}
-                    >
-                      {t.resultsButton}
-                    </Button>
-
-                    <Box sx={{ display: "flex", gap: 1, mt: { xs: 1, sm: 0 } }}>
-                      <IconButton
-                        color="info"
-                        onClick={() => handleOpenEdit(g)}
-                      >
-                        <ICONS.edit fontSize="small" />
-                      </IconButton>
-                      <IconButton
-                        color="error"
-                        onClick={() => {
-                          setGameToDelete(g);
-                          setConfirmOpen(true);
-                        }}
-                      >
-                        <ICONS.delete fontSize="small" />
-                      </IconButton>
-                      <IconButton
+                      <Button
+                        size="small"
+                        variant="outlined"
                         color="primary"
-                        onClick={() => {
-                          setGameToShare(g);
-                          setShareModalOpen(true);
-                        }}
+                        startIcon={<ICONS.quiz />}
+                        onClick={() =>
+                          router.push(
+                            `/cms/modules/quiznest/games/${g.slug}/questions`
+                          )
+                        }
+                        sx={getStartIconSpacing(dir)}
                       >
-                        <ICONS.share fontSize="small" />
-                      </IconButton>
+                        {t.questionsButton}
+                      </Button>
+
+                      <Button
+                        size="small"
+                        variant="outlined"
+                        color="primary"
+                        startIcon={<ICONS.leaderboard />}
+                        onClick={() =>
+                          router.push(
+                            `/cms/modules/quiznest/games/${g.slug}/results`
+                          )
+                        }
+                        sx={getStartIconSpacing(dir)}
+                      >
+                        {t.resultsButton}
+                      </Button>
+                    </Box>
+
+                    {/* Right-aligned icon buttons below */}
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "flex-end",
+                        gap: 1,
+                      }}
+                    >
+                      <Tooltip title={t.editTooltip}>
+                        <IconButton
+                          color="info"
+                          onClick={() => handleOpenEdit(g)}
+                        >
+                          <ICONS.edit fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+
+                      <Tooltip title={t.deleteTooltip}>
+                        <IconButton
+                          color="error"
+                          onClick={() => {
+                            setGameToDelete(g);
+                            setConfirmOpen(true);
+                          }}
+                        >
+                          <ICONS.delete fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+
+                      <Tooltip title={t.shareTooltip}>
+                        <IconButton
+                          color="primary"
+                          onClick={() => {
+                            setGameToShare(g);
+                            setShareModalOpen(true);
+                          }}
+                        >
+                          <ICONS.share fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
                     </Box>
                   </Box>
                 </Box>

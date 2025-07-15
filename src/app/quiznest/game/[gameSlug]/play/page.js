@@ -79,35 +79,39 @@ export default function PlayPage() {
   const celebrateSound =
     typeof Audio !== "undefined" ? new Audio("/celebrate.mp3") : null;
 
-  const languageCodeMap = {
-    en: "en",
-    ar: "ar",
-  };
+  const getText = (t, fallback) =>
+    typeof t === "object" && t?.translatedText ? t.translatedText : fallback;
+
   const translateQuestion = async (questionObj) => {
     if (!questionObj) return;
 
-    const targetLang = languageCodeMap[language] || "en";
+    const targetLang = language;
 
-    try {
-      const [question, answers, hint] = await Promise.all([
-        translateText(questionObj.question, targetLang),
-        Promise.all(
-          questionObj.answers.map((answer) => translateText(answer, targetLang))
-        ),
-        questionObj.hint ? translateText(questionObj.hint, targetLang) : null,
-      ]);
+    const [question, answers, hint] = await Promise.all([
+      translateText(questionObj.question, targetLang),
+      Promise.all(
+        questionObj.answers.map((answer) => translateText(answer, targetLang))
+      ),
+      questionObj.hint ? translateText(questionObj.hint, targetLang) : null,
+    ]);
 
+    if (
+      !question.error ||
+      (!answers.some((a) => a.error) && (!hint || !hint.error))
+    ) {
       setTranslatedContent({
-        question,
-        answers,
-        hint,
+        question: getText(question, questionObj.question),
+        answers: Array.isArray(answers)
+          ? answers.map((a, i) => getText(a, questionObj.answers[i]))
+          : questionObj.answers,
+        hint: getText(hint, questionObj.hint),
         uiLabels: {
           questionLabel: t.question,
           ofLabel: t.of,
           countdownLabel: t.countdown,
         },
       });
-    } catch (error) {
+    } else {
       console.error("Translation error:", error);
       setTranslatedContent({
         question: questionObj.question,
@@ -497,64 +501,65 @@ export default function PlayPage() {
                 gridAutoRows: "1fr",
               }}
             >
-              {translatedContent.answers.map((opt, i) => {
-                const isSelected = selected === i;
-                const isCorrect = i === currentQuestion.correctAnswerIndex;
-                const bg = isSelected
-                  ? isCorrect
-                    ? "#c8e6c9"
-                    : "#ffcdd2"
-                  : "#f5f5f5";
+              {Array.isArray(translatedContent.answers) &&
+                translatedContent.answers.map((opt, i) => {
+                  const isSelected = selected === i;
+                  const isCorrect = i === currentQuestion.correctAnswerIndex;
+                  const bg = isSelected
+                    ? isCorrect
+                      ? "#c8e6c9"
+                      : "#ffcdd2"
+                    : "#f5f5f5";
 
-                return (
-                  <Grid
-                    item
-                    xs={12}
-                    sm={6}
-                    key={i}
-                    sx={{
-                      display: "flex",
-                      minHeight: "150px", 
-                      gridColumn: i === 4 ? "1 / -1" : "auto", 
-                    }}
-                  >
-                    <Button
-                      fullWidth
-                      variant="outlined"
-                      onClick={() => handleSelect(i)}
+                  return (
+                    <Grid
+                      item
+                      xs={12}
+                      sm={6}
+                      key={i}
                       sx={{
-                        backgroundColor: bg,
-                        fontWeight: "bold",
-                        fontSize: "2rem",
-                        borderRadius: 2,
-                        textTransform: "none",
-                        whiteSpace: "normal",
-                        wordBreak: "break-word",
-                        overflowWrap: "break-word",
-                        minHeight: "150px",
                         display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        p: 2,
+                        minHeight: "150px",
+                        gridColumn: i === 4 ? "1 / -1" : "auto",
                       }}
                     >
-                      <Box
+                      <Button
+                        fullWidth
+                        variant="outlined"
+                        onClick={() => handleSelect(i)}
                         sx={{
-                          width: "100%",
-                          height: "100%",
+                          backgroundColor: bg,
+                          fontWeight: "bold",
+                          fontSize: "2rem",
+                          borderRadius: 2,
+                          textTransform: "none",
+                          whiteSpace: "normal",
+                          wordBreak: "break-word",
+                          overflowWrap: "break-word",
+                          minHeight: "150px",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          textAlign: "center",
-                          px: 1,
+                          p: 2,
                         }}
                       >
-                        {opt}
-                      </Box>
-                    </Button>
-                  </Grid>
-                );
-              })}
+                        <Box
+                          sx={{
+                            width: "100%",
+                            height: "100%",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            textAlign: "center",
+                            px: 1,
+                          }}
+                        >
+                          {opt}
+                        </Box>
+                      </Button>
+                    </Grid>
+                  );
+                })}
             </Grid>
 
             {showHint && currentQuestion.hint && (

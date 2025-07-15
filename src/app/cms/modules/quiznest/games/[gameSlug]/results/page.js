@@ -12,13 +12,9 @@ import {
   Divider,
 } from "@mui/material";
 import DownloadIcon from "@mui/icons-material/Download";
-import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
-import BusinessIcon from "@mui/icons-material/Business";
 import ScoreIcon from "@mui/icons-material/Score";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import EditNoteIcon from "@mui/icons-material/EditNote";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import HourglassBottomIcon from "@mui/icons-material/HourglassBottom";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import BreadcrumbsNav from "@/components/BreadcrumbsNav";
@@ -31,6 +27,8 @@ import {
   getLeaderboard,
   exportResults,
 } from "@/services/quiznest/playerService";
+import ICONS from "@/utils/iconUtil";
+import { formatDateTimeWithLocale } from "@/utils/dateUtils";
 const translations = {
   en: {
     resultsTitle: "Results for",
@@ -152,7 +150,7 @@ export default function ResultsPage() {
               <Divider sx={{ mt: 2 }} />
             </Box>
 
-            <Grid container spacing={3}>
+            <Grid container spacing={3} justifyContent={"center"}>
               {players?.map((p, i) => (
                 <Grid item xs={12} sm={6} md={4} key={p._id || i}>
                   <Box
@@ -162,21 +160,20 @@ export default function ResultsPage() {
                       borderRadius: 3,
                       background: "#fdfefe",
                       boxShadow: 2,
-                      width: "350px",
+                      width: { xs: "100%", sm: "350px" },
                       display: "flex",
                       flexDirection: "column",
                       justifyContent: "space-between",
                       transition: "0.3s ease",
                       "&:hover": {
-                        boxShadow: 6,
-                        transform: "translateY(-4px)",
+                        boxShadow: 4,
                       },
                     }}
                   >
                     {/* Rank */}
                     <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
                       {i < 3 && (
-                        <EmojiEventsIcon
+                        <ICONS.trophy
                           color={
                             i === 0 ? "warning" : i === 1 ? "secondary" : "info"
                           }
@@ -197,22 +194,6 @@ export default function ResultsPage() {
                     <Box
                       sx={{ display: "flex", flexDirection: "column", gap: 1 }}
                     >
-                      {/* {p.company && (
-                      <Box sx={{ display: "flex", alignItems: "center" }}>
-                        <BusinessIcon
-                          fontSize="small"
-                          sx={{ mr: 1, color: "text.secondary" }}
-                        />
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          noWrap
-                        >
-                          {p.company}
-                        </Typography>
-                      </Box>
-                    )} */}
-
                       <Box sx={{ display: "flex", alignItems: "center" }}>
                         <ScoreIcon
                           fontSize="small"
@@ -258,17 +239,7 @@ export default function ResultsPage() {
                         >
                           {t.submittedAtLabel}{" "}
                           <strong>
-                            {new Date(p.updatedAt).toLocaleString(
-                              language === "ar" ? "ar-EG" : "en-GB",
-                              {
-                                day: "2-digit",
-                                month: "short",
-                                year: "numeric",
-                                hour: "2-digit",
-                                minute: "2-digit",
-                                hour12: true,
-                              }
-                            )}
+                            {formatDateTimeWithLocale(p.updatedAt)}
                           </strong>
                         </Typography>
                       </Box>

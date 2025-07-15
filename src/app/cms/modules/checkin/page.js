@@ -1,5 +1,5 @@
-import EventAvailableIcon from "@mui/icons-material/EventAvailable";
 import ModuleLandingPage from "@/components/ModuleLandingPage";
+import ICONS from "@/utils/iconUtil";
 
 const translations = {
   en: {
@@ -27,7 +27,7 @@ const translations = {
 export default function CheckInHome() {
   return (
     <ModuleLandingPage
-      moduleIcon={EventAvailableIcon}
+      moduleIcon={ICONS.checkin}
       ctaLabel={translations.en.ctaLabel}
       ctaHref="/cms/modules/checkin/events"
       translations={translations}

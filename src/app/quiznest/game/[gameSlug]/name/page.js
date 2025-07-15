@@ -106,6 +106,7 @@ export default function NamePage() {
         </IconButton>
 
         <Paper
+          dir={dir}
           elevation={6}
           sx={{
             p: { xs: 3, sm: 4 },
@@ -129,33 +130,15 @@ export default function NamePage() {
           </Typography>
 
           <TextField
-            label={entryDialogTranslations[language].nameLabel}
+            label={t.nameLabel}
             fullWidth
             required
             sx={{
               mb: 3,
-              "& .MuiInputBase-root": {
-                borderRadius: 2,
-                backgroundColor: "rgba(255,255,255,0.8)",
-              },
             }}
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
           />
-
-          {/* <TextField
-            label={entryDialogTranslations[language].companyLabel}
-            fullWidth
-            sx={{
-              mb: 3,
-              "& .MuiInputBase-root": {
-                borderRadius: 2,
-                backgroundColor: "rgba(255,255,255,0.8)",
-              },
-            }}
-            value={form.company}
-            onChange={(e) => setForm({ ...form, company: e.target.value })}
-          /> */}
 
           <Button
             variant="contained"
@@ -167,7 +150,7 @@ export default function NamePage() {
             {submitting ? (
               <CircularProgress size={24} color="inherit" />
             ) : (
-              entryDialogTranslations[language].startButton
+              t.startButton
             )}
           </Button>
 

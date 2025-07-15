@@ -62,6 +62,11 @@ import {
   Quiz as QuizIcon,
   Poll as PollIcon,
   ContentCopy as ContentCopyIcon,
+  EmojiEvents as EmojiEventsIcon,
+  SportsEsports as SportsEsportsIcon,
+  Image as ImageIcon,
+  Assignment as AssignmentIcon,
+  HowToReg as HowToRegIcon,
 } from "@mui/icons-material";
 
 // Miscellaneous Icons
@@ -130,6 +135,11 @@ const ICONS = {
   quiz: QuizIcon,
   poll: PollIcon,
   copy: ContentCopyIcon,
+  trophy: EmojiEventsIcon,
+  games: SportsEsportsIcon,
+  image: ImageIcon,
+  assignment: AssignmentIcon,
+  checkin: HowToRegIcon,
 
   // Miscellaneous
   people: PeopleIcon,
