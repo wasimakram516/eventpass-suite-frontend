@@ -45,6 +45,7 @@ import {
   downloadTemplate,
 } from "@/services/quiznest/questionService";
 import { getGameBySlug } from "@/services/quiznest/gameService";
+import NoDataAvailable from "@/components/NoDataAvailable";
 const translations = {
   en: {
     questionsTitle: 'Questions for "{gameTitle}" game',
@@ -324,107 +325,117 @@ export default function QuestionsPage() {
             </Box>
 
             <Divider sx={{ mb: 3 }} />
-
-            <Grid container spacing={3} justifyContent={"center"}>
-              {questions?.map((q, idx) => (
-                <Grid item xs={12} sm={6} md={4} key={q._id || idx}>
-                  <Box
-                    sx={{
-                      borderRadius: 2,
-                      boxShadow: 3,
-                      p: 2,
-                      bgcolor: "#fff",
-                      display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "space-between",
-                      minHeight: 300, // ensures consistent height
-                    }}
-                  >
-                    <Box>
-                      <Typography
-                        variant="subtitle1"
-                        fontWeight="bold"
-                        gutterBottom
-                      >
-                        Q{idx + 1}
-                      </Typography>
-
-                      <Typography variant="body1" sx={{ mb: 1 }}>
-                        <strong>{t.questionLabel}</strong> {q.question}
-                      </Typography>
-
+            {questions.length === 0 ? (
+              <NoDataAvailable />
+            ) : (
+              <Grid container spacing={3} justifyContent={"center"}>
+                {questions?.map((q, idx) => (
+                  <Grid item xs={12} sm={6} md={4} key={q._id || idx}>
+                    <Box
+                      sx={{
+                        borderRadius: 2,
+                        boxShadow: 3,
+                        p: 2,
+                        bgcolor: "#fff",
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "space-between",
+                        minHeight: 300, // ensures consistent height
+                      }}
+                    >
                       <Box>
                         <Typography
-                          variant="body2"
+                          variant="subtitle1"
                           fontWeight="bold"
-                          sx={{ mb: 0.5 }}
+                          gutterBottom
                         >
-                          {t.optionsLabel}
+                          Q{idx + 1}
                         </Typography>
-                        {q.answers.map((a, i) => (
+
+                        <Typography variant="body1" sx={{ mb: 1 }}>
+                          <strong>{t.questionLabel}</strong> {q.question}
+                        </Typography>
+
+                        <Box>
                           <Typography
-                            key={i}
                             variant="body2"
-                            sx={{
-                              color:
-                                i === q.correctAnswerIndex
-                                  ? "green"
-                                  : "text.secondary",
-                            }}
+                            fontWeight="bold"
+                            sx={{ mb: 0.5 }}
                           >
-                            {String.fromCharCode(65 + i)}. {a}
+                            {t.optionsLabel}
                           </Typography>
-                        ))}
+                          {q.answers.map((a, i) => (
+                            <Typography
+                              key={i}
+                              variant="body2"
+                              sx={{
+                                color:
+                                  i === q.correctAnswerIndex
+                                    ? "green"
+                                    : "text.secondary",
+                              }}
+                            >
+                              {String.fromCharCode(65 + i)}. {a}
+                            </Typography>
+                          ))}
+                        </Box>
+
+                        <Typography variant="body2" sx={{ mt: 1 }}>
+                          <strong>{t.correctAnswerLabel}</strong>{" "}
+                          <span style={{ color: "green" }}>
+                            {String.fromCharCode(65 + q.correctAnswerIndex)}.{" "}
+                            {q.answers[q.correctAnswerIndex]}
+                          </span>
+                        </Typography>
+
+                        {q.hint && (
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{ mt: 1, display: "block" }}
+                          >
+                            <strong>{t.hintLabel}</strong> {q.hint}
+                          </Typography>
+                        )}
                       </Box>
 
-                      <Typography variant="body2" sx={{ mt: 1 }}>
-                        <strong>{t.correctAnswerLabel}</strong>{" "}
-                        <span style={{ color: "green" }}>
-                          {String.fromCharCode(65 + q.correctAnswerIndex)}.{" "}
-                          {q.answers[q.correctAnswerIndex]}
-                        </span>
-                      </Typography>
-
-                      {q.hint && (
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          sx={{ mt: 1, display: "block" }}
-                        >
-                          <strong>{t.hintLabel}</strong> {q.hint}
-                        </Typography>
-                      )}
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "flex-end",
+                          gap: 1,
+                          mt: 2,
+                        }}
+                      >
+                        <Tooltip title={t.editTooltip}>
+                          <IconButton
+                            color="info"
+                            onClick={() => {
+                              setSelectedQuestion(q);
+                              setEditMode(true);
+                              setOpenModal(true);
+                            }}
+                          >
+                            <EditIcon />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title={t.deleteTooltip}>
+                          <IconButton
+                            color="error"
+                            onClick={() => {
+                              setSelectedQuestion(q);
+                              setConfirmOpen(true);
+                            }}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
                     </Box>
-
-                    <Box sx={{ display: "flex",justifyContent: "flex-end", gap: 1, mt: 2 }}>
-                      <Tooltip title={t.editTooltip}>
-                        <IconButton
-                          color="info"
-                          onClick={() => {
-                            setSelectedQuestion(q);
-                            setEditMode(true);
-                            setOpenModal(true);
-                          }}
-                        >
-                          <EditIcon />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title={t.deleteTooltip}>
-                        <IconButton
-                          color="error"
-                          onClick={() => {
-                            setSelectedQuestion(q);
-                            setConfirmOpen(true);
-                          }}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </Tooltip>
-                    </Box>
-                  </Box>
-                </Grid>
-              ))}
-            </Grid>
+                  </Grid>
+                ))}
+              </Grid>
+            )}
 
             <QuestionFormModal
               open={openModal}

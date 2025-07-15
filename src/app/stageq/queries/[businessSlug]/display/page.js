@@ -6,9 +6,11 @@ import { Box, CircularProgress, Typography } from "@mui/material";
 import { getQuestionsByBusiness } from "@/services/stageq/questionService";
 import Footer from "@/components/Footer";
 import { getBusinessBySlug } from "@/services/businessService";
+import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
 
 export default function LiveQuestionDisplay() {
   const { businessSlug } = useParams();
+  const {globalConfig} = useGlobalConfig();
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [business, setBusiness] = useState(null);
@@ -91,11 +93,11 @@ export default function LiveQuestionDisplay() {
         </Box>
       )}
 
-      {business?.brandingUrl && (
+      {globalConfig?.brandingMediaUrl && (
         <Box sx={{ textAlign: "center", mt: 2 }}>
           <img
-            src={business.brandingUrl}
-            alt={`${business.name} Branding`}
+            src={globalConfig?.brandingMediaUrl}
+            alt={`${globalConfig?.appName} Branding`}
             style={{
               width: "auto",
               height: "100px",

@@ -29,6 +29,7 @@ import {
 } from "@/services/quiznest/playerService";
 import ICONS from "@/utils/iconUtil";
 import { formatDateTimeWithLocale } from "@/utils/dateUtils";
+import NoDataAvailable from "@/components/NoDataAvailable";
 const translations = {
   en: {
     resultsTitle: "Results for",
@@ -149,105 +150,118 @@ export default function ResultsPage() {
 
               <Divider sx={{ mt: 2 }} />
             </Box>
-
-            <Grid container spacing={3} justifyContent={"center"}>
-              {players?.map((p, i) => (
-                <Grid item xs={12} sm={6} md={4} key={p._id || i}>
-                  <Box
-                    sx={{
-                      height: "100%",
-                      p: 3,
-                      borderRadius: 3,
-                      background: "#fdfefe",
-                      boxShadow: 2,
-                      width: { xs: "100%", sm: "350px" },
-                      display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "space-between",
-                      transition: "0.3s ease",
-                      "&:hover": {
-                        boxShadow: 4,
-                      },
-                    }}
-                  >
-                    {/* Rank */}
-                    <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-                      {i < 3 && (
-                        <ICONS.trophy
-                          color={
-                            i === 0 ? "warning" : i === 1 ? "secondary" : "info"
-                          }
-                          sx={{ mr: 1 }}
-                        />
-                      )}
-                      <Typography
-                        variant="h6"
-                        fontWeight="bold"
-                        color="primary.main"
-                        noWrap
-                      >
-                        #{i + 1} • {p.name}
-                      </Typography>
-                    </Box>
-
-                    {/* Details */}
+            {players.length === 0 ? (
+              <NoDataAvailable />
+            ) : (
+              <Grid container spacing={3} justifyContent={"center"}>
+                {players?.map((p, i) => (
+                  <Grid item xs={12} sm={6} md={4} key={p._id || i}>
                     <Box
-                      sx={{ display: "flex", flexDirection: "column", gap: 1 }}
+                      sx={{
+                        height: "100%",
+                        p: 3,
+                        borderRadius: 3,
+                        background: "#fdfefe",
+                        boxShadow: 2,
+                        width: { xs: "100%", sm: "350px" },
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "space-between",
+                        transition: "0.3s ease",
+                        "&:hover": {
+                          boxShadow: 4,
+                        },
+                      }}
                     >
-                      <Box sx={{ display: "flex", alignItems: "center" }}>
-                        <ScoreIcon
-                          fontSize="small"
-                          sx={{ mr: 1, color: "primary.main" }}
-                        />
-                        <Typography variant="body2">
-                          {t.scoreLabel}
-                          <strong>{p.score}</strong>
-                        </Typography>
-                      </Box>
-
-                      <Box sx={{ display: "flex", alignItems: "center" }}>
-                        <AccessTimeIcon
-                          fontSize="small"
-                          sx={{ mr: 1, color: "primary.main" }}
-                        />
-                        <Typography variant="body2">
-                          {t.timeTakenLabel}
-                          <strong>{p.timeTaken}s</strong>
-                        </Typography>
-                      </Box>
-
-                      <Box sx={{ display: "flex", alignItems: "center" }}>
-                        <EditNoteIcon
-                          fontSize="small"
-                          sx={{ mr: 1, color: "primary.main" }}
-                        />
-                        <Typography variant="body2">
-                          {t.attemptedLabel}
-                          <strong>{p.attemptedQuestions}</strong>
-                        </Typography>
-                      </Box>
-
-                      <Box sx={{ display: "flex", alignItems: "center" }}>
-                        <AccessTimeIcon
-                          fontSize="small"
-                          sx={{ mr: 1, color: "primary.main" }}
-                        />
+                      {/* Rank */}
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", mb: 1 }}
+                      >
+                        {i < 3 && (
+                          <ICONS.trophy
+                            color={
+                              i === 0
+                                ? "warning"
+                                : i === 1
+                                ? "secondary"
+                                : "info"
+                            }
+                            sx={{ mr: 1 }}
+                          />
+                        )}
                         <Typography
-                          variant="body2"
-                          fontStyle="italic"
-                          fontSize="0.85rem"
+                          variant="h6"
+                          fontWeight="bold"
+                          color="primary.main"
+                          noWrap
                         >
-                          {t.submittedAtLabel}{" "}
-                          <strong>
-                            {formatDateTimeWithLocale(p.updatedAt)}
-                          </strong>
+                          #{i + 1} • {p.name}
                         </Typography>
+                      </Box>
+
+                      {/* Details */}
+                      <Box
+                        sx={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 1,
+                        }}
+                      >
+                        <Box sx={{ display: "flex", alignItems: "center" }}>
+                          <ScoreIcon
+                            fontSize="small"
+                            sx={{ mr: 1, color: "primary.main" }}
+                          />
+                          <Typography variant="body2">
+                            {t.scoreLabel}
+                            <strong>{p.score}</strong>
+                          </Typography>
+                        </Box>
+
+                        <Box sx={{ display: "flex", alignItems: "center" }}>
+                          <AccessTimeIcon
+                            fontSize="small"
+                            sx={{ mr: 1, color: "primary.main" }}
+                          />
+                          <Typography variant="body2">
+                            {t.timeTakenLabel}
+                            <strong>{p.timeTaken}s</strong>
+                          </Typography>
+                        </Box>
+
+                        <Box sx={{ display: "flex", alignItems: "center" }}>
+                          <EditNoteIcon
+                            fontSize="small"
+                            sx={{ mr: 1, color: "primary.main" }}
+                          />
+                          <Typography variant="body2">
+                            {t.attemptedLabel}
+                            <strong>{p.attemptedQuestions}</strong>
+                          </Typography>
+                        </Box>
+
+                        <Box sx={{ display: "flex", alignItems: "center" }}>
+                          <AccessTimeIcon
+                            fontSize="small"
+                            sx={{ mr: 1, color: "primary.main" }}
+                          />
+                          <Typography
+                            variant="body2"
+                            fontStyle="italic"
+                            fontSize="0.85rem"
+                          >
+                            {t.submittedAtLabel}{" "}
+                            <strong>
+                              {formatDateTimeWithLocale(p.updatedAt)}
+                            </strong>
+                          </Typography>
+                        </Box>
                       </Box>
                     </Box>
-                  </Box>
-                </Grid>
-              ))}
-            </Grid>
+                  </Grid>
+                ))}
+              </Grid>
+            )}
           </>
         )}
       </Container>

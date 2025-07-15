@@ -55,7 +55,8 @@ const translations = {
     creatingUser: "Creating user...",
     saving: "Saving...",
     deleteConfirm: "Confirm Deletion",
-    deleteMessagePrefix: "Are you sure you want to delete",
+    deleteMessagePrefix:
+      "Are you sure you want to delete this user? This will also delete all their associated businesses and related data, and cannot be undone.",
     role: "Role",
     edit: "Edit",
     delete: "Delete",
@@ -75,7 +76,8 @@ const translations = {
     creatingUser: "جاري إنشاء المستخدم...",
     saving: "جاري الحفظ...",
     deleteConfirm: "تأكيد الحذف",
-    deleteMessagePrefix: "هل أنت متأكد أنك تريد حذف",
+    deleteMessagePrefix:
+      "هل أنت متأكد أنك تريد حذف هذا المستخدم؟ سيؤدي هذا أيضًا إلى حذف جميع الشركات المرتبطة به والبيانات ذات الصلة، ولا يمكن التراجع عن هذا الإجراء.",
     role: "الدور",
     edit: "تعديل",
     delete: "حذف",
@@ -250,7 +252,7 @@ export default function UsersPage() {
 
       <Divider sx={{ mb: 3 }} />
 
-      <Grid container spacing={3}>
+      <Grid container spacing={3} justifyContent={"center"}>
         {users?.map((user) => (
           <Box
             key={user._id}
@@ -425,7 +427,7 @@ export default function UsersPage() {
       <ConfirmationDialog
         open={deleteConfirm}
         title={t.deleteConfirm}
-        message={`${t.deleteMessagePrefix} ${selectedUser?.name}?`}
+        message={`${t.deleteMessagePrefix}`}
         onClose={() => setDeleteConfirm(false)}
         onConfirm={handleDelete}
         confirmButtonText={t.delete}

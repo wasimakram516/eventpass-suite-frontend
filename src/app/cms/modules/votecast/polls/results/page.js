@@ -27,6 +27,7 @@ import useI18nLayout from "@/hooks/useI18nLayout";
 import ICONS from "@/utils/iconUtil";
 import FilterDrawer from "@/components/FilterModal";
 import EmptyBusinessState from "@/components/EmptyBusinessState";
+import NoDataAvailable from "@/components/NoDataAvailable";
 
 const translations = {
   en: {
@@ -211,6 +212,8 @@ export default function ResultsPage() {
             <Box sx={{ textAlign: "center", mt: 8 }}>
               <CircularProgress />
             </Box>
+          ) : results.length === 0 ? (
+            <NoDataAvailable/>
           ) : (
             results.length > 0 && (
               <Box

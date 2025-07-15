@@ -16,8 +16,8 @@ const withApiHandler = (fn, { showSuccess = false } = {}) => async (...args) => 
     return response.data ?? response;
   } catch (err) {
     const message =
+      err?.response?.data?.error ||
       err?.response?.data?.message ||
-      err?.response?.data?.data ||
       err?.message ||
       "An unknown error occurred";
 

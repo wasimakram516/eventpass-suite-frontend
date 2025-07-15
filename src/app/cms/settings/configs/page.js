@@ -148,11 +148,11 @@ export default function GlobalConfigPage() {
   useEffect(() => {
     (async () => {
       const data = await getGlobalConfig();
-
-      if (data.data) {
+      console.log("Global Config Data:", data);
+      
+      if (!data.error) {
         setConfig(data);
-        setForm((prev) => ({
-          ...prev,
+        setForm({
           appName: data.appName || "",
           contact: {
             email: data.contact?.email || "",
@@ -174,7 +174,7 @@ export default function GlobalConfigPage() {
           },
           companyLogoUrl: data.companyLogoUrl || "",
           brandingMediaUrl: data.brandingMediaUrl || "",
-        }));
+        });
       }
     })();
   }, []);

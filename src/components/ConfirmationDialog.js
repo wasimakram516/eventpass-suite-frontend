@@ -123,7 +123,7 @@ const ConfirmationDialog = ({
             padding: "0.5rem 2rem",
           }}
         >
-          {loading ? t.processing : confirmButtonText || t.yes}
+          {confirmButtonText || t.yes}
         </Button>
       </DialogActions>
     </Dialog>

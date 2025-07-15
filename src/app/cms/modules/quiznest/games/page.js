@@ -33,6 +33,7 @@ import ShareLinkModal from "@/components/ShareLinkModal";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import EmptyBusinessState from "@/components/EmptyBusinessState";
+import NoDataAvailable from "@/components/NoDataAvailable";
 
 const translations = {
   en: {
@@ -290,7 +291,9 @@ export default function GamesPage() {
           <Box sx={{ textAlign: "center", mt: 8 }}>
             <CircularProgress />
           </Box>
-        ) : (
+        ) : games.length===0 ? (
+          <NoDataAvailable/>
+        ): (
           <Grid container spacing={3} justifyContent={"center"}>
             {games.map((g) => (
               <Grid item xs={12} sm={6} md={4} lg={3} key={g._id}>

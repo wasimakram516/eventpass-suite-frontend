@@ -24,6 +24,7 @@ import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import ShareLinkModal from "@/components/ShareLinkModal";
 import EmptyBusinessState from "@/components/EmptyBusinessState";
+import NoDataAvailable from "@/components/NoDataAvailable";
 
 const translations = {
   en: {
@@ -106,45 +107,77 @@ export default function LinkSharingPage() {
       <Divider sx={{ my: 4 }} />
 
       {!businesses.length === 0 ? (
-        <EmptyBusinessState />
+        <NoDataAvailable />
       ) : (
         <Grid container spacing={3} justifyContent="center">
           {businesses.map((business) => (
             <Grid item key={business._id} xs={12} sm={6} md={4}>
-              <Card elevation={4} sx={{ height: "100%" }}>
-                <CardHeader
-                  avatar={
-                    business.logoUrl ? (
-                      <Avatar
-                        src={business.logoUrl}
-                        alt={business.name}
-                        sx={{ width: 40, height: 40 }}
-                      />
-                    ) : (
-                      <Avatar>{business.name.charAt(0)}</Avatar>
-                    )
-                  }
-                  title={
-                    <Typography fontWeight="bold">{business.name}</Typography>
-                  }
-                  action={
-                    <Tooltip title={t.shareTooltip}>
-                      <IconButton
-                        onClick={() => handleShare(business)}
-                        color="primary"
-                        aria-label="share"
-                      >
-                        <ICONS.share />
-                      </IconButton>
-                    </Tooltip>
-                  }
-                />
+              <Card
+                elevation={4}
+                sx={{
+                  height: "100%",
+                  p: 3,
+                  borderRadius: 3,
+                  background: "#fdfefe",
+                  boxShadow: 2,
+                  width: { xs: "100%", sm: "300px" },
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                  transition: "0.3s ease",
+                  "&:hover": {
+                    boxShadow: 4,
+                  },
+                }}
+              >
+                <Stack direction="row" spacing={1} alignItems="center" mb={1}>
+                  {business.logoUrl ? (
+                    <Avatar
+                      src={business.logoUrl}
+                      alt={business.name}
+                      sx={{ width: 40, height: 40 }}
+                    />
+                  ) : (
+                    <Avatar>{business.name.charAt(0)}</Avatar>
+                  )}
+                  <Box flexGrow={1}>
+                    <Typography
+                      variant="h6"
+                      fontWeight={700}
+                      sx={{
+                        wordBreak: "break-word",
+                        overflowWrap: "break-word",
+                        whiteSpace: "normal",
+                        fontSize: "1rem",
+                      }}
+                    >
+                      {business.name}
+                    </Typography>
+                  </Box>
+                  <Tooltip title={t.shareTooltip}>
+                    <IconButton
+                      onClick={() => handleShare(business)}
+                      color="primary"
+                      aria-label="share"
+                    >
+                      <ICONS.share />
+                    </IconButton>
+                  </Tooltip>
+                </Stack>
+
                 <CardContent>
                   <Stack spacing={1}>
                     {business?.contact?.email && (
                       <Box display="flex" alignItems="center" gap={1}>
                         <ICONS.email fontSize="small" />
-                        <Typography variant="body2">
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            wordBreak: "break-word",
+                            overflowWrap: "break-word",
+                            whiteSpace: "normal",
+                          }}
+                        >
                           {business?.contact?.email}
                         </Typography>
                       </Box>
@@ -152,7 +185,10 @@ export default function LinkSharingPage() {
                     {business?.contact?.phone && (
                       <Box display="flex" alignItems="center" gap={1}>
                         <ICONS.phone fontSize="small" />
-                        <Typography variant="body2">
+                        <Typography
+                          variant="body2"
+                          sx={{ wordBreak: "break-word", whiteSpace: "normal" }}
+                        >
                           {business?.contact?.phone}
                         </Typography>
                       </Box>
@@ -160,7 +196,10 @@ export default function LinkSharingPage() {
                     {business?.address && (
                       <Box display="flex" alignItems="center" gap={1}>
                         <ICONS.location fontSize="small" />
-                        <Typography variant="body2">
+                        <Typography
+                          variant="body2"
+                          sx={{ wordBreak: "break-word", whiteSpace: "normal" }}
+                        >
                           {business?.address}
                         </Typography>
                       </Box>

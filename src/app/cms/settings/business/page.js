@@ -40,6 +40,7 @@ import slugify from "@/utils/slugify";
 import ConfirmationDialog from "@/components/ConfirmationDialog";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import ICONS from "@/utils/iconUtil";
+import NoDataAvailable from "@/components/NoDataAvailable";
 
 const translations = {
   en: {
@@ -58,7 +59,9 @@ const translations = {
     saving: "Saving...",
     creating: "Creating...",
     confirmDeleteTitle: "Confirm Delete",
-    confirmDeleteMessage: (name) => `Are you sure you want to delete ${name}?`,
+    confirmDeleteMessage: (name) =>
+      `Are you sure you want to delete ${name}? This will also delete all of its associated data and cannot be undone.`,
+
     confirmDeleteButton: "Delete",
     owner: "Owner",
     noBiz: "You haven't created a business yet.",
@@ -86,7 +89,9 @@ const translations = {
     saving: "جارٍ الحفظ...",
     creating: "جارٍ الإنشاء...",
     confirmDeleteTitle: "تأكيد الحذف",
-    confirmDeleteMessage: (name) => `هل أنت متأكد أنك تريد حذف ${name}؟`,
+    confirmDeleteMessage: (name) =>
+      `هل أنت متأكد أنك تريد حذف ${name}؟ سيؤدي هذا أيضًا إلى حذف جميع البيانات المرتبطة به ولا يمكن التراجع عنه.`,
+
     confirmDeleteButton: "حذف",
     owner: "المالك",
     noBiz: "لم تقم بإنشاء أي شركة بعد.",
@@ -354,6 +359,8 @@ export default function BusinessDetailsPage() {
             {t.create}
           </Button>
         </Box>
+      ) : businesses.length === 0 ? (
+        <NoDataAvailable />
       ) : (
         /* ELSE show the grid of businesses (for admin all, for biz user exactly one) */
         <Grid container spacing={3} justifyContent={"center"}>
@@ -361,89 +368,102 @@ export default function BusinessDetailsPage() {
             <Grid item xs={12} sm={6} md={4} key={biz._id}>
               <Grid item xs={12} sm={6} md={4} lg={3}>
                 <Card
-  elevation={3}
-  sx={{
-    p: 2,
-    height: "100%",
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "space-between",
-    borderRadius: 2,
-    width: { xs: "100%", sm: "300px" },
-    wordBreak: "break-word",
-  }}
->
-  {/* Top Section: Avatar + Info */}
-  <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", mb: 2 }}>
-    <Avatar
-      src={biz.logoUrl}
-      alt={biz.name}
-      sx={{ width: 64, height: 64, mb: 1 }}
-    >
-      {biz.name[0]}
-    </Avatar>
+                  elevation={3}
+                  sx={{
+                    p: 2,
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    borderRadius: 2,
+                    width: { xs: "100%", sm: "300px" },
+                    wordBreak: "break-word",
+                  }}
+                >
+                  {/* Top Section: Avatar + Info */}
+                  <Box
+                    sx={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      textAlign: "center",
+                      mb: 2,
+                    }}
+                  >
+                    <Avatar
+                      src={biz.logoUrl}
+                      alt={biz.name}
+                      sx={{ width: 64, height: 64, mb: 1 }}
+                    >
+                      {biz.name[0]}
+                    </Avatar>
 
-    <Typography
-      variant="h6"
-      fontWeight="bold"
-      sx={{ whiteSpace: "normal", wordWrap: "break-word" }}
-    >
-      {biz.name}
-    </Typography>
+                    <Typography
+                      variant="h6"
+                      fontWeight="bold"
+                      sx={{ whiteSpace: "normal", wordWrap: "break-word" }}
+                    >
+                      {biz.name}
+                    </Typography>
 
-    <Typography
-      variant="body2"
-      color="text.secondary"
-      sx={{ whiteSpace: "normal", wordWrap: "break-word" }}
-    >
-      Slug: <strong>{biz.slug}</strong>
-    </Typography>
+                    <Typography
+                      variant="body2"
+                      color="text.secondary"
+                      sx={{ whiteSpace: "normal", wordWrap: "break-word" }}
+                    >
+                      Slug: <strong>{biz.slug}</strong>
+                    </Typography>
 
-    <Typography
-      variant="body2"
-      sx={{ whiteSpace: "normal", wordWrap: "break-word" }}
-    >
-      {biz.contact?.email}
-    </Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{ whiteSpace: "normal", wordWrap: "break-word" }}
+                    >
+                      {biz.contact?.email}
+                    </Typography>
 
-    {biz.owner && (
-      <Typography
-        variant="caption"
-        color="text.secondary"
-        display="block"
-        sx={{ whiteSpace: "normal", wordWrap: "break-word" }}
-      >
-        {t.owner}: {biz.owner.name || biz.owner}
-      </Typography>
-    )}
-  </Box>
+                    {biz.owner && (
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        display="block"
+                        sx={{ whiteSpace: "normal", wordWrap: "break-word" }}
+                      >
+                        {t.owner}: {biz.owner.name || biz.owner}
+                      </Typography>
+                    )}
+                  </Box>
 
-  {/* Actions */}
-  <Box
-    sx={{
-      mt: "auto",
-      display: "flex",
-      justifyContent: "flex-end",
-      gap: 1,
-      flexWrap: "wrap",
-    }}
-  >
-    <Tooltip title={t.edit}>
-      <IconButton color="primary" onClick={() => handleOpen(biz)}>
-        <EditIcon />
-      </IconButton>
-    </Tooltip>
+                  {/* Actions */}
+                  <Box
+                    sx={{
+                      mt: "auto",
+                      display: "flex",
+                      justifyContent: "flex-end",
+                      gap: 1,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <Tooltip title={t.edit}>
+                      <IconButton
+                        color="primary"
+                        onClick={() => handleOpen(biz)}
+                      >
+                        <EditIcon />
+                      </IconButton>
+                    </Tooltip>
 
-    {user.role === "admin" && (
-      <Tooltip title={t.delete}>
-        <IconButton color="error" onClick={() => openDeleteConfirm(biz)}>
-          <DeleteIcon />
-        </IconButton>
-      </Tooltip>
-    )}
-  </Box>
-</Card>
-
+                    {user.role === "admin" && (
+                      <Tooltip title={t.delete}>
+                        <IconButton
+                          color="error"
+                          onClick={() => openDeleteConfirm(biz)}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                  </Box>
+                </Card>
               </Grid>
             </Grid>
           ))}

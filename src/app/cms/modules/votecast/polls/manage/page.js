@@ -43,6 +43,7 @@ import BusinessDrawer from "@/components/BusinessDrawer";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import FilterModal from "@/components/FilterModal";
 import EmptyBusinessState from "@/components/EmptyBusinessState";
+import NoDataAvailable from "@/components/NoDataAvailable";
 const translations = {
   en: {
     title: "Manage Polls",
@@ -325,6 +326,8 @@ export default function ManagePollsPage() {
           <Box sx={{ textAlign: "center", mt: 8 }}>
             <CircularProgress />
           </Box>
+        ) : polls.length === 0 ? (
+          <NoDataAvailable />
         ) : (
           selectedBusiness && (
             <Grid container spacing={3} justifyContent={"center"}>

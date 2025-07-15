@@ -34,6 +34,8 @@ import BusinessDrawer from "@/components/BusinessDrawer";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import EmptyBusinessState from "@/components/EmptyBusinessState";
+import LoadingState from "@/components/LoadingState";
+import NoDataAvailable from "@/components/NoDataAvailable";
 
 const translations = {
   en: {
@@ -216,16 +218,11 @@ export default function ManageQuestionsPage() {
         <Divider sx={{ mb: 4 }} />
 
         {!selectedBusiness ? (
-          <EmptyBusinessState/>
+          <EmptyBusinessState />
         ) : loading ? (
-          <Box
-            display="flex"
-            justifyContent="center"
-            alignItems="center"
-            minHeight="40vh"
-          >
-            <CircularProgress />
-          </Box>
+          <LoadingState />
+        ) : questions.length === 0 ? (
+          <NoDataAvailable />
         ) : (
           <Grid container spacing={3} justifyContent="center">
             {questions.map((q) => (

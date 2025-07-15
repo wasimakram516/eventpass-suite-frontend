@@ -35,6 +35,7 @@ import {
   deleteCheckInEvent,
 } from "@/services/checkin/checkinEventService";
 import EmptyBusinessState from "@/components/EmptyBusinessState";
+import NoDataAvailable from "@/components/NoDataAvailable";
 
 const translations = {
   en: {
@@ -253,6 +254,8 @@ export default function EventsPage() {
           <Box sx={{ textAlign: "center", mt: 8 }}>
             <CircularProgress />
           </Box>
+        ) : events.length === 0 ? (
+          <NoDataAvailable />
         ) : (
           <Grid container spacing={3} justifyContent="center">
             {events.map((event) => {

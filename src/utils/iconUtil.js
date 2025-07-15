@@ -77,6 +77,7 @@ import {
   ThumbUpOffAlt as ThumbUpOffAltIcon,
   Phone as PhoneIcon,
   Email as EmailIcon,
+  SearchOff as EmptyIcon,
 } from "@mui/icons-material";
 
 const ICONS = {
@@ -148,5 +149,6 @@ const ICONS = {
   thumbOff: ThumbUpOffAltIcon,
   phone: PhoneIcon,
   email: EmailIcon,
+  empty: EmptyIcon,
 };
 export default ICONS;

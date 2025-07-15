@@ -36,6 +36,7 @@ import ICONS from "@/utils/iconUtil";
 import WalkInModal from "@/components/WalkInModal";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
+import NoDataAvailable from "@/components/NoDataAvailable";
 
 const ViewRegistrations = () => {
   const { eventSlug } = useParams();
@@ -287,11 +288,7 @@ const ViewRegistrations = () => {
       </Box>
 
       {registrations.length === 0 ? (
-        <Typography
-          sx={{ textAlign: "center", color: "text.secondary", mt: 2 }}
-        >
-          {t.noRecords}
-        </Typography>
+        <NoDataAvailable/>
       ) : (
         <>
           <Grid container spacing={4} justifyContent="center">
