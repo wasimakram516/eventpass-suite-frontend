@@ -21,7 +21,6 @@ import {
   InputAdornment,
   Stack,
   Divider,
-  Avatar,
   Dialog,
   Tooltip,
   Zoom,
@@ -339,9 +338,10 @@ const CMSUploadsPage = () => {
         <Paper elevation={1} sx={{ p: 3, mb: 4, borderRadius: 2 }}>
           <Stack
             direction={{ xs: "column", sm: "row" }}
-            spacing={2}
-            flexWrap="wrap"
+            justifyContent="space-between"
             alignItems={{ xs: "stretch", sm: "center" }}
+            spacing={2}
+            sx={{ my: 3 }}
           >
             <Skeleton
               variant="rectangular"
@@ -391,9 +391,9 @@ const CMSUploadsPage = () => {
       <Stack
         direction={{ xs: "column", sm: "row" }}
         justifyContent="space-between"
-        alignItems={{ xs: "flex-start", sm: "center" }}
+        alignItems={{ xs: "stretch", sm: "center" }}
         spacing={2}
-        mb={2}
+        sx={{ my: 3 }}
       >
         <Box>
           <Typography variant="h4" fontWeight="bold">
@@ -430,11 +430,10 @@ const CMSUploadsPage = () => {
         </Box>
         <Stack
           direction={{ xs: "column", sm: "row" }}
-          spacing={2}
-          alignItems={{ xs: "stretch", sm: "center" }}
           justifyContent="space-between"
-          flexWrap="wrap"
-          useFlexGap
+          alignItems={{ xs: "stretch", sm: "center" }}
+          spacing={2}
+          sx={{ my: 3 }}
         >
           {/* Search on the left */}
           <TextField
@@ -455,12 +454,11 @@ const CMSUploadsPage = () => {
 
           {/* Filters on the right */}
           <Stack
-            direction="row"
+            direction={{ xs: "column", sm: "row" }}
+            justifyContent="space-between"
+            alignItems={{ xs: "stretch", sm: "center" }}
             spacing={2}
-            alignItems="center"
-            justifyContent="flex-end"
-            flexWrap="wrap"
-            useFlexGap
+            sx={{ my: 3 }}
           >
             {/* Wall Selector */}
             <FormControl size="small" sx={{ width: { xs: "100%", sm: 160 } }}>

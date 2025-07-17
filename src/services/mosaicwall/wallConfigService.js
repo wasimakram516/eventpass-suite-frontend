@@ -17,7 +17,6 @@ export const getWallConfigBySlug = withApiHandler(async (slug) => {
 export const createWallConfig = withApiHandler(
   async (payload) => {
     
-    console.log("In creat wall service:", payload);
     const response = await api.post("/mosaicwall/wall-configs", payload);
     return response.data;
   },

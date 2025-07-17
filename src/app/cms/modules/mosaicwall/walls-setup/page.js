@@ -42,11 +42,11 @@ export default function CmsDashboard() {
       {/* Heading Section */}
       <Box sx={{ mb: 2 }}>
         <Stack
-          direction="row"
+          direction={{ xs: "column", sm: "row" }}
           justifyContent="space-between"
-          alignItems={{ xs: "flex-start", sm: "center" }}
-          flexWrap="wrap"
-          rowGap={2}
+          alignItems={{ xs: "stretch", sm: "center" }}
+          spacing={2}
+          sx={{ my: 3 }}
         >
           <Box>
             <Typography variant="h4" fontWeight="bold">

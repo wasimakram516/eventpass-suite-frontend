@@ -5,20 +5,20 @@ const translations = {
   en: {
     title: "Mosaic Wall",
     features: [
-      "Create and share polls with the public effortlessly.",
-      "Users can cast their votes anonymously – no login required.",
-      "View and analyze poll results instantly.",
-      "Ideal for events, booths, or real-time feedback collection.",
+      "Create interactive wall configurations with mosaic or card mode.",
+      "Easily generate and scan QR codes to access the photo capture page.",
+      "Users can click and submit photos from their own devices.",
+      "All submitted photos appear live on the big screen mosaic.",
     ],
     ctaLabel: "Manage Polls",
   },
   ar: {
     title: "VoteCast – استطلاعات الجمهور",
     features: [
-      "أنشئ وشارك استطلاعات مع الجمهور بسهولة.",
-      "يمكن للمستخدمين التصويت بشكل مجهول دون تسجيل الدخول.",
-      "اعرض نتائج الاستطلاع فورًا وحللها.",
-      "مثالية للفعاليات أو الأجنحة أو جمع التعليقات الفورية.",
+      "أنشئ جدارًا تفاعليًا بوضع الفسيفساء أو البطاقات.",
+      "أنشئ رمز QR وامسحه للدخول إلى صفحة التقاط الصور.",
+      "يمكن للمستخدمين التقاط صورهم وإرسالها بسهولة.",
+      "تُعرض جميع الصور المرسلة مباشرةً على الشاشة الكبيرة.",
     ],
     ctaLabel: "إدارة الاستطلاعات",
   },

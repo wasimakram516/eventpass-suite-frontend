@@ -255,7 +255,7 @@ export default function WallConfigsPage() {
         justifyContent="space-between"
         alignItems={{ xs: "stretch", sm: "center" }}
         spacing={2}
-        mb={2}
+        sx={{ my: 3 }}
       >
         <Box>
           <Typography variant="h4" fontWeight="bold">
@@ -267,7 +267,13 @@ export default function WallConfigsPage() {
               : t.selectBusinessToView}
           </Typography>
         </Box>
-        <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          justifyContent="space-between"
+          alignItems={{ xs: "stretch", sm: "center" }}
+          spacing={2}
+          sx={{ my: 3 }}
+        >
           {user?.role === "admin" && (
             <Button
               variant="outlined"
