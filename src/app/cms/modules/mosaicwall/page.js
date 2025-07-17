@@ -1,25 +1,36 @@
-"use client";
+import ModuleLandingPage from "@/components/ModuleLandingPage";
+import ICONS from "@/utils/iconUtil";
 
-import BreadcrumbsNav from "@/components/BreadcrumbsNav";
-import { Box, Typography, Divider, Button, Stack, Container } from "@mui/material";
+const translations = {
+  en: {
+    title: "Mosaic Wall",
+    features: [
+      "Create and share polls with the public effortlessly.",
+      "Users can cast their votes anonymously – no login required.",
+      "View and analyze poll results instantly.",
+      "Ideal for events, booths, or real-time feedback collection.",
+    ],
+    ctaLabel: "Manage Polls",
+  },
+  ar: {
+    title: "VoteCast – استطلاعات الجمهور",
+    features: [
+      "أنشئ وشارك استطلاعات مع الجمهور بسهولة.",
+      "يمكن للمستخدمين التصويت بشكل مجهول دون تسجيل الدخول.",
+      "اعرض نتائج الاستطلاع فورًا وحللها.",
+      "مثالية للفعاليات أو الأجنحة أو جمع التعليقات الفورية.",
+    ],
+    ctaLabel: "إدارة الاستطلاعات",
+  },
+};
 
-export default function MosaicWallCMSPage() {
+export default function VoteCastHome() {
   return (
-    <Container>
-      <BreadcrumbsNav/>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-        <Box>
-          <Typography variant="h5" fontWeight="bold">MosaicWall</Typography>
-          <Typography variant="body2" color="text.secondary">
-            Manage and review real-time photo and text submissions.
-          </Typography>
-        </Box>
-        <Button variant="contained" color="primary">View Submissions</Button>
-      </Stack>
-      <Divider sx={{ mb: 3 }} />
-      <Typography variant="body1" color="text.secondary">
-        This is the main CMS content area for MosaicWall.
-      </Typography>
-    </Container>
+    <ModuleLandingPage
+      moduleIcon={ICONS.poll}
+      ctaLabel={translations.en.ctaLabel}
+      ctaHref="/cms/modules/mosaicwall/walls-setup"
+      translations={translations}
+    />
   );
 }
