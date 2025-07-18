@@ -1,25 +1,36 @@
-"use client";
+import ModuleLandingPage from "@/components/ModuleLandingPage";
+import ICONS from "@/utils/iconUtil";
 
-import BreadcrumbsNav from "@/components/BreadcrumbsNav";
-import { Box, Typography, Divider, Button, Stack, Container } from "@mui/material";
+const translations = {
+  en: {
+    title: "Mosaic Wall",
+    features: [
+      "Create interactive wall configurations with mosaic or card mode.",
+      "Easily generate and scan QR codes to access the photo capture page.",
+      "Users can click and submit photos from their own devices.",
+      "All submitted photos appear live on the big screen mosaic.",
+    ],
+    ctaLabel: "Manage Polls",
+  },
+  ar: {
+    title: "VoteCast – استطلاعات الجمهور",
+    features: [
+      "أنشئ جدارًا تفاعليًا بوضع الفسيفساء أو البطاقات.",
+      "أنشئ رمز QR وامسحه للدخول إلى صفحة التقاط الصور.",
+      "يمكن للمستخدمين التقاط صورهم وإرسالها بسهولة.",
+      "تُعرض جميع الصور المرسلة مباشرةً على الشاشة الكبيرة.",
+    ],
+    ctaLabel: "إدارة الاستطلاعات",
+  },
+};
 
-export default function MosaicWallCMSPage() {
+export default function VoteCastHome() {
   return (
-    <Container>
-      <BreadcrumbsNav/>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-        <Box>
-          <Typography variant="h5" fontWeight="bold">MosaicWall</Typography>
-          <Typography variant="body2" color="text.secondary">
-            Manage and review real-time photo and text submissions.
-          </Typography>
-        </Box>
-        <Button variant="contained" color="primary">View Submissions</Button>
-      </Stack>
-      <Divider sx={{ mb: 3 }} />
-      <Typography variant="body1" color="text.secondary">
-        This is the main CMS content area for MosaicWall.
-      </Typography>
-    </Container>
+    <ModuleLandingPage
+      moduleIcon={ICONS.poll}
+      ctaLabel={translations.en.ctaLabel}
+      ctaHref="/cms/modules/mosaicwall/walls-setup"
+      translations={translations}
+    />
   );
 }

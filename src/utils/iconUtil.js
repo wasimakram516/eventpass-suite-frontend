@@ -67,6 +67,7 @@ import {
   Image as ImageIcon,
   Assignment as AssignmentIcon,
   HowToReg as HowToRegIcon,
+  QrCode as QrCodeIcon,
 } from "@mui/icons-material";
 
 // Miscellaneous Icons
@@ -78,6 +79,13 @@ import {
   Phone as PhoneIcon,
   Email as EmailIcon,
   SearchOff as EmptyIcon,
+  Upload as UploadIcon,
+  Wallpaper as WallpaperIcon,
+  Clear as ClearIcon,
+  PhotoLibrary as PhotoLibraryIcon,
+  CameraAlt as CameraIcon,
+  Refresh as RefreshIcon,
+  Send as SendIcon,
 } from "@mui/icons-material";
 
 const ICONS = {
@@ -141,6 +149,7 @@ const ICONS = {
   image: ImageIcon,
   assignment: AssignmentIcon,
   checkin: HowToRegIcon,
+  qrcode: QrCodeIcon,
 
   // Miscellaneous
   people: PeopleIcon,
@@ -150,5 +159,12 @@ const ICONS = {
   phone: PhoneIcon,
   email: EmailIcon,
   empty: EmptyIcon,
+  uploadIcon: UploadIcon,
+  wallpaper: WallpaperIcon,
+  clear: ClearIcon,
+  library: PhotoLibraryIcon,
+  camera: CameraIcon,
+  refresh: RefreshIcon,
+  send: SendIcon,
 };
 export default ICONS;
