@@ -176,7 +176,7 @@ const CMSUploadsPage = () => {
             <Box
               sx={{
                 maxWidth: "100%",
-                maxHeight: "100%",
+                maxHeight: "75vh",
                 borderRadius: 2,
                 overflow: "hidden",
                 boxShadow: 5,
@@ -185,7 +185,7 @@ const CMSUploadsPage = () => {
               <img
                 src={media.imageUrl}
                 alt="Full screen preview"
-                style={{ width: "100%", height: "auto", objectFit: "contain" }}
+                style={{ width: "auto", height: "100%", objectFit: "contain" }}
               />
             </Box>
           </Box>
