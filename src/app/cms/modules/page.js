@@ -47,14 +47,15 @@ export default function Modules() {
   useEffect(() => {
     const fetchModules = async () => {
       const data = await getModules();
+      if (!data.error) {
+        // Filter by user role
+        const permitted =
+          user?.role === "business"
+            ? data.filter((mod) => user.modulePermissions.includes(mod.key))
+            : data;
 
-      // Filter by user role
-      const permitted =
-        user?.role === "business"
-          ? data.filter((mod) => user.modulePermissions.includes(mod.key))
-          : data;
-
-      setModules(permitted);
+        setModules(permitted);
+      }
     };
 
     fetchModules();
@@ -120,7 +121,7 @@ export default function Modules() {
                 key={mod.key}
                 title={mod.labels[language]}
                 description={mod.descriptions[language]}
-                buttonLabel={mod.buttons?.[language] || "Manage"}
+                buttonLabel={mod.buttons[language] || "Manage"}
                 icon={getModuleIcon(mod.icon)}
                 color={mod.color || "primary"}
                 route={mod.route}
