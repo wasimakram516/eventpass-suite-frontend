@@ -29,7 +29,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import BreadcrumbsNav from "@/components/BreadcrumbsNav";
 import PollFormDrawer from "@/components/PollFormDrawer";
 import ConfirmationDialog from "@/components/ConfirmationDialog";
-import SharePollModal from "@/components/SharePollModal";
 import ICONS from "@/utils/iconUtil";
 import {
   getPolls,
@@ -44,6 +43,7 @@ import useI18nLayout from "@/hooks/useI18nLayout";
 import FilterModal from "@/components/FilterModal";
 import EmptyBusinessState from "@/components/EmptyBusinessState";
 import NoDataAvailable from "@/components/NoDataAvailable";
+import ShareLinkModal from "@/components/ShareLinkModal";
 const translations = {
   en: {
     title: "Manage Polls",
@@ -558,10 +558,10 @@ export default function ManagePollsPage() {
         />
 
         {/* Share Modal */}
-        <SharePollModal
+        <ShareLinkModal
           open={shareOpen}
           onClose={() => setShareOpen(false)}
-          poll={sharePoll}
+          url={typeof window !== "undefined" && `${window.location.origin}/votecast/polls/${selectedBusiness}/vote`}
         />
       </Container>
     </Box>
