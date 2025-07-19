@@ -10,6 +10,7 @@ import CardsGrid from "@/components/CardsGrid";
 import { Shift } from "ambient-cbg";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import LoadingState from "@/components/LoadingState";
+import NoDataAvailable from "@/components/NoDataAvailable";
 
 const translations = {
   en: {
@@ -89,15 +90,7 @@ const BigScreenPage = () => {
         <Box sx={{ position: "absolute", inset: 0, zIndex: 0 }}>
           <Shift />
         </Box>
-        <Typography
-          variant="h6"
-          textAlign={align}
-          mt={4}
-          color="#fff"
-          zIndex={1}
-        >
-          {t.noMediaAvailable}
-        </Typography>
+        <NoDataAvailable color="white" />
       </Box>
     );
   }

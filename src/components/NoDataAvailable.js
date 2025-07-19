@@ -13,7 +13,7 @@ const translations = {
   },
 };
 
-export default function NoDataAvailable() {
+export default function NoDataAvailable({color = "#ccc"}) {
   const { t } = useI18nLayout(translations);
 
   return (
@@ -24,11 +24,12 @@ export default function NoDataAvailable() {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        color: "text.secondary",
       }}
     >
-      <ICONS.empty sx={{ fontSize: 72, mb: 2, color: "#ccc" }} />
-      <Typography variant="h6">{t.noData}</Typography>
+      <ICONS.empty sx={{ fontSize: 72, mb: 2, color }} />
+      <Typography sx={{ color }} variant="h6">
+        {t.noData}
+      </Typography>
     </Box>
   );
 }
