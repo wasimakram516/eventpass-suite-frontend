@@ -10,7 +10,7 @@ const translations = {
       "Users can click and submit photos from their own devices.",
       "All submitted photos appear live on the big screen mosaic.",
     ],
-    ctaLabel: "Manage Polls",
+    ctaLabel: "Manage Uploads",
   },
   ar: {
     title: "VoteCast – استطلاعات الجمهور",
@@ -20,14 +20,14 @@ const translations = {
       "يمكن للمستخدمين التقاط صورهم وإرسالها بسهولة.",
       "تُعرض جميع الصور المرسلة مباشرةً على الشاشة الكبيرة.",
     ],
-    ctaLabel: "إدارة الاستطلاعات",
+    ctaLabel: "إدارة الوسائط المرفوعة",
   },
 };
 
 export default function VoteCastHome() {
   return (
     <ModuleLandingPage
-      moduleIcon={ICONS.poll}
+      moduleIcon={ICONS.image}
       ctaLabel={translations.en.ctaLabel}
       ctaHref="/cms/modules/mosaicwall/walls"
       translations={translations}
