@@ -4,11 +4,11 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { Box, Container, Typography } from "@mui/material";
 import { QRCodeCanvas } from "qrcode.react";
-import Image from "next/image";
 import { getWallConfigBySlug } from "@/services/mosaicwall/wallConfigService";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import LanguageSelector from "@/components/LanguageSelector";
 import LoadingState from "@/components/LoadingState";
+import Footer from "@/components/Footer";
 
 const translations = {
   en: {
@@ -26,18 +26,18 @@ const translations = {
 };
 export default function PublicQrPage() {
   const { slug } = useParams();
-  const [askPageUrl, setAskPageUrl] = useState("");
+  const [capturePageUrl, setCapturePageUrl] = useState("");
   const { t, dir, align } = useI18nLayout(translations);
   useEffect(() => {
     const fetchWallConfig = async () => {
       if (slug) {
         const response = await getWallConfigBySlug(slug);
-        console.log("API Response:", response);
-        if (typeof window !== "undefined") {
-          // Include mode in the URL so the upload page knows what mode to use
-          setAskPageUrl(
-            `${window.location.origin}/mosaicwall/${slug}/upload?mode=${response.mode}`
-          );
+        if (response && !response.erro) {
+          if (typeof window !== "undefined") {
+            setCapturePageUrl(
+              `${window.location.origin}/mosaicwall/${slug}/capture`
+            );
+          }
         }
       }
     };
@@ -53,40 +53,12 @@ export default function PublicQrPage() {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        pt: 10,
+        mt: 2,
         textAlign: align,
       }}
       dir={dir}
     >
-      {/* ✅ Sticky Branding */}
-      <Box
-        sx={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          width: "100%",
-          bgcolor: "background.default",
-          zIndex: 10,
-          py: 1,
-          px: 4,
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          boxShadow: "0px 2px 8px rgba(0,0,0,0.1)",
-        }}
-      >
-        <Box sx={{ width: { xs: 35, sm: 40 } }}>
-          <Image
-            src="/WW.png"
-            alt="WhiteWall Logo"
-            width={100}
-            height={30}
-            style={{ width: "100%", height: "auto", objectFit: "contain" }}
-          />
-        </Box>
-      </Box>
-
-      {/* ✅ Heading */}
+      {/* Heading */}
       <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ mt: 4 }}>
         {t.scanToCapture}
       </Typography>
@@ -95,8 +67,8 @@ export default function PublicQrPage() {
         {t.useYourPhone}
       </Typography>
 
-      {/* ✅ QR Code or Loader */}
-      {askPageUrl ? (
+      {/* QR Code or Loader */}
+      {capturePageUrl ? (
         <Box
           sx={{
             p: 3,
@@ -108,22 +80,19 @@ export default function PublicQrPage() {
           }}
         >
           <QRCodeCanvas
-            value={askPageUrl}
+            value={capturePageUrl}
             size={256}
             bgColor="#ffffff"
             fgColor="#000000"
-            level="H" // High error correction
+            level="H" 
             includeMargin={false}
           />
         </Box>
       ) : (
         <LoadingState />
       )}
-      <LanguageSelector top={9} right={20} />
-      {/* ✅ Footer */}
-      <Typography variant="caption" color="text.secondary" mt={3}>
-        {t.poweredBy}
-      </Typography>
+      <LanguageSelector top={10} right={20} />
+      <Footer />
     </Container>
   );
 }

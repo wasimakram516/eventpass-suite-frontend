@@ -1,19 +1,19 @@
 import api from "@/services/api";
 import withApiHandler from "@/utils/withApiHandler";
 
-// Join a game
+// Start a solo game session
 export const joinGame = withApiHandler(
   async (gameId, payload) => {
-    const { data } = await api.post(`/quiznest/players/${gameId}`, payload);
-    return data;
+    const { data } = await api.post(`/quiznest/players/${gameId}/start-solo`, payload);
+    return data; // { playerId, sessionId }
   },
   { showSuccess: true }
 );
 
-// Submit player result
+// Submit result for a solo session
 export const submitResult = withApiHandler(
-  async (playerId, payload) => {
-    const { data } = await api.patch(`/quiznest/players/${playerId}`, payload);
+  async (sessionId, playerId, payload) => {
+    const { data } = await api.patch(`/quiznest/players/${sessionId}/${playerId}/submit`, payload);
     return data;
   },
   { showSuccess: true }

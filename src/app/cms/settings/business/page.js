@@ -343,12 +343,6 @@ export default function BusinessDetailsPage() {
       </Stack>
       <Divider sx={{ mb: 2 }} />
 
-      {loading && (
-        <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
-          <CircularProgress size={36} />
-        </Box>
-      )}
-
       {/* IF business user AND no biz => special “no biz” callout */}
       {user.role === "business" && businesses.length === 0 ? (
         <Box textAlign="center" sx={{ mt: 6 }}>
@@ -358,6 +352,10 @@ export default function BusinessDetailsPage() {
           <Button variant="contained" onClick={() => handleOpen()}>
             {t.create}
           </Button>
+        </Box>
+      ) : loading ? (
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+          <CircularProgress size={36} />
         </Box>
       ) : businesses.length === 0 ? (
         <NoDataAvailable />

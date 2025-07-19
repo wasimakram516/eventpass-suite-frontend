@@ -70,13 +70,13 @@ export default function MosaicGrid({ media }) {
   const initRef = useRef(false);
 
   useEffect(() => {
-    const newItems = media.filter(
-      (m) => !prevRef.current.find((old) => old._id === m._id),
-    );
-    const nextGrid = [...gridState];
-    const nextVer = [...boxVersions];
+  const newItems = media.filter(
+    (m) => !prevRef.current.find((old) => old._id === m._id),
+  );
+  const nextGrid = [...gridState];
+  const nextVer = [...boxVersions];
 
-    // first load: randomly populate
+  // first load: randomly populate
     if (!initRef.current && media.length) {
       const order = Array.from({ length: TOTAL_BOXES }, (_, i) => i).sort(
         () => Math.random() - 0.5,
@@ -109,7 +109,31 @@ export default function MosaicGrid({ media }) {
       // clear the flag after animation duration
       setTimeout(() => setAnimatingIndex(null), 800);
     }
-  }, [media]);
+
+  // 🧹 detect deletion
+  if (media.length < prevRef.current.length) {
+  console.log("🧹 Deletion detected. Pruning grid...");
+
+  const currentIds = new Set(media.map((m) => m._id));
+  const prunedGrid = [...gridState];
+  const prunedVersions = [...boxVersions];
+
+  // Remove any grid items that no longer exist
+  for (let i = 0; i < prunedGrid.length; i++) {
+    const item = prunedGrid[i];
+    if (item && !currentIds.has(item._id)) {
+      prunedGrid[i] = null;
+      prunedVersions[i]++;
+    }
+  }
+
+  setGridState(prunedGrid);
+  setBoxVersions(prunedVersions);
+  prevRef.current = media;
+}
+
+}, [media]);
+
 
   return (
     <Box

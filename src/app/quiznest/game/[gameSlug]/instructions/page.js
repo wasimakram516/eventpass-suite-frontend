@@ -11,8 +11,6 @@ import {
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import QuizIcon from "@mui/icons-material/Quiz";
-import AccessTimeIcon from "@mui/icons-material/AccessTime";
-import FormatListNumberedIcon from "@mui/icons-material/FormatListNumbered";
 import TimerIcon from "@mui/icons-material/Timer";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";

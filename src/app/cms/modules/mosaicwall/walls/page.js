@@ -45,6 +45,7 @@ import NoDataAvailable from "@/components/NoDataAvailable";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
+import { useRouter } from "next/navigation";
 
 const translations = {
   en: {
@@ -72,6 +73,7 @@ const translations = {
     createdLabel: "Created:",
     showQRCode: "Show QR Code",
     openBigScreen: "Open Big Screen",
+    viewUploads:"View Uploaded Media",
     edit: "Edit",
     wallConfigUpdated: "Wall configuration updated successfully",
     wallConfigCreated: "Wall configuration created successfully",
@@ -103,6 +105,7 @@ const translations = {
     createdLabel: "تم الإنشاء:",
     showQRCode: "عرض رمز الاستجابة السريعة",
     openBigScreen: "فتح الشاشة الكبيرة",
+    viewUploads: "عرض الوسائط المرفوعة",
     edit: "تحرير",
     wallConfigUpdated: "تم تحديث تكوين الجدار بنجاح",
     wallConfigCreated: "تم إنشاء تكوين الجدار بنجاح",
@@ -112,6 +115,7 @@ const translations = {
   },
 };
 export default function WallConfigsPage() {
+  const router = useRouter();
   const [wallConfigs, setWallConfigs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -391,7 +395,7 @@ export default function WallConfigsPage() {
                         onClick={() => showQRCode(config.slug)}
                         aria-label="QR Code"
                       >
-                        <ICONS.qrcode fontSize="small" />
+                        <ICONS.share fontSize="small" />
                       </IconButton>
                     </Tooltip>
                     <Tooltip title={t.openBigScreen}>
@@ -405,11 +409,23 @@ export default function WallConfigsPage() {
                         }
                         aria-label="Big Screen"
                       >
-                        <ICONS.view fontSize="small" color="primary" />
+                        <ICONS.cast fontSize="small" color="primary" />
                       </IconButton>
                     </Tooltip>
                   </Box>
                   <Box>
+                     <Tooltip title={t.viewUploads}>
+                      <IconButton
+                        size="small"
+                        onClick={() =>
+                          router.replace(
+                            `/cms/modules/mosaicwall/walls/${config.slug}/uploads`)
+                        }
+                        aria-label="View Uploads"
+                      >
+                        <ICONS.view fontSize="small" color="primary" />
+                      </IconButton>
+                    </Tooltip>
                     <Tooltip title={t.edit}>
                       <IconButton
                         size="small"

@@ -461,6 +461,7 @@ export default function GamesPage() {
           url={`${
             typeof window !== "undefined" ? window.location.origin : ""
           }/quiznest/game/${gameToShare?.slug}`}
+          name={gameToShare?.title}
         />
 
         <GameFormModal

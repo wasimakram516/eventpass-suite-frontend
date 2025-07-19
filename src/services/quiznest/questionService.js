@@ -55,12 +55,26 @@ export const uploadExcelQuestions = withApiHandler(
 );
 
 // Download Excel template
-export const downloadTemplate = withApiHandler(
-  async (choicesCount, includeHint = false) => {
-    const response = await api.get(
+export const downloadTemplate = async (choicesCount, includeHint = false) => {
+  try {
+    const { data } = await api.get(
       `/quiznest/questions/sample/download/${choicesCount}?includeHint=${includeHint}`,
       { responseType: "blob" }
     );
-    return response;
+
+    const url = window.URL.createObjectURL(new Blob([data]));
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `Solo-quiz-sample-${choicesCount}.xlsx`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (err) {
+    throw new Error(
+      err?.response?.data?.message ||
+        err?.message ||
+        "Failed to download template"
+    );
   }
-);
+};

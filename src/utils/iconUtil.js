@@ -70,6 +70,25 @@ import {
   QrCode as QrCodeIcon,
 } from "@mui/icons-material";
 
+// Screen Sharing
+import {
+  ScreenShare as ScreenShareIcon,
+  DesktopWindows as DesktopWindowsIcon,
+  Devices as DevicesIcon,
+  Monitor as MonitorIcon,
+  Tv as TvIcon,
+  SmartDisplay as SmartDisplayIcon,
+  TabletMac as TabletMacIcon,
+  Laptop as LaptopIcon,
+  PhoneAndroid as PhoneAndroidIcon,
+  PhoneIphone as PhoneIphoneIcon,
+  Cast as CastIcon,
+  ConnectedTv as ConnectedTvIcon,
+  DeveloperBoard as DeveloperBoardIcon,
+  SettingsInputHdmi as SettingsInputHdmiIcon,
+  SettingsInputComponent as SettingsInputComponentIcon,
+} from '@mui/icons-material';
+
 // Miscellaneous Icons
 import {
   People as PeopleIcon,
@@ -79,7 +98,6 @@ import {
   Phone as PhoneIcon,
   Email as EmailIcon,
   SearchOff as EmptyIcon,
-  Upload as UploadIcon,
   Wallpaper as WallpaperIcon,
   Clear as ClearIcon,
   PhotoLibrary as PhotoLibraryIcon,
@@ -150,7 +168,24 @@ const ICONS = {
   assignment: AssignmentIcon,
   checkin: HowToRegIcon,
   qrcode: QrCodeIcon,
+  screenShare: ScreenShareIcon,
 
+  // Screen Sharing / Device Icons
+  desktop: DesktopWindowsIcon,
+  devices: DevicesIcon,
+  monitor: MonitorIcon,
+  tv: TvIcon,
+  smartDisplay: SmartDisplayIcon,
+  tablet: TabletMacIcon,
+  laptop: LaptopIcon,
+  phoneAndroid: PhoneAndroidIcon,
+  phoneIphone: PhoneIphoneIcon,
+  cast: CastIcon,
+  connectedTv: ConnectedTvIcon,
+  developerBoard: DeveloperBoardIcon,
+  settingsInputHdmi: SettingsInputHdmiIcon,
+  settingsInputComponent: SettingsInputComponentIcon,
+  
   // Miscellaneous
   people: PeopleIcon,
   forum: ForumIcon,
@@ -159,7 +194,6 @@ const ICONS = {
   phone: PhoneIcon,
   email: EmailIcon,
   empty: EmptyIcon,
-  uploadIcon: UploadIcon,
   wallpaper: WallpaperIcon,
   clear: ClearIcon,
   library: PhotoLibraryIcon,

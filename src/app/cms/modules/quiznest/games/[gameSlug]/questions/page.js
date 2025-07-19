@@ -31,7 +31,7 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 
 import BreadcrumbsNav from "@/components/BreadcrumbsNav";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import QuestionFormModal from "@/components/QuestionFormModal";
 import ConfirmationDialog from "@/components/ConfirmationDialog";
 import { useMessage } from "@/contexts/MessageContext";
@@ -112,7 +112,7 @@ const translations = {
 };
 export default function QuestionsPage() {
   const { t, language } = useI18nLayout(translations);
-  const { businessSlug, gameSlug } = useParams();
+  const { gameSlug } = useParams();
   const { showMessage } = useMessage();
   const [game, setGame] = useState(null);
   const [questions, setQuestions] = useState([]);
@@ -128,24 +128,27 @@ export default function QuestionsPage() {
   const openMenu = Boolean(anchorEl);
   const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
   const handleMenuClose = () => setAnchorEl(null);
+  const hasFetched = useRef(false);
 
   // Fetch game and questions from backend
   useEffect(() => {
+    if (hasFetched.current) return;
+    hasFetched.current = true;
     const fetchGameAndQuestions = async () => {
       setLoading(true);
-      try {
-        const gameData = await getGameBySlug(gameSlug);
+      const gameData = await getGameBySlug(gameSlug);
+      if (!gameData.error) {
         setGame(gameData);
-        const questionsData = await getQuestions(gameData._id);
-        setQuestions(questionsData || []);
-      } catch (err) {
-        showMessage(t.errorLoading, "error");
-      } finally {
-        setLoading(false);
       }
+      const questionsData = await getQuestions(gameData._id);
+      if (!questionsData.error) {
+        setQuestions(questionsData || []);
+      }
+
+      setLoading(false);
     };
     if (gameSlug) fetchGameAndQuestions();
-  }, [gameSlug, t, showMessage]);
+  }, [gameSlug]);
 
   // Add or edit question
   const handleAddEdit = async (values, isEdit) => {
@@ -202,21 +205,13 @@ export default function QuestionsPage() {
   // Download template
   const handleDownload = async () => {
     try {
-      const response = await downloadTemplate(downloadChoices, includeHint);
-      const blob = response.data; // Axios returns the blob in .data
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", "questions_template.xlsx");
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
+      await downloadTemplate(downloadChoices, includeHint);
       showMessage(t.templateDownloaded, "success");
     } catch (err) {
-      showMessage(t.errorLoading, "error");
+      showMessage(err.message, "error");
+    } finally {
+      setDownloadModalOpen(false);
     }
-    setDownloadModalOpen(false);
   };
 
   return (
@@ -340,7 +335,11 @@ export default function QuestionsPage() {
                         display: "flex",
                         flexDirection: "column",
                         justifyContent: "space-between",
-                        minHeight: 300, // ensures consistent height
+                        height: "100%",
+                        width: {
+                          xs: "100%",
+                          sm: "300px",
+                        },
                       }}
                     >
                       <Box>

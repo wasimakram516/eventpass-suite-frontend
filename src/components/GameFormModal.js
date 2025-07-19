@@ -181,28 +181,21 @@ const GameFormModal = ({
 
     setLoading(true);
 
-    try {
-      const payload = new FormData();
-      payload.append("title", form.title);
-      payload.append("slug", form.slug);
-      payload.append("choicesCount", form.choicesCount);
-      payload.append("countdownTimer", form.countdownTimer);
-      payload.append("gameSessionTimer", form.gameSessionTimer);
+    const payload = new FormData();
+    payload.append("title", form.title);
+    payload.append("slug", form.slug);
+    payload.append("choicesCount", form.choicesCount);
+    payload.append("countdownTimer", form.countdownTimer);
+    payload.append("gameSessionTimer", form.gameSessionTimer);
 
-      if (form.coverImage) payload.append("cover", form.coverImage);
-      if (form.nameImage) payload.append("name", form.nameImage);
-      if (form.backgroundImage)
-        payload.append("background", form.backgroundImage);
+    if (form.coverImage) payload.append("cover", form.coverImage);
+    if (form.nameImage) payload.append("name", form.nameImage);
+    if (form.backgroundImage)
+      payload.append("background", form.backgroundImage);
 
-      await onSubmit(payload, editMode);
-    } catch (error) {
-      showMessage(
-        error.response?.data?.message || "Failed to save game.",
-        "error"
-      );
-    } finally {
-      setLoading(false);
-    }
+    await onSubmit(payload, editMode);
+
+    setLoading(false);
   };
 
   return (

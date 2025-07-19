@@ -46,6 +46,7 @@ export default function NamePage() {
       // Store for later use
       localStorage.setItem("playerInfo", JSON.stringify(form));
       localStorage.setItem("playerId", response.playerId);
+      localStorage.setItem("sessionId", response.sessionId);
 
       router.push(`/quiznest/game/${game.slug}/instructions`);
     } catch (err) {

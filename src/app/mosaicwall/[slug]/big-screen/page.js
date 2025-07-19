@@ -31,7 +31,7 @@ const BigScreenPage = () => {
   const { connected, connectionError } = useMediaSocket({
     wallSlug: slug,
     onMediaUpdate: (data) => {
-      setMedia(data);
+      setMedia(() => [...data]);
       setLoading(false);
     },
   });

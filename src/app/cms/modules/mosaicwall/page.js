@@ -29,7 +29,7 @@ export default function VoteCastHome() {
     <ModuleLandingPage
       moduleIcon={ICONS.poll}
       ctaLabel={translations.en.ctaLabel}
-      ctaHref="/cms/modules/mosaicwall/walls-setup"
+      ctaHref="/cms/modules/mosaicwall/walls"
       translations={translations}
     />
   );

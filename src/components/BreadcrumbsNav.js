@@ -100,6 +100,14 @@ const segmentMap = {
   label: "Registrations",
   icon: <ICONS.appRegister fontSize="small" sx={{ mr: 0.5 }} />,
 },
+walls: {
+  label: "Media Walls",
+  icon: <ICONS.cast fontSize="small" sx={{ mr: 0.5 }} />,
+},
+ uploads: {
+  label: "Media Uploads",
+  icon: <ICONS.upload fontSize="small" sx={{ mr: 0.5 }} />,
+},
 
 };
 

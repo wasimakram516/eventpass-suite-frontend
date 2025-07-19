@@ -58,7 +58,7 @@ const translations = {
 };
 
 export default function ResultsPage() {
-  const { businessSlug, gameSlug } = useParams();
+  const { gameSlug } = useParams();
   const { showMessage } = useMessage();
   const [game, setGame] = useState(null);
   const [players, setPlayers] = useState([]);
@@ -83,6 +83,7 @@ export default function ResultsPage() {
     };
     if (gameSlug) fetchGameAndResults();
   }, [gameSlug, t, showMessage]);
+  
   // Export results as Excel file
   const handleExport = async () => {
     try {
@@ -252,7 +253,7 @@ export default function ResultsPage() {
                           >
                             {t.submittedAtLabel}{" "}
                             <strong>
-                              {formatDateTimeWithLocale(p.updatedAt)}
+                              {formatDateTimeWithLocale(p.endTime)}
                             </strong>
                           </Typography>
                         </Box>

@@ -194,8 +194,9 @@ export default function PlayPage() {
     setEnded(true);
 
     const playerId = localStorage.getItem("playerId");
+    const sessionId = localStorage.getItem("sessionId");
 
-    await submitResult(playerId, {
+    await submitResult(sessionId, playerId, {
       score: scoreRef.current,
       attemptedQuestions: attemptedRef.current,
       timeTaken: game.gameSessionTimer - timeLeftRef.current,
