@@ -7,6 +7,12 @@ export const getAllSpinWheels = withApiHandler(async () => {
   return data;
 });
 
+// Get spin wheel by ID
+export const getSpinWheelById = withApiHandler(async (id) => {
+  const { data } = await api.get(`/eventwheel/wheels/${id}`);
+  return data;
+});
+
 // Get spin wheel by slug
 export const getSpinWheelBySlug = withApiHandler(async (slug) => {
   const { data } = await api.get(`/eventwheel/wheels/slug/${slug}`);

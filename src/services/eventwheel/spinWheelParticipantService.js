@@ -13,6 +13,12 @@ export const addOrUpdateParticipantsInBulk = withApiHandler(async (payload) => {
   return data;
 }, { showSuccess: true });
 
+// Public API to get spin wheel details by ID
+export const getPublicSpinWheelById = withApiHandler(async (id) => {
+  const { data } = await api.get(`/eventwheel/participants/public/spinwheel/${id}`);
+  return data;
+});
+
 // Get all participants (optionally by spinWheelId)
 export const getAllParticipants = withApiHandler(async (spinWheelId) => {
   const { data } = await api.get(`/eventwheel/participants?spinWheelId=${spinWheelId}`);
