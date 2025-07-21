@@ -29,6 +29,8 @@ import {
 } from "@/services/stageq/questionService";
 import Image from "next/image";
 import LanguageSelector from "@/components/LanguageSelector";
+import NoDataAvailable from "@/components/NoDataAvailable";
+import LoadingState from "@/components/LoadingState";
 const translations = {
   en: {
     // Header Section
@@ -167,13 +169,11 @@ export default function AskQuestionsPage() {
 
       {/* Questions List */}
       {loading ? (
-        <Box textAlign={align} mt={4}>
-          <CircularProgress />
-        </Box>
+        <LoadingState/>
       ) : (
         <Stack spacing={2}>
           {questions.length === 0 ? (
-            <Typography color="text.secondary">{t.noQuestions}</Typography>
+            <NoDataAvailable/>
           ) : (
             questions.map((q) => {
               const votedQuestions = JSON.parse(
@@ -202,10 +202,10 @@ export default function AskQuestionsPage() {
                           icon: <ICONS.person fontSize="small" />,
                           text: q.visitor?.name || t.anonymous,
                         },
-                        {
-                          icon: <ICONS.phone fontSize="small" />,
-                          text: q.visitor?.phone || t.notProvided,
-                        },
+                        // {
+                        //   icon: <ICONS.phone fontSize="small" />,
+                        //   text: q.visitor?.phone || t.notProvided,
+                        // },
                         {
                           icon: <ICONS.business fontSize="small" />,
                           text: q.visitor?.company || t.notProvided,
