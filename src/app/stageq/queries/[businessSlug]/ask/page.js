@@ -214,7 +214,7 @@ export default function AskQuestionsPage() {
                         <Box
                           key={index}
                           sx={{
-                            width: "33.33%",
+                            width: "50%",
                             display: "flex",
                             flexDirection: "row",
                             alignItems: "flex-start",
