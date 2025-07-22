@@ -20,7 +20,7 @@ import {
 } from "@/services/eventwheel/spinWheelParticipantService";
 import { getPublicSpinWheelById } from "@/services/eventwheel/spinWheelParticipantService";
 import Image from "next/image";
-import imgDivider from "@/assets/icons and assets/divider.png";
+const imgDivider = "/icons%20and%20assets/divider.png";
 import ConfirmationDialog from "@/components/ConfirmationDialog";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
@@ -135,7 +135,6 @@ const ParticipantsAdminPage = () => {
       }}
       dir={dir}
     >
-      {/* Home Icon */}
       <Box
         sx={{
           position: "absolute",
@@ -214,7 +213,7 @@ const ParticipantsAdminPage = () => {
         {/* 🔹 Optimized "Add Participant" Button */}
         <Button
           onClick={handleAddParticipant}
-          startIcon={<ICONS.add />} // ✅ Material UI Icon
+          startIcon={<ICONS.add />}
           variant="contained"
           sx={{ ...getStartIconSpacing(dir) }}
         >
@@ -226,7 +225,7 @@ const ParticipantsAdminPage = () => {
       <Button
         onClick={() => {
           setShowParticipants(!showParticipants);
-          if (!showParticipants) fetchParticipants(); // Only fetch when showing participants
+          if (!showParticipants) fetchParticipants();
         }}
         startIcon={<ICONS.people />}
         variant="contained"

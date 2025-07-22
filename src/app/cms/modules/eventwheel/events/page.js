@@ -301,7 +301,7 @@ const Dashboard = () => {
     const url =
       type === "collect_info"
         ? `${window.location.origin}/eventwheel/spin/${slug}`
-        : `${window.location.origin}/eventwheel/e/${slug}`;
+        : `${window.location.origin}/eventwheel/event/${slug}`;
     setShareUrl(url);
     setShareTitle(
       `${t.shareSpinWheelTitle}: ${
@@ -537,7 +537,6 @@ const Dashboard = () => {
           </Grid>
         )}
 
-        {/* Share Link Modal */}
         <ShareLinkModal
           open={openShareModal}
           onClose={() => setOpenShareModal(false)}
@@ -642,7 +641,6 @@ const Dashboard = () => {
           </DialogActions>
         </Dialog>
 
-        {/* Confirmation Dialog */}
         <ConfirmationDialog
           open={confirmDelete}
           onClose={() => setConfirmDelete(false)}

@@ -6,21 +6,21 @@ import {
   addOrUpdateParticipantsInBulk,
   getBulkParticipantsForSpinWheel,
 } from "@/services/eventwheel/spinWheelParticipantService";
-import btnReady from "@/assets/icons and assets/ready1.png";
-import btnReadyClicked from "@/assets/icons and assets/ready2.png";
-import background from "@/assets/prize-1080x1920.jpg";
-import imgDivider from "@/assets/icons and assets/divider.png";
-import imgShuffle from "@/assets/icons and assets/shuffle.png";
+const btnReady = "/icons%20and%20assets/ready1.png";
+const btnReadyClicked = "/icons%20and%20assets/ready2.png";
+const background = "/prize-1080x1920.jpg";
+const imgDivider = "/icons%20and%20assets/divider.png";
+const imgShuffle = "/icons%20and%20assets/shuffle.png";
 import { getSpinWheelBySlug } from "@/services/eventwheel/spinWheelService";
 import Image from "next/image";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import LanguageSelector from "@/components/LanguageSelector";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
+import LoadingState from "@/components/LoadingState";
 
 const translations = {
   en: {
     welcomeTo: "Welcome to",
-    loadingEvent: "Loading Event...",
     enterNames: "Enter the names and",
     goodLuck: "good luck to everyone",
     placeholder: "Enter names, one per line",
@@ -29,7 +29,6 @@ const translations = {
   },
   ar: {
     welcomeTo: "مرحباً بك في",
-    loadingEvent: "جاري تحميل الحدث...",
     enterNames: "أدخل الأسماء و",
     goodLuck: "حظ سعيد للجميع",
     placeholder: "أدخل الأسماء، اسم واحد في كل سطر",
@@ -63,7 +62,6 @@ const ParticipantsUserPage = () => {
     fetchEventAndParticipants();
   }, [shortName]);
 
-  // ✅ Shuffle Names Randomly
   const handleShuffleNames = () => {
     const namesArray = bulkNames
       .split("\n")
@@ -71,7 +69,6 @@ const ParticipantsUserPage = () => {
     setBulkNames(namesArray.sort(() => Math.random() - 0.5).join("\n"));
   };
 
-  // ✅ Submit Names to Backend (Update if Changed)
   const handleReady = async () => {
     if (!bulkNames.trim()) {
       alert(t.alertMessage);
@@ -91,6 +88,7 @@ const ParticipantsUserPage = () => {
     setLoading(false);
     setTimeout(() => setBtnClicked(false), 2000); // 🔥 Reset Button After 2 Secs
   };
+  if (!event) return <LoadingState />;
   return (
     <Box
       sx={{
@@ -107,12 +105,13 @@ const ParticipantsUserPage = () => {
       dir={dir}
     >
       <Typography variant="h4" fontWeight="bold" textAlign={align}>
-        {event ? `${t.welcomeTo} ${event.slug}` : t.loadingEvent}
+        {`${t.welcomeTo} ${event.slug}`}
       </Typography>
 
       <Image
         src={imgDivider}
         alt="Divider"
+        width={300}
         height={30}
         style={{
           width: "auto",
@@ -136,32 +135,11 @@ const ParticipantsUserPage = () => {
         placeholder={t.placeholder}
         sx={{
           maxWidth: 400,
-          backgroundColor: "#fff",
-          borderRadius: 2,
+          borderRadius: 4,
           boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.2)",
-          "& .MuiOutlinedInput-root": {
-            borderRadius: 2,
-            "& fieldset": {
-              border: "none",
-              borderRadius: 2,
-            },
-            "&:hover fieldset": {
-              borderColor: "black",
-              borderWidth: "2px",
-              border: "2px solid black",
-              borderRadius: 2,
-            },
-            "&.Mui-focused fieldset": {
-              borderColor: "black",
-              borderWidth: "2px",
-              border: "2px solid black",
-              borderRadius: 2,
-            },
-          },
         }}
       />
 
-      {/* ✅ Buttons Section */}
       <Box
         mt={3}
         sx={{
@@ -171,7 +149,6 @@ const ParticipantsUserPage = () => {
           alignItems: "center",
         }}
       >
-        {/* Shuffle Button */}
         <Button
           onClick={handleShuffleNames}
           startIcon={
@@ -185,7 +162,7 @@ const ParticipantsUserPage = () => {
             </Box>
           }
           sx={{
-            ...getStartIconSpacing(dir), // ✅ Now this will apply
+            ...getStartIconSpacing(dir),
             display: "flex",
             alignItems: "center",
             padding: "6px 12px",
@@ -199,18 +176,21 @@ const ParticipantsUserPage = () => {
         </Button>
 
         {/* Ready Button with Dynamic Background */}
-        <Button
+        <Box
+          component="button"
           onClick={handleReady}
           disabled={loading}
           sx={{
             width: 150,
             height: 50,
-            backgroundImage: `url(${
-              btnClicked ? btnReadyClicked.src : btnReady.src
-            })`,
+            backgroundImage: `url(${btnClicked ? btnReadyClicked : btnReady})`,
             backgroundSize: "cover",
             backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+            border: "none",
             borderRadius: 2,
+            cursor: loading ? "not-allowed" : "pointer",
+            outline: "none",
             "&:hover": { opacity: 0.8 },
           }}
         />

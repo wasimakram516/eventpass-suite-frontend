@@ -4,8 +4,8 @@ import { useParams, useRouter } from "next/navigation";
 import { Box, Typography, Button, IconButton } from "@mui/material";
 import Confetti from "react-confetti";
 import { getParticipantsBySlug } from "@/services/eventwheel/spinWheelParticipantService";
-import btnSpin from "@/assets/icons and assets/freespin1.png";
-import btnSpinClicked from "@/assets/icons and assets/freespin2.png";
+const btnSpin = "/icons%20and%20assets/freespin1.png";
+const btnSpinClicked = "/icons%20and%20assets/freespin2.png";
 import { getSpinWheelBySlug } from "@/services/eventwheel/spinWheelService";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
@@ -36,7 +36,6 @@ const SpinningPage = () => {
   const [eventData, setEventData] = useState([]);
   const { t, dir, align } = useI18nLayout(translations);
 
-  // ✅ Fetch Participants
   const fetchParticipants = useCallback(async () => {
     const data = await getParticipantsBySlug(shortName);
     if (!data) {
@@ -45,7 +44,7 @@ const SpinningPage = () => {
     }
     setParticipants(data);
   }, [shortName]);
-  // ✅ Fetch Spin Wheel Data (for backgroundUrl and other wheel details)
+
   const fetchSpinWheelData = useCallback(async () => {
     const wheelData = await getSpinWheelBySlug(shortName);
     if (wheelData) {
@@ -125,7 +124,6 @@ const SpinningPage = () => {
       }}
       dir={dir}
     >
-      {/* Back Button */}
       {eventData?.type === "enter_names" && (
         <IconButton
           sx={{
@@ -136,7 +134,7 @@ const SpinningPage = () => {
             color: "white",
             zIndex: 9999,
           }}
-          onClick={() => router.push(`/eventwheel/e/${shortName}`)}
+          onClick={() => router.push(`/eventwheel/event/${shortName}`)}
         >
           <ICONS.back sx={{ fontSize: { xs: 24, md: 40 } }} />
         </IconButton>
@@ -246,7 +244,6 @@ const SpinningPage = () => {
         />
       </Box>
 
-      {/* ✅ Spin Button with Dynamic Background */}
       <Button
         onClick={handleSpinWheel}
         disabled={spinning}
