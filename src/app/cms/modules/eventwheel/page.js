@@ -1,25 +1,36 @@
-"use client";
+import ModuleLandingPage from "@/components/ModuleLandingPage";
+import ICONS from "@/utils/iconUtil";
 
-import BreadcrumbsNav from "@/components/BreadcrumbsNav";
-import { Box, Typography, Divider, Button, Stack, Container } from "@mui/material";
+const translations = {
+  en: {
+    title: "Event Wheel",
+    features: [
+      "Create spinning wheels with two setup options: 'Participant enter Names' or 'Admin Write Names'.",
+      "Share wheel links via plain URL or QR code for easy access.",
+      "Interactive spinning animation with random winner selection.",
+      "Display winning results with celebration effects.",
+    ],
+    ctaLabel: "Create Spinning Wheels",
+  },
+  ar: {
+    title: "Event Wheel – عجلة الأحداث",
+    features: [
+      "أنشئ عجلات دوارة مع خيارين للإعداد: 'المشاركون يدخلون الأسماء' أو 'الإدارة تكتب الأسماء'.",
+      "شارك روابط العجلة عبر الرابط المباشر أو رمز QR للوصول السهل.",
+      "رسوم متحركة تفاعلية للدوران مع اختيار عشوائي للفائز.",
+      "عرض نتائج الفوز مع تأثيرات احتفالية.",
+    ],
+    ctaLabel: "إنشاء عجلات دوارة",
+  },
+};
 
-export default function EventWheelCMSPage() {
+export default function EventRegHome() {
   return (
-    <Container>
-      <BreadcrumbsNav/>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-        <Box>
-          <Typography variant="h5" fontWeight="bold">Event Wheel</Typography>
-          <Typography variant="body2" color="text.secondary">
-            Customize and trigger spin-to-win prize wheels.
-          </Typography>
-        </Box>
-        <Button variant="contained" color="primary">Spin Settings</Button>
-      </Stack>
-      <Divider sx={{ mb: 3 }} />
-      <Typography variant="body1" color="text.secondary">
-        This is the main CMS content area for Event Wheel.
-      </Typography>
-    </Container>
+    <ModuleLandingPage
+      moduleIcon={ICONS.event}
+      ctaLabel={translations.en.ctaLabel}
+      ctaHref="/cms/modules/eventwheel/events"
+      translations={translations}
+    />
   );
 }

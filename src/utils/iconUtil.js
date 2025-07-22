@@ -185,7 +185,7 @@ const ICONS = {
   developerBoard: DeveloperBoardIcon,
   settingsInputHdmi: SettingsInputHdmiIcon,
   settingsInputComponent: SettingsInputComponentIcon,
-  
+
   // Miscellaneous
   people: PeopleIcon,
   forum: ForumIcon,
