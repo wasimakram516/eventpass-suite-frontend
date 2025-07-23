@@ -3,7 +3,9 @@ import withApiHandler from "@/utils/withApiHandler";
 
 // Add participant
 export const addParticipant = withApiHandler(async (payload) => {
+  console.log("Inside Participant Service:")
   const { data } = await api.post("/eventwheel/participants", payload);
+  console.log("After Participant Service:");
   return data;
 }, { showSuccess: true });
 
@@ -21,7 +23,7 @@ export const getPublicSpinWheelById = withApiHandler(async (id) => {
 
 // Get all participants (optionally by spinWheelId)
 export const getAllParticipants = withApiHandler(async (spinWheelId) => {
-  const { data } = await api.get(`/eventwheel/participants?spinWheelId=${spinWheelId}`);
+  const { data } = await api.get(`/eventwheel/participants/${spinWheelId}`);
   return data;
 });
 
