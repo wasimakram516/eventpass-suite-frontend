@@ -29,7 +29,7 @@ export default function EventRegHome() {
     <ModuleLandingPage
       moduleIcon={ICONS.trophy}
       ctaLabel={translations.en.ctaLabel}
-      ctaHref="/cms/modules/eventwheel/events"
+      ctaHref="/cms/modules/eventwheel/wheels"
       translations={translations}
     />
   );

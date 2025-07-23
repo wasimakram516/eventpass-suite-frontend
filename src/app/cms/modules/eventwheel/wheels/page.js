@@ -338,15 +338,15 @@ const Dashboard = () => {
     setSelectedWheel(null);
   };
 
-  const handleNavigateToParticipants = (eventId) => {
-    router.push(`/cms/modules/eventwheel/events/participants/${eventId}`);
+  const handleNavigateToParticipants = (slug) => {
+    router.push(`/cms/modules/eventwheel/wheels/${slug}/participants`);
   };
 
   const handleOpenShareModal = (slug, type) => {
     const url =
       type === "collect_info"
         ? `${window.location.origin}/eventwheel/spin/${slug}`
-        : `${window.location.origin}/eventwheel/event/${slug}`;
+        : `${window.location.origin}/eventwheel/wheels/${slug}`;
     setShareUrl(url);
     setShareTitle(
       `${t.shareSpinWheelTitle}: ${
@@ -551,7 +551,7 @@ const Dashboard = () => {
                           <IconButton
                             size="small"
                             onClick={() =>
-                              handleNavigateToParticipants(wheel._id)
+                              handleNavigateToParticipants(wheel.slug)
                             }
                             aria-label="Manage Participants"
                           >

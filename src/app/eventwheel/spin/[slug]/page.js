@@ -57,7 +57,6 @@ const SpinningPage = () => {
     fetchSpinWheelData();
   }, [fetchParticipants, fetchSpinWheelData]);
 
-  // ✅ Reset the Wheel to Default State
   const resetWheel = () => {
     if (wheelRef.current) {
       wheelRef.current.style.transition = "none"; // 🔄 Remove animation
@@ -66,7 +65,6 @@ const SpinningPage = () => {
     setWheelKey((prevKey) => prevKey + 1); // 🔄 Force re-render
   };
 
-  // ✅ Handle Spin (Reset Wheel Before Spinning)
   const handleSpinWheel = async () => {
     if (spinning || participants.length === 0) return;
 
@@ -134,7 +132,7 @@ const SpinningPage = () => {
             color: "white",
             zIndex: 9999,
           }}
-          onClick={() => router.push(`/eventwheel/event/${shortName}`)}
+          onClick={() => router.push(`/eventwheel/wheels/${shortName}`)}
         >
           <ICONS.back sx={{ fontSize: { xs: 24, md: 40 } }} />
         </IconButton>

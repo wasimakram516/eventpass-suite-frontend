@@ -23,11 +23,11 @@ import {
   CircularProgress,
 } from "@mui/material";
 import {
-  getAllParticipants,
   addParticipant,
   deleteParticipant,
-  getPublicSpinWheelById,
+  getParticipantsBySlug,
 } from "@/services/eventwheel/spinWheelParticipantService";
+import { getSpinWheelBySlug } from "@/services/eventwheel/spinWheelService";
 import ConfirmationDialog from "@/components/ConfirmationDialog";
 import BreadcrumbsNav from "@/components/BreadcrumbsNav";
 import ICONS from "@/utils/iconUtil";
@@ -70,6 +70,7 @@ const translations = {
 const ParticipantsAdminPage = () => {
   const router = useRouter();
   const params = useParams();
+  const slug = params?.wheelSlug;
   const [participants, setParticipants] = useState([]);
   const [event, setEvent] = useState(null);
   const [openModal, setOpenModal] = useState(false);
@@ -80,25 +81,23 @@ const ParticipantsAdminPage = () => {
   const [selectedParticipant, setSelectedParticipant] = useState(null);
   const { t, dir } = useI18nLayout(translations);
 
-  const eventId = params?.eventId;
-  // 🔹 Fetch Event and Participants Data
   const fetchData = useCallback(async () => {
-    if (!eventId) return;
-    const eventData = await getPublicSpinWheelById(eventId);
+    if (!slug) return;
+    const eventData = await getSpinWheelBySlug(slug);
     setEvent(eventData);
-  }, [eventId]);
+  }, [slug]);
   const fetchParticipants = useCallback(async () => {
-    if (!eventId) return;
-    const participantsData = await getAllParticipants(eventId);
+    if (!slug) return;
+    const participantsData = await getParticipantsBySlug(slug);
     setParticipants(participantsData);
-  }, [eventId]);
+  }, [slug]);
 
   useEffect(() => {
-    if (eventId) {
+    if (slug) {
       fetchData();
       fetchParticipants();
     }
-  }, [eventId, fetchData, fetchParticipants]);
+  }, [slug, fetchData, fetchParticipants]);
 
   const handleOpenModal = () => {
     setForm({ name: "", phone: "", company: "" });
@@ -127,7 +126,7 @@ const ParticipantsAdminPage = () => {
     setSaving(true);
     const payload = {
       ...form,
-      spinWheelId: eventId,
+      spinWheelId: event._id,
     };
     await addParticipant(payload);
     setForm({ name: "", phone: "", company: "" });
@@ -145,7 +144,7 @@ const ParticipantsAdminPage = () => {
     setSelectedParticipant(null);
   };
 
-  if (!eventId || !event) return <LoadingState />;
+  if (!slug || !event) return <LoadingState />;
 
   return (
     <Box dir={dir} sx={{ minHeight: "100vh", display: "flex" }}>
