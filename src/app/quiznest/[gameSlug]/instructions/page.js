@@ -50,7 +50,7 @@ export default function InstructionsPage() {
   }, []);
 
   const handleStart = () => {
-    router.push(`/quiznest/game/${game.slug}/play`);
+    router.push(`/quiznest/${game.slug}/play`);
   };
 
   if (loading || !game || !playerInfo) {

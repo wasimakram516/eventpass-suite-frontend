@@ -1,25 +1,36 @@
-"use client";
+import ModuleLandingPage from "@/components/ModuleLandingPage";
+import ICONS from "@/utils/iconUtil";
 
-import BreadcrumbsNav from "@/components/BreadcrumbsNav";
-import { Box, Typography, Divider, Button, Stack, Container } from "@mui/material";
+const translations = {
+  en: {
+    title: "EventDuel – PvP Quiz Battles",
+    features: [
+      "Host real-time PvP quiz battles for events and teams.",
+      "Players join using room codes and compete head-to-head.",
+      "Live scoreboards, game sessions, and duel-style gameplay.",
+      "Custom branding, countdowns, and engaging player experience.",
+    ],
+    ctaLabel: "Manage PvP Games",
+  },
+  ar: {
+    title: "EventDuel – معارك اختبارات مباشرة",
+    features: [
+      "استضف معارك اختبارات مباشرة في الوقت الفعلي للفعاليات والفرق.",
+      "ينضم اللاعبون باستخدام رموز الغرف ويتنافسون وجهاً لوجه.",
+      "لوحات نتائج مباشرة وجلسات لعب ونمط مبارزة مثير.",
+      "تصميم مخصص وعد تنازلي وتجربة تفاعلية للاعب.",
+    ],
+    ctaLabel: "إدارة ألعاب PvP",
+  },
+};
 
-export default function EventDuelCMSPage() {
+export default function EventDuelHome() {
   return (
-    <Container>
-      <BreadcrumbsNav/>
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
-        <Box>
-          <Typography variant="h5" fontWeight="bold">Event Duel</Typography>
-          <Typography variant="body2" color="text.secondary">
-            Manage real-time 1v1 quiz battles and match settings.
-          </Typography>
-        </Box>
-        <Button variant="contained" color="primary">Create Duel</Button>
-      </Stack>
-      <Divider sx={{ mb: 3 }} />
-      <Typography variant="body1" color="text.secondary">
-        This is the main CMS content area for Event Duel.
-      </Typography>
-    </Container>
+    <ModuleLandingPage
+      moduleIcon={ICONS.games}
+      ctaLabel={translations.en.ctaLabel}
+      ctaHref="/cms/modules/eventduel/games"
+      translations={translations}
+    />
   );
 }

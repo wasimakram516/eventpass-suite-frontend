@@ -9,6 +9,12 @@ import {
   Cancel as CancelIcon,
   Check as CheckIcon,
   Save as SaveIcon,
+  Start as StartIcon,
+  Stop as StopIcon,
+  Stop as ResumeIcon,
+  PlayArrow as PlayArrowIcon,
+  Pause as PauseIcon,
+  History as HistoryIcon,
   Settings as SettingsIcon,
   FilterAlt as FilterIcon,
   ArrowBack as ArrowBackIcon,
@@ -68,6 +74,7 @@ import {
   Assignment as AssignmentIcon,
   HowToReg as HowToRegIcon,
   QrCode as QrCodeIcon,
+  AdminPanelSettings as AdminPanelSettingsIcon,
 } from "@mui/icons-material";
 
 // Screen Sharing
@@ -116,6 +123,12 @@ const ICONS = {
   share: ShareIcon,
   close: CloseIcon,
   cancel: CancelIcon,
+  start: StartIcon,
+  stop: StopIcon,
+  play: PlayArrowIcon,
+  pause: PauseIcon,
+  resume: ResumeIcon,
+  history: HistoryIcon,
   settings: SettingsIcon,
   filter: FilterIcon,
   check: CheckIcon,
@@ -169,6 +182,7 @@ const ICONS = {
   checkin: HowToRegIcon,
   qrcode: QrCodeIcon,
   screenShare: ScreenShareIcon,
+  adminPanel: AdminPanelSettingsIcon,
 
   // Screen Sharing / Device Icons
   desktop: DesktopWindowsIcon,

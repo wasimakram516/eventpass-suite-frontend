@@ -11,11 +11,12 @@ import {
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useGame } from "@/contexts/GameContext";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { joinGame } from "@/services/quiznest/playerService";
+import { joinGameSession } from "@/services/eventduel/gameSessionService";
 import LanguageSelector from "@/components/LanguageSelector";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import ICONS from "@/utils/iconUtil";
 const entryDialogTranslations = {
   en: {
     nameLabel: "Name",
@@ -32,28 +33,38 @@ export default function NamePage() {
   const { game, loading } = useGame();
   const router = useRouter();
   const { t, dir, align, language } = useI18nLayout(entryDialogTranslations);
-  const [form, setForm] = useState({ name: "", company: "" });
+  const [form, setForm] = useState({ gameSlug: "" ,name: "", company: "", playerType: "" });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+  if (game?.slug) {
+    setForm((prev) => ({ ...prev, gameSlug: game.slug }));
+  }
+}, [game]);
+
+  useEffect(() => {
+    const selectedPlayer = sessionStorage.getItem("selectedPlayer");
+    if (selectedPlayer) {
+      setForm((prev) => ({ ...prev, playerType: selectedPlayer }));
+    }
+  }, []);
 
   const handleSubmit = async () => {
     if (!form.name.trim() || submitting) return;
 
-    try {
-      setSubmitting(true);
-      const response = await joinGame(game._id, form);
+    setSubmitting(true);
+    const response = await joinGameSession(form);
 
+    if (!response.error) {
       // Store for later use
       localStorage.setItem("playerInfo", JSON.stringify(form));
-      localStorage.setItem("playerId", response.playerId);
+      localStorage.setItem("playerId", response.player._id);
       localStorage.setItem("sessionId", response.sessionId);
 
-      router.push(`/quiznest/game/${game.slug}/instructions`);
-    } catch (err) {
-      setError(err);
-    } finally {
-      setSubmitting(false);
+      router.push(`/eventduel/${game.slug}/instructions`);
     }
+    setSubmitting(false);
   };
 
   if (loading || !game) {
@@ -94,7 +105,8 @@ export default function NamePage() {
       >
         {/* Back Button */}
         <IconButton
-          onClick={() => router.push(`/quiznest/game/${game.slug}`)}
+        size="small"
+          onClick={() => router.push(`/eventduel/${game.slug}/player`)}
           sx={{
             position: "fixed",
             top: 20,
@@ -103,7 +115,7 @@ export default function NamePage() {
             color: "white",
           }}
         >
-          <ArrowBackIcon />
+          <ICONS.back />
         </IconButton>
 
         <Paper

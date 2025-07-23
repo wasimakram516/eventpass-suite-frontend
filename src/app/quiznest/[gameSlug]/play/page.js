@@ -390,7 +390,7 @@ export default function PlayPage() {
                 variant="contained"
                 color="secondary"
                 sx={{ fontSize: "1.5rem" }}
-                onClick={() => router.push(`/quiznest/game/${game.slug}`)}
+                onClick={() => router.push(`/quiznest/${game.slug}`)}
               >
                 {t.playAgain}
               </Button>

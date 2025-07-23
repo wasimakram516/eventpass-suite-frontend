@@ -16,7 +16,7 @@
     "ambient-cbg": "^1.0.4",
     "axios": "^1.10.0",
     "framer-motion": "^12.23.0",
-    "next": "15.3.4",
+    "next": "^15.3.4",
     "qr-scanner": "^1.4.2",
     "qrcode.react": "^4.2.0",
     "react": "^19.0.0",
@@ -27,6 +27,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@welldone-software/why-did-you-render": "^10.0.1",
     "eslint": "^9",
     "eslint-config-next": "15.3.4"
   }

@@ -1,5 +1,5 @@
 import env from "@/config/env";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { io } from "socket.io-client";
 
 const WS_HOST = env.server.socket;
@@ -8,7 +8,6 @@ let socketInstance = null;
 const useSocket = (events = {}) => {
   const [connected, setConnected] = useState(false);
   const [connectionError, setConnectionError] = useState(null);
-  const socketRef = useRef(null);
 
   useEffect(() => {
     if (!WS_HOST) {
@@ -27,10 +26,11 @@ const useSocket = (events = {}) => {
       });
     }
 
-    socketRef.current = socketInstance;
+    if (socketInstance.connected) {
+      setConnected(true);
+    }
 
     socketInstance.on("connect", () => {
-      console.log("✅ Socket connected:", socketInstance.id);
       setConnected(true);
       setConnectionError(null);
     });
@@ -46,19 +46,24 @@ const useSocket = (events = {}) => {
       setConnected(false);
     });
 
-    // Register event listeners
+    // Register dynamic events
     for (const [event, handler] of Object.entries(events)) {
       socketInstance.on(event, handler);
     }
 
+    // Cleanup listeners on unmount or change
     return () => {
-      for (const event of Object.keys(events)) {
-        socketInstance.off(event, events[event]);
+      for (const [event, handler] of Object.entries(events)) {
+        socketInstance.off(event, handler);
       }
     };
   }, [events]);
 
-  return { socket: socketRef.current, connected, connectionError };
+  return {
+    socket: socketInstance,
+    connected,
+    connectionError,
+  };
 };
 
 export default useSocket;
