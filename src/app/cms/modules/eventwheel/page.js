@@ -27,7 +27,7 @@ const translations = {
 export default function EventRegHome() {
   return (
     <ModuleLandingPage
-      moduleIcon={ICONS.event}
+      moduleIcon={ICONS.trophy}
       ctaLabel={translations.en.ctaLabel}
       ctaHref="/cms/modules/eventwheel/events"
       translations={translations}

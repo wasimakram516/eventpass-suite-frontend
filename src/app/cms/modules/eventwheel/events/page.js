@@ -41,6 +41,8 @@ import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import LoadingState from "@/components/LoadingState";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
+import slugify from "@/utils/slugify";
+import CircularProgress from "@mui/material/CircularProgress";
 const translations = {
   en: {
     spinWheelManagement: "Spin Wheel Management",
@@ -145,6 +147,10 @@ const Dashboard = () => {
     logo: null,
     background: null,
   });
+  const [logoPreview, setLogoPreview] = useState(null);
+  const [backgroundPreview, setBackgroundPreview] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     const initializeBusinesses = async () => {
@@ -222,32 +228,70 @@ const Dashboard = () => {
             background: null,
           }
     );
+    setLogoPreview(wheel?.logoUrl || null);
+    setBackgroundPreview(wheel?.backgroundUrl || null);
+    setErrors({});
     setOpenModal(true);
   };
 
   const handleFileChange = (e) => {
     const { name, files } = e.target;
-    if (files && files[0]) {
-      setForm((prev) => ({
-        ...prev,
-        [name]: files[0],
-      }));
+    const file = files[0];
+    setForm((prev) => ({
+      ...prev,
+      [name]: file,
+    }));
+
+    if (name === "logo" && file) {
+      setLogoPreview(URL.createObjectURL(file));
+    }
+    if (name === "background" && file) {
+      setBackgroundPreview(URL.createObjectURL(file));
     }
   };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setForm((prev) => {
+      if (name === "title") {
+        return {
+          ...prev,
+          title: value,
+          slug: slugify(value),
+        };
+      }
+      return {
+        ...prev,
+        [name]: value,
+      };
+    });
   };
 
   const validateShortName = (slug) => {
     return slug.toLowerCase().trim().replace(/\s+/g, "-");
   };
 
+  const validateForm = () => {
+    const newErrors = {};
+    if (!form.title || form.title.trim() === "") {
+      newErrors.title = "Title is required";
+    }
+    if (!form.slug || form.slug.trim() === "") {
+      newErrors.slug = "Slug is required";
+    }
+    if (!form.type || form.type.trim() === "") {
+      newErrors.type = "Type is required";
+    }
+    if (!form.logo && !logoPreview) newErrors.logo = "Logo is required";
+    if (!form.background && !backgroundPreview)
+      newErrors.background = "Background is required";
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSaveEvent = async () => {
+    if (!validateForm()) return;
+    setSaving(true);
     const formattedSlug = validateShortName(form.slug);
     const selectedBusinessObject = businesses.find(
       (business) => business.slug === selectedBusiness
@@ -277,6 +321,7 @@ const Dashboard = () => {
 
     fetchSpinWheels(selectedBusiness);
     setOpenModal(false);
+    setSaving(false);
   };
 
   const handleDeleteEvent = (wheel) => {
@@ -294,7 +339,7 @@ const Dashboard = () => {
   };
 
   const handleNavigateToParticipants = (eventId) => {
-    router.push(`/eventwheel/participants/${eventId}`);
+    router.push(`/cms/modules/eventwheel/events/participants/${eventId}`);
   };
 
   const handleOpenShareModal = (slug, type) => {
@@ -312,6 +357,11 @@ const Dashboard = () => {
     setTimeout(() => {
       setOpenShareModal(true);
     }, 0);
+  };
+
+  const handleCloseModal = () => {
+    setOpenModal(false);
+    setErrors({});
   };
 
   const selectedBusinessObject = businesses.find(
@@ -548,7 +598,7 @@ const Dashboard = () => {
         {/* Event Creation/Edit Modal */}
         <Dialog
           open={openModal}
-          onClose={() => setOpenModal(false)}
+          onClose={handleCloseModal}
           maxWidth="sm"
           fullWidth
         >
@@ -564,6 +614,8 @@ const Dashboard = () => {
               value={form.title}
               onChange={handleInputChange}
               required
+              error={!!errors.title}
+              helperText={errors.title}
             />
             <TextField
               name="slug"
@@ -573,7 +625,8 @@ const Dashboard = () => {
               value={form.slug}
               onChange={handleInputChange}
               required
-              helperText={t.urlHelper}
+              error={!!errors.slug}
+              helperText={errors.slug || t.urlHelper}
             />
             <TextField
               name="type"
@@ -583,6 +636,8 @@ const Dashboard = () => {
               margin="normal"
               value={form.type}
               onChange={handleInputChange}
+              error={!!errors.type}
+              helperText={errors.type}
             >
               {eventTypes.map((option) => (
                 <MenuItem key={option.value} value={option.value}>
@@ -605,9 +660,23 @@ const Dashboard = () => {
                   {t.uploadLogo}
                 </Button>
               </label>
-              {form.logo && (
-                <Typography variant="body2" color="text.secondary">
-                  {t.selected}: {form.logo.name}
+              {logoPreview && (
+                <>
+                  <Typography variant="body2" color="text.secondary">
+                    Preview:
+                  </Typography>
+                  <Box sx={{ mt: 1, mb: 1 }}>
+                    <img
+                      src={logoPreview}
+                      alt="Logo Preview"
+                      style={{ maxWidth: "100%", maxHeight: 120 }}
+                    />
+                  </Box>
+                </>
+              )}
+              {errors.logo && (
+                <Typography variant="caption" color="error">
+                  {errors.logo}
                 </Typography>
               )}
             </Box>
@@ -626,16 +695,37 @@ const Dashboard = () => {
                   {t.uploadBackground}
                 </Button>
               </label>
-              {form.background && (
-                <Typography variant="body2" color="text.secondary">
-                  {t.selected}: {form.background.name}
+              {backgroundPreview && (
+                <>
+                  <Typography variant="body2" color="text.secondary">
+                    Preview:
+                  </Typography>
+                  <Box sx={{ mt: 1, mb: 1 }}>
+                    <img
+                      src={backgroundPreview}
+                      alt="Background Preview"
+                      style={{ maxWidth: "100%", maxHeight: 120 }}
+                    />
+                  </Box>
+                </>
+              )}
+              {errors.background && (
+                <Typography variant="caption" color="error">
+                  {errors.background}
                 </Typography>
               )}
             </Box>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setOpenModal(false)}>{t.cancel}</Button>
-            <Button variant="contained" onClick={handleSaveEvent}>
+            <Button onClick={handleCloseModal}>{t.cancel}</Button>
+            <Button
+              variant="contained"
+              onClick={handleSaveEvent}
+              disabled={saving}
+              startIcon={
+                saving ? <CircularProgress size={20} color="inherit" /> : null
+              }
+            >
               {t.save}
             </Button>
           </DialogActions>
