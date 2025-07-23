@@ -70,7 +70,7 @@ export default function EventDetails() {
     );
   }
 
-  const { name, venue, date, logoUrl } = event;
+  const { name, venue, startDate, endDate, logoUrl } = event;
 
   return (
     <Box
@@ -148,8 +148,10 @@ export default function EventDetails() {
         >
           <ICONS.event sx={{ color: "primary.main" }} />
           <Typography variant="h6" sx={{ fontSize: { xs: 16, md: 20 } }}>
-            {formatDate(date)}
-          </Typography>
+                      {startDate === endDate
+                        ? formatDate(startDate)
+                        : `${formatDate(startDate)} – ${formatDate(endDate)}`}
+                    </Typography>
         </Stack>
 
         <Typography

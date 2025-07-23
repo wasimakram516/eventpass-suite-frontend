@@ -31,22 +31,21 @@ export const formatDateTimeWithLocale = (dateString) => {
 };
 
 /**
- * Determines the event status (Expired, Current, Upcoming) based on the event date.
- * @param {string} eventDate - The event date to evaluate.
+ * Determines the event status (Expired, Current, Upcoming) based on the event date range.
+ * @param {string|Date} startDate - The start date of the event.
+ * @param {string|Date} endDate - The end date of the event.
  * @returns {string} - Status of the event.
  */
-export const getEventStatus = (eventDate) => {
+export const getEventStatus = (startDate, endDate) => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
-  const eventDateObj = new Date(eventDate);
-  eventDateObj.setHours(0, 0, 0, 0);
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  start.setHours(0, 0, 0, 0);
+  end.setHours(0, 0, 0, 0);
 
-  if (eventDateObj < today) {
-    return "Expired";
-  } else if (eventDateObj.getTime() === today.getTime()) {
-    return "Current";
-  } else {
-    return "Upcoming";
-  }
+  if (today < start) return "Upcoming";
+  if (today > end) return "Expired";
+  return "Current";
 };

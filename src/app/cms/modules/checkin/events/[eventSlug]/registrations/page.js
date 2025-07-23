@@ -149,47 +149,58 @@ const ViewRegistrations = () => {
   const exportToCSV = () => {
     if (!eventDetails) return;
 
-    const csvHeaders = isPublicEvent
-      ? ["Name", "Email", "Phone", "Company"]
-      : ["Employee ID", "Employee Name", "Table Number", "Table Image URL"];
+    const lines = [];
 
-    const csvRows = registrations.map((reg) =>
-      isPublicEvent
-        ? [
-            reg.employeeName || "N/A",
-            reg.email || "N/A",
-            reg.phone || "N/A",
-            reg.company || "N/A",
-          ]
-        : [
-            reg.employeeId || "N/A",
-            reg.employeeName || "N/A",
-            reg.tableNumber || "N/A",
-            reg.tableImage || "N/A",
-          ]
+    // --- Event metadata ---
+    lines.push([`Event Slug:`, eventDetails.slug || `N/A`].join(`,`));
+    lines.push([`Event Name:`, eventDetails.name || `N/A`].join(`,`));
+    lines.push(
+      [
+        `Event Dates:`,
+        formatDate(eventDetails.startDate) +
+          (eventDetails.endDate &&
+          eventDetails.endDate !== eventDetails.startDate
+            ? ` to ${formatDate(eventDetails.endDate)}`
+            : ``),
+      ].join(`,`)
     );
+    lines.push([`Venue:`, eventDetails.venue || `N/A`].join(`,`));
+    lines.push([`Description:`, eventDetails.description || `N/A`].join(`,`));
+    lines.push([`Logo URL:`, eventDetails.logoUrl || `N/A`].join(`,`));
+    lines.push([`Event Type:`, eventDetails.eventType || `N/A`].join(`,`));
+    lines.push([]); // blank line
 
-    const eventMetadata = [
-      ["Event Slug:", eventDetails.slug || "N/A"],
-      ["Event Name:", eventDetails.name || "N/A"],
-      ["Event Date:", formatDate(eventDetails.date || "N/A")],
-      ["Venue:", eventDetails.venue || "N/A"],
-      ["Description:", eventDetails.description || "N/A"],
-      ["Logo URL:", eventDetails.logoUrl || "N/A"],
-      ["Event Type:", eventDetails.eventType || "N/A"],
-      [],
+    // --- Headers ---
+    const headers = [
+      `Employee ID`,
+      `Employee Name`,
+      `Table Number`,
+      `Table Image URL`,
+      `Registered At`,
     ];
+    lines.push(headers.join(`,`));
 
-    const csvContent = [
-      ...eventMetadata.map((row) => row.join(",")),
-      csvHeaders.join(","),
-      ...csvRows.map((row) => row.join(",")),
-    ].join("\n");
+    // --- Data rows ---
+    registrations.forEach((reg) => {
+      const row = [
+        reg.employeeId || `N/A`,
+        reg.employeeName || `N/A`,
+        reg.tableNumber || `N/A`,
+        reg.tableImage || `N/A`,
+        new Date(reg.createdAt).toLocaleString(),
+      ];
+      lines.push(
+        row.map((v) => `"${v.toString().replace(/"/g, `""`)}"`).join(`,`)
+      );
+    });
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
+    // --- Download CSV ---
+    const blob = new Blob([lines.join(`\n`)], {
+      type: `text/csv;charset=utf-8;`,
+    });
+    const link = document.createElement(`a`);
     link.href = URL.createObjectURL(blob);
-    link.download = `${eventDetails.name || "event"}_registrations.csv`;
+    link.download = `${eventDetails.slug || `event`}_registrations.csv`;
     link.click();
   };
 
@@ -254,7 +265,9 @@ const ViewRegistrations = () => {
         }}
       >
         <Typography variant="body1">
-          {t.showing} {Math.min((page - 1) * limit + 1, totalRegistrations)}–{Math.min(page * limit, totalRegistrations)} {t.of} {totalRegistrations} {t.records}
+          {t.showing} {Math.min((page - 1) * limit + 1, totalRegistrations)}–
+          {Math.min(page * limit, totalRegistrations)} {t.of}{" "}
+          {totalRegistrations} {t.records}
         </Typography>
         <FormControl size="small" sx={{ minWidth: 150 }}>
           <InputLabel id="limit-select-label">{t.recordsPerPage}</InputLabel>
@@ -274,7 +287,7 @@ const ViewRegistrations = () => {
       </Box>
 
       {registrations.length === 0 ? (
-        <NoDataAvailable/>
+        <NoDataAvailable />
       ) : (
         <>
           <Grid container spacing={4} justifyContent="center">
@@ -371,7 +384,6 @@ const ViewRegistrations = () => {
               count={Math.ceil(totalRegistrations / limit)}
               page={page}
               onChange={handlePageChange}
-              color="primary"
             />
           </Box>
         </>

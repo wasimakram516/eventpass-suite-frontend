@@ -70,7 +70,7 @@ export default function EventDetails() {
     );
   }
 
-  const { name, venue, date, logoUrl } = event;
+  const { name, venue, startDate, endDate, logoUrl } = event;
 
   return (
     <Box
@@ -148,7 +148,9 @@ export default function EventDetails() {
         >
           <ICONS.event sx={{ color: "primary.main" }} />
           <Typography variant="h6" sx={{ fontSize: { xs: 16, md: 20 } }}>
-            {formatDate(date)}
+            {startDate === endDate
+              ? formatDate(startDate)
+              : `${formatDate(startDate)} – ${formatDate(endDate)}`}
           </Typography>
         </Stack>
 
@@ -189,7 +191,13 @@ export default function EventDetails() {
           Register Now
         </Button>
 
-        <Stack direction="row" justifyContent="center" alignItems="center" spacing={1} mt={3}>
+        <Stack
+          direction="row"
+          justifyContent="center"
+          alignItems="center"
+          spacing={1}
+          mt={3}
+        >
           <ICONS.time fontSize="small" sx={{ color: "primary.main" }} />
           <Typography variant="caption" fontSize={14}>
             Takes only 5 seconds!

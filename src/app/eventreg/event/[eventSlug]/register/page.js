@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Typography,
@@ -13,62 +13,102 @@ import {
   DialogContent,
   DialogTitle,
   Alert,
+  MenuItem,
+  RadioGroup,
+  FormControlLabel,
+  Radio,
+  Select,
+  InputLabel,
+  FormControl,
 } from "@mui/material";
 import { useParams, useRouter } from "next/navigation";
 
 import { createRegistration } from "@/services/eventreg/registrationService";
+import { getPublicEventBySlug } from "@/services/eventreg/eventService";
 import ICONS from "@/utils/iconUtil";
 
 export default function Registration() {
   const { eventSlug } = useParams();
   const router = useRouter();
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [event, setEvent] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
 
-  const [formData, setFormData] = useState({
-    fullName: "",
-    phone: "",
-    email: "",
-    company: "",
-  });
+  const [dynamicFields, setDynamicFields] = useState([]);
+  const [formData, setFormData] = useState({});
+  const [fieldErrors, setFieldErrors] = useState({});
+
+  // Fetch event
+  useEffect(() => {
+    const fetchEvent = async () => {
+      const result = await getPublicEventBySlug(eventSlug);
+      if (!result?.error) {
+        setEvent(result);
+      }
+      setLoading(false);
+    };
+    fetchEvent();
+  }, [eventSlug]);
+
+  // Normalize fields & init data
+  useEffect(() => {
+    if (!event) return;
+    const fields = event.formFields?.length
+      ? event.formFields.map((f) => ({
+          name: f.inputName,
+          label: f.inputName,
+          type: f.inputType,
+          options: f.values || [],
+          required: f.required,
+        }))
+      : [
+          { name: "fullName", label: "Full Name", type: "text", required: true },
+          { name: "phone", label: "Phone Number", type: "text", required: true },
+          { name: "email", label: "Email", type: "text", required: true },
+          { name: "company", label: "Company (optional)", type: "text", required: false },
+        ];
+    const initial = {};
+    fields.forEach((f) => (initial[f.name] = ""));
+    setDynamicFields(fields);
+    setFormData(initial);
+  }, [event]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    if (name === "phone" && !/^\+?[0-9]*$/.test(value)) return;
+    if (name === "phone" && !/^[+]?[0-9]*$/.test(value)) return;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    setError("");
+    setFieldErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
   const handleSubmit = async () => {
-    const { fullName, phone, email, company } = formData;
-    if (!fullName || !phone || !email) {
-      setError("Please fill all the required fields.");
-      return;
-    }
-    if (!isValidEmail(email)) {
-      setError("Invalid email format.");
-      return;
-    }
-
-    setLoading(true);
-    const result = await createRegistration({
-      fullName,
-      phone,
-      email,
-      company,
-      slug: eventSlug,
+    const errors = {};
+    dynamicFields.forEach((f) => {
+      const val = formData[f.name]?.trim();
+      if (f.required && !val) {
+        errors[f.name] = `${f.label} is required`;
+      }
+      if (f.name === "email" && val && !isValidEmail(val)) {
+        errors[f.name] = "Invalid email address";
+      }
     });
+    if (Object.keys(errors).length) {
+      setFieldErrors(errors);
+      return;
+    }
 
-    setLoading(false);
+    setSubmitting(true);
+    const result = await createRegistration({ ...formData, slug: eventSlug });
+    setSubmitting(false);
+
     if (!result?.error) {
       setShowDialog(true);
-      setFormData({ fullName: "", phone: "", email: "", company: "" });
     } else {
-      setError(result.message || "Failed to register.");
+      // show top-level error if needed
+      setFieldErrors({ _global: result.message || "Failed to register." });
     }
   };
 
@@ -77,123 +117,100 @@ export default function Registration() {
     router.replace(`/eventreg/event/${eventSlug}`);
   };
 
-  return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        backgroundColor: "#f5f5f5",
-        px: 2,
-        py: 4,
-      }}
-    >
-      <Paper
-        elevation={3}
-        sx={{
-          width: "100%",
-          maxWidth: 600,
-          borderRadius: 3,
-          p: 4,
-          textAlign: "center",
-        }}
-      >
-        <Box
-          sx={{
-            mb: 3,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <ICONS.appRegister
-            sx={{ fontSize: 40, color: "primary.main", mr: 2 }}
-          />
-          <Typography variant="h4" fontWeight="bold">
-            Register for the Event
+  if (loading || !event) {
+    return (
+      <Box minHeight="100vh" display="flex" alignItems="center" justifyContent="center">
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  const renderField = (field) => {
+    const errorMsg = fieldErrors[field.name];
+    const commonProps = {
+      fullWidth: true,
+      name: field.name,
+      label: field.label,
+      value: formData[field.name] || "",
+      onChange: handleInputChange,
+      error: !!errorMsg,
+      helperText: errorMsg || "",
+      sx: { mb: 2 },
+    };
+
+    if (field.type === "radio") {
+      return (
+        <Box key={field.name} sx={{ mb: 2, textAlign: "left" }}>
+          <Typography sx={{ mb: 1, color: errorMsg ? 'error.main' : 'inherit' }}>
+            {field.label}
           </Typography>
+          <RadioGroup row name={field.name} value={formData[field.name]} onChange={handleInputChange}>
+            {field.options.map((opt) => (
+              <FormControlLabel
+                key={`${field.name}-${opt}`}
+                value={opt}
+                control={<Radio />}
+                label={opt}
+              />
+            ))}
+          </RadioGroup>
+          {errorMsg && (
+            <Typography variant="caption" color="error" display="block">
+              {errorMsg}
+            </Typography>
+          )}
+        </Box>
+      );
+    }
+
+    if (field.type === "list") {
+      return (
+        <FormControl fullWidth key={field.name} error={!!errorMsg} sx={{ mb: 2 }}>
+          <InputLabel>{field.label}</InputLabel>
+          <Select name={field.name} value={formData[field.name]} onChange={handleInputChange}>
+            {field.options.map((opt) => (
+              <MenuItem key={`${field.name}-${opt}`} value={opt}>
+                {opt}
+              </MenuItem>
+            ))}
+          </Select>
+          {errorMsg && <Typography variant="caption" color="error">{errorMsg}</Typography>}
+        </FormControl>
+      );
+    }
+
+    return <TextField key={field.name} {...commonProps} type={field.type === 'number' ? 'number' : 'text'} />;
+  };
+
+  return (
+    <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f5f5f5', px: 2, py: 4 }}>
+      <Paper elevation={3} sx={{ width: '100%', maxWidth: 600, borderRadius: 3, p: 4, textAlign: 'center' }}>
+        <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <ICONS.appRegister sx={{ fontSize: 40, color: 'primary.main', mr: 2 }} />
+          <Typography variant="h4" fontWeight="bold">Register for the Event</Typography>
         </Box>
 
-        {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
-            {error}
-          </Alert>
-        )}
+        {fieldErrors._global && <Alert severity="error" sx={{ mb: 3 }}>{fieldErrors._global}</Alert>}
 
-        <TextField
-          fullWidth
-          label="Full Name"
-          name="fullName"
-          value={formData.fullName}
-          onChange={handleInputChange}
-          sx={{ mb: 2 }}
-        />
-        <TextField
-          fullWidth
-          label="Phone Number"
-          name="phone"
-          value={formData.phone}
-          onChange={handleInputChange}
-          sx={{ mb: 2 }}
-        />
-        <TextField
-          fullWidth
-          label="Email"
-          name="email"
-          value={formData.email}
-          onChange={handleInputChange}
-          error={formData.email && !isValidEmail(formData.email)}
-          helperText={
-            formData.email && !isValidEmail(formData.email)
-              ? "Invalid email"
-              : ""
-          }
-          sx={{ mb: 2 }}
-        />
-        <TextField
-          fullWidth
-          label="Company (optional)"
-          name="company"
-          value={formData.company}
-          onChange={handleInputChange}
-          sx={{ mb: 3 }}
-        />
+        {dynamicFields.map((f) => renderField(f))}
 
-        <Button
-          variant="contained"
-          fullWidth
-          disabled={loading}
-          onClick={handleSubmit}
-        >
-          {loading ? <CircularProgress size={22} /> : "Submit"}
+        <Button variant="contained" fullWidth disabled={submitting} onClick={handleSubmit}>
+          {submitting ? <CircularProgress size={22} /> : 'Submit'}
         </Button>
       </Paper>
 
-      <Dialog
-        open={showDialog}
-        onClose={handleDialogClose}
-        maxWidth="md"
-        fullWidth
-      >
-        <DialogTitle sx={{ textAlign: "center" }}>
+      <Dialog open={showDialog} onClose={handleDialogClose} maxWidth="md" fullWidth>
+        <DialogTitle sx={{ textAlign: 'center' }}>
           <Box display="flex" flexDirection="column" alignItems="center">
-            <ICONS.checkCircle sx={{ fontSize: 70, color: "#28a745", mb: 2 }} />
-            <Typography variant="h5" fontWeight="bold" component="div">
-              Registration Successful!
-            </Typography>
+            <ICONS.checkCircle sx={{ fontSize: 70, color: '#28a745', mb: 2 }} />
+            <Typography variant="h5" fontWeight="bold">Registration Successful!</Typography>
           </Box>
         </DialogTitle>
-
-        <DialogContent sx={{ textAlign: "center" }}>
-          <Typography variant="body1" sx={{ mb: 2 }}>
-            Thank you for registering. We look forward to seeing you!
-          </Typography>
+        <DialogContent sx={{ textAlign: 'center' }}>
+          <Typography variant="body1" sx={{ mb: 2 }}>Thank you for registering. We look forward to seeing you!</Typography>
         </DialogContent>
-        <DialogActions sx={{ justifyContent: "center", pb: 2 }}>
-          <Button onClick={handleDialogClose} variant="contained">
-            View Event
-          </Button>
+        <DialogActions sx={{ justifyContent: 'center', pb: 2 }}>
+          <Button onClick={handleDialogClose} variant="contained">View Event</Button>
         </DialogActions>
       </Dialog>
     </Box>

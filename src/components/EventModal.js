@@ -1,3 +1,4 @@
+// This is the fully updated EventModal component with toggle for custom fields
 "use client";
 
 import {
@@ -14,6 +15,7 @@ import {
   Box,
   Typography,
   IconButton,
+  Chip
 } from "@mui/material";
 import { useState, useEffect } from "react";
 import slugify from "@/utils/slugify";
@@ -28,7 +30,8 @@ const translations = {
     editTitle: "Edit Event",
     name: "Event Name",
     slug: "Slug",
-    date: "Date",
+    startDate: "Start Date",
+    endDate: "End Date",
     venue: "Venue",
     description: "Description",
     capacity: "Capacity",
@@ -51,7 +54,8 @@ const translations = {
     editTitle: "تعديل الفعالية",
     name: "اسم الفعالية",
     slug: "المعرف",
-    date: "التاريخ",
+    startDate: "تاريخ البدء",
+    endDate: "تاريخ الانتهاء",
     venue: "المكان",
     description: "الوصف",
     capacity: "السعة",
@@ -79,13 +83,14 @@ const EventModal = ({
   selectedBusiness,
   isEmployee = false,
 }) => {
-  const { t, dir, align } = useI18nLayout(translations);
+  const { t, dir } = useI18nLayout(translations);
   const { showMessage } = useMessage();
 
   const [formData, setFormData] = useState({
     name: "",
     slug: "",
-    date: "",
+    startDate: "",
+    endDate: "",
     venue: "",
     description: "",
     logo: null,
@@ -94,6 +99,8 @@ const EventModal = ({
     eventType: isEmployee ? "employee" : "public",
     employeeData: null,
     tableImages: [],
+    formFields: [],
+    useCustomFields: false,
   });
 
   const [loading, setLoading] = useState(false);
@@ -104,8 +111,11 @@ const EventModal = ({
         ...prev,
         name: initialValues.name || "",
         slug: initialValues.slug || "",
-        date: initialValues.date
-          ? new Date(initialValues.date).toISOString().split("T")[0]
+        startDate: initialValues.startDate
+          ? new Date(initialValues.startDate).toISOString().split("T")[0]
+          : "",
+        endDate: initialValues.endDate
+          ? new Date(initialValues.endDate).toISOString().split("T")[0]
           : "",
         venue: initialValues.venue || "",
         description: initialValues.description || "",
@@ -116,13 +126,20 @@ const EventModal = ({
         logoPreview: initialValues.logoUrl || "",
         employeeData: null,
         tableImages: [],
+        formFields: (initialValues.formFields || []).map((f) => ({
+          ...f,
+          _temp: "",
+        })),
+
+        useCustomFields: !!initialValues.formFields?.length,
       }));
     } else {
       setFormData((prev) => ({
         ...prev,
         name: "",
         slug: "",
-        date: "",
+        startDate: "",
+        endDate: "",
         venue: "",
         description: "",
         logo: null,
@@ -131,13 +148,14 @@ const EventModal = ({
         eventType: isEmployee ? "employee" : "public",
         employeeData: null,
         tableImages: [],
+        formFields: [],
+        useCustomFields: false,
       }));
     }
   }, [initialValues, isEmployee]);
 
   const handleInputChange = (e) => {
     const { name, value, files } = e.target;
-
     if (name === "logo" && files?.[0]) {
       const file = files[0];
       if (file.type.startsWith("image/")) {
@@ -158,11 +176,43 @@ const EventModal = ({
 
   const handleNameChange = (e) => {
     const name = e.target.value;
+    setFormData((prev) => ({ ...prev, name, slug: slugify(name) }));
+  };
+
+  const handleFormFieldChange = (index, key, value) => {
+    const updated = [...formData.formFields];
+    updated[index][key] = value;
+    setFormData((prev) => ({ ...prev, formFields: updated }));
+  };
+
+  const addFormField = () => {
     setFormData((prev) => ({
       ...prev,
-      name,
-      slug: slugify(name),
+      formFields: [
+        ...prev.formFields,
+        {
+          inputName: "",
+          inputType: "text",
+          values: [],
+          required: false,
+          _temp: "",
+        },
+      ],
     }));
+  };
+
+  const removeFormField = (index) => {
+    const updated = [...formData.formFields];
+    updated.splice(index, 1);
+    setFormData((prev) => ({ ...prev, formFields: updated }));
+  };
+
+  const handleValueChange = (index, raw) => {
+    handleFormFieldChange(
+      index,
+      "values",
+      raw.split(",").map((s) => s.trim())
+    );
   };
 
   const handleDownloadTemplate = async () => {
@@ -181,11 +231,15 @@ const EventModal = ({
   };
 
   const handleSubmit = async () => {
-    if (!formData.name || !formData.date || !formData.venue) {
+    if (
+      !formData.name ||
+      !formData.startDate ||
+      !formData.endDate ||
+      !formData.venue
+    ) {
       showMessage(t.required, "error");
       return;
     }
-
     if (
       formData.capacity &&
       (isNaN(formData.capacity) || formData.capacity <= 0)
@@ -193,22 +247,18 @@ const EventModal = ({
       showMessage(t.invalidCapacity, "error");
       return;
     }
-
     setLoading(true);
     const payload = new FormData();
-
-    if (!initialValues && selectedBusiness) {
+    if (!initialValues && selectedBusiness)
       payload.append("businessSlug", selectedBusiness);
-    }
-
     payload.append("name", formData.name);
     payload.append("slug", formData.slug || slugify(formData.name));
-    payload.append("date", formData.date);
+    payload.append("startDate", formData.startDate);
+    payload.append("endDate", formData.endDate);
     payload.append("venue", formData.venue);
     payload.append("description", formData.description);
     payload.append("capacity", formData.capacity || "999");
     payload.append("eventType", formData.eventType);
-
     if (formData.logo) payload.append("logo", formData.logo);
     if (formData.eventType === "employee") {
       if (formData.employeeData)
@@ -217,12 +267,13 @@ const EventModal = ({
         payload.append("tableImages", file)
       );
     }
-
+    if (formData.eventType === "public" && formData.useCustomFields) {
+      payload.append("formFields", JSON.stringify(formData.formFields));
+    }
     try {
       await onSubmit(payload, !!initialValues);
     } catch (err) {
-      const msg = err?.message || "Failed to submit event.";
-      showMessage(msg, "error");
+      showMessage(err?.message || "Failed to submit event.", "error");
     } finally {
       setLoading(false);
     }
@@ -240,7 +291,7 @@ const EventModal = ({
           pt: 3,
         }}
       >
-        <Typography variant="body1" sx={{ fontWeight: "bold", fontSize:"1.25rem" }}>
+        <Typography fontWeight="bold" fontSize="1.25rem">
           {initialValues ? t.editTitle : t.createTitle}
         </Typography>
 
@@ -254,7 +305,6 @@ const EventModal = ({
           <ICONS.close />
         </IconButton>
       </DialogTitle>
-
       <DialogContent>
         <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 2 }}>
           <TextField
@@ -272,10 +322,19 @@ const EventModal = ({
             fullWidth
           />
           <TextField
-            label={`${t.date} *`}
-            name="date"
+            label={`${t.startDate} *`}
+            name="startDate"
             type="date"
-            value={formData.date}
+            value={formData.startDate}
+            onChange={handleInputChange}
+            InputLabelProps={{ shrink: true }}
+            fullWidth
+          />
+          <TextField
+            label={`${t.endDate} *`}
+            name="endDate"
+            type="date"
+            value={formData.endDate}
             onChange={handleInputChange}
             InputLabelProps={{ shrink: true }}
             fullWidth
@@ -317,7 +376,6 @@ const EventModal = ({
                 onChange={handleInputChange}
               />
             </Button>
-
             {formData.logoPreview && (
               <Box sx={{ mt: 1 }}>
                 <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
@@ -335,10 +393,9 @@ const EventModal = ({
           {/* Employee Event Specific Fields */}
           {formData.eventType === "employee" && (
             <>
-              <Button variant="outlined" onClick={handleDownloadTemplate}>
+              <Button variant="outlined" onClick={downloadEmployeeTemplate}>
                 {t.downloadTemplate}
               </Button>
-
               <Box>
                 <Typography variant="subtitle2" color="primary">
                   {t.uploadEmployee}
@@ -351,7 +408,6 @@ const EventModal = ({
                   fullWidth
                 />
               </Box>
-
               <Box>
                 <Typography variant="subtitle2" color="primary">
                   {t.uploadTables}
@@ -364,7 +420,6 @@ const EventModal = ({
                   fullWidth
                 />
               </Box>
-
               {formData.tableImages.length > 0 && (
                 <List>
                   {Array.from(formData.tableImages).map((file, i) => (
@@ -376,16 +431,170 @@ const EventModal = ({
               )}
             </>
           )}
+
+          {/* Public Custom Field Toggle */}
+          {formData.eventType === "public" && (
+            <>
+              <Typography variant="subtitle2" color="primary">
+                Use custom registration fields?
+              </Typography>
+              <Button
+                variant="outlined"
+                onClick={() =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    useCustomFields: !prev.useCustomFields,
+                  }))
+                }
+              >
+                {formData.useCustomFields
+                  ? "Switch to Classic Fields"
+                  : "Switch to Custom Fields"}
+              </Button>
+
+              {formData.useCustomFields ? (
+                <>
+                  {formData.formFields.map((field, index) => (
+                    <Box
+                      key={index}
+                      sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 1,
+                        mb: 2,
+                      }}
+                    >
+                      <TextField
+                        label="Field Label"
+                        value={field.inputName}
+                        onChange={(e) =>
+                          handleFormFieldChange(
+                            index,
+                            "inputName",
+                            e.target.value
+                          )
+                        }
+                        fullWidth
+                      />
+                      <TextField
+                        label="Input Type"
+                        select
+                        SelectProps={{ native: true }}
+                        value={field.inputType}
+                        onChange={(e) =>
+                          handleFormFieldChange(
+                            index,
+                            "inputType",
+                            e.target.value
+                          )
+                        }
+                        fullWidth
+                      >
+                        {["text", "number", "radio", "list"].map((type) => (
+                          <option key={type} value={type}>
+                            {type}
+                          </option>
+                        ))}
+                      </TextField>
+                      {(field.inputType === "radio" ||
+                        field.inputType === "list") && (
+                        <Box>
+                          <Typography variant="subtitle2">Options</Typography>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              flexWrap: "wrap",
+                              gap: 1,
+                              mb: 1,
+                            }}
+                          >
+                            {field.values.map((option, i) => (
+                              <Chip
+                                key={i}
+                                label={option}
+                                onDelete={() => {
+                                  const updated = [...field.values];
+                                  updated.splice(i, 1);
+                                  handleFormFieldChange(
+                                    index,
+                                    "values",
+                                    updated
+                                  );
+                                }}
+                                color="primary"
+                                variant="outlined"
+                              />
+                            ))}
+                          </Box>
+                          <TextField
+                            placeholder="Type option and press comma"
+                            value={field._temp || ""}
+                            onChange={(e) => {
+                              const newValue = e.target.value;
+                              if (newValue.endsWith(",")) {
+                                const option = newValue.slice(0, -1).trim();
+                                if (option && !field.values.includes(option)) {
+                                  const updated = [...field.values, option];
+                                  handleFormFieldChange(
+                                    index,
+                                    "values",
+                                    updated
+                                  );
+                                }
+                                handleFormFieldChange(index, "_temp", "");
+                              } else {
+                                handleFormFieldChange(index, "_temp", newValue);
+                              }
+                            }}
+                            fullWidth
+                          />
+                        </Box>
+                      )}
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", gap: 2 }}
+                      >
+                        <label>
+                          <input
+                            type="checkbox"
+                            checked={field.required}
+                            onChange={(e) =>
+                              handleFormFieldChange(
+                                index,
+                                "required",
+                                e.target.checked
+                              )
+                            }
+                          />{" "}
+                          Required
+                        </label>
+                        <Button
+                          size="small"
+                          variant="text"
+                          color="error"
+                          onClick={() => removeFormField(index)}
+                        >
+                          Remove
+                        </Button>
+                      </Box>
+                    </Box>
+                  ))}
+                  <Button onClick={addFormField} variant="outlined">
+                    Add Field
+                  </Button>
+                </>
+              ) : (
+                <Typography variant="body2" sx={{ fontStyle: "italic" }}>
+                  Classic registration fields (fullName, email, phone) will be
+                  used.
+                </Typography>
+              )}
+            </>
+          )}
         </Box>
       </DialogContent>
 
       <DialogActions
-        sx={{
-          p: 3,
-          flexDirection: { xs: "column", sm: "row" },
-          gap: 1,
-          alignItems: "stretch",
-        }}
+        sx={{ p: 3, flexDirection: { xs: "column", sm: "row" }, gap: 1 }}
       >
         <Button
           onClick={onClose}

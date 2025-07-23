@@ -38,16 +38,20 @@ import useI18nLayout from "@/hooks/useI18nLayout";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import NoDataAvailable from "@/components/NoDataAvailable";
 
-const ViewRegistrations = () => {
+export default function ViewRegistrations() {
   const { eventSlug } = useParams();
-  const [registrations, setRegistrations] = useState([]);
+  const router = useParams();
+
   const [eventDetails, setEventDetails] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [registrationToDelete, setRegistrationToDelete] = useState(null);
+  const [dynamicFields, setDynamicFields] = useState([]);
+  const [registrations, setRegistrations] = useState([]);
+  const [totalRegistrations, setTotalRegistrations] = useState(0);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
-  const [totalRegistrations, setTotalRegistrations] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [registrationToDelete, setRegistrationToDelete] = useState(null);
   const [walkInModalOpen, setWalkInModalOpen] = useState(false);
   const [selectedRegistration, setSelectedRegistration] = useState(null);
 
@@ -61,6 +65,7 @@ const ViewRegistrations = () => {
       noRecords: "No registrations found for this event.",
       delete: "Delete Registration",
       deleteMessage: "Are you sure you want to delete this registration?",
+      name: "Full Name",
       email: "Email:",
       phone: "Phone:",
       company: "Company:",
@@ -80,6 +85,7 @@ const ViewRegistrations = () => {
       noRecords: "لا توجد تسجيلات لهذا الحدث.",
       delete: "حذف التسجيل",
       deleteMessage: "هل أنت متأكد أنك تريد حذف هذا التسجيل؟",
+      name: "الاسم الكامل",
       email: "البريد الإلكتروني:",
       phone: "الهاتف:",
       company: "الشركة:",
@@ -92,125 +98,149 @@ const ViewRegistrations = () => {
     },
   });
 
+  // fetch event metadata and registrations
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
 
-      const [eventResponse, registrationResponse] = await Promise.all([
+      const [evRes, regRes] = await Promise.all([
         getPublicEventBySlug(eventSlug),
         getRegistrationsByEvent(eventSlug, page, limit),
       ]);
 
-      // Handle event data
-      if (!eventResponse?.error) {
-        setEventDetails(eventResponse);
+      if (!evRes?.error) {
+        setEventDetails(evRes);
+        // normalize custom fields
+        const fields = evRes.formFields?.length
+          ? evRes.formFields.map((f) => ({
+              name: f.inputName,
+              label: f.inputName,
+            }))
+          : [
+              { name: "fullName", label: t.name },
+              { name: "email", label: t.email },
+              { name: "phone", label: t.phone },
+              { name: "company", label: t.company },
+            ];
+        setDynamicFields(fields);
       }
 
-      // Handle registration data
-      if (!registrationResponse?.error) {
-        setRegistrations(registrationResponse.data || []);
-        setTotalRegistrations(
-          registrationResponse.pagination?.totalRegistrations || 0
-        );
+      if (!regRes?.error) {
+        setRegistrations(regRes.data || []);
+        setTotalRegistrations(regRes.pagination.totalRegistrations || 0);
       }
 
       setLoading(false);
     };
-
-    if (eventSlug) {
-      fetchData();
-    } else {
-      setLoading(false);
-    }
+    if (eventSlug) fetchData();
   }, [eventSlug, page, limit]);
 
-  const handleDelete = async () => {
-    const result = await deleteRegistration(registrationToDelete);
-
-    if (!result?.error) {
-      setRegistrations((prev) =>
-        prev.filter((reg) => reg._id !== registrationToDelete)
-      );
-      setTotalRegistrations((prev) => prev - 1);
-      setRegistrationToDelete(null);
-      setDeleteDialogOpen(false);
-    }
+  const handlePageChange = (_, value) => setPage(value);
+  const handleLimitChange = (e) => {
+    setLimit(Number(e.target.value));
+    setPage(1);
   };
 
-  const handlePageChange = (_, value) => setPage(value);
-
-  const handleLimitChange = (event) => {
-    setLimit(event.target.value);
-    setPage(1);
+  const handleDelete = async () => {
+    const res = await deleteRegistration(registrationToDelete);
+    if (!res?.error) {
+      setRegistrations((prev) =>
+        prev.filter((r) => r._id !== registrationToDelete)
+      );
+      setTotalRegistrations((t) => t - 1);
+    }
+    setDeleteDialogOpen(false);
   };
 
   const exportToCSV = () => {
     if (!eventDetails) return;
 
-    const csvHeaders = ["Name", "Email", "Phone", "Company"];
-    const csvContent = [];
+    // 1) Build CSV lines in an array
+    const lines = [];
 
-    // Event metadata
-    const eventMetadata = [
-      ["Event Slug:", eventDetails.slug || "N/A"],
-      ["Event Name:", eventDetails.name || "N/A"],
-      ["Event Date:", formatDate(eventDetails.date || "N/A")],
-      ["Venue:", eventDetails.venue || "N/A"],
-      ["Description:", eventDetails.description || "N/A"],
-      ["Logo URL:", eventDetails.logoUrl || "N/A"],
-      ["Event Type:", eventDetails.eventType || "N/A"],
-      [],
+    // --- Event metadata ---
+    lines.push([`Event Slug:`, eventDetails.slug || `N/A`].join(`,`));
+    lines.push([`Event Name:`, eventDetails.name || `N/A`].join(`,`));
+    lines.push(
+      [
+        `Event Dates:`,
+        formatDate(eventDetails.startDate) +
+          (eventDetails.endDate &&
+          eventDetails.endDate !== eventDetails.startDate
+            ? ` to ${formatDate(eventDetails.endDate)}`
+            : ``),
+      ].join(`,`)
+    );
+    lines.push([`Venue:`, eventDetails.venue || `N/A`].join(`,`));
+    lines.push([`Description:`, eventDetails.description || `N/A`].join(`,`));
+    lines.push([`Logo URL:`, eventDetails.logoUrl || `N/A`].join(`,`));
+    lines.push([`Event Type:`, eventDetails.eventType || `N/A`].join(`,`));
+    lines.push([]); // blank line
+
+    // --- Header row for registrations ---
+    // dynamicFields is your array of { name, label, … }
+    const regHeaders = [
+      ...dynamicFields.map((f) => f.label),
+      `Token`,
+      `Registered At`,
     ];
-    eventMetadata.forEach((row) => csvContent.push(row.join(",")));
+    lines.push(regHeaders.join(`,`));
 
-    // Main headers
-    csvContent.push(csvHeaders.join(","));
+    // --- One registration row per line ---
+    registrations.forEach((reg) => {
+      const row = dynamicFields.map((f) => {
+        // pick from customFields first, fall back to top-level
+        return `"${(reg.customFields?.[f.name] ?? reg[f.name] ?? ``)
+          .toString()
+          .replace(/"/g, `""`)}"`;
+      });
+      row.push(
+        `"${reg.token}"`,
+        `"${new Date(reg.createdAt).toLocaleString()}"`
+      );
+      lines.push(row.join(`,`));
+    });
 
-    registrations.forEach((reg, index) => {
-      const mainRow = [
-        reg.fullName || "N/A",
-        reg.email || "N/A",
-        reg.phone || "N/A",
-        reg.company || "N/A",
-      ];
-      csvContent.push(mainRow.join(","));
-
-      if (Array.isArray(reg.walkIns) && reg.walkIns.length > 0) {
-        csvContent.push(
-          `Walk-in Records for ${reg.fullName || `#${index + 1}`}:`
+    // --- Walk-in records section ---
+    // only if any walk-ins exist in the whole set
+    const allWalkIns = registrations.flatMap((reg) =>
+      (reg.walkIns || []).map((w) => ({
+        token: reg.token,
+        scannedAt: w.scannedAt,
+        scannedBy: w.scannedBy?.name || w.scannedBy?.email || `Unknown`,
+      }))
+    );
+    if (allWalkIns.length > 0) {
+      lines.push([]);
+      lines.push([`Registration Token`, `Scanned At`, `Scanned By`].join(`,`));
+      allWalkIns.forEach((w) => {
+        lines.push(
+          [
+            `"${w.token}"`,
+            `"${new Date(w.scannedAt).toLocaleString()}"`,
+            `"${w.scannedBy.replace(/"/g, `""`)}"`,
+          ].join(`,`)
         );
-        csvContent.push("Scanned At,Scanned By");
+      });
+    }
 
-        reg.walkIns.forEach((walkin) => {
-          const scannedAt = new Date(walkin.scannedAt).toLocaleString();
-          const scannedBy =
-            walkin.scannedBy?.name || walkin.scannedBy?.email || "Unknown";
-          csvContent.push(`${scannedAt},${scannedBy}`);
-        });
-
-        csvContent.push(""); // blank line after walk-ins
-      }
+    // 2) Download it
+    const blob = new Blob([lines.join(`\n`)], {
+      type: `text/csv;charset=utf-8;`,
     });
-
-    const blob = new Blob([csvContent.join("\n")], {
-      type: "text/csv;charset=utf-8;",
-    });
-
-    const link = document.createElement("a");
+    const link = document.createElement(`a`);
     link.href = URL.createObjectURL(blob);
-    link.download = `${eventDetails.name || "event"}_registrations.csv`;
+    link.download = `${eventDetails.slug || `event`}_registrations.csv`;
     link.click();
   };
 
   if (loading) {
     return (
       <Box
-        sx={{
-          minHeight: "60vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
+        minHeight="60vh"
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
       >
         <CircularProgress />
       </Box>
@@ -220,6 +250,7 @@ const ViewRegistrations = () => {
   return (
     <Container dir={dir} maxWidth="lg">
       <BreadcrumbsNav />
+
       <Stack
         direction={{ xs: "column", sm: "row" }}
         justifyContent="space-between"
@@ -227,83 +258,67 @@ const ViewRegistrations = () => {
         spacing={2}
         sx={{ my: 3 }}
       >
-        {/* Left: Title + Description */}
         <Box sx={{ flex: 1 }}>
           <Typography variant="h4" fontWeight="bold">
             {t.title}
           </Typography>
-          <Typography variant="body1" sx={{ color: "text.secondary" }}>
+          <Typography variant="body1" color="text.secondary">
             {t.description}
           </Typography>
         </Box>
-
-        {/* Right: Export Button */}
         {totalRegistrations > 0 && (
-          <Box sx={{ width: { xs: "100%", sm: "auto" } }}>
-            <Button
-              variant="contained"
-              onClick={exportToCSV}
-              color="primary"
-              startIcon={<ICONS.download fontSize="small" />}
-              fullWidth
-              sx={getStartIconSpacing(dir)}
-            >
-              {t.export}
-            </Button>
-          </Box>
+          <Button
+            variant="contained"
+            onClick={exportToCSV}
+            startIcon={<ICONS.download />}
+            sx={getStartIconSpacing(dir)}
+          >
+            {t.export}
+          </Button>
         )}
       </Stack>
 
       <Divider sx={{ my: 3 }} />
 
       <Box
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          mb: 3,
-          px: 2,
-        }}
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        mb={3}
+        px={2}
       >
-        <Typography variant="body1">
-          {t.showing} {Math.min((page - 1) * limit + 1, totalRegistrations)}–
+        <Typography>
+          {t.showing} {(page - 1) * limit + 1}-
           {Math.min(page * limit, totalRegistrations)} {t.of}{" "}
           {totalRegistrations} {t.records}
         </Typography>
         <FormControl size="small" sx={{ minWidth: 150, ml: 2 }}>
-          <InputLabel id="limit-select-label">Records per page</InputLabel>
+          <InputLabel>{t.recordsPerPage}</InputLabel>
           <Select
-            labelId="limit-select-label"
             value={limit}
             onChange={handleLimitChange}
-            label="Records per page"
+            label={t.recordsPerPage}
           >
-            {[5, 10, 20, 50, 100, 250, 500].map((value) => (
-              <MenuItem key={value} value={value}>
-                {value}
+            {[5, 10, 20, 50, 100, 250, 500].map((n) => (
+              <MenuItem key={n} value={n}>
+                {n}
               </MenuItem>
             ))}
           </Select>
         </FormControl>
       </Box>
 
-      {registrations.length === 0 ? (
-        <NoDataAvailable/>
+      {!registrations.length ? (
+        <NoDataAvailable />
       ) : (
         <>
           <Grid container spacing={4} justifyContent="center">
-            {registrations.map((registration) => (
-              <Grid
-                item
-                xs={12}
-                sm={6}
-                md={4}
-                key={registration._id}
-                sx={{ display: "flex", justifyContent: "center" }}
-              >
+            {registrations.map((reg) => (
+              <Grid item xs={12} sm={6} md={4} key={reg._id}>
                 <Card
                   sx={{
                     width: "100%",
+                    minWidth: 250,
                     maxWidth: 360,
                     boxShadow: 3,
                     borderRadius: 2,
@@ -314,61 +329,34 @@ const ViewRegistrations = () => {
                   }}
                 >
                   <CardContent>
-                    <Typography variant="h6" gutterBottom>
-                      {registration.fullName}
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      color="textSecondary"
-                      sx={{ mt: 1 }}
-                    >
-                      <strong>{t.email}</strong> {registration.email}
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      color="textSecondary"
-                      sx={{ mt: 1 }}
-                    >
-                      <strong>{t.phone}</strong> {registration.phone}
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      color="textSecondary"
-                      sx={{ mt: 1 }}
-                    >
-                      <strong>{t.company}</strong>{" "}
-                      {registration.company || "N/A"}
-                    </Typography>
+                    {dynamicFields.map((f) => (
+                      <Typography key={f.name} variant="body2" sx={{ mt: 1 }}>
+                        <strong>{f.label}</strong>{" "}
+                        {reg.customFields?.[f.name] ?? reg[f.name] ?? "N/A"}
+                      </Typography>
+                    ))}
                   </CardContent>
-
-                  <CardActions sx={{ justifyContent: "center", gap: 1 }}>
-                    <Tooltip
-                      title={t.viewWalkIns}
-                      placement={isArabic ? "left" : "top"}
-                    >
+                  <CardActions sx={{ justifyContent: "center" }}>
+                    <Tooltip title={t.viewWalkIns}>
                       <IconButton
                         color="info"
                         onClick={() => {
-                          setSelectedRegistration(registration);
+                          setSelectedRegistration(reg);
                           setWalkInModalOpen(true);
                         }}
                       >
-                        <ICONS.view fontSize="small" />
+                        <ICONS.view />
                       </IconButton>
                     </Tooltip>
-
-                    <Tooltip
-                      title={t.deleteRecord}
-                      placement={isArabic ? "left" : "top"}
-                    >
+                    <Tooltip title={t.deleteRecord}>
                       <IconButton
                         color="error"
                         onClick={() => {
-                          setRegistrationToDelete(registration._id);
+                          setRegistrationToDelete(reg._id);
                           setDeleteDialogOpen(true);
                         }}
                       >
-                        <ICONS.delete fontSize="small" />
+                        <ICONS.delete />
                       </IconButton>
                     </Tooltip>
                   </CardActions>
@@ -377,12 +365,11 @@ const ViewRegistrations = () => {
             ))}
           </Grid>
 
-          <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+          <Box display="flex" justifyContent="center" mt={4}>
             <Pagination
               count={Math.ceil(totalRegistrations / limit)}
               page={page}
               onChange={handlePageChange}
-              color="primary"
             />
           </Box>
         </>
@@ -392,8 +379,8 @@ const ViewRegistrations = () => {
         open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
         onConfirm={handleDelete}
-        title="Delete Registration"
-        message="Are you sure you want to delete this registration?"
+        title={t.delete}
+        message={t.deleteMessage}
       />
 
       <WalkInModal
@@ -403,6 +390,4 @@ const ViewRegistrations = () => {
       />
     </Container>
   );
-};
-
-export default ViewRegistrations;
+}
