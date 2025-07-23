@@ -148,10 +148,12 @@ export default function EventDetails() {
         >
           <ICONS.event sx={{ color: "primary.main" }} />
           <Typography variant="h6" sx={{ fontSize: { xs: 16, md: 20 } }}>
-                      {startDate === endDate
-                        ? formatDate(startDate)
-                        : `${formatDate(startDate)} – ${formatDate(endDate)}`}
-                    </Typography>
+            {startDate && endDate
+              ? startDate === endDate
+                ? formatDate(startDate)
+                : `${formatDate(startDate)} – ${formatDate(endDate)}`
+              : "Date not available"}
+          </Typography>
         </Stack>
 
         <Typography
@@ -162,7 +164,8 @@ export default function EventDetails() {
             mb: 4,
           }}
         >
-          Thank you for joining us! Please enter your Employee ID to get your table number.
+          Thank you for joining us! Please enter your Employee ID to get your
+          table number.
         </Typography>
 
         <Button
@@ -189,7 +192,13 @@ export default function EventDetails() {
           Get Your Table
         </Button>
 
-        <Stack direction="row" justifyContent="center" alignItems="center" spacing={1} mt={3}>
+        <Stack
+          direction="row"
+          justifyContent="center"
+          alignItems="center"
+          spacing={1}
+          mt={3}
+        >
           <ICONS.time fontSize="small" sx={{ color: "primary.main" }} />
           <Typography variant="caption" fontSize={14}>
             Takes only 5 seconds!

@@ -148,9 +148,11 @@ export default function EventDetails() {
         >
           <ICONS.event sx={{ color: "primary.main" }} />
           <Typography variant="h6" sx={{ fontSize: { xs: 16, md: 20 } }}>
-            {startDate === endDate
-              ? formatDate(startDate)
-              : `${formatDate(startDate)} – ${formatDate(endDate)}`}
+            {startDate && endDate
+              ? startDate === endDate
+                ? formatDate(startDate)
+                : `${formatDate(startDate)} – ${formatDate(endDate)}`
+              : "Date not available"}
           </Typography>
         </Stack>
 

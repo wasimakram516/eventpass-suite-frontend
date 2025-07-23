@@ -252,7 +252,10 @@ export default function EventsPage() {
         ) : (
           <Grid container spacing={3} justifyContent="center">
             {events.map((ev) => {
-              const status = getEventStatus(ev.startDate, ev.endDate);
+              const status =
+                ev?.startDate && ev?.endDate
+                  ? getEventStatus(ev.startDate, ev.endDate)
+                  : "N/A";
               return (
                 <Grid item xs={12} sm={6} md={4} key={ev._id}>
                   <Card
@@ -296,13 +299,13 @@ export default function EventsPage() {
                       </Typography>
 
                       <Typography variant="body2" color="textSecondary">
-                        <strong>
-                          {t.dateRange}:
-                        </strong>{" "}
-                        {formatDate(ev.startDate)}
-                        {ev.endDate && ev.endDate !== ev.startDate
-                          ? ` to ${formatDate(ev.endDate)}`
-                          : ""}
+                        <strong>{t.dateRange}:</strong>{" "}
+                        {ev?.startDate
+                          ? formatDate(ev.startDate) +
+                            (ev.endDate && ev.endDate !== ev.startDate
+                              ? ` to ${formatDate(ev.endDate)}`
+                              : "")
+                          : "N/A"}
                       </Typography>
 
                       <Typography

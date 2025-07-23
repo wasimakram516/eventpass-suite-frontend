@@ -254,16 +254,42 @@ export default function EventsPage() {
         ) : (
           <Grid container spacing={3} justifyContent="center">
             {events.map((event) => {
-              const eventStatus = getEventStatus(event.startDate, event.endDate);
+              const eventStatus =
+                event?.startDate && event?.endDate
+                  ? getEventStatus(event.startDate, event.endDate)
+                  : "N/A";
               return (
                 <Grid item xs={12} sm={6} md={4} key={event._id}>
-                  <Card sx={{ maxWidth: 360, width: "100%", margin: "0 auto", boxShadow: 3, borderRadius: 2 }}>
+                  <Card
+                    sx={{
+                      maxWidth: 360,
+                      width: "100%",
+                      margin: "0 auto",
+                      boxShadow: 3,
+                      borderRadius: 2,
+                    }}
+                  >
                     <CardContent>
-                      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          mb: 2,
+                        }}
+                      >
                         <Chip
                           label={eventStatus}
-                          color={eventStatus === "Expired" ? "error" : eventStatus === "Current" ? "primary" : "success"}
-                          sx={{ fontWeight: "bold", textTransform: "uppercase" }}
+                          color={
+                            eventStatus === "Expired"
+                              ? "error"
+                              : eventStatus === "Current"
+                              ? "primary"
+                              : "success"
+                          }
+                          sx={{
+                            fontWeight: "bold",
+                            textTransform: "uppercase",
+                          }}
                         />
                       </Box>
                       <Typography variant="h6" gutterBottom>
@@ -272,24 +298,40 @@ export default function EventsPage() {
                       <Typography variant="body2" color="textSecondary">
                         <strong>{t.slugLabel}</strong> {event.slug}
                       </Typography>
-                       <Typography variant="body2" color="textSecondary">
-                        <strong>
-                          {t.dateRange}:
-                        </strong>{" "}
-                        {formatDate(event.startDate)}
-                        {event.endDate && event.endDate !== event.startDate
-                          ? ` to ${formatDate(event.endDate)}`
-                          : ""}
+                      <Typography variant="body2" color="textSecondary">
+                        <strong>{t.dateRange}:</strong>{" "}
+                        {event?.startDate
+                          ? formatDate(event.startDate) +
+                            (event?.endDate && event.endDate !== event.startDate
+                              ? ` to ${formatDate(event.endDate)}`
+                              : "")
+                          : "N/A"}
                       </Typography>
-                      <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+
+                      <Typography
+                        variant="body2"
+                        color="textSecondary"
+                        sx={{ mb: 2 }}
+                      >
                         <strong>{t.venue}:</strong> {event.venue || "N/A"}
                       </Typography>
                       {event.logoUrl ? (
-                        <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            justifyContent: "center",
+                            mb: 2,
+                          }}
+                        >
                           <img
                             src={event.logoUrl}
                             alt="Event Logo"
-                            style={{ maxWidth: "250px", height: "auto", objectFit: "contain", borderRadius: "8px" }}
+                            style={{
+                              maxWidth: "250px",
+                              height: "auto",
+                              objectFit: "contain",
+                              borderRadius: "8px",
+                            }}
                           />
                         </Box>
                       ) : (
@@ -303,19 +345,36 @@ export default function EventsPage() {
                         <IconButton
                           color="primary"
                           onClick={() =>
-                            router.replace(`/cms/modules/checkin/events/${event.slug}/registrations`)
+                            router.replace(
+                              `/cms/modules/checkin/events/${event.slug}/registrations`
+                            )
                           }
                         >
                           <ICONS.view fontSize="small" />
                         </IconButton>
                       )}
-                      <IconButton color="secondary" onClick={() => handleOpenEdit(event)}>
+                      <IconButton
+                        color="secondary"
+                        onClick={() => handleOpenEdit(event)}
+                      >
                         <ICONS.edit fontSize="small" />
                       </IconButton>
-                      <IconButton color="error" onClick={() => { setEventToDelete(event); setConfirmOpen(true); }}>
+                      <IconButton
+                        color="error"
+                        onClick={() => {
+                          setEventToDelete(event);
+                          setConfirmOpen(true);
+                        }}
+                      >
                         <ICONS.delete fontSize="small" />
                       </IconButton>
-                      <IconButton color="primary" onClick={() => { setEventToShare(event); setShareModalOpen(true); }}>
+                      <IconButton
+                        color="primary"
+                        onClick={() => {
+                          setEventToShare(event);
+                          setShareModalOpen(true);
+                        }}
+                      >
                         <ICONS.share fontSize="small" />
                       </IconButton>
                     </CardActions>
@@ -347,7 +406,11 @@ export default function EventsPage() {
         <ShareLinkModal
           open={shareModalOpen}
           onClose={() => setShareModalOpen(false)}
-          url={typeof window !== "undefined" && eventToShare?.slug ? `${window.location.origin}/checkin/event/${eventToShare.slug}` : ""}
+          url={
+            typeof window !== "undefined" && eventToShare?.slug
+              ? `${window.location.origin}/checkin/event/${eventToShare.slug}`
+              : ""
+          }
           name={eventToShare?.name}
           title={t.shareTitle}
           description={t.description}
