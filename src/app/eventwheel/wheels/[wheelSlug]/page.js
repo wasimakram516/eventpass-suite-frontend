@@ -39,7 +39,7 @@ const translations = {
 
 const ParticipantsUserPage = () => {
   const params = useParams();
-  const shortName = params.slug;
+  const shortName = params.wheelSlug;
   const router = useRouter();
   const [event, setEvent] = useState(null);
   const [bulkNames, setBulkNames] = useState("");
@@ -75,7 +75,7 @@ const ParticipantsUserPage = () => {
       return;
     }
 
-    setBtnClicked(true); // 🔥 Show Clicked Button
+    setBtnClicked(true);
 
     const formattedNames = bulkNames.split("\n").map((name) => name.trim());
 
