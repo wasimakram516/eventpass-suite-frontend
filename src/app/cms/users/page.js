@@ -46,6 +46,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import { wrapTextBox } from "@/utils/wrapTextStyles";
+import LoadingState from "@/components/LoadingState";
 
 const translations = {
   en: {
@@ -109,6 +110,7 @@ export default function UsersPage() {
   const [selectedUser, setSelectedUser] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isPageLoading, setIsPageLoading] = useState(true);
 
   const defaultForm = {
     name: "",
@@ -128,45 +130,48 @@ export default function UsersPage() {
   }, []);
 
   const fetchUsers = async () => {
-  const rawUsers = isBusinessUser
-    ? await getAllStaffUsers(currentUser?.business?._id)
-    : await getAllUsers();
+    setIsPageLoading(true);
 
-  if (isBusinessUser) {
-    setGroupedUsers({ [currentUser.business.name]: rawUsers });
-    return;
-  }
+    const rawUsers = isBusinessUser
+      ? await getAllStaffUsers(currentUser?.business?._id)
+      : await getAllUsers();
 
-  const groups = {
-    Admins: [],
-    Unassigned: [],
+    if (isBusinessUser) {
+      setGroupedUsers({ [currentUser.business.name]: rawUsers });
+      setIsPageLoading(false);
+      return;
+    }
+
+    const groups = {
+      Admins: [],
+      Unassigned: [],
+    };
+
+    for (const user of rawUsers) {
+      if (user.role === "admin") {
+        groups["Admins"].push(user);
+      } else if (!user.business) {
+        groups["Unassigned"].push(user);
+      } else {
+        const businessName = user.business.name;
+        if (!groups[businessName]) groups[businessName] = [];
+        groups[businessName].push(user);
+      }
+    }
+
+    const orderedGroups = {};
+    if (groups["Admins"].length) orderedGroups["Admins"] = groups["Admins"];
+    for (const [key, val] of Object.entries(groups)) {
+      if (key !== "Admins" && key !== "Unassigned") {
+        orderedGroups[key] = val;
+      }
+    }
+    if (groups["Unassigned"].length)
+      orderedGroups["Unassigned"] = groups["Unassigned"];
+
+    setGroupedUsers(orderedGroups);
+    setIsPageLoading(false);
   };
-
-  for (const user of rawUsers) {
-    if (user.role === "admin") {
-      groups["Admins"].push(user);
-    } else if (!user.business) {
-      groups["Unassigned"].push(user);
-    } else {
-      const businessName = user.business.name;
-      if (!groups[businessName]) groups[businessName] = [];
-      groups[businessName].push(user);
-    }
-  }
-
-  // Preserve group order: Admins, then others, then Unassigned
-  const orderedGroups = {};
-  if (groups["Admins"].length) orderedGroups["Admins"] = groups["Admins"];
-  for (const [key, val] of Object.entries(groups)) {
-    if (key !== "Admins" && key !== "Unassigned") {
-      orderedGroups[key] = val;
-    }
-  }
-  if (groups["Unassigned"].length) orderedGroups["Unassigned"] = groups["Unassigned"];
-
-  setGroupedUsers(orderedGroups);
-};
-
 
   const fetchModules = async () => {
     const allModules = await getModules();
@@ -250,18 +255,36 @@ export default function UsersPage() {
       key={user._id || "self"}
       sx={{ width: { xs: "100%", sm: 300 }, flexShrink: 0 }}
     >
-      <Card elevation={3} sx={{ p: 0, display: "flex", flexDirection: "column", borderRadius: 2, height: "100%" }}>
+      <Card
+        elevation={3}
+        sx={{
+          p: 0,
+          display: "flex",
+          flexDirection: "column",
+          borderRadius: 2,
+          height: "100%",
+        }}
+      >
         <CardContent sx={{ p: 2, flexGrow: 1 }}>
           <Stack direction="row" spacing={2} alignItems="flex-start">
             <Avatar sx={{ width: 56, height: 56 }}>{user.name?.[0]}</Avatar>
             <Box sx={{ flexGrow: 1, ...wrapTextBox }}>
               <Typography variant="h6">{user.name}</Typography>
-              <Typography variant="body2" color="text.secondary">{user.email}</Typography>
-              <Chip label={user.role.charAt(0).toUpperCase() + user.role.slice(1)} color={getRoleColor(user.role)} size="small" sx={{ mt: 0.5 }} />
+              <Typography variant="body2" color="text.secondary">
+                {user.email}
+              </Typography>
+              <Chip
+                label={user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                color={getRoleColor(user.role)}
+                size="small"
+                sx={{ mt: 0.5 }}
+              />
             </Box>
           </Stack>
         </CardContent>
-        <CardActions sx={{ px: 2, pb: 2, pt: 0, justifyContent: "flex-end", mt: "auto" }}>
+        <CardActions
+          sx={{ px: 2, pb: 2, pt: 0, justifyContent: "flex-end", mt: "auto" }}
+        >
           <Tooltip title={t.edit}>
             <IconButton color="primary" onClick={() => handleOpenEdit(user)}>
               <ICONS.edit />
@@ -269,7 +292,13 @@ export default function UsersPage() {
           </Tooltip>
           {!isSelf && currentUser?.role !== "staff" && (
             <Tooltip title={t.delete}>
-              <IconButton color="error" onClick={() => { setSelectedUser(user); setDeleteConfirm(true); }}>
+              <IconButton
+                color="error"
+                onClick={() => {
+                  setSelectedUser(user);
+                  setDeleteConfirm(true);
+                }}
+              >
                 <ICONS.delete />
               </IconButton>
             </Tooltip>
@@ -282,25 +311,63 @@ export default function UsersPage() {
   return (
     <Container dir={dir}>
       <BreadcrumbsNav />
-      <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, justifyContent: "space-between", alignItems: { xs: "flex-start", sm: "center" }, mb: 1, gap: 1 }}>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
+          justifyContent: "space-between",
+          alignItems: { xs: "flex-start", sm: "center" },
+          mb: 1,
+          gap: 1,
+        }}
+      >
         <Box>
-          <Typography variant="h4" fontWeight="bold" gutterBottom textAlign={align}>{t.title}</Typography>
-          <Typography variant="body1" color="text.secondary" textAlign={align}>{t.subtitle}</Typography>
+          <Typography
+            variant="h4"
+            fontWeight="bold"
+            gutterBottom
+            textAlign={align}
+          >
+            {t.title}
+          </Typography>
+          <Typography variant="body1" color="text.secondary" textAlign={align}>
+            {t.subtitle}
+          </Typography>
         </Box>
-        <Button variant="contained" sx={getStartIconSpacing(dir)} startIcon={<ICONS.add />} onClick={handleOpenCreate}>{t.createStaffUser}</Button>
+        <Button
+          variant="contained"
+          sx={getStartIconSpacing(dir)}
+          startIcon={<ICONS.add />}
+          onClick={handleOpenCreate}
+        >
+          {t.createStaffUser}
+        </Button>
       </Box>
       <Divider sx={{ mb: 3 }} />
-      {Object.entries(groupedUsers).map(([group, users]) => (
-        <Box key={group} sx={{ mb: 4 }}>
-          <Typography variant="h6" gutterBottom>{group}</Typography>
-          <Grid container spacing={3} justifyContent="center">
-            {isBusinessUser && group === currentUser.business.name && renderUserCard(currentUser, true)}
-            {users.map((user) => renderUserCard(user))}
-          </Grid>
-        </Box>
-      ))}
+      {isPageLoading ? (
+        <LoadingState />
+      ) : (
+        Object.entries(groupedUsers).map(([group, users]) => (
+          <Box key={group} sx={{ mb: 4 }}>
+            <Typography variant="h6" gutterBottom>
+              {group}
+            </Typography>
+            <Grid container spacing={3} justifyContent="center">
+              {isBusinessUser &&
+                group === currentUser.business.name &&
+                renderUserCard(currentUser, true)}
+              {users.map((user) => renderUserCard(user))}
+            </Grid>
+          </Box>
+        ))
+      )}
 
-      <Dialog open={modalOpen} onClose={() => setModalOpen(false)} fullWidth dir={dir}>
+      <Dialog
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        fullWidth
+        dir={dir}
+      >
         <DialogTitle>{isEditMode ? t.editUser : t.createStaffUser}</DialogTitle>
         <DialogContent>
           {["name", "email", "password"].map((field) => (
@@ -309,7 +376,9 @@ export default function UsersPage() {
               label={t[field]}
               name={field}
               value={form[field]}
-              onChange={(e) => setForm((prev) => ({ ...prev, [field]: e.target.value }))}
+              onChange={(e) =>
+                setForm((prev) => ({ ...prev, [field]: e.target.value }))
+              }
               fullWidth
               margin="normal"
               type={field === "password" ? "password" : "text"}
@@ -320,42 +389,63 @@ export default function UsersPage() {
 
           {currentUser?.role === "admin" && !isEditMode && (
             <FormControl fullWidth margin="normal" error={!!errors.businessId}>
-              <InputLabel id="business-select-label">Select Business</InputLabel>
+              <InputLabel id="business-select-label">
+                Select Business
+              </InputLabel>
               <Select
                 labelId="business-select-label"
                 value={form.businessId || ""}
                 label="Select Business"
-                onChange={(e) => setForm((prev) => ({ ...prev, businessId: e.target.value }))}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, businessId: e.target.value }))
+                }
               >
-                <MenuItem value=""><em>-- Select --</em></MenuItem>
+                <MenuItem value="">
+                  <em>-- Select --</em>
+                </MenuItem>
                 {businesses.map((biz) => (
-                  <MenuItem key={biz._id} value={biz._id}>{biz.name}</MenuItem>
+                  <MenuItem key={biz._id} value={biz._id}>
+                    {biz.name}
+                  </MenuItem>
                 ))}
               </Select>
               {errors.businessId && (
-                <Typography variant="caption" color="error">{errors.businessId}</Typography>
+                <Typography variant="caption" color="error">
+                  {errors.businessId}
+                </Typography>
               )}
             </FormControl>
           )}
 
-          {(selectedUser?.role === "business" || selectedUser?.role === "staff" || !selectedUser) && (
+          {(selectedUser?.role === "business" ||
+            selectedUser?.role === "staff" ||
+            !selectedUser) && (
             <Box sx={{ mt: 3 }}>
-              <Typography variant="subtitle1" gutterBottom textAlign={align}>{t.permissions}</Typography>
+              <Typography variant="subtitle1" gutterBottom textAlign={align}>
+                {t.permissions}
+              </Typography>
               <FormGroup>
                 {(isBusinessUser
-                  ? availableModules.filter((m) => currentUser.modulePermissions?.includes(m.key))
-                  : availableModules).map((mod) => (
+                  ? availableModules.filter((m) =>
+                      currentUser.modulePermissions?.includes(m.key)
+                    )
+                  : availableModules
+                ).map((mod) => (
                   <FormControlLabel
                     key={mod.key}
                     control={
                       <Checkbox
                         checked={form.modulePermissions.includes(mod.key)}
                         onChange={() => {
-                          const exists = form.modulePermissions.includes(mod.key);
+                          const exists = form.modulePermissions.includes(
+                            mod.key
+                          );
                           setForm((prev) => ({
                             ...prev,
                             modulePermissions: exists
-                              ? prev.modulePermissions.filter((k) => k !== mod.key)
+                              ? prev.modulePermissions.filter(
+                                  (k) => k !== mod.key
+                                )
                               : [...prev.modulePermissions, mod.key],
                           }));
                         }}
@@ -369,8 +459,21 @@ export default function UsersPage() {
           )}
         </DialogContent>
         <DialogActions>
-          <Button disabled={loading} startIcon={<ICONS.cancel />} onClick={() => setModalOpen(false)} sx={getStartIconSpacing(dir)}>{t.cancel}</Button>
-          <Button variant="contained" onClick={handleModalSave} disabled={loading} startIcon={<ICONS.save />} sx={getStartIconSpacing(dir)}>
+          <Button
+            disabled={loading}
+            startIcon={<ICONS.cancel />}
+            onClick={() => setModalOpen(false)}
+            sx={getStartIconSpacing(dir)}
+          >
+            {t.cancel}
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleModalSave}
+            disabled={loading}
+            startIcon={<ICONS.save />}
+            sx={getStartIconSpacing(dir)}
+          >
             {loading ? (isEditMode ? t.saving : t.creating) : t.save}
           </Button>
         </DialogActions>
@@ -379,7 +482,11 @@ export default function UsersPage() {
       <ConfirmationDialog
         open={deleteConfirm}
         title={t.deleteConfirm}
-        message={selectedUser?.role === "staff" ? t.deleteStaffMessage : t.deleteMessagePrefix}
+        message={
+          selectedUser?.role === "staff"
+            ? t.deleteStaffMessage
+            : t.deleteMessagePrefix
+        }
         onClose={() => setDeleteConfirm(false)}
         onConfirm={handleDelete}
         confirmButtonText={t.delete}
