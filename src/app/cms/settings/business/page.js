@@ -5,6 +5,7 @@ import {
   Typography,
   Grid,
   Card,
+  CardActions,
   Avatar,
   Button,
   Dialog,
@@ -33,6 +34,7 @@ import {
   updateBusiness,
   deleteBusiness,
 } from "@/services/businessService";
+
 import { getUnassignedUsers } from "@/services/userService";
 import { useAuth } from "@/contexts/AuthContext";
 import useI18nLayout from "@/hooks/useI18nLayout";
@@ -41,6 +43,7 @@ import ConfirmationDialog from "@/components/ConfirmationDialog";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import ICONS from "@/utils/iconUtil";
 import NoDataAvailable from "@/components/NoDataAvailable";
+import { wrapTextBox } from "@/utils/wrapTextStyles";
 
 const translations = {
   en: {
@@ -106,7 +109,7 @@ const translations = {
 };
 
 export default function BusinessDetailsPage() {
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
   const { dir, align, language, t } = useI18nLayout(translations);
   const [loading, setLoading] = useState(false);
   const [businesses, setBusinesses] = useState([]);
@@ -275,11 +278,20 @@ export default function BusinessDetailsPage() {
       res = await createBusiness(fd);
     }
 
-    console.log("Business save response:", res);
-
     if (!res.error) {
       fetchUnassignedUsers();
       fetchBusinesses();
+
+      // Update AuthContext user if role is 'business'
+      if (user.role === "business") {
+        const updatedUser = {
+          ...user,
+          business: res,
+        };
+
+        // Update Context
+        setUser(updatedUser);
+      }
     }
 
     handleClose();
@@ -369,84 +381,117 @@ export default function BusinessDetailsPage() {
                   elevation={3}
                   sx={{
                     p: 2,
+                    borderRadius: 2,
+                    width: { xs: "100%", sm: "300px" },
                     height: "100%",
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "space-between",
-                    borderRadius: 2,
-                    width: { xs: "100%", sm: "300px" },
-                    wordBreak: "break-word",
                   }}
                 >
-                  {/* Top Section: Avatar + Info */}
-                  <Box
-                    sx={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      textAlign: "center",
-                      mb: 2,
-                    }}
-                  >
+                  {/* Top: Avatar and Name */}
+                  <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
                     <Avatar
                       src={biz.logoUrl}
                       alt={biz.name}
-                      sx={{ width: 64, height: 64, mb: 1 }}
+                      sx={{ width: 56, height: 56 }}
                     >
-                      {biz.name[0]}
+                      {biz.name?.[0]}
                     </Avatar>
 
-                    <Typography
-                      variant="h6"
-                      fontWeight="bold"
-                      sx={{ whiteSpace: "normal", wordWrap: "break-word" }}
-                    >
-                      {biz.name}
-                    </Typography>
-
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ whiteSpace: "normal", wordWrap: "break-word" }}
-                    >
-                      Slug: <strong>{biz.slug}</strong>
-                    </Typography>
-
-                    <Typography
-                      variant="body2"
-                      sx={{ whiteSpace: "normal", wordWrap: "break-word" }}
-                    >
-                      {biz.contact?.email}
-                    </Typography>
-
-                    {biz.owner && (
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        display="block"
-                        sx={{ whiteSpace: "normal", wordWrap: "break-word" }}
-                      >
-                        {t.owner}: {biz.owner.name || biz.owner}
+                    <Box sx={{ flexGrow: 1, ...wrapTextBox }}>
+                      <Typography variant="subtitle1" fontWeight="bold">
+                        {biz.name}
                       </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Slug: {biz.slug}
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  {/* Details aligned fully left */}
+                  <Box sx={{ mt: 1, pl: 0, ...wrapTextBox }}>
+                    {biz.contact?.email && (
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1,
+                          mt: 0.5,
+                        }}
+                      >
+                        <ICONS.email fontSize="small" color="action" />
+                        <Typography variant="body2" sx={wrapTextBox}>
+                          {biz.contact.email}
+                        </Typography>
+                      </Box>
+                    )}
+                    {biz.contact?.phone && (
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1,
+                          mt: 0.5,
+                        }}
+                      >
+                        <ICONS.phone fontSize="small" color="action" />
+                        <Typography variant="body2" sx={wrapTextBox}>
+                          {biz.contact.phone}
+                        </Typography>
+                      </Box>
+                    )}
+                    {biz.address && (
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1,
+                          mt: 0.5,
+                        }}
+                      >
+                        <ICONS.location fontSize="small" color="action" />
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={wrapTextBox}
+                        >
+                          {biz.address}
+                        </Typography>
+                      </Box>
+                    )}
+                    {biz.owner && (
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1,
+                          mt: 0.5,
+                        }}
+                      >
+                        <ICONS.person fontSize="small" color="action" />
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={wrapTextBox}
+                        >
+                          {t.owner}: {biz.owner.name || biz.owner}
+                        </Typography>
+                      </Box>
                     )}
                   </Box>
 
-                  {/* Actions */}
-                  <Box
-                    sx={{
-                      mt: "auto",
-                      display: "flex",
-                      justifyContent: "flex-end",
-                      gap: 1,
-                      flexWrap: "wrap",
-                    }}
+                  {/* Card Actions */}
+                  <CardActions
+                    sx={{ mt: 1, justifyContent: "flex-end", px: 0, pt: 1 }}
                   >
                     <Tooltip title={t.edit}>
                       <IconButton
                         color="primary"
                         onClick={() => handleOpen(biz)}
+                        size="small"
                       >
-                        <EditIcon />
+                        <ICONS.edit fontSize="small" />
                       </IconButton>
                     </Tooltip>
 
@@ -455,12 +500,13 @@ export default function BusinessDetailsPage() {
                         <IconButton
                           color="error"
                           onClick={() => openDeleteConfirm(biz)}
+                          size="small"
                         >
-                          <DeleteIcon />
+                          <ICONS.delete fontSize="small" />
                         </IconButton>
                       </Tooltip>
                     )}
-                  </Box>
+                  </CardActions>
                 </Card>
               </Grid>
             </Grid>

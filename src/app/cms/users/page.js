@@ -5,6 +5,8 @@ import {
   Typography,
   Grid,
   Card,
+  CardContent,
+  CardActions,
   Avatar,
   IconButton,
   Tooltip,
@@ -21,6 +23,10 @@ import {
   FormControlLabel,
   FormGroup,
   Chip,
+  Select,
+  MenuItem,
+  InputLabel,
+  FormControl,
 } from "@mui/material";
 
 import { useEffect, useState } from "react";
@@ -33,11 +39,13 @@ import {
   createStaffUser,
   getAllStaffUsers,
 } from "@/services/userService";
+import { getAllBusinesses } from "@/services/businessService";
 import { getModules } from "@/services/moduleService";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
+import { wrapTextBox } from "@/utils/wrapTextStyles";
 
 const translations = {
   en: {
@@ -57,6 +65,8 @@ const translations = {
     deleteConfirm: "Confirm Deletion",
     deleteMessagePrefix:
       "Are you sure you want to delete this user? This will also delete all their associated businesses and related data, and cannot be undone.",
+    deleteStaffMessage:
+      "Are you sure you want to delete this user? This will also delete all their related data, and cannot be undone.",
     role: "Role",
     edit: "Edit",
     delete: "Delete",
@@ -78,6 +88,8 @@ const translations = {
     deleteConfirm: "تأكيد الحذف",
     deleteMessagePrefix:
       "هل أنت متأكد أنك تريد حذف هذا المستخدم؟ سيؤدي هذا أيضًا إلى حذف جميع الشركات المرتبطة به والبيانات ذات الصلة، ولا يمكن التراجع عن هذا الإجراء.",
+    deleteStaffMessage:
+      "هل أنت متأكد أنك تريد حذف هذا المستخدم؟ سيؤدي هذا أيضًا إلى حذف البيانات ذات الصلة، ولا يمكن التراجع عن هذا الإجراء.",
     role: "الدور",
     edit: "تعديل",
     delete: "حذف",
@@ -87,60 +99,86 @@ const translations = {
 export default function UsersPage() {
   const { user: currentUser } = useAuth();
   const isBusinessUser = currentUser?.role === "business";
-
-  const [availableModules, setAvailableModules] = useState([]);
-  const [businessUserModules, setBusinessUserModules] = useState([]);
   const { dir, align, language, t } = useI18nLayout(translations);
 
-  const [users, setUsers] = useState([]);
-  const [isEditMode, setIsEditMode] = useState(false);
+  const [groupedUsers, setGroupedUsers] = useState({});
+  const [businesses, setBusinesses] = useState([]);
+  const [availableModules, setAvailableModules] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
-  const [form, setForm] = useState({
+  const [loading, setLoading] = useState(false);
+
+  const defaultForm = {
     name: "",
     email: "",
     password: "",
     modulePermissions: [],
-  });
-  const [loading, setLoading] = useState(false);
+    businessId: "",
+  };
+
+  const [form, setForm] = useState(defaultForm);
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     fetchUsers();
     fetchModules();
+    if (currentUser?.role === "admin") getAllBusinesses().then(setBusinesses);
   }, []);
 
   const fetchUsers = async () => {
-    const data =
-      isBusinessUser && currentUser?.business?._id
-        ? await getAllStaffUsers(currentUser.business._id)
-        : await getAllUsers();
-    setUsers(data || []);
+  const rawUsers = isBusinessUser
+    ? await getAllStaffUsers(currentUser?.business?._id)
+    : await getAllUsers();
+
+  if (isBusinessUser) {
+    setGroupedUsers({ [currentUser.business.name]: rawUsers });
+    return;
+  }
+
+  const groups = {
+    Admins: [],
+    Unassigned: [],
   };
+
+  for (const user of rawUsers) {
+    if (user.role === "admin") {
+      groups["Admins"].push(user);
+    } else if (!user.business) {
+      groups["Unassigned"].push(user);
+    } else {
+      const businessName = user.business.name;
+      if (!groups[businessName]) groups[businessName] = [];
+      groups[businessName].push(user);
+    }
+  }
+
+  // Preserve group order: Admins, then others, then Unassigned
+  const orderedGroups = {};
+  if (groups["Admins"].length) orderedGroups["Admins"] = groups["Admins"];
+  for (const [key, val] of Object.entries(groups)) {
+    if (key !== "Admins" && key !== "Unassigned") {
+      orderedGroups[key] = val;
+    }
+  }
+  if (groups["Unassigned"].length) orderedGroups["Unassigned"] = groups["Unassigned"];
+
+  setGroupedUsers(orderedGroups);
+};
+
 
   const fetchModules = async () => {
     const allModules = await getModules();
     setAvailableModules(allModules);
-    if (isBusinessUser) {
-      const filteredModules = allModules.filter((module) =>
-        currentUser.modulePermissions?.includes(module.key)
-      );
-      setBusinessUserModules(filteredModules);
-    }
   };
 
-  const getRoleColor = (role) => {
-    switch (role) {
-      case "admin":
-        return "primary";
-      case "business":
-        return "secondary";
-      case "staff":
-        return "success";
-      default:
-        return "default";
-    }
-  };
+  const getRoleColor = (role) =>
+    ({
+      admin: "primary",
+      business: "success",
+      staff: "secondary",
+    }[role] || "default");
 
   const handleOpenEdit = (user) => {
     setSelectedUser(user);
@@ -150,18 +188,35 @@ export default function UsersPage() {
       password: "",
       modulePermissions: user.modulePermissions || [],
     });
+    setErrors({});
     setIsEditMode(true);
     setModalOpen(true);
   };
 
   const handleOpenCreate = () => {
     setSelectedUser(null);
-    setForm({ name: "", email: "", password: "", modulePermissions: [] });
+    setForm(defaultForm);
+    setErrors({});
     setIsEditMode(false);
     setModalOpen(true);
   };
 
+  const validateForm = () => {
+    const newErrors = {};
+    if (!form.name.trim()) newErrors.name = "Name is required";
+    if (!form.email.trim()) newErrors.email = "Email is required";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
+      newErrors.email = "Invalid email format";
+    if (!isEditMode && !form.password.trim())
+      newErrors.password = "Password is required";
+    if (!isEditMode && currentUser?.role === "admin" && !form.businessId)
+      newErrors.businessId = "Please select a business";
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleModalSave = async () => {
+    if (!validateForm()) return;
     setLoading(true);
     let res = null;
     if (isEditMode) {
@@ -174,251 +229,148 @@ export default function UsersPage() {
         form.email,
         form.password,
         "staff",
-        currentUser.business._id
+        currentUser?.role === "admin"
+          ? form.businessId
+          : currentUser.business._id
       );
     }
-    if (!res.error) {
-      await fetchUsers();
-    }
-
+    if (!res.error) await fetchUsers();
     setModalOpen(false);
-
     setLoading(false);
   };
 
   const handleDelete = async () => {
     const res = await deleteUser(selectedUser._id);
-    if (!res.error) {
-      await fetchUsers();
-    }
+    if (!res.error) await fetchUsers();
     setDeleteConfirm(false);
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const togglePermission = (key) => {
-    setForm((prev) => {
-      const exists = prev.modulePermissions.includes(key);
-      return {
-        ...prev,
-        modulePermissions: exists
-          ? prev.modulePermissions.filter((k) => k !== key)
-          : [...prev.modulePermissions, key],
-      };
-    });
-  };
+  const renderUserCard = (user, isSelf = false) => (
+    <Box
+      key={user._id || "self"}
+      sx={{ width: { xs: "100%", sm: 300 }, flexShrink: 0 }}
+    >
+      <Card elevation={3} sx={{ p: 0, display: "flex", flexDirection: "column", borderRadius: 2, height: "100%" }}>
+        <CardContent sx={{ p: 2, flexGrow: 1 }}>
+          <Stack direction="row" spacing={2} alignItems="flex-start">
+            <Avatar sx={{ width: 56, height: 56 }}>{user.name?.[0]}</Avatar>
+            <Box sx={{ flexGrow: 1, ...wrapTextBox }}>
+              <Typography variant="h6">{user.name}</Typography>
+              <Typography variant="body2" color="text.secondary">{user.email}</Typography>
+              <Chip label={user.role.charAt(0).toUpperCase() + user.role.slice(1)} color={getRoleColor(user.role)} size="small" sx={{ mt: 0.5 }} />
+            </Box>
+          </Stack>
+        </CardContent>
+        <CardActions sx={{ px: 2, pb: 2, pt: 0, justifyContent: "flex-end", mt: "auto" }}>
+          <Tooltip title={t.edit}>
+            <IconButton color="primary" onClick={() => handleOpenEdit(user)}>
+              <ICONS.edit />
+            </IconButton>
+          </Tooltip>
+          {!isSelf && currentUser?.role !== "staff" && (
+            <Tooltip title={t.delete}>
+              <IconButton color="error" onClick={() => { setSelectedUser(user); setDeleteConfirm(true); }}>
+                <ICONS.delete />
+              </IconButton>
+            </Tooltip>
+          )}
+        </CardActions>
+      </Card>
+    </Box>
+  );
 
   return (
     <Container dir={dir}>
       <BreadcrumbsNav />
-      <Box
-        sx={{
-          display: "flex",
-          flexDirection: { xs: "column", sm: "row" },
-          justifyContent: "space-between",
-          alignItems: { xs: "flex-start", sm: "center" },
-          mb: 1,
-          gap: 1,
-        }}
-      >
+      <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, justifyContent: "space-between", alignItems: { xs: "flex-start", sm: "center" }, mb: 1, gap: 1 }}>
         <Box>
-          <Typography
-            variant="h4"
-            fontWeight="bold"
-            gutterBottom
-            textAlign={align}
-          >
-            {t.title}
-          </Typography>
-          <Typography variant="body1" color="text.secondary" textAlign={align}>
-            {t.subtitle}
-          </Typography>
+          <Typography variant="h4" fontWeight="bold" gutterBottom textAlign={align}>{t.title}</Typography>
+          <Typography variant="body1" color="text.secondary" textAlign={align}>{t.subtitle}</Typography>
         </Box>
-
-        {isBusinessUser && (
-          <Button
-            variant="contained"
-            sx={getStartIconSpacing(dir)}
-            startIcon={<ICONS.add />}
-            onClick={handleOpenCreate}
-          >
-            {t.createStaffUser}
-          </Button>
-        )}
+        <Button variant="contained" sx={getStartIconSpacing(dir)} startIcon={<ICONS.add />} onClick={handleOpenCreate}>{t.createStaffUser}</Button>
       </Box>
-
       <Divider sx={{ mb: 3 }} />
+      {Object.entries(groupedUsers).map(([group, users]) => (
+        <Box key={group} sx={{ mb: 4 }}>
+          <Typography variant="h6" gutterBottom>{group}</Typography>
+          <Grid container spacing={3} justifyContent="center">
+            {isBusinessUser && group === currentUser.business.name && renderUserCard(currentUser, true)}
+            {users.map((user) => renderUserCard(user))}
+          </Grid>
+        </Box>
+      ))}
 
-      <Grid container spacing={3} justifyContent={"center"}>
-        {users?.map((user) => (
-          <Box
-            key={user._id}
-            sx={{
-              width: { xs: "100%", sm: 300 },
-              flexShrink: 0,
-            }}
-          >
-            <Card
-              elevation={3}
-              sx={{
-                p: 2,
-                height: "100%",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                borderRadius: 2,
-              }}
-            >
-              <Stack
-                direction="row"
-                spacing={2}
-                alignItems="center"
-                flexWrap="wrap"
-              >
-                <Avatar sx={{ width: 56, height: 56 }}>{user.name?.[0]}</Avatar>
-
-                <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-                  <Typography variant="h6" noWrap>
-                    {user.name}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" noWrap>
-                    {user.email}
-                  </Typography>
-                  <Box sx={{ mt: 0.5 }}>
-                    <Chip
-                      label={
-                        user.role.charAt(0).toUpperCase() + user.role.slice(1)
-                      }
-                      color={getRoleColor(user.role)}
-                      size="small"
-                      variant="outlined"
-                    />
-                  </Box>
-                </Box>
-              </Stack>
-
-              <Box
-                sx={{
-                  mt: 2,
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  gap: 1,
-                  flexWrap: "wrap",
-                }}
-              >
-                <Tooltip title={t.edit}>
-                  <IconButton
-                    color="primary"
-                    onClick={() => handleOpenEdit(user)}
-                  >
-                    <ICONS.edit />
-                  </IconButton>
-                </Tooltip>
-                {((currentUser?.role === "admin" &&
-                  (user.role === "business" || user.role === "staff")) ||
-                  (currentUser?.role === "business" &&
-                    user.role === "staff")) && (
-                  <Tooltip title={t.delete}>
-                    <IconButton
-                      color="error"
-                      onClick={() => {
-                        setSelectedUser(user);
-                        setDeleteConfirm(true);
-                      }}
-                    >
-                      <ICONS.delete />
-                    </IconButton>
-                  </Tooltip>
-                )}
-              </Box>
-            </Card>
-          </Box>
-        ))}
-      </Grid>
-
-      <Dialog
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        fullWidth
-        dir={dir}
-      >
+      <Dialog open={modalOpen} onClose={() => setModalOpen(false)} fullWidth dir={dir}>
         <DialogTitle>{isEditMode ? t.editUser : t.createStaffUser}</DialogTitle>
         <DialogContent>
-          <TextField
-            label={t.name}
-            name="name"
-            value={form.name}
-            onChange={handleChange}
-            fullWidth
-            margin="normal"
-          />
-          <TextField
-            label={t.email}
-            name="email"
-            value={form.email}
-            onChange={handleChange}
-            fullWidth
-            margin="normal"
-          />
-          <TextField
-            label={t.password}
-            name="password"
-            value={form.password}
-            onChange={handleChange}
-            fullWidth
-            margin="normal"
-            type="password"
-          />
+          {["name", "email", "password"].map((field) => (
+            <TextField
+              key={field}
+              label={t[field]}
+              name={field}
+              value={form[field]}
+              onChange={(e) => setForm((prev) => ({ ...prev, [field]: e.target.value }))}
+              fullWidth
+              margin="normal"
+              type={field === "password" ? "password" : "text"}
+              error={!!errors[field]}
+              helperText={errors[field] || ""}
+            />
+          ))}
 
-          {(selectedUser?.role === "business" ||
-            selectedUser?.role === "staff" ||
-            !selectedUser) && (
+          {currentUser?.role === "admin" && !isEditMode && (
+            <FormControl fullWidth margin="normal" error={!!errors.businessId}>
+              <InputLabel id="business-select-label">Select Business</InputLabel>
+              <Select
+                labelId="business-select-label"
+                value={form.businessId || ""}
+                label="Select Business"
+                onChange={(e) => setForm((prev) => ({ ...prev, businessId: e.target.value }))}
+              >
+                <MenuItem value=""><em>-- Select --</em></MenuItem>
+                {businesses.map((biz) => (
+                  <MenuItem key={biz._id} value={biz._id}>{biz.name}</MenuItem>
+                ))}
+              </Select>
+              {errors.businessId && (
+                <Typography variant="caption" color="error">{errors.businessId}</Typography>
+              )}
+            </FormControl>
+          )}
+
+          {(selectedUser?.role === "business" || selectedUser?.role === "staff" || !selectedUser) && (
             <Box sx={{ mt: 3 }}>
-              <Typography variant="subtitle1" gutterBottom textAlign={align}>
-                {t.permissions}
-              </Typography>
+              <Typography variant="subtitle1" gutterBottom textAlign={align}>{t.permissions}</Typography>
               <FormGroup>
-                {(isBusinessUser ? businessUserModules : availableModules).map(
-                  (mod) => (
-                    <FormControlLabel
-                      key={mod.key}
-                      control={
-                        <Checkbox
-                          checked={form.modulePermissions.includes(mod.key)}
-                          onChange={() => togglePermission(mod.key)}
-                          disabled={
-                            isBusinessUser &&
-                            !currentUser.modulePermissions?.includes(mod.key)
-                          }
-                        />
-                      }
-                      label={mod.labels?.[language] || mod.key}
-                    />
-                  )
-                )}
+                {(isBusinessUser
+                  ? availableModules.filter((m) => currentUser.modulePermissions?.includes(m.key))
+                  : availableModules).map((mod) => (
+                  <FormControlLabel
+                    key={mod.key}
+                    control={
+                      <Checkbox
+                        checked={form.modulePermissions.includes(mod.key)}
+                        onChange={() => {
+                          const exists = form.modulePermissions.includes(mod.key);
+                          setForm((prev) => ({
+                            ...prev,
+                            modulePermissions: exists
+                              ? prev.modulePermissions.filter((k) => k !== mod.key)
+                              : [...prev.modulePermissions, mod.key],
+                          }));
+                        }}
+                      />
+                    }
+                    label={mod.labels?.[language] || mod.key}
+                  />
+                ))}
               </FormGroup>
             </Box>
           )}
         </DialogContent>
         <DialogActions>
-          <Button
-            disabled={loading}
-            startIcon={<ICONS.cancel />}
-            onClick={() => setModalOpen(false)}
-            sx={getStartIconSpacing(dir)}
-          >
-            {t.cancel}
-          </Button>
-          <Button
-            variant="contained"
-            onClick={handleModalSave}
-            disabled={loading}
-            startIcon={<ICONS.save />}
-            sx={getStartIconSpacing(dir)}
-          >
+          <Button disabled={loading} startIcon={<ICONS.cancel />} onClick={() => setModalOpen(false)} sx={getStartIconSpacing(dir)}>{t.cancel}</Button>
+          <Button variant="contained" onClick={handleModalSave} disabled={loading} startIcon={<ICONS.save />} sx={getStartIconSpacing(dir)}>
             {loading ? (isEditMode ? t.saving : t.creating) : t.save}
           </Button>
         </DialogActions>
@@ -427,7 +379,7 @@ export default function UsersPage() {
       <ConfirmationDialog
         open={deleteConfirm}
         title={t.deleteConfirm}
-        message={`${t.deleteMessagePrefix}`}
+        message={selectedUser?.role === "staff" ? t.deleteStaffMessage : t.deleteMessagePrefix}
         onClose={() => setDeleteConfirm(false)}
         onConfirm={handleDelete}
         confirmButtonText={t.delete}
