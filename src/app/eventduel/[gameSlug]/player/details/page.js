@@ -57,10 +57,8 @@ export default function NamePage() {
     const response = await joinGameSession(form);
 
     if (!response.error) {
-      // Store for later use
-      localStorage.setItem("playerInfo", JSON.stringify(form));
-      localStorage.setItem("playerId", response.player._id);
-      localStorage.setItem("sessionId", response.sessionId);
+      sessionStorage.setItem("playerId", response.player._id);
+      sessionStorage.setItem("sessionId", response.session._id);
 
       router.push(`/eventduel/${game.slug}/instructions`);
     }
@@ -151,6 +149,16 @@ export default function NamePage() {
             }}
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
+          />
+
+          <TextField
+            label={t.companyLabel}
+            fullWidth
+            sx={{
+              mb: 3,
+            }}
+            value={form.company}
+            onChange={(e) => setForm({ ...form, company: e.target.value })}
           />
 
           <Button

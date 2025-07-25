@@ -40,20 +40,23 @@ const gameInstructionsTranslations = {
 export default function InstructionsPage() {
   const router = useRouter();
   const { game, loading } = useGame();
-  const [playerInfo, setPlayerInfo] = useState(null);
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
   const { t, dir, align, language } = useI18nLayout(
     gameInstructionsTranslations
   );
+
   useEffect(() => {
-    const stored = localStorage.getItem("playerInfo");
-    if (stored) setPlayerInfo(JSON.parse(stored));
+    const stored = sessionStorage.getItem("selectedPlayer");
+    if (stored === "p1" || stored === "p2") {
+      setSelectedPlayer(stored);
+    }
   }, []);
 
   const handleStart = () => {
     router.push(`/eventduel/${game.slug}/play`);
   };
 
-  if (loading || !game || !playerInfo) {
+  if (loading || !game || !selectedPlayer) {
     return (
       <Box
         sx={{
@@ -127,23 +130,21 @@ export default function InstructionsPage() {
             {game.title}
           </Typography>
 
-          <Typography
-            variant="h4"
-            sx={{ mb: 4 }}
-            dir={dir}
-          >
-            {gameInstructionsTranslations[language].welcome}{" "}
-            <Box component="span" fontWeight={600}>
-              {playerInfo.name}
-            </Box>{" "}
-            {gameInstructionsTranslations[language].instructionsTitle}
-          </Typography>
+          <Box dir={dir} sx={{ textAlign: "center", mb: 4 }}>
+            <Typography variant="h5" gutterBottom>
+              {gameInstructionsTranslations[language].welcome}
+            </Typography>
 
-          <Stack
-            spacing={2}
-            sx={{ mb: 4 }}
-            alignItems={align}
-          >
+            <Typography variant="h3" fontWeight={700} gutterBottom>
+              {selectedPlayer === "p1" ? "Player 1" : "Player 2"}
+            </Typography>
+
+            <Typography variant="h6">
+              {gameInstructionsTranslations[language].instructionsTitle}
+            </Typography>
+          </Box>
+
+          <Stack spacing={2} sx={{ mb: 4 }} alignItems={align}>
             <Stack
               direction={language === "ar" ? "row-reverse" : "row"}
               alignItems="center"
@@ -173,11 +174,7 @@ export default function InstructionsPage() {
             </Stack>
           </Stack>
 
-          <Button
-            variant="contained"
-            size="large"
-            onClick={handleStart}
-          >
+          <Button variant="contained" size="large" onClick={handleStart}>
             {gameInstructionsTranslations[language].startButton}
           </Button>
         </Paper>

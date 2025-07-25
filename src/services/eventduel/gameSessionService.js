@@ -65,7 +65,6 @@ export const submitPvPResult = withApiHandler(
     );
     return data;
   },
-  { showSuccess: true}
 );
 
 // Get leaderboard for a game

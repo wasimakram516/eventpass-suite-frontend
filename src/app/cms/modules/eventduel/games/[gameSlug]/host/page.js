@@ -417,27 +417,6 @@ export default function HostDashboard() {
                   </Typography>
                 </Box>
 
-                <Box
-                  display="inline-flex"
-                  alignItems="center"
-                  gap={1}
-                  sx={{
-                    backgroundColor: "rgba(255,255,255,0.2)",
-                    px: 2,
-                    py: 0.5,
-                    borderRadius: 2,
-                    mb: 2,
-                    cursor: "pointer",
-                    fontSize: "0.9rem",
-                  }}
-                  onClick={() => navigator.clipboard.writeText(session._id)}
-                >
-                  <ICONS.copy fontSize="small" />
-                  <Typography variant="body2" color="#fff">
-                    {t.sessionId}: <b>{session?._id}</b>
-                  </Typography>
-                </Box>
-
                 {/* Player 1 */}
                 <Box
                   display="flex"
