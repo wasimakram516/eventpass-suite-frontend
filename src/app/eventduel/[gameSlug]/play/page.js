@@ -143,7 +143,10 @@ export default function PlayPage() {
     ]);
     setTranslatedContent({
       question: q || questionObj.question,
-      answers: answers.length === questionObj.answers.length ? answers : questionObj.answers,
+      answers:
+        answers.length === questionObj.answers.length
+          ? answers
+          : questionObj.answers,
       hint: hint || questionObj.hint,
       uiLabels: {
         questionLabel: t.question,
@@ -165,14 +168,17 @@ export default function PlayPage() {
 
     const iv = setInterval(() => {
       if (inCountdown) {
-        if (--countdown <= 0) {
+        countdown--;
+        if (countdown <= 0) {
           inCountdown = false;
+          setLocalDelay(0); // ensure it flips to zero
           setLocalTime(duration);
         } else {
           setLocalDelay(countdown);
         }
       } else {
-        if (--duration <= 0) {
+        duration--;
+        if (duration <= 0) {
           clearInterval(iv);
           submitFinalResult();
         } else {
@@ -180,6 +186,7 @@ export default function PlayPage() {
         }
       }
     }, 1000);
+
     return () => clearInterval(iv);
   }, [activeSession]);
 
