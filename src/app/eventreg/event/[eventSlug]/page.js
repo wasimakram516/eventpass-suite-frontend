@@ -104,7 +104,7 @@ export default function EventDetails() {
         justifyContent: "center",
         minHeight: "100vh",
         px: 2,
-        my: { xs: 2, md: 4 },
+        py: { xs: 2, md: 4 },
         position: "relative",
       }}
     >
@@ -217,20 +217,11 @@ export default function EventDetails() {
                     variant="h6"
                     sx={{
                       fontSize: { xs: 16, md: 20 },
-                      display: { xs: "block", sm: "none" },
                     }}
                   >
                     {t.to}
                   </Typography>
-                  <Typography
-                    variant="h6"
-                    sx={{
-                      fontSize: { xs: 16, md: 20 },
-                      display: { xs: "none", sm: "block" },
-                    }}
-                  >
-                    –
-                  </Typography>
+                  
                   <Typography
                     variant="h6"
                     sx={{ fontSize: { xs: 16, md: 20 } }}
@@ -309,7 +300,7 @@ export default function EventDetails() {
           </Typography>
         </Stack>
       </Paper>
-      <LanguageSelector top={0} right={20} />
+      <LanguageSelector top={20} right={20} />
     </Box>
   );
 }

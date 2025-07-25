@@ -27,6 +27,7 @@ import { createRegistration } from "@/services/eventreg/registrationService";
 import { getPublicEventBySlug } from "@/services/eventreg/eventService";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { translateText } from "@/services/translationService";
 
 export default function Registration() {
   const { eventSlug } = useParams();
@@ -89,6 +90,8 @@ export default function Registration() {
   const [dynamicFields, setDynamicFields] = useState([]);
   const [formData, setFormData] = useState({});
   const [fieldErrors, setFieldErrors] = useState({});
+  const [translations, setTranslations] = useState({});
+  const [translationsReady, setTranslationsReady] = useState(false);
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -104,6 +107,13 @@ export default function Registration() {
   useEffect(() => {
     if (!event) return;
 
+    const defaultFields = [
+      { name: "fullName", label: "Full Name", type: "text", required: true },
+      { name: "phone", label: "Phone Number", type: "text", required: true },
+      { name: "email", label: "Email", type: "text", required: true },
+      { name: "company", label: "Company", type: "text", required: false },
+    ];
+
     const fields = event.formFields?.length
       ? event.formFields.map((f) => ({
           name: f.inputName,
@@ -112,18 +122,43 @@ export default function Registration() {
           options: f.values || [],
           required: f.required,
         }))
-      : [
-          { name: "fullName", label: "fullName", type: "text", required: true },
-          { name: "phone", label: "phone", type: "text", required: true },
-          { name: "email", label: "email", type: "text", required: true },
-          { name: "company", label: "company", type: "text", required: false },
-        ];
+      : defaultFields;
 
     const initial = {};
     fields.forEach((f) => (initial[f.name] = ""));
     setDynamicFields(fields);
     setFormData(initial);
-  }, [event]);
+
+    const translateAll = async () => {
+      // Always use explicit language code
+      const targetLang = dir === "rtl" ? "ar" : "en";
+      const translations = {};
+      const textsToTranslate = new Set();
+      fields.forEach((field) => {
+        textsToTranslate.add(field.label);
+        if (field.options?.length) {
+          field.options.forEach((opt) => textsToTranslate.add(opt));
+        }
+      });
+      const textArray = Array.from(textsToTranslate);
+      const translationResults = await Promise.all(
+        textArray.map((text) => {
+          console.log(text, targetLang);
+          return translateText(text, targetLang);
+        })
+      );
+      console.log("translationResults",translationResults);
+      textArray.forEach((text, idx) => {
+        translations[text] = translationResults[idx];
+      });
+      console.log("translations receieved:",translations);
+      setTranslations(translations);
+      setTranslationsReady(true);
+    };
+
+    setTranslationsReady(false);
+    translateAll();
+  }, [event, dir]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -189,12 +224,26 @@ export default function Registration() {
     );
   }
 
+  if (!translationsReady) {
+    return (
+      <Box
+        minHeight="100vh"
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
   const renderField = (field) => {
     const errorMsg = fieldErrors[field.name];
+    const fieldLabel = translations[field.label] || field.label;
     const commonProps = {
       fullWidth: true,
       name: field.name,
-      label: t[field.label] || field.label,
+      label: fieldLabel,
       value: formData[field.name] || "",
       onChange: handleInputChange,
       error: !!errorMsg,
@@ -208,7 +257,7 @@ export default function Registration() {
           <Typography
             sx={{ mb: 1, color: errorMsg ? "error.main" : "inherit" }}
           >
-            {t[field.label] || field.label}
+            {fieldLabel}
           </Typography>
           <RadioGroup
             row
@@ -221,7 +270,7 @@ export default function Registration() {
                 key={`${field.name}-${opt}`}
                 value={opt}
                 control={<Radio />}
-                label={t[opt] || opt}
+                label={translations[opt] || opt}
               />
             ))}
           </RadioGroup>
@@ -242,15 +291,16 @@ export default function Registration() {
           error={!!errorMsg}
           sx={{ mb: 2 }}
         >
-          <InputLabel>{t[field.label] || field.label}</InputLabel>
+          <InputLabel>{fieldLabel}</InputLabel>
           <Select
             name={field.name}
             value={formData[field.name]}
             onChange={handleInputChange}
+            label={fieldLabel}
           >
             {field.options.map((opt) => (
               <MenuItem key={`${field.name}-${opt}`} value={opt}>
-                {t[opt] || opt}
+                {translations[opt] || opt}
               </MenuItem>
             ))}
           </Select>
