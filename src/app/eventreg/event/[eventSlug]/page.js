@@ -14,10 +14,33 @@ import {
 import { formatDate } from "@/utils/dateUtils";
 import ICONS from "@/utils/iconUtil";
 import { getPublicEventBySlug } from "@/services/eventreg/eventService";
+import LanguageSelector from "@/components/LanguageSelector";
+import useI18nLayout from "@/hooks/useI18nLayout";
+import getStartIconSpacing from "@/utils/getStartIconSpacing";
 
 export default function EventDetails() {
   const { eventSlug } = useParams();
   const router = useRouter();
+
+  const { t, dir } = useI18nLayout({
+    en: {
+      welcome: "Welcome to",
+      thankYou:
+        "Thank you for joining us! Please register below to secure your place.",
+      registerNow: "Register Now",
+      takesSeconds: "Takes only 5 seconds!",
+      dateNotAvailable: "Date not available",
+      to: "to",
+    },
+    ar: {
+      welcome: "مرحبًا في",
+      thankYou: "شكرًا لانضمامك إلينا! يرجى التسجيل أدناه لتأمين مكانك.",
+      registerNow: "سجل الآن",
+      takesSeconds: "يستغرق فقط 5 ثوانٍ!",
+      dateNotAvailable: "التاريخ غير متوفر",
+      to: "إلى",
+    },
+  });
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -74,12 +97,15 @@ export default function EventDetails() {
 
   return (
     <Box
+      dir={dir}
       sx={{
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         minHeight: "100vh",
         px: 2,
+        my: { xs: 2, md: 4 },
+        position: "relative",
       }}
     >
       <Paper
@@ -123,17 +149,28 @@ export default function EventDetails() {
             },
           }}
         >
-          Welcome to {name}
+          {t.welcome} {name}
         </Typography>
 
         <Stack
           direction="row"
-          spacing={1}
+          spacing={dir === "ltr" ? 1 : 0}
           justifyContent="center"
           alignItems="center"
           mb={1}
         >
-          <ICONS.location sx={{ color: "primary.main" }} />
+          <Box component="span" sx={{ display: "flex", color: "primary.main" }}>
+            <ICONS.location />
+          </Box>
+          {dir === "rtl" && (
+            <Box
+              component="span"
+              sx={{
+                width: "8px",
+                display: "inline-block",
+              }}
+            />
+          )}
           <Typography variant="h6" sx={{ fontSize: { xs: 16, md: 20 } }}>
             {venue}
           </Typography>
@@ -141,19 +178,73 @@ export default function EventDetails() {
 
         <Stack
           direction="row"
-          spacing={1}
+          spacing={dir === "ltr" ? 1 : 0}
           justifyContent="center"
           alignItems="center"
           mb={3}
         >
-          <ICONS.event sx={{ color: "primary.main" }} />
-          <Typography variant="h6" sx={{ fontSize: { xs: 16, md: 20 } }}>
-            {startDate && endDate
-              ? startDate === endDate
-                ? formatDate(startDate)
-                : `${formatDate(startDate)} – ${formatDate(endDate)}`
-              : "Date not available"}
-          </Typography>
+          <Box component="span" sx={{ display: "flex", color: "primary.main" }}>
+            <ICONS.event />
+          </Box>
+          {dir === "rtl" && (
+            <Box
+              component="span"
+              sx={{
+                width: "8px",
+                display: "inline-block",
+              }}
+            />
+          )}
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={1}
+            alignItems="center"
+          >
+            {startDate && endDate ? (
+              startDate === endDate ? (
+                <Typography variant="h6" sx={{ fontSize: { xs: 16, md: 20 } }}>
+                  {formatDate(startDate)}
+                </Typography>
+              ) : (
+                <>
+                  <Typography
+                    variant="h6"
+                    sx={{ fontSize: { xs: 16, md: 20 } }}
+                  >
+                    {formatDate(startDate)}
+                  </Typography>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontSize: { xs: 16, md: 20 },
+                      display: { xs: "block", sm: "none" },
+                    }}
+                  >
+                    {t.to}
+                  </Typography>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontSize: { xs: 16, md: 20 },
+                      display: { xs: "none", sm: "block" },
+                    }}
+                  >
+                    –
+                  </Typography>
+                  <Typography
+                    variant="h6"
+                    sx={{ fontSize: { xs: 16, md: 20 } }}
+                  >
+                    {formatDate(endDate)}
+                  </Typography>
+                </>
+              )
+            ) : (
+              <Typography variant="h6" sx={{ fontSize: { xs: 16, md: 20 } }}>
+                {t.dateNotAvailable}
+              </Typography>
+            )}
+          </Stack>
         </Stack>
 
         <Typography
@@ -164,7 +255,7 @@ export default function EventDetails() {
             mb: 4,
           }}
         >
-          Thank you for joining us! Please register below to secure your place.
+          {t.thankYou}
         </Typography>
 
         <Button
@@ -188,24 +279,37 @@ export default function EventDetails() {
               background: "secondary.main",
               transform: "scale(1.05)",
             },
+            ...getStartIconSpacing(dir),
           }}
         >
-          Register Now
+          {t.registerNow}
         </Button>
 
         <Stack
           direction="row"
+          spacing={dir === "ltr" ? 1 : 0}
           justifyContent="center"
           alignItems="center"
-          spacing={1}
           mt={3}
         >
-          <ICONS.time fontSize="small" sx={{ color: "primary.main" }} />
+          <Box component="span" sx={{ display: "flex", color: "primary.main" }}>
+            <ICONS.time fontSize="small" />
+          </Box>
+          {dir === "rtl" && (
+            <Box
+              component="span"
+              sx={{
+                width: "8px",
+                display: "inline-block",
+              }}
+            />
+          )}
           <Typography variant="caption" fontSize={14}>
-            Takes only 5 seconds!
+            {t.takesSeconds}
           </Typography>
         </Stack>
       </Paper>
+      <LanguageSelector top={0} right={20} />
     </Box>
   );
 }

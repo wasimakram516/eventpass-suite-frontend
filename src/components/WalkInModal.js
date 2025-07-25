@@ -16,6 +16,7 @@ import {
 } from "@mui/material";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import getStartIconSpacing from "@/utils/getStartIconSpacing";
 
 const WalkInModal = ({ open, onClose, registration }) => {
   const { t, dir, isArabic } = useI18nLayout({
@@ -52,13 +53,9 @@ const WalkInModal = ({ open, onClose, registration }) => {
                     <ICONS.checkCircle color="success" />
                   </ListItemIcon>
                   <ListItemText
-                    primary={
-                      `${t.scannedBy}: ${
-                        walk.scannedBy?.name ||
-                        walk.scannedBy?.email ||
-                        "Unknown"
-                      }`
-                    }
+                    primary={`${t.scannedBy}: ${
+                      walk.scannedBy?.name || walk.scannedBy?.email || "Unknown"
+                    }`}
                     secondary={`${t.scannedAt}: ${new Date(
                       walk.scannedAt
                     ).toLocaleString()}`}
@@ -76,7 +73,11 @@ const WalkInModal = ({ open, onClose, registration }) => {
         )}
       </DialogContent>
       <DialogActions sx={{ justifyContent: "center" }}>
-        <Button onClick={onClose} startIcon={<ICONS.close />}>
+        <Button
+          onClick={onClose}
+          startIcon={<ICONS.close />}
+          sx={getStartIconSpacing(dir)}
+        >
           {t.close}
         </Button>
       </DialogActions>

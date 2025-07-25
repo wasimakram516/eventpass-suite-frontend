@@ -37,10 +37,10 @@ import WalkInModal from "@/components/WalkInModal";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import NoDataAvailable from "@/components/NoDataAvailable";
+import { wrapTextBox } from "@/utils/wrapTextStyles";
 
 export default function ViewRegistrations() {
   const { eventSlug } = useParams();
-  const router = useParams();
 
   const [eventDetails, setEventDetails] = useState(null);
   const [dynamicFields, setDynamicFields] = useState([]);
@@ -55,7 +55,7 @@ export default function ViewRegistrations() {
   const [walkInModalOpen, setWalkInModalOpen] = useState(false);
   const [selectedRegistration, setSelectedRegistration] = useState(null);
 
-  const { dir, align, isArabic, t } = useI18nLayout({
+  const { dir, t } = useI18nLayout({
     en: {
       title: "Event Details",
       description:
@@ -65,10 +65,10 @@ export default function ViewRegistrations() {
       noRecords: "No registrations found for this event.",
       delete: "Delete Registration",
       deleteMessage: "Are you sure you want to delete this registration?",
-      name: "Full Name",
-      email: "Email:",
-      phone: "Phone:",
-      company: "Company:",
+      fullName: "Full Name",
+      emailLabel: "Email",
+      phoneLabel: "Phone",
+      companyLabel: "Company",
       viewWalkIns: "View Walk-in Records",
       deleteRecord: "Delete Registration",
       recordsPerPage: "Records per page",
@@ -85,10 +85,10 @@ export default function ViewRegistrations() {
       noRecords: "لا توجد تسجيلات لهذا الحدث.",
       delete: "حذف التسجيل",
       deleteMessage: "هل أنت متأكد أنك تريد حذف هذا التسجيل؟",
-      name: "الاسم الكامل",
-      email: "البريد الإلكتروني:",
-      phone: "الهاتف:",
-      company: "الشركة:",
+      fullName: "الاسم الكامل",
+      emailLabel: "البريد الإلكتروني",
+      phoneLabel: "الهاتف",
+      companyLabel: "الشركة",
       viewWalkIns: "عرض سجلات الحضور",
       deleteRecord: "حذف التسجيل",
       recordsPerPage: "عدد السجلات لكل صفحة",
@@ -98,7 +98,6 @@ export default function ViewRegistrations() {
     },
   });
 
-  // fetch event metadata and registrations
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -110,17 +109,16 @@ export default function ViewRegistrations() {
 
       if (!evRes?.error) {
         setEventDetails(evRes);
-        // normalize custom fields
         const fields = evRes.formFields?.length
           ? evRes.formFields.map((f) => ({
               name: f.inputName,
               label: f.inputName,
             }))
           : [
-              { name: "fullName", label: t.name },
-              { name: "email", label: t.email },
-              { name: "phone", label: t.phone },
-              { name: "company", label: t.company },
+              { name: "fullName", label: "fullName" },
+              { name: "email", label: "emailLabel" },
+              { name: "phone", label: "phoneLabel" },
+              { name: "company", label: "companyLabel" },
             ];
         setDynamicFields(fields);
       }
@@ -298,6 +296,7 @@ export default function ViewRegistrations() {
             value={limit}
             onChange={handleLimitChange}
             label={t.recordsPerPage}
+            sx={{ pr: dir === "rtl" ? 1 : undefined }}
           >
             {[5, 10, 20, 50, 100, 250, 500].map((n) => (
               <MenuItem key={n} value={n}>
@@ -314,12 +313,22 @@ export default function ViewRegistrations() {
         <>
           <Grid container spacing={4} justifyContent="center">
             {registrations.map((reg) => (
-              <Grid item xs={12} sm={6} md={4} key={reg._id}>
+              <Grid
+                item
+                xs={12}
+                sm={6}
+                md={4}
+                key={reg._id}
+                sx={{
+                  display: { xs: "flex", sm: "block" },
+                  width: { xs: "100%", sm: "auto" },
+                }}
+              >
                 <Card
                   sx={{
                     width: "100%",
-                    minWidth: 250,
-                    maxWidth: 360,
+                    minWidth: { sm: 250 },
+                    maxWidth: { sm: 360 },
                     boxShadow: 3,
                     borderRadius: 2,
                     height: "100%",
@@ -330,8 +339,12 @@ export default function ViewRegistrations() {
                 >
                   <CardContent>
                     {dynamicFields.map((f) => (
-                      <Typography key={f.name} variant="body2" sx={{ mt: 1 }}>
-                        <strong>{f.label}</strong>{" "}
+                      <Typography
+                        key={f.name}
+                        variant="body2"
+                        sx={{ mt: 1, ...wrapTextBox }}
+                      >
+                        <strong>{t[f.label]}</strong>{" "}
                         {reg.customFields?.[f.name] ?? reg[f.name] ?? "N/A"}
                       </Typography>
                     ))}
@@ -367,6 +380,7 @@ export default function ViewRegistrations() {
 
           <Box display="flex" justifyContent="center" mt={4}>
             <Pagination
+              dir="ltr"
               count={Math.ceil(totalRegistrations / limit)}
               page={page}
               onChange={handlePageChange}
