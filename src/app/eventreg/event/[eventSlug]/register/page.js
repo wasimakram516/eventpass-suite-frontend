@@ -143,15 +143,12 @@ export default function Registration() {
       const textArray = Array.from(textsToTranslate);
       const translationResults = await Promise.all(
         textArray.map((text) => {
-          console.log(text, targetLang);
           return translateText(text, targetLang);
         })
       );
-      console.log("translationResults",translationResults);
       textArray.forEach((text, idx) => {
         translations[text] = translationResults[idx];
       });
-      console.log("translations receieved:",translations);
       setTranslations(translations);
       setTranslationsReady(true);
     };

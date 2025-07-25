@@ -5,6 +5,5 @@ export const translateText = withApiHandler(async (text, targetLang) => {
   if (!text) return { translatedText: text };
 
   const { data } = await api.post("/translate", { text, targetLang });
-  console.log("In service:",data);
   return data;
 });
