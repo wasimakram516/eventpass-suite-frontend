@@ -1,20 +1,11 @@
 "use client";
 
-<<<<<<< Updated upstream
 import ModuleLandingPage from "@/components/ModuleLandingPage";
 import ICONS from "@/utils/iconUtil";
 
 const translations = {
   en: {
     title: "StageQ",
-=======
-import PollIcon from "@mui/icons-material/Poll";
-import ModuleLandingPage from "@/components/ModuleLandingPage";
-
-const translations = {
-  en: {
-    title: "Stageq",
->>>>>>> Stashed changes
     features: [
       "Share your business link or QR code with your audience for instant engagement",
       "Audience members scan the QR to submit new questions or vote on existing ones",
@@ -24,11 +15,7 @@ const translations = {
     ctaLabel: "Manage Event Queries",
   },
   ar: {
-<<<<<<< Updated upstream
     title: "StageQ",
-=======
-    title: "Stageq",
->>>>>>> Stashed changes
     features: [
       "شارك رابط عملك أو رمز الاستجابة السريعة مع الجمهور للتفاعل الفوري",
       "يقوم أفراد الجمهور بمسح الرمز لإرسال أسئلة جديدة أو التصويت على الأسئلة الموجودة",
@@ -41,11 +28,7 @@ const translations = {
 export default function VoteCastHome() {
   return (
     <ModuleLandingPage
-<<<<<<< Updated upstream
       moduleIcon={ICONS.forum}
-=======
-      moduleIcon={PollIcon}
->>>>>>> Stashed changes
       ctaLabel={translations.en.ctaLabel}
       ctaHref="/cms/modules/stageq/queries"
       translations={translations}
