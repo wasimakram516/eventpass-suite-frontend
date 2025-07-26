@@ -17,16 +17,17 @@ import { joinGameSession } from "@/services/eventduel/gameSessionService";
 import LanguageSelector from "@/components/LanguageSelector";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import ICONS from "@/utils/iconUtil";
+import getStartIconSpacing from "@/utils/getStartIconSpacing";
 const entryDialogTranslations = {
   en: {
     nameLabel: "Name",
     companyLabel: "Company",
-    startButton: "Start",
+    startButton: "Proceed",
   },
   ar: {
     nameLabel: "الاسم",
     companyLabel: "اسم الشركة",
-    startButton: "ابدأ",
+    startButton: "متابعة",
   },
 };
 export default function NamePage() {
@@ -167,12 +168,10 @@ export default function NamePage() {
             fullWidth
             onClick={handleSubmit}
             disabled={submitting}
-          >
-            {submitting ? (
-              <CircularProgress size={24} color="inherit" />
-            ) : (
-              t.startButton
-            )}
+            startIcon={submitting ? <CircularProgress size={24} color="inherit" />:<ICONS.next/>}
+            sx={getStartIconSpacing(dir)}
+            >
+           {t.startButton}
           </Button>
 
           {error && (

@@ -2,9 +2,9 @@ import api from "@/services/api";
 import withApiHandler from "@/utils/withApiHandler";
 
 // Get all sessions
-export const getAllSessions = withApiHandler(async (gameSlug) => {
+export const getAllSessions = withApiHandler(async (gameSlug, page = 1, limit = 5) => {
   const { data } = await api.get("/eventduel/sessions", {
-    params: { gameSlug },
+    params: { gameSlug, page, limit },
   });
   return data;
 });

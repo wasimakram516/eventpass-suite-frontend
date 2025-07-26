@@ -75,6 +75,7 @@ import {
   HowToReg as HowToRegIcon,
   QrCode as QrCodeIcon,
   AdminPanelSettings as AdminPanelSettingsIcon,
+   FlashOn as FlashOnIcon
 } from "@mui/icons-material";
 
 // Screen Sharing
@@ -183,6 +184,7 @@ const ICONS = {
   qrcode: QrCodeIcon,
   screenShare: ScreenShareIcon,
   adminPanel: AdminPanelSettingsIcon,
+  flash: FlashOnIcon,
 
   // Screen Sharing / Device Icons
   desktop: DesktopWindowsIcon,

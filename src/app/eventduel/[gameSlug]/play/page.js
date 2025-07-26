@@ -34,6 +34,7 @@ const gameTranslations = {
     thankYou: "Thank you,",
     score: "Score",
     attempted: "Attempted",
+    timeTaken: "Time Taken",
     playAgain: "Play Again",
     noQuestionsTitle: "Please wait...",
     noQuestionsMessage:
@@ -49,6 +50,10 @@ const gameTranslations = {
     finishedEarlyMessage: "You answered all questions before the time ran out.",
     finishedEarlyWaitMessage:
       "Please wait for the host to end the session to view the results.",
+    waitingTitle: "Get Ready!",
+    waitingMessage: "The game will start shortly...",
+    pendingTitle: "Waiting for Host to Start...",
+    pendingMessage: "The game will begin shortly...",
   },
   ar: {
     countdown: "ثانية",
@@ -58,6 +63,7 @@ const gameTranslations = {
     thankYou: "شكراً لك",
     score: "النقاط",
     attempted: "محاولات",
+    timeTaken: "الوقت المستغرق",
     playAgain: "العب مرة أخرى",
     noQuestionsTitle: "الرجاء الانتظار...",
     noQuestionsMessage:
@@ -73,6 +79,10 @@ const gameTranslations = {
     finishedEarlyMessage: "لقد أجبت على جميع الأسئلة قبل انتهاء الوقت.",
     finishedEarlyWaitMessage:
       "يرجى الانتظار حتى يقوم المضيف بإنهاء الجلسة لعرض النتائج.",
+    waitingTitle: "استعد!",
+    waitingMessage: "ستبدأ اللعبة قريباً...",
+    pendingTitle: "في انتظار بدء المضيف...",
+    pendingMessage: "ستبدأ اللعبة قريباً...",
   },
 };
 
@@ -94,7 +104,7 @@ export default function PlayPage() {
     () => (Array.isArray(PlayerQuestions) ? PlayerQuestions : []),
     [PlayerQuestions]
   );
-  
+
   // ─── 4. AUDIO INSTANCES ─────────────────────────────────────────────────
   const correctSound =
     typeof Audio !== "undefined" ? new Audio("/correct.wav") : null;
@@ -231,9 +241,9 @@ export default function PlayPage() {
 
     if (isCorrect) {
       scoreRef.current++;
-      correctSound?.play().catch(() => {});
+      correctSound?.play().catch(() => { });
     } else {
-      wrongSound?.play().catch(() => {});
+      wrongSound?.play().catch(() => { });
       if (currentQuestion.hint) setShowHint(true);
     }
 
@@ -246,7 +256,7 @@ export default function PlayPage() {
       if (isLast) {
         if (localTime > 0) {
           setHasFinishedEarly(true);
-          celebrateSound?.play().catch(() => {});
+          celebrateSound?.play().catch(() => { });
         }
         submitFinalResult();
       } else {
@@ -263,6 +273,7 @@ export default function PlayPage() {
   if (pendingSession) {
     return (
       <Box
+        dir={dir}
         sx={{
           position: "absolute",
           width: "100%",
@@ -280,6 +291,9 @@ export default function PlayPage() {
           px: 3,
         }}
       >
+        {/* Language Selector */}
+        <LanguageSelector top={20} right={20} />
+
         {/* Back Button */}
         <IconButton
           size="small"
@@ -298,13 +312,12 @@ export default function PlayPage() {
         {/* Loading Spinner */}
         <CircularProgress />
 
-        {/* Animated Text */}
+        {/* Animated Title */}
         <Typography
           variant="h3"
           sx={{
             my: 6,
             fontWeight: "bold",
-            color: "#fff",
             textShadow:
               "0 0 10px rgba(255,255,255,0.8), 0 0 20px rgba(0,255,255,0.6)",
             letterSpacing: "2px",
@@ -312,10 +325,10 @@ export default function PlayPage() {
             fontSize: { xs: "1.5rem", sm: "2.5rem" },
           }}
         >
-          Waiting for Host to Start...
+          {t.pendingTitle}
         </Typography>
 
-        {/* Additional Loading Message */}
+        {/* Sub-message */}
         <Typography
           variant="h6"
           sx={{
@@ -326,7 +339,7 @@ export default function PlayPage() {
             animation: "blink 1.5s infinite",
           }}
         >
-          The game will begin shortly...
+          {t.pendingMessage}
         </Typography>
       </Box>
     );
@@ -341,26 +354,64 @@ export default function PlayPage() {
           position: "relative",
           height: "100vh",
           width: "100vw",
+          background:
+            "linear-gradient(to bottom, rgba(0,0,0,0.85), rgba(0,0,0,0.65))",
+          color: "#fff",
           display: "flex",
+          flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          background:
-            "linear-gradient(to bottom, rgba(0,0,0,0.9), rgba(0,0,0,0.6))",
+          textAlign: "center",
+          backdropFilter: "blur(8px)",
+          animation: "fadeIn 1s ease-in-out",
+          px: 3,
         }}
       >
+        {/* Language switcher */}
         <LanguageSelector top={20} right={20} />
+
+        {/* Pre-game title */}
+        <Typography
+          variant="h3"
+          sx={{
+            mb: 4,
+            fontWeight: "bold",
+            textShadow:
+              "0 0 10px rgba(255,255,255,0.8), 0 0 20px rgba(0,255,255,0.6)",
+            letterSpacing: "2px",
+            animation: "pulseText 2s infinite",
+            fontSize: { xs: "1.5rem", sm: "3rem" },
+          }}
+        >
+          {t.waitingTitle}
+        </Typography>
+
+        {/* Countdown number */}
         <Typography
           variant="h1"
           sx={{
             fontWeight: "bold",
-            fontSize: "10rem",
+            fontSize: { xs: "8rem", sm: "10rem" },
             color: "warning.light",
-            textShadow:
-              "0 0 15px rgba(255,215,0,0.8), 0 0 30px rgba(255,165,0,0.6)",
+            textShadow: "0 0 20px rgba(255,215,0,0.9)",
             animation: "pulse 1s infinite alternate",
           }}
         >
           {localDelay}
+        </Typography>
+
+        {/* Subtext */}
+        <Typography
+          variant="h6"
+          sx={{
+            mt: 2,
+            opacity: 0.5,
+            fontStyle: "italic",
+            animation: "blink 1.5s infinite",
+            fontSize: { xs: "0.9rem", sm: "1.2rem" },
+          }}
+        >
+          {t.waitingMessage}
         </Typography>
       </Box>
     );
@@ -595,46 +646,42 @@ export default function PlayPage() {
   if (selectedPlayer && recentlyCompleted) {
     const currentSession = recentlyCompleted;
 
-    const isPlayer1Winner =
-      currentSession?.winner?._id ===
-      currentSession?.players?.[0]?.playerId?._id;
-    const isPlayer2Winner =
-      currentSession?.winner?._id ===
-      currentSession?.players?.[1]?.playerId?._id;
+    // 1. Lookup rather than index
+    const playerObj = currentSession.players.find(
+      (p) => p.playerType === selectedPlayer
+    );
+    const opponentObj = currentSession.players.find(
+      (p) => p.playerType !== selectedPlayer
+    );
 
-    const isWinner =
-      selectedPlayer === "p1" ? isPlayer1Winner : isPlayer2Winner;
-    const isTie = currentSession?.winner === null;
+    // 2. Tie check
+    const isTie = currentSession.winner === null;
 
-    const playerObj =
-      selectedPlayer === "p1"
-        ? currentSession.players[0]
-        : currentSession.players[1];
-    const opponentObj =
-      selectedPlayer === "p1"
-        ? currentSession.players[1]
-        : currentSession.players[0];
+    // 3. Win check
+    const isWinner = !isTie &&
+      currentSession.winner?._id === playerObj.playerId?._id;
 
+    // 4. Extract scores
     const playerScore = playerObj.score;
     const playerAttempted = playerObj.attemptedQuestions;
+    const playerTimeTaken = playerObj.timeTaken;
     const opponentScore = opponentObj.score;
     const opponentAttempted = opponentObj.attemptedQuestions;
+    const opponentTimeTaken = opponentObj.timeTaken;
 
-    const winText = t.win || "YOU WIN!";
-    const loseText = t.lose || "YOU LOSE!";
-    const tieText = t.tie || "IT'S A TIE!";
+    // 5. Headline text
+    const headlineText = isTie
+      ? t.tie
+      : isWinner
+        ? t.win
+        : t.lose;
 
-    let backgroundGradient, headlineText;
-    if (isTie) {
-      backgroundGradient = "linear-gradient(135deg, #FFC107CC, #FF9800CC)";
-      headlineText = tieText;
-    } else if (isWinner) {
-      backgroundGradient = "linear-gradient(135deg, #4CAF50CC, #388E3CCC)";
-      headlineText = winText;
-    } else {
-      backgroundGradient = "linear-gradient(135deg, #F44336CC, #E53935CC)";
-      headlineText = loseText;
-    }
+    // 6. Background gradient
+    const backgroundGradient = isTie
+      ? "linear-gradient(135deg, #FFC107CC, #FF9800CC)"
+      : isWinner
+        ? "linear-gradient(135deg, #4CAF50CC, #388E3CCC)"
+        : "linear-gradient(135deg, #F44336CC, #E53935CC)";
 
     return (
       <Box
@@ -676,31 +723,17 @@ export default function PlayPage() {
             }}
           >
             {/* Player Name */}
-            <Box sx={{ mb: 3 }}>
-              <Typography
-                variant="h3"
-                fontWeight={700}
-                sx={{ textShadow: "0 0 15px rgba(255,255,255,0.8)" }}
-              >
-                {playerObj?.playerId?.name}
-              </Typography>
-            </Box>
+            <Typography variant="h3" fontWeight={700} sx={{ mb: 3, textShadow: "0 0 15px rgba(255,255,255,0.8)" }}>
+              {playerObj?.playerId?.name}
+            </Typography>
 
             {/* Headline */}
-            <Typography
-              variant="h1"
-              sx={{
-                fontWeight: "bold",
-                mb: 3,
-                textShadow: "0 0 10px rgba(255,255,255,0.6)",
-              }}
-            >
+            <Typography variant="h1" sx={{ mb: 3, textShadow: "0 0 15px rgba(255,255,255,0.8)" }}>
               {headlineText}
             </Typography>
 
             {/* Score */}
-            <Typography
-              variant="h2"
+            <Typography variant="h2"
               sx={{
                 fontWeight: "bold",
                 mb: 1,
@@ -710,33 +743,36 @@ export default function PlayPage() {
             >
               {playerScore}
             </Typography>
-
-            <Typography variant="h5" sx={{ mb: 3 }}>
-              {t.attempted}: {playerAttempted}
+            <Typography variant="body1" sx={{ mb: 1 }}>
+              {t.attempted}: {playerAttempted}{" "}
+              <Box component="span" sx={{ mx: 1, color: "text.secondary" }}>|</Box>{" "}
+              {t.timeTaken}: {playerTimeTaken}
             </Typography>
 
+
             {/* Opponent Box */}
-            <Box
-              sx={{
-                background: "#ffffffaa",
-                backdropFilter: "blur(4px)",
-                p: 2,
-                borderRadius: 2,
-                color: "#000",
-                mb: 3,
-              }}
+            <Box sx={{
+              background: "#ffffffaa",
+              backdropFilter: "blur(4px)",
+              p: 2,
+              borderRadius: 2,
+              color: "#000",
+              mb: 3,
+            }}
             >
               <Typography variant="h6" sx={{ mb: 1 }}>
-                {t.opponent || "Opponent"}
+                {t.opponent}
               </Typography>
               <Typography variant="h4" fontWeight="bold" sx={{ mb: 1 }}>
-                {opponentObj?.playerId?.name || "N/A"}
+                {opponentObj.playerId.name}
               </Typography>
               <Typography variant="body1" sx={{ mb: 0.5 }}>
                 {t.score}: {opponentScore}
               </Typography>
-              <Typography variant="body1">
-                {t.attempted}: {opponentAttempted}
+              <Typography variant="body1" sx={{ mb: 1 }}>
+                {t.attempted}: {opponentAttempted}{" "}
+                <Box component="span" sx={{ mx: 1, color: "text.secondary" }}>|</Box>{" "}
+                {t.timeTaken}: {opponentTimeTaken}
               </Typography>
             </Box>
 
@@ -749,7 +785,7 @@ export default function PlayPage() {
               startIcon={<ICONS.replay />}
               sx={getStartIconSpacing(dir)}
             >
-              {t.playAgain || "Play Again"}
+              {t.playAgain}
             </Button>
           </Paper>
         </Fade>
