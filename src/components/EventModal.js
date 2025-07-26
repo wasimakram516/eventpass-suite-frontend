@@ -15,7 +15,7 @@ import {
   Box,
   Typography,
   IconButton,
-  Chip
+  Chip,
 } from "@mui/material";
 import { useState, useEffect } from "react";
 import slugify from "@/utils/slugify";
@@ -48,6 +48,23 @@ const translations = {
     updating: "Saving...",
     required: "Please fill all required fields.",
     invalidCapacity: "Capacity must be a positive number.",
+    useCustomFields: "Use custom registration fields?",
+    switchToClassic: "Switch to Classic Fields",
+    switchToCustom: "Switch to Custom Fields",
+    fieldLabel: "Field Label",
+    inputType: "Input Type",
+    options: "Options",
+    optionPlaceholder: "Type option and press comma",
+    requiredField: "Required",
+    remove: "Remove",
+    addField: "Add Field",
+    classicFieldsNote:
+      "Classic registration fields (fullName, email, phone) will be used.",
+    textType: "Text",
+    numberType: "Number",
+    radioType: "Radio",
+    listType: "List",
+    downloadTemplateError: "Failed to download template.",
   },
   ar: {
     createTitle: "إنشاء فعالية",
@@ -72,6 +89,23 @@ const translations = {
     updating: "جارٍ الحفظ...",
     required: "يرجى تعبئة جميع الحقول المطلوبة.",
     invalidCapacity: "يجب أن تكون السعة رقماً موجباً.",
+    useCustomFields: "استخدم حقول التسجيل المخصصة؟",
+    switchToClassic: "التحويل إلى الحقول الكلاسيكية",
+    switchToCustom: "التحويل إلى الحقول المخصصة",
+    fieldLabel: "تسمية الحقل",
+    inputType: "نوع الإدخال",
+    options: "الخيارات",
+    optionPlaceholder: "اكتب الخيار واضغط فاصلة",
+    requiredField: "إلزامي",
+    remove: "إزالة",
+    addField: "إضافة حقل",
+    classicFieldsNote:
+      "سيتم استخدام الحقول الكلاسيكية (الاسم الكامل، البريد الإلكتروني، الهاتف).",
+    textType: "نص",
+    numberType: "رقم",
+    radioType: "اختيار",
+    listType: "قائمة",
+    downloadTemplateError: "فشل في تحميل القالب.",
   },
 };
 
@@ -226,7 +260,7 @@ const EventModal = ({
       link.click();
       document.body.removeChild(link);
     } catch (error) {
-      showMessage("Failed to download template.", "error");
+      showMessage(t.downloadTemplateError, "error");
     }
   };
 
@@ -436,7 +470,7 @@ const EventModal = ({
           {formData.eventType === "public" && (
             <>
               <Typography variant="subtitle2" color="primary">
-                Use custom registration fields?
+                {t.useCustomFields}
               </Typography>
               <Button
                 variant="outlined"
@@ -448,8 +482,8 @@ const EventModal = ({
                 }
               >
                 {formData.useCustomFields
-                  ? "Switch to Classic Fields"
-                  : "Switch to Custom Fields"}
+                  ? t.switchToClassic
+                  : t.switchToCustom}
               </Button>
 
               {formData.useCustomFields ? (
@@ -465,7 +499,7 @@ const EventModal = ({
                       }}
                     >
                       <TextField
-                        label="Field Label"
+                        label={t.fieldLabel}
                         value={field.inputName}
                         onChange={(e) =>
                           handleFormFieldChange(
@@ -477,7 +511,7 @@ const EventModal = ({
                         fullWidth
                       />
                       <TextField
-                        label="Input Type"
+                        label={t.inputType}
                         select
                         SelectProps={{ native: true }}
                         value={field.inputType}
@@ -490,16 +524,23 @@ const EventModal = ({
                         }
                         fullWidth
                       >
-                        {["text", "number", "radio", "list"].map((type) => (
-                          <option key={type} value={type}>
-                            {type}
+                        {[
+                          { value: "text", label: t.textType },
+                          { value: "number", label: t.numberType },
+                          { value: "radio", label: t.radioType },
+                          { value: "list", label: t.listType },
+                        ].map((type) => (
+                          <option key={type.value} value={type.value}>
+                            {type.label}
                           </option>
                         ))}
                       </TextField>
                       {(field.inputType === "radio" ||
                         field.inputType === "list") && (
                         <Box>
-                          <Typography variant="subtitle2">Options</Typography>
+                          <Typography variant="subtitle2">
+                            {t.options}
+                          </Typography>
                           <Box
                             sx={{
                               display: "flex",
@@ -527,7 +568,7 @@ const EventModal = ({
                             ))}
                           </Box>
                           <TextField
-                            placeholder="Type option and press comma"
+                            placeholder={t.optionPlaceholder}
                             value={field._temp || ""}
                             onChange={(e) => {
                               const newValue = e.target.value;
@@ -565,7 +606,7 @@ const EventModal = ({
                               )
                             }
                           />{" "}
-                          Required
+                          {t.requiredField}
                         </label>
                         <Button
                           size="small"
@@ -573,19 +614,18 @@ const EventModal = ({
                           color="error"
                           onClick={() => removeFormField(index)}
                         >
-                          Remove
+                          {t.remove}
                         </Button>
                       </Box>
                     </Box>
                   ))}
                   <Button onClick={addFormField} variant="outlined">
-                    Add Field
+                    {t.addField}
                   </Button>
                 </>
               ) : (
                 <Typography variant="body2" sx={{ fontStyle: "italic" }}>
-                  Classic registration fields (fullName, email, phone) will be
-                  used.
+                  {t.classicFieldsNote}
                 </Typography>
               )}
             </>

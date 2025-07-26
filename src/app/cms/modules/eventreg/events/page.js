@@ -36,10 +36,11 @@ import {
 } from "@/services/eventreg/eventService";
 import EmptyBusinessState from "@/components/EmptyBusinessState";
 import NoDataAvailable from "@/components/NoDataAvailable";
+import getStartIconSpacing from "@/utils/getStartIconSpacing";
 
 const translations = {
   en: {
-    pageTitle: "Events for",
+    pageTitle: "Manage Events",
     pageDescription: "Manage all public registration events for this business.",
     createEvent: "Create Event",
     selectBusiness: "Select Business",
@@ -57,7 +58,7 @@ const translations = {
     viewRegs: "View Registrations",
   },
   ar: {
-    pageTitle: "الفعاليات لـ",
+    pageTitle: "إدارة الفعاليات",
     pageDescription: "إدارة جميع فعاليات التسجيل العام لهذا العمل.",
     createEvent: "إنشاء فعالية",
     selectBusiness: "اختر العمل",
@@ -198,12 +199,9 @@ export default function EventsPage() {
             flexWrap: "wrap",
           }}
         >
-          {/* Title + Description */}
           <Box sx={{ flex: 1 }}>
             <Typography variant="h5" fontWeight="bold">
-              {user?.role === "admin" && !selectedBusiness
-                ? t.pageDescription
-                : `${t.pageTitle} "${selectedBusiness || ""}"`}
+              {t.pageTitle}
             </Typography>
             <Typography variant="body2" color="text.secondary">
               {t.pageDescription}
@@ -223,6 +221,7 @@ export default function EventsPage() {
                 variant="outlined"
                 onClick={() => setDrawerOpen(true)}
                 startIcon={<BusinessIcon />}
+                sx={getStartIconSpacing(dir)}
               >
                 {t.selectBusiness}
               </Button>
@@ -232,6 +231,7 @@ export default function EventsPage() {
                 variant="contained"
                 startIcon={<ICONS.add />}
                 onClick={handleOpenCreate}
+                sx={getStartIconSpacing(dir)}
               >
                 {t.createEvent}
               </Button>
@@ -264,6 +264,10 @@ export default function EventsPage() {
                       mx: "auto",
                       boxShadow: 3,
                       borderRadius: 2,
+                      height: "100%",
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "space-between",
                     }}
                   >
                     <CardContent>
