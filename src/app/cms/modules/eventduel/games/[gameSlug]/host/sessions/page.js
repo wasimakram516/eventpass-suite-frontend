@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import {
   Box,
@@ -187,23 +187,23 @@ export default function PvPSessions() {
       {loading ? (
         <LoadingState />
       ) : (
-        <>
-          <Stack spacing={3} alignItems="center">
-            <Box sx={{ mt: 2, width: "100%", maxWidth: 600 }}>
-              {sessions && sessions.length > 0 ? (
-                sessions.map((session) => {
-                  const player1 = session.players.find(
-                    (p) => p.playerType === "p1"
-                  );
-                  const player2 = session.players.find(
-                    (p) => p.playerType === "p2"
-                  );
-                  const isPlayer1Winner =
-                    session.winner?._id === player1?.playerId?._id;
-                  const isPlayer2Winner =
-                    session.winner?._id === player2?.playerId?._id;
+        <Stack spacing={3} alignItems="center">
+          <Box sx={{ mt: 2, width: "100%", maxWidth: 600 }}>
+            {sessions && sessions.length > 0 ? (
+              sessions.map((session) => {
+                const player1 = session.players.find(
+                  (p) => p.playerType === "p1"
+                );
+                const player2 = session.players.find(
+                  (p) => p.playerType === "p2"
+                );
+                const isPlayer1Winner =
+                  session.winner?._id === player1?.playerId?._id;
+                const isPlayer2Winner =
+                  session.winner?._id === player2?.playerId?._id;
 
-                  return (
+                return (
+                  <Fragment key={session?._id}>
                     <Fade in timeout={500} key={session._id}>
                       <Paper
                         elevation={6}
@@ -417,22 +417,21 @@ export default function PvPSessions() {
                         </Box>
                       </Paper>
                     </Fade>
-                  );
-                })
-              ) : (
-                <NoDataAvailable />
-              )}
-            </Box>
-          </Stack>
-
-          <Box display="flex" justifyContent="center" mt={4}>
-            <Pagination
-              count={Math.ceil(totalSessions / limit)}
-              page={page}
-              onChange={(_, value) => setPage(value)}
-            />
+                    <Box display="flex" justifyContent="center" mt={4}>
+                      <Pagination
+                        count={Math.ceil(totalSessions / limit)}
+                        page={page}
+                        onChange={(_, value) => setPage(value)}
+                      />
+                    </Box>
+                  </Fragment>
+                );
+              })
+            ) : (
+              <NoDataAvailable />
+            )}
           </Box>
-        </>
+        </Stack>
       )}
 
       <ConfirmationDialog
