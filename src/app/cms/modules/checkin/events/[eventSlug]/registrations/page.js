@@ -35,6 +35,7 @@ import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import NoDataAvailable from "@/components/NoDataAvailable";
+import { wrapTextBox } from "@/utils/wrapTextStyles";
 
 const ViewRegistrations = () => {
   const { eventSlug } = useParams();
@@ -276,6 +277,7 @@ const ViewRegistrations = () => {
             value={limit}
             onChange={handleLimitChange}
             label={t.recordsPerPage}
+            sx={{ pr: dir === "rtl" ? 1 : undefined }}
           >
             {[5, 10, 20, 50, 100, 250, 500].map((value) => (
               <MenuItem key={value} value={value}>
@@ -292,11 +294,22 @@ const ViewRegistrations = () => {
         <>
           <Grid container spacing={4} justifyContent="center">
             {registrations.map((registration) => (
-              <Grid item xs={12} sm={6} md={4} key={registration._id}>
+              <Grid
+                item
+                xs={12}
+                sm={6}
+                md={4}
+                key={registration._id}
+                sx={{
+                  display: { xs: "flex", sm: "block" },
+                  width: { xs: "100%", sm: "auto" },
+                }}
+              >
                 <Card
                   sx={{
-                    maxWidth: 360,
-                    margin: "0 auto",
+                    width: "100%",
+                    minWidth: { sm: 250 },
+                    maxWidth: { sm: 360 },
                     height: "100%",
                     boxShadow: 3,
                     borderRadius: 2,
@@ -313,24 +326,39 @@ const ViewRegistrations = () => {
 
                     {isPublicEvent ? (
                       <>
-                        <Typography variant="body2" sx={{ mt: 1 }}>
+                        <Typography
+                          variant="body2"
+                          sx={{ mt: 1, ...wrapTextBox }}
+                        >
                           <strong>{t.email}</strong> {registration.email}
                         </Typography>
-                        <Typography variant="body2" sx={{ mt: 1 }}>
+                        <Typography
+                          variant="body2"
+                          sx={{ mt: 1, ...wrapTextBox }}
+                        >
                           <strong>{t.phone}</strong> {registration.phone}
                         </Typography>
-                        <Typography variant="body2" sx={{ mt: 1 }}>
+                        <Typography
+                          variant="body2"
+                          sx={{ mt: 1, ...wrapTextBox }}
+                        >
                           <strong>{t.company}</strong>{" "}
                           {registration.company || "N/A"}
                         </Typography>
                       </>
                     ) : (
                       <>
-                        <Typography variant="body2" sx={{ mt: 1 }}>
+                        <Typography
+                          variant="body2"
+                          sx={{ mt: 1, ...wrapTextBox }}
+                        >
                           <strong>{t.employeeId}</strong>{" "}
                           {registration.employeeId}
                         </Typography>
-                        <Typography variant="body2" sx={{ mt: 1 }}>
+                        <Typography
+                          variant="body2"
+                          sx={{ mt: 1, ...wrapTextBox }}
+                        >
                           <strong>{t.tableNumber}</strong>{" "}
                           {registration.tableNumber}
                         </Typography>
@@ -381,6 +409,7 @@ const ViewRegistrations = () => {
 
           <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
             <Pagination
+              dir="ltr"
               count={Math.ceil(totalRegistrations / limit)}
               page={page}
               onChange={handlePageChange}
