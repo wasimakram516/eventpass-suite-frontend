@@ -97,7 +97,6 @@ export default function EventDetails() {
 
   return (
     <Box
-      dir={dir}
       sx={{
         display: "flex",
         alignItems: "center",
@@ -109,6 +108,7 @@ export default function EventDetails() {
       }}
     >
       <Paper
+        dir={dir}
         elevation={3}
         sx={{
           p: 4,
@@ -127,6 +127,7 @@ export default function EventDetails() {
               style={{
                 width: "auto",
                 height: "150px",
+                maxWidth: "250px",
                 objectFit: "contain",
                 borderRadius: 8,
               }}
@@ -178,64 +179,50 @@ export default function EventDetails() {
 
         <Stack
           direction="row"
-          spacing={dir === "ltr" ? 1 : 0}
+          spacing={1}
           justifyContent="center"
           alignItems="center"
-          mb={3}
+          flexWrap="wrap"
+          sx={{ my: 2 }}
         >
           <Box component="span" sx={{ display: "flex", color: "primary.main" }}>
             <ICONS.event />
           </Box>
+
           {dir === "rtl" && (
             <Box
               component="span"
-              sx={{
-                width: "8px",
-                display: "inline-block",
-              }}
+              sx={{ width: "8px", display: "inline-block" }}
             />
           )}
-          <Stack
-            direction={{ xs: "column", sm: "row" }}
-            spacing={1}
-            alignItems="center"
-          >
-            {startDate && endDate ? (
-              startDate === endDate ? (
-                <Typography variant="h6" sx={{ fontSize: { xs: 16, md: 20 } }}>
-                  {formatDate(startDate)}
-                </Typography>
-              ) : (
-                <>
-                  <Typography
-                    variant="h6"
-                    sx={{ fontSize: { xs: 16, md: 20 } }}
-                  >
-                    {formatDate(startDate)}
-                  </Typography>
-                  <Typography
-                    variant="h6"
-                    sx={{
-                      fontSize: { xs: 16, md: 20 },
-                    }}
-                  >
-                    {t.to}
-                  </Typography>
-                  
-                  <Typography
-                    variant="h6"
-                    sx={{ fontSize: { xs: 16, md: 20 } }}
-                  >
-                    {formatDate(endDate)}
-                  </Typography>
-                </>
-              )
-            ) : (
-              <Typography variant="h6" sx={{ fontSize: { xs: 16, md: 20 } }}>
-                {t.dateNotAvailable}
+
+          {startDate && endDate ? (
+            startDate === endDate ? (
+              <Typography
+                variant="h6"
+                noWrap
+                sx={{ fontSize: { xs: 16, md: 20 } }}
+              >
+                {formatDate(startDate)}
               </Typography>
-            )}
-          </Stack>
+            ) : (
+              <Typography
+                variant="h6"
+                noWrap
+                sx={{ fontSize: { xs: 16, md: 20 } }}
+              >
+                {`${formatDate(startDate)} ${t.to} ${formatDate(endDate)}`}
+              </Typography>
+            )
+          ) : (
+            <Typography
+              variant="h6"
+              noWrap
+              sx={{ fontSize: { xs: 16, md: 20 } }}
+            >
+              {t.dateNotAvailable}
+            </Typography>
+          )}
         </Stack>
 
         <Typography

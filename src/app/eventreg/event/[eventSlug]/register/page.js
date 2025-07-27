@@ -178,8 +178,10 @@ export default function Registration() {
     dynamicFields.forEach((f) => {
       const val = formData[f.name]?.trim();
       if (f.required && !val) {
-        errors[f.name] = `${t[f.label] || f.label} ${t.required}`;
+        const translatedLabel = translations[f.label] || t[f.label] || f.label;
+        errors[f.name] = `${translatedLabel} ${t.required}`;
       }
+
       if (f.name === "email" && val && !isValidEmail(val)) {
         errors[f.name] = t.invalidEmail;
       }
@@ -250,27 +252,31 @@ export default function Registration() {
 
     if (field.type === "radio") {
       return (
-        <Box key={field.name} sx={{ mb: 2, textAlign: "left" }}>
+        <Box key={field.name} sx={{ mb: 2, textAlign: "center" }}>
           <Typography
             sx={{ mb: 1, color: errorMsg ? "error.main" : "inherit" }}
           >
             {fieldLabel}
           </Typography>
+
           <RadioGroup
             row
             name={field.name}
             value={formData[field.name]}
             onChange={handleInputChange}
+            sx={{ justifyContent: "center", gap: 2 }}
           >
             {field.options.map((opt) => (
               <FormControlLabel
                 key={`${field.name}-${opt}`}
                 value={opt}
-                control={<Radio />}
+                control={<Radio sx={{ p: 0.5 }} />}
                 label={translations[opt] || opt}
+                sx={{ mx: 1 }}
               />
             ))}
           </RadioGroup>
+
           {errorMsg && (
             <Typography variant="caption" color="error" display="block">
               {errorMsg}
@@ -321,7 +327,6 @@ export default function Registration() {
 
   return (
     <Box
-      dir={dir}
       sx={{
         minHeight: "100vh",
         display: "flex",
@@ -333,6 +338,7 @@ export default function Registration() {
       }}
     >
       <Paper
+        dir={dir}
         elevation={3}
         sx={{
           width: "100%",
