@@ -74,9 +74,23 @@ export const getLeaderboard = withApiHandler(async (gameSlug) => {
 });
 
 // Export player results (blob response)
-export const exportResults = withApiHandler(async (gameSlug) => {
-  const { data } = await api.get(`/eventduel/sessions/export/${gameSlug}`, {
-    responseType: "blob",
-  });
-  return data;
-});
+export const exportResults = async (gameSlug) => {
+  try {
+    const { data } = await api.get(`/eventduel/sessions/export/${gameSlug}`, {
+      responseType: "blob",
+    });
+
+    const url = window.URL.createObjectURL(new Blob([data]));
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `PvP game results for ${gameSlug}.xlsx`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (err) {
+    console.log(
+      err?.response?.data?.message || err?.message || "Failed to export results"
+    );
+  }
+};

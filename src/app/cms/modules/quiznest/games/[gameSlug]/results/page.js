@@ -83,23 +83,11 @@ export default function ResultsPage() {
     };
     if (gameSlug) fetchGameAndResults();
   }, [gameSlug, t, showMessage]);
-  
+
   // Export results as Excel file
   const handleExport = async () => {
-    try {
-      const blob = await exportResults(game._id);
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", `${game?.title || "results"}-results.xlsx`);
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-      showMessage(t.exported, "success");
-    } catch (err) {
-      showMessage(t.errorLoading, "error");
-    }
+    if (!game) return;
+    await exportResults(game._id);
   };
 
   return (

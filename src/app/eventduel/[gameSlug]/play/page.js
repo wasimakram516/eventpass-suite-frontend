@@ -205,10 +205,31 @@ export default function PlayPage() {
     translateQuestion(currentQuestion);
   }, [currentQuestion, language]);
 
+  // 8.3 If Host ends the game session, submit player's stats
+  useEffect(() => {
+    if (
+      typeof window !== "undefined" &&
+      sessionStorage.getItem("forceSubmitTriggered") === "true"
+    ) {
+      if (!hasSubmittedRef.current) {
+        hasSubmittedRef.current = true;
+        submitProgress();
+        clearPlayerSessionData();
+      }
+    }
+  }, [localTime]);
+
+  useEffect(() => {
+    const { playerId, sessionId } = getPlayerSessionData();
+    if (game && (!playerId || !sessionId)) {
+      router.replace(`/eventduel/${game?.slug}`);
+    }
+  }, [pendingSession]);
+
   // ─── 9. PROGRESS & FINAL SUBMISSION ────────────────────────────────────
   const submitProgress = async (timeOverride = null) => {
-    const playerId = sessionStorage.getItem("playerId");
-    const sessionId = sessionStorage.getItem("sessionId");
+    const { playerId, sessionId } = getPlayerSessionData();
+
     if (!playerId || !sessionId) return;
     const timeTaken =
       timeOverride !== null ? timeOverride : game.gameSessionTimer - localTime;
@@ -226,9 +247,8 @@ export default function PlayPage() {
   const submitFinalResult = async () => {
     if (hasSubmittedRef.current) return;
     hasSubmittedRef.current = true;
-    await submitProgress(game.gameSessionTimer);
-    sessionStorage.removeItem("playerId");
-    sessionStorage.removeItem("sessionId");
+    await submitProgress();
+    clearPlayerSessionData();
   };
 
   // ─── 10. ANSWER HANDLER ─────────────────────────────────────────────────
@@ -241,9 +261,9 @@ export default function PlayPage() {
 
     if (isCorrect) {
       scoreRef.current++;
-      correctSound?.play().catch(() => { });
+      correctSound?.play().catch(() => {});
     } else {
-      wrongSound?.play().catch(() => { });
+      wrongSound?.play().catch(() => {});
       if (currentQuestion.hint) setShowHint(true);
     }
 
@@ -256,7 +276,7 @@ export default function PlayPage() {
       if (isLast) {
         if (localTime > 0) {
           setHasFinishedEarly(true);
-          celebrateSound?.play().catch(() => { });
+          celebrateSound?.play().catch(() => {});
         }
         submitFinalResult();
       } else {
@@ -265,6 +285,21 @@ export default function PlayPage() {
         setDisabled(false);
       }
     }, 1000);
+  };
+
+  const getPlayerSessionData = () => {
+    if (typeof window === "undefined") return null;
+    return {
+      playerId: sessionStorage.getItem("playerId"),
+      sessionId: sessionStorage.getItem("sessionId"),
+    };
+  };
+
+  const clearPlayerSessionData = () => {
+    if (typeof window === "undefined") return;
+    sessionStorage.removeItem("playerId");
+    sessionStorage.removeItem("sessionId");
+    sessionStorage.removeItem("forceSubmitTriggered");
   };
 
   // ─── 11. RENDER BRANCHES ────────────────────────────────────────────────
@@ -293,21 +328,6 @@ export default function PlayPage() {
       >
         {/* Language Selector */}
         <LanguageSelector top={20} right={20} />
-
-        {/* Back Button */}
-        <IconButton
-          size="small"
-          onClick={() => router.push(`/eventduel/${game.slug}/`)}
-          sx={{
-            position: "fixed",
-            top: 20,
-            left: 20,
-            bgcolor: "primary.main",
-            color: "white",
-          }}
-        >
-          <ICONS.back />
-        </IconButton>
 
         {/* Loading Spinner */}
         <CircularProgress />
@@ -658,8 +678,8 @@ export default function PlayPage() {
     const isTie = currentSession.winner === null;
 
     // 3. Win check
-    const isWinner = !isTie &&
-      currentSession.winner?._id === playerObj.playerId?._id;
+    const isWinner =
+      !isTie && currentSession.winner?._id === playerObj.playerId?._id;
 
     // 4. Extract scores
     const playerScore = playerObj.score;
@@ -670,18 +690,14 @@ export default function PlayPage() {
     const opponentTimeTaken = opponentObj.timeTaken;
 
     // 5. Headline text
-    const headlineText = isTie
-      ? t.tie
-      : isWinner
-        ? t.win
-        : t.lose;
+    const headlineText = isTie ? t.tie : isWinner ? t.win : t.lose;
 
     // 6. Background gradient
     const backgroundGradient = isTie
       ? "linear-gradient(135deg, #FFC107CC, #FF9800CC)"
       : isWinner
-        ? "linear-gradient(135deg, #4CAF50CC, #388E3CCC)"
-        : "linear-gradient(135deg, #F44336CC, #E53935CC)";
+      ? "linear-gradient(135deg, #4CAF50CC, #388E3CCC)"
+      : "linear-gradient(135deg, #F44336CC, #E53935CC)";
 
     return (
       <Box
@@ -695,6 +711,7 @@ export default function PlayPage() {
           alignItems: "center",
           justifyContent: "center",
           textAlign: "center",
+          overflow: "hidden",
           p: 2,
         }}
       >
@@ -723,20 +740,27 @@ export default function PlayPage() {
             }}
           >
             {/* Player Name */}
-            <Typography variant="h3" fontWeight={700} sx={{ mb: 3, textShadow: "0 0 15px rgba(255,255,255,0.8)" }}>
+            <Typography
+              variant="h3"
+              fontWeight={700}
+              sx={{ mb: 1, textShadow: "0 0 15px rgba(255,255,255,0.8)" }}
+            >
               {playerObj?.playerId?.name}
             </Typography>
 
             {/* Headline */}
-            <Typography variant="h1" sx={{ mb: 3, textShadow: "0 0 15px rgba(255,255,255,0.8)" }}>
+            <Typography
+              variant="h1"
+              sx={{ my: 2, textShadow: "0 0 15px rgba(255,255,255,0.8)" }}
+            >
               {headlineText}
             </Typography>
 
             {/* Score */}
-            <Typography variant="h2"
+            <Typography
+              variant="h2"
               sx={{
                 fontWeight: "bold",
-                mb: 1,
                 fontSize: { xs: "4rem", sm: "6rem" },
                 textShadow: "0 0 20px rgba(255,255,255,0.6)",
               }}
@@ -745,20 +769,22 @@ export default function PlayPage() {
             </Typography>
             <Typography variant="body1" sx={{ mb: 1 }}>
               {t.attempted}: {playerAttempted}{" "}
-              <Box component="span" sx={{ mx: 1, color: "text.secondary" }}>|</Box>{" "}
+              <Box component="span" sx={{ mx: 1, color: "text.secondary" }}>
+                |
+              </Box>{" "}
               {t.timeTaken}: {playerTimeTaken}
             </Typography>
 
-
             {/* Opponent Box */}
-            <Box sx={{
-              background: "#ffffffaa",
-              backdropFilter: "blur(4px)",
-              p: 2,
-              borderRadius: 2,
-              color: "#000",
-              mb: 3,
-            }}
+            <Box
+              sx={{
+                background: "#ffffffaa",
+                backdropFilter: "blur(4px)",
+                p: 2,
+                borderRadius: 2,
+                color: "#000",
+                mb: 3,
+              }}
             >
               <Typography variant="h6" sx={{ mb: 1 }}>
                 {t.opponent}
@@ -771,7 +797,9 @@ export default function PlayPage() {
               </Typography>
               <Typography variant="body1" sx={{ mb: 1 }}>
                 {t.attempted}: {opponentAttempted}{" "}
-                <Box component="span" sx={{ mx: 1, color: "text.secondary" }}>|</Box>{" "}
+                <Box component="span" sx={{ mx: 1, color: "text.secondary" }}>
+                  |
+                </Box>{" "}
                 {t.timeTaken}: {opponentTimeTaken}
               </Typography>
             </Box>

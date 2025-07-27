@@ -28,6 +28,13 @@ const useEventDuelWebSocketData = (gameSlug) => {
 
         setQuestions(playerQs || []);
       },
+      forceSubmitPvP: ({ sessionId }) => {
+      console.log("⚠️ Force submit trigger received for session:", sessionId);
+      // Store a trigger to handle in the component
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("forceSubmitTriggered", "true");
+      }
+    },
     },
     [selectedPlayer]
   );
@@ -77,6 +84,7 @@ const useEventDuelWebSocketData = (gameSlug) => {
     selectedPlayer,
     questions,
     connected,
+    socket
   };
 };
 

@@ -22,6 +22,7 @@ import ConfirmationDialog from "@/components/ConfirmationDialog";
 
 import ICONS from "@/utils/iconUtil";
 import {
+  exportResults,
   getAllSessions,
   resetPvPSessions,
 } from "@/services/eventduel/gameSessionService";
@@ -30,6 +31,7 @@ import useI18nLayout from "@/hooks/useI18nLayout";
 import BreadcrumbsNav from "@/components/BreadcrumbsNav";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import LoadingState from "@/components/LoadingState";
+import { useMessage } from "@/contexts/MessageContext";
 
 const translations = {
   en: {
@@ -56,6 +58,9 @@ const translations = {
     to: "to",
     of: "of",
     records: "sessions",
+    exportResults: "Export Results",
+    errorLoading: "Error loading data.",
+    exported: "Exported results!",
   },
   ar: {
     hostDashboard: "جلسات PvP",
@@ -81,11 +86,15 @@ const translations = {
     to: "إلى",
     of: "من",
     records: "جلسات",
+    exportResults: "تصدير النتائج",
+    errorLoading: "حدث خطأ أثناء تحميل البيانات.",
+    exported: "تم تصدير النتائج!",
   },
 };
 
 export default function PvPSessions() {
   const { gameSlug } = useParams();
+  const { showMessage } = useMessage();
   const { t, dir, align } = useI18nLayout(translations);
   const [sessions, setSessions] = useState([]);
   const [totalSessions, setTotalSessions] = useState(0);
@@ -114,6 +123,11 @@ export default function PvPSessions() {
       setSessions([]);
     }
     setShowConfirm(false);
+  };
+
+  // Export results as Excel file
+  const handleExport = async () => {
+    await exportResults(gameSlug);
   };
 
   return (
@@ -148,6 +162,17 @@ export default function PvPSessions() {
             >
               {t.allSessions}
             </Button>
+            {sessions.length > 0 && (
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<ICONS.download />}
+                onClick={handleExport}
+                sx={getStartIconSpacing(dir)}
+              >
+                {t.exportResults}
+              </Button>
+            )}
           </Stack>
         </Box>
         <Divider sx={{ my: 2 }} />
@@ -190,20 +215,20 @@ export default function PvPSessions() {
         <Stack spacing={3} alignItems="center">
           <Box sx={{ mt: 2, width: "100%", maxWidth: 600 }}>
             {sessions && sessions.length > 0 ? (
-              sessions.map((session) => {
-                const player1 = session.players.find(
-                  (p) => p.playerType === "p1"
-                );
-                const player2 = session.players.find(
-                  (p) => p.playerType === "p2"
-                );
-                const isPlayer1Winner =
-                  session.winner?._id === player1?.playerId?._id;
-                const isPlayer2Winner =
-                  session.winner?._id === player2?.playerId?._id;
+              <>
+                {sessions.map((session) => {
+                  const player1 = session.players.find(
+                    (p) => p.playerType === "p1"
+                  );
+                  const player2 = session.players.find(
+                    (p) => p.playerType === "p2"
+                  );
+                  const isPlayer1Winner =
+                    session.winner?._id === player1?.playerId?._id;
+                  const isPlayer2Winner =
+                    session.winner?._id === player2?.playerId?._id;
 
-                return (
-                  <Fragment key={session?._id}>
+                  return (
                     <Fade in timeout={500} key={session._id}>
                       <Paper
                         elevation={6}
@@ -417,16 +442,17 @@ export default function PvPSessions() {
                         </Box>
                       </Paper>
                     </Fade>
-                    <Box display="flex" justifyContent="center" mt={4}>
-                      <Pagination
-                        count={Math.ceil(totalSessions / limit)}
-                        page={page}
-                        onChange={(_, value) => setPage(value)}
-                      />
-                    </Box>
-                  </Fragment>
-                );
-              })
+                  );
+                })}
+
+                <Box display="flex" justifyContent="center" mt={4}>
+                  <Pagination
+                    count={Math.ceil(totalSessions / limit)}
+                    page={page}
+                    onChange={(_, value) => setPage(value)}
+                  />
+                </Box>
+              </>
             ) : (
               <NoDataAvailable />
             )}
