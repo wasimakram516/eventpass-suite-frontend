@@ -155,10 +155,10 @@ export default function EventDetails() {
 
         <Stack
           direction="row"
-          spacing={dir === "ltr" ? 1 : 0}
+          spacing={1}
           justifyContent="center"
           alignItems="center"
-          mb={1}
+          flexWrap="wrap"
         >
           <Box component="span" sx={{ display: "flex", color: "primary.main" }}>
             <ICONS.location />

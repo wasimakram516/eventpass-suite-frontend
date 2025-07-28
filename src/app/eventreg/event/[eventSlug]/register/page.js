@@ -413,54 +413,50 @@ export default function Registration() {
 
         <DialogContent sx={{ textAlign: "center" }}>
           {event?.showQrAfterRegistration ? (
-           <>
-  <Typography
-    variant="subtitle2"
-    sx={{ color: "text.secondary" }}
-  >
-    {t.yourToken}
-  </Typography>
+            <>
+              <Typography variant="subtitle2" sx={{ color: "text.secondary" }}>
+                {t.yourToken}
+              </Typography>
 
-  <Box
-    sx={{
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      mt: 1,
-    }}
-  >
-    <Box
-      sx={{
-        px: 2,
-        py: 0.5,
-        backgroundColor: "primary.main",
-        color: "#fff",
-        borderRadius: "20px",
-        fontWeight: 600,
-        fontFamily: "monospace",
-        fontSize: 16,
-      }}
-    >
-      {qrToken}
-    </Box>
-  </Box>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  mt: 1,
+                }}
+              >
+                <Box
+                  sx={{
+                    px: 2,
+                    py: 0.5,
+                    backgroundColor: "primary.main",
+                    color: "#fff",
+                    borderRadius: "20px",
+                    fontWeight: 600,
+                    fontFamily: "monospace",
+                    fontSize: 16,
+                  }}
+                >
+                  {qrToken}
+                </Box>
+              </Box>
 
-  <Box mt={2} display="flex" justifyContent="center">
-    <Paper
-      id="qr-container"
-      elevation={3}
-      sx={{
-        p: 2,
-        borderRadius: 2,
-        backgroundColor: "#fff",
-        display: "inline-block",
-      }}
-    >
-      <QRCodeCanvas value={qrToken} size={180} />
-    </Paper>
-  </Box>
-</>
-
+              <Box mt={2} display="flex" justifyContent="center">
+                <Paper
+                  id="qr-container"
+                  elevation={3}
+                  sx={{
+                    p: 2,
+                    borderRadius: 2,
+                    backgroundColor: "#fff",
+                    display: "inline-block",
+                  }}
+                >
+                  <QRCodeCanvas value={qrToken} size={180} />
+                </Paper>
+              </Box>
+            </>
           ) : (
             <Typography variant="body1" sx={{ mb: 2 }}>
               {t.thankYou}
