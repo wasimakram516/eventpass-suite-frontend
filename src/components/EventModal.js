@@ -259,14 +259,15 @@ const EventModal = ({
 
   const handleDownloadTemplate = async () => {
     try {
-      const file = await downloadEmployeeTemplate();
-      const url = window.URL.createObjectURL(new Blob([file]));
+      const blob = await downloadEmployeeTemplate();
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
       link.setAttribute("download", "employee_template.csv");
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
     } catch (error) {
       showMessage(t.downloadTemplateError, "error");
     }
@@ -460,7 +461,7 @@ const EventModal = ({
           {/* Employee Event Specific Fields */}
           {formData.eventType === "employee" && (
             <>
-              <Button variant="outlined" onClick={downloadEmployeeTemplate}>
+              <Button variant="outlined" onClick={handleDownloadTemplate}>
                 {t.downloadTemplate}
               </Button>
               <Box>

@@ -86,7 +86,6 @@ export default function Registration() {
 
   return (
     <Box
-      dir={dir}
       sx={{
         minHeight: "100vh",
         display: "flex",
@@ -106,6 +105,7 @@ export default function Registration() {
           p: 4,
           textAlign: "center",
         }}
+        dir={dir}
       >
         <Box
           sx={{
