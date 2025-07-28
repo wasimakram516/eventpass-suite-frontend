@@ -16,6 +16,8 @@ import {
   Typography,
   IconButton,
   Chip,
+  FormControlLabel,
+  Checkbox,
 } from "@mui/material";
 import { useState, useEffect } from "react";
 import slugify from "@/utils/slugify";
@@ -65,6 +67,7 @@ const translations = {
     radioType: "Radio",
     listType: "List",
     downloadTemplateError: "Failed to download template.",
+    showQrToggle: "Show QR code after registration?",
   },
   ar: {
     createTitle: "إنشاء فعالية",
@@ -106,6 +109,7 @@ const translations = {
     radioType: "اختيار",
     listType: "قائمة",
     downloadTemplateError: "فشل في تحميل القالب.",
+    showQrToggle: "عرض رمز الاستجابة السريعة بعد التسجيل؟",
   },
 };
 
@@ -135,6 +139,7 @@ const EventModal = ({
     tableImages: [],
     formFields: [],
     useCustomFields: false,
+    showQrAfterRegistration: false,
   });
 
   const [loading, setLoading] = useState(false);
@@ -166,6 +171,8 @@ const EventModal = ({
         })),
 
         useCustomFields: !!initialValues.formFields?.length,
+        showQrAfterRegistration:
+          initialValues?.showQrAfterRegistration || false,
       }));
     } else {
       setFormData((prev) => ({
@@ -184,6 +191,7 @@ const EventModal = ({
         tableImages: [],
         formFields: [],
         useCustomFields: false,
+        showQrAfterRegistration: false,
       }));
     }
   }, [initialValues, isEmployee]);
@@ -301,6 +309,11 @@ const EventModal = ({
         payload.append("tableImages", file)
       );
     }
+    payload.append(
+      "showQrAfterRegistration",
+      formData.showQrAfterRegistration.toString()
+    );
+
     if (formData.eventType === "public" && formData.useCustomFields) {
       payload.append("formFields", JSON.stringify(formData.formFields));
     }
@@ -397,6 +410,26 @@ const EventModal = ({
             onChange={handleInputChange}
             fullWidth
           />
+
+          {/* Show QR After Registration Toggle */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={formData.showQrAfterRegistration}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      showQrAfterRegistration: e.target.checked,
+                    }))
+                  }
+                  color="primary"
+                />
+              }
+              label={t.showQrToggle}
+              sx={{ alignSelf: "start" }}
+            />
+          </Box>
 
           {/* Logo Upload */}
           <Box>
