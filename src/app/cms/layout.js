@@ -22,8 +22,20 @@ export default function CmsLayout({ children }) {
   }, [loading, user, router]);
 
   if (loading || !user) {
-    return <LoadingState />;
+    return (
+      <Box
+        sx={{
+          minHeight: "calc(100vh - 40px)",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
+        <LoadingState />
+      </Box>
+    );
   }
+
   return (
     <Box sx={{ display: "flex" }}>
       <Navbar />

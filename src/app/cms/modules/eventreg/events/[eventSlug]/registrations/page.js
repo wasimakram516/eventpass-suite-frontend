@@ -115,10 +115,10 @@ export default function ViewRegistrations() {
               label: f.inputName,
             }))
           : [
-              { name: "fullName", label: "fullName" },
-              { name: "email", label: "emailLabel" },
-              { name: "phone", label: "phoneLabel" },
-              { name: "company", label: "companyLabel" },
+              { name: "fullName", label: t.fullName },
+              { name: "email", label: t.emailLabel },
+              { name: "phone", label: t.phoneLabel },
+              { name: "company", label: t.companyLabel },
             ];
         setDynamicFields(fields);
       }
@@ -344,7 +344,7 @@ export default function ViewRegistrations() {
                         variant="body2"
                         sx={{ mt: 1, ...wrapTextBox }}
                       >
-                        <strong>{t[f.label]}</strong>{" "}
+                        <strong>{f.label}</strong>{" "}
                         {reg.customFields?.[f.name] ?? reg[f.name] ?? "N/A"}
                       </Typography>
                     ))}

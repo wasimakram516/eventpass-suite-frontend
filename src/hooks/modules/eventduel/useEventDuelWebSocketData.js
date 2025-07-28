@@ -6,10 +6,6 @@ const useEventDuelWebSocketData = (gameSlug) => {
   const [currentSession, setCurrentSession] = useState(null);
   const [questions, setQuestions] = useState([]);
 
-  const [pendingSession, setPendingSession] = useState(null);
-  const [activeSession, setActiveSession] = useState(null);
-  const [recentlyCompleted, setRecentlyCompleted] = useState(null);
-
   const selectedPlayer =
     typeof window !== "undefined"
       ? sessionStorage.getItem("selectedPlayer")
@@ -32,6 +28,13 @@ const useEventDuelWebSocketData = (gameSlug) => {
 
         setQuestions(playerQs || []);
       },
+      forceSubmitPvP: ({ sessionId }) => {
+      console.log("⚠️ Force submit trigger received for session:", sessionId);
+      // Store a trigger to handle in the component
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("forceSubmitTriggered", "true");
+      }
+    },
     },
     [selectedPlayer]
   );
@@ -49,20 +52,6 @@ const useEventDuelWebSocketData = (gameSlug) => {
     console.warn("🔒 Cannot emit getAllSessions yet", { connected, socket, gameSlug });
   }
 };
-
-  // Update derived sessions
-  useEffect(() => {
-    const latestPending = sessions.find((s) => s.status === "pending") || null;
-    const latestActive = sessions.find((s) => s.status === "active") || null;
-    const latestCompleted =
-      [...sessions]
-        .filter((s) => s.status === "completed")
-        .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))[0] || null;
-
-    setPendingSession(latestPending);
-    setActiveSession(latestActive);
-    setRecentlyCompleted(latestCompleted);
-  }, [sessions]);
 
   // Auto-select fallback current session if not explicitly set
   useEffect(() => {
@@ -95,9 +84,7 @@ const useEventDuelWebSocketData = (gameSlug) => {
     selectedPlayer,
     questions,
     connected,
-    pendingSession,
-    activeSession,
-    recentlyCompleted,
+    socket
   };
 };
 

@@ -2,9 +2,9 @@ import api from "@/services/api";
 import withApiHandler from "@/utils/withApiHandler";
 
 // Get all sessions
-export const getAllSessions = withApiHandler(async (gameSlug) => {
+export const getAllSessions = withApiHandler(async (gameSlug, page = 1, limit = 5) => {
   const { data } = await api.get("/eventduel/sessions", {
-    params: { gameSlug },
+    params: { gameSlug, page, limit },
   });
   return data;
 });
@@ -65,7 +65,6 @@ export const submitPvPResult = withApiHandler(
     );
     return data;
   },
-  { showSuccess: true}
 );
 
 // Get leaderboard for a game
@@ -75,9 +74,23 @@ export const getLeaderboard = withApiHandler(async (gameSlug) => {
 });
 
 // Export player results (blob response)
-export const exportResults = withApiHandler(async (gameSlug) => {
-  const { data } = await api.get(`/eventduel/sessions/export/${gameSlug}`, {
-    responseType: "blob",
-  });
-  return data;
-});
+export const exportResults = async (gameSlug) => {
+  try {
+    const { data } = await api.get(`/eventduel/sessions/export/${gameSlug}`, {
+      responseType: "blob",
+    });
+
+    const url = window.URL.createObjectURL(new Blob([data]));
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `PvP game results for ${gameSlug}.xlsx`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (err) {
+    console.log(
+      err?.response?.data?.message || err?.message || "Failed to export results"
+    );
+  }
+};

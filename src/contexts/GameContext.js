@@ -26,7 +26,8 @@ export const GameProvider = ({ children, module = "quiznest" }) => {
       if (!result?.error) {
         setGame(result);
       }
-
+      console.log(`Game for Module: ${module}:`, result);
+      
       setLoading(false);
     };
 

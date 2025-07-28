@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { Box, Button, Typography, IconButton } from "@mui/material";
@@ -15,10 +15,13 @@ export default function PlayerSelection() {
   const { gameSlug } = useParams();
   const { game, loading } = useGame();
   const [selectedPlayer, setSelectedPlayer] = useState(null);
-  const [pendingSession, setPendingSession] = useState(null);
   const { showMessage } = useMessage();
   const { sessions } = useWebSocketData(gameSlug);
-  const pollingIntervalRef = useRef(null);
+
+  const pendingSession = useMemo(
+      () => sessions.find((s) => s.status === "pending") || null,
+      [sessions]
+    );
 
   // Load previously selected player from localStorage
   useEffect(() => {
@@ -27,18 +30,6 @@ export default function PlayerSelection() {
       setSelectedPlayer(storedPlayer);
     }
   }, []);
-
-  // Fetch sessions and pick pending one
-  useEffect(() => {
-    if (loading || !game) return;
-    const fetchData = async () => {
-      const response = await getAllSessions(gameSlug);
-      if (!response?.error) {
-        setPendingSession(response.find((s) => s.status === "pending") || null);
-      }
-    };
-    fetchData();
-  }, [gameSlug, loading, game]);
 
   const handlePlayerSelect = (player) => {
     setSelectedPlayer(player);
@@ -54,7 +45,7 @@ export default function PlayerSelection() {
       );
       return;
     }
-    router.push(`/eventduel/${gameSlug}/player/name`);
+    router.push(`/eventduel/${gameSlug}/player/details`);
   };
 
   return (

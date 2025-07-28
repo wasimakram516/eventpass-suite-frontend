@@ -17,16 +17,17 @@ import { joinGameSession } from "@/services/eventduel/gameSessionService";
 import LanguageSelector from "@/components/LanguageSelector";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import ICONS from "@/utils/iconUtil";
+import getStartIconSpacing from "@/utils/getStartIconSpacing";
 const entryDialogTranslations = {
   en: {
     nameLabel: "Name",
     companyLabel: "Company",
-    startButton: "Start",
+    startButton: "Proceed",
   },
   ar: {
     nameLabel: "الاسم",
     companyLabel: "اسم الشركة",
-    startButton: "ابدأ",
+    startButton: "متابعة",
   },
 };
 export default function NamePage() {
@@ -57,10 +58,8 @@ export default function NamePage() {
     const response = await joinGameSession(form);
 
     if (!response.error) {
-      // Store for later use
-      localStorage.setItem("playerInfo", JSON.stringify(form));
-      localStorage.setItem("playerId", response.player._id);
-      localStorage.setItem("sessionId", response.sessionId);
+      sessionStorage.setItem("playerId", response.player._id);
+      sessionStorage.setItem("sessionId", response.session._id);
 
       router.push(`/eventduel/${game.slug}/instructions`);
     }
@@ -153,18 +152,26 @@ export default function NamePage() {
             onChange={(e) => setForm({ ...form, name: e.target.value })}
           />
 
+          <TextField
+            label={t.companyLabel}
+            fullWidth
+            sx={{
+              mb: 3,
+            }}
+            value={form.company}
+            onChange={(e) => setForm({ ...form, company: e.target.value })}
+          />
+
           <Button
             variant="contained"
             size="large"
             fullWidth
             onClick={handleSubmit}
             disabled={submitting}
-          >
-            {submitting ? (
-              <CircularProgress size={24} color="inherit" />
-            ) : (
-              t.startButton
-            )}
+            startIcon={submitting ? <CircularProgress size={24} color="inherit" />:<ICONS.next/>}
+            sx={getStartIconSpacing(dir)}
+            >
+           {t.startButton}
           </Button>
 
           {error && (

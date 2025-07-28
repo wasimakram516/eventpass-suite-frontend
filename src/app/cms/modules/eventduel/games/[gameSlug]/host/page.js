@@ -11,6 +11,8 @@ import {
   Container,
   Stack,
   Divider,
+  Grid,
+  Avatar,
 } from "@mui/material";
 
 import ICONS from "@/utils/iconUtil";
@@ -23,6 +25,7 @@ import {
 import NoDataAvailable from "@/components/NoDataAvailable";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import BreadcrumbsNav from "@/components/BreadcrumbsNav";
+import getStartIconSpacing from "@/utils/getStartIconSpacing";
 
 const translations = {
   en: {
@@ -50,6 +53,7 @@ const translations = {
     company: "Company",
     score: "Score",
     attempted: "Attempted",
+    timeTaken: "Time Taken",
     unknown: "Unknown",
     noData: "No data available",
   },
@@ -78,6 +82,7 @@ const translations = {
     company: "الشركة",
     score: "النتيجة",
     attempted: "المحاولات",
+    timeTaken: "الوقت المستغرق",
     unknown: "غير معروف",
     noData: "لا توجد بيانات متاحة",
   },
@@ -91,9 +96,9 @@ export default function HostDashboard() {
   const { sessions, currentSession, requestAllSessions } =
     useWebSocketData(gameSlug);
 
-    useEffect(() => {
-  requestAllSessions();
-}, [gameSlug]);
+  useEffect(() => {
+    requestAllSessions();
+  }, [gameSlug]);
 
   const pendingSession = useMemo(
     () => sessions.find((s) => s.status === "pending") || null,
@@ -156,13 +161,13 @@ export default function HostDashboard() {
 
   const handleActivateSession = async () => {
     if (!pendingSession) return;
-    await activateGameSession(pendingSession._id);
+    await activateGameSession(pendingSession?._id);
     requestAllSessions();
   };
 
   const handleEndGame = async () => {
     if (!activeSession) return;
-    await endGameSession(currentSession._id);
+    await endGameSession(currentSession?._id);
     requestAllSessions();
   };
 
@@ -198,6 +203,7 @@ export default function HostDashboard() {
                   `/cms/modules/eventduel/games/${gameSlug}/host/sessions`
                 )
               }
+              sx={getStartIconSpacing(dir)}
             >
               {t.allSessions}
             </Button>
@@ -210,6 +216,7 @@ export default function HostDashboard() {
                   `/cms/modules/eventduel/games/${gameSlug}/host/questions`
                 )
               }
+              sx={getStartIconSpacing(dir)}
             >
               {t.questions}
             </Button>
@@ -226,6 +233,7 @@ export default function HostDashboard() {
             color="success"
             startIcon={<ICONS.play />}
             onClick={handleStartGame}
+            sx={getStartIconSpacing(dir)}
           >
             {t.startNewSession}
           </Button>
@@ -240,6 +248,13 @@ export default function HostDashboard() {
               !pendingSession.players.find((p) => p.playerType === "p1") ||
               !pendingSession.players.find((p) => p.playerType === "p2")
             }
+            startIcon={
+              pendingSession.players.find((p) => p.playerType === "p1") &&
+              pendingSession.players.find((p) => p.playerType === "p2") && (
+                <ICONS.play />
+              )
+            }
+            sx={getStartIconSpacing(dir)}
           >
             {pendingSession.players.find((p) => p.playerType === "p1") &&
             pendingSession.players.find((p) => p.playerType === "p2")
@@ -254,6 +269,7 @@ export default function HostDashboard() {
             color="error"
             startIcon={<ICONS.stop />}
             onClick={handleEndGame}
+            sx={getStartIconSpacing(dir)}
           >
             {t.endGame}
           </Button>
@@ -262,58 +278,87 @@ export default function HostDashboard() {
         {/* Active Session Card */}
         {activeSession && (
           <Paper
-            elevation={8}
+            elevation={10}
             sx={{
-              p: 4,
-              mt: 5,
+              mt: 6,
               width: "100%",
-              maxWidth: 450,
+              maxWidth: 480,
+              mx: "auto",
+              px: 4,
+              py: 5,
+              borderRadius: 4,
+              background: "linear-gradient(135deg, #e1f5fe, #ffffff)",
+              boxShadow: "0 12px 35px rgba(0,0,0,0.15)",
+              backdropFilter: "blur(4px)",
               textAlign: "center",
-              background: "linear-gradient(135deg, #e0f7fa, #ffffff)",
-              borderRadius: 3,
-              boxShadow: "0px 10px 30px rgba(0, 0, 0, 0.2)",
+              position: "relative",
             }}
           >
+            {/* Glowing Live Chip */}
             <Box
-              display="flex"
-              justifyContent="center"
-              alignItems="center"
-              mb={2}
+              sx={{
+                position: "absolute",
+                top: 16,
+                right: 16,
+                display: "flex",
+                alignItems: "center",
+                gap: 1,
+                px: 2,
+                py: 0.5,
+                bgcolor: "#4CAF50",
+                borderRadius: 999,
+                color: "#fff",
+                fontWeight: "bold",
+                boxShadow: "0 0 8px 2px rgba(76, 175, 80, 0.4)",
+                textTransform: "uppercase",
+                fontSize: 12,
+                letterSpacing: 0.5,
+              }}
             >
-              <Typography
-                variant="h5"
-                fontWeight="bold"
-                sx={{ color: "success.main", letterSpacing: "0.5px" }}
-              >
-                {t.activeSession}
-              </Typography>
+              <ICONS.flash sx={{ fontSize: 16 }} />
+              LIVE
             </Box>
 
-            {/* Countdown before game starts */}
+            {/* Header */}
+            <Typography
+              variant="h5"
+              fontWeight="bold"
+              sx={{
+                mb: 3,
+                color: "success.dark",
+                textShadow: "0 0 6px rgba(0, 0, 0, 0.1)",
+                letterSpacing: "1px",
+              }}
+            >
+              {t.activeSession}
+            </Typography>
+
+            {/* Delay Countdown */}
             {localDelay > 0 && (
               <Fade in timeout={500}>
-                <Box sx={{ mb: 3 }}>
+                <Box>
                   <Typography
                     variant="body1"
                     fontWeight="bold"
-                    sx={{ color: "secondary.dark", mb: 1 }}
+                    sx={{ color: "warning.main", mb: 1 }}
                   >
                     {t.getReady}
                   </Typography>
                   <Box
-                    component="span"
+                    key={localDelay} // Force animation to restart every second
+                    component="div"
+                    className="pulse"
                     sx={{
-                      fontSize: { xs: "3.5rem", sm: "5rem" },
-                      color: "secondary.main",
+                      fontSize: { xs: "3.8rem", sm: "5rem" },
                       fontWeight: "bold",
-                      animation: "pulse 1s infinite alternate",
+                      color: "warning.main",
                     }}
                   >
                     {localDelay}
                   </Box>
                   <Typography
                     variant="caption"
-                    sx={{ color: "secondary.dark", mt: 1, display: "block" }}
+                    sx={{ color: "warning.dark", mt: 1, display: "block" }}
                   >
                     {t.gameStartsIn}
                   </Typography>
@@ -321,31 +366,32 @@ export default function HostDashboard() {
               </Fade>
             )}
 
-            {/* Game session countdown */}
+            {/* Main Game Countdown */}
             {localTime > 0 && localDelay === 0 && (
               <Fade in timeout={500}>
                 <Box>
                   <Typography
                     variant="body1"
                     fontWeight="bold"
-                    sx={{ color: "primary.dark", mb: 1 }}
+                    sx={{ color: "info.main", mb: 1 }}
                   >
                     {t.timeRemaining}
                   </Typography>
                   <Box
-                    component="span"
+                    key={localTime} // Force animation to restart every second
+                    component="div"
+                    className="pulse"
                     sx={{
-                      fontSize: { xs: "3.5rem", sm: "5rem" },
-                      color: "primary.main",
+                      fontSize: { xs: "3.8rem", sm: "5rem" },
                       fontWeight: "bold",
-                      animation: "pulse 1s infinite alternate",
+                      color: "info.main",
                     }}
                   >
                     {localTime}
                   </Box>
                   <Typography
                     variant="caption"
-                    sx={{ color: "primary.dark", mt: 1, display: "block" }}
+                    sx={{ color: "info.dark", mt: 1, display: "block" }}
                   >
                     {t.secondsLeft}
                   </Typography>
@@ -361,8 +407,12 @@ export default function HostDashboard() {
                 }
                 100% {
                   transform: scale(1.1);
-                  opacity: 0.9;
+                  opacity: 0.85;
                 }
+              }
+
+              .pulse {
+                animation: pulse 1s ease-in-out;
               }
             `}</style>
           </Paper>
@@ -380,10 +430,6 @@ export default function HostDashboard() {
               (p) => p.playerType === "p2"
             );
 
-            const player1Name = player1?.playerId?.name || t.waitingPlayers;
-            const player2Name = player2?.playerId?.name || t.waitingPlayers;
-            const bothJoined = player1?.playerId && player2?.playerId;
-
             return (
               <Paper
                 elevation={6}
@@ -391,115 +437,106 @@ export default function HostDashboard() {
                   p: 4,
                   mt: 4,
                   width: "100%",
-                  maxWidth: 420,
+                  maxWidth: 580,
+                  mx: "auto",
+                  background: "linear-gradient(135deg, #1e3c72, #2a5298)",
+                  borderRadius: 6,
+                  color: "#fff",
                   textAlign: "center",
-                  background: "linear-gradient(to right, #2c3e50, #4ca1af)",
-                  color: "white",
-                  borderRadius: 3,
                 }}
               >
-                <Box
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="center"
-                  mb={2}
-                >
-                  <ICONS.people sx={{ color: "warning.light", mr: 1 }} />
-                  <Typography
-                    variant="h6"
-                    fontWeight="bold"
-                    sx={{
-                      color: "warning.light",
-                      textShadow: "0 0 10px rgba(255,165,0,0.8)",
-                    }}
-                  >
-                    {bothJoined ? t.bothPlayersJoined : t.waitingForPlayers}
-                  </Typography>
-                </Box>
-
-                <Box
-                  display="inline-flex"
-                  alignItems="center"
-                  gap={1}
+                <Typography
+                  variant="h6"
+                  fontWeight="bold"
                   sx={{
-                    backgroundColor: "rgba(255,255,255,0.2)",
-                    px: 2,
-                    py: 0.5,
-                    borderRadius: 2,
-                    mb: 2,
-                    cursor: "pointer",
-                    fontSize: "0.9rem",
-                  }}
-                  onClick={() => navigator.clipboard.writeText(session._id)}
-                >
-                  <ICONS.copy fontSize="small" />
-                  <Typography variant="body2" color="#fff">
-                    {t.sessionId}: <b>{session?._id}</b>
-                  </Typography>
-                </Box>
-
-                {/* Player 1 */}
-                <Box
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="center"
-                  gap={1}
-                  sx={{
-                    mt: 2,
-                    animation: player1?.playerId
-                      ? "fadeIn 1s"
-                      : "blink 1.5s infinite",
+                    mb: 3,
+                    color: "white",
+                    textShadow: "0 0 10px rgba(255,255,255,0.3)",
                   }}
                 >
-                  <ICONS.person fontSize="small" />
-                  <Typography variant="body1" fontWeight="bold" color="#fff">
-                    {t.player1}: {player1Name}
-                  </Typography>
-                </Box>
+                  {player1 && player2 ? t.bothPlayersJoined : t.waitingPlayers}
+                </Typography>
 
-                {/* Player 2 */}
-                <Box
-                  display="flex"
-                  alignItems="center"
-                  justifyContent="center"
-                  gap={1}
-                  sx={{
-                    mt: 1,
-                    animation: player2?.playerId
-                      ? "fadeIn 1s"
-                      : "blink 1.5s infinite",
-                  }}
-                >
-                  <ICONS.person fontSize="small" />
-                  <Typography variant="body1" fontWeight="bold" color="#fff">
-                    {t.player2}: {player2Name}
-                  </Typography>
-                </Box>
-
-                <style jsx>{`
-                  @keyframes fadeIn {
-                    from {
-                      opacity: 0;
-                      transform: translateY(10px);
+                <Grid container spacing={3} justifyContent="center">
+                  {[
+                    { label: t.player1, player: player1 },
+                    { label: t.player2, player: player2 },
+                  ].map(({ label, player }, idx) => (
+                    <Grid item xs={12} sm={6} key={idx}>
+                      <Box
+                        sx={{
+                          backgroundColor: player?.playerId
+                            ? "#4CAF50"
+                            : "#ffffff11",
+                          border: `2px solid ${
+                            player?.playerId ? "#4caf50" : "#ffffff44"
+                          }`,
+                          borderRadius: 4,
+                          p: 2.5,
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "center",
+                          gap: 1,
+                          width: "200px",
+                          height: "100%",
+                          textAlign: "center",
+                          animation: !player?.playerId
+                            ? "waitingPulse 1.2s ease-in-out infinite"
+                            : "none",
+                        }}
+                      >
+                        <Avatar
+                          sx={{
+                            bgcolor: player?.playerId
+                              ? "success.dark"
+                              : "grey.700",
+                            width: 48,
+                            height: 48,
+                          }}
+                        >
+                          <ICONS.person />
+                        </Avatar>
+                        <Typography variant="caption" sx={{ color: "#e0f2f1" }}>
+                          {label}
+                        </Typography>
+                        <Typography
+                          variant="subtitle1"
+                          fontWeight="bold"
+                          sx={{ color: "#fff", wordWrap: "break-word" }}
+                        >
+                          {player?.playerId?.name || ""}
+                        </Typography>
+                        <Box
+                          display="flex"
+                          alignItems="center"
+                          gap={0.5}
+                          sx={{ justifyContent: "center", flexWrap: "wrap" }}
+                        >
+                          <ICONS.business sx={{ fontSize: 18 }} />
+                          <Typography
+                            variant="caption"
+                            sx={{ color: "#e0f2f1", wordBreak: "break-word" }}
+                          >
+                            {player?.playerId?.company || "N/A"}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    </Grid>
+                  ))}
+                  <style jsx>{`
+                    @keyframes waitingPulse {
+                      0% {
+                        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.25);
+                      }
+                      70% {
+                        box-shadow: 0 0 0 10px rgba(255, 255, 255, 0);
+                      }
+                      100% {
+                        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+                      }
                     }
-                    to {
-                      opacity: 1;
-                      transform: translateY(0);
-                    }
-                  }
-
-                  @keyframes blink {
-                    0% {
-                      opacity: 1;
-                    }
-                    50% {
-                      opacity: 0.5;
-                    }
-                    100% {
-                      opacity: 1;
-                    }
-                  }
-                `}</style>
+                  `}</style>
+                </Grid>
               </Paper>
             );
           })()}
@@ -514,6 +551,7 @@ export default function HostDashboard() {
           >
             {t.previousSession}
           </Typography>
+
           {recentlyCompleted ? (
             (() => {
               const session = recentlyCompleted;
@@ -524,190 +562,224 @@ export default function HostDashboard() {
                 (p) => p.playerType === "p2"
               );
               const isPlayer1Winner =
-                session.winner && session.winner._id === player1?.playerId?._id;
+                session.winner?._id === player1?.playerId?._id;
               const isPlayer2Winner =
-                session.winner && session.winner._id === player2?.playerId?._id;
+                session.winner?._id === player2?.playerId?._id;
 
               return (
                 <Fade in timeout={500} key={session._id}>
                   <Paper
                     elevation={6}
                     sx={{
-                      p: 3,
-                      my: 2,
-                      borderRadius: 3,
-                      background: "linear-gradient(135deg, #f5f5f5, #ffffff)",
-                      boxShadow: "0px 4px 15px rgba(0,0,0,0.15)",
+                      overflow: "hidden",
+                      borderRadius: 4,
+                      my: 3,
+                      background:
+                        "linear-gradient(to bottom, #f7f7f7, #ffffff)",
+                      boxShadow: "0px 6px 20px rgba(0,0,0,0.1)",
                     }}
                   >
-                    {/* Session ID */}
-                    <Typography
-                      variant="body1"
-                      fontWeight="bold"
-                      textAlign="center"
-                      color="secondary.main"
-                    >
-                      {t.sessionId}: {session._id}
-                    </Typography>
-
-                    {/* Winner */}
+                    {/* Winner Banner */}
                     <Box
-                      display="flex"
-                      alignItems="center"
-                      justifyContent="center"
-                      mt={1}
-                      mb={2}
+                      sx={{
+                        background: session.winner
+                          ? "linear-gradient(to right, #4CAF50, #81C784)"
+                          : "linear-gradient(to right, #9E9E9E, #BDBDBD)",
+                        px: 3,
+                        py: 1.5,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 1,
+                      }}
                     >
-                      <ICONS.trophy sx={{ color: "#4CAF50", mr: 1 }} />
-                      <Typography
-                        variant="h6"
-                        fontWeight="bold"
-                        color={
-                          session.winner ? "success.main" : "text.secondary"
-                        }
-                      >
-                        {t.winner}: {session.winner?.name || t.tie}
+                      {session?.winner && (
+                        <ICONS.trophy sx={{ color: "#fff" }} />
+                      )}
+                      <Typography variant="h6" color="#fff" fontWeight="bold">
+                        {session.winner ? session.winner.name : t.tie}
                       </Typography>
                     </Box>
 
-                    {/* VS Layout */}
+                    {/* Players */}
                     <Box
                       sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        mt: 2,
-                        p: 2,
-                        borderRadius: 2,
-                        background: "#f3f3f3",
+                        px: { xs: 2, sm: 4 },
+                        py: 3,
                         position: "relative",
                       }}
                     >
-                      {/* Player 1 */}
-                      <Box
-                        sx={{
-                          textAlign: "left",
-                          flex: 1,
-                          background: isPlayer1Winner
-                            ? "linear-gradient(135deg, #4CAF50, #66BB6A)"
-                            : "grey.200",
-                          p: 2,
-                          borderRadius: "8px",
-                          color: isPlayer1Winner ? "#fff" : "text.primary",
-                        }}
+                      <Grid
+                        container
+                        spacing={3}
+                        direction={{ xs: "column", sm: "row" }}
+                        alignItems="stretch"
+                        justifyContent="space-between"
                       >
-                        <Typography fontWeight="bold">
-                          {player1?.playerId?.name || t.unknown}
-                        </Typography>
-                        <Box display="flex" alignItems="center" gap={1}>
-                          <ICONS.business fontSize="small" />
-                          <Typography variant="caption">
-                            {player1?.playerId?.company || "N/A"}
-                          </Typography>
-                        </Box>
-                        <Box display="flex" alignItems="center" gap={1}>
-                          <ICONS.leaderboard fontSize="small" />
-                          <Typography variant="caption">
-                            {t.score}: {player1?.score ?? 0}
-                          </Typography>
-                        </Box>
-                        <Box display="flex" alignItems="center" gap={1}>
-                          <ICONS.assignment fontSize="small" />
-                          <Typography variant="caption">
-                            {t.attempted}: {player1?.attemptedQuestions ?? 0}
-                          </Typography>
-                        </Box>
-                      </Box>
+                        {/* Player 1 */}
+                        <Grid item xs={12} sm={5.5}>
+                          <Box
+                            sx={{
+                              background: isPlayer1Winner
+                                ? "linear-gradient(135deg, #A5D6A7, #C8E6C9)"
+                                : "grey.100",
+                              borderRadius: 3,
+                              p: 3,
+                              height: "100%",
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: 1.5,
+                              textAlign: "left",
+                              alignItems: "flex-start",
+                            }}
+                          >
+                            <Typography variant="h6" fontWeight="bold">
+                              {player1?.playerId?.name || t.unknown}
+                            </Typography>
 
-                      {/* VS Separator */}
-                      <Typography
-                        variant="body1"
-                        fontWeight="bold"
-                        color="text.secondary"
-                        sx={{
-                          position: "absolute",
-                          left: "50%",
-                          transform: "translateX(-50%)",
-                          fontSize: "0.85rem",
-                          background: "#ffffff",
-                          px: 1.5,
-                          py: 0.5,
-                          borderRadius: 1,
-                          boxShadow: "0px 2px 10px rgba(0,0,0,0.1)",
-                        }}
-                      >
-                        VS
-                      </Typography>
+                            <Box display="flex" gap={1} alignItems="center">
+                              <ICONS.business fontSize="small" />
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                              >
+                                {player1?.playerId?.company || "N/A"}
+                              </Typography>
+                            </Box>
 
-                      {/* Player 2 */}
-                      <Box
-                        sx={{
-                          textAlign: "right",
-                          flex: 1,
-                          background: isPlayer2Winner
-                            ? "linear-gradient(135deg, #4CAF50, #66BB6A)"
-                            : "grey.200",
-                          p: 2,
-                          borderRadius: "8px",
-                          color: isPlayer2Winner ? "#fff" : "text.primary",
-                        }}
-                      >
-                        <Typography fontWeight="bold">
-                          {player2?.playerId?.name || t.unknown}
-                        </Typography>
+                            <Box display="flex" gap={1} alignItems="center">
+                              <ICONS.leaderboard fontSize="small" />
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                              >
+                                {t.score}: {player1?.score ?? 0}
+                              </Typography>
+                            </Box>
+
+                            <Box display="flex" gap={1} alignItems="center">
+                              <ICONS.assignment fontSize="small" />
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                              >
+                                {t.attempted}:{" "}
+                                {player1?.attemptedQuestions ?? 0}
+                              </Typography>
+                            </Box>
+                            <Box display="flex" gap={1} alignItems="center">
+                              <ICONS.time fontSize="small" />
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                              >
+                                {t.timeTaken}:{" "}
+                                {player1?.timeTaken != null
+                                  ? `${player1.timeTaken}s`
+                                  : "0s"}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        </Grid>
+
+                        {/* VS Badge */}
                         <Box
-                          display="flex"
-                          justifyContent="flex-end"
-                          alignItems="center"
-                          gap={1}
+                          sx={{
+                            position: { xs: "static", sm: "absolute" },
+                            top: "50%",
+                            left: "50%",
+                            transform: {
+                              xs: "none",
+                              sm: "translate(-50%, -50%)",
+                            },
+                            background: "#fff",
+                            border: "2px solid #ccc",
+                            px: 2,
+                            py: 0.5,
+                            borderRadius: "50px",
+                            fontWeight: "bold",
+                            width: "fit-content",
+                            mx: "auto",
+                            my: { xs: 1, sm: 0 },
+                            zIndex: 2,
+                          }}
                         >
-                          <Typography variant="caption">
-                            {player2?.playerId?.company || "N/A"}
-                          </Typography>
-                          <ICONS.business fontSize="small" />
+                          VS
                         </Box>
-                        <Box
-                          display="flex"
-                          justifyContent="flex-end"
-                          alignItems="center"
-                          gap={1}
-                        >
-                          <Typography variant="caption">
-                            {t.score}: {player2?.score ?? 0}
-                          </Typography>
-                          <ICONS.leaderboard fontSize="small" />
-                        </Box>
-                        <Box
-                          display="flex"
-                          justifyContent="flex-end"
-                          alignItems="center"
-                          gap={1}
-                        >
-                          <Typography variant="caption">
-                            {t.attempted}: {player2?.attemptedQuestions ?? 0}
-                          </Typography>
-                          <ICONS.assignment fontSize="small" />
-                        </Box>
-                      </Box>
+                        {/* Player 2 */}
+                        <Grid item xs={12} sm={5.5}>
+                          <Box
+                            sx={{
+                              background: isPlayer2Winner
+                                ? "linear-gradient(135deg, #A5D6A7, #C8E6C9)"
+                                : "grey.100",
+                              borderRadius: 3,
+                              p: 3,
+                              height: "100%",
+                              display: "flex",
+                              flexDirection: "column",
+                              gap: 1.5,
+                              textAlign: "right",
+                              alignItems: "flex-end",
+                            }}
+                          >
+                            <Typography variant="h6" fontWeight="bold">
+                              {player2?.playerId?.name || t.unknown}
+                            </Typography>
+
+                            <Box display="flex" gap={1} alignItems="center">
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                              >
+                                {player2?.playerId?.company || "N/A"}
+                              </Typography>
+                              <ICONS.business fontSize="small" />
+                            </Box>
+
+                            <Box display="flex" gap={1} alignItems="center">
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                              >
+                                {t.score}: {player2?.score ?? 0}
+                              </Typography>
+                              <ICONS.leaderboard fontSize="small" />
+                            </Box>
+
+                            <Box display="flex" gap={1} alignItems="center">
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                              >
+                                {t.attempted}:{" "}
+                                {player2?.attemptedQuestions ?? 0}
+                              </Typography>
+                              <ICONS.assignment fontSize="small" />
+                            </Box>
+
+                            <Box display="flex" gap={1} alignItems="center">
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                              >
+                                {t.timeTaken}:{" "}
+                                {player2?.timeTaken != null
+                                  ? `${player2.timeTaken}s`
+                                  : "0s"}
+                              </Typography>
+                              <ICONS.time fontSize="small" />
+                            </Box>
+                          </Box>
+                        </Grid>
+                      </Grid>
                     </Box>
                   </Paper>
                 </Fade>
               );
             })()
           ) : (
-            <Fade in timeout={500}>
-              <Paper
-                sx={{
-                  p: 3,
-                  mt: 2,
-                  textAlign: "center",
-                  background: "#f0f0f0",
-                  borderRadius: 2,
-                }}
-              >
-                <NoDataAvailable />
-              </Paper>
-            </Fade>
+            <NoDataAvailable />
           )}
         </Box>
       </Stack>

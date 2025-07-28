@@ -11,7 +11,6 @@ const useSocket = (events = {}) => {
 
   useEffect(() => {
     if (!WS_HOST) {
-      console.error("❌ WebSocket Host is not defined.");
       return;
     }
 
@@ -36,7 +35,6 @@ const useSocket = (events = {}) => {
     });
 
     socketInstance.on("connect_error", (err) => {
-      console.error("❌ Socket error:", err.message);
       setConnected(false);
       setConnectionError(err.message);
     });

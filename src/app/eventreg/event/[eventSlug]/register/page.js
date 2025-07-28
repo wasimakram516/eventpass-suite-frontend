@@ -21,6 +21,8 @@ import {
   InputLabel,
   FormControl,
 } from "@mui/material";
+import { QRCodeCanvas } from "qrcode.react";
+
 import { useParams, useRouter } from "next/navigation";
 import LanguageSelector from "@/components/LanguageSelector";
 import { createRegistration } from "@/services/eventreg/registrationService";
@@ -56,6 +58,9 @@ export default function Registration() {
       age: "Age",
       nationality: "Nationality",
       invalidPhone: "Phone number must be 11 digits",
+      yourToken: "Your Token",
+      qrCode: "QR Code:",
+      saveQr: "Save QR Code",
     },
     ar: {
       registerForEvent: "التسجيل في الفعالية",
@@ -79,6 +84,9 @@ export default function Registration() {
       age: "العمر",
       nationality: "الجنسية",
       invalidPhone: "رقم الهاتف يجب أن يكون 11 رقماً",
+      yourToken: "رمزك",
+      qrCode: "رمز الاستجابة السريعة:",
+      saveQr: "حفظ رمز QR",
     },
   });
 
@@ -92,6 +100,8 @@ export default function Registration() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [translations, setTranslations] = useState({});
   const [translationsReady, setTranslationsReady] = useState(false);
+
+  const [qrToken, setQrToken] = useState(null);
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -177,8 +187,10 @@ export default function Registration() {
     dynamicFields.forEach((f) => {
       const val = formData[f.name]?.trim();
       if (f.required && !val) {
-        errors[f.name] = `${t[f.label] || f.label} ${t.required}`;
+        const translatedLabel = translations[f.label] || t[f.label] || f.label;
+        errors[f.name] = `${translatedLabel} ${t.required}`;
       }
+
       if (f.name === "email" && val && !isValidEmail(val)) {
         errors[f.name] = t.invalidEmail;
       }
@@ -197,6 +209,9 @@ export default function Registration() {
 
     if (!result?.error) {
       setShowDialog(true);
+      if (event?.showQrAfterRegistration) {
+        setQrToken(result.token);
+      }
     } else {
       setFieldErrors({ _global: result.message || t.registrationFailed });
     }
@@ -249,27 +264,31 @@ export default function Registration() {
 
     if (field.type === "radio") {
       return (
-        <Box key={field.name} sx={{ mb: 2, textAlign: "left" }}>
+        <Box key={field.name} sx={{ mb: 2, textAlign: "center" }}>
           <Typography
             sx={{ mb: 1, color: errorMsg ? "error.main" : "inherit" }}
           >
             {fieldLabel}
           </Typography>
+
           <RadioGroup
             row
             name={field.name}
             value={formData[field.name]}
             onChange={handleInputChange}
+            sx={{ justifyContent: "center", gap: 2 }}
           >
             {field.options.map((opt) => (
               <FormControlLabel
                 key={`${field.name}-${opt}`}
                 value={opt}
-                control={<Radio />}
+                control={<Radio sx={{ p: 0.5 }} />}
                 label={translations[opt] || opt}
+                sx={{ mx: 1 }}
               />
             ))}
           </RadioGroup>
+
           {errorMsg && (
             <Typography variant="caption" color="error" display="block">
               {errorMsg}
@@ -320,7 +339,6 @@ export default function Registration() {
 
   return (
     <Box
-      dir={dir}
       sx={{
         minHeight: "100vh",
         display: "flex",
@@ -332,6 +350,7 @@ export default function Registration() {
       }}
     >
       <Paper
+        dir={dir}
         elevation={3}
         sx={{
           width: "100%",
@@ -390,17 +409,84 @@ export default function Registration() {
             </Typography>
           </Box>
         </DialogTitle>
+
         <DialogContent sx={{ textAlign: "center" }}>
-          <Typography variant="body1" sx={{ mb: 2 }}>
-            {t.thankYou}
-          </Typography>
+          {event?.showQrAfterRegistration ? (
+            <>
+              <Typography variant="subtitle2" sx={{ color: "text.secondary" }}>
+                {t.yourToken}
+              </Typography>
+
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  mt: 1,
+                }}
+              >
+                <Box
+                  sx={{
+                    px: 2,
+                    py: 0.5,
+                    backgroundColor: "primary.main",
+                    color: "#fff",
+                    borderRadius: "20px",
+                    fontWeight: 600,
+                    fontFamily: "monospace",
+                    fontSize: 16,
+                  }}
+                >
+                  {qrToken}
+                </Box>
+              </Box>
+
+              <Box mt={2} display="flex" justifyContent="center">
+                <Paper
+                  id="qr-container"
+                  elevation={3}
+                  sx={{
+                    p: 2,
+                    borderRadius: 2,
+                    backgroundColor: "#fff",
+                    display: "inline-block",
+                  }}
+                >
+                  <QRCodeCanvas value={qrToken} size={180} />
+                </Paper>
+              </Box>
+            </>
+          ) : (
+            <Typography variant="body1" sx={{ mb: 2 }}>
+              {t.thankYou}
+            </Typography>
+          )}
         </DialogContent>
+
         <DialogActions sx={{ justifyContent: "center", pb: 2 }}>
-          <Button onClick={handleDialogClose} variant="contained">
-            {t.viewEvent}
-          </Button>
+          {event?.showQrAfterRegistration ? (
+            <Button
+              variant="outlined"
+              sx={{ mt: 2 }}
+              onClick={() => {
+                const canvas = document.querySelector("#qr-container canvas");
+                const url = canvas.toDataURL("image/png");
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `EventQR-${qrToken}.png`;
+                a.click();
+              }}
+            >
+              {t.saveQr}
+            </Button>
+          ) : (
+            <Button onClick={handleDialogClose} variant="contained">
+              {t.viewEvent}
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
+
       <LanguageSelector top={20} right={20} />
     </Box>
   );

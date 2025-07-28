@@ -90,25 +90,32 @@ const segmentMap = {
     label: "Event Wheel",
     icon: <ICONS.trophy fontSize="small" sx={{ mr: 0.5 }} />,
   },
-  
+
   // Sub pages
   events: {
     label: "Events",
     icon: <ICONS.event fontSize="small" sx={{ mr: 0.5 }} />,
   },
   registrations: {
-  label: "Registrations",
-  icon: <ICONS.appRegister fontSize="small" sx={{ mr: 0.5 }} />,
-},
-walls: {
-  label: "Media Walls",
-  icon: <ICONS.cast fontSize="small" sx={{ mr: 0.5 }} />,
-},
- uploads: {
-  label: "Media Uploads",
-  icon: <ICONS.upload fontSize="small" sx={{ mr: 0.5 }} />,
-},
-
+    label: "Registrations",
+    icon: <ICONS.appRegister fontSize="small" sx={{ mr: 0.5 }} />,
+  },
+  walls: {
+    label: "Media Walls",
+    icon: <ICONS.cast fontSize="small" sx={{ mr: 0.5 }} />,
+  },
+  uploads: {
+    label: "Media Uploads",
+    icon: <ICONS.upload fontSize="small" sx={{ mr: 0.5 }} />,
+  },
+  host: {
+    label: "Host",
+    icon: <ICONS.adminPanel fontSize="small" sx={{ mr: 0.5 }} />,
+  },
+  sessions: {
+    label: "Game Sessions",
+    icon: <ICONS.leaderboard fontSize="small" sx={{ mr: 0.5 }} />,
+  },
 };
 
 const formatSegment = (seg) => {

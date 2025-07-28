@@ -32,9 +32,23 @@ export const getLeaderboard = withApiHandler(async (gameId) => {
 });
 
 // Export player results (blob response)
-export const exportResults = withApiHandler(async (gameId) => {
-  const { data } = await api.get(`/quiznest/players/export/${gameId}`, {
-    responseType: "blob",
-  });
-  return data;
-});
+export const exportResults = async (gameId) => {
+  try {
+    const { data } = await api.get(`/quiznest/players/export/${gameId}`, {
+      responseType: "blob",
+    });
+
+    const url = window.URL.createObjectURL(new Blob([data]));
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `Game results.xlsx`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (err) {
+    console.log(
+      err?.response?.data?.message || err?.message || "Failed to export results"
+    );
+  }
+};
