@@ -53,9 +53,9 @@ export const deleteCheckInEvent = withApiHandler(
 );
 
 // Download employee template (raw blob)
-export const downloadEmployeeTemplate = async () => {
+export const downloadEmployeeTemplate = withApiHandler(async () => {
   const response = await api.get("/checkin/events/download-template", {
     responseType: "blob",
   });
-  return response.data; 
-};
+  return response.data;
+});

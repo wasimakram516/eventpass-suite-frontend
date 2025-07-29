@@ -7,7 +7,7 @@ export const formatDate = (dateString) => {
   const date = new Date(dateString);
   return new Intl.DateTimeFormat("en-GB", {
     day: "2-digit",
-    month: "short",
+    month: "long",
     year: "numeric",
   }).format(date);
 };
@@ -48,4 +48,18 @@ export const getEventStatus = (startDate, endDate) => {
   if (today < start) return "Upcoming";
   if (today > end) return "Expired";
   return "Current";
+};
+
+/**
+ * Formats a date string to a human-readable format with a short month name.
+ * @param {string} dateString - The date string to format.
+ * @returns {string} - Formatted date string with short month.
+ */
+export const formatDateWithShortMonth = (dateString) => {
+  const date = new Date(dateString);
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(date);
 };

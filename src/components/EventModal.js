@@ -258,19 +258,18 @@ const EventModal = ({
   };
 
   const handleDownloadTemplate = async () => {
-    try {
-      const blob = await downloadEmployeeTemplate();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", "employee_template.csv");
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      showMessage(t.downloadTemplateError, "error");
+    const blob = await downloadEmployeeTemplate();
+    if (blob?.error) {
+      return;
     }
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "employee_template.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
   };
 
   const handleSubmit = async () => {
@@ -318,13 +317,9 @@ const EventModal = ({
     if (formData.eventType === "public" && formData.useCustomFields) {
       payload.append("formFields", JSON.stringify(formData.formFields));
     }
-    try {
-      await onSubmit(payload, !!initialValues);
-    } catch (err) {
-      showMessage(err?.message || "Failed to submit event.", "error");
-    } finally {
-      setLoading(false);
-    }
+    await onSubmit(payload, !!initialValues);
+    setLoading(false);
+    
   };
 
   return (
