@@ -52,10 +52,25 @@ export const deleteCheckInEvent = withApiHandler(
   { showSuccess: true }
 );
 
-// Download employee template (raw blob)
-export const downloadEmployeeTemplate = withApiHandler(async () => {
-  const response = await api.get("/checkin/events/download-template", {
-    responseType: "blob",
-  });
-  return response.data;
-});
+export const downloadEmployeeTemplate = async () => {
+  try {
+    const { data } = await api.get("/checkin/events/download-template", {
+      responseType: "blob",
+    });
+
+    const url = window.URL.createObjectURL(new Blob([data]));
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "employee_template.csv");
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (err) {
+    throw new Error(
+      err?.response?.data?.message ||
+        err?.message ||
+        "Failed to download template"
+    );
+  }
+};

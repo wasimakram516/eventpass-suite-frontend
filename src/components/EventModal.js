@@ -68,6 +68,7 @@ const translations = {
     listType: "List",
     downloadTemplateError: "Failed to download template.",
     showQrToggle: "Show QR code after registration?",
+    downloadTemplateSuccess: "Template downloaded successfully",
   },
   ar: {
     createTitle: "إنشاء فعالية",
@@ -110,6 +111,7 @@ const translations = {
     listType: "قائمة",
     downloadTemplateError: "فشل في تحميل القالب.",
     showQrToggle: "عرض رمز الاستجابة السريعة بعد التسجيل؟",
+    downloadTemplateSuccess: "تم تحميل القالب بنجاح",
   },
 };
 
@@ -258,18 +260,15 @@ const EventModal = ({
   };
 
   const handleDownloadTemplate = async () => {
-    const blob = await downloadEmployeeTemplate();
-    if (blob?.error) {
-      return;
+    try {
+      await downloadEmployeeTemplate();
+      showMessage(
+        t.downloadTemplateSuccess || "Template downloaded successfully",
+        "success"
+      );
+    } catch (err) {
+      showMessage(err.message, "error");
     }
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.setAttribute("download", "employee_template.csv");
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
   };
 
   const handleSubmit = async () => {
@@ -319,7 +318,6 @@ const EventModal = ({
     }
     await onSubmit(payload, !!initialValues);
     setLoading(false);
-    
   };
 
   return (
