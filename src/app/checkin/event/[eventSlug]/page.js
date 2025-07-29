@@ -11,13 +11,37 @@ import {
   Stack,
 } from "@mui/material";
 
-import { formatDate } from "@/utils/dateUtils";
+import { formatDateWithShortMonth } from "@/utils/dateUtils";
 import ICONS from "@/utils/iconUtil";
 import { getCheckInEventBySlug } from "@/services/checkin/checkinEventService";
+import LanguageSelector from "@/components/LanguageSelector";
+import useI18nLayout from "@/hooks/useI18nLayout";
+import getStartIconSpacing from "@/utils/getStartIconSpacing";
 
 export default function EventDetails() {
   const { eventSlug } = useParams();
   const router = useRouter();
+
+  const { t, dir } = useI18nLayout({
+    en: {
+      welcome: "Welcome to",
+      thankYou:
+        "Thank you for joining us! Please enter your Employee ID to get your table number.",
+      getTable: "Get Your Table",
+      takesSeconds: "Takes only 5 seconds!",
+      dateNotAvailable: "Date not available",
+      to: "to",
+    },
+    ar: {
+      welcome: "مرحبًا في",
+      thankYou:
+        "شكرًا لانضمامك إلينا! يرجى إدخال معرف الموظف للحصول على رقم طاولتك.",
+      getTable: "احصل على طاولتك",
+      takesSeconds: "يستغرق فقط 5 ثوانٍ!",
+      dateNotAvailable: "التاريخ غير متوفر",
+      to: "إلى",
+    },
+  });
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -80,9 +104,12 @@ export default function EventDetails() {
         justifyContent: "center",
         minHeight: "100vh",
         px: 2,
+        py: { xs: 2, md: 4 },
+        position: "relative",
       }}
     >
       <Paper
+        dir={dir}
         elevation={3}
         sx={{
           p: 4,
@@ -101,6 +128,7 @@ export default function EventDetails() {
               style={{
                 width: "auto",
                 height: "150px",
+                maxWidth: "250px",
                 objectFit: "contain",
                 borderRadius: 8,
               }}
@@ -123,7 +151,7 @@ export default function EventDetails() {
             },
           }}
         >
-          Welcome to {name}
+          {t.welcome} {name}
         </Typography>
 
         <Stack
@@ -131,9 +159,20 @@ export default function EventDetails() {
           spacing={1}
           justifyContent="center"
           alignItems="center"
-          mb={1}
+          flexWrap="wrap"
         >
-          <ICONS.location sx={{ color: "primary.main" }} />
+          <Box component="span" sx={{ display: "flex", color: "primary.main" }}>
+            <ICONS.location />
+          </Box>
+          {dir === "rtl" && (
+            <Box
+              component="span"
+              sx={{
+                width: "8px",
+                display: "inline-block",
+              }}
+            />
+          )}
           <Typography variant="h6" sx={{ fontSize: { xs: 16, md: 20 } }}>
             {venue}
           </Typography>
@@ -144,16 +183,37 @@ export default function EventDetails() {
           spacing={1}
           justifyContent="center"
           alignItems="center"
-          mb={3}
+          flexWrap="wrap"
+          sx={{ my: 2 }}
         >
-          <ICONS.event sx={{ color: "primary.main" }} />
-          <Typography variant="h6" sx={{ fontSize: { xs: 16, md: 20 } }}>
-            {startDate && endDate
-              ? startDate === endDate
-                ? formatDate(startDate)
-                : `${formatDate(startDate)} – ${formatDate(endDate)}`
-              : "Date not available"}
-          </Typography>
+          <Box component="span" sx={{ display: "flex", color: "primary.main" }}>
+            <ICONS.event />
+          </Box>
+
+          {dir === "rtl" && (
+            <Box
+              component="span"
+              sx={{ width: "8px", display: "inline-block" }}
+            />
+          )}
+
+          {startDate && endDate ? (
+            startDate === endDate ? (
+              <Typography variant="h6" sx={{ fontSize: { xs: 16, md: 20 } }}>
+                {formatDateWithShortMonth(startDate)}
+              </Typography>
+            ) : (
+              <Typography variant="h6" sx={{ fontSize: { xs: 16, md: 20 } }}>
+                {`${formatDateWithShortMonth(startDate)} ${
+                  t.to
+                } ${formatDateWithShortMonth(endDate)}`}
+              </Typography>
+            )
+          ) : (
+            <Typography variant="h6" sx={{ fontSize: { xs: 16, md: 20 } }}>
+              {t.dateNotAvailable}
+            </Typography>
+          )}
         </Stack>
 
         <Typography
@@ -164,8 +224,7 @@ export default function EventDetails() {
             mb: 4,
           }}
         >
-          Thank you for joining us! Please enter your Employee ID to get your
-          table number.
+          {t.thankYou}
         </Typography>
 
         <Button
@@ -187,24 +246,37 @@ export default function EventDetails() {
               background: "secondary.main",
               transform: "scale(1.05)",
             },
+            ...getStartIconSpacing(dir),
           }}
         >
-          Get Your Table
+          {t.getTable}
         </Button>
 
         <Stack
           direction="row"
+          spacing={dir === "ltr" ? 1 : 0}
           justifyContent="center"
           alignItems="center"
-          spacing={1}
           mt={3}
         >
-          <ICONS.time fontSize="small" sx={{ color: "primary.main" }} />
+          <Box component="span" sx={{ display: "flex", color: "primary.main" }}>
+            <ICONS.time fontSize="small" />
+          </Box>
+          {dir === "rtl" && (
+            <Box
+              component="span"
+              sx={{
+                width: "8px",
+                display: "inline-block",
+              }}
+            />
+          )}
           <Typography variant="caption" fontSize={14}>
-            Takes only 5 seconds!
+            {t.takesSeconds}
           </Typography>
         </Stack>
       </Paper>
+      <LanguageSelector top={20} right={20} />
     </Box>
   );
 }

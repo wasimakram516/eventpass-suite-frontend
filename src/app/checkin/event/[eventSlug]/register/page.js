@@ -18,10 +18,33 @@ import { useParams, useRouter } from "next/navigation";
 
 import { createCheckInRegistration } from "@/services/checkin/checkinRegistrationService";
 import ICONS from "@/utils/iconUtil";
+import LanguageSelector from "@/components/LanguageSelector";
+import useI18nLayout from "@/hooks/useI18nLayout";
 
 export default function Registration() {
   const { eventSlug } = useParams();
   const router = useRouter();
+
+  const { t, dir } = useI18nLayout({
+    en: {
+      getYourTable: "Get Your Table",
+      employeeId: "Employee ID",
+      submit: "Submit",
+      pleaseEnterEmployeeId: "Please enter your Employee ID.",
+      failedToCheckIn: "Failed to check in.",
+      welcome: "Welcome!",
+      okay: "Okay",
+    },
+    ar: {
+      getYourTable: "احصل على طاولتك",
+      employeeId: "معرف الموظف",
+      submit: "إرسال",
+      pleaseEnterEmployeeId: "يرجى إدخال معرف الموظف الخاص بك.",
+      failedToCheckIn: "فشل في تسجيل الحضور.",
+      welcome: "مرحباً!",
+      okay: "حسناً",
+    },
+  });
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -32,7 +55,7 @@ export default function Registration() {
 
   const handleSubmit = async () => {
     if (!employeeId) {
-      setError("Please enter your Employee ID.");
+      setError(t.pleaseEnterEmployeeId);
       return;
     }
 
@@ -52,7 +75,7 @@ export default function Registration() {
       setEmployeeId("");
       setShowDialog(true);
     } else {
-      setError(result.message || "Failed to check in.");
+      setError(result.message || t.failedToCheckIn);
     }
   };
 
@@ -82,11 +105,21 @@ export default function Registration() {
           p: 4,
           textAlign: "center",
         }}
+        dir={dir}
       >
-        <Box sx={{ mb: 3, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <ICONS.diningTable sx={{ fontSize: 40, color: "primary.main", mr: 2 }} />
+        <Box
+          sx={{
+            mb: 3,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          <ICONS.diningTable
+            sx={{ fontSize: 40, color: "primary.main", mr: 2 }}
+          />
           <Typography variant="h4" fontWeight="bold">
-            Get Your Table
+            {t.getYourTable}
           </Typography>
         </Box>
 
@@ -98,7 +131,7 @@ export default function Registration() {
 
         <TextField
           fullWidth
-          label="Employee ID"
+          label={t.employeeId}
           type="number"
           value={employeeId}
           onChange={(e) => setEmployeeId(e.target.value)}
@@ -110,19 +143,31 @@ export default function Registration() {
           disabled={loading}
           onClick={handleSubmit}
         >
-          {loading ? <CircularProgress size={22} /> : "Submit"}
+          {loading ? <CircularProgress size={22} /> : t.submit}
         </Button>
       </Paper>
 
-      <Dialog open={showDialog} onClose={handleDialogClose} maxWidth="md" fullWidth>
+      <Dialog
+        open={showDialog}
+        onClose={handleDialogClose}
+        maxWidth="md"
+        fullWidth
+        dir={dir}
+      >
         <DialogTitle sx={{ textAlign: "center" }}>
-  <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-    <ICONS.checkCircle sx={{ fontSize: 70, color: "#28a745", mb: 1 }} />
-    <Typography variant="h6" fontWeight="bold">
-      Welcome!
-    </Typography>
-  </Box>
-</DialogTitle>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+            }}
+          >
+            <ICONS.checkCircle sx={{ fontSize: 70, color: "#28a745", mb: 1 }} />
+            <Typography variant="h6" fontWeight="bold">
+              {t.welcome}
+            </Typography>
+          </Box>
+        </DialogTitle>
 
         <DialogContent sx={{ textAlign: "center" }}>
           <Typography variant="body1" sx={{ mb: 2 }}>
@@ -145,10 +190,11 @@ export default function Registration() {
         </DialogContent>
         <DialogActions sx={{ justifyContent: "center", pb: 2 }}>
           <Button onClick={handleDialogClose} variant="contained">
-            Okay
+            {t.okay}
           </Button>
         </DialogActions>
       </Dialog>
+      <LanguageSelector top={20} right={20} />
     </Box>
   );
 }

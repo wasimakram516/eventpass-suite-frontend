@@ -140,7 +140,6 @@ export default function Registration() {
     setFormData(initial);
 
     const translateAll = async () => {
-      // Always use explicit language code
       const targetLang = dir === "rtl" ? "ar" : "en";
       const translations = {};
       const textsToTranslate = new Set();

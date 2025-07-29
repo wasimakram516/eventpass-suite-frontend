@@ -11,7 +11,7 @@ import {
   Stack,
 } from "@mui/material";
 
-import { formatDate } from "@/utils/dateUtils";
+import { formatDateWithShortMonth } from "@/utils/dateUtils";
 import ICONS from "@/utils/iconUtil";
 import { getPublicEventBySlug } from "@/services/eventreg/eventService";
 import LanguageSelector from "@/components/LanguageSelector";
@@ -203,7 +203,7 @@ export default function EventDetails() {
                 noWrap
                 sx={{ fontSize: { xs: 16, md: 20 } }}
               >
-                {formatDate(startDate)}
+                {formatDateWithShortMonth(startDate)}
               </Typography>
             ) : (
               <Typography
@@ -211,7 +211,9 @@ export default function EventDetails() {
                 noWrap
                 sx={{ fontSize: { xs: 16, md: 20 } }}
               >
-                {`${formatDate(startDate)} ${t.to} ${formatDate(endDate)}`}
+                {`${formatDateWithShortMonth(startDate)} ${
+                  t.to
+                } ${formatDateWithShortMonth(endDate)}`}
               </Typography>
             )
           ) : (

@@ -35,10 +35,11 @@ import {
 } from "@/services/checkin/checkinEventService";
 import EmptyBusinessState from "@/components/EmptyBusinessState";
 import NoDataAvailable from "@/components/NoDataAvailable";
+import getStartIconSpacing from "@/utils/getStartIconSpacing";
 
 const translations = {
   en: {
-    pageTitle: "Check-in Events for",
+    pageTitle: "Manage Events",
     pageDescription: "Manage all employee check-in events for this business.",
     createEvent: "Create Event",
     selectBusiness: "Select Business",
@@ -55,7 +56,7 @@ const translations = {
     venue: "Venue",
   },
   ar: {
-    pageTitle: "فعاليات تسجيل الحضور لـ",
+    pageTitle: "إدارة الفعاليات",
     pageDescription: "إدارة جميع فعاليات تسجيل الحضور للموظفين لهذا العمل.",
     createEvent: "إنشاء فعالية",
     selectBusiness: "اختر العمل",
@@ -200,9 +201,7 @@ export default function EventsPage() {
           >
             <Box sx={{ flex: 1 }}>
               <Typography variant="h5" fontWeight="bold">
-                {user?.role === "admin" && !selectedBusiness
-                  ? t.pageDescription
-                  : `${t.pageTitle} "${selectedBusiness || ""}"`}
+                {t.pageTitle}
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 {t.pageDescription}
@@ -222,7 +221,7 @@ export default function EventsPage() {
                   variant="outlined"
                   onClick={() => setDrawerOpen(true)}
                   startIcon={<BusinessIcon />}
-                  fullWidth
+                  sx={getStartIconSpacing(dir)}
                 >
                   {t.selectBusiness}
                 </Button>
@@ -232,7 +231,7 @@ export default function EventsPage() {
                   variant="contained"
                   startIcon={<ICONS.add />}
                   onClick={handleOpenCreate}
-                  fullWidth
+                  sx={getStartIconSpacing(dir)}
                 >
                   {t.createEvent}
                 </Button>
@@ -259,14 +258,25 @@ export default function EventsPage() {
                   ? getEventStatus(event.startDate, event.endDate)
                   : "N/A";
               return (
-                <Grid item xs={12} sm={6} md={4} key={event._id}>
+                <Grid
+                  item
+                  xs={12}
+                  sm={6}
+                  md={4}
+                  key={event._id}
+                  sx={{ width: { xs: "100%", sm: "auto" } }}
+                >
                   <Card
                     sx={{
-                      maxWidth: 360,
                       width: "100%",
-                      margin: "0 auto",
+                      maxWidth: { xs: "none", sm: 360 },
+                      mx: { xs: 0, sm: "auto" },
                       boxShadow: 3,
                       borderRadius: 2,
+                      height: "100%",
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "space-between",
                     }}
                   >
                     <CardContent>
@@ -393,6 +403,7 @@ export default function EventsPage() {
           initialValues={selectedEvent}
           selectedBusiness={selectedBusiness}
           isEmployee={true}
+          translations={translations}
         />
 
         <ConfirmationDialog

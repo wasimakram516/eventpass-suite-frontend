@@ -39,7 +39,6 @@ export default function GeneralInfo({
 
   return (
     <Box
-      dir={dir}
       sx={{
         position: "relative",
         minHeight: "100vh",
@@ -54,7 +53,7 @@ export default function GeneralInfo({
     >
       <LanguageSelector top={20} right={20} />
 
-      <Container maxWidth="md" sx={{ textAlign: "center" }}>
+      <Container maxWidth="md" sx={{ textAlign: "center" }} dir={dir}>
         {Icon && (
           <Box
             sx={{
@@ -95,30 +94,25 @@ export default function GeneralInfo({
       </Container>
 
       {globalConfig && (
-        <Stack spacing={3} alignItems="center">
-          {globalConfig.logoUrl && (
+        <Stack spacing={1} mt={6} direction="column" alignItems="center">
+          {globalConfig?.companyLogoUrl && (
             <Box
-              sx={{
-                width: { xs: 100, sm: 120 },
-                height: 40,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Image
-                src={globalConfig.logoUrl}
-                alt={globalConfig.appName || "Logo"}
-                width={120}
-                height={40}
-                style={{ width: "100%", height: "auto", objectFit: "contain" }}
-              />
-            </Box>
+              component="img"
+              src={globalConfig.companyLogoUrl}
+              alt="Company Logo"
+              sx={{ height: 64, mt: 6, opacity: 0.7 }}
+            />
           )}
 
-          
           {(globalConfig?.contact?.email || globalConfig?.contact?.phone) && (
-            <Stack spacing={1} direction="column" alignItems="center">
+            <Stack
+              spacing={1}
+              direction="row"
+              alignItems="center"
+              flexWrap="wrap"
+              justifyContent="center"
+              useFlexGap
+            >
               {globalConfig?.contact?.email && (
                 <Stack direction="row" alignItems="center" spacing={1}>
                   <EmailIcon fontSize="small" />
@@ -138,45 +132,49 @@ export default function GeneralInfo({
             </Stack>
           )}
 
-          
-          <Stack direction="row" spacing={2}>
-            {globalConfig?.socialLinks?.facebook && (
-              <Link
-                href={globalConfig.socialLinks.facebook}
-                target="_blank"
-                color="inherit"
-              >
-                <FacebookIcon />
-              </Link>
-            )}
-            {globalConfig?.socialLinks?.instagram && (
-              <Link
-                href={globalConfig.socialLinks.instagram}
-                target="_blank"
-                color="inherit"
-              >
-                <InstagramIcon />
-              </Link>
-            )}
-            {globalConfig?.socialLinks?.linkedin && (
-              <Link
-                href={globalConfig.socialLinks.linkedin}
-                target="_blank"
-                color="inherit"
-              >
-                <LinkedInIcon />
-              </Link>
-            )}
-            {globalConfig?.socialLinks?.website && (
-              <Link
-                href={globalConfig.socialLinks.website}
-                target="_blank"
-                color="inherit"
-              >
-                <LanguageIcon />
-              </Link>
-            )}
-          </Stack>
+          {(globalConfig?.socialLinks?.facebook ||
+            globalConfig?.socialLinks?.instagram ||
+            globalConfig?.socialLinks?.linkedin ||
+            globalConfig?.socialLinks?.website) && (
+            <Stack direction="row" spacing={2} mt={1}>
+              {globalConfig?.socialLinks?.facebook && (
+                <MuiLink
+                  href={globalConfig.socialLinks.facebook}
+                  target="_blank"
+                  color="inherit"
+                >
+                  <FacebookIcon />
+                </MuiLink>
+              )}
+              {globalConfig?.socialLinks?.instagram && (
+                <MuiLink
+                  href={globalConfig.socialLinks.instagram}
+                  target="_blank"
+                  color="inherit"
+                >
+                  <InstagramIcon />
+                </MuiLink>
+              )}
+              {globalConfig?.socialLinks?.linkedin && (
+                <MuiLink
+                  href={globalConfig.socialLinks.linkedin}
+                  target="_blank"
+                  color="inherit"
+                >
+                  <LinkedInIcon />
+                </MuiLink>
+              )}
+              {globalConfig?.socialLinks?.website && (
+                <MuiLink
+                  href={globalConfig.socialLinks.website}
+                  target="_blank"
+                  color="inherit"
+                >
+                  <LanguageIcon />
+                </MuiLink>
+              )}
+            </Stack>
+          )}
         </Stack>
       )}
     </Box>
