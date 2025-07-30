@@ -16,6 +16,7 @@ import { useState, useEffect } from "react";
 import { useMessage } from "../contexts/MessageContext";
 import { useLanguage } from "../contexts/LanguageContext";
 import slugify from "@/utils/slugify";
+import ICONS from "@/utils/iconUtil";
 
 const GameFormModal = ({
   open,
@@ -138,8 +139,8 @@ const GameFormModal = ({
       coverImage: "صورة الغلاف",
       nameImage: "صورة الاسم",
       backgroundImage: "صورة الخلفية",
-      currentImage: "الصورة الحالية:",
-      preview: "معاينة:",
+      currentImage: ":الصورة الحالية",
+      preview: ":معاينة",
       cancel: "إلغاء",
       update: "تحديث",
       create: "إنشاء",
@@ -280,7 +281,13 @@ const GameFormModal = ({
 
             return (
               <Box key={key}>
-                <Button component="label" variant="outlined">
+                <Button
+                  component="label"
+                  variant="outlined"
+                  sx={{
+                    width: { xs: "100%", sm: "auto" },
+                  }}
+                >
                   {label}
                   <input
                     hidden
@@ -322,6 +329,7 @@ const GameFormModal = ({
           variant="outlined"
           color="inherit"
           disabled={loading}
+          startIcon={<ICONS.cancel />}
         >
           {gameDialogTranslations[language].cancel}
         </Button>
@@ -329,7 +337,13 @@ const GameFormModal = ({
           onClick={handleSubmit}
           variant="contained"
           disabled={loading}
-          startIcon={loading && <CircularProgress size={20} color="inherit" />}
+          startIcon={
+            loading ? (
+              <CircularProgress size={20} color="inherit" />
+            ) : (
+              <ICONS.save />
+            )
+          }
         >
           {loading
             ? editMode

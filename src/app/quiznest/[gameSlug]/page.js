@@ -9,9 +9,8 @@ import {
 } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { useGame } from "@/contexts/GameContext";
-import LanguageSelector from "@/components/LanguageSelector";
 import useI18nLayout from "@/hooks/useI18nLayout";
-//Language Usage
+import LanguageSelector from "@/components/LanguageSelector";
 const gameStartTranslations = {
   en: {
     startButton: "Start Game",
@@ -23,10 +22,10 @@ const gameStartTranslations = {
 export default function GameHomePage() {
   const { game, loading } = useGame();
   const router = useRouter();
-  const { t, dir, align, language } = useI18nLayout(gameStartTranslations); 
+  const { t, dir, align } = useI18nLayout(gameStartTranslations);
 
   const handleStart = () => {
-    router.push(`/quiznest/game/${game.slug}/name`);
+    router.push(`/quiznest/${game.slug}/name`);
   };
 
   if (loading || !game) {
@@ -60,11 +59,12 @@ export default function GameHomePage() {
           backgroundAttachment: "fixed",
           px: 2,
         }}
+        dir={dir}
       >
         <Paper
           elevation={6}
           sx={{
-            textAlign: "center",
+            textAlign: align,
             p: { xs: 3, sm: 4 },
             maxWidth: 480,
             width: "100%",
@@ -95,6 +95,7 @@ export default function GameHomePage() {
           </Button>
         </Paper>
       </Box>
+      <LanguageSelector top={20} right={20} />
     </Box>
   );
 }

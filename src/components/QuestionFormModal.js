@@ -12,9 +12,11 @@ import {
   Select,
   MenuItem,
   CircularProgress,
+  Box,
 } from "@mui/material";
 import { useState, useEffect } from "react";
-import { useLanguage } from "../contexts/LanguageContext";
+import useI18nLayout from "../hooks/useI18nLayout";
+import ICONS from "../utils/iconUtil";
 
 const QuestionFormModal = ({
   open,
@@ -64,62 +66,55 @@ const QuestionFormModal = ({
       setLoading(false);
     }
   };
-const { language } = useLanguage(); //Language Usage
-
-const questionDialogTranslations = {
-  en: {
-    editTitle: "Edit Question",
-    addTitle: "Add Question",
-    questionLabel: "Question",
-    optionLabel: "Option",
-    correctAnswerLabel: "Correct Answer",
-    hintLabel: "Hint (optional)",
-    cancelButton: "Cancel",
-    updateButton: "Update",
-    addButton: "Add",
-    updatingText: "Updating...",
-    addingText: "Adding...",
-    emptyOption: "(empty)",
-  },
-  ar: {
-    editTitle: "تعديل السؤال",
-    addTitle: "إضافة سؤال",
-    questionLabel: "السؤال",
-    optionLabel: "خيار",
-    correctAnswerLabel: "الإجابة الصحيحة",
-    hintLabel: "تلميح (اختياري)",
-    cancelButton: "إلغاء",
-    updateButton: "تحديث",
-    addButton: "إضافة",
-    updatingText: "جارٍ التحديث...",
-    addingText: "جارٍ الإضافة...",
-    emptyOption: "(فارغ)",
-  },
-};
+  const { t, language } = useI18nLayout({
+    en: {
+      editTitle: "Edit Question",
+      addTitle: "Add Question",
+      questionLabel: "Question",
+      optionLabel: "Option",
+      correctAnswerLabel: "Correct Answer",
+      hintLabel: "Hint (optional)",
+      cancelButton: "Cancel",
+      updateButton: "Update",
+      addButton: "Add",
+      updatingText: "Updating...",
+      addingText: "Adding...",
+      emptyOption: "(empty)",
+    },
+    ar: {
+      editTitle: "تعديل السؤال",
+      addTitle: "إضافة سؤال",
+      questionLabel: "السؤال",
+      optionLabel: "خيار",
+      correctAnswerLabel: "الإجابة الصحيحة",
+      hintLabel: "تلميح (اختياري)",
+      cancelButton: "إلغاء",
+      updateButton: "تحديث",
+      addButton: "إضافة",
+      updatingText: "جارٍ التحديث...",
+      addingText: "جارٍ الإضافة...",
+      emptyOption: "(فارغ)",
+    },
+  });
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>
-        {editMode
-          ? questionDialogTranslations[language].editTitle
-          : questionDialogTranslations[language].addTitle}
-      </DialogTitle>
+      <DialogTitle>{editMode ? t.editTitle : t.addTitle}</DialogTitle>
 
       <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
         <TextField
-          label={questionDialogTranslations[language].questionLabel}
+          label={t.questionLabel}
           name="question"
           value={form.question}
           onChange={handleChange}
           fullWidth
           required
+          sx={{ mt: 3 }}
         />
 
         {form.answers.map((ans, idx) => (
           <TextField
             key={idx}
-            label={`${
-              questionDialogTranslations[language].optionLabel
-            } ${String.fromCharCode(65 + idx)}`}
+            label={`${t.optionLabel} ${String.fromCharCode(65 + idx)}`}
             value={ans}
             onChange={(e) => handleAnswerChange(idx, e.target.value)}
             fullWidth
@@ -128,9 +123,7 @@ const questionDialogTranslations = {
         ))}
 
         <FormControl fullWidth>
-          <InputLabel>
-            {questionDialogTranslations[language].correctAnswerLabel}
-          </InputLabel>
+          <InputLabel>{t.correctAnswerLabel}</InputLabel>
           <Select
             value={form.correctAnswerIndex}
             onChange={(e) =>
@@ -139,19 +132,18 @@ const questionDialogTranslations = {
                 correctAnswerIndex: parseInt(e.target.value),
               }))
             }
-            label={questionDialogTranslations[language].correctAnswerLabel}
+            label={t.correctAnswerLabel}
           >
             {form.answers.map((ans, i) => (
               <MenuItem key={i} value={i}>
-                {String.fromCharCode(65 + i)}.{" "}
-                {ans || questionDialogTranslations[language].emptyOption}
+                {String.fromCharCode(65 + i)}. {ans || t.emptyOption}
               </MenuItem>
             ))}
           </Select>
         </FormControl>
 
         <TextField
-          label={questionDialogTranslations[language].hintLabel}
+          label={t.hintLabel}
           name="hint"
           value={form.hint}
           onChange={handleChange}
@@ -159,24 +151,52 @@ const questionDialogTranslations = {
         />
       </DialogContent>
 
-      <DialogActions sx={{ p: 3 }}>
-        <Button variant="outlined" onClick={onClose} disabled={loading}>
-          {questionDialogTranslations[language].cancelButton}
-        </Button>
-        <Button
-          variant="contained"
-          onClick={handleSubmit}
-          disabled={loading}
-          startIcon={loading && <CircularProgress size={20} color="inherit" />}
+      <DialogActions sx={{ p: 3, justifyContent: "flex-end" }}>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: { xs: "column", sm: "row" },
+            gap: 2,
+            width: { xs: "100%", sm: "auto" },
+          }}
         >
-          {loading
-            ? editMode
-              ? questionDialogTranslations[language].updatingText
-              : questionDialogTranslations[language].addingText
-            : editMode
-            ? questionDialogTranslations[language].updateButton
-            : questionDialogTranslations[language].addButton}
-        </Button>
+          <Button
+            variant="contained"
+            onClick={handleSubmit}
+            disabled={loading}
+            startIcon={
+              loading ? (
+                <CircularProgress size={20} color="inherit" />
+              ) : (
+                <ICONS.save />
+              )
+            }
+            sx={{
+              order: { xs: 1, sm: 2 },
+              width: { xs: "100%", sm: "auto" },
+            }}
+          >
+            {loading
+              ? editMode
+                ? t.updatingText
+                : t.addingText
+              : editMode
+              ? t.updateButton
+              : t.addButton}
+          </Button>
+          <Button
+            variant="outlined"
+            onClick={onClose}
+            disabled={loading}
+            startIcon={<ICONS.cancel />}
+            sx={{
+              order: { xs: 2, sm: 1 },
+              width: { xs: "100%", sm: "auto" },
+            }}
+          >
+            {t.cancelButton}
+          </Button>
+        </Box>
       </DialogActions>
     </Dialog>
   );

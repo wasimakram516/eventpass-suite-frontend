@@ -1,4 +1,3 @@
-
 import ModuleLandingPage from "@/components/ModuleLandingPage";
 import ICONS from "@/utils/iconUtil";
 

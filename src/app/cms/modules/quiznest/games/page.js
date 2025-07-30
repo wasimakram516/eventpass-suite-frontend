@@ -44,9 +44,9 @@ const translations = {
     optionCountLabel: "Option Count:",
     countdownTimerLabel: "Countdown Timer:",
     quizTimeLabel: "Quiz Time:",
-    coverImageLabel: "Cover Image:",
-    nameImageLabel: "Name Image:",
-    backgroundImageLabel: "Background Image:",
+    coverImageLabel: "Cover Image",
+    nameImageLabel: "Name Image",
+    backgroundImageLabel: "Background Image",
     questionsButton: "Questions",
     resultsButton: "Results",
     deleteGameTitle: "Delete Game?",
@@ -71,13 +71,13 @@ const translations = {
     gamesTitle: "ألعاب لـ",
     gamesDescription: ".إدارة جميع ألعاب الاختبارات المنشأة لهذا العمل",
     createGameButton: "إنشاء لعبة",
-    slugLabel: ":المعر",
-    optionCountLabel: ":عدد الخيارات",
-    countdownTimerLabel: ":عداد التنازلي",
-    quizTimeLabel: ":وقت الاختبار",
-    coverImageLabel: ":صورة الغلاف",
-    nameImageLabel: ":صورة الاسم",
-    backgroundImageLabel: ":صورة الخلفية",
+    slugLabel: "المعرّف:",
+    optionCountLabel: "عدد الخيارات:",
+    countdownTimerLabel: "عداد التنازلي:",
+    quizTimeLabel: "وقت الاختبار:",
+    coverImageLabel: "صورة الغلاف",
+    nameImageLabel: "صورة الاسم",
+    backgroundImageLabel: "صورة الخلفية",
     questionsButton: "الأسئلة",
     resultsButton: "النتائج",
     deleteGameTitle: "حذف اللعبة؟",
@@ -102,9 +102,8 @@ const translations = {
 
 export default function GamesPage() {
   const router = useRouter();
-  const { showMessage } = useMessage();
   const { user } = useAuth();
-  const { t, dir, align, language } = useI18nLayout(translations);
+  const { t, dir, align } = useI18nLayout(translations);
 
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -154,13 +153,11 @@ export default function GamesPage() {
     });
   }, [selectedBusiness]);
 
-  // UPDATED: Business selection handler
   const handleBusinessSelect = (slug) => {
     setSelectedBusiness(slug);
     setDrawerOpen(false);
   };
 
-  // UPDATED: Create/Edit Game using API
   const handleOpenCreate = () => {
     setSelectedGame(null);
     setEditMode(false);
@@ -241,9 +238,7 @@ export default function GamesPage() {
             {/* Heading + Subheading */}
             <Box>
               <Typography variant="h5" fontWeight="bold">
-                {user?.role === "admin" && !selectedBusiness
-                  ? t.manageGames
-                  : `${t.gamesTitle} "${selectedBusiness || ""}"`}
+                {t.manageGames}
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 {t.gamesDescription}
@@ -254,15 +249,22 @@ export default function GamesPage() {
             <Stack
               direction={{ xs: "column", sm: "row" }}
               spacing={1}
-              sx={{ width: { xs: "100%", sm: "auto" } }}
+              sx={{
+                width: { xs: "100%", sm: "auto" },
+                alignItems: "center",
+                justifyContent: "flex-end",
+                gap: dir === "rtl" ? 2 : 1,
+              }}
             >
               {user?.role === "admin" && (
                 <Button
-                  fullWidth
                   variant="outlined"
                   onClick={() => setDrawerOpen(true)}
                   startIcon={<ICONS.business />}
-                  sx={getStartIconSpacing(dir)}
+                  sx={{
+                    ...getStartIconSpacing(dir),
+                    width: { xs: "100%", sm: "auto" },
+                  }}
                 >
                   {t.selectBusiness || "Select Business"}
                 </Button>
@@ -270,11 +272,13 @@ export default function GamesPage() {
 
               {selectedBusiness && (
                 <Button
-                  fullWidth
                   variant="contained"
                   startIcon={<ICONS.add />}
                   onClick={handleOpenCreate}
-                  sx={getStartIconSpacing(dir)}
+                  sx={{
+                    ...getStartIconSpacing(dir),
+                    width: { xs: "100%", sm: "auto" },
+                  }}
                 >
                   {t.createGameButton}
                 </Button>
@@ -288,12 +292,12 @@ export default function GamesPage() {
         {!selectedBusiness ? (
           <EmptyBusinessState />
         ) : loading ? (
-          <Box sx={{ textAlign: "center", mt: 8 }}>
+          <Box sx={{ textAlign: align, mt: 8 }}>
             <CircularProgress />
           </Box>
-        ) : games.length===0 ? (
-          <NoDataAvailable/>
-        ): (
+        ) : games.length === 0 ? (
+          <NoDataAvailable />
+        ) : (
           <Grid container spacing={3} justifyContent={"center"}>
             {games.map((g) => (
               <Grid item xs={12} sm={6} md={4} lg={3} key={g._id}>
@@ -386,7 +390,10 @@ export default function GamesPage() {
                             `/cms/modules/quiznest/games/${g.slug}/questions`
                           )
                         }
-                        sx={getStartIconSpacing(dir)}
+                        sx={{
+                          ...getStartIconSpacing(dir),
+                          width: { xs: "100%", sm: "auto" },
+                        }}
                       >
                         {t.questionsButton}
                       </Button>
@@ -401,13 +408,15 @@ export default function GamesPage() {
                             `/cms/modules/quiznest/games/${g.slug}/results`
                           )
                         }
-                        sx={getStartIconSpacing(dir)}
+                        sx={{
+                          ...getStartIconSpacing(dir),
+                          width: { xs: "100%", sm: "auto" },
+                        }}
                       >
                         {t.resultsButton}
                       </Button>
                     </Box>
 
-                    {/* Right-aligned icon buttons below */}
                     <Box
                       sx={{
                         display: "flex",
@@ -460,7 +469,7 @@ export default function GamesPage() {
           onClose={() => setShareModalOpen(false)}
           url={`${
             typeof window !== "undefined" ? window.location.origin : ""
-          }/quiznest/game/${gameToShare?.slug}`}
+          }/quiznest/${gameToShare?.slug}`}
           name={gameToShare?.title}
         />
 
@@ -476,7 +485,9 @@ export default function GamesPage() {
         <ConfirmationDialog
           open={confirmOpen}
           title={t.deleteGameTitle}
-          message={`${t.deleteGameMessage} "${gameToDelete?.title}"?`}
+          message={`${t.deleteGameMessage} "${gameToDelete?.title}"${
+            dir === "rtl" ? "؟" : "?"
+          }`}
           onClose={() => setConfirmOpen(false)}
           onConfirm={handleDeleteGame}
         />

@@ -21,6 +21,9 @@ import {
   FormControlLabel,
   Checkbox,
   Divider,
+  Card,
+  CardContent,
+  CardActions,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
@@ -46,6 +49,7 @@ import {
 } from "@/services/quiznest/questionService";
 import { getGameBySlug } from "@/services/quiznest/gameService";
 import NoDataAvailable from "@/components/NoDataAvailable";
+import getStartIconSpacing from "@/utils/getStartIconSpacing";
 const translations = {
   en: {
     questionsTitle: 'Questions for "{gameTitle}" game',
@@ -111,7 +115,7 @@ const translations = {
   },
 };
 export default function QuestionsPage() {
-  const { t, language } = useI18nLayout(translations);
+  const { t, dir } = useI18nLayout(translations);
   const { gameSlug } = useParams();
   const { showMessage } = useMessage();
   const [game, setGame] = useState(null);
@@ -150,310 +154,276 @@ export default function QuestionsPage() {
     if (gameSlug) fetchGameAndQuestions();
   }, [gameSlug]);
 
-  // Add or edit question
   const handleAddEdit = async (values, isEdit) => {
-    try {
-      let response;
-      if (isEdit) {
-        response = await updateQuestion(game._id, selectedQuestion._id, values);
-        setQuestions((prev) =>
-          prev.map((q) => (q._id === selectedQuestion._id ? response : q))
-        );
-        showMessage(t.questionUpdated, "success");
-      } else {
-        response = await addQuestion(game._id, values);
-        setQuestions((prev) => [...prev, response]);
-        showMessage(t.questionAdded, "success");
-      }
-    } catch (err) {
-      showMessage(t.errorLoading, "error");
+    let response;
+    if (isEdit) {
+      response = await updateQuestion(game._id, selectedQuestion._id, values);
+      setQuestions((prev) =>
+        prev.map((q) => (q._id === selectedQuestion._id ? response : q))
+      );
+    } else {
+      response = await addQuestion(game._id, values);
+      setQuestions((prev) => [...prev, response]);
     }
     setOpenModal(false);
   };
 
   // Delete question
   const handleDelete = async () => {
-    try {
-      await deleteQuestion(game._id, selectedQuestion._id);
-      setQuestions((prev) =>
-        prev.filter((q) => q._id !== selectedQuestion._id)
-      );
-      showMessage(t.questionDeleted, "success");
-    } catch (err) {
-      showMessage(t.errorLoading, "error");
-    }
+    await deleteQuestion(game._id, selectedQuestion._id);
+    setQuestions((prev) => prev.filter((q) => q._id !== selectedQuestion._id));
     setConfirmOpen(false);
   };
 
   // Upload questions via Excel
   const handleUpload = async (e) => {
-    try {
-      const file = e.target.files[0];
-      if (!file) return;
-      console.log(game._id, file);
-      await uploadExcelQuestions(game._id, file);
-      showMessage(t.questionsUploaded, "success");
-      // Refresh questions
-      const questionsData = await getQuestions(game._id);
-      setQuestions(questionsData || []);
-    } catch (err) {
-      console.log(err);
-      showMessage(t.errorLoading, "error");
-    }
+    const file = e.target.files[0];
+    if (!file) return;
+    await uploadExcelQuestions(game._id, file);
+    const questionsData = await getQuestions(game._id);
+    setQuestions(questionsData || []);
   };
 
   // Download template
   const handleDownload = async () => {
-    try {
-      await downloadTemplate(downloadChoices, includeHint);
-      showMessage(t.templateDownloaded, "success");
-    } catch (err) {
-      showMessage(err.message, "error");
-    } finally {
-      setDownloadModalOpen(false);
-    }
+    await downloadTemplate(downloadChoices, includeHint);
+    setDownloadModalOpen(false);
   };
 
   return (
-    <Box sx={{ position: "relative", width: "100%" }}>
+    <Box sx={{ position: "relative", width: "100%" }} dir={dir}>
       <Container maxWidth="lg">
+        <Box sx={{ mb: 4 }}>
+          <BreadcrumbsNav />
+
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: { xs: "column", sm: "row" },
+              justifyContent: "space-between",
+              alignItems: { xs: "stretch", sm: "center" },
+              mt: 2,
+              mb: 1,
+              gap: 2,
+              flexWrap: "wrap",
+            }}
+          >
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="h5" fontWeight="bold">
+                {t.questionsTitle.replace("{gameTitle}", game?.title)}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                <span
+                  dangerouslySetInnerHTML={{
+                    __html: t.questionsDescription
+                      .replace("{choicesCount}", game?.choicesCount)
+                      .replace("{countdownTimer}", game?.countdownTimer)
+                      .replace("{gameSessionTimer}", game?.gameSessionTimer),
+                  }}
+                />
+              </Typography>
+            </Box>
+
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: { xs: "column", sm: "row" },
+                gap: 1,
+                width: { xs: "100%", sm: "auto" },
+              }}
+            >
+              {/* Add Question */}
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => {
+                  setEditMode(false);
+                  setSelectedQuestion(null);
+                  setOpenModal(true);
+                }}
+                sx={getStartIconSpacing(dir)}
+              >
+                {t.addQuestion}
+              </Button>
+
+              {/* More Menu (Download + Upload) */}
+              <Button
+                variant="outlined"
+                startIcon={<MoreVertIcon />}
+                onClick={handleMenuOpen}
+                sx={getStartIconSpacing(dir)}
+              >
+                {t.moreOptions}
+              </Button>
+              <Menu
+                anchorEl={anchorEl}
+                open={openMenu}
+                onClose={handleMenuClose}
+              >
+                <MenuItem
+                  onClick={() => {
+                    setDownloadModalOpen(true);
+                    handleMenuClose();
+                  }}
+                >
+                  <DownloadIcon fontSize="small" sx={{ mr: 1 }} />
+                  {t.downloadTemplate}
+                </MenuItem>
+                <MenuItem>
+                  <UploadFileIcon fontSize="small" sx={{ mr: 1 }} />
+                  <label style={{ cursor: "pointer" }}>
+                    {t.uploadQuestions}
+                    <input
+                      type="file"
+                      hidden
+                      accept=".xlsx"
+                      onChange={(e) => {
+                        handleUpload(e);
+                        handleMenuClose();
+                      }}
+                    />
+                  </label>
+                </MenuItem>
+              </Menu>
+            </Box>
+          </Box>
+
+          <Divider sx={{ mt: 2 }} />
+        </Box>
+
         {loading ? (
           <Box sx={{ textAlign: "center", mt: 8 }}>
             <CircularProgress />
           </Box>
+        ) : questions.length === 0 ? (
+          <NoDataAvailable />
         ) : (
-          <>
-            <BreadcrumbsNav />
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "flex-start",
-                flexWrap: "wrap",
-                rowGap: 2,
-                mb: 3,
-              }}
-            >
-              {/* Title + Description */}
-              <Box sx={{ flex: { xs: "1 1 100%", sm: "auto" } }}>
-                <Typography variant="h5" fontWeight="bold">
-                  {t.questionsTitle.replace("{gameTitle}", game?.title)}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  <span
-                    dangerouslySetInnerHTML={{
-                      __html: t.questionsDescription
-                        .replace("{choicesCount}", game?.choicesCount)
-                        .replace("{countdownTimer}", game?.countdownTimer)
-                        .replace("{gameSessionTimer}", game?.gameSessionTimer),
-                    }}
-                  />
-                </Typography>
-              </Box>
-
-              {/* Buttons Block */}
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "stretch",
-                  gap: 1,
-                  flexDirection: { xs: "column", sm: "row" },
-                  width: { xs: "100%", sm: "auto" },
-                }}
+          <Grid container spacing={3} justifyContent="center">
+            {questions?.map((q, idx) => (
+              <Grid
+                item
+                xs={12}
+                sm={6}
+                md={4}
+                key={q._id || idx}
+                sx={{ width: { xs: "100%", sm: "auto" } }}
               >
-                {/* Add Question */}
-                <Button
-                  fullWidth
-                  variant="contained"
-                  startIcon={<AddIcon />}
-                  onClick={() => {
-                    setEditMode(false);
-                    setSelectedQuestion(null);
-                    setOpenModal(true);
+                <Card
+                  sx={{
+                    width: "100%",
+                    maxWidth: { xs: "none", sm: 360 },
+                    mx: { xs: 0, sm: "auto" },
+                    boxShadow: 3,
+                    borderRadius: 2,
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
                   }}
                 >
-                  {t.addQuestion}
-                </Button>
-
-                {/* More Menu (Download + Upload) */}
-                <Box sx={{ width: { xs: "100%", sm: "auto" } }}>
-                  <Button
-                    variant="outlined"
-                    fullWidth
-                    startIcon={<MoreVertIcon />}
-                    onClick={handleMenuOpen}
-                  >
-                    {t.moreOptions}
-                  </Button>
-                  <Menu
-                    anchorEl={anchorEl}
-                    open={openMenu}
-                    onClose={handleMenuClose}
-                  >
-                    <MenuItem
-                      onClick={() => {
-                        setDownloadModalOpen(true);
-                        handleMenuClose();
-                      }}
+                  <CardContent>
+                    <Typography
+                      variant="subtitle1"
+                      fontWeight="bold"
+                      gutterBottom
                     >
-                      <DownloadIcon fontSize="small" sx={{ mr: 1 }} />
-                      {t.downloadTemplate}
-                    </MenuItem>
-                    <MenuItem>
-                      <UploadFileIcon fontSize="small" sx={{ mr: 1 }} />
-                      <label style={{ cursor: "pointer" }}>
-                        {t.uploadQuestions}
-                        <input
-                          type="file"
-                          hidden
-                          accept=".xlsx"
-                          onChange={(e) => {
-                            handleUpload(e);
-                            handleMenuClose();
-                          }}
-                        />
-                      </label>
-                    </MenuItem>
-                  </Menu>
-                </Box>
-              </Box>
-            </Box>
+                      Q{idx + 1}
+                    </Typography>
 
-            <Divider sx={{ mb: 3 }} />
-            {questions.length === 0 ? (
-              <NoDataAvailable />
-            ) : (
-              <Grid container spacing={3} justifyContent={"center"}>
-                {questions?.map((q, idx) => (
-                  <Grid item xs={12} sm={6} md={4} key={q._id || idx}>
-                    <Box
-                      sx={{
-                        borderRadius: 2,
-                        boxShadow: 3,
-                        p: 2,
-                        bgcolor: "#fff",
-                        display: "flex",
-                        flexDirection: "column",
-                        justifyContent: "space-between",
-                        height: "100%",
-                        width: {
-                          xs: "100%",
-                          sm: "300px",
-                        },
-                      }}
-                    >
-                      <Box>
+                    <Typography variant="body1" sx={{ mb: 1 }}>
+                      <strong>{t.questionLabel}</strong> {q.question}
+                    </Typography>
+
+                    <Box>
+                      <Typography
+                        variant="body2"
+                        fontWeight="bold"
+                        sx={{ mb: 0.5 }}
+                      >
+                        {t.optionsLabel}
+                      </Typography>
+                      {q.answers.map((a, i) => (
                         <Typography
-                          variant="subtitle1"
-                          fontWeight="bold"
-                          gutterBottom
+                          key={i}
+                          variant="body2"
+                          sx={{
+                            color:
+                              i === q.correctAnswerIndex
+                                ? "green"
+                                : "text.secondary",
+                          }}
                         >
-                          Q{idx + 1}
+                          {String.fromCharCode(65 + i)}. {a}
                         </Typography>
+                      ))}
+                    </Box>
 
-                        <Typography variant="body1" sx={{ mb: 1 }}>
-                          <strong>{t.questionLabel}</strong> {q.question}
-                        </Typography>
+                    <Typography variant="body2" sx={{ mt: 1 }}>
+                      <strong>{t.correctAnswerLabel}</strong>{" "}
+                      <span style={{ color: "green" }}>
+                        {String.fromCharCode(65 + q.correctAnswerIndex)}.{" "}
+                        {q.answers[q.correctAnswerIndex]}
+                      </span>
+                    </Typography>
 
-                        <Box>
-                          <Typography
-                            variant="body2"
-                            fontWeight="bold"
-                            sx={{ mb: 0.5 }}
-                          >
-                            {t.optionsLabel}
-                          </Typography>
-                          {q.answers.map((a, i) => (
-                            <Typography
-                              key={i}
-                              variant="body2"
-                              sx={{
-                                color:
-                                  i === q.correctAnswerIndex
-                                    ? "green"
-                                    : "text.secondary",
-                              }}
-                            >
-                              {String.fromCharCode(65 + i)}. {a}
-                            </Typography>
-                          ))}
-                        </Box>
-
-                        <Typography variant="body2" sx={{ mt: 1 }}>
-                          <strong>{t.correctAnswerLabel}</strong>{" "}
-                          <span style={{ color: "green" }}>
-                            {String.fromCharCode(65 + q.correctAnswerIndex)}.{" "}
-                            {q.answers[q.correctAnswerIndex]}
-                          </span>
-                        </Typography>
-
-                        {q.hint && (
-                          <Typography
-                            variant="caption"
-                            color="text.secondary"
-                            sx={{ mt: 1, display: "block" }}
-                          >
-                            <strong>{t.hintLabel}</strong> {q.hint}
-                          </Typography>
-                        )}
-                      </Box>
-
-                      <Box
-                        sx={{
-                          display: "flex",
-                          justifyContent: "flex-end",
-                          gap: 1,
-                          mt: 2,
+                    {q.hint && (
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ mt: 1, display: "block" }}
+                      >
+                        <strong>{t.hintLabel}</strong> {q.hint}
+                      </Typography>
+                    )}
+                  </CardContent>
+                  <CardActions sx={{ justifyContent: "center" }}>
+                    <Tooltip title={t.editTooltip}>
+                      <IconButton
+                        color="secondary"
+                        onClick={() => {
+                          setSelectedQuestion(q);
+                          setEditMode(true);
+                          setOpenModal(true);
                         }}
                       >
-                        <Tooltip title={t.editTooltip}>
-                          <IconButton
-                            color="info"
-                            onClick={() => {
-                              setSelectedQuestion(q);
-                              setEditMode(true);
-                              setOpenModal(true);
-                            }}
-                          >
-                            <EditIcon />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title={t.deleteTooltip}>
-                          <IconButton
-                            color="error"
-                            onClick={() => {
-                              setSelectedQuestion(q);
-                              setConfirmOpen(true);
-                            }}
-                          >
-                            <DeleteIcon />
-                          </IconButton>
-                        </Tooltip>
-                      </Box>
-                    </Box>
-                  </Grid>
-                ))}
+                        <EditIcon />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title={t.deleteTooltip}>
+                      <IconButton
+                        color="error"
+                        onClick={() => {
+                          setSelectedQuestion(q);
+                          setConfirmOpen(true);
+                        }}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Tooltip>
+                  </CardActions>
+                </Card>
               </Grid>
-            )}
-
-            <QuestionFormModal
-              open={openModal}
-              onClose={() => setOpenModal(false)}
-              editMode={editMode}
-              initialValues={selectedQuestion}
-              onSubmit={(values) => handleAddEdit(values, editMode)}
-              optionCount={game?.choicesCount}
-            />
-
-            <ConfirmationDialog
-              open={confirmOpen}
-              title={t.deleteQuestionTitle}
-              message={t.deleteQuestionMessage}
-              onClose={() => setConfirmOpen(false)}
-              onConfirm={handleDelete}
-            />
-          </>
+            ))}
+          </Grid>
         )}
+
+        <QuestionFormModal
+          open={openModal}
+          onClose={() => setOpenModal(false)}
+          editMode={editMode}
+          initialValues={selectedQuestion}
+          onSubmit={(values) => handleAddEdit(values, editMode)}
+          optionCount={game?.choicesCount}
+        />
+
+        <ConfirmationDialog
+          open={confirmOpen}
+          title={t.deleteQuestionTitle}
+          message={t.deleteQuestionMessage}
+          onClose={() => setConfirmOpen(false)}
+          onConfirm={handleDelete}
+        />
+
         <Dialog
           open={downloadModalOpen}
           onClose={() => setDownloadModalOpen(false)}
@@ -462,7 +432,7 @@ export default function QuestionsPage() {
           <DialogContent
             sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}
           >
-            <FormControl fullWidth>
+            <FormControl fullWidth sx={{ mt: 2 }}>
               <InputLabel>{t.numberOptionsLabel}</InputLabel>
               <Select
                 value={downloadChoices}
