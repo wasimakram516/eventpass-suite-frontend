@@ -30,7 +30,7 @@ import { getPublicEventBySlug } from "@/services/eventreg/eventService";
 
 import ConfirmationDialog from "@/components/ConfirmationDialog";
 import BreadcrumbsNav from "@/components/BreadcrumbsNav";
-import { formatDate } from "@/utils/dateUtils";
+import { formatDate, formatDateTimeWithLocale } from "@/utils/dateUtils";
 import { useParams } from "next/navigation";
 import ICONS from "@/utils/iconUtil";
 import WalkInModal from "@/components/WalkInModal";
@@ -69,6 +69,7 @@ export default function ViewRegistrations() {
       emailLabel: "Email",
       phoneLabel: "Phone",
       companyLabel: "Company",
+      registeredAt: "Registered At",
       viewWalkIns: "View Walk-in Records",
       deleteRecord: "Delete Registration",
       recordsPerPage: "Records per page",
@@ -89,6 +90,7 @@ export default function ViewRegistrations() {
       emailLabel: "البريد الإلكتروني",
       phoneLabel: "الهاتف",
       companyLabel: "الشركة",
+      registeredAt: "تاريخ التسجيل",
       viewWalkIns: "عرض سجلات الحضور",
       deleteRecord: "حذف التسجيل",
       recordsPerPage: "عدد السجلات لكل صفحة",
@@ -194,7 +196,7 @@ export default function ViewRegistrations() {
       });
       row.push(
         `"${reg.token}"`,
-        `"${new Date(reg.createdAt).toLocaleString()}"`
+        `"${formatDateTimeWithLocale(reg.createdAt)}"`
       );
       lines.push(row.join(`,`));
     });
@@ -348,6 +350,10 @@ export default function ViewRegistrations() {
                         {reg.customFields?.[f.name] ?? reg[f.name] ?? "N/A"}
                       </Typography>
                     ))}
+                    <Typography variant="body2" sx={{ mt: 1, ...wrapTextBox }}>
+                      <strong>{t.registeredAt}</strong>{" "}
+                      {formatDateTimeWithLocale(reg.createdAt)}
+                    </Typography>
                   </CardContent>
                   <CardActions sx={{ justifyContent: "center" }}>
                     <Tooltip title={t.viewWalkIns}>
