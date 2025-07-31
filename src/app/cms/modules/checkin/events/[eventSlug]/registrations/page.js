@@ -24,12 +24,13 @@ import {
 import {
   getCheckInRegistrationsByEvent,
   deleteCheckInRegistration,
+  getAllCheckInRegistrationsByEvent,
 } from "@/services/checkin/checkinRegistrationService";
 import { getCheckInEventBySlug } from "@/services/checkin/checkinEventService";
 
 import ConfirmationDialog from "@/components/ConfirmationDialog";
 import BreadcrumbsNav from "@/components/BreadcrumbsNav";
-import { formatDate } from "@/utils/dateUtils";
+import { formatDate, formatDateTimeWithLocale } from "@/utils/dateUtils";
 import { useParams } from "next/navigation";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
@@ -48,6 +49,7 @@ const ViewRegistrations = () => {
   const [limit, setLimit] = useState(10);
   const [totalRegistrations, setTotalRegistrations] = useState(0);
   const [isPublicEvent, setIsPublicEvent] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
 
   const { dir, align, isArabic, t } = useI18nLayout({
     en: {
@@ -55,6 +57,7 @@ const ViewRegistrations = () => {
       description:
         "View event details and manage registrations for this event. Export registration data or delete entries as needed.",
       export: "Export to CSV",
+      exporting: "Exporting...",
       records: "records",
       noRecords: "No registrations found for this event.",
       delete: "Delete Registration",
@@ -66,6 +69,7 @@ const ViewRegistrations = () => {
       employeeName: "Employee Name:",
       tableNumber: "Table Number:",
       tableImage: "Table Image",
+      registeredAt: "Registered At",
       recordsPerPage: "Records per page",
       showing: "Showing",
       to: "to",
@@ -77,6 +81,7 @@ const ViewRegistrations = () => {
       description:
         "اعرض تفاصيل الحدث وقم بإدارة التسجيلات. يمكنك تصدير البيانات أو حذف السجلات.",
       export: "تصدير إلى CSV",
+      exporting: "جاري التصدير...",
       records: "سجلات",
       noRecords: "لا توجد تسجيلات لهذا الحدث.",
       delete: "حذف التسجيل",
@@ -88,6 +93,7 @@ const ViewRegistrations = () => {
       employeeName: "اسم الموظف:",
       tableNumber: "رقم الطاولة:",
       tableImage: "صورة الطاولة",
+      registeredAt: "تاريخ التسجيل",
       recordsPerPage: "عدد السجلات لكل صفحة",
       showing: "عرض",
       to: "إلى",
@@ -147,8 +153,15 @@ const ViewRegistrations = () => {
     setPage(1);
   };
 
-  const exportToCSV = () => {
+  const exportToCSV = async () => {
     if (!eventDetails) return;
+
+    setExportLoading(true);
+
+    const res = await getAllCheckInRegistrationsByEvent(eventSlug);
+    if (res?.error) return;
+
+    const registrationsToExport = res;
 
     const lines = [];
 
@@ -177,32 +190,33 @@ const ViewRegistrations = () => {
       `Employee Name`,
       `Table Number`,
       `Table Image URL`,
-      `Registered At`,
+      t.registeredAt,
     ];
     lines.push(headers.join(`,`));
 
     // --- Data rows ---
-    registrations.forEach((reg) => {
+    registrationsToExport.forEach((reg) => {
       const row = [
         reg.employeeId || `N/A`,
         reg.employeeName || `N/A`,
         reg.tableNumber || `N/A`,
         reg.tableImage || `N/A`,
-        new Date(reg.createdAt).toLocaleString(),
+        formatDateTimeWithLocale(reg.createdAt),
       ];
       lines.push(
         row.map((v) => `"${v.toString().replace(/"/g, `""`)}"`).join(`,`)
       );
     });
 
-    // --- Download CSV ---
-    const blob = new Blob([lines.join(`\n`)], {
-      type: `text/csv;charset=utf-8;`,
-    });
+    // Add UTF-8 BOM here
+    const csvContent = `\uFEFF` + lines.join(`\n`);
+    const blob = new Blob([csvContent], { type: `text/csv;charset=utf-8;` });
     const link = document.createElement(`a`);
     link.href = URL.createObjectURL(blob);
     link.download = `${eventDetails.slug || `event`}_registrations.csv`;
     link.click();
+
+    setExportLoading(false);
   };
 
   if (loading) {
@@ -244,11 +258,18 @@ const ViewRegistrations = () => {
             <Button
               variant="contained"
               onClick={exportToCSV}
-              startIcon={<ICONS.download fontSize="small" />}
+              disabled={exportLoading}
+              startIcon={
+                exportLoading ? (
+                  <CircularProgress size={20} color="inherit" />
+                ) : (
+                  <ICONS.download fontSize="small" />
+                )
+              }
               sx={getStartIconSpacing(dir)}
               fullWidth
             >
-              {t.export}
+              {exportLoading ? t.exporting || "Exporting..." : t.export}
             </Button>
           </Box>
         )}
@@ -345,6 +366,13 @@ const ViewRegistrations = () => {
                           <strong>{t.company}</strong>{" "}
                           {registration.company || "N/A"}
                         </Typography>
+                        <Typography
+                          variant="body2"
+                          sx={{ mt: 1, ...wrapTextBox }}
+                        >
+                          <strong>{t.registeredAt}</strong>{" "}
+                          {formatDateTimeWithLocale(registration.createdAt)}
+                        </Typography>
                       </>
                     ) : (
                       <>
@@ -382,6 +410,13 @@ const ViewRegistrations = () => {
                             />
                           </Box>
                         )}
+                        <Typography
+                          variant="body2"
+                          sx={{ mt: 1, ...wrapTextBox }}
+                        >
+                          <strong>{t.registeredAt}</strong>{" "}
+                          {formatDateTimeWithLocale(registration.createdAt)}
+                        </Typography>
                       </>
                     )}
                   </CardContent>

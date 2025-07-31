@@ -55,6 +55,7 @@ export default function ViewRegistrations() {
   const [registrationToDelete, setRegistrationToDelete] = useState(null);
   const [walkInModalOpen, setWalkInModalOpen] = useState(false);
   const [selectedRegistration, setSelectedRegistration] = useState(null);
+  const [exportLoading, setExportLoading] = useState(false);
 
   const { dir, t } = useI18nLayout({
     en: {
@@ -62,6 +63,7 @@ export default function ViewRegistrations() {
       description:
         "View event details and manage registrations for this event. Export registration data or delete entries as needed.",
       export: "Export to CSV",
+      exporting: "Exporting...",
       records: "records",
       noRecords: "No registrations found for this event.",
       delete: "Delete Registration",
@@ -83,6 +85,7 @@ export default function ViewRegistrations() {
       description:
         "اعرض تفاصيل الحدث وقم بإدارة التسجيلات. يمكنك تصدير البيانات أو حذف السجلات.",
       export: "تصدير إلى CSV",
+      exporting: "جاري التصدير...",
       records: "سجلات",
       noRecords: "لا توجد تسجيلات لهذا الحدث.",
       delete: "حذف التسجيل",
@@ -156,6 +159,7 @@ export default function ViewRegistrations() {
   const exportToCSV = async () => {
     if (!eventDetails) return;
 
+    setExportLoading(true);
     const res = await getAllPublicRegistrationsByEvent(eventSlug);
     if (res?.error) return;
 
@@ -233,6 +237,7 @@ export default function ViewRegistrations() {
     link.href = URL.createObjectURL(blob);
     link.download = `${eventDetails.slug || `event`}_registrations.csv`;
     link.click();
+    setExportLoading(false);
   };
 
   if (loading) {
@@ -271,10 +276,17 @@ export default function ViewRegistrations() {
           <Button
             variant="contained"
             onClick={exportToCSV}
-            startIcon={<ICONS.download />}
+            disabled={exportLoading}
+            startIcon={
+              exportLoading ? (
+                <CircularProgress size={20} color="inherit" />
+              ) : (
+                <ICONS.download />
+              )
+            }
             sx={getStartIconSpacing(dir)}
           >
-            {t.export}
+            {exportLoading ? t.exporting || "Exporting..." : t.export}
           </Button>
         )}
       </Stack>
