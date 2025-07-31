@@ -7,7 +7,6 @@ export const createRegistration = withApiHandler(
     const { data } = await api.post("/eventreg/registrations", payload);
     return data;
   },
-  { showSuccess: true }
 );
 
 // Verify registration by QR token (Staff use)

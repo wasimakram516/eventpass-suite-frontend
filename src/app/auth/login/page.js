@@ -95,7 +95,6 @@ export default function LoginPage() {
       ) {
         router.push("/cms");
       }
-      showMessage("Login successful!", "success");
     } catch (err) {
       showMessage(
         err?.response?.data?.message ||
