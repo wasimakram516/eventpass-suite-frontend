@@ -25,6 +25,7 @@ import {
 import {
   getRegistrationsByEvent,
   deleteRegistration,
+  getAllPublicRegistrationsByEvent,
 } from "@/services/eventreg/registrationService";
 import { getPublicEventBySlug } from "@/services/eventreg/eventService";
 
@@ -152,13 +153,17 @@ export default function ViewRegistrations() {
     setDeleteDialogOpen(false);
   };
 
-  const exportToCSV = () => {
+  const exportToCSV = async () => {
     if (!eventDetails) return;
 
-    // 1) Build CSV lines in an array
+    const res = await getAllPublicRegistrationsByEvent(eventSlug);
+    if (res?.error) return;
+
+    const registrationsToExport = res;
+
     const lines = [];
 
-    // --- Event metadata ---
+    // Event metadata
     lines.push([`Event Slug:`, eventDetails.slug || `N/A`].join(`,`));
     lines.push([`Event Name:`, eventDetails.name || `N/A`].join(`,`));
     lines.push(
@@ -175,21 +180,18 @@ export default function ViewRegistrations() {
     lines.push([`Description:`, eventDetails.description || `N/A`].join(`,`));
     lines.push([`Logo URL:`, eventDetails.logoUrl || `N/A`].join(`,`));
     lines.push([`Event Type:`, eventDetails.eventType || `N/A`].join(`,`));
-    lines.push([]); // blank line
+    lines.push([]);
 
-    // --- Header row for registrations ---
-    // dynamicFields is your array of { name, label, … }
+    // Header row for registrations
     const regHeaders = [
       ...dynamicFields.map((f) => f.label),
       `Token`,
-      `Registered At`,
+      t.registeredAt,
     ];
     lines.push(regHeaders.join(`,`));
 
-    // --- One registration row per line ---
-    registrations.forEach((reg) => {
+    registrationsToExport.forEach((reg) => {
       const row = dynamicFields.map((f) => {
-        // pick from customFields first, fall back to top-level
         return `"${(reg.customFields?.[f.name] ?? reg[f.name] ?? ``)
           .toString()
           .replace(/"/g, `""`)}"`;
@@ -201,15 +203,14 @@ export default function ViewRegistrations() {
       lines.push(row.join(`,`));
     });
 
-    // --- Walk-in records section ---
-    // only if any walk-ins exist in the whole set
-    const allWalkIns = registrations.flatMap((reg) =>
+    const allWalkIns = registrationsToExport.flatMap((reg) =>
       (reg.walkIns || []).map((w) => ({
         token: reg.token,
         scannedAt: w.scannedAt,
         scannedBy: w.scannedBy?.name || w.scannedBy?.email || `Unknown`,
       }))
     );
+
     if (allWalkIns.length > 0) {
       lines.push([]);
       lines.push([`Registration Token`, `Scanned At`, `Scanned By`].join(`,`));
@@ -217,17 +218,17 @@ export default function ViewRegistrations() {
         lines.push(
           [
             `"${w.token}"`,
-            `"${new Date(w.scannedAt).toLocaleString()}"`,
+            `"${formatDateTimeWithLocale(w.scannedAt)}"`,
             `"${w.scannedBy.replace(/"/g, `""`)}"`,
           ].join(`,`)
         );
       });
     }
 
-    // 2) Download it
-    const blob = new Blob([lines.join(`\n`)], {
-      type: `text/csv;charset=utf-8;`,
-    });
+    // Add UTF-8 BOM here
+    const csvContent = `\uFEFF` + lines.join(`\n`);
+    const blob = new Blob([csvContent], { type: `text/csv;charset=utf-8;` });
+
     const link = document.createElement(`a`);
     link.href = URL.createObjectURL(blob);
     link.download = `${eventDetails.slug || `event`}_registrations.csv`;

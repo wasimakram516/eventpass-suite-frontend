@@ -27,6 +27,16 @@ export const getRegistrationsByEvent = withApiHandler(
   }
 );
 
+// Get all public registrations for export (no pagination)
+export const getAllPublicRegistrationsByEvent = withApiHandler(
+  async (slug) => {
+    const { data } = await api.get(
+      `/eventreg/registrations/event/${slug}/all`
+    );
+    return data;
+  }
+);
+
 // Delete a registration by ID (CMS use)
 export const deleteRegistration = withApiHandler(
   async (id) => {
