@@ -292,7 +292,7 @@ export default function PlayPage() {
             sx={{
               maxWidth: 500,
               p: 4,
-              textAlign: "center",
+              textAlign: align,
               backdropFilter: "blur(6px)",
               backgroundColor: "rgba(255,255,255,0.6)",
               borderRadius: 4,
@@ -347,7 +347,7 @@ export default function PlayPage() {
 
   if (ended) {
     return (
-      <Box dir={dir} sx={{ position: "relative" }}>
+      <Box sx={{ position: "relative" }}>
         <LanguageSelector top={20} right={20} />
         <Box
           sx={{
@@ -359,8 +359,9 @@ export default function PlayPage() {
             background:
               "linear-gradient(135deg, rgba(0,0,0,0.8), rgba(50,50,50,0.8))",
             p: 2,
-            textAlign: "center",
+            textAlign: align,
           }}
+          dir={dir}
         >
           <Fade in timeout={800}>
             <Paper
@@ -402,7 +403,7 @@ export default function PlayPage() {
   }
 
   return (
-    <Box dir={dir} sx={{ position: "relative" }}>
+    <Box sx={{ position: "relative" }}>
       <LanguageSelector top={20} right={20} />
       <Box
         sx={{
@@ -415,6 +416,7 @@ export default function PlayPage() {
           px: 2,
           py: 6,
         }}
+        dir={dir}
       >
         <Box
           sx={{
@@ -471,20 +473,56 @@ export default function PlayPage() {
             elevation={4}
             sx={{
               width: "95%",
+              maxWidth: "100%",
               p: 4,
-              textAlign: "center",
+              textAlign: align,
               backdropFilter: "blur(6px)",
               backgroundColor: "rgba(255,255,255,0.5)",
               borderRadius: 4,
               marginTop: "10vh",
+              overflow: "hidden",
+              wordBreak: "break-word",
+              boxSizing: "border-box",
             }}
           >
-            <Typography variant="h5" gutterBottom fontWeight="bold">
+            <Typography
+              variant="h5"
+              gutterBottom
+              fontWeight="bold"
+              sx={{
+                fontSize: { xs: "1rem", sm: "1.25rem", md: "1.5rem" },
+                lineHeight: { xs: 1.2, sm: 1.3, md: 1.4 },
+                wordBreak: "break-word",
+              }}
+            >
               {translatedContent.uiLabels?.questionLabel || "Question"}{" "}
               {questionIndex + 1} {translatedContent.uiLabels?.ofLabel || "of"}{" "}
               {randomizedIndexes.length || game.questions.length}
             </Typography>
-            <Typography sx={{ fontSize: "3rem" }} gutterBottom>
+            <Typography
+              sx={{
+                fontSize: (() => {
+                  const questionText =
+                    translatedContent.question ||
+                    currentQuestion?.question ||
+                    "";
+                  const textLength = questionText.length;
+                  if (textLength <= 50) {
+                    return { xs: "0.9rem", sm: "1.1rem", md: "1.4rem" };
+                  } else if (textLength <= 100) {
+                    return { xs: "0.8rem", sm: "1rem", md: "1.2rem" };
+                  } else if (textLength <= 200) {
+                    return { xs: "0.7rem", sm: "0.9rem", md: "1rem" };
+                  } else {
+                    return { xs: "0.6rem", sm: "0.8rem", md: "0.9rem" };
+                  }
+                })(),
+                lineHeight: { xs: 1.2, sm: 1.3, md: 1.4 },
+                wordBreak: "break-word",
+                overflowWrap: "break-word",
+              }}
+              gutterBottom
+            >
               {translatedContent.question || currentQuestion?.question}
             </Typography>
 
@@ -495,11 +533,15 @@ export default function PlayPage() {
               alignItems="stretch"
               sx={{
                 mt: 2,
-                maxWidth: "600px",
+                maxWidth: "100%",
+                width: "100%",
                 mx: "auto",
                 display: "grid",
                 gridTemplateColumns: "repeat(2, 1fr)",
                 gridAutoRows: "1fr",
+                overflow: "hidden",
+                boxSizing: "border-box",
+                gap: "8px",
               }}
             >
               {Array.isArray(translatedContent.answers) &&
@@ -521,7 +563,12 @@ export default function PlayPage() {
                       sx={{
                         display: "flex",
                         minHeight: "150px",
+                        maxWidth: "100%",
+                        width: "100%",
                         gridColumn: i === 4 ? "1 / -1" : "auto",
+                        overflow: "hidden",
+                        boxSizing: "border-box",
+                        flexShrink: 0,
                       }}
                     >
                       <Button
@@ -531,28 +578,69 @@ export default function PlayPage() {
                         sx={{
                           backgroundColor: bg,
                           fontWeight: "bold",
-                          fontSize: "2rem",
+                          fontSize: (() => {
+                            const textLength = opt.length;
+                            if (textLength <= 10) {
+                              return {
+                                xs: "0.8rem",
+                                sm: "0.9rem",
+                                md: "1.1rem",
+                              };
+                            } else if (textLength <= 30) {
+                              return {
+                                xs: "0.7rem",
+                                sm: "0.8rem",
+                                md: "1rem",
+                              };
+                            } else if (textLength <= 60) {
+                              return {
+                                xs: "0.6rem",
+                                sm: "0.7rem",
+                                md: "0.8rem",
+                              };
+                            } else {
+                              return {
+                                xs: "0.5rem",
+                                sm: "0.6rem",
+                                md: "0.7rem",
+                              };
+                            }
+                          })(),
                           borderRadius: 2,
                           textTransform: "none",
                           whiteSpace: "normal",
                           wordBreak: "break-word",
                           overflowWrap: "break-word",
-                          minHeight: "150px",
+                          minHeight: { xs: "100px", sm: "120px", md: "150px" },
+                          maxWidth: "100%",
+                          width: "100%",
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          p: 2,
+                          p: { xs: 1, sm: 1.5, md: 2 },
+                          overflow: "hidden",
+                          boxSizing: "border-box",
+                          flexShrink: 0,
+                          minWidth: 0,
                         }}
                       >
                         <Box
                           sx={{
                             width: "100%",
                             height: "100%",
+                            maxWidth: "100%",
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
-                            textAlign: "center",
+                            textAlign: align,
                             px: 1,
+                            overflow: "hidden",
+                            wordBreak: "break-word",
+                            overflowWrap: "break-word",
+                            boxSizing: "border-box",
+                            flexShrink: 0,
+                            minWidth: 0,
+                            hyphens: "auto",
                           }}
                         >
                           {opt}

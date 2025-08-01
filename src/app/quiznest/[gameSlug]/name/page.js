@@ -31,29 +31,15 @@ const entryDialogTranslations = {
 export default function NamePage() {
   const { game, loading } = useGame();
   const router = useRouter();
-  const { t, dir, align, language } = useI18nLayout(entryDialogTranslations);
+  const { t, dir, align } = useI18nLayout(entryDialogTranslations);
   const [form, setForm] = useState({ name: "", company: "" });
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState("");
 
   const handleSubmit = async () => {
     if (!form.name.trim() || submitting) return;
-
-    try {
       setSubmitting(true);
-      const response = await joinGame(game._id, form);
-
-      // Store for later use
-      localStorage.setItem("playerInfo", JSON.stringify(form));
-      localStorage.setItem("playerId", response.playerId);
-      localStorage.setItem("sessionId", response.sessionId);
-
-      router.push(`/quiznest/${game.slug}/instructions`);
-    } catch (err) {
-      setError(err);
-    } finally {
+      await joinGame(game._id, form, game.slug, router);
       setSubmitting(false);
-    }
   };
 
   if (loading || !game) {
@@ -94,7 +80,7 @@ export default function NamePage() {
       >
         {/* Back Button */}
         <IconButton
-          onClick={() => router.push(`/quiznest/game/${game.slug}`)}
+          onClick={() => router.push(`/quiznest/${game.slug}`)}
           sx={{
             position: "fixed",
             top: 20,
@@ -113,7 +99,7 @@ export default function NamePage() {
             p: { xs: 3, sm: 4 },
             width: "100%",
             maxWidth: 500,
-            textAlign: "center",
+            textAlign: align,
             backdropFilter: "blur(10px)",
             backgroundColor: "rgba(255,255,255,0.6)",
             borderRadius: 6,
@@ -154,12 +140,6 @@ export default function NamePage() {
               t.startButton
             )}
           </Button>
-
-          {error && (
-            <Typography variant="caption" color="error" sx={{ mt: 2 }}>
-              {error}
-            </Typography>
-          )}
         </Paper>
       </Box>
     </Box>
