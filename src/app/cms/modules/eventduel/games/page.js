@@ -43,9 +43,9 @@ const translations = {
     optionCountLabel: "Option Count:",
     countdownTimerLabel: "Countdown Timer:",
     quizTimeLabel: "Quiz Time:",
-    coverImageLabel: "Cover Image:",
-    nameImageLabel: "Name Image:",
-    backgroundImageLabel: "Background Image:",
+    coverImageLabel: "Cover Image",
+    nameImageLabel: "Name Image",
+    backgroundImageLabel: "Background Image",
     hostButton: "Host Game",
     questionsButton: "Questions",
     resultsButton: "Results",
@@ -71,13 +71,13 @@ const translations = {
     gamesTitle: "ألعاب لـ",
     gamesDescription: ".إدارة جميع ألعاب الاختبارات المنشأة لهذا العمل",
     createGameButton: "إنشاء لعبة",
-    slugLabel: ":المعر",
-    optionCountLabel: ":عدد الخيارات",
-    countdownTimerLabel: ":عداد التنازلي",
-    quizTimeLabel: ":وقت الاختبار",
-    coverImageLabel: ":صورة الغلاف",
-    nameImageLabel: ":صورة الاسم",
-    backgroundImageLabel: ":صورة الخلفية",
+    slugLabel: "المعر:",
+    optionCountLabel: "عدد الخيارات:",
+    countdownTimerLabel: "عداد التنازلي:",
+    quizTimeLabel: "وقت الاختبار:",
+    coverImageLabel: "صورة الغلاف",
+    nameImageLabel: "صورة الاسم",
+    backgroundImageLabel: "صورة الخلفية",
     hostButton: "استضافة اللعبة",
     questionsButton: "الأسئلة",
     resultsButton: "النتائج",
@@ -104,7 +104,7 @@ const translations = {
 export default function GamesPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const { t, dir, align, language } = useI18nLayout(translations);
+  const { t, dir, align } = useI18nLayout(translations);
 
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -154,13 +154,11 @@ export default function GamesPage() {
     });
   }, [selectedBusiness]);
 
-  // UPDATED: Business selection handler
   const handleBusinessSelect = (slug) => {
     setSelectedBusiness(slug);
     setDrawerOpen(false);
   };
 
-  // UPDATED: Create/Edit Game using API
   const handleOpenCreate = () => {
     setSelectedGame(null);
     setEditMode(false);
@@ -241,28 +239,32 @@ export default function GamesPage() {
             {/* Heading + Subheading */}
             <Box>
               <Typography variant="h5" fontWeight="bold">
-                {user?.role === "admin" && !selectedBusiness
-                  ? t.manageGames
-                  : `${t.gamesTitle} "${selectedBusiness || ""}"`}
+                {t.manageGames}
               </Typography>
               <Typography variant="body2" color="text.secondary">
                 {t.gamesDescription}
               </Typography>
             </Box>
 
-            {/* Buttons */}
             <Stack
               direction={{ xs: "column", sm: "row" }}
               spacing={1}
-              sx={{ width: { xs: "100%", sm: "auto" } }}
+              sx={{
+                width: { xs: "100%", sm: "auto" },
+                alignItems: "center",
+                justifyContent: "flex-end",
+                gap: dir === "rtl" ? 2 : 1,
+              }}
             >
               {user?.role === "admin" && (
                 <Button
-                  fullWidth
                   variant="outlined"
                   onClick={() => setDrawerOpen(true)}
                   startIcon={<ICONS.business />}
-                  sx={getStartIconSpacing(dir)}
+                  sx={{
+                    ...getStartIconSpacing(dir),
+                    width: { xs: "100%", sm: "auto" },
+                  }}
                 >
                   {t.selectBusiness || "Select Business"}
                 </Button>
@@ -270,11 +272,13 @@ export default function GamesPage() {
 
               {selectedBusiness && (
                 <Button
-                  fullWidth
                   variant="contained"
                   startIcon={<ICONS.add />}
                   onClick={handleOpenCreate}
-                  sx={getStartIconSpacing(dir)}
+                  sx={{
+                    ...getStartIconSpacing(dir),
+                    width: { xs: "100%", sm: "auto" },
+                  }}
                 >
                   {t.createGameButton}
                 </Button>
@@ -288,7 +292,7 @@ export default function GamesPage() {
         {!selectedBusiness ? (
           <EmptyBusinessState />
         ) : loading ? (
-          <Box sx={{ textAlign: "center", mt: 8 }}>
+          <Box sx={{ textAlign: align, mt: 8 }}>
             <CircularProgress />
           </Box>
         ) : games.length === 0 ? (
@@ -371,7 +375,6 @@ export default function GamesPage() {
                       sx={{
                         display: "flex",
                         justifyContent: "space-between",
-                        alignItems: "stretch",
                         flexWrap: "wrap",
                         gap: 2,
                       }}
@@ -464,9 +467,13 @@ export default function GamesPage() {
         <ConfirmationDialog
           open={confirmOpen}
           title={t.deleteGameTitle}
-          message={`${t.deleteGameMessage} "${gameToDelete?.title}"?`}
+          message={`${t.deleteGameMessage} "${gameToDelete?.title}"${
+            dir === "rtl" ? "؟" : "?"
+          }`}
           onClose={() => setConfirmOpen(false)}
           onConfirm={handleDeleteGame}
+          confirmButtonText={t.deleteGameTitle}
+          confirmButtonIcon={<ICONS.delete />}
         />
       </Container>
     </Box>

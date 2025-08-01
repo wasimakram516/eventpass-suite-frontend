@@ -21,6 +21,9 @@ import {
   FormControlLabel,
   Checkbox,
   Divider,
+  Card,
+  CardContent,
+  CardActions,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
@@ -34,7 +37,6 @@ import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import QuestionFormModal from "@/components/QuestionFormModal";
 import ConfirmationDialog from "@/components/ConfirmationDialog";
-import { useMessage } from "@/contexts/MessageContext";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import {
   getQuestions,
@@ -46,6 +48,9 @@ import {
 } from "@/services/eventduel/questionService";
 import { getGameBySlug } from "@/services/eventduel/gameService";
 import NoDataAvailable from "@/components/NoDataAvailable";
+import ICONS from "@/utils/iconUtil";
+import getStartIconSpacing from "@/utils/getStartIconSpacing";
+
 const translations = {
   en: {
     questionsTitle: 'Questions for "{gameTitle}" game',
@@ -110,10 +115,10 @@ const translations = {
     addQuestion: "إضافة سؤال",
   },
 };
+
 export default function QuestionsPage() {
-  const { t, language } = useI18nLayout(translations);
+  const { t, dir } = useI18nLayout(translations);
   const { gameSlug } = useParams();
-  const { showMessage } = useMessage();
   const [game, setGame] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -130,9 +135,8 @@ export default function QuestionsPage() {
   const handleMenuClose = () => setAnchorEl(null);
   const hasFetched = useRef(false);
 
-  // Fetch game and questions from backend
   useEffect(() => {
-    if (hasFetched.current) return; 
+    if (hasFetched.current) return;
     hasFetched.current = true;
     const fetchGameAndQuestions = async () => {
       setLoading(true);
@@ -150,72 +154,42 @@ export default function QuestionsPage() {
     if (gameSlug) fetchGameAndQuestions();
   }, [gameSlug]);
 
-  // Add or edit question
   const handleAddEdit = async (values, isEdit) => {
-    try {
-      let response;
-      if (isEdit) {
-        response = await updateQuestion(game._id, selectedQuestion._id, values);
-        setQuestions((prev) =>
-          prev.map((q) => (q._id === selectedQuestion._id ? response : q))
-        );
-        showMessage(t.questionUpdated, "success");
-      } else {
-        response = await addQuestion(game._id, values);
-        setQuestions((prev) => [...prev, response]);
-        showMessage(t.questionAdded, "success");
-      }
-    } catch (err) {
-      showMessage(t.errorLoading, "error");
+    let response;
+    if (isEdit) {
+      response = await updateQuestion(game._id, selectedQuestion._id, values);
+      setQuestions((prev) =>
+        prev.map((q) => (q._id === selectedQuestion._id ? response : q))
+      );
+    } else {
+      response = await addQuestion(game._id, values);
+      setQuestions((prev) => [...prev, response]);
     }
     setOpenModal(false);
   };
 
-  // Delete question
   const handleDelete = async () => {
-    try {
-      await deleteQuestion(game._id, selectedQuestion._id);
-      setQuestions((prev) =>
-        prev.filter((q) => q._id !== selectedQuestion._id)
-      );
-      showMessage(t.questionDeleted, "success");
-    } catch (err) {
-      showMessage(t.errorLoading, "error");
-    }
+    await deleteQuestion(game._id, selectedQuestion._id);
+    setQuestions((prev) => prev.filter((q) => q._id !== selectedQuestion._id));
     setConfirmOpen(false);
   };
 
-  // Upload questions via Excel
   const handleUpload = async (e) => {
-    try {
-      const file = e.target.files[0];
-      if (!file) return;
-      console.log(game._id, file);
-      await uploadExcelQuestions(game._id, file);
-      showMessage(t.questionsUploaded, "success");
-      // Refresh questions
-      const questionsData = await getQuestions(game._id);
-      setQuestions(questionsData || []);
-    } catch (err) {
-      console.log(err);
-      showMessage(t.errorLoading, "error");
-    }
+    const file = e.target.files[0];
+    if (!file) return;
+    console.log(game._id, file);
+    await uploadExcelQuestions(game._id, file);
+    const questionsData = await getQuestions(game._id);
+    setQuestions(questionsData || []);
   };
 
-  // Download template
   const handleDownload = async () => {
-    try {
-      await downloadTemplate(downloadChoices, includeHint);
-      showMessage(t.templateDownloaded, "success");
-    } catch (err) {
-      showMessage(err.message, "error");
-    } finally {
-      setDownloadModalOpen(false);
-    }
+    await downloadTemplate(downloadChoices, includeHint);
+    setDownloadModalOpen(false);
   };
 
   return (
-    <Box sx={{ position: "relative", width: "100%" }}>
+    <Box sx={{ position: "relative", width: "100%" }} dir={dir}>
       <Container maxWidth="lg">
         {loading ? (
           <Box sx={{ textAlign: "center", mt: 8 }}>
@@ -227,10 +201,10 @@ export default function QuestionsPage() {
             <Box
               sx={{
                 display: "flex",
+                flexDirection: { xs: "column", sm: "row" },
                 justifyContent: "space-between",
-                alignItems: "flex-start",
-                flexWrap: "wrap",
-                rowGap: 2,
+                alignItems: { xs: "stretch", sm: "center" },
+                gap: 2,
                 mb: 3,
               }}
             >
@@ -263,7 +237,6 @@ export default function QuestionsPage() {
               >
                 {/* Add Question */}
                 <Button
-                  fullWidth
                   variant="contained"
                   startIcon={<AddIcon />}
                   onClick={() => {
@@ -271,6 +244,7 @@ export default function QuestionsPage() {
                     setSelectedQuestion(null);
                     setOpenModal(true);
                   }}
+                  sx={getStartIconSpacing(dir)}
                 >
                   {t.addQuestion}
                 </Button>
@@ -282,6 +256,7 @@ export default function QuestionsPage() {
                     fullWidth
                     startIcon={<MoreVertIcon />}
                     onClick={handleMenuOpen}
+                    sx={getStartIconSpacing(dir)}
                   >
                     {t.moreOptions}
                   </Button>
@@ -325,24 +300,28 @@ export default function QuestionsPage() {
             ) : (
               <Grid container spacing={3} justifyContent={"center"}>
                 {questions?.map((q, idx) => (
-                  <Grid item xs={12} sm={6} md={4} key={q._id || idx}>
-                    <Box
+                  <Grid
+                    item
+                    xs={12}
+                    sm={6}
+                    md={4}
+                    key={q._id || idx}
+                    sx={{ width: { xs: "100%", sm: "auto" } }}
+                  >
+                    <Card
                       sx={{
-                        borderRadius: 2,
+                        width: "100%",
+                        maxWidth: { xs: "none", sm: 360 },
+                        mx: { xs: 0, sm: "auto" },
                         boxShadow: 3,
-                        p: 2,
-                        bgcolor: "#fff",
+                        borderRadius: 2,
+                        height: "100%",
                         display: "flex",
                         flexDirection: "column",
                         justifyContent: "space-between",
-                        height: "100%",
-                        width: {
-                          xs: "100%",
-                          sm: "300px",
-                        },
                       }}
                     >
-                      <Box>
+                      <CardContent>
                         <Typography
                           variant="subtitle1"
                           fontWeight="bold"
@@ -396,19 +375,11 @@ export default function QuestionsPage() {
                             <strong>{t.hintLabel}</strong> {q.hint}
                           </Typography>
                         )}
-                      </Box>
-
-                      <Box
-                        sx={{
-                          display: "flex",
-                          justifyContent: "flex-end",
-                          gap: 1,
-                          mt: 2,
-                        }}
-                      >
+                      </CardContent>
+                      <CardActions sx={{ justifyContent: "center" }}>
                         <Tooltip title={t.editTooltip}>
                           <IconButton
-                            color="info"
+                            color="secondary"
                             onClick={() => {
                               setSelectedQuestion(q);
                               setEditMode(true);
@@ -429,8 +400,8 @@ export default function QuestionsPage() {
                             <DeleteIcon />
                           </IconButton>
                         </Tooltip>
-                      </Box>
-                    </Box>
+                      </CardActions>
+                    </Card>
                   </Grid>
                 ))}
               </Grid>
@@ -451,18 +422,21 @@ export default function QuestionsPage() {
               message={t.deleteQuestionMessage}
               onClose={() => setConfirmOpen(false)}
               onConfirm={handleDelete}
+              confirmButtonText={t.deleteQuestionTitle}
+              confirmButtonIcon={<ICONS.delete />}
             />
           </>
         )}
         <Dialog
           open={downloadModalOpen}
           onClose={() => setDownloadModalOpen(false)}
+          dir={dir}
         >
           <DialogTitle>{t.downloadTemplateTitle}</DialogTitle>
           <DialogContent
             sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}
           >
-            <FormControl fullWidth>
+            <FormControl fullWidth sx={{ mt: 2 }}>
               <InputLabel>{t.numberOptionsLabel}</InputLabel>
               <Select
                 value={downloadChoices}
@@ -492,10 +466,17 @@ export default function QuestionsPage() {
             <Button
               onClick={() => setDownloadModalOpen(false)}
               variant="outlined"
+              startIcon={<ICONS.cancel />}
+              sx={getStartIconSpacing(dir)}
             >
               {t.cancelButton}
             </Button>
-            <Button onClick={handleDownload} variant="contained">
+            <Button
+              onClick={handleDownload}
+              variant="contained"
+              startIcon={<ICONS.download />}
+              sx={getStartIconSpacing(dir)}
+            >
               {t.downloadButton}
             </Button>
           </DialogActions>
