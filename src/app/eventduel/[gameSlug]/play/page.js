@@ -7,7 +7,6 @@ import {
   CircularProgress,
   Paper,
   Grid,
-  IconButton,
   Fade,
   Container,
   Card,
@@ -307,133 +306,181 @@ export default function PlayPage() {
   /* SESSION PENDING SCREEN (waiting for host)*/
   if (pendingSession) {
     return (
-      <Box
-        dir={dir}
-        sx={{
-          position: "absolute",
-          width: "100%",
-          height: "100%",
-          background:
-            "linear-gradient(to bottom, rgba(0,0,0,0.9), rgba(0,0,0,0.6))",
-          color: "#fff",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          textAlign: "center",
-          backdropFilter: "blur(10px)",
-          animation: "fadeIn 1s ease-in-out",
-          px: 3,
-        }}
-      >
-        {/* Language Selector */}
+      <>
         <LanguageSelector top={20} right={20} />
-
-        {/* Loading Spinner */}
-        <CircularProgress />
-
-        {/* Animated Title */}
-        <Typography
-          variant="h3"
+        <Box
+          dir={dir}
           sx={{
-            my: 6,
-            fontWeight: "bold",
-            textShadow:
-              "0 0 10px rgba(255,255,255,0.8), 0 0 20px rgba(0,255,255,0.6)",
-            letterSpacing: "2px",
-            animation: "pulseText 2s infinite",
-            fontSize: { xs: "1.5rem", sm: "2.5rem" },
+            position: "absolute",
+            width: "100%",
+            height: "100%",
+            background:
+              "linear-gradient(to bottom, rgba(0,0,0,0.9), rgba(0,0,0,0.6))",
+            color: "#fff",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            textAlign: "center",
+            backdropFilter: "blur(10px)",
+            animation: "fadeIn 1s ease-in-out",
+            px: 3,
           }}
         >
-          {t.pendingTitle}
-        </Typography>
+          <CircularProgress />
 
-        {/* Sub-message */}
-        <Typography
-          variant="h6"
-          sx={{
-            mt: 2,
-            opacity: 0.5,
-            fontSize: { xs: "0.9rem", sm: "1.1rem" },
-            fontStyle: "italic",
-            animation: "blink 1.5s infinite",
-          }}
-        >
-          {t.pendingMessage}
-        </Typography>
-      </Box>
+          {/* Animated Title */}
+          <Typography
+            variant="h3"
+            sx={{
+              my: 6,
+              fontWeight: "bold",
+              textShadow:
+                "0 0 10px rgba(255,255,255,0.8), 0 0 20px rgba(0,255,255,0.6)",
+              letterSpacing: "2px",
+              animation: "pulseText 2s infinite",
+              fontSize: (() => {
+                const titleLength = t.pendingTitle?.length || 0;
+                if (titleLength <= 25) {
+                  return { xs: "1.5rem", sm: "2.5rem" };
+                } else if (titleLength <= 40) {
+                  return { xs: "1.25rem", sm: "2rem" };
+                } else {
+                  return { xs: "1rem", sm: "1.75rem" };
+                }
+              })(),
+              lineHeight: { xs: 1.2, sm: 1.3 },
+              wordBreak: "break-word",
+              overflowWrap: "break-word",
+            }}
+          >
+            {t.pendingTitle}
+          </Typography>
+
+          {/* Sub-message */}
+          <Typography
+            variant="h6"
+            sx={{
+              mt: 2,
+              opacity: 0.5,
+              fontSize: (() => {
+                const messageLength = t.pendingMessage?.length || 0;
+                if (messageLength <= 30) {
+                  return { xs: "0.9rem", sm: "1.1rem" };
+                } else if (messageLength <= 50) {
+                  return { xs: "0.8rem", sm: "1rem" };
+                } else {
+                  return { xs: "0.7rem", sm: "0.9rem" };
+                }
+              })(),
+              fontStyle: "italic",
+              animation: "blink 1.5s infinite",
+              lineHeight: { xs: 1.2, sm: 1.3 },
+              wordBreak: "break-word",
+              overflowWrap: "break-word",
+            }}
+          >
+            {t.pendingMessage}
+          </Typography>
+        </Box>
+      </>
     );
   }
 
   // show countdown before active
   if (localDelay > 0) {
     return (
-      <Box
-        dir={dir}
-        sx={{
-          position: "relative",
-          height: "100vh",
-          width: "100vw",
-          background:
-            "linear-gradient(to bottom, rgba(0,0,0,0.85), rgba(0,0,0,0.65))",
-          color: "#fff",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          textAlign: "center",
-          backdropFilter: "blur(8px)",
-          animation: "fadeIn 1s ease-in-out",
-          px: 3,
-        }}
-      >
+      <>
         {/* Language switcher */}
         <LanguageSelector top={20} right={20} />
-
-        {/* Pre-game title */}
-        <Typography
-          variant="h3"
+        <Box
+          dir={dir}
           sx={{
-            mb: 4,
-            fontWeight: "bold",
-            textShadow:
-              "0 0 10px rgba(255,255,255,0.8), 0 0 20px rgba(0,255,255,0.6)",
-            letterSpacing: "2px",
-            animation: "pulseText 2s infinite",
-            fontSize: { xs: "1.5rem", sm: "3rem" },
+            position: "relative",
+            height: "100vh",
+            width: "100vw",
+            background:
+              "linear-gradient(to bottom, rgba(0,0,0,0.85), rgba(0,0,0,0.65))",
+            color: "#fff",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            textAlign: "center",
+            backdropFilter: "blur(8px)",
+            animation: "fadeIn 1s ease-in-out",
+            px: 3,
           }}
         >
-          {t.waitingTitle}
-        </Typography>
+          {/* Pre-game title */}
+          <Typography
+            variant="h3"
+            sx={{
+              mb: 4,
+              fontWeight: "bold",
+              textShadow:
+                "0 0 10px rgba(255,255,255,0.8), 0 0 20px rgba(0,255,255,0.6)",
+              letterSpacing: "2px",
+              animation: "pulseText 2s infinite",
+              fontSize: (() => {
+                const titleLength = t.waitingTitle?.length || 0;
+                if (titleLength <= 15) {
+                  return { xs: "1.5rem", sm: "3rem" };
+                } else if (titleLength <= 25) {
+                  return { xs: "1.25rem", sm: "2.5rem" };
+                } else {
+                  return { xs: "1rem", sm: "2rem" };
+                }
+              })(),
+              lineHeight: { xs: 1.2, sm: 1.3 },
+              wordBreak: "break-word",
+              overflowWrap: "break-word",
+            }}
+          >
+            {t.waitingTitle}
+          </Typography>
 
-        {/* Countdown number */}
-        <Typography
-          variant="h1"
-          sx={{
-            fontWeight: "bold",
-            fontSize: { xs: "8rem", sm: "10rem" },
-            color: "warning.light",
-            textShadow: "0 0 20px rgba(255,215,0,0.9)",
-            animation: "pulse 1s infinite alternate",
-          }}
-        >
-          {localDelay}
-        </Typography>
+          {/* Countdown number */}
+          <Typography
+            variant="h1"
+            sx={{
+              fontWeight: "bold",
+              fontSize: { xs: "8rem", sm: "10rem" },
+              color: "warning.light",
+              textShadow: "0 0 20px rgba(255,215,0,0.9)",
+              animation: "pulse 1s infinite alternate",
+            }}
+          >
+            {localDelay}
+          </Typography>
 
-        {/* Subtext */}
-        <Typography
-          variant="h6"
-          sx={{
-            mt: 2,
-            opacity: 0.5,
-            fontStyle: "italic",
-            animation: "blink 1.5s infinite",
-            fontSize: { xs: "0.9rem", sm: "1.2rem" },
-          }}
-        >
-          {t.waitingMessage}
-        </Typography>
-      </Box>
+          {/* Subtext */}
+          <Typography
+            variant="h6"
+            sx={{
+              mt: 2,
+              opacity: 0.5,
+              fontStyle: "italic",
+              animation: "blink 1.5s infinite",
+              fontSize: (() => {
+                const messageLength = t.waitingMessage?.length || 0;
+                if (messageLength <= 25) {
+                  return { xs: "0.9rem", sm: "1.2rem" };
+                } else if (messageLength <= 40) {
+                  return { xs: "0.8rem", sm: "1.1rem" };
+                } else {
+                  return { xs: "0.7rem", sm: "1rem" };
+                }
+              })(),
+              lineHeight: { xs: 1.2, sm: 1.3 },
+              wordBreak: "break-word",
+              overflowWrap: "break-word",
+            }}
+          >
+            {t.waitingMessage}
+          </Typography>
+        </Box>
+      </>
     );
   }
 
@@ -442,76 +489,132 @@ export default function PlayPage() {
     // Player finished all questions but timer still running
     if (hasFinishedEarly) {
       return (
-        <Box
-          dir={dir}
-          sx={{
-            position: "relative",
-            height: "100vh",
-            width: "100vw",
-            backgroundImage: `url(${game.backgroundImage})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            "&::before": {
-              content: '""',
-              position: "absolute",
-              inset: 0,
-              bgcolor: "rgba(0,0,0,0.5)",
-            },
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            p: 3,
-            textAlign: "center",
-          }}
-        >
-          <Confetti
-            recycle={false}
-            numberOfPieces={300}
-            gravity={0.2}
-            style={{ position: "absolute", top: 0, left: 0 }}
-          />
-
+        <>
           <LanguageSelector top={20} right={20} />
+          <Box
+            dir={dir}
+            sx={{
+              position: "relative",
+              height: "100vh",
+              width: "100vw",
+              backgroundImage: `url(${game.backgroundImage})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              "&::before": {
+                content: '""',
+                position: "absolute",
+                inset: 0,
+                bgcolor: "rgba(0,0,0,0.5)",
+              },
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              p: 3,
+              textAlign: "center",
+            }}
+          >
+            <Confetti
+              recycle={false}
+              numberOfPieces={300}
+              gravity={0.2}
+              style={{ position: "absolute", top: 0, left: 0 }}
+            />
 
-          <Container maxWidth="sm" sx={{ position: "relative", zIndex: 1 }}>
-            <Card elevation={8} sx={{ borderRadius: 3 }}>
-              <CardContent sx={{ py: 4, px: 3 }}>
-                <Typography
-                  variant="h3"
-                  gutterBottom
-                  sx={{
-                    fontWeight: 700,
-                    color: "primary.main",
-                    letterSpacing: 1,
-                  }}
-                >
-                  🎉 {t.finishedEarlyTitle}
-                </Typography>
+            <Container maxWidth="sm" sx={{ position: "relative", zIndex: 1 }}>
+              <Card elevation={8} sx={{ borderRadius: 3 }}>
+                <CardContent sx={{ py: 4, px: 3 }}>
+                  <Typography
+                    variant="h3"
+                    gutterBottom
+                    sx={{
+                      fontWeight: 700,
+                      color: "primary.main",
+                      letterSpacing: 1,
+                      fontSize: (() => {
+                        const titleLength = t.finishedEarlyTitle?.length || 0;
+                        if (titleLength <= 15) {
+                          return { xs: "1.5rem", sm: "2rem", md: "2.5rem" };
+                        } else if (titleLength <= 25) {
+                          return { xs: "1.25rem", sm: "1.75rem", md: "2rem" };
+                        } else {
+                          return { xs: "1rem", sm: "1.5rem", md: "1.75rem" };
+                        }
+                      })(),
+                      lineHeight: { xs: 1.2, sm: 1.3, md: 1.4 },
+                      wordBreak: "break-word",
+                      overflowWrap: "break-word",
+                    }}
+                  >
+                    🎉 {t.finishedEarlyTitle}
+                  </Typography>
 
-                <Typography variant="h6" sx={{ mt: 2, color: "text.primary" }}>
-                  {t.finishedEarlyMessage}
-                </Typography>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      mt: 2,
+                      color: "text.primary",
+                      fontSize: (() => {
+                        const messageLength =
+                          t.finishedEarlyMessage?.length || 0;
+                        if (messageLength <= 50) {
+                          return { xs: "1rem", sm: "1.25rem", md: "1.5rem" };
+                        } else if (messageLength <= 80) {
+                          return {
+                            xs: "0.875rem",
+                            sm: "1.125rem",
+                            md: "1.25rem",
+                          };
+                        } else {
+                          return { xs: "0.75rem", sm: "1rem", md: "1.125rem" };
+                        }
+                      })(),
+                      lineHeight: { xs: 1.2, sm: 1.3, md: 1.4 },
+                      wordBreak: "break-word",
+                      overflowWrap: "break-word",
+                    }}
+                  >
+                    {t.finishedEarlyMessage}
+                  </Typography>
 
-                <Typography
-                  variant="body1"
-                  sx={{
-                    mt: 3,
-                    fontStyle: "italic",
-                    color: "text.secondary",
-                    lineHeight: 1.6,
-                  }}
-                >
-                  {t.finishedEarlyWaitMessage}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Container>
-        </Box>
+                  <Typography
+                    variant="body1"
+                    sx={{
+                      mt: 3,
+                      fontStyle: "italic",
+                      color: "text.secondary",
+                      lineHeight: 1.6,
+                      fontSize: (() => {
+                        const waitMessageLength =
+                          t.finishedEarlyWaitMessage?.length || 0;
+                        if (waitMessageLength <= 60) {
+                          return { xs: "0.875rem", sm: "1rem", md: "1.125rem" };
+                        } else if (waitMessageLength <= 100) {
+                          return { xs: "0.75rem", sm: "0.875rem", md: "1rem" };
+                        } else {
+                          return {
+                            xs: "0.625rem",
+                            sm: "0.75rem",
+                            md: "0.875rem",
+                          };
+                        }
+                      })(),
+                      lineHeight: { xs: 1.2, sm: 1.3, md: 1.4 },
+                      wordBreak: "break-word",
+                      overflowWrap: "break-word",
+                    }}
+                  >
+                    {t.finishedEarlyWaitMessage}
+                  </Typography>
+                </CardContent>
+              </Card>
+            </Container>
+          </Box>
+        </>
       );
     }
 
     return (
-      <Box dir={dir} sx={{ position: "relative" }}>
+      <Box sx={{ position: "relative" }}>
         <LanguageSelector top={20} right={20} />
         <Box
           sx={{
@@ -524,6 +627,7 @@ export default function PlayPage() {
             px: 2,
             py: 6,
           }}
+          dir={dir}
         >
           {/* Timer display */}
           <Box
@@ -590,11 +694,56 @@ export default function PlayPage() {
                 marginTop: "10vh",
               }}
             >
-              <Typography variant="h5" gutterBottom fontWeight="bold">
+              <Typography
+                variant="h5"
+                gutterBottom
+                fontWeight="bold"
+                sx={{
+                  fontSize: (() => {
+                    const questionLabel = `${
+                      translatedContent?.uiLabels?.questionLabel
+                    } ${questionIndex + 1} ${
+                      translatedContent?.uiLabels?.ofLabel
+                    } ${questions.length}`;
+                    const labelLength = questionLabel?.length || 0;
+                    if (labelLength <= 25) {
+                      return { xs: "1.25rem", sm: "1.5rem", md: "1.75rem" };
+                    } else if (labelLength <= 40) {
+                      return { xs: "1rem", sm: "1.25rem", md: "1.5rem" };
+                    } else {
+                      return { xs: "0.875rem", sm: "1.125rem", md: "1.25rem" };
+                    }
+                  })(),
+                  lineHeight: { xs: 1.2, sm: 1.3, md: 1.4 },
+                  wordBreak: "break-word",
+                  overflowWrap: "break-word",
+                }}
+              >
                 {translatedContent?.uiLabels?.questionLabel} {questionIndex + 1}{" "}
                 {translatedContent?.uiLabels?.ofLabel} {questions.length}
               </Typography>
-              <Typography sx={{ fontSize: "3rem" }} gutterBottom>
+              <Typography
+                sx={{
+                  fontSize: (() => {
+                    const questionLength =
+                      translatedContent?.question?.length || 0;
+                    if (questionLength <= 30) {
+                      return { xs: "2rem", sm: "2.5rem", md: "3rem" };
+                    } else if (questionLength <= 60) {
+                      return { xs: "1.5rem", sm: "2rem", md: "2.5rem" };
+                    } else if (questionLength <= 100) {
+                      return { xs: "1.25rem", sm: "1.75rem", md: "2rem" };
+                    } else {
+                      return { xs: "1rem", sm: "1.5rem", md: "1.75rem" };
+                    }
+                  })(),
+                  lineHeight: { xs: 1.2, sm: 1.3, md: 1.4 },
+                  wordBreak: "break-word",
+                  overflowWrap: "break-word",
+                  fontWeight: "bold",
+                }}
+                gutterBottom
+              >
                 {translatedContent?.question}
               </Typography>
 
@@ -630,11 +779,41 @@ export default function PlayPage() {
                           sx={{
                             backgroundColor: bg,
                             fontWeight: "bold",
-                            fontSize: "2rem",
+                            fontSize: (() => {
+                              const optionLength = opt?.length || 0;
+                              if (optionLength <= 20) {
+                                return {
+                                  xs: "1.5rem",
+                                  sm: "2rem",
+                                  md: "2.5rem",
+                                };
+                              } else if (optionLength <= 40) {
+                                return {
+                                  xs: "1.25rem",
+                                  sm: "1.75rem",
+                                  md: "2rem",
+                                };
+                              } else if (optionLength <= 60) {
+                                return {
+                                  xs: "1rem",
+                                  sm: "1.5rem",
+                                  md: "1.75rem",
+                                };
+                              } else {
+                                return {
+                                  xs: "0.875rem",
+                                  sm: "1.25rem",
+                                  md: "1.5rem",
+                                };
+                              }
+                            })(),
                             borderRadius: 2,
                             textTransform: "none",
                             minHeight: "150px",
                             p: 2,
+                            lineHeight: { xs: 1.2, sm: 1.3, md: 1.4 },
+                            wordBreak: "break-word",
+                            overflowWrap: "break-word",
                           }}
                         >
                           <Box sx={{ width: "100%", textAlign: "center" }}>
@@ -650,7 +829,28 @@ export default function PlayPage() {
                 <Typography
                   variant="body2"
                   color="error"
-                  sx={{ mt: 3, fontStyle: "italic" }}
+                  sx={{
+                    mt: 3,
+                    fontStyle: "italic",
+                    fontSize: (() => {
+                      const hintText = `${t.hint}: ${currentQuestion.hint}`;
+                      const hintLength = hintText?.length || 0;
+                      if (hintLength <= 50) {
+                        return { xs: "0.875rem", sm: "1rem", md: "1.125rem" };
+                      } else if (hintLength <= 80) {
+                        return { xs: "0.75rem", sm: "0.875rem", md: "1rem" };
+                      } else {
+                        return {
+                          xs: "0.625rem",
+                          sm: "0.75rem",
+                          md: "0.875rem",
+                        };
+                      }
+                    })(),
+                    lineHeight: { xs: 1.2, sm: 1.3, md: 1.4 },
+                    wordBreak: "break-word",
+                    overflowWrap: "break-word",
+                  }}
                 >
                   {t.hint}: {currentQuestion.hint}
                 </Typography>
@@ -743,7 +943,24 @@ export default function PlayPage() {
             <Typography
               variant="h3"
               fontWeight={700}
-              sx={{ mb: 1, textShadow: "0 0 15px rgba(255,255,255,0.8)" }}
+              sx={{
+                mb: 1,
+                textShadow: "0 0 15px rgba(255,255,255,0.8)",
+                fontSize: (() => {
+                  const playerNameLength =
+                    playerObj?.playerId?.name?.length || 0;
+                  if (playerNameLength <= 20) {
+                    return { xs: "1.5rem", sm: "2rem", md: "2.5rem" };
+                  } else if (playerNameLength <= 35) {
+                    return { xs: "1.25rem", sm: "1.75rem", md: "2rem" };
+                  } else {
+                    return { xs: "1rem", sm: "1.5rem", md: "1.75rem" };
+                  }
+                })(),
+                lineHeight: { xs: 1.2, sm: 1.3, md: 1.4 },
+                wordBreak: "break-word",
+                overflowWrap: "break-word",
+              }}
             >
               {playerObj?.playerId?.name}
             </Typography>
@@ -751,7 +968,24 @@ export default function PlayPage() {
             {/* Headline */}
             <Typography
               variant="h1"
-              sx={{ my: 2, textShadow: "0 0 15px rgba(255,255,255,0.8)" }}
+              sx={{
+                my: 2,
+                textShadow: "0 0 15px rgba(255,255,255,0.8)",
+                fontSize: (() => {
+                  const headlineLength = headlineText?.length || 0;
+                  if (headlineLength <= 15) {
+                    return { xs: "2rem", sm: "3rem", md: "4rem" };
+                  } else if (headlineLength <= 25) {
+                    return { xs: "1.5rem", sm: "2.5rem", md: "3rem" };
+                  } else {
+                    return { xs: "1.25rem", sm: "2rem", md: "2.5rem" };
+                  }
+                })(),
+                lineHeight: { xs: 1.2, sm: 1.3, md: 1.4 },
+                wordBreak: "break-word",
+                overflowWrap: "break-word",
+                fontWeight: "bold",
+              }}
             >
               {headlineText}
             </Typography>
@@ -767,7 +1001,26 @@ export default function PlayPage() {
             >
               {playerScore}
             </Typography>
-            <Typography variant="body1" sx={{ mb: 1 }}>
+            <Typography
+              variant="body1"
+              sx={{
+                mb: 1,
+                fontSize: (() => {
+                  const statsText = `${t.attempted}: ${playerAttempted} | ${t.timeTaken}: ${playerTimeTaken}`;
+                  const statsLength = statsText?.length || 0;
+                  if (statsLength <= 40) {
+                    return { xs: "0.875rem", sm: "1rem", md: "1.125rem" };
+                  } else if (statsLength <= 60) {
+                    return { xs: "0.75rem", sm: "0.875rem", md: "1rem" };
+                  } else {
+                    return { xs: "0.625rem", sm: "0.75rem", md: "0.875rem" };
+                  }
+                })(),
+                lineHeight: { xs: 1.2, sm: 1.3, md: 1.4 },
+                wordBreak: "break-word",
+                overflowWrap: "break-word",
+              }}
+            >
               {t.attempted}: {playerAttempted}{" "}
               <Box component="span" sx={{ mx: 1, color: "text.secondary" }}>
                 |
@@ -786,16 +1039,92 @@ export default function PlayPage() {
                 mb: 3,
               }}
             >
-              <Typography variant="h6" sx={{ mb: 1 }}>
+              <Typography
+                variant="h6"
+                sx={{
+                  mb: 1,
+                  fontSize: (() => {
+                    const opponentLabelLength = t.opponent?.length || 0;
+                    if (opponentLabelLength <= 10) {
+                      return { xs: "1rem", sm: "1.25rem", md: "1.5rem" };
+                    } else if (opponentLabelLength <= 20) {
+                      return { xs: "0.875rem", sm: "1.125rem", md: "1.25rem" };
+                    } else {
+                      return { xs: "0.75rem", sm: "1rem", md: "1.125rem" };
+                    }
+                  })(),
+                  lineHeight: { xs: 1.2, sm: 1.3, md: 1.4 },
+                  wordBreak: "break-word",
+                  overflowWrap: "break-word",
+                }}
+              >
                 {t.opponent}
               </Typography>
-              <Typography variant="h4" fontWeight="bold" sx={{ mb: 1 }}>
+              <Typography
+                variant="h4"
+                fontWeight="bold"
+                sx={{
+                  mb: 1,
+                  fontSize: (() => {
+                    const opponentNameLength =
+                      opponentObj.playerId.name?.length || 0;
+                    if (opponentNameLength <= 20) {
+                      return { xs: "1.25rem", sm: "1.75rem", md: "2rem" };
+                    } else if (opponentNameLength <= 35) {
+                      return { xs: "1rem", sm: "1.5rem", md: "1.75rem" };
+                    } else {
+                      return { xs: "0.875rem", sm: "1.25rem", md: "1.5rem" };
+                    }
+                  })(),
+                  lineHeight: { xs: 1.2, sm: 1.3, md: 1.4 },
+                  wordBreak: "break-word",
+                  overflowWrap: "break-word",
+                }}
+              >
                 {opponentObj.playerId.name}
               </Typography>
-              <Typography variant="body1" sx={{ mb: 0.5 }}>
+              <Typography
+                variant="body1"
+                sx={{
+                  mb: 0.5,
+                  fontSize: (() => {
+                    const scoreText = `${t.score}: ${opponentScore}`;
+                    const scoreLength = scoreText?.length || 0;
+                    if (scoreLength <= 25) {
+                      return { xs: "0.875rem", sm: "1rem", md: "1.125rem" };
+                    } else if (scoreLength <= 40) {
+                      return { xs: "0.75rem", sm: "0.875rem", md: "1rem" };
+                    } else {
+                      return { xs: "0.625rem", sm: "0.75rem", md: "0.875rem" };
+                    }
+                  })(),
+                  lineHeight: { xs: 1.2, sm: 1.3, md: 1.4 },
+                  wordBreak: "break-word",
+                  overflowWrap: "break-word",
+                }}
+              >
                 {t.score}: {opponentScore}
               </Typography>
-              <Typography variant="body1" sx={{ mb: 1 }}>
+              <Typography
+                variant="body1"
+                sx={{
+                  mb: 1,
+                  fontSize: (() => {
+                    const statsText = `${t.attempted}: ${opponentAttempted} | ${t.timeTaken}: ${opponentTimeTaken}`;
+                    const statsLength = statsText?.length || 0;
+                    if (statsLength <= 40) {
+                      return { xs: "0.875rem", sm: "1rem", md: "1.125rem" };
+                    } else if (statsLength <= 60) {
+                      return { xs: "0.75rem", sm: "0.875rem", md: "1rem" };
+                    } else {
+                      return { xs: "0.625rem", sm: "0.75rem", md: "0.875rem" };
+                    }
+                  })(),
+                  lineHeight: { xs: 1.2, sm: 1.3, md: 1.4 },
+                  wordBreak: "break-word",
+                  overflowWrap: "break-word",
+                }}
+              >
                 {t.attempted}: {opponentAttempted}{" "}
                 <Box component="span" sx={{ mx: 1, color: "text.secondary" }}>
                   |

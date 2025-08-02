@@ -193,7 +193,16 @@ export default function HostDashboard() {
               {t.hostDescription}
             </Typography>
           </Box>
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={1}
+            sx={{
+              width: { xs: "100%", sm: "auto" },
+              alignItems: "center",
+              justifyContent: "flex-end",
+              gap: dir === "rtl" ? 2 : 1,
+            }}
+          >
             <Button
               variant="contained"
               color="info"
@@ -203,7 +212,10 @@ export default function HostDashboard() {
                   `/cms/modules/eventduel/games/${gameSlug}/host/sessions`
                 )
               }
-              sx={getStartIconSpacing(dir)}
+              sx={{
+                ...getStartIconSpacing(dir),
+                width: { xs: "100%", sm: "auto" },
+              }}
             >
               {t.allSessions}
             </Button>
@@ -216,7 +228,10 @@ export default function HostDashboard() {
                   `/cms/modules/eventduel/games/${gameSlug}/host/questions`
                 )
               }
-              sx={getStartIconSpacing(dir)}
+              sx={{
+                ...getStartIconSpacing(dir),
+                width: { xs: "100%", sm: "auto" },
+              }}
             >
               {t.questions}
             </Button>

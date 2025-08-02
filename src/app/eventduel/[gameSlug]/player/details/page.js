@@ -9,7 +9,6 @@ import {
   CircularProgress,
   IconButton,
 } from "@mui/material";
-import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useGame } from "@/contexts/GameContext";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -18,6 +17,7 @@ import LanguageSelector from "@/components/LanguageSelector";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
+
 const entryDialogTranslations = {
   en: {
     nameLabel: "Name",
@@ -30,19 +30,25 @@ const entryDialogTranslations = {
     startButton: "متابعة",
   },
 };
+
 export default function NamePage() {
   const { game, loading } = useGame();
   const router = useRouter();
-  const { t, dir, align, language } = useI18nLayout(entryDialogTranslations);
-  const [form, setForm] = useState({ gameSlug: "" ,name: "", company: "", playerType: "" });
+  const { t, dir, align } = useI18nLayout(entryDialogTranslations);
+  const [form, setForm] = useState({
+    gameSlug: "",
+    name: "",
+    company: "",
+    playerType: "",
+  });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-  if (game?.slug) {
-    setForm((prev) => ({ ...prev, gameSlug: game.slug }));
-  }
-}, [game]);
+    if (game?.slug) {
+      setForm((prev) => ({ ...prev, gameSlug: game.slug }));
+    }
+  }, [game]);
 
   useEffect(() => {
     const selectedPlayer = sessionStorage.getItem("selectedPlayer");
@@ -104,7 +110,7 @@ export default function NamePage() {
       >
         {/* Back Button */}
         <IconButton
-        size="small"
+          size="small"
           onClick={() => router.push(`/eventduel/${game.slug}/player`)}
           sx={{
             position: "fixed",
@@ -124,7 +130,7 @@ export default function NamePage() {
             p: { xs: 3, sm: 4 },
             width: "100%",
             maxWidth: 500,
-            textAlign: "center",
+            textAlign: align,
             backdropFilter: "blur(10px)",
             backgroundColor: "rgba(255,255,255,0.6)",
             borderRadius: 6,
@@ -136,7 +142,26 @@ export default function NamePage() {
           <Typography
             variant="h1"
             gutterBottom
-            sx={{ mb: 4, color: "primary.main" }}
+            sx={{
+              mb: 4,
+              color: "primary.main",
+              fontSize: (() => {
+                const titleLength = game.title?.length || 0;
+                if (titleLength <= 20) {
+                  return { xs: "2rem", sm: "2.5rem", md: "3rem" };
+                } else if (titleLength <= 40) {
+                  return { xs: "1.5rem", sm: "2rem", md: "2.5rem" };
+                } else if (titleLength <= 60) {
+                  return { xs: "1.25rem", sm: "1.75rem", md: "2rem" };
+                } else {
+                  return { xs: "1rem", sm: "1.5rem", md: "1.75rem" };
+                }
+              })(),
+              lineHeight: { xs: 1.2, sm: 1.3, md: 1.4 },
+              wordBreak: "break-word",
+              overflowWrap: "break-word",
+              fontWeight: "bold",
+            }}
           >
             {game.title}
           </Typography>
@@ -168,10 +193,16 @@ export default function NamePage() {
             fullWidth
             onClick={handleSubmit}
             disabled={submitting}
-            startIcon={submitting ? <CircularProgress size={24} color="inherit" />:<ICONS.next/>}
+            startIcon={
+              submitting ? (
+                <CircularProgress size={24} color="inherit" />
+              ) : (
+                <ICONS.next />
+              )
+            }
             sx={getStartIconSpacing(dir)}
-            >
-           {t.startButton}
+          >
+            {t.startButton}
           </Button>
 
           {error && (

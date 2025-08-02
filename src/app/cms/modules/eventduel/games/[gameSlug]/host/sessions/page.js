@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import {
   Box,
@@ -17,6 +17,7 @@ import {
   MenuItem,
   InputLabel,
   FormControl,
+  CircularProgress,
 } from "@mui/material";
 import ConfirmationDialog from "@/components/ConfirmationDialog";
 
@@ -31,7 +32,6 @@ import useI18nLayout from "@/hooks/useI18nLayout";
 import BreadcrumbsNav from "@/components/BreadcrumbsNav";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import LoadingState from "@/components/LoadingState";
-import { useMessage } from "@/contexts/MessageContext";
 
 const translations = {
   en: {
@@ -59,6 +59,7 @@ const translations = {
     of: "of",
     records: "sessions",
     exportResults: "Export Results",
+    exporting: "Exporting...",
     errorLoading: "Error loading data.",
     exported: "Exported results!",
   },
@@ -87,6 +88,7 @@ const translations = {
     of: "من",
     records: "جلسات",
     exportResults: "تصدير النتائج",
+    exporting: "جاري التصدير...",
     errorLoading: "حدث خطأ أثناء تحميل البيانات.",
     exported: "تم تصدير النتائج!",
   },
@@ -94,7 +96,6 @@ const translations = {
 
 export default function PvPSessions() {
   const { gameSlug } = useParams();
-  const { showMessage } = useMessage();
   const { t, dir, align } = useI18nLayout(translations);
   const [sessions, setSessions] = useState([]);
   const [totalSessions, setTotalSessions] = useState(0);
@@ -102,6 +103,7 @@ export default function PvPSessions() {
   const [limit, setLimit] = useState(5);
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
 
   useEffect(() => {
     const fetchSessions = async () => {
@@ -127,7 +129,9 @@ export default function PvPSessions() {
 
   // Export results as Excel file
   const handleExport = async () => {
+    setExportLoading(true);
     await exportResults(gameSlug);
+    setExportLoading(false);
   };
 
   return (
@@ -152,13 +156,25 @@ export default function PvPSessions() {
               {t.hostDescription}
             </Typography>
           </Box>
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={1}
+            sx={{
+              width: { xs: "100%", sm: "auto" },
+              alignItems: "center",
+              justifyContent: "flex-end",
+              gap: dir === "rtl" ? 2 : 1,
+            }}
+          >
             <Button
               variant="contained"
               color="error"
               startIcon={<ICONS.delete />}
               onClick={() => setShowConfirm(true)}
-              sx={getStartIconSpacing(dir)}
+              sx={{
+                ...getStartIconSpacing(dir),
+                width: { xs: "100%", sm: "auto" },
+              }}
             >
               {t.allSessions}
             </Button>
@@ -166,11 +182,21 @@ export default function PvPSessions() {
               <Button
                 variant="contained"
                 color="primary"
-                startIcon={<ICONS.download />}
+                startIcon={
+                  exportLoading ? (
+                    <CircularProgress size={20} color="inherit" />
+                  ) : (
+                    <ICONS.download />
+                  )
+                }
                 onClick={handleExport}
-                sx={getStartIconSpacing(dir)}
+                disabled={exportLoading}
+                sx={{
+                  ...getStartIconSpacing(dir),
+                  width: { xs: "100%", sm: "auto" },
+                }}
               >
-                {t.exportResults}
+                {exportLoading ? t.exporting : t.exportResults}
               </Button>
             )}
           </Stack>
@@ -199,6 +225,7 @@ export default function PvPSessions() {
               setPage(1);
             }}
             label={t.recordsPerPage}
+            sx={{ pr: dir === "rtl" ? 1 : undefined }}
           >
             {[5, 10, 20].map((n) => (
               <MenuItem key={n} value={n}>
@@ -447,6 +474,7 @@ export default function PvPSessions() {
 
                 <Box display="flex" justifyContent="center" mt={4}>
                   <Pagination
+                    dir="ltr"
                     count={Math.ceil(totalSessions / limit)}
                     page={page}
                     onChange={(_, value) => setPage(value)}
@@ -467,6 +495,7 @@ export default function PvPSessions() {
         title={t.confirmResetTitle}
         message={t.confirmResetMessage}
         confirmButtonText={t.allSessions}
+        confirmButtonIcon={<ICONS.delete />}
       />
     </Container>
   );

@@ -12,6 +12,8 @@ import {
   CircularProgress,
 } from "@mui/material";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import ICONS from "@/utils/iconUtil";
+import getStartIconSpacing from "@/utils/getStartIconSpacing";
 
 const ConfirmationDialog = ({
   open,
@@ -20,6 +22,7 @@ const ConfirmationDialog = ({
   title,
   message,
   confirmButtonText,
+  confirmButtonIcon,
 }) => {
   const [loading, setLoading] = useState(false);
 
@@ -103,10 +106,12 @@ const ConfirmationDialog = ({
           variant="outlined"
           color="primary"
           disabled={loading}
+          startIcon={<ICONS.cancel />}
           sx={{
             fontWeight: "bold",
             textTransform: "uppercase",
             padding: "0.5rem 2rem",
+            ...getStartIconSpacing(dir),
           }}
         >
           {t.cancel}
@@ -116,11 +121,18 @@ const ConfirmationDialog = ({
           variant="contained"
           color="error"
           disabled={loading}
-          startIcon={loading && <CircularProgress size={20} color="inherit" />}
+          startIcon={
+            loading ? (
+              <CircularProgress size={20} color="inherit" />
+            ) : (
+              confirmButtonIcon
+            )
+          }
           sx={{
             fontWeight: "bold",
             textTransform: "uppercase",
             padding: "0.5rem 2rem",
+            ...getStartIconSpacing(dir),
           }}
         >
           {confirmButtonText || t.yes}
