@@ -114,7 +114,17 @@ export default function Modules() {
             )}
           </Stack>
         ) : (
-          <Grid container spacing={3} justifyContent="center">
+          <Grid 
+            container 
+            spacing={3} 
+            justifyContent="center"
+            sx={{ 
+              alignItems: "stretch",
+              "& .MuiGrid-item": {
+                display: "flex"
+              }
+            }}
+          >
             {modules?.map((mod) => (
               <DashboardCard
                 key={mod.key}

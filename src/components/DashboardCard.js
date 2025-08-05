@@ -34,6 +34,7 @@ const DashboardCard = ({
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
+          minHeight: { xs: "auto", sm: 280, md: 300 },
           height: "100%",
           width: {
             xs: "100%",
@@ -46,7 +47,7 @@ const DashboardCard = ({
           },
         }}
       >
-        <div>
+        <Box sx={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center" }}>
           {icon &&
             React.cloneElement(icon, {
               sx: { fontSize: 50, color, mb: 2 },
@@ -54,10 +55,20 @@ const DashboardCard = ({
           <Typography variant="h6" sx={{ fontWeight: "bold", color, mb: 1 }}>
             {title}
           </Typography>
-          <Typography variant="body2" sx={{ mb: 3, color: "#555" }}>
+          <Typography 
+            variant="body2" 
+            sx={{ 
+              mb: 3, 
+              color: "#555",
+              minHeight: { xs: "auto", sm: "3rem", md: "3.5rem" },
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center"
+            }}
+          >
             {description}
           </Typography>
-        </div>
+        </Box>
         {buttonLabel && (
           <Button
             variant="contained"

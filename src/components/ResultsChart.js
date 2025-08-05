@@ -3,6 +3,15 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { Box, Stack, Typography, Divider, Chip } from "@mui/material";
 import useI18nLayout from "@/hooks/useI18nLayout";
+
+const translations = {
+  en: {
+    totalVotesCasted: "Total Votes Casted:",
+  },
+  ar: {
+    totalVotesCasted: "إجمالي الأصوات المدلى بها:",
+  },
+};
 const COLORS = [
   "#8884d8",
   "#82ca9d",
@@ -14,6 +23,8 @@ const COLORS = [
 ];
 
 export default function ResultsChart({ poll }) {
+  const { t, dir } = useI18nLayout(translations);
+  
   if (!poll) return null;
 
   const totalVotes = poll.options.reduce(
@@ -117,10 +128,15 @@ export default function ResultsChart({ poll }) {
               bgcolor: "grey.100",
               transition: "all 0.3s",
               "&:hover": { bgcolor: "grey.200" },
+              gap: dir === "rtl" ? 2 : 1,
             }}
           >
-            {/* Left-aligned text */}
-            <Box sx={{ flexGrow: 1, textAlign: "left" }}>
+            {/* Option text */}
+            <Box sx={{ 
+              flexGrow: 1, 
+              textAlign: dir === "rtl" ? "right" : "left",
+              minWidth: 0,
+            }}>
               <Typography
                 variant="body2"
                 fontWeight="bold"
@@ -133,7 +149,7 @@ export default function ResultsChart({ poll }) {
               </Typography>
             </Box>
 
-            {/* Right side percentage */}
+            {/* Percentage */}
             <Chip
               label={`${option.percentage}%`}
               size="small"
@@ -141,6 +157,7 @@ export default function ResultsChart({ poll }) {
                 bgcolor: COLORS[idx % COLORS.length],
                 color: "white",
                 fontWeight: "bold",
+                flexShrink: 0,
               }}
             />
           </Stack>
@@ -154,7 +171,7 @@ export default function ResultsChart({ poll }) {
         fontStyle="italic"
         mt={3}
       >
-        Total Votes Casted: <strong>{totalVotes}</strong>
+        {t.totalVotesCasted} <strong>{totalVotes}</strong>
       </Typography>
     </Box>
   );

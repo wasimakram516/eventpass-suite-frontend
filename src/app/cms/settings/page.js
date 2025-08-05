@@ -82,7 +82,17 @@ export default function SettingsPage() {
         </Typography>
         <Divider sx={{ my: 2 }} />
 
-        <Grid container spacing={3} justifyContent="center">
+        <Grid 
+          container 
+          spacing={3} 
+          justifyContent="center"
+          sx={{ 
+            alignItems: "stretch",
+            "& .MuiGrid-item": {
+              display: "flex"
+            }
+          }}
+        >
           {filteredCards.map((card, i) => (
             <DashboardCard
               key={i}

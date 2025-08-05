@@ -28,6 +28,7 @@ import ICONS from "@/utils/iconUtil";
 import FilterDrawer from "@/components/FilterModal";
 import EmptyBusinessState from "@/components/EmptyBusinessState";
 import NoDataAvailable from "@/components/NoDataAvailable";
+import getStartIconSpacing from "@/utils/getStartIconSpacing";
 
 const translations = {
   en: {
@@ -178,29 +179,38 @@ export default function ResultsPage() {
             </Box>
 
             {/* Right: Buttons */}
-            <Stack
-              direction={{ xs: "column", md: "row" }}
-              spacing={2}
-              alignItems="flex-start"
-            >
-              {user?.role === "admin" && (
-                <Button
-                  variant="outlined"
-                  onClick={() => setDrawerOpen(true)}
-                  startIcon={<ICONS.business fontSize="small" />}
-                  fullWidth
-                >
-                  {t.selectBusiness}
-                </Button>
-              )}
-              <Button
-                variant="outlined"
-                onClick={() => setFilterDrawerOpen(true)}
-                startIcon={<ICONS.filter fontSize="small" />}
-                fullWidth
-              >
-                {t.moreFilters}
-              </Button>
+                         <Stack
+               direction={{ xs: "column", md: "row" }}
+               spacing={1}
+               alignItems="flex-start"
+               sx={{
+                 gap: dir === "rtl" ? 1 : 0,
+               }}
+             >
+                             {user?.role === "admin" && (
+                 <Button
+                   variant="outlined"
+                   onClick={() => setDrawerOpen(true)}
+                   startIcon={<ICONS.business fontSize="small" />}
+                   sx={{
+                     ...getStartIconSpacing(dir),
+                     width: { xs: "100%", md: "auto" },
+                   }}
+                 >
+                   {t.selectBusiness}
+                 </Button>
+               )}
+               <Button
+                 variant="outlined"
+                 onClick={() => setFilterDrawerOpen(true)}
+                 startIcon={<ICONS.filter fontSize="small" />}
+                 sx={{
+                   ...getStartIconSpacing(dir),
+                   width: { xs: "100%", md: "auto" },
+                 }}
+               >
+                 {t.moreFilters}
+               </Button>
             </Stack>
           </Stack>
 
@@ -268,6 +278,7 @@ export default function ResultsPage() {
                   fullWidth
                   sx={{ mb: 2 }}
                   onClick={() => setConfirmReset(true)}
+                  startIcon={<ICONS.refresh fontSize="small" />}
                 >
                   {t.resetVotes}
                 </Button>
@@ -284,6 +295,7 @@ export default function ResultsPage() {
                       "_blank"
                     )
                   }
+                  startIcon={<ICONS.fullscreen fontSize="small" />}
                 >
                   {t.viewFullScreen}
                 </Button>
@@ -300,6 +312,7 @@ export default function ResultsPage() {
         title={t.confirmVoteReset}
         message={t.resetConfirmation}
         confirmButtonText={t.resetButton}
+        confirmButtonIcon={<ICONS.refresh fontSize="small" />}
       />
     </>
   );

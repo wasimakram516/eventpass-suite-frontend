@@ -500,7 +500,14 @@ function RealPoll({ businessSlug }) {
                           "&:hover": canSelect ? { bgcolor: "grey.100" } : {},
                         }}
                       >
-                        <Stack direction="row" alignItems="center" spacing={2}>
+                        <Stack 
+                          direction="row" 
+                          alignItems="center" 
+                          spacing={2}
+                          sx={{
+                            gap: dir === "rtl" ? 2 : 0,
+                          }}
+                        >
                           {option.imageUrl && (
                             <Avatar
                               src={option.imageUrl}
@@ -625,20 +632,21 @@ function RealPoll({ businessSlug }) {
       )}
 
       {/* Thank You Dialog */}
-      <Dialog
-        open={finished}
-        onClose={handleRestart}
-        PaperProps={{
-          sx: {
-            borderRadius: 4,
-            p: 3,
-            maxWidth: 420,
-            mx: "auto",
-            textAlign: align,
-            boxShadow: 6,
-          },
-        }}
-      >
+             <Dialog
+         open={finished}
+         onClose={handleRestart}
+         PaperProps={{
+           sx: {
+             borderRadius: 4,
+             p: 3,
+             maxWidth: { xs: "90%", sm: 420 },
+             width: { xs: "90%", sm: "auto" },
+             mx: "auto",
+             textAlign: align,
+             boxShadow: 6,
+           },
+         }}
+       >
         {/* Dialog Title */}
         <DialogTitle
           sx={{

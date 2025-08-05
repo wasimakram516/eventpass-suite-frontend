@@ -21,6 +21,8 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import UploadIcon from "@mui/icons-material/CloudUpload";
 import { useEffect, useState } from "react";
+import useI18nLayout from "@/hooks/useI18nLayout";
+import getStartIconSpacing from "@/utils/getStartIconSpacing";
 export default function PollFormDrawer({
   open,
   onClose,
@@ -29,6 +31,57 @@ export default function PollFormDrawer({
   business = "",
 }) {
   const isEdit = !!(initialValues && initialValues._id);
+
+  const translations = {
+    en: {
+      editPoll: "Edit Poll",
+      createPoll: "Create Poll",
+      active: "Active",
+      archived: "Archived",
+      pollType: "Poll Type",
+      optionsStandardPoll: "Options (Standard Poll)",
+      slider: "Slider",
+      question: "Question",
+      options: "Options",
+      option: "Option",
+      uploadImage: "Upload Image",
+      addOption: "Add Option",
+      updatingPoll: "Updating Poll...",
+      creatingPoll: "Creating Poll...",
+      updatePoll: "Update Poll",
+      createPollButton: "Create Poll",
+      errors: {
+        question: "Question is required",
+        options: "At least 2 options are required",
+        optionText: "Option text is required",
+      },
+    },
+    ar: {
+      editPoll: "تحرير الاستطلاع",
+      createPoll: "إنشاء استطلاع",
+      active: "نشط",
+      archived: "مؤرشف",
+      pollType: "نوع الاستطلاع",
+      optionsStandardPoll: "خيارات (استطلاع قياسي)",
+      slider: "شريط التمرير",
+      question: "السؤال",
+      options: "الخيارات",
+      option: "الخيار",
+      uploadImage: "رفع صورة",
+      addOption: "إضافة خيار",
+      updatingPoll: "جاري تحديث الاستطلاع...",
+      creatingPoll: "جاري إنشاء الاستطلاع...",
+      updatePoll: "تحديث الاستطلاع",
+      createPollButton: "إنشاء الاستطلاع",
+      errors: {
+        question: "السؤال مطلوب",
+        options: "يجب أن يكون هناك خياران على الأقل",
+        optionText: "نص الخيار مطلوب",
+      },
+    },
+  };
+
+  const { t,dir } = useI18nLayout(translations);
 
   const [form, setForm] = useState({
     businessId: "",
@@ -104,9 +157,9 @@ export default function PollFormDrawer({
   const validate = () => {
     const newErrors = {};
     if (!form.businessId) newErrors.businessId = "Business is required";
-    if (!form.question) newErrors.question = "Question is required";
+    if (!form.question) newErrors.question = t.errors.question;
     if (form.options.filter((opt) => opt.text.trim() !== "").length < 2) {
-      newErrors.options = "At least 2 options are required";
+      newErrors.options = t.errors.options;
     }
     if (!["options", "slider"].includes(form.type)) {
       newErrors.type = "Poll type is required";
@@ -170,6 +223,7 @@ export default function PollFormDrawer({
           borderRadius: { xs: 0, sm: "8px 0 0 8px" },
         },
       }}
+      dir={dir}
     >
       <Box
         sx={{ p: 3, display: "flex", flexDirection: "column", height: "100%" }}
@@ -182,7 +236,7 @@ export default function PollFormDrawer({
           mb={2}
         >
           <Typography variant="h6" fontWeight="bold">
-            {isEdit ? "Edit Poll" : "Create Poll"}
+            {isEdit ? t.editPoll : t.createPoll}
           </Typography>
           <IconButton onClick={onClose}>
             <CloseIcon />
@@ -197,14 +251,14 @@ export default function PollFormDrawer({
               color="primary"
             />
           }
-          label={form.status === "active" ? "Active" : "Archived"}
+          label={form.status === "active" ? t.active : t.archived}
           sx={{ mb: 2 }}
         />
 
         <Stack spacing={2} sx={{ flexGrow: 1, overflowY: "auto", pt: 2 }}>
           <TextField
             select
-            label="Poll Type"
+            label={t.pollType}
             name="type"
             value={form.type}
             onChange={handleChange}
@@ -212,13 +266,13 @@ export default function PollFormDrawer({
             helperText={errors.type}
             fullWidth
           >
-            <MenuItem value="options">Options (Standard Poll)</MenuItem>
-            <MenuItem value="slider">Slider</MenuItem>
+            <MenuItem value="options">{t.optionsStandardPoll}</MenuItem>
+            <MenuItem value="slider">{t.slider}</MenuItem>
           </TextField>
 
           {/* Question */}
           <TextField
-            label="Question"
+            label={t.question}
             name="question"
             value={form.question}
             onChange={handleChange}
@@ -231,7 +285,7 @@ export default function PollFormDrawer({
           <Divider />
 
           <Typography variant="subtitle2" fontWeight="bold">
-            Options
+            {t.options}
           </Typography>
 
           {form.options.map((option, index) => (
@@ -241,7 +295,7 @@ export default function PollFormDrawer({
                   fullWidth
                   value={option.text}
                   onChange={(e) => handleOptionChange(index, e.target.value)}
-                  placeholder={`Option ${index + 1}`}
+                  placeholder={`${t.option} ${index + 1}`}
                 />
                 {form.options.length > 2 && (
                   <IconButton color="error" onClick={() => removeOption(index)}>
@@ -250,33 +304,41 @@ export default function PollFormDrawer({
                 )}
               </Stack>
 
-              <Stack direction="row" spacing={1} alignItems="center">
-                <Button
-                  component="label"
-                  variant="outlined"
-                  size="small"
-                  fullWidth={false}
-                  startIcon={<UploadIcon />}
+                                                           <Stack 
+                  direction="row" 
+                  spacing={1}
+                  alignItems="center"
+                  sx={{
+                    gap: dir === "rtl" ? 1 : 0,
+                  }}
                 >
-                  Upload Image
-                  <input
-                    type="file"
-                    hidden
-                    accept="image/*"
-                    onChange={(e) =>
-                      handleOptionImageChange(index, e.target.files[0])
-                    }
-                  />
-                </Button>
+                 <Button
+                   component="label"
+                   variant="outlined"
+                   size="small"
+                   fullWidth={false}
+                   startIcon={<UploadIcon />}
+                   sx={getStartIconSpacing(dir)}
+                 >
+                   {t.uploadImage}
+                   <input
+                     type="file"
+                     hidden
+                     accept="image/*"
+                     onChange={(e) =>
+                       handleOptionImageChange(index, e.target.files[0])
+                     }
+                   />
+                 </Button>
 
-                {option.imagePreview && (
-                  <Avatar
-                    src={option.imagePreview}
-                    variant="rounded"
-                    sx={{ width: 56, height: 56 }}
-                  />
-                )}
-              </Stack>
+                 {option.imagePreview && (
+                   <Avatar
+                     src={option.imagePreview}
+                     variant="rounded"
+                     sx={{ width: 56, height: 56 }}
+                   />
+                 )}
+               </Stack>
             </Stack>
           ))}
 
@@ -286,44 +348,46 @@ export default function PollFormDrawer({
             </Typography>
           )}
 
-          <Button
-            variant="outlined"
-            startIcon={<AddIcon />}
-            onClick={addOption}
-          >
-            Add Option
+                     <Button
+             variant="outlined"
+             startIcon={<AddIcon />}
+             onClick={addOption}
+             sx={getStartIconSpacing(dir)}
+           >
+             {t.addOption}
           </Button>
         </Stack>
 
-        <Button
-          fullWidth
-          variant="contained"
-          size="large"
-          sx={{
-            mt: 3,
-            py: 1.5,
-            fontWeight: "bold",
-            fontSize: "1rem",
-          }}
-          onClick={handleSubmit}
-          disabled={loading}
-          startIcon={
-            loading ? (
-              <CircularProgress size={18} color="inherit" thickness={5} />
-            ) : isEdit ? (
-              <EditIcon />
-            ) : (
-              <AddIcon />
-            )
-          }
-        >
+                 <Button
+           fullWidth
+           variant="contained"
+           size="large"
+           sx={{
+             mt: 3,
+             py: 1.5,
+             fontWeight: "bold",
+             fontSize: "1rem",
+             ...getStartIconSpacing(dir),
+           }}
+           onClick={handleSubmit}
+           disabled={loading}
+           startIcon={
+             loading ? (
+               <CircularProgress size={18} color="inherit" thickness={5} />
+             ) : isEdit ? (
+               <EditIcon />
+             ) : (
+               <AddIcon />
+             )
+           }
+         >
           {loading
             ? isEdit
-              ? "Updating Poll..."
-              : "Creating Poll..."
+              ? t.updatingPoll
+              : t.creatingPoll
             : isEdit
-            ? "Update Poll"
-            : "Create Poll"}
+            ? t.updatePoll
+            : t.createPollButton}
         </Button>
       </Box>
     </Drawer>

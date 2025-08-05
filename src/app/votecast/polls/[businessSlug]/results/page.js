@@ -6,6 +6,7 @@ import { Box, CircularProgress, Typography } from "@mui/material";
 import { getResults } from "@/services/votecast/pollsResultService";
 import ResultsChart from "@/components/ResultsChart";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import LanguageSelector from "@/components/LanguageSelector";
 const translations = {
   en: {
     loading: "Loading...",
@@ -62,15 +63,17 @@ export default function FullScreenResultsPage() {
   }
 
   return (
-    <Box
-      dir={dir}
-      sx={{
-        minHeight: "calc(100vh - 50px)",
-        bgcolor: "background.default",
-        pt: { xs: 10, md: 12 },
-        px: { xs: 2, md: 4 },
-      }}
-    >
+    <>
+      <LanguageSelector top={20} right={20} />
+      <Box
+        dir={dir}
+        sx={{
+          minHeight: "calc(100vh - 50px)",
+          bgcolor: "background.default",
+          pt: { xs: 10, md: 12 },
+          px: { xs: 2, md: 4 },
+        }}
+      >
       {/* ✅ Results Section */}
       {results.length > 0 ? (
         <Box
@@ -91,6 +94,7 @@ export default function FullScreenResultsPage() {
           {t.noResults}
         </Typography>
       )}
-    </Box>
+      </Box>
+    </>
   );
 }
