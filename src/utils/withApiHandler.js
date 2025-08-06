@@ -13,7 +13,11 @@ const withApiHandler = (fn, { showSuccess = false } = {}) => async (...args) => 
       showGlobalMessage(response.message, "success");
     }
 
-    return response.data ?? response;
+    if (response.success && response.data !== null) {
+      return response.data;
+    }
+
+    return null;
   } catch (err) {
     const message =
       err?.response?.data?.error ||
