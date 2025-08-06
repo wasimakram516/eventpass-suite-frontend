@@ -11,6 +11,7 @@ import {
 import useI18nLayout from "@/hooks/useI18nLayout";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
+import LoadingState from "./LoadingState";
 
 export default function BusinessDrawer({
   open,
@@ -23,12 +24,17 @@ export default function BusinessDrawer({
     en: {
       title: "Select Business",
       noBusinessesAvailable: "No businesses available",
+      loading: "Loading businesses...",
     },
     ar: {
       title: "اختيار العمل",
       noBusinessesAvailable: "لا توجد أعمال متاحة",
+      loading: "جاري تحميل الشركات...",
     },
   });
+
+
+  const isLoading = open && businesses.length === 0;
 
   return (
     <Drawer
@@ -70,7 +76,14 @@ export default function BusinessDrawer({
         </Box>
 
         {/* Content */}
-        {businesses.length > 0 ? (
+        {isLoading ? (
+          <Stack alignItems="center" spacing={2} sx={{ mt: 6 }}>
+            <LoadingState size={40} />
+            <Typography variant="body2" color="text.secondary" align={align}>
+              {t.loading}
+            </Typography>
+          </Stack>
+        ) : businesses.length > 0 ? (
           businesses.map((business) => (
             <Button
               key={business._id}
