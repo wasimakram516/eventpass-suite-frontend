@@ -204,6 +204,7 @@ export default function Navbar() {
         title={t.confirmLogoutTitle}
         message={t.confirmLogoutMsg}
         confirmButtonText={t.logout}
+        confirmButtonIcon={<ICONS.logout fontSize="small" />}
       />
     </Box>
   );
