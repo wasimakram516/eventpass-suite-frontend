@@ -10,7 +10,7 @@ import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
 
 export default function LiveQuestionDisplay() {
   const { businessSlug } = useParams();
-  const {globalConfig} = useGlobalConfig();
+  const { globalConfig } = useGlobalConfig();
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [business, setBusiness] = useState(null);

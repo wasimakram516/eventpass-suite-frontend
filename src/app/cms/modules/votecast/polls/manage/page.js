@@ -273,16 +273,16 @@ export default function ManagePollsPage() {
           </Box>
 
           {/* Right: Main Actions + Filter Toggle */}
-                     <Stack
-             direction={{ xs: "column", sm: "row" }}
-             spacing={1}
-             sx={{
-               flexShrink: 0,
-               alignItems: "stretch", // makes buttons 100% in column layout
-               width: { xs: "100%", sm: "auto" }, // full width only on xs
-               gap: dir === "rtl" ? 2 : 1,
-             }}
-           >
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={1}
+            sx={{
+              flexShrink: 0,
+              alignItems: "stretch", // makes buttons 100% in column layout
+              width: { xs: "100%", sm: "auto" }, // full width only on xs
+              gap: dir === "rtl" ? 2 : 1,
+            }}
+          >
             {user?.role === "admin" && (
               <Button
                 variant="outlined"
@@ -362,15 +362,15 @@ export default function ManagePollsPage() {
                     }}
                   >
                     {/* Custom Header Stack */}
-                                         <Stack
-                       direction="row"
-                       spacing={1}
-                       alignItems="center"
-                       mb={1}
-                                               sx={{
-                          gap: dir === "rtl" ? 1 :0 ,
-                        }}
-                       >
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      alignItems="center"
+                      mb={1}
+                      sx={{
+                        gap: dir === "rtl" ? 1 : 0,
+                      }}
+                    >
                       <Avatar sx={{ bgcolor: "primary.main" }}>
                         <ICONS.poll fontSize="small" />
                       </Avatar>
@@ -407,17 +407,17 @@ export default function ManagePollsPage() {
                     {/* Options */}
                     <CardContent sx={{ flexGrow: 1, pt: 1 }}>
                       <Stack spacing={1}>
-                                                 {poll.options.map((opt, idx) => (
-                           <Stack
-                             key={idx}
-                             direction="row"
-                             spacing={1}
-                             alignItems="center"
-                                                           sx={{ 
-                                overflow: "hidden",
-                                gap: dir === "rtl" ? 1 : 0,
-                              }}
-                           >
+                        {poll.options.map((opt, idx) => (
+                          <Stack
+                            key={idx}
+                            direction="row"
+                            spacing={1}
+                            alignItems="center"
+                            sx={{
+                              overflow: "hidden",
+                              gap: dir === "rtl" ? 1 : 0,
+                            }}
+                          >
                             {opt.imageUrl && (
                               <Avatar
                                 src={opt.imageUrl}

@@ -179,38 +179,38 @@ export default function ResultsPage() {
             </Box>
 
             {/* Right: Buttons */}
-                         <Stack
-               direction={{ xs: "column", md: "row" }}
-               spacing={1}
-               alignItems="flex-start"
-               sx={{
-                 gap: dir === "rtl" ? 1 : 0,
-               }}
-             >
-                             {user?.role === "admin" && (
-                 <Button
-                   variant="outlined"
-                   onClick={() => setDrawerOpen(true)}
-                   startIcon={<ICONS.business fontSize="small" />}
-                   sx={{
-                     ...getStartIconSpacing(dir),
-                     width: { xs: "100%", md: "auto" },
-                   }}
-                 >
-                   {t.selectBusiness}
-                 </Button>
-               )}
-               <Button
-                 variant="outlined"
-                 onClick={() => setFilterDrawerOpen(true)}
-                 startIcon={<ICONS.filter fontSize="small" />}
-                 sx={{
-                   ...getStartIconSpacing(dir),
-                   width: { xs: "100%", md: "auto" },
-                 }}
-               >
-                 {t.moreFilters}
-               </Button>
+            <Stack
+              direction={{ xs: "column", md: "row" }}
+              spacing={1}
+              alignItems="flex-start"
+              sx={{
+                gap: dir === "rtl" ? 1 : 0,
+              }}
+            >
+              {user?.role === "admin" && (
+                <Button
+                  variant="outlined"
+                  onClick={() => setDrawerOpen(true)}
+                  startIcon={<ICONS.business fontSize="small" />}
+                  sx={{
+                    ...getStartIconSpacing(dir),
+                    width: { xs: "100%", md: "auto" },
+                  }}
+                >
+                  {t.selectBusiness}
+                </Button>
+              )}
+              <Button
+                variant="outlined"
+                onClick={() => setFilterDrawerOpen(true)}
+                startIcon={<ICONS.filter fontSize="small" />}
+                sx={{
+                  ...getStartIconSpacing(dir),
+                  width: { xs: "100%", md: "auto" },
+                }}
+              >
+                {t.moreFilters}
+              </Button>
             </Stack>
           </Stack>
 
@@ -223,7 +223,7 @@ export default function ResultsPage() {
               <CircularProgress />
             </Box>
           ) : results.length === 0 ? (
-            <NoDataAvailable/>
+            <NoDataAvailable />
           ) : (
             results.length > 0 && (
               <Box
@@ -289,8 +289,7 @@ export default function ResultsPage() {
                   fullWidth
                   onClick={() =>
                     window.open(
-                      `/votecast/polls/${selectedBusiness}/results?status=${
-                        pollStatus === "all" ? "" : pollStatus
+                      `/votecast/polls/${selectedBusiness}/results?status=${pollStatus === "all" ? "" : pollStatus
                       }`,
                       "_blank"
                     )
