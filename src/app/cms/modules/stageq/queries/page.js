@@ -54,17 +54,11 @@ export default function QueriesDashboard() {
         <Divider sx={{ width: "100%", mt: 2 }} />
       </Stack>
 
-      {/* ✅ Cards Grid */}
+      {/* Cards Grid */}
       <Grid
         container
         spacing={3}
         justifyContent={"center"}
-        sx={{ 
-          alignItems: "stretch",
-          "& .MuiGrid-item": {
-            display: "flex"
-          }
-        }}
       >
         <Grid item xs={12} sm={6} md={4}>
           <DashboardCard

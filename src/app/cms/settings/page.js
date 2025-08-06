@@ -86,12 +86,6 @@ export default function SettingsPage() {
           container 
           spacing={3} 
           justifyContent="center"
-          sx={{ 
-            alignItems: "stretch",
-            "& .MuiGrid-item": {
-              display: "flex"
-            }
-          }}
         >
           {filteredCards.map((card, i) => (
             <DashboardCard

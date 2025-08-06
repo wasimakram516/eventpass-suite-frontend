@@ -118,12 +118,6 @@ export default function Modules() {
             container 
             spacing={3} 
             justifyContent="center"
-            sx={{ 
-              alignItems: "stretch",
-              "& .MuiGrid-item": {
-                display: "flex"
-              }
-            }}
           >
             {modules?.map((mod) => (
               <DashboardCard
