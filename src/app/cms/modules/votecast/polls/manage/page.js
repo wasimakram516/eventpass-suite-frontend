@@ -44,6 +44,7 @@ import FilterModal from "@/components/FilterModal";
 import EmptyBusinessState from "@/components/EmptyBusinessState";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import ShareLinkModal from "@/components/ShareLinkModal";
+import getStartIconSpacing from "@/utils/getStartIconSpacing";
 const translations = {
   en: {
     title: "Manage Polls",
@@ -274,11 +275,12 @@ export default function ManagePollsPage() {
           {/* Right: Main Actions + Filter Toggle */}
           <Stack
             direction={{ xs: "column", sm: "row" }}
-            spacing={2}
+            spacing={1}
             sx={{
               flexShrink: 0,
               alignItems: "stretch", // makes buttons 100% in column layout
               width: { xs: "100%", sm: "auto" }, // full width only on xs
+              gap: dir === "rtl" ? 2 : 1,
             }}
           >
             {user?.role === "admin" && (
@@ -286,7 +288,7 @@ export default function ManagePollsPage() {
                 variant="outlined"
                 onClick={() => setDrawerOpen(true)}
                 startIcon={<ICONS.business fontSize="small" />}
-                fullWidth
+                sx={getStartIconSpacing(dir)}
               >
                 {t.selectBusiness}
               </Button>
@@ -300,7 +302,7 @@ export default function ManagePollsPage() {
                   setEditPoll(null);
                   setOpenDrawer(true);
                 }}
-                fullWidth
+                sx={getStartIconSpacing(dir)}
               >
                 {t.createPoll}
               </Button>
@@ -310,7 +312,7 @@ export default function ManagePollsPage() {
               variant="outlined"
               onClick={() => setFilterDrawerOpen(true)}
               startIcon={<ICONS.filter fontSize="small" />}
-              fullWidth
+              sx={getStartIconSpacing(dir)}
             >
               {t.moreFilters}
             </Button>
@@ -342,13 +344,14 @@ export default function ManagePollsPage() {
                   sx={{
                     display: "flex",
                     justifyContent: "center",
+                    width: { xs: "100%", sm: 300 },
                   }}
                 >
                   <Card
                     elevation={3}
                     sx={{
                       width: { xs: "100%", sm: 300 },
-                      maxWidth: "100%",
+                      maxWidth: { xs: "100%", sm: 300 },
                       display: "flex",
                       flexDirection: "column",
                       justifyContent: "space-between",
@@ -364,6 +367,9 @@ export default function ManagePollsPage() {
                       spacing={1}
                       alignItems="center"
                       mb={1}
+                      sx={{
+                        gap: dir === "rtl" ? 1 : 0,
+                      }}
                     >
                       <Avatar sx={{ bgcolor: "primary.main" }}>
                         <ICONS.poll fontSize="small" />
@@ -407,7 +413,10 @@ export default function ManagePollsPage() {
                             direction="row"
                             spacing={1}
                             alignItems="center"
-                            sx={{ overflow: "hidden" }}
+                            sx={{
+                              overflow: "hidden",
+                              gap: dir === "rtl" ? 1 : 0,
+                            }}
                           >
                             {opt.imageUrl && (
                               <Avatar
@@ -528,6 +537,7 @@ export default function ManagePollsPage() {
                   }
                   setLoading(false);
                 }}
+                startIcon={<ICONS.download fontSize="small" />}
               >
                 {t.exportPolls}
               </Button>
@@ -552,9 +562,10 @@ export default function ManagePollsPage() {
           open={confirmDelete.open}
           onClose={() => setConfirmDelete({ open: false, id: null })}
           onConfirm={handleDelete}
-          title={t.sharePollLink}
+          title={t.deletePoll}
           message={t.deleteConfirmation}
           confirmButtonText={t.deleteButton}
+          confirmButtonIcon={<ICONS.delete fontSize="small" />}
         />
 
         {/* Share Modal */}

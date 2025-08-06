@@ -82,7 +82,11 @@ export default function SettingsPage() {
         </Typography>
         <Divider sx={{ my: 2 }} />
 
-        <Grid container spacing={3} justifyContent="center">
+        <Grid 
+          container 
+          spacing={3} 
+          justifyContent="center"
+        >
           {filteredCards.map((card, i) => (
             <DashboardCard
               key={i}

@@ -21,7 +21,14 @@ const DashboardCard = ({
       xs={12}
       sm={6}
       md={4}
-      sx={{ display: "flex", justifyContent: "center" }}
+      sx={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "stretch",
+        "& .MuiGrid-item": {
+          display: "flex"
+        }
+      }}
     >
       <Paper
         elevation={6}
@@ -34,6 +41,7 @@ const DashboardCard = ({
           display: "flex",
           flexDirection: "column",
           justifyContent: "space-between",
+          minHeight: { xs: "auto", sm: 280, md: 300 },
           height: "100%",
           width: {
             xs: "100%",
@@ -46,18 +54,29 @@ const DashboardCard = ({
           },
         }}
       >
-        <div>
+        <Box sx={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center" }}>
           {icon &&
             React.cloneElement(icon, {
               sx: { fontSize: 50, color, mb: 2 },
             })}
-          <Typography variant="h6" sx={{ fontWeight: "bold", color, mb: 1 }}>
+          <Typography variant="h6" sx={{ fontWeight: "bold", color, mb: 1, textAlign: "center" }}>
             {title}
           </Typography>
-          <Typography variant="body2" sx={{ mb: 3, color: "#555" }}>
+          <Typography
+            variant="body2"
+            sx={{
+              mb: 3,
+              color: "#555",
+              minHeight: { xs: "auto", sm: "3rem", md: "3.5rem" },
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              textAlign: "center"
+            }}
+          >
             {description}
           </Typography>
-        </div>
+        </Box>
         {buttonLabel && (
           <Button
             variant="contained"

@@ -26,6 +26,7 @@ import {
   Leaderboard as LeaderboardIcon,
   ViewModule as ModuleIcon,
   Menu as MenuIcon,
+  Fullscreen as FullscreenIcon,
 } from "@mui/icons-material";
 
 // Status & Feedback
@@ -144,6 +145,7 @@ const ICONS = {
   results: LeaderboardIcon,
   module: ModuleIcon,
   menu: MenuIcon,
+  fullscreen: FullscreenIcon,
 
   // Auth
   login: LoginIcon,

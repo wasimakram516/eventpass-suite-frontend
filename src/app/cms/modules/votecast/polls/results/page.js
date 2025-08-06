@@ -28,6 +28,7 @@ import ICONS from "@/utils/iconUtil";
 import FilterDrawer from "@/components/FilterModal";
 import EmptyBusinessState from "@/components/EmptyBusinessState";
 import NoDataAvailable from "@/components/NoDataAvailable";
+import getStartIconSpacing from "@/utils/getStartIconSpacing";
 
 const translations = {
   en: {
@@ -180,15 +181,21 @@ export default function ResultsPage() {
             {/* Right: Buttons */}
             <Stack
               direction={{ xs: "column", md: "row" }}
-              spacing={2}
+              spacing={1}
               alignItems="flex-start"
+              sx={{
+                gap: dir === "rtl" ? 1 : 0,
+              }}
             >
               {user?.role === "admin" && (
                 <Button
                   variant="outlined"
                   onClick={() => setDrawerOpen(true)}
                   startIcon={<ICONS.business fontSize="small" />}
-                  fullWidth
+                  sx={{
+                    ...getStartIconSpacing(dir),
+                    width: { xs: "100%", md: "auto" },
+                  }}
                 >
                   {t.selectBusiness}
                 </Button>
@@ -197,7 +204,10 @@ export default function ResultsPage() {
                 variant="outlined"
                 onClick={() => setFilterDrawerOpen(true)}
                 startIcon={<ICONS.filter fontSize="small" />}
-                fullWidth
+                sx={{
+                  ...getStartIconSpacing(dir),
+                  width: { xs: "100%", md: "auto" },
+                }}
               >
                 {t.moreFilters}
               </Button>
@@ -213,7 +223,7 @@ export default function ResultsPage() {
               <CircularProgress />
             </Box>
           ) : results.length === 0 ? (
-            <NoDataAvailable/>
+            <NoDataAvailable />
           ) : (
             results.length > 0 && (
               <Box
@@ -268,6 +278,7 @@ export default function ResultsPage() {
                   fullWidth
                   sx={{ mb: 2 }}
                   onClick={() => setConfirmReset(true)}
+                  startIcon={<ICONS.refresh fontSize="small" />}
                 >
                   {t.resetVotes}
                 </Button>
@@ -278,12 +289,12 @@ export default function ResultsPage() {
                   fullWidth
                   onClick={() =>
                     window.open(
-                      `/votecast/polls/${selectedBusiness}/results?status=${
-                        pollStatus === "all" ? "" : pollStatus
+                      `/votecast/polls/${selectedBusiness}/results?status=${pollStatus === "all" ? "" : pollStatus
                       }`,
                       "_blank"
                     )
                   }
+                  startIcon={<ICONS.fullscreen fontSize="small" />}
                 >
                   {t.viewFullScreen}
                 </Button>
@@ -300,6 +311,7 @@ export default function ResultsPage() {
         title={t.confirmVoteReset}
         message={t.resetConfirmation}
         confirmButtonText={t.resetButton}
+        confirmButtonIcon={<ICONS.refresh fontSize="small" />}
       />
     </>
   );
