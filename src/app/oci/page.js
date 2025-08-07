@@ -1,13 +1,19 @@
 'use client';
+
 import { useEffect } from 'react';
+import { Box, Typography } from '@mui/material';
 
 export default function DemoAgentPage() {
+
   useEffect(() => {
     const script = document.createElement('script');
     script.type = 'module';
-    script.src = "https://agent.d-id.com/v2/index.js";
+    script.src = 'https://agent.d-id.com/v2/index.js';
     script.setAttribute('data-mode', 'full');
-    script.setAttribute('data-client-key', 'Z29vZ2xlLW9hdXRoMnwxMDU2NzkzNzAxNDc5MTU5NDI5OTk6SUwtUTYtcmdGclRaenMxSzctWFl3');
+    script.setAttribute(
+      'data-client-key',
+      'Z29vZ2xlLW9hdXRoMnwxMDU2NzkzNzAxNDc5MTU5NDI5OTk6SUwtUTYtcmdGclRaenMxSzctWFl3'
+    );
     script.setAttribute('data-agent-id', 'v2_agt_Y4OPERLW');
     script.setAttribute('data-name', 'did-agent');
     script.setAttribute('data-monitor', 'true');
@@ -16,32 +22,38 @@ export default function DemoAgentPage() {
   }, []);
 
   return (
-    <div
-      style={{
+    <Box
+      sx={{
         width: '100vw',
+        minHeight: 'calc(100vh - 40px)',
         display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: '1rem',
-        boxSizing: 'border-box',
-        backgroundColor: '#f9f9f9',
         flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        p: 2,
+        boxSizing: 'border-box',
       }}
     >
-      <h1 style={{ marginBottom: '1rem', fontSize: '2rem', textAlign: 'center' }}>
+      <Typography
+        variant="h4"
+        align="center"
+        sx={{ mb: 3}}
+      >
         Meet Our AI Agent
-      </h1>
-      <div
+      </Typography>
+
+      <Box
         id="agent-container"
-        style={{
+        sx={{
           width: '100%',
+          maxWidth: '90vw',
           height: '75vh',
-          borderRadius: '12px',
+          borderRadius: 2,
           overflow: 'hidden',
-          boxShadow: '0 0 10px rgba(0, 0, 0, 0.1)',
+          boxShadow: 3,
           backgroundColor: '#fff',
         }}
       />
-    </div>
+    </Box>
   );
 }
