@@ -21,15 +21,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import ShareLinkModal from "@/components/ShareLinkModal";
-import BusinessDrawer from "@/components/BusinessDrawer";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import EmptyBusinessState from "@/components/EmptyBusinessState";
 
 const translations = {
   en: {
-    title: "Public QR Code Links for Visitor Questions",
+    title: "Public QR Links",
     description:
-      "Select a business and share its public link for displaying QR codes to visitors. They can scan to post or vote on questions.",
+      "Share QR code links for visitors to post or vote on questions.",
     shareTooltip: "Share public QR code link",
     copySuccessMessage: "Public QR page link copied to clipboard!",
     noBusinessesFound: "No businesses found.",
@@ -38,9 +37,9 @@ const translations = {
     noBusinessesAvailable: "No businesses available",
   },
   ar: {
-    title: "روابط رمز الاستجابة السريعة العامة لأسئلة الزوار",
+    title: "روابط QR العامة",
     description:
-      "اختر نشاطًا تجاريًا وشارك رابطه العام لعرض رموز QR للزوار. يمكنهم المسح لإرسال أو التصويت على الأسئلة.",
+      "شارك روابط QR للزوار لإرسال أو التصويت على الأسئلة.",
     shareTooltip: "مشاركة رابط رمز الاستجابة السريعة",
     copySuccessMessage: "تم نسخ رابط صفحة رمز الاستجابة السريعة!",
     noBusinessesFound: "لم يتم العثور على أعمال.",
@@ -57,7 +56,6 @@ export default function LinkSharingPage() {
   const [businesses, setBusinesses] = useState([]);
   const [selectedBusiness, setSelectedBusiness] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
     const fetchBusinesses = async () => {
@@ -84,24 +82,11 @@ export default function LinkSharingPage() {
     setModalOpen(true);
   };
 
-  const handleBusinessSelect = (businessSlug) => {
-    const business = businesses.find(b => b.slug === businessSlug);
-    setSelectedBusiness(business);
-    setDrawerOpen(false);
-  };
+  // Remove handleBusinessSelect and drawerOpen logic
 
   return (
     <Box dir={dir} sx={{ display: "flex", minHeight: "100vh" }}>
-      {user?.role === "admin" && (
-        <BusinessDrawer
-          open={drawerOpen}
-          onClose={() => setDrawerOpen(false)}
-          businesses={businesses}
-          selectedBusinessSlug={selectedBusiness?.slug}
-          onSelect={handleBusinessSelect}
-        />
-      )}
-
+      {/* Removed BusinessDrawer */}
       <Container maxWidth="lg">
         <BreadcrumbsNav />
 
@@ -121,29 +106,14 @@ export default function LinkSharingPage() {
               {t.description}
             </Typography>
           </Box>
-
-          {user?.role === "admin" && (
-            <Button
-              variant="outlined"
-              onClick={() => setDrawerOpen(true)}
-              startIcon={<ICONS.business fontSize="small" />}
-              size="medium"
-              sx={{
-                whiteSpace: "nowrap",
-                ...getStartIconSpacing(dir),
-              }}
-            >
-              {t.selectBusinessButton}
-            </Button>
-          )}
+          {/* Removed admin-only select business button */}
         </Stack>
         <Divider sx={{ my: 3 }} />
 
-        {!selectedBusiness ? (
-          <EmptyBusinessState />
-        ) : (
-          <Grid container spacing={3} justifyContent={{ xs: "stretch", sm: "center" }}>
-            <Grid item xs={12} sm={6} md={4} sx={{ width: { xs: "100%", sm: "auto" } }}>
+        {/* Show all business cards, not just selectedBusiness */}
+        <Grid container spacing={3} justifyContent={{ xs: "stretch", sm: "center" }}>
+          {businesses.map((business) => (
+            <Grid key={business._id} item xs={12} sm={6} md={4} sx={{ width: { xs: "100%", sm: "auto" } }}>
               <Card
                 elevation={4}
                 sx={{
@@ -172,14 +142,14 @@ export default function LinkSharingPage() {
                     gap: dir === "rtl" ? 1 : 0,
                   }}
                 >
-                  {selectedBusiness.logoUrl ? (
+                  {business.logoUrl ? (
                     <Avatar
-                      src={selectedBusiness.logoUrl}
-                      alt={selectedBusiness.name}
+                      src={business.logoUrl}
+                      alt={business.name}
                       sx={{ width: 40, height: 40 }}
                     />
                   ) : (
-                    <Avatar>{selectedBusiness.name.charAt(0)}</Avatar>
+                    <Avatar>{business.name.charAt(0)}</Avatar>
                   )}
                   <Box flexGrow={1}>
                     <Typography
@@ -192,12 +162,12 @@ export default function LinkSharingPage() {
                         fontSize: "1rem",
                       }}
                     >
-                      {selectedBusiness.name}
+                      {business.name}
                     </Typography>
                   </Box>
                   <Tooltip title={t.shareTooltip}>
                     <IconButton
-                      onClick={() => handleShare(selectedBusiness)}
+                      onClick={() => handleShare(business)}
                       color="primary"
                       aria-label="share"
                     >
@@ -208,7 +178,7 @@ export default function LinkSharingPage() {
 
                 <CardContent>
                   <Stack spacing={1}>
-                    {selectedBusiness?.contact?.email && (
+                    {business?.contact?.email && (
                       <Box display="flex" alignItems="center" gap={1}>
                         <ICONS.email fontSize="small" />
                         <Typography
@@ -219,29 +189,29 @@ export default function LinkSharingPage() {
                             whiteSpace: "normal",
                           }}
                         >
-                          {selectedBusiness?.contact?.email}
+                          {business?.contact?.email}
                         </Typography>
                       </Box>
                     )}
-                    {selectedBusiness?.contact?.phone && (
+                    {business?.contact?.phone && (
                       <Box display="flex" alignItems="center" gap={1}>
                         <ICONS.phone fontSize="small" />
                         <Typography
                           variant="body2"
                           sx={{ wordBreak: "break-word", whiteSpace: "normal" }}
                         >
-                          {selectedBusiness?.contact?.phone}
+                          {business?.contact?.phone}
                         </Typography>
                       </Box>
                     )}
-                    {selectedBusiness?.address && (
+                    {business?.address && (
                       <Box display="flex" alignItems="center" gap={1}>
                         <ICONS.location fontSize="small" />
                         <Typography
                           variant="body2"
                           sx={{ wordBreak: "break-word", whiteSpace: "normal" }}
                         >
-                          {selectedBusiness?.address}
+                          {business?.address}
                         </Typography>
                       </Box>
                     )}
@@ -249,8 +219,8 @@ export default function LinkSharingPage() {
                 </CardContent>
               </Card>
             </Grid>
-          </Grid>
-        )}
+          ))}
+        </Grid>
 
         {/* Share Modal */}
         <ShareLinkModal
