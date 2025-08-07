@@ -63,7 +63,6 @@ export default function PublicQrPage() {
       <Box
         dir={dir}
         sx={{
-          minHeight: "100vh",
           width: "100%",
           display: "flex",
           flexDirection: "column",
@@ -72,7 +71,7 @@ export default function PublicQrPage() {
           position: "relative",
           px: 2,
           pb: 8,
-          textAlign: align,
+          textAlign: "center",
           bgcolor: "background.default",
         }}
       >
@@ -92,7 +91,7 @@ export default function PublicQrPage() {
         )}
 
         {/* Title & Description */}
-        <Box sx={{ mt: 4, maxWidth: 800, textAlign: align }}>
+        <Box sx={{ mt: 4, maxWidth: 800, textAlign: "center" }}>
           <Typography variant="h4" fontWeight="bold" gutterBottom>
             {t.scanTitle}
           </Typography>
