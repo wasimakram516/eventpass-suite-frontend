@@ -73,7 +73,7 @@ const translations = {
     createdLabel: "Created:",
     showQRCode: "Show QR Code",
     openBigScreen: "Open Big Screen",
-    viewUploads:"View Uploaded Media",
+    viewUploads: "View Uploaded Media",
     edit: "Edit",
     wallConfigUpdated: "Wall configuration updated successfully",
     wallConfigCreated: "Wall configuration created successfully",
@@ -92,8 +92,8 @@ const translations = {
     name: "الاسم",
     slug: "الرمز",
     mode: "النمط",
-    mosaic: "فسيفساء",
-    card: "بطاقة",
+    mosaic: "mosaic",
+    card: "card",
     cancel: "إلغاء",
     update: "تحديث",
     create: "إنشاء",
@@ -275,8 +275,9 @@ export default function WallConfigsPage() {
           direction={{ xs: "column", sm: "row" }}
           justifyContent="space-between"
           alignItems={{ xs: "stretch", sm: "center" }}
-          spacing={2}
+          spacing={1}
           sx={{ my: 3 }}
+          gap={dir === "rtl" ? 2 : 1}
         >
           {user?.role === "admin" && (
             <Button
@@ -323,7 +324,7 @@ export default function WallConfigsPage() {
       ) : (
         <Grid container spacing={3} justifyContent={"center"}>
           {wallConfigs.map((config) => (
-            <Grid item xs={12} sm={6} md={4} lg={3} key={config._id}>
+            <Grid item xs={12} sm={6} md={4} key={config._id} sx={{ width: { xs: '100%', sm: 'auto' } }}>
               <Card
                 elevation={3}
                 sx={{
@@ -336,6 +337,7 @@ export default function WallConfigsPage() {
                   borderRadius: 2,
                   boxShadow: "0 2px 10px rgba(0,0,0,0.06)",
                   transition: "transform 0.2s, box-shadow 0.2s",
+                  width: { xs: "100%", md: "auto" },
                 }}
               >
                 {/* Chip at top-right */}
@@ -346,7 +348,7 @@ export default function WallConfigsPage() {
                   sx={{
                     position: "absolute",
                     top: 12,
-                    right: 12,
+                    [dir === "rtl" ? "left" : "right"]: 12,
                     fontWeight: 500,
                     fontSize: "0.75rem",
                     textTransform: "capitalize",
@@ -368,7 +370,7 @@ export default function WallConfigsPage() {
                   </Typography>
 
                   <Typography variant="caption" color="text.secondary">
-                    Created:{" "}
+                    {t.createdLabel}{" "}
                     {(() => {
                       try {
                         if (!config.createdAt) return t.notAvailable;
@@ -414,7 +416,7 @@ export default function WallConfigsPage() {
                     </Tooltip>
                   </Box>
                   <Box>
-                     <Tooltip title={t.viewUploads}>
+                    <Tooltip title={t.viewUploads}>
                       <IconButton
                         size="small"
                         onClick={() =>
@@ -515,8 +517,19 @@ export default function WallConfigsPage() {
             </Box>
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setIsModalOpen(false)}>{t.cancel}</Button>
-            <Button type="submit" variant="contained">
+            <Button
+              onClick={() => setIsModalOpen(false)}
+              startIcon={<ICONS.close fontSize="small" />}
+              sx={getStartIconSpacing(dir)}
+            >
+              {t.cancel}
+            </Button>
+            <Button
+              type="submit"
+              variant="contained"
+              startIcon={<ICONS.save fontSize="small" />}
+              sx={getStartIconSpacing(dir)}
+            >
               {currentConfig ? t.update : t.create}
             </Button>
           </DialogActions>
@@ -538,6 +551,7 @@ export default function WallConfigsPage() {
         title={t.deleteWallConfig}
         message={`${t.deleteConfirmMessage} "${wallToDelete?.name}"? ${t.deleteActionCannotBeUndone}`}
         confirmButtonText={t.delete}
+        confirmButtonIcon={<ICONS.delete fontSize="small" />}
       />
     </Container>
   );
