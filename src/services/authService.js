@@ -21,7 +21,7 @@ export const login = withApiHandler(async (email, password) => {
 // **Register New Business User**
 export const registerUser = withApiHandler(async (name, email, password) => {
   const { data } = await api.post("/auth/register", { name, email, password });
-  return data.data;
+  return data;
 });
 
 // **Refresh Access Token Using Secure Cookie**
@@ -33,16 +33,6 @@ export const refreshToken = withApiHandler(async () => {
 
 // **Logout API Call**
 export const logoutUser = async () => {
-  try {
     await api.post("/auth/logout");
-  } catch (err) {
-    console.error("Failed to logout on the server:", err);
-  } finally {
     clearTokens();
-
-    // Prevent multiple redirects
-    if (window.location.pathname !== "/auth/login") {
-      window.location.href = "/auth/login";
-    }
-  }
 };

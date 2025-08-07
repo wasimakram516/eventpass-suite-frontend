@@ -656,6 +656,7 @@ export default function BusinessDetailsPage() {
         title={t.confirmDeleteTitle}
         message={t.confirmDeleteMessage(bizToDelete?.name)}
         confirmButtonText={t.confirmDeleteButton}
+        confirmButtonIcon={<ICONS.delete/>}
       />
     </Container>
   );

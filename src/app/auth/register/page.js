@@ -104,148 +104,150 @@ export default function RegisterPage() {
   };
 
   return (
-    <Container maxWidth="sm" dir={dir}>
-      <Paper elevation={3} sx={{ p: 4, mt: 4, borderRadius: 3 }}>
-        <Stack
-          direction="row"
-          justifyContent="space-between"
-          alignItems="center"
-          mb={2}
-        >
-          <IconButton onClick={() => router.push("/")} aria-label="Go home">
-            <HomeIcon />
-          </IconButton>
-        </Stack>
-
-        <Typography
-          variant="h5"
-          fontWeight="bold"
-          textAlign="center"
-          gutterBottom
-        >
-          {t.title} {globalConfig?.appName || "EventPass Suite"}
-        </Typography>
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          textAlign="center"
-          sx={{ mb: 3 }}
-        >
-          {t.subtitle}
-        </Typography>
-
-        <Box
-          component="form"
-          onSubmit={handleSubmit}
-          sx={{ display: "flex", flexDirection: "column", gap: 2 }}
-        >
-          <TextField
-            label={t.name}
-            name="name"
-            fullWidth
-            value={form.name}
-            onChange={handleChange}
-            error={!!errors.name}
-            helperText={errors.name}
-            inputProps={{ dir }}
-          />
-          <TextField
-            label={t.email}
-            name="email"
-            type="email"
-            fullWidth
-            value={form.email}
-            onChange={handleChange}
-            error={!!errors.email}
-            helperText={errors.email}
-            inputProps={{ dir }}
-          />
-          <TextField
-            label={t.password}
-            name="password"
-            type={showPassword ? "text" : "password"}
-            fullWidth
-            value={form.password}
-            onChange={handleChange}
-            error={!!errors.password}
-            helperText={errors.password}
-            inputProps={{ dir }}
-            InputProps={{
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    onClick={() => setShowPassword((prev) => !prev)}
-                    edge="end"
-                  >
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
-
-          <Button
-            fullWidth
-            type="submit"
-            variant="contained"
-            size="large"
-            startIcon={
-              loading ? (
-                <CircularProgress size={20} color="inherit" />
-              ) : (
-                <PersonAddAltIcon />
-              )
-            }
-            disabled={loading}
-            sx={{ mt: 1, textTransform: "none", py: 1.5 }}
-          >
-            {loading ? t.registering : t.register}
-          </Button>
-        </Box>
-
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          align="center"
-          sx={{ mt: 2 }}
-        >
-          {t.alreadyHave}{" "}
-          <a
-            href="/auth/login"
-            style={{
-              color: "inherit",
-              fontWeight: 500,
-              textDecoration: "none",
-            }}
-          >
-            {t.loginHere}
-          </a>
-        </Typography>
-
-        <Divider sx={{ my: 3 }} />
-        {globalConfig?.poweredBy?.text && (
+    <Box
+      sx={{
+        minHeight: "calc(100vh - 60px)",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+      dir={dir}
+    >
+      <Container maxWidth="sm">
+        <Paper elevation={3} sx={{ p: 4, mt: 4, borderRadius: 3 }}>
           <Typography
-            variant="caption"
-            color="text.secondary"
-            display="block"
+            variant="h5"
+            fontWeight="bold"
             textAlign="center"
+            gutterBottom
           >
-            {t.poweredBy}{" "}
-            <a
-              href={globalConfig?.socialLinks?.website || "#"}
-              target="_blank"
-              rel="noopener noreferrer"
+            {t.title} {globalConfig?.appName || "EventPass Suite"}
+          </Typography>
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            textAlign="center"
+            sx={{ mb: 3 }}
+          >
+            {t.subtitle}
+          </Typography>
+
+          <Box
+            component="form"
+            onSubmit={handleSubmit}
+            sx={{ display: "flex", flexDirection: "column", gap: 2 }}
+          >
+            <TextField
+              label={t.name}
+              name="name"
+              fullWidth
+              value={form.name}
+              onChange={handleChange}
+              error={!!errors.name}
+              helperText={errors.name}
+              inputProps={{ dir }}
+            />
+            <TextField
+              label={t.email}
+              name="email"
+              type="email"
+              fullWidth
+              value={form.email}
+              onChange={handleChange}
+              error={!!errors.email}
+              helperText={errors.email}
+              inputProps={{ dir }}
+            />
+            <TextField
+              label={t.password}
+              name="password"
+              type={showPassword ? "text" : "password"}
+              fullWidth
+              value={form.password}
+              onChange={handleChange}
+              error={!!errors.password}
+              helperText={errors.password}
+              inputProps={{ dir }}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowPassword((prev) => !prev)}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+
+            <Button
+              fullWidth
+              type="submit"
+              variant="contained"
+              size="large"
+              startIcon={
+                loading ? (
+                  <CircularProgress size={20} color="inherit" />
+                ) : (
+                  <PersonAddAltIcon />
+                )
+              }
+              disabled={loading}
+              sx={{ mt: 1, textTransform: "none", py: 1.5 }}
+            >
+              {loading ? t.registering : t.register}
+            </Button>
+          </Box>
+
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            align="center"
+            sx={{ mt: 2 }}
+          >
+            {t.alreadyHave}{" "}
+            <span
+              onClick={() => router.push("/auth/login")}
               style={{
                 color: "inherit",
                 fontWeight: 500,
                 textDecoration: "none",
+                cursor: "pointer",
               }}
             >
-              {globalConfig?.poweredBy?.text}
-            </a>
+              {t.loginHere}
+            </span>
           </Typography>
-        )}
-      </Paper>
-    </Container>
+
+          {globalConfig?.poweredBy?.text && (
+            <>
+              <Divider sx={{ my: 3 }} />
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                display="block"
+                textAlign="center"
+              >
+                {t.poweredBy}{" "}
+                <a
+                  href={globalConfig?.socialLinks?.website || "#"}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    color: "inherit",
+                    fontWeight: 500,
+                    textDecoration: "none",
+                  }}
+                >
+                  {globalConfig?.poweredBy?.text}
+                </a>
+              </Typography>
+            </>
+          )}
+        </Paper>
+      </Container>
+    </Box>
   );
 }

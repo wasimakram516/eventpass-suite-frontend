@@ -148,8 +148,9 @@ export default function GlobalConfigPage() {
   useEffect(() => {
     (async () => {
       const data = await getGlobalConfig();
-      if(data===null) return;
-      
+
+      if (!data.data || data.data === null) return;
+
       if (!data.error) {
         setConfig(data);
         setForm({
@@ -328,8 +329,8 @@ export default function GlobalConfigPage() {
 
       {!config ? (
         <Box textAlign="center" py={4}>
-          <Typography>{t.noConfig}</Typography>
-          <Button variant="contained" onClick={() => setOpenEdit(true)}>
+          <Typography sx={{mb:4}}>{t.noConfig}</Typography>
+          <Button startIcon={<ICONS.add/>} sx={getStartIconSpacing(dir)} variant="contained" onClick={() => setOpenEdit(true)}>
             {t.create}
           </Button>
         </Box>
@@ -688,6 +689,7 @@ export default function GlobalConfigPage() {
         title={t.deleteConfirmTitle}
         message={t.deleteConfirmMsg}
         confirmButtonText={t.deleteConfirmBtn}
+        confirmButtonIcon={<ICONS.delete/>}
       />
     </Container>
   );
