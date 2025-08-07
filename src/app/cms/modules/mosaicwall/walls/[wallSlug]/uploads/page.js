@@ -176,7 +176,7 @@ const CMSUploadsPage = () => {
             <Box
               sx={{
                 maxWidth: "100%",
-                maxHeight: "75vh",
+                maxHeight: "85vh",
                 borderRadius: 2,
                 overflow: "hidden",
                 boxShadow: 5,
@@ -185,7 +185,7 @@ const CMSUploadsPage = () => {
               <img
                 src={media.imageUrl}
                 alt="Full screen preview"
-                style={{ width: "auto", height: "100%", objectFit: "contain" }}
+                style={{ width: "70%", height: "auto", objectFit: "contain", display: "block", margin: "0 auto" }}
               />
             </Box>
           </Box>
@@ -220,11 +220,11 @@ const CMSUploadsPage = () => {
               </Typography>
             )}
             <Box display="flex" alignItems="center" gap={1} mb={1}>
-                    <ICONS.time fontSize="small" color="action" />
-                    <Typography variant="caption" color="text.secondary">
-                      {formatDateTimeWithLocale(media.createdAt)}
-                    </Typography>
-                  </Box>
+              <ICONS.time fontSize="small" color="action" />
+              <Typography variant="caption" color="text.secondary">
+                {formatDateTimeWithLocale(media.createdAt)}
+              </Typography>
+            </Box>
           </Box>
         </Box>
       )}
@@ -243,10 +243,10 @@ const CMSUploadsPage = () => {
   return (
     <Container dir={dir} maxWidth="lg">
       <BreadcrumbsNav />
-      <Typography variant="h4" fontWeight="bold" mt={3} mb={2}>
+      <Typography variant="h4" fontWeight="bold" mt={3} >
         {t.mediaGallery}
       </Typography>
-      <Typography variant="body2" color="text.secondary" mb={4}>
+      <Typography variant="body2" color="text.secondary" mb={2}>
         {user?.role === "business" ? t.businessDescription : t.adminDescription}
       </Typography>
       <Divider sx={{ mb: 4 }} />
@@ -346,6 +346,7 @@ const CMSUploadsPage = () => {
         title={t.deleteTitle}
         message={t.deleteMessage}
         confirmButtonText={t.delete}
+        confirmButtonIcon={<ICONS.delete fontSize="small" />}
       />
     </Container>
   );
