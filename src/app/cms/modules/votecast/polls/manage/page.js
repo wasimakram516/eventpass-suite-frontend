@@ -52,6 +52,7 @@ const translations = {
     createPoll: "Create Poll",
     selectBusiness: "Select Business",
     exportPolls: "Export Polls",
+    exporting: "Exporting...",
     allPolls: "All Polls",
     activePolls: "Active Polls",
     archivedPolls: "Archived Polls",
@@ -91,6 +92,7 @@ const translations = {
     createPoll: "إنشاء استطلاع",
     selectBusiness: "اختر الشركة",
     exportPolls: "تصدير الاستطلاعات",
+    exporting: "جاري التصدير...",
     allPolls: "جميع الاستطلاعات",
     activePolls: "الاستطلاعات النشطة",
     archivedPolls: "الاستطلاعات المؤرشفة",
@@ -134,6 +136,7 @@ export default function ManagePollsPage() {
   const [polls, setPolls] = useState([]);
   const [businesses, setBusinesses] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
   const [openDrawer, setOpenDrawer] = useState(false);
   const [editPoll, setEditPoll] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState({ open: false, id: null });
@@ -143,11 +146,8 @@ export default function ManagePollsPage() {
   const [selectedBusiness, setSelectedBusiness] = useState(null);
   const [pollStatus, setPollStatus] = useState("all"); // "all", "active", "archived"
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
-
   useEffect(() => {
     const fetchBusinesses = async () => {
-      setLoading(true);
-
       const businessList = await getAllBusinesses();
       setBusinesses(businessList);
 
@@ -162,8 +162,6 @@ export default function ManagePollsPage() {
           fetchPolls(userBusiness.slug, pollStatus);
         }
       }
-
-      setLoading(false);
     };
 
     fetchBusinesses();
@@ -527,7 +525,7 @@ export default function ManagePollsPage() {
                 color="success"
                 fullWidth
                 onClick={async () => {
-                  setLoading(true);
+                  setExportLoading(true);
                   const result = await exportPollsToExcel(
                     selectedBusiness,
                     pollStatus === "all" ? "" : pollStatus
@@ -535,11 +533,18 @@ export default function ManagePollsPage() {
                   if (result?.error) {
                     showMessage(t.failedToExportPolls, "error");
                   }
-                  setLoading(false);
+                  setExportLoading(false);
                 }}
-                startIcon={<ICONS.download fontSize="small" />}
+                disabled={exportLoading}
+                startIcon={
+                  exportLoading ? (
+                    <CircularProgress size={20} color="inherit" />
+                  ) : (
+                    <ICONS.download fontSize="small" />
+                  )
+                }
               >
-                {t.exportPolls}
+                {exportLoading ? t.exporting || "Exporting..." : t.exportPolls}
               </Button>
             </>
           ) : null}

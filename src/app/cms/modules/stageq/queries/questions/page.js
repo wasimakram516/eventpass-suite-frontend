@@ -11,7 +11,6 @@ import {
   Card,
   CardContent,
   Tooltip,
-  CircularProgress,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -36,6 +35,7 @@ import useI18nLayout from "@/hooks/useI18nLayout";
 import EmptyBusinessState from "@/components/EmptyBusinessState";
 import LoadingState from "@/components/LoadingState";
 import NoDataAvailable from "@/components/NoDataAvailable";
+import getStartIconSpacing from "@/utils/getStartIconSpacing";
 
 const translations = {
   en: {
@@ -59,14 +59,6 @@ const translations = {
     notProvided: "Not provided",
     vote: "vote",
     votes: "votes",
-    // Messages
-    failedToLoadBusinesses: "Failed to load businesses",
-    failedToLoadQuestions: "Failed to load questions",
-    questionDeleted: "Question deleted",
-    failedToDeleteQuestion: "Failed to delete question",
-    questionCannotBeEmpty: "Question cannot be empty",
-    questionUpdated: "Question updated",
-    failedToUpdateQuestion: "Failed to update question",
     failedToUpdateAnsweredStatus: "Failed to update answered status",
   },
   ar: {
@@ -89,14 +81,6 @@ const translations = {
     notProvided: "غير مقدم",
     vote: "صوت",
     votes: "أصوات",
-    // Messages
-    failedToLoadBusinesses: "فشل في تحميل الأعمال",
-    failedToLoadQuestions: "فشل في تحميل الأسئلة",
-    questionDeleted: "تم حذف السؤال",
-    failedToDeleteQuestion: "فشل في حذف السؤال",
-    questionCannotBeEmpty: "لا يمكن أن يكون السؤال فارغاً",
-    questionUpdated: "تم تحديث السؤال",
-    failedToUpdateQuestion: "فشل في تحديث السؤال",
     failedToUpdateAnsweredStatus: "فشل في تحديث حالة الإجابة",
   },
 };
@@ -185,14 +169,15 @@ export default function ManageQuestionsPage() {
             direction={{ xs: "column", sm: "row" }}
             spacing={2}
             alignItems={{ xs: "stretch", sm: "center" }}
-            sx={{ width: { xs: "100%", sm: "auto" } }}
+            sx={{ width: { xs: "100%", sm: "auto" }, gap: dir === "rtl" ? 1 : 0 }}
           >
             {user?.role === "admin" && (
               <Button
                 variant="outlined"
                 onClick={() => setDrawerOpen(true)}
                 startIcon={<ICONS.business fontSize="small" />}
-                fullWidth={true}
+                size="medium"
+                sx={{ ...getStartIconSpacing(dir) }}
               >
                 {t.selectBusinessButton}
               </Button>
@@ -207,7 +192,9 @@ export default function ManageQuestionsPage() {
                     "_blank"
                   )
                 }
-                fullWidth={true}
+                startIcon={<ICONS.fullscreen fontSize="small" />}
+                size="medium"
+                sx={{ ...getStartIconSpacing(dir) }}
               >
                 {t.openFullScreenButton}
               </Button>
@@ -226,7 +213,7 @@ export default function ManageQuestionsPage() {
         ) : (
           <Grid container spacing={3} justifyContent="center">
             {questions.map((q) => (
-              <Grid item xs={12} sm={6} md={4} key={q._id}>
+              <Grid item xs={12} sm={6} md={4} key={q._id} sx={{ width: { xs: "100%", sm: "auto" } }}>
                 <Card
                   variant="outlined"
                   sx={{
@@ -234,7 +221,7 @@ export default function ManageQuestionsPage() {
                     flexDirection: "column",
                     justifyContent: "space-between",
                     height: "100%",
-                    width: "300px",
+                    width: { xs: "100%", sm: "300px" },
                     borderRadius: 3,
                     boxShadow: 1,
                     bgcolor: "#fefefe",
@@ -271,7 +258,7 @@ export default function ManageQuestionsPage() {
                       alignItems="center"
                       justifyContent="space-between"
                     >
-                      <Stack direction="row" spacing={1} alignItems="center">
+                      <Stack direction="row" spacing={1} alignItems="center" sx={{ gap: dir === "rtl" ? 1 : 0 }}>
                         {<ICONS.thumb fontSize="small" />}
                         <Typography variant="body2" color="text.secondary">
                           {q.votes} {q.votes === 1 ? t.vote : t.votes}
@@ -311,19 +298,19 @@ export default function ManageQuestionsPage() {
                     <Divider sx={{ my: 1 }} />
 
                     <Stack spacing={0.5}>
-                      <Stack direction="row" spacing={1} alignItems="center">
+                      <Stack direction="row" spacing={1} alignItems="center" sx={{ gap: dir === "rtl" ? 1 : 0 }}>
                         <ICONS.person fontSize="small" />
                         <Typography variant="body2">
                           {q.visitor?.name || t.anonymous}
                         </Typography>
                       </Stack>
-                      <Stack direction="row" spacing={1} alignItems="center">
+                      <Stack direction="row" spacing={1} alignItems="center" sx={{ gap: dir === "rtl" ? 1 : 0 }}>
                         <ICONS.phone fontSize="small" />
                         <Typography variant="body2">
                           {q.visitor?.phone || t.notProvided}
                         </Typography>
                       </Stack>
-                      <Stack direction="row" spacing={1} alignItems="center">
+                      <Stack direction="row" spacing={1} alignItems="center" sx={{ gap: dir === "rtl" ? 1 : 0 }}>
                         <ICONS.business fontSize="small" />
                         <Typography variant="body2">
                           {q.visitor?.company || t.notProvided}
@@ -388,19 +375,51 @@ export default function ManageQuestionsPage() {
               onChange={(e) =>
                 setEditData({ ...editData, text: e.target.value })
               }
+              sx={{ mt: 2 }}
             />
           </DialogContent>
-          <DialogActions sx={{ px: 3, pb: 2 }}>
-            <Button
-              onClick={() => setEditDialogOpen(false)}
-              color="error"
-              variant="outlined"
-            >
-              {t.cancelButton}
-            </Button>
-            <Button onClick={handleEditSubmit} variant="contained">
-              {t.updateButton}
-            </Button>
+          <DialogActions sx={{ px: 3, pb: 2, gap: dir === "rtl" ? 1 : 0 }}>
+            {dir === "rtl" ? (
+              <>
+                <Button
+                  onClick={handleEditSubmit}
+                  variant="contained"
+                  endIcon={<ICONS.save fontSize="small" />}
+                  sx={{ ...getStartIconSpacing(dir) }}
+                >
+                  {t.updateButton}
+                </Button>
+                <Button
+                  onClick={() => setEditDialogOpen(false)}
+                  color="error"
+                  variant="outlined"
+                  endIcon={<ICONS.close fontSize="small" />}
+                  sx={{ ...getStartIconSpacing(dir) }}
+                >
+                  {t.cancelButton}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  onClick={() => setEditDialogOpen(false)}
+                  color="error"
+                  variant="outlined"
+                  startIcon={<ICONS.close fontSize="small" />}
+                  sx={{ ...getStartIconSpacing(dir) }}
+                >
+                  {t.cancelButton}
+                </Button>
+                <Button
+                  onClick={handleEditSubmit}
+                  variant="contained"
+                  startIcon={<ICONS.save fontSize="small" />}
+                  sx={{ ...getStartIconSpacing(dir) }}
+                >
+                  {t.updateButton}
+                </Button>
+              </>
+            )}
           </DialogActions>
         </Dialog>
 
@@ -422,6 +441,8 @@ export default function ManageQuestionsPage() {
           title={t.deleteQuestionTitle}
           message={t.deleteQuestionMessage}
           confirmButtonText={t.deleteButton}
+          confirmButtonIcon={<ICONS.delete fontSize="small" />}
+          cancelButtonIcon={<ICONS.close fontSize="small" />}
         />
       </Container>
     </Box>

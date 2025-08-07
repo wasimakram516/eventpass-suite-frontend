@@ -9,7 +9,6 @@ import {
   Card,
   CardContent,
   Grid,
-  CircularProgress,
 } from "@mui/material";
 import BreadcrumbsNav from "@/components/BreadcrumbsNav";
 import { useEffect, useState } from "react";
@@ -23,6 +22,7 @@ import useI18nLayout from "@/hooks/useI18nLayout";
 import EmptyBusinessState from "@/components/EmptyBusinessState";
 import LoadingState from "@/components/LoadingState";
 import NoDataAvailable from "@/components/NoDataAvailable";
+import getStartIconSpacing from "@/utils/getStartIconSpacing";
 
 const translations = {
   en: {
@@ -53,7 +53,7 @@ const translations = {
 };
 
 export default function VisitorsPage() {
-  const { t, dir, align } = useI18nLayout(translations);
+  const { t, dir } = useI18nLayout(translations);
   const [visitors, setVisitors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [businesses, setBusinesses] = useState([]);
@@ -121,6 +121,7 @@ export default function VisitorsPage() {
           businesses={businesses}
           selectedBusinessSlug={selectedBusiness}
           onSelect={handleBusinessSelect}
+
         />
       )}
       <Container maxWidth="lg">
@@ -150,7 +151,10 @@ export default function VisitorsPage() {
               onClick={() => setDrawerOpen(true)}
               startIcon={<ICONS.business fontSize="small" />}
               fullWidth={{ xs: true, sm: false }}
-              sx={{ alignSelf: { xs: "stretch", sm: "flex-start" } }}
+              sx={{
+                alignSelf: { xs: "stretch", sm: "flex-start" },
+                ...getStartIconSpacing(dir),
+              }}
             >
               {t.selectBusinessButton}
             </Button>
@@ -168,25 +172,25 @@ export default function VisitorsPage() {
         ) : (
           <Grid container spacing={3} justifyContent={"center"}>
             {visitors.map((v) => (
-              <Grid item xs={12} sm={6} md={4} key={v._id}>
+              <Grid item xs={12} sm={6} md={4} key={v._id} sx={{ width: { xs: "100%", sm: "auto" } }}>
                 <Card variant="outlined">
                   <CardContent>
                     <Stack spacing={1}>
-                      <Stack direction="row" spacing={1} alignItems="center">
+                      <Stack direction="row" spacing={1} alignItems="center" sx={{ gap: dir === "rtl" ? 2 : 1 }}>
                         <ICONS.person fontSize="small" />
                         <Typography variant="subtitle1" fontWeight="bold">
                           {v.name}
                         </Typography>
                       </Stack>
 
-                      <Stack direction="row" spacing={1} alignItems="center">
+                      <Stack direction="row" spacing={1} alignItems="center" sx={{ gap: dir === "rtl" ? 1 : 0 }}>
                         <ICONS.phone fontSize="small" />
                         <Typography variant="body2">
                           {v.phone || "Not provided"}
                         </Typography>
                       </Stack>
 
-                      <Stack direction="row" spacing={1} alignItems="center">
+                      <Stack direction="row" spacing={1} alignItems="center" sx={{ gap: dir === "rtl" ? 1 : 0 }}>
                         <ICONS.business fontSize="small" />
                         <Typography variant="body2">
                           {v.company || "Not provided"}
@@ -216,6 +220,7 @@ export default function VisitorsPage() {
                                 direction="row"
                                 spacing={1}
                                 alignItems="center"
+                                sx={{ gap: dir === "rtl" ? 1 : 0 }}
                               >
                                 <ICONS.business fontSize="small" />
                                 <Typography variant="body2" fontWeight="medium">
@@ -225,7 +230,7 @@ export default function VisitorsPage() {
                               <Stack
                                 direction="row"
                                 spacing={2}
-                                sx={{ pl: 4 }}
+                                sx={{ pl: 4, gap: dir === "rtl" ? 3 : 2 }}
                                 alignItems="center"
                               >
                                 <Typography

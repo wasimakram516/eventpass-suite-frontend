@@ -9,8 +9,6 @@ import {
   Grid,
   Card,
   CardContent,
-  CardActions,
-  CardHeader,
   Avatar,
   Stack,
   Button,
@@ -23,14 +21,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import ShareLinkModal from "@/components/ShareLinkModal";
+import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import EmptyBusinessState from "@/components/EmptyBusinessState";
-import NoDataAvailable from "@/components/NoDataAvailable";
 
 const translations = {
   en: {
-    title: "Public QR Code Links for Visitor Questions",
+    title: "Public QR Links",
     description:
-      "Select a business and share its public link for displaying QR codes to visitors. They can scan to post or vote on questions.",
+      "Share QR code links for visitors to post or vote on questions.",
     shareTooltip: "Share public QR code link",
     copySuccessMessage: "Public QR page link copied to clipboard!",
     noBusinessesFound: "No businesses found.",
@@ -39,9 +37,9 @@ const translations = {
     noBusinessesAvailable: "No businesses available",
   },
   ar: {
-    title: "روابط رمز الاستجابة السريعة العامة لأسئلة الزوار",
+    title: "روابط QR العامة",
     description:
-      "اختر نشاطًا تجاريًا وشارك رابطه العام لعرض رموز QR للزوار. يمكنهم المسح لإرسال أو التصويت على الأسئلة.",
+      "شارك روابط QR للزوار لإرسال أو التصويت على الأسئلة.",
     shareTooltip: "مشاركة رابط رمز الاستجابة السريعة",
     copySuccessMessage: "تم نسخ رابط صفحة رمز الاستجابة السريعة!",
     noBusinessesFound: "لم يتم العثور على أعمال.",
@@ -84,34 +82,38 @@ export default function LinkSharingPage() {
     setModalOpen(true);
   };
 
+  // Remove handleBusinessSelect and drawerOpen logic
+
   return (
-    <Container dir={dir} maxWidth="lg">
-      <BreadcrumbsNav />
+    <Box dir={dir} sx={{ display: "flex", minHeight: "100vh" }}>
+      {/* Removed BusinessDrawer */}
+      <Container maxWidth="lg">
+        <BreadcrumbsNav />
 
-      <Stack
-        direction={{ xs: "column", sm: "row" }}
-        justifyContent="space-between"
-        alignItems={{ xs: "stretch", sm: "center" }}
-        spacing={2}
-        mb={2}
-      >
-        <Box>
-          <Typography variant="h4" fontWeight="bold">
-            {t.title}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            {t.description}
-          </Typography>
-        </Box>
-      </Stack>
-      <Divider sx={{ my: 4 }} />
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          justifyContent="space-between"
+          alignItems={{ xs: "stretch", sm: "center" }}
+          spacing={2}
+          mb={1}
+          sx={{ minHeight: "auto" }}
+        >
+          <Box>
+            <Typography variant="h4" fontWeight="bold">
+              {t.title}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {t.description}
+            </Typography>
+          </Box>
+          {/* Removed admin-only select business button */}
+        </Stack>
+        <Divider sx={{ my: 3 }} />
 
-      {!businesses.length === 0 ? (
-        <NoDataAvailable />
-      ) : (
-        <Grid container spacing={3} justifyContent="center">
+        {/* Show all business cards, not just selectedBusiness */}
+        <Grid container spacing={3} justifyContent={{ xs: "stretch", sm: "center" }}>
           {businesses.map((business) => (
-            <Grid item key={business._id} xs={12} sm={6} md={4}>
+            <Grid key={business._id} item xs={12} sm={6} md={4} sx={{ width: { xs: "100%", sm: "auto" } }}>
               <Card
                 elevation={4}
                 sx={{
@@ -121,6 +123,7 @@ export default function LinkSharingPage() {
                   background: "#fdfefe",
                   boxShadow: 2,
                   width: { xs: "100%", sm: "300px" },
+                  maxWidth: { xs: "100%", sm: "300px" },
                   display: "flex",
                   flexDirection: "column",
                   justifyContent: "space-between",
@@ -130,7 +133,15 @@ export default function LinkSharingPage() {
                   },
                 }}
               >
-                <Stack direction="row" spacing={1} alignItems="center" mb={1}>
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  alignItems="center"
+                  mb={1}
+                  sx={{
+                    gap: dir === "rtl" ? 1 : 0,
+                  }}
+                >
                   {business.logoUrl ? (
                     <Avatar
                       src={business.logoUrl}
@@ -210,24 +221,24 @@ export default function LinkSharingPage() {
             </Grid>
           ))}
         </Grid>
-      )}
 
-      {/* Share Modal */}
-      <ShareLinkModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        url={
-          selectedBusiness
-            ? `${window.location.origin}/stageq/queries/${selectedBusiness.slug}/qr`
-            : ""
-        }
-        qrUrl={
-          selectedBusiness
-            ? `${window.location.origin}/stageq/queries/${selectedBusiness.slug}/ask`
-            : ""
-        }
-        name={selectedBusiness?.name || "QR"}
-      />
-    </Container>
+        {/* Share Modal */}
+        <ShareLinkModal
+          open={modalOpen}
+          onClose={() => setModalOpen(false)}
+          url={
+            selectedBusiness
+              ? `${window.location.origin}/stageq/queries/${selectedBusiness.slug}/qr`
+              : ""
+          }
+          qrUrl={
+            selectedBusiness
+              ? `${window.location.origin}/stageq/queries/${selectedBusiness.slug}/ask`
+              : ""
+          }
+          name={selectedBusiness?.name || "QR"}
+        />
+      </Container>
+    </Box>
   );
 }
