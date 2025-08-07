@@ -46,53 +46,56 @@ export default function PublicQrPage() {
   }, [slug]);
 
   return (
-    <Container
-      maxWidth="sm"
-      sx={{
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        mt: 2,
-        textAlign: align,
-      }}
-      dir={dir}
-    >
-      {/* Heading */}
-      <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ mt: 4 }}>
-        {t.scanToCapture}
-      </Typography>
+    <>
+      <Container
+        maxWidth="sm"
+        sx={{
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          mt: 2,
+          textAlign: align,
+        }}
+        dir={dir}
+      >
+        {/* Heading */}
+        <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ mt: 4 }}>
+          {t.scanToCapture}
+        </Typography>
 
-      <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-        {t.useYourPhone}
-      </Typography>
+        <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+          {t.useYourPhone}
+        </Typography>
 
-      {/* QR Code or Loader */}
-      {capturePageUrl ? (
-        <Box
-          sx={{
-            p: 3,
-            borderRadius: 2,
-            backgroundColor: "#fff",
-            boxShadow: 3,
-            width: "100%",
-            maxWidth: 300,
-          }}
-        >
-          <QRCodeCanvas
-            value={capturePageUrl}
-            size={256}
-            bgColor="#ffffff"
-            fgColor="#000000"
-            level="H" 
-            includeMargin={false}
-          />
-        </Box>
-      ) : (
-        <LoadingState />
-      )}
+        {/* QR Code or Loader */}
+        {capturePageUrl ? (
+          <Box
+            sx={{
+              p: 3,
+              borderRadius: 2,
+              backgroundColor: "#fff",
+              boxShadow: 3,
+              width: "100%",
+              maxWidth: 300,
+            }}
+          >
+            <QRCodeCanvas
+              value={capturePageUrl}
+              size={256}
+              bgColor="#ffffff"
+              fgColor="#000000"
+              level="H"
+              includeMargin={false}
+            />
+          </Box>
+        ) : (
+          <LoadingState />
+        )}
+
+        <Footer />
+      </Container>
       <LanguageSelector top={10} right={20} />
-      <Footer />
-    </Container>
+    </>
   );
 }
