@@ -15,7 +15,7 @@ export const login = withApiHandler(async (email, password) => {
   const { data } = await api.post("/auth/login", { email, password });
   setAccessToken(data.data.accessToken);
   setUser(data.data.user);
-  return data.data;
+  return data;
 });
 
 // **Register New Business User**

@@ -148,7 +148,7 @@ export default function GlobalConfigPage() {
   useEffect(() => {
     (async () => {
       const data = await getGlobalConfig();
-      console.log("Global Config Data:", data);
+      if(data===null) return;
       
       if (!data.error) {
         setConfig(data);
@@ -181,10 +181,8 @@ export default function GlobalConfigPage() {
 
   // Delete handler
   const handleDelete = async () => {
-    const res = await deleteGlobalConfig();
-    if (!res.error) {
-      setConfig(null);
-    }
+    await deleteGlobalConfig();
+    setConfig(null);
     refetchConfig();
   };
 
