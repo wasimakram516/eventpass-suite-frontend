@@ -490,6 +490,7 @@ export default function UsersPage() {
         onClose={() => setDeleteConfirm(false)}
         onConfirm={handleDelete}
         confirmButtonText={t.delete}
+        confirmButtonIcon={<ICONS.delete/>}
       />
     </Container>
   );
