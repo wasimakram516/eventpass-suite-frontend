@@ -7,7 +7,7 @@ export default function DemoAgentPage() {
     script.type = 'module';
     script.src = "https://agent.d-id.com/v2/index.js";
     script.setAttribute('data-mode', 'full');
-    script.setAttribute('data-client-key', 'Z29vZ2xlLWh9dXR0mnwxMDU2NzkzNzAxNDc5MTU5NDE5OTk6SUwtUTYtcmGclRaenMxSzctWFI3');
+    script.setAttribute('data-client-key', 'Z29vZ2xlLW9hdXRoMnwxMDU2NzkzNzAxNDc5MTU5NDI5OTk6SUwtUTYtcmdGclRaenMxSzctWFl3');
     script.setAttribute('data-agent-id', 'v2_agt_Y4OPERLW');
     script.setAttribute('data-name', 'did-agent');
     script.setAttribute('data-monitor', 'true');
