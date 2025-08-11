@@ -15,6 +15,7 @@ export default function HomePage() {
   const { user } = useAuth();
   const router = useRouter();
   const [showBusinessModal, setShowBusinessModal] = useState(false);
+  const [businessModalDismissed, setBusinessModalDismissed] = useState(false);
   const { globalConfig } = useGlobalConfig();
 
   const isArabic = language === "ar";
@@ -180,10 +181,10 @@ export default function HomePage() {
   const { subtitle, stats } = translations[language];
 
   useEffect(() => {
-    if (user?.role === "business") {
+    if (user?.role === "business" && !businessModalDismissed) {
       checkBusinessExists();
     }
-  }, [user]);
+  }, [user, businessModalDismissed]);
 
   const checkBusinessExists = async () => {
     const businesses = await getAllBusinesses();
@@ -194,6 +195,11 @@ export default function HomePage() {
     if (!myBusiness) {
       setShowBusinessModal(true);
     }
+  };
+
+  const handleCloseBusinessModal = () => {
+    setShowBusinessModal(false);
+    setBusinessModalDismissed(true);
   };
 
   return (
@@ -212,7 +218,15 @@ export default function HomePage() {
         {/* Stat Cards */}
         <Grid container spacing={3} justifyContent="center">
           {stats.map((s, i) => (
-            <Grid item xs={12} sm={6} md={4} key={i} justifyContent="center" sx={{ display: "flex", width: {xs:"100%", sm:"20rem"} }}>
+            <Grid
+              item
+              xs={12}
+              sm={6}
+              md={4}
+              key={i}
+              justifyContent="center"
+              sx={{ display: "flex", width: { xs: "100%", sm: "20rem" } }}
+            >
               <StatsCard {...s} />
             </Grid>
           ))}
@@ -220,7 +234,7 @@ export default function HomePage() {
       </Container>
       <BusinessAlertModal
         open={showBusinessModal}
-        onClose={() => setShowBusinessModal(false)}
+        onClose={handleCloseBusinessModal}
         onNavigate={() => {
           router.push("/cms/settings/business");
           setShowBusinessModal(false);

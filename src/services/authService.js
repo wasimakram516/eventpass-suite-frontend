@@ -3,8 +3,10 @@ import withApiHandler from "@/utils/withApiHandler";
 
 // Store only access token, refresh token stays in cookies
 export const getAccessToken = () => sessionStorage.getItem("accessToken");
-export const setAccessToken = (accessToken) => sessionStorage.setItem("accessToken", accessToken);
-export const setUser = (user) => sessionStorage.setItem("user", JSON.stringify(user));
+export const setAccessToken = (accessToken) =>
+  sessionStorage.setItem("accessToken", accessToken);
+export const setUser = (user) =>
+  sessionStorage.setItem("user", JSON.stringify(user));
 export const clearTokens = () => {
   sessionStorage.removeItem("accessToken");
   sessionStorage.removeItem("user");
@@ -19,10 +21,27 @@ export const login = withApiHandler(async (email, password) => {
 });
 
 // **Register New Business User**
-export const registerUser = withApiHandler(async (name, email, password) => {
-  const { data } = await api.post("/auth/register", { name, email, password });
-  return data;
-});
+export const registerUser = withApiHandler(
+  async (
+    name,
+    email,
+    password,
+    role = "business",
+    business = null,
+    modulePermissions = []
+  ) => {
+    const { data } = await api.post("/auth/register", {
+      name,
+      email,
+      password,
+      role,
+      business,
+      modulePermissions,
+    });
+    return data;
+  },
+  { showSuccess: true }
+);
 
 // **Refresh Access Token Using Secure Cookie**
 export const refreshToken = withApiHandler(async () => {
@@ -33,6 +52,6 @@ export const refreshToken = withApiHandler(async () => {
 
 // **Logout API Call**
 export const logoutUser = async () => {
-    await api.post("/auth/logout");
-    clearTokens();
+  await api.post("/auth/logout");
+  clearTokens();
 };
