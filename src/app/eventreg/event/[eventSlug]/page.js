@@ -124,7 +124,6 @@ export default function EventDetails() {
             borderRadius: 3,
             overflow: "hidden",
             boxShadow: 3,
-            bgcolor: "#fff",
             mt:{xs: 6, sm:0}
           }}
         >
@@ -278,7 +277,6 @@ export default function EventDetails() {
             maxWidth: 900,
             borderRadius: 3,
             overflow: "hidden",
-            boxShadow: 2,
           }}
         >
           {isVideo(brandingUrl) ? (
