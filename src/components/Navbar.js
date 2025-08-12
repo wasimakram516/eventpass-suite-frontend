@@ -13,7 +13,7 @@ import {
   Tooltip,
 } from "@mui/material";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import ConfirmationDialog from "@/components/ConfirmationDialog";
 import LanguageSelector from "./LanguageSelector";
@@ -45,6 +45,13 @@ export default function Navbar() {
     },
   });
 
+  useEffect(() => {
+    if (!user) {
+      setConfirmLogout(false);
+      setAnchorEl(null);
+    }
+  }, [user]);
+
   const avatarButtonStyle = {
     p: 0,
     borderRadius: "50%",
@@ -73,6 +80,11 @@ export default function Navbar() {
   const openLogoutConfirm = () => {
     handleClose();
     setConfirmLogout(true);
+  };
+
+  const handleConfirmLogout = async () => {
+    setConfirmLogout(false);
+    await logout();
   };
 
   return (
@@ -198,9 +210,9 @@ export default function Navbar() {
       </AppBar>
 
       <ConfirmationDialog
-        open={confirmLogout}
+        open={!!user && confirmLogout}
         onClose={() => setConfirmLogout(false)}
-        onConfirm={logout}
+        onConfirm={handleConfirmLogout}
         title={t.confirmLogoutTitle}
         message={t.confirmLogoutMsg}
         confirmButtonText={t.logout}

@@ -19,6 +19,7 @@ import { getModules } from "@/services/moduleService";
 import { getModuleIcon } from "@/utils/iconMapper";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
+import LoadingState from "@/components/LoadingState";
 
 const translations = {
   en: {
@@ -28,7 +29,6 @@ const translations = {
     noPermission: "You currently do not have access to any modules.",
     contactSupport: "Please contact support to request access:",
   },
-
   ar: {
     title: "الوحدات",
     subtitle:
@@ -43,23 +43,39 @@ export default function Modules() {
   const { globalConfig } = useGlobalConfig();
   const { dir, align, language, t } = useI18nLayout(translations);
   const [modules, setModules] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchModules = async () => {
-      const data = await getModules();
-      if (!data.error) {
-        // Filter by user role
-        const permitted =
-          user?.role === "business"
-            ? data.filter((mod) => user.modulePermissions.includes(mod.key))
-            : data;
+  let mounted = true;
 
-        setModules(permitted);
-      }
-    };
+  (async () => {
+    try {
+      const role = user?.role || "staff";
+      const modulesPayload = await getModules(role); 
+      if (!mounted) return;
 
-    fetchModules();
-  }, [user]);
+      const serverModules = Array.isArray(modulesPayload)
+        ? modulesPayload
+        : [];        
+
+      // If role is 'business', apply allowlist; otherwise keep all
+      const permitted =
+        user?.role === "business" && Array.isArray(user?.modulePermissions)
+          ? serverModules.filter((m) => user.modulePermissions.includes(m.key))
+          : serverModules;
+
+      setModules(permitted);
+    } catch {
+      setModules([]);
+    } finally {
+      if (mounted) setLoading(false);
+    }
+  })();
+
+  return () => {
+    mounted = false;
+  };
+}, [user]);
 
   return (
     <Box dir={dir} sx={{ pb: 8, bgcolor: "background.default" }}>
@@ -79,7 +95,11 @@ export default function Modules() {
           <Divider sx={{ my: 2 }} />
         </Box>
 
-        {modules?.length === 0 ? (
+        {loading ? (
+          <Grid container spacing={3} justifyContent="center">
+            <LoadingState/>
+          </Grid>
+        ) : modules?.length === 0 ? (
           <Stack spacing={2} alignItems="center" sx={{ mt: 5 }}>
             <SupportAgentIcon color="primary" sx={{ fontSize: 64 }} />
             <Typography variant="h6" textAlign="center">
@@ -95,7 +115,7 @@ export default function Modules() {
 
             {(globalConfig?.support?.email || globalConfig?.support?.phone) && (
               <Stack spacing={1} textAlign="center" alignItems="center">
-                {globalConfig.support.email && (
+                {globalConfig?.support?.email && (
                   <Stack direction="row" spacing={1} alignItems="center">
                     <EmailOutlinedIcon fontSize="small" color="action" />
                     <Typography variant="body2">
@@ -103,7 +123,7 @@ export default function Modules() {
                     </Typography>
                   </Stack>
                 )}
-                {globalConfig.support.phone && (
+                {globalConfig?.support?.phone && (
                   <Stack direction="row" spacing={1} alignItems="center">
                     <PhoneOutlinedIcon fontSize="small" color="action" />
                     <Typography variant="body2">
@@ -115,17 +135,17 @@ export default function Modules() {
             )}
           </Stack>
         ) : (
-          <Grid
-            container
-            spacing={3}
-            justifyContent="center"
-          >
-            {modules?.map((mod) => (
+          <Grid container spacing={3} justifyContent="center">
+            {modules.map((mod) => (
               <DashboardCard
                 key={mod.key}
-                title={mod.labels[language]}
-                description={mod.descriptions[language]}
-                buttonLabel={mod.buttons[language] || "Manage"}
+                title={mod.labels?.[language] ?? mod.labels?.en ?? mod.key}
+                description={
+                  mod.descriptions?.[language] ?? mod.descriptions?.en ?? ""
+                }
+                buttonLabel={
+                  mod.buttons?.[language] ?? mod.buttons?.en ?? "Open"
+                }
                 icon={getModuleIcon(mod.icon)}
                 color={mod.color || "primary"}
                 route={mod.route}
