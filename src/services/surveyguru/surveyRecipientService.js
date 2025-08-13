@@ -1,31 +1,19 @@
 import api from "@/services/api";
 import withApiHandler from "@/utils/withApiHandler";
 
-/**
- * LIST recipients for a form
- * params: { formId, q?, status? }
- * backend returns: { data: [...] } (simplified)
- */
 export const listRecipients = withApiHandler(async (params = {}) => {
   const { data } = await api.get("/surveyguru/recipients", { params });
-  return data; // { data }
+  return data; 
 });
 
-/**
- * SYNC recipients from event registrations for a given form
- * POST /surveyguru/forms/:formId/recipients/sync
- */
-export const syncRecipientsForForm = withApiHandler(
+export const syncRecipientsForEvent = withApiHandler(
   async (formId) => {
     const { data } = await api.post(`/surveyguru/forms/${formId}/recipients/sync`);
-    return data; // { added, updated, ... }
+    return data; 
   },
   { showSuccess: true }
 );
 
-/**
- * DELETE a single recipient
- */
 export const deleteRecipient = withApiHandler(
   async (recipientId) => {
     const { data } = await api.delete(`/surveyguru/recipients/${recipientId}`);
@@ -34,21 +22,14 @@ export const deleteRecipient = withApiHandler(
   { showSuccess: true }
 );
 
-/**
- * CLEAR all recipients for a form
- */
 export const clearRecipientsForForm = withApiHandler(
   async (formId) => {
     const { data } = await api.delete(`/surveyguru/forms/${formId}/recipients`);
-    return data; // { deleted }
+    return data; 
   },
   { showSuccess: true }
 );
 
-/**
- * EXPORT recipients CSV
- * params: { formId }
- */
 export const exportRecipientsCsv = async (params = {}) => {
   const query = new URLSearchParams(params).toString();
 
@@ -56,11 +37,10 @@ export const exportRecipientsCsv = async (params = {}) => {
     const { data, headers } = await api.get(
       `/surveyguru/recipients/export${query ? `?${query}` : ""}`,
       {
-        responseType: "blob", // Important for file download
+        responseType: "blob", 
       }
     );
 
-    // Try to read the filename from Content-Disposition
     let filename = "recipients.xlsx";
     const disposition = headers["content-disposition"];
     if (disposition) {
@@ -75,7 +55,6 @@ export const exportRecipientsCsv = async (params = {}) => {
       }
     }
 
-    // Create a blob link to download
     const url = window.URL.createObjectURL(new Blob([data]));
     const link = document.createElement("a");
     link.href = url;
