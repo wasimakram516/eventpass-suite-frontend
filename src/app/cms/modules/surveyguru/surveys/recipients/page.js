@@ -223,14 +223,13 @@ export default function RecipientsManagePage() {
   };
 
   const handleSync = async () => {
-    if (!eventId) return;
-    const res = await syncRecipientsForEvent(eventId);
+    if (!formId) return;
+    const res = await syncRecipientsForEvent(formId);
     if (!res?.error) {
-      showMessage(t.synced, "success");
       if (formId) {
         const refreshed = await listRecipients({ formId });
-        const payload = refreshed?.data || refreshed || {};
-        setRows(payload.data || []);
+        const payload = refreshed || {};
+        setRows(payload || []);
       }
     }
   };
