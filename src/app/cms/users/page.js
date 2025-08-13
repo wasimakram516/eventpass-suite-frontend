@@ -47,12 +47,13 @@ import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import { wrapTextBox } from "@/utils/wrapTextStyles";
 import LoadingState from "@/components/LoadingState";
+import { registerUser } from "@/services/authService"; // <-- NEW
 
 const translations = {
   en: {
     title: "Users",
     subtitle: "View and manage registered users",
-    createStaffUser: "Create Staff User",
+    createUser: "Create User",
     editUser: "Edit User",
     name: "Name",
     email: "Email",
@@ -71,11 +72,23 @@ const translations = {
     role: "Role",
     edit: "Edit",
     delete: "Delete",
+    userTypeLabel: "User Type",
+    businessUser: "Business user",
+    staffUser: "Staff user",
+    selectBusinessLabel: "Select Business",
+    selectPlaceholder: "-- Select --",
+    nameRequired: "Name is required",
+    emailRequired: "Email is required",
+    emailInvalid: "Invalid email format",
+    passwordRequired: "Password is required",
+    businessRequired: "Please select a business",
+    selectAll: "Select All",
+    unselectAll: "Unselect All",
   },
   ar: {
     title: "المستخدمون",
     subtitle: "عرض وإدارة المستخدمين المسجلين",
-    createStaffUser: "إنشاء مستخدم موظف",
+    createUser: "إنشاء مستخدم",
     editUser: "تعديل المستخدم",
     name: "الاسم",
     email: "البريد الإلكتروني",
@@ -94,6 +107,18 @@ const translations = {
     role: "الدور",
     edit: "تعديل",
     delete: "حذف",
+    userTypeLabel: "نوع المستخدم",
+    businessUser: "مستخدم شركة",
+    staffUser: "مستخدم موظف",
+    selectBusinessLabel: "اختر الشركة",
+    selectPlaceholder: "-- اختر --",
+    nameRequired: "الاسم مطلوب",
+    emailRequired: "البريد الإلكتروني مطلوب",
+    emailInvalid: "صيغة البريد الإلكتروني غير صحيحة",
+    passwordRequired: "كلمة المرور مطلوبة",
+    businessRequired: "يرجى اختيار الشركة",
+    selectAll: "تحديد الكل",
+    unselectAll: "إلغاء تحديد الكل",
   },
 };
 
@@ -111,6 +136,7 @@ export default function UsersPage() {
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isPageLoading, setIsPageLoading] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
 
   const defaultForm = {
     name: "",
@@ -118,6 +144,7 @@ export default function UsersPage() {
     password: "",
     modulePermissions: [],
     businessId: "",
+    userType: "staff",
   };
 
   const [form, setForm] = useState(defaultForm);
@@ -192,6 +219,9 @@ export default function UsersPage() {
       email: user.email,
       password: "",
       modulePermissions: user.modulePermissions || [],
+      // No userType change on edit
+      userType: user.role === "business" ? "business" : "staff",
+      businessId: user.business?._id || "",
     });
     setErrors({});
     setIsEditMode(true);
@@ -200,7 +230,11 @@ export default function UsersPage() {
 
   const handleOpenCreate = () => {
     setSelectedUser(null);
-    setForm(defaultForm);
+    setForm({
+      ...defaultForm,
+      // Admin sees dropdown; business users always create staff under their business
+      userType: currentUser?.role === "admin" ? "business" : "staff",
+    });
     setErrors({});
     setIsEditMode(false);
     setModalOpen(true);
@@ -208,14 +242,23 @@ export default function UsersPage() {
 
   const validateForm = () => {
     const newErrors = {};
-    if (!form.name.trim()) newErrors.name = "Name is required";
-    if (!form.email.trim()) newErrors.email = "Email is required";
+    if (!form.name.trim()) newErrors.name = t.nameRequired;
+    if (!form.email.trim()) newErrors.email = t.emailRequired;
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
-      newErrors.email = "Invalid email format";
+      newErrors.email = t.emailInvalid;
     if (!isEditMode && !form.password.trim())
-      newErrors.password = "Password is required";
-    if (!isEditMode && currentUser?.role === "admin" && !form.businessId)
-      newErrors.businessId = "Please select a business";
+      newErrors.password = t.passwordRequired;
+
+    // Only require businessId when creating a STAFF user as admin
+    if (
+      !isEditMode &&
+      currentUser?.role === "admin" &&
+      form.userType === "staff" &&
+      !form.businessId
+    ) {
+      newErrors.businessId = t.businessRequired;
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -224,22 +267,38 @@ export default function UsersPage() {
     if (!validateForm()) return;
     setLoading(true);
     let res = null;
+
     if (isEditMode) {
       const payload = { ...form };
       if (!form.password) delete payload.password;
       res = await updateUser(selectedUser._id, payload);
     } else {
-      res = await createStaffUser(
-        form.name,
-        form.email,
-        form.password,
-        "staff",
-        currentUser?.role === "admin"
-          ? form.businessId
-          : currentUser.business._id
-      );
+      if (currentUser?.role === "admin" && form.userType === "business") {
+        // Register a new BUSINESS user via /auth/register
+        res = await registerUser(
+          form.name,
+          form.email,
+          form.password,
+          "business",
+          null,
+          form.modulePermissions
+        );
+      } else {
+        // Create STAFF user (admin to any selected business, or business owner to own business)
+        res = await createStaffUser(
+          form.name,
+          form.email,
+          form.password,
+          "staff",
+          currentUser?.role === "admin"
+            ? form.businessId
+            : currentUser.business._id,
+          form.modulePermissions
+        );
+      }
     }
-    if (!res.error) await fetchUsers();
+
+    if (!res?.error) await fetchUsers();
     setModalOpen(false);
     setLoading(false);
   };
@@ -340,7 +399,7 @@ export default function UsersPage() {
           startIcon={<ICONS.add />}
           onClick={handleOpenCreate}
         >
-          {t.createStaffUser}
+          {t.createUser}
         </Button>
       </Box>
       <Divider sx={{ mb: 3 }} />
@@ -368,8 +427,26 @@ export default function UsersPage() {
         fullWidth
         dir={dir}
       >
-        <DialogTitle>{isEditMode ? t.editUser : t.createStaffUser}</DialogTitle>
+        <DialogTitle>{isEditMode ? t.editUser : t.createUser}</DialogTitle>
         <DialogContent>
+          {/* Admin-only: choose user type when creating */}
+          {currentUser?.role === "admin" && !isEditMode && (
+            <FormControl fullWidth margin="normal">
+              <InputLabel id="user-type-label">{t.userTypeLabel}</InputLabel>
+              <Select
+                labelId="user-type-label"
+                value={form.userType}
+                label={t.userTypeLabel}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, userType: e.target.value }))
+                }
+              >
+                <MenuItem value="staff">{t.staffUser}</MenuItem>
+                <MenuItem value="business">{t.businessUser}</MenuItem>
+              </Select>
+            </FormControl>
+          )}
+
           {["name", "email", "password"].map((field) => (
             <TextField
               key={field}
@@ -381,41 +458,68 @@ export default function UsersPage() {
               }
               fullWidth
               margin="normal"
-              type={field === "password" ? "password" : "text"}
+              type={
+                field === "password"
+                  ? showPassword
+                    ? "text"
+                    : "password"
+                  : "text"
+              }
               error={!!errors[field]}
               helperText={errors[field] || ""}
+              InputProps={
+                field === "password"
+                  ? {
+                      endAdornment: (
+                        <IconButton
+                          onClick={() => setShowPassword((prev) => !prev)}
+                          edge="end"
+                        >
+                          {showPassword ? <ICONS.hide /> : <ICONS.view />}
+                        </IconButton>
+                      ),
+                    }
+                  : {}
+              }
             />
           ))}
 
-          {currentUser?.role === "admin" && !isEditMode && (
-            <FormControl fullWidth margin="normal" error={!!errors.businessId}>
-              <InputLabel id="business-select-label">
-                Select Business
-              </InputLabel>
-              <Select
-                labelId="business-select-label"
-                value={form.businessId || ""}
-                label="Select Business"
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, businessId: e.target.value }))
-                }
+          {/* Only require/select business for STAFF when admin is creating */}
+          {currentUser?.role === "admin" &&
+            !isEditMode &&
+            form.userType === "staff" && (
+              <FormControl
+                fullWidth
+                margin="normal"
+                error={!!errors.businessId}
               >
-                <MenuItem value="">
-                  <em>-- Select --</em>
-                </MenuItem>
-                {businesses.map((biz) => (
-                  <MenuItem key={biz._id} value={biz._id}>
-                    {biz.name}
+                <InputLabel id="business-select-label">
+                  {t.selectBusinessLabel}
+                </InputLabel>
+                <Select
+                  labelId="business-select-label"
+                  value={form.businessId || ""}
+                  label={t.selectBusinessLabel}
+                  onChange={(e) =>
+                    setForm((prev) => ({ ...prev, businessId: e.target.value }))
+                  }
+                >
+                  <MenuItem value="">
+                    <em>{t.selectPlaceholder}</em>
                   </MenuItem>
-                ))}
-              </Select>
-              {errors.businessId && (
-                <Typography variant="caption" color="error">
-                  {errors.businessId}
-                </Typography>
-              )}
-            </FormControl>
-          )}
+                  {businesses.map((biz) => (
+                    <MenuItem key={biz._id} value={biz._id}>
+                      {biz.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+                {errors.businessId && (
+                  <Typography variant="caption" color="error">
+                    {errors.businessId}
+                  </Typography>
+                )}
+              </FormControl>
+            )}
 
           {(selectedUser?.role === "business" ||
             selectedUser?.role === "staff" ||
@@ -424,6 +528,55 @@ export default function UsersPage() {
               <Typography variant="subtitle1" gutterBottom textAlign={align}>
                 {t.permissions}
               </Typography>
+
+              {/* Select All / Unselect All */}
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={
+                      form.modulePermissions.length ===
+                      (isBusinessUser
+                        ? availableModules.filter((m) =>
+                            currentUser.modulePermissions?.includes(m.key)
+                          ).length
+                        : availableModules.length)
+                    }
+                    indeterminate={
+                      form.modulePermissions.length > 0 &&
+                      form.modulePermissions.length !==
+                        (isBusinessUser
+                          ? availableModules.filter((m) =>
+                              currentUser.modulePermissions?.includes(m.key)
+                            ).length
+                          : availableModules.length)
+                    }
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        const allKeys = isBusinessUser
+                          ? availableModules
+                              .filter((m) =>
+                                currentUser.modulePermissions?.includes(m.key)
+                              )
+                              .map((m) => m.key)
+                          : availableModules.map((m) => m.key);
+                        setForm((prev) => ({
+                          ...prev,
+                          modulePermissions: allKeys,
+                        }));
+                      } else {
+                        setForm((prev) => ({
+                          ...prev,
+                          modulePermissions: [],
+                        }));
+                      }
+                    }}
+                  />
+                }
+                label={
+                  form.modulePermissions.length ? t.unselectAll : t.selectAll
+                }
+              />
+
               <FormGroup>
                 {(isBusinessUser
                   ? availableModules.filter((m) =>
@@ -490,7 +643,7 @@ export default function UsersPage() {
         onClose={() => setDeleteConfirm(false)}
         onConfirm={handleDelete}
         confirmButtonText={t.delete}
-        confirmButtonIcon={<ICONS.delete/>}
+        confirmButtonIcon={<ICONS.delete />}
       />
     </Container>
   );

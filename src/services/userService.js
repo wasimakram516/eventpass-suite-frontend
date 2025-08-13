@@ -9,13 +9,14 @@ export const getAllStaffUsers = withApiHandler(async (businessId) => {
 
 // Create a new staff user
 export const createStaffUser = withApiHandler(
-  async (name, email, password, role, business) => {
+  async (name, email, password, role, business, modulePermissions = []) => {
     const { data } = await api.post("/users/register/staff", {
       name,
       email,
       password,
       role,
       business,
+      modulePermissions,
     });
     return data;
   },

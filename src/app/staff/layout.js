@@ -3,8 +3,6 @@
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { Box, CircularProgress } from "@mui/material";
-import Navbar from "@/components/Navbar";
-import Sidebar from "@/components/Sidebar";
 import { useEffect } from "react";
 
 export default function CmsLayout({ children }) {

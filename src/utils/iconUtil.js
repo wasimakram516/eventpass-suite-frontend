@@ -27,6 +27,7 @@ import {
   ViewModule as ModuleIcon,
   Menu as MenuIcon,
   Fullscreen as FullscreenIcon,
+   Assignment as FormIcon,
 } from "@mui/icons-material";
 
 // Status & Feedback
@@ -117,6 +118,7 @@ import {
 
 const ICONS = {
   // General UI / Navigation
+  form: FormIcon,
   home: HomeIcon,
   add: AddIcon,
   create: AddIcon,

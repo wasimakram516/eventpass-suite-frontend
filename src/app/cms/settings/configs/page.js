@@ -147,36 +147,39 @@ export default function GlobalConfigPage() {
   // Load config
   useEffect(() => {
     (async () => {
-      const data = await getGlobalConfig();
+      const res = await getGlobalConfig();
+      const cfg =
+        res && typeof res === "object" && "data" in res ? res.data : res;
 
-      if (!data.data || data.data === null) return;
-
-      if (!data.error) {
-        setConfig(data);
-        setForm({
-          appName: data.appName || "",
-          contact: {
-            email: data.contact?.email || "",
-            phone: data.contact?.phone || "",
-          },
-          support: {
-            email: data.support?.email || "",
-            phone: data.support?.phone || "",
-          },
-          poweredBy: {
-            text: data.poweredBy?.text || "",
-            mediaUrl: data.poweredBy?.mediaUrl || "",
-          },
-          socialLinks: {
-            facebook: data.socialLinks?.facebook || "",
-            instagram: data.socialLinks?.instagram || "",
-            linkedin: data.socialLinks?.linkedin || "",
-            website: data.socialLinks?.website || "",
-          },
-          companyLogoUrl: data.companyLogoUrl || "",
-          brandingMediaUrl: data.brandingMediaUrl || "",
-        });
+      if (!cfg) {
+        setConfig(null); // no record -> show Create button
+        return;
       }
+
+      setConfig(cfg);
+      setForm({
+        appName: cfg.appName || "",
+        contact: {
+          email: cfg.contact?.email || "",
+          phone: cfg.contact?.phone || "",
+        },
+        support: {
+          email: cfg.support?.email || "",
+          phone: cfg.support?.phone || "",
+        },
+        poweredBy: {
+          text: cfg.poweredBy?.text || "",
+          mediaUrl: cfg.poweredBy?.mediaUrl || "",
+        },
+        socialLinks: {
+          facebook: cfg.socialLinks?.facebook || "",
+          instagram: cfg.socialLinks?.instagram || "",
+          linkedin: cfg.socialLinks?.linkedin || "",
+          website: cfg.socialLinks?.website || "",
+        },
+        companyLogoUrl: cfg.companyLogoUrl || "",
+        brandingMediaUrl: cfg.brandingMediaUrl || "",
+      });
     })();
   }, []);
 
@@ -263,10 +266,16 @@ export default function GlobalConfigPage() {
       ? await updateGlobalConfig(formData)
       : await createGlobalConfig(formData);
 
-    if (!updated.error) {
-      setConfig(updated);
+    const saved =
+      updated && typeof updated === "object" && "data" in updated
+        ? updated.data
+        : updated;
+
+    if (saved && !updated?.error) {
+      setConfig(saved);
       refetchConfig();
     }
+
     setOpenEdit(false);
     setLoading(false);
   };
@@ -329,8 +338,13 @@ export default function GlobalConfigPage() {
 
       {!config ? (
         <Box textAlign="center" py={4}>
-          <Typography sx={{mb:4}}>{t.noConfig}</Typography>
-          <Button startIcon={<ICONS.add/>} sx={getStartIconSpacing(dir)} variant="contained" onClick={() => setOpenEdit(true)}>
+          <Typography sx={{ mb: 4 }}>{t.noConfig}</Typography>
+          <Button
+            startIcon={<ICONS.add />}
+            sx={getStartIconSpacing(dir)}
+            variant="contained"
+            onClick={() => setOpenEdit(true)}
+          >
             {t.create}
           </Button>
         </Box>
@@ -689,7 +703,7 @@ export default function GlobalConfigPage() {
         title={t.deleteConfirmTitle}
         message={t.deleteConfirmMsg}
         confirmButtonText={t.deleteConfirmBtn}
-        confirmButtonIcon={<ICONS.delete/>}
+        confirmButtonIcon={<ICONS.delete />}
       />
     </Container>
   );

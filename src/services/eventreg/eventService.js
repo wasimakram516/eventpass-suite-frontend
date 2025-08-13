@@ -21,6 +21,16 @@ export const getPublicEventById = withApiHandler(async (id) => {
   return data;
 });
 
+export const getEventsByBusinessId = withApiHandler(async (businessId) => {
+  const {data} = await api.get(`/eventreg/events/business/${businessId}`);
+  return data;
+});
+
+export const getEventsByBusinessSlug = withApiHandler(async (slug) => {
+  const {data} = await api.get(`/eventreg/events/business/slug/${slug}`);
+  return data.events;
+});
+
 // Create a new event (FormData with optional logo)
 export const createPublicEvent = withApiHandler(
   async (formData) => {
