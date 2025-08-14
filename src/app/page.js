@@ -69,10 +69,10 @@ export default function HomePage() {
   const features = [
     { key: "quiz", label: t.features.quiz, hue: "#0d47a1" },
     { key: "games", label: t.features.games, hue: "#5e35b1" },
-    
+
     { key: "assignment", label: t.features.assignment, hue: "#006064" },
     { key: "checkin", label: t.features.checkin, hue: "#0277bd" },
-    
+
     { key: "email", label: t.features.email, hue: "#1565c0" },
     { key: "poll", label: t.features.poll, hue: "#00695c" },
     { key: "forum", label: t.features.forum, hue: "#ef6c00" },
@@ -82,7 +82,6 @@ export default function HomePage() {
 
   return (
     <>
-      {/* Fixed, full-page background (stays on scroll) */}
       <Box
         aria-hidden
         sx={{
@@ -90,27 +89,16 @@ export default function HomePage() {
           inset: 0,
           zIndex: 0,
           pointerEvents: "none",
-          background: (th) =>
-            th.palette.mode === "light"
-              ? "linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)"
-              : "linear-gradient(180deg, #0b1220 0%, #0a0f1a 100%)",
+          background: `
+          radial-gradient(800px 600px at 8% 12%, rgba(99,102,241,0.28) 0%, transparent 60%),
+          radial-gradient(720px 540px at 92% 16%, rgba(236,72,153,0.24) 0%, transparent 60%),
+          radial-gradient(700px 520px at 18% 86%, rgba(34,197,94,0.20) 0%, transparent 60%),
+          radial-gradient(680px 520px at 84% 84%, rgba(59,130,246,0.20) 0%, transparent 60%),
+          linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)
+        `,
+          filter: "saturate(1.05)",
         }}
-      >
-        {/* soft gradient blobs */}
-        <Box
-          sx={{
-            position: "absolute",
-            left: "-12%",
-            top: "-18%",
-            width: { xs: 420, md: 720 },
-            height: { xs: 420, md: 720 },
-            filter: "blur(80px)",
-            opacity: 0.25,
-            background:
-              "radial-gradient(closest-side, #60a5fa 0%, transparent 60%), radial-gradient(closest-side, #a78bfa 0%, transparent 60%)",
-          }}
-        />
-      </Box>
+      />
 
       {/* Content */}
       <Box
@@ -209,7 +197,7 @@ export default function HomePage() {
 }
 
 function FeatureBadge({ iconKey, label, hue }) {
-  const iconEl = getModuleIcon(iconKey); // JSX element from icon mapper
+  const iconEl = getModuleIcon(iconKey);
 
   return (
     <Paper
