@@ -13,7 +13,6 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  Paper,
   IconButton,
   Chip,
   Tooltip,
@@ -47,14 +46,16 @@ import {
   clearRecipientsForForm,
   exportRecipientsCsv,
 } from "@/services/surveyguru/surveyRecipientService";
+
 import FilterDialog from "@/components/FilterModal";
 
 const translations = {
   en: {
     title: "Manage Recipients",
-    subtitle: "Select a business, then use Filters to choose event & form.",
+    subtitle: "Pick a business, then open Filters to choose event & form.",
     selectBusiness: "Select Business",
     filters: "Filters",
+    actions: "Actions",
     clearFilters: "Clear Filters",
     event: "Event",
     form: "Form",
@@ -65,30 +66,35 @@ const translations = {
     responded: "Responded",
     apply: "Apply",
     cancel: "Cancel",
+
+    // actions modal buttons
     sync: "Sync from Event",
     synced: "Recipients synced successfully",
     export: "Export Recipients",
     clearAll: "Clear All Recipients",
+
     confirmClearTitle: "Clear All Recipients",
     confirmClearMsg:
       "This will remove all recipients for the selected form. Are you sure you want to proceed?",
     confirmDeleteTitle: "Delete Recipient",
     confirmDeleteMsg:
       "This will permanently delete the selected recipient. Are you sure you want to proceed?",
-    actions: "Actions",
     delete: "Delete",
+
     copied: "Link copied!",
     noFormSelected: "Use Filters to select a form and load recipients.",
     selections: "Selections",
     email: "Email",
     name: "Name",
     company: "Company",
+    copyLink: "Copy survey link",
   },
   ar: {
     title: "إدارة المستلمين",
-    subtitle: "اختر الشركة، ثم استخدم عوامل التصفية لاختيار الفعالية والنموذج.",
+    subtitle: "اختر الشركة، ثم افتح عوامل التصفية لاختيار الفعالية والنموذج.",
     selectBusiness: "اختر الشركة",
     filters: "عوامل التصفية",
+    actions: "إجراءات",
     clearFilters: "مسح عوامل التصفية",
     event: "الفعالية",
     form: "النموذج",
@@ -99,22 +105,26 @@ const translations = {
     responded: "تم الرد",
     apply: "تطبيق",
     cancel: "إلغاء",
-    sync: "المزامنة من التسجيلات",
+
+    sync: "مزامنة من التسجيلات",
     synced: "تمت مزامنة المستلمين بنجاح",
     export: "تصدير المستلمين",
     clearAll: "حذف جميع المستلمين",
+
     confirmClearTitle: "حذف جميع المستلمين",
-    confirmClearMsg: "سيتم حذف جميع المستلمين للنموذج المحدد. هل تريد المتابعة؟",
+    confirmClearMsg:
+      "سيتم حذف جميع المستلمين للنموذج المحدد. هل تريد المتابعة؟",
     confirmDeleteTitle: "حذف مستلم",
     confirmDeleteMsg: "سيتم حذف المستلم المحدد نهائياً. هل تريد المتابعة؟",
-    actions: "إجراءات",
     delete: "حذف",
+
     copied: "تم نسخ الرابط!",
     noFormSelected: "استخدم عوامل التصفية لاختيار نموذج وتحميل المستلمين.",
     selections: "الاختيارات",
     email: "البريد الإلكتروني",
     name: "الاسم",
     company: "الشركة",
+    copyLink: "نسخ رابط الاستبيان",
   },
 };
 
@@ -137,16 +147,21 @@ export default function RecipientsManagePage() {
   const [events, setEvents] = useState([]);
   const [forms, setForms] = useState([]);
 
+  // applied filters (live)
   const [eventId, setEventId] = useState("");
   const [formId, setFormId] = useState("");
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("");
 
-  const [modalOpen, setModalOpen] = useState(false);
+  // filter modal (staged)
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [mEventId, setMEventId] = useState("");
   const [mFormId, setMFormId] = useState("");
   const [mQ, setMQ] = useState("");
   const [mStatus, setMStatus] = useState("");
+
+  // actions modal
+  const [actionsOpen, setActionsOpen] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [rows, setRows] = useState([]);
@@ -204,9 +219,10 @@ export default function RecipientsManagePage() {
         return;
       }
       setLoading(true);
+      const qTrim = (q || "").trim();
       const res = await listRecipients({
         formId,
-        ...(q ? { q } : {}),
+        ...(qTrim ? { q: qTrim } : {}),
         ...(status ? { status } : {}),
       });
       setRows(res || []);
@@ -214,23 +230,17 @@ export default function RecipientsManagePage() {
     })();
   }, [formId, q, status]);
 
-  const clearFilters = () => {
-    setEventId("");
-    setFormId("");
-    setQ("");
-    setStatus("");
-    setRows([]);
-  };
-
   const handleSync = async () => {
     if (!formId) return;
-    const res = await syncRecipientsForEvent(formId);
-    if (!res?.error) {
-      if (formId) {
-        const refreshed = await listRecipients({ formId });
-        const payload = refreshed || {};
-        setRows(payload || []);
-      }
+    const r = await syncRecipientsForEvent(formId);
+    if (!r?.error) {
+      const qTrim = (q || "").trim();
+      const refreshed = await listRecipients({
+        formId,
+        ...(qTrim ? { q: qTrim } : {}),
+        ...(status ? { status } : {}),
+      });
+      setRows(refreshed || []);
     }
   };
 
@@ -271,15 +281,45 @@ export default function RecipientsManagePage() {
     setMFormId(formId || "");
     setMQ(q || "");
     setMStatus(status || "");
-    setModalOpen(true);
+    setFiltersOpen(true);
   };
 
-  const applyFilters = () => {
-    setEventId(mEventId || "");
-    setFormId(mFormId || "");
-    setQ(mQ || "");
-    setStatus(mStatus || "");
-    setModalOpen(false);
+  // REPLACE your current applyFilters with this
+
+  const applyFilters = async () => {
+    const nextEventId = mEventId || "";
+    const nextFormId = mFormId || "";
+    const nextQ = (mQ || "").trim();
+    const nextStatus = mStatus || "";
+
+    setEventId(nextEventId);
+    setFormId(nextFormId);
+    setQ(nextQ);
+    setStatus(nextStatus);
+    setFiltersOpen(false);
+
+    if (nextFormId) {
+      setLoading(true);
+      const res = await listRecipients({
+        formId: nextFormId,
+        ...(nextQ ? { q: nextQ } : {}),
+        ...(nextStatus ? { status: nextStatus } : {}),
+      });
+      setRows(res || []);
+      setLoading(false);
+    } else {
+      setRows([]);
+    }
+  };
+
+  const onCopySurveyLink = (r) => {
+    if (!selectedForm?.slug || !r?.token) return;
+    const base = typeof window !== "undefined" ? window.location.origin : "";
+    const url = `${base}/surveyguru/${
+      selectedForm.slug
+    }?token=${encodeURIComponent(r.token)}`;
+    navigator.clipboard.writeText(url);
+    showMessage(t.copied, "info");
   };
 
   const RecipientCard = ({ r }) => (
@@ -311,7 +351,20 @@ export default function RecipientsManagePage() {
           />
         </Stack>
       </CardContent>
+
       <CardActions sx={{ justifyContent: "flex-end", pt: 0 }}>
+        {/* Copy survey link for this recipient */}
+        <Tooltip title={t.copyLink}>
+          <IconButton
+            onClick={() => onCopySurveyLink(r)}
+            color="primary"
+            disabled={!selectedForm?.slug}
+          >
+            <ICONS.copy fontSize="small" />
+          </IconButton>
+        </Tooltip>
+
+        {/* Delete recipient */}
         <Tooltip title={t.delete}>
           <IconButton
             color="error"
@@ -340,18 +393,18 @@ export default function RecipientsManagePage() {
       <Container maxWidth="lg">
         <BreadcrumbsNav />
 
-        {/* Primary header */}
+        {/* Compact header */}
         <Box
           sx={{
             display: "flex",
             justifyContent: "space-between",
             alignItems: "flex-start",
             flexWrap: "wrap",
-            rowGap: 2,
+            rowGap: 12 / 8,
             mt: 2,
           }}
         >
-          <Box>
+          <Box sx={{ minWidth: 260 }}>
             <Typography variant="h4" fontWeight="bold">
               {t.title}
             </Typography>
@@ -359,7 +412,13 @@ export default function RecipientsManagePage() {
               {t.subtitle}
             </Typography>
             {/* Selections summary */}
-            <Stack direction="row" spacing={1} mt={1} flexWrap="wrap" rowGap={1}>
+            <Stack
+              direction="row"
+              spacing={1}
+              mt={1}
+              flexWrap="wrap"
+              rowGap={1}
+            >
               {selectedBusiness && (
                 <Chip
                   size="small"
@@ -386,6 +445,7 @@ export default function RecipientsManagePage() {
             </Stack>
           </Box>
 
+          {/* Right side: 3 buttons only */}
           <Stack
             direction={{ xs: "column", sm: "row" }}
             spacing={1}
@@ -411,54 +471,16 @@ export default function RecipientsManagePage() {
             </Button>
 
             <Button
-              variant="text"
-              startIcon={<ICONS.clear fontSize="small" />}
-              onClick={clearFilters}
+              variant="outlined"
+              startIcon={<ICONS.flash fontSize="small" />}
+              disabled={!formId}
+              onClick={() => setActionsOpen(true)}
               sx={getStartIconSpacing(dir)}
             >
-              {t.clearFilters}
+              {t.actions}
             </Button>
           </Stack>
         </Box>
-
-        {/* Secondary actions */}
-        {formId && (
-          <Stack
-            direction={{ xs: "column", sm: "row" }}
-            spacing={1}
-            mt={2}
-            mb={1}
-          >
-            <Button
-              variant="contained"
-              startIcon={<ICONS.refresh fontSize="small" />}
-              disabled={!eventId}
-              onClick={handleSync}
-              sx={getStartIconSpacing(dir)}
-            >
-              {t.sync}
-            </Button>
-
-            <Button
-              variant="outlined"
-              startIcon={<ICONS.download fontSize="small" />}
-              onClick={handleExport}
-              sx={getStartIconSpacing(dir)}
-            >
-              {t.export}
-            </Button>
-
-            <Button
-              color="error"
-              variant="outlined"
-              startIcon={<ICONS.delete fontSize="small" />}
-              onClick={() => setConfirmClear(true)}
-              sx={getStartIconSpacing(dir)}
-            >
-              {t.clearAll}
-            </Button>
-          </Stack>
-        )}
 
         <Divider sx={{ my: 2 }} />
 
@@ -474,15 +496,18 @@ export default function RecipientsManagePage() {
         ) : !rows.length ? (
           <NoDataAvailable />
         ) : isMobile ? (
-          // Mobile: cards
           <Stack spacing={1.5} id="recipients-list">
             {rows.map((r) => (
               <RecipientCard key={r._id} r={r} />
             ))}
           </Stack>
         ) : (
-          // Desktop/Tablet: compact grid cards (better than wide tables)
-          <Grid container justifyContent={"center"} spacing={1.5} id="recipients-list">
+          <Grid
+            container
+            justifyContent="center"
+            spacing={1.5}
+            id="recipients-list"
+          >
             {rows.map((r) => (
               <Grid item xs={12} md={6} lg={4} key={r._id}>
                 <RecipientCard r={r} />
@@ -491,6 +516,7 @@ export default function RecipientsManagePage() {
           </Grid>
         )}
 
+        {/* Delete & Clear confirmations */}
         <ConfirmationDialog
           open={confirmDelete.open}
           onClose={() => setConfirmDelete({ open: false, id: null })}
@@ -514,8 +540,8 @@ export default function RecipientsManagePage() {
 
       {/* Filters Modal */}
       <FilterDialog
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
+        open={filtersOpen}
+        onClose={() => setFiltersOpen(false)}
         title={t.filters}
       >
         <Stack spacing={2}>
@@ -529,8 +555,7 @@ export default function RecipientsManagePage() {
                 setMEventId(val);
                 const filtered = forms.filter(
                   (f) =>
-                    !val ||
-                    String(f.eventId?._id || f.eventId) === String(val)
+                    !val || String(f.eventId?._id || f.eventId) === String(val)
                 );
                 if (!filtered.find((f) => String(f._id) === String(mFormId))) {
                   setMFormId("");
@@ -590,14 +615,6 @@ export default function RecipientsManagePage() {
 
           <Stack direction="row" spacing={1} justifyContent="flex-end" mt={1}>
             <Button
-              variant="text"
-              startIcon={<ICONS.close fontSize="small" />}
-              onClick={() => setModalOpen(false)}
-              sx={getStartIconSpacing(dir)}
-            >
-              {t.cancel}
-            </Button>
-            <Button
               variant="contained"
               startIcon={<ICONS.check fontSize="small" />}
               onClick={applyFilters}
@@ -606,6 +623,52 @@ export default function RecipientsManagePage() {
               {t.apply}
             </Button>
           </Stack>
+        </Stack>
+      </FilterDialog>
+
+      {/* Actions Modal (API call buttons) */}
+      <FilterDialog
+        open={actionsOpen}
+        onClose={() => setActionsOpen(false)}
+        title={t.actions}
+      >
+        <Stack spacing={1.5}>
+          <Button
+            fullWidth
+            variant="contained"
+            startIcon={<ICONS.refresh fontSize="small" />}
+            disabled={!formId || !eventId}
+            onClick={handleSync}
+            sx={getStartIconSpacing(dir)}
+          >
+            {t.sync}
+          </Button>
+
+          <Button
+            fullWidth
+            variant="outlined"
+            startIcon={<ICONS.download fontSize="small" />}
+            disabled={!formId}
+            onClick={handleExport}
+            sx={getStartIconSpacing(dir)}
+          >
+            {t.export}
+          </Button>
+
+          <Button
+            fullWidth
+            color="error"
+            variant="outlined"
+            startIcon={<ICONS.delete fontSize="small" />}
+            disabled={!formId}
+            onClick={() => {
+              setActionsOpen(false);
+              setConfirmClear(true);
+            }}
+            sx={getStartIconSpacing(dir)}
+          >
+            {t.clearAll}
+          </Button>
         </Stack>
       </FilterDialog>
     </Box>

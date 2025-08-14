@@ -90,6 +90,10 @@ const segmentMap = {
     label: "Event Wheel",
     icon: <ICONS.trophy fontSize="small" sx={{ mr: 0.5 }} />,
   },
+  surveyguru: {
+    label: "SurveyGuru",
+    icon: <ICONS.email fontSize="small" sx={{ mr: 0.5 }} />,
+  },
 
   // Sub pages
   events: {
@@ -115,6 +119,22 @@ const segmentMap = {
   sessions: {
     label: "Game Sessions",
     icon: <ICONS.leaderboard fontSize="small" sx={{ mr: 0.5 }} />,
+  },
+  surveys: {
+    label: "Surveys",
+    icon: <ICONS.email fontSize="small" sx={{ mr: 0.5 }} />,
+  },
+  forms: {
+    label: "Surveys Forms",
+    icon: <ICONS.form fontSize="small" sx={{ mr: 0.5 }} />,
+  },
+  recipients: {
+    label: "Survey Recipients",
+    icon: <ICONS.people fontSize="small" sx={{ mr: 0.5 }} />,
+  },
+  responses: {
+    label: "Survey Responses",
+    icon: <ICONS.results fontSize="small" sx={{ mr: 0.5 }} />,
   },
 };
 
