@@ -11,7 +11,6 @@ import {
   Stack,
 } from "@mui/material";
 
-import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
 import { formatDateWithShortMonth } from "@/utils/dateUtils";
 import ICONS from "@/utils/iconUtil";
 import { getPublicEventBySlug } from "@/services/eventreg/eventService";
@@ -22,7 +21,6 @@ import getStartIconSpacing from "@/utils/getStartIconSpacing";
 export default function EventDetails() {
   const { eventSlug } = useParams();
   const router = useRouter();
-  const { globalConfig } = useGlobalConfig();
 
   const { t, dir } = useI18nLayout({
     en: {
@@ -59,12 +57,8 @@ export default function EventDetails() {
   }, [eventSlug]);
 
   const brandingUrl = useMemo(() => {
-    return (
-      globalConfig?.brandingMediaUrl ||
-      globalConfig?.poweredBy?.mediaUrl ||
-      ""
-    );
-  }, [globalConfig]);
+    return event?.brandingMediaUrl || "";
+  }, [event]);
 
   const isVideo = (url = "") =>
     /\.(mp4|webm|ogg)$/i.test(url.split("?")[0] || "");
@@ -113,6 +107,7 @@ export default function EventDetails() {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
+        justifyContent: "center",
         gap: 2,
       }}
     >
@@ -124,7 +119,7 @@ export default function EventDetails() {
             borderRadius: 3,
             overflow: "hidden",
             boxShadow: 3,
-            mt:{xs: 6, sm:0}
+            mt: { xs: 6, sm: 0 }
           }}
         >
           <Box
