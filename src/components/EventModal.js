@@ -1,4 +1,3 @@
-// This is the fully updated EventModal component with toggle for custom fields
 "use client";
 
 import {
@@ -38,6 +37,7 @@ const translations = {
     description: "Description",
     capacity: "Capacity",
     logo: "Upload Event Logo",
+    brandingMedia: "Upload Branding Media",
     currentImage: "Current Logo:",
     preview: "Preview:",
     downloadTemplate: "Download Employee Template",
@@ -81,6 +81,7 @@ const translations = {
     description: "الوصف",
     capacity: "السعة",
     logo: "رفع شعار الفعالية",
+    brandingMedia: "رفع الوسائط التسويقية",
     currentImage: "الشعار الحالي:",
     preview: "معاينة:",
     downloadTemplate: "تحميل قالب الموظفين",
@@ -115,6 +116,13 @@ const translations = {
   },
 };
 
+// Helper function to detect video URLs by file extension
+const isVideoUrl = (url) => {
+  if (!url || typeof url !== 'string') return false;
+  const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.mkv', '.wmv', '.flv'];
+  const urlWithoutQuery = url.split('?')[0].toLowerCase();
+  return videoExtensions.some(ext => urlWithoutQuery.endsWith(ext));
+};
 const EventModal = ({
   open,
   onClose,
@@ -135,6 +143,8 @@ const EventModal = ({
     description: "",
     logo: null,
     logoPreview: "",
+    brandingMedia: null,
+    brandingPreview: "",
     capacity: "",
     eventType: isEmployee ? "employee" : "public",
     employeeData: null,
@@ -165,6 +175,8 @@ const EventModal = ({
           initialValues.eventType || (isEmployee ? "employee" : "public"),
         logo: null,
         logoPreview: initialValues.logoUrl || "",
+        brandingMedia: null,
+        brandingPreview: initialValues.brandingMediaUrl || "",
         employeeData: null,
         tableImages: [],
         formFields: (initialValues.formFields || []).map((f) => ({
@@ -187,6 +199,8 @@ const EventModal = ({
         description: "",
         logo: null,
         logoPreview: "",
+        brandingMedia: null,
+        brandingPreview: "",
         capacity: "",
         eventType: isEmployee ? "employee" : "public",
         employeeData: null,
@@ -209,6 +223,15 @@ const EventModal = ({
           logoPreview: URL.createObjectURL(file),
         }));
       }
+    } else if (name === "brandingMedia" && files?.[0]) {
+      const file = files[0];
+      if (file.type.startsWith("image/") || file.type.startsWith("video/")) {
+        setFormData((prev) => ({
+          ...prev,
+          brandingMedia: file,
+          brandingPreview: URL.createObjectURL(file),
+        }));
+      }
     } else if (name === "employeeData" && files?.[0]) {
       setFormData((prev) => ({ ...prev, employeeData: files[0] }));
     } else if (name === "tableImages" && files?.length > 0) {
@@ -217,7 +240,6 @@ const EventModal = ({
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
-
   const handleNameChange = (e) => {
     const name = e.target.value;
     setFormData((prev) => ({ ...prev, name, slug: slugify(name) }));
@@ -249,14 +271,6 @@ const EventModal = ({
     const updated = [...formData.formFields];
     updated.splice(index, 1);
     setFormData((prev) => ({ ...prev, formFields: updated }));
-  };
-
-  const handleValueChange = (index, raw) => {
-    handleFormFieldChange(
-      index,
-      "values",
-      raw.split(",").map((s) => s.trim())
-    );
   };
 
   const handleDownloadTemplate = async () => {
@@ -301,6 +315,7 @@ const EventModal = ({
     payload.append("capacity", formData.capacity || "999");
     payload.append("eventType", formData.eventType);
     if (formData.logo) payload.append("logo", formData.logo);
+    if (formData.brandingMedia) payload.append("brandingMedia", formData.brandingMedia);
     if (formData.eventType === "employee") {
       if (formData.employeeData)
         payload.append("employeeData", formData.employeeData);
@@ -450,8 +465,39 @@ const EventModal = ({
               </Box>
             )}
           </Box>
-
-          {/* Employee Event Specific Fields */}
+          <Box>
+            <Button component="label" variant="outlined">
+              {t.brandingMedia}
+              <input
+                hidden
+                name="brandingMedia"
+                type="file"
+                accept="image/*,video/*,.gif"
+                onChange={handleInputChange}
+              />
+            </Button>
+            {formData.brandingPreview && (
+              <Box sx={{ mt: 1 }}>
+                <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                  {initialValues && !formData.brandingMedia ? (isVideoUrl(formData.brandingPreview) ? "Current Branding Video:" : "Current Branding:") : t.preview}
+                </Typography>
+                {(formData.brandingMedia && formData.brandingMedia.type.startsWith("video/")) ||
+                  (!formData.brandingMedia && isVideoUrl(formData.brandingPreview)) ? (
+                  <video
+                    src={formData.brandingPreview}
+                    controls
+                    style={{ maxHeight: 100, borderRadius: 6 }}
+                  />
+                ) : (
+                  <img
+                    src={formData.brandingPreview}
+                    alt="Branding preview"
+                    style={{ maxHeight: 100, borderRadius: 6 }}
+                  />
+                )}
+              </Box>
+            )}
+          </Box>
           {formData.eventType === "employee" && (
             <>
               <Button variant="outlined" onClick={handleDownloadTemplate}>
@@ -564,60 +610,60 @@ const EventModal = ({
                       </TextField>
                       {(field.inputType === "radio" ||
                         field.inputType === "list") && (
-                        <Box>
-                          <Typography variant="subtitle2">
-                            {t.options}
-                          </Typography>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              flexWrap: "wrap",
-                              gap: 1,
-                              mb: 1,
-                            }}
-                          >
-                            {field.values.map((option, i) => (
-                              <Chip
-                                key={i}
-                                label={option}
-                                onDelete={() => {
-                                  const updated = [...field.values];
-                                  updated.splice(i, 1);
-                                  handleFormFieldChange(
-                                    index,
-                                    "values",
-                                    updated
-                                  );
-                                }}
-                                color="primary"
-                                variant="outlined"
-                              />
-                            ))}
-                          </Box>
-                          <TextField
-                            placeholder={t.optionPlaceholder}
-                            value={field._temp || ""}
-                            onChange={(e) => {
-                              const newValue = e.target.value;
-                              if (newValue.endsWith(",")) {
-                                const option = newValue.slice(0, -1).trim();
-                                if (option && !field.values.includes(option)) {
-                                  const updated = [...field.values, option];
-                                  handleFormFieldChange(
-                                    index,
-                                    "values",
-                                    updated
-                                  );
+                          <Box>
+                            <Typography variant="subtitle2">
+                              {t.options}
+                            </Typography>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                flexWrap: "wrap",
+                                gap: 1,
+                                mb: 1,
+                              }}
+                            >
+                              {field.values.map((option, i) => (
+                                <Chip
+                                  key={i}
+                                  label={option}
+                                  onDelete={() => {
+                                    const updated = [...field.values];
+                                    updated.splice(i, 1);
+                                    handleFormFieldChange(
+                                      index,
+                                      "values",
+                                      updated
+                                    );
+                                  }}
+                                  color="primary"
+                                  variant="outlined"
+                                />
+                              ))}
+                            </Box>
+                            <TextField
+                              placeholder={t.optionPlaceholder}
+                              value={field._temp || ""}
+                              onChange={(e) => {
+                                const newValue = e.target.value;
+                                if (newValue.endsWith(",")) {
+                                  const option = newValue.slice(0, -1).trim();
+                                  if (option && !field.values.includes(option)) {
+                                    const updated = [...field.values, option];
+                                    handleFormFieldChange(
+                                      index,
+                                      "values",
+                                      updated
+                                    );
+                                  }
+                                  handleFormFieldChange(index, "_temp", "");
+                                } else {
+                                  handleFormFieldChange(index, "_temp", newValue);
                                 }
-                                handleFormFieldChange(index, "_temp", "");
-                              } else {
-                                handleFormFieldChange(index, "_temp", newValue);
-                              }
-                            }}
-                            fullWidth
-                          />
-                        </Box>
-                      )}
+                              }}
+                              fullWidth
+                            />
+                          </Box>
+                        )}
                       <Box
                         sx={{ display: "flex", alignItems: "center", gap: 2 }}
                       >
@@ -669,6 +715,7 @@ const EventModal = ({
           color="inherit"
           disabled={loading}
           fullWidth
+          startIcon={<ICONS.cancel />}
         >
           {t.cancel}
         </Button>
@@ -676,7 +723,7 @@ const EventModal = ({
           onClick={handleSubmit}
           variant="contained"
           disabled={loading}
-          startIcon={loading && <CircularProgress size={20} color="inherit" />}
+          startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <ICONS.save />}
           fullWidth
         >
           {loading
@@ -684,8 +731,8 @@ const EventModal = ({
               ? t.updating
               : t.creating
             : initialValues
-            ? t.update
-            : t.create}
+              ? t.update
+              : t.create}
         </Button>
       </DialogActions>
     </Dialog>
