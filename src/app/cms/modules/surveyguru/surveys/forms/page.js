@@ -107,7 +107,7 @@ const translations = {
     vSlugFormat: "Slug must be URL-friendly (letters, numbers, hyphens).",
     vQuestions: "At least one question is required.",
     vQText: "Question text is required.",
-    vQOptions: "Single/Multiple choice needs at least 2 options.",
+    vQOptions: "Multiple choice needs at least 2 options.",
     vScaleMinMax: "Min must be less than Max.",
     vStepPositive: "Step must be a positive number.",
   },
@@ -164,7 +164,7 @@ const translations = {
     vSlugFormat: "يجب أن يكون المُعرف مناسبًا للرابط (حروف، أرقام، وشرطات).",
     vQuestions: "مطلوب سؤال واحد على الأقل.",
     vQText: "نص السؤال مطلوب.",
-    vQOptions: "الاختيار الفردي/المتعدد يحتاج خيارين على الأقل.",
+    vQOptions: "المتعدد يحتاج خيارين على الأقل.",
     vScaleMinMax: "يجب أن يكون الحد الأدنى أقل من الحد الأقصى.",
     vStepPositive: "يجب أن تكون الخطوة رقمًا موجبًا.",
   },
@@ -173,7 +173,7 @@ const translations = {
 const emptyQuestion = () => ({
   label: "",
   helpText: "",
-  type: "single", // single | multi | text | rating | nps
+  type: "multi", // multi | text | rating | nps
   required: true,
   order: 0,
   options: [], // [{label, imageUrl?, imageRemove?}]
@@ -274,7 +274,7 @@ export default function SurveyFormsManagePage() {
     (questions || []).forEach((q, i) => {
       if (!q.label?.trim()) e[`q_${i}_label`] = t.vQText;
 
-      if (q.type === "single" || q.type === "multi") {
+      if (q.type === "multi") {
         const opts = q.options || [];
         if (opts.length < 2 || opts.some((o) => !o.label?.trim())) {
           e[`q_${i}_options`] = t.vQOptions;
@@ -368,7 +368,7 @@ export default function SurveyFormsManagePage() {
     const qs = (form.questions || []).map((q, idx) => ({
       label: q.label || "",
       helpText: q.helpText || "",
-      type: q.type || "single",
+      type: q.type || "milti",
       required: !!q.required,
       order: idx,
       options: (q.options || []).map((o) => ({
@@ -898,7 +898,7 @@ export default function SurveyFormsManagePage() {
                               ? { min: 0, max: 10, step: 1 }
                               : { min: 1, max: 5, step: 1 };
                           const resetOptions =
-                            type === "single" || type === "multi"
+                            type === "multi"
                               ? q.options
                               : [];
                           updateQuestion(qi, {
@@ -910,7 +910,6 @@ export default function SurveyFormsManagePage() {
                         select
                         fullWidth
                       >
-                        <MenuItem value="single">Single choice</MenuItem>
                         <MenuItem value="multi">Multiple choice</MenuItem>
                         <MenuItem value="text">Text</MenuItem>
                         <MenuItem value="rating">Rating (1-5)</MenuItem>
@@ -945,7 +944,7 @@ export default function SurveyFormsManagePage() {
                       />
                     </Stack>
 
-                    {(q.type === "single" || q.type === "multi") && (
+                    {(q.type === "multi") && (
                       <>
                         <Stack
                           direction="row"
