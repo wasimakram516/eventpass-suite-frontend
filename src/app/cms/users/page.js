@@ -201,8 +201,8 @@ export default function UsersPage() {
   };
 
   const fetchModules = async () => {
-    const allModules = await getModules();
-    setAvailableModules(allModules);
+    const allModules = await getModules(currentUser?.role);
+    setAvailableModules(allModules || []);
   };
 
   const getRoleColor = (role) =>
