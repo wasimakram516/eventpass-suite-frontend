@@ -137,7 +137,16 @@ export default function PublicSurveyPage() {
 
   if (loading) {
     return (
-      <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundImage: 'url(/Surverybg.png)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+      <Box sx={{
+        minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: `
+        radial-gradient(800px 600px at 8% 12%, rgba(99,102,241,0.28) 0%, transparent 60%),
+        radial-gradient(720px 540px at 92% 16%, rgba(236,72,153,0.24) 0%, transparent 60%),
+        radial-gradient(700px 520px at 18% 86%, rgba(34,197,94,0.20) 0%, transparent 60%),
+        radial-gradient(680px 520px at 84% 84%, rgba(59,130,246,0.20) 0%, transparent 60%),
+        linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)
+      `,
+        filter: "saturate(1.05)", backgroundSize: 'cover', backgroundPosition: 'center'
+      }}>
         <Container maxWidth="sm" sx={{ py: 6, zIndex: 1 }}>
           <Typography variant="h6">Loading…</Typography>
           <LinearProgress sx={{ mt: 2 }} />
@@ -148,7 +157,16 @@ export default function PublicSurveyPage() {
 
   if (!form) {
     return (
-      <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundImage: 'url(/Surverybg.png)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+      <Box sx={{
+        minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: `
+        radial-gradient(800px 600px at 8% 12%, rgba(99,102,241,0.28) 0%, transparent 60%),
+        radial-gradient(720px 540px at 92% 16%, rgba(236,72,153,0.24) 0%, transparent 60%),
+        radial-gradient(700px 520px at 18% 86%, rgba(34,197,94,0.20) 0%, transparent 60%),
+        radial-gradient(680px 520px at 84% 84%, rgba(59,130,246,0.20) 0%, transparent 60%),
+        linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)
+      `,
+        filter: "saturate(1.05)", backgroundSize: 'cover', backgroundPosition: 'center'
+      }}>
         <Container maxWidth="sm" sx={{ py: 8, zIndex: 1 }}>
           <Typography variant="h5" fontWeight={700} gutterBottom>
             Survey unavailable
@@ -161,7 +179,16 @@ export default function PublicSurveyPage() {
 
   if (phase === "submitted") {
     return (
-      <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundImage: 'url(/Surverybg.png)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+      <Box sx={{
+        minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: `
+        radial-gradient(800px 600px at 8% 12%, rgba(99,102,241,0.28) 0%, transparent 60%),
+        radial-gradient(720px 540px at 92% 16%, rgba(236,72,153,0.24) 0%, transparent 60%),
+        radial-gradient(700px 520px at 18% 86%, rgba(34,197,94,0.20) 0%, transparent 60%),
+        radial-gradient(680px 520px at 84% 84%, rgba(59,130,246,0.20) 0%, transparent 60%),
+        linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)
+      `,
+        filter: "saturate(1.05)", backgroundSize: 'cover', backgroundPosition: 'center'
+      }}>
         <Container maxWidth="sm" sx={{ py: 8, zIndex: 1 }}>
           <Paper elevation={0} sx={{ p: 4, borderRadius: 3, textAlign: "center", border: "1px solid", borderColor: "divider" }}>
             <Typography variant="h4" fontWeight={800} gutterBottom>
@@ -176,7 +203,16 @@ export default function PublicSurveyPage() {
 
   if (phase === "attendee") {
     return (
-      <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundImage: 'url(/Surverybg.png)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+      <Box sx={{
+        minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: `
+        radial-gradient(800px 600px at 8% 12%, rgba(99,102,241,0.28) 0%, transparent 60%),
+        radial-gradient(720px 540px at 92% 16%, rgba(236,72,153,0.24) 0%, transparent 60%),
+        radial-gradient(700px 520px at 18% 86%, rgba(34,197,94,0.20) 0%, transparent 60%),
+        radial-gradient(680px 520px at 84% 84%, rgba(59,130,246,0.20) 0%, transparent 60%),
+        linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)
+      `,
+        filter: "saturate(1.05)", backgroundSize: 'cover', backgroundPosition: 'center'
+      }}>
         <Paper
           elevation={3}
           sx={{
@@ -243,7 +279,16 @@ export default function PublicSurveyPage() {
     const currentQ = questions[currentIdx];
     if (!currentQ) {
       return (
-        <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundImage: 'url(/Surverybg.png)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+        <Box sx={{
+          minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: `
+          radial-gradient(800px 600px at 8% 12%, rgba(99,102,241,0.28) 0%, transparent 60%),
+          radial-gradient(720px 540px at 92% 16%, rgba(236,72,153,0.24) 0%, transparent 60%),
+          radial-gradient(700px 520px at 18% 86%, rgba(34,197,94,0.20) 0%, transparent 60%),
+          radial-gradient(680px 520px at 84% 84%, rgba(59,130,246,0.20) 0%, transparent 60%),
+          linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)
+        `,
+          filter: "saturate(1.05)", backgroundSize: 'cover', backgroundPosition: 'center'
+        }}>
           <Container maxWidth="sm" sx={{ py: 8, zIndex: 1 }}>
             <Typography variant="h5" fontWeight={700} gutterBottom>
               No question found
@@ -257,8 +302,7 @@ export default function PublicSurveyPage() {
     const a = answers[currentQ._id] || {};
     const isNps = t === "nps" || t === "rating";
     const isText = t.includes("text");
-    const isSingle = t.includes("single") || (t.includes("choice") && !t.includes("multi"));
-    const isMulti = t.includes("multi");
+    const isChoice = t.includes("multi") || t.includes("choice");
     const isIcon = currentQ.options && currentQ.options.some(opt => opt.imageUrl);
     const min = currentQ.scale?.min ?? (t === "rating" ? 1 : 0);
     const max = currentQ.scale?.max ?? (t === "rating" ? 5 : 10);
@@ -300,17 +344,25 @@ export default function PublicSurveyPage() {
     const setAnswer = (qid, patch) => {
       setAnswers(prev => ({ ...prev, [qid]: { ...(prev[qid] || {}), ...patch } }));
     };
-    const toggleMulti = (qid, optId) => {
+    const selectSingleOption = (qid, optId) => {
       setAnswers(prev => {
         const curr = prev[qid]?.optionIds || [];
         const has = curr.includes(optId);
-        const next = has ? curr.filter(id => id !== optId) : [...curr, optId];
+        const next = has ? [] : [optId];
         return { ...prev, [qid]: { ...(prev[qid] || {}), optionIds: next } };
       });
     };
-
     return (
-      <Box sx={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundImage: 'url(/Surverybg.png)', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+      <Box sx={{
+        minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: `
+        radial-gradient(800px 600px at 8% 12%, rgba(99,102,241,0.28) 0%, transparent 60%),
+        radial-gradient(720px 540px at 92% 16%, rgba(236,72,153,0.24) 0%, transparent 60%),
+        radial-gradient(700px 520px at 18% 86%, rgba(34,197,94,0.20) 0%, transparent 60%),
+        radial-gradient(680px 520px at 84% 84%, rgba(59,130,246,0.20) 0%, transparent 60%),
+        linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)
+      `,
+        filter: "saturate(1.05)", backgroundSize: 'cover', backgroundPosition: 'center'
+      }}>
         <Box sx={{
           display: 'flex',
           bgcolor: '#fff',
@@ -328,9 +380,9 @@ export default function PublicSurveyPage() {
           maxWidth: { xs: '100vw', md: '90vw' },
           width: { xs: '100%', md: '100%' }
         }}>
-
+          {/* Left Sidebar */}
           <Box sx={{
-            width: 340,
+            width: '40%',
             p: 4,
             display: { xs: 'none', md: 'flex' },
             flexDirection: 'column',
@@ -380,7 +432,7 @@ export default function PublicSurveyPage() {
           </Box>
 
           <Box sx={{
-            flex: 1,
+            width: { xs: '100%', md: '60%' },
             background: { xs: colorChoices[colorIndex].gradient, md: colorChoices[colorIndex].gradient },
             pt: 4,
             pb: 4,
@@ -470,7 +522,7 @@ export default function PublicSurveyPage() {
                 flex: 1,
                 display: 'flex',
                 flexDirection: 'column',
-                justifyContent: 'flex-start',
+                justifyContent: { xs: 'space-between', md: 'flex-start' },
                 flex: { xs: 1, md: 'none' },
                 mb: { xs: 3, md: 0 }
               }}>
@@ -481,15 +533,15 @@ export default function PublicSurveyPage() {
 
                 <Box sx={{
                   display: 'flex',
-                  alignItems: 'flex-start',
-                  justifyContent: 'flex-start',
+                  alignItems: { xs: 'center', md: 'flex-start' },
+                  justifyContent: { xs: 'center', md: 'flex-start' },
                   width: '100%',
                   mt: 1,
-                  justifyContent: { xs: 'center', md: 'flex-start' }
+                  flex: { xs: 1, md: 'none' },
                 }}>
                   {/* NPS/Rating */}
                   {isNps && (
-                    <Box sx={{ display: 'flex', gap: 5, justifyContent: 'flex-start', flexWrap: 'wrap' }}>
+                    <Box sx={{ display: 'flex', gap: 5, justifyContent: { xs: 'center', md: 'flex-start' }, flexWrap: 'wrap' }}>
                       {npsRange.map(num => (
                         <Button
                           key={num}
@@ -505,7 +557,7 @@ export default function PublicSurveyPage() {
                   )}
 
                   {/* Icon/Image Choice */}
-                  {isIcon && (isSingle || isMulti) && (
+                  {isIcon && isChoice && (
                     <Box sx={{ display: 'flex', gap: 7, justifyContent: { xs: 'center', md: 'flex-start' }, flexWrap: 'wrap' }}>
                       {currentQ.options.map(opt => (
                         <Box key={opt._id} sx={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -526,7 +578,7 @@ export default function PublicSurveyPage() {
                               '&:hover': { transform: 'scale(1.03)', backgroundColor: 'transparent' },
                               transition: 'all 0.2s ease'
                             }}
-                            onClick={() => isMulti ? toggleMulti(currentQ._id, String(opt._id)) : setAnswer(currentQ._id, { optionIds: [String(opt._id)] })}
+                            onClick={() => selectSingleOption(currentQ._id, String(opt._id))}
                           >
                             {opt.imageUrl ? (
                               <img src={opt.imageUrl} alt={opt.label} style={{ width: 60, height: 60, objectFit: 'contain' }} />
@@ -542,8 +594,8 @@ export default function PublicSurveyPage() {
                     </Box>
                   )}
 
-                  {/* Single/Multiple Choice (no icons) */}
-                  {!isIcon && (isSingle || isMulti) && (
+                  {/* Multiple Choice (no icons) */}
+                  {!isIcon && isChoice && (
                     <Box sx={{ display: 'flex', gap: 1.5, justifyContent: { xs: 'center', md: 'flex-start' }, flexWrap: 'wrap' }}>
                       {currentQ.options.map(opt => (
                         <Button
@@ -559,7 +611,7 @@ export default function PublicSurveyPage() {
                             fontWeight: 600,
                             fontSize: 14
                           }}
-                          onClick={() => isMulti ? toggleMulti(currentQ._id, String(opt._id)) : setAnswer(currentQ._id, { optionIds: [String(opt._id)] })}
+                          onClick={() => selectSingleOption(currentQ._id, String(opt._id))}
                         >
                           {opt.label}
                         </Button>
