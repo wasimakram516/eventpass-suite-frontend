@@ -12,7 +12,6 @@ import {
   Chip,
   IconButton,
 } from "@mui/material";
-import Image from "next/image";
 import { createDisplayMedia } from "@/services/mosaicwall/displayMediaService";
 import { getWallConfigBySlug } from "@/services/mosaicwall/wallConfigService";
 import ICONS from "@/utils/iconUtil";
@@ -181,7 +180,7 @@ export default function UploadPage() {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ minHeight: "100vh", py: 2 }}>
+    <Container maxWidth="lg" sx={{ minHeight: "100vh", py: 2 }} >
       <Box
         sx={{
           display: "flex",
@@ -189,6 +188,7 @@ export default function UploadPage() {
           alignItems: "center",
           width: "100%",
         }}
+        dir={dir}
       >
         {/* Title and Mode */}
         <Box
@@ -197,7 +197,7 @@ export default function UploadPage() {
             flexDirection: "column",
             alignItems: "center",
             textAlign: "center",
-            mt:2,
+            mt: 2,
             mb: 4,
           }}
         >
@@ -381,7 +381,15 @@ export default function UploadPage() {
         )}
 
         {/* Action Buttons */}
-        <Box sx={{ display: "flex", justifyContent: "center", gap: 2, mb: 3 }}>
+        <Box
+          sx={{
+            display: { xs: "flex", sm: "flex" },
+            flexDirection: { xs: "column", sm: "row" },
+            justifyContent: "center",
+            gap: 2,
+            mb: 3,
+          }}
+        >
           {!capturedImage ? (
             <Button
               variant="contained"
@@ -390,7 +398,10 @@ export default function UploadPage() {
               onClick={capturePhoto}
               disabled={isLoading || !cameraOn}
               startIcon={<ICONS.camera />}
-              sx={getStartIconSpacing(dir)}
+              sx={{
+                ...getStartIconSpacing(dir),
+                width: { xs: "100%", sm: "auto" },
+              }}
             >
               {t.capturePhotoBtn}
             </Button>
@@ -405,13 +416,17 @@ export default function UploadPage() {
                 startIcon={
                   isSubmitting ? <LoadingState size={20} /> : <ICONS.send />
                 }
-                sx={getStartIconSpacing(dir)}
+                sx={{
+                  ...getStartIconSpacing(dir),
+                  width: { xs: "100%", sm: "auto" },
+
+                }}
               >
                 {isSubmitting
                   ? t.uploading
                   : mode === "card"
-                  ? t.submitPhotoMessage
-                  : t.submitPhoto}
+                    ? t.submitPhotoMessage
+                    : t.submitPhoto}
               </Button>
 
               <Button
@@ -421,7 +436,10 @@ export default function UploadPage() {
                 onClick={retakePhoto}
                 disabled={isSubmitting}
                 startIcon={<ICONS.refresh />}
-                sx={getStartIconSpacing(dir)}
+                sx={{
+                  ...getStartIconSpacing(dir),
+                  width: { xs: "100%", sm: "auto" },
+                }}
               >
                 {t.retakePhoto}
               </Button>
@@ -430,7 +448,16 @@ export default function UploadPage() {
         </Box>
 
         {/* Instructions */}
-        <Paper dir={dir} elevation={1} sx={{ p: 2, mt: 3, bgcolor: "grey.50" }}>
+        <Paper
+
+          elevation={1}
+          sx={{
+            p: 2,
+            mt: 3,
+            bgcolor: "grey.50",
+            mb: { xs: 8, sm: 8 },
+          }}
+        >
           <Typography variant="body2" color="text.secondary">
             <strong>{t.instructions}</strong>
           </Typography>
@@ -452,9 +479,10 @@ export default function UploadPage() {
             </Box>
           )}
         </Paper>
-        <LanguageSelector top={10} right={20} />
+
         <Footer />
       </Box>
+      <LanguageSelector top={10} right={20} />
     </Container>
   );
 }
