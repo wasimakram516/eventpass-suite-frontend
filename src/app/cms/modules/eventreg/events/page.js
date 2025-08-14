@@ -52,6 +52,7 @@ const translations = {
     errorLoading: "Error loading data.",
     deleteEventTitle: "Delete Event?",
     deleteEventMessage: "Are you sure you want to delete",
+    delete: "Delete",
     slugLabel: "Slug:",
     dateRange: "Dates",
     venue: "Venue",
@@ -74,6 +75,7 @@ const translations = {
     dateRange: "التواريخ",
     venue: "الموقع",
     viewRegs: "عرض التسجيلات",
+    delete: "حذف",
   },
 };
 
@@ -284,8 +286,8 @@ export default function EventsPage() {
                             status === "Expired"
                               ? "error"
                               : status === "Current"
-                              ? "primary"
-                              : "success"
+                                ? "primary"
+                                : "success"
                           }
                           sx={{
                             fontWeight: "bold",
@@ -306,9 +308,9 @@ export default function EventsPage() {
                         <strong>{t.dateRange}:</strong>{" "}
                         {ev?.startDate
                           ? formatDate(ev.startDate) +
-                            (ev.endDate && ev.endDate !== ev.startDate
-                              ? ` to ${formatDate(ev.endDate)}`
-                              : "")
+                          (ev.endDate && ev.endDate !== ev.startDate
+                            ? ` to ${formatDate(ev.endDate)}`
+                            : "")
                           : "N/A"}
                       </Typography>
 
@@ -400,6 +402,8 @@ export default function EventsPage() {
           message={`${t.deleteEventMessage} "${eventToDelete?.name}"?`}
           onClose={() => setConfirmOpen(false)}
           onConfirm={handleDeleteEvent}
+          confirmButtonText="Delete"
+          confirmButtonIcon={<ICONS.delete />}
         />
 
         <ShareLinkModal
