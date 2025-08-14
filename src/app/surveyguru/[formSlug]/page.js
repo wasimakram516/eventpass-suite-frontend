@@ -691,7 +691,6 @@ export default function PublicSurveyPage() {
         return { ...prev, [qid]: { ...(prev[qid] || {}), optionIds: next } };
       });
     };
-
     return (
       <Box
         sx={{
