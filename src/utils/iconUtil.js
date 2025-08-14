@@ -27,7 +27,21 @@ import {
   ViewModule as ModuleIcon,
   Menu as MenuIcon,
   Fullscreen as FullscreenIcon,
-   Assignment as FormIcon,
+  Assignment as FormIcon,
+  Star as StarIcon,
+  StarBorder as StarBorderIcon,
+} from "@mui/icons-material";
+
+// Outlined / extras we need across pages
+import {
+  PersonOutline as PersonOutlineIcon,
+  EmailOutlined as EmailOutlinedIcon,
+  ApartmentOutlined as ApartmentOutlinedIcon,
+  QueryBuilderOutlined as QueryBuilderOutlinedIcon,
+  VpnKeyOutlined as VpnKeyOutlinedIcon,
+  VerifiedOutlined as VerifiedOutlinedIcon,
+  AssignmentOutlined as AssignmentOutlinedIcon,
+  EventOutlined as EventOutlinedIcon,
 } from "@mui/icons-material";
 
 // Status & Feedback
@@ -77,7 +91,7 @@ import {
   HowToReg as HowToRegIcon,
   QrCode as QrCodeIcon,
   AdminPanelSettings as AdminPanelSettingsIcon,
-   FlashOn as FlashOnIcon
+  FlashOn as FlashOnIcon,
 } from "@mui/icons-material";
 
 // Screen Sharing
@@ -97,7 +111,7 @@ import {
   DeveloperBoard as DeveloperBoardIcon,
   SettingsInputHdmi as SettingsInputHdmiIcon,
   SettingsInputComponent as SettingsInputComponentIcon,
-} from '@mui/icons-material';
+} from "@mui/icons-material";
 
 // Miscellaneous Icons
 import {
@@ -118,6 +132,8 @@ import {
 
 const ICONS = {
   // General UI / Navigation
+  star: StarIcon,
+  starBorder: StarBorderIcon,
   form: FormIcon,
   home: HomeIcon,
   add: AddIcon,
@@ -148,6 +164,16 @@ const ICONS = {
   module: ModuleIcon,
   menu: MenuIcon,
   fullscreen: FullscreenIcon,
+
+  // Outlined / extras
+  personOutline: PersonOutlineIcon,
+  emailOutline: EmailOutlinedIcon,
+  apartment: ApartmentOutlinedIcon,
+  timeOutline: QueryBuilderOutlinedIcon,
+  vpnKey: VpnKeyOutlinedIcon,
+  verified: VerifiedOutlinedIcon,
+  assignmentOutline: AssignmentOutlinedIcon,
+  eventOutline: EventOutlinedIcon,
 
   // Auth
   login: LoginIcon,
@@ -221,4 +247,5 @@ const ICONS = {
   refresh: RefreshIcon,
   send: SendIcon,
 };
+
 export default ICONS;

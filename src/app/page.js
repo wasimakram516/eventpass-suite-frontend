@@ -217,6 +217,7 @@ function FeatureBadge({ iconKey, label, hue }) {
       sx={(th) => ({
         p: 2.25,
         borderRadius: 3,
+        minWidth: 180,
         display: "flex",
         alignItems: "center",
         gap: 1.25,

@@ -79,6 +79,7 @@ const translations = {
     fSelectEventPlaceholder: "Select an event",
     questions: "Questions",
     addQuestion: "Add Question",
+    duplicateQuestion: "Duplicate question",
     qText: "Question text",
     qType: "Type",
     qHelp: "Help text",
@@ -135,6 +136,7 @@ const translations = {
     fSelectEventPlaceholder: "اختر فعالية",
     questions: "الأسئلة",
     addQuestion: "إضافة سؤال",
+    duplicateQuestion: "تكرار السؤال",
     qText: "نص السؤال",
     qType: "النوع",
     qHelp: "نص المساعدة",
@@ -394,6 +396,19 @@ export default function SurveyFormsManagePage() {
     setOpen(true);
   };
 
+  const insertQuestionAfter = (idx) =>
+    setQuestions((prev) => {
+      const next = [...prev];
+      next.splice(idx + 1, 0, emptyQuestion());
+      return next;
+    });
+
+  const duplicateQuestion = (idx) =>
+    setQuestions((prev) => {
+      const dupe = JSON.parse(JSON.stringify(prev[idx])); // deep clone
+      return [...prev.slice(0, idx + 1), dupe, ...prev.slice(idx + 1)];
+    });
+
   const addQuestion = () => setQuestions((p) => [...p, emptyQuestion()]);
   const updateQuestion = (idx, patch) =>
     setQuestions((p) => p.map((q, i) => (i === idx ? { ...q, ...patch } : q)));
@@ -614,7 +629,7 @@ export default function SurveyFormsManagePage() {
             </Button>
 
             {selectedBusiness?._id && (
-              <FormControl size="small" sx={{ minWidth: 220 }}>
+              <FormControl size="large" sx={{ minWidth: 220, maxWidth: {xs:"100%", sm:300} }}>
                 <InputLabel>{t.selectEventFilter}</InputLabel>
                 <Select
                   label={t.selectEventFilter}
@@ -780,10 +795,8 @@ export default function SurveyFormsManagePage() {
         <DialogTitle>{editing ? t.editForm : t.createForm}</DialogTitle>
         <DialogContent dividers>
           <Stack spacing={2} sx={{ mt: 1 }}>
-            <FormControl fullWidth size="small">
-              <InputLabel>{t.fEvent}</InputLabel>
+            <FormControl fullWidth size="large">
               <Select
-                label={t.fEvent}
                 value={selectedEventId}
                 onChange={(e) => setSelectedEventId(e.target.value)}
                 displayEmpty
@@ -851,13 +864,6 @@ export default function SurveyFormsManagePage() {
               <Typography variant="subtitle1" fontWeight={600}>
                 {t.questions}
               </Typography>
-              <Button
-                size="small"
-                startIcon={<ICONS.add fontSize="small" />}
-                onClick={addQuestion}
-              >
-                {t.addQuestion}
-              </Button>
             </Stack>
             {errors.questions && (
               <Typography variant="caption" color="error">
@@ -912,7 +918,11 @@ export default function SurveyFormsManagePage() {
                       </TextField>
                     </Stack>
 
-                    <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                    <Stack
+                      direction={{ xs: "column", sm: "row" }}
+                      spacing={2}
+                      alignItems={{ sm: "center" }}
+                    >
                       <TextField
                         label={t.qHelp}
                         value={q.helpText}
@@ -921,20 +931,18 @@ export default function SurveyFormsManagePage() {
                         }
                         fullWidth
                       />
-                      <TextField
-                        label={t.qRequired}
-                        value={q.required ? t.yes : t.no}
-                        onChange={(e) =>
-                          updateQuestion(qi, {
-                            required: e.target.value === t.yes,
-                          })
+                      <FormControlLabel
+                        sx={{ ml: { sm: 1 } }}
+                        control={
+                          <Switch
+                            checked={!!q.required}
+                            onChange={(e) =>
+                              updateQuestion(qi, { required: e.target.checked })
+                            }
+                          />
                         }
-                        select
-                        fullWidth
-                      >
-                        <MenuItem value={t.yes}>{t.yes}</MenuItem>
-                        <MenuItem value={t.no}>{t.no}</MenuItem>
-                      </TextField>
+                        label={t.qRequired}
+                      />
                     </Stack>
 
                     {(q.type === "single" || q.type === "multi") && (
@@ -1119,19 +1127,46 @@ export default function SurveyFormsManagePage() {
                       </>
                     )}
 
-                    <Stack direction="row" justifyContent="flex-end">
-                      <Button
-                        startIcon={<ICONS.delete fontSize="small" />}
-                        color="error"
-                        onClick={() => removeQuestion(qi)}
+                    <Stack
+                      direction={{ xs: "column", sm: "row" }}
+                      justifyContent="flex-end"
+                      alignItems={{ xs: "stretch", sm: "center" }}
+                      sx={{ mt: 1 }}
+                    >
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        justifyContent="flex-end"
                       >
-                        {t.removeQuestion}
-                      </Button>
+                        <Tooltip title={t.duplicateQuestion}>
+                          <IconButton onClick={() => duplicateQuestion(qi)}>
+                            <ICONS.copy fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+
+                        <Tooltip title={t.removeQuestion}>
+                          <IconButton
+                            color="error"
+                            onClick={() => removeQuestion(qi)}
+                          >
+                            <ICONS.delete fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </Stack>
                     </Stack>
                   </Stack>
                 </Card>
               ))}
             </Stack>
+            <Box sx={{ mt: 2, display: "flex", justifyContent: "center" }}>
+              <Button
+                variant="outlined"
+                startIcon={<ICONS.add fontSize="small" />}
+                onClick={addQuestion}
+              >
+                {t.addQuestion}
+              </Button>
+            </Box>
           </Stack>
         </DialogContent>
         <DialogActions>
