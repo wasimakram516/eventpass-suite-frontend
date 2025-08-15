@@ -748,22 +748,12 @@ export default function PublicSurveyPage() {
                 borderRadius: 3,
                 p: 2.5,
                 display: "grid",
-                gridTemplateRows: "auto auto auto 1fr auto", // Survey Tite & Helper / stepper / header / content / footer
+                gridTemplateRows: "auto auto 1fr auto", // stepper / header / content / footer
                 gap: 2,
                 minHeight: "70vh",
                 overflowX: "hidden",
               }}
             >
-              {/* Title & Description */}
-              <Box sx={{ wordBreak: "break-word", textAlign: "center", mt: 2 }}>
-                <Typography variant="h4" fontWeight={800} gutterBottom>
-                  {form.title}
-                </Typography>
-                <Typography color="text.secondary" sx={{ mb: 3 }}>
-                  {form.description}
-                </Typography>
-              </Box>
-
               {/* Stepper */}
               {(() => {
                 const DotIcon = ({ active, completed, icon }) => (
