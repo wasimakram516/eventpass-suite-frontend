@@ -13,16 +13,10 @@ import {
   alpha,
 } from "@mui/material";
 import { useRouter } from "next/navigation";
-import {
-  PlayArrowRounded,
-  Facebook,
-  Instagram,
-  LinkedIn,
-  Language,
-} from "@mui/icons-material";
 import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { getModuleIcon } from "@/utils/iconMapper";
+import ICONS from "@/utils/iconUtil";
 
 const translations = {
   en: {
@@ -151,7 +145,7 @@ export default function HomePage() {
               <Button
                 variant="contained"
                 size="large"
-                startIcon={<PlayArrowRounded />}
+                startIcon={<ICONS.play />}
                 onClick={() => router.push("/cms")}
                 sx={(th) => ({
                   mt: 1,
@@ -205,7 +199,7 @@ function FeatureBadge({ iconKey, label, hue }) {
       sx={(th) => ({
         p: 2.25,
         borderRadius: 3,
-        minWidth: 180,
+        minWidth: 190,
         display: "flex",
         alignItems: "center",
         gap: 1.25,
@@ -266,28 +260,43 @@ function Footer({ globalConfig, align }) {
       )}
 
       {(globalConfig?.contact?.email || globalConfig?.contact?.phone) && (
-        <Typography variant="body2" color="text.secondary" textAlign={align}>
+        <Stack
+          direction="row"
+          flexWrap="wrap"
+          justifyContent="center"
+          spacing={2}
+          sx={{ maxWidth: "100%", rowGap: 0.5 }}
+        >
           {globalConfig?.contact?.email && (
-            <>
-              <strong>Email:</strong> {globalConfig.contact.email}
-            </>
+            <Stack direction="row" spacing={0.5} alignItems="center">
+              <ICONS.email fontSize="small" />
+              <Typography variant="body2" color="text.secondary">
+                {globalConfig.contact.email}
+              </Typography>
+            </Stack>
           )}
-          {globalConfig?.contact?.email &&
-            globalConfig?.contact?.phone &&
-            " · "}
+
           {globalConfig?.contact?.phone && (
-            <>
-              <strong>Phone:</strong> {globalConfig.contact.phone}
-            </>
+            <Stack direction="row" spacing={0.5} alignItems="center">
+              <ICONS.phone fontSize="small" />
+              <Typography variant="body2" color="text.secondary">
+                {globalConfig.contact.phone}
+              </Typography>
+            </Stack>
           )}
-        </Typography>
+        </Stack>
       )}
 
       {(globalConfig?.socialLinks?.facebook ||
         globalConfig?.socialLinks?.instagram ||
         globalConfig?.socialLinks?.linkedin ||
         globalConfig?.socialLinks?.website) && (
-        <Stack direction="row" spacing={2} sx={{ mt: 0.5 }}>
+        <Stack
+          direction="row"
+          spacing={2}
+          sx={{ mt: 0.5, flexWrap: "wrap" }}
+          justifyContent="center"
+        >
           {globalConfig?.socialLinks?.facebook && (
             <MuiLink
               href={globalConfig.socialLinks.facebook}
@@ -295,7 +304,7 @@ function Footer({ globalConfig, align }) {
               underline="hover"
               color="inherit"
             >
-              <Facebook fontSize="small" />
+              <ICONS.facebook fontSize="small" />
             </MuiLink>
           )}
           {globalConfig?.socialLinks?.instagram && (
@@ -305,7 +314,7 @@ function Footer({ globalConfig, align }) {
               underline="hover"
               color="inherit"
             >
-              <Instagram fontSize="small" />
+              <ICONS.instagram fontSize="small" />
             </MuiLink>
           )}
           {globalConfig?.socialLinks?.linkedin && (
@@ -315,7 +324,7 @@ function Footer({ globalConfig, align }) {
               underline="hover"
               color="inherit"
             >
-              <LinkedIn fontSize="small" />
+              <ICONS.linkedin fontSize="small" />
             </MuiLink>
           )}
           {globalConfig?.socialLinks?.website && (
@@ -325,7 +334,7 @@ function Footer({ globalConfig, align }) {
               underline="hover"
               color="inherit"
             >
-              <Language fontSize="small" />
+              <ICONS.Language fontSize="small" />
             </MuiLink>
           )}
         </Stack>

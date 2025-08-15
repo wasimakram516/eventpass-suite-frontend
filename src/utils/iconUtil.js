@@ -30,6 +30,22 @@ import {
   Assignment as FormIcon,
   Star as StarIcon,
   StarBorder as StarBorderIcon,
+  Language as LanguageIcon,
+  Language,
+} from "@mui/icons-material";
+
+// Social Media Icons
+import {
+  Facebook as FacebookIcon,
+  Instagram as InstagramIcon,
+  LinkedIn as LinkedInIcon,
+  Twitter as TwitterIcon,
+  YouTube as YouTubeIcon,
+  GitHub as GitHubIcon,
+  Telegram as TelegramIcon,
+  WhatsApp as WhatsAppIcon,
+  Tiktok as TiktokIcon,
+  Snapchat as SnapchatIcon,
 } from "@mui/icons-material";
 
 // Outlined / extras we need across pages
@@ -164,6 +180,19 @@ const ICONS = {
   module: ModuleIcon,
   menu: MenuIcon,
   fullscreen: FullscreenIcon,
+  Language: LanguageIcon,
+
+  // Social Media
+  facebook: FacebookIcon,
+  instagram: InstagramIcon,
+  linkedin: LinkedInIcon,
+  twitter: TwitterIcon,
+  youtube: YouTubeIcon,
+  github: GitHubIcon,
+  telegram: TelegramIcon,
+  whatsapp: WhatsAppIcon,
+  tiktok: TiktokIcon,
+  snapchat: SnapchatIcon,
 
   // Outlined / extras
   personOutline: PersonOutlineIcon,
