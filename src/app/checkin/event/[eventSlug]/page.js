@@ -17,6 +17,7 @@ import { getCheckInEventBySlug } from "@/services/checkin/checkinEventService";
 import LanguageSelector from "@/components/LanguageSelector";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
+import Background from "@/components/Background";
 
 export default function EventDetails() {
   const { eventSlug } = useParams();
@@ -71,6 +72,7 @@ export default function EventDetails() {
           justifyContent: "center",
         }}
       >
+        <Background/>
         <CircularProgress />
       </Box>
     );
@@ -87,6 +89,7 @@ export default function EventDetails() {
           textAlign: "center",
         }}
       >
+        <Background/>
         <Typography color="error" variant="h6">
           {error}
         </Typography>
@@ -108,6 +111,7 @@ export default function EventDetails() {
         position: "relative",
       }}
     >
+      <Background/>
       <Paper
         dir={dir}
         elevation={3}

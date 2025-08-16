@@ -17,6 +17,7 @@ import { getPublicEventBySlug } from "@/services/eventreg/eventService";
 import LanguageSelector from "@/components/LanguageSelector";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
+import Background from "@/components/Background";
 
 export default function EventDetails() {
   const { eventSlug } = useParams();
@@ -111,6 +112,8 @@ export default function EventDetails() {
         gap: 2,
       }}
     >
+      <Background/>
+      
       {/* logo outside the container */}
       {logoUrl && (
         <Box

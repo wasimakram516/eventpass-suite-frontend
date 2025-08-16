@@ -18,6 +18,7 @@ import { useParams } from "next/navigation";
 import { getPublicFormBySlug } from "@/services/surveyguru/surveyFormService";
 import { submitSurveyResponseBySlug } from "@/services/surveyguru/surveyResponseService";
 import ICONS from "@/utils/iconUtil";
+import Background from "@/components/Background";
 
 const guessType = (q) => (q?.type || q?.questionType || "").toLowerCase();
 
@@ -698,19 +699,10 @@ export default function PublicSurveyPage() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: `
-      radial-gradient(800px 600px at 8% 12%, rgba(99,102,241,0.28) 0%, transparent 60%),
-      radial-gradient(720px 540px at 92% 16%, rgba(236,72,153,0.24) 0%, transparent 60%),
-      radial-gradient(700px 520px at 18% 86%, rgba(34,197,94,0.20) 0%, transparent 60%),
-      radial-gradient(680px 520px at 84% 84%, rgba(59,130,246,0.20) 0%, transparent 60%),
-      linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)
-    `,
-          filter: "saturate(1.05)",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
           width: "100%",
         }}
       >
+        <Background/>
         {/* ============ MOBILE VIEW (xs only) ============ */}
         <Box sx={{ display: { xs: "block", md: "none" }, width: "100%" }}>
           <Box

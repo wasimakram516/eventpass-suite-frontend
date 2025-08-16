@@ -20,6 +20,7 @@ import { createCheckInRegistration } from "@/services/checkin/checkinRegistratio
 import ICONS from "@/utils/iconUtil";
 import LanguageSelector from "@/components/LanguageSelector";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import Background from "@/components/Background";
 
 export default function Registration() {
   const { eventSlug } = useParams();
@@ -91,11 +92,11 @@ export default function Registration() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "#f5f5f5",
         px: 2,
         py: 4,
       }}
     >
+      <Background/>
       <Paper
         elevation={3}
         sx={{

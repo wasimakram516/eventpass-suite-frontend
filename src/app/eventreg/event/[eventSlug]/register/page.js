@@ -30,6 +30,7 @@ import { getPublicEventBySlug } from "@/services/eventreg/eventService";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { translateText } from "@/services/translationService";
+import Background from "@/components/Background";
 
 export default function Registration() {
   const { eventSlug } = useParams();
@@ -230,6 +231,7 @@ export default function Registration() {
         alignItems="center"
         justifyContent="center"
       >
+        <Background />
         <CircularProgress />
       </Box>
     );
@@ -243,6 +245,7 @@ export default function Registration() {
         alignItems="center"
         justifyContent="center"
       >
+        <Background />
         <CircularProgress />
       </Box>
     );
@@ -344,11 +347,11 @@ export default function Registration() {
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        backgroundColor: "#f5f5f5",
         px: 2,
         py: 4,
       }}
     >
+      <Background />
       <Paper
         dir={dir}
         elevation={3}

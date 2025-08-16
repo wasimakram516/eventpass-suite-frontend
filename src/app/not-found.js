@@ -3,6 +3,7 @@
 import { Box, Button, Container, Typography, Stack } from "@mui/material";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import Background from "@/components/Background";
 
 export default function NotFoundPage() {
   const router = useRouter();
@@ -21,6 +22,9 @@ export default function NotFoundPage() {
         textAlign: "center",
       }}
     >
+      {/* Background */}
+      <Background/>
+
       {/* Logo + Code */}
       <Box sx={{ mb: 3 }}>
         <Typography
