@@ -38,7 +38,7 @@ const FilterDialog = ({ open, onClose, title, children }) => {
       PaperProps={{
         sx: {
           borderRadius: 2,
-          minHeight: "60vh",
+          minHeight: "40vh",
           display: "flex",
           flexDirection: "column",
         },
