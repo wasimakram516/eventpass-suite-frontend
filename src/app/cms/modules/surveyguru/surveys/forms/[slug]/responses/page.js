@@ -41,35 +41,40 @@ import {
   exportFormResponsesCsv,
 } from "@/services/surveyguru/surveyResponseService";
 
-const {
-  personOutline: PersonOutlineIcon,
-  emailOutline: EmailOutlinedIcon,
-  apartment: ApartmentOutlinedIcon,
-  eventOutline: EventOutlinedIcon,
-  timeOutline: QueryBuilderOutlinedIcon,
-  vpnKey: VpnKeyOutlinedIcon,
-  verified: VerifiedOutlinedIcon,
-  assignmentOutline: AssignmentOutlinedIcon,
-} = ICONS;
 
-/* ------------ Small UI helpers ------------ */
-function FieldRow({ icon, primary, secondary }) {
+// ------------ Small UI helpers ------------
+function FieldRow({ icon, primary, secondary, dir, align }) {
   return (
-    <ListItem dense disableGutters sx={{ px: 0, py: 0.5 }}>
+    <ListItem dense disableGutters sx={{ px: 0, py: 0.5 }} dir={dir}>
       {icon && (
-        <ListItemIcon sx={{ minWidth: 34, color: "text.secondary" }}>
+        <ListItemIcon
+          sx={{
+            minWidth: 34,
+            color: "text.secondary",
+          }}
+        >
           {icon}
         </ListItemIcon>
       )}
       <ListItemText
         disableTypography
         primary={
-          <Typography variant="body2" color="text.secondary" component="div">
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            component="div"
+            sx={{ textAlign: align }}
+          >
             {primary}
           </Typography>
         }
         secondary={
-          <Typography variant="body1" fontWeight={500} component="div">
+          <Typography
+            variant="body1"
+            fontWeight={500}
+            component="div"
+            sx={{ textAlign: align }}
+          >
             {secondary || "N/A"}
           </Typography>
         }
@@ -78,7 +83,7 @@ function FieldRow({ icon, primary, secondary }) {
   );
 }
 
-function OptionThumb({ url, label, size = 22 }) {
+function OptionThumb({ url, label, size = 22, dir }) {
   if (!url) return null;
   return (
     <Avatar
@@ -90,8 +95,8 @@ function OptionThumb({ url, label, size = 22 }) {
         border: (t) => `1px solid ${t.palette.divider}`,
         bgcolor: "background.paper",
       }}
+      dir={dir}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         alt={label || "option"}
         src={url}
@@ -101,7 +106,7 @@ function OptionThumb({ url, label, size = 22 }) {
   );
 }
 
-function renderAnswer({ q, ans }) {
+function renderAnswer({ q, ans, dir, align }) {
   if (!q) return null;
 
   const findOpt = (id) =>
@@ -111,7 +116,7 @@ function renderAnswer({ q, ans }) {
     const ids = ans?.optionIds || [];
     if (!ids.length)
       return (
-        <Typography variant="body2" component="span">
+        <Typography variant="body2" component="span" dir={dir} sx={{ textAlign: align }}>
           N/A
         </Typography>
       );
@@ -155,7 +160,7 @@ function renderAnswer({ q, ans }) {
     const id = ans?.optionId || ans?.optionIds?.[0];
     if (!id)
       return (
-        <Typography variant="body2" component="span">
+        <Typography variant="body2" component="span" dir={dir} sx={{ textAlign: align }}>
           N/A
         </Typography>
       );
@@ -167,7 +172,7 @@ function renderAnswer({ q, ans }) {
     return (
       <Stack direction="row" alignItems="center" spacing={1}>
         {img && <OptionThumb url={img} label={label} size={20} />}
-        <Typography variant="body2" component="span">
+        <Typography variant="body2" component="span" dir={dir} sx={{ textAlign: align }}>
           {label}
         </Typography>
       </Stack>
@@ -178,7 +183,7 @@ function renderAnswer({ q, ans }) {
     const text = ans?.text?.trim();
     if (!text)
       return (
-        <Typography variant="body2" component="span">
+        <Typography variant="body2" component="span" dir={dir} sx={{ textAlign: align }}>
           N/A
         </Typography>
       );
@@ -186,7 +191,8 @@ function renderAnswer({ q, ans }) {
       <Typography
         variant="body2"
         component="span"
-        sx={{ whiteSpace: "pre-wrap" }}
+        sx={{ whiteSpace: "pre-wrap", textAlign: align }}
+        dir={dir}
       >
         {text}
       </Typography>
@@ -197,7 +203,7 @@ function renderAnswer({ q, ans }) {
     const n = Number(ans?.number);
     if (!Number.isFinite(n)) {
       return (
-        <Typography variant="body2" component="span">
+        <Typography variant="body2" component="span" dir={dir} sx={{ textAlign: align, width: '100%' }}>
           N/A
         </Typography>
       );
@@ -206,7 +212,7 @@ function renderAnswer({ q, ans }) {
     const max = Number(q?.scale?.max ?? 5);
 
     return (
-      <Stack direction="row" alignItems="center" spacing={1}>
+      <Stack direction="row" alignItems="center" spacing={1} dir={dir} sx={{ justifyContent: align === 'right' ? 'flex-end' : 'flex-start', width: '100%' }}>
         <Stack direction="row" spacing={0.25}>
           {Array.from({ length: max }).map((_, i) =>
             i < n ? (
@@ -216,7 +222,7 @@ function renderAnswer({ q, ans }) {
             )
           )}
         </Stack>
-        <Typography variant="body2" component="span">
+        <Typography variant="body2" component="span" dir={dir} sx={{ textAlign: align, flexGrow: 1 }}>
           {n} / {max}
         </Typography>
       </Stack>
@@ -227,13 +233,13 @@ function renderAnswer({ q, ans }) {
     const n = Number(ans?.number);
     if (!Number.isFinite(n))
       return (
-        <Typography variant="body2" component="span">
+        <Typography variant="body2" component="span" dir={dir} sx={{ textAlign: align }}>
           N/A
         </Typography>
       );
     const max = Number(q?.scale?.max ?? 10);
     return (
-      <Typography variant="body2" component="span">
+      <Typography variant="body2" component="span" dir={dir} sx={{ textAlign: align }}>
         {n} / {max}
       </Typography>
     );
@@ -253,26 +259,25 @@ function renderAnswer({ q, ans }) {
     default:
       if (typeof ans?.number === "number")
         return (
-          <Typography variant="body2" component="span">
+          <Typography variant="body2" component="span" dir={dir} sx={{ textAlign: align }}>
             {String(ans.number)}
           </Typography>
         );
       if (typeof ans?.bool === "boolean")
         return (
-          <Typography variant="body2" component="span">
+          <Typography variant="body2" component="span" dir={dir} sx={{ textAlign: align }}>
             {ans.bool ? "Yes" : "No"}
           </Typography>
         );
       return (
-        <Typography variant="body2" component="span">
+        <Typography variant="body2" component="span" dir={dir} sx={{ textAlign: align }}>
           N/A
         </Typography>
       );
   }
 }
 
-/* ------------ Response Card ------------ */
-function ResponseCard({ resp, t, dir, formDetails }) {
+function ResponseCard({ resp, t, dir, formDetails, align }) {
   const name = resp.attendee?.name;
   const email = resp.attendee?.email;
   const company = resp.attendee?.company;
@@ -283,10 +288,15 @@ function ResponseCard({ resp, t, dir, formDetails }) {
   const statusChip = rec ? (
     <Chip
       size="small"
-      icon={rec.status === "responded" ? <VerifiedOutlinedIcon /> : undefined}
+      icon={rec.status === "responded" ? <ICONS.verified /> : undefined}
       label={(rec.status || t.statusUnknown || "UNKNOWN").toUpperCase()}
       color={rec.status === "responded" ? "success" : "default"}
       variant={rec.status === "responded" ? "filled" : "outlined"}
+      sx={
+        rec.status === "responded" && dir === "rtl"
+          ? { minWidth: 110, px: 2 }
+          : undefined
+      }
     />
   ) : null;
 
@@ -314,26 +324,22 @@ function ResponseCard({ resp, t, dir, formDetails }) {
     >
       <CardHeader
         avatar={
-          <Avatar sx={{ bgcolor: "primary.main" }}>
-            <PersonOutlineIcon />
+          <Avatar
+            sx={{
+              bgcolor: "primary.main",
+              ...(dir === "rtl"
+                ? { ml: 0.5, mr: 0 }
+                : { mr: 0.5, ml: 0 }),
+            }}
+          >
+            <ICONS.personOutline />
           </Avatar>
         }
         titleTypographyProps={{ fontWeight: 700 }}
-        subheaderTypographyProps={{ color: "text.secondary" }}
-        title={name || t.unknownName || "Unnamed respondent"}
-        subheader={
-          submittedAt ? (
-            <Stack direction="row" spacing={1} alignItems="center">
-              <EventOutlinedIcon fontSize="small" />
-              <Typography variant="caption">
-                {t.submittedAt}: {formatDateTimeWithLocale(submittedAt)}
-              </Typography>
-            </Stack>
-          ) : (
-            <Typography variant="caption" color="text.secondary">
-              {t.noSubmitTime || "Submission time not available"}
-            </Typography>
-          )
+        title={
+          <Typography dir={dir} variant="body1" fontWeight={700} sx={{ textAlign: align }}>
+            {name || t.unknownName || "Unnamed respondent"}
+          </Typography>
         }
         action={
           rec ? (
@@ -344,83 +350,115 @@ function ResponseCard({ resp, t, dir, formDetails }) {
         }
         sx={{
           pb: 0.5,
-          "& .MuiCardHeader-action": { alignSelf: "center", mr: 1 },
+          "& .MuiCardHeader-action": {
+            alignSelf: "center",
+            ...(dir === "rtl" ? { ml: 1, mr: 0 } : { mr: 1, ml: 0 }),
+          },
         }}
       />
 
       <CardContent sx={{ pt: 1.5 }}>
-        {/* Submitted details */}
-        <Typography variant="overline" sx={{ letterSpacing: 0.6 }}>
+        <Box sx={{ mb: 2 }}>
+          {submittedAt ? (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: dir === "rtl" ? 1 : 1 }}>
+              <ICONS.eventOutline fontSize="small" color="text.secondary" />
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                dir={dir}
+              >
+                {t.submittedAt}: {formatDateTimeWithLocale(submittedAt)}
+              </Typography>
+            </Box>
+          ) : (
+            <Typography variant="body2" color="text.secondary" dir={dir}>
+              {t.noSubmitTime || "Submission time not available"}
+            </Typography>
+          )}
+        </Box>
+
+        <Typography variant="overline" sx={{ letterSpacing: 0.6, textAlign: align }} dir={dir}>
           {t.submittedDetails || "Submitted Details"}
         </Typography>
         <List dense sx={{ py: 0 }}>
           <FieldRow
-            icon={<PersonOutlineIcon fontSize="small" />}
+            icon={<ICONS.personOutline fontSize="small" />}
             primary={t.name || "Name"}
             secondary={name}
+            dir={dir}
+            align={align}
           />
           <FieldRow
-            icon={<EmailOutlinedIcon fontSize="small" />}
+            icon={<ICONS.emailOutline fontSize="small" />}
             primary={t.email || "Email"}
             secondary={email}
+            dir={dir}
+            align={align}
           />
           <FieldRow
-            icon={<ApartmentOutlinedIcon fontSize="small" />}
+            icon={<ICONS.apartment fontSize="small" />}
             primary={t.company || "Company"}
             secondary={company}
+            dir={dir}
+            align={align}
           />
         </List>
 
-        {/* Original recipient (if any) */}
         {rec && (
           <Fragment>
             <Divider sx={{ my: 1.5 }} />
-            <Typography variant="overline" sx={{ letterSpacing: 0.6 }}>
+            <Typography variant="overline" sx={{ letterSpacing: 0.6, textAlign: align }} dir={dir}>
               {t.originalParticipantDetails || "Original Participant Details"}
             </Typography>
             <List dense sx={{ py: 0 }}>
               <FieldRow
-                icon={<PersonOutlineIcon fontSize="small" />}
+                icon={<ICONS.personOutline fontSize="small" />}
                 primary={t.fullName || "Full Name"}
                 secondary={rec.fullName}
+                dir={dir}
+                align={align}
               />
               <FieldRow
-                icon={<EmailOutlinedIcon fontSize="small" />}
+                icon={<ICONS.emailOutline fontSize="small" />}
                 primary={t.email || "Email"}
                 secondary={rec.email}
+                dir={dir}
+                align={align}
               />
               <FieldRow
-                icon={<ApartmentOutlinedIcon fontSize="small" />}
+                icon={<ICONS.apartment fontSize="small" />}
                 primary={t.company || "Company"}
                 secondary={rec.company}
+                dir={dir}
+                align={align}
               />
               <FieldRow
-                icon={<VerifiedOutlinedIcon fontSize="small" />}
+                icon={<ICONS.verified fontSize="small" />}
                 primary={t.status || "Status"}
                 secondary={rec.status}
+                dir={dir}
+                align={align}
               />
               <FieldRow
-                icon={<VpnKeyOutlinedIcon fontSize="small" />}
+                icon={<ICONS.vpnKey fontSize="small" />}
                 primary={t.token || "Token"}
                 secondary={rec.token}
+                dir={dir}
+                align={align}
               />
               <FieldRow
-                icon={<QueryBuilderOutlinedIcon fontSize="small" />}
+                icon={<ICONS.timeOutline fontSize="small" />}
                 primary={t.createdAt || "Created At"}
-                secondary={
-                  rec.createdAt
-                    ? formatDateTimeWithLocale(rec.createdAt)
-                    : "N/A"
-                }
+                secondary={rec.createdAt ? formatDateTimeWithLocale(rec.createdAt) : "N/A"}
+                dir={dir}
+                align={align}
               />
               <FieldRow
-                icon={<QueryBuilderOutlinedIcon fontSize="small" />}
+                icon={<ICONS.timeOutline fontSize="small" />}
                 primary={t.respondedAt || "Responded At"}
-                secondary={
-                  rec.respondedAt
-                    ? formatDateTimeWithLocale(rec.respondedAt)
-                    : "N/A"
-                }
+                secondary={rec.respondedAt ? formatDateTimeWithLocale(rec.respondedAt) : "N/A"}
+                dir={dir}
+                align={align}
               />
             </List>
           </Fragment>
@@ -429,7 +467,7 @@ function ResponseCard({ resp, t, dir, formDetails }) {
         <Divider sx={{ my: 1.5 }} />
 
         {/* Answers */}
-        <Typography variant="overline" sx={{ letterSpacing: 0.6 }}>
+        <Typography variant="overline" sx={{ letterSpacing: 0.6, textAlign: align }} dir={dir}>
           {t.answersTitle || "Answers"}
         </Typography>
 
@@ -445,8 +483,8 @@ function ResponseCard({ resp, t, dir, formDetails }) {
                 disableGutters
                 sx={{ px: 0, py: 0.75 }}
               >
-                <ListItemIcon sx={{ minWidth: 34, color: "text.secondary" }}>
-                  <AssignmentOutlinedIcon fontSize="small" />
+                <ListItemIcon sx={{ minWidth: 34, color: "text.secondary", ...(dir === "rtl" ? { ml: 1, mr: 0 } : { mr: 1, ml: 0 }) }}>
+                  <ICONS.assignmentOutline fontSize="small" />
                 </ListItemIcon>
                 <ListItemText
                   disableTypography
@@ -455,13 +493,15 @@ function ResponseCard({ resp, t, dir, formDetails }) {
                       variant="body2"
                       color="text.secondary"
                       component="div"
+                      dir={dir}
+                      sx={{ textAlign: align }}
                     >
                       {q.label || "Question"}
                     </Typography>
                   }
                   secondary={
-                    <Box component="div" sx={{ mt: 0.25 }}>
-                      {renderAnswer({ q, ans })}
+                    <Box component="div" sx={{ mt: 0.25, textAlign: align, width: '100%' }}>
+                      {renderAnswer({ q, ans, dir, align })}
                     </Box>
                   }
                 />
@@ -478,15 +518,7 @@ function ResponseCard({ resp, t, dir, formDetails }) {
 export default function ViewSurveyResponses() {
   const { slug } = useParams();
 
-  const [formDetails, setFormDetails] = useState(null);
-  const [responses, setResponses] = useState([]);
-  const [totalResponses, setTotalResponses] = useState(0);
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(12);
-  const [loading, setLoading] = useState(true);
-  const [exportLoading, setExportLoading] = useState(false);
-
-  const { dir, t } = useI18nLayout({
+  const { dir, t, align } = useI18nLayout({
     en: {
       title: "Survey Responses",
       description: "View all responses for this survey form.",
@@ -544,6 +576,17 @@ export default function ViewSurveyResponses() {
       answersTitle: "الإجابات",
     },
   });
+
+
+  const [formDetails, setFormDetails] = useState(null);
+  const [responses, setResponses] = useState([]);
+  const [totalResponses, setTotalResponses] = useState(0);
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(12);
+  const [loading, setLoading] = useState(true);
+  const [exportLoading, setExportLoading] = useState(false);
+
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -673,6 +716,7 @@ export default function ViewSurveyResponses() {
                   t={t}
                   dir={dir}
                   formDetails={formDetails}
+                  align={align}
                 />
               </Grid>
             ))}
