@@ -2,11 +2,9 @@
 
 import { Container, Grid, Typography, Divider, Stack } from "@mui/material";
 import DashboardCard from "@/components/DashboardCard";
-import DescriptionIcon from "@mui/icons-material/Description";   // Form
-import GroupIcon from "@mui/icons-material/Group";               // Recipients
-import AssessmentIcon from "@mui/icons-material/Assessment";     // Responses
 import BreadcrumbsNav from "@/components/BreadcrumbsNav";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import ICONS from "@/utils/iconUtil";
 
 const translations = {
   en: {
@@ -64,7 +62,7 @@ export default function SurveyGuruDashboard() {
             title={t.formTitle}
             description={t.formDesc}
             buttonLabel={t.formBtn}
-            icon={<DescriptionIcon />}
+            icon={<ICONS.description />}
             color="#1976d2"
             route="/cms/modules/surveyguru/surveys/forms"
           />
@@ -75,7 +73,7 @@ export default function SurveyGuruDashboard() {
             title={t.recTitle}
             description={t.recDesc}
             buttonLabel={t.recBtn}
-            icon={<GroupIcon />}
+            icon={<ICONS.group />}
             color="#8e24aa"
             route="/cms/modules/surveyguru/surveys/recipients"
           />
