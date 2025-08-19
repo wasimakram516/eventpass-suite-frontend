@@ -31,7 +31,6 @@ import {
   Star as StarIcon,
   StarBorder as StarBorderIcon,
   Language as LanguageIcon,
-  Language,
 } from "@mui/icons-material";
 
 // Social Media Icons
@@ -144,6 +143,9 @@ import {
   CameraAlt as CameraIcon,
   Refresh as RefreshIcon,
   Send as SendIcon,
+  Help as HelpIcon,
+  Group as GroupIcon,
+  Description as DescriptionIcon,
 } from "@mui/icons-material";
 
 const ICONS = {
@@ -275,6 +277,9 @@ const ICONS = {
   camera: CameraIcon,
   refresh: RefreshIcon,
   send: SendIcon,
+  help: HelpIcon,
+  group: GroupIcon,
+  description: DescriptionIcon,
 };
 
 export default ICONS;
