@@ -53,6 +53,9 @@ import {
 } from "@/services/surveyguru/surveyFormService";
 import slugify from "@/utils/slugify";
 
+import { useTheme } from '@mui/material/styles';
+import useMediaQuery from '@mui/material/useMediaQuery';
+
 const translations = {
   en: {
     title: "Manage Survey Forms",
@@ -328,7 +331,6 @@ export default function SurveyFormsManagePage() {
 
   useEffect(() => {
     fetchBusinesses();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -340,12 +342,10 @@ export default function SurveyFormsManagePage() {
       setForms([]);
     }
     setEventFilterId("");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedBizSlug]);
 
   useEffect(() => {
     if (selectedBusiness?._id) fetchForms();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventFilterId]);
 
   const openCreate = () => {
@@ -379,8 +379,8 @@ export default function SurveyFormsManagePage() {
         q.type === "rating"
           ? q.scale || { min: 1, max: 5, step: 1 }
           : q.type === "nps"
-          ? q.scale || { min: 0, max: 10, step: 1 }
-          : { min: 1, max: 5, step: 1 },
+            ? q.scale || { min: 0, max: 10, step: 1 }
+            : { min: 1, max: 5, step: 1 },
     }));
     setQuestions(qs);
 
@@ -395,13 +395,6 @@ export default function SurveyFormsManagePage() {
 
     setOpen(true);
   };
-
-  const insertQuestionAfter = (idx) =>
-    setQuestions((prev) => {
-      const next = [...prev];
-      next.splice(idx + 1, 0, emptyQuestion());
-      return next;
-    });
 
   const duplicateQuestion = (idx) =>
     setQuestions((prev) => {
@@ -434,9 +427,9 @@ export default function SurveyFormsManagePage() {
       p.map((q, i) =>
         i === qi
           ? {
-              ...q,
-              options: [...(q.options || []), { label: "", imageUrl: null }],
-            }
+            ...q,
+            options: [...(q.options || []), { label: "", imageUrl: null }],
+          }
           : q
       )
     );
@@ -525,17 +518,17 @@ export default function SurveyFormsManagePage() {
       scale:
         q.type === "rating"
           ? {
-              min: Number(q.scale?.min ?? 1),
-              max: Number(q.scale?.max ?? 5),
-              step: Number(q.scale?.step ?? 1),
-            }
+            min: Number(q.scale?.min ?? 1),
+            max: Number(q.scale?.max ?? 5),
+            step: Number(q.scale?.step ?? 1),
+          }
           : q.type === "nps"
-          ? {
+            ? {
               min: Number(q.scale?.min ?? 0),
               max: Number(q.scale?.max ?? 10),
               step: Number(q.scale?.step ?? 1),
             }
-          : { min: 1, max: 5, step: 1 },
+            : { min: 1, max: 5, step: 1 },
     }));
 
     fd.append("questions", JSON.stringify(qs));
@@ -578,6 +571,9 @@ export default function SurveyFormsManagePage() {
     setConfirmDelete({ open: false, id: null });
   };
 
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.only('xs'));
+
   return (
     <Box dir={dir} sx={{ minHeight: "100vh" }}>
       <BusinessDrawer
@@ -616,20 +612,32 @@ export default function SurveyFormsManagePage() {
 
           <Stack
             direction={{ xs: "column", sm: "row" }}
-            spacing={1}
-            sx={{ alignItems: "stretch", width: { xs: "100%", sm: "auto" } }}
+            spacing={dir === 'rtl' ? 1 : 1}
+            sx={{ width: { xs: '100%', sm: 'auto' } }}
           >
             <Button
+              fullWidth={isMobile}
+              sx={isMobile ? { width: '100%', ...getStartIconSpacing(dir) } : { ...getStartIconSpacing(dir) }}
               variant="outlined"
               startIcon={<ICONS.business fontSize="small" />}
               onClick={() => setBizDrawerOpen(true)}
-              sx={getStartIconSpacing(dir)}
             >
               {t.selectBusiness}
             </Button>
 
             {selectedBusiness?._id && (
-              <FormControl size="large" sx={{ minWidth: 220, maxWidth: {xs:"100%", sm:300} }}>
+              <FormControl
+                fullWidth={isMobile}
+                size="large"
+                sx={{
+                  minWidth: 220,
+                  maxWidth: { xs: '100%', sm: 300 },
+                  ...(isMobile && { width: '100%' }),
+                  '& .MuiInputBase-root': {
+                    ...(dir === 'rtl' && { mr: 1 }),
+                  },
+                }}
+              >
                 <InputLabel>{t.selectEventFilter}</InputLabel>
                 <Select
                   label={t.selectEventFilter}
@@ -648,11 +656,12 @@ export default function SurveyFormsManagePage() {
 
             {selectedBusiness && (
               <Button
+                fullWidth={isMobile}
+                sx={isMobile ? { width: '100%', ...getStartIconSpacing(dir) } : { ...getStartIconSpacing(dir) }}
                 variant="contained"
                 startIcon={<ICONS.add fontSize="small" />}
                 onClick={openCreate}
                 disabled={!selectedBusiness?._id}
-                sx={getStartIconSpacing(dir)}
               >
                 {t.newForm}
               </Button>
@@ -684,12 +693,7 @@ export default function SurveyFormsManagePage() {
                   }}
                 >
                   <CardContent sx={{ flexGrow: 1 }}>
-                    <Stack
-                      direction="row"
-                      spacing={1}
-                      alignItems="center"
-                      mb={1}
-                    >
+                    <Stack direction="row" spacing={dir === 'rtl' ? 1.5 : 1} alignItems="center" mb={1}>
                       <Avatar
                         sx={{
                           bgcolor: f.isActive ? "success.main" : "grey.500",
@@ -697,6 +701,7 @@ export default function SurveyFormsManagePage() {
                       >
                         <ICONS.form fontSize="small" />
                       </Avatar>
+                      <Box sx={dir === 'rtl' ? { mr: 1.5 } : { ml: 1 }} />
                       <Stack flex={1} overflow="hidden">
                         <Typography variant="subtitle1" fontWeight={600} noWrap>
                           {f.title}
@@ -723,15 +728,26 @@ export default function SurveyFormsManagePage() {
                     >
                       {f.description || "—"}
                     </Typography>
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{ mt: 1, display: "block" }}
-                    >
-                      {f.questions?.length || 0} question(s) •{" "}
-                      {f.recipientCount ?? 0} recipient(s) •{" "}
-                      {f.responseCount ?? 0} response(s)
-                    </Typography>
+                    <Stack spacing={0.5} sx={{ mt: 1 }}>
+                      <Stack direction="row" alignItems="center">
+                        <ICONS.help fontSize="inherit" />
+                        <Typography variant="caption" color="text.secondary" sx={dir === 'rtl' ? { mr: 1 } : { ml: 1 }}>
+                          {f.questions?.length || 0} question(s)
+                        </Typography>
+                      </Stack>
+                      <Stack direction="row" alignItems="center">
+                        <ICONS.people fontSize="inherit" />
+                        <Typography variant="caption" color="text.secondary" sx={dir === 'rtl' ? { mr: 1 } : { ml: 1 }}>
+                          {f.recipientCount ?? 0} recipient(s)
+                        </Typography>
+                      </Stack>
+                      <Stack direction="row" alignItems="center">
+                        <ICONS.results fontSize="inherit" />
+                        <Typography variant="caption" color="text.secondary" sx={dir === 'rtl' ? { mr: 1 } : { ml: 1 }}>
+                          {f.responseCount ?? 0} response(s)
+                        </Typography>
+                      </Stack>
+                    </Stack>
                   </CardContent>
 
                   <CardActions sx={{ justifyContent: "center" }}>
@@ -875,7 +891,7 @@ export default function SurveyFormsManagePage() {
               {questions.map((q, qi) => (
                 <Card key={qi} variant="outlined" sx={{ p: 2 }}>
                   <Stack spacing={1}>
-                    <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                    <Stack direction={{ xs: "column", sm: "row" }} spacing={{ xs: 0, sm: 2 }}>
                       <TextField
                         label={t.qText}
                         value={q.label}
@@ -895,8 +911,8 @@ export default function SurveyFormsManagePage() {
                             type === "rating"
                               ? { min: 1, max: 5, step: 1 }
                               : type === "nps"
-                              ? { min: 0, max: 10, step: 1 }
-                              : { min: 1, max: 5, step: 1 };
+                                ? { min: 0, max: 10, step: 1 }
+                                : { min: 1, max: 5, step: 1 };
                           const resetOptions =
                             type === "multi"
                               ? q.options
@@ -919,8 +935,9 @@ export default function SurveyFormsManagePage() {
 
                     <Stack
                       direction={{ xs: "column", sm: "row" }}
-                      spacing={2}
+                      spacing={{ xs: 0, sm: 2 }}
                       alignItems={{ sm: "center" }}
+                      sx={{ mt: { xs: 4, sm: 0 } }}
                     >
                       <TextField
                         label={t.qHelp}
@@ -968,7 +985,7 @@ export default function SurveyFormsManagePage() {
                           </Typography>
                         )}
 
-                        <Stack spacing={1}>
+                        <Stack spacing={1} sx={{ mb: 5 }}>
                           {(q.options || []).map((opt, oi) => {
                             const key = `${qi}:${oi}`;
                             const preview = optionPreviews[key] || null;
@@ -1026,9 +1043,8 @@ export default function SurveyFormsManagePage() {
                                       variant="outlined"
                                       size="small"
                                       component="span"
-                                      startIcon={
-                                        <ICONS.upload fontSize="small" />
-                                      }
+                                      startIcon={<ICONS.upload fontSize="small" />}
+                                      sx={{ mt: 1.5 }} // Added margin top to align with other fields
                                     >
                                       {t.upload}
                                     </Button>
@@ -1064,12 +1080,17 @@ export default function SurveyFormsManagePage() {
                       </>
                     )}
 
+                    {/* Add extra spacing for rating/NPS questions */}
+                    {(q.type === "rating" || q.type === "nps") && (
+                      <Box sx={{ height: 10 }} />
+                    )}
+
                     {(q.type === "rating" || q.type === "nps") && (
                       <>
                         <Stack
                           direction={{ xs: "column", sm: "row" }}
-                          spacing={2}
-                          sx={{ mt: 1 }}
+                          spacing={{ xs: 1, sm: 2 }}
+                          sx={{ mt: 3, mb: 2 }}
                         >
                           <TextField
                             label={t.min}
@@ -1169,8 +1190,15 @@ export default function SurveyFormsManagePage() {
           </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpen(false)}>{t.cancel}</Button>
-          <Button variant="contained" onClick={handleSave}>
+          <Button
+            onClick={() => setOpen(false)}
+            variant="outlined"
+            startIcon={<ICONS.cancel fontSize="small" />}
+            sx={getStartIconSpacing(dir)}
+          >
+            {t.cancel}
+          </Button>
+          <Button variant="contained" onClick={handleSave} startIcon={<ICONS.save fontSize="small" />} sx={getStartIconSpacing(dir)}>
             {editing ? t.save : t.create}
           </Button>
         </DialogActions>
