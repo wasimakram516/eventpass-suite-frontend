@@ -164,6 +164,9 @@ export default function RecipientsManagePage() {
   const [actionsOpen, setActionsOpen] = useState(false);
 
   const [loading, setLoading] = useState(false);
+  const [syncLoading, setSyncLoading] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
+  const [clearLoading, setClearLoading] = useState(false);
   const [rows, setRows] = useState([]);
 
   const [confirmDelete, setConfirmDelete] = useState({ open: false, id: null });
@@ -232,6 +235,7 @@ export default function RecipientsManagePage() {
 
   const handleSync = async () => {
     if (!formId) return;
+    setSyncLoading(true);
     const r = await syncRecipientsForEvent(formId);
     if (!r?.error) {
       const qTrim = (q || "").trim();
@@ -242,17 +246,22 @@ export default function RecipientsManagePage() {
       });
       setRows(refreshed || []);
     }
+    setSyncLoading(false);
   };
 
-  const handleExport = () => {
+  const handleExport = async () => {
     if (!formId) return;
-    exportRecipientsCsv({ formId });
+    setExportLoading(true);
+    await exportRecipientsCsv({ formId });
+    setExportLoading(false);
   };
 
   const handleClearAll = async () => {
     if (!formId) return setConfirmClear(false);
+    setClearLoading(true);
     const res = await clearRecipientsForForm(formId);
     if (!res?.error) setRows([]);
+    setClearLoading(false);
     setConfirmClear(false);
   };
 
@@ -284,8 +293,6 @@ export default function RecipientsManagePage() {
     setFiltersOpen(true);
   };
 
-  // REPLACE your current applyFilters with this
-
   const applyFilters = async () => {
     const nextEventId = mEventId || "";
     const nextFormId = mFormId || "";
@@ -315,9 +322,8 @@ export default function RecipientsManagePage() {
   const onCopySurveyLink = (r) => {
     if (!selectedForm?.slug || !r?.token) return;
     const base = typeof window !== "undefined" ? window.location.origin : "";
-    const url = `${base}/surveyguru/${
-      selectedForm.slug
-    }?token=${encodeURIComponent(r.token)}`;
+    const url = `${base}/surveyguru/${selectedForm.slug
+      }?token=${encodeURIComponent(r.token)}`;
     navigator.clipboard.writeText(url);
     showMessage(t.copied, "info");
   };
@@ -326,34 +332,34 @@ export default function RecipientsManagePage() {
     <Card variant="outlined" sx={{ borderRadius: 2 }}>
       <CardContent sx={{ pb: 1.5 }}>
         <Stack
-          direction="row"
-          alignItems="center"
+          direction={dir === 'rtl' ? 'row-reverse' : 'row'}
           justifyContent="space-between"
-          spacing={2}
-          flexWrap="wrap"
-          rowGap={1}
+          alignItems="center"
+          width="100%"
         >
-          <Stack spacing={0.5}>
-            <Typography variant="subtitle1" fontWeight={600}>
-              {r.fullName || "—"}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {t.email}: {r.email}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {t.company}: {r.company || "—"}
-            </Typography>
-          </Stack>
+          <Typography variant="subtitle1" fontWeight={600}>
+            {r.fullName || "—"}
+          </Typography>
           <Chip
             size="small"
+            icon={<ICONS.verified />}
             color={r.status === "responded" ? "success" : "default"}
             label={r.status || "queued"}
+            sx={{
+              minWidth: dir === 'rtl' ? '120px' : 'auto', // Wider in Arabic
+              ml: 2
+            }}
           />
         </Stack>
+        <Typography variant="body2" color="text.secondary">
+          {t.email}: {r.email}
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          {t.company}: {r.company || "—"}
+        </Typography>
       </CardContent>
 
       <CardActions sx={{ justifyContent: "flex-end", pt: 0 }}>
-        {/* Copy survey link for this recipient */}
         <Tooltip title={t.copyLink}>
           <IconButton
             onClick={() => onCopySurveyLink(r)}
@@ -364,7 +370,6 @@ export default function RecipientsManagePage() {
           </IconButton>
         </Tooltip>
 
-        {/* Delete recipient */}
         <Tooltip title={t.delete}>
           <IconButton
             color="error"
@@ -393,7 +398,6 @@ export default function RecipientsManagePage() {
       <Container maxWidth="lg">
         <BreadcrumbsNav />
 
-        {/* Compact header */}
         <Box
           sx={{
             display: "flex",
@@ -411,35 +415,38 @@ export default function RecipientsManagePage() {
             <Typography variant="body2" color="text.secondary" mt={0.5}>
               {t.subtitle}
             </Typography>
-            {/* Selections summary */}
+            {/* Selections summary (chips) */}
             <Stack
               direction="row"
-              spacing={1}
+              spacing={dir === "rtl" ? 2 : 1.5}
               mt={1}
               flexWrap="wrap"
-              rowGap={1}
+              rowGap={1.5}
             >
               {selectedBusiness && (
                 <Chip
                   size="small"
                   icon={<ICONS.business fontSize="small" />}
-                  label={`${t.selections}: ${
-                    selectedBusiness?.name || selectedBusiness?.slug
-                  }`}
+                  label={`${t.selections}: ${selectedBusiness?.name || selectedBusiness?.slug}`}
+                  sx={{ minWidth: 140, px: 1.5 }}
                 />
               )}
               {selectedEvent && (
-                <Chip
-                  size="small"
-                  icon={<ICONS.event fontSize="small" />}
-                  label={selectedEvent?.name}
-                />
+                <Box sx={{ display: "inline-flex", alignItems: "center" }}>
+                  <Chip
+                    size="small"
+                    icon={<ICONS.event fontSize="small" />}
+                    label={selectedEvent?.name}
+                    sx={{ minWidth: 120, px: 1.5, ...(dir === "rtl" ? { mr: 2 } : {}), }}
+                  />
+                </Box>
               )}
               {selectedForm && (
                 <Chip
                   size="small"
                   icon={<ICONS.form fontSize="small" />}
                   label={selectedForm?.title}
+                  sx={{ minWidth: 120, px: 1.5 }}
                 />
               )}
             </Stack>
@@ -449,7 +456,11 @@ export default function RecipientsManagePage() {
           <Stack
             direction={{ xs: "column", sm: "row" }}
             spacing={1}
-            sx={{ alignItems: "stretch", width: { xs: "100%", sm: "auto" } }}
+            sx={{
+              alignItems: "stretch",
+              width: { xs: "100%", sm: "auto" },
+              gap: dir === "rtl" ? 2 : 1
+            }}
           >
             <Button
               variant="outlined"
@@ -636,8 +647,14 @@ export default function RecipientsManagePage() {
           <Button
             fullWidth
             variant="contained"
-            startIcon={<ICONS.refresh fontSize="small" />}
-            disabled={!formId || !eventId}
+            startIcon={
+              syncLoading ? (
+                <CircularProgress size={20} color="inherit" />
+              ) : (
+                <ICONS.refresh fontSize="small" />
+              )
+            }
+            disabled={!formId || !eventId || syncLoading}
             onClick={handleSync}
             sx={getStartIconSpacing(dir)}
           >
@@ -647,8 +664,14 @@ export default function RecipientsManagePage() {
           <Button
             fullWidth
             variant="outlined"
-            startIcon={<ICONS.download fontSize="small" />}
-            disabled={!formId}
+            startIcon={
+              exportLoading ? (
+                <CircularProgress size={20} color="inherit" />
+              ) : (
+                <ICONS.download fontSize="small" />
+              )
+            }
+            disabled={!formId || exportLoading}
             onClick={handleExport}
             sx={getStartIconSpacing(dir)}
           >
@@ -659,8 +682,14 @@ export default function RecipientsManagePage() {
             fullWidth
             color="error"
             variant="outlined"
-            startIcon={<ICONS.delete fontSize="small" />}
-            disabled={!formId}
+            startIcon={
+              clearLoading ? (
+                <CircularProgress size={20} color="inherit" />
+              ) : (
+                <ICONS.delete fontSize="small" />
+              )
+            }
+            disabled={!formId || clearLoading}
             onClick={() => {
               setActionsOpen(false);
               setConfirmClear(true);
