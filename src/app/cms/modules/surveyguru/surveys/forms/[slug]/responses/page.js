@@ -7,7 +7,6 @@ import {
   Grid,
   Card,
   CardContent,
-  CardHeader,
   CircularProgress,
   Button,
   Pagination,
@@ -122,7 +121,7 @@ function renderAnswer({ q, ans, dir, align }) {
       );
 
     return (
-      <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap>
+      <Stack direction="row" spacing={0.75} flexWrap="wrap" useFlexGap dir={dir}>
         {ids.map((id) => {
           const opt = findOpt(id);
           const label = opt?.label || "—";
@@ -170,9 +169,9 @@ function renderAnswer({ q, ans, dir, align }) {
     const img = opt?.imageUrl;
 
     return (
-      <Stack direction="row" alignItems="center" spacing={1}>
+      <Stack direction="row" alignItems="center" spacing={1} dir={dir}>
         {img && <OptionThumb url={img} label={label} size={20} />}
-        <Typography variant="body2" component="span" dir={dir} sx={{ textAlign: align }}>
+        <Typography variant="body2" component="span" sx={{ textAlign: align }}>
           {label}
         </Typography>
       </Stack>
@@ -222,7 +221,7 @@ function renderAnswer({ q, ans, dir, align }) {
             )
           )}
         </Stack>
-        <Typography variant="body2" component="span" dir={dir} sx={{ textAlign: align, flexGrow: 1 }}>
+        <Typography variant="body2" component="span" sx={{ textAlign: align, flexGrow: 1 }}>
           {n} / {max}
         </Typography>
       </Stack>
@@ -285,6 +284,11 @@ function ResponseCard({ resp, t, dir, formDetails, align }) {
 
   const rec = resp.recipientId;
 
+  const chipStyles = {
+    minWidth: dir === 'rtl' ? '140px' : 'auto',
+    px: dir === 'rtl' ? 1.5 : 1
+  };
+
   const statusChip = rec ? (
     <Chip
       size="small"
@@ -292,14 +296,9 @@ function ResponseCard({ resp, t, dir, formDetails, align }) {
       label={(rec.status || t.statusUnknown || "UNKNOWN").toUpperCase()}
       color={rec.status === "responded" ? "success" : "default"}
       variant={rec.status === "responded" ? "filled" : "outlined"}
-      sx={
-        rec.status === "responded" && dir === "rtl"
-          ? { minWidth: 110, px: 2 }
-          : undefined
-      }
+      sx={chipStyles}
     />
   ) : null;
-
   const questions = formDetails?.questions || [];
 
   return (
@@ -321,41 +320,33 @@ function ResponseCard({ resp, t, dir, formDetails, align }) {
           boxShadow: 6,
         },
       }}
+      dir={dir}
     >
-      <CardHeader
-        avatar={
-          <Avatar
-            sx={{
-              bgcolor: "primary.main",
-              ...(dir === "rtl"
-                ? { ml: 0.5, mr: 0 }
-                : { mr: 0.5, ml: 0 }),
-            }}
-          >
+      <Box sx={{ p: 2, pb: 0.5 }}>
+        <Box sx={{
+          display: 'flex',
+          alignItems: 'center',
+          flexDirection: dir === "rtl" ? 'row-reverse' : 'row',
+          gap: 2,
+          flexDirection: dir === "rtl" ? 'row-reverse' : 'row'
+        }}>
+          <Avatar sx={{ bgcolor: "primary.main" }}>
             <ICONS.personOutline />
           </Avatar>
-        }
-        titleTypographyProps={{ fontWeight: 700 }}
-        title={
-          <Typography dir={dir} variant="body1" fontWeight={700} sx={{ textAlign: align }}>
-            {name || t.unknownName || "Unnamed respondent"}
-          </Typography>
-        }
-        action={
-          rec ? (
+          <Box sx={{
+            flex: 1,
+          }}>
+            <Typography variant="body1" fontWeight={700} sx={{ textAlign: align }}>
+              {name || t.unknownName || "Unnamed respondent"}
+            </Typography>
+          </Box>
+          {rec && (
             <Tooltip title={t.originalParticipant || "Original participant"}>
               {statusChip}
             </Tooltip>
-          ) : null
-        }
-        sx={{
-          pb: 0.5,
-          "& .MuiCardHeader-action": {
-            alignSelf: "center",
-            ...(dir === "rtl" ? { ml: 1, mr: 0 } : { mr: 1, ml: 0 }),
-          },
-        }}
-      />
+          )}
+        </Box>
+      </Box>
 
       <CardContent sx={{ pt: 1.5 }}>
         <Box sx={{ mb: 2 }}>
@@ -365,19 +356,18 @@ function ResponseCard({ resp, t, dir, formDetails, align }) {
               <Typography
                 variant="caption"
                 color="text.secondary"
-                dir={dir}
               >
                 {t.submittedAt}: {formatDateTimeWithLocale(submittedAt)}
               </Typography>
             </Box>
           ) : (
-            <Typography variant="body2" color="text.secondary" dir={dir}>
+            <Typography variant="body2" color="text.secondary" >
               {t.noSubmitTime || "Submission time not available"}
             </Typography>
           )}
         </Box>
 
-        <Typography variant="overline" sx={{ letterSpacing: 0.6, textAlign: align }} dir={dir}>
+        <Typography variant="overline" sx={{ letterSpacing: 0.6, textAlign: align }} >
           {t.submittedDetails || "Submitted Details"}
         </Typography>
         <List dense sx={{ py: 0 }}>
@@ -385,21 +375,18 @@ function ResponseCard({ resp, t, dir, formDetails, align }) {
             icon={<ICONS.personOutline fontSize="small" />}
             primary={t.name || "Name"}
             secondary={name}
-            dir={dir}
             align={align}
           />
           <FieldRow
             icon={<ICONS.emailOutline fontSize="small" />}
             primary={t.email || "Email"}
             secondary={email}
-            dir={dir}
             align={align}
           />
           <FieldRow
             icon={<ICONS.apartment fontSize="small" />}
             primary={t.company || "Company"}
             secondary={company}
-            dir={dir}
             align={align}
           />
         </List>
@@ -407,7 +394,7 @@ function ResponseCard({ resp, t, dir, formDetails, align }) {
         {rec && (
           <Fragment>
             <Divider sx={{ my: 1.5 }} />
-            <Typography variant="overline" sx={{ letterSpacing: 0.6, textAlign: align }} dir={dir}>
+            <Typography variant="overline" sx={{ letterSpacing: 0.6, textAlign: align }}>
               {t.originalParticipantDetails || "Original Participant Details"}
             </Typography>
             <List dense sx={{ py: 0 }}>
@@ -415,49 +402,42 @@ function ResponseCard({ resp, t, dir, formDetails, align }) {
                 icon={<ICONS.personOutline fontSize="small" />}
                 primary={t.fullName || "Full Name"}
                 secondary={rec.fullName}
-                dir={dir}
                 align={align}
               />
               <FieldRow
                 icon={<ICONS.emailOutline fontSize="small" />}
                 primary={t.email || "Email"}
                 secondary={rec.email}
-                dir={dir}
                 align={align}
               />
               <FieldRow
                 icon={<ICONS.apartment fontSize="small" />}
                 primary={t.company || "Company"}
                 secondary={rec.company}
-                dir={dir}
                 align={align}
               />
               <FieldRow
                 icon={<ICONS.verified fontSize="small" />}
                 primary={t.status || "Status"}
                 secondary={rec.status}
-                dir={dir}
                 align={align}
               />
               <FieldRow
                 icon={<ICONS.vpnKey fontSize="small" />}
                 primary={t.token || "Token"}
                 secondary={rec.token}
-                dir={dir}
                 align={align}
               />
               <FieldRow
                 icon={<ICONS.timeOutline fontSize="small" />}
                 primary={t.createdAt || "Created At"}
                 secondary={rec.createdAt ? formatDateTimeWithLocale(rec.createdAt) : "N/A"}
-                dir={dir}
                 align={align}
               />
               <FieldRow
                 icon={<ICONS.timeOutline fontSize="small" />}
                 primary={t.respondedAt || "Responded At"}
                 secondary={rec.respondedAt ? formatDateTimeWithLocale(rec.respondedAt) : "N/A"}
-                dir={dir}
                 align={align}
               />
             </List>
@@ -467,7 +447,7 @@ function ResponseCard({ resp, t, dir, formDetails, align }) {
         <Divider sx={{ my: 1.5 }} />
 
         {/* Answers */}
-        <Typography variant="overline" sx={{ letterSpacing: 0.6, textAlign: align }} dir={dir}>
+        <Typography variant="overline" sx={{ letterSpacing: 0.6, textAlign: align }}>
           {t.answersTitle || "Answers"}
         </Typography>
 
@@ -493,7 +473,6 @@ function ResponseCard({ resp, t, dir, formDetails, align }) {
                       variant="body2"
                       color="text.secondary"
                       component="div"
-                      dir={dir}
                       sx={{ textAlign: align }}
                     >
                       {q.label || "Question"}
@@ -714,7 +693,6 @@ export default function ViewSurveyResponses() {
                 <ResponseCard
                   resp={resp}
                   t={t}
-                  dir={dir}
                   formDetails={formDetails}
                   align={align}
                 />
