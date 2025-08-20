@@ -84,7 +84,9 @@ export default function AskQuestionsPage() {
 
   const fetchQuestions = async () => {
     const data = await getQuestionsByBusiness(businessSlug);
+    if (!data.error) {
     setQuestions(data);
+    }
     setLoading(false);
   };
 
