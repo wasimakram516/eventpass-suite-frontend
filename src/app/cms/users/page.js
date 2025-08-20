@@ -349,7 +349,7 @@ export default function UsersPage() {
               <ICONS.edit />
             </IconButton>
           </Tooltip>
-          {!isSelf && currentUser?.role !== "staff" && (
+          {!isSelf && currentUser?.role !== "staff" && user.role !== "admin" && (
             <Tooltip title={t.delete}>
               <IconButton
                 color="error"
