@@ -349,19 +349,21 @@ export default function UsersPage() {
               <ICONS.edit />
             </IconButton>
           </Tooltip>
-          {!isSelf && currentUser?.role !== "staff" && user.role !== "admin" && (
-            <Tooltip title={t.delete}>
-              <IconButton
-                color="error"
-                onClick={() => {
-                  setSelectedUser(user);
-                  setDeleteConfirm(true);
-                }}
-              >
-                <ICONS.delete />
-              </IconButton>
-            </Tooltip>
-          )}
+          {!isSelf &&
+            currentUser?.role !== "staff" &&
+            user.role !== "admin" && (
+              <Tooltip title={t.delete}>
+                <IconButton
+                  color="error"
+                  onClick={() => {
+                    setSelectedUser(user);
+                    setDeleteConfirm(true);
+                  }}
+                >
+                  <ICONS.delete />
+                </IconButton>
+              </Tooltip>
+            )}
         </CardActions>
       </Card>
     </Box>
@@ -395,7 +397,10 @@ export default function UsersPage() {
         </Box>
         <Button
           variant="contained"
-          sx={getStartIconSpacing(dir)}
+          sx={{
+            ...getStartIconSpacing(dir),
+            width: { xs: "100%", sm: "auto" },
+          }}
           startIcon={<ICONS.add />}
           onClick={handleOpenCreate}
         >

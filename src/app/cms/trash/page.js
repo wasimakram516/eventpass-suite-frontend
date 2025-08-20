@@ -39,6 +39,7 @@ import ConfirmationDialog from "@/components/ConfirmationDialog";
 import { wrapTextBox } from "@/utils/wrapTextStyles";
 import { formatDateTimeWithLocale } from "@/utils/dateUtils";
 import FilterModal from "@/components/FilterModal";
+import getStartIconSpacing from "@/utils/getStartIconSpacing";
 
 const translations = {
   en: {
@@ -258,7 +259,7 @@ export default function TrashPage() {
         <Button
           variant="contained"
           startIcon={<ICONS.filter />}
-          sx={{ display: { xs: "flex", sm: "none" } }}
+          sx={{ display: { xs: "flex", sm: "none" }, ...getStartIconSpacing(dir) }}
           onClick={() => setFilterOpen(true)}
         >
           {t.filters}
