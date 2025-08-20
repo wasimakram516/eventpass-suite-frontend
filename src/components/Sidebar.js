@@ -29,6 +29,7 @@ export default function Sidebar() {
       staff: "Staff",
       users: "Users",
       settings: "Settings",
+      trash: "Recycle Bin",
       menu: "Menu",
       close: "Close",
     },
@@ -38,6 +39,7 @@ export default function Sidebar() {
       staff: "الموظفون",
       users: "المستخدمون",
       settings: "الإعدادات",
+      trash: "سلة المحذوفات",
       menu: "القائمة",
       close: "إغلاق",
     },
@@ -56,6 +58,7 @@ export default function Sidebar() {
       path: "/cms/users",
     },
     { label: t.settings, icon: ICONS.settings, path: "/cms/settings" },
+    { label: t.trash, icon: ICONS.delete, path: "/cms/trash" },
   ];
 
   const isActive = (path) =>
@@ -82,16 +85,15 @@ export default function Sidebar() {
             mb: 2,
           }}
         >
-          
-            <IconButton
-              size="large"
-              color="error"
-              sx={{ p: 1 }}
-              onClick={() => setMobileOpen(false)}
-              aria-label={t.close}
-            >
-              <ICONS.close />
-            </IconButton>
+          <IconButton
+            size="large"
+            color="error"
+            sx={{ p: 1 }}
+            onClick={() => setMobileOpen(false)}
+            aria-label={t.close}
+          >
+            <ICONS.close />
+          </IconButton>
         </Box>
       )}
 

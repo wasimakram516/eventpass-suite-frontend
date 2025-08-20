@@ -31,6 +31,7 @@ import {
   Star as StarIcon,
   StarBorder as StarBorderIcon,
   Language as LanguageIcon,
+  RestoreFromTrash as RestoreIcon,
 } from "@mui/icons-material";
 
 // Social Media Icons
@@ -183,6 +184,7 @@ const ICONS = {
   menu: MenuIcon,
   fullscreen: FullscreenIcon,
   Language: LanguageIcon,
+  restore: RestoreIcon,
 
   // Social Media
   facebook: FacebookIcon,
