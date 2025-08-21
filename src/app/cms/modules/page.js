@@ -46,36 +46,36 @@ export default function Modules() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-  let mounted = true;
+    let mounted = true;
 
-  (async () => {
-    try {
-      const role = user?.role || "staff";
-      const modulesPayload = await getModules(role); 
-      if (!mounted) return;
+    (async () => {
+      try {
+        const role = user?.role || "staff";
+        const modulesPayload = await getModules(role);
+        if (!mounted) return;
 
-      const serverModules = Array.isArray(modulesPayload)
-        ? modulesPayload
-        : [];        
+        const serverModules = Array.isArray(modulesPayload)
+          ? modulesPayload
+          : [];
 
-      // If role is 'business', apply allowlist; otherwise keep all
-      const permitted =
-        user?.role === "business" && Array.isArray(user?.modulePermissions)
-          ? serverModules.filter((m) => user.modulePermissions.includes(m.key))
-          : serverModules;
+        // If role is 'business', apply allowlist; otherwise keep all
+        const permitted =
+          user?.role === "business" && Array.isArray(user?.modulePermissions)
+            ? serverModules.filter((m) => user.modulePermissions.includes(m.key))
+            : serverModules;
 
-      setModules(permitted);
-    } catch {
-      setModules([]);
-    } finally {
-      if (mounted) setLoading(false);
-    }
-  })();
+        setModules(permitted);
+      } catch {
+        setModules([]);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
 
-  return () => {
-    mounted = false;
-  };
-}, [user]);
+    return () => {
+      mounted = false;
+    };
+  }, [user]);
 
   return (
     <Box dir={dir} sx={{ pb: 8, bgcolor: "background.default" }}>
@@ -97,7 +97,7 @@ export default function Modules() {
 
         {loading ? (
           <Grid container spacing={3} justifyContent="center">
-            <LoadingState/>
+            <LoadingState />
           </Grid>
         ) : modules?.length === 0 ? (
           <Stack spacing={2} alignItems="center" sx={{ mt: 5 }}>
@@ -135,7 +135,16 @@ export default function Modules() {
             )}
           </Stack>
         ) : (
-          <Grid container spacing={3} justifyContent="center">
+          <Grid
+            container
+            spacing={3}
+            justifyContent="center"
+            sx={{
+              '& > *': {
+                width: { xs: '100%', sm: 'auto' }
+              }
+            }}
+          >
             {modules.map((mod) => (
               <DashboardCard
                 key={mod.key}
