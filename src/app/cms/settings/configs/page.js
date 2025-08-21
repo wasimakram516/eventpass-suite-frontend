@@ -308,13 +308,21 @@ export default function GlobalConfigPage() {
             sx={{
               width: { xs: "100%", sm: "auto" },
               justifyContent: { xs: "space-between", sm: "flex-end" },
+              flexDirection: { xs: "column-reverse", sm: "row" },
+              '& > *': {
+                marginLeft: { xs: 0, sm: undefined },
+              },
+              gap: { xs: 2, sm: 2 },
             }}
           >
             <Button
               variant="outlined"
               color="error"
               startIcon={<DeleteIcon />}
-              sx={getStartIconSpacing(dir)}
+              sx={{
+                ...getStartIconSpacing(dir),
+                width: { xs: "100%", sm: "auto" },
+              }}
               onClick={() => setConfirmDeleteOpen(true)}
               fullWidth
             >
@@ -324,7 +332,11 @@ export default function GlobalConfigPage() {
             <Button
               variant="contained"
               startIcon={<EditIcon />}
-              sx={getStartIconSpacing(dir)}
+              sx={{
+                ...getStartIconSpacing(dir),
+                width: { xs: "100%", sm: "auto" },
+                ml: { xs: "0 !important", sm: undefined },
+              }}
               onClick={() => setOpenEdit(true)}
               fullWidth
             >
@@ -661,12 +673,22 @@ export default function GlobalConfigPage() {
             </Stack>
           </Stack>
         </DialogContent>
-        <DialogActions>
+        <DialogActions
+          sx={{
+            flexDirection: { xs: "column", sm: "row" },
+            gap: { xs: 1, sm: 0 },
+            px: { xs: 3, sm: 2 },
+          }}
+        >
           <Button
             disabled={loading}
             startIcon={<ICONS.cancel />}
             onClick={() => setOpenEdit(false)}
-            sx={getStartIconSpacing(dir)}
+            sx={{
+              ...getStartIconSpacing(dir),
+              width: { xs: "100%", sm: "auto" }
+            }}
+            variant="outlined"
           >
             {t.cancel}
           </Button>
@@ -681,15 +703,18 @@ export default function GlobalConfigPage() {
                 <ICONS.save />
               )
             }
-            sx={getStartIconSpacing(dir)}
+            sx={{
+              ...getStartIconSpacing(dir),
+              width: { xs: "100%", sm: "auto" }
+            }}
           >
             {loading
               ? config
                 ? t.saving
                 : t.creating
               : config
-              ? t.save
-              : t.create}
+                ? t.save
+                : t.create}
           </Button>
         </DialogActions>
       </Dialog>
