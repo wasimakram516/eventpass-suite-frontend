@@ -206,11 +206,11 @@ export default function UsersPage() {
   };
 
   const getRoleColor = (role) =>
-    ({
-      admin: "primary",
-      business: "success",
-      staff: "secondary",
-    }[role] || "default");
+  ({
+    admin: "primary",
+    business: "success",
+    staff: "secondary",
+  }[role] || "default");
 
   const handleOpenEdit = (user) => {
     setSelectedUser(user);
@@ -325,7 +325,12 @@ export default function UsersPage() {
         }}
       >
         <CardContent sx={{ p: 2, flexGrow: 1 }}>
-          <Stack direction="row" spacing={2} alignItems="flex-start">
+          <Stack
+            direction="row"
+            spacing={2}
+            alignItems="flex-start"
+            sx={{ gap: dir === 'rtl' ? '16px' : '' }}
+          >
             <Avatar sx={{ width: 56, height: 56 }}>{user.name?.[0]}</Avatar>
             <Box sx={{ flexGrow: 1, ...wrapTextBox }}>
               <Typography variant="h6">{user.name}</Typography>
@@ -399,7 +404,7 @@ export default function UsersPage() {
           variant="contained"
           sx={{
             ...getStartIconSpacing(dir),
-            width: { xs: "100%", sm: "auto" },
+            width: { xs: '100%', sm: 'auto' }
           }}
           startIcon={<ICONS.add />}
           onClick={handleOpenCreate}
@@ -475,15 +480,15 @@ export default function UsersPage() {
               InputProps={
                 field === "password"
                   ? {
-                      endAdornment: (
-                        <IconButton
-                          onClick={() => setShowPassword((prev) => !prev)}
-                          edge="end"
-                        >
-                          {showPassword ? <ICONS.hide /> : <ICONS.view />}
-                        </IconButton>
-                      ),
-                    }
+                    endAdornment: (
+                      <IconButton
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        edge="end"
+                      >
+                        {showPassword ? <ICONS.hide /> : <ICONS.view />}
+                      </IconButton>
+                    ),
+                  }
                   : {}
               }
             />
@@ -529,111 +534,124 @@ export default function UsersPage() {
           {(selectedUser?.role === "business" ||
             selectedUser?.role === "staff" ||
             !selectedUser) && (
-            <Box sx={{ mt: 3 }}>
-              <Typography variant="subtitle1" gutterBottom textAlign={align}>
-                {t.permissions}
-              </Typography>
+              <Box sx={{ mt: 3 }}>
+                <Typography variant="subtitle1" gutterBottom textAlign={align}>
+                  {t.permissions}
+                </Typography>
 
-              {/* Select All / Unselect All */}
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={
-                      form.modulePermissions.length ===
-                      (isBusinessUser
-                        ? availableModules.filter((m) =>
-                            currentUser.modulePermissions?.includes(m.key)
-                          ).length
-                        : availableModules.length)
-                    }
-                    indeterminate={
-                      form.modulePermissions.length > 0 &&
-                      form.modulePermissions.length !==
+                {/* Select All / Unselect All */}
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={
+                        form.modulePermissions.length ===
                         (isBusinessUser
                           ? availableModules.filter((m) =>
-                              currentUser.modulePermissions?.includes(m.key)
-                            ).length
+                            currentUser.modulePermissions?.includes(m.key)
+                          ).length
                           : availableModules.length)
-                    }
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        const allKeys = isBusinessUser
-                          ? availableModules
+                      }
+                      indeterminate={
+                        form.modulePermissions.length > 0 &&
+                        form.modulePermissions.length !==
+                        (isBusinessUser
+                          ? availableModules.filter((m) =>
+                            currentUser.modulePermissions?.includes(m.key)
+                          ).length
+                          : availableModules.length)
+                      }
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          const allKeys = isBusinessUser
+                            ? availableModules
                               .filter((m) =>
                                 currentUser.modulePermissions?.includes(m.key)
                               )
                               .map((m) => m.key)
-                          : availableModules.map((m) => m.key);
-                        setForm((prev) => ({
-                          ...prev,
-                          modulePermissions: allKeys,
-                        }));
-                      } else {
-                        setForm((prev) => ({
-                          ...prev,
-                          modulePermissions: [],
-                        }));
-                      }
-                    }}
-                  />
-                }
-                label={
-                  form.modulePermissions.length ? t.unselectAll : t.selectAll
-                }
-              />
-
-              <FormGroup>
-                {(isBusinessUser
-                  ? availableModules.filter((m) =>
-                      currentUser.modulePermissions?.includes(m.key)
-                    )
-                  : availableModules
-                ).map((mod) => (
-                  <FormControlLabel
-                    key={mod.key}
-                    control={
-                      <Checkbox
-                        checked={form.modulePermissions.includes(mod.key)}
-                        onChange={() => {
-                          const exists = form.modulePermissions.includes(
-                            mod.key
-                          );
+                            : availableModules.map((m) => m.key);
                           setForm((prev) => ({
                             ...prev,
-                            modulePermissions: exists
-                              ? prev.modulePermissions.filter(
+                            modulePermissions: allKeys,
+                          }));
+                        } else {
+                          setForm((prev) => ({
+                            ...prev,
+                            modulePermissions: [],
+                          }));
+                        }
+                      }}
+                    />
+                  }
+                  label={
+                    form.modulePermissions.length ? t.unselectAll : t.selectAll
+                  }
+                />
+
+                <FormGroup>
+                  {(isBusinessUser
+                    ? availableModules.filter((m) =>
+                      currentUser.modulePermissions?.includes(m.key)
+                    )
+                    : availableModules
+                  ).map((mod) => (
+                    <FormControlLabel
+                      key={mod.key}
+                      control={
+                        <Checkbox
+                          checked={form.modulePermissions.includes(mod.key)}
+                          onChange={() => {
+                            const exists = form.modulePermissions.includes(
+                              mod.key
+                            );
+                            setForm((prev) => ({
+                              ...prev,
+                              modulePermissions: exists
+                                ? prev.modulePermissions.filter(
                                   (k) => k !== mod.key
                                 )
-                              : [...prev.modulePermissions, mod.key],
-                          }));
-                        }}
-                      />
-                    }
-                    label={mod.labels?.[language] || mod.key}
-                  />
-                ))}
-              </FormGroup>
-            </Box>
-          )}
+                                : [...prev.modulePermissions, mod.key],
+                            }));
+                          }}
+                        />
+                      }
+                      label={mod.labels?.[language] || mod.key}
+                    />
+                  ))}
+                </FormGroup>
+              </Box>
+            )}
         </DialogContent>
-        <DialogActions>
-          <Button
-            disabled={loading}
-            startIcon={<ICONS.cancel />}
-            onClick={() => setModalOpen(false)}
-            sx={getStartIconSpacing(dir)}
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Stack
+            direction={{ xs: 'column-reverse', sm: 'row' }}
+            spacing={2}
+            sx={{ width: '100%', justifyContent: { xs: 'stretch', sm: 'flex-end' } }}
           >
-            {t.cancel}
-          </Button>
-          <Button
-            variant="contained"
-            onClick={handleModalSave}
-            disabled={loading}
-            startIcon={<ICONS.save />}
-            sx={getStartIconSpacing(dir)}
-          >
-            {loading ? (isEditMode ? t.saving : t.creating) : t.save}
-          </Button>
+            <Button
+              variant="outlined"
+              disabled={loading}
+              startIcon={<ICONS.cancel />}
+              onClick={() => setModalOpen(false)}
+              sx={{
+                ...getStartIconSpacing(dir),
+                flex: { xs: 1, sm: 'none' }
+              }}
+            >
+              {t.cancel}
+            </Button>
+            <Button
+              variant="contained"
+              onClick={handleModalSave}
+              disabled={loading}
+              startIcon={<ICONS.save />}
+              sx={{
+                ...getStartIconSpacing(dir),
+                flex: { xs: 1, sm: 'none' }
+              }}
+            >
+              {loading ? (isEditMode ? t.saving : t.creating) : t.save}
+            </Button>
+          </Stack>
         </DialogActions>
       </Dialog>
 
