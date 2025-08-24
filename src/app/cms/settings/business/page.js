@@ -54,7 +54,8 @@ const translations = {
     upload: "Upload Logo",
     save: "Save",
     cancel: "Cancel",
-    create: "Create New Business",
+    createNewBusiness: "Create New Business",
+    create: "create",
     edit: "Edit Business",
     delete: "Delete Business",
     saving: "Saving...",
@@ -84,7 +85,8 @@ const translations = {
     upload: "تحميل الشعار",
     save: "حفظ",
     cancel: "إلغاء",
-    create: "إنشاء شركة جديدة",
+    createNewBusiness: "إنشاء شركة جديدة",
+    create: "إنشاء",
     edit: "تعديل الشركة",
     delete: "حذف الشركة",
     saving: "جارٍ الحفظ...",
@@ -347,7 +349,7 @@ export default function BusinessDetailsPage() {
             onClick={() => handleOpen()}
             sx={getStartIconSpacing(dir)}
           >
-            {t.create}
+            {t.createNewBusiness}
           </Button>
         )}
       </Stack>
@@ -360,7 +362,7 @@ export default function BusinessDetailsPage() {
             {t.noBiz}
           </Typography>
           <Button variant="contained" onClick={() => handleOpen()}>
-            {t.create}
+            {t.createNewBusiness}
           </Button>
         </Box>
       ) : loading ? (
@@ -524,7 +526,7 @@ export default function BusinessDetailsPage() {
 
       {/* MODAL FORM */}
       <Dialog open={formOpen} onClose={handleClose} fullWidth>
-        <DialogTitle>{editingBiz ? t.edit : t.create}</DialogTitle>
+        <DialogTitle>{editingBiz ? t.edit : t.createNewBusiness}</DialogTitle>
         <DialogContent sx={{ pt: 1 }}>
           <TextField
             label={t.name}
@@ -629,8 +631,9 @@ export default function BusinessDetailsPage() {
         </DialogContent>
         <DialogActions
           sx={{
-            flexDirection: { xs: "column-reverse", sm: "row" },
-            gap: { xs: 1, sm: 0 },
+            flexDirection: "row",
+            justifyContent: "flex-end",
+            gap: 1,
             px: { xs: 3, sm: 2 },
           }}
         >
