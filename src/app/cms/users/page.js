@@ -623,9 +623,9 @@ export default function UsersPage() {
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 3 }}>
           <Stack
-            direction={{ xs: 'column-reverse', sm: 'row' }}
+            direction="row"
             spacing={2}
-            sx={{ width: '100%', justifyContent: { xs: 'stretch', sm: 'flex-end' } }}
+            sx={{ width: '100%', justifyContent: 'flex-end' }}
           >
             <Button
               variant="outlined"
@@ -633,8 +633,7 @@ export default function UsersPage() {
               startIcon={<ICONS.cancel />}
               onClick={() => setModalOpen(false)}
               sx={{
-                ...getStartIconSpacing(dir),
-                flex: { xs: 1, sm: 'none' }
+                ...getStartIconSpacing(dir)
               }}
             >
               {t.cancel}
@@ -645,8 +644,7 @@ export default function UsersPage() {
               disabled={loading}
               startIcon={<ICONS.save />}
               sx={{
-                ...getStartIconSpacing(dir),
-                flex: { xs: 1, sm: 'none' }
+                ...getStartIconSpacing(dir)
               }}
             >
               {loading ? (isEditMode ? t.saving : t.creating) : t.save}
