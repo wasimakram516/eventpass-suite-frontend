@@ -590,13 +590,13 @@ export default function GlobalConfigPage() {
             <Divider />
 
             <Typography variant="subtitle2">{t.mediaUploadsSection}</Typography>
-            <Stack direction="row" alignItems="center" spacing={2}>
+            <Stack direction={{ xs: "column", sm: "row" }} alignItems="center" spacing={2}>
               <Avatar
                 src={form.companyLogoUrl}
                 variant="square"
                 sx={{ width: 64, height: 64 }}
               />
-              <Button variant="outlined" component="label">
+              <Button variant="outlined" component="label" sx={{ width: { xs: "100%", sm: "auto" } }}>
                 {t.uploadLogo}
                 <input
                   type="file"
@@ -608,7 +608,7 @@ export default function GlobalConfigPage() {
                 />
               </Button>
             </Stack>
-            <Stack direction="row" alignItems="center" spacing={2}>
+            <Stack direction={{ xs: "column", sm: "row" }} alignItems="center" spacing={2}>
               {form.brandingMediaUrl &&
                 (isVideo(form.brandingMediaUrl) ? (
                   <Box
@@ -616,6 +616,7 @@ export default function GlobalConfigPage() {
                     src={form.brandingMediaUrl}
                     controls
                     width={80}
+                    sx={{ maxWidth: { xs: "100%", sm: 80 } }}
                   />
                 ) : (
                   <Box
@@ -623,9 +624,10 @@ export default function GlobalConfigPage() {
                     src={form.brandingMediaUrl}
                     alt=""
                     width={80}
+                    sx={{ maxWidth: { xs: "100%", sm: 80 } }}
                   />
                 ))}
-              <Button variant="outlined" component="label">
+              <Button variant="outlined" component="label" sx={{ width: { xs: "100%", sm: "auto" } }}>
                 {t.uploadBranding}
                 <input
                   type="file"
@@ -637,7 +639,7 @@ export default function GlobalConfigPage() {
                 />
               </Button>
             </Stack>
-            <Stack direction="row" alignItems="center" spacing={2}>
+            <Stack direction={{ xs: "column", sm: "row" }} alignItems="center" spacing={2}>
               {form.poweredBy.mediaUrl &&
                 (isVideo(form.poweredBy.mediaUrl) ? (
                   <Box
@@ -645,6 +647,7 @@ export default function GlobalConfigPage() {
                     src={form.poweredBy.mediaUrl}
                     controls
                     width={80}
+                    sx={{ maxWidth: { xs: "100%", sm: 80 } }}
                   />
                 ) : (
                   <Box
@@ -652,10 +655,11 @@ export default function GlobalConfigPage() {
                     src={form.poweredBy.mediaUrl}
                     alt=""
                     width={80}
+                    sx={{ maxWidth: { xs: "100%", sm: 80 } }}
                   />
                 ))}
 
-              <Button variant="outlined" component="label">
+              <Button variant="outlined" component="label" sx={{ width: { xs: "100%", sm: "auto" } }}>
                 {t.uploadPoweredBy}
                 <input
                   type="file"
@@ -675,8 +679,9 @@ export default function GlobalConfigPage() {
         </DialogContent>
         <DialogActions
           sx={{
-            flexDirection: { xs: "column", sm: "row" },
-            gap: { xs: 1, sm: 0 },
+            flexDirection: "row",
+            justifyContent: "flex-end",
+            gap: 1,
             px: { xs: 3, sm: 2 },
           }}
         >
@@ -686,7 +691,6 @@ export default function GlobalConfigPage() {
             onClick={() => setOpenEdit(false)}
             sx={{
               ...getStartIconSpacing(dir),
-              width: { xs: "100%", sm: "auto" }
             }}
             variant="outlined"
           >
@@ -705,7 +709,6 @@ export default function GlobalConfigPage() {
             }
             sx={{
               ...getStartIconSpacing(dir),
-              width: { xs: "100%", sm: "auto" }
             }}
           >
             {loading
