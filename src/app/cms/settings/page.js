@@ -82,10 +82,16 @@ export default function SettingsPage() {
         </Typography>
         <Divider sx={{ my: 2 }} />
 
-        <Grid 
-          container 
-          spacing={3} 
+        <Grid
+          container
+          spacing={3}
           justifyContent="center"
+          sx={{
+            '& > *': { 
+              xs: { width: '100%' }, 
+              sm: { width: 'auto' }
+            }
+          }}
         >
           {filteredCards.map((card, i) => (
             <DashboardCard
