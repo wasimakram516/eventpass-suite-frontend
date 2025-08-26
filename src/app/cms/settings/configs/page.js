@@ -45,6 +45,7 @@ import { useMessage } from "@/contexts/MessageContext";
 import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import ICONS from "@/utils/iconUtil";
+import { useTheme, useMediaQuery } from '@mui/material';
 
 const translations = {
   en: {
@@ -53,7 +54,8 @@ const translations = {
     delete: "Delete",
     edit: "Edit",
     create: "Create",
-    save: "Save Changes",
+    saveChanges: "Save Changes",
+    save: "Save",
     saving: "Saving...",
     creating: "Creating...",
     cancel: "Cancel",
@@ -87,7 +89,8 @@ const translations = {
     delete: "حذف",
     edit: "تعديل",
     create: "إنشاء",
-    save: "حفظ التغييرات",
+    saveChanges: "حفظ التغييرات",
+    save: "حفظ",
     saving: "جارٍ الحفظ...",
     creating: "جارٍ الإنشاء...",
     cancel: "إلغاء",
@@ -122,6 +125,8 @@ export default function GlobalConfigPage() {
   const { refetchConfig } = useGlobalConfig();
   const { dir, align, t } = useI18nLayout(translations);
 
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [loading, setLoading] = useState(false);
 
   const [config, setConfig] = useState(null);
@@ -142,8 +147,13 @@ export default function GlobalConfigPage() {
   });
 
   // Helper
-  const isVideo = (url) => /\.(mp4|mov|webm|ogg)$/i.test(url);
-
+  // Helper function to detect video URLs by file extension
+  const isVideo = (url) => {
+    if (!url || typeof url !== 'string') return false;
+    const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.mkv', '.wmv', '.flv'];
+    const urlWithoutQuery = url.split('?')[0].toLowerCase();
+    return videoExtensions.some(ext => urlWithoutQuery.endsWith(ext));
+  };
   // Load config
   useEffect(() => {
     (async () => {
@@ -203,10 +213,22 @@ export default function GlobalConfigPage() {
     }
   };
 
-  // File pick & preview
   const handleFileChange = (e, fileKey, previewKey) => {
     const file = e.target.files[0];
     if (!file) return;
+
+    // Validate file type based on the upload type
+    if (fileKey === "companyLogoFile" && !file.type.startsWith("image/")) {
+      showMessage("Please select an image file for logo", "error");
+      return;
+    }
+
+    if ((fileKey === "brandingMediaFile" || fileKey === "poweredByMediaFile") &&
+      !file.type.startsWith("image/") && !file.type.startsWith("video/")) {
+      showMessage("Please select an image or video file", "error");
+      return;
+    }
+
     const preview = URL.createObjectURL(file);
 
     if (previewKey === "poweredBy.mediaUrl") {
@@ -364,10 +386,10 @@ export default function GlobalConfigPage() {
         <List sx={{ mt: 2, bgcolor: "background.paper" }}>
           {/* App Name */}
           <ListItem>
-            <ListItemIcon>
+            <ListItemIcon >
               <SettingsIcon />
             </ListItemIcon>
-            <ListItemText primary={t.appName} secondary={config?.appName} />
+            <ListItemText primary={t.appName} secondary={config?.appName} sx={{ textAlign: align }} />
           </ListItem>
           <Divider />
 
@@ -377,14 +399,14 @@ export default function GlobalConfigPage() {
             <ListItemIcon>
               <EmailIcon />
             </ListItemIcon>
-            <ListItemText secondary={config?.contact?.email} />
+            <ListItemText secondary={config?.contact?.email} sx={{ textAlign: align }} />
           </ListItem>
           <Divider component="li" />
           <ListItem>
             <ListItemIcon>
               <PhoneIcon />
             </ListItemIcon>
-            <ListItemText secondary={config?.contact?.phone} />
+            <ListItemText secondary={config?.contact?.phone} sx={{ textAlign: align }} />
           </ListItem>
           <Divider />
 
@@ -394,34 +416,45 @@ export default function GlobalConfigPage() {
             <ListItemIcon>
               <EmailIcon />
             </ListItemIcon>
-            <ListItemText secondary={config?.support?.email} />
+            <ListItemText secondary={config?.support?.email} sx={{ textAlign: align }} />
           </ListItem>
           <Divider component="li" />
           <ListItem>
             <ListItemIcon>
               <PhoneIcon />
             </ListItemIcon>
-            <ListItemText secondary={config?.support?.phone} />
+            <ListItemText secondary={config?.support?.phone} sx={{ textAlign: align }} />
           </ListItem>
           <Divider />
 
           {/* Powered By */}
           <ListSubheader>{t.poweredBy}</ListSubheader>
-          <ListItem>
-            <ListItemText secondary={config?.poweredBy?.text || t.none} />
+          <ListItem sx={{
+            flexDirection: 'column',
+            alignItems: 'flex-start',
+            gap: 2
+          }}>
+            <ListItemText secondary={config?.poweredBy?.text || t.none} sx={{ textAlign: align }} />
             {config?.poweredBy?.mediaUrl &&
               (isVideo(config?.poweredBy?.mediaUrl) ? (
                 <Box
                   component="video"
                   src={config?.poweredBy?.mediaUrl}
                   controls
-                  width={100}
+                  sx={{
+                    width: { xs: "100%", md: 200 },
+                    height: { xs: 140, md: 200 },
+                    objectFit: 'cover',
+                  }}
                 />
               ) : (
                 <Avatar
                   src={config?.poweredBy?.mediaUrl}
                   variant="square"
-                  sx={{ width: 80, height: 80 }}
+                  sx={{
+                    width: { xs: "100%", md: 200 },
+                    height: { xs: 120, md: 200 }
+                  }}
                 />
               ))}
           </ListItem>
@@ -429,12 +462,15 @@ export default function GlobalConfigPage() {
 
           {/* Company Logo */}
           <ListSubheader>{t.companyLogo}</ListSubheader>
-          <ListItem>
+          <ListItem >
             {config?.companyLogoUrl ? (
               <Avatar
                 src={config?.companyLogoUrl}
                 variant="square"
-                sx={{ width: 80, height: 80 }}
+                sx={{
+                  width: { xs: "100%", md: 200 },
+                  height: { xs: 140, md: 200 },
+                }}
               />
             ) : (
               <Typography color="text.secondary">None</Typography>
@@ -451,14 +487,21 @@ export default function GlobalConfigPage() {
                   component="video"
                   src={config?.brandingMediaUrl}
                   controls
-                  width={100}
+                  sx={{
+                    width: { xs: "100%", md: 200 },
+                    height: { xs: 140, md: 200 },
+                    objectFit: 'cover',
+                  }}
                 />
               ) : (
-                <Box
-                  component="img"
+                <Avatar
                   src={config?.brandingMediaUrl}
                   alt="Branding"
-                  width={100}
+                  variant="square"
+                  sx={{
+                    width: { xs: "100%", md: 200 },
+                    height: { xs: 140, md: 200 },
+                  }}
                 />
               )
             ) : (
@@ -481,10 +524,42 @@ export default function GlobalConfigPage() {
                   <ListItem>
                     <ListItemIcon>{icon}</ListItemIcon>
                     <ListItemText
-                      primary={config.socialLinks[key]}
-                      component="a"
-                      href={config.socialLinks[key]}
-                      target="_blank"
+                      primary={
+                        <Typography
+                          component="a"
+                          href={config.socialLinks[key]}
+                          target="_blank"
+                          sx={{
+                            textDecoration: 'underline',
+                            color: 'blue',
+                            display: {
+                              xs: 'none',
+                              sm: 'block'
+                            },
+                            textAlign: align
+                          }}
+                        >
+                          {config.socialLinks[key]}
+                        </Typography>
+                      }
+                      secondary={
+                        <Typography
+                          component="a"
+                          href={config.socialLinks[key]}
+                          target="_blank"
+                          sx={{
+                            textDecoration: 'underline',
+                            color: 'blue',
+                            display: {
+                              xs: 'block',
+                              sm: 'none'
+                            },
+                            textAlign: align
+                          }}
+                        >
+                          {key.charAt(0).toUpperCase() + key.slice(1)}
+                        </Typography>
+                      }
                     />
                   </ListItem>
                   <Divider component="li" />
@@ -594,7 +669,10 @@ export default function GlobalConfigPage() {
               <Avatar
                 src={form.companyLogoUrl}
                 variant="square"
-                sx={{ width: 64, height: 64 }}
+                sx={{
+                  width: { xs: "100%", md: 160 },
+                  height: { xs: 120, md: 160 },
+                }}
               />
               <Button variant="outlined" component="label" sx={{ width: { xs: "100%", sm: "auto" } }}>
                 {t.uploadLogo}
@@ -610,28 +688,34 @@ export default function GlobalConfigPage() {
             </Stack>
             <Stack direction={{ xs: "column", sm: "row" }} alignItems="center" spacing={2}>
               {form.brandingMediaUrl &&
-                (isVideo(form.brandingMediaUrl) ? (
+                (form.brandingMediaFile?.type?.startsWith("video/") ||
+                  (!form.brandingMediaFile && isVideo(form.brandingMediaUrl)) ? (
                   <Box
                     component="video"
                     src={form.brandingMediaUrl}
                     controls
-                    width={80}
-                    sx={{ maxWidth: { xs: "100%", sm: 80 } }}
+                    sx={{
+                      width: { xs: "100%", md: 160 },
+                      height: { xs: 120, md: 160 },
+                      objectFit: 'cover',
+                    }}
                   />
                 ) : (
-                  <Box
-                    component="img"
+                  <Avatar
                     src={form.brandingMediaUrl}
                     alt=""
-                    width={80}
-                    sx={{ maxWidth: { xs: "100%", sm: 80 } }}
+                    variant="square"
+                    sx={{
+                      width: { xs: "100%", md: 160 },
+                      height: { xs: 120, md: 160 },
+                    }}
                   />
                 ))}
               <Button variant="outlined" component="label" sx={{ width: { xs: "100%", sm: "auto" } }}>
                 {t.uploadBranding}
                 <input
                   type="file"
-                  accept="image/*,video/*"
+                  accept="image/*,video/*,.gif"
                   hidden
                   onChange={(e) =>
                     handleFileChange(e, "brandingMediaFile", "brandingMediaUrl")
@@ -641,21 +725,28 @@ export default function GlobalConfigPage() {
             </Stack>
             <Stack direction={{ xs: "column", sm: "row" }} alignItems="center" spacing={2}>
               {form.poweredBy.mediaUrl &&
-                (isVideo(form.poweredBy.mediaUrl) ? (
+                (form.poweredByMediaFile?.type?.startsWith("video/") ||
+                  (!form.poweredByMediaFile && isVideo(form.poweredBy.mediaUrl)) ? (
                   <Box
                     component="video"
                     src={form.poweredBy.mediaUrl}
                     controls
                     width={80}
-                    sx={{ maxWidth: { xs: "100%", sm: 80 } }}
+                    sx={{
+                      width: { xs: "100%", md: 160 },
+                      height: { xs: 120, md: 160 },
+                      objectFit: 'cover',
+                    }}
                   />
                 ) : (
-                  <Box
-                    component="img"
+                  <Avatar
                     src={form.poweredBy.mediaUrl}
                     alt=""
-                    width={80}
-                    sx={{ maxWidth: { xs: "100%", sm: 80 } }}
+                    variant="square"
+                    sx={{
+                      width: { xs: "100%", md: 160 },
+                      height: { xs: 120, md: 160 },
+                    }}
                   />
                 ))}
 
@@ -663,7 +754,7 @@ export default function GlobalConfigPage() {
                 {t.uploadPoweredBy}
                 <input
                   type="file"
-                  accept="image/*,video/*"
+                  accept="image/*,video/*,.gif"
                   hidden
                   onChange={(e) =>
                     handleFileChange(
@@ -716,7 +807,7 @@ export default function GlobalConfigPage() {
                 ? t.saving
                 : t.creating
               : config
-                ? t.save
+                ? (isMobile ? t.save : t.saveChanges)
                 : t.create}
           </Button>
         </DialogActions>
