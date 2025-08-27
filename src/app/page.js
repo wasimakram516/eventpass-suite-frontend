@@ -243,7 +243,12 @@ function FeatureBadge({ iconKey, label, hue }) {
 
 const marqueeMany = keyframes`
   0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); } /* seamless if two copies are flush */
+  100% { transform: translateX(-50%); } /* two identical halves */
+`;
+
+const marqueeFew = keyframes`
+  0% { transform: translateX(100%); }   /* start off-screen on the right */
+  100% { transform: translateX(-100%); }/* exit fully to the left */
 `;
 
 function ClientLogoStrip({ logos }) {
@@ -251,30 +256,66 @@ function ClientLogoStrip({ logos }) {
   if (!items.length) return null;
 
   const isFew = items.length <= 5;
-  const duration = isFew
-    ? Math.max(8, Math.min(10, items.length * 4))
-    : 10;
+
+  // duration in seconds (your constraint: max speed = 10s)
+  const duration = isFew ? Math.max(8, Math.min(10, items.length * 4)) : 10;
 
   return (
-    <Box sx={{ borderTop: "1px solid", borderBottom: "1px solid", py: 2, overflow: "hidden" }}>
-      <Box
+    <Box
+      sx={(th) => ({
+        borderTop: `1px solid ${th.palette.divider}`,
+        borderBottom: `1px solid ${th.palette.divider}`,
+        py: { xs: 1.5, md: 2 },
+        position: "relative",
+        "@media (prefers-reduced-motion: reduce)": {
+          "& *": { animation: "none !important" },
+        },
+      })}
+    >
+      <Container
+        maxWidth="md"
         sx={{
-          display: "flex",
-          width: "max-content",
-          animation: `${isFew ? marqueeFew : marqueeMany} ${duration}s linear infinite`,
-          "&:hover": { animationPlayState: "paused" },
+          overflow: "hidden",
+          position: "relative",
+          WebkitMaskImage:
+            "linear-gradient(to right, rgba(0,0,0,0), rgba(0,0,0,1) 10%, rgba(0,0,0,1) 90%, rgba(0,0,0,0))",
+          WebkitMaskRepeat: "no-repeat",
+          WebkitMaskSize: "100% 100%",
+          maskImage:
+            "linear-gradient(to right, rgba(0,0,0,0), rgba(0,0,0,1) 10%, rgba(0,0,0,1) 90%, rgba(0,0,0,0))",
+          maskRepeat: "no-repeat",
+          maskSize: "100% 100%",
         }}
       >
-        {isFew
-          ? // FEW MODE: just one pass
-            items.map((cl, i) => (
-              <LogoItem cl={cl} key={cl._id || i} />
-            ))
-          : // MANY MODE: concat array twice
-            [...items, ...items].map((cl, i) => (
-              <LogoItem cl={cl} key={cl._id || i} />
-            ))}
-      </Box>
+        <Box sx={{ direction: "ltr" }}>
+          <Box
+            sx={{
+              display: "flex",
+              flexWrap: "nowrap",
+              width: "max-content",
+              animation: `${isFew ? marqueeFew : marqueeMany} ${duration}s linear infinite`,
+              "&:hover": { animationPlayState: "paused" },
+            }}
+          >
+            {isFew ? (
+              // FEW: single pass (starts at right, exits left)
+              items.map((cl, i) => (
+                <LogoItem cl={cl} key={`few-${cl._id || i}`} />
+              ))
+            ) : (
+              // MANY: render two *flat* copies with unique keys for seamless loop
+              <>
+                {items.map((cl, i) => (
+                  <LogoItem cl={cl} key={`a-${cl._id || i}`} />
+                ))}
+                {items.map((cl, i) => (
+                  <LogoItem cl={cl} key={`b-${cl._id || i}`} />
+                ))}
+              </>
+            )}
+          </Box>
+        </Box>
+      </Container>
     </Box>
   );
 }
@@ -293,6 +334,10 @@ function LogoItem({ cl }) {
         alignItems: "center",
         justifyContent: "center",
         px: { xs: 1.25, sm: 2 },
+        opacity: 0.95,
+        transition: "opacity .2s ease",
+        textDecoration: "none",
+        "&:hover": { opacity: 1 },
       }}
     >
       <Box
