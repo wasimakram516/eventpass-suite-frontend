@@ -243,144 +243,69 @@ function FeatureBadge({ iconKey, label, hue }) {
 
 const marqueeMany = keyframes`
   0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); } /* 2 copies => move half */
-`;
-
-const marqueeFew = keyframes`
-  0% { transform: translateX(100%); }   /* start off-screen on the right */
-  100% { transform: translateX(-100%); }/* exit fully to the left */
+  100% { transform: translateX(-50%); } /* seamless if two copies are flush */
 `;
 
 function ClientLogoStrip({ logos }) {
-  const items = Array.isArray(logos) ? logos.filter((l) => !!l?.logoUrl) : [];
+  const items = Array.isArray(logos) ? logos.filter(l => !!l?.logoUrl) : [];
   if (!items.length) return null;
 
   const isFew = items.length <= 5;
-  // duration in seconds
-  const duration = isFew ? Math.max(8, Math.min(10, items.length * 4)) : 10;
+  const duration = isFew
+    ? Math.max(8, Math.min(10, items.length * 4))
+    : 10;
 
   return (
-    <Box
-      sx={(th) => ({
-        borderTop: `1px solid ${th.palette.divider}`,
-        borderBottom: `1px solid ${th.palette.divider}`,
-        py: { xs: 1.5, md: 2 },
-        position: "relative",
-        "@media (prefers-reduced-motion: reduce)": {
-          "& *": { animation: "none !important" },
-        },
-      })}
-    >
-      <Container
-        maxWidth="md"
+    <Box sx={{ borderTop: "1px solid", borderBottom: "1px solid", py: 2, overflow: "hidden" }}>
+      <Box
         sx={{
-          overflow: "hidden",
-          position: "relative",
-          WebkitMaskImage:
-            "linear-gradient(to right, rgba(0,0,0,0), rgba(0,0,0,1) 10%, rgba(0,0,0,1) 90%, rgba(0,0,0,0))",
-          WebkitMaskRepeat: "no-repeat",
-          WebkitMaskSize: "100% 100%",
-          maskImage:
-            "linear-gradient(to right, rgba(0,0,0,0), rgba(0,0,0,1) 10%, rgba(0,0,0,1) 90%, rgba(0,0,0,0))",
-          maskRepeat: "no-repeat",
-          maskSize: "100% 100%",
+          display: "flex",
+          width: "max-content",
+          animation: `${isFew ? marqueeFew : marqueeMany} ${duration}s linear infinite`,
+          "&:hover": { animationPlayState: "paused" },
         }}
       >
-        <Box sx={{ direction: "ltr" }}>
-          <Box
-            sx={{
-              display: "flex",
-              flexWrap: "nowrap",
-              width: "max-content",
-              animation: `${
-                isFew ? marqueeFew : marqueeMany
-              } ${duration}s linear infinite`,
-              "&:hover": { animationPlayState: "paused" },
-            }}
-          >
-            {isFew ? (
-              <Box sx={{ display: "flex", flexWrap: "nowrap" }}>
-                {items.map((cl, i) => {
-                  const clickable = !!cl.website;
-                  const Wrapper = clickable ? "a" : "div";
-                  return (
-                    <Box
-                      key={(cl._id || i) + "-few"}
-                      component={Wrapper}
-                      href={clickable ? normalizeUrl(cl.website) : undefined}
-                      target={clickable ? "_blank" : undefined}
-                      rel={clickable ? "noopener noreferrer" : undefined}
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        px: { xs: 1.25, sm: 2 },
-                        opacity: 0.95,
-                        transition: "opacity .2s ease",
-                        textDecoration: "none",
-                        "&:hover": { opacity: 1 },
-                      }}
-                    >
-                      <Box
-                        component="img"
-                        src={cl.logoUrl}
-                        alt={cl.name || "client logo"}
-                        sx={{
-                          height: { xs: 28, sm: 36, md: 44 },
-                          maxWidth: { xs: 120, sm: 160 },
-                          objectFit: "contain",
-                          display: "block",
-                        }}
-                      />
-                    </Box>
-                  );
-                })}
-              </Box>
-            ) : (
-              [0, 1].map((rep) => (
-                <Box key={rep} sx={{ display: "flex", flexWrap: "nowrap" }}>
-                  {items.map((cl, i) => {
-                    const key = (cl._id || i) + "-" + rep;
-                    const clickable = !!cl.website;
-                    const Wrapper = clickable ? "a" : "div";
-                    return (
-                      <Box
-                        key={key}
-                        component={Wrapper}
-                        href={clickable ? normalizeUrl(cl.website) : undefined}
-                        target={clickable ? "_blank" : undefined}
-                        rel={clickable ? "noopener noreferrer" : undefined}
-                        sx={{
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          px: { xs: 1.25, sm: 2 },
-                          opacity: 0.95,
-                          transition: "opacity .2s ease",
-                          textDecoration: "none",
-                          "&:hover": { opacity: 1 },
-                        }}
-                      >
-                        <Box
-                          component="img"
-                          src={cl.logoUrl}
-                          alt={cl.name || "client logo"}
-                          sx={{
-                            height: { xs: 28, sm: 36, md: 44 },
-                            maxWidth: { xs: 120, sm: 160 },
-                            objectFit: "contain",
-                            display: "block",
-                          }}
-                        />
-                      </Box>
-                    );
-                  })}
-                </Box>
-              ))
-            )}
-          </Box>
-        </Box>
-      </Container>
+        {isFew
+          ? // FEW MODE: just one pass
+            items.map((cl, i) => (
+              <LogoItem cl={cl} key={cl._id || i} />
+            ))
+          : // MANY MODE: concat array twice
+            [...items, ...items].map((cl, i) => (
+              <LogoItem cl={cl} key={cl._id || i} />
+            ))}
+      </Box>
+    </Box>
+  );
+}
+
+function LogoItem({ cl }) {
+  const clickable = !!cl.website;
+  const Wrapper = clickable ? "a" : "div";
+  return (
+    <Box
+      component={Wrapper}
+      href={clickable ? normalizeUrl(cl.website) : undefined}
+      target={clickable ? "_blank" : undefined}
+      rel={clickable ? "noopener noreferrer" : undefined}
+      sx={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        px: { xs: 1.25, sm: 2 },
+      }}
+    >
+      <Box
+        component="img"
+        src={cl.logoUrl}
+        alt={cl.name || "client logo"}
+        sx={{
+          height: { xs: 28, sm: 36, md: 44 },
+          maxWidth: { xs: 120, sm: 160 },
+          objectFit: "contain",
+          display: "block",
+        }}
+      />
     </Box>
   );
 }
