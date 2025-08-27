@@ -258,7 +258,7 @@ function ClientLogoStrip({ logos }) {
   const isFew = items.length <= 5;
 
   // duration in seconds (your constraint: max speed = 10s)
-  const duration = isFew ? Math.max(8, Math.min(10, items.length * 4)) : 10;
+  const duration = isFew ? Math.max(8, Math.min(10, items.length * 4)) : 15;
 
   return (
     <Box
