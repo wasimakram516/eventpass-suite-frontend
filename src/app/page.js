@@ -12,7 +12,7 @@ import {
   Paper,
   alpha,
 } from "@mui/material";
-import { keyframes } from "@mui/system"; // 👈 for marquee animation
+import { keyframes } from "@mui/system";
 import { useRouter } from "next/navigation";
 import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
 import useI18nLayout from "@/hooks/useI18nLayout";
@@ -241,14 +241,23 @@ function FeatureBadge({ iconKey, label, hue }) {
 
 /* ---------- Client Logo Strip ---------- */
 
-const marquee = keyframes`
+const marqueeMany = keyframes`
   0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); } 
+  100% { transform: translateX(-50%); } /* 2 copies => move half */
+`;
+
+const marqueeFew = keyframes`
+  0% { transform: translateX(100%); }   /* start off-screen on the right */
+  100% { transform: translateX(-100%); }/* exit fully to the left */
 `;
 
 function ClientLogoStrip({ logos }) {
   const items = Array.isArray(logos) ? logos.filter((l) => !!l?.logoUrl) : [];
   if (!items.length) return null;
+
+  const isFew = items.length <= 5;
+  // duration in seconds
+  const duration = isFew ? Math.max(8, Math.min(10, items.length * 4)) : 10;
 
   return (
     <Box
@@ -283,19 +292,20 @@ function ClientLogoStrip({ logos }) {
               display: "flex",
               flexWrap: "nowrap",
               width: "max-content",
-              animation: `${marquee} 15s linear infinite`,
+              animation: `${
+                isFew ? marqueeFew : marqueeMany
+              } ${duration}s linear infinite`,
               "&:hover": { animationPlayState: "paused" },
             }}
           >
-            {[0, 1].map((rep) => (
-              <Box key={rep} sx={{ display: "flex", flexWrap: "nowrap" }}>
+            {isFew ? (
+              <Box sx={{ display: "flex", flexWrap: "nowrap" }}>
                 {items.map((cl, i) => {
-                  const key = (cl._id || i) + "-" + rep;
                   const clickable = !!cl.website;
                   const Wrapper = clickable ? "a" : "div";
                   return (
                     <Box
-                      key={key}
+                      key={(cl._id || i) + "-few"}
                       component={Wrapper}
                       href={clickable ? normalizeUrl(cl.website) : undefined}
                       target={clickable ? "_blank" : undefined}
@@ -326,7 +336,48 @@ function ClientLogoStrip({ logos }) {
                   );
                 })}
               </Box>
-            ))}
+            ) : (
+              [0, 1].map((rep) => (
+                <Box key={rep} sx={{ display: "flex", flexWrap: "nowrap" }}>
+                  {items.map((cl, i) => {
+                    const key = (cl._id || i) + "-" + rep;
+                    const clickable = !!cl.website;
+                    const Wrapper = clickable ? "a" : "div";
+                    return (
+                      <Box
+                        key={key}
+                        component={Wrapper}
+                        href={clickable ? normalizeUrl(cl.website) : undefined}
+                        target={clickable ? "_blank" : undefined}
+                        rel={clickable ? "noopener noreferrer" : undefined}
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          px: { xs: 1.25, sm: 2 },
+                          opacity: 0.95,
+                          transition: "opacity .2s ease",
+                          textDecoration: "none",
+                          "&:hover": { opacity: 1 },
+                        }}
+                      >
+                        <Box
+                          component="img"
+                          src={cl.logoUrl}
+                          alt={cl.name || "client logo"}
+                          sx={{
+                            height: { xs: 28, sm: 36, md: 44 },
+                            maxWidth: { xs: 120, sm: 160 },
+                            objectFit: "contain",
+                            display: "block",
+                          }}
+                        />
+                      </Box>
+                    );
+                  })}
+                </Box>
+              ))
+            )}
           </Box>
         </Box>
       </Container>
