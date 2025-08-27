@@ -21,6 +21,7 @@ import {
   startGameSession,
   endGameSession,
   activateGameSession,
+  abandonGameSession,
 } from "@/services/eventduel/gameSessionService";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import useI18nLayout from "@/hooks/useI18nLayout";
@@ -44,6 +45,10 @@ const translations = {
     secondsLeft: "seconds left to play",
     bothPlayersJoined: "Both Players have joined!",
     waitingForPlayers: "Waiting for Players...",
+    autoCloseNotice:
+      "This session will auto-close if both players don't join within",
+    seconds: "seconds",
+    sessionAbandoned: "Session was auto-closed due to inactivity.",
     sessionId: "Session ID",
     player1: "Player 1",
     player2: "Player 2",
@@ -73,6 +78,9 @@ const translations = {
     secondsLeft: "ثوانٍ متبقية للعب",
     bothPlayersJoined: "انضم كلا اللاعبين!",
     waitingForPlayers: "بانتظار اللاعبين...",
+    autoCloseNotice: "سيتم إغلاق الجلسة تلقائيًا إذا لم ينضم اللاعبان خلال",
+    seconds: "ثوانٍ",
+    sessionAbandoned: "تم إغلاق الجلسة تلقائيًا بسبب عدم النشاط.",
     sessionId: "معرّف الجلسة",
     player1: "اللاعب 1",
     player2: "اللاعب 2",
@@ -119,6 +127,7 @@ export default function HostDashboard() {
 
   const [localDelay, setLocalDelay] = useState(0);
   const [localTime, setLocalTime] = useState(0);
+  const [abandonRemaining, setAbandonRemaining] = useState(60);
 
   useEffect(() => {
     if (!activeSession) return;
@@ -153,6 +162,46 @@ export default function HostDashboard() {
 
     return () => clearInterval(interval);
   }, [activeSession]);
+
+  useEffect(() => {
+    if (!pendingSession) return;
+
+    const hasP1 = pendingSession.players?.some(
+      (p) => p.playerType === "p1" && p.playerId
+    );
+    const hasP2 = pendingSession.players?.some(
+      (p) => p.playerType === "p2" && p.playerId
+    );
+    const bothJoined = hasP1 && hasP2;
+
+    setAbandonRemaining(60);
+
+    if (bothJoined) return;
+
+    let isCancelled = false;
+
+    const interval = setInterval(async () => {
+      setAbandonRemaining((prev) => {
+        const next = prev - 1;
+        if (next <= 0) {
+          clearInterval(interval);
+          if (!isCancelled) {
+            abandonGameSession(pendingSession._id)
+              .then(() => requestAllSessions())
+              .catch(() => {
+                /* silently ignore, UI will sync via WS anyway */
+              });
+          }
+        }
+        return Math.max(next, 0);
+      });
+    }, 1000);
+
+    return () => {
+      isCancelled = true;
+      clearInterval(interval);
+    };
+  }, [pendingSession?._id, pendingSession?.players]);
 
   const handleStartGame = async () => {
     await startGameSession(gameSlug);
@@ -552,6 +601,14 @@ export default function HostDashboard() {
                     }
                   `}</style>
                 </Grid>
+
+                {(!player1 || !player2) && (
+                  <Box sx={{ mt: 3 }}>
+                    <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                      {t.autoCloseNotice} <b>{abandonRemaining}</b> {t.seconds}.
+                    </Typography>
+                  </Box>
+                )}
               </Paper>
             );
           })()}

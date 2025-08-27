@@ -33,6 +33,7 @@ import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import EmptyBusinessState from "@/components/EmptyBusinessState";
 import NoDataAvailable from "@/components/NoDataAvailable";
+import LoadingState from "@/components/LoadingState";
 
 const translations = {
   en: {
@@ -292,9 +293,7 @@ export default function GamesPage() {
         {!selectedBusiness ? (
           <EmptyBusinessState />
         ) : loading ? (
-          <Box sx={{ textAlign: align, mt: 8 }}>
-            <CircularProgress />
-          </Box>
+          <LoadingState/>
         ) : games.length === 0 ? (
           <NoDataAvailable />
         ) : (

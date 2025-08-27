@@ -26,6 +26,15 @@ export const joinGameSession = withApiHandler(
   }
 );
 
+// Abandon (auto-close) a pending session
+export const abandonGameSession = withApiHandler(
+  async (sessionId) => {
+    const { data } = await api.put(`/eventduel/sessions/${sessionId}/abandon`);
+    return data;
+  },
+  { showSuccess: true }
+);
+
 // Activate session
 export const activateGameSession = withApiHandler(
   async (sessionId) => {

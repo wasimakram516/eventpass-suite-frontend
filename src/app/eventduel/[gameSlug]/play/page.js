@@ -11,12 +11,16 @@ import {
   Container,
   Card,
   CardContent,
+  IconButton
 } from "@mui/material";
 import Confetti from "react-confetti";
 import { useGame } from "@/contexts/GameContext";
 import { useEffect, useState, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { submitPvPResult } from "@/services/eventduel/gameSessionService";
+import {
+  submitPvPResult,
+  activateGameSession,
+} from "@/services/eventduel/gameSessionService";
 import LanguageSelector from "@/components/LanguageSelector";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { translateText } from "@/services/translationService";
@@ -53,6 +57,9 @@ const gameTranslations = {
     waitingMessage: "The game will start shortly...",
     pendingTitle: "Waiting for Host to Start...",
     pendingMessage: "The game will begin shortly...",
+    startNow: "Start Game",
+    bothJoined: "Both players are ready!",
+    waitingForBoth: "Waiting for both players to join...",
   },
   ar: {
     countdown: "ثانية",
@@ -82,6 +89,9 @@ const gameTranslations = {
     waitingMessage: "ستبدأ اللعبة قريباً...",
     pendingTitle: "في انتظار بدء المضيف...",
     pendingMessage: "ستبدأ اللعبة قريباً...",
+    startNow: "ابدأ اللعبة",
+    bothJoined: "انضم اللاعبان! جاهزون للبدء",
+    waitingForBoth: "بانتظار انضمام كلا اللاعبين...",
   },
 };
 
@@ -96,6 +106,7 @@ export default function PlayPage() {
     sessions = [],
     selectedPlayer = null,
     questions: PlayerQuestions = [],
+    requestAllSessions
   } = useEventDuelWebSocketData(game?.slug) || {};
 
   // ─── 3. DERIVED QUESTIONS ARRAY ────────────────────────────────────────
@@ -125,22 +136,41 @@ export default function PlayPage() {
   const [localDelay, setLocalDelay] = useState(0);
   const [localTime, setLocalTime] = useState(0);
   const [hasFinishedEarly, setHasFinishedEarly] = useState(false);
+  const [starting, setStarting] = useState(false);
 
   // ─── 6. SESSION STATUS DERIVATIONS ────────────────────────────────────
+  const abandonedSession = useMemo(
+    () => sessions.find((s) => s.status === "abandoned") || null,
+    [sessions]
+  );
+
   const pendingSession = useMemo(
     () => sessions.find((s) => s.status === "pending") || null,
     [sessions]
   );
+
   const activeSession = useMemo(
     () => sessions.find((s) => s.status === "active") || null,
     [sessions]
   );
+
   const recentlyCompleted = useMemo(() => {
     const completed = sessions
       .filter((s) => s.status === "completed")
       .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
     return completed[0] || null;
   }, [sessions]);
+
+  const bothPlayersJoined = useMemo(() => {
+    if (!pendingSession) return false;
+    const hasP1 = pendingSession.players?.some(
+      (p) => p.playerType === "p1" && p.playerId
+    );
+    const hasP2 = pendingSession.players?.some(
+      (p) => p.playerType === "p2" && p.playerId
+    );
+    return hasP1 && hasP2;
+  }, [pendingSession]);
 
   // ─── 7. QUESTION TRANSLATION HELPER ────────────────────────────────────
   const translateQuestion = async (questionObj) => {
@@ -223,7 +253,7 @@ export default function PlayPage() {
     if (game && (!playerId || !sessionId)) {
       router.replace(`/eventduel/${game?.slug}`);
     }
-  }, [pendingSession]);
+  }, [pendingSession, abandonedSession]);
 
   // ─── 9. PROGRESS & FINAL SUBMISSION ────────────────────────────────────
   const submitProgress = async (timeOverride = null) => {
@@ -250,7 +280,18 @@ export default function PlayPage() {
     clearPlayerSessionData();
   };
 
-  // ─── 10. ANSWER HANDLER ─────────────────────────────────────────────────
+  // ─── 10. HANDLERS ─────────────────────────────────────────────────
+  const handlePlayerActivate = async () => {
+    if (!pendingSession || !bothPlayersJoined || starting) return;
+    try {
+      setStarting(true);
+      await activateGameSession(pendingSession._id);
+      requestAllSessions();
+    } finally {
+      setStarting(false);
+    }
+  };
+
   const handleSelect = (i) => {
     if (!currentQuestion || selected !== null || disabled) return;
     const isCorrect = i === currentQuestion.correctAnswerIndex;
@@ -303,7 +344,7 @@ export default function PlayPage() {
 
   // ─── 11. RENDER BRANCHES ────────────────────────────────────────────────
 
-  /* SESSION PENDING SCREEN (waiting for host)*/
+  /* SESSION PENDING SCREEN (players can start) */
   if (pendingSession) {
     return (
       <>
@@ -327,61 +368,120 @@ export default function PlayPage() {
             px: 3,
           }}
         >
-          <CircularProgress />
+          {/* Back Button */}
+        <IconButton
+          size="small"
+          onClick={() => router.replace(`/eventduel/${game.slug}`)}
+          sx={{
+            position: "fixed",
+            top: 20,
+            left: 20,
+            bgcolor: "primary.main",
+            color: "white",
+          }}
+        >
+          <ICONS.back />
+        </IconButton>
+          {!bothPlayersJoined ? (
+            <>
+              <CircularProgress />
+              <Typography
+                variant="h3"
+                sx={{
+                  my: 6,
+                  fontWeight: "bold",
+                  textShadow:
+                    "0 0 10px rgba(255,255,255,0.8), 0 0 20px rgba(0,255,255,0.6)",
+                  letterSpacing: "2px",
+                  animation: "pulseText 2s infinite",
+                  fontSize: (() => {
+                    const L = (t.waitingTitle || t.pendingTitle || "").length;
+                    if (L <= 25) return { xs: "1.5rem", sm: "2.5rem" };
+                    if (L <= 40) return { xs: "1.25rem", sm: "2rem" };
+                    return { xs: "1rem", sm: "1.75rem" };
+                  })(),
+                  lineHeight: { xs: 1.2, sm: 1.3 },
+                  wordBreak: "break-word",
+                  overflowWrap: "break-word",
+                }}
+              >
+                {t.waitingTitle || t.pendingTitle}
+              </Typography>
 
-          {/* Animated Title */}
-          <Typography
-            variant="h3"
-            sx={{
-              my: 6,
-              fontWeight: "bold",
-              textShadow:
-                "0 0 10px rgba(255,255,255,0.8), 0 0 20px rgba(0,255,255,0.6)",
-              letterSpacing: "2px",
-              animation: "pulseText 2s infinite",
-              fontSize: (() => {
-                const titleLength = t.pendingTitle?.length || 0;
-                if (titleLength <= 25) {
-                  return { xs: "1.5rem", sm: "2.5rem" };
-                } else if (titleLength <= 40) {
-                  return { xs: "1.25rem", sm: "2rem" };
-                } else {
-                  return { xs: "1rem", sm: "1.75rem" };
-                }
-              })(),
-              lineHeight: { xs: 1.2, sm: 1.3 },
-              wordBreak: "break-word",
-              overflowWrap: "break-word",
-            }}
-          >
-            {t.pendingTitle}
-          </Typography>
+              <Typography
+                variant="h6"
+                sx={{
+                  mt: 2,
+                  opacity: 0.6,
+                  fontStyle: "italic",
+                  animation: "blink 1.5s infinite",
+                  fontSize: (() => {
+                    const L = (t.waitingForBoth || t.pendingMessage || "")
+                      .length;
+                    if (L <= 30) return { xs: "0.9rem", sm: "1.1rem" };
+                    if (L <= 50) return { xs: "0.8rem", sm: "1rem" };
+                    return { xs: "0.7rem", sm: "0.9rem" };
+                  })(),
+                }}
+              >
+                {t.waitingForBoth || t.pendingMessage}
+              </Typography>
+            </>
+          ) : (
+            <>
+              <Typography
+                variant="h3"
+                sx={{
+                  mb: 4,
+                  fontWeight: "bold",
+                  textShadow:
+                    "0 0 10px rgba(255,255,255,0.8), 0 0 20px rgba(0,255,255,0.6)",
+                  letterSpacing: "2px",
+                  animation: "pulseText 2s infinite",
+                  fontSize: (() => {
+                    const L = (t.bothJoined || "").length;
+                    if (L <= 20) return { xs: "1.5rem", sm: "2.5rem" };
+                    if (L <= 35) return { xs: "1.25rem", sm: "2rem" };
+                    return { xs: "1rem", sm: "1.75rem" };
+                  })(),
+                }}
+              >
+                {t.bothJoined}
+              </Typography>
 
-          {/* Sub-message */}
-          <Typography
-            variant="h6"
-            sx={{
-              mt: 2,
-              opacity: 0.5,
-              fontSize: (() => {
-                const messageLength = t.pendingMessage?.length || 0;
-                if (messageLength <= 30) {
-                  return { xs: "0.9rem", sm: "1.1rem" };
-                } else if (messageLength <= 50) {
-                  return { xs: "0.8rem", sm: "1rem" };
-                } else {
-                  return { xs: "0.7rem", sm: "0.9rem" };
-                }
-              })(),
-              fontStyle: "italic",
-              animation: "blink 1.5s infinite",
-              lineHeight: { xs: 1.2, sm: 1.3 },
-              wordBreak: "break-word",
-              overflowWrap: "break-word",
-            }}
-          >
-            {t.pendingMessage}
-          </Typography>
+              <Button
+                variant="contained"
+                size="large"
+                onClick={handlePlayerActivate}
+                disabled={starting}
+                startIcon={<ICONS.play />}
+                sx={{
+                  px: 4,
+                  py: 1.25,
+                  borderRadius: 999,
+                  fontWeight: "bold",
+                  textTransform: "none",
+                  ...getStartIconSpacing(dir),
+                }}
+              >
+                {starting ? (
+                  <CircularProgress size={22} sx={{ color: "#fff" }} />
+                ) : (
+                  t.startNow
+                )}
+              </Button>
+
+              <Typography
+                variant="body2"
+                sx={{ mt: 4, opacity: 0.7, fontStyle: "italic" }}
+              >
+                {/* Small hint so users know anybody can start */}
+                {language === "ar"
+                  ? "يمكن لأي لاعب بدء اللعبة الآن."
+                  : "Any player can start the game now."}
+              </Typography>
+            </>
+          )}
         </Box>
       </>
     );
