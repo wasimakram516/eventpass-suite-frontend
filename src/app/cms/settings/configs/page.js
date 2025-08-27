@@ -50,6 +50,7 @@ import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import ICONS from "@/utils/iconUtil";
 import { useTheme, useMediaQuery } from "@mui/material";
+import LoadingState from "@/components/LoadingState";
 
 const translations = {
   en: {
@@ -192,6 +193,7 @@ export default function GlobalConfigPage() {
 
   useEffect(() => {
     (async () => {
+      setLoading(true);
       const res = await getGlobalConfig();
       const cfg =
         res && typeof res === "object" && "data" in res ? res.data : res;
@@ -202,6 +204,7 @@ export default function GlobalConfigPage() {
       }
 
       setConfig(cfg);
+      setLoading(false);
       setForm((prev) => ({
         ...prev,
         appName: cfg.appName || "",
@@ -564,7 +567,9 @@ export default function GlobalConfigPage() {
 
       <Divider />
 
-      {!config ? (
+      {loading ? (
+        <LoadingState />
+      ) : !config ? (
         <Box textAlign="center" py={4}>
           <Typography sx={{ mb: 4 }}>{t.noConfig}</Typography>
           <Button
