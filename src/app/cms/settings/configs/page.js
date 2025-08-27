@@ -19,6 +19,10 @@ import {
   DialogActions,
   TextField,
   CircularProgress,
+  Paper,
+  Grid,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 
@@ -45,7 +49,7 @@ import { useMessage } from "@/contexts/MessageContext";
 import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import ICONS from "@/utils/iconUtil";
-import { useTheme, useMediaQuery } from '@mui/material';
+import { useTheme, useMediaQuery } from "@mui/material";
 
 const translations = {
   en: {
@@ -82,6 +86,13 @@ const translations = {
     none: "None",
     socialLinksSection: "Social Links",
     mediaUploadsSection: "Media Uploads",
+    clientLogosSection: "Client Logos",
+    addClientLogos: "Add Client Logos",
+    clearAllLogos: "Clear All Logos",
+    willClearAll: "Will Clear All (toggle off?)",
+    nameOptional: "Client Name (optional)",
+    websiteOptional: "Website (optional)",
+    remove: "Remove",
   },
   ar: {
     title: "الإعدادات العامة",
@@ -117,6 +128,13 @@ const translations = {
     none: "لا يوجد",
     socialLinksSection: "روابط التواصل الاجتماعي",
     mediaUploadsSection: "تحميل الوسائط",
+    clientLogosSection: "شعارات العملاء",
+    addClientLogos: "إضافة شعارات العملاء",
+    clearAllLogos: "حذف جميع الشعارات",
+    willClearAll: "سيتم حذف الكل (تعطيل؟)",
+    nameOptional: "اسم العميل (اختياري)",
+    websiteOptional: "الموقع (اختياري)",
+    remove: "إزالة",
   },
 };
 
@@ -126,7 +144,7 @@ export default function GlobalConfigPage() {
   const { dir, align, t } = useI18nLayout(translations);
 
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const [loading, setLoading] = useState(false);
 
   const [config, setConfig] = useState(null);
@@ -144,17 +162,34 @@ export default function GlobalConfigPage() {
     companyLogoFile: null,
     brandingMediaFile: null,
     poweredByMediaFile: null,
+
+    // client logos + controls
+    clientLogos: [], // array of { _id?, name, website, logoUrl, file? }
+    removeLogoIds: [],
+    clearAllClientLogos: false,
+
+    // removal flags for single media
+    removeCompanyLogo: false,
+    removeBrandingMedia: false,
+    removePoweredByMedia: false,
   });
 
-  // Helper
-  // Helper function to detect video URLs by file extension
   const isVideo = (url) => {
-    if (!url || typeof url !== 'string') return false;
-    const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.mkv', '.wmv', '.flv'];
-    const urlWithoutQuery = url.split('?')[0].toLowerCase();
-    return videoExtensions.some(ext => urlWithoutQuery.endsWith(ext));
+    if (!url || typeof url !== "string") return false;
+    const exts = [
+      ".mp4",
+      ".webm",
+      ".ogg",
+      ".mov",
+      ".avi",
+      ".mkv",
+      ".wmv",
+      ".flv",
+    ];
+    const clean = url.split("?")[0].toLowerCase();
+    return exts.some((ext) => clean.endsWith(ext));
   };
-  // Load config
+
   useEffect(() => {
     (async () => {
       const res = await getGlobalConfig();
@@ -162,12 +197,13 @@ export default function GlobalConfigPage() {
         res && typeof res === "object" && "data" in res ? res.data : res;
 
       if (!cfg) {
-        setConfig(null); // no record -> show Create button
+        setConfig(null);
         return;
       }
 
       setConfig(cfg);
-      setForm({
+      setForm((prev) => ({
+        ...prev,
         appName: cfg.appName || "",
         contact: {
           email: cfg.contact?.email || "",
@@ -189,18 +225,32 @@ export default function GlobalConfigPage() {
         },
         companyLogoUrl: cfg.companyLogoUrl || "",
         brandingMediaUrl: cfg.brandingMediaUrl || "",
-      });
+        clientLogos: Array.isArray(cfg.clientLogos)
+          ? cfg.clientLogos.map((l) => ({
+              _id: l._id,
+              name: l.name || "",
+              website: l.website || "",
+              logoUrl: l.logoUrl || "",
+            }))
+          : [],
+        removeLogoIds: [],
+        clearAllClientLogos: false,
+        removeCompanyLogo: false,
+        removeBrandingMedia: false,
+        removePoweredByMedia: false,
+        companyLogoFile: null,
+        brandingMediaFile: null,
+        poweredByMediaFile: null,
+      }));
     })();
   }, []);
 
-  // Delete handler
   const handleDelete = async () => {
     await deleteGlobalConfig();
     setConfig(null);
     refetchConfig();
   };
 
-  // Field change
   const handleChange = (e, section) => {
     const { name, value } = e.target;
     if (section) {
@@ -214,17 +264,18 @@ export default function GlobalConfigPage() {
   };
 
   const handleFileChange = (e, fileKey, previewKey) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type based on the upload type
     if (fileKey === "companyLogoFile" && !file.type.startsWith("image/")) {
       showMessage("Please select an image file for logo", "error");
       return;
     }
-
-    if ((fileKey === "brandingMediaFile" || fileKey === "poweredByMediaFile") &&
-      !file.type.startsWith("image/") && !file.type.startsWith("video/")) {
+    if (
+      (fileKey === "brandingMediaFile" || fileKey === "poweredByMediaFile") &&
+      !file.type.startsWith("image/") &&
+      !file.type.startsWith("video/")
+    ) {
       showMessage("Please select an image or video file", "error");
       return;
     }
@@ -246,7 +297,85 @@ export default function GlobalConfigPage() {
     }
   };
 
-  // Save (create or update)
+  const normalizeUrl = (url) => {
+    if (!url) return "";
+    return url.startsWith("http://") || url.startsWith("https://")
+      ? url
+      : `https://${url}`;
+  };
+
+  // Client logos
+  const handleAddClientLogos = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    const newItems = files.map((file) => ({
+      name: "",
+      website: "",
+      logoUrl: URL.createObjectURL(file),
+      file,
+    }));
+
+    setForm((prev) => ({
+      ...prev,
+      clientLogos: [...prev.clientLogos, ...newItems],
+    }));
+  };
+
+  const handleLogoFieldChange = (index, key, value) => {
+    setForm((prev) => {
+      const arr = [...prev.clientLogos];
+      arr[index] = { ...arr[index], [key]: value };
+      return { ...prev, clientLogos: arr };
+    });
+  };
+
+  const handleRemoveClientLogo = (index) => {
+    setForm((prev) => {
+      const arr = [...prev.clientLogos];
+      const removed = arr.splice(index, 1)[0];
+      const removeLogoIds = [...prev.removeLogoIds];
+      if (removed && removed._id) removeLogoIds.push(removed._id);
+      return { ...prev, clientLogos: arr, removeLogoIds };
+    });
+  };
+
+  const handleClearAllClientLogos = () => {
+    setForm((prev) => ({
+      ...prev,
+      clearAllClientLogos: !prev.clearAllClientLogos,
+    }));
+  };
+
+  // Single-media removals
+  const handleRemoveCompanyLogo = () => {
+    setForm((prev) => ({
+      ...prev,
+      companyLogoUrl: "",
+      companyLogoFile: null,
+      removeCompanyLogo: true,
+    }));
+  };
+
+  const handleRemoveBrandingMedia = () => {
+    setForm((prev) => ({
+      ...prev,
+      brandingMediaUrl: "",
+      brandingMediaFile: null,
+      removeBrandingMedia: true,
+    }));
+  };
+
+  const handleRemovePoweredByMedia = () => {
+    setForm((prev) => ({
+      ...prev,
+      poweredBy: { ...prev.poweredBy, mediaUrl: "" },
+      poweredByMediaFile: null,
+      removePoweredByMedia: true,
+    }));
+  };
+
+  // Save
   const handleSave = async () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -256,7 +385,6 @@ export default function GlobalConfigPage() {
         "error"
       );
     }
-
     if (form.support.email && !emailRegex.test(form.support.email)) {
       return showMessage(
         t.invalidSupportEmail || "Invalid support email",
@@ -284,6 +412,49 @@ export default function GlobalConfigPage() {
     if (form.poweredByMediaFile)
       formData.append("poweredByMedia", form.poweredByMediaFile);
 
+    if (form.removeCompanyLogo) formData.append("removeCompanyLogo", "true");
+    if (form.removeBrandingMedia)
+      formData.append("removeBrandingMedia", "true");
+    if (form.removePoweredByMedia)
+      formData.append("removePoweredByMedia", "true");
+
+    if (form.clearAllClientLogos) {
+      formData.append("clearAllClientLogos", "true");
+    } else {
+      const meta = [];
+      form.clientLogos.forEach((item) => {
+        if (item.file) {
+          formData.append("clientLogos", item.file);
+          meta.push({ name: item.name || "", website: item.website || "" });
+        }
+      });
+      if (meta.length) {
+        formData.append("clientLogosMeta", JSON.stringify(meta));
+      }
+    }
+
+    if (form.removeLogoIds && form.removeLogoIds.length) {
+      formData.append("removeLogoIds", JSON.stringify(form.removeLogoIds));
+    }
+
+    const hasNewFiles = form.clientLogos.some((l) => !!l.file);
+
+    if (!form.clearAllClientLogos && !hasNewFiles) {
+      const removeSet = new Set((form.removeLogoIds || []).map(String));
+      const reordered = (form.clientLogos || [])
+        .filter((l) => !removeSet.has(String(l._id)))
+        .map((l) => ({
+          _id: l._id,
+          name: l.name || "",
+          website: l.website || "",
+          logoUrl: l.logoUrl || "",
+        }));
+
+      if (reordered.length) {
+        formData.append("reorderClientLogos", JSON.stringify(reordered));
+      }
+    }
+
     const updated = config
       ? await updateGlobalConfig(formData)
       : await createGlobalConfig(formData);
@@ -295,6 +466,31 @@ export default function GlobalConfigPage() {
 
     if (saved && !updated?.error) {
       setConfig(saved);
+      setForm((prev) => ({
+        ...prev,
+        companyLogoUrl: saved.companyLogoUrl || "",
+        brandingMediaUrl: saved.brandingMediaUrl || "",
+        poweredBy: {
+          ...prev.poweredBy,
+          mediaUrl: saved.poweredBy?.mediaUrl || "",
+        },
+        clientLogos: Array.isArray(saved.clientLogos)
+          ? saved.clientLogos.map((l) => ({
+              _id: l._id,
+              name: l.name || "",
+              website: l.website || "",
+              logoUrl: l.logoUrl || "",
+            }))
+          : [],
+        companyLogoFile: null,
+        brandingMediaFile: null,
+        poweredByMediaFile: null,
+        removeCompanyLogo: false,
+        removeBrandingMedia: false,
+        removePoweredByMedia: false,
+        removeLogoIds: [],
+        clearAllClientLogos: false,
+      }));
       refetchConfig();
     }
 
@@ -331,9 +527,7 @@ export default function GlobalConfigPage() {
               width: { xs: "100%", sm: "auto" },
               justifyContent: { xs: "space-between", sm: "flex-end" },
               flexDirection: { xs: "column-reverse", sm: "row" },
-              '& > *': {
-                marginLeft: { xs: 0, sm: undefined },
-              },
+              "& > *": { marginLeft: { xs: 0, sm: undefined } },
               gap: { xs: 2, sm: 2 },
             }}
           >
@@ -386,10 +580,14 @@ export default function GlobalConfigPage() {
         <List sx={{ mt: 2, bgcolor: "background.paper" }}>
           {/* App Name */}
           <ListItem>
-            <ListItemIcon >
+            <ListItemIcon>
               <SettingsIcon />
             </ListItemIcon>
-            <ListItemText primary={t.appName} secondary={config?.appName} sx={{ textAlign: align }} />
+            <ListItemText
+              primary={t.appName}
+              secondary={config?.appName}
+              sx={{ textAlign: align }}
+            />
           </ListItem>
           <Divider />
 
@@ -399,14 +597,20 @@ export default function GlobalConfigPage() {
             <ListItemIcon>
               <EmailIcon />
             </ListItemIcon>
-            <ListItemText secondary={config?.contact?.email} sx={{ textAlign: align }} />
+            <ListItemText
+              secondary={config?.contact?.email}
+              sx={{ textAlign: align }}
+            />
           </ListItem>
           <Divider component="li" />
           <ListItem>
             <ListItemIcon>
               <PhoneIcon />
             </ListItemIcon>
-            <ListItemText secondary={config?.contact?.phone} sx={{ textAlign: align }} />
+            <ListItemText
+              secondary={config?.contact?.phone}
+              sx={{ textAlign: align }}
+            />
           </ListItem>
           <Divider />
 
@@ -416,25 +620,32 @@ export default function GlobalConfigPage() {
             <ListItemIcon>
               <EmailIcon />
             </ListItemIcon>
-            <ListItemText secondary={config?.support?.email} sx={{ textAlign: align }} />
+            <ListItemText
+              secondary={config?.support?.email}
+              sx={{ textAlign: align }}
+            />
           </ListItem>
           <Divider component="li" />
           <ListItem>
             <ListItemIcon>
               <PhoneIcon />
             </ListItemIcon>
-            <ListItemText secondary={config?.support?.phone} sx={{ textAlign: align }} />
+            <ListItemText
+              secondary={config?.support?.phone}
+              sx={{ textAlign: align }}
+            />
           </ListItem>
           <Divider />
 
           {/* Powered By */}
           <ListSubheader>{t.poweredBy}</ListSubheader>
-          <ListItem sx={{
-            flexDirection: 'column',
-            alignItems: 'flex-start',
-            gap: 2
-          }}>
-            <ListItemText secondary={config?.poweredBy?.text || t.none} sx={{ textAlign: align }} />
+          <ListItem
+            sx={{ flexDirection: "column", alignItems: "flex-start", gap: 2 }}
+          >
+            <ListItemText
+              secondary={config?.poweredBy?.text || t.none}
+              sx={{ textAlign: align }}
+            />
             {config?.poweredBy?.mediaUrl &&
               (isVideo(config?.poweredBy?.mediaUrl) ? (
                 <Box
@@ -444,7 +655,7 @@ export default function GlobalConfigPage() {
                   sx={{
                     width: { xs: "100%", md: 200 },
                     height: { xs: 140, md: 200 },
-                    objectFit: 'cover',
+                    objectFit: "cover",
                   }}
                 />
               ) : (
@@ -453,7 +664,7 @@ export default function GlobalConfigPage() {
                   variant="square"
                   sx={{
                     width: { xs: "100%", md: 200 },
-                    height: { xs: 120, md: 200 }
+                    height: { xs: 120, md: 200 },
                   }}
                 />
               ))}
@@ -462,7 +673,7 @@ export default function GlobalConfigPage() {
 
           {/* Company Logo */}
           <ListSubheader>{t.companyLogo}</ListSubheader>
-          <ListItem >
+          <ListItem>
             {config?.companyLogoUrl ? (
               <Avatar
                 src={config?.companyLogoUrl}
@@ -473,7 +684,7 @@ export default function GlobalConfigPage() {
                 }}
               />
             ) : (
-              <Typography color="text.secondary">None</Typography>
+              <Typography color="text.secondary">{t.none}</Typography>
             )}
           </ListItem>
           <Divider />
@@ -490,7 +701,7 @@ export default function GlobalConfigPage() {
                   sx={{
                     width: { xs: "100%", md: 200 },
                     height: { xs: 140, md: 200 },
-                    objectFit: 'cover',
+                    objectFit: "cover",
                   }}
                 />
               ) : (
@@ -508,6 +719,95 @@ export default function GlobalConfigPage() {
               <Typography color="text.secondary">{t.none}</Typography>
             )}
           </ListItem>
+          <Divider />
+
+          {/* Client Logos */}
+          <ListSubheader>
+            {t.clientLogosSection || "Client Logos"}
+          </ListSubheader>
+
+          {!config?.clientLogos?.length ? (
+            <ListItem>
+              <ListItemText secondary={t.none} sx={{ textAlign: align }} />
+            </ListItem>
+          ) : (
+            <ListItem disableGutters sx={{ px: 2 }}>
+              <Grid container spacing={2}>
+                {config.clientLogos.map((cl, idx) => (
+                  <Grid item xs={6} sm={4} md={3} lg={2} key={cl._id || idx}>
+                    <Stack
+                      spacing={0.5}
+                      alignItems="center"
+                      sx={{ width: "100%" }}
+                    >
+                      {/* logo tile */}
+                      <Box
+                        sx={{
+                          width: "100%",
+                          height: 80,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          p: 1,
+                          border: "1px solid",
+                          borderColor: "divider",
+                          borderRadius: 1,
+                          bgcolor: "background.default",
+                        }}
+                      >
+                        <Box
+                          component="img"
+                          src={cl.logoUrl}
+                          alt={cl.name || "logo"}
+                          sx={{
+                            maxWidth: "100%",
+                            maxHeight: "100%",
+                            objectFit: "contain",
+                          }}
+                        />
+                      </Box>
+
+                      {/* meta (only shown if present) */}
+                      {(cl.name || cl.website) && (
+                        <Stack spacing={0} sx={{ width: "100%" }}>
+                          {cl.name ? (
+                            <Typography
+                              variant="caption"
+                              noWrap
+                              title={cl.name}
+                              sx={{ textAlign: align }}
+                            >
+                              {cl.name}
+                            </Typography>
+                          ) : null}
+
+                          {cl.website ? (
+                            <Typography
+                              component="a"
+                              href={normalizeUrl(cl.website)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              noWrap
+                              sx={{
+                                textDecoration: "underline",
+                                color: "blue",
+                                textAlign: align,
+                                cursor: "pointer",
+                                fontSize: "0.75rem",
+                                display: "inline-block",
+                              }}
+                            >
+                              {cl.website}
+                            </Typography>
+                          ) : null}
+                        </Stack>
+                      )}
+                    </Stack>
+                  </Grid>
+                ))}
+              </Grid>
+            </ListItem>
+          )}
           <Divider />
 
           {/* Social Links */}
@@ -530,31 +830,9 @@ export default function GlobalConfigPage() {
                           href={config.socialLinks[key]}
                           target="_blank"
                           sx={{
-                            textDecoration: 'underline',
-                            color: 'blue',
-                            display: {
-                              xs: 'none',
-                              sm: 'block'
-                            },
-                            textAlign: align
-                          }}
-                        >
-                          {config.socialLinks[key]}
-                        </Typography>
-                      }
-                      secondary={
-                        <Typography
-                          component="a"
-                          href={config.socialLinks[key]}
-                          target="_blank"
-                          sx={{
-                            textDecoration: 'underline',
-                            color: 'blue',
-                            display: {
-                              xs: 'block',
-                              sm: 'none'
-                            },
-                            textAlign: align
+                            textDecoration: "underline",
+                            color: "blue",
+                            textAlign: align,
                           }}
                         >
                           {key.charAt(0).toUpperCase() + key.slice(1)}
@@ -569,7 +847,13 @@ export default function GlobalConfigPage() {
         </List>
       )}
 
-      <Dialog open={openEdit} onClose={() => setOpenEdit(false)} fullWidth>
+      {/* EDIT / CREATE DIALOG */}
+      <Dialog
+        open={openEdit}
+        onClose={() => setOpenEdit(false)}
+        fullWidth
+        maxWidth="md"
+      >
         <DialogTitle>{config ? "Edit" : "Create"} Configuration</DialogTitle>
         <DialogContent>
           <Stack spacing={2} mt={1}>
@@ -665,7 +949,13 @@ export default function GlobalConfigPage() {
             <Divider />
 
             <Typography variant="subtitle2">{t.mediaUploadsSection}</Typography>
-            <Stack direction={{ xs: "column", sm: "row" }} alignItems="center" spacing={2}>
+
+            {/* Company Logo */}
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              alignItems="center"
+              spacing={2}
+            >
               <Avatar
                 src={form.companyLogoUrl}
                 variant="square"
@@ -674,22 +964,47 @@ export default function GlobalConfigPage() {
                   height: { xs: 120, md: 160 },
                 }}
               />
-              <Button variant="outlined" component="label" sx={{ width: { xs: "100%", sm: "auto" } }}>
-                {t.uploadLogo}
-                <input
-                  type="file"
-                  accept="image/*,video/*"
-                  hidden
-                  onChange={(e) =>
-                    handleFileChange(e, "companyLogoFile", "companyLogoUrl")
-                  }
-                />
-              </Button>
+              <Stack
+                direction="row"
+                spacing={1}
+                sx={{ width: { xs: "100%", sm: "auto" } }}
+              >
+                <Button
+                  variant="outlined"
+                  component="label"
+                  sx={{ width: { xs: "100%", sm: "auto" } }}
+                >
+                  {t.uploadLogo}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    hidden
+                    onChange={(e) =>
+                      handleFileChange(e, "companyLogoFile", "companyLogoUrl")
+                    }
+                  />
+                </Button>
+                {form.companyLogoUrl && (
+                  <Button
+                    color="error"
+                    variant="text"
+                    onClick={handleRemoveCompanyLogo}
+                  >
+                    {t.remove}
+                  </Button>
+                )}
+              </Stack>
             </Stack>
-            <Stack direction={{ xs: "column", sm: "row" }} alignItems="center" spacing={2}>
+
+            {/* Branding Media */}
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              alignItems="center"
+              spacing={2}
+            >
               {form.brandingMediaUrl &&
                 (form.brandingMediaFile?.type?.startsWith("video/") ||
-                  (!form.brandingMediaFile && isVideo(form.brandingMediaUrl)) ? (
+                (!form.brandingMediaFile && isVideo(form.brandingMediaUrl)) ? (
                   <Box
                     component="video"
                     src={form.brandingMediaUrl}
@@ -697,7 +1012,7 @@ export default function GlobalConfigPage() {
                     sx={{
                       width: { xs: "100%", md: 160 },
                       height: { xs: 120, md: 160 },
-                      objectFit: 'cover',
+                      objectFit: "cover",
                     }}
                   />
                 ) : (
@@ -711,31 +1026,60 @@ export default function GlobalConfigPage() {
                     }}
                   />
                 ))}
-              <Button variant="outlined" component="label" sx={{ width: { xs: "100%", sm: "auto" } }}>
-                {t.uploadBranding}
-                <input
-                  type="file"
-                  accept="image/*,video/*,.gif"
-                  hidden
-                  onChange={(e) =>
-                    handleFileChange(e, "brandingMediaFile", "brandingMediaUrl")
-                  }
-                />
-              </Button>
+              <Stack
+                direction="row"
+                spacing={1}
+                sx={{ width: { xs: "100%", sm: "auto" } }}
+              >
+                <Button
+                  variant="outlined"
+                  component="label"
+                  sx={{ width: { xs: "100%", sm: "auto" } }}
+                >
+                  {t.uploadBranding}
+                  <input
+                    type="file"
+                    accept="image/*,video/*,.gif"
+                    hidden
+                    onChange={(e) =>
+                      handleFileChange(
+                        e,
+                        "brandingMediaFile",
+                        "brandingMediaUrl"
+                      )
+                    }
+                  />
+                </Button>
+                {form.brandingMediaUrl && (
+                  <Button
+                    color="error"
+                    variant="text"
+                    onClick={handleRemoveBrandingMedia}
+                  >
+                    {t.remove}
+                  </Button>
+                )}
+              </Stack>
             </Stack>
-            <Stack direction={{ xs: "column", sm: "row" }} alignItems="center" spacing={2}>
+
+            {/* Powered By Media */}
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              alignItems="center"
+              spacing={2}
+            >
               {form.poweredBy.mediaUrl &&
                 (form.poweredByMediaFile?.type?.startsWith("video/") ||
-                  (!form.poweredByMediaFile && isVideo(form.poweredBy.mediaUrl)) ? (
+                (!form.poweredByMediaFile &&
+                  isVideo(form.poweredBy.mediaUrl)) ? (
                   <Box
                     component="video"
                     src={form.poweredBy.mediaUrl}
                     controls
-                    width={80}
                     sx={{
                       width: { xs: "100%", md: 160 },
                       height: { xs: 120, md: 160 },
-                      objectFit: 'cover',
+                      objectFit: "cover",
                     }}
                   />
                 ) : (
@@ -749,25 +1093,146 @@ export default function GlobalConfigPage() {
                     }}
                   />
                 ))}
+              <Stack
+                direction="row"
+                spacing={1}
+                sx={{ width: { xs: "100%", sm: "auto" } }}
+              >
+                <Button
+                  variant="outlined"
+                  component="label"
+                  sx={{ width: { xs: "100%", sm: "auto" } }}
+                >
+                  {t.uploadPoweredBy}
+                  <input
+                    type="file"
+                    accept="image/*,video/*,.gif"
+                    hidden
+                    onChange={(e) =>
+                      handleFileChange(
+                        e,
+                        "poweredByMediaFile",
+                        "poweredBy.mediaUrl"
+                      )
+                    }
+                  />
+                </Button>
+                {form.poweredBy.mediaUrl && (
+                  <Button
+                    color="error"
+                    variant="text"
+                    onClick={handleRemovePoweredByMedia}
+                  >
+                    {t.remove}
+                  </Button>
+                )}
+              </Stack>
+            </Stack>
 
-              <Button variant="outlined" component="label" sx={{ width: { xs: "100%", sm: "auto" } }}>
-                {t.uploadPoweredBy}
+            {/* Client Logos */}
+            <Divider />
+            <Typography variant="subtitle2">{t.clientLogosSection}</Typography>
+
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              spacing={2}
+              alignItems="center"
+              sx={{ mb: 1 }}
+            >
+              <Button
+                variant="outlined"
+                component="label"
+                sx={{ width: { xs: "100%", sm: "auto" } }}
+                disabled={form.clearAllClientLogos}
+              >
+                {t.addClientLogos}
                 <input
                   type="file"
-                  accept="image/*,video/*,.gif"
+                  accept="image/*"
+                  multiple
                   hidden
-                  onChange={(e) =>
-                    handleFileChange(
-                      e,
-                      "poweredByMediaFile",
-                      "poweredBy.mediaUrl"
-                    )
-                  }
+                  onChange={handleAddClientLogos}
                 />
               </Button>
+              <Button
+                variant={form.clearAllClientLogos ? "contained" : "outlined"}
+                color="error"
+                onClick={handleClearAllClientLogos}
+              >
+                {form.clearAllClientLogos ? t.willClearAll : t.clearAllLogos}
+              </Button>
+            </Stack>
+
+            {/* make rows scroll if many */}
+            <Stack
+              spacing={2}
+              sx={{ maxHeight: { xs: 420, md: 360 }, overflow: "auto", pr: 1 }}
+            >
+              {form.clientLogos.length === 0 && (
+                <Typography color="text.secondary">{t.none}</Typography>
+              )}
+
+              {form.clientLogos.map((item, idx) => (
+                <Paper
+                  key={item._id || `new-${idx}`}
+                  variant="outlined"
+                  sx={{ p: 1.5, borderRadius: 1.5 }}
+                >
+                  <Grid container spacing={1.5} alignItems="center">
+                    {/* thumbnail */}
+                    <Grid item xs={12} sm="auto">
+                      <Avatar
+                        src={item.logoUrl}
+                        variant="square"
+                        sx={{ width: 72, height: 72 }}
+                      />
+                    </Grid>
+
+                    {/* name */}
+                    <Grid item xs={12} sm={4} md={4}>
+                      <TextField
+                        size="small"
+                        fullWidth
+                        label={t.nameOptional}
+                        value={item.name}
+                        onChange={(e) =>
+                          handleLogoFieldChange(idx, "name", e.target.value)
+                        }
+                      />
+                    </Grid>
+
+                    {/* website */}
+                    <Grid item xs={12} sm={6} md={6}>
+                      <TextField
+                        size="small"
+                        fullWidth
+                        label={t.websiteOptional}
+                        value={item.website}
+                        onChange={(e) =>
+                          handleLogoFieldChange(idx, "website", e.target.value)
+                        }
+                      />
+                    </Grid>
+
+                    {/* remove button */}
+                    <Grid item xs={12} sm="auto">
+                      <Tooltip title={t.remove}>
+                        <IconButton
+                          color="error"
+                          onClick={() => handleRemoveClientLogo(idx)}
+                          size="small"
+                        >
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Grid>
+                  </Grid>
+                </Paper>
+              ))}
             </Stack>
           </Stack>
         </DialogContent>
+
         <DialogActions
           sx={{
             flexDirection: "row",
@@ -780,9 +1245,7 @@ export default function GlobalConfigPage() {
             disabled={loading}
             startIcon={<ICONS.cancel />}
             onClick={() => setOpenEdit(false)}
-            sx={{
-              ...getStartIconSpacing(dir),
-            }}
+            sx={{ ...getStartIconSpacing(dir) }}
             variant="outlined"
           >
             {t.cancel}
@@ -798,20 +1261,21 @@ export default function GlobalConfigPage() {
                 <ICONS.save />
               )
             }
-            sx={{
-              ...getStartIconSpacing(dir),
-            }}
+            sx={{ ...getStartIconSpacing(dir) }}
           >
             {loading
               ? config
                 ? t.saving
                 : t.creating
               : config
-                ? (isMobile ? t.save : t.saveChanges)
-                : t.create}
+              ? isMobile
+                ? t.save
+                : t.saveChanges
+              : t.create}
           </Button>
         </DialogActions>
       </Dialog>
+
       <ConfirmationDialog
         open={confirmDeleteOpen}
         onClose={() => setConfirmDeleteOpen(false)}

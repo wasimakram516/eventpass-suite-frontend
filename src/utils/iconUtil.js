@@ -40,12 +40,7 @@ import {
   Instagram as InstagramIcon,
   LinkedIn as LinkedInIcon,
   Twitter as TwitterIcon,
-  YouTube as YouTubeIcon,
-  GitHub as GitHubIcon,
-  Telegram as TelegramIcon,
   WhatsApp as WhatsAppIcon,
-  Tiktok as TiktokIcon,
-  Snapchat as SnapchatIcon,
 } from "@mui/icons-material";
 
 // Outlined / extras we need across pages
@@ -191,12 +186,7 @@ const ICONS = {
   instagram: InstagramIcon,
   linkedin: LinkedInIcon,
   twitter: TwitterIcon,
-  youtube: YouTubeIcon,
-  github: GitHubIcon,
-  telegram: TelegramIcon,
   whatsapp: WhatsAppIcon,
-  tiktok: TiktokIcon,
-  snapchat: SnapchatIcon,
 
   // Outlined / extras
   personOutline: PersonOutlineIcon,

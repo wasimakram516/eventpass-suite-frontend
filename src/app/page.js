@@ -12,6 +12,7 @@ import {
   Paper,
   alpha,
 } from "@mui/material";
+import { keyframes } from "@mui/system"; // 👈 for marquee animation
 import { useRouter } from "next/navigation";
 import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
 import useI18nLayout from "@/hooks/useI18nLayout";
@@ -56,6 +57,13 @@ const translations = {
   },
 };
 
+// ---------- helpers ----------
+const normalizeUrl = (url) => {
+  if (!url) return "";
+  return /^https?:\/\//i.test(url) ? url : `https://${url}`;
+};
+// -----------------------------
+
 export default function HomePage() {
   const router = useRouter();
   const { globalConfig } = useGlobalConfig();
@@ -91,11 +99,7 @@ export default function HomePage() {
         }}
       >
         {/* HERO */}
-        <Box
-          sx={{
-            py: 6,
-          }}
-        >
+        <Box sx={{ py: 6 }}>
           <Container maxWidth="lg">
             <Stack spacing={3} alignItems="center" textAlign={align}>
               <Typography
@@ -152,7 +156,7 @@ export default function HomePage() {
         </Box>
 
         {/* FEATURES */}
-        <Container maxWidth="lg" sx={{ pb: { xs: 6, md: 10 } }}>
+        <Container maxWidth="lg" sx={{ pb: { xs: 3, md: 5 } }}>
           <Divider sx={{ mb: 4 }} />
           <Grid
             container
@@ -167,6 +171,9 @@ export default function HomePage() {
             ))}
           </Grid>
         </Container>
+
+        {/* CLIENT LOGOS STRIP (below features, above footer) */}
+        <ClientLogoStrip logos={globalConfig?.clientLogos || []} />
 
         {/* FOOTER */}
         <Footer globalConfig={globalConfig} align={align} />
@@ -232,9 +239,110 @@ function FeatureBadge({ iconKey, label, hue }) {
   );
 }
 
+/* ---------- Client Logo Strip ---------- */
+
+const marquee = keyframes`
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); } 
+`;
+
+function ClientLogoStrip({ logos }) {
+  const items = Array.isArray(logos) ? logos.filter((l) => !!l?.logoUrl) : [];
+  if (!items.length) return null;
+
+  return (
+    <Box
+      sx={(th) => ({
+        borderTop: `1px solid ${th.palette.divider}`,
+        borderBottom: `1px solid ${th.palette.divider}`,
+        py: { xs: 1.5, md: 2 },
+        position: "relative",
+        "@media (prefers-reduced-motion: reduce)": {
+          "& *": { animation: "none !important" },
+        },
+      })}
+    >
+      <Container
+        maxWidth="md"
+        sx={{
+          overflow: "hidden",
+          position: "relative",
+          WebkitMaskImage:
+            "linear-gradient(to right, rgba(0,0,0,0), rgba(0,0,0,1) 10%, rgba(0,0,0,1) 90%, rgba(0,0,0,0))",
+          WebkitMaskRepeat: "no-repeat",
+          WebkitMaskSize: "100% 100%",
+          maskImage:
+            "linear-gradient(to right, rgba(0,0,0,0), rgba(0,0,0,1) 10%, rgba(0,0,0,1) 90%, rgba(0,0,0,0))",
+          maskRepeat: "no-repeat",
+          maskSize: "100% 100%",
+        }}
+      >
+        <Box sx={{ direction: "ltr" }}>
+          <Box
+            sx={{
+              display: "flex",
+              flexWrap: "nowrap",
+              width: "max-content",
+              animation: `${marquee} 15s linear infinite`,
+              "&:hover": { animationPlayState: "paused" },
+            }}
+          >
+            {[0, 1].map((rep) => (
+              <Box key={rep} sx={{ display: "flex", flexWrap: "nowrap" }}>
+                {items.map((cl, i) => {
+                  const key = (cl._id || i) + "-" + rep;
+                  const clickable = !!cl.website;
+                  const Wrapper = clickable ? "a" : "div";
+                  return (
+                    <Box
+                      key={key}
+                      component={Wrapper}
+                      href={clickable ? normalizeUrl(cl.website) : undefined}
+                      target={clickable ? "_blank" : undefined}
+                      rel={clickable ? "noopener noreferrer" : undefined}
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        px: { xs: 1.25, sm: 2 },
+                        opacity: 0.95,
+                        transition: "opacity .2s ease",
+                        textDecoration: "none",
+                        "&:hover": { opacity: 1 },
+                      }}
+                    >
+                      <Box
+                        component="img"
+                        src={cl.logoUrl}
+                        alt={cl.name || "client logo"}
+                        sx={{
+                          height: { xs: 28, sm: 36, md: 44 },
+                          maxWidth: { xs: 120, sm: 160 },
+                          objectFit: "contain",
+                          display: "block",
+                        }}
+                      />
+                    </Box>
+                  );
+                })}
+              </Box>
+            ))}
+          </Box>
+        </Box>
+      </Container>
+    </Box>
+  );
+}
+
+/* -------------------------------------- */
 function Footer({ globalConfig, align }) {
   return (
-    <Stack spacing={1.5} alignItems="center" sx={{ pb: { xs: 4, md: 6 } }}>
+    <Stack
+      spacing={1.5}
+      alignItems="center"
+      mt={4}
+      sx={{ pb: { xs: 4, md: 6 } }}
+    >
       {globalConfig?.companyLogoUrl && (
         <Box
           component="img"
@@ -284,7 +392,7 @@ function Footer({ globalConfig, align }) {
         >
           {globalConfig?.socialLinks?.facebook && (
             <MuiLink
-              href={globalConfig.socialLinks.facebook}
+              href={normalizeUrl(globalConfig.socialLinks.facebook)}
               target="_blank"
               underline="hover"
               color="inherit"
@@ -294,7 +402,7 @@ function Footer({ globalConfig, align }) {
           )}
           {globalConfig?.socialLinks?.instagram && (
             <MuiLink
-              href={globalConfig.socialLinks.instagram}
+              href={normalizeUrl(globalConfig.socialLinks.instagram)}
               target="_blank"
               underline="hover"
               color="inherit"
@@ -304,7 +412,7 @@ function Footer({ globalConfig, align }) {
           )}
           {globalConfig?.socialLinks?.linkedin && (
             <MuiLink
-              href={globalConfig.socialLinks.linkedin}
+              href={normalizeUrl(globalConfig.socialLinks.linkedin)}
               target="_blank"
               underline="hover"
               color="inherit"
@@ -314,7 +422,7 @@ function Footer({ globalConfig, align }) {
           )}
           {globalConfig?.socialLinks?.website && (
             <MuiLink
-              href={globalConfig.socialLinks.website}
+              href={normalizeUrl(globalConfig.socialLinks.website)}
               target="_blank"
               underline="hover"
               color="inherit"
