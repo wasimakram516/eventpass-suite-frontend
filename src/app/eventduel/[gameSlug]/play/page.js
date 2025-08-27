@@ -11,7 +11,7 @@ import {
   Container,
   Card,
   CardContent,
-  IconButton
+  IconButton,
 } from "@mui/material";
 import Confetti from "react-confetti";
 import { useGame } from "@/contexts/GameContext";
@@ -20,6 +20,7 @@ import { useRouter } from "next/navigation";
 import {
   submitPvPResult,
   activateGameSession,
+  abandonGameSession,
 } from "@/services/eventduel/gameSessionService";
 import LanguageSelector from "@/components/LanguageSelector";
 import useI18nLayout from "@/hooks/useI18nLayout";
@@ -60,6 +61,9 @@ const gameTranslations = {
     startNow: "Start Game",
     bothJoined: "Both players are ready!",
     waitingForBoth: "Waiting for both players to join...",
+    autoCloseNotice:
+      "This session will auto-close if both players don't join within",
+    seconds: "seconds",
   },
   ar: {
     countdown: "ثانية",
@@ -92,6 +96,8 @@ const gameTranslations = {
     startNow: "ابدأ اللعبة",
     bothJoined: "انضم اللاعبان! جاهزون للبدء",
     waitingForBoth: "بانتظار انضمام كلا اللاعبين...",
+    autoCloseNotice: "سيتم إغلاق الجلسة تلقائيًا إذا لم ينضم اللاعبان خلال",
+    seconds: "ثوانٍ",
   },
 };
 
@@ -106,7 +112,7 @@ export default function PlayPage() {
     sessions = [],
     selectedPlayer = null,
     questions: PlayerQuestions = [],
-    requestAllSessions
+    requestAllSessions,
   } = useEventDuelWebSocketData(game?.slug) || {};
 
   // ─── 3. DERIVED QUESTIONS ARRAY ────────────────────────────────────────
@@ -137,13 +143,9 @@ export default function PlayPage() {
   const [localTime, setLocalTime] = useState(0);
   const [hasFinishedEarly, setHasFinishedEarly] = useState(false);
   const [starting, setStarting] = useState(false);
+  const [abandonRemaining, setAbandonRemaining] = useState(60);
 
   // ─── 6. SESSION STATUS DERIVATIONS ────────────────────────────────────
-  const abandonedSession = useMemo(
-    () => sessions.find((s) => s.status === "abandoned") || null,
-    [sessions]
-  );
-
   const pendingSession = useMemo(
     () => sessions.find((s) => s.status === "pending") || null,
     [sessions]
@@ -196,11 +198,19 @@ export default function PlayPage() {
   };
 
   // ─── 8. EFFECTS ─────────────────────────────────────────────────────────
+
+  useEffect(() => {
+    if (pendingSession && typeof window !== "undefined") {
+      sessionStorage.removeItem("forceSubmitTriggered");
+    }
+  }, [pendingSession?._id]);
+
   // 8.1 Countdown + game timer
   useEffect(() => {
     if (!activeSession) return;
     let countdown = activeSession.gameId.countdownTimer || 5;
-    let duration = activeSession.gameId.gameSessionTimer || 60;
+    let sessionDuration = activeSession.gameId.gameSessionTimer || 60; // <-- keep this
+    let duration = sessionDuration;
     let inCountdown = true;
     setLocalDelay(countdown);
     setLocalTime(0);
@@ -210,7 +220,7 @@ export default function PlayPage() {
         countdown--;
         if (countdown <= 0) {
           inCountdown = false;
-          setLocalDelay(0); // ensure it flips to zero
+          setLocalDelay(0);
           setLocalTime(duration);
         } else {
           setLocalDelay(countdown);
@@ -218,8 +228,9 @@ export default function PlayPage() {
       } else {
         duration--;
         if (duration <= 0) {
+          setLocalTime(0);
           clearInterval(iv);
-          submitFinalResult();
+          submitFinalResult(sessionDuration); // <-- pass duration explicitly
         } else {
           setLocalTime(duration);
         }
@@ -234,34 +245,82 @@ export default function PlayPage() {
     translateQuestion(currentQuestion);
   }, [currentQuestion, language]);
 
+  useEffect(() => {
+    if (!pendingSession) return;
+
+    const hasP1 = pendingSession.players?.some(
+      (p) => p.playerType === "p1" && p.playerId
+    );
+    const hasP2 = pendingSession.players?.some(
+      (p) => p.playerType === "p2" && p.playerId
+    );
+    const bothJoinedLocal = Boolean(hasP1 && hasP2);
+
+    // Reset timer on new session / player changes
+    setAbandonRemaining(60);
+
+    // If both joined, no countdown/abandon needed
+    if (bothJoinedLocal) return;
+
+    let cancelled = false;
+    const iv = setInterval(() => {
+      setAbandonRemaining((prev) => {
+        const next = prev - 1;
+        if (next <= 0) {
+          clearInterval(iv);
+          if (!cancelled && pendingSession?._id) {
+            abandonGameSession(pendingSession._id)
+              .then(() => {
+                clearPlayerSessionData({ clearIds: true, clearFlag: true });
+                requestAllSessions?.(game?.slug);
+                router.replace(`/eventduel/${game?.slug}`);
+              })
+
+              .catch(() => {});
+          }
+          return 0;
+        }
+        return next;
+      });
+    }, 1000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(iv);
+    };
+    // Re-run on session id or players change
+  }, [pendingSession?._id, pendingSession?.players, game?.slug]);
+
   // 8.3 If Host ends the game session, submit player's stats
   useEffect(() => {
-    if (
-      typeof window !== "undefined" &&
-      sessionStorage.getItem("forceSubmitTriggered") === "true"
-    ) {
-      if (!hasSubmittedRef.current) {
-        hasSubmittedRef.current = true;
-        submitProgress();
-        clearPlayerSessionData();
-      }
-    }
-  }, [localTime]);
+    if (!activeSession) return;
 
-  useEffect(() => {
-    const { playerId, sessionId } = getPlayerSessionData();
-    if (game && (!playerId || !sessionId)) {
-      router.replace(`/eventduel/${game?.slug}`);
+    const forced =
+      typeof window !== "undefined" &&
+      sessionStorage.getItem("forceSubmitTriggered") === "true";
+    if (forced && !hasSubmittedRef.current) {
+      hasSubmittedRef.current = true;
+      submitProgress();
+      sessionStorage.removeItem("forceSubmitTriggered");
     }
-  }, [pendingSession, abandonedSession]);
+  }, [activeSession?._id]);
 
   // ─── 9. PROGRESS & FINAL SUBMISSION ────────────────────────────────────
   const submitProgress = async (timeOverride = null) => {
     const { playerId, sessionId } = getPlayerSessionData();
-
     if (!playerId || !sessionId) return;
-    const timeTaken =
-      timeOverride !== null ? timeOverride : game.gameSessionTimer - localTime;
+
+    const sessionDuration =
+      activeSession?.gameId?.gameSessionTimer ?? game?.gameSessionTimer ?? 60;
+
+    let timeTaken =
+      timeOverride !== null ? timeOverride : sessionDuration - localTime;
+
+    // clamp & sanitize
+    if (!Number.isFinite(timeTaken)) timeTaken = 0;
+    if (timeTaken < 0) timeTaken = 0;
+    if (timeTaken > sessionDuration) timeTaken = sessionDuration;
+
     await submitPvPResult({
       sessionId,
       playerId,
@@ -273,11 +332,11 @@ export default function PlayPage() {
     });
   };
 
-  const submitFinalResult = async () => {
+  const submitFinalResult = async (timeOverride = null) => {
     if (hasSubmittedRef.current) return;
     hasSubmittedRef.current = true;
-    await submitProgress();
-    clearPlayerSessionData();
+    await submitProgress(timeOverride); // <-- forward override
+    clearPlayerSessionData({ clearIds: true, clearFlag: true });
   };
 
   // ─── 10. HANDLERS ─────────────────────────────────────────────────
@@ -335,11 +394,17 @@ export default function PlayPage() {
     };
   };
 
-  const clearPlayerSessionData = () => {
+  const clearPlayerSessionData = (
+    opts = { clearIds: true, clearFlag: true }
+  ) => {
     if (typeof window === "undefined") return;
-    sessionStorage.removeItem("playerId");
-    sessionStorage.removeItem("sessionId");
-    sessionStorage.removeItem("forceSubmitTriggered");
+    if (opts.clearIds) {
+      sessionStorage.removeItem("playerId");
+      sessionStorage.removeItem("sessionId");
+    }
+    if (opts.clearFlag) {
+      sessionStorage.removeItem("forceSubmitTriggered");
+    }
   };
 
   // ─── 11. RENDER BRANCHES ────────────────────────────────────────────────
@@ -369,19 +434,20 @@ export default function PlayPage() {
           }}
         >
           {/* Back Button */}
-        <IconButton
-          size="small"
-          onClick={() => router.replace(`/eventduel/${game.slug}`)}
-          sx={{
-            position: "fixed",
-            top: 20,
-            left: 20,
-            bgcolor: "primary.main",
-            color: "white",
-          }}
-        >
-          <ICONS.back />
-        </IconButton>
+          <IconButton
+            size="small"
+            onClick={() => router.replace(`/eventduel/${game.slug}`)}
+            sx={{
+              position: "fixed",
+              top: 20,
+              left: 20,
+              bgcolor: "primary.main",
+              color: "white",
+            }}
+          >
+            <ICONS.back />
+          </IconButton>
+
           {!bothPlayersJoined ? (
             <>
               <CircularProgress />
@@ -426,6 +492,11 @@ export default function PlayPage() {
               >
                 {t.waitingForBoth || t.pendingMessage}
               </Typography>
+              <Box sx={{ mt: 3 }}>
+                <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                  {t.autoCloseNotice} <b>{abandonRemaining}</b> {t.seconds}.
+                </Typography>
+              </Box>
             </>
           ) : (
             <>
@@ -1265,6 +1336,21 @@ export default function PlayPage() {
         backgroundAttachment: "fixed",
       }}
     >
+      {/* Back Button */}
+      <IconButton
+        size="small"
+        onClick={() => router.replace(`/eventduel/${game.slug}`)}
+        sx={{
+          position: "fixed",
+          top: 20,
+          left: 20,
+          bgcolor: "primary.main",
+          color: "white",
+        }}
+      >
+        <ICONS.back />
+      </IconButton>
+
       <CircularProgress />
     </Box>
   );

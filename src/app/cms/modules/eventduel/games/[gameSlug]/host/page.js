@@ -22,7 +22,7 @@ import {
   endGameSession,
   activateGameSession,
   abandonGameSession,
-} from "@/services/eventduel/gameSessionService";
+} from "@/services/eventduel/gameSessionService"; 
 import NoDataAvailable from "@/components/NoDataAvailable";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import BreadcrumbsNav from "@/components/BreadcrumbsNav";
