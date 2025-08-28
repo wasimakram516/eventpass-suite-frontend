@@ -21,6 +21,7 @@ import {
   submitPvPResult,
   activateGameSession,
   abandonGameSession,
+  endGameSession,
 } from "@/services/eventduel/gameSessionService";
 import LanguageSelector from "@/components/LanguageSelector";
 import useI18nLayout from "@/hooks/useI18nLayout";
@@ -139,6 +140,8 @@ export default function PlayPage() {
   const [disabled, setDisabled] = useState(false);
   const scoreRef = useRef(0);
   const attemptedRef = useRef(0);
+  const timerIvRef = useRef(null);
+  const endOnceRef = useRef(false);
   const [localDelay, setLocalDelay] = useState(0);
   const [localTime, setLocalTime] = useState(0);
   const [hasFinishedEarly, setHasFinishedEarly] = useState(false);
@@ -199,6 +202,7 @@ export default function PlayPage() {
 
   // ─── 8. EFFECTS ─────────────────────────────────────────────────────────
 
+  // 8.0 Clear forced submit flag on new session
   useEffect(() => {
     if (pendingSession && typeof window !== "undefined") {
       sessionStorage.removeItem("forceSubmitTriggered");
@@ -207,15 +211,22 @@ export default function PlayPage() {
 
   // 8.1 Countdown + game timer
   useEffect(() => {
-    if (!activeSession) return;
+    // run ONLY while active and not already finalized
+    if (!activeSession || activeSession.status !== "active") return;
+    if (hasSubmittedRef.current || endOnceRef.current) return;
+
     let countdown = activeSession.gameId.countdownTimer || 5;
-    let sessionDuration = activeSession.gameId.gameSessionTimer || 60; // <-- keep this
+    const sessionDuration = activeSession.gameId.gameSessionTimer || 60;
     let duration = sessionDuration;
     let inCountdown = true;
+
     setLocalDelay(countdown);
     setLocalTime(0);
 
-    const iv = setInterval(() => {
+    // clear any previous interval
+    if (timerIvRef.current) clearInterval(timerIvRef.current);
+
+    timerIvRef.current = setInterval(() => {
       if (inCountdown) {
         countdown--;
         if (countdown <= 0) {
@@ -229,22 +240,46 @@ export default function PlayPage() {
         duration--;
         if (duration <= 0) {
           setLocalTime(0);
-          clearInterval(iv);
-          submitFinalResult(sessionDuration); // <-- pass duration explicitly
+          clearInterval(timerIvRef.current);
+          timerIvRef.current = null;
+
+          // one-shot finalize & end
+          if (!endOnceRef.current) {
+            endOnceRef.current = true;
+            submitFinalResult(sessionDuration);
+            if (activeSession?._id) {
+              endGameSession(activeSession._id).catch(() => {});
+              requestAllSessions?.(game?.slug);
+            }
+          }
         } else {
           setLocalTime(duration);
         }
       }
     }, 1000);
 
-    return () => clearInterval(iv);
-  }, [activeSession]);
+    return () => {
+      if (timerIvRef.current) {
+        clearInterval(timerIvRef.current);
+        timerIvRef.current = null;
+      }
+    };
+  }, [activeSession?._id, activeSession?.status]);
+
+  // stop any running timer as soon as server marks session completed
+  useEffect(() => {
+    if (activeSession?.status === "completed" && timerIvRef.current) {
+      clearInterval(timerIvRef.current);
+      timerIvRef.current = null;
+    }
+  }, [activeSession?.status]);
 
   // 8.2 Translate on question change
   useEffect(() => {
     translateQuestion(currentQuestion);
   }, [currentQuestion, language]);
 
+  // 8.3 Abandon pending session if not started in time
   useEffect(() => {
     if (!pendingSession) return;
 
@@ -291,7 +326,7 @@ export default function PlayPage() {
     // Re-run on session id or players change
   }, [pendingSession?._id, pendingSession?.players, game?.slug]);
 
-  // 8.3 If Host ends the game session, submit player's stats
+  // 8.4 If Host ends the game session, submit player's stats
   useEffect(() => {
     if (!activeSession) return;
 
