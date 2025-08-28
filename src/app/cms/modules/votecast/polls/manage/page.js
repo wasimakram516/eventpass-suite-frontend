@@ -326,7 +326,7 @@ export default function ManagePollsPage() {
           <Box sx={{ textAlign: "center", mt: 8 }}>
             <CircularProgress />
           </Box>
-        ) : polls.length === 0 ? (
+        ) : !polls ||polls.length === 0 ? (
           <NoDataAvailable />
         ) : (
           selectedBusiness && (
