@@ -137,6 +137,25 @@ export default function TrashPage() {
     fetchModuleData();
   }, []);
 
+  const formatDate = (dateString) => {
+    if (!dateString) return "";
+    const d = new Date(dateString);
+
+    const options = {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    };
+    const parts = new Intl.DateTimeFormat("en-US", options).formatToParts(d);
+    const datePart = `${parts.find(p => p.type === "month").value} ${parts.find(p => p.type === "day").value} ${parts.find(p => p.type === "year").value}`;
+    const timePart = `${parts.find(p => p.type === "hour").value}:${parts.find(p => p.type === "minute").value} ${parts.find(p => p.type === "dayPeriod").value}`;
+
+    return `${datePart} at ${timePart}`;
+  };
+
   // debounced effect to reduce API calls during rapid filter changes
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -243,6 +262,8 @@ export default function TrashPage() {
       'game-eventduel': 'Game (EventDuel)',
       'gamesession-quiznest': 'Game Session (QuizNest)',
       'gamesession-eventduel': 'Game Session (EventDuel)',
+      'qnquestion': 'Questions (QuizNest)', 
+      'pvpquestion': 'Questions (EventDuel)', 
     };
     return moduleNames[moduleKey] || moduleKey.charAt(0).toUpperCase() + moduleKey.slice(1);
   };
@@ -268,7 +289,9 @@ export default function TrashPage() {
     'question': 'question',
     'visitor': 'visitor',
     'surveyform': 'surveyform',
-    'surveyresponse': 'surveyresponse'
+    'surveyresponse': 'surveyresponse',
+    'pvpquestion': 'pvpquestion', 
+    'qnquestion': 'qnquestion', 
   };
 
   const mapToBackendController = (frontendModuleKey) => {
@@ -527,7 +550,7 @@ export default function TrashPage() {
                         <Box sx={{ flexGrow: 1, ...wrapTextBox }}>
                           <Typography variant="subtitle1" fontWeight="bold">
                             {item.name || item.title || item.slug || item.text || item.question || item.fullName || item.
-                              employeeId || "Unnamed"}
+                              employeeId || formatDate(item.endTime) || "Unnamed"}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
                             {`Deleted: ${item.deletedAt
