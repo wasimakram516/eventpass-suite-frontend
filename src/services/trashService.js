@@ -24,3 +24,8 @@ export const permanentDeleteTrashItem = withApiHandler(
   },
   { showSuccess: true }
 );
+
+export const getModuleCounts = withApiHandler(async () => {
+  const { data } = await api.get("/trash/module-counts");
+  return data;
+});
