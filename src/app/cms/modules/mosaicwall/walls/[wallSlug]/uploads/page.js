@@ -82,17 +82,19 @@ const CMSUploadsPage = () => {
   const { t, dir } = useI18nLayout(translations);
 
   useMediaSocket({
-    wallSlug,
-    onMediaUpdate: (updatedList) => {
-      let scoped = updatedList;
-      if (user?.role === "business" && user?.business?._id) {
-        scoped = updatedList.filter(
-          (item) => item.wall?.business === user.business._id
-        );
-      }
-      setMedia(scoped);
-    },
-  });
+  wallSlug,
+  onMediaUpdate: (updatedList) => {
+    let scoped = updatedList;
+    if (user?.role === "business" && user?.business?._id) {
+      scoped = updatedList.filter(
+        (item) => item.wall?.business === user.business._id
+      );
+    }
+    // Filter out any soft-deleted items as backup
+    scoped = scoped.filter(item => !item.deletedAt && !item.isDeleted);
+    setMedia(scoped);
+  },
+});
 
   const fetchMedia = async () => {
     setLoading(true);
@@ -123,13 +125,18 @@ const CMSUploadsPage = () => {
   };
 
   const confirmDelete = async () => {
-    if (!mediaToDelete) return;
-    await deleteDisplayMedia(mediaToDelete._id);
-    setDeleteDialogOpen(false);
-    setMediaToDelete(null);
-    fetchMedia();
-  };
-
+  if (!mediaToDelete) return;
+  await deleteDisplayMedia(mediaToDelete._id);
+  
+  // Immediately remove from local state to prevent showing deleted item
+  setMedia((prevMedia) => 
+    prevMedia.filter((item) => item._id !== mediaToDelete._id)
+  );
+  
+  setDeleteDialogOpen(false);
+  setMediaToDelete(null);
+  fetchMedia();
+};
   const closePreview = () => {
     setPreviewOpen(false);
     setSelectedMedia(null);
