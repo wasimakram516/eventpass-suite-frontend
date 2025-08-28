@@ -40,7 +40,9 @@ import { wrapTextBox } from "@/utils/wrapTextStyles";
 import { formatDateTimeWithLocale } from "@/utils/dateUtils";
 import FilterModal from "@/components/FilterModal";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
-
+import { getModuleCounts } from "@/services/trashService";
+import { getModuleIcon } from "@/utils/iconMapper";
+import { getModules } from "@/services/moduleService";
 const translations = {
   en: {
     title: "Recycle Bin",
@@ -68,6 +70,7 @@ const translations = {
     records: "records",
     recordsPerPage: "Records per page",
     filters: "Filters",
+    totalItems: "Total Items",
   },
   ar: {
     title: "سلة المحذوفات",
@@ -95,6 +98,7 @@ const translations = {
     records: "سجلات",
     recordsPerPage: "عدد السجلات في الصفحة",
     filters: "عوامل التصفية",
+    totalItems: "إجمالي العناصر",
   },
 };
 
@@ -102,9 +106,11 @@ export default function TrashPage() {
   const { dir, align, t } = useI18nLayout(translations);
   const { user: currentUser } = useAuth();
   const isBusiness = currentUser?.role === "business";
-
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [trashData, setTrashData] = useState({});
+  const [moduleCounts, setModuleCounts] = useState({});
+  const [allAvailableModules, setAllAvailableModules] = useState([]);
+  const [moduleData, setModuleData] = useState([]);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [restoreConfirm, setRestoreConfirm] = useState(false);
   const [pendingAction, setPendingAction] = useState(null);
@@ -126,10 +132,18 @@ export default function TrashPage() {
 
   useEffect(() => {
     hydrateUsersMap();
+    fetchModuleCounts();
+    fetchAllModules();
+    fetchModuleData();
   }, []);
 
+  // debounced effect to reduce API calls during rapid filter changes
   useEffect(() => {
-    fetchTrash();
+    const timeoutId = setTimeout(() => {
+      fetchTrash();
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
   }, [limit, deletedByFilter, moduleFilter, dateFrom, dateTo, pageState]);
 
   const hydrateUsersMap = async () => {
@@ -145,31 +159,70 @@ export default function TrashPage() {
         map[u._id] = u.name || u.fullName || u.email || u._id;
       });
       setUserMap(map);
-    } catch {}
+    } catch { }
+  };
+  const fetchModuleData = async () => {
+    try {
+      const role = currentUser?.role || "staff";
+      const modulesPayload = await getModules(role);
+      const serverModules = Array.isArray(modulesPayload) ? modulesPayload : [];
+      setModuleData(serverModules);
+    } catch (error) {
+      console.error('Error fetching module data:', error);
+    }
   };
 
   const fetchTrash = async () => {
     setLoading(true);
-    const params = { limit };
-    if (deletedByFilter !== "__ALL__") params.deletedBy = deletedByFilter;
-    if (moduleFilter !== "__ALL__") params.model = moduleFilter;
-    if (dateFrom) params.startDate = dateFrom;
-    if (dateTo) params.endDate = dateTo;
+    try {
+      const params = { limit };
+      if (deletedByFilter !== "__ALL__") params.deletedBy = deletedByFilter;
+      if (moduleFilter !== "__ALL__") params.model = moduleFilter;
+      if (dateFrom) params.startDate = dateFrom;
+      if (dateTo) params.endDate = dateTo;
 
-    const res = await getTrash(params);
-    setTrashData(res);
-    setLoading(false);
+      const res = await getTrash(params);
+      setTrashData(res.items || res);
+      if (moduleFilter === "__ALL__" && Object.keys(allAvailableModules).length === 0) {
+        setAllAvailableModules(Object.keys(res.items || res));
+      }
+    } catch (error) {
+      console.error('Error fetching trash:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
+  const fetchModuleCounts = async () => {
+    try {
+      const counts = await getModuleCounts();
+      setModuleCounts(counts);
+    } catch (error) {
+      console.error('Error fetching module counts:', error);
+    }
+  };
+
+  const fetchAllModules = async () => {
+    try {
+      const res = await getTrash({ limit: 1 });
+      setAllAvailableModules(Object.keys(res.items || res));
+    } catch (error) {
+      console.error('Error fetching all modules:', error);
+    }
+  };
   const deletedByOptions = useMemo(() => {
     const ids = new Set();
-    Object.values(trashData).forEach(({ items = [] }) => {
-      items.forEach((it) => {
-        const db = it.deletedBy;
-        if (typeof db === "string") ids.add(db);
-        else if (db && db._id) ids.add(db._id);
+    if (trashData && typeof trashData === 'object') {
+      Object.values(trashData).forEach((moduleData) => {
+        if (moduleData && moduleData.items && Array.isArray(moduleData.items)) {
+          moduleData.items.forEach((it) => {
+            const db = it.deletedBy;
+            if (typeof db === "string") ids.add(db);
+            else if (db && db._id) ids.add(db._id);
+          });
+        }
       });
-    });
+    }
     return ["__ALL__", ...Array.from(ids)];
   }, [trashData]);
 
@@ -179,6 +232,48 @@ export default function TrashPage() {
     return val.fullName || val.name || val.email || val._id || "-";
   };
 
+  // Function to convert module keys to user-friendly display names
+  const getModuleDisplayName = (moduleKey) => {
+    const moduleNames = {
+      'registration-eventreg': 'Registration (EventReg)',
+      'registration-checkin': 'Registration (CheckIn)',
+      'event-eventreg': 'Event (EventReg)',
+      'event-checkin': 'Event (CheckIn)',
+      'game-quiznest': 'Game (QuizNest)',
+      'game-eventduel': 'Game (EventDuel)',
+      'gamesession-quiznest': 'Game Session (QuizNest)',
+      'gamesession-eventduel': 'Game Session (EventDuel)',
+    };
+    return moduleNames[moduleKey] || moduleKey.charAt(0).toUpperCase() + moduleKey.slice(1);
+  };
+  // Frontend module to backend controller mapping - matches controllerMap in backend
+  const frontendToBackendModuleMap = {
+    'business': 'business',
+    'event-checkin': 'checkinevent',
+    'registration-checkin': 'checkinregistration',
+    'event-eventreg': 'eventregevent',
+    'registration-eventreg': 'eventregregistration',
+    'game-quiznest': 'qngame',
+    'game-eventduel': 'pvpgame',
+    'gamesession-quiznest': null,
+    'gamesession-eventduel': 'pvpgamesession',
+    'poll': 'poll',
+    'spinwheel': 'spinwheel',
+    'spinwheelparticipant': 'spinwheelparticipant',
+    'displaymedia': 'displaymedia',
+    'wallconfig': 'wallconfig',
+    'globalconfig': 'globalconfig',
+    'user': 'user',
+    'eventquestion': 'question',
+    'question': 'question',
+    'visitor': 'visitor',
+    'surveyform': 'surveyform',
+    'surveyresponse': 'surveyresponse'
+  };
+
+  const mapToBackendController = (frontendModuleKey) => {
+    return frontendToBackendModuleMap[frontendModuleKey] || frontendModuleKey;
+  };
   const matchesSearch = (item) => {
     const q = search.trim().toLowerCase();
     if (!q) return true;
@@ -187,12 +282,14 @@ export default function TrashPage() {
   };
 
   const openRestoreConfirm = (module, item) => {
-    setPendingAction({ type: "restore", module, item });
+    const backendModule = mapToBackendController(module);
+    setPendingAction({ type: "restore", module: backendModule, item });
     setRestoreConfirm(true);
   };
 
   const openDeleteConfirm = (module, item) => {
-    setPendingAction({ type: "delete", module, item });
+    const backendModule = mapToBackendController(module);
+    setPendingAction({ type: "delete", module: backendModule, item });
     setDeleteConfirm(true);
   };
 
@@ -237,9 +334,64 @@ export default function TrashPage() {
             {t.subtitle}
           </Typography>
         </Box>
-        
+
       </Stack>
       <Divider sx={{ mb: 2 }} />
+      {/* Module Count Cards */}
+      {Object.keys(moduleCounts).length > 0 && (
+        <Box sx={{ mb: 3 }}>
+          <Grid container spacing={2}>
+            {Object.entries(moduleCounts)
+              .filter(([, count]) => count > 0)
+              .map(([module, count]) => (
+                <Grid item xs={6} sm={4} md={3} lg={2} key={module}>
+                  <Card
+                    elevation={2}
+                    sx={{
+                      p: 2,
+                      textAlign: "center",
+                      borderRadius: 2,
+                      backgroundColor: "background.paper",
+                      transition: "all 0.2s ease-in-out",
+                      "&:hover": {
+                        elevation: 4,
+                        transform: "translateY(-2px)",
+                      },
+                    }}
+                  >
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                      <Avatar
+                        sx={{
+                          width: 40,
+                          height: 40,
+                          bgcolor: "primary.main",
+                          fontSize: "0.875rem",
+                        }}
+                      >
+                        {(() => {
+                          const moduleInfo = moduleData.find(m => m.key.toLowerCase() === module.toLowerCase());
+                          return getModuleIcon(moduleInfo?.icon);
+                        })()}
+                      </Avatar>
+                      <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+                        <Typography variant="h6" fontWeight="bold" color="text.primary">
+                          {count}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ textTransform: "capitalize", lineHeight: 1 }}
+                        >
+                          {module}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Card>
+                </Grid>
+              ))}
+          </Grid>
+        </Box>
+      )}
 
       {/* Filters inline (search + records/page only) */}
       <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ mb: 2 }}>
@@ -265,57 +417,57 @@ export default function TrashPage() {
           {t.filters}
         </Button>
         <TextField
-            select
-            label={t.deletedByLabel}
-            fullWidth
-            value={deletedByFilter}
-            onChange={(e) => setDeletedByFilter(e.target.value)}
-            sx={{ display: { xs: "none", sm: "flex" } }}
-          >
-            <MenuItem value="__ALL__">{t.all}</MenuItem>
-            {deletedByOptions.map((id) =>
-              id === "__ALL__" ? null : (
-                <MenuItem key={id} value={id}>
-                  {userMap[id] || id}
-                </MenuItem>
-              )
-            )}
-          </TextField>
-
-          <TextField
-            select
-            fullWidth
-            label={t.moduleLabel}
-            value={moduleFilter}
-            onChange={(e) => setModuleFilter(e.target.value)}
-             sx={{ display: { xs: "none", sm: "flex" } }}
-          >
-            <MenuItem value="__ALL__">{t.all}</MenuItem>
-            {Object.keys(trashData).map((m) => (
-              <MenuItem key={m} value={m}>
-                {m}
+          select
+          label={t.deletedByLabel}
+          fullWidth
+          value={deletedByFilter}
+          onChange={(e) => setDeletedByFilter(e.target.value)}
+          sx={{ display: { xs: "none", sm: "flex" } }}
+        >
+          <MenuItem value="__ALL__">{t.all}</MenuItem>
+          {deletedByOptions.map((id) =>
+            id === "__ALL__" ? null : (
+              <MenuItem key={id} value={id}>
+                {userMap[id] || id}
               </MenuItem>
-            ))}
-          </TextField>
+            )
+          )}
+        </TextField>
 
-          <TextField
-            label={t.dateFrom}
-            fullWidth
-            type="date"
-            value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
-            InputLabelProps={{ shrink: true }}
-             sx={{ display: { xs: "none", sm: "flex" } }}
-          />
-          <TextField
-            label={t.dateTo}
-            fullWidth
-            type="date"
-            value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
-            InputLabelProps={{ shrink: true }}
-             sx={{ display: { xs: "none", sm: "flex" } }}
-          />
+        <TextField
+          select
+          fullWidth
+          label={t.moduleLabel}
+          value={moduleFilter}
+          onChange={(e) => setModuleFilter(e.target.value)}
+          sx={{ display: { xs: "none", sm: "flex" } }}
+        >
+          <MenuItem value="__ALL__">{t.all}</MenuItem>
+          {allAvailableModules.map((m) => (
+            <MenuItem key={m} value={m}>
+              {getModuleDisplayName(m)}
+            </MenuItem>
+          ))}
+        </TextField>
+
+        <TextField
+          label={t.dateFrom}
+          fullWidth
+          type="date"
+          value={dateFrom}
+          onChange={(e) => setDateFrom(e.target.value)}
+          InputLabelProps={{ shrink: true }}
+          sx={{ display: { xs: "none", sm: "flex" } }}
+        />
+        <TextField
+          label={t.dateTo}
+          fullWidth
+          type="date"
+          value={dateTo}
+          onChange={(e) => setDateTo(e.target.value)}
+          InputLabelProps={{ shrink: true }}
+          sx={{ display: { xs: "none", sm: "flex" } }}
+        />
         <FormControl size="small" sx={{ minWidth: 150 }}>
           <InputLabel>{t.recordsPerPage}</InputLabel>
           <Select
@@ -339,10 +491,11 @@ export default function TrashPage() {
         <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
           <CircularProgress size={36} />
         </Box>
-      ) : Object.keys(trashData).length === 0 ? (
+      ) : !trashData || Object.keys(trashData).length === 0 ? (
         <NoDataAvailable message={t.noTrash} />
       ) : (
-        Object.entries(trashData).map(([module, { items = [], total = 0 }]) => {
+        Object.entries(trashData).map(([module, moduleData]) => {
+          const { items = [], total = 0 } = moduleData || {};
           const page = pageState[module] || 1;
           const filtered = items.filter(matchesSearch);
           if (!filtered.length) return null;
@@ -373,16 +526,16 @@ export default function TrashPage() {
                         </Avatar>
                         <Box sx={{ flexGrow: 1, ...wrapTextBox }}>
                           <Typography variant="subtitle1" fontWeight="bold">
-                            {item.name || item.title || item.slug || "Unnamed"}
+                            {item.name || item.title || item.slug || item.text || item.question || item.fullName || item.
+                              employeeId || "Unnamed"}
                           </Typography>
                           <Typography variant="caption" color="text.secondary">
-                            {`Deleted: ${
-                              item.deletedAt
-                                ? formatDateTimeWithLocale(item.deletedAt)
-                                : "-"
-                            } • ${t.deletedBy}: ${labelForDeletedBy(
-                              item.deletedBy
-                            )}`}
+                            {`Deleted: ${item.deletedAt
+                              ? formatDateTimeWithLocale(item.deletedAt)
+                              : "-"
+                              } • ${t.deletedBy}: ${labelForDeletedBy(
+                                item.deletedBy
+                              )}`}
                           </Typography>
                         </Box>
                       </Box>
@@ -452,9 +605,9 @@ export default function TrashPage() {
             onChange={(e) => setModuleFilter(e.target.value)}
           >
             <MenuItem value="__ALL__">{t.all}</MenuItem>
-            {Object.keys(trashData).map((m) => (
+            {allAvailableModules.map((m) => (
               <MenuItem key={m} value={m}>
-                {m}
+                {getModuleDisplayName(m)}
               </MenuItem>
             ))}
           </TextField>
