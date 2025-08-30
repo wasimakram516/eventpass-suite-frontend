@@ -5,6 +5,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import ClientLayout from "@/utils/ClientLayout";
 import { GlobalConfigProvider } from "@/contexts/GlobalConfigContext";
+import Script from "next/script"; 
 
 export const metadata = {
   title: "EventPass – WhiteWall",
@@ -44,6 +45,10 @@ export default function RootLayout({ children }) {
             </GlobalConfigProvider>
           </MessageProvider>
         </LanguageProvider>
+
+        {/* Browser Print Files*/}
+        <Script src="/BrowserPrint-3.1.250.min.js" strategy="afterInteractive" />
+        <Script src="/BrowserPrint-Zebra-1.1.250.min.js" strategy="afterInteractive" />
       </body>
     </html>
   );

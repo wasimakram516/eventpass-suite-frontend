@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -15,11 +15,14 @@ import { verifyRegistrationByToken } from "@/services/eventreg/registrationServi
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
+import { printZpl } from "@/utils/printZpl";
+import { useMessage } from "@/contexts/MessageContext";
 
 const translations = {
   en: {
     startVerification: "Start Verification",
-    scanMessage: "Tap the button below to scan a QR code and verify registration.",
+    scanMessage:
+      "Tap the button below to scan a QR code and verify registration.",
     openScanner: "Open Scanner",
     cancel: "Cancel",
     verifying: "Verifying registration...",
@@ -29,11 +32,14 @@ const translations = {
     event: "Event",
     scanAnother: "Scan Another",
     tryAgain: "Try Again",
+    printBadge: "Print Badge",
+    printing: "Printing...",
     tooltip: {
       openScanner: "Open QR Scanner",
       cancel: "Cancel scanning",
       scan: "Scan another code",
       retry: "Retry verification",
+      print: "Send badge to Zebra printer",
     },
   },
   ar: {
@@ -48,26 +54,48 @@ const translations = {
     event: "الفعالية",
     scanAnother: "مسح رمز آخر",
     tryAgain: "حاول مرة أخرى",
+    printBadge: "طباعة الشارة",
+    printing: "جارٍ الطباعة...",
     tooltip: {
       openScanner: "افتح الماسح الضوئي",
       cancel: "إلغاء المسح",
       scan: "مسح رمز آخر",
       retry: "إعادة المحاولة",
+      print: "إرسال الشارة إلى طابعة Zebra",
     },
   },
 };
 
 export default function VerifyPage() {
   const { t, dir } = useI18nLayout(translations);
-
+  const { showMessage } = useMessage();
   const [showScanner, setShowScanner] = useState(false);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
+  const [printing, setPrinting] = useState(false);
 
   const successAudioRef = useRef(null);
   const errorAudioRef = useRef(null);
+
+  useEffect(() => {
+    const iv = setInterval(() => {
+      if (typeof window !== "undefined" && window.BrowserPrint) {
+        clearInterval(iv);
+        window.BrowserPrint.getDefaultDevice(
+          "printer",
+          (d) =>
+            showMessage(
+              d ? `Printer ready: ${d.name}` : "No default Zebra printer",
+              d ? "success" : "warning"
+            ),
+          () => showMessage("Browser Print not responding", "error")
+        );
+      }
+    }, 250);
+    return () => clearInterval(iv);
+  }, []);
 
   const handleScanSuccess = useCallback(async (scannedToken) => {
     setShowScanner(false);
@@ -77,7 +105,6 @@ export default function VerifyPage() {
     setResult(null);
 
     const res = await verifyRegistrationByToken(scannedToken);
-
     if (res?.error) {
       errorAudioRef.current?.play();
       setError(res.message || "Invalid token.");
@@ -94,6 +121,20 @@ export default function VerifyPage() {
     setResult(null);
     setError(null);
     setShowScanner(false);
+    setPrinting(false);
+  };
+
+  const handlePrint = async () => {
+    try {
+      if (!result?.zpl) throw new Error("No ZPL received from server");
+      setPrinting(true);
+      await printZpl(result.zpl);
+      showMessage("Badge sent to printer successfully", "success");
+    } catch (e) {
+      showMessage(e?.message || "Printing failed", "error");
+    } finally {
+      setPrinting(false);
+    }
   };
 
   return (
@@ -191,7 +232,7 @@ export default function VerifyPage() {
               <Typography variant="body1">{result.fullName}</Typography>
             </Stack>
 
-            {result.company && (
+            {!!result.company && (
               <Stack direction="row" spacing={2} alignItems="center">
                 <ICONS.business sx={{ color: "text.secondary" }} />
                 <Typography variant="body1" fontWeight={500}>
@@ -210,12 +251,28 @@ export default function VerifyPage() {
             </Stack>
           </Stack>
 
+          {/* Print Badge */}
+          <Tooltip title={t.tooltip.print}>
+            <span>
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<ICONS.print />}
+                onClick={handlePrint}
+                disabled={printing || !result?.zpl}
+                sx={{ mt: 1, ...getStartIconSpacing(dir) }}
+              >
+                {printing ? t.printing : t.printBadge}
+              </Button>
+            </span>
+          </Tooltip>
+
           <Tooltip title={t.tooltip.scan}>
             <Button
-              variant="contained"
+              variant="outlined"
               startIcon={<ICONS.qrCodeScanner />}
               onClick={reset}
-              sx={{ mt: 4, ...getStartIconSpacing(dir) }}
+              sx={{ mt: 2, ...getStartIconSpacing(dir) }}
             >
               {t.scanAnother}
             </Button>

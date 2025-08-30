@@ -103,6 +103,7 @@ import {
   QrCode as QrCodeIcon,
   AdminPanelSettings as AdminPanelSettingsIcon,
   FlashOn as FlashOnIcon,
+  Print as PrintIcon,
 } from "@mui/icons-material";
 
 // Screen Sharing
@@ -238,6 +239,7 @@ const ICONS = {
   screenShare: ScreenShareIcon,
   adminPanel: AdminPanelSettingsIcon,
   flash: FlashOnIcon,
+  print: PrintIcon,
 
   // Screen Sharing / Device Icons
   desktop: DesktopWindowsIcon,
