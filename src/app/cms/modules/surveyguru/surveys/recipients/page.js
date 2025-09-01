@@ -78,7 +78,7 @@ const translations = {
       "This will remove all recipients for the selected form. Are you sure you want to proceed?",
     confirmDeleteTitle: "Delete Recipient",
     confirmDeleteMsg:
-      "This will permanently delete the selected recipient. Are you sure you want to proceed?",
+      "Are you sure you want to move this item to the Recycle Bin?",
     delete: "Delete",
 
     copied: "Link copied!",
@@ -115,8 +115,9 @@ const translations = {
     confirmClearMsg:
       "سيتم حذف جميع المستلمين للنموذج المحدد. هل تريد المتابعة؟",
     confirmDeleteTitle: "حذف مستلم",
-    confirmDeleteMsg: "سيتم حذف المستلم المحدد نهائياً. هل تريد المتابعة؟",
+    confirmDeleteMsg: "هل أنت متأكد أنك تريد نقل هذا العنصر إلى سلة المحذوفات؟",
     delete: "حذف",
+
 
     copied: "تم نسخ الرابط!",
     noFormSelected: "استخدم عوامل التصفية لاختيار نموذج وتحميل المستلمين.",

@@ -66,7 +66,7 @@ const translations = {
     cancel: "Cancel",
     deleteConfirmTitle: "Delete Configuration?",
     deleteConfirmMsg:
-      "Are you sure you want to delete the global configuration? This action cannot be undone.",
+      "Are you sure you want to move this item to the Recycle Bin?",
     deleteConfirmBtn: "Delete",
     noConfig: "No configuration found.",
     appName: "App Name",
@@ -108,7 +108,7 @@ const translations = {
     cancel: "إلغاء",
     deleteConfirmTitle: "حذف الإعدادات؟",
     deleteConfirmMsg:
-      "هل أنت متأكد من حذف الإعدادات العامة؟ لا يمكن التراجع عن هذا الإجراء.",
+      "هل أنت متأكد أنك تريد نقل هذا العنصر إلى سلة المحذوفات؟",
     deleteConfirmBtn: "حذف",
     noConfig: "لا توجد إعدادات.",
     appName: "اسم التطبيق",

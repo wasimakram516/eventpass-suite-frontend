@@ -51,7 +51,8 @@ const translations = {
     questionsButton: "Questions",
     resultsButton: "Results",
     deleteGameTitle: "Delete Game?",
-    deleteGameMessage: "Are you sure you want to delete",
+    deleteGameMessage: "Are you sure you want to move this item to the Recycle Bin?",
+    delete: "Delete",
     manageGames: "Manage Games",
     selectBusiness: "Select Business",
     noGames: "No games found.",
@@ -83,7 +84,8 @@ const translations = {
     questionsButton: "الأسئلة",
     resultsButton: "النتائج",
     deleteGameTitle: "حذف اللعبة؟",
-    deleteGameMessage: "هل أنت متأكد أنك تريد حذف",
+    deleteGameMessage: "هل أنت متأكد من أنك تريد نقل هذا العنصر إلى سلة المحذوفات؟",
+    delete: "حذف",
     manageGames: "إدارة الألعاب",
     selectBusiness: "اختر العمل",
     noGames: "لا توجد ألعاب.",
@@ -448,9 +450,8 @@ export default function GamesPage() {
         <ShareLinkModal
           open={shareModalOpen}
           onClose={() => setShareModalOpen(false)}
-          url={`${
-            typeof window !== "undefined" ? window.location.origin : ""
-          }/eventduel/${gameToShare?.slug}`}
+          url={`${typeof window !== "undefined" ? window.location.origin : ""
+            }/eventduel/${gameToShare?.slug}`}
           name={gameToShare?.title}
         />
 
@@ -466,13 +467,11 @@ export default function GamesPage() {
         <ConfirmationDialog
           open={confirmOpen}
           title={t.deleteGameTitle}
-          message={`${t.deleteGameMessage} "${gameToDelete?.title}"${
-            dir === "rtl" ? "؟" : "?"
-          }`}
+          message={t.deleteGameMessage}
+          confirmButtonIcon={<ICONS.delete />}
+          confirmButtonText={t.delete}
           onClose={() => setConfirmOpen(false)}
           onConfirm={handleDeleteGame}
-          confirmButtonText={t.deleteGameTitle}
-          confirmButtonIcon={<ICONS.delete />}
         />
       </Container>
     </Box>

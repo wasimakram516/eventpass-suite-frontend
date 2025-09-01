@@ -50,7 +50,7 @@ const translations = {
     questionsButton: "Questions",
     resultsButton: "Results",
     deleteGameTitle: "Delete Game?",
-    deleteGameMessage: "Are you sure you want to delete",
+    deleteGameMessage: "Are you sure you want to move this item to the Recycle Bin?",
     manageGames: "Manage Games",
     selectBusiness: "Select Business",
     noGames: "No games found.",
@@ -66,6 +66,7 @@ const translations = {
     editTooltip: "Edit Game",
     deleteTooltip: "Delete Game",
     shareTooltip: "Share Game Link",
+    delete: "Delete",
   },
   ar: {
     gamesTitle: "ألعاب لـ",
@@ -81,7 +82,7 @@ const translations = {
     questionsButton: "الأسئلة",
     resultsButton: "النتائج",
     deleteGameTitle: "حذف اللعبة؟",
-    deleteGameMessage: "هل أنت متأكد أنك تريد حذف",
+    deleteGameMessage: "هل أنت متأكد أنك تريد نقل هذا العنصر إلى سلة المحذوفات؟",
     manageGames: "إدارة الألعاب",
     selectBusiness: "اختر العمل",
     noGames: "لا توجد ألعاب.",
@@ -97,6 +98,7 @@ const translations = {
     editTooltip: "تعديل اللعبة",
     deleteTooltip: "حذف اللعبة",
     shareTooltip: "مشاركة رابط اللعبة",
+    delete: "حذف",
   },
 };
 
@@ -467,9 +469,8 @@ export default function GamesPage() {
         <ShareLinkModal
           open={shareModalOpen}
           onClose={() => setShareModalOpen(false)}
-          url={`${
-            typeof window !== "undefined" ? window.location.origin : ""
-          }/quiznest/${gameToShare?.slug}`}
+          url={`${typeof window !== "undefined" ? window.location.origin : ""
+            }/quiznest/${gameToShare?.slug}`}
           name={gameToShare?.title}
         />
 
@@ -485,9 +486,9 @@ export default function GamesPage() {
         <ConfirmationDialog
           open={confirmOpen}
           title={t.deleteGameTitle}
-          message={`${t.deleteGameMessage} "${gameToDelete?.title}"${
-            dir === "rtl" ? "؟" : "?"
-          }`}
+          message={t.deleteGameMessage}
+          confirmButtonText={t.delete}
+          confirmButtonIcon={<ICONS.delete />}
           onClose={() => setConfirmOpen(false)}
           onConfirm={handleDeleteGame}
         />

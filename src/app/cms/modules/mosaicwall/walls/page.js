@@ -66,8 +66,7 @@ const translations = {
     update: "Update",
     create: "Create",
     deleteWallConfig: "Delete Wall Config?",
-    deleteConfirmMessage: "Are you sure you want to permanently delete",
-    deleteActionCannotBeUndone: "This action cannot be undone.",
+    deleteConfirmMessage: "Are you sure you want to move this item to the Recycle Bin?",
     delete: "Delete",
     slugLabel: "Slug:",
     createdLabel: "Created:",
@@ -98,8 +97,7 @@ const translations = {
     update: "تحديث",
     create: "إنشاء",
     deleteWallConfig: "حذف تكوين الجدار؟",
-    deleteConfirmMessage: "هل أنت متأكد من أنك تريد حذف",
-    deleteActionCannotBeUndone: "لا يمكن التراجع عن هذا الإجراء.",
+    deleteConfirmMessage: "هل أنت متأكد أنك تريد نقل هذا العنصر إلى سلة المحذوفات؟",
     delete: "حذف",
     slugLabel: "الرمز:",
     createdLabel: "تم الإنشاء:",
@@ -549,7 +547,7 @@ export default function WallConfigsPage() {
         onClose={() => setDeleteDialogOpen(false)}
         onConfirm={confirmDelete}
         title={t.deleteWallConfig}
-        message={`${t.deleteConfirmMessage} "${wallToDelete?.name}"? ${t.deleteActionCannotBeUndone}`}
+        message={t.deleteConfirmMessage}
         confirmButtonText={t.delete}
         confirmButtonIcon={<ICONS.delete fontSize="small" />}
       />

@@ -74,8 +74,7 @@ const translations = {
     cancel: "Cancel",
     save: "Save",
     deleteWheelTitle: "Delete Spin Wheel?",
-    deleteWheelMessage:
-      "Are you sure you want to delete this spin wheel? This action cannot be undone.",
+    deleteWheelMessage: "Are you sure you want to move this item to the Recycle Bin?",
     collectInfoLabel: "Collect Info (Admin adds names)",
     enterNamesLabel: "Enter Names (Participants enter their names)",
     shareSpinWheelTitle: "Share Spin Wheel",
@@ -109,8 +108,7 @@ const translations = {
     cancel: "إلغاء",
     save: "حفظ",
     deleteWheelTitle: "حذف عجلة الدوران؟",
-    deleteWheelMessage:
-      "هل أنت متأكد من رغبتك في حذف عجلة الدوران هذه؟ لا يمكن التراجع عن هذا الإجراء.",
+    deleteWheelMessage: "هل أنت متأكد أنك تريد نقل هذا العنصر إلى سلة المحذوفات؟",
     collectInfoLabel: "جمع المعلومات (المشرف يضيف الأسماء)",
     enterNamesLabel: "إدخال الأسماء (المشاركون يدخلون أسماءهم)",
     shareSpinWheelTitle: "مشاركة عجلة الدوران",
@@ -181,11 +179,11 @@ const Dashboard = () => {
       const wheelList = await getAllSpinWheels();
       const filteredWheels = businessSlug
         ? wheelList.filter(
-            (wheel) =>
-              wheel.business?.slug === businessSlug ||
-              wheel.business?._id ===
-                businesses.find((b) => b.slug === businessSlug)?._id
-          )
+          (wheel) =>
+            wheel.business?.slug === businessSlug ||
+            wheel.business?._id ===
+            businesses.find((b) => b.slug === businessSlug)?._id
+        )
         : wheelList;
 
       setSpinWheels(filteredWheels);
@@ -208,25 +206,25 @@ const Dashboard = () => {
     setForm(
       wheel
         ? {
-            business:
-              wheel.business?._id ||
-              wheel.business ||
-              selectedBusinessObject?._id ||
-              "",
-            title: wheel.title,
-            slug: wheel.slug,
-            type: wheel.type,
-            logo: null,
-            background: null,
-          }
+          business:
+            wheel.business?._id ||
+            wheel.business ||
+            selectedBusinessObject?._id ||
+            "",
+          title: wheel.title,
+          slug: wheel.slug,
+          type: wheel.type,
+          logo: null,
+          background: null,
+        }
         : {
-            business: selectedBusinessObject?._id || "",
-            title: "",
-            slug: "",
-            type: "collect_info",
-            logo: null,
-            background: null,
-          }
+          business: selectedBusinessObject?._id || "",
+          title: "",
+          slug: "",
+          type: "collect_info",
+          logo: null,
+          background: null,
+        }
     );
     setLogoPreview(wheel?.logoUrl || null);
     setBackgroundPreview(wheel?.backgroundUrl || null);
@@ -349,8 +347,7 @@ const Dashboard = () => {
         : `${window.location.origin}/eventwheel/wheels/${slug}`;
     setShareUrl(url);
     setShareTitle(
-      `${t.shareSpinWheelTitle}: ${
-        spinWheels.find((w) => w.slug === slug)?.title || slug
+      `${t.shareSpinWheelTitle}: ${spinWheels.find((w) => w.slug === slug)?.title || slug
       }`
     );
 
@@ -738,6 +735,7 @@ const Dashboard = () => {
           title={t.deleteWheelTitle}
           message={t.deleteWheelMessage}
           confirmButtonText={t.delete}
+          confirmButtonIcon={<ICONS.delete />}
         />
       </Container>
     </Box>

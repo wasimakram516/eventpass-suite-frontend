@@ -74,7 +74,7 @@ const translations = {
     sharePollLink: "Share Poll Link",
     deletePoll: "Delete Poll",
     deleteConfirmation:
-      "Are you sure you want to delete this poll? This action cannot be undone.",
+      "Are you sure you want to move this item to the Recycle Bin?",
     noBusiness: "No business",
     pollCreated: "Poll created successfully",
     pollUpdated: "Poll updated successfully",
@@ -127,7 +127,7 @@ const translations = {
     sharePollLink: "مشاركة رابط الاستطلاع",
     deletePoll: "حذف الاستطلاع",
     deleteConfirmation:
-      "هل أنت متأكد من أنك تريد حذف هذا الاستطلاع؟ لا يمكن التراجع عن هذا الإجراء.",
+      "هل أنت متأكد أنك تريد نقل هذا العنصر إلى سلة المحذوفات؟",
     noBusiness: "لا يوجد عمل",
     pollCreated: "تم إنشاء الاستطلاع بنجاح",
     pollUpdated: "تم تحديث الاستطلاع بنجاح",
