@@ -46,8 +46,7 @@ const translations = {
     viewDetails: "View Details",
     delete: "Delete",
     deleteTitle: "Delete Media?",
-    deleteMessage:
-      "Are you sure you want to permanently delete this media item? This action cannot be undone.",
+    deleteMessage: "Are you sure you want to move this item to the Recycle Bin?",
     deleteSuccess: "Media deleted successfully",
   },
   ar: {
@@ -64,8 +63,7 @@ const translations = {
     viewDetails: "عرض التفاصيل",
     delete: "حذف",
     deleteTitle: "حذف الوسائط؟",
-    deleteMessage:
-      "هل أنت متأكد من أنك تريد حذف عنصر الوسائط هذا نهائيًا؟ لا يمكن التراجع عن هذا الإجراء.",
+    deleteMessage: "هل أنت متأكد أنك تريد نقل هذا العنصر إلى سلة المحذوفات؟",
     deleteSuccess: "تم حذف الوسائط بنجاح",
   },
 };
@@ -82,19 +80,19 @@ const CMSUploadsPage = () => {
   const { t, dir } = useI18nLayout(translations);
 
   useMediaSocket({
-  wallSlug,
-  onMediaUpdate: (updatedList) => {
-    let scoped = updatedList;
-    if (user?.role === "business" && user?.business?._id) {
-      scoped = updatedList.filter(
-        (item) => item.wall?.business === user.business._id
-      );
-    }
-    // Filter out any soft-deleted items as backup
-    scoped = scoped.filter(item => !item.deletedAt && !item.isDeleted);
-    setMedia(scoped);
-  },
-});
+    wallSlug,
+    onMediaUpdate: (updatedList) => {
+      let scoped = updatedList;
+      if (user?.role === "business" && user?.business?._id) {
+        scoped = updatedList.filter(
+          (item) => item.wall?.business === user.business._id
+        );
+      }
+      // Filter out any soft-deleted items as backup
+      scoped = scoped.filter(item => !item.deletedAt && !item.isDeleted);
+      setMedia(scoped);
+    },
+  });
 
   const fetchMedia = async () => {
     setLoading(true);
@@ -125,18 +123,18 @@ const CMSUploadsPage = () => {
   };
 
   const confirmDelete = async () => {
-  if (!mediaToDelete) return;
-  await deleteDisplayMedia(mediaToDelete._id);
-  
-  // Immediately remove from local state to prevent showing deleted item
-  setMedia((prevMedia) => 
-    prevMedia.filter((item) => item._id !== mediaToDelete._id)
-  );
-  
-  setDeleteDialogOpen(false);
-  setMediaToDelete(null);
-  fetchMedia();
-};
+    if (!mediaToDelete) return;
+    await deleteDisplayMedia(mediaToDelete._id);
+
+    // Immediately remove from local state to prevent showing deleted item
+    setMedia((prevMedia) =>
+      prevMedia.filter((item) => item._id !== mediaToDelete._id)
+    );
+
+    setDeleteDialogOpen(false);
+    setMediaToDelete(null);
+    fetchMedia();
+  };
   const closePreview = () => {
     setPreviewOpen(false);
     setSelectedMedia(null);

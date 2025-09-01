@@ -64,7 +64,8 @@ const translations = {
     correctAnswerLabel: "Correct Answer:",
     hintLabel: "Hint:",
     deleteQuestionTitle: "Delete Question?",
-    deleteQuestionMessage: "Are you sure you want to delete this question?",
+    deleteQuestionMessage: "Are you sure you want to move this item to the Recycle Bin?",
+    delete: "Delete",
     downloadTemplateTitle: "Download Template",
     numberOptionsLabel: "Number of Options",
     includeHintLabel: "Include Hint Column",
@@ -95,7 +96,8 @@ const translations = {
     correctAnswerLabel: "الإجابة الصحيحة:",
     hintLabel: "تلميح:",
     deleteQuestionTitle: "حذف السؤال؟",
-    deleteQuestionMessage: "هل أنت متأكد أنك تريد حذف هذا السؤال؟",
+    deleteQuestionMessage: "هل أنت متأكد من أنك تريد نقل هذا العنصر إلى سلة المحذوفات؟",
+    delete: "حذف",
     downloadTemplateTitle: "تحميل القالب",
     numberOptionsLabel: "عدد الخيارات",
     includeHintLabel: "تضمين عمود التلميح",
@@ -422,7 +424,7 @@ export default function QuestionsPage() {
               message={t.deleteQuestionMessage}
               onClose={() => setConfirmOpen(false)}
               onConfirm={handleDelete}
-              confirmButtonText={t.deleteQuestionTitle}
+              confirmButtonText={t.delete}
               confirmButtonIcon={<ICONS.delete />}
             />
           </>

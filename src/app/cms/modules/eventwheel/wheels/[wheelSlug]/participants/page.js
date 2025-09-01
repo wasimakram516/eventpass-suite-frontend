@@ -47,8 +47,7 @@ const translations = {
     company: "Company",
     deleteParticipant: "Delete Participant",
     deleteTitle: "Delete Participant?",
-    deleteMessage:
-      "Are you sure you want to delete this participant? This action cannot be undone.",
+    deleteMessage: "Are you sure you want to move this item to the Recycle Bin?",
     delete: "Delete",
   },
   ar: {
@@ -61,8 +60,7 @@ const translations = {
     company: "الشركة",
     deleteParticipant: "حذف المشارك",
     deleteTitle: "حذف المشارك؟",
-    deleteMessage:
-      "هل أنت متأكد من حذف هذا المشارك؟ لا يمكن التراجع عن هذا الإجراء.",
+    deleteMessage: "هل أنت متأكد أنك تريد نقل هذا العنصر إلى سلة المحذوفات؟",
     delete: "حذف",
   },
 };
@@ -314,6 +312,7 @@ const ParticipantsAdminPage = () => {
           title={t.deleteTitle}
           message={t.deleteMessage}
           confirmButtonText={t.delete}
+          confirmButtonIcon={<ICONS.delete />}
         />
       </Container>
     </Box>

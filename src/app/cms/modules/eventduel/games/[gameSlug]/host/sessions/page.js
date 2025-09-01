@@ -51,8 +51,8 @@ const translations = {
     unknown: "Unknown",
     noData: "No data available",
     confirmResetTitle: "Reset All Sessions?",
-    confirmResetMessage:
-      "This will permanently delete all sessions for this game. Are you sure?",
+    confirmResetMessage: "Are you sure you want to move this item to the Recycle Bin?",
+    delete: "Delete",
     recordsPerPage: "Records per page",
     showing: "Showing",
     to: "to",
@@ -80,8 +80,8 @@ const translations = {
     unknown: "غير معروف",
     noData: "لا توجد بيانات متاحة",
     confirmResetTitle: "هل تريد إعادة تعيين جميع الجلسات؟",
-    confirmResetMessage:
-      "سيؤدي هذا إلى حذف جميع الجلسات نهائيًا. هل أنت متأكد؟",
+    confirmResetMessage: "هل أنت متأكد من أنك تريد نقل هذا العنصر إلى سلة المحذوفات؟",
+    delete: "حذف",
     recordsPerPage: "عدد الجلسات لكل صفحة",
     showing: "عرض",
     to: "إلى",
@@ -494,7 +494,7 @@ export default function PvPSessions() {
         onConfirm={handleResetSessions}
         title={t.confirmResetTitle}
         message={t.confirmResetMessage}
-        confirmButtonText={t.allSessions}
+        confirmButtonText={t.delete}
         confirmButtonIcon={<ICONS.delete />}
       />
     </Container>

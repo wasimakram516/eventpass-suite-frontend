@@ -22,6 +22,8 @@ import {
   Select,
   Pagination,
   Button,
+  useMediaQuery, 
+  useTheme, 
 } from "@mui/material";
 
 import BreadcrumbsNav from "@/components/BreadcrumbsNav";
@@ -48,13 +50,14 @@ const translations = {
     title: "Recycle Bin",
     subtitle: "View, restore or permanently delete trashed items.",
     restore: "Restore",
+    delete: "Delete",
     permanentDelete: "Delete Permanently",
     confirmDeleteTitle: "Confirm Permanent Delete",
-    confirmDeleteMessage: (name) =>
-      `Are you sure you want to permanently delete ${name}? This action cannot be undone.`,
-    confirmDeleteButton: "Delete",
+    confirmDeleteMessage:
+      "Are you sure you want to permanently delete this item? This action cannot be undone.",
+    confirmDeleteButton: "Delete Permanently",
     confirmRestoreTitle: "Confirm Restore",
-    confirmRestoreMessage: (name) => `Do you want to restore ${name}?`,
+    confirmRestoreMessage: "Are you sure you want to restore this item?",
     confirmRestoreButton: "Restore",
     noTrash: "No trashed items found.",
     searchPlaceholder: "Search…",
@@ -76,13 +79,14 @@ const translations = {
     title: "سلة المحذوفات",
     subtitle: "عرض أو استعادة أو حذف العناصر المحذوفة نهائيًا.",
     restore: "استعادة",
+    "delete": "حذف",
     permanentDelete: "حذف نهائي",
     confirmDeleteTitle: "تأكيد الحذف النهائي",
-    confirmDeleteMessage: (name) =>
-      `هل أنت متأكد أنك تريد حذف ${name} نهائيًا؟ لا يمكن التراجع عن هذا الإجراء.`,
-    confirmDeleteButton: "حذف",
+    confirmDeleteMessage:
+      "هل أنت متأكد أنك تريد حذف هذا العنصر نهائيًا؟ لا يمكن التراجع عن هذا الإجراء.",
+    confirmDeleteButton: "حذف نهائيًا",
     confirmRestoreTitle: "تأكيد الاستعادة",
-    confirmRestoreMessage: (name) => `هل تريد استعادة ${name}؟`,
+    confirmRestoreMessage: "هل أنت متأكد أنك تريد استعادة هذا العنصر؟",
     confirmRestoreButton: "استعادة",
     noTrash: "لم يتم العثور على عناصر محذوفة.",
     searchPlaceholder: "ابحث…",
@@ -105,6 +109,8 @@ const translations = {
 export default function TrashPage() {
   const { dir, align, t } = useI18nLayout(translations);
   const { user: currentUser } = useAuth();
+  const theme = useTheme(); 
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm')); 
   const isBusiness = currentUser?.role === "business";
   const [loading, setLoading] = useState(true);
   const [trashData, setTrashData] = useState({});
@@ -131,11 +137,15 @@ export default function TrashPage() {
   const [filterOpen, setFilterOpen] = useState(false);
 
   useEffect(() => {
-    hydrateUsersMap();
-    fetchModuleCounts();
-    fetchAllModules();
-    fetchModuleData();
-  }, []);
+    const initializeData = async () => {
+      await hydrateUsersMap();
+      await fetchAllModules(); 
+      await fetchModuleCounts();
+      await fetchModuleData();
+      await fetchTrash();
+    };
+    initializeData();
+  }, []); 
 
   const formatDate = (dateString) => {
     if (!dateString) return "";
@@ -158,12 +168,14 @@ export default function TrashPage() {
 
   // debounced effect to reduce API calls during rapid filter changes
   useEffect(() => {
+    if (allAvailableModules.length === 0) return;
+
     const timeoutId = setTimeout(() => {
       fetchTrash();
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [limit, deletedByFilter, moduleFilter, dateFrom, dateTo, pageState]);
+  }, [limit, deletedByFilter, moduleFilter, dateFrom, dateTo, pageState, allAvailableModules]);
 
   const hydrateUsersMap = async () => {
     try {
@@ -193,17 +205,37 @@ export default function TrashPage() {
 
   const fetchTrash = async () => {
     setLoading(true);
+    console.log('🔍 fetchTrash called with filters:', { deletedByFilter, moduleFilter, dateFrom, dateTo, limit }); 
     try {
-      const params = { limit };
-      if (deletedByFilter !== "__ALL__") params.deletedBy = deletedByFilter;
-      if (moduleFilter !== "__ALL__") params.model = moduleFilter;
-      if (dateFrom) params.startDate = dateFrom;
-      if (dateTo) params.endDate = dateTo;
+      const allResults = {};
 
-      const res = await getTrash(params);
-      setTrashData(res.items || res);
-      if (moduleFilter === "__ALL__" && Object.keys(allAvailableModules).length === 0) {
-        setAllAvailableModules(Object.keys(res.items || res));
+      if (moduleFilter !== "__ALL__") {
+        const page = pageState[moduleFilter] || 1;
+        const params = { limit, page, model: moduleFilter };
+        if (deletedByFilter !== "__ALL__") params.deletedBy = deletedByFilter;
+        if (dateFrom) params.startDate = dateFrom;
+        if (dateTo) params.endDate = dateTo; 
+        const res = await getTrash(params);
+        const moduleResult = res.items?.[moduleFilter] || res[moduleFilter] || { items: [], total: 0 };
+        allResults[moduleFilter] = moduleResult;
+      } else {
+        const modules = Object.keys(allAvailableModules).length > 0 ? allAvailableModules :
+          Object.keys(await getTrash({ limit: 1 }).then(r => r.items || r));
+        for (const module of modules) {
+          const page = pageState[module] || 1;
+          const params = { limit, page, model: module };
+          if (deletedByFilter !== "__ALL__") params.deletedBy = deletedByFilter;
+          if (dateFrom) params.startDate = dateFrom;
+          if (dateTo) params.endDate = dateTo;
+            const res = await getTrash(params);
+            const moduleResult = res.items?.[module] || res[module] || { items: [], total: 0 };
+            allResults[module] = moduleResult;
+        }
+      }
+
+      setTrashData(allResults);
+      if (Object.keys(allAvailableModules).length === 0) {
+        setAllAvailableModules(Object.keys(allResults));
       }
     } catch (error) {
       console.error('Error fetching trash:', error);
@@ -211,6 +243,21 @@ export default function TrashPage() {
       setLoading(false);
     }
   };
+  useEffect(() => {
+    if (trashData) {
+      const newIds = new Set(allDeletedByIds);
+      Object.values(trashData).forEach((moduleData) => {
+        if (moduleData && moduleData.items && Array.isArray(moduleData.items)) {
+          moduleData.items.forEach((it) => {
+            const db = it.deletedBy;
+            if (typeof db === "string") newIds.add(db);
+            else if (db && db._id) newIds.add(db._id);
+          });
+        }
+      });
+      setAllDeletedByIds(newIds);
+    }
+  }, [trashData]);
 
   const fetchModuleCounts = async () => {
     try {
@@ -222,15 +269,31 @@ export default function TrashPage() {
   };
 
   const fetchAllModules = async () => {
-    try {
-      const res = await getTrash({ limit: 1 });
-      setAllAvailableModules(Object.keys(res.items || res));
-    } catch (error) {
-      console.error('Error fetching all modules:', error);
-    }
+      const res = await getTrash({ limit: 10 }); 
+      const modules = Object.keys(res.items || res);
+      setAllAvailableModules(modules);
+
+      const userIds = new Set();
+      Object.values(res.items || res).forEach((moduleData) => {
+        if (moduleData && moduleData.items && Array.isArray(moduleData.items)) {
+          moduleData.items.forEach((item) => {
+            const db = item.deletedBy;
+            if (typeof db === "string") userIds.add(db);
+            else if (db && db._id) userIds.add(db._id);
+          });
+        }
+      });
+      setAllDeletedByIds(userIds);
   };
+
+  // Store all user IDs separately from filtered data to prevent dropdown emptying
+  const [allDeletedByIds, setAllDeletedByIds] = useState(new Set());
+
   const deletedByOptions = useMemo(() => {
-    const ids = new Set();
+    const ids = new Set([...allDeletedByIds]);
+    if (deletedByFilter !== "__ALL__") {
+      ids.add(deletedByFilter);
+    }
     if (trashData && typeof trashData === 'object') {
       Object.values(trashData).forEach((moduleData) => {
         if (moduleData && moduleData.items && Array.isArray(moduleData.items)) {
@@ -242,8 +305,10 @@ export default function TrashPage() {
         }
       });
     }
-    return ["__ALL__", ...Array.from(ids)];
-  }, [trashData]);
+
+    const options = ["__ALL__", ...Array.from(ids)];
+    return options;
+  }, [trashData, allDeletedByIds, deletedByFilter]);
 
   const labelForDeletedBy = (val) => {
     if (!val) return "-";
@@ -262,8 +327,8 @@ export default function TrashPage() {
       'game-eventduel': 'Game (EventDuel)',
       'gamesession-quiznest': 'Game Session (QuizNest)',
       'gamesession-eventduel': 'Game Session (EventDuel)',
-      'qnquestion': 'Questions (QuizNest)', 
-      'pvpquestion': 'Questions (EventDuel)', 
+      'qnquestion': 'Questions (QuizNest)',
+      'pvpquestion': 'Questions (EventDuel)',
     };
     return moduleNames[moduleKey] || moduleKey.charAt(0).toUpperCase() + moduleKey.slice(1);
   };
@@ -290,8 +355,8 @@ export default function TrashPage() {
     'visitor': 'visitor',
     'surveyform': 'surveyform',
     'surveyresponse': 'surveyresponse',
-    'pvpquestion': 'pvpquestion', 
-    'qnquestion': 'qnquestion', 
+    'pvpquestion': 'pvpquestion',
+    'qnquestion': 'qnquestion',
   };
 
   const mapToBackendController = (frontendModuleKey) => {
@@ -315,12 +380,17 @@ export default function TrashPage() {
     setPendingAction({ type: "delete", module: backendModule, item });
     setDeleteConfirm(true);
   };
-
   const handleRestore = async () => {
     if (!pendingAction) return;
     setLoading(true);
-    await restoreTrashItem(pendingAction.module, pendingAction.item._id);
+    await restoreTrashItem(pendingAction.module, pendingAction.item._id);  
+    setModuleCounts(prev => ({
+      ...prev,
+      [pendingAction.module]: Math.max(0, (prev[pendingAction.module] || 1) - 1)
+    }));
+
     await fetchTrash();
+    await fetchModuleCounts();
     setRestoreConfirm(false);
     setPendingAction(null);
     setLoading(false);
@@ -330,7 +400,13 @@ export default function TrashPage() {
     if (!pendingAction) return;
     setLoading(true);
     await permanentDeleteTrashItem(pendingAction.module, pendingAction.item._id);
+    setModuleCounts(prev => ({
+      ...prev,
+      [pendingAction.module]: Math.max(0, (prev[pendingAction.module] || 1) - 1)
+    }));
+
     await fetchTrash();
+    await fetchModuleCounts();
     setDeleteConfirm(false);
     setPendingAction(null);
     setLoading(false);
@@ -340,6 +416,25 @@ export default function TrashPage() {
     setPageState((prev) => ({ ...prev, [module]: value }));
   };
 
+  const handleLimitChange = (newLimit) => {
+    setLimit(newLimit);
+    setPageState({});
+  };
+
+  // Prevent MUI from locking body overflow and removing scrollbar
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      if (document.body.style.overflow === 'hidden') {
+        document.body.style.overflow = 'auto';
+        document.body.style.paddingRight = '0px';
+      }
+    });
+    observer.observe(document.body, {
+      attributes: true,
+      attributeFilter: ['style']
+    });
+    return () => observer.disconnect();
+  }, []);
   return (
     <Container dir={dir}>
       <BreadcrumbsNav />
@@ -362,7 +457,9 @@ export default function TrashPage() {
       <Divider sx={{ mb: 2 }} />
       {/* Module Count Cards */}
       {Object.keys(moduleCounts).length > 0 && (
-        <Box sx={{ mb: 3 }}>
+        <Box sx={{
+          mb: 3,
+        }}>
           <Grid container spacing={2}>
             {Object.entries(moduleCounts)
               .filter(([, count]) => count > 0)
@@ -446,6 +543,7 @@ export default function TrashPage() {
           value={deletedByFilter}
           onChange={(e) => setDeletedByFilter(e.target.value)}
           sx={{ display: { xs: "none", sm: "flex" } }}
+          SelectProps={{ displayEmpty: true }}
         >
           <MenuItem value="__ALL__">{t.all}</MenuItem>
           {deletedByOptions.map((id) =>
@@ -497,8 +595,7 @@ export default function TrashPage() {
             value={limit}
             size="large"
             onChange={(e) => {
-              setLimit(Number(e.target.value));
-              setPageState({});
+              handleLimitChange(Number(e.target.value));
             }}
           >
             {[5, 10, 20, 50].map((n) => (
@@ -520,16 +617,23 @@ export default function TrashPage() {
         Object.entries(trashData).map(([module, moduleData]) => {
           const { items = [], total = 0 } = moduleData || {};
           const page = pageState[module] || 1;
-          const filtered = items.filter(matchesSearch);
+          const filtered = items.filter((item) => {
+            if (!search.trim()) return true;
+            const searchTerm = search.trim().toLowerCase();
+            const itemText = (item.name || item.title || item.slug || item.text || item.question || item.fullName || item.employeeId || '').toLowerCase();
+            return itemText.includes(searchTerm);
+          });
           if (!filtered.length) return null;
           return (
             <Box key={module} sx={{ mb: 4 }}>
               <Typography variant="h6" sx={{ mb: 2 }}>
-                {module} ({total})
+                {getModuleDisplayName(module)} - {total}
               </Typography>
-              <Grid container spacing={3}>
+              <Grid container spacing={3} justifyContent="center">
                 {filtered.map((item) => (
-                  <Grid item xs={12} sm={6} md={4} key={item._id}>
+                  <Grid item xs={12} sm={6} md={4} key={item._id} sx={{
+                    width: { xs: '100%', md: "auto" }
+                  }}>
                     <Card
                       elevation={3}
                       sx={{
@@ -541,25 +645,32 @@ export default function TrashPage() {
                         justifyContent: "space-between",
                       }}
                     >
-                      <Box
-                        sx={{ display: "flex", gap: 2, alignItems: "center" }}
-                      >
-                        <Avatar sx={{ width: 48, height: 48 }}>
-                          {item.name?.[0] || item.title?.[0] || "?"}
-                        </Avatar>
-                        <Box sx={{ flexGrow: 1, ...wrapTextBox }}>
-                          <Typography variant="subtitle1" fontWeight="bold">
-                            {item.name || item.title || item.slug || item.text || item.question || item.fullName || item.
-                              employeeId || formatDate(item.endTime) || "Unnamed"}
-                          </Typography>
-                          <Typography variant="caption" color="text.secondary">
-                            {`Deleted: ${item.deletedAt
-                              ? formatDateTimeWithLocale(item.deletedAt)
-                              : "-"
-                              } • ${t.deletedBy}: ${labelForDeletedBy(
-                                item.deletedBy
-                              )}`}
-                          </Typography>
+                      <Box>
+                        <Box sx={{ display: "flex", gap: 2, alignItems: "center", mb: 1 }}>
+                          <Avatar sx={{ width: 48, height: 48 }}>
+                            {item.name?.[0] || item.title?.[0] || "?"}
+                          </Avatar>
+                          <Box sx={{ flexGrow: 1, ...wrapTextBox }}>
+                            <Typography variant="subtitle1" fontWeight="bold">
+                              {item.name || item.title || item.slug || item.text || item.question || item.fullName || item.
+                                employeeId || formatDate(item.endTime) || "Unnamed"}
+                            </Typography>
+                          </Box>
+                        </Box>
+
+                        <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, ml: 1 }}>
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                            <ICONS.event fontSize="small" color="action" />
+                            <Typography variant="caption" color="text.secondary">
+                              Deleted: {item.deletedAt ? formatDateTimeWithLocale(item.deletedAt) : "-"}
+                            </Typography>
+                          </Box>
+                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                            <ICONS.person fontSize="small" color="action" />
+                            <Typography variant="caption" color="text.secondary">
+                              {t.deletedBy}: {labelForDeletedBy(item.deletedBy)}
+                            </Typography>
+                          </Box>
                         </Box>
                       </Box>
                       <CardActions sx={{ mt: 1, justifyContent: "flex-end" }}>
@@ -587,17 +698,19 @@ export default function TrashPage() {
                 ))}
               </Grid>
 
-              {total > limit && (
-                <Box display="flex" justifyContent="center" mt={3}>
-                  <Pagination
-                    dir="ltr"
-                    count={Math.ceil(total / limit)}
-                    page={page}
-                    onChange={(e, val) => handlePageChange(module, val)}
-                  />
-                </Box>
-              )}
-            </Box>
+              {
+                total > limit && (
+                  <Box display="flex" justifyContent="center" mt={3}>
+                    <Pagination
+                      dir="ltr"
+                      count={Math.ceil(total / limit)}
+                      page={page}
+                      onChange={(e, val) => handlePageChange(module, val)}
+                    />
+                  </Box>
+                )
+              }
+            </Box >
           );
         })
       )}
@@ -657,9 +770,7 @@ export default function TrashPage() {
         onClose={() => setRestoreConfirm(false)}
         onConfirm={handleRestore}
         title={t.confirmRestoreTitle}
-        message={t.confirmRestoreMessage(
-          pendingAction?.item?.name || pendingAction?.item?.title
-        )}
+        message={t.confirmRestoreMessage}
         confirmButtonText={t.confirmRestoreButton}
         confirmButtonIcon={<ICONS.restore />}
       />
@@ -668,12 +779,10 @@ export default function TrashPage() {
         onClose={() => setDeleteConfirm(false)}
         onConfirm={handlePermanentDelete}
         title={t.confirmDeleteTitle}
-        message={t.confirmDeleteMessage(
-          pendingAction?.item?.name || pendingAction?.item?.title
-        )}
-        confirmButtonText={t.confirmDeleteButton}
+        message={t.confirmDeleteMessage}
+         confirmButtonText={isMobile ? t.delete : t.confirmDeleteButton}
         confirmButtonIcon={<ICONS.delete />}
       />
-    </Container>
+    </Container >
   );
 }

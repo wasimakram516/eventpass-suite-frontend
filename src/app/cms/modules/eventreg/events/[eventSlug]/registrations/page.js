@@ -66,8 +66,8 @@ export default function ViewRegistrations() {
       exporting: "Exporting...",
       records: "records",
       noRecords: "No registrations found for this event.",
-      delete: "Delete Registration",
-      deleteMessage: "Are you sure you want to delete this registration?",
+      delete: "Delete",
+      deleteMessage: "Are you sure you want to move this item to the Recycle Bin?",
       fullName: "Full Name",
       emailLabel: "Email",
       phoneLabel: "Phone",
@@ -88,8 +88,8 @@ export default function ViewRegistrations() {
       exporting: "جاري التصدير...",
       records: "سجلات",
       noRecords: "لا توجد تسجيلات لهذا الحدث.",
-      delete: "حذف التسجيل",
-      deleteMessage: "هل أنت متأكد أنك تريد حذف هذا التسجيل؟",
+      delete: "حذف",
+      deleteMessage: "هل أنت متأكد من أنك تريد نقل هذا العنصر إلى سلة المحذوفات؟",
       fullName: "الاسم الكامل",
       emailLabel: "البريد الإلكتروني",
       phoneLabel: "الهاتف",
@@ -117,15 +117,15 @@ export default function ViewRegistrations() {
         setEventDetails(evRes);
         const fields = evRes.formFields?.length
           ? evRes.formFields.map((f) => ({
-              name: f.inputName,
-              label: f.inputName,
-            }))
+            name: f.inputName,
+            label: f.inputName,
+          }))
           : [
-              { name: "fullName", label: t.fullName },
-              { name: "email", label: t.emailLabel },
-              { name: "phone", label: t.phoneLabel },
-              { name: "company", label: t.companyLabel },
-            ];
+            { name: "fullName", label: t.fullName },
+            { name: "email", label: t.emailLabel },
+            { name: "phone", label: t.phoneLabel },
+            { name: "company", label: t.companyLabel },
+          ];
         setDynamicFields(fields);
       }
 
@@ -174,10 +174,10 @@ export default function ViewRegistrations() {
       [
         `Event Dates:`,
         formatDate(eventDetails.startDate) +
-          (eventDetails.endDate &&
+        (eventDetails.endDate &&
           eventDetails.endDate !== eventDetails.startDate
-            ? ` to ${formatDate(eventDetails.endDate)}`
-            : ``),
+          ? ` to ${formatDate(eventDetails.endDate)}`
+          : ``),
       ].join(`,`)
     );
     lines.push([`Venue:`, eventDetails.venue || `N/A`].join(`,`));
@@ -414,6 +414,8 @@ export default function ViewRegistrations() {
         onConfirm={handleDelete}
         title={t.delete}
         message={t.deleteMessage}
+        confirmButtonText={t.delete}
+        confirmButtonIcon={<ICONS.delete />}
       />
 
       <WalkInModal

@@ -31,7 +31,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import DownloadIcon from "@mui/icons-material/Download";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
-
+import ICONS from "@/utils/iconUtil";
 import BreadcrumbsNav from "@/components/BreadcrumbsNav";
 import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -63,7 +63,8 @@ const translations = {
     correctAnswerLabel: "Correct Answer:",
     hintLabel: "Hint:",
     deleteQuestionTitle: "Delete Question?",
-    deleteQuestionMessage: "Are you sure you want to delete this question?",
+    delete: "Delete",
+    deleteQuestionMessage: "Are you sure you want to move this item to the Recycle Bin?",
     downloadTemplateTitle: "Download Template",
     numberOptionsLabel: "Number of Options",
     includeHintLabel: "Include Hint Column",
@@ -94,7 +95,8 @@ const translations = {
     correctAnswerLabel: "الإجابة الصحيحة:",
     hintLabel: "تلميح:",
     deleteQuestionTitle: "حذف السؤال؟",
-    deleteQuestionMessage: "هل أنت متأكد أنك تريد حذف هذا السؤال؟",
+    deleteQuestionMessage: "هل أنت متأكد أنك تريد نقل هذا العنصر إلى سلة المحذوفات؟",
+    delete: "حذف",
     downloadTemplateTitle: "تحميل القالب",
     numberOptionsLabel: "عدد الخيارات",
     includeHintLabel: "تضمين عمود التلميح",
@@ -422,6 +424,8 @@ export default function QuestionsPage() {
           message={t.deleteQuestionMessage}
           onClose={() => setConfirmOpen(false)}
           onConfirm={handleDelete}
+          confirmButtonText={t.delete}
+          confirmButtonIcon={<ICONS.delete />}
         />
 
         <Dialog

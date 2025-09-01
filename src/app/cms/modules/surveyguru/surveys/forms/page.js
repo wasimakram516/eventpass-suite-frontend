@@ -71,7 +71,7 @@ const translations = {
     delete: "Delete",
     confirmDeleteTitle: "Delete Form",
     confirmDeleteMsg:
-      "Are you sure you want to delete this survey form? This action cannot be undone.",
+      "Are you sure you want to move this item to the Recycle Bin?",
     confirmDeleteBtn: "Delete",
     // form fields
     fTitle: "Title",
@@ -128,7 +128,7 @@ const translations = {
     delete: "حذف",
     confirmDeleteTitle: "حذف النموذج",
     confirmDeleteMsg:
-      "هل أنت متأكد أنك تريد حذف هذا النموذج؟ لا يمكن التراجع عن هذا الإجراء.",
+      "هل أنت متأكد أنك تريد نقل هذا العنصر إلى سلة المحذوفات؟",
     confirmDeleteBtn: "حذف",
     // form fields
     fTitle: "العنوان",

@@ -51,7 +51,7 @@ const translations = {
     eventDeleted: "Event deleted!",
     errorLoading: "Error loading data.",
     deleteEventTitle: "Delete Event?",
-    deleteEventMessage: "Are you sure you want to delete",
+    deleteEventMessage: "Are you sure you want to move this item to the Recycle Bin?",
     delete: "Delete",
     slugLabel: "Slug:",
     dateRange: "Dates",
@@ -70,12 +70,12 @@ const translations = {
     eventDeleted: "تم حذف الفعالية!",
     errorLoading: "حدث خطأ أثناء تحميل البيانات.",
     deleteEventTitle: "حذف الفعالية؟",
-    deleteEventMessage: "هل أنت متأكد أنك تريد حذف",
+    deleteEventMessage: "هل أنت متأكد من أنك تريد نقل هذا العنصر إلى سلة المحذوفات؟",
+    delete: "حذف",
     slugLabel: ":المعرف",
     dateRange: "التواريخ",
     venue: "الموقع",
     viewRegs: "عرض التسجيلات",
-    delete: "حذف",
   },
 };
 
@@ -399,10 +399,10 @@ export default function EventsPage() {
         <ConfirmationDialog
           open={confirmOpen}
           title={t.deleteEventTitle}
-          message={`${t.deleteEventMessage} "${eventToDelete?.name}"?`}
+          message={t.deleteEventMessage}
           onClose={() => setConfirmOpen(false)}
           onConfirm={handleDeleteEvent}
-          confirmButtonText="Delete"
+          confirmButtonText={t.delete}
           confirmButtonIcon={<ICONS.delete />}
         />
 

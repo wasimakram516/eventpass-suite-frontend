@@ -60,8 +60,8 @@ const ViewRegistrations = () => {
       exporting: "Exporting...",
       records: "records",
       noRecords: "No registrations found for this event.",
-      delete: "Delete Registration",
-      deleteMessage: "Are you sure you want to delete this registration?",
+      delete: "Delete",
+      deleteMessage: "Are you sure you want to move this item to the Recycle Bin?",
       email: "Email:",
       phone: "Phone:",
       company: "Company:",
@@ -84,8 +84,8 @@ const ViewRegistrations = () => {
       exporting: "جاري التصدير...",
       records: "سجلات",
       noRecords: "لا توجد تسجيلات لهذا الحدث.",
-      delete: "حذف التسجيل",
-      deleteMessage: "هل أنت متأكد أنك تريد حذف هذا التسجيل؟",
+      delete: "حذف",
+      deleteMessage: "هل أنت متأكد من أنك تريد نقل هذا العنصر إلى سلة المحذوفات؟",
       email: "البريد الإلكتروني:",
       phone: "الهاتف:",
       company: "الشركة:",
@@ -172,10 +172,10 @@ const ViewRegistrations = () => {
       [
         `Event Dates:`,
         formatDate(eventDetails.startDate) +
-          (eventDetails.endDate &&
+        (eventDetails.endDate &&
           eventDetails.endDate !== eventDetails.startDate
-            ? ` to ${formatDate(eventDetails.endDate)}`
-            : ``),
+          ? ` to ${formatDate(eventDetails.endDate)}`
+          : ``),
       ].join(`,`)
     );
     lines.push([`Venue:`, eventDetails.venue || `N/A`].join(`,`));
@@ -459,6 +459,8 @@ const ViewRegistrations = () => {
         onConfirm={handleDelete}
         title={t.delete}
         message={t.deleteMessage}
+        confirmButtonText={t.delete}
+        confirmButtonIcon={<ICONS.delete />}
       />
     </Container>
   );

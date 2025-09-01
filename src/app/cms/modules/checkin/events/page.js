@@ -50,7 +50,8 @@ const translations = {
     eventDeleted: "Event deleted!",
     errorLoading: "Error loading data.",
     deleteEventTitle: "Delete Event?",
-    deleteEventMessage: "Are you sure you want to delete",
+    deleteEventMessage: "Are you sure you want to move this item to the Recycle Bin?",
+    delete: "Delete",
     slugLabel: "Slug:",
     dateRange: "Dates",
     venue: "Venue",
@@ -67,7 +68,8 @@ const translations = {
     eventDeleted: "تم حذف الفعالية!",
     errorLoading: "حدث خطأ أثناء تحميل البيانات.",
     deleteEventTitle: "حذف الفعالية؟",
-    deleteEventMessage: "هل أنت متأكد أنك تريد حذف",
+    deleteEventMessage: "هل أنت متأكد أنك تريد نقل هذا العنصر إلى سلة المحذوفات؟",
+    delete: "Delete",
     slugLabel: ":المعرف",
     dateRange: "التواريخ",
     venue: "الموقع",
@@ -293,8 +295,8 @@ export default function EventsPage() {
                             eventStatus === "Expired"
                               ? "error"
                               : eventStatus === "Current"
-                              ? "primary"
-                              : "success"
+                                ? "primary"
+                                : "success"
                           }
                           sx={{
                             fontWeight: "bold",
@@ -312,9 +314,9 @@ export default function EventsPage() {
                         <strong>{t.dateRange}:</strong>{" "}
                         {event?.startDate
                           ? formatDate(event.startDate) +
-                            (event?.endDate && event.endDate !== event.startDate
-                              ? ` to ${formatDate(event.endDate)}`
-                              : "")
+                          (event?.endDate && event.endDate !== event.startDate
+                            ? ` to ${formatDate(event.endDate)}`
+                            : "")
                           : "N/A"}
                       </Typography>
 
@@ -409,7 +411,9 @@ export default function EventsPage() {
         <ConfirmationDialog
           open={confirmOpen}
           title={t.deleteEventTitle}
-          message={`${t.deleteEventMessage} "${eventToDelete?.name}"?`}
+          message={t.deleteEventMessage}
+          confirmButtonIcon={<ICONS.delete />}
+          confirmButtonText={t.delete}
           onClose={() => setConfirmOpen(false)}
           onConfirm={handleDeleteEvent}
         />
