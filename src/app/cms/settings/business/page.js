@@ -61,8 +61,8 @@ const translations = {
     saving: "Saving...",
     creating: "Creating...",
     confirmDeleteTitle: "Confirm Delete",
-    confirmDeleteMessage: (name) =>
-      `Are you sure you want to delete ${name}? This will also delete all of its associated data and cannot be undone.`,
+    confirmDeleteMessage:
+      `Are you sure you want to move this item to the Recycle Bin?`,
 
     confirmDeleteButton: "Delete",
     owner: "Owner",
@@ -92,8 +92,8 @@ const translations = {
     saving: "جارٍ الحفظ...",
     creating: "جارٍ الإنشاء...",
     confirmDeleteTitle: "تأكيد الحذف",
-    confirmDeleteMessage: (name) =>
-      `هل أنت متأكد أنك تريد حذف ${name}؟ سيؤدي هذا أيضًا إلى حذف جميع البيانات المرتبطة به ولا يمكن التراجع عنه.`,
+    confirmDeleteMessage:
+      `هل أنت متأكد أنك تريد نقل هذا العنصر إلى سلة المحذوفات؟`,
 
     confirmDeleteButton: "حذف",
     owner: "المالك",
@@ -674,7 +674,7 @@ export default function BusinessDetailsPage() {
         onClose={() => setConfirmOpen(false)}
         onConfirm={handleDeleteConfirmed}
         title={t.confirmDeleteTitle}
-        message={t.confirmDeleteMessage(bizToDelete?.name)}
+        message={t.confirmDeleteMessage}
         confirmButtonText={t.confirmDeleteButton}
         confirmButtonIcon={<ICONS.delete />}
       />
