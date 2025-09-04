@@ -31,8 +31,8 @@ import {
   getTrash,
   restoreTrashItem,
   permanentDeleteTrashItem,
-  restoreAllTrashItems,        
-  permanentDeleteAllTrashItems, 
+  restoreAllTrashItems,
+  permanentDeleteAllTrashItems,
 } from "@/services/trashService";
 import { getAllUsers, getAllStaffUsers } from "@/services/userService";
 import { useAuth } from "@/contexts/AuthContext";
@@ -81,14 +81,14 @@ const translations = {
     totalItems: "Total Items",
     deletedAt: "Deleted",
     clearFilters: "Clear Filters",
-    restoreAll: "Restore All",          
-    deleteAll: "Delete All",            
-    confirmBulkRestoreTitle: "Confirm Restore All",  
-    confirmBulkRestoreMessage: "Are you sure you want to restore all items in this module?", 
-    confirmBulkDeleteTitle: "Confirm Delete All",    
-    confirmBulkDeleteMessage: "Are you sure you want to permanently delete all items in this module? This action cannot be undone.", 
-    deleteAllPermanently: "Delete Permanently",  
-    deleteAllMobile: "Delete",                      
+    restoreAll: "Restore All",
+    deleteAll: "Delete All",
+    confirmBulkRestoreTitle: "Confirm Restore All",
+    confirmBulkRestoreMessage: "Are you sure you want to restore all items in this module?",
+    confirmBulkDeleteTitle: "Confirm Delete All",
+    confirmBulkDeleteMessage: "Are you sure you want to permanently delete all items in this module? This action cannot be undone.",
+    deleteAllPermanently: "Delete Permanently",
+    deleteAllMobile: "Delete",
   },
   ar: {
     title: "سلة المحذوفات",
@@ -123,14 +123,14 @@ const translations = {
     totalItems: "إجمالي العناصر",
     deletedAt: "تم الحذف",
     clearFilters: "مسح المرشحات",
-    restoreAll: "استعادة الكل",                 
-    deleteAll: "حذف الكل",                       
-    confirmBulkRestoreTitle: "تأكيد استعادة الكل",   
-    confirmBulkRestoreMessage: "هل أنت متأكد أنك تريد استعادة جميع العناصر في هذه الوحدة؟", 
-    confirmBulkDeleteTitle: "تأكيد حذف الكل",        
-    confirmBulkDeleteMessage: "هل أنت متأكد أنك تريد حذف جميع العناصر في هذه الوحدة نهائيًا؟ لا يمكن التراجع عن هذا الإجراء.", 
-    deleteAllPermanently: "حذف نهائيًا",         
-    deleteAllMobile: "حذف",                         
+    restoreAll: "استعادة الكل",
+    deleteAll: "حذف الكل",
+    confirmBulkRestoreTitle: "تأكيد استعادة الكل",
+    confirmBulkRestoreMessage: "هل أنت متأكد أنك تريد استعادة جميع العناصر في هذه الوحدة؟",
+    confirmBulkDeleteTitle: "تأكيد حذف الكل",
+    confirmBulkDeleteMessage: "هل أنت متأكد أنك تريد حذف جميع العناصر في هذه الوحدة نهائيًا؟ لا يمكن التراجع عن هذا الإجراء.",
+    deleteAllPermanently: "حذف نهائيًا",
+    deleteAllMobile: "حذف",
   },
 };
 
@@ -258,9 +258,8 @@ export default function TrashPage() {
         const moduleResult = res.items?.[moduleFilter] || res[moduleFilter] || { items: [], total: 0 };
         allResults[moduleFilter] = moduleResult;
       } else {
-        const modules = Object.keys(allAvailableModules).length > 0 ? allAvailableModules :
-          Object.keys(await getTrash({ limit: 1 }).then(r => r.items || r));
-        for (const module of modules) {
+        const freshModules = Object.keys(await getTrash({ limit: 1 }).then(r => r.items || r));
+        for (const module of freshModules) {
           const page = pageState[module] || 1;
           const params = { limit, page, model: module };
           if (deletedByFilter !== "__ALL__") params.deletedBy = deletedByFilter;
@@ -445,16 +444,11 @@ export default function TrashPage() {
   const handleRestore = async () => {
     if (!pendingAction) return;
     setLoading(true);
-    await restoreTrashItem(pendingAction.module, pendingAction.item._id);
+      await restoreTrashItem(pendingAction.module, pendingAction.item._id);
 
-    setModuleCounts(prev => ({
-      ...prev,
-      [pendingAction.module]: Math.max(0, (prev[pendingAction.module] || 1) - 1)
-    }));
-
-    await fetchTrash();
-    await fetchModuleCounts();
-    await updateAvailableModules();
+      await fetchTrash();
+      await fetchModuleCounts();
+      await updateAvailableModules();
 
     setRestoreConfirm(false);
     setPendingAction(null);
@@ -464,16 +458,11 @@ export default function TrashPage() {
   const handlePermanentDelete = async () => {
     if (!pendingAction) return;
     setLoading(true);
-    await permanentDeleteTrashItem(pendingAction.module, pendingAction.item._id);
+      await permanentDeleteTrashItem(pendingAction.module, pendingAction.item._id);
 
-    setModuleCounts(prev => ({
-      ...prev,
-      [pendingAction.module]: Math.max(0, (prev[pendingAction.module] || 1) - 1)
-    }));
-
-    await fetchTrash();
-    await fetchModuleCounts();
-    await updateAvailableModules();
+      await fetchTrash();
+      await fetchModuleCounts();
+      await updateAvailableModules();
 
     setDeleteConfirm(false);
     setPendingAction(null);
@@ -523,11 +512,66 @@ export default function TrashPage() {
     setLoading(false);
   };
 
+  // Enhanced polling that handles complex backend operations with exponential backoff
+  const pollForCompletion = async (moduleKey, filterParams = {}, maxAttempts = 30, initialDelay = 300) => {
+    let attempts = 0;
+    let delay = initialDelay;
+    let lastCount = null;
+    let stableCount = 0;
+
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    while (attempts < maxAttempts) {
+      try {
+        const response = await getTrash({
+          model: moduleKey,
+          limit: 1,
+          ...filterParams
+        });
+        const moduleData = response.items?.[moduleKey] || response[moduleKey];
+        const currentCount = moduleData?.total || 0;
+
+        if (currentCount === 0) {
+          return true;
+        }
+
+        if (lastCount === currentCount) {
+          stableCount++;
+          if (stableCount >= 4 && attempts > 15) {
+            return true;
+          }
+        } else {
+          stableCount = 0;
+        }
+
+        lastCount = currentCount;
+
+        if (attempts > 8) {
+          delay = Math.min(delay * 1.3, 2000); // Increased max delay to 2 seconds
+        }
+
+        await new Promise(resolve => setTimeout(resolve, delay));
+        attempts++;
+
+      } catch (error) {
+        console.error('Error polling for completion:', error);
+        await new Promise(resolve => setTimeout(resolve, delay * 2));
+        attempts++;
+      }
+    }
+
+    // if max attempts reached, assume operation completed
+    console.warn(`Polling timeout after ${attempts} attempts for ${moduleKey} - proceeding anyway`);
+    return false;
+  };
+
   const handleBulkDelete = async () => {
     if (!pendingBulkAction) return;
     setLoading(true);
     try {
       await permanentDeleteAllTrashItems(pendingBulkAction.frontendModule, pendingBulkAction.filterParams);
+      await pollForCompletion(pendingBulkAction.frontendModule);
+
       await fetchTrash();
       await fetchModuleCounts();
       await updateAvailableModules();
@@ -730,7 +774,7 @@ export default function TrashPage() {
         </FormControl>
       </Stack>
 
-      <Box sx={{ display: { xs: "none", sm: "flex" }, justifyContent: "flex-start", mb: 2 }}> 
+      <Box sx={{ display: { xs: "none", sm: "flex" }, justifyContent: "flex-start", mb: 2 }}>
         <Button
           variant="outlined"
           color="primary"
@@ -761,53 +805,53 @@ export default function TrashPage() {
           if (!filtered.length) return null;
           return (
             <Box key={module} sx={{ mb: 4 }}>
-               <Stack
-                 direction={{ xs: "column", sm: "row" }}
-                 justifyContent="space-between"
-                 alignItems={{ xs: "flex-start", sm: "center" }}
-                 sx={{ mb: 2 }}
-               >
-                 <Typography variant="h6">
-                   {getModuleDisplayName(module)} - {total}
-                 </Typography>
-                 <Stack 
-                   direction={{ xs: "row", sm: "row" }} 
-                   spacing={1}
-                   sx={{ 
-                     width: { xs: "100%", sm: "auto" },
-                     mt: { xs: 1, sm: 0 }
-                   }}
-                 >
-                   <Button
-                     variant="text"
-                     color="success"
-                     size="small"
-                     startIcon={<ICONS.restore />}
-                     onClick={() => openBulkRestoreConfirm(module)}
-                     disabled={filtered.length === 0}
-                     sx={{ 
-                       ...getStartIconSpacing(dir),
-                       width: { xs: "100%", sm: "auto" }
-                     }}
-                   >
-                     {t.restoreAll}
-                   </Button>
-                   <Button
-                     variant="text"
-                     color="error"
-                     size="small"
-                     startIcon={<ICONS.delete />}
-                     onClick={() => openBulkDeleteConfirm(module)}
-                     disabled={filtered.length === 0}
-                     sx={{ 
-                       ...getStartIconSpacing(dir),
-                       width: { xs: "100%", sm: "auto" }
-                     }}
-                   >
-                     {t.deleteAll}
-                   </Button>
-                 </Stack>
-               </Stack>
+              <Stack
+                direction={{ xs: "column", sm: "row" }}
+                justifyContent="space-between"
+                alignItems={{ xs: "flex-start", sm: "center" }}
+                sx={{ mb: 2 }}
+              >
+                <Typography variant="h6">
+                  {getModuleDisplayName(module)} - {total}
+                </Typography>
+                <Stack
+                  direction={{ xs: "row", sm: "row" }}
+                  spacing={1}
+                  sx={{
+                    width: { xs: "100%", sm: "auto" },
+                    mt: { xs: 1, sm: 0 }
+                  }}
+                >
+                  <Button
+                    variant="text"
+                    color="success"
+                    size="small"
+                    startIcon={<ICONS.restore />}
+                    onClick={() => openBulkRestoreConfirm(module)}
+                    disabled={filtered.length === 0}
+                    sx={{
+                      ...getStartIconSpacing(dir),
+                      width: { xs: "100%", sm: "auto" }
+                    }}
+                  >
+                    {t.restoreAll}
+                  </Button>
+                  <Button
+                    variant="text"
+                    color="error"
+                    size="small"
+                    startIcon={<ICONS.delete />}
+                    onClick={() => openBulkDeleteConfirm(module)}
+                    disabled={filtered.length === 0}
+                    sx={{
+                      ...getStartIconSpacing(dir),
+                      width: { xs: "100%", sm: "auto" }
+                    }}
+                  >
+                    {t.deleteAll}
+                  </Button>
+                </Stack>
+              </Stack>
               <Grid container spacing={3} justifyContent="center">
                 {filtered.map((item) => (
                   <Grid item xs={12} sm={6} md={4} key={item._id} sx={{
@@ -832,7 +876,7 @@ export default function TrashPage() {
                           <Box sx={{ flexGrow: 1, ...wrapTextBox }}>
                             <Typography variant="subtitle1" fontWeight="bold">
                               {item.name || item.title || item.slug || item.text || item.question || item.fullName || item.
-                                employeeId || formatDate(item.endTime) || "Unnamed"}
+                                employeeId || formatDate(item.endTime) ||formatDate(item.createdAt)|| "Unnamed"}
                             </Typography>
                           </Box>
                         </Box>
