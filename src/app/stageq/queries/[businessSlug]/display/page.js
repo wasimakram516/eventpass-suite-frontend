@@ -89,7 +89,7 @@ export default function LiveQuestionDisplay() {
             alt={`${business.name} Logo`}
             style={{
               width: "auto",
-              height: "100px",
+              height: "150px",
               objectFit: "contain",
             }}
           />
