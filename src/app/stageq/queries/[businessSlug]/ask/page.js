@@ -15,6 +15,7 @@ import {
   DialogContent,
   DialogActions,
   TextField,
+  CircularProgress,
 } from "@mui/material";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
@@ -74,6 +75,7 @@ export default function AskQuestionsPage() {
   const { t, dir, align } = useI18nLayout(translations);
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [openForm, setOpenForm] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -85,7 +87,7 @@ export default function AskQuestionsPage() {
   const fetchQuestions = async () => {
     const data = await getQuestionsByBusiness(businessSlug);
     if (!data.error) {
-    setQuestions(data);
+      setQuestions(data);
     }
     setLoading(false);
   };
@@ -106,11 +108,15 @@ export default function AskQuestionsPage() {
   };
 
   const handleSubmit = async () => {
-    const { name, text } = formData;
-    await submitQuestion(businessSlug, formData);
-    setFormData({ name: "", phone: "", company: "", text: "" });
-    setOpenForm(false);
-    fetchQuestions();
+    try {
+      setSubmitting(true);
+      await submitQuestion(businessSlug, formData);
+      setFormData({ name: "", phone: "", company: "", text: "" });
+      setOpenForm(false);
+      fetchQuestions();
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   useEffect(() => {
@@ -331,10 +337,15 @@ export default function AskQuestionsPage() {
               onClick={handleSubmit}
               variant="contained"
               color="primary"
-              startIcon={<ICONS.save />}
               sx={{ minWidth: 120 }}
+              disabled={submitting}
+              startIcon={submitting ? null : <ICONS.send />}
             >
-              {t.submit}
+              {submitting ? (
+                <CircularProgress size={20} color="inherit" />
+              ) : (
+                t.submit
+              )}
             </Button>
           </DialogActions>
         </Dialog>
