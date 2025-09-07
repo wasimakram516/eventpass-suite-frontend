@@ -22,8 +22,8 @@ import {
   Select,
   Pagination,
   Button,
-  useMediaQuery, 
-  useTheme, 
+  useMediaQuery,
+  useTheme,
 } from "@mui/material";
 
 import BreadcrumbsNav from "@/components/BreadcrumbsNav";
@@ -31,6 +31,8 @@ import {
   getTrash,
   restoreTrashItem,
   permanentDeleteTrashItem,
+  restoreAllTrashItems,
+  permanentDeleteAllTrashItems,
 } from "@/services/trashService";
 import { getAllUsers, getAllStaffUsers } from "@/services/userService";
 import { useAuth } from "@/contexts/AuthContext";
@@ -55,12 +57,11 @@ const translations = {
     confirmDeleteTitle: "Confirm Permanent Delete",
     confirmDeleteMessage:
       "Are you sure you want to permanently delete this item? This action cannot be undone.",
-    deleteMessagePrefix:
-      "Are you sure you want to delete this user? This will also delete all their associated businesses and related data, and cannot be undone.",
-    deleteStaffMessage:
-      "Are you sure you want to delete this user? This will also delete all their related data, and cannot be undone.",
-    deleteBusinessMessage:
-      "Are you sure you want to delete this business? This will also delete all of its associated data and cannot be undone.",
+
+    deleteMessagePrefix: "Are you sure you want to delete this user? This will also delete all their associated businesses and related data, and cannot be undone.",
+    deleteStaffMessage: "Are you sure you want to delete this user? This will also delete all their related data, and cannot be undone.",
+    deleteBusinessMessage: "Are you sure you want to delete this business? This will also delete all of its associated data and cannot be undone.",
+
     confirmDeleteButton: "Delete Permanently",
     confirmRestoreTitle: "Confirm Restore",
     confirmRestoreMessage: "Are you sure you want to restore this item?",
@@ -85,11 +86,11 @@ const translations = {
     restoreAll: "Restore All",
     deleteAll: "Delete All",
     confirmBulkRestoreTitle: "Confirm Restore All",
-    confirmBulkRestoreMessage:
-      "Are you sure you want to restore all items in this module?",
+
+    confirmBulkRestoreMessage: "Are you sure you want to restore all items in this module?",
     confirmBulkDeleteTitle: "Confirm Delete All",
-    confirmBulkDeleteMessage:
-      "Are you sure you want to permanently delete all items in this module? This action cannot be undone.",
+    confirmBulkDeleteMessage: "Are you sure you want to permanently delete all items in this module? This action cannot be undone.",
+
     deleteAllPermanently: "Delete Permanently",
     deleteAllMobile: "Delete",
   },
@@ -102,12 +103,11 @@ const translations = {
     confirmDeleteTitle: "تأكيد الحذف النهائي",
     confirmDeleteMessage:
       "هل أنت متأكد أنك تريد حذف هذا العنصر نهائيًا؟ لا يمكن التراجع عن هذا الإجراء.",
-    deleteMessagePrefix:
-      "هل أنت متأكد أنك تريد حذف هذا المستخدم؟ سيؤدي هذا أيضًا إلى حذف جميع الشركات المرتبطة به والبيانات ذات الصلة، ولا يمكن التراجع عن هذا الإجراء.",
-    deleteStaffMessage:
-      "هل أنت متأكد أنك تريد حذف هذا المستخدم؟ سيؤدي هذا أيضًا إلى حذف البيانات ذات الصلة، ولا يمكن التراجع عن هذا الإجراء.",
-    deleteBusinessMessage:
-      "هل أنت متأكد أنك تريد حذف هذا العمل؟ سيؤدي هذا أيضًا إلى حذف جميع البيانات المرتبطة به ولا يمكن التراجع عن هذا الإجراء.",
+
+    deleteMessagePrefix: "هل أنت متأكد أنك تريد حذف هذا المستخدم؟ سيؤدي هذا أيضًا إلى حذف جميع الشركات المرتبطة به والبيانات ذات الصلة، ولا يمكن التراجع عن هذا الإجراء.",
+    deleteStaffMessage: "هل أنت متأكد أنك تريد حذف هذا المستخدم؟ سيؤدي هذا أيضًا إلى حذف البيانات ذات الصلة، ولا يمكن التراجع عن هذا الإجراء.",
+    deleteBusinessMessage: "هل أنت متأكد أنك تريد حذف هذا العمل؟ سيؤدي هذا أيضًا إلى حذف جميع البيانات المرتبطة به ولا يمكن التراجع عن هذا الإجراء.",
+
     confirmDeleteButton: "حذف نهائيًا",
     confirmRestoreTitle: "تأكيد الاستعادة",
     confirmRestoreMessage: "هل أنت متأكد أنك تريد استعادة هذا العنصر؟",
@@ -132,11 +132,11 @@ const translations = {
     restoreAll: "استعادة الكل",
     deleteAll: "حذف الكل",
     confirmBulkRestoreTitle: "تأكيد استعادة الكل",
-    confirmBulkRestoreMessage:
-      "هل أنت متأكد أنك تريد استعادة جميع العناصر في هذه الوحدة؟",
+
+    confirmBulkRestoreMessage: "هل أنت متأكد أنك تريد استعادة جميع العناصر في هذه الوحدة؟",
     confirmBulkDeleteTitle: "تأكيد حذف الكل",
-    confirmBulkDeleteMessage:
-      "هل أنت متأكد أنك تريد حذف جميع العناصر في هذه الوحدة نهائيًا؟ لا يمكن التراجع عن هذا الإجراء.",
+    confirmBulkDeleteMessage: "هل أنت متأكد أنك تريد حذف جميع العناصر في هذه الوحدة نهائيًا؟ لا يمكن التراجع عن هذا الإجراء.",
+
     deleteAllPermanently: "حذف نهائيًا",
     deleteAllMobile: "حذف",
   },
@@ -146,7 +146,9 @@ export default function TrashPage() {
   const { dir, align, t } = useI18nLayout(translations);
   const { user: currentUser } = useAuth();
   const theme = useTheme();
+
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
   const isBusiness = currentUser?.role === "business";
   const [loading, setLoading] = useState(true);
   const [trashData, setTrashData] = useState({});
@@ -156,6 +158,9 @@ export default function TrashPage() {
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [restoreConfirm, setRestoreConfirm] = useState(false);
   const [pendingAction, setPendingAction] = useState(null);
+  const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
+  const [bulkRestoreConfirm, setBulkRestoreConfirm] = useState(false);
+  const [pendingBulkAction, setPendingBulkAction] = useState(null);
 
   // pagination state PER MODULE
   const [pageState, setPageState] = useState({});
@@ -172,16 +177,25 @@ export default function TrashPage() {
   const [dateTo, setDateTo] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
 
+  const clearAllFilters = () => {
+    setSearch("");
+    setDeletedByFilter("__ALL__");
+    setModuleFilter("__ALL__");
+    setDateFrom("");
+    setDateTo("");
+    setPageState({});
+  };
+
   useEffect(() => {
     const initializeData = async () => {
       await hydrateUsersMap();
-      await fetchAllModules(); 
+      await fetchAllModules();
       await fetchModuleCounts();
       await fetchModuleData();
       await fetchTrash();
     };
     initializeData();
-  }, []); 
+  }, []);
 
   const formatDate = (dateString) => {
     if (!dateString) return "";
@@ -215,7 +229,7 @@ export default function TrashPage() {
     }, 300);
 
     return () => clearTimeout(timeoutId);
-  }, [limit, deletedByFilter, moduleFilter, dateFrom, dateTo, pageState, allAvailableModules]);
+  }, [limit, deletedByFilter, moduleFilter, dateFrom, dateTo, pageState]);
 
   const hydrateUsersMap = async () => {
     try {
@@ -245,7 +259,6 @@ export default function TrashPage() {
 
   const fetchTrash = async () => {
     setLoading(true);
-    console.log('🔍 fetchTrash called with filters:', { deletedByFilter, moduleFilter, dateFrom, dateTo, limit }); 
     try {
       const res = await getTrash({ limit, page: 1 });
       setTrashData(res.items || {});
@@ -261,26 +274,18 @@ export default function TrashPage() {
       const res = await getTrash({ limit: 1000 });
       const modules = Object.keys(res.items || res);
 
-      const modulesWithItems = modules.filter((module) => {
+      const modulesWithItems = modules.filter(module => {
         const moduleData = res.items?.[module] || res[module];
-        return (
-          moduleData &&
-          moduleData.items &&
-          Array.isArray(moduleData.items) &&
-          moduleData.items.length > 0
-        );
+        return moduleData && moduleData.items && Array.isArray(moduleData.items) && moduleData.items.length > 0;
       });
 
       setAllAvailableModules(modulesWithItems);
 
-      if (
-        moduleFilter !== "__ALL__" &&
-        !modulesWithItems.includes(moduleFilter)
-      ) {
+      if (moduleFilter !== "__ALL__" && !modulesWithItems.includes(moduleFilter)) {
         setModuleFilter("__ALL__");
       }
     } catch (error) {
-      console.error("Error updating available modules:", error);
+      console.error('Error updating available modules:', error);
     }
   };
   useEffect(() => {
@@ -324,17 +329,25 @@ export default function TrashPage() {
 
     setAllAvailableModules(modulesWithItems);
 
-      const userIds = new Set();
-      Object.values(res.items || res).forEach((moduleData) => {
-        if (moduleData && moduleData.items && Array.isArray(moduleData.items)) {
-          moduleData.items.forEach((item) => {
-            const db = item.deletedBy;
-            if (typeof db === "string") userIds.add(db);
-            else if (db && db._id) userIds.add(db._id);
-          });
-        }
-      });
-      setAllDeletedByIds(userIds);
+
+    const modulesWithItems = modules.filter(module => {
+      const moduleData = res.items?.[module] || res[module];
+      return moduleData && moduleData.items && Array.isArray(moduleData.items) && moduleData.items.length > 0;
+    });
+
+    setAllAvailableModules(modulesWithItems);
+
+    const userIds = new Set();
+    Object.values(res.items || res).forEach((moduleData) => {
+      if (moduleData && moduleData.items && Array.isArray(moduleData.items)) {
+        moduleData.items.forEach((item) => {
+          const db = item.deletedBy;
+          if (typeof db === "string") userIds.add(db);
+          else if (db && db._id) userIds.add(db._id);
+        });
+      }
+    });
+    setAllDeletedByIds(userIds);
   };
 
   // Store all user IDs separately from filtered data to prevent dropdown emptying
@@ -392,18 +405,23 @@ export default function TrashPage() {
   };
 
   const openRestoreConfirm = (module, item) => {
+
     setPendingAction({ type: "restore", module, frontendModule: module, item });
+
     setRestoreConfirm(true);
   };
 
   const openDeleteConfirm = (module, item) => {
+
     setPendingAction({ type: "delete", module, frontendModule: module, item });
+
     setDeleteConfirm(true);
   };
 
   const handleRestore = async () => {
     if (!pendingAction) return;
     setLoading(true);
+
     await restoreTrashItem(pendingAction.module, pendingAction.item._id);
 
     await fetchTrash();
@@ -418,6 +436,7 @@ export default function TrashPage() {
   const handlePermanentDelete = async () => {
     if (!pendingAction) return;
     setLoading(true);
+
     await permanentDeleteTrashItem(
       pendingAction.module,
       pendingAction.item._id
@@ -426,6 +445,7 @@ export default function TrashPage() {
     await fetchTrash();
     await fetchModuleCounts();
     await updateAvailableModules();
+
 
     setDeleteConfirm(false);
     setPendingAction(null);
@@ -438,6 +458,7 @@ export default function TrashPage() {
 
   // Handle bulk operations
   const openBulkRestoreConfirm = (module) => {
+
     const filterParams = {
       ...(deletedByFilter !== "__ALL__" && { deletedBy: deletedByFilter }),
       ...(dateFrom && { startDate: dateFrom }),
@@ -449,10 +470,12 @@ export default function TrashPage() {
       frontendModule: module,
       filterParams,
     });
+
     setBulkRestoreConfirm(true);
   };
 
   const openBulkDeleteConfirm = (module) => {
+
     const filterParams = {
       ...(deletedByFilter !== "__ALL__" && { deletedBy: deletedByFilter }),
       ...(dateFrom && { startDate: dateFrom }),
@@ -464,6 +487,7 @@ export default function TrashPage() {
       frontendModule: module,
       filterParams,
     });
+
     setBulkDeleteConfirm(true);
   };
 
@@ -471,15 +495,19 @@ export default function TrashPage() {
     if (!pendingBulkAction) return;
     setLoading(true);
     try {
+
       await restoreAllTrashItems(
         pendingBulkAction.frontendModule,
         pendingBulkAction.filterParams
       );
+
       await fetchTrash();
       await fetchModuleCounts();
       await updateAvailableModules();
     } catch (error) {
+
       console.error("Error in bulk restore:", error);
+
     }
     setBulkRestoreConfirm(false);
     setPendingBulkAction(null);
@@ -487,25 +515,31 @@ export default function TrashPage() {
   };
 
   // Enhanced polling that handles complex backend operations with exponential backoff
+
   const pollForCompletion = async (
     moduleKey,
     filterParams = {},
     maxAttempts = 30,
     initialDelay = 300
   ) => {
+
     let attempts = 0;
     let delay = initialDelay;
     let lastCount = null;
     let stableCount = 0;
 
+
     await new Promise((resolve) => setTimeout(resolve, 1000));
+
 
     while (attempts < maxAttempts) {
       try {
         const response = await getTrash({
           model: moduleKey,
           limit: 1,
+
           ...filterParams,
+
         });
         const moduleData = response.items?.[moduleKey] || response[moduleKey];
         const currentCount = moduleData?.total || 0;
@@ -534,14 +568,16 @@ export default function TrashPage() {
       } catch (error) {
         console.error("Error polling for completion:", error);
         await new Promise((resolve) => setTimeout(resolve, delay * 2));
+
         attempts++;
       }
     }
 
-    // if max attempts reached, assume operation completed
+
     console.warn(
       `Polling timeout after ${attempts} attempts for ${moduleKey} - proceeding anyway`
     );
+
     return false;
   };
 
@@ -549,17 +585,21 @@ export default function TrashPage() {
     if (!pendingBulkAction) return;
     setLoading(true);
     try {
+
       await permanentDeleteAllTrashItems(
         pendingBulkAction.frontendModule,
         pendingBulkAction.filterParams
       );
+
       await pollForCompletion(pendingBulkAction.frontendModule);
 
       await fetchTrash();
       await fetchModuleCounts();
       await updateAvailableModules();
     } catch (error) {
+
       console.error("Error in bulk delete:", error);
+
     }
     setBulkDeleteConfirm(false);
     setPendingBulkAction(null);
@@ -780,11 +820,13 @@ export default function TrashPage() {
           mb: 2,
         }}
       >
+
         <Button
           variant="outlined"
           color="primary"
           startIcon={<ICONS.clear />}
           onClick={clearAllFilters}
+
           disabled={
             !search &&
             deletedByFilter === "__ALL__" &&
@@ -792,6 +834,7 @@ export default function TrashPage() {
             !dateFrom &&
             !dateTo
           }
+
         >
           {t.clearFilters}
         </Button>
@@ -839,7 +882,9 @@ export default function TrashPage() {
                   spacing={1}
                   sx={{
                     width: { xs: "100%", sm: "auto" },
+
                     mt: { xs: 1, sm: 0 },
+
                   }}
                 >
                   <Button
@@ -851,7 +896,9 @@ export default function TrashPage() {
                     disabled={filtered.length === 0}
                     sx={{
                       ...getStartIconSpacing(dir),
+
                       width: { xs: "100%", sm: "auto" },
+
                     }}
                   >
                     {t.restoreAll}
@@ -865,7 +912,9 @@ export default function TrashPage() {
                     disabled={filtered.length === 0}
                     sx={{
                       ...getStartIconSpacing(dir),
+
                       width: { xs: "100%", sm: "auto" },
+
                     }}
                   >
                     {t.deleteAll}
@@ -909,6 +958,7 @@ export default function TrashPage() {
                           </Avatar>
                           <Box sx={{ flexGrow: 1, ...wrapTextBox }}>
                             <Typography variant="subtitle1" fontWeight="bold">
+
                               {item.name ||
                                 item.title ||
                                 item.slug ||
@@ -919,6 +969,7 @@ export default function TrashPage() {
                                 formatDate(item.endTime) ||
                                 formatDate(item.createdAt) ||
                                 "Unnamed"}
+
                             </Typography>
                           </Box>
                         </Box>
@@ -939,6 +990,7 @@ export default function TrashPage() {
                             }}
                           >
                             <ICONS.event fontSize="small" color="action" />
+
                             <Typography
                               variant="caption"
                               color="text.secondary"
@@ -947,6 +999,7 @@ export default function TrashPage() {
                               {item.deletedAt
                                 ? formatDateTimeWithLocale(item.deletedAt)
                                 : "-"}
+
                             </Typography>
                           </Box>
                           <Box
@@ -969,7 +1022,7 @@ export default function TrashPage() {
                       <CardActions sx={{ mt: 1, justifyContent: "flex-end" }}>
                         <Tooltip title={t.restore}>
                           <IconButton
-                            color="primary"
+                            color="success"
                             onClick={() => openRestoreConfirm(module, item)}
                             size="small"
                           >
@@ -1064,6 +1117,7 @@ export default function TrashPage() {
               clearAllFilters();
               setFilterOpen(false);
             }}
+
             disabled={
               !search &&
               deletedByFilter === "__ALL__" &&
@@ -1071,6 +1125,7 @@ export default function TrashPage() {
               !dateFrom &&
               !dateTo
             }
+
           >
             {t.clearFilters}
           </Button>
@@ -1085,12 +1140,14 @@ export default function TrashPage() {
         message={t.confirmRestoreMessage}
         confirmButtonText={t.confirmRestoreButton}
         confirmButtonIcon={<ICONS.restore />}
+        confirmButtonColor="success"
       />
       <ConfirmationDialog
         open={deleteConfirm}
         onClose={() => setDeleteConfirm(false)}
         onConfirm={handlePermanentDelete}
         title={t.confirmDeleteTitle}
+
         message={(() => {
           const frontendModule = pendingAction?.frontendModule;
           const itemRole = pendingAction?.item?.role;
@@ -1109,6 +1166,7 @@ export default function TrashPage() {
 
           return t.confirmDeleteMessage;
         })()}
+
         confirmButtonText={isMobile ? t.delete : t.confirmDeleteButton}
         confirmButtonIcon={<ICONS.delete />}
       />
@@ -1128,9 +1186,11 @@ export default function TrashPage() {
         onConfirm={handleBulkDelete}
         title={t.confirmBulkDeleteTitle}
         message={t.confirmBulkDeleteMessage}
+
         confirmButtonText={
           isMobile ? t.deleteAllMobile : t.deleteAllPermanently
         }
+
         confirmButtonIcon={<ICONS.delete />}
       />
     </Container>

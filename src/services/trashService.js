@@ -29,3 +29,21 @@ export const getModuleCounts = withApiHandler(async () => {
   const { data } = await api.get("/trash/module-counts");
   return data;
 });
+
+// Bulk restore and delete operations
+export const restoreAllTrashItems = withApiHandler(
+  async (module, params = {}) => {
+    const { data } = await api.put(`/trash/${module}/restore-all`, null, { params });
+    return data;
+  },
+  { showSuccess: true }
+);
+
+export const permanentDeleteAllTrashItems = withApiHandler(
+  async (module, params = {}) => {
+    const { data } = await api.delete(`/trash/${module}/permanent-all`, { params });
+    return data;
+  },
+  { showSuccess: true }
+);
+

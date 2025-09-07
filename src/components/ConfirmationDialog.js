@@ -23,6 +23,7 @@ const ConfirmationDialog = ({
   message,
   confirmButtonText,
   confirmButtonIcon,
+  confirmButtonColor = "error",
 }) => {
   const [loading, setLoading] = useState(false);
 
@@ -119,7 +120,7 @@ const ConfirmationDialog = ({
         <Button
           onClick={handleConfirm}
           variant="contained"
-          color="error"
+          color={confirmButtonColor}
           disabled={loading}
           startIcon={
             loading ? (

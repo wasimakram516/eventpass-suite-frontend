@@ -66,9 +66,9 @@ const translations = {
     saving: "Saving...",
     deleteConfirm: "Confirm Deletion",
     deleteMessagePrefix:
-      "Are you sure you want to delete this user? This will also delete all their associated businesses and related data, and cannot be undone.",
+      "Are you sure you want to move this item to the Recycle Bin?",
     deleteStaffMessage:
-      "Are you sure you want to delete this user? This will also delete all their related data, and cannot be undone.",
+      "Are you sure you want to move this item to the Recycle Bin?",
     role: "Role",
     edit: "Edit",
     delete: "Delete",
@@ -101,9 +101,9 @@ const translations = {
     saving: "جاري الحفظ...",
     deleteConfirm: "تأكيد الحذف",
     deleteMessagePrefix:
-      "هل أنت متأكد أنك تريد حذف هذا المستخدم؟ سيؤدي هذا أيضًا إلى حذف جميع الشركات المرتبطة به والبيانات ذات الصلة، ولا يمكن التراجع عن هذا الإجراء.",
+      "هل أنت متأكد أنك تريد نقل هذا العنصر إلى سلة المحذوفات؟",
     deleteStaffMessage:
-      "هل أنت متأكد أنك تريد حذف هذا المستخدم؟ سيؤدي هذا أيضًا إلى حذف البيانات ذات الصلة، ولا يمكن التراجع عن هذا الإجراء.",
+      "هل أنت متأكد أنك تريد نقل هذا العنصر إلى سلة المحذوفات؟",
     role: "الدور",
     edit: "تعديل",
     delete: "حذف",
