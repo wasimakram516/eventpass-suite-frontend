@@ -15,13 +15,15 @@ export default function Footer() {
         bottom: 0,
         left: 0,
         right: 0,
-        bgcolor: "background.default",
+        bgcolor: "rgba(255, 255, 255, 0.3)",
+        backdropFilter: "blur(8px)",
+        WebkitBackdropFilter: "blur(8px)",
         zIndex: 10,
         py: 1,
         px: 4,
         display: "flex",
-        alignItems: "center", 
-        justifyContent: "center", 
+        alignItems: "center",
+        justifyContent: "center",
         boxShadow: 1,
       }}
     >

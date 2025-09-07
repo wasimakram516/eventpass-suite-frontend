@@ -49,7 +49,8 @@ const translations = {
     updateButton: "Update",
     cancelButton: "Cancel",
     deleteQuestionTitle: "Delete Question",
-    deleteQuestionMessage: "Are you sure you want to move this item to the Recycle Bin?",
+    deleteQuestionMessage:
+      "Are you sure you want to move this item to the Recycle Bin?",
     deleteButton: "Delete",
     markAsAnswered: "Mark as Answered",
     markAsUnanswered: "Mark as Unanswered",
@@ -71,7 +72,8 @@ const translations = {
     updateButton: "تحديث",
     cancelButton: "إلغاء",
     deleteQuestionTitle: "حذف السؤال",
-    deleteQuestionMessage: "هل أنت متأكد أنك تريد نقل هذا العنصر إلى سلة المحذوفات؟",
+    deleteQuestionMessage:
+      "هل أنت متأكد أنك تريد نقل هذا العنصر إلى سلة المحذوفات؟",
     deleteButton: "حذف",
     markAsAnswered: "تمييز كمجاب عليه",
     markAsUnanswered: "تمييز كغير مجاب عليه",
@@ -112,6 +114,7 @@ export default function ManageQuestionsPage() {
       }
     }
   };
+
   const fetchQuestions = async (slug) => {
     setLoading(true);
     const data = await getQuestionsByBusiness(slug);
@@ -141,6 +144,18 @@ export default function ManageQuestionsPage() {
     fetchBusinesses();
   }, []);
 
+  useEffect(() => {
+    if (!selectedBusiness) return;
+
+    fetchQuestions(selectedBusiness);
+
+    const interval = setInterval(() => {
+      fetchQuestions(selectedBusiness);
+    }, 10000); // every 10 seconds
+
+    return () => clearInterval(interval);
+  }, [selectedBusiness]);
+
   return (
     <Box dir={dir} sx={{ display: "flex", minHeight: "100vh" }}>
       {/* Main Content */}
@@ -169,7 +184,10 @@ export default function ManageQuestionsPage() {
             direction={{ xs: "column", sm: "row" }}
             spacing={2}
             alignItems={{ xs: "stretch", sm: "center" }}
-            sx={{ width: { xs: "100%", sm: "auto" }, gap: dir === "rtl" ? 1 : 0 }}
+            sx={{
+              width: { xs: "100%", sm: "auto" },
+              gap: dir === "rtl" ? 1 : 0,
+            }}
           >
             {user?.role === "admin" && (
               <Button
@@ -213,7 +231,14 @@ export default function ManageQuestionsPage() {
         ) : (
           <Grid container spacing={3} justifyContent="center">
             {questions.map((q) => (
-              <Grid item xs={12} sm={6} md={4} key={q._id} sx={{ width: { xs: "100%", sm: "auto" } }}>
+              <Grid
+                item
+                xs={12}
+                sm={6}
+                md={4}
+                key={q._id}
+                sx={{ width: { xs: "100%", sm: "auto" } }}
+              >
                 <Card
                   variant="outlined"
                   sx={{
@@ -258,7 +283,12 @@ export default function ManageQuestionsPage() {
                       alignItems="center"
                       justifyContent="space-between"
                     >
-                      <Stack direction="row" spacing={1} alignItems="center" sx={{ gap: dir === "rtl" ? 1 : 0 }}>
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        alignItems="center"
+                        sx={{ gap: dir === "rtl" ? 1 : 0 }}
+                      >
                         {<ICONS.thumb fontSize="small" />}
                         <Typography variant="body2" color="text.secondary">
                           {q.votes} {q.votes === 1 ? t.vote : t.votes}
@@ -298,19 +328,34 @@ export default function ManageQuestionsPage() {
                     <Divider sx={{ my: 1 }} />
 
                     <Stack spacing={0.5}>
-                      <Stack direction="row" spacing={1} alignItems="center" sx={{ gap: dir === "rtl" ? 1 : 0 }}>
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        alignItems="center"
+                        sx={{ gap: dir === "rtl" ? 1 : 0 }}
+                      >
                         <ICONS.person fontSize="small" />
                         <Typography variant="body2">
                           {q.visitor?.name || t.anonymous}
                         </Typography>
                       </Stack>
-                      <Stack direction="row" spacing={1} alignItems="center" sx={{ gap: dir === "rtl" ? 1 : 0 }}>
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        alignItems="center"
+                        sx={{ gap: dir === "rtl" ? 1 : 0 }}
+                      >
                         <ICONS.phone fontSize="small" />
                         <Typography variant="body2">
                           {q.visitor?.phone || t.notProvided}
                         </Typography>
                       </Stack>
-                      <Stack direction="row" spacing={1} alignItems="center" sx={{ gap: dir === "rtl" ? 1 : 0 }}>
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        alignItems="center"
+                        sx={{ gap: dir === "rtl" ? 1 : 0 }}
+                      >
                         <ICONS.business fontSize="small" />
                         <Typography variant="body2">
                           {q.visitor?.company || t.notProvided}
