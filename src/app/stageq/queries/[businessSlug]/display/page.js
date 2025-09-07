@@ -7,6 +7,8 @@ import { getQuestionsByBusiness } from "@/services/stageq/questionService";
 import Footer from "@/components/Footer";
 import { getBusinessBySlug } from "@/services/businessService";
 import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
+import Background from "@/components/Background";
+import {Shift} from "ambient-cbg";
 
 export default function LiveQuestionDisplay() {
   const { businessSlug } = useParams();
@@ -59,6 +61,7 @@ export default function LiveQuestionDisplay() {
         justifyContent="center"
         alignItems="center"
       >
+        <Shift />
         <CircularProgress />
       </Box>
     );
@@ -79,6 +82,7 @@ export default function LiveQuestionDisplay() {
         overflowX: "hidden",
       }}
     >
+      <Shift />
       {business?.logoUrl && (
         <Box sx={{ textAlign: "center", mt: 2 }}>
           <img
