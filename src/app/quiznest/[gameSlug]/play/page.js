@@ -27,6 +27,7 @@ const gameTranslations = {
     thankYou: "Thank you,",
     score: "Score",
     attempted: "Attempted",
+    timeTaken: "Time Taken",
     playAgain: "Play Again",
     noQuestionsTitle: "Please wait...",
     noQuestionsMessage:
@@ -40,6 +41,7 @@ const gameTranslations = {
     thankYou: "شكراً لك",
     score: "النقاط",
     attempted: "محاولات",
+    timeTaken: "الوقت المستغرق",
     playAgain: "العب مرة أخرى",
     noQuestionsTitle: "الرجاء الانتظار...",
     noQuestionsMessage:
@@ -61,6 +63,7 @@ export default function PlayPage() {
   const [showHint, setShowHint] = useState(false);
   const [score, setScore] = useState(0);
   const [attempted, setAttempted] = useState(0);
+  const [timeTaken, setTimeTaken] = useState(0);
   const [translatedContent, setTranslatedContent] = useState({});
 
   const intervalRef = useRef(null);
@@ -195,11 +198,12 @@ export default function PlayPage() {
 
     const playerId = sessionStorage.getItem("playerId");
     const sessionId = sessionStorage.getItem("sessionId");
-
+    const timeTaken = game.gameSessionTimer - timeLeftRef.current;
+    setTimeTaken(timeTaken);
     await submitResult(sessionId, playerId, {
       score: scoreRef.current,
       attemptedQuestions: attemptedRef.current,
-      timeTaken: game.gameSessionTimer - timeLeftRef.current,
+      timeTaken: timeTaken,
     });
   };
 
@@ -350,6 +354,7 @@ export default function PlayPage() {
       <Box sx={{ position: "relative" }}>
         <LanguageSelector top={20} right={20} />
         <Box
+          dir={dir}
           sx={{
             height: "100vh",
             width: "100vw",
@@ -359,38 +364,44 @@ export default function PlayPage() {
             background:
               "linear-gradient(135deg, rgba(0,0,0,0.8), rgba(50,50,50,0.8))",
             p: 2,
-            textAlign: align,
+            textAlign: "center",
           }}
-          dir={dir}
         >
           <Fade in timeout={800}>
             <Paper
               elevation={8}
               sx={{
-                width: { xs: "80%", sm: "50%" },
-                p: 4,
+                width: { xs: "90%", sm: "60%", md: "40%" },
+                p: { xs: 3, sm: 4 },
                 borderRadius: 3,
                 background:
-                  "linear-gradient(135deg, rgba(76,175,80,0.8), rgba(56,142,60,0.8))",
+                  "linear-gradient(135deg, rgba(76,175,80,0.9), rgba(56,142,60,0.9))",
                 color: "#fff",
                 boxShadow: "0 0 30px rgba(0,0,0,0.6)",
                 backdropFilter: "blur(5px)",
-                marginTop: "15vh",
+                textAlign: "center",
               }}
             >
               <Typography variant="h3" fontWeight="bold" mb={2}>
                 {t.thankYou} {playerInfo.name}!
               </Typography>
-              <Typography variant="h2" mb={1}>
+
+              <Typography variant="h2" mb={2}>
                 {t.score}: {score}
               </Typography>
-              <Typography variant="h6" mb={3}>
+
+              <Typography variant="h6" mb={1}>
                 {t.attempted}: {attempted}
               </Typography>
+
+              <Typography variant="h6" mb={3}>
+                {t.timeTaken}: {timeTaken} {t.countdown}
+              </Typography>
+
               <Button
                 variant="contained"
                 color="secondary"
-                sx={{ fontSize: "1.5rem" }}
+                sx={{ fontSize: "1.25rem", px: 4, py: 1.5 }}
                 onClick={() => router.push(`/quiznest/${game.slug}`)}
               >
                 {t.playAgain}
