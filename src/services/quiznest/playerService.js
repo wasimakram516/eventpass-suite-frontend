@@ -3,23 +3,13 @@ import withApiHandler from "@/utils/withApiHandler";
 
 // Start a solo game session with localStorage setup and navigation
 export const joinGame = withApiHandler(
-  async (gameId, payload, gameSlug, router) => {
+  async (gameId, payload) => {
     const { data } = await api.post(
       `/quiznest/players/${gameId}/start-solo`,
       payload
     );
 
-    // Store for later use
-    localStorage.setItem("playerInfo", JSON.stringify(payload));
-    localStorage.setItem("playerId", data.playerId);
-    localStorage.setItem("sessionId", data.sessionId);
-
-    // Navigate to instructions
-    if (gameSlug && router) {
-      router.push(`/quiznest/${gameSlug}/instructions`);
-    }
-
-    return data; // { playerId, sessionId }
+    return data; 
   },
   { showSuccess: true }
 );

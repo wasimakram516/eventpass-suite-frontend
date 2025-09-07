@@ -38,7 +38,16 @@ export default function NamePage() {
   const handleSubmit = async () => {
     if (!form.name.trim() || submitting) return;
       setSubmitting(true);
-      await joinGame(game._id, form, game.slug, router);
+      const res = await joinGame(game._id, form);
+      if (!res.error) {
+        console.log(res);
+        
+        sessionStorage.setItem("playerInfo", JSON.stringify(form));
+        sessionStorage.setItem("playerId", res.playerId);
+        sessionStorage.setItem("sessionId", res.sessionId);
+
+        router.push(`/quiznest/${game.slug}/instructions`);
+      } 
       setSubmitting(false);
   };
 

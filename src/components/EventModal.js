@@ -118,10 +118,19 @@ const translations = {
 
 // Helper function to detect video URLs by file extension
 const isVideoUrl = (url) => {
-  if (!url || typeof url !== 'string') return false;
-  const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.mkv', '.wmv', '.flv'];
-  const urlWithoutQuery = url.split('?')[0].toLowerCase();
-  return videoExtensions.some(ext => urlWithoutQuery.endsWith(ext));
+  if (!url || typeof url !== "string") return false;
+  const videoExtensions = [
+    ".mp4",
+    ".webm",
+    ".ogg",
+    ".mov",
+    ".avi",
+    ".mkv",
+    ".wmv",
+    ".flv",
+  ];
+  const urlWithoutQuery = url.split("?")[0].toLowerCase();
+  return videoExtensions.some((ext) => urlWithoutQuery.endsWith(ext));
 };
 const EventModal = ({
   open,
@@ -145,6 +154,8 @@ const EventModal = ({
     logoPreview: "",
     brandingMedia: null,
     brandingPreview: "",
+    agenda: null,
+    agendaPreview: "",
     capacity: "",
     eventType: isEmployee ? "employee" : "public",
     employeeData: null,
@@ -177,6 +188,8 @@ const EventModal = ({
         logoPreview: initialValues.logoUrl || "",
         brandingMedia: null,
         brandingPreview: initialValues.brandingMediaUrl || "",
+        agenda: null,
+        agendaPreview: initialValues.agendaUrl || "",
         employeeData: null,
         tableImages: [],
         formFields: (initialValues.formFields || []).map((f) => ({
@@ -201,6 +214,8 @@ const EventModal = ({
         logoPreview: "",
         brandingMedia: null,
         brandingPreview: "",
+        agenda: null,
+        agendaPreview: "",
         capacity: "",
         eventType: isEmployee ? "employee" : "public",
         employeeData: null,
@@ -230,6 +245,15 @@ const EventModal = ({
           ...prev,
           brandingMedia: file,
           brandingPreview: URL.createObjectURL(file),
+        }));
+      }
+    } else if (name === "agenda" && files?.[0]) {
+      const file = files[0];
+      if (file.type === "application/pdf") {
+        setFormData((prev) => ({
+          ...prev,
+          agenda: file,
+          agendaPreview: file.name,
         }));
       }
     } else if (name === "employeeData" && files?.[0]) {
@@ -315,7 +339,9 @@ const EventModal = ({
     payload.append("capacity", formData.capacity || "999");
     payload.append("eventType", formData.eventType);
     if (formData.logo) payload.append("logo", formData.logo);
-    if (formData.brandingMedia) payload.append("brandingMedia", formData.brandingMedia);
+    if (formData.brandingMedia)
+      payload.append("brandingMedia", formData.brandingMedia);
+    if (formData.agenda) payload.append("agenda", formData.agenda);
     if (formData.eventType === "employee") {
       if (formData.employeeData)
         payload.append("employeeData", formData.employeeData);
@@ -479,10 +505,16 @@ const EventModal = ({
             {formData.brandingPreview && (
               <Box sx={{ mt: 1 }}>
                 <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
-                  {initialValues && !formData.brandingMedia ? (isVideoUrl(formData.brandingPreview) ? "Current Branding Video:" : "Current Branding:") : t.preview}
+                  {initialValues && !formData.brandingMedia
+                    ? isVideoUrl(formData.brandingPreview)
+                      ? "Current Branding Video:"
+                      : "Current Branding:"
+                    : t.preview}
                 </Typography>
-                {(formData.brandingMedia && formData.brandingMedia.type.startsWith("video/")) ||
-                  (!formData.brandingMedia && isVideoUrl(formData.brandingPreview)) ? (
+                {(formData.brandingMedia &&
+                  formData.brandingMedia.type.startsWith("video/")) ||
+                (!formData.brandingMedia &&
+                  isVideoUrl(formData.brandingPreview)) ? (
                   <video
                     src={formData.brandingPreview}
                     controls
@@ -498,6 +530,31 @@ const EventModal = ({
               </Box>
             )}
           </Box>
+          <Box>
+            <Button component="label" variant="outlined">
+              Upload Agenda (PDF)
+              <input
+                hidden
+                name="agenda"
+                type="file"
+                accept="application/pdf"
+                onChange={handleInputChange}
+              />
+            </Button>
+            {formData.agendaPreview && (
+              <Box sx={{ mt: 1 }}>
+                <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                  {initialValues && !formData.agenda
+                    ? "Current Agenda:"
+                    : "Selected Agenda:"}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {formData.agendaPreview}
+                </Typography>
+              </Box>
+            )}
+          </Box>
+
           {formData.eventType === "employee" && (
             <>
               <Button variant="outlined" onClick={handleDownloadTemplate}>
@@ -610,60 +667,60 @@ const EventModal = ({
                       </TextField>
                       {(field.inputType === "radio" ||
                         field.inputType === "list") && (
-                          <Box>
-                            <Typography variant="subtitle2">
-                              {t.options}
-                            </Typography>
-                            <Box
-                              sx={{
-                                display: "flex",
-                                flexWrap: "wrap",
-                                gap: 1,
-                                mb: 1,
-                              }}
-                            >
-                              {field.values.map((option, i) => (
-                                <Chip
-                                  key={i}
-                                  label={option}
-                                  onDelete={() => {
-                                    const updated = [...field.values];
-                                    updated.splice(i, 1);
-                                    handleFormFieldChange(
-                                      index,
-                                      "values",
-                                      updated
-                                    );
-                                  }}
-                                  color="primary"
-                                  variant="outlined"
-                                />
-                              ))}
-                            </Box>
-                            <TextField
-                              placeholder={t.optionPlaceholder}
-                              value={field._temp || ""}
-                              onChange={(e) => {
-                                const newValue = e.target.value;
-                                if (newValue.endsWith(",")) {
-                                  const option = newValue.slice(0, -1).trim();
-                                  if (option && !field.values.includes(option)) {
-                                    const updated = [...field.values, option];
-                                    handleFormFieldChange(
-                                      index,
-                                      "values",
-                                      updated
-                                    );
-                                  }
-                                  handleFormFieldChange(index, "_temp", "");
-                                } else {
-                                  handleFormFieldChange(index, "_temp", newValue);
-                                }
-                              }}
-                              fullWidth
-                            />
+                        <Box>
+                          <Typography variant="subtitle2">
+                            {t.options}
+                          </Typography>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              flexWrap: "wrap",
+                              gap: 1,
+                              mb: 1,
+                            }}
+                          >
+                            {field.values.map((option, i) => (
+                              <Chip
+                                key={i}
+                                label={option}
+                                onDelete={() => {
+                                  const updated = [...field.values];
+                                  updated.splice(i, 1);
+                                  handleFormFieldChange(
+                                    index,
+                                    "values",
+                                    updated
+                                  );
+                                }}
+                                color="primary"
+                                variant="outlined"
+                              />
+                            ))}
                           </Box>
-                        )}
+                          <TextField
+                            placeholder={t.optionPlaceholder}
+                            value={field._temp || ""}
+                            onChange={(e) => {
+                              const newValue = e.target.value;
+                              if (newValue.endsWith(",")) {
+                                const option = newValue.slice(0, -1).trim();
+                                if (option && !field.values.includes(option)) {
+                                  const updated = [...field.values, option];
+                                  handleFormFieldChange(
+                                    index,
+                                    "values",
+                                    updated
+                                  );
+                                }
+                                handleFormFieldChange(index, "_temp", "");
+                              } else {
+                                handleFormFieldChange(index, "_temp", newValue);
+                              }
+                            }}
+                            fullWidth
+                          />
+                        </Box>
+                      )}
                       <Box
                         sx={{ display: "flex", alignItems: "center", gap: 2 }}
                       >
@@ -723,7 +780,13 @@ const EventModal = ({
           onClick={handleSubmit}
           variant="contained"
           disabled={loading}
-          startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <ICONS.save />}
+          startIcon={
+            loading ? (
+              <CircularProgress size={20} color="inherit" />
+            ) : (
+              <ICONS.save />
+            )
+          }
           fullWidth
         >
           {loading
@@ -731,8 +794,8 @@ const EventModal = ({
               ? t.updating
               : t.creating
             : initialValues
-              ? t.update
-              : t.create}
+            ? t.update
+            : t.create}
         </Button>
       </DialogActions>
     </Dialog>

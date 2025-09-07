@@ -57,9 +57,11 @@ const translations = {
     confirmDeleteTitle: "Confirm Permanent Delete",
     confirmDeleteMessage:
       "Are you sure you want to permanently delete this item? This action cannot be undone.",
+
     deleteMessagePrefix: "Are you sure you want to delete this user? This will also delete all their associated businesses and related data, and cannot be undone.",
     deleteStaffMessage: "Are you sure you want to delete this user? This will also delete all their related data, and cannot be undone.",
     deleteBusinessMessage: "Are you sure you want to delete this business? This will also delete all of its associated data and cannot be undone.",
+
     confirmDeleteButton: "Delete Permanently",
     confirmRestoreTitle: "Confirm Restore",
     confirmRestoreMessage: "Are you sure you want to restore this item?",
@@ -84,9 +86,11 @@ const translations = {
     restoreAll: "Restore All",
     deleteAll: "Delete All",
     confirmBulkRestoreTitle: "Confirm Restore All",
+
     confirmBulkRestoreMessage: "Are you sure you want to restore all items in this module?",
     confirmBulkDeleteTitle: "Confirm Delete All",
     confirmBulkDeleteMessage: "Are you sure you want to permanently delete all items in this module? This action cannot be undone.",
+
     deleteAllPermanently: "Delete Permanently",
     deleteAllMobile: "Delete",
   },
@@ -94,14 +98,16 @@ const translations = {
     title: "سلة المحذوفات",
     subtitle: "عرض أو استعادة أو حذف العناصر المحذوفة نهائيًا.",
     restore: "استعادة",
-    "delete": "حذف",
+    delete: "حذف",
     permanentDelete: "حذف نهائي",
     confirmDeleteTitle: "تأكيد الحذف النهائي",
     confirmDeleteMessage:
       "هل أنت متأكد أنك تريد حذف هذا العنصر نهائيًا؟ لا يمكن التراجع عن هذا الإجراء.",
+
     deleteMessagePrefix: "هل أنت متأكد أنك تريد حذف هذا المستخدم؟ سيؤدي هذا أيضًا إلى حذف جميع الشركات المرتبطة به والبيانات ذات الصلة، ولا يمكن التراجع عن هذا الإجراء.",
     deleteStaffMessage: "هل أنت متأكد أنك تريد حذف هذا المستخدم؟ سيؤدي هذا أيضًا إلى حذف البيانات ذات الصلة، ولا يمكن التراجع عن هذا الإجراء.",
     deleteBusinessMessage: "هل أنت متأكد أنك تريد حذف هذا العمل؟ سيؤدي هذا أيضًا إلى حذف جميع البيانات المرتبطة به ولا يمكن التراجع عن هذا الإجراء.",
+
     confirmDeleteButton: "حذف نهائيًا",
     confirmRestoreTitle: "تأكيد الاستعادة",
     confirmRestoreMessage: "هل أنت متأكد أنك تريد استعادة هذا العنصر؟",
@@ -126,9 +132,11 @@ const translations = {
     restoreAll: "استعادة الكل",
     deleteAll: "حذف الكل",
     confirmBulkRestoreTitle: "تأكيد استعادة الكل",
+
     confirmBulkRestoreMessage: "هل أنت متأكد أنك تريد استعادة جميع العناصر في هذه الوحدة؟",
     confirmBulkDeleteTitle: "تأكيد حذف الكل",
     confirmBulkDeleteMessage: "هل أنت متأكد أنك تريد حذف جميع العناصر في هذه الوحدة نهائيًا؟ لا يمكن التراجع عن هذا الإجراء.",
+
     deleteAllPermanently: "حذف نهائيًا",
     deleteAllMobile: "حذف",
   },
@@ -138,7 +146,9 @@ export default function TrashPage() {
   const { dir, align, t } = useI18nLayout(translations);
   const { user: currentUser } = useAuth();
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
   const isBusiness = currentUser?.role === "business";
   const [loading, setLoading] = useState(true);
   const [trashData, setTrashData] = useState({});
@@ -200,8 +210,12 @@ export default function TrashPage() {
       hour12: true,
     };
     const parts = new Intl.DateTimeFormat("en-US", options).formatToParts(d);
-    const datePart = `${parts.find(p => p.type === "month").value} ${parts.find(p => p.type === "day").value} ${parts.find(p => p.type === "year").value}`;
-    const timePart = `${parts.find(p => p.type === "hour").value}:${parts.find(p => p.type === "minute").value} ${parts.find(p => p.type === "dayPeriod").value}`;
+    const datePart = `${parts.find((p) => p.type === "month").value} ${
+      parts.find((p) => p.type === "day").value
+    } ${parts.find((p) => p.type === "year").value}`;
+    const timePart = `${parts.find((p) => p.type === "hour").value}:${
+      parts.find((p) => p.type === "minute").value
+    } ${parts.find((p) => p.type === "dayPeriod").value}`;
 
     return `${datePart} at ${timePart}`;
   };
@@ -230,7 +244,7 @@ export default function TrashPage() {
         map[u._id] = u.name || u.fullName || u.email || u._id;
       });
       setUserMap(map);
-    } catch { }
+    } catch {}
   };
   const fetchModuleData = async () => {
     try {
@@ -239,41 +253,17 @@ export default function TrashPage() {
       const serverModules = Array.isArray(modulesPayload) ? modulesPayload : [];
       setModuleData(serverModules);
     } catch (error) {
-      console.error('Error fetching module data:', error);
+      console.error("Error fetching module data:", error);
     }
   };
 
   const fetchTrash = async () => {
     setLoading(true);
     try {
-      const allResults = {};
-
-      if (moduleFilter !== "__ALL__") {
-        const page = pageState[moduleFilter] || 1;
-        const params = { limit, page, model: moduleFilter };
-        if (deletedByFilter !== "__ALL__") params.deletedBy = deletedByFilter;
-        if (dateFrom) params.startDate = dateFrom;
-        if (dateTo) params.endDate = dateTo;
-        const res = await getTrash(params);
-        const moduleResult = res.items?.[moduleFilter] || res[moduleFilter] || { items: [], total: 0 };
-        allResults[moduleFilter] = moduleResult;
-      } else {
-        const freshModules = Object.keys(await getTrash({ limit: 1 }).then(r => r.items || r));
-        for (const module of freshModules) {
-          const page = pageState[module] || 1;
-          const params = { limit, page, model: module };
-          if (deletedByFilter !== "__ALL__") params.deletedBy = deletedByFilter;
-          if (dateFrom) params.startDate = dateFrom;
-          if (dateTo) params.endDate = dateTo;
-          const res = await getTrash(params);
-          const moduleResult = res.items?.[module] || res[module] || { items: [], total: 0 };
-          allResults[module] = moduleResult;
-        }
-      }
-
-      setTrashData(allResults);
-    } catch (error) {
-      console.error('Error fetching trash:', error);
+      const res = await getTrash({ limit, page: 1 });
+      setTrashData(res.items || {});
+    } catch (err) {
+      console.error("Error fetching trash:", err);
     } finally {
       setLoading(false);
     }
@@ -319,13 +309,26 @@ export default function TrashPage() {
       const counts = await getModuleCounts();
       setModuleCounts(counts);
     } catch (error) {
-      console.error('Error fetching module counts:', error);
+      console.error("Error fetching module counts:", error);
     }
   };
 
   const fetchAllModules = async () => {
     const res = await getTrash({ limit: 10 });
     const modules = Object.keys(res.items || res);
+
+    const modulesWithItems = modules.filter((module) => {
+      const moduleData = res.items?.[module] || res[module];
+      return (
+        moduleData &&
+        moduleData.items &&
+        Array.isArray(moduleData.items) &&
+        moduleData.items.length > 0
+      );
+    });
+
+    setAllAvailableModules(modulesWithItems);
+
 
     const modulesWithItems = modules.filter(module => {
       const moduleData = res.items?.[module] || res[module];
@@ -355,7 +358,7 @@ export default function TrashPage() {
     if (deletedByFilter !== "__ALL__") {
       ids.add(deletedByFilter);
     }
-    if (trashData && typeof trashData === 'object') {
+    if (trashData && typeof trashData === "object") {
       Object.values(trashData).forEach((moduleData) => {
         if (moduleData && moduleData.items && Array.isArray(moduleData.items)) {
           moduleData.items.forEach((it) => {
@@ -380,75 +383,50 @@ export default function TrashPage() {
   // Function to convert module keys to user-friendly display names
   const getModuleDisplayName = (moduleKey) => {
     const moduleNames = {
-      'registration-eventreg': 'Registration (EventReg)',
-      'registration-checkin': 'Registration (CheckIn)',
-      'event-eventreg': 'Event (EventReg)',
-      'event-checkin': 'Event (CheckIn)',
-      'game-quiznest': 'Game (QuizNest)',
-      'game-eventduel': 'Game (EventDuel)',
-      'gamesession-quiznest': 'Game Session (QuizNest)',
-      'gamesession-eventduel': 'Game Session (EventDuel)',
-      'qnquestion': 'Questions (QuizNest)',
-      'pvpquestion': 'Questions (EventDuel)',
+      "registration-eventreg": "Registration (EventReg)",
+      "registration-checkin": "Registration (CheckIn)",
+      "event-eventreg": "Event (EventReg)",
+      "event-checkin": "Event (CheckIn)",
+      "game-quiznest": "Game (QuizNest)",
+      "game-eventduel": "Game (EventDuel)",
+      "gamesession-quiznest": "Game Session (QuizNest)",
+      "gamesession-eventduel": "Game Session (EventDuel)",
+      qnquestion: "Questions (QuizNest)",
+      pvpquestion: "Questions (EventDuel)",
     };
-    return moduleNames[moduleKey] || moduleKey.charAt(0).toUpperCase() + moduleKey.slice(1);
-  };
-  // Frontend module to backend controller mapping - matches controllerMap in backend
-  const frontendToBackendModuleMap = {
-    'business': 'business',
-    'event-checkin': 'checkinevent',
-    'registration-checkin': 'checkinregistration',
-    'event-eventreg': 'eventregevent',
-    'registration-eventreg': 'eventregregistration',
-    'game-quiznest': 'qngame',
-    'game-eventduel': 'pvpgame',
-    'gamesession-quiznest': null,
-    'gamesession-eventduel': 'pvpgamesession',
-    'poll': 'poll',
-    'spinwheel': 'spinwheel',
-    'spinwheelparticipant': 'spinwheelparticipant',
-    'displaymedia': 'displaymedia',
-    'wallconfig': 'wallconfig',
-    'globalconfig': 'globalconfig',
-    'user': 'user',
-    'eventquestion': 'question',
-    'question': 'question',
-    'visitor': 'visitor',
-    'surveyform': 'surveyform',
-    'surveyresponse': 'surveyresponse',
-    'pvpquestion': 'pvpquestion',
-    'qnquestion': 'qnquestion',
+    return (
+      moduleNames[moduleKey] ||
+      moduleKey.charAt(0).toUpperCase() + moduleKey.slice(1)
+    );
   };
 
   const mapToBackendController = (frontendModuleKey) => {
     return frontendToBackendModuleMap[frontendModuleKey] || frontendModuleKey;
   };
-  const matchesSearch = (item) => {
-    const q = search.trim().toLowerCase();
-    if (!q) return true;
-    const text = (item.name || item.title || item.slug || "").toLowerCase();
-    return text.includes(q);
-  };
 
   const openRestoreConfirm = (module, item) => {
-    const backendModule = mapToBackendController(module);
-    setPendingAction({ type: "restore", module: backendModule, frontendModule: module, item });
+
+    setPendingAction({ type: "restore", module, frontendModule: module, item });
+
     setRestoreConfirm(true);
   };
 
   const openDeleteConfirm = (module, item) => {
-    const backendModule = mapToBackendController(module);
-    setPendingAction({ type: "delete", module: backendModule, frontendModule: module, item });
+
+    setPendingAction({ type: "delete", module, frontendModule: module, item });
+
     setDeleteConfirm(true);
   };
+
   const handleRestore = async () => {
     if (!pendingAction) return;
     setLoading(true);
-      await restoreTrashItem(pendingAction.module, pendingAction.item._id);
 
-      await fetchTrash();
-      await fetchModuleCounts();
-      await updateAvailableModules();
+    await restoreTrashItem(pendingAction.module, pendingAction.item._id);
+
+    await fetchTrash();
+    await fetchModuleCounts();
+    await updateAvailableModules();
 
     setRestoreConfirm(false);
     setPendingAction(null);
@@ -458,11 +436,16 @@ export default function TrashPage() {
   const handlePermanentDelete = async () => {
     if (!pendingAction) return;
     setLoading(true);
-      await permanentDeleteTrashItem(pendingAction.module, pendingAction.item._id);
 
-      await fetchTrash();
-      await fetchModuleCounts();
-      await updateAvailableModules();
+    await permanentDeleteTrashItem(
+      pendingAction.module,
+      pendingAction.item._id
+    );
+
+    await fetchTrash();
+    await fetchModuleCounts();
+    await updateAvailableModules();
+
 
     setDeleteConfirm(false);
     setPendingAction(null);
@@ -475,24 +458,36 @@ export default function TrashPage() {
 
   // Handle bulk operations
   const openBulkRestoreConfirm = (module) => {
-    const backendModule = mapToBackendController(module);
+
     const filterParams = {
       ...(deletedByFilter !== "__ALL__" && { deletedBy: deletedByFilter }),
       ...(dateFrom && { startDate: dateFrom }),
-      ...(dateTo && { endDate: dateTo })
+      ...(dateTo && { endDate: dateTo }),
     };
-    setPendingBulkAction({ type: "restore", module: backendModule, frontendModule: module, filterParams });
+    setPendingBulkAction({
+      type: "restore",
+      module,
+      frontendModule: module,
+      filterParams,
+    });
+
     setBulkRestoreConfirm(true);
   };
 
   const openBulkDeleteConfirm = (module) => {
-    const backendModule = mapToBackendController(module);
+
     const filterParams = {
       ...(deletedByFilter !== "__ALL__" && { deletedBy: deletedByFilter }),
       ...(dateFrom && { startDate: dateFrom }),
-      ...(dateTo && { endDate: dateTo })
+      ...(dateTo && { endDate: dateTo }),
     };
-    setPendingBulkAction({ type: "delete", module: backendModule, frontendModule: module, filterParams });
+    setPendingBulkAction({
+      type: "delete",
+      module,
+      frontendModule: module,
+      filterParams,
+    });
+
     setBulkDeleteConfirm(true);
   };
 
@@ -500,12 +495,19 @@ export default function TrashPage() {
     if (!pendingBulkAction) return;
     setLoading(true);
     try {
-      await restoreAllTrashItems(pendingBulkAction.frontendModule, pendingBulkAction.filterParams);
+
+      await restoreAllTrashItems(
+        pendingBulkAction.frontendModule,
+        pendingBulkAction.filterParams
+      );
+
       await fetchTrash();
       await fetchModuleCounts();
       await updateAvailableModules();
     } catch (error) {
-      console.error('Error in bulk restore:', error);
+
+      console.error("Error in bulk restore:", error);
+
     }
     setBulkRestoreConfirm(false);
     setPendingBulkAction(null);
@@ -513,20 +515,31 @@ export default function TrashPage() {
   };
 
   // Enhanced polling that handles complex backend operations with exponential backoff
-  const pollForCompletion = async (moduleKey, filterParams = {}, maxAttempts = 30, initialDelay = 300) => {
+
+  const pollForCompletion = async (
+    moduleKey,
+    filterParams = {},
+    maxAttempts = 30,
+    initialDelay = 300
+  ) => {
+
     let attempts = 0;
     let delay = initialDelay;
     let lastCount = null;
     let stableCount = 0;
 
-    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
 
     while (attempts < maxAttempts) {
       try {
         const response = await getTrash({
           model: moduleKey,
           limit: 1,
-          ...filterParams
+
+          ...filterParams,
+
         });
         const moduleData = response.items?.[moduleKey] || response[moduleKey];
         const currentCount = moduleData?.total || 0;
@@ -550,18 +563,21 @@ export default function TrashPage() {
           delay = Math.min(delay * 1.3, 2000); // Increased max delay to 2 seconds
         }
 
-        await new Promise(resolve => setTimeout(resolve, delay));
+        await new Promise((resolve) => setTimeout(resolve, delay));
         attempts++;
-
       } catch (error) {
-        console.error('Error polling for completion:', error);
-        await new Promise(resolve => setTimeout(resolve, delay * 2));
+        console.error("Error polling for completion:", error);
+        await new Promise((resolve) => setTimeout(resolve, delay * 2));
+
         attempts++;
       }
     }
 
-    // if max attempts reached, assume operation completed
-    console.warn(`Polling timeout after ${attempts} attempts for ${moduleKey} - proceeding anyway`);
+
+    console.warn(
+      `Polling timeout after ${attempts} attempts for ${moduleKey} - proceeding anyway`
+    );
+
     return false;
   };
 
@@ -569,14 +585,21 @@ export default function TrashPage() {
     if (!pendingBulkAction) return;
     setLoading(true);
     try {
-      await permanentDeleteAllTrashItems(pendingBulkAction.frontendModule, pendingBulkAction.filterParams);
+
+      await permanentDeleteAllTrashItems(
+        pendingBulkAction.frontendModule,
+        pendingBulkAction.filterParams
+      );
+
       await pollForCompletion(pendingBulkAction.frontendModule);
 
       await fetchTrash();
       await fetchModuleCounts();
       await updateAvailableModules();
     } catch (error) {
-      console.error('Error in bulk delete:', error);
+
+      console.error("Error in bulk delete:", error);
+
     }
     setBulkDeleteConfirm(false);
     setPendingBulkAction(null);
@@ -591,14 +614,14 @@ export default function TrashPage() {
   // Prevent MUI from locking body overflow and removing scrollbar
   useEffect(() => {
     const observer = new MutationObserver(() => {
-      if (document.body.style.overflow === 'hidden') {
-        document.body.style.overflow = 'auto';
-        document.body.style.paddingRight = '0px';
+      if (document.body.style.overflow === "hidden") {
+        document.body.style.overflow = "auto";
+        document.body.style.paddingRight = "0px";
       }
     });
     observer.observe(document.body, {
       attributes: true,
-      attributeFilter: ['style']
+      attributeFilter: ["style"],
     });
     return () => observer.disconnect();
   }, []);
@@ -619,14 +642,15 @@ export default function TrashPage() {
             {t.subtitle}
           </Typography>
         </Box>
-
       </Stack>
       <Divider sx={{ mb: 2 }} />
       {/* Module Count Cards */}
       {Object.keys(moduleCounts).length > 0 && (
-        <Box sx={{
-          mb: 3,
-        }}>
+        <Box
+          sx={{
+            mb: 3,
+          }}
+        >
           <Grid container spacing={2}>
             {Object.entries(moduleCounts)
               .filter(([, count]) => count > 0)
@@ -656,12 +680,24 @@ export default function TrashPage() {
                         }}
                       >
                         {(() => {
-                          const moduleInfo = moduleData.find(m => m.key.toLowerCase() === module.toLowerCase());
+                          const moduleInfo = moduleData.find(
+                            (m) => m.key.toLowerCase() === module.toLowerCase()
+                          );
                           return getModuleIcon(moduleInfo?.icon);
                         })()}
                       </Avatar>
-                      <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-                        <Typography variant="h6" fontWeight="bold" color="text.primary">
+                      <Box
+                        sx={{
+                          display: "flex",
+                          flexDirection: "column",
+                          alignItems: "flex-start",
+                        }}
+                      >
+                        <Typography
+                          variant="h6"
+                          fontWeight="bold"
+                          color="text.primary"
+                        >
                           {count}
                         </Typography>
                         <Typography
@@ -698,7 +734,10 @@ export default function TrashPage() {
         <Button
           variant="contained"
           startIcon={<ICONS.filter />}
-          sx={{ display: { xs: "flex", sm: "none" }, ...getStartIconSpacing(dir) }}
+          sx={{
+            display: { xs: "flex", sm: "none" },
+            ...getStartIconSpacing(dir),
+          }}
           onClick={() => setFilterOpen(true)}
         >
           {t.filters}
@@ -774,13 +813,28 @@ export default function TrashPage() {
         </FormControl>
       </Stack>
 
-      <Box sx={{ display: { xs: "none", sm: "flex" }, justifyContent: "flex-start", mb: 2 }}>
+      <Box
+        sx={{
+          display: { xs: "none", sm: "flex" },
+          justifyContent: "flex-start",
+          mb: 2,
+        }}
+      >
+
         <Button
           variant="outlined"
           color="primary"
           startIcon={<ICONS.clear />}
           onClick={clearAllFilters}
-          disabled={!search && deletedByFilter === "__ALL__" && moduleFilter === "__ALL__" && !dateFrom && !dateTo}
+
+          disabled={
+            !search &&
+            deletedByFilter === "__ALL__" &&
+            moduleFilter === "__ALL__" &&
+            !dateFrom &&
+            !dateTo
+          }
+
         >
           {t.clearFilters}
         </Button>
@@ -799,7 +853,16 @@ export default function TrashPage() {
           const filtered = items.filter((item) => {
             if (!search.trim()) return true;
             const searchTerm = search.trim().toLowerCase();
-            const itemText = (item.name || item.title || item.slug || item.text || item.question || item.fullName || item.employeeId || '').toLowerCase();
+            const itemText = (
+              item.name ||
+              item.title ||
+              item.slug ||
+              item.text ||
+              item.question ||
+              item.fullName ||
+              item.employeeId ||
+              ""
+            ).toLowerCase();
             return itemText.includes(searchTerm);
           });
           if (!filtered.length) return null;
@@ -819,7 +882,9 @@ export default function TrashPage() {
                   spacing={1}
                   sx={{
                     width: { xs: "100%", sm: "auto" },
-                    mt: { xs: 1, sm: 0 }
+
+                    mt: { xs: 1, sm: 0 },
+
                   }}
                 >
                   <Button
@@ -831,7 +896,9 @@ export default function TrashPage() {
                     disabled={filtered.length === 0}
                     sx={{
                       ...getStartIconSpacing(dir),
-                      width: { xs: "100%", sm: "auto" }
+
+                      width: { xs: "100%", sm: "auto" },
+
                     }}
                   >
                     {t.restoreAll}
@@ -845,7 +912,9 @@ export default function TrashPage() {
                     disabled={filtered.length === 0}
                     sx={{
                       ...getStartIconSpacing(dir),
-                      width: { xs: "100%", sm: "auto" }
+
+                      width: { xs: "100%", sm: "auto" },
+
                     }}
                   >
                     {t.deleteAll}
@@ -854,9 +923,16 @@ export default function TrashPage() {
               </Stack>
               <Grid container spacing={3} justifyContent="center">
                 {filtered.map((item) => (
-                  <Grid item xs={12} sm={6} md={4} key={item._id} sx={{
-                    width: { xs: '100%', md: "auto" }
-                  }}>
+                  <Grid
+                    item
+                    xs={12}
+                    sm={6}
+                    md={4}
+                    key={item._id}
+                    sx={{
+                      width: { xs: "100%", md: "auto" },
+                    }}
+                  >
                     <Card
                       elevation={3}
                       sx={{
@@ -869,28 +945,75 @@ export default function TrashPage() {
                       }}
                     >
                       <Box>
-                        <Box sx={{ display: "flex", gap: 2, alignItems: "center", mb: 1 }}>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            gap: 2,
+                            alignItems: "center",
+                            mb: 1,
+                          }}
+                        >
                           <Avatar sx={{ width: 48, height: 48 }}>
                             {item.name?.[0] || item.title?.[0] || "?"}
                           </Avatar>
                           <Box sx={{ flexGrow: 1, ...wrapTextBox }}>
                             <Typography variant="subtitle1" fontWeight="bold">
-                              {item.name || item.title || item.slug || item.text || item.question || item.fullName || item.
-                                employeeId || formatDate(item.endTime) ||formatDate(item.createdAt)|| "Unnamed"}
+
+                              {item.name ||
+                                item.title ||
+                                item.slug ||
+                                item.text ||
+                                item.question ||
+                                item.fullName ||
+                                item.employeeId ||
+                                formatDate(item.endTime) ||
+                                formatDate(item.createdAt) ||
+                                "Unnamed"}
+
                             </Typography>
                           </Box>
                         </Box>
 
-                        <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5, ml: 1 }}>
-                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <Box
+                          sx={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 0.5,
+                            ml: 1,
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 1,
+                            }}
+                          >
                             <ICONS.event fontSize="small" color="action" />
-                            <Typography variant="caption" color="text.secondary">
-                              {t.deletedAt}: {item.deletedAt ? formatDateTimeWithLocale(item.deletedAt) : "-"}
+
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                            >
+                              {t.deletedAt}:{" "}
+                              {item.deletedAt
+                                ? formatDateTimeWithLocale(item.deletedAt)
+                                : "-"}
+
                             </Typography>
                           </Box>
-                          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 1,
+                            }}
+                          >
                             <ICONS.person fontSize="small" color="action" />
-                            <Typography variant="caption" color="text.secondary">
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                            >
                               {t.deletedBy}: {labelForDeletedBy(item.deletedBy)}
                             </Typography>
                           </Box>
@@ -921,19 +1044,17 @@ export default function TrashPage() {
                 ))}
               </Grid>
 
-              {
-                total > limit && (
-                  <Box display="flex" justifyContent="center" mt={3}>
-                    <Pagination
-                      dir="ltr"
-                      count={Math.ceil(total / limit)}
-                      page={page}
-                      onChange={(e, val) => handlePageChange(module, val)}
-                    />
-                  </Box>
-                )
-              }
-            </Box >
+              {total > limit && (
+                <Box display="flex" justifyContent="center" mt={3}>
+                  <Pagination
+                    dir="ltr"
+                    count={Math.ceil(total / limit)}
+                    page={page}
+                    onChange={(e, val) => handlePageChange(module, val)}
+                  />
+                </Box>
+              )}
+            </Box>
           );
         })
       )}
@@ -996,7 +1117,15 @@ export default function TrashPage() {
               clearAllFilters();
               setFilterOpen(false);
             }}
-            disabled={!search && deletedByFilter === "__ALL__" && moduleFilter === "__ALL__" && !dateFrom && !dateTo}
+
+            disabled={
+              !search &&
+              deletedByFilter === "__ALL__" &&
+              moduleFilter === "__ALL__" &&
+              !dateFrom &&
+              !dateTo
+            }
+
           >
             {t.clearFilters}
           </Button>
@@ -1018,26 +1147,26 @@ export default function TrashPage() {
         onClose={() => setDeleteConfirm(false)}
         onConfirm={handlePermanentDelete}
         title={t.confirmDeleteTitle}
-        message={
-          (() => {
-            const frontendModule = pendingAction?.frontendModule;
-            const itemRole = pendingAction?.item?.role;
 
-            if (frontendModule === "business") {
-              return t.deleteBusinessMessage;
-            }
+        message={(() => {
+          const frontendModule = pendingAction?.frontendModule;
+          const itemRole = pendingAction?.item?.role;
 
-            if (itemRole === "staff") {
-              return t.deleteStaffMessage;
-            }
+          if (frontendModule === "business") {
+            return t.deleteBusinessMessage;
+          }
 
-            if (frontendModule === "user") {
-              return t.deleteMessagePrefix;
-            }
+          if (itemRole === "staff") {
+            return t.deleteStaffMessage;
+          }
 
-            return t.confirmDeleteMessage;
-          })()
-        }
+          if (frontendModule === "user") {
+            return t.deleteMessagePrefix;
+          }
+
+          return t.confirmDeleteMessage;
+        })()}
+
         confirmButtonText={isMobile ? t.delete : t.confirmDeleteButton}
         confirmButtonIcon={<ICONS.delete />}
       />
@@ -1057,9 +1186,13 @@ export default function TrashPage() {
         onConfirm={handleBulkDelete}
         title={t.confirmBulkDeleteTitle}
         message={t.confirmBulkDeleteMessage}
-        confirmButtonText={isMobile ? t.deleteAllMobile : t.deleteAllPermanently}
+
+        confirmButtonText={
+          isMobile ? t.deleteAllMobile : t.deleteAllPermanently
+        }
+
         confirmButtonIcon={<ICONS.delete />}
       />
-    </Container >
+    </Container>
   );
 }

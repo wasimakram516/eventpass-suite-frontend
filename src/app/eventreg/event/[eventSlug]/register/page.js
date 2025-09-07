@@ -170,11 +170,6 @@ export default function Registration() {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
 
-    if (name === "phone") {
-      if (!/^[0-9]*$/.test(value)) return;
-      if (value.length > 11) return;
-    }
-
     if (name === "fullName" && !/^[a-zA-Z\s]*$/.test(value)) return;
 
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -194,9 +189,6 @@ export default function Registration() {
 
       if (f.name === "email" && val && !isValidEmail(val)) {
         errors[f.name] = t.invalidEmail;
-      }
-      if (f.name === "phone" && val && val.length !== 11) {
-        errors[f.name] = t.invalidPhone;
       }
     });
     if (Object.keys(errors).length) {
