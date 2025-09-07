@@ -24,7 +24,7 @@ const segmentMap = {
     icon: <ICONS.poll fontSize="small" sx={{ mr: 0.5 }} />,
   },
   results: {
-    label: "Poll Results",
+    label: "Results",
     icon: <ICONS.results fontSize="small" sx={{ mr: 0.5 }} />,
   },
   users: {

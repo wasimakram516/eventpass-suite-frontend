@@ -146,9 +146,9 @@ export default function PlayPage() {
     }
   }, [game]);
 
-  // Load Player Info from LocalStorage
+  // Load Player Info from SessionStorage
   useEffect(() => {
-    const stored = localStorage.getItem("playerInfo");
+    const stored = sessionStorage.getItem("playerInfo");
     if (stored) setPlayerInfo(JSON.parse(stored));
   }, []);
 
@@ -193,8 +193,8 @@ export default function PlayPage() {
     celebrateSound?.play();
     setEnded(true);
 
-    const playerId = localStorage.getItem("playerId");
-    const sessionId = localStorage.getItem("sessionId");
+    const playerId = sessionStorage.getItem("playerId");
+    const sessionId = sessionStorage.getItem("sessionId");
 
     await submitResult(sessionId, playerId, {
       score: scoreRef.current,

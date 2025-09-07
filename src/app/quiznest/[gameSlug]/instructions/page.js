@@ -45,7 +45,7 @@ export default function InstructionsPage() {
     gameInstructionsTranslations
   );
   useEffect(() => {
-    const stored = localStorage.getItem("playerInfo");
+    const stored = sessionStorage.getItem("playerInfo");
     if (stored) setPlayerInfo(JSON.parse(stored));
   }, []);
 
