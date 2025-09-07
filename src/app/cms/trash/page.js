@@ -329,14 +329,6 @@ export default function TrashPage() {
 
     setAllAvailableModules(modulesWithItems);
 
-
-    const modulesWithItems = modules.filter(module => {
-      const moduleData = res.items?.[module] || res[module];
-      return moduleData && moduleData.items && Array.isArray(moduleData.items) && moduleData.items.length > 0;
-    });
-
-    setAllAvailableModules(modulesWithItems);
-
     const userIds = new Set();
     Object.values(res.items || res).forEach((moduleData) => {
       if (moduleData && moduleData.items && Array.isArray(moduleData.items)) {

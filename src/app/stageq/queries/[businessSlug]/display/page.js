@@ -8,7 +8,7 @@ import Footer from "@/components/Footer";
 import { getBusinessBySlug } from "@/services/businessService";
 import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
 import Background from "@/components/Background";
-import {Shift} from "ambient-cbg";
+import { Shift } from "ambient-cbg";
 
 export default function LiveQuestionDisplay() {
   const { businessSlug } = useParams();
