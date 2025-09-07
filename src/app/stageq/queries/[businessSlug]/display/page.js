@@ -75,7 +75,6 @@ export default function LiveQuestionDisplay() {
         flexDirection: "column",
         justifyContent: "flex-start",
         alignItems: "center",
-        bgcolor: "#f0f4f8",
         px: { xs: 2, sm: 4 },
         pt: 2,
         pb: 10,
