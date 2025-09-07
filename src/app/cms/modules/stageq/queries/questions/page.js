@@ -224,8 +224,6 @@ export default function ManageQuestionsPage() {
 
         {!selectedBusiness ? (
           <EmptyBusinessState />
-        ) : loading ? (
-          <LoadingState />
         ) : questions.length === 0 ? (
           <NoDataAvailable />
         ) : (
