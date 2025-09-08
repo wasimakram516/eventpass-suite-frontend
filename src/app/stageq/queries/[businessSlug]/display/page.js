@@ -83,7 +83,7 @@ export default function LiveQuestionDisplay() {
     >
       <Shift />
       {business?.logoUrl && (
-        <Box sx={{ textAlign: "center", mt: 2 }}>
+        <Box sx={{ textAlign: "center" }}>
           <img
             src={business.logoUrl}
             alt={`${business.name} Logo`}
