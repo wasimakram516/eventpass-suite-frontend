@@ -1,28 +1,28 @@
 "use client";
 
-import { Poll as PollIcon } from "@mui/icons-material";
 import GeneralInfo from "@/components/GeneralInfo";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { getModuleIcon } from "@/utils/iconMapper";
 
 const translations = {
   en: {
     title: "Welcome to VoteCast",
     subtitle:
-      "A collaborative voting platform designed for business decision-making and feedback.",
+      "Create and manage audience polls for events and feedback.",
     description:
-      "This platform enables businesses to ask questions and gather votes from other businesses. Submit your questions, cast your votes, and view real-time results on full-screen displays.",
-    adminLogin: "Business Login",
+      "This platform allows you to create and share polls with the public effortlessly. Users can cast their votes anonymously without requiring login, and you can view and analyze poll results instantly. Perfect for events, booths, or real-time feedback collection.",
+    adminLogin: "Admin Login",
   },
   ar: {
-    title: "مرحبًا بكم في فوتكاست",
-    subtitle: "منصة تصويت تعاونية مصممة لاتخاذ القرارات التجارية والتغذية الراجعة.",
+    title: "مرحبًا بكم في VoteCast",
+    subtitle: "أنشئ وأدر استطلاعات الجمهور للفعاليات والتعليقات.",
     description:
-      "تمكّن هذه المنصة الشركات من طرح الأسئلة وجمع الأصوات من الشركات الأخرى. اطرح أسئلتك، امنح أصواتك، وشاهد النتائج المباشرة على شاشات العرض الكاملة.",
-    adminLogin: "تسجيل دخول الشركة",
+      "تتيح هذه المنصة إنشاء ومشاركة استطلاعات مع الجمهور بسهولة. يمكن للمستخدمين التصويت بشكل مجهول دون الحاجة لتسجيل الدخول، ويمكنك عرض وتحليل نتائج الاستطلاع فورًا. مثالية للفعاليات أو الأجنحة أو جمع التعليقات الفورية.",
+    adminLogin: "تسجيل دخول المسؤول",
   },
 };
 
-export default function HomePage() {
+export default function VoteCastPage() {
   const { t } = useI18nLayout(translations);
 
   return (
@@ -32,7 +32,7 @@ export default function HomePage() {
       description={t.description}
       ctaText={t.adminLogin}
       ctaHref="/auth/login"
-      moduleIcon={PollIcon}
+      moduleIcon={() => getModuleIcon('poll')}
     />
   );
 }

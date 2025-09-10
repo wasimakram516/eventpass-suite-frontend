@@ -1,28 +1,28 @@
 "use client";
 
-import { QrCode as QrCodeIcon } from "@mui/icons-material";
 import GeneralInfo from "@/components/GeneralInfo";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { getModuleIcon } from "@/utils/iconMapper";
 
 const translations = {
   en: {
     title: "Welcome to StageQ",
     subtitle:
-      "A comprehensive platform for managing business interactions and visitor engagement.",
+      "Interactive audience engagement for presentations and events.",
     description:
-      "This platform enables businesses to share QR code links, manage visitor submissions, and review questions. Track visitor engagement and streamline your business communication process.",
-    adminLogin: "Business Login",
+      "This platform allows you to share your business link or QR code with your audience for instant engagement. Audience members can scan the QR to submit new questions or vote on existing ones, with all questions displayed live on the big screen during your presentation, creating interactive sessions where your audience drives the conversation.",
+    adminLogin: "Admin Login",
   },
   ar: {
-    title: "مرحبًا بكم في ستاج كيو",
-    subtitle: "منصة شاملة لإدارة التفاعلات التجارية ومشاركة الزوار.",
+    title: "مرحبًا بكم في StageQ",
+    subtitle: "تفاعل تفاعلي مع الجمهور للعروض التقديمية والفعاليات.",
     description:
-      "تمكّن هذه المنصة الشركات من مشاركة روابط رمز QR وإدارة طلبات الزوار ومراجعة الأسئلة. تتبع مشاركة الزوار وتبسيط عملية التواصل التجاري.",
-    adminLogin: "تسجيل دخول الشركة",
+      "تتيح هذه المنصة مشاركة رابط عملك أو رمز QR مع الجمهور للتفاعل الفوري. يمكن لأفراد الجمهور مسح الرمز لإرسال أسئلة جديدة أو التصويت على الأسئلة الموجودة، مع عرض جميع الأسئلة مباشرة على الشاشة الكبيرة أثناء عرضك التقديمي، مما يخلق جلسات تفاعلية حيث يقود الجمهور المحادثة.",
+    adminLogin: "تسجيل دخول المسؤول",
   },
 };
 
-export default function HomePage() {
+export default function StageQPage() {
   const { t } = useI18nLayout(translations);
 
   return (
@@ -32,7 +32,7 @@ export default function HomePage() {
       description={t.description}
       ctaText={t.adminLogin}
       ctaHref="/auth/login"
-      moduleIcon={QrCodeIcon}
+      moduleIcon={() => getModuleIcon('forum')}
     />
   );
 }
