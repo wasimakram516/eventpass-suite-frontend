@@ -12,6 +12,7 @@ import useI18nLayout from "@/hooks/useI18nLayout";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import LoadingState from "./LoadingState";
+import NoDataAvailable from "./NoDataAvailable";
 
 export default function BusinessDrawer({
   open,
@@ -34,7 +35,7 @@ export default function BusinessDrawer({
   });
 
 
-  const isLoading = open && businesses.length === 0;
+  const isLoading = open && businesses === null;
 
   return (
     <Drawer
@@ -83,6 +84,8 @@ export default function BusinessDrawer({
               {t.loading}
             </Typography>
           </Stack>
+        ) : businesses.length==0 ? (
+          <NoDataAvailable />
         ) : businesses.length > 0 ? (
           businesses.map((business) => (
             <Button

@@ -41,7 +41,7 @@ import ICONS from "@/utils/iconUtil";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import ConfirmationDialog from "@/components/ConfirmationDialog";
 import { wrapTextBox } from "@/utils/wrapTextStyles";
-import { formatDateTimeWithLocale } from "@/utils/dateUtils";
+import { formatDateTimeWithLocale, formatDate } from "@/utils/dateUtils";
 import FilterModal from "@/components/FilterModal";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import { getModuleCounts } from "@/services/trashService";
@@ -58,9 +58,12 @@ const translations = {
     confirmDeleteMessage:
       "Are you sure you want to permanently delete this item? This action cannot be undone.",
 
-    deleteMessagePrefix: "Are you sure you want to delete this user? This will also delete all their associated businesses and related data, and cannot be undone.",
-    deleteStaffMessage: "Are you sure you want to delete this user? This will also delete all their related data, and cannot be undone.",
-    deleteBusinessMessage: "Are you sure you want to delete this business? This will also delete all of its associated data and cannot be undone.",
+    deleteMessagePrefix:
+      "Are you sure you want to delete this user? This will also delete all their associated businesses and related data, and cannot be undone.",
+    deleteStaffMessage:
+      "Are you sure you want to delete this user? This will also delete all their related data, and cannot be undone.",
+    deleteBusinessMessage:
+      "Are you sure you want to delete this business? This will also delete all of its associated data and cannot be undone.",
 
     confirmDeleteButton: "Delete Permanently",
     confirmRestoreTitle: "Confirm Restore",
@@ -87,9 +90,11 @@ const translations = {
     deleteAll: "Delete All",
     confirmBulkRestoreTitle: "Confirm Restore All",
 
-    confirmBulkRestoreMessage: "Are you sure you want to restore all items in this module?",
+    confirmBulkRestoreMessage:
+      "Are you sure you want to restore all items in this module?",
     confirmBulkDeleteTitle: "Confirm Delete All",
-    confirmBulkDeleteMessage: "Are you sure you want to permanently delete all items in this module? This action cannot be undone.",
+    confirmBulkDeleteMessage:
+      "Are you sure you want to permanently delete all items in this module? This action cannot be undone.",
 
     deleteAllPermanently: "Delete Permanently",
     deleteAllMobile: "Delete",
@@ -104,9 +109,12 @@ const translations = {
     confirmDeleteMessage:
       "هل أنت متأكد أنك تريد حذف هذا العنصر نهائيًا؟ لا يمكن التراجع عن هذا الإجراء.",
 
-    deleteMessagePrefix: "هل أنت متأكد أنك تريد حذف هذا المستخدم؟ سيؤدي هذا أيضًا إلى حذف جميع الشركات المرتبطة به والبيانات ذات الصلة، ولا يمكن التراجع عن هذا الإجراء.",
-    deleteStaffMessage: "هل أنت متأكد أنك تريد حذف هذا المستخدم؟ سيؤدي هذا أيضًا إلى حذف البيانات ذات الصلة، ولا يمكن التراجع عن هذا الإجراء.",
-    deleteBusinessMessage: "هل أنت متأكد أنك تريد حذف هذا العمل؟ سيؤدي هذا أيضًا إلى حذف جميع البيانات المرتبطة به ولا يمكن التراجع عن هذا الإجراء.",
+    deleteMessagePrefix:
+      "هل أنت متأكد أنك تريد حذف هذا المستخدم؟ سيؤدي هذا أيضًا إلى حذف جميع الشركات المرتبطة به والبيانات ذات الصلة، ولا يمكن التراجع عن هذا الإجراء.",
+    deleteStaffMessage:
+      "هل أنت متأكد أنك تريد حذف هذا المستخدم؟ سيؤدي هذا أيضًا إلى حذف البيانات ذات الصلة، ولا يمكن التراجع عن هذا الإجراء.",
+    deleteBusinessMessage:
+      "هل أنت متأكد أنك تريد حذف هذا العمل؟ سيؤدي هذا أيضًا إلى حذف جميع البيانات المرتبطة به ولا يمكن التراجع عن هذا الإجراء.",
 
     confirmDeleteButton: "حذف نهائيًا",
     confirmRestoreTitle: "تأكيد الاستعادة",
@@ -133,9 +141,11 @@ const translations = {
     deleteAll: "حذف الكل",
     confirmBulkRestoreTitle: "تأكيد استعادة الكل",
 
-    confirmBulkRestoreMessage: "هل أنت متأكد أنك تريد استعادة جميع العناصر في هذه الوحدة؟",
+    confirmBulkRestoreMessage:
+      "هل أنت متأكد أنك تريد استعادة جميع العناصر في هذه الوحدة؟",
     confirmBulkDeleteTitle: "تأكيد حذف الكل",
-    confirmBulkDeleteMessage: "هل أنت متأكد أنك تريد حذف جميع العناصر في هذه الوحدة نهائيًا؟ لا يمكن التراجع عن هذا الإجراء.",
+    confirmBulkDeleteMessage:
+      "هل أنت متأكد أنك تريد حذف جميع العناصر في هذه الوحدة نهائيًا؟ لا يمكن التراجع عن هذا الإجراء.",
 
     deleteAllPermanently: "حذف نهائيًا",
     deleteAllMobile: "حذف",
@@ -161,13 +171,12 @@ export default function TrashPage() {
   const [bulkDeleteConfirm, setBulkDeleteConfirm] = useState(false);
   const [bulkRestoreConfirm, setBulkRestoreConfirm] = useState(false);
   const [pendingBulkAction, setPendingBulkAction] = useState(null);
+  const [allDeletedByIds, setAllDeletedByIds] = useState(new Set());
+  const [userMap, setUserMap] = useState({});
 
   // pagination state PER MODULE
   const [pageState, setPageState] = useState({});
   const [limit, setLimit] = useState(5);
-
-  // Users map
-  const [userMap, setUserMap] = useState({});
 
   // Filters
   const [search, setSearch] = useState("");
@@ -177,117 +186,7 @@ export default function TrashPage() {
   const [dateTo, setDateTo] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
 
-  const clearAllFilters = () => {
-    setSearch("");
-    setDeletedByFilter("__ALL__");
-    setModuleFilter("__ALL__");
-    setDateFrom("");
-    setDateTo("");
-    setPageState({});
-  };
-
-  useEffect(() => {
-    const initializeData = async () => {
-      await hydrateUsersMap();
-      await fetchAllModules();
-      await fetchModuleCounts();
-      await fetchModuleData();
-      await fetchTrash();
-    };
-    initializeData();
-  }, []);
-
-  const formatDate = (dateString) => {
-    if (!dateString) return "";
-    const d = new Date(dateString);
-
-    const options = {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    };
-    const parts = new Intl.DateTimeFormat("en-US", options).formatToParts(d);
-    const datePart = `${parts.find((p) => p.type === "month").value} ${
-      parts.find((p) => p.type === "day").value
-    } ${parts.find((p) => p.type === "year").value}`;
-    const timePart = `${parts.find((p) => p.type === "hour").value}:${
-      parts.find((p) => p.type === "minute").value
-    } ${parts.find((p) => p.type === "dayPeriod").value}`;
-
-    return `${datePart} at ${timePart}`;
-  };
-
-  // debounced effect to reduce API calls during rapid filter changes
-  useEffect(() => {
-    if (allAvailableModules.length === 0) return;
-
-    const timeoutId = setTimeout(() => {
-      fetchTrash();
-    }, 300);
-
-    return () => clearTimeout(timeoutId);
-  }, [limit, deletedByFilter, moduleFilter, dateFrom, dateTo, pageState]);
-
-  const hydrateUsersMap = async () => {
-    try {
-      let users = [];
-      if (isBusiness) {
-        users = await getAllStaffUsers(currentUser?.business?._id);
-      } else {
-        users = await getAllUsers();
-      }
-      const map = {};
-      users.forEach((u) => {
-        map[u._id] = u.name || u.fullName || u.email || u._id;
-      });
-      setUserMap(map);
-    } catch {}
-  };
-  const fetchModuleData = async () => {
-    try {
-      const role = currentUser?.role || "staff";
-      const modulesPayload = await getModules(role);
-      const serverModules = Array.isArray(modulesPayload) ? modulesPayload : [];
-      setModuleData(serverModules);
-    } catch (error) {
-      console.error("Error fetching module data:", error);
-    }
-  };
-
-  const fetchTrash = async () => {
-    setLoading(true);
-    try {
-      const res = await getTrash({ limit, page: 1 });
-      setTrashData(res.items || {});
-    } catch (err) {
-      console.error("Error fetching trash:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateAvailableModules = async () => {
-    try {
-      const res = await getTrash({ limit: 1000 });
-      const modules = Object.keys(res.items || res);
-
-      const modulesWithItems = modules.filter(module => {
-        const moduleData = res.items?.[module] || res[module];
-        return moduleData && moduleData.items && Array.isArray(moduleData.items) && moduleData.items.length > 0;
-      });
-
-      setAllAvailableModules(modulesWithItems);
-
-      if (moduleFilter !== "__ALL__" && !modulesWithItems.includes(moduleFilter)) {
-        setModuleFilter("__ALL__");
-      }
-    } catch (error) {
-      console.error('Error updating available modules:', error);
-    }
-  };
+  //Effect to update available modules whenever trashData changes
   useEffect(() => {
     if (trashData) {
       const newIds = new Set(allDeletedByIds);
@@ -304,75 +203,37 @@ export default function TrashPage() {
     }
   }, [trashData]);
 
-  const fetchModuleCounts = async () => {
-    try {
-      const counts = await getModuleCounts();
-      setModuleCounts(counts);
-    } catch (error) {
-      console.error("Error fetching module counts:", error);
-    }
+  // Handle page change for a specific module
+  useEffect(() => {
+    const initializeData = async () => {
+      await hydrateUsersMap();
+      await fetchAllModules();
+      await fetchModuleCounts();
+      await fetchModuleData();
+    };
+    initializeData();
+  }, []);
+
+  // Fetch trash data when filters, pagination, or limit change
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      fetchTrash(moduleFilter);
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [limit, deletedByFilter, moduleFilter, dateFrom, dateTo, pageState]);
+
+  // Clear filters
+  const handleClearAllFilters = () => {
+    setSearch("");
+    setDeletedByFilter("__ALL__");
+    setDateFrom("");
+    setDateTo("");
+    setLimit(5);
+    setPageState({});
   };
 
-  const fetchAllModules = async () => {
-    const res = await getTrash({ limit: 10 });
-    const modules = Object.keys(res.items || res);
-
-    const modulesWithItems = modules.filter((module) => {
-      const moduleData = res.items?.[module] || res[module];
-      return (
-        moduleData &&
-        moduleData.items &&
-        Array.isArray(moduleData.items) &&
-        moduleData.items.length > 0
-      );
-    });
-
-    setAllAvailableModules(modulesWithItems);
-
-    const userIds = new Set();
-    Object.values(res.items || res).forEach((moduleData) => {
-      if (moduleData && moduleData.items && Array.isArray(moduleData.items)) {
-        moduleData.items.forEach((item) => {
-          const db = item.deletedBy;
-          if (typeof db === "string") userIds.add(db);
-          else if (db && db._id) userIds.add(db._id);
-        });
-      }
-    });
-    setAllDeletedByIds(userIds);
-  };
-
-  // Store all user IDs separately from filtered data to prevent dropdown emptying
-  const [allDeletedByIds, setAllDeletedByIds] = useState(new Set());
-
-  const deletedByOptions = useMemo(() => {
-    const ids = new Set([...allDeletedByIds]);
-    if (deletedByFilter !== "__ALL__") {
-      ids.add(deletedByFilter);
-    }
-    if (trashData && typeof trashData === "object") {
-      Object.values(trashData).forEach((moduleData) => {
-        if (moduleData && moduleData.items && Array.isArray(moduleData.items)) {
-          moduleData.items.forEach((it) => {
-            const db = it.deletedBy;
-            if (typeof db === "string") ids.add(db);
-            else if (db && db._id) ids.add(db._id);
-          });
-        }
-      });
-    }
-
-    const options = ["__ALL__", ...Array.from(ids)];
-    return options;
-  }, [trashData, allDeletedByIds, deletedByFilter]);
-
-  const labelForDeletedBy = (val) => {
-    if (!val) return "-";
-    if (typeof val === "string") return userMap[val] || val;
-    return val.fullName || val.name || val.email || val._id || "-";
-  };
-
-  // Function to convert module keys to user-friendly display names
+  // handler for module name based on key
   const getModuleDisplayName = (moduleKey) => {
     const moduleNames = {
       "registration-eventreg": "Registration (EventReg)",
@@ -385,6 +246,16 @@ export default function TrashPage() {
       "gamesession-eventduel": "Game Session (EventDuel)",
       qnquestion: "Questions (QuizNest)",
       pvpquestion: "Questions (EventDuel)",
+      user: "User",
+      business: "Business",
+      poll: "Poll",
+      spinwheel: "SpinWheel",
+      spinwheelparticipant: "SpinWheel Participant",
+      displaymedia: "Display Media",
+      wallconfig: "Wall Config",
+      globalconfig: "Global Config",
+      surveyform: "Survey Form",
+      walkin: "Walk-In",
     };
     return (
       moduleNames[moduleKey] ||
@@ -392,8 +263,119 @@ export default function TrashPage() {
     );
   };
 
-  const mapToBackendController = (frontendModuleKey) => {
-    return frontendToBackendModuleMap[frontendModuleKey] || frontendModuleKey;
+  const getLabelForDeletedBy = (val) => {
+    if (!val) return "-";
+    if (typeof val === "string") return userMap[val] || val;
+    return val.fullName || val.name || val.email || val._id || "-";
+  };
+
+  const hydrateUsersMap = async () => {
+    try {
+      let users = [];
+      if (isBusiness) {
+        users = await getAllStaffUsers(currentUser?.business?._id);
+      } else {
+        users = await getAllUsers();
+      }
+      const map = {};
+      users.forEach((u) => {
+        map[u._id] = u.name || u.fullName || u.email || u._id;
+      });
+      setUserMap(map);
+    } catch {}
+  };
+
+  const handleLimitChange = (newLimit) => {
+    setLimit(newLimit);
+    setPageState({}); // reset pagination when limit changes
+  };
+
+  const fetchModuleData = async () => {
+    try {
+      const role = currentUser?.role || "staff";
+      const modulesPayload = await getModules(role);
+      const serverModules = Array.isArray(modulesPayload) ? modulesPayload : [];
+      setModuleData(serverModules);
+    } catch (error) {
+      console.error("Error fetching module data:", error);
+    }
+  };
+
+  const fetchTrash = async (targetModule = moduleFilter) => {
+    setLoading(true);
+    try {
+      if (!targetModule || targetModule === "__ALL__") {
+        const res = await getTrash({ limit, page: 1 });
+        setTrashData(res.items || {});
+      } else {
+        const res = await getTrash({
+          model: targetModule,
+          limit,
+          page: pageState[targetModule] || 1,
+          ...(deletedByFilter !== "__ALL__" && { deletedBy: deletedByFilter }),
+          ...(dateFrom && { startDate: dateFrom }),
+          ...(dateTo && { endDate: dateTo }),
+        });
+        setTrashData(res.items || {});
+      }
+    } catch (err) {
+      setTrashData({});
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateAvailableModules = async () => {
+    try {
+      const res = await getTrash({ limit: 1000 });
+      const modules = Object.keys(res.items || res);
+
+      const modulesWithItems = modules.filter((module) => {
+        const moduleData = res.items?.[module] || res[module];
+        return (
+          moduleData &&
+          moduleData.items &&
+          Array.isArray(moduleData.items) &&
+          moduleData.items.length > 0
+        );
+      });
+
+      setAllAvailableModules(modulesWithItems);
+
+      if (
+        moduleFilter !== "__ALL__" &&
+        !modulesWithItems.includes(moduleFilter)
+      ) {
+        setModuleFilter("__ALL__");
+      }
+    } catch (error) {
+      console.error("Error updating available modules:", error);
+    }
+  };
+
+  const fetchModuleCounts = async () => {
+    try {
+      const counts = await getModuleCounts();
+      setModuleCounts(counts);
+    } catch (error) {
+      console.error("Error fetching module counts:", error);
+    }
+  };
+
+  const fetchAllModules = async () => {
+    try {
+      const res = await getModuleCounts(); // ✅ use counts API
+      const modules = Object.keys(res || {}).filter((m) => res[m] > 0);
+
+      setAllAvailableModules(modules);
+
+      // Auto-select first module if none selected
+      if (modules.length > 0 && moduleFilter === "__ALL__") {
+        setModuleFilter(modules[0]);
+      }
+    } catch (err) {
+      console.error("Error fetching modules:", err);
+    }
   };
 
   const openRestoreConfirm = (module, item) => {
@@ -409,48 +391,47 @@ export default function TrashPage() {
 
     setDeleteConfirm(true);
   };
-
+  
   const handleRestore = async () => {
     if (!pendingAction) return;
     setLoading(true);
 
-    await restoreTrashItem(pendingAction.module, pendingAction.item._id);
-
-    await fetchTrash();
-    await fetchModuleCounts();
-    await updateAvailableModules();
-
-    setRestoreConfirm(false);
-    setPendingAction(null);
-    setLoading(false);
+    try {
+      await restoreTrashItem(pendingAction.module, pendingAction.item._id);
+      await fetchTrash();
+      await fetchModuleCounts();
+      await updateAvailableModules();
+    } catch (err) {
+      console.error("Error restoring item:", err);
+    } finally {
+      setRestoreConfirm(false);
+      setPendingAction(null);
+      setLoading(false);
+    }
   };
 
   const handlePermanentDelete = async () => {
     if (!pendingAction) return;
     setLoading(true);
 
-    await permanentDeleteTrashItem(
-      pendingAction.module,
-      pendingAction.item._id
-    );
-
-    await fetchTrash();
-    await fetchModuleCounts();
-    await updateAvailableModules();
-
-
-    setDeleteConfirm(false);
-    setPendingAction(null);
-    setLoading(false);
+    try {
+      await permanentDeleteTrashItem(
+        pendingAction.module,
+        pendingAction.item._id
+      );
+      await fetchTrash();
+      await fetchModuleCounts();
+      await updateAvailableModules();
+    } catch (err) {
+      console.error("Error permanently deleting item:", err);
+    } finally {
+      setDeleteConfirm(false);
+      setPendingAction(null);
+      setLoading(false);
+    }
   };
-
-  const handlePageChange = (module, value) => {
-    setPageState((prev) => ({ ...prev, [module]: value }));
-  };
-
   // Handle bulk operations
   const openBulkRestoreConfirm = (module) => {
-
     const filterParams = {
       ...(deletedByFilter !== "__ALL__" && { deletedBy: deletedByFilter }),
       ...(dateFrom && { startDate: dateFrom }),
@@ -467,7 +448,6 @@ export default function TrashPage() {
   };
 
   const openBulkDeleteConfirm = (module) => {
-
     const filterParams = {
       ...(deletedByFilter !== "__ALL__" && { deletedBy: deletedByFilter }),
       ...(dateFrom && { startDate: dateFrom }),
@@ -487,136 +467,62 @@ export default function TrashPage() {
     if (!pendingBulkAction) return;
     setLoading(true);
     try {
-
       await restoreAllTrashItems(
         pendingBulkAction.frontendModule,
         pendingBulkAction.filterParams
       );
-
       await fetchTrash();
       await fetchModuleCounts();
       await updateAvailableModules();
     } catch (error) {
-
       console.error("Error in bulk restore:", error);
-
+    } finally {
+      setBulkRestoreConfirm(false);
+      setPendingBulkAction(null);
+      setLoading(false);
     }
-    setBulkRestoreConfirm(false);
-    setPendingBulkAction(null);
-    setLoading(false);
-  };
-
-  // Enhanced polling that handles complex backend operations with exponential backoff
-
-  const pollForCompletion = async (
-    moduleKey,
-    filterParams = {},
-    maxAttempts = 30,
-    initialDelay = 300
-  ) => {
-
-    let attempts = 0;
-    let delay = initialDelay;
-    let lastCount = null;
-    let stableCount = 0;
-
-
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-
-    while (attempts < maxAttempts) {
-      try {
-        const response = await getTrash({
-          model: moduleKey,
-          limit: 1,
-
-          ...filterParams,
-
-        });
-        const moduleData = response.items?.[moduleKey] || response[moduleKey];
-        const currentCount = moduleData?.total || 0;
-
-        if (currentCount === 0) {
-          return true;
-        }
-
-        if (lastCount === currentCount) {
-          stableCount++;
-          if (stableCount >= 4 && attempts > 15) {
-            return true;
-          }
-        } else {
-          stableCount = 0;
-        }
-
-        lastCount = currentCount;
-
-        if (attempts > 8) {
-          delay = Math.min(delay * 1.3, 2000); // Increased max delay to 2 seconds
-        }
-
-        await new Promise((resolve) => setTimeout(resolve, delay));
-        attempts++;
-      } catch (error) {
-        console.error("Error polling for completion:", error);
-        await new Promise((resolve) => setTimeout(resolve, delay * 2));
-
-        attempts++;
-      }
-    }
-
-
-    console.warn(
-      `Polling timeout after ${attempts} attempts for ${moduleKey} - proceeding anyway`
-    );
-
-    return false;
   };
 
   const handleBulkDelete = async () => {
     if (!pendingBulkAction) return;
     setLoading(true);
     try {
-
       await permanentDeleteAllTrashItems(
         pendingBulkAction.frontendModule,
         pendingBulkAction.filterParams
       );
-
-      await pollForCompletion(pendingBulkAction.frontendModule);
-
       await fetchTrash();
       await fetchModuleCounts();
       await updateAvailableModules();
     } catch (error) {
-
       console.error("Error in bulk delete:", error);
-
+    } finally {
+      setBulkDeleteConfirm(false);
+      setPendingBulkAction(null);
+      setLoading(false);
     }
-    setBulkDeleteConfirm(false);
-    setPendingBulkAction(null);
-    setLoading(false);
   };
 
-  const handleLimitChange = (newLimit) => {
-    setLimit(newLimit);
-    setPageState({});
-  };
+  const deletedByOptions = useMemo(() => {
+    const ids = new Set([...allDeletedByIds]);
+    if (deletedByFilter !== "__ALL__") {
+      ids.add(deletedByFilter);
+    }
+    if (trashData && typeof trashData === "object") {
+      Object.values(trashData).forEach((moduleData) => {
+        if (moduleData && moduleData.items && Array.isArray(moduleData.items)) {
+          moduleData.items.forEach((it) => {
+            const db = it.deletedBy;
+            if (typeof db === "string") ids.add(db);
+            else if (db && db._id) ids.add(db._id);
+          });
+        }
+      });
+    }
+    const options = ["__ALL__", ...Array.from(ids)];
+    return options;
+  }, [trashData, allDeletedByIds, deletedByFilter]);
 
-  // Prevent MUI from locking body overflow and removing scrollbar
-  useEffect(() => {
-    const observer = new MutationObserver(() => {
-      if (document.body.style.overflow === "hidden") {
-        document.body.style.overflow = "auto";
-        document.body.style.paddingRight = "0px";
-      }
-    });
-    observer.observe(document.body, {
-      attributes: true,
-      attributeFilter: ["style"],
-    });
-    return () => observer.disconnect();
-  }, []);
   return (
     <Container dir={dir}>
       <BreadcrumbsNav />
@@ -636,85 +542,116 @@ export default function TrashPage() {
         </Box>
       </Stack>
       <Divider sx={{ mb: 2 }} />
+
       {/* Module Count Cards */}
       {Object.keys(moduleCounts).length > 0 && (
         <Box
           sx={{
-            mb: 3,
+            mb: 2,
+            overflowX: "auto",
+            whiteSpace: "nowrap",
+            pb: 1,
+            "&::-webkit-scrollbar": {
+              height: 6,
+            },
+            "&::-webkit-scrollbar-thumb": {
+              backgroundColor: "rgba(0,0,0,0.2)",
+              borderRadius: 3,
+            },
           }}
         >
-          <Grid container spacing={2}>
+          <Box
+            sx={{
+              display: "flex",
+              gap: 2,
+            }}
+          >
             {Object.entries(moduleCounts)
               .filter(([, count]) => count > 0)
               .map(([module, count]) => (
-                <Grid item xs={6} sm={4} md={3} lg={2} key={module}>
-                  <Card
-                    elevation={2}
-                    sx={{
-                      p: 2,
-                      textAlign: "center",
-                      borderRadius: 2,
-                      backgroundColor: "background.paper",
-                      transition: "all 0.2s ease-in-out",
-                      "&:hover": {
-                        elevation: 4,
-                        transform: "translateY(-2px)",
-                      },
-                    }}
-                  >
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                      <Avatar
-                        sx={{
-                          width: 40,
-                          height: 40,
-                          bgcolor: "primary.main",
-                          fontSize: "0.875rem",
-                        }}
+                <Card
+                  key={module}
+                  elevation={2}
+                  sx={{
+                    flex: "0 0 auto",
+                    minWidth: 160,
+                    p: 2,
+                    textAlign: "center",
+                    borderRadius: 2,
+                    backgroundColor: "background.paper",
+                    transition: "all 0.2s ease-in-out",
+                    "&:hover": {
+                      elevation: 4,
+                      transform: "translateY(-2px)",
+                    },
+                  }}
+                >
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                    <Avatar
+                      sx={{
+                        width: 40,
+                        height: 40,
+                        bgcolor: "primary.main",
+                        fontSize: "0.875rem",
+                      }}
+                    >
+                      {(() => {
+                        const moduleInfo = moduleData.find(
+                          (m) => m.key.toLowerCase() === module.toLowerCase()
+                        );
+                        return getModuleIcon(moduleInfo?.icon);
+                      })()}
+                    </Avatar>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "flex-start",
+                      }}
+                    >
+                      <Typography
+                        variant="h6"
+                        fontWeight="bold"
+                        color="text.primary"
                       >
-                        {(() => {
-                          const moduleInfo = moduleData.find(
-                            (m) => m.key.toLowerCase() === module.toLowerCase()
-                          );
-                          return getModuleIcon(moduleInfo?.icon);
-                        })()}
-                      </Avatar>
-                      <Box
-                        sx={{
-                          display: "flex",
-                          flexDirection: "column",
-                          alignItems: "flex-start",
-                        }}
+                        {count}
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        sx={{ textTransform: "capitalize", lineHeight: 1 }}
                       >
-                        <Typography
-                          variant="h6"
-                          fontWeight="bold"
-                          color="text.primary"
-                        >
-                          {count}
-                        </Typography>
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          sx={{ textTransform: "capitalize", lineHeight: 1 }}
-                        >
-                          {module}
-                        </Typography>
-                      </Box>
+                        {module}
+                      </Typography>
                     </Box>
-                  </Card>
-                </Grid>
+                  </Box>
+                </Card>
               ))}
-          </Grid>
+          </Box>
         </Box>
       )}
 
-      {/* Filters inline (search + records/page only) */}
-      <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ mb: 2 }}>
+      {/* Filters Bar */}
+      <Box
+        sx={{
+          mb: 3,
+          p: 2,
+          borderRadius: 2,
+          backgroundColor: "background.paper",
+          boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 2,
+          alignItems: "center",
+        }}
+      >
+        {/* Search */}
         <TextField
-          fullWidth
           placeholder={t.searchPlaceholder}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
+          size="small"
+          sx={{ flex: 1, minWidth: 220 }}
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">
@@ -734,67 +671,92 @@ export default function TrashPage() {
         >
           {t.filters}
         </Button>
-        <TextField
-          select
-          label={t.deletedByLabel}
-          fullWidth
-          value={deletedByFilter}
-          onChange={(e) => setDeletedByFilter(e.target.value)}
-          sx={{ display: { xs: "none", sm: "flex" } }}
-          SelectProps={{ displayEmpty: true }}
+
+        {/* Deleted By */}
+        <FormControl
+          size="small"
+          sx={{ minWidth: 180, display: { xs: "none", sm: "flex" } }}
         >
-          <MenuItem value="__ALL__">{t.all}</MenuItem>
-          {deletedByOptions.map((id) =>
-            id === "__ALL__" ? null : (
-              <MenuItem key={id} value={id}>
-                {userMap[id] || id}
+          <InputLabel>{t.deletedByLabel}</InputLabel>
+          <Select
+            value={deletedByFilter}
+            label={t.deletedByLabel}
+            onChange={(e) => setDeletedByFilter(e.target.value)}
+          >
+            <MenuItem value="__ALL__">{t.all}</MenuItem>
+            {deletedByOptions.map(
+              (id) =>
+                id !== "__ALL__" && (
+                  <MenuItem key={id} value={id}>
+                    {userMap[id] || id}
+                  </MenuItem>
+                )
+            )}
+          </Select>
+        </FormControl>
+
+        {/* Module */}
+        <FormControl
+          size="small"
+          sx={{ minWidth: 180, display: { xs: "none", sm: "flex" } }}
+        >
+          <InputLabel>{t.moduleLabel}</InputLabel>
+          <Select
+            value={moduleFilter}
+            label={t.moduleLabel}
+            onChange={(e) => setModuleFilter(e.target.value)}
+          >
+            <MenuItem value="__ALL__">{t.all}</MenuItem>
+            {allAvailableModules.map((m) => (
+              <MenuItem key={m} value={m}>
+                {getModuleDisplayName(m)}
               </MenuItem>
-            )
-          )}
-        </TextField>
+            ))}
+          </Select>
+        </FormControl>
 
-        <TextField
-          select
-          fullWidth
-          label={t.moduleLabel}
-          value={moduleFilter}
-          onChange={(e) => setModuleFilter(e.target.value)}
-          sx={{ display: { xs: "none", sm: "flex" } }}
+        {/* Date Range (single control with 2 inputs side by side) */}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            border: "1px solid",
+            borderColor: "divider",
+            borderRadius: 1,
+            px: 1,
+            py: 0.5,
+            minWidth: 250,
+            display: { xs: "none", sm: "flex" },
+          }}
         >
-          <MenuItem value="__ALL__">{t.all}</MenuItem>
-          {allAvailableModules.map((m) => (
-            <MenuItem key={m} value={m}>
-              {getModuleDisplayName(m)}
-            </MenuItem>
-          ))}
-        </TextField>
+          <TextField
+            type="date"
+            size="small"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            InputLabelProps={{ shrink: true }}
+            sx={{ flex: 1 }}
+          />
+          <Typography variant="body2" color="text.secondary" sx={{ mx: 1 }}>
+            —
+          </Typography>
+          <TextField
+            type="date"
+            size="small"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            InputLabelProps={{ shrink: true }}
+            sx={{ flex: 1 }}
+          />
+        </Box>
 
-        <TextField
-          label={t.dateFrom}
-          fullWidth
-          type="date"
-          value={dateFrom}
-          onChange={(e) => setDateFrom(e.target.value)}
-          InputLabelProps={{ shrink: true }}
-          sx={{ display: { xs: "none", sm: "flex" } }}
-        />
-        <TextField
-          label={t.dateTo}
-          fullWidth
-          type="date"
-          value={dateTo}
-          onChange={(e) => setDateTo(e.target.value)}
-          InputLabelProps={{ shrink: true }}
-          sx={{ display: { xs: "none", sm: "flex" } }}
-        />
+        {/* Records per page */}
         <FormControl size="small" sx={{ minWidth: 150 }}>
           <InputLabel>{t.recordsPerPage}</InputLabel>
           <Select
             value={limit}
-            size="large"
-            onChange={(e) => {
-              handleLimitChange(Number(e.target.value));
-            }}
+            label={t.recordsPerPage}
+            onChange={(e) => handleLimitChange(Number(e.target.value))}
           >
             {[5, 10, 20, 50].map((n) => (
               <MenuItem key={n} value={n}>
@@ -803,22 +765,14 @@ export default function TrashPage() {
             ))}
           </Select>
         </FormControl>
-      </Stack>
 
-      <Box
-        sx={{
-          display: { xs: "none", sm: "flex" },
-          justifyContent: "flex-start",
-          mb: 2,
-        }}
-      >
-
+        {/* Clear Filters Button */}
         <Button
           variant="outlined"
-          color="primary"
+          color="secondary"
           startIcon={<ICONS.clear />}
-          onClick={clearAllFilters}
-
+          onClick={handleClearAllFilters}
+          sx={{ display: { xs: "none", sm: "flex" } }}
           disabled={
             !search &&
             deletedByFilter === "__ALL__" &&
@@ -826,14 +780,13 @@ export default function TrashPage() {
             !dateFrom &&
             !dateTo
           }
-
         >
           {t.clearFilters}
         </Button>
       </Box>
 
       {loading ? (
-        <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
           <CircularProgress size={36} />
         </Box>
       ) : !trashData || Object.keys(trashData).length === 0 ? (
@@ -876,7 +829,6 @@ export default function TrashPage() {
                     width: { xs: "100%", sm: "auto" },
 
                     mt: { xs: 1, sm: 0 },
-
                   }}
                 >
                   <Button
@@ -890,7 +842,6 @@ export default function TrashPage() {
                       ...getStartIconSpacing(dir),
 
                       width: { xs: "100%", sm: "auto" },
-
                     }}
                   >
                     {t.restoreAll}
@@ -906,7 +857,6 @@ export default function TrashPage() {
                       ...getStartIconSpacing(dir),
 
                       width: { xs: "100%", sm: "auto" },
-
                     }}
                   >
                     {t.deleteAll}
@@ -950,7 +900,6 @@ export default function TrashPage() {
                           </Avatar>
                           <Box sx={{ flexGrow: 1, ...wrapTextBox }}>
                             <Typography variant="subtitle1" fontWeight="bold">
-
                               {item.name ||
                                 item.title ||
                                 item.slug ||
@@ -961,7 +910,6 @@ export default function TrashPage() {
                                 formatDate(item.endTime) ||
                                 formatDate(item.createdAt) ||
                                 "Unnamed"}
-
                             </Typography>
                           </Box>
                         </Box>
@@ -991,7 +939,6 @@ export default function TrashPage() {
                               {item.deletedAt
                                 ? formatDateTimeWithLocale(item.deletedAt)
                                 : "-"}
-
                             </Typography>
                           </Box>
                           <Box
@@ -1006,7 +953,8 @@ export default function TrashPage() {
                               variant="caption"
                               color="text.secondary"
                             >
-                              {t.deletedBy}: {labelForDeletedBy(item.deletedBy)}
+                              {t.deletedBy}:{" "}
+                              {getLabelForDeletedBy(item.deletedBy)}
                             </Typography>
                           </Box>
                         </Box>
@@ -1102,14 +1050,13 @@ export default function TrashPage() {
           {/* Clear Filters Button - Mobile */}
           <Button
             variant="outlined"
-            color="primary"
+            color="secondary"
             fullWidth
             startIcon={<ICONS.clear />}
             onClick={() => {
-              clearAllFilters();
+              handleClearAllFilters();
               setFilterOpen(false);
             }}
-
             disabled={
               !search &&
               deletedByFilter === "__ALL__" &&
@@ -1117,7 +1064,6 @@ export default function TrashPage() {
               !dateFrom &&
               !dateTo
             }
-
           >
             {t.clearFilters}
           </Button>
@@ -1139,7 +1085,6 @@ export default function TrashPage() {
         onClose={() => setDeleteConfirm(false)}
         onConfirm={handlePermanentDelete}
         title={t.confirmDeleteTitle}
-
         message={(() => {
           const frontendModule = pendingAction?.frontendModule;
           const itemRole = pendingAction?.item?.role;
@@ -1158,7 +1103,6 @@ export default function TrashPage() {
 
           return t.confirmDeleteMessage;
         })()}
-
         confirmButtonText={isMobile ? t.delete : t.confirmDeleteButton}
         confirmButtonIcon={<ICONS.delete />}
       />
@@ -1178,11 +1122,9 @@ export default function TrashPage() {
         onConfirm={handleBulkDelete}
         title={t.confirmBulkDeleteTitle}
         message={t.confirmBulkDeleteMessage}
-
         confirmButtonText={
           isMobile ? t.deleteAllMobile : t.deleteAllPermanently
         }
-
         confirmButtonIcon={<ICONS.delete />}
       />
     </Container>
