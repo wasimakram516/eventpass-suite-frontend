@@ -47,6 +47,7 @@ import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import { getModuleCounts } from "@/services/trashService";
 import { getModuleIcon } from "@/utils/iconMapper";
 import { getModules } from "@/services/moduleService";
+import LoadingState from "@/components/LoadingState";
 const translations = {
   en: {
     title: "Recycle Bin",
@@ -379,19 +380,17 @@ export default function TrashPage() {
   };
 
   const openRestoreConfirm = (module, item) => {
-
     setPendingAction({ type: "restore", module, frontendModule: module, item });
 
     setRestoreConfirm(true);
   };
 
   const openDeleteConfirm = (module, item) => {
-
     setPendingAction({ type: "delete", module, frontendModule: module, item });
 
     setDeleteConfirm(true);
   };
-  
+
   const handleRestore = async () => {
     if (!pendingAction) return;
     setLoading(true);
@@ -786,217 +785,232 @@ export default function TrashPage() {
       </Box>
 
       {loading ? (
-        <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-          <CircularProgress size={36} />
-        </Box>
+        <LoadingState />
       ) : !trashData || Object.keys(trashData).length === 0 ? (
         <NoDataAvailable message={t.noTrash} />
       ) : (
-        Object.entries(trashData).map(([module, moduleData]) => {
-          const { items = [], total = 0 } = moduleData || {};
-          const page = pageState[module] || 1;
-          const filtered = items.filter((item) => {
-            if (!search.trim()) return true;
-            const searchTerm = search.trim().toLowerCase();
-            const itemText = (
-              item.name ||
-              item.title ||
-              item.slug ||
-              item.text ||
-              item.question ||
-              item.fullName ||
-              item.employeeId ||
-              ""
-            ).toLowerCase();
-            return itemText.includes(searchTerm);
-          });
-          if (!filtered.length) return null;
-          return (
-            <Box key={module} sx={{ mb: 4 }}>
-              <Stack
-                direction={{ xs: "column", sm: "row" }}
-                justifyContent="space-between"
-                alignItems={{ xs: "flex-start", sm: "center" }}
-                sx={{ mb: 2 }}
-              >
-                <Typography variant="h6">
-                  {getModuleDisplayName(module)} - {total}
-                </Typography>
-                <Stack
-                  direction={{ xs: "row", sm: "row" }}
-                  spacing={1}
-                  sx={{
-                    width: { xs: "100%", sm: "auto" },
+        (() => {
+          const renderedModules = Object.entries(trashData).map(
+            ([module, moduleData]) => {
+              const { items = [], total = 0 } = moduleData || {};
+              const page = pageState[module] || 1;
 
-                    mt: { xs: 1, sm: 0 },
-                  }}
-                >
-                  <Button
-                    variant="text"
-                    color="success"
-                    size="small"
-                    startIcon={<ICONS.restore />}
-                    onClick={() => openBulkRestoreConfirm(module)}
-                    disabled={filtered.length === 0}
-                    sx={{
-                      ...getStartIconSpacing(dir),
+              const filtered = items.filter((item) => {
+                if (!search.trim()) return true;
+                const searchTerm = search.trim().toLowerCase();
+                const itemText = (
+                  item.name ||
+                  item.title ||
+                  item.slug ||
+                  item.text ||
+                  item.question ||
+                  item.fullName ||
+                  item.employeeId ||
+                  ""
+                ).toLowerCase();
+                return itemText.includes(searchTerm);
+              });
 
-                      width: { xs: "100%", sm: "auto" },
-                    }}
+              if (!filtered.length) return null;
+              return (
+                <Box key={module} sx={{ mb: 4 }}>
+                  <Stack
+                    direction={{ xs: "column", sm: "row" }}
+                    justifyContent="space-between"
+                    alignItems={{ xs: "flex-start", sm: "center" }}
+                    sx={{ mb: 2 }}
                   >
-                    {t.restoreAll}
-                  </Button>
-                  <Button
-                    variant="text"
-                    color="error"
-                    size="small"
-                    startIcon={<ICONS.delete />}
-                    onClick={() => openBulkDeleteConfirm(module)}
-                    disabled={filtered.length === 0}
-                    sx={{
-                      ...getStartIconSpacing(dir),
-
-                      width: { xs: "100%", sm: "auto" },
-                    }}
-                  >
-                    {t.deleteAll}
-                  </Button>
-                </Stack>
-              </Stack>
-              <Grid container spacing={3} justifyContent="center">
-                {filtered.map((item) => (
-                  <Grid
-                    item
-                    xs={12}
-                    sm={6}
-                    md={4}
-                    key={item._id}
-                    sx={{
-                      width: { xs: "100%", md: "auto" },
-                    }}
-                  >
-                    <Card
-                      elevation={3}
+                    <Typography variant="h6">
+                      {getModuleDisplayName(module)} - {total}
+                    </Typography>
+                    <Stack
+                      direction={{ xs: "row", sm: "row" }}
+                      spacing={1}
                       sx={{
-                        p: 2,
-                        borderRadius: 2,
-                        height: "100%",
-                        display: "flex",
-                        flexDirection: "column",
-                        justifyContent: "space-between",
+                        width: { xs: "100%", sm: "auto" },
+
+                        mt: { xs: 1, sm: 0 },
                       }}
                     >
-                      <Box>
-                        <Box
-                          sx={{
-                            display: "flex",
-                            gap: 2,
-                            alignItems: "center",
-                            mb: 1,
-                          }}
-                        >
-                          <Avatar sx={{ width: 48, height: 48 }}>
-                            {item.name?.[0] || item.title?.[0] || "?"}
-                          </Avatar>
-                          <Box sx={{ flexGrow: 1, ...wrapTextBox }}>
-                            <Typography variant="subtitle1" fontWeight="bold">
-                              {item.name ||
-                                item.title ||
-                                item.slug ||
-                                item.text ||
-                                item.question ||
-                                item.fullName ||
-                                item.employeeId ||
-                                formatDate(item.endTime) ||
-                                formatDate(item.createdAt) ||
-                                "Unnamed"}
-                            </Typography>
-                          </Box>
-                        </Box>
+                      <Button
+                        variant="text"
+                        color="success"
+                        size="small"
+                        startIcon={<ICONS.restore />}
+                        onClick={() => openBulkRestoreConfirm(module)}
+                        disabled={filtered.length === 0}
+                        sx={{
+                          ...getStartIconSpacing(dir),
 
-                        <Box
+                          width: { xs: "100%", sm: "auto" },
+                        }}
+                      >
+                        {t.restoreAll}
+                      </Button>
+                      <Button
+                        variant="text"
+                        color="error"
+                        size="small"
+                        startIcon={<ICONS.delete />}
+                        onClick={() => openBulkDeleteConfirm(module)}
+                        disabled={filtered.length === 0}
+                        sx={{
+                          ...getStartIconSpacing(dir),
+
+                          width: { xs: "100%", sm: "auto" },
+                        }}
+                      >
+                        {t.deleteAll}
+                      </Button>
+                    </Stack>
+                  </Stack>
+                  <Grid container spacing={3} justifyContent="center">
+                    {filtered.map((item) => (
+                      <Grid
+                        item
+                        xs={12}
+                        sm={6}
+                        md={4}
+                        key={item._id}
+                        sx={{
+                          width: { xs: "100%", md: "auto" },
+                        }}
+                      >
+                        <Card
+                          elevation={3}
                           sx={{
+                            p: 2,
+                            borderRadius: 2,
+                            height: "100%",
                             display: "flex",
                             flexDirection: "column",
-                            gap: 0.5,
-                            ml: 1,
+                            justifyContent: "space-between",
                           }}
                         >
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 1,
-                            }}
-                          >
-                            <ICONS.event fontSize="small" color="action" />
+                          <Box>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                gap: 2,
+                                alignItems: "center",
+                                mb: 1,
+                              }}
+                            >
+                              <Avatar sx={{ width: 48, height: 48 }}>
+                                {item.name?.[0] || item.title?.[0] || "?"}
+                              </Avatar>
+                              <Box sx={{ flexGrow: 1, ...wrapTextBox }}>
+                                <Typography
+                                  variant="subtitle1"
+                                  fontWeight="bold"
+                                >
+                                  {item.name ||
+                                    item.title ||
+                                    item.slug ||
+                                    item.text ||
+                                    item.question ||
+                                    item.fullName ||
+                                    item.employeeId ||
+                                    formatDate(item.endTime) ||
+                                    formatDate(item.createdAt) ||
+                                    "Unnamed"}
+                                </Typography>
+                              </Box>
+                            </Box>
 
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
+                            <Box
+                              sx={{
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: 0.5,
+                                ml: 1,
+                              }}
                             >
-                              {t.deletedAt}:{" "}
-                              {item.deletedAt
-                                ? formatDateTimeWithLocale(item.deletedAt)
-                                : "-"}
-                            </Typography>
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 1,
+                                }}
+                              >
+                                <ICONS.event fontSize="small" color="action" />
+
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                >
+                                  {t.deletedAt}:{" "}
+                                  {item.deletedAt
+                                    ? formatDateTimeWithLocale(item.deletedAt)
+                                    : "-"}
+                                </Typography>
+                              </Box>
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 1,
+                                }}
+                              >
+                                <ICONS.person fontSize="small" color="action" />
+                                <Typography
+                                  variant="caption"
+                                  color="text.secondary"
+                                >
+                                  {t.deletedBy}:{" "}
+                                  {getLabelForDeletedBy(item.deletedBy)}
+                                </Typography>
+                              </Box>
+                            </Box>
                           </Box>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 1,
-                            }}
+                          <CardActions
+                            sx={{ mt: 1, justifyContent: "flex-end" }}
                           >
-                            <ICONS.person fontSize="small" color="action" />
-                            <Typography
-                              variant="caption"
-                              color="text.secondary"
-                            >
-                              {t.deletedBy}:{" "}
-                              {getLabelForDeletedBy(item.deletedBy)}
-                            </Typography>
-                          </Box>
-                        </Box>
-                      </Box>
-                      <CardActions sx={{ mt: 1, justifyContent: "flex-end" }}>
-                        <Tooltip title={t.restore}>
-                          <IconButton
-                            color="success"
-                            onClick={() => openRestoreConfirm(module, item)}
-                            size="small"
-                          >
-                            <ICONS.restore fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title={t.permanentDelete}>
-                          <IconButton
-                            color="error"
-                            onClick={() => openDeleteConfirm(module, item)}
-                            size="small"
-                          >
-                            <ICONS.delete fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      </CardActions>
-                    </Card>
+                            <Tooltip title={t.restore}>
+                              <IconButton
+                                color="success"
+                                onClick={() => openRestoreConfirm(module, item)}
+                                size="small"
+                              >
+                                <ICONS.restore fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title={t.permanentDelete}>
+                              <IconButton
+                                color="error"
+                                onClick={() => openDeleteConfirm(module, item)}
+                                size="small"
+                              >
+                                <ICONS.delete fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          </CardActions>
+                        </Card>
+                      </Grid>
+                    ))}
                   </Grid>
-                ))}
-              </Grid>
 
-              {total > limit && (
-                <Box display="flex" justifyContent="center" mt={3}>
-                  <Pagination
-                    dir="ltr"
-                    count={Math.ceil(total / limit)}
-                    page={page}
-                    onChange={(e, val) => handlePageChange(module, val)}
-                  />
+                  {total > limit && (
+                    <Box display="flex" justifyContent="center" mt={3}>
+                      <Pagination
+                        dir="ltr"
+                        count={Math.ceil(total / limit)}
+                        page={page}
+                        onChange={(e, val) => handlePageChange(module, val)}
+                      />
+                    </Box>
+                  )}
                 </Box>
-              )}
-            </Box>
+              );
+            }
           );
-        })
+
+          // if all entries are null, show fallback
+          if (renderedModules.every((el) => el === null)) {
+            return <NoDataAvailable message={t.noTrash} />;
+          }
+          return renderedModules;
+        })()
       )}
 
       {/* Filter Modal for mobile */}
