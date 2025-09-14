@@ -13,7 +13,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 
 const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#8dd1e1"];
 
-export default function StatCard({ title, subtitle, data, centerValue }) {
+export default function StatCard({ title, subtitle, data = [], centerValue }) {
   const theme = useTheme();
 
   return (
@@ -58,7 +58,7 @@ export default function StatCard({ title, subtitle, data, centerValue }) {
               animationEasing="ease-out"
               labelLine={false}
             >
-              {data.map((_, i) => (
+              {data?.map((_, i) => (
                 <Cell key={i} fill={COLORS[i % COLORS.length]} />
               ))}
             </Pie>
@@ -87,7 +87,7 @@ export default function StatCard({ title, subtitle, data, centerValue }) {
 
       {/* Option breakdown */}
       <Stack spacing={1}>
-        {data.map((item, idx) => (
+        {data?.map((item, idx) => (
           <Stack
             key={idx}
             direction="row"
