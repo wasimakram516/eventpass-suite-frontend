@@ -67,7 +67,6 @@ export default function HomePage() {
     }
   }, [user, businessModalDismissed]);
 
-
   // Real-time clock
   useEffect(() => {
     const timer = setInterval(() => setDateTime(new Date()), 1000);
@@ -178,7 +177,7 @@ export default function HomePage() {
                 width: { xs: 48, md: 64 },
                 height: { xs: 48, md: 64 },
                 flexShrink: 0,
-                display: {xs:"none", sm:"flex"}
+                display: { xs: "none", sm: "flex" },
               }}
             />
           </Box>
@@ -196,23 +195,47 @@ export default function HomePage() {
             <Divider sx={{ mb: 2 }} />
             <Grid container spacing={2} justifyContent="center">
               {scope === "superadmin" && (
-                <Grid item >
-                  <Paper sx={{ p: 2, textAlign: "center", borderRadius: 2, width:130 }}>
+                <Grid item>
+                  <Paper
+                    sx={{
+                      p: 2,
+                      textAlign: "center",
+                      borderRadius: 2,
+                      height: "100%",
+                      width: { xs: 110, sm: 130 },
+                    }}
+                  >
                     <ICONS.business sx={{ fontSize: 32, color: "#1976d2" }} />
                     <Typography variant="h4">
                       {moduleStats.global.totals?.businesses ?? 0}
                     </Typography>
-                    <Typography variant="body2" sx={{fontSize:11, textTransform:"capitalize"}}>{t.businesses}</Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{ fontSize: 11, textTransform: "capitalize" }}
+                    >
+                      {t.businesses}
+                    </Typography>
                   </Paper>
                 </Grid>
               )}
               {Object.entries(moduleStats.global.totals?.users || {}).map(
                 ([role, count]) => (
                   <Grid item xs={6} sm={4} md={3} key={role}>
-                    <Paper sx={{ p: 2, textAlign: "center", borderRadius: 2, width:130 }}>
+                    <Paper
+                      sx={{
+                        p: 2,
+                        textAlign: "center",
+                        borderRadius: 2,
+                        height: "100%",
+                        width: { xs: 110, sm: 130 },
+                      }}
+                    >
                       <ICONS.group sx={{ fontSize: 32, color: "#1976d2" }} />
                       <Typography variant="h4">{count}</Typography>
-                      <Typography variant="body2" sx={{fontSize:11, textTransform:"capitalize"}}>
+                      <Typography
+                        variant="body2"
+                        sx={{ fontSize: 11, textTransform: "capitalize" }}
+                      >
                         {t.users} ({role})
                       </Typography>
                     </Paper>
@@ -321,7 +344,13 @@ export default function HomePage() {
                               }}
                             >
                               <Typography variant="h4">{v}</Typography>
-                              <Typography variant="body2" sx={{ fontSize: 11, textTransform: "capitalize" }}>
+                              <Typography
+                                variant="body2"
+                                sx={{
+                                  fontSize: 11,
+                                  textTransform: "capitalize",
+                                }}
+                              >
                                 {k.replace(/([A-Z])/g, " $1")}
                               </Typography>
                             </Paper>
