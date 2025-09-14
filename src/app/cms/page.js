@@ -168,7 +168,7 @@ export default function HomePage() {
               <Typography variant="body2" textAlign={align}>
                 {formattedDate} · {formattedTime}
               </Typography>
-              <Typography variant="body1" sx={{ mt: 1 }} textAlign={align}>
+              <Typography variant="body1" sx={{ mt: 2 }} textAlign={align}>
                 {t.overviewIntro}
               </Typography>
             </Box>
@@ -178,6 +178,7 @@ export default function HomePage() {
                 width: { xs: 48, md: 64 },
                 height: { xs: 48, md: 64 },
                 flexShrink: 0,
+                display: {xs:"none", sm:"flex"}
               }}
             />
           </Box>
@@ -196,7 +197,7 @@ export default function HomePage() {
             <Grid container spacing={2} justifyContent="center">
               {scope === "superadmin" && (
                 <Grid item >
-                  <Paper sx={{ p: 2, textAlign: "center", borderRadius: 2, width:120 }}>
+                  <Paper sx={{ p: 2, textAlign: "center", borderRadius: 2, width:130 }}>
                     <ICONS.business sx={{ fontSize: 32, color: "#1976d2" }} />
                     <Typography variant="h4">
                       {moduleStats.global.totals?.businesses ?? 0}
@@ -208,7 +209,7 @@ export default function HomePage() {
               {Object.entries(moduleStats.global.totals?.users || {}).map(
                 ([role, count]) => (
                   <Grid item xs={6} sm={4} md={3} key={role}>
-                    <Paper sx={{ p: 2, textAlign: "center", borderRadius: 2 }}>
+                    <Paper sx={{ p: 2, textAlign: "center", borderRadius: 2, width:130 }}>
                       <ICONS.group sx={{ fontSize: 32, color: "#1976d2" }} />
                       <Typography variant="h4">{count}</Typography>
                       <Typography variant="body2" sx={{fontSize:11, textTransform:"capitalize"}}>
