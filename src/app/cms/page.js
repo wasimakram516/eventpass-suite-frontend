@@ -201,7 +201,7 @@ export default function HomePage() {
                     <Typography variant="h4">
                       {moduleStats.global.totals?.businesses ?? 0}
                     </Typography>
-                    <Typography variant="body2">{t.businesses}</Typography>
+                    <Typography variant="body2" sx={{textTransform:"capitalize"}}>{t.businesses}</Typography>
                   </Paper>
                 </Grid>
               )}
@@ -320,7 +320,7 @@ export default function HomePage() {
                               }}
                             >
                               <Typography variant="h4">{v}</Typography>
-                              <Typography variant="body2" sx={{ fontSize: 11 }}>
+                              <Typography variant="body2" sx={{ fontSize: 11, textTransform: "capitalize" }}>
                                 {k.replace(/([A-Z])/g, " $1")}
                               </Typography>
                             </Paper>
