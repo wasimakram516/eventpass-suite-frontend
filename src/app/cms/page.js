@@ -193,15 +193,15 @@ export default function HomePage() {
               <Typography variant="h6">{t.globalOverview}</Typography>
             </Box>
             <Divider sx={{ mb: 2 }} />
-            <Grid container spacing={2}>
+            <Grid container spacing={2} justifyContent="center">
               {scope === "superadmin" && (
-                <Grid item xs={6} sm={4} md={3}>
-                  <Paper sx={{ p: 2, textAlign: "center", borderRadius: 2 }}>
+                <Grid item >
+                  <Paper sx={{ p: 2, textAlign: "center", borderRadius: 2, width:120 }}>
                     <ICONS.business sx={{ fontSize: 32, color: "#1976d2" }} />
                     <Typography variant="h4">
                       {moduleStats.global.totals?.businesses ?? 0}
                     </Typography>
-                    <Typography variant="body2" sx={{textTransform:"capitalize"}}>{t.businesses}</Typography>
+                    <Typography variant="body2" sx={{fontSize:11, textTransform:"capitalize"}}>{t.businesses}</Typography>
                   </Paper>
                 </Grid>
               )}
@@ -211,7 +211,7 @@ export default function HomePage() {
                     <Paper sx={{ p: 2, textAlign: "center", borderRadius: 2 }}>
                       <ICONS.group sx={{ fontSize: 32, color: "#1976d2" }} />
                       <Typography variant="h4">{count}</Typography>
-                      <Typography variant="body2">
+                      <Typography variant="body2" sx={{fontSize:11, textTransform:"capitalize"}}>
                         {t.users} ({role})
                       </Typography>
                     </Paper>
@@ -269,7 +269,7 @@ export default function HomePage() {
                     borderRadius: 3,
                     boxShadow: "0 6px 12px rgba(0,0,0,0.1)",
                     height: "100%",
-                    width: { xs: 350, sm: 350 },
+                    width: { xs: 300, sm: 350 },
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "space-between",
