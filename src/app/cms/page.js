@@ -29,6 +29,7 @@ import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { getAllBusinesses } from "@/services/businessService";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
+import { formatDateTimeWithLocale } from "@/utils/dateUtils";
 
 const translations = {
   en: {
@@ -198,7 +199,7 @@ export default function HomePage() {
               dir={dir}
               sx={{
                 display: "flex",
-                flexDirection: "column", // always column, so stacked
+                flexDirection: "column",
                 alignItems: { xs: "stretch", sm: "flex-end" },
                 gap: 0.5,
                 width: { xs: "100%", sm: "auto" },
@@ -235,13 +236,7 @@ export default function HomePage() {
                   }}
                 >
                   {t.lastUpdated}{" "}
-                  {new Date(insights.lastUpdated).toLocaleString(undefined, {
-                    weekday: "short",
-                    month: "short",
-                    day: "numeric",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
+                  {formatDateTimeWithLocale(insights.lastUpdated)}
                 </Typography>
               )}
             </Box>
