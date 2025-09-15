@@ -201,10 +201,12 @@ export default function HomePage() {
                 flexDirection: "column", // always column, so stacked
                 alignItems: { xs: "stretch", sm: "flex-end" },
                 gap: 0.5,
+                width: { xs: "100%", sm: "auto" },
               }}
             >
               <Button
                 variant="contained"
+                fullWidth
                 color="secondary"
                 startIcon={
                   computing ? (
