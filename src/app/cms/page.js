@@ -10,13 +10,17 @@ import {
   Divider,
   Chip,
   Stack,
+  Button,
+  CircularProgress,
 } from "@mui/material";
-import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import BusinessAlertModal from "@/components/BusinessAlertModal";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { getDashboardInsights } from "@/services/dashboardService";
+import {
+  getDashboardInsights,
+  refreshDashboardInsights,
+} from "@/services/dashboardService";
 import { getModules } from "@/services/moduleService";
 import LoadingState from "@/components/LoadingState";
 import { wrapTextBox } from "@/utils/wrapTextStyles";
@@ -24,6 +28,7 @@ import { getModuleIcon } from "@/utils/iconMapper";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { getAllBusinesses } from "@/services/businessService";
+import getStartIconSpacing from "@/utils/getStartIconSpacing";
 
 const translations = {
   en: {
@@ -31,6 +36,8 @@ const translations = {
     greetingAfternoon: "Good Afternoon",
     greetingEvening: "Good Evening",
     overviewIntro: "Here’s a quick overview of your modules and engagement.",
+    recompute: "Recompute",
+    lastUpdated: "Last updated:",
     globalOverview: "Global Overview",
     trash: "Trash",
     users: "Users",
@@ -42,6 +49,8 @@ const translations = {
     greetingAfternoon: "مساء الخير",
     greetingEvening: "مساء الخير",
     overviewIntro: "إليك نظرة عامة سريعة على وحداتك ومشاركاتك.",
+    recompute: "إعادة الحساب",
+    lastUpdated: "آخر تحديث:",
     globalOverview: "نظرة عامة عالمية",
     trash: "المحذوفات",
     users: "المستخدمون",
@@ -59,6 +68,7 @@ export default function HomePage() {
   const [modules, setModules] = useState([]);
   const [dateTime, setDateTime] = useState(new Date());
   const [businessModalDismissed, setBusinessModalDismissed] = useState(false);
+  const [computing, setComputing] = useState(false);
   const effectRan = useRef(false);
 
   useEffect(() => {
@@ -91,6 +101,16 @@ export default function HomePage() {
       }
     })();
   }, [user?.role]);
+
+  const handleRecomputeStats = async () => {
+    if (computing) return;
+    setComputing(true);
+    const updated = await refreshDashboardInsights();
+    if (updated && updated.modules) {
+      setInsights(updated);
+    }
+    setComputing(false);
+  };
 
   const checkBusinessExists = async () => {
     const businesses = await getAllBusinesses();
@@ -126,7 +146,7 @@ export default function HomePage() {
     day: "numeric",
     year: "numeric",
   });
-  
+
   const formattedTime = dateTime.toLocaleTimeString(undefined, {
     hour: "2-digit",
     minute: "2-digit",
@@ -150,7 +170,7 @@ export default function HomePage() {
           <Box
             sx={{
               display: "flex",
-              flexDirection: { xs: "row", md: "row" },
+              flexDirection: { xs: "column", md: "row" },
               alignItems: "center",
               justifyContent: "space-between",
               gap: 2,
@@ -173,15 +193,56 @@ export default function HomePage() {
                 {t.overviewIntro}
               </Typography>
             </Box>
-            {/* Avatar inline */}
-            <Avatar
+            {/* Recompute button + last updated */}
+            <Box
+              dir={dir}
               sx={{
-                width: { xs: 48, md: 64 },
-                height: { xs: 48, md: 64 },
-                flexShrink: 0,
-                display: { xs: "none", sm: "flex" },
+                display: "flex",
+                flexDirection: "column", // always column, so stacked
+                alignItems: { xs: "stretch", sm: "flex-end" },
+                gap: 0.5,
               }}
-            />
+            >
+              <Button
+                variant="contained"
+                color="secondary"
+                startIcon={
+                  computing ? (
+                    <CircularProgress size={18} color="inherit" />
+                  ) : (
+                    <ICONS.refresh />
+                  )
+                }
+                disabled={computing}
+                onClick={handleRecomputeStats}
+                sx={{
+                  width: { xs: "100%", sm: "auto" },
+                  ...getStartIconSpacing(dir),
+                }}
+              >
+                {t.recompute}
+              </Button>
+
+              {insights?.lastUpdated && (
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: "rgba(255,255,255,0.8)",
+                    textAlign: { xs: "left", sm: "right" },
+                    mt: 1,
+                  }}
+                >
+                  {t.lastUpdated}{" "}
+                  {new Date(insights.lastUpdated).toLocaleString(undefined, {
+                    weekday: "short",
+                    month: "short",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </Typography>
+              )}
+            </Box>
           </Box>
         </Paper>
 
@@ -261,17 +322,37 @@ export default function HomePage() {
                     {t.trash}
                   </Typography>
                 </Box>
-                <Stack direction="row" flexWrap="wrap" spacing={1}>
-                  {Object.entries(moduleStats.global.trash).map(([k, v]) => (
-                    <Chip
-                      key={k}
-                      label={`${k}: ${v}`}
-                      color="paper"
-                      size="small"
-                      sx={{ mb: 1, p: 2, textTransform: "capitalize" }}
-                    />
-                  ))}
-                </Stack>
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: 1, // same as spacing
+                    justifyContent: "flex-start",
+                  }}
+                >
+                  {Object.entries(moduleStats.global.trash).map(([k, v]) => {
+                    if (typeof v === "object" && v !== null) {
+                      return Object.entries(v).map(([role, count]) => (
+                        <Chip
+                          key={`${k}-${role}`}
+                          label={`Users (${role}): ${count}`}
+                          size="small"
+                          sx={{ textTransform: "capitalize" }}
+                        />
+                      ));
+                    }
+                    return (
+                      <Chip
+                        key={k}
+                        label={`${
+                          k.charAt(0).toUpperCase() + k.slice(1)
+                        }: ${v}`}
+                        size="small"
+                        sx={{ textTransform: "capitalize" }}
+                      />
+                    );
+                  })}
+                </Box>
               </Box>
             )}
           </Paper>
@@ -332,10 +413,10 @@ export default function HomePage() {
                     <Divider sx={{ my: 2 }} />
 
                     {/* Totals */}
-                    <Grid container spacing={2}>
+                    <Grid container spacing={2} justifyContent={"center"}>
                       {totalEntries.length > 0 ? (
                         totalEntries.map(([k, v]) => (
-                          <Grid item xs={6} key={k}>
+                          <Grid item xs={6} key={k} justifyContent={"center"}>
                             <Paper
                               sx={{
                                 p: 2,
@@ -343,13 +424,15 @@ export default function HomePage() {
                                 bgcolor: mod.color,
                                 color: "#fff",
                                 borderRadius: 2,
+                                minWidth: 80,
+                                height: "100%",
                               }}
                             >
                               <Typography variant="h4">{v}</Typography>
                               <Typography
                                 variant="body2"
                                 sx={{
-                                  fontSize: 11,
+                                  fontSize: 10,
                                   textTransform: "capitalize",
                                 }}
                               >
@@ -387,22 +470,25 @@ export default function HomePage() {
                           </Typography>
                         </Box>
 
-                        <Stack
-                          direction="row"
-                          flexWrap="wrap"
-                          spacing={1}
-                          rowGap={1}
+                        <Box
+                          sx={{
+                            display: "flex",
+                            flexWrap: "wrap",
+                            gap: 1,
+                            justifyContent: "flex-start",
+                          }}
                         >
                           {trashEntries.map(([k, v]) => (
                             <Chip
                               key={k}
-                              label={`${k}: ${v}`}
-                              color="paper"
+                              label={`${
+                                k.charAt(0).toUpperCase() + k.slice(1)
+                              }: ${v}`}
                               size="small"
-                              sx={{ my: 2, textTransform: "capitalize" }}
+                              sx={{ textTransform: "capitalize" }}
                             />
                           ))}
-                        </Stack>
+                        </Box>
                       </>
                     )}
                   </Box>
