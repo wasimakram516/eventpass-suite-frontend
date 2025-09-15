@@ -256,6 +256,8 @@ export default function HomePage() {
               <Typography variant="h6">{t.globalOverview}</Typography>
             </Box>
             <Divider sx={{ mb: 2 }} />
+
+            {/* Totals */}
             <Grid container spacing={2} justifyContent="center">
               {scope === "superadmin" && (
                 <Grid item>
@@ -281,8 +283,10 @@ export default function HomePage() {
                   </Paper>
                 </Grid>
               )}
-              {Object.entries(moduleStats.global.totals?.users || {}).map(
-                ([role, count]) => (
+
+              {Object.entries(moduleStats.global.totals?.users || {})
+                .filter(([role]) => scope === "superadmin" || role === "staff")
+                .map(([role, count]) => (
                   <Grid item xs={6} sm={4} md={3} key={role}>
                     <Paper
                       sx={{
@@ -303,53 +307,54 @@ export default function HomePage() {
                       </Typography>
                     </Paper>
                   </Grid>
-                )
-              )}
+                ))}
             </Grid>
-            {/* Global Trash */}
+
+            {/* Trash */}
             {moduleStats.global.trash && (
               <Box sx={{ mt: 2 }}>
                 {/* Trash title row */}
-                <Box
-                  sx={{
-                    display: "flex",
-                    gap: 1,
-                    mb: 1,
-                  }}
-                >
+                <Box sx={{ display: "flex", gap: 1, mb: 1 }}>
                   <ICONS.delete fontSize="small" color="error" />
                   <Typography variant="subtitle2" gutterBottom>
                     {t.trash}
                   </Typography>
                 </Box>
+
                 <Box
                   sx={{
                     display: "flex",
                     flexWrap: "wrap",
-                    gap: 1, // same as spacing
+                    gap: 1,
                     justifyContent: "flex-start",
                   }}
                 >
                   {Object.entries(moduleStats.global.trash).map(([k, v]) => {
                     if (typeof v === "object" && v !== null) {
-                      return Object.entries(v).map(([role, count]) => (
+                      return Object.entries(v)
+                        .filter(
+                          ([role]) => scope === "superadmin" || role === "staff"
+                        )
+                        .map(([role, count]) => (
+                          <Chip
+                            key={`${k}-${role}`}
+                            label={`Users (${role}): ${count}`}
+                            size="small"
+                            sx={{ textTransform: "capitalize" }}
+                          />
+                        ));
+                    }
+                    return (
+                      scope === "superadmin" && (
                         <Chip
-                          key={`${k}-${role}`}
-                          label={`Users (${role}): ${count}`}
+                          key={k}
+                          label={`${
+                            k.charAt(0).toUpperCase() + k.slice(1)
+                          }: ${v}`}
                           size="small"
                           sx={{ textTransform: "capitalize" }}
                         />
-                      ));
-                    }
-                    return (
-                      <Chip
-                        key={k}
-                        label={`${
-                          k.charAt(0).toUpperCase() + k.slice(1)
-                        }: ${v}`}
-                        size="small"
-                        sx={{ textTransform: "capitalize" }}
-                      />
+                      )
                     );
                   })}
                 </Box>
