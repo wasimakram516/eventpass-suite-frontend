@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -14,9 +14,11 @@ import {
   DialogTitle,
   Alert,
 } from "@mui/material";
+import { QRCodeCanvas } from "qrcode.react";
 import { useParams, useRouter } from "next/navigation";
 
 import { createCheckInRegistration } from "@/services/checkin/checkinRegistrationService";
+import { getCheckInEventBySlug } from "@/services/checkin/checkinEventService";
 import ICONS from "@/utils/iconUtil";
 import LanguageSelector from "@/components/LanguageSelector";
 import useI18nLayout from "@/hooks/useI18nLayout";
@@ -33,8 +35,11 @@ export default function Registration() {
       submit: "Submit",
       pleaseEnterEmployeeId: "Please enter your Employee ID.",
       failedToCheckIn: "Failed to check in.",
-      welcome: "Welcome!",
+      registrationSuccess: "Registration Successful!",
       okay: "Okay",
+      yourToken: "Your Token",
+      qrCode: "QR Code:",
+      saveQr: "Save QR Code",
     },
     ar: {
       getYourTable: "احصل على طاولتك",
@@ -42,17 +47,32 @@ export default function Registration() {
       submit: "إرسال",
       pleaseEnterEmployeeId: "يرجى إدخال معرف الموظف الخاص بك.",
       failedToCheckIn: "فشل في تسجيل الحضور.",
-      welcome: "مرحباً!",
+      registrationSuccess: "تم التسجيل بنجاح!",
       okay: "حسناً",
+      yourToken: "رمزك",
+      qrCode: "رمز الاستجابة السريعة:",
+      saveQr: "حفظ رمز QR",
     },
   });
 
+  const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const [employeeId, setEmployeeId] = useState("");
   const [showDialog, setShowDialog] = useState(false);
   const [confirmationData, setConfirmationData] = useState(null);
+  const [qrToken, setQrToken] = useState(null);
+
+  useEffect(() => {
+    const fetchEvent = async () => {
+      const result = await getCheckInEventBySlug(eventSlug);
+      if (!result?.error) {
+        setEvent(result);
+      }
+    };
+    fetchEvent();
+  }, [eventSlug]);
 
   const handleSubmit = async () => {
     if (!employeeId) {
@@ -68,11 +88,15 @@ export default function Registration() {
 
     setLoading(false);
     if (!result?.error) {
-      const { employeeName, tableNumber, tableImage } = result;
+      const { employeeName, tableNumber, tableImage, token, showQrAfterRegistration } = result;
       setConfirmationData({
         message: `${employeeName}, your table number is ${tableNumber}.`,
         tableImage,
       });
+      // Use the showQrAfterRegistration from the API response instead of event data
+      if (showQrAfterRegistration && token) {
+        setQrToken(token);
+      }
       setEmployeeId("");
       setShowDialog(true);
     } else {
@@ -84,6 +108,8 @@ export default function Registration() {
     setShowDialog(false);
     router.replace(`/checkin/event/${eventSlug}`);
   };
+
+
 
   return (
     <Box
@@ -165,7 +191,7 @@ export default function Registration() {
           >
             <ICONS.checkCircle sx={{ fontSize: 70, color: "#28a745", mb: 1 }} />
             <Typography variant="h6" fontWeight="bold">
-              {t.welcome}
+              {t.registrationSuccess}
             </Typography>
           </Box>
         </DialogTitle>
@@ -188,11 +214,74 @@ export default function Registration() {
               />
             </Box>
           )}
+          {qrToken && (
+            <>
+              <Typography variant="subtitle2" sx={{ color: "text.secondary" }}>
+                {t.yourToken}
+              </Typography>
+
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  mt: 1,
+                }}
+              >
+                <Box
+                  sx={{
+                    px: 2,
+                    py: 0.5,
+                    backgroundColor: "primary.main",
+                    color: "#fff",
+                    borderRadius: "20px",
+                    fontWeight: 600,
+                    fontFamily: "monospace",
+                    fontSize: 16,
+                  }}
+                >
+                  {qrToken}
+                </Box>
+              </Box>
+
+              <Box mt={2} display="flex" justifyContent="center">
+                <Paper
+                  id="qr-container"
+                  elevation={3}
+                  sx={{
+                    p: 2,
+                    borderRadius: 2,
+                    backgroundColor: "#fff",
+                    display: "inline-block",
+                  }}
+                >
+                  <QRCodeCanvas value={qrToken} size={180} />
+                </Paper>
+              </Box>
+            </>
+          )}
         </DialogContent>
         <DialogActions sx={{ justifyContent: "center", pb: 2 }}>
-          <Button onClick={handleDialogClose} variant="contained">
-            {t.okay}
-          </Button>
+          {qrToken ? (
+            <Button
+              variant="outlined"
+              sx={{ mt: 2 }}
+              onClick={() => {
+                const canvas = document.querySelector("#qr-container canvas");
+                const url = canvas.toDataURL("image/png");
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `CheckinQR-${qrToken}.png`;
+                a.click();
+              }}
+            >
+              {t.saveQr}
+            </Button>
+          ) : (
+            <Button onClick={handleDialogClose} variant="contained">
+              {t.okay}
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
       <LanguageSelector top={20} right={20} />

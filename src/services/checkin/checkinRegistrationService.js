@@ -26,6 +26,14 @@ export const deleteCheckInRegistration = withApiHandler(
   { showSuccess: true }
 );
 
+// Verify registration by QR token (Staff use)
+export const verifyRegistrationByToken = withApiHandler(
+  async (token) => {
+    const { data } = await api.get(`/checkin/registrations/verify?token=${token}`);
+    return data;
+  }
+);
+
 // Get all checkin registrations for export (no pagination)
 export const getAllCheckInRegistrationsByEvent = withApiHandler(
   async (slug) => {
