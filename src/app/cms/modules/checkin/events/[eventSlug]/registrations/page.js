@@ -29,6 +29,7 @@ import {
 import { getCheckInEventBySlug } from "@/services/checkin/checkinEventService";
 
 import ConfirmationDialog from "@/components/ConfirmationDialog";
+import WalkInModal from "@/components/WalkInModal";
 import BreadcrumbsNav from "@/components/BreadcrumbsNav";
 import { formatDate, formatDateTimeWithLocale } from "@/utils/dateUtils";
 import { useParams } from "next/navigation";
@@ -50,6 +51,8 @@ const ViewRegistrations = () => {
   const [totalRegistrations, setTotalRegistrations] = useState(0);
   const [isPublicEvent, setIsPublicEvent] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
+  const [walkInModalOpen, setWalkInModalOpen] = useState(false);
+  const [selectedRegistration, setSelectedRegistration] = useState(null);
 
   const { dir, align, isArabic, t } = useI18nLayout({
     en: {
@@ -75,6 +78,7 @@ const ViewRegistrations = () => {
       to: "to",
       of: "of",
       deleteRecord: "Delete Registration",
+      viewWalkIns: "View Walk-in Records",
     },
     ar: {
       title: "تفاصيل الحدث",
@@ -99,6 +103,7 @@ const ViewRegistrations = () => {
       to: "إلى",
       of: "من",
       deleteRecord: "حذف التسجيل",
+      viewWalkIns: "عرض سجلات الحضور",
     },
   });
 
@@ -422,6 +427,17 @@ const ViewRegistrations = () => {
                   </CardContent>
 
                   <CardActions sx={{ justifyContent: "center" }}>
+                    <Tooltip title={t.viewWalkIns}>
+                      <IconButton
+                        color="info"
+                        onClick={() => {
+                          setSelectedRegistration(registration);
+                          setWalkInModalOpen(true);
+                        }}
+                      >
+                        <ICONS.view fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
                     <Tooltip
                       title={t.deleteRecord}
                       placement={isArabic ? "left" : "top"}
@@ -461,6 +477,12 @@ const ViewRegistrations = () => {
         message={t.deleteMessage}
         confirmButtonText={t.delete}
         confirmButtonIcon={<ICONS.delete />}
+      />
+
+      <WalkInModal
+        open={walkInModalOpen}
+        onClose={() => setWalkInModalOpen(false)}
+        registration={selectedRegistration}
       />
     </Container>
   );
