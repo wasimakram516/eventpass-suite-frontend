@@ -1,27 +1,28 @@
 "use client";
 
-import { EventAvailable as EventIcon } from "@mui/icons-material";
 import GeneralInfo from "@/components/GeneralInfo";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { getModuleIcon } from "@/utils/iconMapper";
 
 const translations = {
   en: {
     title: "Welcome to EventReg",
-    subtitle: "Streamlined Event Registration Management",
+    subtitle:
+      "Create and manage public event registration forms with ease.",
     description:
-      "A comprehensive platform for managing event registrations. Create and manage public events and handle registrations. Perfect for conferences, workshops, and corporate events.",
+      "This platform allows you to create public event registration forms, share them via links or QR codes, and automatically send WhatsApp confirmation messages to participants after successful registration.",
     adminLogin: "Admin Login",
   },
   ar: {
-    title: "مرحباً بكم في إيفنت ريج",
-    subtitle: "إدارة تسجيل الفعاليات بشكل مبسط",
+    title: "مرحبًا بكم في EventReg",
+    subtitle: "أنشئ وأدر نماذج تسجيل الفعاليات العامة بسهولة.",
     description:
-      "منصة شاملة لإدارة تسجيلات الفعاليات. قم بإنشاء وإدارة الفعاليات العامة والتحكم في التسجيلات. مثالية للمؤتمرات وورش العمل والفعاليات المؤسسية.",
+      "تتيح هذه المنصة إنشاء نماذج تسجيل فعاليات عامة ومشاركتها عبر الروابط أو رموز QR وإرسال رسائل تأكيد تلقائية عبر WhatsApp للمشاركين بعد التسجيل الناجح.",
     adminLogin: "تسجيل دخول المسؤول",
   },
 };
 
-export default function HomePage() {
+export default function EventRegPage() {
   const { t } = useI18nLayout(translations);
 
   return (
@@ -31,7 +32,7 @@ export default function HomePage() {
       description={t.description}
       ctaText={t.adminLogin}
       ctaHref="/auth/login"
-      moduleIcon={EventIcon}
+      moduleIcon={() => getModuleIcon('event')}
     />
   );
 }

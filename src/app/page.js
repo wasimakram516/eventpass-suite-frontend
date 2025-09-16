@@ -70,17 +70,17 @@ export default function HomePage() {
   const { t, dir, align } = useI18nLayout(translations);
 
   const features = [
-    { key: "quiz", label: t.features.quiz, hue: "#0d47a1" },
-    { key: "games", label: t.features.games, hue: "#5e35b1" },
+    { key: "quiz", label: t.features.quiz, hue: "#0d47a1", route: "/quiznest" },
+    { key: "games", label: t.features.games, hue: "#5e35b1", route: "/eventduel" },
 
-    { key: "assignment", label: t.features.assignment, hue: "#006064" },
-    { key: "checkin", label: t.features.checkin, hue: "#0277bd" },
+    { key: "assignment", label: t.features.assignment, hue: "#006064", route: "/eventreg" },
+    { key: "checkin", label: t.features.checkin, hue: "#0277bd", route: "/checkin" },
 
-    { key: "email", label: t.features.email, hue: "#1565c0" },
-    { key: "poll", label: t.features.poll, hue: "#00695c" },
-    { key: "forum", label: t.features.forum, hue: "#ef6c00" },
-    { key: "image", label: t.features.image, hue: "#4e342e" },
-    { key: "trophy", label: t.features.trophy, hue: "#c62828" },
+    { key: "email", label: t.features.email, hue: "#1565c0", route: "/surveyguru" },
+    { key: "poll", label: t.features.poll, hue: "#00695c", route: "/votecast" },
+    { key: "forum", label: t.features.forum, hue: "#ef6c00", route: "/stageq" },
+    { key: "image", label: t.features.image, hue: "#4e342e", route: "/mosaicwall" },
+    { key: "trophy", label: t.features.trophy, hue: "#c62828", route: "/eventwheel" },
   ];
 
   return (
@@ -166,7 +166,7 @@ export default function HomePage() {
           >
             {features.map((f) => (
               <Grid key={f.key} item xs={3} sm={4} md={3}>
-                <FeatureBadge iconKey={f.key} label={f.label} hue={f.hue} />
+                <FeatureBadge iconKey={f.key} label={f.label} hue={f.hue} route={f.route} />
               </Grid>
             ))}
           </Grid>
@@ -182,12 +182,18 @@ export default function HomePage() {
   );
 }
 
-function FeatureBadge({ iconKey, label, hue }) {
+function FeatureBadge({ iconKey, label, hue, route }) {
   const iconEl = getModuleIcon(iconKey);
+  const router = useRouter();
+
+  const handleClick = () => {
+    router.push(route);
+  };
 
   return (
     <Paper
       elevation={0}
+      onClick={handleClick}
       sx={(th) => ({
         p: 2.25,
         borderRadius: 3,
@@ -195,6 +201,7 @@ function FeatureBadge({ iconKey, label, hue }) {
         display: "flex",
         alignItems: "center",
         gap: 1.25,
+        cursor: "pointer",
         background:
           th.palette.mode === "light"
             ? `linear-gradient(180deg, ${alpha("#fff", 0.92)} 0%, ${alpha(

@@ -7,7 +7,7 @@ import {
   Stack,
   Typography,
   Divider,
-  Link,
+  Link as MuiLink,
   useTheme,
 } from "@mui/material";
 import {
@@ -55,16 +55,36 @@ export default function GeneralInfo({
 
       <Container maxWidth="md" sx={{ textAlign: "center" }} dir={dir}>
         {Icon && (
-          <Box
-            sx={{
-              bgcolor: `${theme.palette.primary.main}20`,
-              p: 3,
-              borderRadius: "50%",
-              display: "inline-flex",
-              mb: 3,
-            }}
-          >
-            <Icon sx={{ fontSize: 60, color: "primary.main" }} />
+           <Box
+             sx={{
+               bgcolor: `${theme.palette.primary.main}20`,
+               p: 4,
+               borderRadius: "50%",
+               display: "inline-flex",
+               alignItems: "center",
+               justifyContent: "center",
+               mb: 3,
+             }}
+           >
+             {typeof Icon === 'function' ? (
+               <Box sx={{ 
+                 fontSize: 60, 
+                 color: "primary.main",
+                 display: "flex",
+                 alignItems: "center",
+                 justifyContent: "center",
+                 '& svg': {
+                   fontSize: 'inherit',
+                   width: '1em',
+                   height: '1em',
+                   display: 'block'
+                 }
+               }}>
+                 {Icon()}
+               </Box>
+             ) : (
+               <Icon sx={{ fontSize: 60, color: "primary.main" }} />
+             )}
           </Box>
         )}
 
