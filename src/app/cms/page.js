@@ -30,6 +30,7 @@ import useI18nLayout from "@/hooks/useI18nLayout";
 import { getAllBusinesses } from "@/services/businessService";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import { formatDateTimeWithLocale } from "@/utils/dateUtils";
+import useDashboardSocket from "@/hooks/useDashboardSocket";
 
 const translations = {
   en: {
@@ -71,6 +72,12 @@ export default function HomePage() {
   const [businessModalDismissed, setBusinessModalDismissed] = useState(false);
   const [computing, setComputing] = useState(false);
   const effectRan = useRef(false);
+
+  const { connected, socket } = useDashboardSocket({
+    onMetricsUpdate: (metrics) => {
+      setInsights(metrics);
+    },
+  });
 
   useEffect(() => {
     if (user?.role === "business" && !businessModalDismissed) {
@@ -205,6 +212,23 @@ export default function HomePage() {
                 width: { xs: "100%", sm: "auto" },
               }}
             >
+              {connected ? (
+                <Chip
+                  label="Live"
+                  icon={<ICONS.flash color="secondary" fontSize="small" />}
+                  color="success"
+                  size="small"
+                  sx={{ ml: 1 }}
+                />
+              ) : (
+                <Chip
+                  label="Offline"
+                  color="error"
+                  size="small"
+                  sx={{ ml: 1 }}
+                />
+              )}
+
               <Button
                 variant="contained"
                 fullWidth
@@ -220,6 +244,7 @@ export default function HomePage() {
                 onClick={handleRecomputeStats}
                 sx={{
                   width: { xs: "100%", sm: "auto" },
+                  mt: 1,
                   ...getStartIconSpacing(dir),
                 }}
               >
