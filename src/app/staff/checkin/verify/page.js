@@ -229,7 +229,7 @@ export default function VerifyPage() {
               <Typography variant="body1" fontWeight={500}>
                 {t.name}:
               </Typography>
-              <Typography variant="body1">{result.fullName}</Typography>
+              <Typography variant="body1">{result.employeeName}</Typography>
             </Stack>
 
             {!!result.company && (
