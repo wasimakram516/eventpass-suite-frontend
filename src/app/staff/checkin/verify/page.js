@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef } from "react";
 import {
   Box,
   Typography,
@@ -8,6 +8,7 @@ import {
   CircularProgress,
   Stack,
   Tooltip,
+  TextField,
 } from "@mui/material";
 
 import QrScanner from "@/components/QrScanner";
@@ -23,6 +24,12 @@ const translations = {
     startVerification: "Start Verification",
     scanMessage:
       "Tap the button below to scan a QR code and verify registration.",
+    manualVerification: "Manual Verification",
+    manualInstructions:
+      "Enter the token manually, or place the cursor in the field and scan with a connected QR code scanner.",
+    enterToken: "Enter Token",
+    verify: "Verify",
+    checkPrinter: "Check Printer Status",
     openScanner: "Open Scanner",
     cancel: "Cancel",
     verifying: "Verifying registration...",
@@ -45,6 +52,12 @@ const translations = {
   ar: {
     startVerification: "ابدأ التحقق",
     scanMessage: "اضغط على الزر أدناه لمسح رمز QR والتحقق من التسجيل.",
+    manualVerification: "التحقق اليدوي",
+    manualInstructions:
+      "أدخل الرمز يدويًا، أو ضع المؤشر داخل الحقل وامسح باستخدام جهاز ماسح QR متصل.",
+    enterToken: "أدخل الرمز",
+    verify: "تحقق",
+    checkPrinter: "تحقق من حالة الطابعة",
     openScanner: "افتح الماسح الضوئي",
     cancel: "إلغاء",
     verifying: "جارٍ التحقق من التسجيل...",
@@ -69,8 +82,10 @@ const translations = {
 export default function VerifyPage() {
   const { t, dir } = useI18nLayout(translations);
   const { showMessage } = useMessage();
+
   const [showScanner, setShowScanner] = useState(false);
-  const [token, setToken] = useState(null);
+  const [manualMode, setManualMode] = useState(false);
+  const [token, setToken] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
@@ -79,32 +94,31 @@ export default function VerifyPage() {
   const successAudioRef = useRef(null);
   const errorAudioRef = useRef(null);
 
-  useEffect(() => {
-    const iv = setInterval(() => {
-      if (typeof window !== "undefined" && window.BrowserPrint) {
-        clearInterval(iv);
-        window.BrowserPrint.getDefaultDevice(
-          "printer",
-          (d) =>
-            showMessage(
-              d ? `Printer ready: ${d.name}` : "No default Zebra printer",
-              d ? "success" : "warning"
-            ),
-          () => showMessage("Browser Print not responding", "error")
-        );
-      }
-    }, 250);
-    return () => clearInterval(iv);
-  }, []);
+  const checkPrinter = () => {
+    if (typeof window !== "undefined" && window.BrowserPrint) {
+      window.BrowserPrint.getDefaultDevice(
+        "printer",
+        (d) => {
+          if (d) {
+            showMessage(`Printer ready: ${d.name}`, "success");
+          } else {
+            showMessage("No default Zebra printer", "warning");
+          }
+        },
+        () => showMessage("Browser Print not responding", "error")
+      );
+    } else {
+      showMessage("Browser Print not available in this browser", "error");
+    }
+  };
 
-  const handleScanSuccess = useCallback(async (scannedToken) => {
-    setShowScanner(false);
-    setToken(scannedToken);
+  const doVerify = useCallback(async (inputToken) => {
+    const trimmed = inputToken.trim();
     setLoading(true);
     setError(null);
     setResult(null);
 
-    const res = await verifyRegistrationByToken(scannedToken);
+    const res = await verifyRegistrationByToken(trimmed);
     if (res?.error) {
       errorAudioRef.current?.play();
       setError(res.message || "Invalid token.");
@@ -116,11 +130,21 @@ export default function VerifyPage() {
     setLoading(false);
   }, []);
 
+  const handleScanSuccess = useCallback(
+    async (scannedToken) => {
+      setShowScanner(false);
+      setToken(scannedToken);
+      await doVerify(scannedToken);
+    },
+    [doVerify]
+  );
+
   const reset = () => {
-    setToken(null);
+    setToken("");
     setResult(null);
     setError(null);
     setShowScanner(false);
+    setManualMode(false);
     setPrinting(false);
   };
 
@@ -149,9 +173,9 @@ export default function VerifyPage() {
       justifyContent="center"
       alignItems="center"
     >
-      {/* Initial Button */}
-      {!token && !showScanner && !loading && !result && !error && (
-        <Box textAlign="center" my={4}>
+      {/* Initial Options */}
+      {!showScanner && !loading && !result && !error && (
+        <Box textAlign="center" my={4} width="100%">
           <Stack spacing={2} alignItems="center">
             <Typography variant="h6" fontWeight={600}>
               {t.startVerification}
@@ -159,22 +183,86 @@ export default function VerifyPage() {
             <Typography variant="body2" color="text.secondary">
               {t.scanMessage}
             </Typography>
-            <Tooltip title={t.tooltip.openScanner}>
-              <Button
-                variant="contained"
-                color="primary"
-                size="large"
-                startIcon={<ICONS.qrCodeScanner />}
-                onClick={() => {
-                  setShowScanner(true);
-                  setError(null);
-                  setResult(null);
-                }}
-                sx={getStartIconSpacing(dir)}
-              >
-                {t.openScanner}
-              </Button>
-            </Tooltip>
+
+            {!manualMode ? (
+              <>
+                {/* Open Scanner CTA */}
+                <Tooltip title={t.tooltip.openScanner}>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    size="large"
+                    startIcon={<ICONS.qrCodeScanner />}
+                    onClick={() => setShowScanner(true)}
+                    sx={getStartIconSpacing(dir)}
+                    fullWidth
+                  >
+                    {t.openScanner}
+                  </Button>
+                </Tooltip>
+
+                {/* Manual Verification CTA */}
+                <Button
+                  variant="outlined"
+                  color="primary"
+                  startIcon={<ICONS.key />}
+                  onClick={() => {
+                    setManualMode(true);
+                    setToken("");
+                  }}
+                  fullWidth
+                >
+                  {t.manualVerification}
+                </Button>
+
+                {/* Check Printer CTA */}
+                <Button
+                  variant="outlined"
+                  color="secondary"
+                  startIcon={<ICONS.print />}
+                  onClick={checkPrinter}
+                  fullWidth
+                >
+                  {t.checkPrinter}
+                </Button>
+              </>
+            ) : (
+              <>
+                {/* Manual Mode Instructions */}
+                <Typography
+                  variant="body2"
+                  sx={{ mb: 1 }}
+                  color="text.secondary"
+                >
+                  {t.manualInstructions}
+                </Typography>
+
+                <Stack direction="row" spacing={1} width="100%" maxWidth={350}>
+                  <TextField
+                    fullWidth
+                    label={t.enterToken}
+                    value={token}
+                    onChange={(e) => setToken(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && token.trim().length === 10) {
+                        doVerify(token);
+                      }
+                    }}
+                    inputProps={{ maxLength: 10 }}
+                  />
+                  <Button
+                    variant="contained"
+                    color="secondary"
+                    startIcon={<ICONS.check />}
+                    disabled={token.trim().length !== 10}
+                    onClick={() => doVerify(token)}
+                    sx={{ ...getStartIconSpacing(dir), minWidth: 120, mx: 2 }}
+                  >
+                    {t.verify}
+                  </Button>
+                </Stack>
+              </>
+            )}
           </Stack>
         </Box>
       )}
@@ -267,6 +355,7 @@ export default function VerifyPage() {
             </span>
           </Tooltip>
 
+          {/* Scan Another */}
           <Tooltip title={t.tooltip.scan}>
             <Button
               variant="outlined"
