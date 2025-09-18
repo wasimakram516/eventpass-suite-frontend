@@ -64,7 +64,8 @@ const ViewRegistrations = () => {
       records: "records",
       noRecords: "No registrations found for this event.",
       delete: "Delete",
-      deleteMessage: "Are you sure you want to move this item to the Recycle Bin?",
+      deleteMessage:
+        "Are you sure you want to move this item to the Recycle Bin?",
       email: "Email:",
       phone: "Phone:",
       company: "Company:",
@@ -89,7 +90,8 @@ const ViewRegistrations = () => {
       records: "سجلات",
       noRecords: "لا توجد تسجيلات لهذا الحدث.",
       delete: "حذف",
-      deleteMessage: "هل أنت متأكد من أنك تريد نقل هذا العنصر إلى سلة المحذوفات؟",
+      deleteMessage:
+        "هل أنت متأكد من أنك تريد نقل هذا العنصر إلى سلة المحذوفات؟",
       email: "البريد الإلكتروني:",
       phone: "الهاتف:",
       company: "الشركة:",
@@ -167,7 +169,6 @@ const ViewRegistrations = () => {
     if (res?.error) return;
 
     const registrationsToExport = res;
-
     const lines = [];
 
     // --- Event metadata ---
@@ -177,10 +178,10 @@ const ViewRegistrations = () => {
       [
         `Event Dates:`,
         formatDate(eventDetails.startDate) +
-        (eventDetails.endDate &&
+          (eventDetails.endDate &&
           eventDetails.endDate !== eventDetails.startDate
-          ? ` to ${formatDate(eventDetails.endDate)}`
-          : ``),
+            ? ` to ${formatDate(eventDetails.endDate)}`
+            : ``),
       ].join(`,`)
     );
     lines.push([`Venue:`, eventDetails.venue || `N/A`].join(`,`));
@@ -189,7 +190,7 @@ const ViewRegistrations = () => {
     lines.push([`Event Type:`, eventDetails.eventType || `N/A`].join(`,`));
     lines.push([]); // blank line
 
-    // --- Headers ---
+    // --- Headers for registrations ---
     const headers = [
       `Employee ID`,
       `Employee Name`,
@@ -199,7 +200,7 @@ const ViewRegistrations = () => {
     ];
     lines.push(headers.join(`,`));
 
-    // --- Data rows ---
+    // --- Registration rows ---
     registrationsToExport.forEach((reg) => {
       const row = [
         reg.employeeId || `N/A`,
@@ -213,7 +214,42 @@ const ViewRegistrations = () => {
       );
     });
 
-    // Add UTF-8 BOM here
+    // --- Walk-in records ---
+    const allWalkIns = registrationsToExport.flatMap((reg) =>
+      (reg.walkIns || []).map((w) => ({
+        employeeId: reg.employeeId,
+        employeeName: reg.employeeName,
+        tableNumber: reg.tableNumber,
+        scannedAt: w.scannedAt,
+        scannedBy: w.scannedBy?.name || w.scannedBy?.email || `Unknown`,
+      }))
+    );
+
+    if (allWalkIns.length > 0) {
+      lines.push([]); // blank line before walk-ins
+      lines.push(
+        [
+          `Employee ID`,
+          `Employee Name`,
+          `Table Number`,
+          `Scanned At`,
+          `Scanned By`,
+        ].join(`,`)
+      );
+      allWalkIns.forEach((w) => {
+        lines.push(
+          [
+            `"${w.employeeId}"`,
+            `"${w.employeeName}"`,
+            `"${w.tableNumber}"`,
+            `"${formatDateTimeWithLocale(w.scannedAt)}"`,
+            `"${w.scannedBy.replace(/"/g, `""`)}"`,
+          ].join(`,`)
+        );
+      });
+    }
+
+    // Add UTF-8 BOM
     const csvContent = `\uFEFF` + lines.join(`\n`);
     const blob = new Blob([csvContent], { type: `text/csv;charset=utf-8;` });
     const link = document.createElement(`a`);
