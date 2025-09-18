@@ -88,7 +88,13 @@ export default function Registration() {
 
     setLoading(false);
     if (!result?.error) {
-      const { employeeName, tableNumber, tableImage, token, showQrAfterRegistration } = result;
+      const {
+        employeeName,
+        tableNumber,
+        tableImage,
+        token,
+        showQrAfterRegistration,
+      } = result;
       setConfirmationData({
         message: `${employeeName}, your table number is ${tableNumber}.`,
         tableImage,
@@ -109,8 +115,6 @@ export default function Registration() {
     router.replace(`/checkin/event/${eventSlug}`);
   };
 
-
-
   return (
     <Box
       sx={{
@@ -122,7 +126,7 @@ export default function Registration() {
         py: 4,
       }}
     >
-      <Background/>
+      <Background />
       <Paper
         elevation={3}
         sx={{
@@ -206,10 +210,12 @@ export default function Registration() {
                 src={confirmationData.tableImage}
                 alt="Table"
                 style={{
-                  maxWidth: "100%",
                   height: "200px",
+                  width: "auto",
+                  maxWidth: "100%",
                   borderRadius: 8,
                   border: "1px solid #ddd",
+                  objectFit: "contain",
                 }}
               />
             </Box>
