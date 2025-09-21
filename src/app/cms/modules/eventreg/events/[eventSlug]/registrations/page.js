@@ -42,6 +42,7 @@ import useI18nLayout from "@/hooks/useI18nLayout";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import { wrapTextBox } from "@/utils/wrapTextStyles";
+import useEventRegSocket from "@/hooks/modules/eventReg/useEventRegSocket";
 
 export default function ViewRegistrations() {
   const { eventSlug } = useParams();
@@ -60,6 +61,18 @@ export default function ViewRegistrations() {
   const [selectedRegistration, setSelectedRegistration] = useState(null);
   const [exportLoading, setExportLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(null);
+
+  const { progress } = useEventRegSocket({
+    eventId: eventDetails?._id,
+    onProgress: (data) => {
+      setUploadProgress(data);
+      if (data.uploaded === data.total) {
+        setTimeout(() => setUploadProgress(null), 2000);
+      }
+    },
+  });
+
   const { dir, t } = useI18nLayout({
     en: {
       title: "Event Details",
@@ -348,7 +361,11 @@ export default function ViewRegistrations() {
             disabled={uploading}
             fullWidth
           >
-            {uploading ? t.uploading : t.uploadFile}
+            {uploading && uploadProgress
+              ? `${t.uploading} ${uploadProgress.uploaded}/${uploadProgress.total}`
+              : uploading
+              ? t.uploading
+              : t.uploadFile}
             <input
               type="file"
               hidden
@@ -438,6 +455,7 @@ export default function ViewRegistrations() {
                     flexDirection: "column",
                     justifyContent: "space-between",
                     transition: "transform 0.2s, box-shadow 0.2s",
+                    ...wrapTextBox,
                     "&:hover": {
                       transform: "translateY(-1px)",
                       boxShadow: 6,
