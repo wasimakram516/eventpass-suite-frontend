@@ -167,9 +167,9 @@ export default function ViewRegistrations() {
   };
 
   const handleDownloadSample = async () => {
-    if (!eventDetails?._id) return;
+    if (!eventSlug) return;
     try {
-      const blob = await downloadSampleExcel(eventDetails._id);
+      const blob = await downloadSampleExcel(eventSlug);
 
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -187,13 +187,13 @@ export default function ViewRegistrations() {
   };
 
   const handleUpload = async (e) => {
-    if (!eventDetails?._id) return;
+    if (!eventSlug) return;
     const file = e.target.files?.[0];
     if (!file) return;
 
     setUploading(true);
     try {
-      await uploadRegistrations(eventDetails._id, file);
+      await uploadRegistrations(eventSlug, file);
       // Refresh after upload
       fetchData();
     } catch (err) {

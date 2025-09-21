@@ -16,9 +16,9 @@ export const verifyRegistrationByToken = withApiHandler(async (token) => {
 });
 
 // Download sample Excel template
-export const downloadSampleExcel = async (eventId) => {
+export const downloadSampleExcel = async (slug) => {
   const response = await api.get(
-    `/eventreg/registrations/event/${eventId}/sample-excel`,
+    `/eventreg/registrations/event/${slug}/sample-excel`,
     { responseType: "blob" } 
   );
   return response.data; 
@@ -26,12 +26,12 @@ export const downloadSampleExcel = async (eventId) => {
 
 // Upload filled Excel
 export const uploadRegistrations = withApiHandler(
-  async (eventId, file) => {
+  async (slug, file) => {
     const formData = new FormData();
     formData.append("file", file);
 
     const { data } = await api.post(
-      `/eventreg/registrations/event/${eventId}/upload`,
+      `/eventreg/registrations/event/${slug}/upload`,
       formData,
       {
         headers: { "Content-Type": "multipart/form-data" },
