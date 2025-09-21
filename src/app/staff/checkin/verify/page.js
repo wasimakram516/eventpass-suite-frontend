@@ -9,6 +9,10 @@ import {
   Stack,
   Tooltip,
   TextField,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemIcon,
 } from "@mui/material";
 
 import QrScanner from "@/components/QrScanner";
@@ -311,33 +315,67 @@ export default function VerifyPage() {
             {t.verified}
           </Typography>
 
-          <Stack spacing={2} width="100%" maxWidth={400}>
-            <Stack direction="row" spacing={2} alignItems="center">
-              <ICONS.person sx={{ color: "text.secondary" }} />
-              <Typography variant="body1" fontWeight={500}>
-                {t.name}:
-              </Typography>
-              <Typography variant="body1">{result.employeeName}</Typography>
-            </Stack>
+          {result.employeeId && (
+            <ListItem>
+              <ListItemIcon>
+                <ICONS.vpnKey sx={{ color: "text.secondary" }} />
+              </ListItemIcon>
+              <ListItemText
+                primary={t.employeeId || "Employee ID"}
+                secondary={result.employeeId}
+                primaryTypographyProps={{ fontWeight: 500 }}
+              />
+            </ListItem>
+          )}
+          <List sx={{ width: "100%", maxWidth: 400 }}>
+            <ListItem>
+              <ListItemIcon>
+                <ICONS.person sx={{ color: "text.secondary" }} />
+              </ListItemIcon>
+              <ListItemText
+                primary={t.name}
+                secondary={result.employeeName || "—"}
+                primaryTypographyProps={{ fontWeight: 500 }}
+              />
+            </ListItem>
 
-            {!!result.company && (
-              <Stack direction="row" spacing={2} alignItems="center">
-                <ICONS.business sx={{ color: "text.secondary" }} />
-                <Typography variant="body1" fontWeight={500}>
-                  {t.company}:
-                </Typography>
-                <Typography variant="body1">{result.company}</Typography>
-              </Stack>
+            {result.tableNumber && (
+              <ListItem>
+                <ListItemIcon>
+                  <ICONS.diningTable sx={{ color: "text.secondary" }} />
+                </ListItemIcon>
+                <ListItemText
+                  primary={t.tableNumber || "Table"}
+                  secondary={result.tableNumber}
+                  primaryTypographyProps={{ fontWeight: 500 }}
+                />
+              </ListItem>
             )}
 
-            <Stack direction="row" spacing={2} alignItems="center">
-              <ICONS.event sx={{ color: "text.secondary" }} />
-              <Typography variant="body1" fontWeight={500}>
-                {t.event}:
-              </Typography>
-              <Typography variant="body1">{result.eventName}</Typography>
-            </Stack>
-          </Stack>
+            {result.company && (
+              <ListItem>
+                <ListItemIcon>
+                  <ICONS.business sx={{ color: "text.secondary" }} />
+                </ListItemIcon>
+                <ListItemText
+                  primary={t.company}
+                  secondary={result.company}
+                  primaryTypographyProps={{ fontWeight: 500 }}
+                />
+              </ListItem>
+            )}
+
+            <ListItem>
+              <ListItemIcon>
+                <ICONS.event sx={{ color: "text.secondary" }} />
+              </ListItemIcon>
+              <ListItemText
+                primary={t.event}
+                secondary={result.eventName}
+                primaryTypographyProps={{ fontWeight: 500 }}
+              />
+            </ListItem>
+          </List>
 
           {/* Print Badge */}
           <Tooltip title={t.tooltip.print}>

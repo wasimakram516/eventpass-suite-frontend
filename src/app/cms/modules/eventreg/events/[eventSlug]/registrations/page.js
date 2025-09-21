@@ -6,6 +6,7 @@ import {
   Typography,
   Grid,
   Card,
+  CardHeader,
   CardContent,
   CircularProgress,
   IconButton,
@@ -26,6 +27,8 @@ import {
   getRegistrationsByEvent,
   deleteRegistration,
   getAllPublicRegistrationsByEvent,
+  downloadSampleExcel,
+  uploadRegistrations,
 } from "@/services/eventreg/registrationService";
 import { getPublicEventBySlug } from "@/services/eventreg/eventService";
 
@@ -56,7 +59,7 @@ export default function ViewRegistrations() {
   const [walkInModalOpen, setWalkInModalOpen] = useState(false);
   const [selectedRegistration, setSelectedRegistration] = useState(null);
   const [exportLoading, setExportLoading] = useState(false);
-
+  const [uploading, setUploading] = useState(false);
   const { dir, t } = useI18nLayout({
     en: {
       title: "Event Details",
@@ -64,14 +67,19 @@ export default function ViewRegistrations() {
         "View event details and manage registrations for this event. Export registration data or delete entries as needed.",
       export: "Export to CSV",
       exporting: "Exporting...",
+      downloadSample: "Download Sample",
+      uploadFile: "Upload File",
+      uploading: "Uploading...",
       records: "records",
       noRecords: "No registrations found for this event.",
       delete: "Delete",
-      deleteMessage: "Are you sure you want to move this item to the Recycle Bin?",
+      deleteMessage:
+        "Are you sure you want to move this item to the Recycle Bin?",
       fullName: "Full Name",
       emailLabel: "Email",
       phoneLabel: "Phone",
       companyLabel: "Company",
+      token: "Token",
       registeredAt: "Registered At",
       viewWalkIns: "View Walk-in Records",
       deleteRecord: "Delete Registration",
@@ -86,14 +94,19 @@ export default function ViewRegistrations() {
         "اعرض تفاصيل الحدث وقم بإدارة التسجيلات. يمكنك تصدير البيانات أو حذف السجلات.",
       export: "تصدير إلى CSV",
       exporting: "جاري التصدير...",
+      downloadSample: "تنزيل نموذج",
+      uploadFile: "رفع ملف",
+      uploading: "جاري الرفع...",
       records: "سجلات",
       noRecords: "لا توجد تسجيلات لهذا الحدث.",
       delete: "حذف",
-      deleteMessage: "هل أنت متأكد من أنك تريد نقل هذا العنصر إلى سلة المحذوفات؟",
+      deleteMessage:
+        "هل أنت متأكد من أنك تريد نقل هذا العنصر إلى سلة المحذوفات؟",
       fullName: "الاسم الكامل",
       emailLabel: "البريد الإلكتروني",
       phoneLabel: "الهاتف",
       companyLabel: "الشركة",
+      token: "الرمز",
       registeredAt: "تاريخ التسجيل",
       viewWalkIns: "عرض سجلات الحضور",
       deleteRecord: "حذف التسجيل",
@@ -105,39 +118,76 @@ export default function ViewRegistrations() {
   });
 
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
+    if (eventSlug) fetchData();
+  }, [eventSlug, page, limit]);
 
-      const [evRes, regRes] = await Promise.all([
-        getPublicEventBySlug(eventSlug),
-        getRegistrationsByEvent(eventSlug, page, limit),
-      ]);
+  const fetchData = async () => {
+    setLoading(true);
 
-      if (!evRes?.error) {
-        setEventDetails(evRes);
-        const fields = evRes.formFields?.length
-          ? evRes.formFields.map((f) => ({
+    const [evRes, regRes] = await Promise.all([
+      getPublicEventBySlug(eventSlug),
+      getRegistrationsByEvent(eventSlug, page, limit),
+    ]);
+
+    if (!evRes?.error) {
+      setEventDetails(evRes);
+      const fields = evRes.formFields?.length
+        ? evRes.formFields.map((f) => ({
             name: f.inputName,
             label: f.inputName,
           }))
-          : [
+        : [
             { name: "fullName", label: t.fullName },
             { name: "email", label: t.emailLabel },
             { name: "phone", label: t.phoneLabel },
             { name: "company", label: t.companyLabel },
           ];
-        setDynamicFields(fields);
-      }
+      setDynamicFields(fields);
+    }
 
-      if (!regRes?.error) {
-        setRegistrations(regRes.data || []);
-        setTotalRegistrations(regRes.pagination.totalRegistrations || 0);
-      }
+    if (!regRes?.error) {
+      setRegistrations(regRes.data || []);
+      setTotalRegistrations(regRes.pagination.totalRegistrations || 0);
+    }
 
-      setLoading(false);
-    };
-    if (eventSlug) fetchData();
-  }, [eventSlug, page, limit]);
+    setLoading(false);
+  };
+
+  const handleDownloadSample = async () => {
+    if (!eventDetails?._id) return;
+    try {
+      const blob = await downloadSampleExcel(eventDetails._id);
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `${
+        eventDetails.slug || "event"
+      }_registrations_template.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Failed to download sample:", err);
+    }
+  };
+
+  const handleUpload = async (e) => {
+    if (!eventDetails?._id) return;
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      await uploadRegistrations(eventDetails._id, file);
+      // Refresh after upload
+      fetchData();
+    } catch (err) {
+      console.error("Upload failed:", err);
+    }
+    setUploading(false);
+  };
 
   const handlePageChange = (_, value) => setPage(value);
   const handleLimitChange = (e) => {
@@ -174,10 +224,10 @@ export default function ViewRegistrations() {
       [
         `Event Dates:`,
         formatDate(eventDetails.startDate) +
-        (eventDetails.endDate &&
+          (eventDetails.endDate &&
           eventDetails.endDate !== eventDetails.startDate
-          ? ` to ${formatDate(eventDetails.endDate)}`
-          : ``),
+            ? ` to ${formatDate(eventDetails.endDate)}`
+            : ``),
       ].join(`,`)
     );
     lines.push([`Venue:`, eventDetails.venue || `N/A`].join(`,`));
@@ -264,6 +314,7 @@ export default function ViewRegistrations() {
         spacing={2}
         sx={{ my: 3 }}
       >
+        {/* Left side: title + description */}
         <Box sx={{ flex: 1 }}>
           <Typography variant="h4" fontWeight="bold">
             {t.title}
@@ -272,23 +323,59 @@ export default function ViewRegistrations() {
             {t.description}
           </Typography>
         </Box>
-        {totalRegistrations > 0 && (
+
+        {/* Right side: action buttons */}
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          spacing={2}
+          sx={{ width: { xs: "100%", sm: "auto" } }}
+        >
           <Button
-            variant="contained"
-            onClick={exportToCSV}
-            disabled={exportLoading}
-            startIcon={
-              exportLoading ? (
-                <CircularProgress size={20} color="inherit" />
-              ) : (
-                <ICONS.download />
-              )
-            }
-            sx={getStartIconSpacing(dir)}
+            variant="outlined"
+            startIcon={<ICONS.download />}
+            onClick={handleDownloadSample}
+            fullWidth
           >
-            {exportLoading ? t.exporting || "Exporting..." : t.export}
+            {t.downloadSample}
           </Button>
-        )}
+
+          <Button
+            variant="outlined"
+            component="label"
+            startIcon={
+              uploading ? <CircularProgress size={20} /> : <ICONS.upload />
+            }
+            disabled={uploading}
+            fullWidth
+          >
+            {uploading ? t.uploading : t.uploadFile}
+            <input
+              type="file"
+              hidden
+              accept=".xlsx,.xls"
+              onChange={handleUpload}
+            />
+          </Button>
+
+          {totalRegistrations > 0 && (
+            <Button
+              variant="contained"
+              onClick={exportToCSV}
+              disabled={exportLoading}
+              startIcon={
+                exportLoading ? (
+                  <CircularProgress size={20} color="inherit" />
+                ) : (
+                  <ICONS.download />
+                )
+              }
+              sx={getStartIconSpacing(dir)}
+              fullWidth
+            >
+              {exportLoading ? t.exporting : t.export}
+            </Button>
+          )}
+        </Stack>
       </Stack>
 
       <Divider sx={{ my: 3 }} />
@@ -342,33 +429,76 @@ export default function ViewRegistrations() {
                 <Card
                   sx={{
                     width: "100%",
-                    minWidth: { sm: 250 },
-                    maxWidth: { sm: 360 },
-                    boxShadow: 3,
-                    borderRadius: 2,
+                    minWidth: { sm: 260 },
+                    maxWidth: { sm: 380 },
+                    boxShadow: 4,
+                    borderRadius: 3,
                     height: "100%",
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "space-between",
+                    transition: "transform 0.2s, box-shadow 0.2s",
+                    "&:hover": {
+                      transform: "translateY(-1px)",
+                      boxShadow: 6,
+                    },
                   }}
                 >
-                  <CardContent>
-                    {dynamicFields.map((f) => (
-                      <Typography
-                        key={f.name}
-                        variant="body2"
-                        sx={{ mt: 1, ...wrapTextBox }}
-                      >
-                        <strong>{f.label}</strong>{" "}
-                        {reg.customFields?.[f.name] ?? reg[f.name] ?? "N/A"}
+                  <CardHeader
+                    avatar={
+                      <ICONS.qrcode
+                        sx={{ fontSize: 32, color: "primary.main" }}
+                      />
+                    }
+                    title={
+                      <Typography variant="subtitle1" fontWeight="bold" noWrap>
+                        {t.token}: {reg.token}
                       </Typography>
+                    }
+                    subheader={formatDateTimeWithLocale(reg.createdAt)}
+                    sx={{
+                      backgroundColor: "grey.50",
+                      borderBottom: "1px solid",
+                      borderColor: "divider",
+                      pb: 1,
+                    }}
+                  />
+
+                  <CardContent sx={{ flexGrow: 1 }}>
+                    {dynamicFields.map((f) => (
+                      <Box
+                        key={f.name}
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          mb: 1,
+                          borderBottom: "1px dashed",
+                          borderColor: "divider",
+                          pb: 0.5,
+                        }}
+                      >
+                        <Typography variant="body2" color="text.secondary">
+                          {f.label}
+                        </Typography>
+                        <Typography
+                          variant="body2"
+                          fontWeight={500}
+                          sx={{ ml: 2, textAlign: "right" }}
+                        >
+                          {reg.customFields?.[f.name] ?? reg[f.name] ?? "—"}
+                        </Typography>
+                      </Box>
                     ))}
-                    <Typography variant="body2" sx={{ mt: 1, ...wrapTextBox }}>
-                      <strong>{t.registeredAt}</strong>{" "}
-                      {formatDateTimeWithLocale(reg.createdAt)}
-                    </Typography>
                   </CardContent>
-                  <CardActions sx={{ justifyContent: "center" }}>
+
+                  <CardActions
+                    sx={{
+                      justifyContent: "center",
+                      borderTop: "1px solid",
+                      borderColor: "divider",
+                      backgroundColor: "grey.50",
+                    }}
+                  >
                     <Tooltip title={t.viewWalkIns}>
                       <IconButton
                         color="info"
@@ -380,6 +510,7 @@ export default function ViewRegistrations() {
                         <ICONS.view />
                       </IconButton>
                     </Tooltip>
+
                     <Tooltip title={t.deleteRecord}>
                       <IconButton
                         color="error"

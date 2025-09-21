@@ -2,19 +2,44 @@ import api from "@/services/api";
 import withApiHandler from "@/utils/withApiHandler";
 
 // Create a new public registration (public use)
-export const createRegistration = withApiHandler(
-  async (payload) => {
-    const { data } = await api.post("/eventreg/registrations", payload);
-    return data;
-  },
-);
+export const createRegistration = withApiHandler(async (payload) => {
+  const { data } = await api.post("/eventreg/registrations", payload);
+  return data;
+});
 
 // Verify registration by QR token (Staff use)
-export const verifyRegistrationByToken = withApiHandler(
-  async (token) => {
-    const { data } = await api.get(`/eventreg/registrations/verify?token=${token}`);
+export const verifyRegistrationByToken = withApiHandler(async (token) => {
+  const { data } = await api.get(
+    `/eventreg/registrations/verify?token=${token}`
+  );
+  return data;
+});
+
+// Download sample Excel template
+export const downloadSampleExcel = async (eventId) => {
+  const response = await api.get(
+    `/eventreg/registrations/event/${eventId}/sample-excel`,
+    { responseType: "blob" } 
+  );
+  return response.data; 
+};
+
+// Upload filled Excel
+export const uploadRegistrations = withApiHandler(
+  async (eventId, file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const { data } = await api.post(
+      `/eventreg/registrations/event/${eventId}/upload`,
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      }
+    );
     return data;
-  }
+  },
+  { showSuccess: true }
 );
 
 // Get registrations for a specific event (CMS use, by slug)
@@ -28,14 +53,10 @@ export const getRegistrationsByEvent = withApiHandler(
 );
 
 // Get all public registrations for export (no pagination)
-export const getAllPublicRegistrationsByEvent = withApiHandler(
-  async (slug) => {
-    const { data } = await api.get(
-      `/eventreg/registrations/event/${slug}/all`
-    );
-    return data;
-  }
-);
+export const getAllPublicRegistrationsByEvent = withApiHandler(async (slug) => {
+  const { data } = await api.get(`/eventreg/registrations/event/${slug}/all`);
+  return data;
+});
 
 // Delete a registration by ID (CMS use)
 export const deleteRegistration = withApiHandler(

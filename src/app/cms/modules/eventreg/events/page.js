@@ -56,6 +56,7 @@ const translations = {
     slugLabel: "Slug:",
     dateRange: "Dates",
     venue: "Venue",
+    registrations: "Registrations",
     viewRegs: "View Registrations",
   },
   ar: {
@@ -75,6 +76,7 @@ const translations = {
     slugLabel: ":المعرف",
     dateRange: "التواريخ",
     venue: "الموقع",
+    registrations: "التسجيلات",
     viewRegs: "عرض التسجيلات",
   },
 };
@@ -317,9 +319,16 @@ export default function EventsPage() {
                       <Typography
                         variant="body2"
                         color="textSecondary"
-                        sx={{ mb: 2 }}
                       >
                         <strong>{t.venue}:</strong> {ev.venue}
+                      </Typography>
+
+                      <Typography
+                        variant="body2"
+                        color="textSecondary"
+                        sx={{ mb: 2 }}
+                      >
+                        <strong>{t.registrations}:</strong> {ev.registrations}
                       </Typography>
 
                       {ev.logoUrl ? (

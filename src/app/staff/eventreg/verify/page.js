@@ -9,6 +9,10 @@ import {
   Stack,
   Tooltip,
   TextField,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemIcon,
 } from "@mui/material";
 
 import QrScanner from "@/components/QrScanner";
@@ -34,8 +38,10 @@ const translations = {
     cancel: "Cancel",
     verifying: "Verifying registration...",
     verified: "Registration Verified",
+    token:"Token",
     name: "Name",
     company: "Company",
+    title: "Title",
     event: "Event",
     scanAnother: "Scan Another",
     tryAgain: "Try Again",
@@ -62,8 +68,10 @@ const translations = {
     cancel: "إلغاء",
     verifying: "جارٍ التحقق من التسجيل...",
     verified: "تم التحقق من التسجيل",
+    token:"الرمز",
     name: "الاسم",
     company: "الشركة",
+    title: "المسمى الوظيفي",
     event: "الفعالية",
     scanAnother: "مسح رمز آخر",
     tryAgain: "حاول مرة أخرى",
@@ -264,14 +272,13 @@ export default function VerifyPage() {
                         doVerify(token);
                       }
                     }}
-                    inputProps={{ maxLength: 10 }}
                   />
 
                   <Button
                     variant="contained"
                     color="secondary"
                     startIcon={<ICONS.check />}
-                    disabled={token.trim().length !== 10}
+                    disabled={token.trim().length === 0}
                     onClick={() => doVerify(token)}
                     sx={{ ...getStartIconSpacing(dir), minWidth: 120, mx: 2 }}
                   >
@@ -322,69 +329,103 @@ export default function VerifyPage() {
 
       {/* Success */}
       {result && (
-        <Stack spacing={3} alignItems="center" textAlign="center" mt={5}>
-          <ICONS.checkCircle sx={{ fontSize: 64, color: "success.main" }} />
-          <Typography variant="h2" color="success.main">
-            {t.verified}
-          </Typography>
+  <Stack spacing={3} alignItems="center" textAlign="center" mt={5}>
+    <ICONS.checkCircle sx={{ fontSize: 64, color: "success.main" }} />
+    <Typography variant="h2" color="success.main">
+      {t.verified}
+    </Typography>
 
-          <Stack spacing={2} width="100%" maxWidth={400}>
-            <Stack direction="row" spacing={2} alignItems="center">
-              <ICONS.person sx={{ color: "text.secondary" }} />
-              <Typography variant="body1" fontWeight={500}>
-                {t.name}:
-              </Typography>
-              <Typography variant="body1">{result.fullName}</Typography>
-            </Stack>
+    <List sx={{ width: "100%", maxWidth: 400 }}>
+      <ListItem>
+        <ListItemIcon>
+          <ICONS.key sx={{ color: "text.secondary" }} />
+        </ListItemIcon>
+        <ListItemText
+          primary={t.token}
+          secondary={result.token}
+          primaryTypographyProps={{ fontWeight: 500 }}
+        />
+      </ListItem>
 
-            {!!result.company && (
-              <Stack direction="row" spacing={2} alignItems="center">
-                <ICONS.business sx={{ color: "text.secondary" }} />
-                <Typography variant="body1" fontWeight={500}>
-                  {t.company}:
-                </Typography>
-                <Typography variant="body1">{result.company}</Typography>
-              </Stack>
-            )}
+      <ListItem>
+        <ListItemIcon>
+          <ICONS.person sx={{ color: "text.secondary" }} />
+        </ListItemIcon>
+        <ListItemText
+          primary={t.name}
+          secondary={result.fullName || "—"}
+          primaryTypographyProps={{ fontWeight: 500 }}
+        />
+      </ListItem>
 
-            <Stack direction="row" spacing={2} alignItems="center">
-              <ICONS.event sx={{ color: "text.secondary" }} />
-              <Typography variant="body1" fontWeight={500}>
-                {t.event}:
-              </Typography>
-              <Typography variant="body1">{result.eventName}</Typography>
-            </Stack>
-          </Stack>
-
-          {/* Print Badge */}
-          <Tooltip title={t.tooltip.print}>
-            <span>
-              <Button
-                variant="contained"
-                color="primary"
-                startIcon={<ICONS.print />}
-                onClick={handlePrint}
-                disabled={printing || !result?.zpl}
-                sx={{ mt: 1, ...getStartIconSpacing(dir) }}
-              >
-                {printing ? t.printing : t.printBadge}
-              </Button>
-            </span>
-          </Tooltip>
-
-          {/* Scan Another */}
-          <Tooltip title={t.tooltip.scan}>
-            <Button
-              variant="outlined"
-              startIcon={<ICONS.qrCodeScanner />}
-              onClick={reset}
-              sx={{ mt: 2, ...getStartIconSpacing(dir) }}
-            >
-              {t.scanAnother}
-            </Button>
-          </Tooltip>
-        </Stack>
+      {result.company && (
+        <ListItem>
+          <ListItemIcon>
+            <ICONS.business sx={{ color: "text.secondary" }} />
+          </ListItemIcon>
+          <ListItemText
+            primary={t.company}
+            secondary={result.company}
+            primaryTypographyProps={{ fontWeight: 500 }}
+          />
+        </ListItem>
       )}
+
+      {result.title && (
+        <ListItem>
+          <ListItemIcon>
+            <ICONS.badge sx={{ color: "text.secondary" }} />
+          </ListItemIcon>
+          <ListItemText
+            primary={t.title}
+            secondary={result.title}
+            primaryTypographyProps={{ fontWeight: 500 }}
+          />
+        </ListItem>
+      )}
+
+      <ListItem>
+        <ListItemIcon>
+          <ICONS.event sx={{ color: "text.secondary" }} />
+        </ListItemIcon>
+        <ListItemText
+          primary={t.event}
+          secondary={result.eventName}
+          primaryTypographyProps={{ fontWeight: 500 }}
+        />
+      </ListItem>
+    </List>
+
+    {/* Print Badge */}
+    <Tooltip title={t.tooltip.print}>
+      <span>
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<ICONS.print />}
+          onClick={handlePrint}
+          disabled={printing || !result?.zpl}
+          sx={{ mt: 1, ...getStartIconSpacing(dir) }}
+        >
+          {printing ? t.printing : t.printBadge}
+        </Button>
+      </span>
+    </Tooltip>
+
+    {/* Scan Another */}
+    <Tooltip title={t.tooltip.scan}>
+      <Button
+        variant="outlined"
+        startIcon={<ICONS.qrCodeScanner />}
+        onClick={reset}
+        sx={{ mt: 2, ...getStartIconSpacing(dir) }}
+      >
+        {t.scanAnother}
+      </Button>
+    </Tooltip>
+  </Stack>
+)}
+
 
       {/* Error */}
       {error && (
