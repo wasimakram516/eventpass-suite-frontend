@@ -1,20 +1,27 @@
-import { useState } from "react";
+import { useState, useMemo, useCallback } from "react";
 import useSocket from "@/utils/useSocket";
 
-/**
- * Hook for listening to registration upload progress
- */
 const useEventRegSocket = ({ eventId, onProgress }) => {
   const [progress, setProgress] = useState({ uploaded: 0, total: 0 });
 
-  const { socket, connected, connectionError } = useSocket({
-    registrationUploadProgress: (data) => {
+  // stable handler
+  const handleProgress = useCallback(
+    (data) => {
       if (data.eventId === eventId) {
         setProgress({ uploaded: data.uploaded, total: data.total });
         if (onProgress) onProgress(data);
       }
     },
-  });
+    [eventId, onProgress]
+  );
+
+  // stable events object
+  const events = useMemo(
+    () => ({ registrationUploadProgress: handleProgress }),
+    [handleProgress]
+  );
+
+  const { socket, connected, connectionError } = useSocket(events);
 
   return {
     socket,
