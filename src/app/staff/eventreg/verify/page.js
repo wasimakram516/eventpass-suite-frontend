@@ -38,7 +38,7 @@ const translations = {
     cancel: "Cancel",
     verifying: "Verifying registration...",
     verified: "Registration Verified",
-    token:"Token",
+    token: "Token",
     name: "Name",
     company: "Company",
     title: "Title",
@@ -68,7 +68,7 @@ const translations = {
     cancel: "إلغاء",
     verifying: "جارٍ التحقق من التسجيل...",
     verified: "تم التحقق من التسجيل",
-    token:"الرمز",
+    token: "الرمز",
     name: "الاسم",
     company: "الشركة",
     title: "المسمى الوظيفي",
@@ -137,7 +137,25 @@ export default function VerifyPage() {
   };
 
   const doVerify = useCallback(async (inputToken) => {
-    const trimmed = inputToken.trim();
+    let trimmed = inputToken.trim();
+
+    // If the token contains "#BARCODE", extract token after it, like this https://meira.glueup.com/event/2025-meira-annual-conference-137620/#BARCODE00001-U5J7ZB
+    const marker = "#BARCODE";
+    if (trimmed.includes(marker)) {
+      trimmed = trimmed.split(marker).pop();
+    }
+
+    // If it's a full URL but no #BARCODE, still try to extract last segment
+    if (trimmed.startsWith("http")) {
+      const hashIndex = trimmed.indexOf("#BARCODE");
+      if (hashIndex >= 0) {
+        trimmed = trimmed.substring(hashIndex + marker.length);
+      } else {
+        // fallback: take everything after last slash
+        trimmed = trimmed.split("/").pop();
+      }
+    }
+
     setLoading(true);
     setError(null);
     setResult(null);
@@ -155,10 +173,19 @@ export default function VerifyPage() {
   }, []);
 
   const handleScanSuccess = useCallback(
-    async (scannedToken) => {
+    async (scannedValue) => {
       setShowScanner(false);
-      setToken(scannedToken);
-      await doVerify(scannedToken);
+
+      let extractedToken = scannedValue;
+
+      // If the scanned value contains "#BARCODE", extract token after it, like this https://meira.glueup.com/event/2025-meira-annual-conference-137620/#BARCODE00001-U5J7ZB
+      const marker = "#BARCODE";
+      if (scannedValue.includes(marker)) {
+        extractedToken = scannedValue.split(marker).pop(); // get text after #BARCODE
+      }
+
+      setToken(extractedToken);
+      await doVerify(extractedToken);
     },
     [doVerify]
   );
@@ -329,103 +356,102 @@ export default function VerifyPage() {
 
       {/* Success */}
       {result && (
-  <Stack spacing={3} alignItems="center" textAlign="center" mt={5}>
-    <ICONS.checkCircle sx={{ fontSize: 64, color: "success.main" }} />
-    <Typography variant="h2" color="success.main">
-      {t.verified}
-    </Typography>
+        <Stack spacing={3} alignItems="center" textAlign="center" mt={5}>
+          <ICONS.checkCircle sx={{ fontSize: 64, color: "success.main" }} />
+          <Typography variant="h2" color="success.main">
+            {t.verified}
+          </Typography>
 
-    <List sx={{ width: "100%", maxWidth: 400 }}>
-      <ListItem>
-        <ListItemIcon>
-          <ICONS.key sx={{ color: "text.secondary" }} />
-        </ListItemIcon>
-        <ListItemText
-          primary={t.token}
-          secondary={result.token}
-          primaryTypographyProps={{ fontWeight: 500 }}
-        />
-      </ListItem>
+          <List sx={{ width: "100%", maxWidth: 400 }}>
+            <ListItem>
+              <ListItemIcon>
+                <ICONS.key sx={{ color: "text.secondary" }} />
+              </ListItemIcon>
+              <ListItemText
+                primary={t.token}
+                secondary={result.token}
+                primaryTypographyProps={{ fontWeight: 500 }}
+              />
+            </ListItem>
 
-      <ListItem>
-        <ListItemIcon>
-          <ICONS.person sx={{ color: "text.secondary" }} />
-        </ListItemIcon>
-        <ListItemText
-          primary={t.name}
-          secondary={result.fullName || "—"}
-          primaryTypographyProps={{ fontWeight: 500 }}
-        />
-      </ListItem>
+            <ListItem>
+              <ListItemIcon>
+                <ICONS.person sx={{ color: "text.secondary" }} />
+              </ListItemIcon>
+              <ListItemText
+                primary={t.name}
+                secondary={result.fullName || "—"}
+                primaryTypographyProps={{ fontWeight: 500 }}
+              />
+            </ListItem>
 
-      {result.company && (
-        <ListItem>
-          <ListItemIcon>
-            <ICONS.business sx={{ color: "text.secondary" }} />
-          </ListItemIcon>
-          <ListItemText
-            primary={t.company}
-            secondary={result.company}
-            primaryTypographyProps={{ fontWeight: 500 }}
-          />
-        </ListItem>
+            {result.company && (
+              <ListItem>
+                <ListItemIcon>
+                  <ICONS.business sx={{ color: "text.secondary" }} />
+                </ListItemIcon>
+                <ListItemText
+                  primary={t.company}
+                  secondary={result.company}
+                  primaryTypographyProps={{ fontWeight: 500 }}
+                />
+              </ListItem>
+            )}
+
+            {result.title && (
+              <ListItem>
+                <ListItemIcon>
+                  <ICONS.badge sx={{ color: "text.secondary" }} />
+                </ListItemIcon>
+                <ListItemText
+                  primary={t.title}
+                  secondary={result.title}
+                  primaryTypographyProps={{ fontWeight: 500 }}
+                />
+              </ListItem>
+            )}
+
+            <ListItem>
+              <ListItemIcon>
+                <ICONS.event sx={{ color: "text.secondary" }} />
+              </ListItemIcon>
+              <ListItemText
+                primary={t.event}
+                secondary={result.eventName}
+                primaryTypographyProps={{ fontWeight: 500 }}
+              />
+            </ListItem>
+          </List>
+
+          {/* Print Badge */}
+          <Tooltip title={t.tooltip.print}>
+            <span>
+              <Button
+                variant="contained"
+                color="primary"
+                startIcon={<ICONS.print />}
+                onClick={handlePrint}
+                disabled={printing || !result?.zpl}
+                sx={{ mt: 1, ...getStartIconSpacing(dir) }}
+              >
+                {printing ? t.printing : t.printBadge}
+              </Button>
+            </span>
+          </Tooltip>
+
+          {/* Scan Another */}
+          <Tooltip title={t.tooltip.scan}>
+            <Button
+              variant="outlined"
+              startIcon={<ICONS.qrCodeScanner />}
+              onClick={reset}
+              sx={{ mt: 2, ...getStartIconSpacing(dir) }}
+            >
+              {t.scanAnother}
+            </Button>
+          </Tooltip>
+        </Stack>
       )}
-
-      {result.title && (
-        <ListItem>
-          <ListItemIcon>
-            <ICONS.badge sx={{ color: "text.secondary" }} />
-          </ListItemIcon>
-          <ListItemText
-            primary={t.title}
-            secondary={result.title}
-            primaryTypographyProps={{ fontWeight: 500 }}
-          />
-        </ListItem>
-      )}
-
-      <ListItem>
-        <ListItemIcon>
-          <ICONS.event sx={{ color: "text.secondary" }} />
-        </ListItemIcon>
-        <ListItemText
-          primary={t.event}
-          secondary={result.eventName}
-          primaryTypographyProps={{ fontWeight: 500 }}
-        />
-      </ListItem>
-    </List>
-
-    {/* Print Badge */}
-    <Tooltip title={t.tooltip.print}>
-      <span>
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<ICONS.print />}
-          onClick={handlePrint}
-          disabled={printing || !result?.zpl}
-          sx={{ mt: 1, ...getStartIconSpacing(dir) }}
-        >
-          {printing ? t.printing : t.printBadge}
-        </Button>
-      </span>
-    </Tooltip>
-
-    {/* Scan Another */}
-    <Tooltip title={t.tooltip.scan}>
-      <Button
-        variant="outlined"
-        startIcon={<ICONS.qrCodeScanner />}
-        onClick={reset}
-        sx={{ mt: 2, ...getStartIconSpacing(dir) }}
-      >
-        {t.scanAnother}
-      </Button>
-    </Tooltip>
-  </Stack>
-)}
-
 
       {/* Error */}
       {error && (
