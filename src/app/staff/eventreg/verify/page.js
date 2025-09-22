@@ -101,6 +101,7 @@ export default function VerifyPage() {
 
   const successAudioRef = useRef(null);
   const errorAudioRef = useRef(null);
+  const scanningRef = useRef(false);
 
   // useEffect(() => {
   //   if (typeof window !== "undefined" && window.BrowserPrint) {
@@ -136,31 +137,36 @@ export default function VerifyPage() {
     }
   };
 
-  const doVerify = useCallback(async (inputToken) => {
-    let trimmed = inputToken.trim();
+  const normalizeToken = (raw) => {
+    if (!raw) return "";
+    const s = String(raw).trim();
 
-    // If the token contains "#BARCODE", extract token after it, like this https://meira.glueup.com/event/2025-meira-annual-conference-137620/#BARCODE00001-U5J7ZB
     const marker = "#BARCODE";
-    if (trimmed.includes(marker)) {
-      trimmed = trimmed.split(marker).pop();
+    const idx = s.indexOf(marker);
+    if (idx >= 0) {
+      // everything after "#BARCODE"
+      return s.slice(idx + marker.length).trim();
     }
 
-    // If it's a full URL but no #BARCODE, still try to extract last segment
-    if (trimmed.startsWith("http")) {
-      const hashIndex = trimmed.indexOf("#BARCODE");
-      if (hashIndex >= 0) {
-        trimmed = trimmed.substring(hashIndex + marker.length);
-      } else {
-        // fallback: take everything after last slash
-        trimmed = trimmed.split("/").pop();
-      }
+    // If URL contains /B/ then take the last segment after /B/
+    const bIndex = s.toUpperCase().lastIndexOf("/B/");
+    if (bIndex >= 0) {
+      return s.slice(bIndex + 3).trim(); // 3 = length of "/B/"
     }
+
+    // fallback → return original string
+    return s;
+  };
+
+  const doVerify = useCallback(async (inputToken) => {
+    const cleaned = normalizeToken(inputToken);
+    setToken(cleaned);
 
     setLoading(true);
     setError(null);
     setResult(null);
 
-    const res = await verifyRegistrationByToken(trimmed);
+    const res = await verifyRegistrationByToken(cleaned);
     if (res?.error) {
       errorAudioRef.current?.play();
       setError(res.message || "Invalid token.");
@@ -174,18 +180,16 @@ export default function VerifyPage() {
 
   const handleScanSuccess = useCallback(
     async (scannedValue) => {
+      if (scanningRef.current) return;
+      scanningRef.current = true;
+
       setShowScanner(false);
 
-      let extractedToken = scannedValue;
+      await doVerify(scannedValue);
 
-      // If the scanned value contains "#BARCODE", extract token after it, like this https://meira.glueup.com/event/2025-meira-annual-conference-137620/#BARCODE00001-U5J7ZB
-      const marker = "#BARCODE";
-      if (scannedValue.includes(marker)) {
-        extractedToken = scannedValue.split(marker).pop(); // get text after #BARCODE
-      }
-
-      setToken(extractedToken);
-      await doVerify(extractedToken);
+      setTimeout(() => {
+        scanningRef.current = false;
+      }, 600);
     },
     [doVerify]
   );
