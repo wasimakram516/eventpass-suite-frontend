@@ -126,13 +126,15 @@ export default function Registration() {
     ];
 
     const fields = event.formFields?.length
-      ? event.formFields.map((f) => ({
-          name: f.inputName,
-          label: f.inputName,
-          type: f.inputType,
-          options: f.values || [],
-          required: f.required,
-        }))
+      ? event.formFields
+          .filter((f) => f.visible !== false)
+          .map((f) => ({
+            name: f.inputName,
+            label: f.inputName,
+            type: f.inputType,
+            options: f.values || [],
+            required: f.required,
+          }))
       : defaultFields;
 
     const initial = {};

@@ -39,6 +39,7 @@ const translations = {
     verifying: "Verifying registration...",
     verified: "Registration Verified",
     token: "Token",
+    badgeIdentifier: "Badge Identifier",
     name: "Name",
     company: "Company",
     title: "Title",
@@ -69,6 +70,7 @@ const translations = {
     verifying: "جارٍ التحقق من التسجيل...",
     verified: "تم التحقق من التسجيل",
     token: "الرمز",
+    badgeIdentifier: "معرف الشارة",
     name: "الاسم",
     company: "الشركة",
     title: "المسمى الوظيفي",
@@ -377,7 +379,18 @@ export default function VerifyPage() {
                 primaryTypographyProps={{ fontWeight: 500 }}
               />
             </ListItem>
-
+            {result.badgeIdentifier && (
+              <ListItem>
+                <ListItemIcon>
+                  <ICONS.badge sx={{ color: "text.secondary" }} />
+                </ListItemIcon>
+                <ListItemText
+                  primary={t.badgeIdentifier}
+                  secondary={result.badgeIdentifier}
+                  primaryTypographyProps={{ fontWeight: 500 }}
+                />
+              </ListItem>
+            )}
             <ListItem>
               <ListItemIcon>
                 <ICONS.person sx={{ color: "text.secondary" }} />
@@ -389,19 +402,6 @@ export default function VerifyPage() {
               />
             </ListItem>
 
-            {result.company && (
-              <ListItem>
-                <ListItemIcon>
-                  <ICONS.business sx={{ color: "text.secondary" }} />
-                </ListItemIcon>
-                <ListItemText
-                  primary={t.company}
-                  secondary={result.company}
-                  primaryTypographyProps={{ fontWeight: 500 }}
-                />
-              </ListItem>
-            )}
-
             {result.title && (
               <ListItem>
                 <ListItemIcon>
@@ -410,6 +410,19 @@ export default function VerifyPage() {
                 <ListItemText
                   primary={t.title}
                   secondary={result.title}
+                  primaryTypographyProps={{ fontWeight: 500 }}
+                />
+              </ListItem>
+            )}
+
+            {result.company && (
+              <ListItem>
+                <ListItemIcon>
+                  <ICONS.business sx={{ color: "text.secondary" }} />
+                </ListItemIcon>
+                <ListItemText
+                  primary={t.company}
+                  secondary={result.company}
                   primaryTypographyProps={{ fontWeight: 500 }}
                 />
               </ListItem>

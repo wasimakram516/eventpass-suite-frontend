@@ -58,6 +58,7 @@ const translations = {
     options: "Options",
     optionPlaceholder: "Type option and press comma",
     requiredField: "Required",
+    visibleField: "Visible",
     remove: "Remove",
     addField: "Add Field",
     classicFieldsNote:
@@ -102,6 +103,7 @@ const translations = {
     options: "الخيارات",
     optionPlaceholder: "اكتب الخيار واضغط فاصلة",
     requiredField: "إلزامي",
+    visibleField: "مرئي",
     remove: "إزالة",
     addField: "إضافة حقل",
     classicFieldsNote:
@@ -285,6 +287,7 @@ const EventModal = ({
           inputType: "text",
           values: [],
           required: false,
+          visible: true,
           _temp: "",
         },
       ],
@@ -640,6 +643,7 @@ const EventModal = ({
                         }
                         fullWidth
                       />
+
                       <TextField
                         label={t.inputType}
                         select
@@ -665,6 +669,7 @@ const EventModal = ({
                           </option>
                         ))}
                       </TextField>
+
                       {(field.inputType === "radio" ||
                         field.inputType === "list") && (
                         <Box>
@@ -721,23 +726,44 @@ const EventModal = ({
                           />
                         </Box>
                       )}
+
                       <Box
                         sx={{ display: "flex", alignItems: "center", gap: 2 }}
                       >
-                        <label>
-                          <input
-                            type="checkbox"
-                            checked={field.required}
-                            onChange={(e) =>
-                              handleFormFieldChange(
-                                index,
-                                "required",
-                                e.target.checked
-                              )
-                            }
-                          />{" "}
-                          {t.requiredField}
-                        </label>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={field.required}
+                              onChange={(e) =>
+                                handleFormFieldChange(
+                                  index,
+                                  "required",
+                                  e.target.checked
+                                )
+                              }
+                              color="primary"
+                            />
+                          }
+                          label={t.requiredField}
+                        />
+
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={field.visible}
+                              onChange={(e) =>
+                                handleFormFieldChange(
+                                  index,
+                                  "visible",
+                                  e.target.checked
+                                )
+                              }
+                              color="primary"
+                            />
+                          }
+                          label={t.visibleField}
+                        />
+
                         <Button
                           size="small"
                           variant="text"
