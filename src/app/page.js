@@ -19,6 +19,7 @@ import useI18nLayout from "@/hooks/useI18nLayout";
 import { getModuleIcon } from "@/utils/iconMapper";
 import ICONS from "@/utils/iconUtil";
 import Background from "@/components/Background";
+import HorizontalCarousel from "@/components/HorizontalCarousel";
 
 const translations = {
   en: {
@@ -71,16 +72,46 @@ export default function HomePage() {
 
   const features = [
     { key: "quiz", label: t.features.quiz, hue: "#0d47a1", route: "/quiznest" },
-    { key: "games", label: t.features.games, hue: "#5e35b1", route: "/eventduel" },
+    {
+      key: "games",
+      label: t.features.games,
+      hue: "#5e35b1",
+      route: "/eventduel",
+    },
 
-    { key: "assignment", label: t.features.assignment, hue: "#006064", route: "/eventreg" },
-    { key: "checkin", label: t.features.checkin, hue: "#0277bd", route: "/checkin" },
+    {
+      key: "assignment",
+      label: t.features.assignment,
+      hue: "#006064",
+      route: "/eventreg",
+    },
+    {
+      key: "checkin",
+      label: t.features.checkin,
+      hue: "#0277bd",
+      route: "/checkin",
+    },
 
-    { key: "email", label: t.features.email, hue: "#1565c0", route: "/surveyguru" },
+    {
+      key: "email",
+      label: t.features.email,
+      hue: "#1565c0",
+      route: "/surveyguru",
+    },
     { key: "poll", label: t.features.poll, hue: "#00695c", route: "/votecast" },
     { key: "forum", label: t.features.forum, hue: "#ef6c00", route: "/stageq" },
-    { key: "image", label: t.features.image, hue: "#4e342e", route: "/mosaicwall" },
-    { key: "trophy", label: t.features.trophy, hue: "#c62828", route: "/eventwheel" },
+    {
+      key: "image",
+      label: t.features.image,
+      hue: "#4e342e",
+      route: "/mosaicwall",
+    },
+    {
+      key: "trophy",
+      label: t.features.trophy,
+      hue: "#c62828",
+      route: "/eventwheel",
+    },
   ];
 
   return (
@@ -166,14 +197,25 @@ export default function HomePage() {
           >
             {features.map((f) => (
               <Grid key={f.key} item xs={3} sm={4} md={3}>
-                <FeatureBadge iconKey={f.key} label={f.label} hue={f.hue} route={f.route} />
+                <FeatureBadge
+                  iconKey={f.key}
+                  label={f.label}
+                  hue={f.hue}
+                  route={f.route}
+                />
               </Grid>
             ))}
           </Grid>
         </Container>
 
-        {/* CLIENT LOGOS STRIP (below features, above footer) */}
-        <ClientLogoStrip logos={globalConfig?.clientLogos || []} />
+        {/* CLIENT LOGOS CAROUSEL (below features, above footer) */}
+        <HorizontalCarousel
+          items={globalConfig?.clientLogos || []}
+          showBorders={true}
+          maxWidth="md"
+          itemHeight={{ xs: 28, sm: 36, md: 44 }}
+          itemMaxWidth={{ xs: 120, sm: 160 }}
+        />
 
         {/* FOOTER */}
         <Footer globalConfig={globalConfig} align={align} />
@@ -243,122 +285,6 @@ function FeatureBadge({ iconKey, label, hue, route }) {
         {label}
       </Typography>
     </Paper>
-  );
-}
-
-/* ---------- Client Logo Strip ---------- */
-
-const marqueeMany = keyframes`
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); } /* two identical halves */
-`;
-
-const marqueeFew = keyframes`
-  0% { transform: translateX(100%); }   /* start off-screen on the right */
-  100% { transform: translateX(-100%); }/* exit fully to the left */
-`;
-
-function ClientLogoStrip({ logos }) {
-  const items = Array.isArray(logos) ? logos.filter(l => !!l?.logoUrl) : [];
-  if (!items.length) return null;
-
-  const isFew = items.length <= 5;
-
-  // duration in seconds (your constraint: max speed = 10s)
-  const duration = isFew ? Math.max(8, Math.min(10, items.length * 4)) : 15;
-
-  return (
-    <Box
-      sx={(th) => ({
-        borderTop: `1px solid ${th.palette.divider}`,
-        borderBottom: `1px solid ${th.palette.divider}`,
-        py: { xs: 1.5, md: 2 },
-        position: "relative",
-        "@media (prefers-reduced-motion: reduce)": {
-          "& *": { animation: "none !important" },
-        },
-      })}
-    >
-      <Container
-        maxWidth="md"
-        sx={{
-          overflow: "hidden",
-          position: "relative",
-          WebkitMaskImage:
-            "linear-gradient(to right, rgba(0,0,0,0), rgba(0,0,0,1) 10%, rgba(0,0,0,1) 90%, rgba(0,0,0,0))",
-          WebkitMaskRepeat: "no-repeat",
-          WebkitMaskSize: "100% 100%",
-          maskImage:
-            "linear-gradient(to right, rgba(0,0,0,0), rgba(0,0,0,1) 10%, rgba(0,0,0,1) 90%, rgba(0,0,0,0))",
-          maskRepeat: "no-repeat",
-          maskSize: "100% 100%",
-        }}
-      >
-        <Box sx={{ direction: "ltr" }}>
-          <Box
-            sx={{
-              display: "flex",
-              flexWrap: "nowrap",
-              width: "max-content",
-              animation: `${isFew ? marqueeFew : marqueeMany} ${duration}s linear infinite`,
-              "&:hover": { animationPlayState: "paused" },
-            }}
-          >
-            {isFew ? (
-              // FEW: single pass (starts at right, exits left)
-              items.map((cl, i) => (
-                <LogoItem cl={cl} key={`few-${cl._id || i}`} />
-              ))
-            ) : (
-              // MANY: render two *flat* copies with unique keys for seamless loop
-              <>
-                {items.map((cl, i) => (
-                  <LogoItem cl={cl} key={`a-${cl._id || i}`} />
-                ))}
-                {items.map((cl, i) => (
-                  <LogoItem cl={cl} key={`b-${cl._id || i}`} />
-                ))}
-              </>
-            )}
-          </Box>
-        </Box>
-      </Container>
-    </Box>
-  );
-}
-
-function LogoItem({ cl }) {
-  const clickable = !!cl.website;
-  const Wrapper = clickable ? "a" : "div";
-  return (
-    <Box
-      component={Wrapper}
-      href={clickable ? normalizeUrl(cl.website) : undefined}
-      target={clickable ? "_blank" : undefined}
-      rel={clickable ? "noopener noreferrer" : undefined}
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        px: { xs: 1.25, sm: 2 },
-        opacity: 0.95,
-        transition: "opacity .2s ease",
-        textDecoration: "none",
-        "&:hover": { opacity: 1 },
-      }}
-    >
-      <Box
-        component="img"
-        src={cl.logoUrl}
-        alt={cl.name || "client logo"}
-        sx={{
-          height: { xs: 28, sm: 36, md: 44 },
-          maxWidth: { xs: 120, sm: 160 },
-          objectFit: "contain",
-          display: "block",
-        }}
-      />
-    </Box>
   );
 }
 
