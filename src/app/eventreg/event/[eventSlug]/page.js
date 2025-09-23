@@ -10,7 +10,7 @@ import {
   Paper,
   Stack,
 } from "@mui/material";
-
+import HorizontalCarousel from "@/components/HorizontalCarousel";
 import { formatDateWithShortMonth } from "@/utils/dateUtils";
 import ICONS from "@/utils/iconUtil";
 import { getPublicEventBySlug } from "@/services/eventreg/eventService";
@@ -57,12 +57,9 @@ export default function EventDetails() {
     fetchEvent();
   }, [eventSlug]);
 
-  const brandingUrl = useMemo(() => {
-    return event?.brandingMediaUrl || "";
+  const brandingMedia = useMemo(() => {
+    return event?.brandingMedia || [];
   }, [event]);
-
-  const isVideo = (url = "") =>
-    /\.(mp4|webm|ogg)$/i.test(url.split("?")[0] || "");
 
   if (loading) {
     return (
@@ -112,8 +109,8 @@ export default function EventDetails() {
         gap: 2,
       }}
     >
-      <Background/>
-      
+      <Background />
+
       {/* logo outside the container */}
       {logoUrl && (
         <Box
@@ -122,7 +119,7 @@ export default function EventDetails() {
             borderRadius: 3,
             overflow: "hidden",
             boxShadow: 3,
-            mt: { xs: 6, sm: 0 }
+            mt: { xs: 6, sm: 0 },
           }}
         >
           <Box
@@ -181,7 +178,9 @@ export default function EventDetails() {
           <Box component="span" sx={{ display: "flex", color: "primary.main" }}>
             <ICONS.location />
           </Box>
-          {dir === "rtl" && <Box component="span" sx={{ width: 8, display: "inline-block" }} />}
+          {dir === "rtl" && (
+            <Box component="span" sx={{ width: 8, display: "inline-block" }} />
+          )}
           <Typography variant="h6" sx={{ fontSize: { xs: 16, md: 20 } }}>
             {venue}
           </Typography>
@@ -198,22 +197,36 @@ export default function EventDetails() {
           <Box component="span" sx={{ display: "flex", color: "primary.main" }}>
             <ICONS.event />
           </Box>
-          {dir === "rtl" && <Box component="span" sx={{ width: 8, display: "inline-block" }} />}
+          {dir === "rtl" && (
+            <Box component="span" sx={{ width: 8, display: "inline-block" }} />
+          )}
 
           {startDate && endDate ? (
             startDate === endDate ? (
-              <Typography variant="h6" noWrap sx={{ fontSize: { xs: 16, md: 20 } }}>
+              <Typography
+                variant="h6"
+                noWrap
+                sx={{ fontSize: { xs: 16, md: 20 } }}
+              >
                 {formatDateWithShortMonth(startDate)}
               </Typography>
             ) : (
-              <Typography variant="h6" noWrap sx={{ fontSize: { xs: 16, md: 20 } }}>
-                {`${formatDateWithShortMonth(startDate)} ${t.to} ${formatDateWithShortMonth(
-                  endDate
-                )}`}
+              <Typography
+                variant="h6"
+                noWrap
+                sx={{ fontSize: { xs: 16, md: 20 } }}
+              >
+                {`${formatDateWithShortMonth(startDate)} ${
+                  t.to
+                } ${formatDateWithShortMonth(endDate)}`}
               </Typography>
             )
           ) : (
-            <Typography variant="h6" noWrap sx={{ fontSize: { xs: 16, md: 20 } }}>
+            <Typography
+              variant="h6"
+              noWrap
+              sx={{ fontSize: { xs: 16, md: 20 } }}
+            >
               {t.dateNotAvailable}
             </Typography>
           )}
@@ -230,7 +243,9 @@ export default function EventDetails() {
           variant="contained"
           size="large"
           fullWidth
-          onClick={() => router.replace(`/eventreg/event/${eventSlug}/register`)}
+          onClick={() =>
+            router.replace(`/eventreg/event/${eventSlug}/register`)
+          }
           startIcon={<ICONS.appRegister />}
           sx={{
             maxWidth: { xs: "100%", sm: 300 },
@@ -241,7 +256,10 @@ export default function EventDetails() {
             textTransform: "none",
             background: "primary.main",
             transition: "0.3s",
-            "&:hover": { background: "secondary.main", transform: "scale(1.05)" },
+            "&:hover": {
+              background: "secondary.main",
+              transform: "scale(1.05)",
+            },
             ...getStartIconSpacing(dir),
           }}
         >
@@ -258,7 +276,9 @@ export default function EventDetails() {
           <Box component="span" sx={{ display: "flex", color: "primary.main" }}>
             <ICONS.time fontSize="small" />
           </Box>
-          {dir === "rtl" && <Box component="span" sx={{ width: 8, display: "inline-block" }} />}
+          {dir === "rtl" && (
+            <Box component="span" sx={{ width: 8, display: "inline-block" }} />
+          )}
           <Typography variant="caption" fontSize={14}>
             {t.takesSeconds}
           </Typography>
@@ -266,38 +286,18 @@ export default function EventDetails() {
       </Paper>
 
       {/* Branding media at the bottom */}
-      {brandingUrl && (
-        <Box
-          sx={{
-            mt: 3,
-            mb: 2,
-            width: "100%",
-            maxWidth: 900,
-            borderRadius: 3,
-            overflow: "hidden",
-          }}
-        >
-          {isVideo(brandingUrl) ? (
-            <Box
-              component="video"
-              src={brandingUrl}
-              controls
-              autoPlay
-              loop
-              muted
-              playsInline
-              sx={{ width: "100%", height: "auto", display: "block", background: "#000" }}
-            />
-          ) : (
-            <Box
-              component="img"
-              src={brandingUrl}
-              alt="Branding"
-              sx={{ width: "100%", height: "auto", display: "block", objectFit: "cover" }}
-            />
-          )}
-        </Box>
-      )}
+      {/* Branding media carousel at the bottom */}
+      <HorizontalCarousel
+        items={brandingMedia}
+        showBorders={false}
+        maxWidth="lg"
+        itemHeight={{ xs: 40, sm: 50, md: 60 }}
+        itemMaxWidth={{ xs: 150, sm: 200, md: 250 }}
+        containerPadding={{ xs: 2, md: 3 }}
+        itemPadding={{ xs: 2, sm: 3 }}
+        pauseOnHover={true}
+        reducedMotionSupport={true}
+      />
 
       <LanguageSelector top={20} right={20} />
     </Box>

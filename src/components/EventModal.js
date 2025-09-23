@@ -17,6 +17,9 @@ import {
   Chip,
   FormControlLabel,
   Checkbox,
+  Grid,
+  Paper,
+  Tooltip,
 } from "@mui/material";
 import { useState, useEffect } from "react";
 import slugify from "@/utils/slugify";
@@ -154,8 +157,10 @@ const EventModal = ({
     description: "",
     logo: null,
     logoPreview: "",
-    brandingMedia: null,
-    brandingPreview: "",
+    // branding logos (multiple like client logos design)
+    brandingLogos: [], // array of { _id?, name, website, logoUrl, file? }
+    removeBrandingLogoIds: [],
+    clearAllBrandingLogos: false,
     agenda: null,
     agendaPreview: "",
     capacity: "",
@@ -188,8 +193,16 @@ const EventModal = ({
           initialValues.eventType || (isEmployee ? "employee" : "public"),
         logo: null,
         logoPreview: initialValues.logoUrl || "",
-        brandingMedia: null,
-        brandingPreview: initialValues.brandingMediaUrl || "",
+        brandingLogos: Array.isArray(initialValues.brandingMedia)
+          ? initialValues.brandingMedia.map((l) => ({
+              _id: l._id,
+              name: l.name || "",
+              website: l.website || "",
+              logoUrl: l.logoUrl || "",
+            }))
+          : [],
+        removeBrandingLogoIds: [],
+        clearAllBrandingLogos: false,
         agenda: null,
         agendaPreview: initialValues.agendaUrl || "",
         employeeData: null,
@@ -214,8 +227,9 @@ const EventModal = ({
         description: "",
         logo: null,
         logoPreview: "",
-        brandingMedia: null,
-        brandingPreview: "",
+        brandingLogos: [],
+        removeBrandingLogoIds: [],
+        clearAllBrandingLogos: false,
         agenda: null,
         agendaPreview: "",
         capacity: "",
@@ -240,15 +254,6 @@ const EventModal = ({
           logoPreview: URL.createObjectURL(file),
         }));
       }
-    } else if (name === "brandingMedia" && files?.[0]) {
-      const file = files[0];
-      if (file.type.startsWith("image/") || file.type.startsWith("video/")) {
-        setFormData((prev) => ({
-          ...prev,
-          brandingMedia: file,
-          brandingPreview: URL.createObjectURL(file),
-        }));
-      }
     } else if (name === "agenda" && files?.[0]) {
       const file = files[0];
       if (file.type === "application/pdf") {
@@ -265,6 +270,58 @@ const EventModal = ({
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
+  };
+
+  const handleAddBrandingLogos = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+
+    const newItems = files.map((file, index) => ({
+      name: "",
+      website: "",
+      logoUrl: URL.createObjectURL(file),
+      file,
+      uniqueKey: `${Date.now()}-${index}-${Math.random()}`,
+    }));
+
+    setFormData((prev) => ({
+      ...prev,
+      brandingLogos: [...prev.brandingLogos, ...newItems],
+    }));
+    e.target.value = "";
+  };
+
+  const handleBrandingLogoFieldChange = (index, key, value) => {
+    setFormData((prev) => {
+      const arr = [...prev.brandingLogos];
+      arr[index] = { ...arr[index], [key]: value };
+      return { ...prev, brandingLogos: arr };
+    });
+  };
+
+  const handleRemoveBrandingLogo = (index) => {
+    setFormData((prev) => {
+      const arr = [...prev.brandingLogos];
+      const removed = arr.splice(index, 1)[0];
+      const removeIds = [...prev.removeBrandingLogoIds];
+
+      if (removed && removed._id) {
+        removeIds.push(removed._id);
+      }
+
+      return {
+        ...prev,
+        brandingLogos: arr,
+        removeBrandingLogoIds: removeIds,
+      };
+    });
+  };
+
+  const handleClearAllBrandingLogos = () => {
+    setFormData((prev) => ({
+      ...prev,
+      clearAllBrandingLogos: !prev.clearAllBrandingLogos,
+    }));
   };
   const handleNameChange = (e) => {
     const name = e.target.value;
@@ -342,8 +399,39 @@ const EventModal = ({
     payload.append("capacity", formData.capacity || "999");
     payload.append("eventType", formData.eventType);
     if (formData.logo) payload.append("logo", formData.logo);
-    if (formData.brandingMedia)
-      payload.append("brandingMedia", formData.brandingMedia);
+    if (formData.clearAllBrandingLogos) {
+      payload.append("clearAllBrandingLogos", "true");
+    } else {
+      const meta = [];
+      formData.brandingLogos.forEach((item) => {
+        if (item.file) {
+          payload.append("brandingMedia", item.file);
+          meta.push({ name: item.name || "", website: item.website || "" });
+        }
+      });
+      if (meta.length) {
+        payload.append("brandingMediaMeta", JSON.stringify(meta));
+      }
+    }
+
+    if (initialValues && !formData.clearAllBrandingLogos) {
+      const existingBrandingUrls = formData.brandingLogos
+        .filter((item) => !item.file && item.logoUrl)
+        .map((item) => ({
+          name: item.name || "",
+          website: item.website || "",
+          logoUrl: item.logoUrl,
+        }));
+      payload.append("brandingMediaUrls", JSON.stringify(existingBrandingUrls));
+
+      if (formData.removeBrandingLogoIds.length > 0) {
+        payload.append(
+          "removeBrandingLogoIds",
+          JSON.stringify(formData.removeBrandingLogoIds)
+        );
+      }
+    }
+
     if (formData.agenda) payload.append("agenda", formData.agenda);
     if (formData.eventType === "employee") {
       if (formData.employeeData)
@@ -365,7 +453,7 @@ const EventModal = ({
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth dir={dir}>
+    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth dir={dir}>
       <DialogTitle
         sx={{
           display: "flex",
@@ -495,43 +583,158 @@ const EventModal = ({
             )}
           </Box>
           <Box>
-            <Button component="label" variant="outlined">
-              {t.brandingMedia}
-              <input
-                hidden
-                name="brandingMedia"
-                type="file"
-                accept="image/*,video/*,.gif"
-                onChange={handleInputChange}
-              />
-            </Button>
-            {formData.brandingPreview && (
-              <Box sx={{ mt: 1 }}>
-                <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
-                  {initialValues && !formData.brandingMedia
-                    ? isVideoUrl(formData.brandingPreview)
-                      ? "Current Branding Video:"
-                      : "Current Branding:"
-                    : t.preview}
-                </Typography>
-                {(formData.brandingMedia &&
-                  formData.brandingMedia.type.startsWith("video/")) ||
-                (!formData.brandingMedia &&
-                  isVideoUrl(formData.brandingPreview)) ? (
-                  <video
-                    src={formData.brandingPreview}
-                    controls
-                    style={{ maxHeight: 100, borderRadius: 6 }}
-                  />
-                ) : (
-                  <img
-                    src={formData.brandingPreview}
-                    alt="Branding preview"
-                    style={{ maxHeight: 100, borderRadius: 6 }}
-                  />
-                )}
-              </Box>
-            )}
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: { xs: "column", sm: "row" },
+                gap: 1,
+                width: { xs: "100%", sm: "auto" },
+                mb: 1,
+              }}
+            >
+              <Button
+                variant="outlined"
+                component="label"
+                sx={{ width: { xs: "100%", sm: "auto" } }}
+                disabled={formData.clearAllBrandingLogos}
+              >
+                {t.brandingMedia}
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  hidden
+                  onChange={handleAddBrandingLogos}
+                />
+              </Button>
+              <Button
+                variant={
+                  formData.clearAllBrandingLogos ? "contained" : "outlined"
+                }
+                color="error"
+                onClick={handleClearAllBrandingLogos}
+              >
+                {formData.clearAllBrandingLogos
+                  ? t.willClearAll || "Will Clear All (toggle off?)"
+                  : t.clearAllLogos || "Clear All Logos"}
+              </Button>
+            </Box>
+
+            <Box
+              sx={{ maxHeight: { xs: 420, md: 360 }, overflow: "auto", pr: 1 }}
+            >
+              <List disablePadding>
+                {formData.brandingLogos.map((item, idx) => (
+                  <ListItem
+                    key={item.uniqueKey || item._id || `b-${idx}`}
+                    disableGutters
+                    sx={{ px: 0, mb: 1 }}
+                  >
+                    <Paper
+                      variant="outlined"
+                      sx={{ p: 1.5, borderRadius: 1.5, width: "100%" }}
+                    >
+                      <Box
+                        sx={{
+                          display: "flex",
+                          flexDirection: { xs: "column", sm: "row" },
+                          alignItems: { xs: "stretch", sm: "center" },
+                          gap: 1.5,
+                          minWidth: 0,
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            flexShrink: 0,
+                            alignSelf: { xs: "center", sm: "flex-start" },
+                          }}
+                        >
+                          <img
+                            src={item.logoUrl}
+                            alt="branding"
+                            style={{
+                              width: 72,
+                              height: 72,
+                              objectFit: "cover",
+                              borderRadius: 4,
+                            }}
+                          />
+                        </Box>
+
+                        <Box
+                          sx={{
+                            display: "flex",
+                            flexDirection: { xs: "column", sm: "row" },
+                            gap: 1.5,
+                            flex: 1,
+                            minWidth: 0,
+                          }}
+                        >
+                          <Box
+                            sx={{
+                              flex: 1,
+                              minWidth: { xs: "100%", sm: 120 },
+                            }}
+                          >
+                            <TextField
+                              size="small"
+                              fullWidth
+                              label={t.nameOptional || "Client Name (optional)"}
+                              value={item.name}
+                              onChange={(e) =>
+                                handleBrandingLogoFieldChange(
+                                  idx,
+                                  "name",
+                                  e.target.value
+                                )
+                              }
+                            />
+                          </Box>
+                          <Box
+                            sx={{
+                              flex: 1.2,
+                              minWidth: { xs: "100%", sm: 140 },
+                            }}
+                          >
+                            <TextField
+                              size="small"
+                              fullWidth
+                              label={t.websiteOptional || "Website (optional)"}
+                              value={item.website}
+                              onChange={(e) =>
+                                handleBrandingLogoFieldChange(
+                                  idx,
+                                  "website",
+                                  e.target.value
+                                )
+                              }
+                            />
+                          </Box>
+                        </Box>
+
+                        <Box
+                          sx={{
+                            flexShrink: 0,
+                            alignSelf: { xs: "stretch", sm: "flex-start" },
+                          }}
+                        >
+                          <Tooltip title={t.remove || "Remove"}>
+                            <IconButton
+                              color="error"
+                              onClick={() => handleRemoveBrandingLogo(idx)}
+                              size="small"
+                              sx={{ width: { xs: "100%", sm: "auto" } }}
+                            >
+                              <ICONS.delete />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
+                      </Box>
+                    </Paper>
+                  </ListItem>
+                ))}
+              </List>
+            </Box>
           </Box>
           <Box>
             <Button component="label" variant="outlined">
