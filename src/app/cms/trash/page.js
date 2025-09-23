@@ -224,6 +224,12 @@ export default function TrashPage() {
     return () => clearTimeout(timeoutId);
   }, [limit, deletedByFilter, moduleFilter, dateFrom, dateTo, pageState]);
 
+  const safeFormatDate = (val) => {
+    if (!val) return null;
+    const d = new Date(val);
+    return isNaN(d) ? null : formatDate(val);
+  };
+
   // Clear filters
   const handleClearAllFilters = () => {
     setSearch("");
@@ -911,8 +917,8 @@ export default function TrashPage() {
                                     item.question ||
                                     item.fullName ||
                                     item.employeeId ||
-                                    formatDate(item.endTime) ||
-                                    formatDate(item.createdAt) ||
+                                    safeFormatDate(item.endTime) ||
+                                    safeFormatDate(item.createdAt) ||
                                     "Unnamed"}
                                 </Typography>
                               </Box>
