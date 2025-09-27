@@ -4,7 +4,6 @@ import { useEffect } from 'react';
 import { Box, Typography } from '@mui/material';
 
 export default function DemoAgentPage() {
-
   useEffect(() => {
     const script = document.createElement('script');
     script.type = 'module';
@@ -14,11 +13,15 @@ export default function DemoAgentPage() {
       'data-client-key',
       'Z29vZ2xlLW9hdXRoMnwxMDU2NzkzNzAxNDc5MTU5NDI5OTk6SUwtUTYtcmdGclRaenMxSzctWFl3'
     );
-    script.setAttribute('data-agent-id', 'v2_agt_Y4OPERLW');
+    script.setAttribute('data-agent-id', 'v2_agt_oBb8zgZN');
     script.setAttribute('data-name', 'did-agent');
     script.setAttribute('data-monitor', 'true');
     script.setAttribute('data-target-id', 'agent-container');
     document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script); 
+    };
   }, []);
 
   return (
@@ -37,7 +40,7 @@ export default function DemoAgentPage() {
       <Typography
         variant="h4"
         align="center"
-        sx={{ mb: 3}}
+        sx={{ mb: 3 }}
       >
         Meet Our AI Agent
       </Typography>
