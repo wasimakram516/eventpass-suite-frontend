@@ -38,6 +38,7 @@ import {
 import EmptyBusinessState from "@/components/EmptyBusinessState";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
+import InitialsPlaceholder from "@/components/InitialsPlaceholder";
 
 const translations = {
   en: {
@@ -268,7 +269,7 @@ export default function EventsPage() {
                   <Card
                     sx={{
                       maxWidth: 360,
-                      minHeight: 420, 
+                      minHeight: 420,
                       mx: "auto",
                       borderRadius: 4,
                       overflow: "hidden",
@@ -285,15 +286,25 @@ export default function EventsPage() {
                   >
                     {/* Cover Image + Overlay */}
                     <Box sx={{ position: "relative", height: 200 }}>
-                      <img
-                        src={ev.logoUrl || "/placeholder.jpg"}
-                        alt={ev.name}
-                        style={{
-                          width: "100%",
-                          height: "100%",
-                          objectFit: "cover",
-                        }}
-                      />
+                      {ev.logoUrl ? (
+                        <img
+                          src={ev.logoUrl}
+                          alt={ev.name}
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                            borderRadius: 8,
+                          }}
+                        />
+                      ) : (
+                        <InitialsPlaceholder
+                          name={ev.name}
+                          size={200}
+                          variant="rounded"
+                        />
+                      )}
+
                       <Box
                         sx={{
                           position: "absolute",
