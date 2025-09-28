@@ -15,6 +15,7 @@ import {
   Card,
   CardContent,
   CardActions,
+  Tooltip,
 } from "@mui/material";
 import BusinessIcon from "@mui/icons-material/Business";
 import BreadcrumbsNav from "@/components/BreadcrumbsNav";
@@ -50,7 +51,8 @@ const translations = {
     eventDeleted: "Event deleted!",
     errorLoading: "Error loading data.",
     deleteEventTitle: "Delete Event?",
-    deleteEventMessage: "Are you sure you want to move this item to the Recycle Bin?",
+    deleteEventMessage:
+      "Are you sure you want to move this item to the Recycle Bin?",
     delete: "Delete",
     slugLabel: "Slug:",
     dateRange: "Dates",
@@ -68,7 +70,8 @@ const translations = {
     eventDeleted: "تم حذف الفعالية!",
     errorLoading: "حدث خطأ أثناء تحميل البيانات.",
     deleteEventTitle: "حذف الفعالية؟",
-    deleteEventMessage: "هل أنت متأكد أنك تريد نقل هذا العنصر إلى سلة المحذوفات؟",
+    deleteEventMessage:
+      "هل أنت متأكد أنك تريد نقل هذا العنصر إلى سلة المحذوفات؟",
     delete: "Delete",
     slugLabel: ":المعرف",
     dateRange: "التواريخ",
@@ -272,123 +275,219 @@ export default function EventsPage() {
                     sx={{
                       width: "100%",
                       maxWidth: { xs: "none", sm: 360 },
+                      minHeight: 420,
                       mx: { xs: 0, sm: "auto" },
-                      boxShadow: 3,
-                      borderRadius: 2,
-                      height: "100%",
+                      borderRadius: 4,
+                      overflow: "hidden",
+                      boxShadow: "0 6px 20px rgba(0,0,0,0.12)",
                       display: "flex",
                       flexDirection: "column",
                       justifyContent: "space-between",
+                      transition: "all 0.3s ease",
+                      "&:hover": {
+                        transform: "translateY(-2px)",
+                        boxShadow: "0 12px 28px rgba(0,0,0,0.25)",
+                      },
                     }}
                   >
-                    <CardContent>
+                    {/* Cover Image + Overlay */}
+                    <Box sx={{ position: "relative", height: 200 }}>
+                      <img
+                        src={event.logoUrl || "/placeholder.jpg"}
+                        alt={event.name}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                        }}
+                      />
                       <Box
                         sx={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          mb: 2,
+                          position: "absolute",
+                          bottom: 0,
+                          left: 0,
+                          width: "100%",
+                          background:
+                            "linear-gradient(to top, rgba(0,0,0,0.75) 20%, rgba(0,0,0,0) 90%)",
+                          p: 2,
+                          color: "white",
                         }}
                       >
+                        {/* Status Chip */}
                         <Chip
-                          label={eventStatus}
-                          color={
-                            eventStatus === "Expired"
-                              ? "error"
-                              : eventStatus === "Current"
-                                ? "primary"
-                                : "success"
-                          }
-                          sx={{
-                            fontWeight: "bold",
-                            textTransform: "uppercase",
-                          }}
-                        />
-                      </Box>
-                      <Typography variant="h6" gutterBottom>
-                        {event.name}
-                      </Typography>
-                      <Typography variant="body2" color="textSecondary">
-                        <strong>{t.slugLabel}</strong> {event.slug}
-                      </Typography>
-                      <Typography variant="body2" color="textSecondary">
-                        <strong>{t.dateRange}:</strong>{" "}
-                        {event?.startDate
-                          ? formatDate(event.startDate) +
-                          (event?.endDate && event.endDate !== event.startDate
-                            ? ` to ${formatDate(event.endDate)}`
-                            : "")
-                          : "N/A"}
-                      </Typography>
-
-                      <Typography
-                        variant="body2"
-                        color="textSecondary"
-                        sx={{ mb: 2 }}
-                      >
-                        <strong>{t.venue}:</strong> {event.venue || "N/A"}
-                      </Typography>
-                      {event.logoUrl ? (
-                        <Box
-                          sx={{
-                            display: "flex",
-                            justifyContent: "center",
-                            mb: 2,
-                          }}
-                        >
-                          <img
-                            src={event.logoUrl}
-                            alt="Event Logo"
-                            style={{
-                              maxWidth: "250px",
-                              height: "auto",
-                              objectFit: "contain",
-                              borderRadius: "8px",
-                            }}
-                          />
-                        </Box>
-                      ) : (
-                        <Typography variant="body2" color="textSecondary">
-                          No logo available
-                        </Typography>
-                      )}
-                    </CardContent>
-                    <CardActions sx={{ justifyContent: "center" }}>
-                      {event.slug && (
-                        <IconButton
-                          color="primary"
-                          onClick={() =>
-                            router.replace(
-                              `/cms/modules/checkin/events/${event.slug}/registrations`
+                          icon={
+                            eventStatus === "Expired" ? (
+                              <ICONS.errorOutline fontSize="small" />
+                            ) : eventStatus === "Current" ? (
+                              <ICONS.checkCircle fontSize="small" />
+                            ) : (
+                              <ICONS.info fontSize="small" />
                             )
                           }
+                          label={eventStatus}
+                          size="small"
+                          sx={{
+                            bgcolor:
+                              eventStatus === "Expired"
+                                ? "error.main"
+                                : eventStatus === "Current"
+                                ? "primary.main"
+                                : "success.main",
+                            color: "white",
+                            fontWeight: "bold",
+                            textTransform: "uppercase",
+                            mb: 1,
+                            borderRadius: 1.5,
+                            px: 1,
+                            "& .MuiChip-icon": { color: "white", ml: 0.5 },
+                          }}
+                        />
+
+                        {/* Event Name */}
+                        <Typography
+                          variant="h6"
+                          sx={{
+                            fontWeight: 700,
+                            lineHeight: 1.2,
+                            mb: 0.3,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
                         >
-                          <ICONS.view fontSize="small" />
-                        </IconButton>
+                          {event.name}
+                        </Typography>
+
+                        {/* Venue */}
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            opacity: 0.85,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 0.5,
+                          }}
+                        >
+                          <ICONS.location fontSize="small" />{" "}
+                          {event.venue || "N/A"}
+                        </Typography>
+                      </Box>
+                    </Box>
+
+                    {/* Info Section */}
+                    <CardContent sx={{ px: 2, py: 2, flexGrow: 1 }}>
+                      {/* Slug */}
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          mb: 0.7,
+                          color: "text.secondary",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 0.8,
+                        }}
+                      >
+                        <ICONS.qrcode fontSize="small" sx={{ opacity: 0.7 }} />
+                        <strong>{t.slugLabel}</strong> {event.slug}
+                      </Typography>
+
+                      {/* Dates */}
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          mb: 0.7,
+                          color: "text.secondary",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 0.8,
+                          flexWrap: "wrap",
+                        }}
+                      >
+                        <ICONS.event fontSize="small" sx={{ opacity: 0.7 }} />
+                        <strong>{t.dateRange}:</strong>{" "}
+                        {event?.startDate
+                          ? `${formatDate(event.startDate)} → ${
+                              event?.endDate &&
+                              event.endDate !== event.startDate
+                                ? formatDate(event.endDate)
+                                : formatDate(event.startDate)
+                            }`
+                          : "N/A"}
+                      </Typography>
+                    </CardContent>
+
+                    {/* Actions */}
+                    <CardActions
+                      sx={{
+                        justifyContent: "space-around",
+                        borderTop: "1px solid rgba(0,0,0,0.06)",
+                        p: 1,
+                        bgcolor: "rgba(0,0,0,0.02)",
+                      }}
+                    >
+                      {event.slug && (
+                        <Tooltip title={t.viewRegs}>
+                          <IconButton
+                            color="primary"
+                            onClick={() =>
+                              router.replace(
+                                `/cms/modules/checkin/events/${event.slug}/registrations`
+                              )
+                            }
+                            sx={{
+                              "&:hover": { transform: "scale(1.1)" },
+                              transition: "0.2s",
+                            }}
+                          >
+                            <ICONS.view />
+                          </IconButton>
+                        </Tooltip>
                       )}
-                      <IconButton
-                        color="secondary"
-                        onClick={() => handleOpenEdit(event)}
-                      >
-                        <ICONS.edit fontSize="small" />
-                      </IconButton>
-                      <IconButton
-                        color="error"
-                        onClick={() => {
-                          setEventToDelete(event);
-                          setConfirmOpen(true);
-                        }}
-                      >
-                        <ICONS.delete fontSize="small" />
-                      </IconButton>
-                      <IconButton
-                        color="primary"
-                        onClick={() => {
-                          setEventToShare(event);
-                          setShareModalOpen(true);
-                        }}
-                      >
-                        <ICONS.share fontSize="small" />
-                      </IconButton>
+
+                      <Tooltip title={t.edit}>
+                        <IconButton
+                          color="warning"
+                          onClick={() => handleOpenEdit(event)}
+                          sx={{
+                            "&:hover": { transform: "scale(1.1)" },
+                            transition: "0.2s",
+                          }}
+                        >
+                          <ICONS.edit />
+                        </IconButton>
+                      </Tooltip>
+
+                      <Tooltip title={t.delete}>
+                        <IconButton
+                          color="error"
+                          onClick={() => {
+                            setEventToDelete(event);
+                            setConfirmOpen(true);
+                          }}
+                          sx={{
+                            "&:hover": { transform: "scale(1.1)" },
+                            transition: "0.2s",
+                          }}
+                        >
+                          <ICONS.delete />
+                        </IconButton>
+                      </Tooltip>
+
+                      <Tooltip title={t.shareTitle || "Share"}>
+                        <IconButton
+                          color="primary"
+                          onClick={() => {
+                            setEventToShare(event);
+                            setShareModalOpen(true);
+                          }}
+                          sx={{
+                            "&:hover": { transform: "scale(1.1)" },
+                            transition: "0.2s",
+                          }}
+                        >
+                          <ICONS.share />
+                        </IconButton>
+                      </Tooltip>
                     </CardActions>
                   </Card>
                 </Grid>

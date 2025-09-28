@@ -15,6 +15,7 @@ import {
   Card,
   CardContent,
   CardActions,
+  Tooltip,
 } from "@mui/material";
 import BusinessIcon from "@mui/icons-material/Business";
 import BreadcrumbsNav from "@/components/BreadcrumbsNav";
@@ -51,7 +52,8 @@ const translations = {
     eventDeleted: "Event deleted!",
     errorLoading: "Error loading data.",
     deleteEventTitle: "Delete Event?",
-    deleteEventMessage: "Are you sure you want to move this item to the Recycle Bin?",
+    deleteEventMessage:
+      "Are you sure you want to move this item to the Recycle Bin?",
     delete: "Delete",
     slugLabel: "Slug:",
     dateRange: "Dates",
@@ -71,7 +73,8 @@ const translations = {
     eventDeleted: "تم حذف الفعالية!",
     errorLoading: "حدث خطأ أثناء تحميل البيانات.",
     deleteEventTitle: "حذف الفعالية؟",
-    deleteEventMessage: "هل أنت متأكد من أنك تريد نقل هذا العنصر إلى سلة المحذوفات؟",
+    deleteEventMessage:
+      "هل أنت متأكد من أنك تريد نقل هذا العنصر إلى سلة المحذوفات؟",
     delete: "حذف",
     slugLabel: ":المعرف",
     dateRange: "التواريخ",
@@ -265,128 +268,230 @@ export default function EventsPage() {
                   <Card
                     sx={{
                       maxWidth: 360,
+                      minHeight: 420, 
                       mx: "auto",
-                      boxShadow: 3,
-                      borderRadius: 2,
-                      height: "100%",
+                      borderRadius: 4,
+                      overflow: "hidden",
+                      boxShadow: "0 6px 20px rgba(0,0,0,0.12)",
                       display: "flex",
                       flexDirection: "column",
                       justifyContent: "space-between",
+                      transition: "all 0.3s ease",
+                      "&:hover": {
+                        transform: "translateY(-2px)",
+                        boxShadow: "0 12px 28px rgba(0,0,0,0.25)",
+                      },
                     }}
                   >
-                    <CardContent>
+                    {/* Cover Image + Overlay */}
+                    <Box sx={{ position: "relative", height: 200 }}>
+                      <img
+                        src={ev.logoUrl || "/placeholder.jpg"}
+                        alt={ev.name}
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                        }}
+                      />
                       <Box
                         sx={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          mb: 2,
+                          position: "absolute",
+                          bottom: 0,
+                          left: 0,
+                          width: "100%",
+                          background:
+                            "linear-gradient(to top, rgba(0,0,0,0.75) 20%, rgba(0,0,0,0) 90%)",
+                          p: 2,
+                          color: "white",
                         }}
                       >
+                        {/* Status Chip with icon */}
                         <Chip
-                          label={status}
-                          color={
-                            status === "Expired"
-                              ? "error"
-                              : status === "Current"
-                                ? "primary"
-                                : "success"
+                          icon={
+                            status === "Expired" ? (
+                              <ICONS.errorOutline fontSize="small" />
+                            ) : status === "Current" ? (
+                              <ICONS.checkCircle fontSize="small" />
+                            ) : (
+                              <ICONS.info fontSize="small" />
+                            )
                           }
+                          label={status}
+                          size="small"
                           sx={{
+                            bgcolor:
+                              status === "Expired"
+                                ? "error.main"
+                                : status === "Current"
+                                ? "primary.main"
+                                : "success.main",
+                            color: "white",
                             fontWeight: "bold",
                             textTransform: "uppercase",
+                            mb: 1,
+                            borderRadius: 1.5,
+                            px: 1,
+                            "& .MuiChip-icon": {
+                              color: "white",
+                              ml: 0.5,
+                            },
                           }}
                         />
+
+                        {/* Event Name */}
+                        <Typography
+                          variant="h6"
+                          sx={{
+                            fontWeight: 700,
+                            lineHeight: 1.2,
+                            mb: 0.3,
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          {ev.name}
+                        </Typography>
+
+                        {/* Venue */}
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            opacity: 0.85,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 0.5,
+                          }}
+                        >
+                          <ICONS.location fontSize="small" /> {ev.venue}
+                        </Typography>
                       </Box>
+                    </Box>
 
-                      <Typography variant="h6" gutterBottom>
-                        {ev.name}
-                      </Typography>
-
-                      <Typography variant="body2" color="textSecondary">
+                    {/* Info Section */}
+                    <CardContent sx={{ px: 2, py: 2, flexGrow: 1 }}>
+                      {/* Slug */}
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          mb: 0.7,
+                          color: "text.secondary",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 0.8,
+                        }}
+                      >
+                        <ICONS.qrcode fontSize="small" sx={{ opacity: 0.7 }} />
                         <strong>{t.slugLabel}</strong> {ev.slug}
                       </Typography>
 
-                      <Typography variant="body2" color="textSecondary">
+                      {/* Dates */}
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          mb: 0.7,
+                          color: "text.secondary",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 0.8,
+                          flexWrap: "wrap", // allows wrapping properly on small screens
+                        }}
+                      >
+                        <ICONS.event fontSize="small" sx={{ opacity: 0.7 }} />
                         <strong>{t.dateRange}:</strong>{" "}
                         {ev?.startDate
-                          ? formatDate(ev.startDate) +
-                          (ev.endDate && ev.endDate !== ev.startDate
-                            ? ` to ${formatDate(ev.endDate)}`
-                            : "")
+                          ? `${formatDate(ev.startDate)} → ${formatDate(
+                              ev.endDate
+                            )}`
                           : "N/A"}
                       </Typography>
 
+                      {/* Registrations */}
                       <Typography
                         variant="body2"
-                        color="textSecondary"
+                        sx={{
+                          color: "text.secondary",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 0.8,
+                        }}
                       >
-                        <strong>{t.venue}:</strong> {ev.venue}
-                      </Typography>
-
-                      <Typography
-                        variant="body2"
-                        color="textSecondary"
-                        sx={{ mb: 2 }}
-                      >
+                        <ICONS.people fontSize="small" sx={{ opacity: 0.7 }} />
                         <strong>{t.registrations}:</strong> {ev.registrations}
                       </Typography>
-
-                      {ev.logoUrl ? (
-                        <Box
-                          sx={{
-                            display: "flex",
-                            justifyContent: "center",
-                            mb: 2,
-                          }}
-                        >
-                          <img
-                            src={ev.logoUrl}
-                            alt="Event Logo"
-                            style={{ maxWidth: "250px", borderRadius: 8 }}
-                          />
-                        </Box>
-                      ) : (
-                        <Typography variant="body2" color="textSecondary">
-                          No logo available
-                        </Typography>
-                      )}
                     </CardContent>
 
-                    <CardActions sx={{ justifyContent: "center" }}>
-                      <IconButton
-                        color="primary"
-                        onClick={() =>
-                          router.replace(
-                            `/cms/modules/eventreg/events/${ev.slug}/registrations`
-                          )
-                        }
-                      >
-                        <ICONS.view />
-                      </IconButton>
-                      <IconButton
-                        color="secondary"
-                        onClick={() => handleOpenEdit(ev)}
-                      >
-                        <ICONS.edit />
-                      </IconButton>
-                      <IconButton
-                        color="error"
-                        onClick={() => {
-                          setEventToDelete(ev);
-                          setConfirmOpen(true);
-                        }}
-                      >
-                        <ICONS.delete />
-                      </IconButton>
-                      <IconButton
-                        color="primary"
-                        onClick={() => {
-                          setEventToShare(ev);
-                          setShareModalOpen(true);
-                        }}
-                      >
-                        <ICONS.share />
-                      </IconButton>
+                    {/* Actions */}
+                    <CardActions
+                      sx={{
+                        justifyContent: "space-around",
+                        borderTop: "1px solid rgba(0,0,0,0.06)",
+                        p: 1,
+                        bgcolor: "rgba(0,0,0,0.02)",
+                      }}
+                    >
+                      <Tooltip title={t.viewRegs}>
+                        <IconButton
+                          color="primary"
+                          onClick={() =>
+                            router.replace(
+                              `/cms/modules/eventreg/events/${ev.slug}/registrations`
+                            )
+                          }
+                          sx={{
+                            "&:hover": { transform: "scale(1.1)" },
+                            transition: "0.2s",
+                          }}
+                        >
+                          <ICONS.view />
+                        </IconButton>
+                      </Tooltip>
+
+                      <Tooltip title={t.edit}>
+                        <IconButton
+                          color="warning"
+                          onClick={() => handleOpenEdit(ev)}
+                          sx={{
+                            "&:hover": { transform: "scale(1.1)" },
+                            transition: "0.2s",
+                          }}
+                        >
+                          <ICONS.edit />
+                        </IconButton>
+                      </Tooltip>
+
+                      <Tooltip title={t.delete}>
+                        <IconButton
+                          color="error"
+                          onClick={() => {
+                            setEventToDelete(ev);
+                            setConfirmOpen(true);
+                          }}
+                          sx={{
+                            "&:hover": { transform: "scale(1.1)" },
+                            transition: "0.2s",
+                          }}
+                        >
+                          <ICONS.delete />
+                        </IconButton>
+                      </Tooltip>
+
+                      <Tooltip title={t.shareTitle || "Share"}>
+                        <IconButton
+                          color="primary"
+                          onClick={() => {
+                            setEventToShare(ev);
+                            setShareModalOpen(true);
+                          }}
+                          sx={{
+                            "&:hover": { transform: "scale(1.1)" },
+                            transition: "0.2s",
+                          }}
+                        >
+                          <ICONS.share />
+                        </IconButton>
+                      </Tooltip>
                     </CardActions>
                   </Card>
                 </Grid>

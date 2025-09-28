@@ -446,62 +446,103 @@ export default function ViewRegistrations() {
                 <Card
                   sx={{
                     width: "100%",
-                    minWidth: { sm: 260 },
-                    maxWidth: { sm: 380 },
-                    boxShadow: 4,
-                    borderRadius: 3,
+                    width: { xs: "100%", sm: 340 },
                     height: "100%",
+                    borderRadius: 4,
+                    overflow: "hidden",
+                    boxShadow: "0 6px 18px rgba(0,0,0,0.12)",
                     display: "flex",
                     flexDirection: "column",
-                    justifyContent: "space-between",
-                    transition: "transform 0.2s, box-shadow 0.2s",
-                    ...wrapTextBox,
+                    transition: "all 0.3s ease",
                     "&:hover": {
-                      transform: "translateY(-1px)",
-                      boxShadow: 6,
+                      transform: "translateY(-2px)",
+                      boxShadow: "0 12px 28px rgba(0,0,0,0.25)",
                     },
                   }}
                 >
-                  <CardHeader
-                    avatar={
-                      <ICONS.qrcode
-                        sx={{ fontSize: 32, color: "primary.main" }}
-                      />
-                    }
-                    title={
-                      <Typography variant="subtitle1" fontWeight="bold" noWrap>
-                        {t.token}: {reg.token}
-                      </Typography>
-                    }
-                    subheader={formatDateTimeWithLocale(reg.createdAt)}
+                  {/* Header with token + date */}
+                  <Box
                     sx={{
-                      backgroundColor: "grey.50",
+                      background: "linear-gradient(to right, #f5f5f5, #fafafa)", // ✅ subtle modern look
                       borderBottom: "1px solid",
                       borderColor: "divider",
-                      pb: 1,
+                      p: 2,
                     }}
-                  />
+                  >
+                    <Stack spacing={0.6}>
+                      {/* Token */}
+                      <Stack direction="row" spacing={1} alignItems="center">
+                        <ICONS.qrcode
+                          sx={{ fontSize: 28, color: "primary.main" }}
+                        />
+                        <Typography
+                          variant="subtitle1"
+                          fontWeight="bold"
+                          sx={wrapTextBox}
+                        >
+                          {t.token}: {reg.token}
+                        </Typography>
+                      </Stack>
 
-                  <CardContent sx={{ flexGrow: 1 }}>
+                      {/* Date with icon */}
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 0.5,
+                          color: "text.secondary",
+                        }}
+                      >
+                        <ICONS.time fontSize="inherit" sx={{ opacity: 0.7 }} />
+                        {formatDateTimeWithLocale(reg.createdAt)}
+                      </Typography>
+                    </Stack>
+                  </Box>
+
+                  {/* Dynamic Fields */}
+                  <CardContent sx={{ flexGrow: 1, px: 2, py: 1.5 }}>
                     {dynamicFields.map((f) => (
                       <Box
                         key={f.name}
                         sx={{
                           display: "flex",
                           justifyContent: "space-between",
-                          mb: 1,
-                          borderBottom: "1px dashed",
+                          alignItems: "flex-start",
+                          py: 0.8,
+                          borderBottom: "1px solid",
                           borderColor: "divider",
-                          pb: 0.5,
+                          "&:last-of-type": { borderBottom: "none" },
                         }}
                       >
-                        <Typography variant="body2" color="text.secondary">
+                        {/* Field Label */}
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 0.6,
+                            color: "text.secondary",
+                          }}
+                        >
+                          <ICONS.personOutline
+                            fontSize="small"
+                            sx={{ opacity: 0.6 }}
+                          />
                           {f.label}
                         </Typography>
+
+                        {/* Field Value */}
                         <Typography
                           variant="body2"
                           fontWeight={500}
-                          sx={{ ml: 2, textAlign: "right" }}
+                          sx={{
+                            ml: 2,
+                            textAlign: "right",
+                            flex: 1,
+                            color: "text.primary",
+                            ...wrapTextBox, // ✅ allow wrapping
+                          }}
                         >
                           {reg.customFields?.[f.name] ?? reg[f.name] ?? "—"}
                         </Typography>
@@ -509,12 +550,13 @@ export default function ViewRegistrations() {
                     ))}
                   </CardContent>
 
+                  {/* Actions */}
                   <CardActions
                     sx={{
                       justifyContent: "center",
-                      borderTop: "1px solid",
-                      borderColor: "divider",
-                      backgroundColor: "grey.50",
+                      borderTop: "1px solid rgba(0,0,0,0.08)",
+                      bgcolor: "rgba(0,0,0,0.02)",
+                      py: 1,
                     }}
                   >
                     <Tooltip title={t.viewWalkIns}>
@@ -523,6 +565,10 @@ export default function ViewRegistrations() {
                         onClick={() => {
                           setSelectedRegistration(reg);
                           setWalkInModalOpen(true);
+                        }}
+                        sx={{
+                          "&:hover": { transform: "scale(1.1)" },
+                          transition: "0.2s",
                         }}
                       >
                         <ICONS.view />
@@ -535,6 +581,10 @@ export default function ViewRegistrations() {
                         onClick={() => {
                           setRegistrationToDelete(reg._id);
                           setDeleteDialogOpen(true);
+                        }}
+                        sx={{
+                          "&:hover": { transform: "scale(1.1)" },
+                          transition: "0.2s",
                         }}
                       >
                         <ICONS.delete />

@@ -1,99 +1,113 @@
 "use client";
 
 import React from "react";
-import { Grid, Paper, Typography, Button, Box } from "@mui/material";
+import { Grid, Typography, Button, Box } from "@mui/material";
 import { useRouter } from "next/navigation";
+import AppCard from "@/components/AppCard";
 
 const DashboardCard = ({
   title,
   description,
   buttonLabel,
   icon,
-  color,
+  color = "#1976d2",
   route,
   actions,
 }) => {
   const router = useRouter();
 
   return (
-    <Grid
-      item
-      xs={12}
-      sm={6}
-      md={4}
-      sx={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "stretch",
-        "& .MuiGrid-item": {
-          display: "flex"
-        }
-      }}
-    >
-      <Paper
-        elevation={6}
+    <Grid item xs={12} sm={6} md={4} display="flex" justifyContent="center">
+      <AppCard
         sx={{
-          p: 4,
+          p: 3,
           my: 2,
+          alignItems: "center",
           textAlign: "center",
-          borderRadius: 2,
-          backgroundColor: "#ffffff",
-          display: "flex",
-          flexDirection: "column",
           justifyContent: "space-between",
           minHeight: { xs: "auto", sm: 280, md: 300 },
-          height: "100%",
-          width: {
-            xs: "100%",
-            sm: 300,
-          },
-          maxWidth: "100%",
-          transition: "transform 0.2s, box-shadow 0.2s",
-          "&:hover": {
-            boxShadow: "0px 6px 15px rgba(0, 0, 0, 0.2)",
-          },
+          width: { xs: "100%", sm: 300 },
         }}
       >
-        <Box sx={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center" }}>
-          {icon &&
-            React.cloneElement(icon, {
-              sx: { fontSize: 50, color, mb: 2 },
-            })}
-          <Typography variant="h6" sx={{ fontWeight: "bold", color, mb: 1, textAlign: "center" }}>
-            {title}
-          </Typography>
-          <Typography
-            variant="body2"
+        {/* Icon with highlight */}
+        {icon && (
+          <Box
             sx={{
-              mb: 3,
-              color: "#555",
-              minHeight: { xs: "auto", sm: "3rem", md: "3.5rem" },
+              width: 72,
+              height: 72,
+              borderRadius: "50%",
+              bgcolor: `${color}1A`, // soft tinted bg
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              textAlign: "center"
+              mb: 2,
             }}
           >
-            {description}
-          </Typography>
-        </Box>
+            {React.cloneElement(icon, {
+              sx: { fontSize: 36, color },
+            })}
+          </Box>
+        )}
+
+        {/* Title */}
+        <Typography
+          variant="h6"
+          fontWeight="bold"
+          sx={{ color, mb: 1, lineHeight: 1.3 }}
+        >
+          {title}
+        </Typography>
+
+        {/* Description */}
+        <Typography
+          variant="body2"
+          sx={{
+            mb: 3,
+            color: "text.secondary",
+            minHeight: { xs: "auto", sm: 48 },
+            px: 1,
+          }}
+        >
+          {description}
+        </Typography>
+
+        {/* Primary Button */}
         {buttonLabel && (
           <Button
             variant="contained"
-            size="large"
-            sx={{ backgroundColor: color, color: "#fff", mt: 2 }}
+            size="medium"
+            sx={{
+              backgroundColor: color,
+              color: "#fff",
+              textTransform: "none",
+              fontWeight: "bold",
+              px: 3,
+              borderRadius: 2,
+              "&:hover": {
+                backgroundColor: color,
+                opacity: 0.9,
+              },
+            }}
             onClick={() => router.push(route)}
           >
             {buttonLabel}
           </Button>
         )}
-        {/* Action buttons (edit, delete, view, etc.) */}
+
+        {/* Extra Actions */}
         {actions && (
-          <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              gap: 1.5,
+              mt: buttonLabel ? 2 : 0,
+            }}
+          >
             {actions}
           </Box>
         )}
-      </Paper>
+      </AppCard>
     </Grid>
   );
 };
