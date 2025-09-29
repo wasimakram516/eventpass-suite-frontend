@@ -249,7 +249,8 @@ export default function ViewRegistrations() {
     lines.push([`Event Type:`, eventDetails.eventType || `N/A`].join(`,`));
     lines.push([]);
 
-    // Header row for registrations
+    // ---- Registrations Section ----
+    lines.push([`=== Registrations ===`]);
     const regHeaders = [
       ...dynamicFields.map((f) => f.label),
       `Token`,
@@ -270,35 +271,60 @@ export default function ViewRegistrations() {
       lines.push(row.join(`,`));
     });
 
+    // ---- Walk-ins Section ----
     const allWalkIns = registrationsToExport.flatMap((reg) =>
       (reg.walkIns || []).map((w) => ({
-        token: reg.token,
-        scannedAt: w.scannedAt,
-        scannedBy: w.scannedBy?.name || w.scannedBy?.email || `Unknown`,
+        ...w,
+        // inject registration details here
+        regData: reg,
       }))
     );
 
     if (allWalkIns.length > 0) {
       lines.push([]);
-      lines.push([`Registration Token`, `Scanned At`, `Scanned By`].join(`,`));
+      lines.push([`=== Walk-ins ===`]);
+
+      const walkInHeaders = [
+        ...dynamicFields.map((f) => f.label),
+        `Token`,
+        `Registered At`,
+        `Scanned At`,
+        `Scanned By`,
+      ];
+      lines.push(walkInHeaders.join(`,`));
+
       allWalkIns.forEach((w) => {
-        lines.push(
-          [
-            `"${w.token}"`,
-            `"${formatDateTimeWithLocale(w.scannedAt)}"`,
-            `"${w.scannedBy.replace(/"/g, `""`)}"`,
-          ].join(`,`)
+        const reg = w.regData;
+
+        const row = dynamicFields.map((f) => {
+          return `"${(reg.customFields?.[f.name] ?? reg[f.name] ?? "")
+            .toString()
+            .replace(/"/g, `""`)}"`;
+        });
+
+        row.push(
+          `"${reg.token}"`,
+          `"${reg.createdAt ? formatDateTimeWithLocale(reg.createdAt) : ""}"`,
+          `"${w.scannedAt ? formatDateTimeWithLocale(w.scannedAt) : ""}"`,
+          `"${(w.scannedBy?.name || w.scannedBy?.email || "Unknown").replace(
+            /"/g,
+            `""`
+          )}"`
         );
+
+        lines.push(row.join(`,`));
       });
     }
 
-    // Add UTF-8 BOM here
+    // Save CSV
     const csvContent = `\uFEFF` + lines.join(`\n`);
     const blob = new Blob([csvContent], { type: `text/csv;charset=utf-8;` });
 
     const link = document.createElement(`a`);
     link.href = URL.createObjectURL(blob);
-    link.download = `${eventDetails.slug || `event`}_registrations.csv`;
+    link.download = `${
+      eventDetails.slug || `event`
+    }_registrations_and_walkins.csv`;
     link.click();
     setExportLoading(false);
   };

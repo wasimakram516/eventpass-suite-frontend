@@ -162,7 +162,6 @@ const ViewRegistrations = () => {
 
   const exportToCSV = async () => {
     if (!eventDetails) return;
-
     setExportLoading(true);
 
     const res = await getAllCheckInRegistrationsByEvent(eventSlug);
@@ -188,25 +187,27 @@ const ViewRegistrations = () => {
     lines.push([`Description:`, eventDetails.description || `N/A`].join(`,`));
     lines.push([`Logo URL:`, eventDetails.logoUrl || `N/A`].join(`,`));
     lines.push([`Event Type:`, eventDetails.eventType || `N/A`].join(`,`));
-    lines.push([]); // blank line
+    lines.push([]);
 
-    // --- Headers for registrations ---
+    // --- Registrations Section ---
+    lines.push([`=== Registrations ===`]);
     const headers = [
       `Employee ID`,
       `Employee Name`,
       `Table Number`,
       `Table Image URL`,
-      t.registeredAt,
+      `Token`,
+      `Registered At`,
     ];
     lines.push(headers.join(`,`));
 
-    // --- Registration rows ---
     registrationsToExport.forEach((reg) => {
       const row = [
-        reg.employeeId || `N/A`,
-        reg.employeeName || `N/A`,
-        reg.tableNumber || `N/A`,
-        reg.tableImage || `N/A`,
+        reg.employeeId || "N/A",
+        reg.employeeName || "N/A",
+        reg.tableNumber || "N/A",
+        reg.tableImage || "N/A",
+        reg.token || "N/A",
         formatDateTimeWithLocale(reg.createdAt),
       ];
       lines.push(
@@ -214,47 +215,55 @@ const ViewRegistrations = () => {
       );
     });
 
-    // --- Walk-in records ---
+    // --- Walk-ins Section ---
     const allWalkIns = registrationsToExport.flatMap((reg) =>
       (reg.walkIns || []).map((w) => ({
-        employeeId: reg.employeeId,
-        employeeName: reg.employeeName,
-        tableNumber: reg.tableNumber,
-        scannedAt: w.scannedAt,
-        scannedBy: w.scannedBy?.name || w.scannedBy?.email || `Unknown`,
+        ...w,
+        reg,
       }))
     );
 
     if (allWalkIns.length > 0) {
-      lines.push([]); // blank line before walk-ins
-      lines.push(
-        [
-          `Employee ID`,
-          `Employee Name`,
-          `Table Number`,
-          `Scanned At`,
-          `Scanned By`,
-        ].join(`,`)
-      );
+      lines.push([]);
+      lines.push([`=== Walk-ins ===`]);
+      const walkHeaders = [
+        `Employee ID`,
+        `Employee Name`,
+        `Table Number`,
+        `Table Image URL`,
+        `Token`,
+        `Registered At`,
+        `Scanned At`,
+        `Scanned By`,
+      ];
+      lines.push(walkHeaders.join(`,`));
+
       allWalkIns.forEach((w) => {
+        const reg = w.reg;
+        const row = [
+          reg.employeeId || "N/A",
+          reg.employeeName || "N/A",
+          reg.tableNumber || "N/A",
+          reg.tableImage || "N/A",
+          reg.token || "N/A",
+          formatDateTimeWithLocale(reg.createdAt),
+          w.scannedAt ? formatDateTimeWithLocale(w.scannedAt) : "",
+          w.scannedBy?.name || w.scannedBy?.email || "Unknown",
+        ];
         lines.push(
-          [
-            `"${w.employeeId}"`,
-            `"${w.employeeName}"`,
-            `"${w.tableNumber}"`,
-            `"${formatDateTimeWithLocale(w.scannedAt)}"`,
-            `"${w.scannedBy.replace(/"/g, `""`)}"`,
-          ].join(`,`)
+          row.map((v) => `"${v.toString().replace(/"/g, `""`)}"`).join(`,`)
         );
       });
     }
 
-    // Add UTF-8 BOM
+    // --- Save CSV ---
     const csvContent = `\uFEFF` + lines.join(`\n`);
     const blob = new Blob([csvContent], { type: `text/csv;charset=utf-8;` });
-    const link = document.createElement(`a`);
+    const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `${eventDetails.slug || `event`}_registrations.csv`;
+    link.download = `${
+      eventDetails.slug || "event"
+    }_employee_registrations.csv`;
     link.click();
 
     setExportLoading(false);
