@@ -2,22 +2,14 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import {
-  Box,
-  Typography,
-  Button,
-  CircularProgress,
-  Paper,
-  Stack,
-} from "@mui/material";
+import { Box, Typography, CircularProgress } from "@mui/material";
 
-import { formatDateWithShortMonth } from "@/utils/dateUtils";
-import ICONS from "@/utils/iconUtil";
 import { getCheckInEventBySlug } from "@/services/checkin/checkinEventService";
 import LanguageSelector from "@/components/LanguageSelector";
 import useI18nLayout from "@/hooks/useI18nLayout";
-import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import Background from "@/components/Background";
+import EventWelcomeCard from "@/components/EventWelcomeCard";
+import ICONS from "@/utils/iconUtil";
 
 export default function EventDetails() {
   const { eventSlug } = useParams();
@@ -72,7 +64,7 @@ export default function EventDetails() {
           justifyContent: "center",
         }}
       >
-        <Background/>
+        <Background />
         <CircularProgress />
       </Box>
     );
@@ -89,7 +81,7 @@ export default function EventDetails() {
           textAlign: "center",
         }}
       >
-        <Background/>
+        <Background />
         <Typography color="error" variant="h6">
           {error}
         </Typography>
@@ -103,183 +95,57 @@ export default function EventDetails() {
     <Box
       sx={{
         display: "flex",
+        flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
         minHeight: "100vh",
         px: 2,
         py: { xs: 2, md: 4 },
+        gap: 2,
         position: "relative",
       }}
     >
-      <Background/>
-      <Paper
+      <Background />
+
+      {/* Logo shown outside the card */}
+      {logoUrl && (
+        <Box
+          sx={{
+            width: { xs: "100%", sm: 320, md: 500 },
+            borderRadius: 3,
+            overflow: "hidden",
+            boxShadow: 3,
+            mt: { xs: 6, sm: 0 },
+          }}
+        >
+          <Box
+            component="img"
+            src={logoUrl}
+            alt={`${name} Logo`}
+            sx={{
+              display: "block",
+              width: "100%",
+              height: "auto",
+              objectFit: "contain",
+            }}
+          />
+        </Box>
+      )}
+
+      {/* Main welcome card */}
+      <EventWelcomeCard
+        t={t}
+        name={name}
+        venue={venue}
+        startDate={startDate}
+        endDate={endDate}
+        router={router}
         dir={dir}
-        elevation={3}
-        sx={{
-          p: 4,
-          maxWidth: 700,
-          width: "100%",
-          textAlign: "center",
-          borderRadius: 3,
-          boxShadow: "0px 6px 12px rgba(0, 0, 0, 0.15)",
-        }}
-      >
-        {logoUrl && (
-          <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
-            <img
-              src={logoUrl}
-              alt={`${name} Logo`}
-              style={{
-                width: "auto",
-                height: "150px",
-                maxWidth: "250px",
-                objectFit: "contain",
-                borderRadius: 8,
-              }}
-            />
-          </Box>
-        )}
+        actionLabel={t.getTable}
+        actionIcon={<ICONS.diningTable />}
+        actionRoute={`/checkin/event/${eventSlug}/register`}
+      />
 
-        <Typography
-          variant="h4"
-          fontWeight="bold"
-          sx={{
-            fontSize: { xs: 28, md: 36 },
-            color: "primary.main",
-            letterSpacing: "1.5px",
-            mb: 2,
-            animation: "fadeIn 1.2s ease-in-out",
-            "@keyframes fadeIn": {
-              "0%": { opacity: 0, transform: "translateY(-10px)" },
-              "100%": { opacity: 1, transform: "translateY(0)" },
-            },
-          }}
-        >
-          {t.welcome} {name}
-        </Typography>
-
-        <Stack
-          direction="row"
-          spacing={1}
-          justifyContent="center"
-          alignItems="center"
-          flexWrap="wrap"
-        >
-          <Box component="span" sx={{ display: "flex", color: "primary.main" }}>
-            <ICONS.location />
-          </Box>
-          {dir === "rtl" && (
-            <Box
-              component="span"
-              sx={{
-                width: "8px",
-                display: "inline-block",
-              }}
-            />
-          )}
-          <Typography variant="h6" sx={{ fontSize: { xs: 16, md: 20 } }}>
-            {venue}
-          </Typography>
-        </Stack>
-
-        <Stack
-          direction="row"
-          spacing={1}
-          justifyContent="center"
-          alignItems="center"
-          flexWrap="wrap"
-          sx={{ my: 2 }}
-        >
-          <Box component="span" sx={{ display: "flex", color: "primary.main" }}>
-            <ICONS.event />
-          </Box>
-
-          {dir === "rtl" && (
-            <Box
-              component="span"
-              sx={{ width: "8px", display: "inline-block" }}
-            />
-          )}
-
-          {startDate && endDate ? (
-            startDate === endDate ? (
-              <Typography variant="h6" sx={{ fontSize: { xs: 16, md: 20 } }}>
-                {formatDateWithShortMonth(startDate)}
-              </Typography>
-            ) : (
-              <Typography variant="h6" sx={{ fontSize: { xs: 16, md: 20 } }}>
-                {`${formatDateWithShortMonth(startDate)} ${
-                  t.to
-                } ${formatDateWithShortMonth(endDate)}`}
-              </Typography>
-            )
-          ) : (
-            <Typography variant="h6" sx={{ fontSize: { xs: 16, md: 20 } }}>
-              {t.dateNotAvailable}
-            </Typography>
-          )}
-        </Stack>
-
-        <Typography
-          variant="body2"
-          sx={{
-            fontSize: { xs: 14, md: 16 },
-            color: "text.secondary",
-            mb: 4,
-          }}
-        >
-          {t.thankYou}
-        </Typography>
-
-        <Button
-          variant="contained"
-          size="large"
-          fullWidth
-          onClick={() => router.replace(`/checkin/event/${eventSlug}/register`)}
-          startIcon={<ICONS.diningTable />}
-          sx={{
-            maxWidth: { xs: "100%", sm: 300 },
-            fontSize: { xs: 16, md: 18 },
-            p: "12px",
-            fontWeight: "bold",
-            borderRadius: 2,
-            textTransform: "none",
-            background: "primary.main",
-            transition: "0.3s",
-            "&:hover": {
-              background: "secondary.main",
-              transform: "scale(1.05)",
-            },
-            ...getStartIconSpacing(dir),
-          }}
-        >
-          {t.getTable}
-        </Button>
-
-        <Stack
-          direction="row"
-          spacing={dir === "ltr" ? 1 : 0}
-          justifyContent="center"
-          alignItems="center"
-          mt={3}
-        >
-          <Box component="span" sx={{ display: "flex", color: "primary.main" }}>
-            <ICONS.time fontSize="small" />
-          </Box>
-          {dir === "rtl" && (
-            <Box
-              component="span"
-              sx={{
-                width: "8px",
-                display: "inline-block",
-              }}
-            />
-          )}
-          <Typography variant="caption" fontSize={14}>
-            {t.takesSeconds}
-          </Typography>
-        </Stack>
-      </Paper>
       <LanguageSelector top={20} right={20} />
     </Box>
   );

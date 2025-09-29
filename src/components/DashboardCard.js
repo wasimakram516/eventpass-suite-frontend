@@ -3,7 +3,7 @@
 import React from "react";
 import { Grid, Typography, Button, Box } from "@mui/material";
 import { useRouter } from "next/navigation";
-import AppCard from "@/components/AppCard";
+import AppCard from "@/components/cards/AppCard";
 
 const DashboardCard = ({
   title,

@@ -2,22 +2,14 @@
 
 import React, { useEffect, useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
-import {
-  Box,
-  Typography,
-  Button,
-  CircularProgress,
-  Paper,
-  Stack,
-} from "@mui/material";
+import { Box, Typography, CircularProgress } from "@mui/material";
 import HorizontalCarousel from "@/components/HorizontalCarousel";
-import { formatDateWithShortMonth } from "@/utils/dateUtils";
-import ICONS from "@/utils/iconUtil";
 import { getPublicEventBySlug } from "@/services/eventreg/eventService";
 import LanguageSelector from "@/components/LanguageSelector";
 import useI18nLayout from "@/hooks/useI18nLayout";
-import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import Background from "@/components/Background";
+import EventWelcomeCard from "@/components/EventWelcomeCard";
+import ICONS from "@/utils/iconUtil";
 
 export default function EventDetails() {
   const { eventSlug } = useParams();
@@ -137,155 +129,19 @@ export default function EventDetails() {
       )}
 
       {/* Main details container */}
-      <Paper
+      <EventWelcomeCard
+        t={t}
+        name={name}
+        venue={venue}
+        startDate={startDate}
+        endDate={endDate}
+        router={router}
         dir={dir}
-        elevation={3}
-        sx={{
-          p: 4,
-          mt: { xs: 1, sm: 0 },
-          maxWidth: 700,
-          width: "100%",
-          textAlign: "center",
-          borderRadius: 3,
-          boxShadow: "0px 6px 12px rgba(0, 0, 0, 0.15)",
-        }}
-      >
-        <Typography
-          variant="h4"
-          fontWeight="bold"
-          sx={{
-            fontSize: { xs: 28, md: 36 },
-            color: "primary.main",
-            letterSpacing: "1.5px",
-            mb: 2,
-            animation: "fadeIn 1.2s ease-in-out",
-            "@keyframes fadeIn": {
-              "0%": { opacity: 0, transform: "translateY(-10px)" },
-              "100%": { opacity: 1, transform: "translateY(0)" },
-            },
-          }}
-        >
-          {t.welcome} {name}
-        </Typography>
+        actionLabel={t.registerNow}
+        actionIcon={<ICONS.appRegister />}
+        actionRoute={`/eventreg/event/${eventSlug}/register`}
+      />
 
-        <Stack
-          direction="row"
-          spacing={1}
-          justifyContent="center"
-          alignItems="center"
-          flexWrap="wrap"
-        >
-          <Box component="span" sx={{ display: "flex", color: "primary.main" }}>
-            <ICONS.location />
-          </Box>
-          {dir === "rtl" && (
-            <Box component="span" sx={{ width: 8, display: "inline-block" }} />
-          )}
-          <Typography variant="h6" sx={{ fontSize: { xs: 16, md: 20 } }}>
-            {venue}
-          </Typography>
-        </Stack>
-
-        <Stack
-          direction="row"
-          spacing={1}
-          justifyContent="center"
-          alignItems="center"
-          flexWrap="wrap"
-          sx={{ my: 2 }}
-        >
-          <Box component="span" sx={{ display: "flex", color: "primary.main" }}>
-            <ICONS.event />
-          </Box>
-          {dir === "rtl" && (
-            <Box component="span" sx={{ width: 8, display: "inline-block" }} />
-          )}
-
-          {startDate && endDate ? (
-            startDate === endDate ? (
-              <Typography
-                variant="h6"
-                noWrap
-                sx={{ fontSize: { xs: 16, md: 20 } }}
-              >
-                {formatDateWithShortMonth(startDate)}
-              </Typography>
-            ) : (
-              <Typography
-                variant="h6"
-                noWrap
-                sx={{ fontSize: { xs: 16, md: 20 } }}
-              >
-                {`${formatDateWithShortMonth(startDate)} ${
-                  t.to
-                } ${formatDateWithShortMonth(endDate)}`}
-              </Typography>
-            )
-          ) : (
-            <Typography
-              variant="h6"
-              noWrap
-              sx={{ fontSize: { xs: 16, md: 20 } }}
-            >
-              {t.dateNotAvailable}
-            </Typography>
-          )}
-        </Stack>
-
-        <Typography
-          variant="body2"
-          sx={{ fontSize: { xs: 14, md: 16 }, color: "text.secondary", mb: 4 }}
-        >
-          {t.thankYou}
-        </Typography>
-
-        <Button
-          variant="contained"
-          size="large"
-          fullWidth
-          onClick={() =>
-            router.replace(`/eventreg/event/${eventSlug}/register`)
-          }
-          startIcon={<ICONS.appRegister />}
-          sx={{
-            maxWidth: { xs: "100%", sm: 300 },
-            fontSize: { xs: 16, md: 18 },
-            p: "12px",
-            fontWeight: "bold",
-            borderRadius: 2,
-            textTransform: "none",
-            background: "primary.main",
-            transition: "0.3s",
-            "&:hover": {
-              background: "secondary.main",
-              transform: "scale(1.05)",
-            },
-            ...getStartIconSpacing(dir),
-          }}
-        >
-          {t.registerNow}
-        </Button>
-
-        <Stack
-          direction="row"
-          spacing={dir === "ltr" ? 1 : 0}
-          justifyContent="center"
-          alignItems="center"
-          mt={3}
-        >
-          <Box component="span" sx={{ display: "flex", color: "primary.main" }}>
-            <ICONS.time fontSize="small" />
-          </Box>
-          {dir === "rtl" && (
-            <Box component="span" sx={{ width: 8, display: "inline-block" }} />
-          )}
-          <Typography variant="caption" fontSize={14}>
-            {t.takesSeconds}
-          </Typography>
-        </Stack>
-      </Paper>
-
-      {/* Branding media at the bottom */}
       {/* Branding media carousel at the bottom */}
       <HorizontalCarousel
         items={brandingMedia}
