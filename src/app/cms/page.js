@@ -162,7 +162,7 @@ export default function HomePage() {
 
   return (
     <Box sx={{ pb: 6, bgcolor: "#f8f9fc", minHeight: "100vh" }}>
-      <Container dir={dir}>
+      <Box dir={dir}>
         {/* Welcome Header */}
         <Paper
           sx={{
@@ -554,7 +554,7 @@ export default function HomePage() {
             setShowBusinessModal(false);
           }}
         />
-      </Container>
+      </Box>
     </Box>
   );
 }
