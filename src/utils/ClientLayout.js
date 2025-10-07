@@ -25,6 +25,7 @@ export default function ClientLayout({ children }) {
     "/checkin",
     "/eventwheel",
     "/surveyguru",
+    "/event"
   ];
 
   const hideNavbar = modulePrefixes.some((prefix) =>
