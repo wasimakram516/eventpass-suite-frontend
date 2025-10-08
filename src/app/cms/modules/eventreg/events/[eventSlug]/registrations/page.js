@@ -22,6 +22,7 @@ import {
   CardActions,
   Tooltip,
   TextField,
+  Chip,
 } from "@mui/material";
 import { DateTimePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
@@ -726,6 +727,74 @@ export default function ViewRegistrations() {
           </FormControl>
         </Stack>
       </Box>
+      {/* Toolbar (keep your existing Box exactly as is) */}
+      <Box
+        display="flex"
+        flexDirection={{ xs: "column", md: "row" }}
+        justifyContent="space-between"
+        alignItems={{ xs: "flex-start", md: "center" }}
+        gap={2}
+        mb={2}
+        px={{ xs: 1, sm: 2 }}
+      >
+        {/* ...your existing left and right toolbar content... */}
+      </Box>
+
+      {/* Active Filters Summary (new block below toolbar) */}
+      {Object.entries(filters).filter(
+        ([key, val]) => val && !key.endsWith("Ms")
+      ).length > 0 && (
+        <Box
+          sx={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 1,
+            alignItems: "center",
+            mb: 3,
+            px: { xs: 1, sm: 2 },
+          }}
+        >
+          <Typography variant="body2" fontWeight={500} color="text.secondary">
+            Active Filters:
+          </Typography>
+
+          {Object.entries(filters)
+            .filter(([key, val]) => val && !key.endsWith("Ms"))
+            .map(([key, val]) => (
+              <Chip
+                key={key}
+                label={`${key}: ${val}`}
+                onDelete={() =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    [key]: "",
+                  }))
+                }
+                color="primary"
+                variant="outlined"
+                size="small"
+              />
+            ))}
+
+          <Button
+            size="small"
+            color="secondary"
+            onClick={() =>
+              setFilters({
+                ...Object.fromEntries(dynamicFields.map((f) => [f.name, ""])),
+                createdAtFromMs: null,
+                createdAtToMs: null,
+                scannedAtFromMs: null,
+                scannedAtToMs: null,
+                scannedBy: "",
+                token: "",
+              })
+            }
+          >
+            Clear All
+          </Button>
+        </Box>
+      )}
 
       {!filteredRegistrations.length ? (
         <NoDataAvailable />
