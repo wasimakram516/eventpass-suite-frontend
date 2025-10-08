@@ -25,8 +25,12 @@ import {
 } from "@mui/material";
 import { DateTimePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+dayjs.extend(utc);
+
 import FilterDialog from "@/components/FilterModal";
 import {
+  getRegistrationsByEvent,
   deleteRegistration,
   getAllPublicRegistrationsByEvent,
   downloadSampleExcel,
@@ -46,13 +50,114 @@ import NoDataAvailable from "@/components/NoDataAvailable";
 import { wrapTextBox } from "@/utils/wrapTextStyles";
 import useEventRegSocket from "@/hooks/modules/eventReg/useEventRegSocket";
 
+const translations = {
+  en: {
+    title: "Event Details",
+    description:
+      "View event details and manage registrations for this event. Export registration data or delete entries as needed.",
+    export: "Export to CSV",
+    exporting: "Exporting...",
+    downloadSample: "Download Sample",
+    uploadFile: "Upload File",
+    uploading: "Uploading...",
+    records: "records",
+    noRecords: "No registrations found for this event.",
+    delete: "Delete",
+    deleteMessage:
+      "Are you sure you want to move this item to the Recycle Bin?",
+    fullName: "Full Name",
+    emailLabel: "Email",
+    phoneLabel: "Phone",
+    companyLabel: "Company",
+    token: "Token",
+    registeredAt: "Registered At",
+    viewWalkIns: "View Walk-in Records",
+    deleteRecord: "Delete Registration",
+    recordsPerPage: "Records per page",
+    showing: "Showing",
+    to: "to",
+    of: "of",
+    matchingRecords: "{count} matching record",
+    matchingRecordsPlural: "{count} matching records",
+    found: "found",
+    exportAll: "Export All",
+    exportFiltered: "Export Filtered",
+    filters: "Filters",
+    applyFilters: "Apply",
+    clearFilters: "Clear",
+    filterBy: "Filter by",
+    from: "From",
+    to: "To",
+    scannedBy: "Scanned By (Name or Email)",
+    scannedAt: "Scanned At",
+  },
+  ar: {
+    title: "تفاصيل الحدث",
+    description:
+      "اعرض تفاصيل الحدث وقم بإدارة التسجيلات. يمكنك تصدير البيانات أو حذف السجلات.",
+    export: "تصدير إلى CSV",
+    exporting: "جاري التصدير...",
+    downloadSample: "تنزيل نموذج",
+    uploadFile: "رفع ملف",
+    uploading: "جاري الرفع...",
+    records: "سجلات",
+    noRecords: "لا توجد تسجيلات لهذا الحدث.",
+    delete: "حذف",
+    deleteMessage: "هل أنت متأكد من أنك تريد نقل هذا العنصر إلى سلة المحذوفات؟",
+    fullName: "الاسم الكامل",
+    emailLabel: "البريد الإلكتروني",
+    phoneLabel: "الهاتف",
+    companyLabel: "الشركة",
+    token: "الرمز",
+    registeredAt: "تاريخ التسجيل",
+    viewWalkIns: "عرض سجلات الحضور",
+    deleteRecord: "حذف التسجيل",
+    recordsPerPage: "عدد السجلات لكل صفحة",
+    showing: "عرض",
+    to: "إلى",
+    of: "من",
+    matchingRecords: "{count} سجل مطابق",
+    matchingRecordsPlural: "{count} سجلات مطابقة",
+    found: "تم العثور عليها",
+    exportAll: "تصدير الكل",
+    exportFiltered: "تصدير النتائج المصفاة",
+    filters: "تصفية",
+    applyFilters: "تطبيق",
+    clearFilters: "مسح",
+    filterBy: "تصفية حسب",
+    from: "من",
+    to: "إلى",
+    scannedBy: "تم المسح بواسطة (الاسم أو البريد الإلكتروني)",
+    scannedAt: "تاريخ المسح",
+  },
+};
+
 export default function ViewRegistrations() {
   const { eventSlug } = useParams();
+  const { dir, t } = useI18nLayout(translations);
+
+  const BASE_DATE_FILTERS = {
+    createdAtFromMs: null,
+    createdAtToMs: null,
+    scannedAtFromMs: null,
+    scannedAtToMs: null,
+    scannedBy: "",
+    token: "",
+  };
+
+  function buildFilterState(fieldsLocal, prev = {}) {
+    const dynamic = Object.fromEntries(
+      (fieldsLocal || []).map((f) => [f.name, prev[f.name] ?? ""])
+    );
+    return { ...BASE_DATE_FILTERS, ...dynamic };
+  }
 
   const [eventDetails, setEventDetails] = useState(null);
   const [dynamicFields, setDynamicFields] = useState([]);
+  const [fieldMetaMap, setFieldMetaMap] = useState({});
   const [allRegistrations, setAllRegistrations] = useState([]);
   const [totalRegistrations, setTotalRegistrations] = useState(0);
+
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [loading, setLoading] = useState(true);
@@ -64,98 +169,24 @@ export default function ViewRegistrations() {
   const [exportLoading, setExportLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(null);
+
+  const [rawSearch, setRawSearch] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+
   const [filterModalOpen, setFilterModalOpen] = useState(false);
-  const [filters, setFilters] = useState({});
+  const [filters, setFilters] = useState(BASE_DATE_FILTERS);
 
-  const filteredRegistrations = allRegistrations.filter((reg) => {
-    const combinedValues = [
-      reg.fullName,
-      reg.email,
-      reg.phone,
-      reg.company,
-      reg.token,
-      formatDateTimeWithLocale?.(reg.createdAt) || reg.createdAt,
-      ...Object.values(reg.customFields || {}),
-      ...(reg.walkIns || []).flatMap((w) => [
-        w.scannedBy?.name,
-        w.scannedBy?.email,
-        formatDateTimeWithLocale?.(w.scannedAt) || w.scannedAt,
-      ]),
-    ]
-      .filter(Boolean)
-      .join(" ")
-      .toLowerCase();
+  useEffect(() => {
+    if (eventSlug) fetchData();
+  }, [eventSlug]);
 
-    // ---- General search ----
-    const matchesSearch =
-      !searchTerm || combinedValues.includes(searchTerm.toLowerCase());
-
-    // ---- Date range filters ----
-    const createdAt = new Date(reg.createdAt);
-    const scannedDates = (reg.walkIns || []).map((w) => new Date(w.scannedAt));
-
-    const createdFrom = filters.createdAtFrom
-      ? new Date(filters.createdAtFrom)
-      : null;
-    const createdTo = filters.createdAtTo
-      ? new Date(filters.createdAtTo)
-      : null;
-    const scannedFrom = filters.scannedAtFrom
-      ? new Date(filters.scannedAtFrom)
-      : null;
-    const scannedTo = filters.scannedAtTo
-      ? new Date(filters.scannedAtTo)
-      : null;
-
-    const matchesCreatedAt =
-      (!createdFrom || createdAt >= createdFrom) &&
-      (!createdTo || createdAt <= createdTo);
-
-    const matchesScannedAt =
-      !filters.scannedAtFrom && !filters.scannedAtTo
-        ? true
-        : scannedDates.some(
-            (d) =>
-              (!scannedFrom || d >= scannedFrom) &&
-              (!scannedTo || d <= scannedTo)
-          );
-
-    // ---- Text / dropdown filters ----
-    const matchesFilters = Object.entries(filters).every(([key, value]) => {
-      if (!value || key.endsWith("From") || key.endsWith("To")) return true;
-
-      if (key === "scannedBy") {
-        return (reg.walkIns || []).some((w) =>
-          [w.scannedBy?.name, w.scannedBy?.email]
-            .filter(Boolean)
-            .some((v) =>
-              v.toString().toLowerCase().includes(value.toLowerCase())
-            )
-        );
-      }
-
-      const regValue =
-        reg.customFields?.[key] ??
-        reg[key] ??
-        (key === "token"
-          ? reg.token
-          : key === "createdAt"
-          ? formatDateTimeWithLocale?.(reg.createdAt) || reg.createdAt
-          : "");
-
-      return regValue.toString().toLowerCase().includes(value.toLowerCase());
-    });
-
-    return (
-      matchesSearch && matchesCreatedAt && matchesScannedAt && matchesFilters
+  useEffect(() => {
+    const id = setTimeout(
+      () => setSearchTerm(rawSearch.trim().toLowerCase()),
+      20
     );
-  });
-
-  const paginatedRegistrations = filteredRegistrations.slice(
-    (page - 1) * limit,
-    page * limit
-  );
+    return () => clearTimeout(id);
+  }, [rawSearch]);
 
   const { progress } = useEventRegSocket({
     eventId: eventDetails?._id,
@@ -167,124 +198,160 @@ export default function ViewRegistrations() {
     },
   });
 
-  const { dir, t } = useI18nLayout({
-    en: {
-      title: "Event Details",
-      description:
-        "View event details and manage registrations for this event. Export registration data or delete entries as needed.",
-      export: "Export to CSV",
-      exporting: "Exporting...",
-      downloadSample: "Download Sample",
-      uploadFile: "Upload File",
-      uploading: "Uploading...",
-      records: "records",
-      noRecords: "No registrations found for this event.",
-      delete: "Delete",
-      deleteMessage:
-        "Are you sure you want to move this item to the Recycle Bin?",
-      fullName: "Full Name",
-      emailLabel: "Email",
-      phoneLabel: "Phone",
-      companyLabel: "Company",
-      token: "Token",
-      registeredAt: "Registered At",
-      viewWalkIns: "View Walk-in Records",
-      deleteRecord: "Delete Registration",
-      recordsPerPage: "Records per page",
-      showing: "Showing",
-      to: "to",
-      of: "of",
-      matchingRecords: "{count} matching record",
-      matchingRecordsPlural: "{count} matching records",
-      found: "found",
-      exportAll: "Export All",
-      exportFiltered: "Export Filtered",
-      filters: "Filters",
-      applyFilters: "Apply",
-      clearFilters: "Clear",
-      filterBy: "Filter by",
-      from: "From",
-      to: "To",
-      scannedBy: "Scanned By (Name or Email)",
-      scannedAt: "Scanned At",
-    },
-    ar: {
-      title: "تفاصيل الحدث",
-      description:
-        "اعرض تفاصيل الحدث وقم بإدارة التسجيلات. يمكنك تصدير البيانات أو حذف السجلات.",
-      export: "تصدير إلى CSV",
-      exporting: "جاري التصدير...",
-      downloadSample: "تنزيل نموذج",
-      uploadFile: "رفع ملف",
-      uploading: "جاري الرفع...",
-      records: "سجلات",
-      noRecords: "لا توجد تسجيلات لهذا الحدث.",
-      delete: "حذف",
-      deleteMessage:
-        "هل أنت متأكد من أنك تريد نقل هذا العنصر إلى سلة المحذوفات؟",
-      fullName: "الاسم الكامل",
-      emailLabel: "البريد الإلكتروني",
-      phoneLabel: "الهاتف",
-      companyLabel: "الشركة",
-      token: "الرمز",
-      registeredAt: "تاريخ التسجيل",
-      viewWalkIns: "عرض سجلات الحضور",
-      deleteRecord: "حذف التسجيل",
-      recordsPerPage: "عدد السجلات لكل صفحة",
-      showing: "عرض",
-      to: "إلى",
-      of: "من",
-      matchingRecords: "{count} سجل مطابق",
-      matchingRecordsPlural: "{count} سجلات مطابقة",
-      found: "تم العثور عليها",
-      exportAll: "تصدير الكل",
-      exportFiltered: "تصدير النتائج المصفاة",
-      filters: "تصفية",
-      applyFilters: "تطبيق",
-      clearFilters: "مسح",
-      filterBy: "تصفية حسب",
-      from: "من",
-      to: "إلى",
-      scannedBy: "تم المسح بواسطة (الاسم أو البريد الإلكتروني)",
-      scannedAt: "تاريخ المسح",
-    },
-  });
-
-  useEffect(() => {
-    if (eventSlug) fetchData();
-  }, [eventSlug, page, limit]);
-
   const fetchData = async () => {
     setLoading(true);
 
-    const [evRes, allRegsRes] = await Promise.all([
-      getPublicEventBySlug(eventSlug),
-      getAllPublicRegistrationsByEvent(eventSlug),
-    ]);
+    // 1) Event meta -> dynamic fields
+    const evRes = await getPublicEventBySlug(eventSlug);
 
-    if (!evRes?.error) {
-      setEventDetails(evRes);
-      const fields = evRes.formFields?.length
+    const fieldsLocal =
+      !evRes?.error && evRes.formFields?.length
         ? evRes.formFields.map((f) => ({
             name: f.inputName,
             label: f.inputName,
+            type: (f.inputType || "text").toLowerCase(),
+            values: Array.isArray(f.values) ? f.values : [],
           }))
         : [
-            { name: "fullName", label: t.fullName },
-            { name: "email", label: t.emailLabel },
-            { name: "phone", label: t.phoneLabel },
-            { name: "company", label: t.companyLabel },
+            { name: "fullName", label: t.fullName, type: "text", values: [] },
+            { name: "email", label: t.emailLabel, type: "text", values: [] },
+            { name: "phone", label: t.phoneLabel, type: "text", values: [] },
+            {
+              name: "company",
+              label: t.companyLabel,
+              type: "text",
+              values: [],
+            },
           ];
-      setDynamicFields(fields);
+
+    if (!evRes?.error) {
+      setEventDetails(evRes);
+    }
+    setDynamicFields(fieldsLocal);
+    setFieldMetaMap(
+      Object.fromEntries(
+        fieldsLocal.map((f) => [f.name, { type: f.type, values: f.values }])
+      )
+    );
+
+    // Ensure filters include ALL dynamic keys
+    setFilters((prev) => buildFilterState(fieldsLocal, prev));
+
+    // 2) Helper to build search haystack ONCE per record (includes all dynamic fields)
+    function buildHaystack(reg) {
+      const dyn = fieldsLocal.map(
+        (f) => reg.customFields?.[f.name] ?? reg[f.name]
+      );
+      const walk = (reg.walkIns || []).flatMap((w) => [
+        w.scannedBy?.name,
+        w.scannedBy?.email,
+      ]);
+      return [
+        reg.fullName,
+        reg.email,
+        reg.phone,
+        reg.company,
+        reg.token,
+        ...dyn,
+        ...walk,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
     }
 
-    if (!allRegsRes?.error) {
-      setAllRegistrations(allRegsRes);
-      setTotalRegistrations(allRegsRes.length);
+    // 3) Fetch ALL registrations ONCE and preprocess
+    const regsRes = await getAllPublicRegistrationsByEvent(eventSlug);
+    if (!regsRes?.error) {
+      const prepped = regsRes.map((r) => ({
+        ...r,
+        _createdAtMs: Date.parse(r.createdAt),
+        _scannedAtMs: (r.walkIns || []).map((w) => Date.parse(w.scannedAt)),
+        _haystack: buildHaystack(r),
+      }));
+      setAllRegistrations(prepped);
+      setTotalRegistrations(prepped.length);
     }
 
     setLoading(false);
   };
+
+  const filteredRegistrations = React.useMemo(() => {
+    const {
+      createdAtFromMs,
+      createdAtToMs,
+      scannedAtFromMs,
+      scannedAtToMs,
+      ...restFilters
+    } = filters;
+
+    return allRegistrations.filter((reg) => {
+      // Search (precomputed across ALL dynamic fields)
+      if (searchTerm && !reg._haystack.includes(searchTerm)) return false;
+
+      // Date: createdAt (UTC ms bounds)
+      if (createdAtFromMs != null && reg._createdAtMs < createdAtFromMs)
+        return false;
+      if (createdAtToMs != null && reg._createdAtMs > createdAtToMs)
+        return false;
+
+      // Date: scannedAt (any walk-in within range)
+      if (scannedAtFromMs != null || scannedAtToMs != null) {
+        const ok = reg._scannedAtMs.some((d) => {
+          if (scannedAtFromMs != null && d < scannedAtFromMs) return false;
+          if (scannedAtToMs != null && d > scannedAtToMs) return false;
+          return true;
+        });
+        if (!ok) return false;
+      }
+
+      // Generic dynamic filters (all fields)
+      for (const [key, rawValue] of Object.entries(restFilters)) {
+        if (rawValue == null || rawValue === "") continue;
+        if (key.endsWith("Ms") || key.endsWith("From") || key.endsWith("To"))
+          continue;
+
+        if (key === "scannedBy") {
+          const hit = (reg.walkIns || []).some((w) =>
+            [w.scannedBy?.name, w.scannedBy?.email]
+              .filter(Boolean)
+              .some((v) =>
+                v
+                  .toString()
+                  .toLowerCase()
+                  .includes(String(rawValue).toLowerCase())
+              )
+          );
+          if (!hit) return false;
+          continue;
+        }
+
+        const meta = fieldMetaMap[key]; // {type, values}
+        const regValue =
+          reg.customFields?.[key] ??
+          reg[key] ??
+          (key === "token"
+            ? reg.token
+            : key === "createdAt"
+            ? reg.createdAt
+            : "");
+
+        const v = String(regValue ?? "").toLowerCase();
+        const f = String(rawValue).toLowerCase();
+
+        const isExact =
+          meta && ["radio", "list", "select", "dropdown"].includes(meta.type);
+        if (isExact ? v !== f : !v.includes(f)) return false;
+      }
+
+      return true;
+    });
+  }, [allRegistrations, filters, searchTerm, fieldMetaMap]);
+
+  const paginatedRegistrations = React.useMemo(() => {
+    const start = (page - 1) * limit;
+    return filteredRegistrations.slice(start, start + limit);
+  }, [filteredRegistrations, page, limit]);
 
   const handleDownloadSample = async () => {
     if (!eventSlug) return;
@@ -612,8 +679,8 @@ export default function ViewRegistrations() {
             size="small"
             variant="outlined"
             placeholder={t.searchPlaceholder || "Search..."}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            value={rawSearch}
+            onChange={(e) => setRawSearch(e.target.value)}
             InputProps={{
               startAdornment: (
                 <ICONS.search fontSize="small" sx={{ mr: 1, opacity: 0.6 }} />
@@ -831,12 +898,14 @@ export default function ViewRegistrations() {
           </Grid>
 
           <Box display="flex" justifyContent="center" mt={4}>
-            <Pagination
-              dir="ltr"
-              count={Math.ceil(filteredRegistrations.length / limit)}
-              page={page}
-              onChange={handlePageChange}
-            />
+            {filteredRegistrations.length > limit && (
+              <Pagination
+                dir="ltr"
+                count={Math.ceil(filteredRegistrations.length / limit)}
+                page={page}
+                onChange={(_, v) => setPage(v)}
+              />
+            )}
           </Box>
         </>
       )}
@@ -863,31 +932,29 @@ export default function ViewRegistrations() {
         title="Filter Registrations"
       >
         <Stack spacing={2}>
-          {/* --- Dynamic Custom / Classic Fields --- */}
-          {(eventDetails?.formFields?.length
-            ? eventDetails.formFields // use actual event-defined fields
-            : [
-                { inputName: "fullName", inputType: "text", values: [] },
-                { inputName: "email", inputType: "text", values: [] },
-                { inputName: "phone", inputType: "text", values: [] },
-                { inputName: "company", inputType: "text", values: [] },
-              ]
-          ).map((f) => (
-            <Box key={f.inputName}>
+          {/* --- Dynamic Custom / Classic Fields (use dynamicFields) --- */}
+          {dynamicFields.map((f) => (
+            <Box key={f.name}>
               <Typography variant="subtitle2" gutterBottom>
-                {f.inputName}
+                {f.label}
               </Typography>
 
-              {/* Dropdowns for radio/list */}
-              {["radio", "list"].includes(f.inputType?.toLowerCase()) &&
-              f.values?.length > 0 ? (
+              {/* Dropdowns for radio/list/select-like fields */}
+              {["radio", "list", "select", "dropdown"].includes(
+                (f.type || "").toLowerCase()
+              ) &&
+              Array.isArray(f.values) &&
+              f.values.length > 0 ? (
                 <FormControl fullWidth size="small">
-                  <InputLabel>{`Select ${f.inputName}`}</InputLabel>
+                  <InputLabel>{`Select ${f.label}`}</InputLabel>
                   <Select
-                    label={`Select ${f.inputName}`}
-                    value={filters[f.inputName] || ""}
+                    label={`Select ${f.label}`}
+                    value={filters[f.name] ?? ""}
                     onChange={(e) =>
-                      setFilters({ ...filters, [f.inputName]: e.target.value })
+                      setFilters((prev) => ({
+                        ...prev,
+                        [f.name]: e.target.value,
+                      }))
                     }
                   >
                     <MenuItem value="">
@@ -904,16 +971,20 @@ export default function ViewRegistrations() {
                 // Text field for all others
                 <TextField
                   size="small"
-                  placeholder={`Filter by ${f.inputName}`}
-                  value={filters[f.inputName] || ""}
+                  placeholder={`Filter by ${f.label}`}
+                  value={filters[f.name] ?? ""}
                   onChange={(e) =>
-                    setFilters({ ...filters, [f.inputName]: e.target.value })
+                    setFilters((prev) => ({
+                      ...prev,
+                      [f.name]: e.target.value,
+                    }))
                   }
                   fullWidth
                 />
               )}
             </Box>
           ))}
+
           {/* --- Always show Token + Registered At range --- */}
           <Box>
             <Typography variant="subtitle2" gutterBottom>
@@ -924,7 +995,7 @@ export default function ViewRegistrations() {
               placeholder="Filter by Token"
               value={filters.token || ""}
               onChange={(e) =>
-                setFilters({ ...filters, token: e.target.value })
+                setFilters((prev) => ({ ...prev, token: e.target.value }))
               }
               fullWidth
             />
@@ -938,24 +1009,32 @@ export default function ViewRegistrations() {
               <DateTimePicker
                 label="From"
                 value={
-                  filters.createdAtFrom ? dayjs(filters.createdAtFrom) : null
+                  filters.createdAtFromMs
+                    ? dayjs(filters.createdAtFromMs)
+                    : null
                 }
                 onChange={(val) =>
-                  setFilters({
-                    ...filters,
-                    createdAtFrom: val ? val.toISOString() : null,
-                  })
+                  setFilters((f) => ({
+                    ...f,
+                    createdAtFromMs: val
+                      ? dayjs(val).utc().startOf("day").valueOf()
+                      : null,
+                  }))
                 }
                 slotProps={{ textField: { size: "small", fullWidth: true } }}
               />
               <DateTimePicker
                 label="To"
-                value={filters.createdAtTo ? dayjs(filters.createdAtTo) : null}
+                value={
+                  filters.createdAtToMs ? dayjs(filters.createdAtToMs) : null
+                }
                 onChange={(val) =>
-                  setFilters({
-                    ...filters,
-                    createdAtTo: val ? val.toISOString() : null,
-                  })
+                  setFilters((f) => ({
+                    ...f,
+                    createdAtToMs: val
+                      ? dayjs(val).utc().endOf("day").valueOf()
+                      : null,
+                  }))
                 }
                 slotProps={{ textField: { size: "small", fullWidth: true } }}
               />
@@ -972,7 +1051,7 @@ export default function ViewRegistrations() {
               placeholder="Filter by scanner name/email"
               value={filters.scannedBy || ""}
               onChange={(e) =>
-                setFilters({ ...filters, scannedBy: e.target.value })
+                setFilters((prev) => ({ ...prev, scannedBy: e.target.value }))
               }
               fullWidth
             />
@@ -986,41 +1065,59 @@ export default function ViewRegistrations() {
               <DateTimePicker
                 label="From"
                 value={
-                  filters.scannedAtFrom ? dayjs(filters.scannedAtFrom) : null
+                  filters.scannedAtFromMs
+                    ? dayjs(filters.scannedAtFromMs)
+                    : null
                 }
                 onChange={(val) =>
-                  setFilters({
-                    ...filters,
-                    scannedAtFrom: val ? val.toISOString() : null,
-                  })
+                  setFilters((f) => ({
+                    ...f,
+                    scannedAtFromMs: val
+                      ? dayjs(val).utc().startOf("day").valueOf()
+                      : null,
+                  }))
                 }
                 slotProps={{ textField: { size: "small", fullWidth: true } }}
               />
               <DateTimePicker
                 label="To"
-                value={filters.scannedAtTo ? dayjs(filters.scannedAtTo) : null}
+                value={
+                  filters.scannedAtToMs ? dayjs(filters.scannedAtToMs) : null
+                }
                 onChange={(val) =>
-                  setFilters({
-                    ...filters,
-                    scannedAtTo: val ? val.toISOString() : null,
-                  })
+                  setFilters((f) => ({
+                    ...f,
+                    scannedAtToMs: val
+                      ? dayjs(val).utc().endOf("day").valueOf()
+                      : null,
+                  }))
                 }
                 slotProps={{ textField: { size: "small", fullWidth: true } }}
               />
             </Stack>
           </Box>
+
           {/* --- Buttons --- */}
           <Stack direction="row" justifyContent="flex-end" spacing={2} mt={2}>
-            {(Object.keys(filters).length > 0 ||
-              Object.values(filters).some((v) => v)) && (
-              <Button
-                variant="outlined"
-                color="secondary"
-                onClick={() => setFilters({})}
-              >
-                Clear
-              </Button>
-            )}
+            <Button
+              variant="outlined"
+              color="secondary"
+              onClick={() =>
+                setFilters({
+                  // reset ALL dynamic fields to ""
+                  ...Object.fromEntries(dynamicFields.map((f) => [f.name, ""])),
+                  // reset the special/base filters
+                  createdAtFromMs: null,
+                  createdAtToMs: null,
+                  scannedAtFromMs: null,
+                  scannedAtToMs: null,
+                  scannedBy: "",
+                  token: "",
+                })
+              }
+            >
+              Clear
+            </Button>
             <Button
               variant="contained"
               onClick={() => setFilterModalOpen(false)}
