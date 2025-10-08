@@ -287,7 +287,6 @@ export default function ViewRegistrations() {
     } = filters;
 
     return allRegistrations.filter((reg) => {
-      // Search (precomputed across ALL dynamic fields)
       if (searchTerm && !reg._haystack.includes(searchTerm)) return false;
 
       // Date: createdAt (UTC ms bounds)
@@ -327,7 +326,7 @@ export default function ViewRegistrations() {
           continue;
         }
 
-        const meta = fieldMetaMap[key]; // {type, values}
+        const meta = fieldMetaMap[key];
         const regValue =
           reg.customFields?.[key] ??
           reg[key] ??
@@ -727,74 +726,108 @@ export default function ViewRegistrations() {
           </FormControl>
         </Stack>
       </Box>
-      {/* Toolbar (keep your existing Box exactly as is) */}
-      <Box
-        display="flex"
-        flexDirection={{ xs: "column", md: "row" }}
-        justifyContent="space-between"
-        alignItems={{ xs: "flex-start", md: "center" }}
-        gap={2}
-        mb={2}
-        px={{ xs: 1, sm: 2 }}
-      >
-        {/* ...your existing left and right toolbar content... */}
-      </Box>
 
-      {/* Active Filters Summary (new block below toolbar) */}
-      {Object.entries(filters).filter(
-        ([key, val]) => val && !key.endsWith("Ms")
-      ).length > 0 && (
-        <Box
-          sx={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: 1,
-            alignItems: "center",
-            mb: 3,
-            px: { xs: 1, sm: 2 },
-          }}
-        >
-          <Typography variant="body2" fontWeight={500} color="text.secondary">
-            Active Filters:
-          </Typography>
+      {/* Active Filters Summary */}
+      {(() => {
+        const activeFilterEntries = [];
 
-          {Object.entries(filters)
-            .filter(([key, val]) => val && !key.endsWith("Ms"))
-            .map(([key, val]) => (
+        // text-based filters
+        Object.entries(filters).forEach(([key, val]) => {
+          if (val && !key.endsWith("Ms")) activeFilterEntries.push([key, val]);
+        });
+
+        // date-based filters
+        if (filters.createdAtFromMs || filters.createdAtToMs) {
+          activeFilterEntries.push([
+            "Registered At",
+            `${
+              filters.createdAtFromMs
+                ? formatDateTimeWithLocale(filters.createdAtFromMs)
+                : "—"
+            } → ${
+              filters.createdAtToMs
+                ? formatDateTimeWithLocale(filters.createdAtToMs)
+                : "—"
+            }`,
+          ]);
+        }
+        if (filters.scannedAtFromMs || filters.scannedAtToMs) {
+          activeFilterEntries.push([
+            "Scanned At",
+            `${
+              filters.scannedAtFromMs
+                ? formatDateTimeWithLocale(filters.scannedAtFromMs)
+                : "—"
+            } → ${
+              filters.scannedAtToMs
+                ? formatDateTimeWithLocale(filters.scannedAtToMs)
+                : "—"
+            }`,
+          ]);
+        }
+
+        if (activeFilterEntries.length === 0) return null;
+
+        return (
+          <Box
+            sx={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 1,
+              alignItems: "center",
+              mb: 3,
+              px: { xs: 1, sm: 2 },
+            }}
+          >
+            <Typography variant="body2" fontWeight={500} color="text.secondary">
+              Active Filters:
+            </Typography>
+
+            {activeFilterEntries.map(([key, val]) => (
               <Chip
                 key={key}
                 label={`${key}: ${val}`}
-                onDelete={() =>
-                  setFilters((prev) => ({
-                    ...prev,
-                    [key]: "",
-                  }))
-                }
+                onDelete={() => {
+                  setFilters((prev) => {
+                    const updated = { ...prev };
+                    if (key === "Registered At") {
+                      updated.createdAtFromMs = null;
+                      updated.createdAtToMs = null;
+                    } else if (key === "Scanned At") {
+                      updated.scannedAtFromMs = null;
+                      updated.scannedAtToMs = null;
+                    } else {
+                      updated[key] = "";
+                    }
+                    return updated;
+                  });
+                }}
                 color="primary"
                 variant="outlined"
                 size="small"
               />
             ))}
 
-          <Button
-            size="small"
-            color="secondary"
-            onClick={() =>
-              setFilters({
-                ...Object.fromEntries(dynamicFields.map((f) => [f.name, ""])),
-                createdAtFromMs: null,
-                createdAtToMs: null,
-                scannedAtFromMs: null,
-                scannedAtToMs: null,
-                scannedBy: "",
-                token: "",
-              })
-            }
-          >
-            Clear All
-          </Button>
-        </Box>
-      )}
+            <Button
+              size="small"
+              color="secondary"
+              onClick={() =>
+                setFilters({
+                  ...Object.fromEntries(dynamicFields.map((f) => [f.name, ""])),
+                  createdAtFromMs: null,
+                  createdAtToMs: null,
+                  scannedAtFromMs: null,
+                  scannedAtToMs: null,
+                  scannedBy: "",
+                  token: "",
+                })
+              }
+            >
+              Clear All
+            </Button>
+          </Box>
+        );
+      })()}
 
       {!filteredRegistrations.length ? (
         <NoDataAvailable />
