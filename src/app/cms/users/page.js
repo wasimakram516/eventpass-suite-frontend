@@ -45,6 +45,7 @@ import { getAllBusinesses } from "@/services/businessService";
 import { getModules } from "@/services/moduleService";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { useAuth } from "@/contexts/AuthContext";
+import { useMesasage } from "@/contexts/MessageContext";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import { wrapTextBox } from "@/utils/wrapTextStyles";
@@ -59,6 +60,11 @@ const translations = {
     subtitle: "View and manage registered users",
     createUser: "Create User",
     editUser: "Edit User",
+    editAdminUser: "Edit Admin User",
+    createBusinessUser: "Create Business User",
+    editBusinessUser: "Edit Business User",
+    createStaffUser: "Create Staff User",
+    editStaffUser: "Edit Staff User",
     name: "Name",
     email: "Email",
     password: "New Password ",
@@ -113,6 +119,11 @@ const translations = {
     subtitle: "عرض وإدارة المستخدمين المسجلين",
     createUser: "إنشاء مستخدم",
     editUser: "تعديل المستخدم",
+    editAdminUser: "تعديل مستخدم مسؤول",
+    createBusinessUser: "إنشاء مستخدم شركة",
+    editBusinessUser: "تعديل مستخدم شركة",
+    createStaffUser: "إنشاء مستخدم موظف",
+    editStaffUser: "تعديل مستخدم موظف",
     name: "الاسم",
     email: "البريد الإلكتروني",
     password: "كلمة المرور الجديدة ",
@@ -168,7 +179,7 @@ export default function UsersPage() {
   const { user: currentUser } = useAuth();
   const isBusinessUser = currentUser?.role === "business";
   const { dir, align, language, t } = useI18nLayout(translations);
-
+  const { showMessage } = useMesasage();
   const [groupedUsers, setGroupedUsers] = useState({});
   const [businesses, setBusinesses] = useState([]);
   const [availableModules, setAvailableModules] = useState([]);
@@ -373,7 +384,41 @@ export default function UsersPage() {
   };
 
   const handleModalSave = async () => {
-    if (!validateForm()) return;
+    const newErrors = {};
+    if (!form.name.trim()) newErrors.name = t.nameRequired;
+    if (!form.email.trim()) newErrors.email = t.emailRequired;
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
+      newErrors.email = t.emailInvalid;
+    if (!isEditMode && !form.password.trim())
+      newErrors.password = t.passwordRequired;
+
+    if (
+      !isEditMode &&
+      currentUser?.role === "admin" &&
+      form.userType === "staff" &&
+      !form.businessId
+    ) {
+      newErrors.businessId = t.businessRequired;
+    }
+
+    if (form.userType === "business") {
+      if (!form.businessName.trim()) newErrors.businessName = t.businessNameRequired;
+      if (!form.businessSlug.trim()) newErrors.businessSlug = t.businessSlugRequired;
+      if (!form.businessEmail.trim()) {
+        newErrors.businessEmail = t.businessEmailRequired;
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.businessEmail)) {
+        newErrors.businessEmail = t.emailInvalid;
+      }
+    }
+
+    setErrors(newErrors);
+
+    if (Object.keys(newErrors).length > 0) {
+      const errorMessages = Object.entries(newErrors).map(([field, msg]) => `${msg}`).join(", ");
+      showMessage(errorMessages, "error");
+      return;
+    }
+
     setLoading(true);
     let userRes = null;
     let businessRes = null;
@@ -605,7 +650,33 @@ export default function UsersPage() {
         maxWidth="md"
         dir={dir}
       >
-        <DialogTitle>{isEditMode ? t.editUser : t.createUser}</DialogTitle>
+        <DialogTitle sx={{ pr: 6 }}>
+          {isEditMode
+            ? (selectedUser?.role === "admin"
+              ? t.editAdminUser
+              : selectedUser?.role === "business"
+                ? t.editBusinessUser
+                : t.editStaffUser)
+            : (form.userType === "business" ? t.createBusinessUser : t.createStaffUser)
+          }
+          <IconButton
+            onClick={() => setModalOpen(false)}
+            sx={{
+              position: 'absolute',
+              right: 8,
+              top: 8,
+              color: 'text.secondary',
+              border: '1px solid',
+              borderColor: '#0077b6',
+              '&:hover': {
+                bgcolor: '#0077b6',
+                color: 'primary.contrastText',
+              }
+            }}
+          >
+            <ICONS.close />
+          </IconButton>
+        </DialogTitle>
 
         <DialogContent>
           {currentUser?.role === "admin" && !isEditMode && (
@@ -626,38 +697,24 @@ export default function UsersPage() {
             </FormControl>
           )}
 
-          <Box sx={{ borderBottom: 1, borderColor: 'divider', mt: 2, mx: -3 }}>
-            <Tabs
-              value={activeTab}
-              onChange={(e, newValue) => {
-                if (newValue > activeTab) {
-                  // Moving forward - validate all tabs between current and target
-                  let canProceed = true;
-                  for (let i = activeTab; i < newValue; i++) {
-                    if (!validateTabByIndex(i)) {
-                      canProceed = false;
-                      setActiveTab(i);
-                      break;
-                    }
-                  }
-                  if (canProceed) setActiveTab(newValue);
-                } else {
-                  // Moving backward - always allow
-                  setActiveTab(newValue);
-                }
-              }}
-              aria-label="user tabs"
-              sx={{ px: 3 }}
-            >
-              <Tab label={t.userDetailsTab} />
-              {form.userType === "business" && <Tab label={t.businessProfileTab} />}
-              <Tab label={t.permissionsTab} />
-            </Tabs>
-          </Box>
+          {(form.userType === "business" || (!isEditMode || selectedUser?.role !== "admin")) && (
+            <Box sx={{ borderBottom: 1, borderColor: 'divider', mt: 2, mx: -3 }}>
+              <Tabs
+                value={activeTab}
+                onChange={(e, newValue) => setActiveTab(newValue)}
+                aria-label="user tabs"
+                sx={{ px: 3 }}
+              >
+                <Tab label={t.userDetailsTab} />
+                {form.userType === "business" && <Tab label={t.businessProfileTab} />}
+                {(!isEditMode || selectedUser?.role !== "admin") && <Tab label={t.permissionsTab} />}
+              </Tabs>
+            </Box>
+          )}
 
           {activeTab === 0 && (
             <Box sx={{ mt: 2 }}>
-              {form.userType === "staff" && (
+              {form.userType === "staff" && (!isEditMode || selectedUser?.role === "staff") && (
                 <FormControl fullWidth margin="normal">
                   <InputLabel id="staff-type-label">{t.staffTypeLabel}</InputLabel>
                   <Select
@@ -680,9 +737,12 @@ export default function UsersPage() {
                   label={t[field]}
                   name={field}
                   value={form[field]}
-                  onChange={(e) =>
-                    setForm((prev) => ({ ...prev, [field]: e.target.value }))
-                  }
+                  onChange={(e) => {
+                    setForm((prev) => ({ ...prev, [field]: e.target.value }));
+                    if (errors[field]) {
+                      setErrors((prev) => ({ ...prev, [field]: "" }));
+                    }
+                  }}
                   fullWidth
                   margin="normal"
                   type={
@@ -726,9 +786,12 @@ export default function UsersPage() {
                       labelId="business-select-label"
                       value={form.businessId || ""}
                       label={t.selectBusinessLabel}
-                      onChange={(e) =>
-                        setForm((prev) => ({ ...prev, businessId: e.target.value }))
-                      }
+                      onChange={(e) => {
+                        setForm((prev) => ({ ...prev, businessId: e.target.value }));
+                        if (errors.businessId) {
+                          setErrors((prev) => ({ ...prev, businessId: "" }));
+                        }
+                      }}
                     >
                       <MenuItem value="">
                         <em>{t.selectPlaceholder}</em>
@@ -761,6 +824,9 @@ export default function UsersPage() {
                     businessName: value,
                     businessSlug: !isEditMode ? slugify(value, { lower: true }) : prev.businessSlug,
                   }));
+                  if (errors.businessName) {
+                    setErrors((prev) => ({ ...prev, businessName: "" }));
+                  }
                 }}
                 fullWidth
                 margin="normal"
@@ -771,9 +837,12 @@ export default function UsersPage() {
               <TextField
                 label={t.businessSlug}
                 value={form.businessSlug}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, businessSlug: e.target.value }))
-                }
+                onChange={(e) => {
+                  setForm((prev) => ({ ...prev, businessSlug: e.target.value }));
+                  if (errors.businessSlug) {
+                    setErrors((prev) => ({ ...prev, businessSlug: "" }));
+                  }
+                }}
                 fullWidth
                 margin="normal"
                 error={!!errors.businessSlug}
@@ -783,9 +852,12 @@ export default function UsersPage() {
               <TextField
                 label={t.businessEmail}
                 value={form.businessEmail}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, businessEmail: e.target.value }))
-                }
+                onChange={(e) => {
+                  setForm((prev) => ({ ...prev, businessEmail: e.target.value }));
+                  if (errors.businessEmail) {
+                    setErrors((prev) => ({ ...prev, businessEmail: "" }));
+                  }
+                }}
                 fullWidth
                 margin="normal"
                 error={!!errors.businessEmail}
@@ -938,23 +1010,10 @@ export default function UsersPage() {
 
         <DialogActions sx={{ px: 3, pb: 3 }}>
           <Stack
-            direction={{ xs: 'column-reverse', sm: 'row' }}
+            direction="row"
             spacing={2}
-            sx={{ width: '100%', justifyContent: { sm: 'space-between' } }}
+            sx={{ width: '100%', justifyContent: 'flex-end' }}
           >
-            <Button
-              variant="outlined"
-              disabled={loading}
-              startIcon={<ICONS.cancel />}
-              onClick={() => setModalOpen(false)}
-              sx={{
-                ...getStartIconSpacing(dir),
-                width: { xs: '100%', sm: 'auto' }
-              }}
-            >
-              {t.cancel}
-            </Button>
-
             <Stack direction="row" spacing={2} sx={{ width: { xs: '100%', sm: 'auto' } }}>
               {activeTab > 0 && (
                 <Button
@@ -971,7 +1030,7 @@ export default function UsersPage() {
                 </Button>
               )}
 
-              {((form.userType === "staff" && activeTab < 1) ||
+              {((form.userType === "staff" && activeTab < 1 && (!isEditMode || selectedUser?.role !== "admin")) ||
                 (form.userType === "business" && activeTab < 2)) ? (
                 <Button
                   variant="contained"
