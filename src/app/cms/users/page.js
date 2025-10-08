@@ -45,7 +45,7 @@ import { getAllBusinesses } from "@/services/businessService";
 import { getModules } from "@/services/moduleService";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { useAuth } from "@/contexts/AuthContext";
-import { useMesasage } from "@/contexts/MessageContext";
+import { useMessage } from "@/contexts/MessageContext";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import { wrapTextBox } from "@/utils/wrapTextStyles";
@@ -179,7 +179,7 @@ export default function UsersPage() {
   const { user: currentUser } = useAuth();
   const isBusinessUser = currentUser?.role === "business";
   const { dir, align, language, t } = useI18nLayout(translations);
-  const { showMessage } = useMesasage();
+  const { showMessage } = useMessage();
   const [groupedUsers, setGroupedUsers] = useState({});
   const [businesses, setBusinesses] = useState([]);
   const [availableModules, setAvailableModules] = useState([]);
