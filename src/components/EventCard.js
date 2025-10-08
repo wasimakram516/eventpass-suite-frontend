@@ -25,7 +25,7 @@ export default function EventCardBase({
   onShare,
 }) {
   return (
-    <AppCard sx={{width:{xs:"100%", sm:360}}}>
+    <AppCard sx={{width:{xs:"100%", sm:360}, height:"100%"}}>
       {/* Cover Image + Overlay */}
       <Box sx={{ position: "relative", height: 200 }}>
         {event.logoUrl ? (

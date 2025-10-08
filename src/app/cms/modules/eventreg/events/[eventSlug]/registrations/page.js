@@ -21,8 +21,11 @@ import {
   Stack,
   CardActions,
   Tooltip,
+  TextField,
 } from "@mui/material";
-
+import { DateTimePicker } from "@mui/x-date-pickers";
+import dayjs from "dayjs";
+import FilterDialog from "@/components/FilterModal";
 import {
   getRegistrationsByEvent,
   deleteRegistration,
@@ -62,6 +65,93 @@ export default function ViewRegistrations() {
   const [exportLoading, setExportLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterModalOpen, setFilterModalOpen] = useState(false);
+  const [filters, setFilters] = useState({});
+
+  const filteredRegistrations = registrations.filter((reg) => {
+    const combinedValues = [
+      reg.fullName,
+      reg.email,
+      reg.phone,
+      reg.company,
+      reg.token,
+      formatDateTimeWithLocale?.(reg.createdAt) || reg.createdAt,
+      ...Object.values(reg.customFields || {}),
+      ...(reg.walkIns || []).flatMap((w) => [
+        w.scannedBy?.name,
+        w.scannedBy?.email,
+        formatDateTimeWithLocale?.(w.scannedAt) || w.scannedAt,
+      ]),
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+
+    // ---- General search ----
+    const matchesSearch =
+      !searchTerm || combinedValues.includes(searchTerm.toLowerCase());
+
+    // ---- Date range filters ----
+    const createdAt = new Date(reg.createdAt);
+    const scannedDates = (reg.walkIns || []).map((w) => new Date(w.scannedAt));
+
+    const createdFrom = filters.createdAtFrom
+      ? new Date(filters.createdAtFrom)
+      : null;
+    const createdTo = filters.createdAtTo
+      ? new Date(filters.createdAtTo)
+      : null;
+    const scannedFrom = filters.scannedAtFrom
+      ? new Date(filters.scannedAtFrom)
+      : null;
+    const scannedTo = filters.scannedAtTo
+      ? new Date(filters.scannedAtTo)
+      : null;
+
+    const matchesCreatedAt =
+      (!createdFrom || createdAt >= createdFrom) &&
+      (!createdTo || createdAt <= createdTo);
+
+    const matchesScannedAt =
+      !filters.scannedAtFrom && !filters.scannedAtTo
+        ? true
+        : scannedDates.some(
+            (d) =>
+              (!scannedFrom || d >= scannedFrom) &&
+              (!scannedTo || d <= scannedTo)
+          );
+
+    // ---- Text / dropdown filters ----
+    const matchesFilters = Object.entries(filters).every(([key, value]) => {
+      if (!value || key.endsWith("From") || key.endsWith("To")) return true;
+
+      if (key === "scannedBy") {
+        return (reg.walkIns || []).some((w) =>
+          [w.scannedBy?.name, w.scannedBy?.email]
+            .filter(Boolean)
+            .some((v) =>
+              v.toString().toLowerCase().includes(value.toLowerCase())
+            )
+        );
+      }
+
+      const regValue =
+        reg.customFields?.[key] ??
+        reg[key] ??
+        (key === "token"
+          ? reg.token
+          : key === "createdAt"
+          ? formatDateTimeWithLocale?.(reg.createdAt) || reg.createdAt
+          : "");
+
+      return regValue.toString().toLowerCase().includes(value.toLowerCase());
+    });
+
+    return (
+      matchesSearch && matchesCreatedAt && matchesScannedAt && matchesFilters
+    );
+  });
 
   const { progress } = useEventRegSocket({
     eventId: eventDetails?._id,
@@ -100,6 +190,19 @@ export default function ViewRegistrations() {
       showing: "Showing",
       to: "to",
       of: "of",
+      matchingRecords: "{count} matching record",
+      matchingRecordsPlural: "{count} matching records",
+      found: "found",
+      exportAll: "Export All",
+      exportFiltered: "Export Filtered",
+      filters: "Filters",
+      applyFilters: "Apply",
+      clearFilters: "Clear",
+      filterBy: "Filter by",
+      from: "From",
+      to: "To",
+      scannedBy: "Scanned By (Name or Email)",
+      scannedAt: "Scanned At",
     },
     ar: {
       title: "تفاصيل الحدث",
@@ -127,6 +230,19 @@ export default function ViewRegistrations() {
       showing: "عرض",
       to: "إلى",
       of: "من",
+      matchingRecords: "{count} سجل مطابق",
+      matchingRecordsPlural: "{count} سجلات مطابقة",
+      found: "تم العثور عليها",
+      exportAll: "تصدير الكل",
+      exportFiltered: "تصدير النتائج المصفاة",
+      filters: "تصفية",
+      applyFilters: "تطبيق",
+      clearFilters: "مسح",
+      filterBy: "تصفية حسب",
+      from: "من",
+      to: "إلى",
+      scannedBy: "تم المسح بواسطة (الاسم أو البريد الإلكتروني)",
+      scannedAt: "تاريخ المسح",
     },
   });
 
@@ -219,14 +335,26 @@ export default function ViewRegistrations() {
     setDeleteDialogOpen(false);
   };
 
-  const exportToCSV = async () => {
+  const handleExportRegs = async () => {
     if (!eventDetails) return;
 
     setExportLoading(true);
-    const res = await getAllPublicRegistrationsByEvent(eventSlug);
-    if (res?.error) return;
 
-    const registrationsToExport = res;
+    const isFiltered =
+      searchTerm ||
+      Object.keys(filters).some(
+        (k) => filters[k] && !k.endsWith("From") && !k.endsWith("To")
+      );
+
+    let registrationsToExport = [];
+
+    if (isFiltered) {
+      registrationsToExport = filteredRegistrations;
+    } else {
+      const res = await getAllPublicRegistrationsByEvent(eventSlug);
+      if (res?.error) return;
+      registrationsToExport = res;
+    }
 
     const lines = [];
 
@@ -253,7 +381,7 @@ export default function ViewRegistrations() {
     lines.push([`=== Registrations ===`]);
     const regHeaders = [
       ...dynamicFields.map((f) => f.label),
-      `Token`,
+      t.token,
       t.registeredAt,
     ];
     lines.push(regHeaders.join(`,`));
@@ -275,7 +403,6 @@ export default function ViewRegistrations() {
     const allWalkIns = registrationsToExport.flatMap((reg) =>
       (reg.walkIns || []).map((w) => ({
         ...w,
-        // inject registration details here
         regData: reg,
       }))
     );
@@ -286,10 +413,10 @@ export default function ViewRegistrations() {
 
       const walkInHeaders = [
         ...dynamicFields.map((f) => f.label),
-        `Token`,
-        `Registered At`,
-        `Scanned At`,
-        `Scanned By`,
+        t.token,
+        t.registeredAt,
+        t.scannedAt,
+        t.scannedBy,
       ];
       lines.push(walkInHeaders.join(`,`));
 
@@ -322,10 +449,11 @@ export default function ViewRegistrations() {
 
     const link = document.createElement(`a`);
     link.href = URL.createObjectURL(blob);
-    link.download = `${
-      eventDetails.slug || `event`
-    }_registrations_and_walkins.csv`;
+    link.download = `${eventDetails.slug || `event`}_${
+      isFiltered ? "filtered" : "all"
+    }_registrations.csv`;
     link.click();
+
     setExportLoading(false);
   };
 
@@ -373,7 +501,6 @@ export default function ViewRegistrations() {
             variant="outlined"
             startIcon={<ICONS.download />}
             onClick={handleDownloadSample}
-            fullWidth
           >
             {t.downloadSample}
           </Button>
@@ -385,7 +512,6 @@ export default function ViewRegistrations() {
               uploading ? <CircularProgress size={20} /> : <ICONS.upload />
             }
             disabled={uploading}
-            fullWidth
           >
             {uploading && uploadProgress
               ? `${t.uploading} ${uploadProgress.uploaded}/${uploadProgress.total}`
@@ -403,7 +529,7 @@ export default function ViewRegistrations() {
           {totalRegistrations > 0 && (
             <Button
               variant="contained"
-              onClick={exportToCSV}
+              onClick={handleExportRegs}
               disabled={exportLoading}
               startIcon={
                 exportLoading ? (
@@ -413,9 +539,12 @@ export default function ViewRegistrations() {
                 )
               }
               sx={getStartIconSpacing(dir)}
-              fullWidth
             >
-              {exportLoading ? t.exporting : t.export}
+              {exportLoading
+                ? t.exporting
+                : searchTerm || Object.keys(filters).some((k) => filters[k])
+                ? t.exportFiltered
+                : t.exportAll}
             </Button>
           )}
         </Stack>
@@ -423,41 +552,115 @@ export default function ViewRegistrations() {
 
       <Divider sx={{ my: 3 }} />
 
+      {/* Search, Filter, and Info Toolbar */}
       <Box
         display="flex"
+        flexDirection={{ xs: "column", md: "row" }}
         justifyContent="space-between"
-        alignItems="center"
+        alignItems={{ xs: "flex-start", md: "center" }}
+        gap={2}
         mb={3}
-        px={2}
+        px={{ xs: 1, sm: 2 }}
       >
-        <Typography>
-          {t.showing} {(page - 1) * limit + 1}-
-          {Math.min(page * limit, totalRegistrations)} {t.of}{" "}
-          {totalRegistrations} {t.records}
-        </Typography>
-        <FormControl size="small" sx={{ minWidth: 150, ml: 2 }}>
-          <InputLabel>{t.recordsPerPage}</InputLabel>
-          <Select
-            value={limit}
-            onChange={handleLimitChange}
-            label={t.recordsPerPage}
-            sx={{ pr: dir === "rtl" ? 1 : undefined }}
+        {/* Left: Record info */}
+        <Box width="100%" maxWidth={{ xs: "100%", md: "50%" }}>
+          <Typography variant="body2" color="text.secondary">
+            {t.showing} {(page - 1) * limit + 1}-
+            {Math.min(page * limit, totalRegistrations)} {t.of}{" "}
+            {totalRegistrations} {t.records}
+          </Typography>
+
+          {/* Matching results counter */}
+          {(searchTerm || Object.keys(filters).some((k) => filters[k])) && (
+            <Typography
+              variant="body2"
+              color="primary"
+              fontWeight="500"
+              mt={0.5}
+              sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
+            >
+              <ICONS.search fontSize="small" sx={{ opacity: 0.7 }} />
+              {filteredRegistrations.length === 1
+                ? t.matchingRecords.replace(
+                    "{count}",
+                    filteredRegistrations.length
+                  )
+                : t.matchingRecordsPlural.replace(
+                    "{count}",
+                    filteredRegistrations.length
+                  )}{" "}
+              {t.found}
+            </Typography>
+          )}
+        </Box>
+
+        {/* Right: Search + Filters + Records per page */}
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          spacing={1.5}
+          alignItems={{ xs: "stretch", sm: "center" }}
+          justifyContent="flex-end"
+          width="100%"
+        >
+          {/* Search */}
+          <TextField
+            size="small"
+            variant="outlined"
+            placeholder={t.searchPlaceholder || "Search..."}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <ICONS.search fontSize="small" sx={{ mr: 1, opacity: 0.6 }} />
+              ),
+            }}
+            sx={{
+              flex: 1,
+              minWidth: { xs: "100%", sm: 220 },
+            }}
+          />
+
+          {/* Filters */}
+          <Button
+            variant="outlined"
+            startIcon={<ICONS.filter />}
+            onClick={() => setFilterModalOpen(true)}
+            sx={{
+              width: { xs: "100%", sm: "auto" },
+            }}
           >
-            {[5, 10, 20, 50, 100, 250, 500].map((n) => (
-              <MenuItem key={n} value={n}>
-                {n}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+            {t.filters}
+          </Button>
+
+          {/* Records per page */}
+          <FormControl
+            size="small"
+            sx={{
+              minWidth: { xs: "100%", sm: 150 },
+            }}
+          >
+            <InputLabel>{t.recordsPerPage}</InputLabel>
+            <Select
+              value={limit}
+              onChange={handleLimitChange}
+              label={t.recordsPerPage}
+            >
+              {[5, 10, 20, 50, 100, 250, 500].map((n) => (
+                <MenuItem key={n} value={n}>
+                  {n}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Stack>
       </Box>
 
-      {!registrations.length ? (
+      {!filteredRegistrations.length ? (
         <NoDataAvailable />
       ) : (
         <>
           <Grid container spacing={4} justifyContent="center">
-            {registrations.map((reg) => (
+            {filteredRegistrations.map((reg) => (
               <Grid
                 item
                 xs={12}
@@ -489,7 +692,7 @@ export default function ViewRegistrations() {
                   {/* Header with token + date */}
                   <Box
                     sx={{
-                      background: "linear-gradient(to right, #f5f5f5, #fafafa)", // ✅ subtle modern look
+                      background: "linear-gradient(to right, #f5f5f5, #fafafa)",
                       borderBottom: "1px solid",
                       borderColor: "divider",
                       p: 2,
@@ -567,7 +770,7 @@ export default function ViewRegistrations() {
                             textAlign: "right",
                             flex: 1,
                             color: "text.primary",
-                            ...wrapTextBox, // ✅ allow wrapping
+                            ...wrapTextBox,
                           }}
                         >
                           {reg.customFields?.[f.name] ?? reg[f.name] ?? "—"}
@@ -648,6 +851,180 @@ export default function ViewRegistrations() {
         onClose={() => setWalkInModalOpen(false)}
         registration={selectedRegistration}
       />
+
+      <FilterDialog
+        open={filterModalOpen}
+        onClose={() => setFilterModalOpen(false)}
+        title="Filter Registrations"
+      >
+        <Stack spacing={2}>
+          {/* --- Dynamic Custom / Classic Fields --- */}
+          {(eventDetails?.formFields?.length
+            ? eventDetails.formFields // use actual event-defined fields
+            : [
+                { inputName: "fullName", inputType: "text", values: [] },
+                { inputName: "email", inputType: "text", values: [] },
+                { inputName: "phone", inputType: "text", values: [] },
+                { inputName: "company", inputType: "text", values: [] },
+              ]
+          ).map((f) => (
+            <Box key={f.inputName}>
+              <Typography variant="subtitle2" gutterBottom>
+                {f.inputName}
+              </Typography>
+
+              {/* Dropdowns for radio/list */}
+              {["radio", "list"].includes(f.inputType?.toLowerCase()) &&
+              f.values?.length > 0 ? (
+                <FormControl fullWidth size="small">
+                  <InputLabel>{`Select ${f.inputName}`}</InputLabel>
+                  <Select
+                    label={`Select ${f.inputName}`}
+                    value={filters[f.inputName] || ""}
+                    onChange={(e) =>
+                      setFilters({ ...filters, [f.inputName]: e.target.value })
+                    }
+                  >
+                    <MenuItem value="">
+                      <em>All</em>
+                    </MenuItem>
+                    {f.values.map((val) => (
+                      <MenuItem key={val} value={val}>
+                        {val}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              ) : (
+                // Text field for all others
+                <TextField
+                  size="small"
+                  placeholder={`Filter by ${f.inputName}`}
+                  value={filters[f.inputName] || ""}
+                  onChange={(e) =>
+                    setFilters({ ...filters, [f.inputName]: e.target.value })
+                  }
+                  fullWidth
+                />
+              )}
+            </Box>
+          ))}
+          {/* --- Always show Token + Registered At range --- */}
+          <Box>
+            <Typography variant="subtitle2" gutterBottom>
+              Token
+            </Typography>
+            <TextField
+              size="small"
+              placeholder="Filter by Token"
+              value={filters.token || ""}
+              onChange={(e) =>
+                setFilters({ ...filters, token: e.target.value })
+              }
+              fullWidth
+            />
+          </Box>
+
+          <Box>
+            <Typography variant="subtitle2" gutterBottom>
+              Registered At
+            </Typography>
+            <Stack direction="row" spacing={1}>
+              <DateTimePicker
+                label="From"
+                value={
+                  filters.createdAtFrom ? dayjs(filters.createdAtFrom) : null
+                }
+                onChange={(val) =>
+                  setFilters({
+                    ...filters,
+                    createdAtFrom: val ? val.toISOString() : null,
+                  })
+                }
+                slotProps={{ textField: { size: "small", fullWidth: true } }}
+              />
+              <DateTimePicker
+                label="To"
+                value={filters.createdAtTo ? dayjs(filters.createdAtTo) : null}
+                onChange={(val) =>
+                  setFilters({
+                    ...filters,
+                    createdAtTo: val ? val.toISOString() : null,
+                  })
+                }
+                slotProps={{ textField: { size: "small", fullWidth: true } }}
+              />
+            </Stack>
+          </Box>
+
+          {/* --- Walk-in Filters --- */}
+          <Box>
+            <Typography variant="subtitle2" gutterBottom>
+              Scanned By (Name or Email)
+            </Typography>
+            <TextField
+              size="small"
+              placeholder="Filter by scanner name/email"
+              value={filters.scannedBy || ""}
+              onChange={(e) =>
+                setFilters({ ...filters, scannedBy: e.target.value })
+              }
+              fullWidth
+            />
+          </Box>
+
+          <Box>
+            <Typography variant="subtitle2" gutterBottom>
+              Scanned At
+            </Typography>
+            <Stack direction="row" spacing={1}>
+              <DateTimePicker
+                label="From"
+                value={
+                  filters.scannedAtFrom ? dayjs(filters.scannedAtFrom) : null
+                }
+                onChange={(val) =>
+                  setFilters({
+                    ...filters,
+                    scannedAtFrom: val ? val.toISOString() : null,
+                  })
+                }
+                slotProps={{ textField: { size: "small", fullWidth: true } }}
+              />
+              <DateTimePicker
+                label="To"
+                value={filters.scannedAtTo ? dayjs(filters.scannedAtTo) : null}
+                onChange={(val) =>
+                  setFilters({
+                    ...filters,
+                    scannedAtTo: val ? val.toISOString() : null,
+                  })
+                }
+                slotProps={{ textField: { size: "small", fullWidth: true } }}
+              />
+            </Stack>
+          </Box>
+          {/* --- Buttons --- */}
+          <Stack direction="row" justifyContent="flex-end" spacing={2} mt={2}>
+            {(Object.keys(filters).length > 0 ||
+              Object.values(filters).some((v) => v)) && (
+              <Button
+                variant="outlined"
+                color="secondary"
+                onClick={() => setFilters({})}
+              >
+                Clear
+              </Button>
+            )}
+            <Button
+              variant="contained"
+              onClick={() => setFilterModalOpen(false)}
+            >
+              Apply
+            </Button>
+          </Stack>
+        </Stack>
+      </FilterDialog>
     </Container>
   );
 }
