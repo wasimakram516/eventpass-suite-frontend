@@ -154,7 +154,7 @@ export default function BusinessDetailsPage() {
   const fetchUnassignedUsers = async () => {
     if (user.role === "admin") {
       const users = await getUnassignedUsers();
-      setUnassignedUsers(users);
+      setUnassignedUsers(Array.isArray(users) ? users : []);
     }
   };
 
@@ -278,20 +278,19 @@ export default function BusinessDetailsPage() {
       res = await createBusiness(fd);
     }
 
-    if (!res.error) {
-      fetchUnassignedUsers();
-      fetchBusinesses();
+    if (res?.error) {
+      setLoading(false);
+      return;
+    }
+    fetchUnassignedUsers();
+    fetchBusinesses();
 
-      // Update AuthContext user if role is 'business'
-      if (user.role === "business") {
-        const updatedUser = {
-          ...user,
-          business: res,
-        };
-
-        // Update Context
-        setUser(updatedUser);
-      }
+    if (user.role === "business") {
+      const updatedUser = {
+        ...user,
+        business: res,
+      };
+      setUser(updatedUser);
     }
 
     handleClose();
