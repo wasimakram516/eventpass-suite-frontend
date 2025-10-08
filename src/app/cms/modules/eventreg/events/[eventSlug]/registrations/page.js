@@ -27,7 +27,6 @@ import { DateTimePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import FilterDialog from "@/components/FilterModal";
 import {
-  getRegistrationsByEvent,
   deleteRegistration,
   getAllPublicRegistrationsByEvent,
   downloadSampleExcel,
@@ -52,7 +51,7 @@ export default function ViewRegistrations() {
 
   const [eventDetails, setEventDetails] = useState(null);
   const [dynamicFields, setDynamicFields] = useState([]);
-  const [registrations, setRegistrations] = useState([]);
+  const [allRegistrations, setAllRegistrations] = useState([]);
   const [totalRegistrations, setTotalRegistrations] = useState(0);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
@@ -69,7 +68,7 @@ export default function ViewRegistrations() {
   const [filterModalOpen, setFilterModalOpen] = useState(false);
   const [filters, setFilters] = useState({});
 
-  const filteredRegistrations = registrations.filter((reg) => {
+  const filteredRegistrations = allRegistrations.filter((reg) => {
     const combinedValues = [
       reg.fullName,
       reg.email,
@@ -152,6 +151,11 @@ export default function ViewRegistrations() {
       matchesSearch && matchesCreatedAt && matchesScannedAt && matchesFilters
     );
   });
+
+  const paginatedRegistrations = filteredRegistrations.slice(
+    (page - 1) * limit,
+    page * limit
+  );
 
   const { progress } = useEventRegSocket({
     eventId: eventDetails?._id,
@@ -253,9 +257,9 @@ export default function ViewRegistrations() {
   const fetchData = async () => {
     setLoading(true);
 
-    const [evRes, regRes] = await Promise.all([
+    const [evRes, allRegsRes] = await Promise.all([
       getPublicEventBySlug(eventSlug),
-      getRegistrationsByEvent(eventSlug, page, limit),
+      getAllPublicRegistrationsByEvent(eventSlug),
     ]);
 
     if (!evRes?.error) {
@@ -274,9 +278,9 @@ export default function ViewRegistrations() {
       setDynamicFields(fields);
     }
 
-    if (!regRes?.error) {
-      setRegistrations(regRes.data || []);
-      setTotalRegistrations(regRes.pagination.totalRegistrations || 0);
+    if (!allRegsRes?.error) {
+      setAllRegistrations(allRegsRes);
+      setTotalRegistrations(allRegsRes.length);
     }
 
     setLoading(false);
@@ -327,9 +331,10 @@ export default function ViewRegistrations() {
   const handleDelete = async () => {
     const res = await deleteRegistration(registrationToDelete);
     if (!res?.error) {
-      setRegistrations((prev) =>
+      setAllRegistrations((prev) =>
         prev.filter((r) => r._id !== registrationToDelete)
       );
+
       setTotalRegistrations((t) => t - 1);
     }
     setDeleteDialogOpen(false);
@@ -660,7 +665,7 @@ export default function ViewRegistrations() {
       ) : (
         <>
           <Grid container spacing={4} justifyContent="center">
-            {filteredRegistrations.map((reg) => (
+            {paginatedRegistrations.map((reg) => (
               <Grid
                 item
                 xs={12}
@@ -828,7 +833,7 @@ export default function ViewRegistrations() {
           <Box display="flex" justifyContent="center" mt={4}>
             <Pagination
               dir="ltr"
-              count={Math.ceil(totalRegistrations / limit)}
+              count={Math.ceil(filteredRegistrations.length / limit)}
               page={page}
               onChange={handlePageChange}
             />
