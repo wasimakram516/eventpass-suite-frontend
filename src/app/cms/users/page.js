@@ -663,7 +663,7 @@ export default function UsersPage() {
             onClick={() => setModalOpen(false)}
             sx={{
               position: 'absolute',
-              right: 8,
+              ...(dir === 'rtl' ? { left: 8 } : { right: 8 }),
               top: 8,
               color: 'text.secondary',
               border: '1px solid',
@@ -689,6 +689,14 @@ export default function UsersPage() {
                 onChange={(e) => {
                   setForm((prev) => ({ ...prev, userType: e.target.value }));
                   setActiveTab(0);
+                }}
+                sx={{
+                  ...(dir === 'rtl' && {
+                    '& .MuiSelect-select': {
+                      textAlign: 'left',
+                      paddingRight: '32px'
+                    }
+                  })
                 }}
               >
                 <MenuItem value="staff">{t.staffUser}</MenuItem>
@@ -891,7 +899,12 @@ export default function UsersPage() {
                 <Typography variant="body2" sx={{ mb: 1 }}>
                   {t.businessLogo}
                 </Typography>
-                <Stack direction="row" spacing={2} alignItems="center">
+                <Stack
+                  direction="row"
+                  spacing={2}
+                  alignItems="center"
+                  sx={{ gap: dir === 'rtl' ? '16px' : '' }}
+                >
                   <Avatar
                     src={form.logoPreview}
                     alt="Preview"
@@ -1014,7 +1027,14 @@ export default function UsersPage() {
             spacing={2}
             sx={{ width: '100%', justifyContent: 'flex-end' }}
           >
-            <Stack direction="row" spacing={2} sx={{ width: { xs: '100%', sm: 'auto' } }}>
+            <Stack
+              direction="row"
+              spacing={2}
+              sx={{
+                width: { xs: '100%', sm: 'auto' },
+                gap: dir === 'rtl' ? '16px' : ''
+              }}
+            >
               {activeTab > 0 && (
                 <Button
                   variant="outlined"
@@ -1040,8 +1060,11 @@ export default function UsersPage() {
                     }
                   }}
                   disabled={loading}
-                  endIcon={<ICONS.next />}
-                  sx={{ flex: { xs: 1, sm: 'initial' } }}
+                  startIcon={<ICONS.next />}
+                  sx={{
+                    ...getStartIconSpacing(dir),
+                    flex: { xs: 1, sm: 'initial' }
+                  }}
                 >
                   {t.next}
                 </Button>
