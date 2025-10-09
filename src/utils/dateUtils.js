@@ -15,11 +15,22 @@ export const formatDate = (dateString) => {
 /**
  * Formats a date with time in a locale-aware way, including hour and minute.
  * @param {string} dateString - The date string to format.
- * @param {"en" | "ar"} language - Language code to determine locale.
  * @returns {string} - Formatted date and time string.
  */
-export const formatDateTimeWithLocale = (dateString) => {
+export const formatDateTimeWithLocale = (dateString, locale = "en") => {
   const date = new Date(dateString);
+
+  if (locale === "ar") {
+    return date.toLocaleString("ar-SA", {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  }
+
   return date.toLocaleString("en-GB", {
     day: "2-digit",
     month: "short",
