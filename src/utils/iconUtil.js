@@ -145,7 +145,8 @@ import {
   Help as HelpIcon,
   Group as GroupIcon,
   Description as DescriptionIcon,
-  
+  MeetingRoom as DoorIcon,
+  Desk as DeskIcon,
 } from "@mui/icons-material";
 
 const ICONS = {
@@ -185,7 +186,8 @@ const ICONS = {
   Language: LanguageIcon,
   restore: RestoreIcon,
   badge: BadgeIcon,
-
+  door: DoorIcon,
+  desk: DeskIcon,
   // Social Media
   facebook: FacebookIcon,
   instagram: InstagramIcon,
