@@ -540,16 +540,30 @@ export default function UsersPage() {
               </Typography>
               <Stack direction="row" spacing={0.5} sx={{ mt: 0.5, flexWrap: 'wrap', gap: 0.5 }}>
                 <Chip
+                  icon={user.role === 'admin' ? <ICONS.person /> : user.role === 'business' ? <ICONS.business /> : <ICONS.people />}
                   label={user.role.charAt(0).toUpperCase() + user.role.slice(1)}
                   color={getRoleColor(user.role)}
                   size="small"
+                  sx={{
+                    ...(dir === 'rtl' && {
+                      '& .MuiChip-icon': {
+                        marginLeft: '5px',
+                        marginRight: '3px'
+                      }
+                    })
+                  }}
                 />
                 {user.role === "staff" && user.staffType && (
                   <Chip
+                    icon={user.staffType === 'door' ? <ICONS.door /> : <ICONS.desk />}
                     label={user.staffType.charAt(0).toUpperCase() + user.staffType.slice(1)}
                     sx={{
-                      bgcolor: '#9c27b0',
-                      color: '#ffffff',
+                      bgcolor: user.staffType === 'door' ? '#e1bee7' : '#4fc3f7',
+                      color: '#000000',
+                      '& .MuiChip-icon': {
+                        color: '#000000',
+                        ...(dir === 'rtl' && { marginRight: '5px', marginLeft: '8px' })
+                      }
                     }}
                     size="small"
                   />
@@ -1040,7 +1054,7 @@ export default function UsersPage() {
                   variant="outlined"
                   onClick={() => setActiveTab((prev) => prev - 1)}
                   disabled={loading}
-                  startIcon={<ICONS.back />}
+                  startIcon={dir === 'rtl' ? <ICONS.next /> : <ICONS.back />}
                   sx={{
                     ...getStartIconSpacing(dir),
                     flex: { xs: 1, sm: 'initial' }
@@ -1060,7 +1074,7 @@ export default function UsersPage() {
                     }
                   }}
                   disabled={loading}
-                  startIcon={<ICONS.next />}
+                  startIcon={dir === 'rtl' ? <ICONS.back /> : <ICONS.next />}
                   sx={{
                     ...getStartIconSpacing(dir),
                     flex: { xs: 1, sm: 'initial' }
