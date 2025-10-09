@@ -947,7 +947,9 @@ export default function ViewRegistrations() {
                         }}
                       >
                         <ICONS.time fontSize="inherit" sx={{ opacity: 0.7 }} />
-                        {formatDateTimeWithLocale(reg.createdAt, dir === "rtl" ? "ar" : "en")}
+                        <Box component="span" sx={{ direction: "ltr", unicodeBidi: "embed" }}>
+                          {formatDateTimeWithLocale(reg.createdAt)}
+                        </Box>
                       </Typography>
                     </Stack>
                   </Box>
