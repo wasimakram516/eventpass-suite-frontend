@@ -86,11 +86,17 @@ const translations = {
     filters: "Filters",
     applyFilters: "Apply",
     clearFilters: "Clear",
+    clearAll: "Clear All",
+    activeFilters: "Active Filters",
     filterBy: "Filter by",
     from: "From",
     to: "To",
     scannedBy: "Scanned By (Name or Email)",
     scannedAt: "Scanned At",
+    searchPlaceholder: "Search...",
+    apply: "Apply",
+    clear: "Clear",
+    filterRegistrations: "Filter Registrations",
   },
   ar: {
     title: "تفاصيل الحدث",
@@ -125,11 +131,17 @@ const translations = {
     filters: "تصفية",
     applyFilters: "تطبيق",
     clearFilters: "مسح",
+    clearAll: "مسح الكل",
+    activeFilters: "الفلاتر النشطة",
     filterBy: "تصفية حسب",
     from: "من",
     to: "إلى",
     scannedBy: "تم المسح بواسطة (الاسم أو البريد الإلكتروني)",
     scannedAt: "تاريخ المسح",
+    searchPlaceholder: "بحث...",
+    apply: "تطبيق",
+    clear: "مسح",
+    filterRegistrations: "تصفية التسجيلات",
   },
 };
 
@@ -202,28 +214,21 @@ export default function ViewRegistrations() {
   const fetchData = async () => {
     setLoading(true);
 
-    // 1) Event meta -> dynamic fields
     const evRes = await getPublicEventBySlug(eventSlug);
 
     const fieldsLocal =
       !evRes?.error && evRes.formFields?.length
         ? evRes.formFields.map((f) => ({
-            name: f.inputName,
-            label: f.inputName,
-            type: (f.inputType || "text").toLowerCase(),
-            values: Array.isArray(f.values) ? f.values : [],
-          }))
+          name: f.inputName,
+          type: (f.inputType || "text").toLowerCase(),
+          values: Array.isArray(f.values) ? f.values : [],
+        }))
         : [
-            { name: "fullName", label: t.fullName, type: "text", values: [] },
-            { name: "email", label: t.emailLabel, type: "text", values: [] },
-            { name: "phone", label: t.phoneLabel, type: "text", values: [] },
-            {
-              name: "company",
-              label: t.companyLabel,
-              type: "text",
-              values: [],
-            },
-          ];
+          { name: "fullName", type: "text", values: [] },
+          { name: "email", type: "text", values: [] },
+          { name: "phone", type: "text", values: [] },
+          { name: "company", type: "text", values: [] },
+        ];
 
     if (!evRes?.error) {
       setEventDetails(evRes);
@@ -333,8 +338,8 @@ export default function ViewRegistrations() {
           (key === "token"
             ? reg.token
             : key === "createdAt"
-            ? reg.createdAt
-            : "");
+              ? reg.createdAt
+              : "");
 
         const v = String(regValue ?? "").toLowerCase();
         const f = String(rawValue).toLowerCase();
@@ -361,9 +366,8 @@ export default function ViewRegistrations() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `${
-        eventDetails.slug || "event"
-      }_registrations_template.xlsx`;
+      link.download = `${eventDetails.slug || "event"
+        }_registrations_template.xlsx`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -437,10 +441,10 @@ export default function ViewRegistrations() {
       [
         `Event Dates:`,
         formatDate(eventDetails.startDate) +
-          (eventDetails.endDate &&
+        (eventDetails.endDate &&
           eventDetails.endDate !== eventDetails.startDate
-            ? ` to ${formatDate(eventDetails.endDate)}`
-            : ``),
+          ? ` to ${formatDate(eventDetails.endDate)}`
+          : ``),
       ].join(`,`)
     );
     lines.push([`Venue:`, eventDetails.venue || `N/A`].join(`,`));
@@ -452,7 +456,7 @@ export default function ViewRegistrations() {
     // ---- Registrations Section ----
     lines.push([`=== Registrations ===`]);
     const regHeaders = [
-      ...dynamicFields.map((f) => f.label),
+      ...dynamicFields.map((f) => getFieldLabel(f.name)),
       t.token,
       t.registeredAt,
     ];
@@ -484,7 +488,7 @@ export default function ViewRegistrations() {
       lines.push([`=== Walk-ins ===`]);
 
       const walkInHeaders = [
-        ...dynamicFields.map((f) => f.label),
+        ...dynamicFields.map((f) => getFieldLabel(f.name)),
         t.token,
         t.registeredAt,
         t.scannedAt,
@@ -521,9 +525,8 @@ export default function ViewRegistrations() {
 
     const link = document.createElement(`a`);
     link.href = URL.createObjectURL(blob);
-    link.download = `${eventDetails.slug || `event`}_${
-      isFiltered ? "filtered" : "all"
-    }_registrations.csv`;
+    link.download = `${eventDetails.slug || `event`}_${isFiltered ? "filtered" : "all"
+      }_registrations.csv`;
     link.click();
 
     setExportLoading(false);
@@ -541,7 +544,15 @@ export default function ViewRegistrations() {
       </Box>
     );
   }
-
+  const getFieldLabel = (fieldName) => {
+    const labelMap = {
+      fullName: t.fullName,
+      email: t.emailLabel,
+      phone: t.phoneLabel,
+      company: t.companyLabel,
+    };
+    return labelMap[fieldName] || fieldName;
+  };
   return (
     <Container dir={dir} maxWidth="lg">
       <BreadcrumbsNav />
@@ -567,12 +578,16 @@ export default function ViewRegistrations() {
         <Stack
           direction={{ xs: "column", sm: "row" }}
           spacing={2}
-          sx={{ width: { xs: "100%", sm: "auto" } }}
+          sx={{
+            width: { xs: "100%", sm: "auto" },
+            gap: dir === "rtl" ? 2 : 1.5
+          }}
         >
           <Button
             variant="outlined"
             startIcon={<ICONS.download />}
             onClick={handleDownloadSample}
+            sx={getStartIconSpacing(dir)}
           >
             {t.downloadSample}
           </Button>
@@ -584,12 +599,13 @@ export default function ViewRegistrations() {
               uploading ? <CircularProgress size={20} /> : <ICONS.upload />
             }
             disabled={uploading}
+            sx={getStartIconSpacing(dir)}
           >
             {uploading && uploadProgress
               ? `${t.uploading} ${uploadProgress.uploaded}/${uploadProgress.total}`
               : uploading
-              ? t.uploading
-              : t.uploadFile}
+                ? t.uploading
+                : t.uploadFile}
             <input
               type="file"
               hidden
@@ -615,8 +631,8 @@ export default function ViewRegistrations() {
               {exportLoading
                 ? t.exporting
                 : searchTerm || Object.keys(filters).some((k) => filters[k])
-                ? t.exportFiltered
-                : t.exportAll}
+                  ? t.exportFiltered
+                  : t.exportAll}
             </Button>
           )}
         </Stack>
@@ -654,51 +670,61 @@ export default function ViewRegistrations() {
               <ICONS.search fontSize="small" sx={{ opacity: 0.7 }} />
               {filteredRegistrations.length === 1
                 ? t.matchingRecords.replace(
-                    "{count}",
-                    filteredRegistrations.length
-                  )
+                  "{count}",
+                  filteredRegistrations.length
+                )
                 : t.matchingRecordsPlural.replace(
-                    "{count}",
-                    filteredRegistrations.length
-                  )}{" "}
+                  "{count}",
+                  filteredRegistrations.length
+                )}{" "}
               {t.found}
             </Typography>
           )}
         </Box>
 
-        {/* Right: Search + Filters + Records per page */}
         <Stack
           direction={{ xs: "column", sm: "row" }}
           spacing={1.5}
           alignItems={{ xs: "stretch", sm: "center" }}
           justifyContent="flex-end"
           width="100%"
+          sx={dir === "rtl" ? {
+            columnGap: 1.5,
+            rowGap: 1.5,
+          } : {}}
         >
-          {/* Search */}
           <TextField
             size="small"
             variant="outlined"
-            placeholder={t.searchPlaceholder || "Search..."}
+            placeholder={t.searchPlaceholder}
             value={rawSearch}
             onChange={(e) => setRawSearch(e.target.value)}
             InputProps={{
               startAdornment: (
-                <ICONS.search fontSize="small" sx={{ mr: 1, opacity: 0.6 }} />
+                <ICONS.search fontSize="small" sx={{
+                  mr: dir === "rtl" ? 0 : 1,
+                  ml: dir === "rtl" ? 1 : 0,
+                  opacity: 0.6
+                }} />
               ),
+              sx: dir === "rtl" ? {
+                paddingRight: 2,
+              } : {}
             }}
             sx={{
               flex: 1,
               minWidth: { xs: "100%", sm: 220 },
+              mr: dir === "rtl" ? 0 : 1.5,
+              ml: dir === "rtl" ? 1.5 : 0,
             }}
           />
-
-          {/* Filters */}
           <Button
             variant="outlined"
             startIcon={<ICONS.filter />}
             onClick={() => setFilterModalOpen(true)}
             sx={{
               width: { xs: "100%", sm: "auto" },
+              ...getStartIconSpacing(dir)
             }}
           >
             {t.filters}
@@ -709,6 +735,10 @@ export default function ViewRegistrations() {
             size="small"
             sx={{
               minWidth: { xs: "100%", sm: 150 },
+              '& .MuiSelect-icon': {
+                left: dir === "rtl" ? 'auto' : 7,
+                right: dir === "rtl" ? 7 : 'auto',
+              },
             }}
           >
             <InputLabel>{t.recordsPerPage}</InputLabel>
@@ -716,6 +746,9 @@ export default function ViewRegistrations() {
               value={limit}
               onChange={handleLimitChange}
               label={t.recordsPerPage}
+              sx={{
+                textAlign: dir === "rtl" ? 'left' : 'right',
+              }}
             >
               {[5, 10, 20, 50, 100, 250, 500].map((n) => (
                 <MenuItem key={n} value={n}>
@@ -740,28 +773,24 @@ export default function ViewRegistrations() {
         if (filters.createdAtFromMs || filters.createdAtToMs) {
           activeFilterEntries.push([
             "Registered At",
-            `${
-              filters.createdAtFromMs
-                ? formatDateTimeWithLocale(filters.createdAtFromMs)
-                : "—"
-            } → ${
-              filters.createdAtToMs
-                ? formatDateTimeWithLocale(filters.createdAtToMs)
-                : "—"
+            `${filters.createdAtFromMs
+              ? formatDateTimeWithLocale(filters.createdAtFromMs)
+              : "—"
+            } → ${filters.createdAtToMs
+              ? formatDateTimeWithLocale(filters.createdAtToMs)
+              : "—"
             }`,
           ]);
         }
         if (filters.scannedAtFromMs || filters.scannedAtToMs) {
           activeFilterEntries.push([
             "Scanned At",
-            `${
-              filters.scannedAtFromMs
-                ? formatDateTimeWithLocale(filters.scannedAtFromMs)
-                : "—"
-            } → ${
-              filters.scannedAtToMs
-                ? formatDateTimeWithLocale(filters.scannedAtToMs)
-                : "—"
+            `${filters.scannedAtFromMs
+              ? formatDateTimeWithLocale(filters.scannedAtFromMs)
+              : "—"
+            } → ${filters.scannedAtToMs
+              ? formatDateTimeWithLocale(filters.scannedAtToMs)
+              : "—"
             }`,
           ]);
         }
@@ -780,37 +809,52 @@ export default function ViewRegistrations() {
             }}
           >
             <Typography variant="body2" fontWeight={500} color="text.secondary">
-              Active Filters:
+              {t.activeFilters}:
             </Typography>
 
-            {activeFilterEntries.map(([key, val]) => (
-              <Chip
-                key={key}
-                label={`${key}: ${val}`}
-                onDelete={() => {
-                  setFilters((prev) => {
-                    const updated = { ...prev };
-                    if (key === "Registered At") {
-                      updated.createdAtFromMs = null;
-                      updated.createdAtToMs = null;
-                    } else if (key === "Scanned At") {
-                      updated.scannedAtFromMs = null;
-                      updated.scannedAtToMs = null;
-                    } else {
-                      updated[key] = "";
+            {activeFilterEntries.map(([key, val]) => {
+              const translatedKey = key === "token" ? t.token :
+                key === "Registered At" ? t.registeredAt :
+                  key === "Scanned At" ? t.scannedAt :
+                    key === "scannedBy" ? t.scannedBy :
+                      getFieldLabel(key);
+              return (
+                <Chip
+                  key={key}
+                  label={`${translatedKey}: ${val}`}
+                  onDelete={() => {
+                    setFilters((prev) => {
+                      const updated = { ...prev };
+                      if (key === "Registered At") {
+                        updated.createdAtFromMs = null;
+                        updated.createdAtToMs = null;
+                      } else if (key === "Scanned At") {
+                        updated.scannedAtFromMs = null;
+                        updated.scannedAtToMs = null;
+                      } else {
+                        updated[key] = "";
+                      }
+                      return updated;
+                    });
+                  }}
+                  color="primary"
+                  variant="outlined"
+                  size="small"
+                  sx={dir === "rtl" ? {
+                    pr: 4.5,
+                    pl: 2,
+                    "& .MuiChip-label": {
+                      whiteSpace: "nowrap",
                     }
-                    return updated;
-                  });
-                }}
-                color="primary"
-                variant="outlined"
-                size="small"
-              />
-            ))}
+                  } : {}}
+                />
+              );
+            })}
 
             <Button
               size="small"
               color="secondary"
+              startIcon={<ICONS.close />}
               onClick={() =>
                 setFilters({
                   ...Object.fromEntries(dynamicFields.map((f) => [f.name, ""])),
@@ -822,8 +866,9 @@ export default function ViewRegistrations() {
                   token: "",
                 })
               }
+              sx={getStartIconSpacing(dir)}
             >
-              Clear All
+              {t.clearAll}
             </Button>
           </Box>
         );
@@ -874,7 +919,11 @@ export default function ViewRegistrations() {
                   >
                     <Stack spacing={0.6}>
                       {/* Token */}
-                      <Stack direction="row" spacing={1} alignItems="center">
+                      <Stack
+                        direction="row"
+                        alignItems="center"
+                        sx={{ gap: dir === "rtl" ? 1 : 1 }}
+                      >
                         <ICONS.qrcode
                           sx={{ fontSize: 28, color: "primary.main" }}
                         />
@@ -898,7 +947,7 @@ export default function ViewRegistrations() {
                         }}
                       >
                         <ICONS.time fontSize="inherit" sx={{ opacity: 0.7 }} />
-                        {formatDateTimeWithLocale(reg.createdAt)}
+                        {formatDateTimeWithLocale(reg.createdAt, dir === "rtl" ? "ar" : "en")}
                       </Typography>
                     </Stack>
                   </Box>
@@ -932,7 +981,7 @@ export default function ViewRegistrations() {
                             fontSize="small"
                             sx={{ opacity: 0.6 }}
                           />
-                          {f.label}
+                          {getFieldLabel(f.name)}
                         </Typography>
 
                         {/* Field Value */}
@@ -941,7 +990,7 @@ export default function ViewRegistrations() {
                           fontWeight={500}
                           sx={{
                             ml: 2,
-                            textAlign: "right",
+                            textAlign: dir === "rtl" ? "left" : "right",
                             flex: 1,
                             color: "text.primary",
                             ...wrapTextBox,
@@ -1031,26 +1080,26 @@ export default function ViewRegistrations() {
       <FilterDialog
         open={filterModalOpen}
         onClose={() => setFilterModalOpen(false)}
-        title="Filter Registrations"
+        title={t.filterRegistrations || "Filter Registrations"}
       >
         <Stack spacing={2}>
           {/* --- Dynamic Custom / Classic Fields (use dynamicFields) --- */}
           {dynamicFields.map((f) => (
             <Box key={f.name}>
               <Typography variant="subtitle2" gutterBottom>
-                {f.label}
+                {getFieldLabel(f.name)}
               </Typography>
 
               {/* Dropdowns for radio/list/select-like fields */}
               {["radio", "list", "select", "dropdown"].includes(
                 (f.type || "").toLowerCase()
               ) &&
-              Array.isArray(f.values) &&
-              f.values.length > 0 ? (
+                Array.isArray(f.values) &&
+                f.values.length > 0 ? (
                 <FormControl fullWidth size="small">
-                  <InputLabel>{`Select ${f.label}`}</InputLabel>
+                  <InputLabel>{`Select ${getFieldLabel(f.name)}`}</InputLabel>
                   <Select
-                    label={`Select ${f.label}`}
+                    label={`Select ${getFieldLabel(f.name)}`}
                     value={filters[f.name] ?? ""}
                     onChange={(e) =>
                       setFilters((prev) => ({
@@ -1070,10 +1119,9 @@ export default function ViewRegistrations() {
                   </Select>
                 </FormControl>
               ) : (
-                // Text field for all others
                 <TextField
                   size="small"
-                  placeholder={`Filter by ${f.label}`}
+                  placeholder={`${t.filterBy} ${getFieldLabel(f.name)}`}
                   value={filters[f.name] ?? ""}
                   onChange={(e) =>
                     setFilters((prev) => ({
@@ -1090,11 +1138,11 @@ export default function ViewRegistrations() {
           {/* --- Always show Token + Registered At range --- */}
           <Box>
             <Typography variant="subtitle2" gutterBottom>
-              Token
+              {t.token}
             </Typography>
             <TextField
               size="small"
-              placeholder="Filter by Token"
+              placeholder={`${t.filterBy} ${t.token}`}
               value={filters.token || ""}
               onChange={(e) =>
                 setFilters((prev) => ({ ...prev, token: e.target.value }))
@@ -1105,11 +1153,18 @@ export default function ViewRegistrations() {
 
           <Box>
             <Typography variant="subtitle2" gutterBottom>
-              Registered At
+              {t.registeredAt}
             </Typography>
-            <Stack direction="row" spacing={1}>
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{
+                width: "100%",
+                gap: dir === "rtl" ? 1 : 0
+              }}
+            >
               <DateTimePicker
-                label="From"
+                label={t.from}
                 value={
                   filters.createdAtFromMs
                     ? dayjs(filters.createdAtFromMs)
@@ -1126,7 +1181,7 @@ export default function ViewRegistrations() {
                 slotProps={{ textField: { size: "small", fullWidth: true } }}
               />
               <DateTimePicker
-                label="To"
+                label={t.to}
                 value={
                   filters.createdAtToMs ? dayjs(filters.createdAtToMs) : null
                 }
@@ -1146,11 +1201,11 @@ export default function ViewRegistrations() {
           {/* --- Walk-in Filters --- */}
           <Box>
             <Typography variant="subtitle2" gutterBottom>
-              Scanned By (Name or Email)
+              {t.scannedBy}
             </Typography>
             <TextField
               size="small"
-              placeholder="Filter by scanner name/email"
+              placeholder={`${t.filterBy} ${t.scannedBy}`}
               value={filters.scannedBy || ""}
               onChange={(e) =>
                 setFilters((prev) => ({ ...prev, scannedBy: e.target.value }))
@@ -1161,54 +1216,104 @@ export default function ViewRegistrations() {
 
           <Box>
             <Typography variant="subtitle2" gutterBottom>
-              Scanned At
+              {t.scannedAt}
             </Typography>
-            <Stack direction="row" spacing={1}>
-              <DateTimePicker
-                label="From"
-                value={
-                  filters.scannedAtFromMs
-                    ? dayjs(filters.scannedAtFromMs)
-                    : null
-                }
-                onChange={(val) =>
-                  setFilters((f) => ({
-                    ...f,
-                    scannedAtFromMs: val
-                      ? dayjs(val).utc().startOf("day").valueOf()
-                      : null,
-                  }))
-                }
-                slotProps={{ textField: { size: "small", fullWidth: true } }}
-              />
-              <DateTimePicker
-                label="To"
-                value={
-                  filters.scannedAtToMs ? dayjs(filters.scannedAtToMs) : null
-                }
-                onChange={(val) =>
-                  setFilters((f) => ({
-                    ...f,
-                    scannedAtToMs: val
-                      ? dayjs(val).utc().endOf("day").valueOf()
-                      : null,
-                  }))
-                }
-                slotProps={{ textField: { size: "small", fullWidth: true } }}
-              />
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{
+                gap: dir === "rtl" ? 1 : undefined
+              }}
+            >
+              {dir === "rtl" ? (
+                <>
+                  <DateTimePicker
+                    label={t.to}
+                    value={
+                      filters.scannedAtToMs ? dayjs(filters.scannedAtToMs) : null
+                    }
+                    onChange={(val) =>
+                      setFilters((f) => ({
+                        ...f,
+                        scannedAtToMs: val
+                          ? dayjs(val).utc().endOf("day").valueOf()
+                          : null,
+                      }))
+                    }
+                    slotProps={{ textField: { size: "small", fullWidth: true } }}
+                  />
+                  <DateTimePicker
+                    label={t.from}
+                    value={
+                      filters.scannedAtFromMs
+                        ? dayjs(filters.scannedAtFromMs)
+                        : null
+                    }
+                    onChange={(val) =>
+                      setFilters((f) => ({
+                        ...f,
+                        scannedAtFromMs: val
+                          ? dayjs(val).utc().startOf("day").valueOf()
+                          : null,
+                      }))
+                    }
+                    slotProps={{ textField: { size: "small", fullWidth: true } }}
+                  />
+                </>
+              ) : (
+                <>
+                  <DateTimePicker
+                    label={t.from}
+                    value={
+                      filters.scannedAtFromMs
+                        ? dayjs(filters.scannedAtFromMs)
+                        : null
+                    }
+                    onChange={(val) =>
+                      setFilters((f) => ({
+                        ...f,
+                        scannedAtFromMs: val
+                          ? dayjs(val).utc().startOf("day").valueOf()
+                          : null,
+                      }))
+                    }
+                    slotProps={{ textField: { size: "small", fullWidth: true } }}
+                  />
+                  <DateTimePicker
+                    label={t.to}
+                    value={
+                      filters.scannedAtToMs ? dayjs(filters.scannedAtToMs) : null
+                    }
+                    onChange={(val) =>
+                      setFilters((f) => ({
+                        ...f,
+                        scannedAtToMs: val
+                          ? dayjs(val).utc().endOf("day").valueOf()
+                          : null,
+                      }))
+                    }
+                    slotProps={{ textField: { size: "small", fullWidth: true } }}
+                  />
+                </>
+              )}
             </Stack>
           </Box>
 
           {/* --- Buttons --- */}
-          <Stack direction="row" justifyContent="flex-end" spacing={2} mt={2}>
+          <Stack
+            direction="row"
+            justifyContent="flex-end"
+            spacing={2}
+            mt={2}
+            sx={dir === "rtl" ? { gap: 2 } : {}}
+          >
             <Button
               variant="outlined"
               color="secondary"
+              startIcon={<ICONS.clear />}
               onClick={() =>
                 setFilters({
-                  // reset ALL dynamic fields to ""
                   ...Object.fromEntries(dynamicFields.map((f) => [f.name, ""])),
-                  // reset the special/base filters
                   createdAtFromMs: null,
                   createdAtToMs: null,
                   scannedAtFromMs: null,
@@ -1217,14 +1322,17 @@ export default function ViewRegistrations() {
                   token: "",
                 })
               }
+              sx={getStartIconSpacing(dir)}
             >
-              Clear
+              {t.clear}
             </Button>
             <Button
               variant="contained"
               onClick={() => setFilterModalOpen(false)}
+              startIcon={<ICONS.check />}
+              sx={getStartIconSpacing(dir)}
             >
-              Apply
+              {t.apply}
             </Button>
           </Stack>
         </Stack>

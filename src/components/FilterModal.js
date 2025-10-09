@@ -1,13 +1,9 @@
-"use client";
-
 import {
   Dialog,
   DialogTitle,
   DialogContent,
   IconButton,
   Slide,
-  Typography,
-  Box,
 } from "@mui/material";
 import ICONS from "@/utils/iconUtil";
 import { forwardRef } from "react";
@@ -20,6 +16,7 @@ const Transition = forwardRef(function Transition(props, ref) {
 
 const FilterDialog = ({ open, onClose, title, children }) => {
   const { dir } = useI18nLayout();
+
 
   const hasChildren =
     !!children &&

@@ -77,6 +77,7 @@ const WalkInModal = ({ open, onClose, registration }) => {
           onClick={onClose}
           startIcon={<ICONS.close />}
           sx={getStartIconSpacing(dir)}
+          variant="outlined"
         >
           {t.close}
         </Button>
