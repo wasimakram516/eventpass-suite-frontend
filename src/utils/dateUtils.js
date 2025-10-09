@@ -17,19 +17,8 @@ export const formatDate = (dateString) => {
  * @param {string} dateString - The date string to format.
  * @returns {string} - Formatted date and time string.
  */
-export const formatDateTimeWithLocale = (dateString, locale = "en") => {
+export const formatDateTimeWithLocale = (dateString) => {
   const date = new Date(dateString);
-
-  if (locale === "ar") {
-    return date.toLocaleString("ar-SA", {
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    });
-  }
 
   return date.toLocaleString("en-GB", {
     day: "2-digit",
