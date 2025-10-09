@@ -18,10 +18,6 @@ import {
   IconButton,
   Tooltip,
   Divider,
-  MenuItem,
-  Select,
-  InputLabel,
-  FormControl,
   CircularProgress,
 } from "@mui/material";
 import { useEffect, useState } from "react";
@@ -33,7 +29,6 @@ import {
   deleteBusiness,
 } from "@/services/businessService";
 
-import { getUnassignedUsers } from "@/services/userService";
 import { useAuth } from "@/contexts/AuthContext";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import slugify from "@/utils/slugify";
@@ -72,7 +67,6 @@ const translations = {
       slug: "Slug is required",
       email: "Email is required",
       emailInvalid: "Invalid email format",
-      owner: "Owner is required",
     },
   },
   ar: {
@@ -103,7 +97,6 @@ const translations = {
       slug: "المعرف مطلوب",
       email: "البريد الإلكتروني مطلوب",
       emailInvalid: "تنسيق البريد الإلكتروني غير صالح",
-      owner: "المالك مطلوب",
     },
   },
 };
@@ -113,7 +106,6 @@ export default function BusinessDetailsPage() {
   const { dir, align, language, t } = useI18nLayout(translations);
   const [loading, setLoading] = useState(false);
   const [businesses, setBusinesses] = useState([]);
-  const [unassignedUsers, setUnassignedUsers] = useState([]);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [bizToDelete, setBizToDelete] = useState(null);
   const [editingBiz, setEditingBiz] = useState(null);
@@ -133,7 +125,6 @@ export default function BusinessDetailsPage() {
 
   useEffect(() => {
     fetchBusinesses();
-    fetchUnassignedUsers();
   }, []);
 
   const fetchBusinesses = async () => {
@@ -151,32 +142,9 @@ export default function BusinessDetailsPage() {
     setLoading(false);
   };
 
-  const fetchUnassignedUsers = async () => {
-    if (user.role === "admin") {
-      const users = await getUnassignedUsers();
-      setUnassignedUsers(Array.isArray(users) ? users : []);
-    }
-  };
 
   const handleOpen = (biz = null) => {
-    const fallbackOwnerId = user.role !== "admin" ? user.id : "";
     setEditingBiz(biz);
-
-    // If editing and current owner not in dropdown, add them manually
-    if (
-      user.role === "admin" &&
-      biz?.owner?._id &&
-      !unassignedUsers.some((u) => u._id === biz.owner._id)
-    ) {
-      setUnassignedUsers((prev) => [
-        ...prev,
-        {
-          _id: biz.owner._id,
-          name: biz.owner.name,
-          email: biz.owner.email,
-        },
-      ]);
-    }
 
     setForm({
       name: biz?.name ?? "",
@@ -186,25 +154,30 @@ export default function BusinessDetailsPage() {
       logoPreview: biz?.logoUrl ?? "",
       logoFile: null,
       address: biz?.address ?? "",
-      ownerId: biz?.owner?._id ?? fallbackOwnerId,
+      ownerId: biz?.owner?._id ?? user.id,
+      ownerName: biz?.owner?.name ?? user.name,
     });
 
     setFormOpen(true);
   };
 
   const handleClose = () => {
-    setEditingBiz(null);
     setFormOpen(false);
-    setForm({
-      name: "",
-      email: "",
-      phone: "",
-      slug: "",
-      logoPreview: "",
-      logoFile: null,
-      address: "",
-      ownerId: "",
-    });
+    setFormErrors({});
+    setTimeout(() => {
+      setEditingBiz(null);
+      setForm({
+        name: "",
+        email: "",
+        phone: "",
+        slug: "",
+        logoPreview: "",
+        logoFile: null,
+        address: "",
+        ownerId: "",
+        ownerName: "",
+      });
+    }, 200);
   };
 
   const handleChange = (e) => {
@@ -244,10 +217,6 @@ export default function BusinessDetailsPage() {
       errors.email = t.errors.emailInvalid;
     }
 
-    if (user.role === "admin" && !form.ownerId) {
-      errors.ownerId = t.errors.owner;
-    }
-
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -282,7 +251,6 @@ export default function BusinessDetailsPage() {
       setLoading(false);
       return;
     }
-    fetchUnassignedUsers();
     fetchBusinesses();
 
     if (user.role === "business") {
@@ -308,7 +276,6 @@ export default function BusinessDetailsPage() {
     const res = await deleteBusiness(bizToDelete._id);
     if (!res.error) {
       fetchBusinesses();
-      fetchUnassignedUsers();
     }
     setLoading(false);
     setConfirmOpen(false);
@@ -341,16 +308,6 @@ export default function BusinessDetailsPage() {
           </Typography>
         </Box>
 
-        {user.role === "admin" && (
-          <Button
-            variant="contained"
-            startIcon={<ICONS.create />}
-            onClick={() => handleOpen()}
-            sx={getStartIconSpacing(dir)}
-          >
-            {t.createNewBusiness}
-          </Button>
-        )}
       </Stack>
       <Divider sx={{ mb: 2 }} />
 
@@ -524,7 +481,7 @@ export default function BusinessDetailsPage() {
       }
 
       {/* MODAL FORM */}
-      <Dialog open={formOpen} onClose={handleClose} fullWidth>
+      <Dialog open={formOpen} onClose={handleClose} fullWidth dir={dir}>
         <DialogTitle>{editingBiz ? t.edit : t.createNewBusiness}</DialogTitle>
         <DialogContent sx={{ pt: 1 }}>
           <TextField
@@ -584,33 +541,29 @@ export default function BusinessDetailsPage() {
           />
 
           {user.role === "admin" && (
-            <FormControl fullWidth margin="normal" error={!!formErrors.ownerId}>
-              <InputLabel>{t.owner}</InputLabel>
-              <Select
-                name="ownerId"
-                value={form.ownerId}
-                onChange={handleChange}
-                label={t.owner}
-              >
-                {unassignedUsers.map((u) => (
-                  <MenuItem key={u._id} value={u._id}>
-                    {u.name} ({u.email})
-                  </MenuItem>
-                ))}
-              </Select>
-              {formErrors.ownerId && (
-                <Typography variant="caption" color="error" mt={0.5}>
-                  {formErrors.ownerId}
-                </Typography>
-              )}
-            </FormControl>
+            <TextField
+              label={t.owner}
+              name="ownerName"
+              value={form.ownerName}
+              fullWidth
+              margin="normal"
+              disabled
+              InputProps={{
+                readOnly: true,
+              }}
+            />
           )}
 
           <Box sx={{ mt: 2 }}>
             <Typography variant="body2" sx={{ mb: 1 }}>
               {t.logo}
             </Typography>
-            <Stack direction="row" spacing={2} alignItems="center">
+            <Stack
+              direction="row"
+              spacing={2}
+              alignItems="center"
+              sx={{ gap: dir === 'rtl' ? 2 : undefined }}
+            >
               <Avatar
                 src={form.logoPreview}
                 alt="Preview"
@@ -641,7 +594,7 @@ export default function BusinessDetailsPage() {
             onClick={handleClose}
             startIcon={<ICONS.cancel />}
             disabled={loading}
-            sx={{ width: { xs: "100%", sm: "auto" }, }}
+            sx={{ width: { xs: "100%", sm: "auto" }, ...getStartIconSpacing(dir) }}
           >
             {t.cancel}
           </Button>
@@ -656,7 +609,7 @@ export default function BusinessDetailsPage() {
                 <ICONS.save />
               )
             }
-            sx={{ width: { xs: "100%", sm: "auto" }, }}
+            sx={{ width: { xs: "100%", sm: "auto" }, ...getStartIconSpacing(dir) }}
           >
             {loading
               ? editingBiz
