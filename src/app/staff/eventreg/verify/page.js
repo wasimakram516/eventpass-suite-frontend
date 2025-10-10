@@ -13,8 +13,6 @@ import {
   ListItem,
   ListItemText,
   ListItemIcon,
-  Dialog,
-  IconButton,
 } from "@mui/material";
 
 import QrScanner from "@/components/QrScanner";
@@ -109,7 +107,7 @@ export default function VerifyPage() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const [printing, setPrinting] = useState(false);
-  const [printPreviewUrl, setPrintPreviewUrl] = useState(null);
+  const [showPdfModal, setShowPdfModal] = useState(false);
 
   const successAudioRef = useRef(null);
   const errorAudioRef = useRef(null);
@@ -194,6 +192,7 @@ export default function VerifyPage() {
     setShowScanner(false);
     setManualMode(false);
     setPrinting(false);
+    setShowPdfModal(false);
   };
 
   const handlePrintZebra = async () => {
@@ -223,20 +222,71 @@ export default function VerifyPage() {
         <BadgePDF data={result} qrCodeDataUrl={qrCodeDataUrl} />
       ).toBlob();
 
+      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
       const blobUrl = URL.createObjectURL(blob);
 
-      // iOS fallback – open in Safari viewer
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      if (isIOS) {
-        window.open(blobUrl, "_blank");
+      if (isMobile) {
+        const link = document.createElement("a");
+        link.href = blobUrl;
+        link.download = `${result.fullName || "badge"}.pdf`;
+        link.click();
+
+        showMessage?.(
+          "PDF downloaded. Open it in your files to print manually.",
+          "info"
+        );
         return;
       }
 
-      // Other platforms – open in modal iframe
-      setPrintPreviewUrl(blobUrl);
+      const width = Math.floor(window.outerWidth * 0.9);
+      const height = Math.floor(window.outerHeight * 0.9);
+      const left = window.screenX + (window.outerWidth - width) / 2;
+      const top = window.screenY + (window.outerHeight - height) / 2;
+
+      const printWindow = window.open(
+        "",
+        "_blank",
+        `width=${width},height=${height},left=${left},top=${top},resizable=no,scrollbars=no,status=no`
+      );
+
+      if (!printWindow) {
+        showMessage?.("Please allow pop-ups to print the badge.", "warning");
+        return;
+      }
+
+      // 5️⃣ Write HTML + auto-trigger print on load
+      printWindow.document.write(`
+      <html>
+        <head>
+          <title>Print Badge</title>
+          <style>
+            html, body {
+              margin: 0;
+              padding: 0;
+              height: 100%;
+              overflow: hidden;
+              background: #fff;
+            }
+            iframe {
+              width: 100%;
+              height: 100%;
+              border: none;
+            }
+          </style>
+        </head>
+        <body>
+          <iframe
+            src="${blobUrl}"
+            onload="this.contentWindow.focus(); this.contentWindow.print();"
+          ></iframe>
+        </body>
+      </html>
+    `);
+      printWindow.document.close();
     } catch (err) {
       console.error("PDF Print Error:", err);
-      showMessage("Failed to generate or preview badge.", "error");
+      showMessage?.("Failed to generate or print badge.", "error");
     }
   };
 
@@ -497,73 +547,6 @@ export default function VerifyPage() {
             </Button>
           </Tooltip>
         </Stack>
-      )}
-
-      {printPreviewUrl && (
-        <Dialog
-          open
-          onClose={() => setPrintPreviewUrl(null)}
-          maxWidth="md"
-          fullWidth
-          PaperProps={{
-            sx: {
-              height: "90vh",
-              borderRadius: 3,
-              overflow: "hidden",
-            },
-          }}
-        >
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              p: 1.5,
-              borderBottom: "1px solid #ddd",
-              backgroundColor: "#f7f7f7",
-            }}
-          >
-            <Typography fontWeight={600}>{t.printBadge}</Typography>
-
-            <Stack direction="row" spacing={1}>
-              <Tooltip title={t.tooltip.print}>
-                <IconButton
-                  color="primary"
-                  onClick={() => {
-                    const frame = document.getElementById("badgeFrame");
-                    if (frame?.contentWindow) {
-                      frame.contentWindow.focus();
-                      frame.contentWindow.print();
-                    }
-                  }}
-                >
-                  <ICONS.print />
-                </IconButton>
-              </Tooltip>
-
-              <Tooltip title={t.tooltip.cancel}>
-                <IconButton
-                  color="error"
-                  onClick={() => setPrintPreviewUrl(null)}
-                >
-                  <ICONS.close />
-                </IconButton>
-              </Tooltip>
-            </Stack>
-          </Box>
-
-          <Box sx={{ flex: 1, height: "100%", overflow: "hidden" }}>
-            <iframe
-              id="badgeFrame"
-              src={printPreviewUrl}
-              style={{
-                width: "100%",
-                height: "100%",
-                border: "none",
-              }}
-            />
-          </Box>
-        </Dialog>
       )}
 
       <audio ref={successAudioRef} src="/correct.wav" preload="auto" />
