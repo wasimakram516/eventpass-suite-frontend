@@ -208,7 +208,7 @@ export default function VerifyPage() {
     }
   };
 
-  const handlePrintPdf = async () => {
+  const handlePrint = async () => {
     if (!result) return;
 
     try {
@@ -221,45 +221,93 @@ export default function VerifyPage() {
       const blob = await pdf(
         <BadgePDF data={result} qrCodeDataUrl={qrCodeDataUrl} />
       ).toBlob();
-
       const blobUrl = URL.createObjectURL(blob);
 
-      // Calculate center position
+      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+      // Determine window size
       const width = 800;
       const height = 600;
       const left = window.screenX + (window.outerWidth - width) / 2;
       const top = window.screenY + (window.outerHeight - height) / 2;
 
-      // Open centered print window
+      // Open viewer window (same for desktop & mobile now)
       const printWindow = window.open(
         "",
         "_blank",
-        `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=no,status=no`
+        isMobile
+          ? "width=device-width,height=device-height"
+          : `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes,status=no`
       );
 
       if (!printWindow) {
-        showMessage("Please allow pop-ups to print the badge.", "warning");
+        showMessage("Please allow pop-ups to open the badge.", "warning");
         return;
       }
 
+      // Write printable HTML into the new tab
       printWindow.document.write(`
       <html>
         <head>
           <title>Print Badge</title>
           <style>
-            html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+            html, body {
+              margin: 0;
+              padding: 0;
+              height: 100%;
+              overflow: hidden;
+              background: #f5f5f5;
+              font-family: sans-serif;
+            }
+            .toolbar {
+              position: fixed;
+              top: 0;
+              left: 0;
+              right: 0;
+              background: #0077b6;
+              color: #fff;
+              padding: 10px 0;
+              text-align: center;
+              font-size: 16px;
+              z-index: 10;
+              box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            }
+            iframe {
+              position: absolute;
+              top: 50px;
+              left: 0;
+              width: 100%;
+              height: calc(100% - 50px);
+              border: none;
+            }
+            button {
+              background: #fff;
+              color: #0077b6;
+              font-weight: bold;
+              border: none;
+              border-radius: 4px;
+              padding: 6px 16px;
+              cursor: pointer;
+              font-size: 14px;
+            }
+            button:hover {
+              background: #e0e0e0;
+            }
           </style>
         </head>
         <body>
-          <iframe
-            src="${blobUrl}"
-            frameborder="0"
-            style="width:100%;height:100%;border:none;"
-            onload="this.contentWindow.focus(); this.contentWindow.print();"
-          ></iframe>
+          <div class="toolbar">
+            Badge Preview &nbsp;|&nbsp;
+            <button onclick="document.getElementById('pdf').contentWindow.print()">
+              🖨️ Print Badge
+            </button>
+          </div>
+          <iframe id="pdf" src="${blobUrl}"></iframe>
         </body>
       </html>
     `);
+
+      printWindow.document.close();
     } catch (err) {
       console.error("PDF Print Error:", err);
       showMessage("Failed to generate or print badge.", "error");
@@ -481,7 +529,7 @@ export default function VerifyPage() {
                   variant="contained"
                   color="primary"
                   startIcon={<ICONS.print />}
-                  onClick={handlePrintPdf}
+                  onClick={handlePrint}
                   sx={getStartIconSpacing(dir)}
                 >
                   {t.printBadge}
