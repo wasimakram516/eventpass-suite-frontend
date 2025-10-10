@@ -16,13 +16,15 @@ import {
 } from "@mui/material";
 
 import QrScanner from "@/components/QrScanner";
-import BadgePDFViewer from "@/components/BadgePDFViewer";
 import { verifyRegistrationByToken } from "@/services/eventreg/registrationService";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import { printZpl } from "@/utils/printZpl";
 import { useMessage } from "@/contexts/MessageContext";
+import { pdf } from "@react-pdf/renderer";
+import QRCode from "qrcode";
+import BadgePDF from "@/components/BadgePDF";
 
 const translations = {
   en: {
@@ -47,7 +49,7 @@ const translations = {
     event: "Event",
     scanAnother: "Scan Another",
     tryAgain: "Try Again",
-    printBadge: "Print Badge (PDF)",
+    printBadge: "Print Badge",
     printZebra: "Print Badge (Zebra)",
     printing: "Printing...",
     tooltip: {
@@ -55,8 +57,7 @@ const translations = {
       cancel: "Cancel scanning",
       scan: "Scan another code",
       retry: "Retry verification",
-      printPdf: "View and print badge as PDF",
-      printZebra: "Send badge to Zebra printer",
+      print: "Print Badge",
     },
   },
   ar: {
@@ -80,7 +81,7 @@ const translations = {
     event: "الفعالية",
     scanAnother: "مسح رمز آخر",
     tryAgain: "حاول مرة أخرى",
-    printBadge: "طباعة الشارة (PDF)",
+    printBadge: "طباعة الشارة",
     printZebra: "طباعة الشارة (Zebra)",
     printing: "جارٍ الطباعة...",
     tooltip: {
@@ -88,8 +89,7 @@ const translations = {
       cancel: "إلغاء المسح",
       scan: "مسح رمز آخر",
       retry: "إعادة المحاولة",
-      printPdf: "عرض وطباعة الشارة بتنسيق PDF",
-      printZebra: "إرسال الشارة إلى طابعة Zebra",
+      print: "طباعة الشارة",
     },
   },
 };
@@ -206,8 +206,62 @@ export default function VerifyPage() {
     }
   };
 
-  const handlePrintPdf = () => {
-    setShowPdfModal(true);
+  const handlePrintPdf = async () => {
+    if (!result) return;
+
+    try {
+      const qrCodeDataUrl = await QRCode.toDataURL(result.token, {
+        width: 300,
+        margin: 1,
+        color: { dark: "#000000", light: "#ffffff" },
+      });
+
+      const blob = await pdf(
+        <BadgePDF data={result} qrCodeDataUrl={qrCodeDataUrl} />
+      ).toBlob();
+
+      const blobUrl = URL.createObjectURL(blob);
+
+      // Calculate center position
+      const width = 800;
+      const height = 600;
+      const left = window.screenX + (window.outerWidth - width) / 2;
+      const top = window.screenY + (window.outerHeight - height) / 2;
+
+      // Open centered print window
+      const printWindow = window.open(
+        "",
+        "_blank",
+        `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=no,status=no`
+      );
+
+      if (!printWindow) {
+        showMessage("Please allow pop-ups to print the badge.", "warning");
+        return;
+      }
+
+      printWindow.document.write(`
+      <html>
+        <head>
+          <title>Print Badge</title>
+          <style>
+            html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+          </style>
+        </head>
+        <body>
+          <iframe
+            src="${blobUrl}"
+            frameborder="0"
+            style="width:100%;height:100%;border:none;"
+            onload="this.contentWindow.focus(); this.contentWindow.print();"
+          ></iframe>
+        </body>
+      </html>
+    `);
+    } catch (err) {
+      console.error("PDF Print Error:", err);
+      showMessage("Failed to generate or print badge.", "error");
+    }
   };
 
   return (
@@ -428,12 +482,12 @@ export default function VerifyPage() {
             </ListItem>
           </List>
 
-          <Stack direction="row" spacing={2} mt={2}>
-            <Tooltip title={t.tooltip.printPdf}>
+          <Stack direction="column" spacing={2} mt={2}>
+            <Tooltip title={t.tooltip.print}>
               <Button
                 variant="contained"
                 color="primary"
-                startIcon={<ICONS.pdf />}
+                startIcon={<ICONS.print />}
                 onClick={handlePrintPdf}
                 sx={getStartIconSpacing(dir)}
               >
@@ -441,36 +495,18 @@ export default function VerifyPage() {
               </Button>
             </Tooltip>
 
-            {/* Zebra Print Button (if ZPL available) */}
-            {result?.zpl && (
-              <Tooltip title={t.tooltip.printZebra}>
-                <span>
-                  <Button
-                    variant="outlined"
-                    color="secondary"
-                    startIcon={<ICONS.print />}
-                    onClick={handlePrintZebra}
-                    disabled={printing}
-                    sx={getStartIconSpacing(dir)}
-                  >
-                    {printing ? t.printing : t.printZebra}
-                  </Button>
-                </span>
-              </Tooltip>
-            )}
+            {/* Scan Another */}
+            <Tooltip title={t.tooltip.scan}>
+              <Button
+                variant="outlined"
+                startIcon={<ICONS.qrCodeScanner />}
+                onClick={reset}
+                sx={{ mt: 2, ...getStartIconSpacing(dir) }}
+              >
+                {t.scanAnother}
+              </Button>
+            </Tooltip>
           </Stack>
-
-          {/* Scan Another */}
-          <Tooltip title={t.tooltip.scan}>
-            <Button
-              variant="outlined"
-              startIcon={<ICONS.qrCodeScanner />}
-              onClick={reset}
-              sx={{ mt: 2, ...getStartIconSpacing(dir) }}
-            >
-              {t.scanAnother}
-            </Button>
-          </Tooltip>
         </Stack>
       )}
 
@@ -493,15 +529,6 @@ export default function VerifyPage() {
             </Button>
           </Tooltip>
         </Stack>
-      )}
-
-      {/* PDF Modal */}
-      {result && (
-        <BadgePDFViewer
-          open={showPdfModal}
-          onClose={() => setShowPdfModal(false)}
-          badgeData={result}
-        />
       )}
 
       <audio ref={successAudioRef} src="/correct.wav" preload="auto" />
