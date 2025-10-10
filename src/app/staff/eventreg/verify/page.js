@@ -25,6 +25,7 @@ import { useMessage } from "@/contexts/MessageContext";
 import { pdf } from "@react-pdf/renderer";
 import QRCode from "qrcode";
 import BadgePDF from "@/components/BadgePDF";
+import { useAuth } from "@/contexts/AuthContext";
 
 const translations = {
   en: {
@@ -97,6 +98,7 @@ const translations = {
 export default function VerifyPage() {
   const { t, dir } = useI18nLayout(translations);
   const { showMessage } = useMessage();
+  const { user } = useAuth();
 
   const [showScanner, setShowScanner] = useState(false);
   const [manualMode, setManualMode] = useState(false);
@@ -315,16 +317,6 @@ export default function VerifyPage() {
                 >
                   {t.manualVerification}
                 </Button>
-
-                <Button
-                  variant="outlined"
-                  color="secondary"
-                  startIcon={<ICONS.print />}
-                  onClick={checkPrinter}
-                  fullWidth
-                >
-                  {t.checkPrinter}
-                </Button>
               </>
             ) : (
               <>
@@ -483,17 +475,19 @@ export default function VerifyPage() {
           </List>
 
           <Stack direction="column" spacing={2} mt={2}>
-            <Tooltip title={t.tooltip.print}>
-              <Button
-                variant="contained"
-                color="primary"
-                startIcon={<ICONS.print />}
-                onClick={handlePrintPdf}
-                sx={getStartIconSpacing(dir)}
-              >
-                {t.printBadge}
-              </Button>
-            </Tooltip>
+            {user?.staffType === "desk" && (
+              <Tooltip title={t.tooltip.print}>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  startIcon={<ICONS.print />}
+                  onClick={handlePrintPdf}
+                  sx={getStartIconSpacing(dir)}
+                >
+                  {t.printBadge}
+                </Button>
+              </Tooltip>
+            )}
 
             {/* Scan Another */}
             <Tooltip title={t.tooltip.scan}>

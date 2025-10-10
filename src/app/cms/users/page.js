@@ -50,7 +50,7 @@ import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import { wrapTextBox } from "@/utils/wrapTextStyles";
 import LoadingState from "@/components/LoadingState";
-import { registerUser } from "@/services/authService"; // <-- NEW
+import { registerUser } from "@/services/authService"; 
 import { createBusiness, updateBusiness } from "@/services/businessService";
 import slugify from "@/utils/slugify";
 
