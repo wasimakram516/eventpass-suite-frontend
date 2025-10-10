@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef } from "react";
 import {
   Box,
   Typography,
@@ -22,6 +22,9 @@ import useI18nLayout from "@/hooks/useI18nLayout";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import { printZpl } from "@/utils/printZpl";
 import { useMessage } from "@/contexts/MessageContext";
+import { pdf } from "@react-pdf/renderer";
+import QRCode from "qrcode";
+import BadgePDF from "@/components/BadgePDF";
 
 const translations = {
   en: {
@@ -47,13 +50,14 @@ const translations = {
     scanAnother: "Scan Another",
     tryAgain: "Try Again",
     printBadge: "Print Badge",
+    printZebra: "Print Badge (Zebra)",
     printing: "Printing...",
     tooltip: {
       openScanner: "Open QR Scanner",
       cancel: "Cancel scanning",
       scan: "Scan another code",
       retry: "Retry verification",
-      print: "Send badge to Zebra printer",
+      print: "Print Badge",
     },
   },
   ar: {
@@ -78,13 +82,14 @@ const translations = {
     scanAnother: "مسح رمز آخر",
     tryAgain: "حاول مرة أخرى",
     printBadge: "طباعة الشارة",
+    printZebra: "طباعة الشارة (Zebra)",
     printing: "جارٍ الطباعة...",
     tooltip: {
       openScanner: "افتح الماسح الضوئي",
       cancel: "إلغاء المسح",
       scan: "مسح رمز آخر",
       retry: "إعادة المحاولة",
-      print: "إرسال الشارة إلى طابعة Zebra",
+      print: "طباعة الشارة",
     },
   },
 };
@@ -100,26 +105,11 @@ export default function VerifyPage() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const [printing, setPrinting] = useState(false);
+  const [showPdfModal, setShowPdfModal] = useState(false);
 
   const successAudioRef = useRef(null);
   const errorAudioRef = useRef(null);
   const scanningRef = useRef(false);
-
-  // useEffect(() => {
-  //   if (typeof window !== "undefined" && window.BrowserPrint) {
-  //     window.BrowserPrint.getDefaultDevice(
-  //       "printer",
-  //       (d) => {
-  //         if (d) {
-  //           showMessage(`Printer ready: ${d.name}`, "success");
-  //         } else {
-  //           showMessage("No default Zebra printer", "warning");
-  //         }
-  //       },
-  //       () => showMessage("Browser Print not responding", "error")
-  //     );
-  //   }
-  // }, [showMessage]);
 
   const checkPrinter = () => {
     if (typeof window !== "undefined" && window.BrowserPrint) {
@@ -146,17 +136,14 @@ export default function VerifyPage() {
     const marker = "#BARCODE";
     const idx = s.indexOf(marker);
     if (idx >= 0) {
-      // everything after "#BARCODE"
       return s.slice(idx + marker.length).trim();
     }
 
-    // If URL contains /B/ then take the last segment after /B/
     const bIndex = s.toUpperCase().lastIndexOf("/B/");
     if (bIndex >= 0) {
-      return s.slice(bIndex + 3).trim(); // 3 = length of "/B/"
+      return s.slice(bIndex + 3).trim();
     }
 
-    // fallback → return original string
     return s;
   };
 
@@ -203,9 +190,10 @@ export default function VerifyPage() {
     setShowScanner(false);
     setManualMode(false);
     setPrinting(false);
+    setShowPdfModal(false);
   };
 
-  const handlePrint = async () => {
+  const handlePrintZebra = async () => {
     try {
       if (!result?.zpl) throw new Error("No ZPL received from server");
       setPrinting(true);
@@ -215,6 +203,64 @@ export default function VerifyPage() {
       showMessage(e?.message || "Printing failed", "error");
     } finally {
       setPrinting(false);
+    }
+  };
+
+  const handlePrintPdf = async () => {
+    if (!result) return;
+
+    try {
+      const qrCodeDataUrl = await QRCode.toDataURL(result.token, {
+        width: 300,
+        margin: 1,
+        color: { dark: "#000000", light: "#ffffff" },
+      });
+
+      const blob = await pdf(
+        <BadgePDF data={result} qrCodeDataUrl={qrCodeDataUrl} />
+      ).toBlob();
+
+      const blobUrl = URL.createObjectURL(blob);
+
+      // Calculate center position
+      const width = 800;
+      const height = 600;
+      const left = window.screenX + (window.outerWidth - width) / 2;
+      const top = window.screenY + (window.outerHeight - height) / 2;
+
+      // Open centered print window
+      const printWindow = window.open(
+        "",
+        "_blank",
+        `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=no,status=no`
+      );
+
+      if (!printWindow) {
+        showMessage("Please allow pop-ups to print the badge.", "warning");
+        return;
+      }
+
+      printWindow.document.write(`
+      <html>
+        <head>
+          <title>Print Badge</title>
+          <style>
+            html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; }
+          </style>
+        </head>
+        <body>
+          <iframe
+            src="${blobUrl}"
+            frameborder="0"
+            style="width:100%;height:100%;border:none;"
+            onload="this.contentWindow.focus(); this.contentWindow.print();"
+          ></iframe>
+        </body>
+      </html>
+    `);
+    } catch (err) {
+      console.error("PDF Print Error:", err);
+      showMessage("Failed to generate or print badge.", "error");
     }
   };
 
@@ -243,7 +289,6 @@ export default function VerifyPage() {
 
             {!manualMode ? (
               <>
-                {/* Open Scanner CTA */}
                 <Tooltip title={t.tooltip.openScanner}>
                   <Button
                     variant="contained"
@@ -258,7 +303,6 @@ export default function VerifyPage() {
                   </Button>
                 </Tooltip>
 
-                {/* Manual Verification CTA */}
                 <Button
                   variant="outlined"
                   color="primary"
@@ -272,7 +316,6 @@ export default function VerifyPage() {
                   {t.manualVerification}
                 </Button>
 
-                {/* Check Printer CTA */}
                 <Button
                   variant="outlined"
                   color="secondary"
@@ -285,7 +328,6 @@ export default function VerifyPage() {
               </>
             ) : (
               <>
-                {/* Manual Mode Instructions */}
                 <Typography
                   variant="body2"
                   sx={{ mb: 1 }}
@@ -440,33 +482,31 @@ export default function VerifyPage() {
             </ListItem>
           </List>
 
-          {/* Print Badge */}
-          <Tooltip title={t.tooltip.print}>
-            <span>
+          <Stack direction="column" spacing={2} mt={2}>
+            <Tooltip title={t.tooltip.print}>
               <Button
                 variant="contained"
                 color="primary"
                 startIcon={<ICONS.print />}
-                onClick={handlePrint}
-                disabled={printing || !result?.zpl}
-                sx={{ mt: 1, ...getStartIconSpacing(dir) }}
+                onClick={handlePrintPdf}
+                sx={getStartIconSpacing(dir)}
               >
-                {printing ? t.printing : t.printBadge}
+                {t.printBadge}
               </Button>
-            </span>
-          </Tooltip>
+            </Tooltip>
 
-          {/* Scan Another */}
-          <Tooltip title={t.tooltip.scan}>
-            <Button
-              variant="outlined"
-              startIcon={<ICONS.qrCodeScanner />}
-              onClick={reset}
-              sx={{ mt: 2, ...getStartIconSpacing(dir) }}
-            >
-              {t.scanAnother}
-            </Button>
-          </Tooltip>
+            {/* Scan Another */}
+            <Tooltip title={t.tooltip.scan}>
+              <Button
+                variant="outlined"
+                startIcon={<ICONS.qrCodeScanner />}
+                onClick={reset}
+                sx={{ mt: 2, ...getStartIconSpacing(dir) }}
+              >
+                {t.scanAnother}
+              </Button>
+            </Tooltip>
+          </Stack>
         </Stack>
       )}
 
