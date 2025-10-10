@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef } from "react";
 import {
   Box,
   Typography,
@@ -16,6 +16,7 @@ import {
 } from "@mui/material";
 
 import QrScanner from "@/components/QrScanner";
+import BadgePDFViewer from "@/components/BadgePDFViewer";
 import { verifyRegistrationByToken } from "@/services/eventreg/registrationService";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
@@ -46,14 +47,16 @@ const translations = {
     event: "Event",
     scanAnother: "Scan Another",
     tryAgain: "Try Again",
-    printBadge: "Print Badge",
+    printBadge: "Print Badge (PDF)",
+    printZebra: "Print Badge (Zebra)",
     printing: "Printing...",
     tooltip: {
       openScanner: "Open QR Scanner",
       cancel: "Cancel scanning",
       scan: "Scan another code",
       retry: "Retry verification",
-      print: "Send badge to Zebra printer",
+      printPdf: "View and print badge as PDF",
+      printZebra: "Send badge to Zebra printer",
     },
   },
   ar: {
@@ -77,14 +80,16 @@ const translations = {
     event: "الفعالية",
     scanAnother: "مسح رمز آخر",
     tryAgain: "حاول مرة أخرى",
-    printBadge: "طباعة الشارة",
+    printBadge: "طباعة الشارة (PDF)",
+    printZebra: "طباعة الشارة (Zebra)",
     printing: "جارٍ الطباعة...",
     tooltip: {
       openScanner: "افتح الماسح الضوئي",
       cancel: "إلغاء المسح",
       scan: "مسح رمز آخر",
       retry: "إعادة المحاولة",
-      print: "إرسال الشارة إلى طابعة Zebra",
+      printPdf: "عرض وطباعة الشارة بتنسيق PDF",
+      printZebra: "إرسال الشارة إلى طابعة Zebra",
     },
   },
 };
@@ -100,26 +105,11 @@ export default function VerifyPage() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const [printing, setPrinting] = useState(false);
+  const [showPdfModal, setShowPdfModal] = useState(false);
 
   const successAudioRef = useRef(null);
   const errorAudioRef = useRef(null);
   const scanningRef = useRef(false);
-
-  // useEffect(() => {
-  //   if (typeof window !== "undefined" && window.BrowserPrint) {
-  //     window.BrowserPrint.getDefaultDevice(
-  //       "printer",
-  //       (d) => {
-  //         if (d) {
-  //           showMessage(`Printer ready: ${d.name}`, "success");
-  //         } else {
-  //           showMessage("No default Zebra printer", "warning");
-  //         }
-  //       },
-  //       () => showMessage("Browser Print not responding", "error")
-  //     );
-  //   }
-  // }, [showMessage]);
 
   const checkPrinter = () => {
     if (typeof window !== "undefined" && window.BrowserPrint) {
@@ -146,17 +136,14 @@ export default function VerifyPage() {
     const marker = "#BARCODE";
     const idx = s.indexOf(marker);
     if (idx >= 0) {
-      // everything after "#BARCODE"
       return s.slice(idx + marker.length).trim();
     }
 
-    // If URL contains /B/ then take the last segment after /B/
     const bIndex = s.toUpperCase().lastIndexOf("/B/");
     if (bIndex >= 0) {
-      return s.slice(bIndex + 3).trim(); // 3 = length of "/B/"
+      return s.slice(bIndex + 3).trim();
     }
 
-    // fallback → return original string
     return s;
   };
 
@@ -203,9 +190,10 @@ export default function VerifyPage() {
     setShowScanner(false);
     setManualMode(false);
     setPrinting(false);
+    setShowPdfModal(false);
   };
 
-  const handlePrint = async () => {
+  const handlePrintZebra = async () => {
     try {
       if (!result?.zpl) throw new Error("No ZPL received from server");
       setPrinting(true);
@@ -216,6 +204,10 @@ export default function VerifyPage() {
     } finally {
       setPrinting(false);
     }
+  };
+
+  const handlePrintPdf = () => {
+    setShowPdfModal(true);
   };
 
   return (
@@ -243,7 +235,6 @@ export default function VerifyPage() {
 
             {!manualMode ? (
               <>
-                {/* Open Scanner CTA */}
                 <Tooltip title={t.tooltip.openScanner}>
                   <Button
                     variant="contained"
@@ -258,7 +249,6 @@ export default function VerifyPage() {
                   </Button>
                 </Tooltip>
 
-                {/* Manual Verification CTA */}
                 <Button
                   variant="outlined"
                   color="primary"
@@ -272,7 +262,6 @@ export default function VerifyPage() {
                   {t.manualVerification}
                 </Button>
 
-                {/* Check Printer CTA */}
                 <Button
                   variant="outlined"
                   color="secondary"
@@ -285,7 +274,6 @@ export default function VerifyPage() {
               </>
             ) : (
               <>
-                {/* Manual Mode Instructions */}
                 <Typography
                   variant="body2"
                   sx={{ mb: 1 }}
@@ -440,21 +428,37 @@ export default function VerifyPage() {
             </ListItem>
           </List>
 
-          {/* Print Badge */}
-          <Tooltip title={t.tooltip.print}>
-            <span>
+          <Stack direction="row" spacing={2} mt={2}>
+            <Tooltip title={t.tooltip.printPdf}>
               <Button
                 variant="contained"
                 color="primary"
-                startIcon={<ICONS.print />}
-                onClick={handlePrint}
-                disabled={printing || !result?.zpl}
-                sx={{ mt: 1, ...getStartIconSpacing(dir) }}
+                startIcon={<ICONS.pdf />}
+                onClick={handlePrintPdf}
+                sx={getStartIconSpacing(dir)}
               >
-                {printing ? t.printing : t.printBadge}
+                {t.printBadge}
               </Button>
-            </span>
-          </Tooltip>
+            </Tooltip>
+
+            {/* Zebra Print Button (if ZPL available) */}
+            {result?.zpl && (
+              <Tooltip title={t.tooltip.printZebra}>
+                <span>
+                  <Button
+                    variant="outlined"
+                    color="secondary"
+                    startIcon={<ICONS.print />}
+                    onClick={handlePrintZebra}
+                    disabled={printing}
+                    sx={getStartIconSpacing(dir)}
+                  >
+                    {printing ? t.printing : t.printZebra}
+                  </Button>
+                </span>
+              </Tooltip>
+            )}
+          </Stack>
 
           {/* Scan Another */}
           <Tooltip title={t.tooltip.scan}>
@@ -489,6 +493,15 @@ export default function VerifyPage() {
             </Button>
           </Tooltip>
         </Stack>
+      )}
+
+      {/* PDF Modal */}
+      {result && (
+        <BadgePDFViewer
+          open={showPdfModal}
+          onClose={() => setShowPdfModal(false)}
+          badgeData={result}
+        />
       )}
 
       <audio ref={successAudioRef} src="/correct.wav" preload="auto" />
