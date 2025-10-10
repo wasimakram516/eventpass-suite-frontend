@@ -93,6 +93,7 @@ const translations = {
     to: "To",
     scannedBy: "Scanned By (Name or Email)",
     scannedAt: "Scanned At",
+    staffType: "Staff Type",
     searchPlaceholder: "Search...",
     apply: "Apply",
     clear: "Clear",
@@ -138,6 +139,7 @@ const translations = {
     to: "إلى",
     scannedBy: "تم المسح بواسطة (الاسم أو البريد الإلكتروني)",
     scannedAt: "تاريخ المسح",
+    staffType: "نوع الطاقم",
     searchPlaceholder: "بحث...",
     apply: "تطبيق",
     clear: "مسح",
@@ -219,16 +221,16 @@ export default function ViewRegistrations() {
     const fieldsLocal =
       !evRes?.error && evRes.formFields?.length
         ? evRes.formFields.map((f) => ({
-          name: f.inputName,
-          type: (f.inputType || "text").toLowerCase(),
-          values: Array.isArray(f.values) ? f.values : [],
-        }))
+            name: f.inputName,
+            type: (f.inputType || "text").toLowerCase(),
+            values: Array.isArray(f.values) ? f.values : [],
+          }))
         : [
-          { name: "fullName", type: "text", values: [] },
-          { name: "email", type: "text", values: [] },
-          { name: "phone", type: "text", values: [] },
-          { name: "company", type: "text", values: [] },
-        ];
+            { name: "fullName", type: "text", values: [] },
+            { name: "email", type: "text", values: [] },
+            { name: "phone", type: "text", values: [] },
+            { name: "company", type: "text", values: [] },
+          ];
 
     if (!evRes?.error) {
       setEventDetails(evRes);
@@ -338,8 +340,8 @@ export default function ViewRegistrations() {
           (key === "token"
             ? reg.token
             : key === "createdAt"
-              ? reg.createdAt
-              : "");
+            ? reg.createdAt
+            : "");
 
         const v = String(regValue ?? "").toLowerCase();
         const f = String(rawValue).toLowerCase();
@@ -366,8 +368,9 @@ export default function ViewRegistrations() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `${eventDetails.slug || "event"
-        }_registrations_template.xlsx`;
+      link.download = `${
+        eventDetails.slug || "event"
+      }_registrations_template.xlsx`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -434,17 +437,17 @@ export default function ViewRegistrations() {
 
     const lines = [];
 
-    // Event metadata
+    // ---- Event metadata ----
     lines.push([`Event Slug:`, eventDetails.slug || `N/A`].join(`,`));
     lines.push([`Event Name:`, eventDetails.name || `N/A`].join(`,`));
     lines.push(
       [
         `Event Dates:`,
         formatDate(eventDetails.startDate) +
-        (eventDetails.endDate &&
+          (eventDetails.endDate &&
           eventDetails.endDate !== eventDetails.startDate
-          ? ` to ${formatDate(eventDetails.endDate)}`
-          : ``),
+            ? ` to ${formatDate(eventDetails.endDate)}`
+            : ``),
       ].join(`,`)
     );
     lines.push([`Venue:`, eventDetails.venue || `N/A`].join(`,`));
@@ -493,6 +496,7 @@ export default function ViewRegistrations() {
         t.registeredAt,
         t.scannedAt,
         t.scannedBy,
+        t.staffType,
       ];
       lines.push(walkInHeaders.join(`,`));
 
@@ -505,6 +509,13 @@ export default function ViewRegistrations() {
             .replace(/"/g, `""`)}"`;
         });
 
+        // Capitalize staff type safely
+        const staffTypeRaw = w.scannedBy?.staffType || "N/A";
+        const staffType =
+          staffTypeRaw && staffTypeRaw !== "N/A"
+            ? staffTypeRaw.charAt(0).toUpperCase() + staffTypeRaw.slice(1)
+            : "N/A";
+
         row.push(
           `"${reg.token}"`,
           `"${reg.createdAt ? formatDateTimeWithLocale(reg.createdAt) : ""}"`,
@@ -512,21 +523,25 @@ export default function ViewRegistrations() {
           `"${(w.scannedBy?.name || w.scannedBy?.email || "Unknown").replace(
             /"/g,
             `""`
-          )}"`
+          )}"`,
+          `"${staffType}"` 
         );
 
         lines.push(row.join(`,`));
       });
     }
 
-    // Save CSV
+    // ---- Save CSV ----
     const csvContent = `\uFEFF` + lines.join(`\n`);
-    const blob = new Blob([csvContent], { type: `text/csv;charset=utf-8;` });
+    const blob = new Blob([csvContent], {
+      type: `text/csv;charset=utf-8;`,
+    });
 
     const link = document.createElement(`a`);
     link.href = URL.createObjectURL(blob);
-    link.download = `${eventDetails.slug || `event`}_${isFiltered ? "filtered" : "all"
-      }_registrations.csv`;
+    link.download = `${eventDetails.slug || `event`}_${
+      isFiltered ? "filtered" : "all"
+    }_registrations.csv`;
     link.click();
 
     setExportLoading(false);
@@ -580,7 +595,7 @@ export default function ViewRegistrations() {
           spacing={2}
           sx={{
             width: { xs: "100%", sm: "auto" },
-            gap: dir === "rtl" ? 2 : 1.5
+            gap: dir === "rtl" ? 2 : 1.5,
           }}
         >
           <Button
@@ -604,8 +619,8 @@ export default function ViewRegistrations() {
             {uploading && uploadProgress
               ? `${t.uploading} ${uploadProgress.uploaded}/${uploadProgress.total}`
               : uploading
-                ? t.uploading
-                : t.uploadFile}
+              ? t.uploading
+              : t.uploadFile}
             <input
               type="file"
               hidden
@@ -631,8 +646,8 @@ export default function ViewRegistrations() {
               {exportLoading
                 ? t.exporting
                 : searchTerm || Object.keys(filters).some((k) => filters[k])
-                  ? t.exportFiltered
-                  : t.exportAll}
+                ? t.exportFiltered
+                : t.exportAll}
             </Button>
           )}
         </Stack>
@@ -670,13 +685,13 @@ export default function ViewRegistrations() {
               <ICONS.search fontSize="small" sx={{ opacity: 0.7 }} />
               {filteredRegistrations.length === 1
                 ? t.matchingRecords.replace(
-                  "{count}",
-                  filteredRegistrations.length
-                )
+                    "{count}",
+                    filteredRegistrations.length
+                  )
                 : t.matchingRecordsPlural.replace(
-                  "{count}",
-                  filteredRegistrations.length
-                )}{" "}
+                    "{count}",
+                    filteredRegistrations.length
+                  )}{" "}
               {t.found}
             </Typography>
           )}
@@ -688,10 +703,14 @@ export default function ViewRegistrations() {
           alignItems={{ xs: "stretch", sm: "center" }}
           justifyContent="flex-end"
           width="100%"
-          sx={dir === "rtl" ? {
-            columnGap: 1.5,
-            rowGap: 1.5,
-          } : {}}
+          sx={
+            dir === "rtl"
+              ? {
+                  columnGap: 1.5,
+                  rowGap: 1.5,
+                }
+              : {}
+          }
         >
           <TextField
             size="small"
@@ -701,15 +720,21 @@ export default function ViewRegistrations() {
             onChange={(e) => setRawSearch(e.target.value)}
             InputProps={{
               startAdornment: (
-                <ICONS.search fontSize="small" sx={{
-                  mr: dir === "rtl" ? 0 : 1,
-                  ml: dir === "rtl" ? 1 : 0,
-                  opacity: 0.6
-                }} />
+                <ICONS.search
+                  fontSize="small"
+                  sx={{
+                    mr: dir === "rtl" ? 0 : 1,
+                    ml: dir === "rtl" ? 1 : 0,
+                    opacity: 0.6,
+                  }}
+                />
               ),
-              sx: dir === "rtl" ? {
-                paddingRight: 2,
-              } : {}
+              sx:
+                dir === "rtl"
+                  ? {
+                      paddingRight: 2,
+                    }
+                  : {},
             }}
             sx={{
               flex: 1,
@@ -724,7 +749,7 @@ export default function ViewRegistrations() {
             onClick={() => setFilterModalOpen(true)}
             sx={{
               width: { xs: "100%", sm: "auto" },
-              ...getStartIconSpacing(dir)
+              ...getStartIconSpacing(dir),
             }}
           >
             {t.filters}
@@ -735,9 +760,9 @@ export default function ViewRegistrations() {
             size="small"
             sx={{
               minWidth: { xs: "100%", sm: 150 },
-              '& .MuiSelect-icon': {
-                left: dir === "rtl" ? 'auto' : 7,
-                right: dir === "rtl" ? 7 : 'auto',
+              "& .MuiSelect-icon": {
+                left: dir === "rtl" ? "auto" : 7,
+                right: dir === "rtl" ? 7 : "auto",
               },
             }}
           >
@@ -747,7 +772,7 @@ export default function ViewRegistrations() {
               onChange={handleLimitChange}
               label={t.recordsPerPage}
               sx={{
-                textAlign: dir === "rtl" ? 'left' : 'right',
+                textAlign: dir === "rtl" ? "left" : "right",
               }}
             >
               {[5, 10, 20, 50, 100, 250, 500].map((n) => (
@@ -773,24 +798,28 @@ export default function ViewRegistrations() {
         if (filters.createdAtFromMs || filters.createdAtToMs) {
           activeFilterEntries.push([
             "Registered At",
-            `${filters.createdAtFromMs
-              ? formatDateTimeWithLocale(filters.createdAtFromMs)
-              : "—"
-            } → ${filters.createdAtToMs
-              ? formatDateTimeWithLocale(filters.createdAtToMs)
-              : "—"
+            `${
+              filters.createdAtFromMs
+                ? formatDateTimeWithLocale(filters.createdAtFromMs)
+                : "—"
+            } → ${
+              filters.createdAtToMs
+                ? formatDateTimeWithLocale(filters.createdAtToMs)
+                : "—"
             }`,
           ]);
         }
         if (filters.scannedAtFromMs || filters.scannedAtToMs) {
           activeFilterEntries.push([
             "Scanned At",
-            `${filters.scannedAtFromMs
-              ? formatDateTimeWithLocale(filters.scannedAtFromMs)
-              : "—"
-            } → ${filters.scannedAtToMs
-              ? formatDateTimeWithLocale(filters.scannedAtToMs)
-              : "—"
+            `${
+              filters.scannedAtFromMs
+                ? formatDateTimeWithLocale(filters.scannedAtFromMs)
+                : "—"
+            } → ${
+              filters.scannedAtToMs
+                ? formatDateTimeWithLocale(filters.scannedAtToMs)
+                : "—"
             }`,
           ]);
         }
@@ -813,11 +842,16 @@ export default function ViewRegistrations() {
             </Typography>
 
             {activeFilterEntries.map(([key, val]) => {
-              const translatedKey = key === "token" ? t.token :
-                key === "Registered At" ? t.registeredAt :
-                  key === "Scanned At" ? t.scannedAt :
-                    key === "scannedBy" ? t.scannedBy :
-                      getFieldLabel(key);
+              const translatedKey =
+                key === "token"
+                  ? t.token
+                  : key === "Registered At"
+                  ? t.registeredAt
+                  : key === "Scanned At"
+                  ? t.scannedAt
+                  : key === "scannedBy"
+                  ? t.scannedBy
+                  : getFieldLabel(key);
               return (
                 <Chip
                   key={key}
@@ -840,13 +874,17 @@ export default function ViewRegistrations() {
                   color="primary"
                   variant="outlined"
                   size="small"
-                  sx={dir === "rtl" ? {
-                    pr: 4.5,
-                    pl: 2,
-                    "& .MuiChip-label": {
-                      whiteSpace: "nowrap",
-                    }
-                  } : {}}
+                  sx={
+                    dir === "rtl"
+                      ? {
+                          pr: 4.5,
+                          pl: 2,
+                          "& .MuiChip-label": {
+                            whiteSpace: "nowrap",
+                          },
+                        }
+                      : {}
+                  }
                 />
               );
             })}
@@ -947,7 +985,10 @@ export default function ViewRegistrations() {
                         }}
                       >
                         <ICONS.time fontSize="inherit" sx={{ opacity: 0.7 }} />
-                        <Box component="span" sx={{ direction: "ltr", unicodeBidi: "embed" }}>
+                        <Box
+                          component="span"
+                          sx={{ direction: "ltr", unicodeBidi: "embed" }}
+                        >
                           {formatDateTimeWithLocale(reg.createdAt)}
                         </Box>
                       </Typography>
@@ -1096,8 +1137,8 @@ export default function ViewRegistrations() {
               {["radio", "list", "select", "dropdown"].includes(
                 (f.type || "").toLowerCase()
               ) &&
-                Array.isArray(f.values) &&
-                f.values.length > 0 ? (
+              Array.isArray(f.values) &&
+              f.values.length > 0 ? (
                 <FormControl fullWidth size="small">
                   <InputLabel>{`Select ${getFieldLabel(f.name)}`}</InputLabel>
                   <Select
@@ -1162,7 +1203,7 @@ export default function ViewRegistrations() {
               spacing={1}
               sx={{
                 width: "100%",
-                gap: dir === "rtl" ? 1 : 0
+                gap: dir === "rtl" ? 1 : 0,
               }}
             >
               <DateTimePicker
@@ -1224,7 +1265,7 @@ export default function ViewRegistrations() {
               direction="row"
               spacing={1}
               sx={{
-                gap: dir === "rtl" ? 1 : undefined
+                gap: dir === "rtl" ? 1 : undefined,
               }}
             >
               {dir === "rtl" ? (
@@ -1232,7 +1273,9 @@ export default function ViewRegistrations() {
                   <DateTimePicker
                     label={t.to}
                     value={
-                      filters.scannedAtToMs ? dayjs(filters.scannedAtToMs) : null
+                      filters.scannedAtToMs
+                        ? dayjs(filters.scannedAtToMs)
+                        : null
                     }
                     onChange={(val) =>
                       setFilters((f) => ({
@@ -1242,7 +1285,9 @@ export default function ViewRegistrations() {
                           : null,
                       }))
                     }
-                    slotProps={{ textField: { size: "small", fullWidth: true } }}
+                    slotProps={{
+                      textField: { size: "small", fullWidth: true },
+                    }}
                   />
                   <DateTimePicker
                     label={t.from}
@@ -1259,7 +1304,9 @@ export default function ViewRegistrations() {
                           : null,
                       }))
                     }
-                    slotProps={{ textField: { size: "small", fullWidth: true } }}
+                    slotProps={{
+                      textField: { size: "small", fullWidth: true },
+                    }}
                   />
                 </>
               ) : (
@@ -1279,12 +1326,16 @@ export default function ViewRegistrations() {
                           : null,
                       }))
                     }
-                    slotProps={{ textField: { size: "small", fullWidth: true } }}
+                    slotProps={{
+                      textField: { size: "small", fullWidth: true },
+                    }}
                   />
                   <DateTimePicker
                     label={t.to}
                     value={
-                      filters.scannedAtToMs ? dayjs(filters.scannedAtToMs) : null
+                      filters.scannedAtToMs
+                        ? dayjs(filters.scannedAtToMs)
+                        : null
                     }
                     onChange={(val) =>
                       setFilters((f) => ({
@@ -1294,7 +1345,9 @@ export default function ViewRegistrations() {
                           : null,
                       }))
                     }
-                    slotProps={{ textField: { size: "small", fullWidth: true } }}
+                    slotProps={{
+                      textField: { size: "small", fullWidth: true },
+                    }}
                   />
                 </>
               )}
