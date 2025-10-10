@@ -76,6 +76,7 @@ import {
 import {
   FileDownload as FileDownloadIcon,
   FileUpload as FileUploadIcon,
+  PictureAsPdf as PictureAsPdfIcon,
 } from "@mui/icons-material";
 
 // Time & Location
@@ -213,6 +214,7 @@ const ICONS = {
   // File Actions
   download: FileDownloadIcon,
   upload: FileUploadIcon,
+  pdf: PictureAsPdfIcon,
 
   // Status & Feedback
   info: InfoIcon,
