@@ -72,6 +72,7 @@ const translations = {
     listType: "List",
     downloadTemplateError: "Failed to download template.",
     showQrToggle: "Show QR code after registration?",
+    showQrOnBadgeToggle: "Show QR Code on Printed Badge?",
     downloadTemplateSuccess: "Template downloaded successfully",
   },
   ar: {
@@ -117,26 +118,11 @@ const translations = {
     listType: "قائمة",
     downloadTemplateError: "فشل في تحميل القالب.",
     showQrToggle: "عرض رمز الاستجابة السريعة بعد التسجيل؟",
+    showQrOnBadgeToggle: "عرض رمز QR على بطاقة الطباعة؟",
     downloadTemplateSuccess: "تم تحميل القالب بنجاح",
   },
 };
 
-// Helper function to detect video URLs by file extension
-const isVideoUrl = (url) => {
-  if (!url || typeof url !== "string") return false;
-  const videoExtensions = [
-    ".mp4",
-    ".webm",
-    ".ogg",
-    ".mov",
-    ".avi",
-    ".mkv",
-    ".wmv",
-    ".flv",
-  ];
-  const urlWithoutQuery = url.split("?")[0].toLowerCase();
-  return videoExtensions.some((ext) => urlWithoutQuery.endsWith(ext));
-};
 const EventModal = ({
   open,
   onClose,
@@ -148,6 +134,7 @@ const EventModal = ({
   const { t, dir } = useI18nLayout(translations);
   const { showMessage } = useMessage();
 
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     slug: "",
@@ -157,7 +144,6 @@ const EventModal = ({
     description: "",
     logo: null,
     logoPreview: "",
-    // branding logos (multiple like client logos design)
     brandingLogos: [], // array of { _id?, name, website, logoUrl, file? }
     removeBrandingLogoIds: [],
     clearAllBrandingLogos: false,
@@ -170,9 +156,8 @@ const EventModal = ({
     formFields: [],
     useCustomFields: false,
     showQrAfterRegistration: false,
+    showQrOnBadge: true,
   });
-
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (initialValues && Object.keys(initialValues).length > 0) {
@@ -215,6 +200,7 @@ const EventModal = ({
         useCustomFields: !!initialValues.formFields?.length,
         showQrAfterRegistration:
           initialValues?.showQrAfterRegistration || false,
+        showQrOnBadge: initialValues?.showQrOnBadge ?? true,
       }));
     } else {
       setFormData((prev) => ({
@@ -239,6 +225,7 @@ const EventModal = ({
         formFields: [],
         useCustomFields: false,
         showQrAfterRegistration: false,
+        showQrOnBadge: true,
       }));
     }
   }, [initialValues, isEmployee]);
@@ -444,6 +431,7 @@ const EventModal = ({
       "showQrAfterRegistration",
       formData.showQrAfterRegistration.toString()
     );
+    payload.append("showQrOnBadge", formData.showQrOnBadge.toString());
 
     if (formData.eventType === "public" && formData.useCustomFields) {
       payload.append("formFields", JSON.stringify(formData.formFields));
@@ -553,6 +541,26 @@ const EventModal = ({
                 />
               }
               label={t.showQrToggle}
+              sx={{ alignSelf: "start" }}
+            />
+          </Box>
+
+          {/* Show QR on Badge Toggle */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={formData.showQrOnBadge}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      showQrOnBadge: e.target.checked,
+                    }))
+                  }
+                  color="primary"
+                />
+              }
+              label={t.showQrOnBadgeToggle}
               sx={{ alignSelf: "start" }}
             />
           </Box>

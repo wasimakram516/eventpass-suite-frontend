@@ -222,23 +222,27 @@ export default function VerifyPage() {
         <BadgePDF data={result} qrCodeDataUrl={qrCodeDataUrl} />
       ).toBlob();
 
+      const blobUrl = URL.createObjectURL(blob);
       const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-      const blobUrl = URL.createObjectURL(blob);
-
       if (isMobile) {
-        const link = document.createElement("a");
-        link.href = blobUrl;
-        link.download = `${result.fullName || "badge"}.pdf`;
-        link.click();
+        // 🟢 Mobile — open in new tab and trigger native print dialog
+        const printWindow = window.open(blobUrl, "_blank");
+        if (!printWindow) {
+          showMessage?.("Please allow pop-ups to print the badge.", "warning");
+          return;
+        }
 
-        showMessage?.(
-          "PDF downloaded. Open it in your files to print manually.",
-          "info"
-        );
+        // wait until document is ready then trigger native print modal
+        printWindow.onload = () => {
+          printWindow.focus();
+          printWindow.print();
+        };
+
         return;
       }
 
+      // 🖥️ Desktop — open custom print preview (same as before)
       const width = Math.floor(window.outerWidth * 0.9);
       const height = Math.floor(window.outerHeight * 0.9);
       const left = window.screenX + (window.outerWidth - width) / 2;
@@ -255,7 +259,6 @@ export default function VerifyPage() {
         return;
       }
 
-      // 5️⃣ Write HTML + auto-trigger print on load
       printWindow.document.write(`
       <html>
         <head>
