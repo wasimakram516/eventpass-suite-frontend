@@ -20,8 +20,8 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     justifyContent: "flex-start",
     alignItems: "center",
-    paddingTop: 120,
-    paddingBottom: 60,
+    paddingTop: 120, // space for top preprinted area
+    paddingBottom: 60, // space for bottom preprinted area
   },
 
   contentArea: {
@@ -32,6 +32,32 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     textAlign: "center",
+  },
+
+  qrWrapper: {
+    width: "100%",
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 14,
+  },
+  qrImage: {
+    width: 110,
+    height: 110,
+  },
+  token: {
+    fontSize: 10,
+    fontWeight: "bold",
+    color: "#0077b6",
+    marginTop: 4,
+    letterSpacing: 1,
+  },
+  divider: {
+    borderBottom: "1pt solid #ccc",
+    width: "60%",
+    marginTop: 8,
+    marginBottom: 10,
   },
 
   name: {
@@ -52,24 +78,13 @@ const styles = StyleSheet.create({
     marginTop: 3,
     textAlign: "center",
   },
-
-  qrWrapper: {
-    width: "100%",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  qrImage: {
-    width: 110,
-    height: 110,
-  },
-  token: {
-    fontSize: 10,
+  badgeIdentifier: {
+    fontSize: 14,
     fontWeight: "bold",
+    textTransform: "uppercase",
     color: "#0077b6",
-    marginTop: 4,
-    letterSpacing: 1,
+    marginTop: 10,
+    textAlign: "center",
   },
 });
 
@@ -84,14 +99,20 @@ export default function BadgePDF({ data, qrCodeDataUrl }) {
               <>
                 <Image src={qrCodeDataUrl} style={styles.qrImage} />
                 <Text style={styles.token}>{data.token}</Text>
+                <View style={styles.divider} />
               </>
             )}
           </View>
 
-          {/* Text section */}
+          {/* Attendee info */}
           {data.fullName && <Text style={styles.name}>{data.fullName}</Text>}
           {data.title && <Text style={styles.title}>{data.title}</Text>}
           {data.company && <Text style={styles.company}>{data.company}</Text>}
+
+          {/* Badge identifier (e.g., Visitor, Sponsor, Exhibitor) */}
+          {data.badgeIdentifier && (
+            <Text style={styles.badgeIdentifier}>{data.badgeIdentifier}</Text>
+          )}
         </View>
       </Page>
     </Document>
