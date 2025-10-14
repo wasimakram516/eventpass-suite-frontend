@@ -148,6 +148,7 @@ import {
   Description as DescriptionIcon,
   MeetingRoom as DoorIcon,
   Desk as DeskIcon,
+  Insights as InsightsIcon
 } from "@mui/icons-material";
 
 const ICONS = {
@@ -283,6 +284,7 @@ const ICONS = {
   help: HelpIcon,
   group: GroupIcon,
   description: DescriptionIcon,
+  insights: InsightsIcon,
 };
 
 export default ICONS;
