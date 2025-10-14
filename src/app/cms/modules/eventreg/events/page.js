@@ -58,6 +58,7 @@ const translations = {
     edit: "Edit",
     shareTitle: "Share",
     viewRegs: "View Registrations",
+    insights: "Insights",
   },
   ar: {
     pageTitle: "إدارة الفعاليات",
@@ -81,6 +82,7 @@ const translations = {
     delete: "حذف",
     shareTitle: "مشاركة",
     viewRegs: "عرض التسجيلات",
+    insights: "التحليلات",
   },
 };
 
@@ -284,6 +286,9 @@ export default function EventsPage() {
                       setEventToShare(ev);
                       setShareModalOpen(true);
                     }}
+                    onInsights={() =>
+                      router.push(`/cms/modules/eventreg/events/${ev.slug}/insights`)
+                    }
                   />
                 </Grid>
               );
