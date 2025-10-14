@@ -26,6 +26,39 @@ import {
 } from '@/services/eventreg/insightsService';
 import ICONS from "@/utils/iconUtil";
 import BreadcrumbsNav from '@/components/BreadcrumbsNav';
+import useI18nLayout from '@/hooks/useI18nLayout';
+const translations = {
+    en: {
+        pageTitle: "Insights",
+        pageDescription: "Analyze event data and visualize key metrics through interactive charts and distributions.",
+        searchPlaceholder: "Search fields...",
+        availableFields: "Available Fields",
+        selectFieldPrompt: "Select a field to view insights",
+        distributionOverview: "Distribution Overview",
+        historicalTrend: "Historical Trend",
+        topN: "Top N",
+        startDate: "Start Date",
+        startTime: "Start Time",
+        endDate: "End Date",
+        endTime: "End Time",
+        intervalMinutes: "Interval (min)",
+    },
+    ar: {
+        pageTitle: "التحليلات",
+        pageDescription: "تحليل بيانات الحدث وتصور المقاييس الرئيسية من خلال الرسوم البيانية والتوزيعات التفاعلية.",
+        searchPlaceholder: "بحث في الحقول...",
+        availableFields: "الحقول المتاحة",
+        selectFieldPrompt: "اختر حقلاً لعرض التحليلات",
+        distributionOverview: "نظرة عامة على التوزيع",
+        historicalTrend: "الاتجاه التاريخي",
+        topN: "أعلى N",
+        startDate: "تاريخ البدء",
+        startTime: "وقت البدء",
+        endDate: "تاريخ النهاية",
+        endTime: "وقت النهاية",
+        intervalMinutes: "الفاصل الزمني (دقيقة)",
+    },
+};
 
 const fieldColors = [
     '#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899',
@@ -74,7 +107,8 @@ const ChartVisualization = ({
     onEndDateChange,
     onEndTimeChange,
     topN,
-    intervalMinutes
+    intervalMinutes,
+    t
 }) => {
     if (!selectedField || !chartData[selectedField]) {
         return (
@@ -90,7 +124,7 @@ const ChartVisualization = ({
                 <Box>
                     <BarChartIcon sx={{ fontSize: 48, color: '#d1d5db', mx: 'auto', mb: 2 }} />
                     <Typography color="textSecondary">
-                        Select a field to view insights
+                        {t.selectFieldPrompt}
                     </Typography>
                 </Box>
             </Box>
@@ -102,8 +136,8 @@ const ChartVisualization = ({
     if (!field) return null;
 
     const getChartDescription = () => {
-        if (field.chartType === 'pie') return 'Distribution Overview';
-        return 'Historical Trend';
+        if (field.chartType === 'pie') return t.distributionOverview;
+        return t.historicalTrend;
     };
 
     const showTopNControl = field.type === 'text' || field.type === 'number';
@@ -143,7 +177,7 @@ const ChartVisualization = ({
 
                 {showTopNControl && (
                     <TextField
-                        label="Top N"
+                        label={t.topN}
                         type="number"
                         size="small"
                         value={topN}
@@ -156,7 +190,7 @@ const ChartVisualization = ({
                 {showIntervalControl && (
                     <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'flex-end' }}>
                         <TextField
-                            label="Start Date"
+                            label={t.startDate}
                             type="date"
                             size="small"
                             defaultValue={new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0]}
@@ -165,7 +199,7 @@ const ChartVisualization = ({
                             sx={{ width: '150px' }}
                         />
                         <TextField
-                            label="Start Time"
+                            label={t.startTime}
                             type="time"
                             size="small"
                             defaultValue="00:00"
@@ -174,7 +208,7 @@ const ChartVisualization = ({
                             sx={{ width: '140px' }}
                         />
                         <TextField
-                            label="End Date"
+                            label={t.endDate}
                             type="date"
                             size="small"
                             defaultValue={new Date().toISOString().split('T')[0]}
@@ -183,7 +217,7 @@ const ChartVisualization = ({
                             sx={{ width: '150px' }}
                         />
                         <TextField
-                            label="End Time"
+                            label={t.endTime}
                             type="time"
                             size="small"
                             defaultValue="23:59"
@@ -192,7 +226,7 @@ const ChartVisualization = ({
                             sx={{ width: '140px' }}
                         />
                         <TextField
-                            label="Interval (min)"
+                            label={t.intervalMinutes}
                             type="number"
                             size="small"
                             value={intervalMinutes}
@@ -257,6 +291,7 @@ const ChartVisualization = ({
 
 export default function AnalyticsDashboard() {
     const { eventSlug } = useParams();
+    const { t, dir } = useI18nLayout(translations);
     const [selectedField, setSelectedField] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [availableFields, setAvailableFields] = useState([]);
@@ -422,6 +457,7 @@ export default function AnalyticsDashboard() {
 
     return (
         <Box
+            dir={dir}
             sx={{
                 display: 'flex',
                 flexDirection: 'column',
@@ -445,15 +481,15 @@ export default function AnalyticsDashboard() {
                 >
                     <Box sx={{ flex: 1 }}>
                         <Typography variant="h4" fontWeight="bold">
-                            Insights
+                            {t.pageTitle}
                         </Typography>
                         <Typography variant="body1" color="text.secondary">
-                            Analyze event data and visualize key metrics through interactive charts and distributions.
+                            {t.pageDescription}
                         </Typography>
                     </Box>
 
                     <TextField
-                        placeholder="Search fields..."
+                        placeholder={t.searchPlaceholder}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         size="small"
@@ -499,7 +535,7 @@ export default function AnalyticsDashboard() {
                         mb: 1
                     }}
                 >
-                    Available Fields
+                    {t.availableFields}
                 </Typography>
                 <Stack
                     direction="row"
@@ -544,6 +580,7 @@ export default function AnalyticsDashboard() {
                     onStartTimeChange={setStartTime}
                     onEndDateChange={setEndDate}
                     onEndTimeChange={setEndTime}
+                    t={t}
                 />
             </Paper>
         </Box>
