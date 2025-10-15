@@ -33,6 +33,7 @@ import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { exportChartsToPDF } from '@/utils/pdfExportCharts';
 import { Button, CircularProgress } from '@mui/material';
 import getStartIconSpacing from '@/utils/getStartIconSpacing';
+import { formatDateTimeWithLocale } from '@/utils/dateUtils';
 
 const translations = {
     en: {
@@ -67,12 +68,14 @@ const translations = {
     },
 };
 
-const fieldColors = [
+const FIELD_COLOR = '#0077b6';
+
+const PIE_SEGMENT_COLORS = [
     '#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899',
     '#14b8a6', '#f97316', '#06b6d4', '#84cc16', '#a855f7', '#eab308'
 ];
 
-const getFieldColor = (index) => fieldColors[index % fieldColors.length];
+const getPieSegmentColor = (index) => PIE_SEGMENT_COLORS[index % PIE_SEGMENT_COLORS.length];
 
 const determineChartType = (field) => {
     if (field.type === 'time') return 'line';
@@ -89,12 +92,10 @@ const FieldChip = ({ field, isSelected, onClick }) => {
                 color: isSelected ? '#ffffff' : '#374151',
                 fontWeight: isSelected ? 600 : 500,
                 border: isSelected ? 'none' : '2px solid #e5e7eb',
-                boxShadow: isSelected ? `0 8px 20px -4px ${field.color}60` : 'none',
                 cursor: 'pointer',
                 transition: 'all 0.3s ease-out',
                 '&:hover': {
                     transform: 'scale(1.05)',
-                    boxShadow: `0 4px 12px ${field.color}40`,
                     backgroundColor: isSelected ? field.color : `${field.color}15`,
                     color: isSelected ? '#ffffff' : field.color,
                     borderColor: field.color
@@ -184,16 +185,16 @@ const ChartVisualization = ({
                             label={t.from}
                             value={startDateTime}
                             onChange={(val) => onStartDateTimeChange(val)}
-                            ampm={false}
-                            format="DD/MM/YYYY HH:mm"
+                            ampm={true}
+                            format="DD/MM/YYYY hh:mm A"
                             slotProps={{ textField: { size: 'small', sx: { width: '200px' } } }}
                         />
                         <DateTimePicker
                             label={t.to}
                             value={endDateTime}
                             onChange={(val) => onEndDateTimeChange(val)}
-                            ampm={false}
-                            format="DD/MM/YYYY HH:mm"
+                            ampm={true}
+                            format="DD/MM/YYYY hh:mm A"
                             slotProps={{ textField: { size: 'small', sx: { width: '200px' } } }}
                         />
                         <TextField
@@ -240,12 +241,20 @@ const ChartVisualization = ({
                     <LineChart
                         xAxis={[{
                             scaleType: 'point',
-                            data: field.xData
+                            data: field.xData,
+                            tickLabelStyle: {
+                                direction: 'ltr',
+                                textAlign: 'left',
+                            },
                         }]}
                         yAxis={[
                             {
                                 min: 0,
-                                max: Math.max(...field.yData) + Math.ceil(Math.max(...field.yData) * 0.05) //add 5% padding
+                                max: Math.max(...field.yData) + Math.ceil(Math.max(...field.yData) * 0.05), //add 5% padding
+                                tickLabelStyle: {
+                                    direction: 'ltr', // Force LTR for x-axis labels
+                                    textAlign: 'left', // Ensure text alignment is consistent
+                                },
                             }
                         ]}
                         series={[
@@ -309,17 +318,17 @@ export default function AnalyticsDashboard() {
                 const allFields = [
                     ...response.data.categoricalFields
                         .filter(f => f.name !== 'token')
-                        .map((f, idx) => ({
+                        .map(f => ({
                             ...f,
                             chartType: determineChartType(f),
-                            color: getFieldColor(idx)
+                            color: FIELD_COLOR
                         })),
                     ...response.data.timeFields
                         .filter(f => f.name !== 'token')
-                        .map((f, idx) => ({
+                        .map(f => ({
                             ...f,
                             chartType: 'line',
-                            color: getFieldColor(response.data.categoricalFields.length + idx)
+                            color: FIELD_COLOR
                         }))
                 ];
 
@@ -329,14 +338,14 @@ export default function AnalyticsDashboard() {
                         label: 'Scanned By Staff Type',
                         type: 'special',
                         chartType: 'pie',
-                        color: getFieldColor(allFields.length)
+                        color: FIELD_COLOR
                     },
                     {
                         name: 'scannedByUser',
                         label: 'Scanned By Staff Name',
                         type: 'special',
                         chartType: 'pie',
-                        color: getFieldColor(allFields.length + 1)
+                        color: FIELD_COLOR
                     }
                 );
 
@@ -369,24 +378,20 @@ export default function AnalyticsDashboard() {
                 try {
                     let response;
                     if (field.type === 'time') {
-                        const start = new Date(`${startDateTime.format('YYYY-MM-DD')}T${startDateTime.format('HH:mm:ss')}Z`);
-                        const end = new Date(`${endDateTime.format('YYYY-MM-DD')}T${endDateTime.format('HH:mm:ss')}Z`);
+                        const start = startDateTime.toDate();
+                        const end = endDateTime.toDate();
+
                         response = await getTimeDistribution(eventSlug, fieldName, start, end, intervalMinutes);
 
-                        const startTimeUTC = start.getTime();
-                        const endTimeUTC = end.getTime();
+                        const startTimeLocal = startDateTime.valueOf();
+                        const endTimeLocal = endDateTime.valueOf();
 
                         const filteredData = response.data.data.filter(d => {
-                            const pointTime = dayjs.utc(d.timestamp).valueOf();
-                            return d.count > 0 && pointTime >= startTimeUTC && pointTime <= endTimeUTC;
+                            const pointTime = new Date(d.timestamp).getTime();
+                            return d.count > 0 && pointTime >= startTimeLocal && pointTime <= endTimeLocal;
                         });
 
-                        const xData = filteredData.map(d => {
-                            const [datePart, timePart] = d.timestamp.split('T');
-                            const [year, month, day] = datePart.split('-');
-                            const time = timePart.slice(0, 5);
-                            return `${day}/${month}, ${time}`;
-                        });
+                        const xData = filteredData.map(d => formatDateTimeWithLocale(d.timestamp));
                         const yData = filteredData.map(d => d.count);
 
                         setChartData(prev => ({
@@ -402,7 +407,7 @@ export default function AnalyticsDashboard() {
                             id: idx,
                             value: item.value,
                             label: item.label,
-                            color: getFieldColor(idx)
+                            color: getPieSegmentColor(idx)
                         }));
 
                         setChartData(prev => ({
@@ -417,7 +422,7 @@ export default function AnalyticsDashboard() {
                             id: idx,
                             value: item.value,
                             label: item.label,
-                            color: getFieldColor(idx)
+                            color: getPieSegmentColor(idx)
                         }));
 
                         setChartData(prev => ({
@@ -448,7 +453,16 @@ export default function AnalyticsDashboard() {
                 return field?.label || fieldName;
             });
 
-            const chartDataArray = selectedFields.map(fieldName => chartData[fieldName]);
+            const chartDataArray = selectedFields.map(fieldName => {
+                const data = chartData[fieldName];
+                return {
+                    ...data,
+                    topN: getFieldParam(fieldName, 'topN', 10),
+                    intervalMinutes: getFieldParam(fieldName, 'intervalMinutes', 60),
+                    startDateTime: getFieldParam(fieldName, 'startDateTime', dayjs().subtract(30, 'day').startOf('day')).toDate(),
+                    endDateTime: getFieldParam(fieldName, 'endDateTime', dayjs().endOf('day')).toDate()
+                };
+            });
 
             await exportChartsToPDF(refs, labels, chartDataArray);
         } catch (error) {
