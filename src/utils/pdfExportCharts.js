@@ -1,5 +1,6 @@
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import { formatDateTimeWithLocale } from '@/utils/dateUtils';
 
 export const exportChartsToPDF = async (chartRefs, fieldLabels, chartDataArray) => {
   const pdf = new jsPDF('p', 'mm', 'a4');
@@ -57,37 +58,65 @@ export const exportChartsToPDF = async (chartRefs, fieldLabels, chartDataArray) 
 
       pdf.setFontSize(14);
       pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(31, 41, 55);
       pdf.text(fieldLabel, margin, yPosition);
-      yPosition += titleHeight + spacing;
 
-      pdf.addImage(imgData, 'PNG', margin, yPosition, chartWidth, chartHeight);
-      yPosition += chartHeight + legendSpacing;
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(107, 114, 128);
+      const chartDescription = chartData.chartType === 'pie' ? 'Distribution Overview' : 'Historical Trend';
+      pdf.text(chartDescription, margin, yPosition + 5);
+
+      if (chartData.chartType === 'pie' && (chartData.type === 'text' || chartData.type === 'number')) {
+        pdf.setFontSize(12);
+        pdf.setTextColor(107, 114, 128);
+        pdf.text(`Top ${chartData.topN || 10}`, pageWidth - margin, yPosition-1, { align: 'right' });
+      } else if (chartData.chartType === 'line' && chartData.type === 'time') {
+        pdf.setFontSize(11);
+        pdf.setTextColor(107, 114, 128);
+        const startDate = `From: ${formatDateTimeWithLocale(chartData.startDateTime)}`;
+        const endDate = `To: ${formatDateTimeWithLocale(chartData.endDateTime)}`;
+        const intervalText = `Interval: ${chartData.intervalMinutes || 60} min`;
+
+        const textX = pageWidth - 70; 
+        pdf.text(startDate, textX, yPosition-1);
+        pdf.text(endDate, textX, yPosition + 5);
+        pdf.text(intervalText, textX, yPosition + 11);
+      }
+
+      yPosition += titleHeight + spacing + 3;
+
 
       // Add legend for pie charts
       if (legendItems.length > 0) {
-        pdf.setFontSize(10);
+        const legendWidth = 45;
+        const gapBetweenChartAndLegend = 3;
+        const adjustedChartWidth = chartWidth - legendWidth - gapBetweenChartAndLegend;
+        const adjustedChartHeight = Math.min(adjustedChartWidth / imgAspectRatio, maxChartHeight);
+
+        pdf.addImage(imgData, 'PNG', margin, yPosition, adjustedChartWidth, adjustedChartHeight);
+
+        pdf.setFontSize(9);
         pdf.setFont('helvetica', 'normal');
 
-        const columnWidth = chartWidth / 2;
-        const itemsPerColumn = Math.ceil(legendItems.length / 2);
+        const legendX = margin + adjustedChartWidth + gapBetweenChartAndLegend;
+        const itemHeight = 6;
+        const legendStartY = yPosition + (adjustedChartHeight / 2) - ((legendItems.length * itemHeight) / 2);
 
         legendItems.forEach((item, idx) => {
-          const column = Math.floor(idx / itemsPerColumn);
-          const row = idx % itemsPerColumn;
-
-          const xPos = margin + (column * columnWidth);
-          const yPos = yPosition + (row * 6);
+          const yPos = legendStartY + (idx * itemHeight);
 
           pdf.setFillColor(item.color);
-          pdf.circle(xPos + 2, yPos - 1, 1.5, 'F');
+          pdf.circle(legendX + 2, yPos - 1, 1.5, 'F');
 
           pdf.setTextColor('#333333');
-          pdf.text(`${item.label}: ${item.value}`, xPos + 6, yPos);
+          pdf.text(`${item.label}`, legendX + 6, yPos, { maxWidth: legendWidth - 6 });
         });
 
-        yPosition += legendHeight + spacing;
+        yPosition += adjustedChartHeight + spacing;
       } else {
-        yPosition += spacing;
+        pdf.addImage(imgData, 'PNG', margin, yPosition, chartWidth, chartHeight);
+        yPosition += chartHeight + spacing;
       }
 
       isFirstChart = false;
