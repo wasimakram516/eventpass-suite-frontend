@@ -23,9 +23,10 @@ export default function EventCardBase({
   onEdit,
   onDelete,
   onShare,
+  onInsights,
 }) {
   return (
-    <AppCard sx={{width:{xs:"100%", sm:360}, height:"100%"}}>
+    <AppCard sx={{ width: { xs: "100%", sm: 360 }, height: "100%" }}>
       {/* Cover Image + Overlay */}
       <Box sx={{ position: "relative", height: 200 }}>
         {event.logoUrl ? (
@@ -74,8 +75,8 @@ export default function EventCardBase({
                   status === "Expired"
                     ? "error.main"
                     : status === "Current"
-                    ? "primary.main"
-                    : "success.main",
+                      ? "primary.main"
+                      : "success.main",
                 color: "white",
                 fontWeight: "bold",
                 textTransform: "uppercase",
@@ -150,11 +151,10 @@ export default function EventCardBase({
           <ICONS.event fontSize="small" sx={{ opacity: 0.7 }} />
           <strong>{t.dateRange}:</strong>&nbsp;
           {event?.startDate
-            ? `${formatDate(event.startDate)} → ${
-                event?.endDate && event.endDate !== event.startDate
-                  ? formatDate(event.endDate)
-                  : formatDate(event.startDate)
-              }`
+            ? `${formatDate(event.startDate)} → ${event?.endDate && event.endDate !== event.startDate
+              ? formatDate(event.endDate)
+              : formatDate(event.startDate)
+            }`
             : "N/A"}
         </Typography>
 
@@ -199,7 +199,20 @@ export default function EventCardBase({
             </IconButton>
           </Tooltip>
         )}
-
+        {onInsights && (
+          <Tooltip title={t.insights || "Insights"}>
+            <IconButton
+              color="info"
+              onClick={onInsights}
+              sx={{
+                "&:hover": { transform: "scale(1.1)" },
+                transition: "0.2s",
+              }}
+            >
+              <ICONS.insights />
+            </IconButton>
+          </Tooltip>
+        )}
         {onEdit && (
           <Tooltip title={t.edit}>
             <IconButton
@@ -229,7 +242,6 @@ export default function EventCardBase({
             </IconButton>
           </Tooltip>
         )}
-
         {onShare && (
           <Tooltip title={t.shareTitle || "Share"}>
             <IconButton
