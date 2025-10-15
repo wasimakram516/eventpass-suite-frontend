@@ -21,6 +21,8 @@
     "axios": "^1.10.0",
     "dayjs": "^1.11.18",
     "framer-motion": "^12.23.0",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^3.0.3",
     "next": "^15.3.4",
     "qr-scanner": "^1.4.2",
     "qrcode": "^1.5.4",
