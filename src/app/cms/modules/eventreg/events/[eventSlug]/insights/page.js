@@ -27,6 +27,13 @@ import {
 import ICONS from "@/utils/iconUtil";
 import BreadcrumbsNav from '@/components/BreadcrumbsNav';
 import useI18nLayout from '@/hooks/useI18nLayout';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+import { exportChartsToPDF } from '@/utils/pdfExportCharts';
+import { Button, CircularProgress } from '@mui/material';
+import getStartIconSpacing from '@/utils/getStartIconSpacing';
+
 const translations = {
     en: {
         pageTitle: "Insights",
@@ -37,11 +44,11 @@ const translations = {
         distributionOverview: "Distribution Overview",
         historicalTrend: "Historical Trend",
         topN: "Top N",
-        startDate: "Start Date",
-        startTime: "Start Time",
-        endDate: "End Date",
-        endTime: "End Time",
+        from: "From",
+        to: "To",
         intervalMinutes: "Interval (min)",
+        exportInsights: "Export Insights",
+        exporting: "Exporting...",
     },
     ar: {
         pageTitle: "التحليلات",
@@ -52,11 +59,11 @@ const translations = {
         distributionOverview: "نظرة عامة على التوزيع",
         historicalTrend: "الاتجاه التاريخي",
         topN: "أعلى N",
-        startDate: "تاريخ البدء",
-        startTime: "وقت البدء",
-        endDate: "تاريخ النهاية",
-        endTime: "وقت النهاية",
+        from: "من",
+        to: "إلى",
         intervalMinutes: "الفاصل الزمني (دقيقة)",
+        exportInsights: "تصدير التحليلات",
+        exporting: "جاري التصدير...",
     },
 };
 
@@ -71,7 +78,7 @@ const determineChartType = (field) => {
     if (field.type === 'time') return 'line';
     return 'pie';
 };
-
+dayjs.extend(utc);
 const FieldChip = ({ field, isSelected, onClick }) => {
     return (
         <Chip
@@ -102,33 +109,17 @@ const ChartVisualization = ({
     chartData,
     onTopNChange,
     onIntervalChange,
-    onStartDateChange,
-    onStartTimeChange,
-    onEndDateChange,
-    onEndTimeChange,
+    onStartDateTimeChange,
+    onEndDateTimeChange,
+    startDateTime,
+    endDateTime,
     topN,
     intervalMinutes,
-    t
+    t,
+    onRefReady
 }) => {
     if (!selectedField || !chartData[selectedField]) {
-        return (
-            <Box
-                sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    height: '100%',
-                    textAlign: 'center'
-                }}
-            >
-                <Box>
-                    <BarChartIcon sx={{ fontSize: 48, color: '#d1d5db', mx: 'auto', mb: 2 }} />
-                    <Typography color="textSecondary">
-                        {t.selectFieldPrompt}
-                    </Typography>
-                </Box>
-            </Box>
-        );
+        return null;
     }
 
     const field = chartData[selectedField];
@@ -189,41 +180,21 @@ const ChartVisualization = ({
 
                 {showIntervalControl && (
                     <Box sx={{ display: 'flex', gap: 1.5, flexWrap: 'wrap', alignItems: 'flex-end' }}>
-                        <TextField
-                            label={t.startDate}
-                            type="date"
-                            size="small"
-                            defaultValue={new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0]}
-                            onChange={(e) => onStartDateChange(new Date(e.target.value))}
-                            InputLabelProps={{ shrink: true }}
-                            sx={{ width: '150px' }}
+                        <DateTimePicker
+                            label={t.from}
+                            value={startDateTime}
+                            onChange={(val) => onStartDateTimeChange(val)}
+                            ampm={false}
+                            format="DD/MM/YYYY HH:mm"
+                            slotProps={{ textField: { size: 'small', sx: { width: '200px' } } }}
                         />
-                        <TextField
-                            label={t.startTime}
-                            type="time"
-                            size="small"
-                            defaultValue="00:00"
-                            onChange={(e) => onStartTimeChange(e.target.value)}
-                            InputLabelProps={{ shrink: true }}
-                            sx={{ width: '140px' }}
-                        />
-                        <TextField
-                            label={t.endDate}
-                            type="date"
-                            size="small"
-                            defaultValue={new Date().toISOString().split('T')[0]}
-                            onChange={(e) => onEndDateChange(new Date(e.target.value))}
-                            InputLabelProps={{ shrink: true }}
-                            sx={{ width: '150px' }}
-                        />
-                        <TextField
-                            label={t.endTime}
-                            type="time"
-                            size="small"
-                            defaultValue="23:59"
-                            onChange={(e) => onEndTimeChange(e.target.value)}
-                            InputLabelProps={{ shrink: true }}
-                            sx={{ width: '140px' }}
+                        <DateTimePicker
+                            label={t.to}
+                            value={endDateTime}
+                            onChange={(val) => onEndDateTimeChange(val)}
+                            ampm={false}
+                            format="DD/MM/YYYY HH:mm"
+                            slotProps={{ textField: { size: 'small', sx: { width: '200px' } } }}
                         />
                         <TextField
                             label={t.intervalMinutes}
@@ -238,19 +209,31 @@ const ChartVisualization = ({
                 )}
             </Box>
 
-            <Box sx={{ flex: 1, minHeight: 0, width: '100%' }}>
+            <Box
+                ref={(el) => onRefReady && onRefReady(el)}
+                sx={{ flex: 1, minHeight: 0, width: '100%' }}
+            >
                 {field.chartType === 'pie' ? (
                     <PieChart
                         series={[
                             {
                                 data: field.data,
                                 highlightScope: { faded: 'global', highlighted: 'item' },
-                                faded: { innerRadius: 30, additionalRadius: -30, color: 'gray' }
+                                faded: { innerRadius: 30, additionalRadius: -30, color: 'gray' },
+                                arcLabel: (item) => `${((item.value / field.data.reduce((sum, d) => sum + d.value, 0)) * 100).toFixed(1)}%`,
+                                arcLabelMinAngle: 35
                             }
                         ]}
                         height={400}
                         slotProps={{
-                            legend: { hidden: true }
+                            legend: { hidden: true },
+                            pieArcLabel: {
+                                style: {
+                                    fill: 'white',
+                                    fontWeight: 600,
+                                    fontSize: 'clamp(10px, 2vw, 14px)'
+                                }
+                            }
                         }}
                     />
                 ) : (
@@ -292,29 +275,29 @@ const ChartVisualization = ({
 export default function AnalyticsDashboard() {
     const { eventSlug } = useParams();
     const { t, dir } = useI18nLayout(translations);
-    const [selectedField, setSelectedField] = useState(null);
+    const [selectedFields, setSelectedFields] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
     const [availableFields, setAvailableFields] = useState([]);
     const [chartData, setChartData] = useState({});
     const [loading, setLoading] = useState(true);
-    const [topN, setTopN] = useState(10);
-    const [intervalMinutes, setIntervalMinutes] = useState(60);
-    const [startDate, setStartDate] = useState(() => {
-        const d = new Date();
-        d.setDate(d.getDate() - 30);
-        return d;
-    });
-    const [startTime, setStartTime] = useState('00:00');
-    const [endDate, setEndDate] = useState(new Date());
-    const [endTime, setEndTime] = useState('23:59');
+    const [fieldParams, setFieldParams] = useState({});
+    const [chartRefs, setChartRefs] = useState({});
+    const [exportLoading, setExportLoading] = useState(false);
 
-
-    const mergeDateTime = (date, timeStr) => {
-        const [hours, minutes] = timeStr.split(':').map(Number);
-        const dateStr = date.toISOString().split('T')[0];
-        const isoString = `${dateStr}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00Z`;
-        return new Date(isoString);
+    const getFieldParam = (fieldName, paramName, defaultValue) => {
+        return fieldParams[fieldName]?.[paramName] ?? defaultValue;
     };
+
+    const updateFieldParam = (fieldName, paramName, value) => {
+        setFieldParams(prev => ({
+            ...prev,
+            [fieldName]: {
+                ...prev[fieldName],
+                [paramName]: value
+            }
+        }));
+    };
+
     useEffect(() => {
         const fetchFields = async () => {
             if (!eventSlug) return;
@@ -324,29 +307,33 @@ export default function AnalyticsDashboard() {
                 const response = await getAvailableFields(eventSlug);
 
                 const allFields = [
-                    ...response.data.categoricalFields.map((f, idx) => ({
-                        ...f,
-                        chartType: determineChartType(f),
-                        color: getFieldColor(idx)
-                    })),
-                    ...response.data.timeFields.map((f, idx) => ({
-                        ...f,
-                        chartType: 'line',
-                        color: getFieldColor(response.data.categoricalFields.length + idx)
-                    }))
+                    ...response.data.categoricalFields
+                        .filter(f => f.name !== 'token')
+                        .map((f, idx) => ({
+                            ...f,
+                            chartType: determineChartType(f),
+                            color: getFieldColor(idx)
+                        })),
+                    ...response.data.timeFields
+                        .filter(f => f.name !== 'token')
+                        .map((f, idx) => ({
+                            ...f,
+                            chartType: 'line',
+                            color: getFieldColor(response.data.categoricalFields.length + idx)
+                        }))
                 ];
 
                 allFields.push(
                     {
                         name: 'scannedByType',
-                        label: 'Scanned By Type',
+                        label: 'Scanned By Staff Type',
                         type: 'special',
                         chartType: 'pie',
                         color: getFieldColor(allFields.length)
                     },
                     {
                         name: 'scannedByUser',
-                        label: 'Scanned By User',
+                        label: 'Scanned By Staff Name',
                         type: 'special',
                         chartType: 'pie',
                         color: getFieldColor(allFields.length + 1)
@@ -368,85 +355,107 @@ export default function AnalyticsDashboard() {
 
     useEffect(() => {
         const fetchChartData = async () => {
-            if (!selectedField || !eventSlug || availableFields.length === 0) return;
+            if (selectedFields.length === 0 || !eventSlug || availableFields.length === 0) return;
 
-            const field = availableFields.find(f => f.name === selectedField);
-            if (!field) return;
+            for (const fieldName of selectedFields) {
+                const field = availableFields.find(f => f.name === fieldName);
+                if (!field) continue;
 
-            try {
-                let response;
+                const topN = getFieldParam(fieldName, 'topN', 10);
+                const intervalMinutes = getFieldParam(fieldName, 'intervalMinutes', 60);
+                const startDateTime = getFieldParam(fieldName, 'startDateTime', dayjs().subtract(30, 'day').startOf('day'));
+                const endDateTime = getFieldParam(fieldName, 'endDateTime', dayjs().endOf('day'));
 
-                if (field.type === 'time') {
-                    const start = mergeDateTime(startDate, startTime);
-                    const end = mergeDateTime(endDate, endTime);
+                try {
+                    let response;
+                    if (field.type === 'time') {
+                        const start = new Date(`${startDateTime.format('YYYY-MM-DD')}T${startDateTime.format('HH:mm:ss')}Z`);
+                        const end = new Date(`${endDateTime.format('YYYY-MM-DD')}T${endDateTime.format('HH:mm:ss')}Z`);
+                        response = await getTimeDistribution(eventSlug, fieldName, start, end, intervalMinutes);
 
-                    response = await getTimeDistribution(eventSlug, selectedField, start, end, intervalMinutes);
+                        const startTimeUTC = start.getTime();
+                        const endTimeUTC = end.getTime();
 
+                        const filteredData = response.data.data.filter(d => {
+                            const pointTime = dayjs.utc(d.timestamp).valueOf();
+                            return d.count > 0 && pointTime >= startTimeUTC && pointTime <= endTimeUTC;
+                        });
 
-                    const filteredData = response.data.data.filter(d => d.count > 0);
-                    const xData = filteredData.map(d => {
-                        const [datePart, timePart] = d.timestamp.split('T');
-                        const [year, month, day] = datePart.split('-');
-                        const time = timePart.slice(0, 5);
-                        return `${month}/${day}, ${time}`;
-                    });
-                    const yData = filteredData.map(d => d.count);
+                        const xData = filteredData.map(d => {
+                            const [datePart, timePart] = d.timestamp.split('T');
+                            const [year, month, day] = datePart.split('-');
+                            const time = timePart.slice(0, 5);
+                            return `${day}/${month}, ${time}`;
+                        });
+                        const yData = filteredData.map(d => d.count);
 
-                    setChartData(prev => ({
-                        ...prev,
-                        [selectedField]: {
-                            ...field,
-                            xData,
-                            yData
-                        }
-                    }));
-                } else if (selectedField === 'scannedByType' || selectedField === 'scannedByUser') {
-                    response = selectedField === 'scannedByType'
-                        ? await getScannedByTypeDistribution(eventSlug)
-                        : await getScannedByUserDistribution(eventSlug);
+                        setChartData(prev => ({
+                            ...prev,
+                            [fieldName]: { ...field, xData, yData }
+                        }));
+                    } else if (fieldName === 'scannedByType' || fieldName === 'scannedByUser') {
+                        response = fieldName === 'scannedByType'
+                            ? await getScannedByTypeDistribution(eventSlug)
+                            : await getScannedByUserDistribution(eventSlug);
 
-                    const data = response.data.data.map((item, idx) => ({
-                        id: idx,
-                        value: item.value,
-                        label: item.label,
-                        color: getFieldColor(idx)
-                    }));
+                        const data = response.data.data.map((item, idx) => ({
+                            id: idx,
+                            value: item.value,
+                            label: item.label,
+                            color: getFieldColor(idx)
+                        }));
 
-                    setChartData(prev => ({
-                        ...prev,
-                        [selectedField]: {
-                            ...field,
-                            data
-                        }
-                    }));
-                } else {
-                    const useTopN = field.type === 'text' || field.type === 'number' ? topN : null;
-                    response = await getFieldDistribution(eventSlug, selectedField, useTopN);
+                        setChartData(prev => ({
+                            ...prev,
+                            [fieldName]: { ...field, data }
+                        }));
+                    } else {
+                        const useTopN = field.type === 'text' || field.type === 'number' ? topN : null;
+                        response = await getFieldDistribution(eventSlug, fieldName, useTopN);
 
-                    const data = response.data.data.map((item, idx) => ({
-                        id: idx,
-                        value: item.value,
-                        label: item.label,
-                        color: getFieldColor(idx)
-                    }));
+                        const data = response.data.data.map((item, idx) => ({
+                            id: idx,
+                            value: item.value,
+                            label: item.label,
+                            color: getFieldColor(idx)
+                        }));
 
-                    setChartData(prev => ({
-                        ...prev,
-                        [selectedField]: {
-                            ...field,
-                            data
-                        }
-                    }));
+                        setChartData(prev => ({
+                            ...prev,
+                            [fieldName]: { ...field, data }
+                        }));
+                    }
+                } catch (error) {
+                    console.error(`Error loading chart data for ${fieldName}:`, error);
                 }
-            } catch (error) {
-                console.error('Error loading chart data:', error);
             }
         };
 
         fetchChartData();
-    }, [selectedField, eventSlug, availableFields, topN, intervalMinutes, startDate, startTime, endDate, endTime]);
+    }, [selectedFields, eventSlug, availableFields, fieldParams]);
 
+    const handleExportPDF = async () => {
+        if (selectedFields.length === 0) return;
 
+        setExportLoading(true);
+        try {
+            const refs = selectedFields
+                .map(fieldName => chartRefs[fieldName])
+                .filter(Boolean);
+
+            const labels = selectedFields.map(fieldName => {
+                const field = availableFields.find(f => f.name === fieldName);
+                return field?.label || fieldName;
+            });
+
+            const chartDataArray = selectedFields.map(fieldName => chartData[fieldName]);
+
+            await exportChartsToPDF(refs, labels, chartDataArray);
+        } catch (error) {
+            console.error('PDF export failed:', error);
+        }
+        setExportLoading(false);
+    };
 
 
     const filteredFields = useMemo(() => {
@@ -464,7 +473,6 @@ export default function AnalyticsDashboard() {
                 height: '100%',
                 width: '100%',
                 overflow: 'hidden',
-                background: 'linear-gradient(to bottom right, #f9fafb, #f3f4f6)',
                 p: { xs: 1, sm: 1.5, md: 2 },
                 gap: 1,
                 boxSizing: 'border-box'
@@ -488,29 +496,54 @@ export default function AnalyticsDashboard() {
                         </Typography>
                     </Box>
 
-                    <TextField
-                        placeholder={t.searchPlaceholder}
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        size="small"
-                        InputProps={{
-                            startAdornment: <SearchIcon sx={{ mr: 1, color: '#9ca3af' }} />
-                        }}
-                        sx={{
-                            width: { xs: "100%", sm: "auto" },
-                            maxWidth: { xs: '100%', sm: '300px', md: '400px' },
-                            minWidth: { xs: '100%', sm: '200px' },
-                            '& .MuiOutlinedInput-root': {
-                                backgroundColor: '#ffffff',
-                                '&:hover fieldset': {
-                                    borderColor: '#3b82f6'
-                                },
-                                '&.Mui-focused fieldset': {
-                                    borderColor: '#3b82f6'
+                    <Stack
+                        direction={{ xs: "column", sm: "row" }}
+                        spacing={2}
+                        alignItems={{ xs: "stretch", sm: "center" }}
+                        sx={{ width: { xs: "100%", sm: "auto" }, gap: { xs: 1, sm: 2 } }}
+                    >
+                        <TextField
+                            placeholder={t.searchPlaceholder}
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            size="small"
+                            InputProps={{
+                                startAdornment: <SearchIcon sx={{ mr: 1, color: '#9ca3af' }} />
+                            }}
+                            sx={{
+                                width: { xs: "100%", sm: "auto" },
+                                maxWidth: { xs: '100%', sm: '300px', md: '400px' },
+                                minWidth: { xs: '100%', sm: '200px' },
+                                '& .MuiOutlinedInput-root': {
+                                    backgroundColor: '#ffffff',
+                                    '&:hover fieldset': {
+                                        borderColor: '#3b82f6'
+                                    },
+                                    '&.Mui-focused fieldset': {
+                                        borderColor: '#3b82f6'
+                                    }
                                 }
-                            }
-                        }}
-                    />
+                            }}
+                        />
+
+                        {selectedFields.length > 0 && (
+                            <Button
+                                variant="contained"
+                                onClick={handleExportPDF}
+                                disabled={exportLoading}
+                                startIcon={exportLoading ? <CircularProgress size={20} color="inherit" /> : <ICONS.download />}
+                                sx={{
+                                    whiteSpace: 'nowrap',
+                                    width: { xs: '100%', sm: 'auto' },
+                                    minWidth: { xs: '100%', sm: 'fit-content' },
+                                    py: 1,
+                                    ...getStartIconSpacing(dir)
+                                }}
+                            >
+                                {exportLoading ? t.exporting : t.exportInsights}
+                            </Button>
+                        )}
+                    </Stack>
                 </Stack>
 
                 <Divider sx={{ mb: 3 }} />
@@ -551,38 +584,52 @@ export default function AnalyticsDashboard() {
                             key={field.name}
                             fieldKey={field.name}
                             field={field}
-                            isSelected={selectedField === field.name}
-                            onClick={() => setSelectedField(field.name)}
+                            isSelected={selectedFields.includes(field.name)}
+                            onClick={() => {
+                                setSelectedFields(prev =>
+                                    prev.includes(field.name)
+                                        ? prev.filter(f => f !== field.name)
+                                        : [...prev, field.name]
+                                );
+                            }}
                         />
                     ))}
                 </Stack>
             </Paper>
 
-            <Paper
-                sx={{
-                    flex: '1 1 0%',
-                    borderRadius: 2,
-                    boxShadow: 2,
-                    overflow: 'hidden',
-                    minHeight: 0,
-                    width: '100%',
-                    boxSizing: 'border-box'
-                }}
-            >
-                <ChartVisualization
-                    selectedField={selectedField}
-                    chartData={chartData}
-                    topN={topN}
-                    intervalMinutes={intervalMinutes}
-                    onTopNChange={setTopN}
-                    onIntervalChange={setIntervalMinutes}
-                    onStartDateChange={setStartDate}
-                    onStartTimeChange={setStartTime}
-                    onEndDateChange={setEndDate}
-                    onEndTimeChange={setEndTime}
-                    t={t}
-                />
-            </Paper>
+            <Stack spacing={2} sx={{ flex: '1 1 0%', overflow: 'auto', minHeight: 0, pb: 2, px: 0.3 }}>
+                {selectedFields.length === 0 ? (
+                    <Paper sx={{ flex: 1, borderRadius: 2, boxShadow: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Box textAlign="center">
+                            <BarChartIcon sx={{ fontSize: 48, color: '#d1d5db', mb: 2 }} />
+                            <Typography color="textSecondary">{t.selectFieldPrompt}</Typography>
+                        </Box>
+                    </Paper>
+                ) : (
+                    selectedFields.map(fieldName => (
+                        <Paper key={fieldName} sx={{ borderRadius: 2, boxShadow: 2, minHeight: '450px' }}>
+                            <ChartVisualization
+                                selectedField={fieldName}
+                                chartData={chartData}
+                                topN={getFieldParam(fieldName, 'topN', 10)}
+                                intervalMinutes={getFieldParam(fieldName, 'intervalMinutes', 60)}
+                                startDateTime={getFieldParam(fieldName, 'startDateTime', dayjs().subtract(30, 'day').startOf('day'))}
+                                endDateTime={getFieldParam(fieldName, 'endDateTime', dayjs().endOf('day'))}
+                                onTopNChange={(val) => updateFieldParam(fieldName, 'topN', val)}
+                                onIntervalChange={(val) => updateFieldParam(fieldName, 'intervalMinutes', val)}
+                                onStartDateTimeChange={(val) => updateFieldParam(fieldName, 'startDateTime', val ? dayjs(val) : dayjs().subtract(30, 'day').startOf('day'))}
+                                onEndDateTimeChange={(val) => updateFieldParam(fieldName, 'endDateTime', val ? dayjs(val) : dayjs().endOf('day'))}
+                                onRefReady={(el) => {
+                                    if (el && chartRefs[fieldName] !== el) {
+                                        setChartRefs(prev => ({ ...prev, [fieldName]: el }));
+                                    }
+                                }}
+                                t={t}
+                            />
+                        </Paper>
+                    ))
+                )}
+            </Stack>
         </Box>
     );
 }
