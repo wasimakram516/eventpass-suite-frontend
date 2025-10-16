@@ -274,7 +274,7 @@ const ChartVisualization = ({
 
           {showGenerateButton && (
             <Button
-              variant="contained"
+              variant="text"
               onClick={onGenerate}
               disabled={isGenerating}
               sx={{
