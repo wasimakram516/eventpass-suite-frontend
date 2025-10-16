@@ -86,7 +86,7 @@ export default function EventDetails() {
     );
   }
 
-  const { name, venue, startDate, endDate, logoUrl } = event;
+  const { name, description, venue, startDate, endDate, logoUrl } = event;
 
   return (
     <Box
@@ -99,11 +99,21 @@ export default function EventDetails() {
         alignItems: "center",
         justifyContent: "center",
         gap: 2,
+        position: "relative",
+        backgroundImage: event?.backgroundUrl
+          ? `url(${event.backgroundUrl})`
+          : "none",
+        backgroundSize: "cover",
+        backgroundPosition: "center center",
+        backgroundRepeat: "no-repeat",
+        backgroundAttachment: "fixed",
+        zIndex: 0,
       }}
     >
-      <Background />
+      {/* Default background component if no bgUrl */}
+      {!event?.backgroundUrl && <Background />}
 
-      {/* logo outside the container */}
+      {/* Logo outside the container */}
       {logoUrl && (
         <Box
           sx={{
@@ -132,6 +142,7 @@ export default function EventDetails() {
       <EventWelcomeCard
         t={t}
         name={name}
+        description={description}
         venue={venue}
         startDate={startDate}
         endDate={endDate}
@@ -142,7 +153,7 @@ export default function EventDetails() {
         actionRoute={`/eventreg/event/${eventSlug}/register`}
       />
 
-      {/* Branding media carousel at the bottom */}
+      {/* Branding media carousel */}
       <HorizontalCarousel
         items={brandingMedia}
         showBorders={false}

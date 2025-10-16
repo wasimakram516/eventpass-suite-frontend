@@ -67,6 +67,7 @@ const translations = {
     classicFieldsNote:
       "Classic registration fields (fullName, email, phone) will be used.",
     textType: "Text",
+    emailType: "Email",
     numberType: "Number",
     radioType: "Radio",
     listType: "List",
@@ -113,6 +114,7 @@ const translations = {
     classicFieldsNote:
       "سيتم استخدام الحقول الكلاسيكية (الاسم الكامل، البريد الإلكتروني، الهاتف).",
     textType: "نص",
+    emailType: "البريد الإلكتروني",
     numberType: "رقم",
     radioType: "اختيار",
     listType: "قائمة",
@@ -144,6 +146,8 @@ const EventModal = ({
     description: "",
     logo: null,
     logoPreview: "",
+    background: null,
+    backgroundPreview: "",
     brandingLogos: [], // array of { _id?, name, website, logoUrl, file? }
     removeBrandingLogoIds: [],
     clearAllBrandingLogos: false,
@@ -178,6 +182,8 @@ const EventModal = ({
           initialValues.eventType || (isEmployee ? "employee" : "public"),
         logo: null,
         logoPreview: initialValues.logoUrl || "",
+        background: null,
+        backgroundPreview: initialValues.backgroundUrl || "",
         brandingLogos: Array.isArray(initialValues.brandingMedia)
           ? initialValues.brandingMedia.map((l) => ({
               _id: l._id,
@@ -213,6 +219,8 @@ const EventModal = ({
         description: "",
         logo: null,
         logoPreview: "",
+        background: null,
+        backgroundPreview: "",
         brandingLogos: [],
         removeBrandingLogoIds: [],
         clearAllBrandingLogos: false,
@@ -239,6 +247,15 @@ const EventModal = ({
           ...prev,
           logo: file,
           logoPreview: URL.createObjectURL(file),
+        }));
+      }
+    } else if (name === "background" && files?.[0]) {
+      const file = files[0];
+      if (file.type.startsWith("image/")) {
+        setFormData((prev) => ({
+          ...prev,
+          background: file,
+          backgroundPreview: URL.createObjectURL(file),
         }));
       }
     } else if (name === "agenda" && files?.[0]) {
@@ -386,6 +403,7 @@ const EventModal = ({
     payload.append("capacity", formData.capacity || "999");
     payload.append("eventType", formData.eventType);
     if (formData.logo) payload.append("logo", formData.logo);
+    if (formData.background) payload.append("background", formData.background);
     if (formData.clearAllBrandingLogos) {
       payload.append("clearAllBrandingLogos", "true");
     } else {
@@ -590,6 +608,39 @@ const EventModal = ({
               </Box>
             )}
           </Box>
+
+          {/* Background Upload */}
+          <Box>
+            <Button component="label" variant="outlined">
+              Upload Background Image (optional)
+              <input
+                hidden
+                name="background"
+                type="file"
+                accept="image/*"
+                onChange={handleInputChange}
+              />
+            </Button>
+            {formData.backgroundPreview && (
+              <Box sx={{ mt: 1 }}>
+                <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                  {initialValues && !formData.background
+                    ? "Current Background:"
+                    : "Preview:"}
+                </Typography>
+                <img
+                  src={formData.backgroundPreview}
+                  alt="Background preview"
+                  style={{
+                    maxHeight: 120,
+                    borderRadius: 6,
+                    objectFit: "cover",
+                  }}
+                />
+              </Box>
+            )}
+          </Box>
+          {/* Branding Logos Upload and List */}
           <Box>
             <Box
               sx={{
@@ -871,6 +922,7 @@ const EventModal = ({
                       >
                         {[
                           { value: "text", label: t.textType },
+                          { value: "email", label: t.emailType },
                           { value: "number", label: t.numberType },
                           { value: "radio", label: t.radioType },
                           { value: "list", label: t.listType },

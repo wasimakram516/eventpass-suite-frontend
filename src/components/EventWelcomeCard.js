@@ -9,6 +9,7 @@ import AppCard from "@/components/cards/AppCard";
 export default function EventWelcomeCard({
   t,
   name,
+  description,
   venue,
   startDate,
   endDate,
@@ -39,8 +40,22 @@ export default function EventWelcomeCard({
           mb: 2,
         }}
       >
-        {t.welcome} {name}
+        {name}
       </Typography>
+
+      {/* Description */}
+      {description && (
+        <Typography
+          variant="body1"
+          sx={{
+            fontSize: { xs: 16, md: 18 },
+            color: "text.secondary",
+            mb: 3,
+          }}
+        >
+          {description}
+        </Typography>
+      )}
 
       {/* Venue */}
       <Stack
@@ -73,7 +88,9 @@ export default function EventWelcomeCard({
             </Typography>
           ) : (
             <Typography variant="h6" sx={{ fontSize: { xs: 16, md: 20 } }}>
-              {`${formatDateWithShortMonth(startDate)} ${t.to} ${formatDateWithShortMonth(endDate)}`}
+              {`${formatDateWithShortMonth(startDate)} ${
+                t.to
+              } ${formatDateWithShortMonth(endDate)}`}
             </Typography>
           )
         ) : (

@@ -22,7 +22,6 @@ import {
   FormControl,
 } from "@mui/material";
 import { QRCodeCanvas } from "qrcode.react";
-
 import { useParams, useRouter } from "next/navigation";
 import LanguageSelector from "@/components/LanguageSelector";
 import { createRegistration } from "@/services/eventreg/registrationService";
@@ -50,17 +49,7 @@ export default function Registration() {
       required: "is required",
       invalidEmail: "Invalid email address",
       registrationFailed: "Failed to register.",
-      department: "Department",
-      position: "Position",
-      address: "Address",
-      city: "City",
-      country: "Country",
-      gender: "Gender",
-      age: "Age",
-      nationality: "Nationality",
-      invalidPhone: "Phone number must be 11 digits",
       yourToken: "Your Token",
-      qrCode: "QR Code:",
       saveQr: "Save QR Code",
     },
     ar: {
@@ -76,17 +65,7 @@ export default function Registration() {
       required: "مطلوب",
       invalidEmail: "عنوان البريد الإلكتروني غير صالح",
       registrationFailed: "فشل التسجيل.",
-      department: "القسم",
-      position: "المنصب",
-      address: "العنوان",
-      city: "المدينة",
-      country: "الدولة",
-      gender: "الجنس",
-      age: "العمر",
-      nationality: "الجنسية",
-      invalidPhone: "رقم الهاتف يجب أن يكون 11 رقماً",
       yourToken: "رمزك",
-      qrCode: "رمز الاستجابة السريعة:",
       saveQr: "حفظ رمز QR",
     },
   });
@@ -95,29 +74,26 @@ export default function Registration() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [showDialog, setShowDialog] = useState(false);
-
   const [dynamicFields, setDynamicFields] = useState([]);
   const [formData, setFormData] = useState({});
   const [fieldErrors, setFieldErrors] = useState({});
   const [translations, setTranslations] = useState({});
   const [translationsReady, setTranslationsReady] = useState(false);
-
   const [qrToken, setQrToken] = useState(null);
 
+  // Fetch event
   useEffect(() => {
     const fetchEvent = async () => {
       const result = await getPublicEventBySlug(eventSlug);
-      if (!result?.error) {
-        setEvent(result);
-      }
+      if (!result?.error) setEvent(result);
       setLoading(false);
     };
     fetchEvent();
   }, [eventSlug]);
 
+  // Prepare dynamic fields + translation
   useEffect(() => {
     if (!event) return;
-
     const defaultFields = [
       { name: "fullName", label: "Full Name", type: "text", required: true },
       { name: "phone", label: "Phone Number", type: "text", required: true },
@@ -144,38 +120,30 @@ export default function Registration() {
 
     const translateAll = async () => {
       const targetLang = dir === "rtl" ? "ar" : "en";
-      const translations = {};
       const textsToTranslate = new Set();
-      fields.forEach((field) => {
-        textsToTranslate.add(field.label);
-        if (field.options?.length) {
-          field.options.forEach((opt) => textsToTranslate.add(opt));
-        }
+      fields.forEach((f) => {
+        textsToTranslate.add(f.label);
+        if (f.options?.length)
+          f.options.forEach((o) => textsToTranslate.add(o));
       });
       const textArray = Array.from(textsToTranslate);
-      const translationResults = await Promise.all(
-        textArray.map((text) => {
-          return translateText(text, targetLang);
-        })
+      const results = await Promise.all(
+        textArray.map((txt) => translateText(txt, targetLang))
       );
-      textArray.forEach((text, idx) => {
-        translations[text] = translationResults[idx];
-      });
-      setTranslations(translations);
+      const map = {};
+      textArray.forEach((txt, i) => (map[txt] = results[i]));
+      setTranslations(map);
       setTranslationsReady(true);
     };
-
     setTranslationsReady(false);
     translateAll();
   }, [event, dir]);
 
+  // Handlers
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-
-    if (name === "fullName" && !/^[a-zA-Z\s]*$/.test(value)) return;
-
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    setFieldErrors((prev) => ({ ...prev, [name]: "" }));
+    setFormData((p) => ({ ...p, [name]: value }));
+    setFieldErrors((p) => ({ ...p, [name]: "" }));
   };
 
   const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -184,15 +152,13 @@ export default function Registration() {
     const errors = {};
     dynamicFields.forEach((f) => {
       const val = formData[f.name]?.trim();
-      if (f.required && !val) {
-        const translatedLabel = translations[f.label] || t[f.label] || f.label;
-        errors[f.name] = `${translatedLabel} ${t.required}`;
-      }
-
-      if (f.name === "email" && val && !isValidEmail(val)) {
+      if (f.required && !val) errors[f.name] = `${f.label} ${t.required}`;
+      if (f.type === "email" && val && !isValidEmail(val))
         errors[f.name] = t.invalidEmail;
-      }
+      if (f.name === "email" && val && !isValidEmail(val))
+        errors[f.name] = t.invalidEmail;
     });
+
     if (Object.keys(errors).length) {
       setFieldErrors(errors);
       return;
@@ -204,9 +170,7 @@ export default function Registration() {
 
     if (!result?.error) {
       setShowDialog(true);
-      if (event?.showQrAfterRegistration) {
-        setQrToken(result.token);
-      }
+      if (event?.showQrAfterRegistration) setQrToken(result.token);
     } else {
       setFieldErrors({ _global: result.message || t.registrationFailed });
     }
@@ -217,7 +181,8 @@ export default function Registration() {
     router.replace(`/eventreg/event/${eventSlug}`);
   };
 
-  if (loading || !event) {
+  // Loading screens
+  if (loading || !event || !translationsReady) {
     return (
       <Box
         minHeight="100vh"
@@ -231,20 +196,7 @@ export default function Registration() {
     );
   }
 
-  if (!translationsReady) {
-    return (
-      <Box
-        minHeight="100vh"
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
-      >
-        <Background />
-        <CircularProgress />
-      </Box>
-    );
-  }
-
+  // Render each input
   const renderField = (field) => {
     const errorMsg = fieldErrors[field.name];
     const fieldLabel = translations[field.label] || field.label;
@@ -259,15 +211,10 @@ export default function Registration() {
       sx: { mb: 2 },
     };
 
-    if (field.type === "radio") {
+    if (field.type === "radio")
       return (
         <Box key={field.name} sx={{ mb: 2, textAlign: "center" }}>
-          <Typography
-            sx={{ mb: 1, color: errorMsg ? "error.main" : "inherit" }}
-          >
-            {fieldLabel}
-          </Typography>
-
+          <Typography sx={{ mb: 1 }}>{fieldLabel}</Typography>
           <RadioGroup
             row
             name={field.name}
@@ -281,28 +228,20 @@ export default function Registration() {
                 value={opt}
                 control={<Radio sx={{ p: 0.5 }} />}
                 label={translations[opt] || opt}
-                sx={{ mx: 1 }}
               />
             ))}
           </RadioGroup>
-
           {errorMsg && (
-            <Typography variant="caption" color="error" display="block">
+            <Typography variant="caption" color="error">
               {errorMsg}
             </Typography>
           )}
         </Box>
       );
-    }
 
-    if (field.type === "list") {
+    if (field.type === "list")
       return (
-        <FormControl
-          fullWidth
-          key={field.name}
-          error={!!errorMsg}
-          sx={{ mb: 2 }}
-        >
+        <FormControl fullWidth key={field.name} sx={{ mb: 2 }}>
           <InputLabel>{fieldLabel}</InputLabel>
           <Select
             name={field.name}
@@ -323,29 +262,69 @@ export default function Registration() {
           )}
         </FormControl>
       );
-    }
 
     return (
       <TextField
         key={field.name}
         {...commonProps}
-        type={field.type === "number" ? "number" : "text"}
+        type={
+          field.type === "number"
+            ? "number"
+            : field.type === "email"
+            ? "email"
+            : "text"
+        }
       />
     );
   };
+
+  const { name, description, logoUrl, backgroundUrl } = event;
 
   return (
     <Box
       sx={{
         minHeight: "100vh",
         display: "flex",
+        flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
+        gap: 2,
         px: 2,
         py: 4,
+        backgroundImage: backgroundUrl ? `url(${backgroundUrl})` : "none",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+        backgroundAttachment: "fixed",
+        position: "relative",
       }}
     >
-      <Background />
+      {!backgroundUrl && <Background />}
+
+      {logoUrl && (
+        <Box
+          sx={{
+            width: { xs: "100%", sm: 320, md: 500 },
+            borderRadius: 3,
+            overflow: "hidden",
+            boxShadow: 3,
+            mt: { xs: 6, sm: 0 },
+          }}
+        >
+          <Box
+            component="img"
+            src={logoUrl}
+            alt={`${name} Logo`}
+            sx={{
+              display: "block",
+              width: "100%",
+              height: "auto",
+              objectFit: "contain",
+            }}
+          />
+        </Box>
+      )}
+
       <Paper
         dir={dir}
         elevation={3}
@@ -355,23 +334,26 @@ export default function Registration() {
           borderRadius: 3,
           p: 4,
           textAlign: "center",
+          backdropFilter: "blur(6px)",
+          backgroundColor: "rgba(255,255,255,0.9)",
         }}
       >
-        <Box
-          sx={{
-            mb: 3,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <ICONS.appRegister
-            sx={{ fontSize: 40, color: "primary.main", mr: 2 }}
-          />
-          <Typography variant="h4" fontWeight="bold">
-            {t.registerForEvent}
+        <Typography variant="h5" fontWeight="bold" sx={{ mb: 1 }}>
+          {name}
+        </Typography>
+        {description && (
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ mb: 3, whiteSpace: "pre-line" }}
+          >
+            {description}
           </Typography>
-        </Box>
+        )}
+
+        <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>
+          {t.registerForEvent}
+        </Typography>
 
         {fieldErrors._global && (
           <Alert severity="error" sx={{ mb: 3 }}>
@@ -391,6 +373,7 @@ export default function Registration() {
         </Button>
       </Paper>
 
+      {/* Success dialog */}
       <Dialog
         open={showDialog}
         onClose={handleDialogClose}
@@ -414,14 +397,7 @@ export default function Registration() {
                 {t.yourToken}
               </Typography>
 
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  mt: 1,
-                }}
-              >
+              <Box sx={{ display: "flex", justifyContent: "center", mt: 1 }}>
                 <Box
                   sx={{
                     px: 2,
