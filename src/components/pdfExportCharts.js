@@ -1,10 +1,12 @@
-import html2canvas from 'html2canvas';
-import jsPDF from 'jspdf';
-import { formatDateTimeWithLocale, formatDate } from '@/utils/dateUtils';
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
+import { formatDateTimeWithLocale, formatDate } from "@/utils/dateUtils";
+
 const addEventHeader = async (pdf, eventInfo, pageWidth, margin) => {
   if (!eventInfo) return margin;
 
-  const logoSize = 20;
+  const logoMaxWidth = 40; // adjust if needed
+  const logoMaxHeight = 20;
   let currentY = margin;
 
   if (eventInfo.logoUrl) {
@@ -16,24 +18,36 @@ const addEventHeader = async (pdf, eventInfo, pageWidth, margin) => {
         reader.onloadend = () => resolve(reader.result);
         reader.readAsDataURL(blob);
       });
-      pdf.addImage(base64, 'PNG', margin, currentY, logoSize, logoSize);
-      currentY += logoSize + 3;
+
+      // 🖼 Maintain aspect ratio (contain)
+      const img = new Image();
+      img.src = base64;
+      await new Promise((res) => (img.onload = res));
+      const ratio = Math.min(
+        logoMaxWidth / img.width,
+        logoMaxHeight / img.height
+      );
+      const logoWidth = img.width * ratio;
+      const logoHeight = img.height * ratio;
+
+      pdf.addImage(base64, "PNG", margin, currentY, logoWidth, logoHeight);
+      currentY += logoHeight + 3;
     } catch (error) {
-      console.error('Error loading event logo:', error);
+      console.error("Error loading event logo:", error);
     }
   }
 
-  // Event name
+  // 🧾 Event name
   pdf.setFontSize(16);
-  pdf.setFont('helvetica', 'bold');
+  pdf.setFont("helvetica", "bold");
   pdf.setTextColor(31, 41, 55);
   pdf.text(eventInfo.name, margin, currentY + 5);
 
   currentY += 10;
 
-  // Event details
+  // 🗓 Event details
   pdf.setFontSize(9);
-  pdf.setFont('helvetica', 'normal');
+  pdf.setFont("helvetica", "normal");
   pdf.setTextColor(107, 114, 128);
 
   const fromDate = formatDate(eventInfo.startDate);
@@ -53,16 +67,23 @@ const addEventHeader = async (pdf, eventInfo, pageWidth, margin) => {
   return currentY;
 };
 
-export const exportChartsToPDF = async (chartRefs, fieldLabels, chartDataArray, eventInfo) => {
-  const pdf = new jsPDF('p', 'mm', 'a4');
+export const exportChartsToPDF = async (
+  chartRefs,
+  fieldLabels,
+  chartDataArray,
+  eventInfo
+) => {
+  const pdf = new jsPDF("p", "mm", "a4");
   const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
   const margin = 15;
-  const chartWidth = pageWidth - (margin * 2);
+  const chartWidth = pageWidth - margin * 2;
   const maxChartHeight = 100;
   const titleHeight = 10;
   const spacing = 8;
-  const legendSpacing = 5;
+
+  const totalPages = chartRefs.length;
+  let currentPage = 1;
 
   const headerHeight = await addEventHeader(pdf, eventInfo, pageWidth, margin);
   let yPosition = headerHeight + spacing;
@@ -72,78 +93,86 @@ export const exportChartsToPDF = async (chartRefs, fieldLabels, chartDataArray, 
     const chartElement = chartRefs[i];
     const fieldLabel = fieldLabels[i];
     const chartData = chartDataArray[i];
-
     if (!chartElement) continue;
 
     try {
-      // Capture chart image
-      const legendElements = chartElement.querySelectorAll('.MuiChartsLegend-root, [class*="MuiChartsLegend"]');
-      legendElements.forEach(el => el.style.display = 'none');
+      // Temporarily hide chart legends for clean capture
+      const legendElements = chartElement.querySelectorAll(
+        '.MuiChartsLegend-root, [class*="MuiChartsLegend"]'
+      );
+      legendElements.forEach((el) => (el.style.display = "none"));
 
       const canvas = await html2canvas(chartElement, {
         scale: 2,
-        backgroundColor: '#ffffff',
+        backgroundColor: "#ffffff",
         logging: false,
-        useCORS: true
+        useCORS: true,
       });
 
-      legendElements.forEach(el => el.style.display = '');
+      legendElements.forEach((el) => (el.style.display = ""));
 
-      const imgData = canvas.toDataURL('image/png');
+      const imgData = canvas.toDataURL("image/png");
       const imgAspectRatio = canvas.width / canvas.height;
       const chartHeight = Math.min(chartWidth / imgAspectRatio, maxChartHeight);
 
-      let legendHeight = 0;
-      let legendItems = [];
+      const totalHeight = titleHeight + spacing + chartHeight + spacing;
 
-      if (chartData?.chartType === 'pie' && chartData?.data) {
-        legendItems = chartData.data.map(item => ({
-          label: item.label,
-          color: item.color,
-          value: item.value
-        }));
-
-        const itemsPerColumn = Math.ceil(legendItems.length / 2);
-        legendHeight = itemsPerColumn * 6 + 5;
-      }
-
-      const totalHeight = titleHeight + spacing + chartHeight + legendHeight;
+      // 🔁 Check page overflow
       if (yPosition + totalHeight > pageHeight - margin && !isFirstChart) {
+        // Footer page number
+        pdf.setFontSize(10);
+        pdf.setTextColor(120);
+        pdf.text(
+          `Page ${currentPage} of ${totalPages}`,
+          pageWidth / 2,
+          pageHeight - 10,
+          { align: "center" }
+        );
+
         pdf.addPage();
-        yPosition = margin;
+        currentPage++;
+        yPosition =
+          (await addEventHeader(pdf, eventInfo, pageWidth, margin)) + spacing;
       }
 
+      // Chart title
       pdf.setFontSize(14);
-      pdf.setFont('helvetica', 'bold');
+      pdf.setFont("helvetica", "bold");
       pdf.setTextColor(31, 41, 55);
       pdf.text(fieldLabel, margin, yPosition);
 
       yPosition += 7;
 
+      // Field details (if applicable)
       pdf.setFontSize(9);
-      pdf.setFont('helvetica', 'normal');
+      pdf.setFont("helvetica", "normal");
       pdf.setTextColor(107, 114, 128);
 
-      if (chartData.chartType === 'pie' && (chartData.type === 'text' || chartData.type === 'number')) {
+      if (
+        chartData.chartType === "pie" &&
+        (chartData.type === "text" || chartData.type === "number")
+      ) {
         pdf.text(`Top ${chartData.topN || 10}`, margin, yPosition);
         yPosition += 5;
-      } else if (chartData.chartType === 'line' && chartData.type === 'time') {
+      } else if (chartData.chartType === "line" && chartData.type === "time") {
         const startDate = formatDateTimeWithLocale(chartData.startDateTime);
         const endDate = formatDateTimeWithLocale(chartData.endDateTime);
-
         pdf.text(`From: ${startDate}`, margin, yPosition);
         pdf.text(`To: ${endDate}`, margin, yPosition + 5);
-        pdf.text(`Interval: ${chartData.intervalMinutes || 60} min`, margin, yPosition + 10);
+        pdf.text(
+          `Interval: ${chartData.intervalMinutes || 60} min`,
+          margin,
+          yPosition + 10
+        );
         yPosition += 15;
       }
 
+      // Chart image
       yPosition += spacing + 3;
-
-
-      // Add legend for pie charts
-      pdf.addImage(imgData, 'PNG', margin, yPosition, chartWidth, chartHeight);
+      pdf.addImage(imgData, "PNG", margin, yPosition, chartWidth, chartHeight);
       yPosition += chartHeight + spacing;
-      // Add separator line after each chart
+
+      // Divider
       pdf.setDrawColor(229, 231, 235);
       pdf.setLineWidth(0.3);
       pdf.line(margin, yPosition, pageWidth - margin, yPosition);
@@ -155,5 +184,15 @@ export const exportChartsToPDF = async (chartRefs, fieldLabels, chartDataArray, 
     }
   }
 
-  pdf.save('insights_charts.pdf');
+  // 🧩 Add final footer page number
+  pdf.setFontSize(10);
+  pdf.setTextColor(120);
+  pdf.text(
+    `Page ${currentPage} of ${totalPages}`,
+    pageWidth / 2,
+    pageHeight - 10,
+    { align: "center" }
+  );
+
+  pdf.save(`${eventInfo?.name || "insights"}_charts.pdf`);
 };
