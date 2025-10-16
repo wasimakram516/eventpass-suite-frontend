@@ -43,7 +43,6 @@ const addEventHeader = async (pdf, eventInfo, pageWidth, margin) => {
 
   currentY += 10;
 
-  // 🗓 Event details
   pdf.setFontSize(9);
   pdf.setFont("helvetica", "normal");
   pdf.setTextColor(107, 114, 128);
@@ -80,11 +79,7 @@ export const exportChartsToPDF = async (
   const titleHeight = 10;
   const spacing = 8;
 
-  const totalPages = chartRefs.length;
-  let currentPage = 1;
-
-  const headerHeight = await addEventHeader(pdf, eventInfo, pageWidth, margin);
-  let yPosition = headerHeight + spacing;
+  let yPosition = (await addEventHeader(pdf, eventInfo, pageWidth, margin)) + spacing;
   let isFirstChart = true;
 
   for (let i = 0; i < chartRefs.length; i++) {
@@ -115,23 +110,10 @@ export const exportChartsToPDF = async (
       const totalHeight = titleHeight + spacing + chartHeight + spacing;
 
       if (yPosition + totalHeight > pageHeight - margin && !isFirstChart) {
-        // Footer page number
-        pdf.setFontSize(10);
-        pdf.setTextColor(120);
-        pdf.text(
-          `Page ${currentPage} of ${totalPages}`,
-          pageWidth / 2,
-          pageHeight - 10,
-          { align: "center" }
-        );
-
         pdf.addPage();
-        currentPage++;
-
         yPosition = margin + spacing;
       }
 
-      // Chart title
       pdf.setFontSize(14);
       pdf.setFont("helvetica", "bold");
       pdf.setTextColor(31, 41, 55);
@@ -139,7 +121,6 @@ export const exportChartsToPDF = async (
 
       yPosition += 7;
 
-      // Field details
       pdf.setFontSize(9);
       pdf.setFont("helvetica", "normal");
       pdf.setTextColor(107, 114, 128);
@@ -163,12 +144,10 @@ export const exportChartsToPDF = async (
         yPosition += 15;
       }
 
-      // Chart image
       yPosition += spacing + 3;
       pdf.addImage(imgData, "PNG", margin, yPosition, chartWidth, chartHeight);
       yPosition += chartHeight + spacing;
 
-      // Divider
       pdf.setDrawColor(229, 231, 235);
       pdf.setLineWidth(0.3);
       pdf.line(margin, yPosition, pageWidth - margin, yPosition);
@@ -180,15 +159,18 @@ export const exportChartsToPDF = async (
     }
   }
 
-  // Footer page number
-  pdf.setFontSize(10);
-  pdf.setTextColor(120);
-  pdf.text(
-    `Page ${currentPage} of ${totalPages}`,
-    pageWidth / 2,
-    pageHeight - 10,
-    { align: "center" }
-  );
+  const totalPages = pdf.internal.getNumberOfPages();
+  for (let i = 1; i <= totalPages; i++) {
+    pdf.setPage(i);
+    pdf.setFontSize(10);
+    pdf.setTextColor(120);
+    pdf.text(
+      `Page ${i} of ${totalPages}`,
+      pageWidth / 2,
+      pageHeight - 10,
+      { align: "center" }
+    );
+  }
 
   pdf.save(`${eventInfo?.name || "insights"}_charts.pdf`);
 };
