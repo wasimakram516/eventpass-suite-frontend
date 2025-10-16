@@ -16,7 +16,7 @@ const segmentMap = {
     icon: <ICONS.business fontSize="small" sx={{ mr: 0.5 }} />,
   },
   insights: {
-    label: "Insights",
+    label: "Intelligent Insights",
     icon: <ICONS.insights fontSize="small" sx={{ mr: 0.5 }} />,
   },
   polls: {

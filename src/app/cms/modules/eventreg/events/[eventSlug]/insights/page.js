@@ -35,7 +35,7 @@ import { formatDateTimeWithLocale } from "@/utils/dateUtils";
 
 const translations = {
   en: {
-    pageTitle: "Insights",
+    pageTitle: "Intelligent Insights",
     pageDescription:
       "Analyze event data and visualize key metrics through interactive charts and distributions.",
     availableFields: "Available Fields",
@@ -52,7 +52,7 @@ const translations = {
     exporting: "Exporting...",
   },
   ar: {
-    pageTitle: "التحليلات",
+    pageTitle: "تحليلات ذكية",
     pageDescription:
       "تحليل بيانات الحدث وتصور المقاييس الرئيسية من خلال الرسوم البيانية والتوزيعات التفاعلية.",
     availableFields: "الحقول المتاحة",
@@ -795,10 +795,10 @@ export default function AnalyticsDashboard() {
           spacing={2}
         >
           <Box sx={{ flex: 1 }}>
-            <Typography variant="h4" fontWeight="bold">
+            <Typography variant="h3" fontWeight="bold" gutterBottom>
               {t.pageTitle}
             </Typography>
-            <Typography variant="body1" color="text.secondary">
+            <Typography variant="body1" color="text.secondary" gutterBottom>
               {t.pageDescription}
             </Typography>
           </Box>
