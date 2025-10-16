@@ -1,8 +1,59 @@
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
-import { formatDateTimeWithLocale } from '@/utils/dateUtils';
+import { formatDateTimeWithLocale, formatDate } from '@/utils/dateUtils';
+const addEventHeader = async (pdf, eventInfo, pageWidth, margin) => {
+  if (!eventInfo) return margin;
 
-export const exportChartsToPDF = async (chartRefs, fieldLabels, chartDataArray) => {
+  const logoSize = 20;
+  let currentY = margin;
+
+  if (eventInfo.logoUrl) {
+    try {
+      const response = await fetch(eventInfo.logoUrl);
+      const blob = await response.blob();
+      const base64 = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.readAsDataURL(blob);
+      });
+      pdf.addImage(base64, 'PNG', margin, currentY, logoSize, logoSize);
+      currentY += logoSize + 3;
+    } catch (error) {
+      console.error('Error loading event logo:', error);
+    }
+  }
+
+  // Event name
+  pdf.setFontSize(16);
+  pdf.setFont('helvetica', 'bold');
+  pdf.setTextColor(31, 41, 55);
+  pdf.text(eventInfo.name, margin, currentY + 5);
+
+  currentY += 10;
+
+  // Event details
+  pdf.setFontSize(9);
+  pdf.setFont('helvetica', 'normal');
+  pdf.setTextColor(107, 114, 128);
+
+  const fromDate = formatDate(eventInfo.startDate);
+  const toDate = formatDate(eventInfo.endDate);
+
+  pdf.text(`From: ${fromDate}`, margin, currentY);
+  pdf.text(`To: ${toDate}`, margin, currentY + 5);
+  pdf.text(`Venue: ${eventInfo.venue}`, margin, currentY + 10);
+  pdf.text(`Registrations: ${eventInfo.registrations}`, margin, currentY + 15);
+
+  currentY += 20;
+
+  pdf.setDrawColor(229, 231, 235);
+  pdf.setLineWidth(0.5);
+  pdf.line(margin, currentY, pageWidth - margin, currentY);
+
+  return currentY;
+};
+
+export const exportChartsToPDF = async (chartRefs, fieldLabels, chartDataArray, eventInfo) => {
   const pdf = new jsPDF('p', 'mm', 'a4');
   const pageWidth = pdf.internal.pageSize.getWidth();
   const pageHeight = pdf.internal.pageSize.getHeight();
@@ -13,7 +64,8 @@ export const exportChartsToPDF = async (chartRefs, fieldLabels, chartDataArray) 
   const spacing = 8;
   const legendSpacing = 5;
 
-  let yPosition = margin;
+  const headerHeight = await addEventHeader(pdf, eventInfo, pageWidth, margin);
+  let yPosition = headerHeight + spacing;
   let isFirstChart = true;
 
   for (let i = 0; i < chartRefs.length; i++) {
@@ -25,12 +77,17 @@ export const exportChartsToPDF = async (chartRefs, fieldLabels, chartDataArray) 
 
     try {
       // Capture chart image
+      const legendElements = chartElement.querySelectorAll('.MuiChartsLegend-root, [class*="MuiChartsLegend"]');
+      legendElements.forEach(el => el.style.display = 'none');
+
       const canvas = await html2canvas(chartElement, {
         scale: 2,
         backgroundColor: '#ffffff',
         logging: false,
         useCORS: true
       });
+
+      legendElements.forEach(el => el.style.display = '');
 
       const imgData = canvas.toDataURL('image/png');
       const imgAspectRatio = canvas.width / canvas.height;
@@ -61,63 +118,36 @@ export const exportChartsToPDF = async (chartRefs, fieldLabels, chartDataArray) 
       pdf.setTextColor(31, 41, 55);
       pdf.text(fieldLabel, margin, yPosition);
 
+      yPosition += 7;
+
       pdf.setFontSize(9);
       pdf.setFont('helvetica', 'normal');
       pdf.setTextColor(107, 114, 128);
-      const chartDescription = chartData.chartType === 'pie' ? 'Distribution Overview' : 'Historical Trend';
-      pdf.text(chartDescription, margin, yPosition + 5);
 
       if (chartData.chartType === 'pie' && (chartData.type === 'text' || chartData.type === 'number')) {
-        pdf.setFontSize(12);
-        pdf.setTextColor(107, 114, 128);
-        pdf.text(`Top ${chartData.topN || 10}`, pageWidth - margin, yPosition-1, { align: 'right' });
+        pdf.text(`Top ${chartData.topN || 10}`, margin, yPosition);
+        yPosition += 5;
       } else if (chartData.chartType === 'line' && chartData.type === 'time') {
-        pdf.setFontSize(11);
-        pdf.setTextColor(107, 114, 128);
-        const startDate = `From: ${formatDateTimeWithLocale(chartData.startDateTime)}`;
-        const endDate = `To: ${formatDateTimeWithLocale(chartData.endDateTime)}`;
-        const intervalText = `Interval: ${chartData.intervalMinutes || 60} min`;
+        const startDate = formatDateTimeWithLocale(chartData.startDateTime);
+        const endDate = formatDateTimeWithLocale(chartData.endDateTime);
 
-        const textX = pageWidth - 70; 
-        pdf.text(startDate, textX, yPosition-1);
-        pdf.text(endDate, textX, yPosition + 5);
-        pdf.text(intervalText, textX, yPosition + 11);
+        pdf.text(`From: ${startDate}`, margin, yPosition);
+        pdf.text(`To: ${endDate}`, margin, yPosition + 5);
+        pdf.text(`Interval: ${chartData.intervalMinutes || 60} min`, margin, yPosition + 10);
+        yPosition += 15;
       }
 
-      yPosition += titleHeight + spacing + 3;
+      yPosition += spacing + 3;
 
 
       // Add legend for pie charts
-      if (legendItems.length > 0) {
-        const legendWidth = 45;
-        const gapBetweenChartAndLegend = 3;
-        const adjustedChartWidth = chartWidth - legendWidth - gapBetweenChartAndLegend;
-        const adjustedChartHeight = Math.min(adjustedChartWidth / imgAspectRatio, maxChartHeight);
-
-        pdf.addImage(imgData, 'PNG', margin, yPosition, adjustedChartWidth, adjustedChartHeight);
-
-        pdf.setFontSize(9);
-        pdf.setFont('helvetica', 'normal');
-
-        const legendX = margin + adjustedChartWidth + gapBetweenChartAndLegend;
-        const itemHeight = 6;
-        const legendStartY = yPosition + (adjustedChartHeight / 2) - ((legendItems.length * itemHeight) / 2);
-
-        legendItems.forEach((item, idx) => {
-          const yPos = legendStartY + (idx * itemHeight);
-
-          pdf.setFillColor(item.color);
-          pdf.circle(legendX + 2, yPos - 1, 1.5, 'F');
-
-          pdf.setTextColor('#333333');
-          pdf.text(`${item.label}`, legendX + 6, yPos, { maxWidth: legendWidth - 6 });
-        });
-
-        yPosition += adjustedChartHeight + spacing;
-      } else {
-        pdf.addImage(imgData, 'PNG', margin, yPosition, chartWidth, chartHeight);
-        yPosition += chartHeight + spacing;
-      }
+      pdf.addImage(imgData, 'PNG', margin, yPosition, chartWidth, chartHeight);
+      yPosition += chartHeight + spacing;
+      // Add separator line after each chart
+      pdf.setDrawColor(229, 231, 235);
+      pdf.setLineWidth(0.3);
+      pdf.line(margin, yPosition, pageWidth - margin, yPosition);
+      yPosition += spacing;
 
       isFirstChart = false;
     } catch (error) {
