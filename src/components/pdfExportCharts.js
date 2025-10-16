@@ -5,7 +5,7 @@ import { formatDateTimeWithLocale, formatDate } from "@/utils/dateUtils";
 const addEventHeader = async (pdf, eventInfo, pageWidth, margin) => {
   if (!eventInfo) return margin;
 
-  const logoMaxWidth = 40; // adjust if needed
+  const logoMaxWidth = 40;
   const logoMaxHeight = 20;
   let currentY = margin;
 
@@ -19,7 +19,6 @@ const addEventHeader = async (pdf, eventInfo, pageWidth, margin) => {
         reader.readAsDataURL(blob);
       });
 
-      // 🖼 Maintain aspect ratio (contain)
       const img = new Image();
       img.src = base64;
       await new Promise((res) => (img.onload = res));
@@ -37,7 +36,6 @@ const addEventHeader = async (pdf, eventInfo, pageWidth, margin) => {
     }
   }
 
-  // 🧾 Event name
   pdf.setFontSize(16);
   pdf.setFont("helvetica", "bold");
   pdf.setTextColor(31, 41, 55);
@@ -96,7 +94,6 @@ export const exportChartsToPDF = async (
     if (!chartElement) continue;
 
     try {
-      // Temporarily hide chart legends for clean capture
       const legendElements = chartElement.querySelectorAll(
         '.MuiChartsLegend-root, [class*="MuiChartsLegend"]'
       );
@@ -117,7 +114,6 @@ export const exportChartsToPDF = async (
 
       const totalHeight = titleHeight + spacing + chartHeight + spacing;
 
-      // 🔁 Check page overflow
       if (yPosition + totalHeight > pageHeight - margin && !isFirstChart) {
         // Footer page number
         pdf.setFontSize(10);
@@ -131,8 +127,8 @@ export const exportChartsToPDF = async (
 
         pdf.addPage();
         currentPage++;
-        yPosition =
-          (await addEventHeader(pdf, eventInfo, pageWidth, margin)) + spacing;
+
+        yPosition = margin + spacing;
       }
 
       // Chart title
@@ -143,7 +139,7 @@ export const exportChartsToPDF = async (
 
       yPosition += 7;
 
-      // Field details (if applicable)
+      // Field details
       pdf.setFontSize(9);
       pdf.setFont("helvetica", "normal");
       pdf.setTextColor(107, 114, 128);
@@ -184,7 +180,7 @@ export const exportChartsToPDF = async (
     }
   }
 
-  // 🧩 Add final footer page number
+  // Footer page number
   pdf.setFontSize(10);
   pdf.setTextColor(120);
   pdf.text(
