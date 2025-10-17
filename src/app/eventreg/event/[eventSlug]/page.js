@@ -91,7 +91,7 @@ export default function EventDetails() {
   return (
     <Box
       sx={{
-        minHeight: "100vh",
+        minHeight: "100dvh",
         px: 2,
         py: { xs: 2, md: 4 },
         display: "flex",
