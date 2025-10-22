@@ -63,8 +63,22 @@ const gameTranslations = {
     bothJoined: "Both players are ready!",
     waitingForBoth: "Waiting for both players to join...",
     autoCloseNotice:
-      "This session will auto-close if both players don't join within",
+      "This session will auto-close if players don't join within",
     seconds: "seconds",
+
+    waitingTeamsTitle: "Waiting for all teams...",
+    waitingTeamsMessage: "Waiting for teams to fill their players...",
+    allTeamsJoined: "All teams have joined!",
+    anyTeamCanStart: "Any team can start the game now.",
+    anyPlayerCanStart: "Any player can start the game now.",
+    teamCountdownTitle: "Teams, get ready!",
+    teamCountdownMessage: "The game will begin in a few seconds...",
+    teamWin: "YOUR TEAM WINS!",
+    teamLose: "YOUR TEAM LOSES!",
+    opponentTeams: "Opponent Teams",
+    totalScore: "Total Score",
+    averageTime: "Average Time",
+    averageAttempted: "Average Attempted",
   },
   ar: {
     countdown: "ثانية",
@@ -97,8 +111,22 @@ const gameTranslations = {
     startNow: "ابدأ اللعبة",
     bothJoined: "انضم اللاعبان! جاهزون للبدء",
     waitingForBoth: "بانتظار انضمام كلا اللاعبين...",
-    autoCloseNotice: "سيتم إغلاق الجلسة تلقائيًا إذا لم ينضم اللاعبان خلال",
+    autoCloseNotice: "سيتم إغلاق هذه الجلسة تلقائياً إذا لم ينضم اللاعبون خلال",
     seconds: "ثوانٍ",
+
+    waitingTeamsTitle: "بانتظار جميع الفرق...",
+    waitingTeamsMessage: "بانتظار الفرق لملء لاعبيها...",
+    allTeamsJoined: "انضمت جميع الفرق!",
+    anyTeamCanStart: "يمكن لأي فريق بدء اللعبة الآن.",
+    anyPlayerCanStart: "يمكن لأي لاعب بدء اللعبة الآن.",
+    teamCountdownTitle: "استعدوا أيها الفرق!",
+    teamCountdownMessage: "ستبدأ اللعبة خلال لحظات...",
+    teamWin: "فريقك فاز!",
+    teamLose: "فريقك خسر!",
+    opponentTeams: "الفرق المنافسة",
+    totalScore: "المجموع الكلي",
+    averageTime: "المتوسط الزمني",
+    averageAttempted: "المعدل المتوسط للأسئلة المجابة",
   },
 };
 
@@ -283,48 +311,54 @@ export default function PlayPage() {
   useEffect(() => {
     if (!pendingSession) return;
 
+    const isTeamMode = pendingSession?.gameId?.isTeamMode;
     const hasP1 = pendingSession.players?.some(
       (p) => p.playerType === "p1" && p.playerId
     );
     const hasP2 = pendingSession.players?.some(
       (p) => p.playerType === "p2" && p.playerId
     );
-    const bothJoinedLocal = Boolean(hasP1 && hasP2);
+    const bothJoined = hasP1 && hasP2;
 
-    // Reset timer on new session / player changes
-    setAbandonRemaining(60);
+    const allTeamsReady = isTeamMode
+      ? pendingSession.teams?.every(
+          (t) =>
+            (t.players?.length || 0) >=
+            (pendingSession.gameId?.playersPerTeam || 0)
+        )
+      : false;
 
-    // If both joined, no countdown/abandon needed
-    if (bothJoinedLocal) return;
+    const sessionReady = isTeamMode ? allTeamsReady : bothJoined;
+
+    // timer duration: 3 min for team mode, 1 min for PvP
+    const initialTimer = isTeamMode ? 180 : 60;
+    setAbandonRemaining(initialTimer);
+
+    if (sessionReady) return;
 
     let cancelled = false;
-    const iv = setInterval(() => {
+    const interval = setInterval(async () => {
       setAbandonRemaining((prev) => {
         const next = prev - 1;
         if (next <= 0) {
-          clearInterval(iv);
-          if (!cancelled && pendingSession?._id) {
+          clearInterval(interval);
+          if (!cancelled) {
             abandonGameSession(pendingSession._id)
-              .then(() => {
-                clearPlayerSessionData({ clearIds: true, clearFlag: true });
-                requestAllSessions?.(game?.slug);
-                router.replace(`/eventduel/${game?.slug}`);
-              })
-
-              .catch(() => {});
+              .then(() => requestAllSessions())
+              .catch(() => {
+                /* silent fail; UI resyncs via socket */
+              });
           }
-          return 0;
         }
-        return next;
+        return Math.max(next, 0);
       });
     }, 1000);
 
     return () => {
       cancelled = true;
-      clearInterval(iv);
+      clearInterval(interval);
     };
-    // Re-run on session id or players change
-  }, [pendingSession?._id, pendingSession?.players, game?.slug]);
+  }, [pendingSession?._id, pendingSession?.players, pendingSession?.teams]);
 
   // 8.4 If Host ends the game session, submit player's stats
   useEffect(() => {
@@ -341,8 +375,9 @@ export default function PlayPage() {
   }, [activeSession?._id]);
 
   // ─── 9. PROGRESS & FINAL SUBMISSION ────────────────────────────────────
+  // --- SUBMIT PROGRESS (Team + PvP compatible) ---
   const submitProgress = async (timeOverride = null) => {
-    const { playerId, sessionId } = getPlayerSessionData();
+    const { playerId, sessionId, teamId } = getPlayerSessionData();
     if (!playerId || !sessionId) return;
 
     const sessionDuration =
@@ -360,6 +395,7 @@ export default function PlayPage() {
       sessionId,
       playerId,
       payload: {
+        teamId: teamId || null,
         score: scoreRef.current,
         attemptedQuestions: attemptedRef.current,
         timeTaken,
@@ -367,16 +403,41 @@ export default function PlayPage() {
     });
   };
 
+  // --- SUBMIT FINAL RESULT (unchanged flow) ---
   const submitFinalResult = async (timeOverride = null) => {
     if (hasSubmittedRef.current) return;
     hasSubmittedRef.current = true;
-    await submitProgress(timeOverride); // <-- forward override
+    await submitProgress(timeOverride);
     clearPlayerSessionData({ clearIds: true, clearFlag: true });
   };
 
   // ─── 10. HANDLERS ─────────────────────────────────────────────────
   const handlePlayerActivate = async () => {
-    if (!pendingSession || !bothPlayersJoined || starting) return;
+    if (!pendingSession || starting) return;
+
+    // Determine if it's team mode
+    const isTeamMode = pendingSession?.teams && pendingSession.teams.length > 0;
+
+    let canStart = false;
+
+    if (isTeamMode) {
+      // For team mode: each team must have at least one player joined
+      canStart = pendingSession.teams.every(
+        (team) => team.players && team.players.some((p) => p.playerId)
+      );
+    } else {
+      // For PvP: both player slots must be filled
+      const hasP1 = pendingSession.players?.some(
+        (p) => p.playerType === "p1" && p.playerId
+      );
+      const hasP2 = pendingSession.players?.some(
+        (p) => p.playerType === "p2" && p.playerId
+      );
+      canStart = hasP1 && hasP2;
+    }
+
+    if (!canStart) return;
+
     try {
       setStarting(true);
       await activateGameSession(pendingSession._id);
@@ -421,22 +482,33 @@ export default function PlayPage() {
     }, 1000);
   };
 
+  // --- FETCH PLAYER + TEAM SESSION DATA ---
   const getPlayerSessionData = () => {
     if (typeof window === "undefined") return null;
+
+    const playerId = sessionStorage.getItem("playerId");
+    const sessionId = sessionStorage.getItem("sessionId");
+    const teamId = sessionStorage.getItem("selectedTeamId");
+    const teamName = sessionStorage.getItem("selectedTeamName");
+
     return {
-      playerId: sessionStorage.getItem("playerId"),
-      sessionId: sessionStorage.getItem("sessionId"),
+      playerId,
+      sessionId,
+      ...(teamId ? { teamId, teamName } : {}),
     };
   };
 
+  // --- CLEAR PLAYER + TEAM SESSION DATA ---
   const clearPlayerSessionData = (
     opts = { clearIds: true, clearFlag: true }
   ) => {
     if (typeof window === "undefined") return;
+
     if (opts.clearIds) {
       sessionStorage.removeItem("playerId");
       sessionStorage.removeItem("sessionId");
     }
+
     if (opts.clearFlag) {
       sessionStorage.removeItem("forceSubmitTriggered");
     }
@@ -444,8 +516,30 @@ export default function PlayPage() {
 
   // ─── 11. RENDER BRANCHES ────────────────────────────────────────────────
 
-  /* SESSION PENDING SCREEN (players can start) */
+  /* SESSION PENDING SCREEN (players or teams can start) */
   if (pendingSession) {
+    const isTeamMode = pendingSession?.gameId?.isTeamMode;
+
+    // For PvP:
+    const hasP1 = pendingSession.players?.some(
+      (p) => p.playerType === "p1" && p.playerId
+    );
+    const hasP2 = pendingSession.players?.some(
+      (p) => p.playerType === "p2" && p.playerId
+    );
+    const bothPlayersJoined = hasP1 && hasP2;
+
+    // For Team Mode:
+    const allTeamsReady = isTeamMode
+      ? pendingSession.teams?.every(
+          (t) =>
+            (t.players?.length || 0) >=
+            (pendingSession.gameId?.playersPerTeam || 0)
+        )
+      : false;
+
+    const sessionReady = isTeamMode ? allTeamsReady : bothPlayersJoined;
+
     return (
       <>
         <LanguageSelector top={20} right={20} />
@@ -483,7 +577,7 @@ export default function PlayPage() {
             <ICONS.back />
           </IconButton>
 
-          {!bothPlayersJoined ? (
+          {!sessionReady ? (
             <>
               <CircularProgress />
               <Typography
@@ -496,7 +590,11 @@ export default function PlayPage() {
                   letterSpacing: "2px",
                   animation: "pulseText 2s infinite",
                   fontSize: (() => {
-                    const L = (t.waitingTitle || t.pendingTitle || "").length;
+                    const L = (
+                      isTeamMode
+                        ? t.waitingTeamsTitle
+                        : t.waitingTitle || t.pendingTitle
+                    )?.length;
                     if (L <= 25) return { xs: "1.5rem", sm: "2.5rem" };
                     if (L <= 40) return { xs: "1.25rem", sm: "2rem" };
                     return { xs: "1rem", sm: "1.75rem" };
@@ -506,7 +604,9 @@ export default function PlayPage() {
                   overflowWrap: "break-word",
                 }}
               >
-                {t.waitingTitle || t.pendingTitle}
+                {isTeamMode
+                  ? t.waitingTeamsTitle
+                  : t.waitingTitle || t.pendingTitle}
               </Typography>
 
               <Typography
@@ -517,16 +617,22 @@ export default function PlayPage() {
                   fontStyle: "italic",
                   animation: "blink 1.5s infinite",
                   fontSize: (() => {
-                    const L = (t.waitingForBoth || t.pendingMessage || "")
-                      .length;
+                    const L = (
+                      isTeamMode
+                        ? t.waitingTeamsMessage
+                        : t.waitingForBoth || t.pendingMessage
+                    )?.length;
                     if (L <= 30) return { xs: "0.9rem", sm: "1.1rem" };
                     if (L <= 50) return { xs: "0.8rem", sm: "1rem" };
                     return { xs: "0.7rem", sm: "0.9rem" };
                   })(),
                 }}
               >
-                {t.waitingForBoth || t.pendingMessage}
+                {isTeamMode
+                  ? t.waitingTeamsMessage
+                  : t.waitingForBoth || t.pendingMessage}
               </Typography>
+
               <Box sx={{ mt: 3 }}>
                 <Typography variant="body2" sx={{ opacity: 0.9 }}>
                   {t.autoCloseNotice} <b>{abandonRemaining}</b> {t.seconds}.
@@ -545,14 +651,15 @@ export default function PlayPage() {
                   letterSpacing: "2px",
                   animation: "pulseText 2s infinite",
                   fontSize: (() => {
-                    const L = (t.bothJoined || "").length;
+                    const L = (isTeamMode ? t.allTeamsJoined : t.bothJoined)
+                      ?.length;
                     if (L <= 20) return { xs: "1.5rem", sm: "2.5rem" };
                     if (L <= 35) return { xs: "1.25rem", sm: "2rem" };
                     return { xs: "1rem", sm: "1.75rem" };
                   })(),
                 }}
               >
-                {t.bothJoined}
+                {isTeamMode ? t.allTeamsJoined : t.bothJoined}
               </Typography>
 
               <Button
@@ -581,10 +688,7 @@ export default function PlayPage() {
                 variant="body2"
                 sx={{ mt: 4, opacity: 0.7, fontStyle: "italic" }}
               >
-                {/* Small hint so users know anybody can start */}
-                {language === "ar"
-                  ? "يمكن لأي لاعب بدء اللعبة الآن."
-                  : "Any player can start the game now."}
+                {isTeamMode ? t.anyTeamCanStart : t.anyPlayerCanStart}
               </Typography>
             </>
           )}
@@ -593,11 +697,12 @@ export default function PlayPage() {
     );
   }
 
-  // show countdown before active
+  // --- PRE-GAME COUNTDOWN (PvP + Team mode) ---
   if (localDelay > 0) {
+    const isTeamMode = game?.isTeamMode;
+
     return (
       <>
-        {/* Language switcher */}
         <LanguageSelector top={20} right={20} />
         <Box
           dir={dir}
@@ -618,7 +723,7 @@ export default function PlayPage() {
             px: 3,
           }}
         >
-          {/* Pre-game title */}
+          {/* Title */}
           <Typography
             variant="h3"
             sx={{
@@ -629,21 +734,20 @@ export default function PlayPage() {
               letterSpacing: "2px",
               animation: "pulseText 2s infinite",
               fontSize: (() => {
-                const titleLength = t.waitingTitle?.length || 0;
-                if (titleLength <= 15) {
-                  return { xs: "1.5rem", sm: "3rem" };
-                } else if (titleLength <= 25) {
-                  return { xs: "1.25rem", sm: "2.5rem" };
-                } else {
-                  return { xs: "1rem", sm: "2rem" };
-                }
+                const title = isTeamMode
+                  ? t.teamCountdownTitle
+                  : t.waitingTitle;
+                const titleLength = title?.length || 0;
+                if (titleLength <= 15) return { xs: "1.5rem", sm: "3rem" };
+                if (titleLength <= 25) return { xs: "1.25rem", sm: "2.5rem" };
+                return { xs: "1rem", sm: "2rem" };
               })(),
               lineHeight: { xs: 1.2, sm: 1.3 },
               wordBreak: "break-word",
               overflowWrap: "break-word",
             }}
           >
-            {t.waitingTitle}
+            {isTeamMode ? t.teamCountdownTitle : t.waitingTitle}
           </Typography>
 
           {/* Countdown number */}
@@ -669,21 +773,20 @@ export default function PlayPage() {
               fontStyle: "italic",
               animation: "blink 1.5s infinite",
               fontSize: (() => {
-                const messageLength = t.waitingMessage?.length || 0;
-                if (messageLength <= 25) {
-                  return { xs: "0.9rem", sm: "1.2rem" };
-                } else if (messageLength <= 40) {
-                  return { xs: "0.8rem", sm: "1.1rem" };
-                } else {
-                  return { xs: "0.7rem", sm: "1rem" };
-                }
+                const msg = isTeamMode
+                  ? t.teamCountdownMessage
+                  : t.waitingMessage;
+                const L = msg?.length || 0;
+                if (L <= 25) return { xs: "0.9rem", sm: "1.2rem" };
+                if (L <= 40) return { xs: "0.8rem", sm: "1.1rem" };
+                return { xs: "0.7rem", sm: "1rem" };
               })(),
               lineHeight: { xs: 1.2, sm: 1.3 },
               wordBreak: "break-word",
               overflowWrap: "break-word",
             }}
           >
-            {t.waitingMessage}
+            {isTeamMode ? t.teamCountdownMessage : t.waitingMessage}
           </Typography>
         </Box>
       </>
@@ -1068,11 +1171,175 @@ export default function PlayPage() {
     );
   }
 
-  // Game ended – show result
-  if (selectedPlayer && recentlyCompleted) {
+  // --- GAME ENDED: PvP + TEAM MODE ---
+  if ((selectedPlayer || game?.isTeamMode) && recentlyCompleted) {
     const currentSession = recentlyCompleted;
+    const isTeamMode = game?.isTeamMode;
 
-    // 1. Lookup rather than index
+    // ============ TEAM MODE ============
+    if (isTeamMode) {
+      const { teamId, teamName } = getPlayerSessionData();
+
+      const playerTeam = currentSession.teams?.find(
+        (t) => t.teamId?._id === teamId
+      );
+      const opponentTeams =
+        currentSession.teams?.filter((t) => t.teamId?._id !== teamId) || [];
+
+      const isTie = !currentSession.winnerTeamId;
+      const isWinner = !isTie && currentSession.winnerTeamId?._id === teamId;
+
+      const headlineText = isTie ? t.tie : isWinner ? t.teamWin : t.teamLose;
+
+      const backgroundGradient = isTie
+        ? "linear-gradient(135deg, #FFC107CC, #FF9800CC)"
+        : isWinner
+        ? "linear-gradient(135deg, #4CAF50CC, #388E3CCC)"
+        : "linear-gradient(135deg, #F44336CC, #E53935CC)";
+
+      return (
+        <Box
+          sx={{
+            position: "relative",
+            height: "100vh",
+            width: "100vw",
+            background:
+              "linear-gradient(135deg, rgba(0,0,0,0.8), rgba(50,50,50,0.8))",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            textAlign: "center",
+            overflow: "hidden",
+            p: 2,
+          }}
+        >
+          {isWinner && (
+            <Confetti
+              recycle={false}
+              numberOfPieces={300}
+              gravity={0.2}
+              style={{ position: "absolute", top: 0, left: 0 }}
+            />
+          )}
+          <LanguageSelector top={20} right={20} />
+          <Fade in timeout={800}>
+            <Paper
+              dir={dir}
+              elevation={8}
+              sx={{
+                width: { xs: "85%", sm: "60%" },
+                p: 4,
+                borderRadius: 3,
+                background: backgroundGradient,
+                color: "#fff",
+                textAlign: "center",
+                boxShadow: "0 0 30px rgba(0,0,0,0.6)",
+                backdropFilter: "blur(5px)",
+              }}
+            >
+              {/* Team Name */}
+              <Typography
+                variant="h3"
+                fontWeight={700}
+                sx={{
+                  mb: 1,
+                  textShadow: "0 0 15px rgba(255,255,255,0.8)",
+                  fontSize: (() => {
+                    const nameLen = teamName?.length || 0;
+                    if (nameLen <= 20)
+                      return { xs: "1.5rem", sm: "2rem", md: "2.5rem" };
+                    if (nameLen <= 35)
+                      return { xs: "1.25rem", sm: "1.75rem", md: "2rem" };
+                    return { xs: "1rem", sm: "1.5rem", md: "1.75rem" };
+                  })(),
+                }}
+              >
+                {teamName}
+              </Typography>
+
+              {/* Headline */}
+              <Typography
+                variant="h1"
+                sx={{
+                  my: 3,
+                  fontWeight: "bold",
+                  textShadow: "0 0 15px rgba(255,255,255,0.8)",
+                  fontSize: { xs: "2.5rem", sm: "3.5rem", md: "4rem" },
+                }}
+              >
+                {headlineText}
+              </Typography>
+
+              {/* Team Stats */}
+              <Typography
+                variant="h3"
+                sx={{
+                  my: 2,
+                  textShadow: "0 0 10px rgba(255,255,255,0.6)",
+                }}
+              >
+                {t.totalScore}: {playerTeam?.totalScore ?? 0}
+              </Typography>
+
+              <Typography variant="body1" sx={{ mb: 3 }}>
+                {t.averageTime}: {playerTeam?.avgTimeTaken ?? 0}s{" "}
+                <Box component="span" sx={{ mx: 1, color: "text.secondary" }}>
+                  |
+                </Box>{" "}
+                {t.averageAttempted}: {playerTeam?.avgAttemptedQuestions ?? 0}
+              </Typography>
+
+              {/* Opponent Teams */}
+              {opponentTeams.length > 0 && (
+                <Box
+                  sx={{
+                    background: "#ffffffaa",
+                    backdropFilter: "blur(4px)",
+                    p: 2,
+                    borderRadius: 2,
+                    color: "#000",
+                    mb: 3,
+                  }}
+                >
+                  <Typography variant="h6" sx={{ mb: 1 }}>
+                    {t.opponentTeams}
+                  </Typography>
+                  {opponentTeams.map((opp, idx) => (
+                    <Box key={idx} sx={{ mb: 1 }}>
+                      <Typography variant="h5" fontWeight="bold">
+                        {opp.teamId?.name}
+                      </Typography>
+                      <Typography variant="body2">
+                        {t.totalScore}: {opp.totalScore ?? 0}
+                      </Typography>
+                      <Typography variant="body2">
+                        {t.averageTime}: {opp.avgTimeTaken ?? 0}s
+                      </Typography>
+                      <Typography variant="body2">
+                        {t.averageAttempted}: {opp.avgAttemptedQuestions ?? 0}
+                      </Typography>
+                    </Box>
+                  ))}
+                </Box>
+              )}
+
+              <Button
+                variant="contained"
+                color="secondary"
+                size="large"
+                onClick={() => router.push(`/eventduel/${game.slug}`)}
+                startIcon={<ICONS.replay />}
+                sx={getStartIconSpacing(dir)}
+              >
+                {t.playAgain}
+              </Button>
+            </Paper>
+          </Fade>
+        </Box>
+      );
+    }
+
+    // ============ PVP MODE ============
     const playerObj = currentSession.players.find(
       (p) => p.playerType === selectedPlayer
     );
@@ -1080,14 +1347,10 @@ export default function PlayPage() {
       (p) => p.playerType !== selectedPlayer
     );
 
-    // 2. Tie check
     const isTie = currentSession.winner === null;
-
-    // 3. Win check
     const isWinner =
       !isTie && currentSession.winner?._id === playerObj.playerId?._id;
 
-    // 4. Extract scores
     const playerScore = playerObj.score;
     const playerAttempted = playerObj.attemptedQuestions;
     const playerTimeTaken = playerObj.timeTaken;
@@ -1095,10 +1358,7 @@ export default function PlayPage() {
     const opponentAttempted = opponentObj.attemptedQuestions;
     const opponentTimeTaken = opponentObj.timeTaken;
 
-    // 5. Headline text
     const headlineText = isTie ? t.tie : isWinner ? t.win : t.lose;
-
-    // 6. Background gradient
     const backgroundGradient = isTie
       ? "linear-gradient(135deg, #FFC107CC, #FF9800CC)"
       : isWinner

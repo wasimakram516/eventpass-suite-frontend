@@ -34,6 +34,7 @@ import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import EmptyBusinessState from "@/components/EmptyBusinessState";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import LoadingState from "@/components/LoadingState";
+import AppCard from "@/components/cards/AppCard";
 
 const translations = {
   en: {
@@ -51,7 +52,8 @@ const translations = {
     questionsButton: "Questions",
     resultsButton: "Results",
     deleteGameTitle: "Delete Game?",
-    deleteGameMessage: "Are you sure you want to move this item to the Recycle Bin?",
+    deleteGameMessage:
+      "Are you sure you want to move this item to the Recycle Bin?",
     delete: "Delete",
     manageGames: "Manage Games",
     selectBusiness: "Select Business",
@@ -84,7 +86,8 @@ const translations = {
     questionsButton: "الأسئلة",
     resultsButton: "النتائج",
     deleteGameTitle: "حذف اللعبة؟",
-    deleteGameMessage: "هل أنت متأكد من أنك تريد نقل هذا العنصر إلى سلة المحذوفات؟",
+    deleteGameMessage:
+      "هل أنت متأكد من أنك تريد نقل هذا العنصر إلى سلة المحذوفات؟",
     delete: "حذف",
     manageGames: "إدارة الألعاب",
     selectBusiness: "اختر العمل",
@@ -295,28 +298,32 @@ export default function GamesPage() {
         {!selectedBusiness ? (
           <EmptyBusinessState />
         ) : loading ? (
-          <LoadingState/>
+          <LoadingState />
         ) : games.length === 0 ? (
           <NoDataAvailable />
         ) : (
           <Grid container spacing={3} justifyContent={"center"}>
             {games.map((g) => (
               <Grid item xs={12} sm={6} md={4} lg={3} key={g._id}>
-                <Box
+                <AppCard
                   sx={{
-                    borderRadius: 2,
-                    boxShadow: 3,
                     p: 2,
+                    width: { xs: "100%", sm: 360 },
                     height: "100%",
-                    maxWidth: "350px",
+                    mx: "auto",
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "space-between",
-                    bgcolor: "#fff",
                   }}
                 >
+                  {/* Header */}
                   <Box>
-                    <Typography variant="h6" fontWeight="bold" gutterBottom>
+                    <Typography
+                      variant="h6"
+                      fontWeight="bold"
+                      gutterBottom
+                      sx={{ lineHeight: 1.3, textTransform: "capitalize" }}
+                    >
                       {g.title}
                     </Typography>
 
@@ -331,85 +338,77 @@ export default function GamesPage() {
                       <strong>{t.optionCountLabel}</strong> {g.choicesCount}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      <strong>{t.countdownTimerLabel}</strong>{" "}
-                      {g.countdownTimer} sec
+                      <strong>{t.quizTimeLabel}</strong> {g.gameSessionTimer}s
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      <strong>{t.quizTimeLabel}</strong> {g.gameSessionTimer}{" "}
-                      sec
-                    </Typography>
+                  </Box>
 
+                  {/* Image Row */}
+                  <Box
+                    sx={{
+                      display: "flex",
+                      gap: 1,
+                      mt: 2,
+                      flexWrap: "nowrap",
+                      overflowX: "auto",
+                      scrollbarWidth: "none",
+                      "&::-webkit-scrollbar": { display: "none" },
+                    }}
+                  >
                     {["coverImage", "nameImage", "backgroundImage"].map(
-                      (imgKey) => (
-                        <Box key={imgKey} sx={{ mt: 1 }}>
-                          <Typography variant="caption" color="text.secondary">
-                            {t[`${imgKey}Label`]}:
-                          </Typography>
-                          <Box
-                            component="img"
-                            src={g[imgKey]}
-                            alt={imgKey}
-                            sx={{
-                              width: "100%",
-                              height: "auto",
-                              maxHeight: 140,
-                              objectFit: "cover",
-                              borderRadius: 1,
-                              mt: 0.5,
-                            }}
-                          />
-                        </Box>
+                      (key) => (
+                        <Box
+                          key={key}
+                          component="img"
+                          src={g[key]}
+                          alt={key}
+                          sx={{
+                            flexShrink: 0,
+                            width: 100,
+                            height: { xs: 70, sm: 80 },
+                            objectFit: "cover",
+                            borderRadius: 1,
+                            border: "1px solid #eee",
+                          }}
+                        />
                       )
                     )}
                   </Box>
 
+                  {/* Actions */}
                   <Box
                     sx={{
                       mt: 2,
                       display: "flex",
-                      flexDirection: "column",
-                      gap: 1,
-                      width: "100%",
+                      flexDirection: { xs: "column", sm: "row" },
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: 1.2,
                     }}
                   >
-                    <Box
+                    <Button
+                      size="small"
+                      variant="contained"
+                      color="primary"
+                      startIcon={<ICONS.adminPanel />}
+                      fullWidth
+                      onClick={() =>
+                        router.push(
+                          `/cms/modules/eventduel/games/${g.slug}/host`
+                        )
+                      }
                       sx={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        flexWrap: "wrap",
-                        gap: 2,
+                        fontSize: "0.8rem",
+                        ...getStartIconSpacing(dir),
                       }}
                     >
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        color="primary"
-                        startIcon={<ICONS.adminPanel />}
-                        onClick={() =>
-                          router.push(
-                            `/cms/modules/eventduel/games/${g.slug}/host`
-                          )
-                        }
-                        sx={{
-                          width: "100%",
-                          ...getStartIconSpacing(dir),
-                        }}
-                      >
-                        {t.hostButton}
-                      </Button>
-                    </Box>
+                      {t.hostButton}
+                    </Button>
 
-                    {/* Right-aligned icon buttons below */}
-                    <Box
-                      sx={{
-                        display: "flex",
-                        justifyContent: "flex-end",
-                        gap: 1,
-                      }}
-                    >
+                    <Box sx={{ display: "flex", gap: 0.5 }}>
                       <Tooltip title={t.editTooltip}>
                         <IconButton
                           color="info"
+                          size="small"
                           onClick={() => handleOpenEdit(g)}
                         >
                           <ICONS.edit fontSize="small" />
@@ -419,6 +418,7 @@ export default function GamesPage() {
                       <Tooltip title={t.deleteTooltip}>
                         <IconButton
                           color="error"
+                          size="small"
                           onClick={() => {
                             setGameToDelete(g);
                             setConfirmOpen(true);
@@ -431,6 +431,7 @@ export default function GamesPage() {
                       <Tooltip title={t.shareTooltip}>
                         <IconButton
                           color="primary"
+                          size="small"
                           onClick={() => {
                             setGameToShare(g);
                             setShareModalOpen(true);
@@ -441,7 +442,7 @@ export default function GamesPage() {
                       </Tooltip>
                     </Box>
                   </Box>
-                </Box>
+                </AppCard>
               </Grid>
             ))}
           </Grid>
@@ -450,8 +451,9 @@ export default function GamesPage() {
         <ShareLinkModal
           open={shareModalOpen}
           onClose={() => setShareModalOpen(false)}
-          url={`${typeof window !== "undefined" ? window.location.origin : ""
-            }/eventduel/${gameToShare?.slug}`}
+          url={`${
+            typeof window !== "undefined" ? window.location.origin : ""
+          }/eventduel/${gameToShare?.slug}`}
           name={gameToShare?.title}
         />
 

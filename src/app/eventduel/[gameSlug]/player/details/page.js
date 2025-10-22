@@ -23,11 +23,13 @@ const entryDialogTranslations = {
     nameLabel: "Name",
     companyLabel: "Company",
     startButton: "Proceed",
+    joiningTeam: "Joining Team",
   },
   ar: {
     nameLabel: "الاسم",
     companyLabel: "اسم الشركة",
     startButton: "متابعة",
+    joiningTeam: "الانضمام إلى الفريق",
   },
 };
 
@@ -35,40 +37,50 @@ export default function NamePage() {
   const { game, loading } = useGame();
   const router = useRouter();
   const { t, dir, align } = useI18nLayout(entryDialogTranslations);
+
   const [form, setForm] = useState({
     gameSlug: "",
     name: "",
     company: "",
     playerType: "",
+    teamId: "",
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [selectedTeamName, setSelectedTeamName] = useState("");
 
+  // Populate form with slug + selected mode info
   useEffect(() => {
-    if (game?.slug) {
-      setForm((prev) => ({ ...prev, gameSlug: game.slug }));
+    if (game?.slug) setForm((p) => ({ ...p, gameSlug: game.slug }));
+
+    if (game?.isTeamMode) {
+      const teamId = sessionStorage.getItem("selectedTeamId");
+      const teamName = sessionStorage.getItem("selectedTeamName"); 
+      if (teamId) {
+        setForm((p) => ({ ...p, teamId }));
+        if (teamName) setSelectedTeamName(teamName);
+      }
+    } else {
+      const playerType = sessionStorage.getItem("selectedPlayer");
+      if (playerType) setForm((p) => ({ ...p, playerType }));
     }
   }, [game]);
 
-  useEffect(() => {
-    const selectedPlayer = sessionStorage.getItem("selectedPlayer");
-    if (selectedPlayer) {
-      setForm((prev) => ({ ...prev, playerType: selectedPlayer }));
-    }
-  }, []);
-
   const handleSubmit = async () => {
     if (!form.name.trim() || submitting) return;
-
     setSubmitting(true);
+    setError("");
+
     const response = await joinGameSession(form);
 
-    if (!response.error) {
+    if (!response?.error) {
       sessionStorage.setItem("playerId", response.player._id);
       sessionStorage.setItem("sessionId", response.session._id);
-
       router.push(`/eventduel/${game.slug}/instructions`);
+    } else {
+      setError(response?.message || "Something went wrong. Try again.");
     }
+
     setSubmitting(false);
   };
 
@@ -130,7 +142,7 @@ export default function NamePage() {
             p: { xs: 3, sm: 4 },
             width: "100%",
             maxWidth: 500,
-            textAlign: align,
+            textAlign: "center",
             backdropFilter: "blur(10px)",
             backgroundColor: "rgba(255,255,255,0.6)",
             borderRadius: 6,
@@ -139,54 +151,70 @@ export default function NamePage() {
             boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
           }}
         >
+          {/* Game Title */}
           <Typography
             variant="h1"
             gutterBottom
             sx={{
-              mb: 4,
+              mb: 3,
               color: "primary.main",
               fontSize: (() => {
-                const titleLength = game.title?.length || 0;
-                if (titleLength <= 20) {
-                  return { xs: "2rem", sm: "2.5rem", md: "3rem" };
-                } else if (titleLength <= 40) {
-                  return { xs: "1.5rem", sm: "2rem", md: "2.5rem" };
-                } else if (titleLength <= 60) {
-                  return { xs: "1.25rem", sm: "1.75rem", md: "2rem" };
-                } else {
-                  return { xs: "1rem", sm: "1.5rem", md: "1.75rem" };
-                }
+                const len = game.title?.length || 0;
+                if (len <= 20) return { xs: "2rem", sm: "2.5rem", md: "3rem" };
+                if (len <= 40) return { xs: "1.5rem", sm: "2rem", md: "2.5rem" };
+                if (len <= 60) return { xs: "1.25rem", sm: "1.75rem", md: "2rem" };
+                return { xs: "1rem", sm: "1.5rem", md: "1.75rem" };
               })(),
               lineHeight: { xs: 1.2, sm: 1.3, md: 1.4 },
               wordBreak: "break-word",
-              overflowWrap: "break-word",
               fontWeight: "bold",
             }}
           >
             {game.title}
           </Typography>
 
+          {/* Team Mode Info */}
+          {game?.isTeamMode && selectedTeamName && (
+            <Box
+              sx={{
+                mb: 3,
+                p: 1.5,
+                borderRadius: 3,
+                textAlign: "center",
+                background:
+                  "linear-gradient(135deg, rgba(25,118,210,0.9), rgba(66,165,245,0.9))",
+                color: "#fff",
+              }}
+            >
+              <Typography
+                variant="body1"
+                sx={{ fontWeight: "bold", letterSpacing: 0.5 }}
+              >
+                {t.joiningTeam}: {selectedTeamName}
+              </Typography>
+            </Box>
+          )}
+
+          {/* Name */}
           <TextField
             label={t.nameLabel}
             fullWidth
             required
-            sx={{
-              mb: 3,
-            }}
+            sx={{ mb: 3 }}
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
           />
 
+          {/* Company */}
           <TextField
             label={t.companyLabel}
             fullWidth
-            sx={{
-              mb: 3,
-            }}
+            sx={{ mb: 3 }}
             value={form.company}
             onChange={(e) => setForm({ ...form, company: e.target.value })}
           />
 
+          {/* Submit */}
           <Button
             variant="contained"
             size="large"

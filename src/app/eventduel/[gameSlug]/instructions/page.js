@@ -12,6 +12,7 @@ import {
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import QuizIcon from "@mui/icons-material/Quiz";
 import TimerIcon from "@mui/icons-material/Timer";
+import GroupIcon from "@mui/icons-material/Groups";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useGame } from "@/contexts/GameContext";
@@ -30,6 +31,8 @@ const gameInstructionsTranslations = {
     startButton: "Get Ready",
     player1: "Player 1",
     player2: "Player 2",
+    teamMember: "Team Member",
+    yourTeam: "Your Team:",
   },
   ar: {
     welcome: "أهلاً بك",
@@ -40,21 +43,42 @@ const gameInstructionsTranslations = {
     startButton: "استعد",
     player1: "اللاعب الأول",
     player2: "اللاعب الثاني",
+    teamMember: "عضو الفريق",
+    yourTeam: "فريقك:",
   },
 };
 
 export default function InstructionsPage() {
   const router = useRouter();
   const { game, loading } = useGame();
-  const [selectedPlayer, setSelectedPlayer] = useState(null);
-  const { t, dir, align, language } = useI18nLayout(
-    gameInstructionsTranslations
-  );
+  const { t, dir, align } = useI18nLayout(gameInstructionsTranslations);
+
+  const [playerInfo, setPlayerInfo] = useState({});
 
   useEffect(() => {
     const stored = sessionStorage.getItem("selectedPlayer");
+    const playerId = sessionStorage.getItem("playerId");
+    const teamId = sessionStorage.getItem("selectedTeamId");
+    const teamName = sessionStorage.getItem("selectedTeamName");
+    const sessionId = sessionStorage.getItem("sessionId");
+
     if (stored === "p1" || stored === "p2") {
-      setSelectedPlayer(stored);
+      // PvP mode
+      setPlayerInfo({
+        mode: "pvp",
+        selectedPlayer: stored,
+        playerId,
+        sessionId,
+      });
+    } else if (teamId && teamName) {
+      // Team mode
+      setPlayerInfo({
+        mode: "team",
+        playerId,
+        teamId,
+        teamName,
+        sessionId,
+      });
     }
   }, []);
 
@@ -62,7 +86,7 @@ export default function InstructionsPage() {
     router.push(`/eventduel/${game.slug}/play`);
   };
 
-  if (loading || !game || !selectedPlayer) {
+  if (loading || !game) {
     return (
       <Box
         sx={{
@@ -78,7 +102,7 @@ export default function InstructionsPage() {
         }}
       >
         <IconButton
-          onClick={() => router.push(`/eventduel/${game.slug}`)}
+          onClick={() => router.push(`/eventduel/${game?.slug || ""}`)}
           sx={{
             position: "fixed",
             top: 20,
@@ -170,97 +194,49 @@ export default function InstructionsPage() {
           </Typography>
 
           <Box dir={dir} sx={{ textAlign: "center", mb: 4 }}>
-            <Typography
-              variant="h5"
-              gutterBottom
-              sx={{
-                fontSize: (() => {
-                  const welcomeLength = t.welcome?.length || 0;
-                  if (welcomeLength <= 10) {
-                    return { xs: "1.25rem", sm: "1.5rem", md: "1.75rem" };
-                  } else if (welcomeLength <= 20) {
-                    return { xs: "1rem", sm: "1.25rem", md: "1.5rem" };
-                  } else {
-                    return { xs: "0.875rem", sm: "1.125rem", md: "1.25rem" };
-                  }
-                })(),
-                lineHeight: { xs: 1.2, sm: 1.3, md: 1.4 },
-                wordBreak: "break-word",
-                overflowWrap: "break-word",
-              }}
-            >
+            <Typography variant="h5" gutterBottom>
               {t.welcome}
             </Typography>
 
-            <Typography
-              variant="h3"
-              fontWeight={700}
-              gutterBottom
-              sx={{
-                fontSize: (() => {
-                  const playerText =
-                    selectedPlayer === "p1" ? t.player1 : t.player2;
-                  const playerLength = playerText?.length || 0;
-                  if (playerLength <= 15) {
-                    return { xs: "1.5rem", sm: "2rem", md: "2.5rem" };
-                  } else if (playerLength <= 25) {
-                    return { xs: "1.25rem", sm: "1.75rem", md: "2rem" };
-                  } else {
-                    return { xs: "1rem", sm: "1.5rem", md: "1.75rem" };
-                  }
-                })(),
-                lineHeight: { xs: 1.2, sm: 1.3, md: 1.4 },
-                wordBreak: "break-word",
-                overflowWrap: "break-word",
-              }}
-            >
-              {selectedPlayer === "p1" ? t.player1 : t.player2}
-            </Typography>
+            {/* Player or Team Display */}
+            {playerInfo.mode === "team" || game.isTeamMode ? (
+              <>
+                <Typography
+                  variant="h4"
+                  fontWeight={700}
+                  gutterBottom
+                  sx={{ color: "primary.dark" }}
+                >
+                  {t.teamMember}
+                </Typography>
+                <Typography variant="h6" gutterBottom>
+                  <GroupIcon
+                    sx={{ fontSize: 22, verticalAlign: "middle", mr: 1 }}
+                  />
+                  {t.yourTeam}{" "}
+                  <Box component="span" fontWeight={700}>
+                    {playerInfo.teamName || "—"}
+                  </Box>
+                </Typography>
+              </>
+            ) : (
+              <Typography
+                variant="h3"
+                fontWeight={700}
+                gutterBottom
+                sx={{ color: "primary.dark" }}
+              >
+                {playerInfo.selectedPlayer === "p1" ? t.player1 : t.player2}
+              </Typography>
+            )}
 
-            <Typography
-              variant="h6"
-              sx={{
-                fontSize: (() => {
-                  const instructionsLength = t.instructionsTitle?.length || 0;
-                  if (instructionsLength <= 30) {
-                    return { xs: "1rem", sm: "1.25rem", md: "1.5rem" };
-                  } else if (instructionsLength <= 50) {
-                    return { xs: "0.875rem", sm: "1.125rem", md: "1.25rem" };
-                  } else {
-                    return { xs: "0.75rem", sm: "1rem", md: "1.125rem" };
-                  }
-                })(),
-                lineHeight: { xs: 1.2, sm: 1.3, md: 1.4 },
-                wordBreak: "break-word",
-                overflowWrap: "break-word",
-              }}
-            >
-              {t.instructionsTitle}
-            </Typography>
+            <Typography variant="h6">{t.instructionsTitle}</Typography>
           </Box>
 
           <Stack spacing={2} sx={{ mb: 4 }} alignItems={align}>
             <Stack direction="row" alignItems="center" spacing={1}>
               <QuizIcon color="primary" />
-              <Typography
-                variant="h5"
-                sx={{
-                  fontSize: (() => {
-                    const questionsText = `${t.questionsCount} ${game.questions.length}`;
-                    const questionsLength = questionsText?.length || 0;
-                    if (questionsLength <= 25) {
-                      return { xs: "1rem", sm: "1.25rem", md: "1.5rem" };
-                    } else if (questionsLength <= 40) {
-                      return { xs: "0.875rem", sm: "1.125rem", md: "1.25rem" };
-                    } else {
-                      return { xs: "0.75rem", sm: "1rem", md: "1.125rem" };
-                    }
-                  })(),
-                  lineHeight: { xs: 1.2, sm: 1.3, md: 1.4 },
-                  wordBreak: "break-word",
-                  overflowWrap: "break-word",
-                }}
-              >
+              <Typography variant="h5">
                 {t.questionsCount}{" "}
                 <Box component="span" fontWeight={600}>
                   {game.questions.length}
@@ -269,25 +245,7 @@ export default function InstructionsPage() {
             </Stack>
             <Stack direction="row" alignItems="center" spacing={1}>
               <TimerIcon color="primary" />
-              <Typography
-                variant="h5"
-                sx={{
-                  fontSize: (() => {
-                    const durationText = `${t.quizDuration} ${game.gameSessionTimer} ${t.seconds}`;
-                    const durationLength = durationText?.length || 0;
-                    if (durationLength <= 30) {
-                      return { xs: "1rem", sm: "1.25rem", md: "1.5rem" };
-                    } else if (durationLength <= 50) {
-                      return { xs: "0.875rem", sm: "1.125rem", md: "1.25rem" };
-                    } else {
-                      return { xs: "0.75rem", sm: "1rem", md: "1.125rem" };
-                    }
-                  })(),
-                  lineHeight: { xs: 1.2, sm: 1.3, md: 1.4 },
-                  wordBreak: "break-word",
-                  overflowWrap: "break-word",
-                }}
-              >
+              <Typography variant="h5">
                 {t.quizDuration}{" "}
                 <Box component="span" fontWeight={600}>
                   {game.gameSessionTimer} {t.seconds}

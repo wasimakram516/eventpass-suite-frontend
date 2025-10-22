@@ -18,40 +18,83 @@ const useEventDuelWebSocketData = (gameSlug) => {
         setSessions(payload);
       },
       pvpCurrentSession: (payload) => {
-        console.log("🔄 pvpCurrentSession received", payload);
-        const { session, player1Questions, player2Questions } = payload;
+        console.log("pvpCurrentSession received", payload);
+        const {
+          populatedSession,
+          player1Questions,
+          player2Questions,
+          teamQuestions,
+        } = payload;
 
+        const session = populatedSession || payload.session;
         setCurrentSession(session);
 
-        const playerQs =
-          selectedPlayer === "p1" ? player1Questions : player2Questions;
+        let resolvedQuestions = [];
 
-        setQuestions(playerQs || []);
+        // --- TEAM MODE ---
+        if (session?.teams?.length > 0 && Array.isArray(teamQuestions)) {
+          const selectedTeamId =
+            typeof window !== "undefined"
+              ? sessionStorage.getItem("selectedTeamId")
+              : null;
+
+          const teamEntry = teamQuestions.find(
+            (tq) =>
+              tq.teamId === selectedTeamId || tq.teamId?._id === selectedTeamId
+          );
+
+          if (teamEntry && Array.isArray(teamEntry.questionSet)) {
+            resolvedQuestions = teamEntry.questionSet;
+            console.log(
+              "Loaded team questions for team:",
+              selectedTeamId,
+              resolvedQuestions
+            );
+          } else {
+            console.warn(
+              "No team questions found for team:",
+              selectedTeamId
+            );
+          }
+        }
+
+        // --- PVP MODE (fallback) ---
+        else {
+          const playerQs =
+            selectedPlayer === "p1" ? player1Questions : player2Questions;
+          resolvedQuestions = playerQs || [];
+        }
+
+        setQuestions(resolvedQuestions);
       },
+
       forceSubmitPvP: ({ sessionId }) => {
-      console.log("⚠️ Force submit trigger received for session:", sessionId);
-      // Store a trigger to handle in the component
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem("forceSubmitTriggered", "true");
-      }
-    },
+        console.log("Force submit trigger received for session:", sessionId);
+        // Store a trigger to handle in the component
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem("forceSubmitTriggered", "true");
+        }
+      },
     },
     [selectedPlayer]
   );
 
   useEffect(() => {
-  
-  socket?.emit("getAllSessions", { gameSlug });
-}, [connected, socket, gameSlug]);
+    socket?.emit("getAllSessions", { gameSlug });
+  }, [connected, socket, gameSlug]);
 
   const requestAllSessions = () => {
-  if (connected && socket && gameSlug) {
-    console.log("🔁 Emitting getAllSessions");
-    socket.emit("getAllSessions", { gameSlug });
-  } else {
-    console.warn("🔒 Cannot emit getAllSessions yet", { connected, socket, gameSlug });
-  }
-};
+    if (connected && socket && gameSlug) {
+      console.log("🔁 Emitting getAllSessions");
+      socket.emit("getAllSessions", { gameSlug });
+    } else {
+      console.warn("🔒 Cannot emit getAllSessions yet", {
+        connected,
+        socket,
+        gameSlug,
+      });
+    }
+  };
 
   // Auto-select fallback current session if not explicitly set
   useEffect(() => {
@@ -84,7 +127,7 @@ const useEventDuelWebSocketData = (gameSlug) => {
     selectedPlayer,
     questions,
     connected,
-    socket
+    socket,
   };
 };
 
