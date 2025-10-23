@@ -283,7 +283,7 @@ export default function Registration() {
   return (
     <Box
       sx={{
-        minHeight: "100dvh",
+        minHeight: "100vh",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
