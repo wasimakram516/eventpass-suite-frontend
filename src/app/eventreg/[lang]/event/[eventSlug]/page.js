@@ -24,7 +24,7 @@ export default function EventDetails() {
       ? "شكرًا لانضمامك إلينا! يرجى التسجيل أدناه لتأمين مكانك."
       : "Thank you for joining us! Please register below to secure your place.",
     registerNow: isArabic ? "سجل الآن" : "Register Now",
-    takesSeconds: isArabic ? "يستغرق فقط 5 ثوانٍ!" : "Takes only 5 seconds!",
+    takesSeconds: isArabic ? "يستغرق فقط ٥ ثوانٍ!" : "Takes only 5 seconds!",
     dateNotAvailable: isArabic ? "التاريخ غير متوفر" : "Date not available",
     to: isArabic ? "إلى" : "to",
   };
