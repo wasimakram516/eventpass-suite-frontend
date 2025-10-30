@@ -61,12 +61,14 @@ export default function EventWelcomeCard({
       {/* Venue */}
       <Stack
         direction="row"
-        spacing={1}
+        spacing={dir === "ltr" ? 1 : 0}
         justifyContent="center"
         alignItems="center"
         flexWrap="wrap"
       >
-        <ICONS.location color="primary" />
+        <ICONS.location color="primary" sx={{
+          ...(dir === "rtl" ? { ml: 1 } : { ml: 0 })
+        }} />
         <Typography variant="h6" sx={{ fontSize: { xs: 16, md: 20 } }}>
           {venue || t.dateNotAvailable}
         </Typography>
@@ -75,13 +77,15 @@ export default function EventWelcomeCard({
       {/* Dates */}
       <Stack
         direction="row"
-        spacing={1}
+        spacing={dir === "ltr" ? 1 : 0}
         justifyContent="center"
         alignItems="center"
         flexWrap="wrap"
         sx={{ my: 2 }}
       >
-        <ICONS.event color="primary" />
+        <ICONS.event color="primary" sx={{
+          ...(dir === "rtl" ? { ml: 1 } : { ml: 0 })
+        }} />
         {startDate && endDate ? (
           startDate === endDate ? (
             <Typography variant="h6" sx={{ fontSize: { xs: 16, md: 20 } }}>
@@ -148,7 +152,9 @@ export default function EventWelcomeCard({
         alignItems="center"
         mt={3}
       >
-        <ICONS.time fontSize="small" color="primary" />
+        <ICONS.time fontSize="small" color="primary" sx={{
+          ...(dir === "rtl" ? { ml: 1 } : { ml: 0 })
+        }} />
         <Typography variant="caption" fontSize={14}>
           {t.takesSeconds}
         </Typography>
