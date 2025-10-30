@@ -148,11 +148,13 @@ import {
   Description as DescriptionIcon,
   MeetingRoom as DoorIcon,
   Desk as DeskIcon,
-  Insights as InsightsIcon
+  Insights as InsightsIcon,
+  CloudUpload as cloudIcon,
 } from "@mui/icons-material";
 
 const ICONS = {
   // General UI / Navigation
+  cloud: cloudIcon,
   star: StarIcon,
   starBorder: StarBorderIcon,
   form: FormIcon,
