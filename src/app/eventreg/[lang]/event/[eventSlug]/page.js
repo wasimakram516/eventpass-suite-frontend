@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Box, Typography, CircularProgress } from "@mui/material";
 import HorizontalCarousel from "@/components/HorizontalCarousel";
 import { getPublicEventBySlug } from "@/services/eventreg/eventService";
-import LanguageSelector from "@/components/LanguageSelector";
+import { translateText } from "@/services/translationService";;
 import useI18nLayout from "@/hooks/useI18nLayout";
 import Background from "@/components/Background";
 import EventWelcomeCard from "@/components/EventWelcomeCard";
@@ -14,40 +14,73 @@ import ICONS from "@/utils/iconUtil";
 export default function EventDetails() {
   const { eventSlug } = useParams();
   const router = useRouter();
+  const { lang } = useParams();
+  const isArabic = lang === "ar";
+  const dir = isArabic ? "rtl" : "ltr";
 
-  const { t, dir } = useI18nLayout({
-    en: {
-      welcome: "Welcome to",
-      thankYou:
-        "Thank you for joining us! Please register below to secure your place.",
-      registerNow: "Register Now",
-      takesSeconds: "Takes only 5 seconds!",
-      dateNotAvailable: "Date not available",
-      to: "to",
-    },
-    ar: {
-      welcome: "مرحبًا في",
-      thankYou: "شكرًا لانضمامك إلينا! يرجى التسجيل أدناه لتأمين مكانك.",
-      registerNow: "سجل الآن",
-      takesSeconds: "يستغرق فقط 5 ثوانٍ!",
-      dateNotAvailable: "التاريخ غير متوفر",
-      to: "إلى",
-    },
-  });
+  const t = {
+    welcome: isArabic ? "مرحبًا في" : "Welcome to",
+    thankYou: isArabic
+      ? "شكرًا لانضمامك إلينا! يرجى التسجيل أدناه لتأمين مكانك."
+      : "Thank you for joining us! Please register below to secure your place.",
+    registerNow: isArabic ? "سجل الآن" : "Register Now",
+    takesSeconds: isArabic ? "يستغرق فقط 5 ثوانٍ!" : "Takes only 5 seconds!",
+    dateNotAvailable: isArabic ? "التاريخ غير متوفر" : "Date not available",
+    to: isArabic ? "إلى" : "to",
+  };
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [translatedEvent, setTranslatedEvent] = useState(null);
 
   useEffect(() => {
     const fetchEvent = async () => {
       const result = await getPublicEventBySlug(eventSlug);
-      if (!result?.error) setEvent(result);
-      else setError(result.message || "Event not found.");
+      if (!result?.error) {
+        setEvent(result);
+        if (isArabic) {
+          await translateEventData(result);
+        } else {
+          setTranslatedEvent(result);
+        }
+      } else {
+        setError(result.message || "Event not found.");
+      }
       setLoading(false);
     };
     fetchEvent();
-  }, [eventSlug]);
+  }, [eventSlug, isArabic]);
+
+  const translateEventData = async (eventData) => {
+    try {
+      const translationPromises = [
+        translateText(eventData.name, "ar"),
+        translateText(eventData.venue, "ar"),
+      ];
+
+      if (eventData.description) {
+        translationPromises.push(translateText(eventData.description, "ar"));
+      }
+
+      const results = await Promise.all(translationPromises);
+
+      const translated = {
+        ...eventData,
+        name: results[0],
+        venue: results[1],
+      };
+
+      if (eventData.description) {
+        translated.description = results[2];
+      }
+
+      setTranslatedEvent(translated);
+    } catch (err) {
+      console.error("Translation error:", err);
+      setTranslatedEvent(eventData);
+    }
+  };
 
   const brandingMedia = useMemo(() => {
     return event?.brandingMedia || [];
@@ -86,7 +119,8 @@ export default function EventDetails() {
     );
   }
 
-  const { name, description, venue, startDate, endDate, logoUrl } = event;
+  const { name, description, venue, startDate, endDate, logoUrl } =
+    translatedEvent || event;
 
   return (
     <Box
@@ -150,7 +184,8 @@ export default function EventDetails() {
         dir={dir}
         actionLabel={t.registerNow}
         actionIcon={<ICONS.appRegister />}
-        actionRoute={`/event/${eventSlug}/register`}
+        actionRoute={`/eventreg/${lang}/event/${eventSlug}/register`}
+        isArabic={isArabic}
       />
 
       {/* Branding media carousel */}
@@ -166,7 +201,6 @@ export default function EventDetails() {
         reducedMotionSupport={true}
       />
 
-      <LanguageSelector top={20} right={20} />
     </Box>
   );
 }

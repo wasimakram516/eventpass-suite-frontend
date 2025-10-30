@@ -32,43 +32,31 @@ import { translateText } from "@/services/translationService";
 import Background from "@/components/Background";
 
 export default function Registration() {
-  const { eventSlug } = useParams();
+  const { eventSlug, lang } = useParams();
+  const isArabic = lang === "ar";
   const router = useRouter();
 
-  const { t, dir } = useI18nLayout({
-    en: {
-      registerForEvent: "Register for the Event",
-      fullName: "Full Name",
-      phone: "Phone Number",
-      email: "Email",
-      company: "Company (optional)",
-      submit: "Submit",
-      registrationSuccess: "Registration Successful!",
-      thankYou: "Thank you for registering. We look forward to seeing you!",
-      viewEvent: "View Event",
-      required: "is required",
-      invalidEmail: "Invalid email address",
-      registrationFailed: "Failed to register.",
-      yourToken: "Your Token",
-      saveQr: "Save QR Code",
-    },
-    ar: {
-      registerForEvent: "التسجيل في الفعالية",
-      fullName: "الاسم الكامل",
-      phone: "رقم الهاتف",
-      email: "البريد الإلكتروني",
-      company: "الشركة (اختياري)",
-      submit: "إرسال",
-      registrationSuccess: "تم التسجيل بنجاح!",
-      thankYou: "شكراً لتسجيلك. نتطلع لرؤيتك!",
-      viewEvent: "عرض الفعالية",
-      required: "مطلوب",
-      invalidEmail: "عنوان البريد الإلكتروني غير صالح",
-      registrationFailed: "فشل التسجيل.",
-      yourToken: "رمزك",
-      saveQr: "حفظ رمز QR",
-    },
-  });
+  const dir = isArabic ? "rtl" : "ltr";
+  const t = {
+    registerForEvent: isArabic ? "التسجيل في الفعالية" : "Register for the Event",
+    fullName: isArabic ? "الاسم الكامل" : "Full Name",
+    phone: isArabic ? "رقم الهاتف" : "Phone Number",
+    email: isArabic ? "البريد الإلكتروني" : "Email",
+    company: isArabic ? "الشركة (اختياري)" : "Company (optional)",
+    submit: isArabic ? "إرسال" : "Submit",
+    registrationSuccess: isArabic ? "تم التسجيل بنجاح!" : "Registration Successful!",
+    thankYou: isArabic
+      ? "شكراً لتسجيلك. نتطلع لرؤيتك!"
+      : "Thank you for registering. We look forward to seeing you!",
+    viewEvent: isArabic ? "عرض الفعالية" : "View Event",
+    required: isArabic ? "مطلوب" : "is required",
+    invalidEmail: isArabic
+      ? "عنوان البريد الإلكتروني غير صالح"
+      : "Invalid email address",
+    registrationFailed: isArabic ? "فشل التسجيل." : "Failed to register.",
+    yourToken: isArabic ? "رمزك" : "Your Token",
+    saveQr: isArabic ? "حفظ رمز QR" : "Save QR Code",
+  };
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -79,17 +67,55 @@ export default function Registration() {
   const [fieldErrors, setFieldErrors] = useState({});
   const [translations, setTranslations] = useState({});
   const [translationsReady, setTranslationsReady] = useState(false);
+  const [translatedEvent, setTranslatedEvent] = useState(null);
   const [qrToken, setQrToken] = useState(null);
 
   // Fetch event
   useEffect(() => {
     const fetchEvent = async () => {
       const result = await getPublicEventBySlug(eventSlug);
-      if (!result?.error) setEvent(result);
+      if (!result?.error) {
+        setEvent(result);
+        if (isArabic) {
+          await translateEventData(result);
+        } else {
+          setTranslatedEvent(result);
+        }
+      }
       setLoading(false);
     };
     fetchEvent();
-  }, [eventSlug]);
+  }, [eventSlug, isArabic]);
+
+  const translateEventData = async (eventData) => {
+    try {
+      const translationPromises = [
+        translateText(eventData.name, "ar"),
+        translateText(eventData.venue, "ar"),
+      ];
+
+      if (eventData.description) {
+        translationPromises.push(translateText(eventData.description, "ar"));
+      }
+
+      const results = await Promise.all(translationPromises);
+
+      const translated = {
+        ...eventData,
+        name: results[0],
+        venue: results[1],
+      };
+
+      if (eventData.description) {
+        translated.description = results[2];
+      }
+
+      setTranslatedEvent(translated);
+    } catch (err) {
+      console.error("Translation error:", err);
+      setTranslatedEvent(eventData);
+    }
+  };
 
   // Prepare dynamic fields + translation
   useEffect(() => {
@@ -103,14 +129,14 @@ export default function Registration() {
 
     const fields = event.formFields?.length
       ? event.formFields
-          .filter((f) => f.visible !== false)
-          .map((f) => ({
-            name: f.inputName,
-            label: f.inputName,
-            type: f.inputType,
-            options: f.values || [],
-            required: f.required,
-          }))
+        .filter((f) => f.visible !== false)
+        .map((f) => ({
+          name: f.inputName,
+          label: f.inputName,
+          type: f.inputType,
+          options: f.values || [],
+          required: f.required,
+        }))
       : defaultFields;
 
     const initial = {};
@@ -119,16 +145,20 @@ export default function Registration() {
     setFormData(initial);
 
     const translateAll = async () => {
-      const targetLang = dir === "rtl" ? "ar" : "en";
+      if (!isArabic) {
+        setTranslationsReady(true);
+        return;
+      }
+
       const textsToTranslate = new Set();
       fields.forEach((f) => {
         textsToTranslate.add(f.label);
-        if (f.options?.length)
-          f.options.forEach((o) => textsToTranslate.add(o));
+        if (f.options?.length) f.options.forEach((o) => textsToTranslate.add(o));
       });
+
       const textArray = Array.from(textsToTranslate);
       const results = await Promise.all(
-        textArray.map((txt) => translateText(txt, targetLang))
+        textArray.map((txt) => translateText(txt, "ar"))
       );
       const map = {};
       textArray.forEach((txt, i) => (map[txt] = results[i]));
@@ -137,7 +167,7 @@ export default function Registration() {
     };
     setTranslationsReady(false);
     translateAll();
-  }, [event, dir]);
+  }, [event, isArabic]);
 
   // Handlers
   const handleInputChange = (e) => {
@@ -178,11 +208,11 @@ export default function Registration() {
 
   const handleDialogClose = () => {
     setShowDialog(false);
-    router.replace(`/eventreg/event/${eventSlug}`);
+    router.replace(`/eventreg/${lang}/event/${eventSlug}`);
   };
 
   // Loading screens
-  if (loading || !event || !translationsReady) {
+  if (loading || !event || !translatedEvent || !translationsReady) {
     return (
       <Box
         minHeight="100vh"
@@ -271,14 +301,14 @@ export default function Registration() {
           field.type === "number"
             ? "number"
             : field.type === "email"
-            ? "email"
-            : "text"
+              ? "email"
+              : "text"
         }
       />
     );
   };
 
-  const { name, description, logoUrl, backgroundUrl } = event;
+  const { name, description, logoUrl, backgroundUrl } = translatedEvent || event;
 
   return (
     <Box
@@ -460,7 +490,6 @@ export default function Registration() {
         </DialogActions>
       </Dialog>
 
-      <LanguageSelector top={20} right={20} />
     </Box>
   );
 }
