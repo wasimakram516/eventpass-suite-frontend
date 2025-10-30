@@ -184,7 +184,7 @@ export default function EventDetails() {
         dir={dir}
         actionLabel={t.registerNow}
         actionIcon={<ICONS.appRegister />}
-        actionRoute={`/eventreg/${lang}/event/${eventSlug}/register`}
+        actionRoute={`/${lang}/event/${eventSlug}/register`}
         isArabic={isArabic}
       />
 
