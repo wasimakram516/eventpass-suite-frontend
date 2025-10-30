@@ -6,7 +6,6 @@ import { Box, Typography, CircularProgress } from "@mui/material";
 import HorizontalCarousel from "@/components/HorizontalCarousel";
 import { getPublicEventBySlug } from "@/services/eventreg/eventService";
 import { translateText } from "@/services/translationService";
-import useI18nLayout from "@/hooks/useI18nLayout";
 import Background from "@/components/Background";
 import EventWelcomeCard from "@/components/EventWelcomeCard";
 import ICONS from "@/utils/iconUtil";
@@ -40,11 +39,7 @@ export default function EventDetails() {
       const result = await getPublicEventBySlug(eventSlug);
       if (!result?.error) {
         setEvent(result);
-        if (isArabic) {
-          await translateEventData(result);
-        } else {
-          setTranslatedEvent(result);
-        }
+        await translateEventData(result, lang);
       } else {
         setError(result.message || "Event not found.");
       }
@@ -53,15 +48,15 @@ export default function EventDetails() {
     fetchEvent();
   }, [eventSlug, isArabic]);
 
-  const translateEventData = async (eventData) => {
+  const translateEventData = async (eventData, targetLang) => {
     try {
       const translationPromises = [
-        translateText(eventData.name, "ar"),
-        translateText(eventData.venue, "ar"),
+        translateText(eventData.name, targetLang),
+        translateText(eventData.venue, targetLang),
       ];
 
       if (eventData.description) {
-        translationPromises.push(translateText(eventData.description, "ar"));
+        translationPromises.push(translateText(eventData.description, targetLang));
       }
 
       const results = await Promise.all(translationPromises);

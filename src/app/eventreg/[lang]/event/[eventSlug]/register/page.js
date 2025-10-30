@@ -27,7 +27,6 @@ import LanguageSelector from "@/components/LanguageSelector";
 import { createRegistration } from "@/services/eventreg/registrationService";
 import { getPublicEventBySlug } from "@/services/eventreg/eventService";
 import ICONS from "@/utils/iconUtil";
-import useI18nLayout from "@/hooks/useI18nLayout";
 import { translateText } from "@/services/translationService";
 import Background from "@/components/Background";
 
@@ -80,26 +79,22 @@ export default function Registration() {
       const result = await getPublicEventBySlug(eventSlug);
       if (!result?.error) {
         setEvent(result);
-        if (isArabic) {
-          await translateEventData(result);
-        } else {
-          setTranslatedEvent(result);
-        }
+        await translateEventData(result, lang);
       }
       setLoading(false);
     };
     fetchEvent();
   }, [eventSlug, isArabic]);
 
-  const translateEventData = async (eventData) => {
+  const translateEventData = async (eventData, targetLang) => {
     try {
       const translationPromises = [
-        translateText(eventData.name, "ar"),
-        translateText(eventData.venue, "ar"),
+        translateText(eventData.name, targetLang),
+        translateText(eventData.venue, targetLang),
       ];
 
       if (eventData.description) {
-        translationPromises.push(translateText(eventData.description, "ar"));
+        translationPromises.push(translateText(eventData.description, targetLang));
       }
 
       const results = await Promise.all(translationPromises);
@@ -133,14 +128,14 @@ export default function Registration() {
 
     const fields = event.formFields?.length
       ? event.formFields
-          .filter((f) => f.visible !== false)
-          .map((f) => ({
-            name: f.inputName,
-            label: f.inputName,
-            type: f.inputType,
-            options: f.values || [],
-            required: f.required,
-          }))
+        .filter((f) => f.visible !== false)
+        .map((f) => ({
+          name: f.inputName,
+          label: f.inputName,
+          type: f.inputType,
+          options: f.values || [],
+          required: f.required,
+        }))
       : defaultFields;
 
     const initial = {};
@@ -163,7 +158,7 @@ export default function Registration() {
 
       const textArray = Array.from(textsToTranslate);
       const results = await Promise.all(
-        textArray.map((txt) => translateText(txt, "ar"))
+        textArray.map((txt) => translateText(txt, lang))
       );
       const map = {};
       textArray.forEach((txt, i) => (map[txt] = results[i]));
@@ -306,8 +301,8 @@ export default function Registration() {
           field.type === "number"
             ? "number"
             : field.type === "email"
-            ? "email"
-            : "text"
+              ? "email"
+              : "text"
         }
       />
     );
