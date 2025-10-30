@@ -95,6 +95,13 @@ body {
   text-align: right !important;
 }
 
+/* --- Remove notch gap in RTL when label is empty --- */
+[dir="rtl"] .MuiOutlinedInput-root:not(.Mui-focused):not(.MuiInputLabel-shrink)
+  .MuiOutlinedInput-notchedOutline legend {
+  max-width: 0 !important;
+  padding: 0 !important;
+}
+
 @keyframes fadeInUp {
   from {
     opacity: 0;
