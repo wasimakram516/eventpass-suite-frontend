@@ -30,7 +30,7 @@ export default function Sidebar() {
       users: "Users",
       settings: "Settings",
       trash: "Recycle Bin",
-      files: "Files",
+      files: "Files to Download",
       menu: "Menu",
       close: "Close",
     },
@@ -41,7 +41,7 @@ export default function Sidebar() {
       users: "المستخدمون",
       settings: "الإعدادات",
       trash: "سلة المحذوفات",
-      files: "الملفات",
+      files: "الملفات للتحميل",
       menu: "القائمة",
       close: "إغلاق",
     },
@@ -60,7 +60,7 @@ export default function Sidebar() {
       path: "/cms/users",
     },
     { label: t.settings, icon: ICONS.settings, path: "/cms/settings" },
-    { label: t.files, icon: ICONS.cloud, path: "/cms/filestore" },
+    { label: t.files, icon: ICONS.cloud, path: "/cms/downloads" },
     { label: t.trash, icon: ICONS.delete, path: "/cms/trash" },
   ];
 

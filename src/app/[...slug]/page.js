@@ -9,6 +9,7 @@ import {
   CardContent,
   Typography,
   CircularProgress,
+  Button,
 } from "@mui/material";
 import {
   InsertDriveFile as FileIcon,
@@ -16,15 +17,36 @@ import {
   Image as ImageIcon,
   Movie as VideoIcon,
   CloudOff as CloudOffIcon,
+  Download as DownloadIcon,
 } from "@mui/icons-material";
+import useI18nLayout from "@/hooks/useI18nLayout";
 import { getFileBySlug } from "@/services/fileResourceService";
 
 export default function FileDownloadPage() {
   const params = useParams();
+  const slug = Array.isArray(params.slug) ? params.slug.join("/") : params.slug;
+
+  const { t, dir } = useI18nLayout({
+    en: {
+      fileNotFound: "File Not Found",
+      fileRemoved:
+        "The file you’re trying to access may have been removed or expired.",
+      loading: "Loading...",
+      download: "Download File",
+      preview: "File Preview",
+    },
+    ar: {
+      fileNotFound: "الملف غير موجود",
+      fileRemoved: "الملف الذي تحاول الوصول إليه قد تمت إزالته أو انتهت صلاحيته.",
+      loading: "جارٍ التحميل...",
+      download: "تنزيل الملف",
+      preview: "معاينة الملف",
+    },
+  });
+
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const slug = Array.isArray(params.slug) ? params.slug.join("/") : params.slug;
 
   useEffect(() => {
     const fetchFile = async () => {
@@ -32,14 +54,6 @@ export default function FileDownloadPage() {
         const res = await getFileBySlug(slug);
         if (!res || !res.fileUrl) throw new Error("File not found");
         setFile(res);
-
-        // ✅ Auto trigger file download once the file is found
-        const link = document.createElement("a");
-        link.href = res.fileUrl;
-        link.download = res.title || "download";
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
       } catch (err) {
         console.error(err);
         setError("File not found or has been removed.");
@@ -47,7 +61,6 @@ export default function FileDownloadPage() {
         setLoading(false);
       }
     };
-
     if (slug) fetchFile();
   }, [slug]);
 
@@ -78,6 +91,7 @@ export default function FileDownloadPage() {
           justifyContent: "center",
           py: 6,
         }}
+        dir={dir}
       >
         <Card
           elevation={4}
@@ -91,17 +105,17 @@ export default function FileDownloadPage() {
           <CardContent>
             <CloudOffIcon sx={{ fontSize: 80, color: "error.main", mb: 2 }} />
             <Typography variant="h5" fontWeight="bold" gutterBottom>
-              File Not Found
+              {t.fileNotFound}
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              The file you’re trying to access may have been removed or expired.
+              {t.fileRemoved}
             </Typography>
           </CardContent>
         </Card>
       </Container>
     );
 
-  // ========== Success / Auto Download View ==========
+  // ========== Success View ==========
   const isImage = file?.contentType?.startsWith("image/");
   const isPdf = file?.contentType === "application/pdf";
   const isVideo = file?.contentType?.startsWith("video/");
@@ -111,14 +125,67 @@ export default function FileDownloadPage() {
   ) : isImage ? (
     <ImageIcon sx={{ fontSize: 80, color: "primary.main" }} />
   ) : isVideo ? (
-    <MovieIcon sx={{ fontSize: 80, color: "secondary.main" }} />
+    <VideoIcon sx={{ fontSize: 80, color: "secondary.main" }} />
   ) : (
     <FileIcon sx={{ fontSize: 80, color: "text.secondary" }} />
   );
 
+  const preview = (() => {
+    if (isImage)
+      return (
+        <Box
+          component="img"
+          src={file.fileUrl}
+          alt={file.title}
+          sx={{
+            maxWidth: "100%",
+            borderRadius: 2,
+            boxShadow: 2,
+            mt: 3,
+          }}
+        />
+      );
+    if (isVideo)
+      return (
+        <Box sx={{ mt: 3 }}>
+          <video
+            controls
+            style={{ width: "100%", borderRadius: "10px" }}
+            src={file.fileUrl}
+          />
+        </Box>
+      );
+    if (isPdf)
+      return (
+        <Box sx={{ mt: 3 }}>
+          <iframe
+            src={`https://docs.google.com/gview?url=${encodeURIComponent(
+              file.fileUrl
+            )}&embedded=true`}
+            style={{
+              width: "100%",
+              height: "500px",
+              border: "none",
+              borderRadius: "10px",
+            }}
+          ></iframe>
+        </Box>
+      );
+    return null;
+  })();
+
+  const handleDownload = () => {
+    const link = document.createElement("a");
+    link.href = file.fileUrl;
+    link.download = file.title || "download";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <Container
-      maxWidth="sm"
+      maxWidth="md"
       sx={{
         minHeight: "100vh",
         display: "flex",
@@ -126,6 +193,7 @@ export default function FileDownloadPage() {
         justifyContent: "center",
         py: 6,
       }}
+      dir={dir}
     >
       <Card
         elevation={4}
@@ -146,9 +214,19 @@ export default function FileDownloadPage() {
             color="text.secondary"
             sx={{ mt: 1, mb: 2 }}
           >
-            Downloading your file...
+            {t.preview}
           </Typography>
-          <CircularProgress size={26} />
+
+          {preview}
+
+          <Button
+            variant="contained"
+            startIcon={<DownloadIcon />}
+            onClick={handleDownload}
+            sx={{ mt: 3 }}
+          >
+            {t.download}
+          </Button>
         </CardContent>
       </Card>
     </Container>

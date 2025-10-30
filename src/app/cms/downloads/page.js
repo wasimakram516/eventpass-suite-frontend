@@ -9,16 +9,7 @@ import {
   Button,
   CircularProgress,
   Divider,
-  Card,
-  CardContent,
-  CardActions,
   IconButton,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
-  Stack,
 } from "@mui/material";
 import BusinessIcon from "@mui/icons-material/Business";
 import {
@@ -26,6 +17,7 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   InsertDriveFile as FileIcon,
+  Share as ShareIcon,
 } from "@mui/icons-material";
 
 import BreadcrumbsNav from "@/components/BreadcrumbsNav";
@@ -33,7 +25,6 @@ import BusinessDrawer from "@/components/BusinessDrawer";
 import EmptyBusinessState from "@/components/EmptyBusinessState";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import useI18nLayout from "@/hooks/useI18nLayout";
-import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import { useAuth } from "@/contexts/AuthContext";
 import { getAllBusinesses } from "@/services/businessService";
 import {
@@ -43,6 +34,9 @@ import {
   deleteFile,
 } from "@/services/fileResourceService";
 import FileUploadDialog from "@/components/FileUploadDialog";
+import AppCard from "@/components/cards/AppCard";
+import ShareLinkModal from "@/components/ShareLinkModal";
+import ConfirmationDialog from "@/components/ConfirmationDialog";
 
 const translations = {
   en: {
@@ -56,6 +50,11 @@ const translations = {
     type: "Type",
     edit: "Edit",
     delete: "Delete",
+    share: "Share",
+    deleteConfirmTitle: "Delete File?",
+    deleteConfirmMsg:
+      "Are you sure you want to permanently delete this file? This action cannot be undone.",
+    yesDelete: "Yes, Delete",
   },
   ar: {
     pageTitle: "إدارة الملفات",
@@ -68,12 +67,14 @@ const translations = {
     type: "النوع",
     edit: "تعديل",
     delete: "حذف",
+    share: "مشاركة",
+    deleteConfirmTitle: "حذف الملف؟",
+    deleteConfirmMsg:
+      "هل أنت متأكد أنك تريد حذف هذا الملف نهائيًا؟ لا يمكن التراجع عن هذا الإجراء.",
+    yesDelete: "نعم، حذف",
   },
 };
 
-// ==========================
-// Main Page
-// ==========================
 export default function FileStorePage() {
   const { user } = useAuth();
   const { t, dir } = useI18nLayout(translations);
@@ -85,6 +86,15 @@ export default function FileStorePage() {
   const [loading, setLoading] = useState(true);
   const [openDialog, setOpenDialog] = useState(false);
   const [editingFile, setEditingFile] = useState(null);
+  const [shareData, setShareData] = useState({
+    open: false,
+    url: "",
+    name: "",
+  });
+  const [confirmDialog, setConfirmDialog] = useState({
+    open: false,
+    fileId: null,
+  });
 
   useEffect(() => {
     getAllBusinesses()
@@ -96,6 +106,7 @@ export default function FileStorePage() {
     if (user?.role === "business" && user.business?.slug)
       setSelectedBusiness(user.business.slug);
   }, [user]);
+
   const fetchFiles = async () => {
     if (!selectedBusiness) {
       setFiles([]);
@@ -107,6 +118,7 @@ export default function FileStorePage() {
     setFiles(res || []);
     setLoading(false);
   };
+
   useEffect(() => {
     fetchFiles();
   }, [selectedBusiness]);
@@ -117,20 +129,33 @@ export default function FileStorePage() {
   };
 
   const handleCreate = async (formData) => {
-    console.log("FormData (create):", [...formData.entries()]);
     await createFile(formData);
     fetchFiles();
   };
 
   const handleUpdate = async (formData, id) => {
-    console.log("FormData (update):", [...formData.entries()]);
     await updateFile(id, formData);
     fetchFiles();
   };
 
-  const handleDelete = async (id) => {
-    await deleteFile(id);
+  const handleDelete = (id) => {
+    setConfirmDialog({ open: true, fileId: id });
+  };
+
+  const confirmDelete = async () => {
+    if (!confirmDialog.fileId) return;
+    await deleteFile(confirmDialog.fileId);
+    setConfirmDialog({ open: false, fileId: null });
     fetchFiles();
+  };
+
+  const handleShare = (slug, title) => {
+    const base = typeof window !== "undefined" ? window.origin : "";
+    setShareData({
+      open: true,
+      url: `${base}/${slug}`,
+      name: title || slug,
+    });
   };
 
   return (
@@ -206,16 +231,15 @@ export default function FileStorePage() {
           <Grid container spacing={2}>
             {files.map((f) => (
               <Grid item xs={12} sm={6} md={4} lg={3} key={f._id}>
-                <Card
+                <AppCard
                   sx={{
                     p: 2,
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "space-between",
                     height: "100%",
+                    justifyContent: "space-between",
+                    width: { xs: "100%", sm: 360 },
                   }}
                 >
-                  <CardContent>
+                  <Box>
                     <FileIcon sx={{ fontSize: 40, color: "primary.main" }} />
                     <Typography variant="subtitle1" fontWeight="bold" mt={1}>
                       {f.title}
@@ -231,26 +255,42 @@ export default function FileStorePage() {
                     <Typography variant="caption" color="text.secondary">
                       {f.contentType}
                     </Typography>
-                  </CardContent>
+                  </Box>
 
-                  <CardActions sx={{ justifyContent: "flex-end" }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "flex-end",
+                      mt: 2,
+                      gap: 1,
+                    }}
+                  >
+                    <IconButton
+                      color="primary"
+                      onClick={() => handleShare(f.slug, f.title)}
+                      title={t.share}
+                    >
+                      <ShareIcon fontSize="small" />
+                    </IconButton>
                     <IconButton
                       color="primary"
                       onClick={() => {
                         setEditingFile(f);
                         setOpenDialog(true);
                       }}
+                      title={t.edit}
                     >
                       <EditIcon fontSize="small" />
                     </IconButton>
                     <IconButton
                       color="error"
                       onClick={() => handleDelete(f._id)}
+                      title={t.delete}
                     >
                       <DeleteIcon fontSize="small" />
                     </IconButton>
-                  </CardActions>
-                </Card>
+                  </Box>
+                </AppCard>
               </Grid>
             ))}
           </Grid>
@@ -263,7 +303,28 @@ export default function FileStorePage() {
             onSubmit={editingFile ? handleUpdate : handleCreate}
             editingFile={editingFile}
             businessSlug={selectedBusiness}
-            t={t}
+          />
+        )}
+
+        {shareData.open && (
+          <ShareLinkModal
+            open={shareData.open}
+            onClose={() => setShareData({ open: false, url: "", name: "" })}
+            url={shareData.url}
+            name={shareData.name}
+          />
+        )}
+
+        {confirmDialog.open && (
+          <ConfirmationDialog
+            open={confirmDialog.open}
+            onClose={() => setConfirmDialog({ open: false, fileId: null })}
+            onConfirm={confirmDelete}
+            title={t.deleteConfirmTitle}
+            message={t.deleteConfirmMsg}
+            confirmButtonText={t.yesDelete}
+            confirmButtonIcon={<DeleteIcon />}
+            confirmButtonColor="error"
           />
         )}
       </Container>

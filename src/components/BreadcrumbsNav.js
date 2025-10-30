@@ -11,6 +11,10 @@ const segmentMap = {
     label: "Dashboard",
     icon: <ICONS.home fontSize="small" sx={{ mr: 0.5 }} />,
   },
+  downloads:{
+    label: "Files to Download",
+    icon: <ICONS.cloud fontSize="small" sx={{ mr: 0.5 }} />,
+  },
   businesses: {
     label: "Businesses",
     icon: <ICONS.business fontSize="small" sx={{ mr: 0.5 }} />,
