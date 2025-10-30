@@ -53,7 +53,10 @@ export default function FileDownloadPage() {
     const fetchFile = async () => {
       try {
         const res = await getFileBySlug(slug);
-        if (!res || !res.fileUrl) throw new Error("File not found");
+        if (!res || !res.fileUrl) {
+          setError("File not found or has been removed.");
+          return;
+        }
         setFile(res);
       } catch (err) {
         console.error(err);
