@@ -38,13 +38,17 @@ export default function Registration() {
 
   const dir = isArabic ? "rtl" : "ltr";
   const t = {
-    registerForEvent: isArabic ? "التسجيل في الفعالية" : "Register for the Event",
+    registerForEvent: isArabic
+      ? "التسجيل في الفعالية"
+      : "Register for the Event",
     fullName: isArabic ? "الاسم الكامل" : "Full Name",
     phone: isArabic ? "رقم الهاتف" : "Phone Number",
     email: isArabic ? "البريد الإلكتروني" : "Email",
     company: isArabic ? "الشركة (اختياري)" : "Company (optional)",
     submit: isArabic ? "إرسال" : "Submit",
-    registrationSuccess: isArabic ? "تم التسجيل بنجاح!" : "Registration Successful!",
+    registrationSuccess: isArabic
+      ? "تم التسجيل بنجاح!"
+      : "Registration Successful!",
     thankYou: isArabic
       ? "شكراً لتسجيلك. نتطلع لرؤيتك!"
       : "Thank you for registering. We look forward to seeing you!",
@@ -129,14 +133,14 @@ export default function Registration() {
 
     const fields = event.formFields?.length
       ? event.formFields
-        .filter((f) => f.visible !== false)
-        .map((f) => ({
-          name: f.inputName,
-          label: f.inputName,
-          type: f.inputType,
-          options: f.values || [],
-          required: f.required,
-        }))
+          .filter((f) => f.visible !== false)
+          .map((f) => ({
+            name: f.inputName,
+            label: f.inputName,
+            type: f.inputType,
+            options: f.values || [],
+            required: f.required,
+          }))
       : defaultFields;
 
     const initial = {};
@@ -153,7 +157,8 @@ export default function Registration() {
       const textsToTranslate = new Set();
       fields.forEach((f) => {
         textsToTranslate.add(f.label);
-        if (f.options?.length) f.options.forEach((o) => textsToTranslate.add(o));
+        if (f.options?.length)
+          f.options.forEach((o) => textsToTranslate.add(o));
       });
 
       const textArray = Array.from(textsToTranslate);
@@ -301,14 +306,15 @@ export default function Registration() {
           field.type === "number"
             ? "number"
             : field.type === "email"
-              ? "email"
-              : "text"
+            ? "email"
+            : "text"
         }
       />
     );
   };
 
-  const { name, description, logoUrl, backgroundUrl } = translatedEvent || event;
+  const { name, description, logoUrl, backgroundUrl } =
+    translatedEvent || event;
 
   return (
     <Box
@@ -489,7 +495,7 @@ export default function Registration() {
           )}
         </DialogActions>
       </Dialog>
-
+      <LanguageSelector top={20} right={20} />
     </Box>
   );
 }

@@ -5,11 +5,12 @@ import { useParams, useRouter } from "next/navigation";
 import { Box, Typography, CircularProgress } from "@mui/material";
 import HorizontalCarousel from "@/components/HorizontalCarousel";
 import { getPublicEventBySlug } from "@/services/eventreg/eventService";
-import { translateText } from "@/services/translationService";;
+import { translateText } from "@/services/translationService";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import Background from "@/components/Background";
 import EventWelcomeCard from "@/components/EventWelcomeCard";
 import ICONS from "@/utils/iconUtil";
+import LanguageSelector from "@/components/LanguageSelector";
 
 export default function EventDetails() {
   const { eventSlug } = useParams();
@@ -201,6 +202,7 @@ export default function EventDetails() {
         reducedMotionSupport={true}
       />
 
+      <LanguageSelector top={20} right={20} />
     </Box>
   );
 }

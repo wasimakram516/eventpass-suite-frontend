@@ -107,16 +107,14 @@ export default function Navbar() {
               sx={{ cursor: "pointer", width: { xs: 180, sm: "auto" } }}
             >
               {/* Logo for mobile devices */}
-              <Box
-                component="img"
-                src="/WW.png"
-                alt="Company Logo"
-                sx={{
-                  display: { xs: "block", sm: "none" },
-                  height: 20,
-                  objectFit: "contain",
-                }}
-              />
+              <Typography
+                variant="body1"
+                color="text.primary"
+                noWrap
+                sx={{ display: { xs: "block", sm: "none" } }}
+              >
+                {globalConfig?.appName || "EventPass"}
+              </Typography>
 
               {/* App name for tablets and desktops */}
               <Typography
