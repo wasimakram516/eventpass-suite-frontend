@@ -71,6 +71,16 @@ body {
   margin-left: -14px;
 }
 
+[dir="rtl"] .MuiOutlinedInput-notchedOutline legend {
+  float: right !important;
+  text-align: right !important;
+}
+
+[dir="rtl"] .MuiInputLabel-root {
+  right: 28px !important;
+  left: auto !important;
+}
+
 
 @keyframes fadeInUp {
   from {

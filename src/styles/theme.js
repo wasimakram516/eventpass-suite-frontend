@@ -2,21 +2,12 @@ import { createTheme } from "@mui/material/styles";
 
 const theme = createTheme({
   palette: {
-    primary: {
-      main: "#128199",
-    },
-    secondary: {
-      main: "#ffcc00",
-    },
-    background: {
-      default: "#f9f9f9",
-      paper: "#ffffff",
-    },
-    text: {
-      primary: "#033649",
-      secondary: "#555",
-    },
+    primary: { main: "#128199" },
+    secondary: { main: "#ffcc00" },
+    background: { default: "#f9f9f9", paper: "#ffffff" },
+    text: { primary: "#033649", secondary: "#555" },
   },
+
   typography: {
     fontFamily: "'Poppins', sans-serif",
     h1: {
@@ -44,35 +35,18 @@ const theme = createTheme({
       fontSize: "1.3rem",
       fontWeight: "700",
     },
-    h6: {
-      fontFamily: "'Comfortaa', cursive",
-      fontSize: "1.25rem",
-    },
-    body1: {
-      fontSize: "1.075rem",
-      fontFamily: "'Poppins', sans-serif",
-    },
-    body2: {
-      fontSize: "0.95rem",
-      fontFamily: "'Poppins', sans-serif",
-    },
-    subtitle1: {
-      fontSize: "0.9rem",
-      fontWeight: "600",
-    },
-    subtitle2: {
-      fontSize: "0.8rem",
-      fontWeight: "500",
-    },
-    button: {
-      textTransform: "uppercase",
-      fontWeight: "bold",
-    },
+    h6: { fontFamily: "'Comfortaa', cursive", fontSize: "1.25rem" },
+    body1: { fontSize: "1.075rem", fontFamily: "'Poppins', sans-serif" },
+    body2: { fontSize: "0.95rem", fontFamily: "'Poppins', sans-serif" },
+    subtitle1: { fontSize: "0.9rem", fontWeight: "600" },
+    subtitle2: { fontSize: "0.8rem", fontWeight: "500" },
+    button: { textTransform: "uppercase", fontWeight: "bold" },
   },
-  shape: {
-    borderRadius: 8,
-  },
+
+  shape: { borderRadius: 8 },
+
   components: {
+    // === Buttons ===
     MuiButton: {
       styleOverrides: {
         root: {
@@ -159,6 +133,7 @@ const theme = createTheme({
       },
     },
 
+    // === Paper Variants ===
     MuiPaper: {
       styleOverrides: {
         root: {},
@@ -183,20 +158,57 @@ const theme = createTheme({
       ],
     },
 
+    // === Inputs Direction & Alignment ===
+    MuiInputBase: {
+      styleOverrides: {
+        input: {
+          "&[dir='rtl'], [dir='rtl'] &": {
+            textAlign: "right !important",
+          },
+          "&[dir='ltr'], [dir='ltr'] &": {
+            textAlign: "left !important",
+          },
+        },
+      },
+    },
+
+    // === Floating Label (RTL + Notched Outline Flip) ===
+    MuiInputLabel: {
+      styleOverrides: {
+        root: {
+          "&[dir='rtl'], [dir='rtl'] &": {
+            right: 30,
+            left: "auto",
+            textAlign: "right",
+            transformOrigin: "top right",
+          },
+          "&[dir='ltr'], [dir='ltr'] &": {
+            right: "auto",
+            textAlign: "left",
+            transformOrigin: "top left",
+          },
+        },
+      },
+    },
+
+    // === Outlined Input Fix for RTL Notch ===
     MuiOutlinedInput: {
       styleOverrides: {
         root: {
           backgroundColor: "rgba(255,255,255,0.8)",
           borderRadius: "30px",
           overflow: "hidden",
-
-          "&&.MuiOutlinedInput-multiline": {
-            borderRadius: "16px",
-          },
+          "&&.MuiOutlinedInput-multiline": { borderRadius: "16px" },
 
           "& .MuiOutlinedInput-notchedOutline": {
             borderColor: "#128199",
             borderRadius: "inherit",
+            "[dir='rtl'] &": {
+              direction: "rtl",
+            },
+            "[dir='ltr'] &": {
+              direction: "ltr",
+            },
           },
           "&:hover .MuiOutlinedInput-notchedOutline": {
             borderColor: "#0077b6",
@@ -208,20 +220,16 @@ const theme = createTheme({
       },
     },
 
+    // === Select Fields ===
     MuiSelect: {
       styleOverrides: {
         root: {
           backgroundColor: "rgba(255,255,255,0.8)",
           borderRadius: "30px",
           overflow: "hidden",
-          "&:focus": {
-            backgroundColor: "rgba(255,255,255,0.9)",
-          },
+          "&:focus": { backgroundColor: "rgba(255,255,255,0.9)" },
         },
-        icon: {
-          color: "#128199",
-          right: 16,
-        },
+        icon: { color: "#128199", right: 16 },
       },
     },
   },
