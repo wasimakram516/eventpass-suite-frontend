@@ -5,11 +5,11 @@ import { useParams } from "next/navigation";
 import {
   Box,
   Container,
+  CircularProgress,
+  Typography,
+  Button,
   Card,
   CardContent,
-  Typography,
-  CircularProgress,
-  Button,
 } from "@mui/material";
 import {
   InsertDriveFile as FileIcon,
@@ -37,7 +37,8 @@ export default function FileDownloadPage() {
     },
     ar: {
       fileNotFound: "الملف غير موجود",
-      fileRemoved: "الملف الذي تحاول الوصول إليه قد تمت إزالته أو انتهت صلاحيته.",
+      fileRemoved:
+        "الملف الذي تحاول الوصول إليه قد تمت إزالته أو انتهت صلاحيته.",
       loading: "جارٍ التحميل...",
       download: "تنزيل الملف",
       preview: "معاينة الملف",
@@ -121,13 +122,13 @@ export default function FileDownloadPage() {
   const isVideo = file?.contentType?.startsWith("video/");
 
   const icon = isPdf ? (
-    <PdfIcon sx={{ fontSize: 80, color: "error.main" }} />
+    <PdfIcon sx={{ fontSize: 28, color: "error.main", ml: 1 }} />
   ) : isImage ? (
-    <ImageIcon sx={{ fontSize: 80, color: "primary.main" }} />
+    <ImageIcon sx={{ fontSize: 28, color: "primary.main", ml: 1 }} />
   ) : isVideo ? (
-    <VideoIcon sx={{ fontSize: 80, color: "secondary.main" }} />
+    <VideoIcon sx={{ fontSize: 28, color: "secondary.main", ml: 1 }} />
   ) : (
-    <FileIcon sx={{ fontSize: 80, color: "text.secondary" }} />
+    <FileIcon sx={{ fontSize: 28, color: "text.secondary", ml: 1 }} />
   );
 
   const preview = (() => {
@@ -138,40 +139,52 @@ export default function FileDownloadPage() {
           src={file.fileUrl}
           alt={file.title}
           sx={{
-            maxWidth: "100%",
+            width: "100%",
+            height: "100%",
+            objectFit: "contain",
             borderRadius: 2,
-            boxShadow: 2,
-            mt: 3,
           }}
         />
       );
     if (isVideo)
       return (
-        <Box sx={{ mt: 3 }}>
-          <video
-            controls
-            style={{ width: "100%", borderRadius: "10px" }}
-            src={file.fileUrl}
-          />
-        </Box>
+        <video
+          controls
+          style={{
+            width: "100%",
+            height: "100%",
+            borderRadius: "10px",
+            background: "#000",
+          }}
+          src={file.fileUrl}
+        />
       );
     if (isPdf)
       return (
-        <Box sx={{ mt: 3 }}>
-          <iframe
-            src={`https://docs.google.com/gview?url=${encodeURIComponent(
-              file.fileUrl
-            )}&embedded=true`}
-            style={{
-              width: "100%",
-              height: "500px",
-              border: "none",
-              borderRadius: "10px",
-            }}
-          ></iframe>
-        </Box>
+        <iframe
+          src={`https://docs.google.com/gview?url=${encodeURIComponent(
+            file.fileUrl
+          )}&embedded=true`}
+          style={{
+            width: "100%",
+            height: "100%",
+            border: "none",
+            borderRadius: "10px",
+          }}
+        ></iframe>
       );
-    return null;
+    return (
+      <Box
+        sx={{
+          flexGrow: 1,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <FileIcon sx={{ fontSize: 80, color: "text.secondary" }} />
+      </Box>
+    );
   })();
 
   const handleDownload = () => {
@@ -184,51 +197,63 @@ export default function FileDownloadPage() {
   };
 
   return (
-    <Container
-      maxWidth="md"
+    <Box
       sx={{
-        minHeight: "100vh",
         display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        py: 6,
+        flexDirection: "column",
+        height: "calc(100vh - 40px)",
+        backgroundColor: "#fafafa",
       }}
       dir={dir}
     >
-      <Card
-        elevation={4}
+      {/* ===== File Preview Area ===== */}
+      <Box
         sx={{
-          width: "100%",
-          textAlign: "center",
-          borderRadius: 3,
-          p: 4,
+          flexGrow: 1,
+          mt: 4,
+          overflow: "hidden",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: "#00000005",
         }}
       >
-        <CardContent>
-          {icon}
-          <Typography variant="h5" fontWeight="bold" sx={{ mt: 2 }}>
+        {preview}
+      </Box>
+
+      {/* ===== Footer Section ===== */}
+      <Box
+        sx={{
+          borderTop: "1px solid #ddd",
+          p: 1,
+          backgroundColor: "#fff",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center" }}>
+          <Typography
+            variant="subtitle1"
+            fontWeight="bold"
+            color="text.primary"
+            sx={{ display: "flex", alignItems: "center" }}
+          >
+            {icon}
             {file.title || "File"}
           </Typography>
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{ mt: 1, mb: 2 }}
-          >
-            {t.preview}
-          </Typography>
+        </Box>
 
-          {preview}
-
-          <Button
-            variant="contained"
-            startIcon={<DownloadIcon />}
-            onClick={handleDownload}
-            sx={{ mt: 3 }}
-          >
-            {t.download}
-          </Button>
-        </CardContent>
-      </Card>
-    </Container>
+        <Button
+          variant="contained"
+          startIcon={<DownloadIcon />}
+          onClick={handleDownload}
+          sx={{ mt: { xs: 1, sm: 0 } }}
+        >
+          {t.download}
+        </Button>
+      </Box>
+    </Box>
   );
 }
