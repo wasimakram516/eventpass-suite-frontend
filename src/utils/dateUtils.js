@@ -55,11 +55,40 @@ export const getEventStatus = (startDate, endDate) => {
  * @param {string} dateString - The date string to format.
  * @returns {string} - Formatted date string with short month.
  */
-export const formatDateWithShortMonth = (dateString) => {
+const monthTranslations = {
+  Jan: "يناير",
+  Feb: "فبراير",
+  Mar: "مارس",
+  Apr: "أبريل",
+  May: "مايو",
+  Jun: "يونيو",
+  Jul: "يوليو",
+  Aug: "أغسطس",
+  Sep: "سبتمبر",
+  Oct: "أكتوبر",
+  Nov: "نوفمبر",
+  Dec: "ديسمبر"
+};
+
+export const formatDateWithShortMonth = (dateString, locale = "en-GB") => {
   const date = new Date(dateString);
-  return new Intl.DateTimeFormat("en-GB", {
+  const formatted = new Intl.DateTimeFormat("en-GB", {
     day: "2-digit",
     month: "short",
     year: "numeric",
   }).format(date);
+
+  if (locale === "ar-SA") {
+    const translatedDate = formatted.replace(
+      /Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec/,
+      (match) => monthTranslations[match]
+    );
+
+    // Convert digits to Arabic numerals
+    return translatedDate.replace(/\d/g, (digit) =>
+      String.fromCharCode(digit.charCodeAt(0) + 0x0630)
+    );
+  }
+
+  return formatted;
 };
