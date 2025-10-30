@@ -203,12 +203,6 @@ const theme = createTheme({
           "& .MuiOutlinedInput-notchedOutline": {
             borderColor: "#128199",
             borderRadius: "inherit",
-            "[dir='rtl'] &": {
-              direction: "rtl",
-            },
-            "[dir='ltr'] &": {
-              direction: "ltr",
-            },
           },
           "&:hover .MuiOutlinedInput-notchedOutline": {
             borderColor: "#0077b6",
