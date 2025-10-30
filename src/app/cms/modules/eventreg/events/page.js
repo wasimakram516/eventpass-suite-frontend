@@ -323,7 +323,7 @@ export default function EventsPage() {
           onClose={() => setShareModalOpen(false)}
           url={
             typeof window !== "undefined" && eventToShare?.slug
-              ? `${window.location.origin}/event/${eventToShare.slug}`
+              ? `${window.location.origin}/${eventToShare.defaultLanguage || "en"}/event/${eventToShare.slug}`
               : ""
           }
           name={eventToShare?.name}

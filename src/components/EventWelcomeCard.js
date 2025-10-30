@@ -18,6 +18,7 @@ export default function EventWelcomeCard({
   actionLabel,
   actionIcon,
   actionRoute,
+  isArabic,
 }) {
   return (
     <AppCard
@@ -84,13 +85,12 @@ export default function EventWelcomeCard({
         {startDate && endDate ? (
           startDate === endDate ? (
             <Typography variant="h6" sx={{ fontSize: { xs: 16, md: 20 } }}>
-              {formatDateWithShortMonth(startDate)}
+              {formatDateWithShortMonth(startDate, isArabic ? "ar-SA" : "en-GB")}
             </Typography>
           ) : (
             <Typography variant="h6" sx={{ fontSize: { xs: 16, md: 20 } }}>
-              {`${formatDateWithShortMonth(startDate)} ${
-                t.to
-              } ${formatDateWithShortMonth(endDate)}`}
+              {`${formatDateWithShortMonth(startDate, isArabic ? "ar-SA" : "en-GB")} ${t.to
+                } ${formatDateWithShortMonth(endDate, isArabic ? "ar-SA" : "en-GB")}`}
             </Typography>
           )
         ) : (
