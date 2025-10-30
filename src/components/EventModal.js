@@ -161,6 +161,7 @@ const EventModal = ({
     useCustomFields: false,
     showQrAfterRegistration: false,
     showQrOnBadge: true,
+    defaultLanguage: "en",
   });
 
   useEffect(() => {
@@ -186,11 +187,11 @@ const EventModal = ({
         backgroundPreview: initialValues.backgroundUrl || "",
         brandingLogos: Array.isArray(initialValues.brandingMedia)
           ? initialValues.brandingMedia.map((l) => ({
-              _id: l._id,
-              name: l.name || "",
-              website: l.website || "",
-              logoUrl: l.logoUrl || "",
-            }))
+            _id: l._id,
+            name: l.name || "",
+            website: l.website || "",
+            logoUrl: l.logoUrl || "",
+          }))
           : [],
         removeBrandingLogoIds: [],
         clearAllBrandingLogos: false,
@@ -207,6 +208,7 @@ const EventModal = ({
         showQrAfterRegistration:
           initialValues?.showQrAfterRegistration || false,
         showQrOnBadge: initialValues?.showQrOnBadge ?? true,
+        defaultLanguage: initialValues?.defaultLanguage || "en",
       }));
     } else {
       setFormData((prev) => ({
@@ -234,6 +236,7 @@ const EventModal = ({
         useCustomFields: false,
         showQrAfterRegistration: false,
         showQrOnBadge: true,
+        defaultLanguage: "en",
       }));
     }
   }, [initialValues, isEmployee]);
@@ -445,11 +448,9 @@ const EventModal = ({
         payload.append("tableImages", file)
       );
     }
-    payload.append(
-      "showQrAfterRegistration",
-      formData.showQrAfterRegistration.toString()
-    );
+    payload.append("showQrAfterRegistration", formData.showQrAfterRegistration.toString());
     payload.append("showQrOnBadge", formData.showQrOnBadge.toString());
+    payload.append("defaultLanguage", formData.defaultLanguage);
 
     if (formData.eventType === "public" && formData.useCustomFields) {
       payload.append("formFields", JSON.stringify(formData.formFields));
@@ -564,6 +565,7 @@ const EventModal = ({
           </Box>
 
           {/* Show QR on Badge Toggle */}
+
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <FormControlLabel
               control={
@@ -581,6 +583,74 @@ const EventModal = ({
               label={t.showQrOnBadgeToggle}
               sx={{ alignSelf: "start" }}
             />
+          </Box>
+
+          {/* Default Language Selector */}
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+            <Box
+              onClick={() =>
+                setFormData((prev) => ({
+                  ...prev,
+                  defaultLanguage: prev.defaultLanguage === "en" ? "ar" : "en",
+                }))
+              }
+              sx={{
+                width: 64,
+                height: 32,
+                borderRadius: 32,
+                backgroundColor: "background.paper",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                px: 1,
+                cursor: "pointer",
+                overflow: "hidden",
+                boxShadow: `
+        2px 2px 6px rgba(0, 0, 0, 0.15),
+        -2px -2px 6px rgba(255, 255, 255, 0.5),
+        inset 2px 2px 5px rgba(0, 0, 0, 0.2),
+        inset -2px -2px 5px rgba(255, 255, 255, 0.7)
+      `,
+                position: "relative",
+              }}
+            >
+              <Typography
+                variant="caption"
+                sx={{
+                  fontWeight: 600,
+                  color: formData.defaultLanguage === "en" ? "#fff" : "text.secondary",
+                  zIndex: 2,
+                  transition: "color 0.3s",
+                }}
+              >
+                EN
+              </Typography>
+              <Typography
+                variant="caption"
+                sx={{
+                  fontWeight: 600,
+                  color: formData.defaultLanguage === "ar" ? "#fff" : "text.secondary",
+                  zIndex: 2,
+                  transition: "color 0.3s",
+                }}
+              >
+                AR
+              </Typography>
+              <Box
+                sx={{
+                  position: "absolute",
+                  width: 28,
+                  height: 28,
+                  borderRadius: 999,
+                  top: 2,
+                  left: formData.defaultLanguage === "ar" ? 34 : 2,
+                  backgroundColor: "#1976d2",
+                  zIndex: 1,
+                  boxShadow: "0 4px 8px rgba(0, 0, 0, 0.3)",
+                  transition: "left 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)",
+                }}
+              />
+            </Box>
           </Box>
 
           {/* Logo Upload */}
@@ -935,60 +1005,60 @@ const EventModal = ({
 
                       {(field.inputType === "radio" ||
                         field.inputType === "list") && (
-                        <Box>
-                          <Typography variant="subtitle2">
-                            {t.options}
-                          </Typography>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              flexWrap: "wrap",
-                              gap: 1,
-                              mb: 1,
-                            }}
-                          >
-                            {field.values.map((option, i) => (
-                              <Chip
-                                key={i}
-                                label={option}
-                                onDelete={() => {
-                                  const updated = [...field.values];
-                                  updated.splice(i, 1);
-                                  handleFormFieldChange(
-                                    index,
-                                    "values",
-                                    updated
-                                  );
-                                }}
-                                color="primary"
-                                variant="outlined"
-                              />
-                            ))}
-                          </Box>
-                          <TextField
-                            placeholder={t.optionPlaceholder}
-                            value={field._temp || ""}
-                            onChange={(e) => {
-                              const newValue = e.target.value;
-                              if (newValue.endsWith(",")) {
-                                const option = newValue.slice(0, -1).trim();
-                                if (option && !field.values.includes(option)) {
-                                  const updated = [...field.values, option];
-                                  handleFormFieldChange(
-                                    index,
-                                    "values",
-                                    updated
-                                  );
+                          <Box>
+                            <Typography variant="subtitle2">
+                              {t.options}
+                            </Typography>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                flexWrap: "wrap",
+                                gap: 1,
+                                mb: 1,
+                              }}
+                            >
+                              {field.values.map((option, i) => (
+                                <Chip
+                                  key={i}
+                                  label={option}
+                                  onDelete={() => {
+                                    const updated = [...field.values];
+                                    updated.splice(i, 1);
+                                    handleFormFieldChange(
+                                      index,
+                                      "values",
+                                      updated
+                                    );
+                                  }}
+                                  color="primary"
+                                  variant="outlined"
+                                />
+                              ))}
+                            </Box>
+                            <TextField
+                              placeholder={t.optionPlaceholder}
+                              value={field._temp || ""}
+                              onChange={(e) => {
+                                const newValue = e.target.value;
+                                if (newValue.endsWith(",")) {
+                                  const option = newValue.slice(0, -1).trim();
+                                  if (option && !field.values.includes(option)) {
+                                    const updated = [...field.values, option];
+                                    handleFormFieldChange(
+                                      index,
+                                      "values",
+                                      updated
+                                    );
+                                  }
+                                  handleFormFieldChange(index, "_temp", "");
+                                } else {
+                                  handleFormFieldChange(index, "_temp", newValue);
                                 }
-                                handleFormFieldChange(index, "_temp", "");
-                              } else {
-                                handleFormFieldChange(index, "_temp", newValue);
-                              }
-                            }}
-                            fullWidth
-                          />
-                        </Box>
-                      )}
+                              }}
+                              fullWidth
+                            />
+                          </Box>
+                        )}
 
                       <Box
                         sx={{ display: "flex", alignItems: "center", gap: 2 }}
@@ -1083,8 +1153,8 @@ const EventModal = ({
               ? t.updating
               : t.creating
             : initialValues
-            ? t.update
-            : t.create}
+              ? t.update
+              : t.create}
         </Button>
       </DialogActions>
     </Dialog>
