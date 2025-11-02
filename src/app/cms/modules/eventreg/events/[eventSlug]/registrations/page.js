@@ -36,6 +36,8 @@ import {
   getAllPublicRegistrationsByEvent,
   downloadSampleExcel,
   uploadRegistrations,
+  getUnsentCount,
+  sendBulkEmails,
 } from "@/services/eventreg/registrationService";
 import { getPublicEventBySlug } from "@/services/eventreg/eventService";
 
@@ -98,6 +100,12 @@ const translations = {
     apply: "Apply",
     clear: "Clear",
     filterRegistrations: "Filter Registrations",
+    sendBulkEmails: "Send Bulk Emails",
+    sendingEmails: "Sending Emails...",
+    confirmBulkEmails:
+      "Are you sure you want to send {count} bulk emails for this event?",
+    emailSent: "Email Sent",
+    emailNotSent: "Email Not Sent",
   },
   ar: {
     title: "تفاصيل الحدث",
@@ -144,6 +152,12 @@ const translations = {
     apply: "تطبيق",
     clear: "مسح",
     filterRegistrations: "تصفية التسجيلات",
+    sendBulkEmails: "إرسال رسائل البريد الإلكتروني الجماعية",
+    sendingEmails: "جاري إرسال الرسائل...",
+    confirmBulkEmails:
+      "هل أنت متأكد أنك تريد إرسال {count} رسالة بريد إلكتروني جماعية لهذا الحدث؟",
+    emailSent: "تم الإرسال",
+    emailNotSent: "لم يتم الإرسال",
   },
 };
 
@@ -172,6 +186,7 @@ export default function ViewRegistrations() {
   const [fieldMetaMap, setFieldMetaMap] = useState({});
   const [allRegistrations, setAllRegistrations] = useState([]);
   const [totalRegistrations, setTotalRegistrations] = useState(0);
+  const [unsentEmailCount, setUnsentEmailCount] = useState(0);
 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
@@ -183,13 +198,15 @@ export default function ViewRegistrations() {
   const [selectedRegistration, setSelectedRegistration] = useState(null);
   const [exportLoading, setExportLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(null);
 
   const [rawSearch, setRawSearch] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
   const [filterModalOpen, setFilterModalOpen] = useState(false);
   const [filters, setFilters] = useState(BASE_DATE_FILTERS);
+
+  const [sendingEmails, setSendingEmails] = useState(false);
+  const [confirmEmailDialogOpen, setConfirmEmailDialogOpen] = useState(false);
 
   useEffect(() => {
     if (eventSlug) fetchData();
@@ -203,20 +220,30 @@ export default function ViewRegistrations() {
     return () => clearTimeout(id);
   }, [rawSearch]);
 
-  const { progress } = useEventRegSocket({
+  const { uploadProgress, emailProgress } = useEventRegSocket({
     eventId: eventDetails?._id,
-    onProgress: (data) => {
-      setUploadProgress(data);
-      if (data.uploaded === data.total) {
-        setTimeout(() => setUploadProgress(null), 2000);
-      }
-    },
   });
+
+  const handleSendBulkEmails = async () => {
+    setConfirmEmailDialogOpen(false);
+    setSendingEmails(true);
+    try {
+      await sendBulkEmails(eventSlug);
+    } catch (err) {
+      console.error("Bulk email send failed:", err);
+    } finally {
+      fetchData();
+      setUnsentEmailCount(0);
+      setSendingEmails(false);
+    }
+  };
 
   const fetchData = async () => {
     setLoading(true);
 
     const evRes = await getPublicEventBySlug(eventSlug);
+    const unsentRes = await getUnsentCount(eventSlug);
+    setUnsentEmailCount(unsentRes?.unsentCount || 0);
 
     const fieldsLocal =
       !evRes?.error && evRes.formFields?.length
@@ -524,7 +551,7 @@ export default function ViewRegistrations() {
             /"/g,
             `""`
           )}"`,
-          `"${staffType}"` 
+          `"${staffType}"`
         );
 
         lines.push(row.join(`,`));
@@ -588,69 +615,91 @@ export default function ViewRegistrations() {
             {t.description}
           </Typography>
         </Box>
-
-        {/* Right side: action buttons */}
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          spacing={2}
-          sx={{
-            width: { xs: "100%", sm: "auto" },
-            gap: dir === "rtl" ? 2 : 1.5,
-          }}
+      </Stack>
+      {/* Right side: action buttons */}
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
+        spacing={2}
+        sx={{
+          width: { xs: "100%", sm: "auto" },
+          gap: dir === "rtl" ? 1 : 0,
+        }}
+      >
+        <Button
+          variant="outlined"
+          startIcon={<ICONS.download />}
+          onClick={handleDownloadSample}
+          sx={getStartIconSpacing(dir)}
         >
-          <Button
-            variant="outlined"
-            startIcon={<ICONS.download />}
-            onClick={handleDownloadSample}
-            sx={getStartIconSpacing(dir)}
-          >
-            {t.downloadSample}
-          </Button>
+          {t.downloadSample}
+        </Button>
 
+        <Button
+          variant="outlined"
+          component="label"
+          startIcon={
+            uploading ? <CircularProgress size={20} /> : <ICONS.upload />
+          }
+          disabled={uploading}
+          sx={getStartIconSpacing(dir)}
+        >
+          {uploading && uploadProgress
+            ? `${t.uploading} ${uploadProgress.uploaded}/${uploadProgress.total}`
+            : uploading
+            ? t.uploading
+            : t.uploadFile}
+          <input
+            type="file"
+            hidden
+            accept=".xlsx,.xls"
+            onChange={handleUpload}
+          />
+        </Button>
+
+        {totalRegistrations > 0 && (
           <Button
-            variant="outlined"
-            component="label"
+            variant="contained"
+            color="secondary"
+            disabled={sendingEmails}
             startIcon={
-              uploading ? <CircularProgress size={20} /> : <ICONS.upload />
+              sendingEmails ? (
+                <CircularProgress size={20} color="inherit" />
+              ) : (
+                <ICONS.email />
+              )
             }
-            disabled={uploading}
+            onClick={() => setConfirmEmailDialogOpen(true)}
             sx={getStartIconSpacing(dir)}
           >
-            {uploading && uploadProgress
-              ? `${t.uploading} ${uploadProgress.uploaded}/${uploadProgress.total}`
-              : uploading
-              ? t.uploading
-              : t.uploadFile}
-            <input
-              type="file"
-              hidden
-              accept=".xlsx,.xls"
-              onChange={handleUpload}
-            />
+            {sendingEmails && emailProgress
+              ? `${t.sendingEmails} ${emailProgress.sent}/${unsentEmailCount}`
+              : sendingEmails
+              ? t.sendingEmails
+              : t.sendBulkEmails}
           </Button>
+        )}
 
-          {totalRegistrations > 0 && (
-            <Button
-              variant="contained"
-              onClick={handleExportRegs}
-              disabled={exportLoading}
-              startIcon={
-                exportLoading ? (
-                  <CircularProgress size={20} color="inherit" />
-                ) : (
-                  <ICONS.download />
-                )
-              }
-              sx={getStartIconSpacing(dir)}
-            >
-              {exportLoading
-                ? t.exporting
-                : searchTerm || Object.keys(filters).some((k) => filters[k])
-                ? t.exportFiltered
-                : t.exportAll}
-            </Button>
-          )}
-        </Stack>
+        {totalRegistrations > 0 && (
+          <Button
+            variant="contained"
+            onClick={handleExportRegs}
+            disabled={exportLoading}
+            startIcon={
+              exportLoading ? (
+                <CircularProgress size={20} color="inherit" />
+              ) : (
+                <ICONS.download />
+              )
+            }
+            sx={getStartIconSpacing(dir)}
+          >
+            {exportLoading
+              ? t.exporting
+              : searchTerm || Object.keys(filters).some((k) => filters[k])
+              ? t.exportFiltered
+              : t.exportAll}
+          </Button>
+        )}
       </Stack>
 
       <Divider sx={{ my: 3 }} />
@@ -993,6 +1042,39 @@ export default function ViewRegistrations() {
                         </Box>
                       </Typography>
                     </Stack>
+                    {/* Email Sent Status */}
+                    <Stack
+                      direction="row"
+                      alignItems="center"
+                      spacing={0.6}
+                      sx={{ mt: 0.3 }}
+                    >
+                      {reg.emailSent ? (
+                        <>
+                          <ICONS.checkCircle
+                            sx={{ fontSize: 20, color: "success.main" }}
+                          />
+                          <Typography
+                            variant="caption"
+                            sx={{ color: "success.main", fontWeight: 500 }}
+                          >
+                            {t.emailSent || "Email Sent"}
+                          </Typography>
+                        </>
+                      ) : (
+                        <>
+                          <ICONS.checkCircleOutline
+                            sx={{ fontSize: 20, color: "warning.main" }}
+                          />
+                          <Typography
+                            variant="caption"
+                            sx={{ color: "warning.main", fontWeight: 500 }}
+                          >
+                            {t.emailNotSent || "Not Sent"}
+                          </Typography>
+                        </>
+                      )}
+                    </Stack>
                   </Box>
 
                   {/* Dynamic Fields */}
@@ -1112,6 +1194,20 @@ export default function ViewRegistrations() {
         message={t.deleteMessage}
         confirmButtonText={t.delete}
         confirmButtonIcon={<ICONS.delete />}
+      />
+
+      <ConfirmationDialog
+        open={confirmEmailDialogOpen}
+        onClose={() => setConfirmEmailDialogOpen(false)}
+        onConfirm={handleSendBulkEmails}
+        title={t.sendBulkEmails}
+        message={t.confirmBulkEmails.replace(
+          "{count}",
+          unsentEmailCount.toString()
+        )}
+        confirmButtonText={t.sendBulkEmails}
+        confirmButtonIcon={<ICONS.email />}
+        confirmButtonColor="secondary"
       />
 
       <WalkInModal

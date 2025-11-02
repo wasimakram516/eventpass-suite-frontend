@@ -1,24 +1,39 @@
 import { useState, useMemo, useCallback } from "react";
 import useSocket from "@/utils/useSocket";
 
-const useEventRegSocket = ({ eventId, onProgress }) => {
-  const [progress, setProgress] = useState({ uploaded: 0, total: 0 });
+const useEventRegSocket = ({ eventId, onUploadProgress, onEmailProgress } = {}) => {
+  const [uploadProgress, setUploadProgress] = useState({ uploaded: 0, total: 0 });
+  const [emailProgress, setEmailProgress] = useState({ sent: 0, total: 0 });
 
-  // stable handler
-  const handleProgress = useCallback(
+  // ---- Upload Progress Handler ----
+  const handleUploadProgress = useCallback(
     (data) => {
       if (data.eventId === eventId) {
-        setProgress({ uploaded: data.uploaded, total: data.total });
-        if (onProgress) onProgress(data);
+        setUploadProgress({ uploaded: data.uploaded, total: data.total });
+        if (onUploadProgress) onUploadProgress(data);
       }
     },
-    [eventId, onProgress]
+    [eventId, onUploadProgress]
   );
 
-  // stable events object
+  // ---- Email Progress Handler ----
+  const handleEmailProgress = useCallback(
+    (data) => {
+      if (data.eventId === eventId) {
+        setEmailProgress({ sent: data.sent, total: data.total });
+        if (onEmailProgress) onEmailProgress(data);
+      }
+    },
+    [eventId, onEmailProgress]
+  );
+
+  // ---- Register socket events ----
   const events = useMemo(
-    () => ({ registrationUploadProgress: handleProgress }),
-    [handleProgress]
+    () => ({
+      registrationUploadProgress: handleUploadProgress,
+      registrationEmailProgress: handleEmailProgress,
+    }),
+    [handleUploadProgress, handleEmailProgress]
   );
 
   const { socket, connected, connectionError } = useSocket(events);
@@ -27,7 +42,8 @@ const useEventRegSocket = ({ eventId, onProgress }) => {
     socket,
     connected,
     connectionError,
-    progress,
+    uploadProgress,
+    emailProgress,
   };
 };
 

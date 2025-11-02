@@ -7,6 +7,25 @@ export const createRegistration = withApiHandler(async (payload) => {
   return data;
 });
 
+// Get count of unsent registration emails for an event (CMS admin use)
+export const getUnsentCount = withApiHandler(async (eventSlug) => {
+  const { data } = await api.get(
+    `/eventreg/registrations/event/${eventSlug}/unsent-count`
+  );
+  return data;
+});
+
+// Send bulk registration emails for an event (CMS admin use)
+export const sendBulkEmails = withApiHandler(
+  async (slug) => {
+    const { data } = await api.post(
+      `/eventreg/registrations/event/${slug}/bulk-email`
+    );
+    return data;
+  },
+  { showSuccess: true }
+);
+
 // Verify registration by QR token (Staff use)
 export const verifyRegistrationByToken = withApiHandler(async (token) => {
   const { data } = await api.get(
@@ -19,9 +38,9 @@ export const verifyRegistrationByToken = withApiHandler(async (token) => {
 export const downloadSampleExcel = async (slug) => {
   const response = await api.get(
     `/eventreg/registrations/event/${slug}/sample-excel`,
-    { responseType: "blob" } 
+    { responseType: "blob" }
   );
-  return response.data; 
+  return response.data;
 };
 
 // Upload filled Excel
