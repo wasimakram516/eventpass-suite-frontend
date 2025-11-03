@@ -23,7 +23,24 @@ export async function exportAllBadges(registrations = [], eventDetails) {
       {regs.map((r) => {
         const data = {
           fullName:
-            r.customFields?.["Full Name"] || r.fullName || "Unnamed Visitor",
+            r.customFields?.["Full Name"] ||
+            r.customFields?.["fullName"] ||
+            r.customFields?.["Name"] ||
+            r.customFields?.["name"] ||
+            (
+              (r.customFields?.["First Name"] ||
+                r.customFields?.["firstName"] ||
+                r.customFields?.["FirstName"] ||
+                "") +
+              " " +
+              (r.customFields?.["Last Name"] ||
+                r.customFields?.["lastName"] ||
+                r.customFields?.["LastName"] ||
+                "")
+            ).trim() ||
+            r.fullName ||
+            "Unnamed Visitor",
+
           company:
             r.customFields?.["Company"] ||
             r.customFields?.["Institution"] ||
@@ -33,6 +50,13 @@ export async function exportAllBadges(registrations = [], eventDetails) {
             r.company ||
             eventDetails?.name ||
             "",
+          title:
+            r.customFields?.["Title"] ||
+            r.customFields?.["Position"] ||
+            r.customFields?.["position"] ||
+            r.title ||
+            "",
+          badgeIdentifier: r.badgeIdentifier || "",
 
           token: r.token,
           showQrOnBadge: eventDetails?.showQrOnBadge ?? true,

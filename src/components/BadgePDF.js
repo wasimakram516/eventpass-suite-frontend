@@ -57,13 +57,12 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: "bold",
     color: "#0077b6",
-    marginTop: 3,
     letterSpacing: 0.7,
     textAlign: "center",
   },
   name: { fontSize: 18, fontWeight: "bold", color: "#000" },
+  company: { fontSize: 14, color: "#000", marginTop: 1 },
   title: { fontSize: 11, color: "#444", marginTop: 4 },
-  company: { fontSize: 14, color: "#000", marginTop: 3 },
   badgeIdentifier: {
     fontSize: 14,
     fontWeight: "bold",
@@ -83,8 +82,8 @@ export default function BadgePDF({ data, qrCodeDataUrl, single = true }) {
     <Page size={[A6_WIDTH, A6_HEIGHT]} style={styles.page}>
       <View style={styles.contentArea}>
         {data.fullName && <Text style={styles.name}>{data.fullName}</Text>}
-        {data.title && <Text style={styles.title}>{data.title}</Text>}
         {data.company && <Text style={styles.company}>{data.company}</Text>}
+        {data.title && <Text style={styles.title}>{data.title}</Text>}
         {data.badgeIdentifier && (
           <Text style={styles.badgeIdentifier}>{data.badgeIdentifier}</Text>
         )}
