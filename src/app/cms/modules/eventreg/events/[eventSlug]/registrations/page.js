@@ -581,7 +581,7 @@ export default function ViewRegistrations() {
   const handleExportBadges = async () => {
     try {
       setExportingBadges(true);
-      await exportAllBadges(filteredRegistrations, eventDetails);
+      await exportAllBadges(paginatedRegistrations, eventDetails);
     } catch (err) {
       console.error("Badge export failed:", err);
     } finally {
@@ -731,7 +731,7 @@ export default function ViewRegistrations() {
             onClick={handleExportBadges}
             sx={getStartIconSpacing(dir)}
           >
-            {exportingBadges ? t.exporting : t.exportBadges}
+            {exportingBadges ? t.exporting : `${t.exportBadges} (Page ${page})`}
           </Button>
         )}
       </Stack>
