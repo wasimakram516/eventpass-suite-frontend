@@ -111,6 +111,7 @@ const translations = {
     emailNotSent: "Email Not Sent",
     exportBadges: "Export Badges",
     editRegistration: "Edit Registration",
+    copyToken: "Copy Token",
   },
   ar: {
     title: "تفاصيل الحدث",
@@ -165,6 +166,7 @@ const translations = {
     emailNotSent: "لم يتم الإرسال",
     exportbadges: "تصدير الشارات",
     editRegistration: "تعديل التسجيل",
+    copyToken: "نسخ الرمز",
   },
 };
 
@@ -217,8 +219,7 @@ export default function ViewRegistrations() {
   const [confirmEmailDialogOpen, setConfirmEmailDialogOpen] = useState(false);
 
   const [editModalOpen, setEditModalOpen] = useState(false);
-const [editingReg, setEditingReg] = useState(null);
-
+  const [editingReg, setEditingReg] = useState(null);
 
   useEffect(() => {
     if (eventSlug) fetchData();
@@ -237,21 +238,20 @@ const [editingReg, setEditingReg] = useState(null);
   });
 
   const handleSaveEdit = async (updatedFields) => {
-  const res = await updateRegistration(editingReg._id, updatedFields);
-  if (!res?.error) {
-    setAllRegistrations((prev) =>
-      prev.map((r) =>
-        r._id === editingReg._id
-          ? { ...r, customFields: { ...r.customFields, ...updatedFields } }
-          : r
-      )
-    );
-    setEditModalOpen(false);
-  } else {
-    alert(res.error);
-  }
-};
-
+    const res = await updateRegistration(editingReg._id, updatedFields);
+    if (!res?.error) {
+      setAllRegistrations((prev) =>
+        prev.map((r) =>
+          r._id === editingReg._id
+            ? { ...r, customFields: { ...r.customFields, ...updatedFields } }
+            : r
+        )
+      );
+      setEditModalOpen(false);
+    } else {
+      alert(res.error);
+    }
+  };
 
   const handleSendBulkEmails = async () => {
     setConfirmEmailDialogOpen(false);
@@ -1063,7 +1063,7 @@ const [editingReg, setEditingReg] = useState(null);
                     }}
                   >
                     <Stack spacing={0.6}>
-                      {/* Token */}
+                      {/* Token (copyable) */}
                       <Stack
                         direction="row"
                         alignItems="center"
@@ -1072,13 +1072,58 @@ const [editingReg, setEditingReg] = useState(null);
                         <ICONS.qrcode
                           sx={{ fontSize: 28, color: "primary.main" }}
                         />
-                        <Typography
-                          variant="subtitle1"
-                          fontWeight="bold"
-                          sx={wrapTextBox}
+
+                        <Box
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 1,
+                            bgcolor: "rgba(0,0,0,0.04)",
+                            px: 1.2,
+                            py: 0.5,
+                            borderRadius: 1.5,
+                            flexWrap: "wrap",
+                            flex: 1,
+                          }}
                         >
-                          {t.token}: {reg.token}
-                        </Typography>
+                          <Typography
+                            variant="subtitle2"
+                            sx={{ fontWeight: 600, color: "text.secondary" }}
+                          >
+                            {t.token}:
+                          </Typography>
+
+                          <Typography
+                            variant="subtitle1"
+                            fontWeight="bold"
+                            sx={{
+                              fontFamily: "monospace",
+                              wordBreak: "break-all",
+                              color: "primary.main",
+                            }}
+                          >
+                            {reg.token}
+                          </Typography>
+
+                          <Tooltip title={t.copyToken}>
+                            <IconButton
+                              size="small"
+                              onClick={() => {
+                                navigator.clipboard.writeText(reg.token);
+                              }}
+                              sx={{
+                                p: 0.5,
+                                color: "primary.main",
+                                "&:hover": {
+                                  backgroundColor: "transparent",
+                                  opacity: 0.8,
+                                },
+                              }}
+                            >
+                              <ICONS.copy fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
                       </Stack>
 
                       {/* Date with icon */}
@@ -1211,17 +1256,16 @@ const [editingReg, setEditingReg] = useState(null);
                     </Tooltip>
 
                     <Tooltip title={t.editRegistration}>
-  <IconButton
-    color="primary"
-    onClick={() => {
-      setEditingReg(reg);
-      setEditModalOpen(true);
-    }}
-  >
-    <ICONS.edit fontSize="small" />
-  </IconButton>
-</Tooltip>
-
+                      <IconButton
+                        color="primary"
+                        onClick={() => {
+                          setEditingReg(reg);
+                          setEditModalOpen(true);
+                        }}
+                      >
+                        <ICONS.edit fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
 
                     <Tooltip title={t.deleteRecord}>
                       <IconButton
@@ -1257,13 +1301,13 @@ const [editingReg, setEditingReg] = useState(null);
         </>
       )}
 
-<EditRegistrationModal
-  open={editModalOpen}
-  onClose={() => setEditModalOpen(false)}
-  registration={editingReg}
-  formFields={eventDetails.formFields || []}
-  onSave={handleSaveEdit}
-/>
+      <EditRegistrationModal
+        open={editModalOpen}
+        onClose={() => setEditModalOpen(false)}
+        registration={editingReg}
+        formFields={eventDetails.formFields || []}
+        onSave={handleSaveEdit}
+      />
 
       <ConfirmationDialog
         open={deleteDialogOpen}
