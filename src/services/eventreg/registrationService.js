@@ -85,3 +85,12 @@ export const deleteRegistration = withApiHandler(
   },
   { showSuccess: true }
 );
+
+// Update a registration by ID (CMS use)
+export const updateRegistration = withApiHandler(
+  async (id, fields) => {
+    const { data } = await api.put(`/eventreg/registrations/${id}`, { fields });
+    return data;
+  },
+  { showSuccess: true }
+);

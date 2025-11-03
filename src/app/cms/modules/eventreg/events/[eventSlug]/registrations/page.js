@@ -38,6 +38,7 @@ import {
   uploadRegistrations,
   getUnsentCount,
   sendBulkEmails,
+  updateRegistration,
 } from "@/services/eventreg/registrationService";
 import { getPublicEventBySlug } from "@/services/eventreg/eventService";
 
@@ -53,6 +54,7 @@ import NoDataAvailable from "@/components/NoDataAvailable";
 import { wrapTextBox } from "@/utils/wrapTextStyles";
 import useEventRegSocket from "@/hooks/modules/eventReg/useEventRegSocket";
 import { exportAllBadges } from "@/utils/exportBadges";
+import EditRegistrationModal from "@/components/EditRegistrationModal";
 
 const translations = {
   en: {
@@ -108,6 +110,7 @@ const translations = {
     emailSent: "Email Sent",
     emailNotSent: "Email Not Sent",
     exportBadges: "Export Badges",
+    editRegistration: "Edit Registration",
   },
   ar: {
     title: "تفاصيل الحدث",
@@ -161,6 +164,7 @@ const translations = {
     emailSent: "تم الإرسال",
     emailNotSent: "لم يتم الإرسال",
     exportbadges: "تصدير الشارات",
+    editRegistration: "تعديل التسجيل",
   },
 };
 
@@ -212,6 +216,10 @@ export default function ViewRegistrations() {
   const [sendingEmails, setSendingEmails] = useState(false);
   const [confirmEmailDialogOpen, setConfirmEmailDialogOpen] = useState(false);
 
+  const [editModalOpen, setEditModalOpen] = useState(false);
+const [editingReg, setEditingReg] = useState(null);
+
+
   useEffect(() => {
     if (eventSlug) fetchData();
   }, [eventSlug]);
@@ -227,6 +235,23 @@ export default function ViewRegistrations() {
   const { uploadProgress, emailProgress } = useEventRegSocket({
     eventId: eventDetails?._id,
   });
+
+  const handleSaveEdit = async (updatedFields) => {
+  const res = await updateRegistration(editingReg._id, updatedFields);
+  if (!res?.error) {
+    setAllRegistrations((prev) =>
+      prev.map((r) =>
+        r._id === editingReg._id
+          ? { ...r, customFields: { ...r.customFields, ...updatedFields } }
+          : r
+      )
+    );
+    setEditModalOpen(false);
+  } else {
+    alert(res.error);
+  }
+};
+
 
   const handleSendBulkEmails = async () => {
     setConfirmEmailDialogOpen(false);
@@ -1185,6 +1210,19 @@ export default function ViewRegistrations() {
                       </IconButton>
                     </Tooltip>
 
+                    <Tooltip title={t.editRegistration}>
+  <IconButton
+    color="primary"
+    onClick={() => {
+      setEditingReg(reg);
+      setEditModalOpen(true);
+    }}
+  >
+    <ICONS.edit fontSize="small" />
+  </IconButton>
+</Tooltip>
+
+
                     <Tooltip title={t.deleteRecord}>
                       <IconButton
                         color="error"
@@ -1218,6 +1256,14 @@ export default function ViewRegistrations() {
           </Box>
         </>
       )}
+
+<EditRegistrationModal
+  open={editModalOpen}
+  onClose={() => setEditModalOpen(false)}
+  registration={editingReg}
+  formFields={eventDetails.formFields || []}
+  onSave={handleSaveEdit}
+/>
 
       <ConfirmationDialog
         open={deleteDialogOpen}
