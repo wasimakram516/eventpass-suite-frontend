@@ -12,7 +12,7 @@ const segmentMap = {
     icon: <ICONS.home fontSize="small" sx={{ mr: 0.5 }} />,
   },
   downloads:{
-    label: "Files to Download",
+    label: "Manage Files",
     icon: <ICONS.cloud fontSize="small" sx={{ mr: 0.5 }} />,
   },
   businesses: {

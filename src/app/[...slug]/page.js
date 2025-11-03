@@ -11,16 +11,10 @@ import {
   Card,
   CardContent,
 } from "@mui/material";
-import {
-  InsertDriveFile as FileIcon,
-  PictureAsPdf as PdfIcon,
-  Image as ImageIcon,
-  Movie as VideoIcon,
-  CloudOff as CloudOffIcon,
-  Download as DownloadIcon,
-} from "@mui/icons-material";
+import CloudOffIcon from "@mui/icons-material/CloudOff";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { getFileBySlug } from "@/services/fileResourceService";
+import ICONS from "@/utils/iconUtil";
 
 export default function FileDownloadPage() {
   const params = useParams();
@@ -124,14 +118,14 @@ export default function FileDownloadPage() {
   const isPdf = file?.contentType === "application/pdf";
   const isVideo = file?.contentType?.startsWith("video/");
 
-  const icon = isPdf ? (
-    <PdfIcon sx={{ fontSize: 28, color: "error.main", ml: 1 }} />
+  const fileIcon = isPdf ? (
+    <ICONS.pdf sx={{ fontSize: 40, color: "error.main" }} />
   ) : isImage ? (
-    <ImageIcon sx={{ fontSize: 28, color: "primary.main", ml: 1 }} />
+    <ICONS.image sx={{ fontSize: 40, color: "primary.main" }} />
   ) : isVideo ? (
-    <VideoIcon sx={{ fontSize: 28, color: "secondary.main", ml: 1 }} />
+    <ICONS.video sx={{ fontSize: 40, color: "secondary.main" }} />
   ) : (
-    <FileIcon sx={{ fontSize: 28, color: "text.secondary", ml: 1 }} />
+    <ICONS.files sx={{ fontSize: 40, color: "text.secondary" }} />
   );
 
   const preview = (() => {
@@ -185,7 +179,7 @@ export default function FileDownloadPage() {
           justifyContent: "center",
         }}
       >
-        <FileIcon sx={{ fontSize: 80, color: "text.secondary" }} />
+        <ICONS.files sx={{ fontSize: 80, color: "text.secondary" }} />
       </Box>
     );
   })();
@@ -243,14 +237,14 @@ export default function FileDownloadPage() {
             color="text.primary"
             sx={{ display: "flex", alignItems: "center" }}
           >
-            {icon}
+            {fileIcon}
             {file.title || "File"}
           </Typography>
         </Box>
 
         <Button
           variant="contained"
-          startIcon={<DownloadIcon />}
+          startIcon={<ICONS.download />}
           onClick={handleDownload}
           sx={{ mt: { xs: 1, sm: 0 } }}
         >

@@ -980,8 +980,7 @@ export default function ViewRegistrations() {
               >
                 <Card
                   sx={{
-                    width: "100%",
-                    width: { xs: "100%", sm: 340 },
+                    width: { xs: "100%", sm: 340 }, 
                     height: "100%",
                     borderRadius: 4,
                     overflow: "hidden",

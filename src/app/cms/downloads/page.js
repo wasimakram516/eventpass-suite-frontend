@@ -10,15 +10,10 @@ import {
   CircularProgress,
   Divider,
   IconButton,
+  Tooltip,
 } from "@mui/material";
-import BusinessIcon from "@mui/icons-material/Business";
-import {
-  CloudUpload as UploadIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  InsertDriveFile as FileIcon,
-  Share as ShareIcon,
-} from "@mui/icons-material";
+
+import { Dialog, DialogContent } from "@mui/material";
 
 import BreadcrumbsNav from "@/components/BreadcrumbsNav";
 import BusinessDrawer from "@/components/BusinessDrawer";
@@ -37,6 +32,7 @@ import FileUploadDialog from "@/components/FileUploadDialog";
 import AppCard from "@/components/cards/AppCard";
 import ShareLinkModal from "@/components/ShareLinkModal";
 import ConfirmationDialog from "@/components/ConfirmationDialog";
+import ICONS from "@/utils/iconUtil";
 
 const translations = {
   en: {
@@ -48,6 +44,7 @@ const translations = {
     title: "Title",
     slug: "Slug",
     type: "Type",
+    preview: "Preview",
     edit: "Edit",
     delete: "Delete",
     share: "Share",
@@ -65,6 +62,7 @@ const translations = {
     title: "العنوان",
     slug: "المعرف",
     type: "النوع",
+    preview: "معاينة",
     edit: "تعديل",
     delete: "حذف",
     share: "مشاركة",
@@ -81,6 +79,7 @@ export default function FileStorePage() {
 
   const [allBusinesses, setAllBusinesses] = useState([]);
   const [selectedBusiness, setSelectedBusiness] = useState(null);
+  const [previewFile, setPreviewFile] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -197,7 +196,7 @@ export default function FileStorePage() {
               <Button
                 variant="outlined"
                 onClick={() => setDrawerOpen(true)}
-                startIcon={<BusinessIcon />}
+                startIcon={<ICONS.business />}
               >
                 {t.selectBusiness}
               </Button>
@@ -205,7 +204,7 @@ export default function FileStorePage() {
             {selectedBusiness && (
               <Button
                 variant="contained"
-                startIcon={<UploadIcon />}
+                startIcon={<ICONS.upload />}
                 onClick={() => {
                   setEditingFile(null);
                   setOpenDialog(true);
@@ -229,70 +228,111 @@ export default function FileStorePage() {
           <NoDataAvailable />
         ) : (
           <Grid container spacing={2}>
-            {files.map((f) => (
-              <Grid item xs={12} sm={6} md={4} lg={3} key={f._id}>
-                <AppCard
+            {files.map((f) => {
+              const isPdf = f.contentType === "application/pdf";
+              const isImage = f.contentType?.startsWith("image/");
+              const isVideo = f.contentType?.startsWith("video/");
+
+              const fileIcon = isPdf ? (
+                <ICONS.pdf sx={{ fontSize: 40, color: "error.main" }} />
+              ) : isImage ? (
+                <ICONS.image sx={{ fontSize: 40, color: "primary.main" }} />
+              ) : isVideo ? (
+                <ICONS.video sx={{ fontSize: 40, color: "secondary.main" }} />
+              ) : (
+                <ICONS.files sx={{ fontSize: 40, color: "text.secondary" }} />
+              );
+
+              return (
+                <Grid
+                  item
+                  xs={12}
+                  sm={6}
+                  md={4}
+                  lg={3}
+                  key={f._id}
                   sx={{
-                    p: 2,
-                    height: "100%",
-                    justifyContent: "space-between",
-                    width: { xs: "100%", sm: 360 },
+                    display: { xs: "flex", sm: "block" },
+                    width: { xs: "100%", sm: "auto" },
                   }}
                 >
-                  <Box>
-                    <FileIcon sx={{ fontSize: 40, color: "primary.main" }} />
-                    <Typography variant="subtitle1" fontWeight="bold" mt={1}>
-                      {f.title}
-                    </Typography>
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      noWrap
-                      title={f.slug}
-                    >
-                      {f.slug}
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      {f.contentType}
-                    </Typography>
-                  </Box>
-
-                  <Box
+                  <AppCard
                     sx={{
-                      display: "flex",
-                      justifyContent: "flex-end",
-                      mt: 2,
-                      gap: 1,
+                      p: 2,
+                      height: "100%",
+                      justifyContent: "space-between",
+                      width: { xs: "100%", sm: 340 },
                     }}
                   >
-                    <IconButton
-                      color="primary"
-                      onClick={() => handleShare(f.slug, f.title)}
-                      title={t.share}
-                    >
-                      <ShareIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton
-                      color="primary"
-                      onClick={() => {
-                        setEditingFile(f);
-                        setOpenDialog(true);
+                    <Box>
+                      {fileIcon}
+                      <Typography variant="subtitle1" fontWeight="bold" mt={1}>
+                        {f.title}
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        noWrap
+                        title={f.slug}
+                      >
+                        {f.slug}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {f.contentType}
+                      </Typography>
+                    </Box>
+
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "flex-end",
+                        mt: 2,
+                        gap: 1,
                       }}
-                      title={t.edit}
                     >
-                      <EditIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton
-                      color="error"
-                      onClick={() => handleDelete(f._id)}
-                      title={t.delete}
-                    >
-                      <DeleteIcon fontSize="small" />
-                    </IconButton>
-                  </Box>
-                </AppCard>
-              </Grid>
-            ))}
+                      <Tooltip title={t.preview} arrow>
+                        <IconButton
+                          color="primary"
+                          onClick={() => setPreviewFile(f)}
+                        >
+                          <ICONS.view fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+
+                      <Tooltip title={t.edit} arrow>
+                        <IconButton
+                          color="primary"
+                          onClick={() => {
+                            setEditingFile(f);
+                            setOpenDialog(true);
+                          }}
+                        >
+                          <ICONS.edit fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+
+                      <Tooltip title={t.delete} arrow>
+                        <IconButton
+                          color="error"
+                          onClick={() => handleDelete(f._id)}
+                        >
+                          <ICONS.delete fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+
+                      <Tooltip title={t.share} arrow>
+                        <IconButton
+                          color="primary"
+                          onClick={() => handleShare(f.slug, f.title)}
+                        >
+                          <ICONS.share fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                  </AppCard>
+                </Grid>
+              );
+            })}
           </Grid>
         )}
 
@@ -326,6 +366,81 @@ export default function FileStorePage() {
             confirmButtonIcon={<DeleteIcon />}
             confirmButtonColor="error"
           />
+        )}
+
+        {/* === Global Preview Modal === */}
+        {previewFile && (
+          <Dialog
+            open={Boolean(previewFile)}
+            onClose={() => setPreviewFile(null)}
+            fullWidth
+            maxWidth="md"
+            PaperProps={{
+              sx: {
+                height: "80vh",
+                backgroundColor: "#fff",
+                position: "relative",
+              },
+            }}
+          >
+            <IconButton
+              onClick={() => setPreviewFile(null)}
+              sx={{
+                position: "absolute",
+                top: 10,
+                right: 10,
+                zIndex: 10,
+                backgroundColor: "#fff",
+              }}
+            >
+              <ICONS.close />
+            </IconButton>
+            <DialogContent sx={{ p: 0, height: "100%" }}>
+              {previewFile.contentType?.startsWith("image/") ? (
+                <Box
+                  component="img"
+                  src={previewFile.fileUrl}
+                  alt={previewFile.title}
+                  sx={{ width: "100%", height: "100%", objectFit: "contain" }}
+                />
+              ) : previewFile.contentType?.startsWith("video/") ? (
+                <video
+                  controls
+                  autoPlay
+                  src={previewFile.fileUrl}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    borderRadius: "10px",
+                    background: "#000",
+                  }}
+                />
+              ) : previewFile.contentType === "application/pdf" ? (
+                <iframe
+                  src={`https://docs.google.com/gview?url=${encodeURIComponent(
+                    previewFile.fileUrl
+                  )}&embedded=true`}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    border: "none",
+                    borderRadius: "10px",
+                  }}
+                />
+              ) : (
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    height: "100%",
+                  }}
+                >
+                  <ICONS.files sx={{ fontSize: 80, color: "text.secondary" }} />
+                </Box>
+              )}
+            </DialogContent>
+          </Dialog>
         )}
       </Container>
     </Box>
