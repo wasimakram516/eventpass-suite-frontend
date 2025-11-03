@@ -46,6 +46,7 @@ const translations = {
     badgeIdentifier: "Badge Identifier",
     name: "Name",
     company: "Company",
+    wing: "Wing",
     title: "Title",
     event: "Event",
     scanAnother: "Scan Another",
@@ -78,6 +79,7 @@ const translations = {
     badgeIdentifier: "معرف الشارة",
     name: "الاسم",
     company: "الشركة",
+    wing: "الجناح",
     title: "المسمى الوظيفي",
     event: "الفعالية",
     scanAnother: "مسح رمز آخر",
@@ -484,6 +486,19 @@ export default function VerifyPage() {
                 <ListItemText
                   primary={t.company}
                   secondary={result.company}
+                  primaryTypographyProps={{ fontWeight: 500 }}
+                />
+              </ListItem>
+            )}
+
+            {result.wing && (
+              <ListItem>
+                <ListItemIcon>
+                  <ICONS.business sx={{ color: "text.secondary" }} />
+                </ListItemIcon>
+                <ListItemText
+                  primary={t.wing}
+                  secondary={result.wing}
                   primaryTypographyProps={{ fontWeight: 500 }}
                 />
               </ListItem>
