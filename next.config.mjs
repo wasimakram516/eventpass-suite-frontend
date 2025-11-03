@@ -1,19 +1,33 @@
-export default {
+const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+
   async rewrites() {
     return [
       // Handle explicit language routes
       {
-        source: '/:lang(en|ar)/event/:slug*',
-        destination: '/eventreg/:lang/event/:slug*',
+        source: "/:lang(en|ar)/event/:slug*",
+        destination: "/eventreg/:lang/event/:slug*",
       },
       // Fallback: missing language → default to "en"
       {
-        source: '/event/:slug*',
-        destination: '/eventreg/en/event/:slug*',
+        source: "/event/:slug*",
+        destination: "/eventreg/en/event/:slug*",
       },
     ];
   },
+
+  webpack(config) {
+    config.module.rules.push({
+      test: /\.ttf$/,
+      type: "asset/resource",
+      generator: {
+        filename: "static/fonts/[name][ext]", 
+      },
+    });
+    return config;
+  },
 };
+
+export default nextConfig;

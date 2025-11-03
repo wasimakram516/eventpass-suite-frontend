@@ -6,7 +6,21 @@ import {
   View,
   StyleSheet,
   Image,
+  Font,
 } from "@react-pdf/renderer";
+
+import regularFont from "../fonts/IBMPlexSansArabic-Regular.ttf";
+import mediumFont from "../fonts/IBMPlexSansArabic-Medium.ttf";
+import boldFont from "../fonts/IBMPlexSansArabic-Bold.ttf";
+
+Font.register({
+  family: "IBM Plex Sans Arabic",
+  fonts: [
+    { src: regularFont, fontWeight: "normal" },
+    { src: mediumFont, fontWeight: "500" },
+    { src: boldFont, fontWeight: "bold" },
+  ],
+});
 
 const A6_WIDTH = 297.6;
 const A6_HEIGHT = 419.5;
@@ -16,75 +30,46 @@ const styles = StyleSheet.create({
     width: A6_WIDTH,
     height: A6_HEIGHT,
     backgroundColor: "#ffffff",
+    position: "relative",
+    paddingTop: 120,
+    paddingBottom: 10,
     display: "flex",
     flexDirection: "column",
-    justifyContent: "flex-start",
-    alignItems: "center",
-    paddingTop: 120, // space for top preprinted area
-    paddingBottom: 60, // space for bottom preprinted area
-  },
-
-  contentArea: {
-    flexGrow: 1,
-    width: "100%",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
     justifyContent: "center",
+    alignItems: "center",
+    fontFamily: "IBM Plex Sans Arabic",
+  },
+  contentArea: {
+    width: "100%",
     textAlign: "center",
   },
-
   qrWrapper: {
-    width: "100%",
+    position: "absolute",
+    bottom: 35,
+    left: 25,
+    width: 90,
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 14,
   },
-  qrImage: {
-    width: 110,
-    height: 110,
-  },
+  qrImage: { width: 70, height: 70 },
   token: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: "bold",
     color: "#0077b6",
-    marginTop: 4,
-    letterSpacing: 1,
-  },
-  divider: {
-    borderBottom: "1pt solid #ccc",
-    width: "60%",
-    marginTop: 8,
-    marginBottom: 10,
-  },
-
-  name: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#000",
-    textAlign: "center",
-  },
-  title: {
-    fontSize: 11,
-    color: "#444",
-    marginTop: 4,
-    textAlign: "center",
-  },
-  company: {
-    fontSize: 11,
-    color: "#000",
     marginTop: 3,
+    letterSpacing: 0.7,
     textAlign: "center",
   },
+  name: { fontSize: 18, fontWeight: "bold", color: "#000" },
+  title: { fontSize: 11, color: "#444", marginTop: 4 },
+  company: { fontSize: 14, color: "#000", marginTop: 3 },
   badgeIdentifier: {
     fontSize: 14,
     fontWeight: "bold",
     textTransform: "uppercase",
     color: "#0077b6",
     marginTop: 10,
-    textAlign: "center",
   },
 });
 
@@ -93,27 +78,20 @@ export default function BadgePDF({ data, qrCodeDataUrl }) {
     <Document>
       <Page size={[A6_WIDTH, A6_HEIGHT]} style={styles.page}>
         <View style={styles.contentArea}>
-          {/* QR section (reserved space, even if hidden) */}
-          <View style={styles.qrWrapper}>
-            {data.showQrOnBadge && (
-              <>
-                <Image src={qrCodeDataUrl} style={styles.qrImage} />
-                <Text style={styles.token}>{data.token}</Text>
-                <View style={styles.divider} />
-              </>
-            )}
-          </View>
-
-          {/* Attendee info */}
           {data.fullName && <Text style={styles.name}>{data.fullName}</Text>}
           {data.title && <Text style={styles.title}>{data.title}</Text>}
           {data.company && <Text style={styles.company}>{data.company}</Text>}
-
-          {/* Badge identifier (e.g., Visitor, Sponsor, Exhibitor) */}
           {data.badgeIdentifier && (
             <Text style={styles.badgeIdentifier}>{data.badgeIdentifier}</Text>
           )}
         </View>
+
+        {data.showQrOnBadge && (
+          <View style={styles.qrWrapper}>
+            <Image src={qrCodeDataUrl} style={styles.qrImage} />
+            <Text style={styles.token}>{data.token}</Text>
+          </View>
+        )}
       </Page>
     </Document>
   );
