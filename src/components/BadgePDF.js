@@ -73,26 +73,32 @@ const styles = StyleSheet.create({
   },
 });
 
-export default function BadgePDF({ data, qrCodeDataUrl }) {
-  return (
-    <Document>
-      <Page size={[A6_WIDTH, A6_HEIGHT]} style={styles.page}>
-        <View style={styles.contentArea}>
-          {data.fullName && <Text style={styles.name}>{data.fullName}</Text>}
-          {data.title && <Text style={styles.title}>{data.title}</Text>}
-          {data.company && <Text style={styles.company}>{data.company}</Text>}
-          {data.badgeIdentifier && (
-            <Text style={styles.badgeIdentifier}>{data.badgeIdentifier}</Text>
-          )}
-        </View>
-
-        {data.showQrOnBadge && (
-          <View style={styles.qrWrapper}>
-            <Image src={qrCodeDataUrl} style={styles.qrImage} />
-            <Text style={styles.token}>{data.token}</Text>
-          </View>
+/**
+ * Reusable Badge PDF component
+ * - When `single` = true → wraps with <Document> (for one-off print/download)
+ * - When `single` = false → returns only <Page> (for batch export)
+ */
+export default function BadgePDF({ data, qrCodeDataUrl, single = true }) {
+  const content = (
+    <Page size={[A6_WIDTH, A6_HEIGHT]} style={styles.page}>
+      <View style={styles.contentArea}>
+        {data.fullName && <Text style={styles.name}>{data.fullName}</Text>}
+        {data.title && <Text style={styles.title}>{data.title}</Text>}
+        {data.company && <Text style={styles.company}>{data.company}</Text>}
+        {data.badgeIdentifier && (
+          <Text style={styles.badgeIdentifier}>{data.badgeIdentifier}</Text>
         )}
-      </Page>
-    </Document>
+      </View>
+
+      {data.showQrOnBadge && (
+        <View style={styles.qrWrapper}>
+          <Image src={qrCodeDataUrl} style={styles.qrImage} />
+          <Text style={styles.token}>{data.token}</Text>
+        </View>
+      )}
+    </Page>
   );
+
+  // Wrap in <Document> only if rendering a single badge
+  return single ? <Document>{content}</Document> : content;
 }

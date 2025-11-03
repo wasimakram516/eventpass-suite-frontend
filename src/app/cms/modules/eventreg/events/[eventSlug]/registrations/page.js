@@ -52,6 +52,7 @@ import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import { wrapTextBox } from "@/utils/wrapTextStyles";
 import useEventRegSocket from "@/hooks/modules/eventReg/useEventRegSocket";
+import { exportAllBadges } from "@/utils/exportBadges";
 
 const translations = {
   en: {
@@ -106,6 +107,7 @@ const translations = {
       "Are you sure you want to send {count} bulk emails for this event?",
     emailSent: "Email Sent",
     emailNotSent: "Email Not Sent",
+    exportBadges: "Export Badges",
   },
   ar: {
     title: "تفاصيل الحدث",
@@ -158,6 +160,7 @@ const translations = {
       "هل أنت متأكد أنك تريد إرسال {count} رسالة بريد إلكتروني جماعية لهذا الحدث؟",
     emailSent: "تم الإرسال",
     emailNotSent: "لم يتم الإرسال",
+    exportbadges: "تصدير الشارات",
   },
 };
 
@@ -198,6 +201,7 @@ export default function ViewRegistrations() {
   const [selectedRegistration, setSelectedRegistration] = useState(null);
   const [exportLoading, setExportLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [exportingBadges, setExportingBadges] = useState(false);
 
   const [rawSearch, setRawSearch] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -574,6 +578,17 @@ export default function ViewRegistrations() {
     setExportLoading(false);
   };
 
+  const handleExportBadges = async () => {
+    try {
+      setExportingBadges(true);
+      await exportAllBadges(filteredRegistrations, eventDetails);
+    } catch (err) {
+      console.error("Badge export failed:", err);
+    } finally {
+      setExportingBadges(false);
+    }
+  };
+
   if (loading) {
     return (
       <Box
@@ -698,6 +713,25 @@ export default function ViewRegistrations() {
               : searchTerm || Object.keys(filters).some((k) => filters[k])
               ? t.exportFiltered
               : t.exportAll}
+          </Button>
+        )}
+
+        {totalRegistrations > 0 && (
+          <Button
+            variant="contained"
+            color="primary"
+            disabled={exportingBadges}
+            startIcon={
+              exportingBadges ? (
+                <CircularProgress size={20} color="inherit" />
+              ) : (
+                <ICONS.pdf />
+              )
+            }
+            onClick={handleExportBadges}
+            sx={getStartIconSpacing(dir)}
+          >
+            {exportingBadges ? t.exporting : t.exportBadges}
           </Button>
         )}
       </Stack>
@@ -980,7 +1014,7 @@ export default function ViewRegistrations() {
               >
                 <Card
                   sx={{
-                    width: { xs: "100%", sm: 340 }, 
+                    width: { xs: "100%", sm: 340 },
                     height: "100%",
                     borderRadius: 4,
                     overflow: "hidden",
