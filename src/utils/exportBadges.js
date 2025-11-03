@@ -26,9 +26,14 @@ export async function exportAllBadges(registrations = [], eventDetails) {
             r.customFields?.["Full Name"] || r.fullName || "Unnamed Visitor",
           company:
             r.customFields?.["Company"] ||
+            r.customFields?.["Institution"] ||
+            r.customFields?.["Organization"] ||
+            r.customFields?.["organization"] ||
+            r.customFields?.["institution"] ||
             r.company ||
             eventDetails?.name ||
             "",
+
           token: r.token,
           showQrOnBadge: eventDetails?.showQrOnBadge ?? true,
         };
