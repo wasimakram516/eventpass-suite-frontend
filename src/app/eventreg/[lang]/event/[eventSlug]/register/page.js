@@ -27,15 +27,15 @@ import LanguageSelector from "@/components/LanguageSelector";
 import { createRegistration } from "@/services/eventreg/registrationService";
 import { getPublicEventBySlug } from "@/services/eventreg/eventService";
 import ICONS from "@/utils/iconUtil";
-import { translateText } from "@/services/translationService";
+import { translateTexts } from "@/services/translationService"; // ✅ use batched version
 import Background from "@/components/Background";
 
 export default function Registration() {
   const { eventSlug, lang } = useParams();
   const isArabic = lang === "ar";
   const router = useRouter();
-
   const dir = isArabic ? "rtl" : "ltr";
+
   const t = {
     registerForEvent: isArabic
       ? "التسجيل في الفعالية"
@@ -73,61 +73,32 @@ export default function Registration() {
   const [translatedEvent, setTranslatedEvent] = useState(null);
   const [qrToken, setQrToken] = useState(null);
 
-  // Fetch event
+  // Fetch event + translate event metadata
   useEffect(() => {
     const fetchEvent = async () => {
       const result = await getPublicEventBySlug(eventSlug);
       if (!result?.error) {
         setEvent(result);
-        await translateEventData(result, lang);
       }
       setLoading(false);
     };
     fetchEvent();
   }, [eventSlug, isArabic]);
 
-  const translateEventData = async (eventData, targetLang) => {
-    try {
-      const translationPromises = [
-        translateText(eventData.name, targetLang),
-        translateText(eventData.venue, targetLang),
-      ];
+  
+// Prepare dynamic fields + batch translation for event & form fields
+useEffect(() => {
+  if (!event) return;
 
-      if (eventData.description) {
-        translationPromises.push(translateText(eventData.description, targetLang));
-      }
+  const defaultFields = [
+    { name: "fullName", label: "Full Name", type: "text", required: true },
+    { name: "phone", label: "Phone Number", type: "text", required: true },
+    { name: "email", label: "Email", type: "text", required: true },
+    { name: "company", label: "Company", type: "text", required: false },
+  ];
 
-      const results = await Promise.all(translationPromises);
-
-      const translated = {
-        ...eventData,
-        name: results[0],
-        venue: results[1],
-      };
-
-      if (eventData.description) {
-        translated.description = results[2];
-      }
-
-      setTranslatedEvent(translated);
-    } catch (err) {
-      console.error("Translation error:", err);
-      setTranslatedEvent(eventData);
-    }
-  };
-
-  // Prepare dynamic fields + translation
-  useEffect(() => {
-    if (!event) return;
-    const defaultFields = [
-      { name: "fullName", label: "Full Name", type: "text", required: true },
-      { name: "phone", label: "Phone Number", type: "text", required: true },
-      { name: "email", label: "Email", type: "text", required: true },
-      { name: "company", label: "Company", type: "text", required: false },
-    ];
-
-    const fields = event.formFields?.length
-      ? event.formFields
+  const fields = event.formFields?.length
+    ? event.formFields
         .filter((f) => f.visible !== false)
         .map((f) => ({
           name: f.inputName,
@@ -135,39 +106,84 @@ export default function Registration() {
           type: f.inputType,
           options: f.values || [],
           required: f.required,
+          placeholder: f.placeholder || "",
         }))
-      : defaultFields;
+    : defaultFields;
 
-    const initial = {};
-    fields.forEach((f) => (initial[f.name] = ""));
-    setDynamicFields(fields);
-    setFormData(initial);
+  // initialize form
+  const initial = {};
+  fields.forEach((f) => (initial[f.name] = ""));
+  setDynamicFields(fields);
+  setFormData(initial);
 
-    const translateAll = async () => {
-      if (!isArabic) {
-        setTranslationsReady(true);
-        return;
-      }
+  const translateAll = async () => {
+  const textsToTranslate = new Set();
 
-      const textsToTranslate = new Set();
-      fields.forEach((f) => {
-        textsToTranslate.add(f.label);
-        if (f.options?.length)
-          f.options.forEach((o) => textsToTranslate.add(o));
-      });
+  // Event-level fields
+  if (event.name) textsToTranslate.add(event.name);
+  if (event.venue) textsToTranslate.add(event.venue);
+  if (event.description) textsToTranslate.add(event.description);
 
-      const textArray = Array.from(textsToTranslate);
-      const results = await Promise.all(
-        textArray.map((txt) => translateText(txt, lang))
-      );
-      const map = {};
-      textArray.forEach((txt, i) => (map[txt] = results[i]));
-      setTranslations(map);
-      setTranslationsReady(true);
+  // Form fields: labels, options, placeholders
+  fields.forEach((f) => {
+    if (f.label) textsToTranslate.add(f.label);
+    if (f.placeholder) textsToTranslate.add(f.placeholder);
+    (f.options || []).forEach((o) => textsToTranslate.add(o));
+  });
+
+  // ✅ Convert Set → Array first, then filter
+  const textArray = Array.from(textsToTranslate).filter(
+    (t) => typeof t === "string" && t.trim() !== ""
+  );
+
+  if (!textArray.length) {
+    setTranslatedEvent(event);
+    setTranslationsReady(true);
+    return;
+  }
+
+  try {
+    const results = await translateTexts(textArray, lang);
+    const map = {};
+    textArray.forEach((txt, i) => (map[txt] = results[i] || txt));
+
+    const translatedEvent = {
+      ...event,
+      name: map[event.name] || event.name,
+      venue: map[event.venue] || event.venue,
+      description: map[event.description] || event.description,
+      formFields:
+        event.formFields?.map((f) => ({
+          ...f,
+          inputName: map[f.inputName] || f.inputName,
+          values: f.values?.map((v) => map[v] || v) || f.values,
+          placeholder: map[f.placeholder] || f.placeholder,
+        })) || event.formFields,
     };
-    setTranslationsReady(false);
-    translateAll();
-  }, [event, isArabic]);
+
+    const translationMap = {};
+    fields.forEach((f) => {
+      translationMap[f.label] = map[f.label] || f.label;
+      (f.options || []).forEach((o) => {
+        translationMap[o] = map[o] || o;
+      });
+    });
+
+    setTranslations(translationMap);
+    setTranslatedEvent(translatedEvent);
+  } catch (err) {
+    console.error("⚠️ Translation error:", err);
+    setTranslatedEvent(event);
+  } finally {
+    setTranslationsReady(true);
+  }
+};
+
+
+  setTranslationsReady(false);
+  translateAll();
+}, [event, lang]);
+
 
   // Handlers
   const handleInputChange = (e) => {
@@ -183,9 +199,11 @@ export default function Registration() {
     dynamicFields.forEach((f) => {
       const val = formData[f.name]?.trim();
       if (f.required && !val) errors[f.name] = `${f.label} ${t.required}`;
-      if (f.type === "email" && val && !isValidEmail(val))
-        errors[f.name] = t.invalidEmail;
-      if (f.name === "email" && val && !isValidEmail(val))
+      if (
+        (f.type === "email" || f.name === "email") &&
+        val &&
+        !isValidEmail(val)
+      )
         errors[f.name] = t.invalidEmail;
     });
 
@@ -211,7 +229,7 @@ export default function Registration() {
     router.replace(`/eventreg/${lang}/event/${eventSlug}`);
   };
 
-  // Loading screens
+  // Loading
   if (loading || !event || !translatedEvent || !translationsReady) {
     return (
       <Box
@@ -226,10 +244,11 @@ export default function Registration() {
     );
   }
 
-  // Render each input
+  // Render fields
   const renderField = (field) => {
     const errorMsg = fieldErrors[field.name];
     const fieldLabel = translations[field.label] || field.label;
+
     const commonProps = {
       fullWidth: true,
       name: field.name,
@@ -301,8 +320,8 @@ export default function Registration() {
           field.type === "number"
             ? "number"
             : field.type === "email"
-              ? "email"
-              : "text"
+            ? "email"
+            : "text"
         }
       />
     );
