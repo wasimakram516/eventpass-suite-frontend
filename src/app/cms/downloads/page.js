@@ -417,9 +417,26 @@ export default function FileStorePage() {
                 />
               ) : previewFile.contentType === "application/pdf" ? (
                 <iframe
+                  key={previewFile.fileUrl}
                   src={`https://docs.google.com/gview?url=${encodeURIComponent(
                     previewFile.fileUrl
-                  )}&embedded=true`}
+                  )}&embedded=true#view=fitH`}
+                  onLoad={(e) => {
+                    // if viewer fails to load instantly, trigger a single reload
+                    const iframe = e.target;
+                    setTimeout(() => {
+                      try {
+                        const iframeDoc =
+                          iframe.contentDocument ||
+                          iframe.contentWindow.document;
+                        if (!iframeDoc || !iframeDoc.body.innerHTML.trim()) {
+                          iframe.src = iframe.src;
+                        }
+                      } catch {
+                        // ignore cross-origin errors
+                      }
+                    }, 1500);
+                  }}
                   style={{
                     width: "100%",
                     height: "100%",

@@ -159,9 +159,25 @@ export default function FileDownloadPage() {
     if (isPdf)
       return (
         <iframe
+          key={file.fileUrl}
           src={`https://docs.google.com/gview?url=${encodeURIComponent(
             file.fileUrl
-          )}&embedded=true`}
+          )}&embedded=true#view=fitH`}
+          onLoad={(e) => {
+            // force reload if content doesn’t load properly
+            const iframe = e.target;
+            setTimeout(() => {
+              try {
+                const iframeDoc =
+                  iframe.contentDocument || iframe.contentWindow.document;
+                if (!iframeDoc || !iframeDoc.body.innerHTML.trim()) {
+                  iframe.src = iframe.src; // trigger reload once
+                }
+              } catch {
+                // ignore cross-origin access
+              }
+            }, 1500);
+          }}
           style={{
             width: "100%",
             height: "100%",
