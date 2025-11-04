@@ -537,6 +537,28 @@ export default function PlayPage() {
               {translatedContent.question || currentQuestion?.question}
             </Typography>
 
+            {currentQuestion?.questionImage && (
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "center",
+                  mt: 2,
+                  mb: 2,
+                }}
+              >
+                <img
+                  src={currentQuestion.questionImage}
+                  alt="Question"
+                  style={{
+                    maxWidth: "clamp(200px, 50vw, 400px)",
+                    maxHeight: "clamp(150px, 30vh, 300px)",
+                    objectFit: "contain",
+                    borderRadius: "8px",
+                  }}
+                />
+              </Box>
+            )}
+
             <Grid
               container
               spacing={2}
@@ -626,8 +648,8 @@ export default function PlayPage() {
                           maxWidth: "100%",
                           width: "100%",
                           display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
+                          flexDirection: "column",
+                          justifyContent: "space-between",
                           p: { xs: 1, sm: 1.5, md: 2 },
                           overflow: "hidden",
                           boxSizing: "border-box",
@@ -638,14 +660,12 @@ export default function PlayPage() {
                         <Box
                           sx={{
                             width: "100%",
-                            height: "100%",
                             maxWidth: "100%",
                             display: "flex",
-                            alignItems: "center",
+                            alignItems: "flex-start",
                             justifyContent: "center",
                             textAlign: align,
                             px: 1,
-                            overflow: "hidden",
                             wordBreak: "break-word",
                             overflowWrap: "break-word",
                             boxSizing: "border-box",
@@ -656,6 +676,28 @@ export default function PlayPage() {
                         >
                           {opt}
                         </Box>
+
+                        {currentQuestion?.answerImages?.[i] && (
+                          <Box
+                            sx={{
+                              display: "flex",
+                              justifyContent: "center",
+                              alignItems: "flex-end",
+                              mt: 1,
+                            }}
+                          >
+                            <img
+                              src={currentQuestion.answerImages[i]}
+                              alt={`Answer ${i + 1}`}
+                              style={{
+                                maxWidth: "clamp(80px, 30vw, 150px)",
+                                maxHeight: "clamp(60px, 20vh, 120px)",
+                                objectFit: "contain",
+                                borderRadius: "4px",
+                              }}
+                            />
+                          </Box>
+                        )}
                       </Button>
                     </Grid>
                   );
