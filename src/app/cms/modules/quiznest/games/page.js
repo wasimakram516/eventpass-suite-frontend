@@ -34,6 +34,7 @@ import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import EmptyBusinessState from "@/components/EmptyBusinessState";
 import NoDataAvailable from "@/components/NoDataAvailable";
+import AppCard from "@/components/cards/AppCard";
 
 const translations = {
   en: {
@@ -303,17 +304,14 @@ export default function GamesPage() {
           <Grid container spacing={3} justifyContent={"center"}>
             {games.map((g) => (
               <Grid item xs={12} sm={6} md={4} lg={3} key={g._id}>
-                <Box
+                <AppCard
                   sx={{
-                    borderRadius: 2,
-                    boxShadow: 3,
                     p: 2,
                     height: "100%",
                     maxWidth: "350px",
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "space-between",
-                    bgcolor: "#fff",
                   }}
                 >
                   <Box>
@@ -340,28 +338,36 @@ export default function GamesPage() {
                       sec
                     </Typography>
 
-                    {["coverImage", "nameImage", "backgroundImage"].map(
-                      (imgKey) => (
-                        <Box key={imgKey} sx={{ mt: 1 }}>
-                          <Typography variant="caption" color="text.secondary">
-                            {t[`${imgKey}Label`]}:
-                          </Typography>
-                          <Box
-                            component="img"
-                            src={g[imgKey]}
-                            alt={imgKey}
-                            sx={{
-                              width: "100%",
-                              height: "auto",
-                              maxHeight: 140,
-                              objectFit: "cover",
-                              borderRadius: 1,
-                              mt: 0.5,
-                            }}
-                          />
-                        </Box>
-                      )
-                    )}
+                    <Box
+                      sx={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(3, 1fr)",
+                        gap: 1,
+                        mt: 2,
+                      }}
+                    >
+                      {["coverImage", "nameImage", "backgroundImage"].map(
+                        (imgKey) => (
+                          <Box key={imgKey}>
+                            <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5, fontSize: "0.7rem" }}>
+                              {t[`${imgKey}Label`]}
+                            </Typography>
+                            <Box
+                              component="img"
+                              src={g[imgKey]}
+                              alt={imgKey}
+                              sx={{
+                                width: "100%",
+                                height: { xs: 70, sm: 80 },
+                                objectFit: "cover",
+                                borderRadius: 1,
+                                border: "1px solid #eee",
+                              }}
+                            />
+                          </Box>
+                        )
+                      )}
+                    </Box>
                   </Box>
 
                   <Box
@@ -460,7 +466,7 @@ export default function GamesPage() {
                       </Tooltip>
                     </Box>
                   </Box>
-                </Box>
+                </AppCard>
               </Grid>
             ))}
           </Grid>
