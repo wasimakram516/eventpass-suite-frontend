@@ -211,40 +211,44 @@ export default function VerifyPage() {
   };
 
   const handlePrint = async () => {
-    if (!result) return;
+    if (!result?.token) return;
 
+    setPrinting(true);
     try {
-      const qrCodeDataUrl = await QRCode.toDataURL(result.token, {
-        width: 300,
-        margin: 1,
-        color: { dark: "#000000", light: "#ffffff" },
-      });
+      let qrCodeDataUrl = "";
+      try {
+        qrCodeDataUrl = await QRCode.toDataURL(result.token, {
+          width: 300,
+          margin: 1,
+          color: { dark: "#000000", light: "#ffffff" },
+        });
+      } catch {
+        // ignore minor QR errors (badge can still print)
+      }
 
-      const blob = await pdf(
-        <BadgePDF data={result} qrCodeDataUrl={qrCodeDataUrl} />
-      ).toBlob();
+      // Generate the PDF blob
+      const doc = <BadgePDF data={result} qrCodeDataUrl={qrCodeDataUrl} />;
+      const blob = await pdf(doc).toBlob();
+      if (!blob || blob.size === 0) throw new Error("Empty PDF generated");
 
       const blobUrl = URL.createObjectURL(blob);
       const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
+      // Mobile flow — open in new tab, trigger native print
       if (isMobile) {
-        // 🟢 Mobile — open in new tab and trigger native print dialog
         const printWindow = window.open(blobUrl, "_blank");
         if (!printWindow) {
-          showMessage?.("Please allow pop-ups to print the badge.", "warning");
+          showMessage("Please allow pop-ups to print the badge.", "warning");
           return;
         }
-
-        // wait until document is ready then trigger native print modal
         printWindow.onload = () => {
           printWindow.focus();
           printWindow.print();
         };
-
         return;
       }
 
-      // 🖥️ Desktop — open custom print preview (same as before)
+      // Desktop flow — open preview in centered popup
       const width = Math.floor(window.outerWidth * 0.9);
       const height = Math.floor(window.outerHeight * 0.9);
       const left = window.screenX + (window.outerWidth - width) / 2;
@@ -257,7 +261,7 @@ export default function VerifyPage() {
       );
 
       if (!printWindow) {
-        showMessage?.("Please allow pop-ups to print the badge.", "warning");
+        showMessage("Please allow pop-ups to print the badge.", "warning");
         return;
       }
 
@@ -289,9 +293,11 @@ export default function VerifyPage() {
       </html>
     `);
       printWindow.document.close();
-    } catch (err) {
-      console.error("PDF Print Error:", err);
-      showMessage?.("Failed to generate or print badge.", "error");
+    } catch {
+      // only one calm message, no error spam
+      showMessage("Badge could not be generated. Please try again.", "warning");
+    } finally {
+      setPrinting(false);
     }
   };
 
