@@ -5,16 +5,15 @@ import { useParams, useRouter } from "next/navigation";
 import { Box, Typography, CircularProgress } from "@mui/material";
 import HorizontalCarousel from "@/components/HorizontalCarousel";
 import { getPublicEventBySlug } from "@/services/eventreg/eventService";
-import { translateText } from "@/services/translationService";
+import { translateTexts } from "@/services/translationService"; // ✅ updated import
 import Background from "@/components/Background";
 import EventWelcomeCard from "@/components/EventWelcomeCard";
 import ICONS from "@/utils/iconUtil";
 import LanguageSelector from "@/components/LanguageSelector";
 
 export default function EventDetails() {
-  const { eventSlug } = useParams();
+  const { eventSlug, lang } = useParams();
   const router = useRouter();
-  const { lang } = useParams();
   const isArabic = lang === "ar";
   const dir = isArabic ? "rtl" : "ltr";
 
@@ -48,28 +47,36 @@ export default function EventDetails() {
     fetchEvent();
   }, [eventSlug, isArabic]);
 
+  /**
+   * 🔤 BATCH TRANSLATION
+   * Instead of calling translateText() 3 times,
+   * we send one array of texts to translateTexts().
+   */
   const translateEventData = async (eventData, targetLang) => {
     try {
-      const translationPromises = [
-        translateText(eventData.name, targetLang),
-        translateText(eventData.venue, targetLang),
-      ];
+      // Collect all fields that need translation
+      const textsToTranslate = [
+        eventData.name || "",
+        eventData.venue || "",
+        eventData.description || "",
+      ].filter(Boolean);
 
-      if (eventData.description) {
-        translationPromises.push(translateText(eventData.description, targetLang));
+      // If target is English (default), skip translation
+      if (!textsToTranslate.length) {
+        setTranslatedEvent(eventData);
+        return;
       }
 
-      const results = await Promise.all(translationPromises);
+      // 🟢 Send one batched call
+      const results = await translateTexts(textsToTranslate, targetLang);
 
+      // Map translations back to event fields
       const translated = {
         ...eventData,
-        name: results[0],
-        venue: results[1],
+        name: results[0] || eventData.name,
+        venue: results[1] || eventData.venue,
+        description: results[2] || eventData.description,
       };
-
-      if (eventData.description) {
-        translated.description = results[2];
-      }
 
       setTranslatedEvent(translated);
     } catch (err) {
@@ -78,9 +85,7 @@ export default function EventDetails() {
     }
   };
 
-  const brandingMedia = useMemo(() => {
-    return event?.brandingMedia || [];
-  }, [event]);
+  const brandingMedia = useMemo(() => event?.brandingMedia || [], [event]);
 
   if (loading) {
     return (
