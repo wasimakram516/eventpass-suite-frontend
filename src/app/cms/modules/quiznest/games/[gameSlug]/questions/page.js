@@ -21,7 +21,6 @@ import {
   FormControlLabel,
   Checkbox,
   Divider,
-  Card,
   CardContent,
   CardActions,
 } from "@mui/material";
@@ -50,6 +49,8 @@ import {
 import { getGameBySlug } from "@/services/quiznest/gameService";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
+import AppCard from "@/components/cards/AppCard";
+
 const translations = {
   en: {
     questionsTitle: 'Questions for "{gameTitle}" game',
@@ -310,13 +311,11 @@ export default function QuestionsPage() {
                 key={q._id || idx}
                 sx={{ width: { xs: "100%", sm: "auto" } }}
               >
-                <Card
+                <AppCard
                   sx={{
                     width: "100%",
                     maxWidth: { xs: "none", sm: 360 },
                     mx: { xs: 0, sm: "auto" },
-                    boxShadow: 3,
-                    borderRadius: 2,
                     height: "100%",
                     display: "flex",
                     flexDirection: "column",
@@ -332,9 +331,26 @@ export default function QuestionsPage() {
                       Q{idx + 1}
                     </Typography>
 
-                    <Typography variant="body1" sx={{ mb: 1 }}>
-                      <strong>{t.questionLabel}</strong> {q.question}
-                    </Typography>
+                    <Box>
+                      <Typography variant="body1" fontWeight="bold" sx={{ mb: 1 }}>
+                        <strong>{t.questionLabel}</strong> {q.question}
+                      </Typography>
+                      {q.questionImage && (
+                        <Box
+                          component="img"
+                          src={q.questionImage}
+                          alt="Question"
+                          sx={{
+                            width: 100,
+                            height: { xs: 70, sm: 80 },
+                            objectFit: "cover",
+                            borderRadius: 1,
+                            border: "1px solid #eee",
+                            mb: 1,
+                          }}
+                        />
+                      )}
+                    </Box>
 
                     <Box>
                       <Typography
@@ -344,20 +360,44 @@ export default function QuestionsPage() {
                       >
                         {t.optionsLabel}
                       </Typography>
-                      {q.answers.map((a, i) => (
-                        <Typography
-                          key={i}
-                          variant="body2"
-                          sx={{
-                            color:
-                              i === q.correctAnswerIndex
-                                ? "green"
-                                : "text.secondary",
-                          }}
-                        >
-                          {String.fromCharCode(65 + i)}. {a}
-                        </Typography>
-                      ))}
+                      <Box
+                        sx={{
+                          display: "grid",
+                          gridTemplateColumns: "repeat(2, 1fr)",
+                          gap: 1,
+                        }}
+                      >
+                        {q.answers.map((a, i) => (
+                          <Box key={i}>
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                color:
+                                  i === q.correctAnswerIndex
+                                    ? "green"
+                                    : "text.secondary",
+                              }}
+                            >
+                              {String.fromCharCode(65 + i)}. {a}
+                            </Typography>
+                            {q.answerImages?.[i] && (
+                              <Box
+                                component="img"
+                                src={q.answerImages[i]}
+                                alt={`Option ${String.fromCharCode(65 + i)}`}
+                                sx={{
+                                  width: 100,
+                                  height: { xs: 70, sm: 80 },
+                                  objectFit: "cover",
+                                  borderRadius: 1,
+                                  border: "1px solid #eee",
+                                  mt: 0.5,
+                                }}
+                              />
+                            )}
+                          </Box>
+                        ))}
+                      </Box>
                     </Box>
 
                     <Typography variant="body2" sx={{ mt: 1 }}>
@@ -403,7 +443,7 @@ export default function QuestionsPage() {
                       </IconButton>
                     </Tooltip>
                   </CardActions>
-                </Card>
+                </AppCard>
               </Grid>
             ))}
           </Grid>
