@@ -295,7 +295,7 @@ export default function GamesPage() {
         {!selectedBusiness ? (
           <EmptyBusinessState />
         ) : loading ? (
-          <Box sx={{ textAlign: align, mt: 8 }}>
+          <Box sx={{ display: "flex", justifyContent: "center", mt: 8 }}>
             <CircularProgress />
           </Box>
         ) : games.length === 0 ? (
