@@ -15,7 +15,7 @@ import { useRouter } from "next/navigation";
 import { submitResult } from "@/services/quiznest/playerService";
 import LanguageSelector from "@/components/LanguageSelector";
 import useI18nLayout from "@/hooks/useI18nLayout";
-import { translateText } from "@/services/translationService";
+import { translateTexts } from "@/services/translationService";
 import QuizOutlinedIcon from "@mui/icons-material/QuizOutlined";
 
 const gameTranslations = {
@@ -82,40 +82,52 @@ export default function PlayPage() {
   const celebrateSound =
     typeof Audio !== "undefined" ? new Audio("/celebrate.mp3") : null;
 
-  const getText = (t, fallback) =>
-    typeof t === "object" && t?.translatedText ? t.translatedText : fallback;
 
   const translateQuestion = async (questionObj) => {
     if (!questionObj) return;
 
-    const targetLang = language;
+    const textsToTranslate = [];
 
-    const [question, answers, hint] = await Promise.all([
-      translateText(questionObj.question, targetLang),
-      Promise.all(
-        questionObj.answers.map((answer) => translateText(answer, targetLang))
-      ),
-      questionObj.hint ? translateText(questionObj.hint, targetLang) : null,
-    ]);
+    if (questionObj.question) textsToTranslate.push(questionObj.question);
+    if (questionObj.answers) textsToTranslate.push(...questionObj.answers);
+    if (questionObj.hint) textsToTranslate.push(questionObj.hint);
 
-    if (
-      !question.error ||
-      (!answers.some((a) => a.error) && (!hint || !hint.error))
-    ) {
+    if (!textsToTranslate.length) {
       setTranslatedContent({
-        question: getText(question, questionObj.question),
-        answers: Array.isArray(answers)
-          ? answers.map((a, i) => getText(a, questionObj.answers[i]))
-          : questionObj.answers,
-        hint: getText(hint, questionObj.hint),
+        question: questionObj.question,
+        answers: questionObj.answers,
+        hint: questionObj.hint,
         uiLabels: {
           questionLabel: t.question,
           ofLabel: t.of,
           countdownLabel: t.countdown,
         },
       });
-    } else {
-      console.error("Translation error:", error);
+      return;
+    }
+
+    try {
+      const results = await translateTexts(textsToTranslate, language);
+
+      let index = 0;
+      const translatedQuestion = results[index++] || questionObj.question;
+      const translatedAnswers = questionObj.answers.map(() =>
+        results[index++] || questionObj.answers[index - 1 - questionObj.answers.length]
+      );
+      const translatedHint = questionObj.hint ? (results[index++] || questionObj.hint) : questionObj.hint;
+
+      setTranslatedContent({
+        question: translatedQuestion,
+        answers: translatedAnswers,
+        hint: translatedHint,
+        uiLabels: {
+          questionLabel: t.question,
+          ofLabel: t.of,
+          countdownLabel: t.countdown,
+        },
+      });
+    } catch (err) {
+      console.error("Translation error:", err);
       setTranslatedContent({
         question: questionObj.question,
         answers: questionObj.answers,
@@ -704,13 +716,13 @@ export default function PlayPage() {
                 })}
             </Grid>
 
-            {showHint && currentQuestion.hint && (
+            {showHint && translatedContent.hint && (
               <Typography
                 variant="body2"
                 color="error"
                 sx={{ mt: 3, fontStyle: "italic" }}
               >
-                {t.hint}: {currentQuestion.hint}
+                {t.hint}: {translatedContent.hint}
               </Typography>
             )}
           </Paper>
