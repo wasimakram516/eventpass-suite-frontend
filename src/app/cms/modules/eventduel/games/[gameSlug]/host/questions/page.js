@@ -21,7 +21,6 @@ import {
   FormControlLabel,
   Checkbox,
   Divider,
-  Card,
   CardContent,
   CardActions,
 } from "@mui/material";
@@ -50,6 +49,7 @@ import { getGameBySlug } from "@/services/eventduel/gameService";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
+import AppCard from "@/components/cards/AppCard";
 
 const translations = {
   en: {
@@ -64,8 +64,8 @@ const translations = {
     correctAnswerLabel: "Correct Answer:",
     hintLabel: "Hint:",
     deleteQuestionTitle: "Delete Question?",
-    deleteQuestionMessage: "Are you sure you want to move this item to the Recycle Bin?",
     delete: "Delete",
+    deleteQuestionMessage: "Are you sure you want to move this item to the Recycle Bin?",
     downloadTemplateTitle: "Download Template",
     numberOptionsLabel: "Number of Options",
     includeHintLabel: "Include Hint Column",
@@ -190,245 +190,286 @@ export default function QuestionsPage() {
     setDownloadModalOpen(false);
   };
 
+
   return (
     <Box sx={{ position: "relative", width: "100%" }} dir={dir}>
       <Container maxWidth="lg">
-        {loading ? (
-          <Box sx={{ textAlign: "center", mt: 8 }}>
-            <CircularProgress />
-          </Box>
-        ) : (
-          <>
-            <BreadcrumbsNav />
+        <Box sx={{ mb: 4 }}>
+          <BreadcrumbsNav />
+
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: { xs: "column", sm: "row" },
+              justifyContent: "space-between",
+              alignItems: { xs: "stretch", sm: "center" },
+              mt: 2,
+              mb: 1,
+              gap: 2,
+              flexWrap: "wrap",
+            }}
+          >
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="h5" fontWeight="bold">
+                {t.questionsTitle.replace("{gameTitle}", game?.title)}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                <span
+                  dangerouslySetInnerHTML={{
+                    __html: t.questionsDescription
+                      .replace("{choicesCount}", game?.choicesCount)
+                      .replace("{countdownTimer}", game?.countdownTimer)
+                      .replace("{gameSessionTimer}", game?.gameSessionTimer),
+                  }}
+                />
+              </Typography>
+            </Box>
+
+            {/* Buttons Block */}
             <Box
               sx={{
                 display: "flex",
                 flexDirection: { xs: "column", sm: "row" },
-                justifyContent: "space-between",
-                alignItems: { xs: "stretch", sm: "center" },
-                gap: 2,
-                mb: 3,
+                gap: 1,
+                width: { xs: "100%", sm: "auto" },
               }}
             >
-              {/* Title + Description */}
-              <Box sx={{ flex: { xs: "1 1 100%", sm: "auto" } }}>
-                <Typography variant="h5" fontWeight="bold">
-                  {t.questionsTitle.replace("{gameTitle}", game?.title)}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  <span
-                    dangerouslySetInnerHTML={{
-                      __html: t.questionsDescription
-                        .replace("{choicesCount}", game?.choicesCount)
-                        .replace("{countdownTimer}", game?.countdownTimer)
-                        .replace("{gameSessionTimer}", game?.gameSessionTimer),
-                    }}
-                  />
-                </Typography>
-              </Box>
-
-              {/* Buttons Block */}
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "stretch",
-                  gap: 1,
-                  flexDirection: { xs: "column", sm: "row" },
-                  width: { xs: "100%", sm: "auto" },
+              {/* Add Question */}
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => {
+                  setEditMode(false);
+                  setSelectedQuestion(null);
+                  setOpenModal(true);
                 }}
+                sx={getStartIconSpacing(dir)}
               >
-                {/* Add Question */}
-                <Button
-                  variant="contained"
-                  startIcon={<AddIcon />}
-                  onClick={() => {
-                    setEditMode(false);
-                    setSelectedQuestion(null);
-                    setOpenModal(true);
-                  }}
-                  sx={getStartIconSpacing(dir)}
-                >
-                  {t.addQuestion}
-                </Button>
+                {t.addQuestion}
+              </Button>
 
-                {/* More Menu (Download + Upload) */}
-                <Box sx={{ width: { xs: "100%", sm: "auto" } }}>
-                  <Button
-                    variant="outlined"
-                    fullWidth
-                    startIcon={<MoreVertIcon />}
-                    onClick={handleMenuOpen}
-                    sx={getStartIconSpacing(dir)}
-                  >
-                    {t.moreOptions}
-                  </Button>
-                  <Menu
-                    anchorEl={anchorEl}
-                    open={openMenu}
-                    onClose={handleMenuClose}
-                  >
-                    <MenuItem
-                      onClick={() => {
-                        setDownloadModalOpen(true);
+              {/* More Menu (Download + Upload) */}
+              <Button
+                variant="outlined"
+                startIcon={<MoreVertIcon />}
+                onClick={handleMenuOpen}
+                sx={getStartIconSpacing(dir)}
+              >
+                {t.moreOptions}
+              </Button>
+              <Menu
+                anchorEl={anchorEl}
+                open={openMenu}
+                onClose={handleMenuClose}
+              >
+                <MenuItem
+                  onClick={() => {
+                    setDownloadModalOpen(true);
+                    handleMenuClose();
+                  }}
+                >
+                  <DownloadIcon fontSize="small" sx={{ mr: 1 }} />
+                  {t.downloadTemplate}
+                </MenuItem>
+                <MenuItem>
+                  <UploadFileIcon fontSize="small" sx={{ mr: 1 }} />
+                  <label style={{ cursor: "pointer" }}>
+                    {t.uploadQuestions}
+                    <input
+                      type="file"
+                      hidden
+                      accept=".xlsx"
+                      onChange={(e) => {
+                        handleUpload(e);
                         handleMenuClose();
                       }}
-                    >
-                      <DownloadIcon fontSize="small" sx={{ mr: 1 }} />
-                      {t.downloadTemplate}
-                    </MenuItem>
-                    <MenuItem>
-                      <UploadFileIcon fontSize="small" sx={{ mr: 1 }} />
-                      <label style={{ cursor: "pointer" }}>
-                        {t.uploadQuestions}
-                        <input
-                          type="file"
-                          hidden
-                          accept=".xlsx"
-                          onChange={(e) => {
-                            handleUpload(e);
-                            handleMenuClose();
-                          }}
-                        />
-                      </label>
-                    </MenuItem>
-                  </Menu>
-                </Box>
-              </Box>
+                    />
+                  </label>
+                </MenuItem>
+              </Menu>
             </Box>
+          </Box>
 
-            <Divider sx={{ mb: 3 }} />
-            {questions.length === 0 ? (
-              <NoDataAvailable />
-            ) : (
-              <Grid container spacing={3} justifyContent={"center"}>
-                {questions?.map((q, idx) => (
-                  <Grid
-                    item
-                    xs={12}
-                    sm={6}
-                    md={4}
-                    key={q._id || idx}
-                    sx={{ width: { xs: "100%", sm: "auto" } }}
+          <Divider sx={{ mt: 2 }} />
+        </Box>
+
+        {loading ? (
+          <Box sx={{ textAlign: "center", mt: 8 }}>
+            <CircularProgress />
+          </Box>
+        ) : !game || questions.length === 0 ? (
+          <NoDataAvailable />
+        ) : (
+          <Grid container spacing={3} justifyContent="center">
+            {questions?.map((q, idx) => {
+              const answerImages = q.answerImages || [];
+              const answers = q.answers || [];
+              return (
+                <Grid
+                  item
+                  xs={12}
+                  sm={6}
+                  md={4}
+                  key={q._id || idx}
+                  sx={{ width: { xs: "100%", sm: "auto" } }}
+                >
+                  <AppCard
+                    sx={{
+                      width: "100%",
+                      maxWidth: { xs: "none", sm: 360 },
+                      mx: { xs: 0, sm: "auto" },
+                      height: "100%",
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "space-between",
+                    }}
                   >
-                    <Card
-                      sx={{
-                        width: "100%",
-                        maxWidth: { xs: "none", sm: 360 },
-                        mx: { xs: 0, sm: "auto" },
-                        boxShadow: 3,
-                        borderRadius: 2,
-                        height: "100%",
-                        display: "flex",
-                        flexDirection: "column",
-                        justifyContent: "space-between",
-                      }}
-                    >
-                      <CardContent>
-                        <Typography
-                          variant="subtitle1"
-                          fontWeight="bold"
-                          gutterBottom
-                        >
-                          Q{idx + 1}
-                        </Typography>
+                    <CardContent>
+                      <Typography
+                        variant="subtitle1"
+                        fontWeight="bold"
+                        gutterBottom
+                      >
+                        Q{idx + 1}
+                      </Typography>
 
-                        <Typography variant="body1" sx={{ mb: 1 }}>
+                      <Box>
+                        <Typography variant="body1" fontWeight="bold" sx={{ mb: 1 }}>
                           <strong>{t.questionLabel}</strong> {q.question}
                         </Typography>
+                        {q.questionImage && (
+                          <Box
+                            component="img"
+                            src={q.questionImage}
+                            alt="Question"
+                            sx={{
+                              width: 100,
+                              height: { xs: 70, sm: 80 },
+                              objectFit: "cover",
+                              borderRadius: 1,
+                              border: "1px solid #eee",
+                              mb: 1,
+                            }}
+                          />
+                        )}
+                      </Box>
 
-                        <Box>
-                          <Typography
-                            variant="body2"
-                            fontWeight="bold"
-                            sx={{ mb: 0.5 }}
-                          >
-                            {t.optionsLabel}
-                          </Typography>
-                          {q.answers.map((a, i) => (
-                            <Typography
-                              key={i}
-                              variant="body2"
-                              sx={{
-                                color:
-                                  i === q.correctAnswerIndex
-                                    ? "green"
-                                    : "text.secondary",
-                              }}
-                            >
-                              {String.fromCharCode(65 + i)}. {a}
-                            </Typography>
+                      <Box>
+                        <Typography
+                          variant="body2"
+                          fontWeight="bold"
+                          sx={{ mb: 0.5 }}
+                        >
+                          {t.optionsLabel}
+                        </Typography>
+                        <Box
+                          sx={{
+                            display: "grid",
+                            gridTemplateColumns: "repeat(2, 1fr)",
+                            gap: 1,
+                          }}
+                        >
+                          {answers.map((a, i) => (
+                            <Box key={i}>
+                              <Typography
+                                variant="body2"
+                                sx={{
+                                  color:
+                                    i === q.correctAnswerIndex
+                                      ? "green"
+                                      : "text.secondary",
+                                }}
+                              >
+                                {String.fromCharCode(65 + i)}. {a}
+                              </Typography>
+                              {answerImages[i] && (
+                                <Box
+                                  component="img"
+                                  src={q.answerImages[i]}
+                                  alt={`Option ${String.fromCharCode(65 + i)}`}
+                                  sx={{
+                                    width: 100,
+                                    height: { xs: 70, sm: 80 },
+                                    objectFit: "cover",
+                                    borderRadius: 1,
+                                    border: "1px solid #eee",
+                                    mt: 0.5,
+                                  }}
+                                />
+                              )}
+                            </Box>
                           ))}
                         </Box>
+                      </Box>
 
-                        <Typography variant="body2" sx={{ mt: 1 }}>
-                          <strong>{t.correctAnswerLabel}</strong>{" "}
-                          <span style={{ color: "green" }}>
-                            {String.fromCharCode(65 + q.correctAnswerIndex)}.{" "}
-                            {q.answers[q.correctAnswerIndex]}
-                          </span>
+                      <Typography variant="body2" sx={{ mt: 1 }}>
+                        <strong>{t.correctAnswerLabel}</strong>{" "}
+                        <span style={{ color: "green" }}>
+                          {String.fromCharCode(65 + (q.correctAnswerIndex || 0))}.{" "}
+                          {answers[q.correctAnswerIndex || 0]}
+                        </span>
+                      </Typography>
+
+                      {q.hint && (
+                        <Typography
+                          variant="caption"
+                          color="text.secondary"
+                          sx={{ mt: 1, display: "block" }}
+                        >
+                          <strong>{t.hintLabel}</strong> {q.hint}
                         </Typography>
-
-                        {q.hint && (
-                          <Typography
-                            variant="caption"
-                            color="text.secondary"
-                            sx={{ mt: 1, display: "block" }}
-                          >
-                            <strong>{t.hintLabel}</strong> {q.hint}
-                          </Typography>
-                        )}
-                      </CardContent>
-                      <CardActions sx={{ justifyContent: "center" }}>
-                        <Tooltip title={t.editTooltip}>
-                          <IconButton
-                            color="secondary"
-                            onClick={() => {
-                              setSelectedQuestion(q);
-                              setEditMode(true);
-                              setOpenModal(true);
-                            }}
-                          >
-                            <EditIcon />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title={t.deleteTooltip}>
-                          <IconButton
-                            color="error"
-                            onClick={() => {
-                              setSelectedQuestion(q);
-                              setConfirmOpen(true);
-                            }}
-                          >
-                            <DeleteIcon />
-                          </IconButton>
-                        </Tooltip>
-                      </CardActions>
-                    </Card>
-                  </Grid>
-                ))}
-              </Grid>
-            )}
-
-            <QuestionFormModal
-              open={openModal}
-              onClose={() => setOpenModal(false)}
-              editMode={editMode}
-              initialValues={selectedQuestion}
-              onSubmit={(values) => handleAddEdit(values, editMode)}
-              optionCount={game?.choicesCount}
-            />
-
-            <ConfirmationDialog
-              open={confirmOpen}
-              title={t.deleteQuestionTitle}
-              message={t.deleteQuestionMessage}
-              onClose={() => setConfirmOpen(false)}
-              onConfirm={handleDelete}
-              confirmButtonText={t.delete}
-              confirmButtonIcon={<ICONS.delete />}
-            />
-          </>
+                      )}
+                    </CardContent>
+                    <CardActions sx={{ justifyContent: "center" }}>
+                      <Tooltip title={t.editTooltip}>
+                        <IconButton
+                          color="secondary"
+                          onClick={() => {
+                            setSelectedQuestion(q);
+                            setEditMode(true);
+                            setOpenModal(true);
+                          }}
+                        >
+                          <EditIcon />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title={t.deleteTooltip}>
+                        <IconButton
+                          color="error"
+                          onClick={() => {
+                            setSelectedQuestion(q);
+                            setConfirmOpen(true);
+                          }}
+                        >
+                          <DeleteIcon />
+                        </IconButton>
+                      </Tooltip>
+                    </CardActions>
+                  </AppCard>
+                </Grid>
+              )
+            })}
+          </Grid>
         )}
+
+        <QuestionFormModal
+          open={openModal}
+          onClose={() => setOpenModal(false)}
+          editMode={editMode}
+          initialValues={selectedQuestion}
+          onSubmit={(values) => handleAddEdit(values, editMode)}
+          optionCount={game?.choicesCount}
+        />
+
+        <ConfirmationDialog
+          open={confirmOpen}
+          title={t.deleteQuestionTitle}
+          message={t.deleteQuestionMessage}
+          onClose={() => setConfirmOpen(false)}
+          onConfirm={handleDelete}
+          confirmButtonText={t.delete}
+          confirmButtonIcon={<ICONS.delete />}
+        />
         <Dialog
           open={downloadModalOpen}
           onClose={() => setDownloadModalOpen(false)}
@@ -468,22 +509,15 @@ export default function QuestionsPage() {
             <Button
               onClick={() => setDownloadModalOpen(false)}
               variant="outlined"
-              startIcon={<ICONS.cancel />}
-              sx={getStartIconSpacing(dir)}
             >
               {t.cancelButton}
             </Button>
-            <Button
-              onClick={handleDownload}
-              variant="contained"
-              startIcon={<ICONS.download />}
-              sx={getStartIconSpacing(dir)}
-            >
+            <Button onClick={handleDownload} variant="contained">
               {t.downloadButton}
             </Button>
           </DialogActions>
         </Dialog>
       </Container>
-    </Box>
+    </Box >
   );
 }
