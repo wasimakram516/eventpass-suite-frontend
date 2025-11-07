@@ -30,7 +30,6 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
 import DownloadIcon from "@mui/icons-material/Download";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
-import { wrapTextBox } from "@/utils/wrapTextStyles";
 import BreadcrumbsNav from "@/components/BreadcrumbsNav";
 import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -331,7 +330,7 @@ export default function QuestionsPage() {
                       </Typography>
 
                       <Box>
-                        <Typography variant="body1" fontWeight="bold" sx={{ mb: 1, ...wrapTextBox }}>
+                        <Typography variant="body1" fontWeight="bold" sx={{ mb: 1 }}>
                           <strong>{t.questionLabel}</strong> {q.question}
                         </Typography>
                         {q.questionImage && (
@@ -375,7 +374,6 @@ export default function QuestionsPage() {
                                     i === q.correctAnswerIndex
                                       ? "green"
                                       : "text.secondary",
-                                  ...wrapTextBox,
                                 }}
                               >
                                 {String.fromCharCode(65 + i)}. {a}
@@ -400,7 +398,7 @@ export default function QuestionsPage() {
                         </Box>
                       </Box>
 
-                      <Typography variant="body2" sx={{ mt: 1, ...wrapTextBox }}>
+                      <Typography variant="body2" sx={{ mt: 1}}>
                         <strong>{t.correctAnswerLabel}</strong>{" "}
                         <span style={{ color: "green" }}>
                           {String.fromCharCode(65 + (q.correctAnswerIndex || 0))}.{" "}
@@ -412,7 +410,7 @@ export default function QuestionsPage() {
                         <Typography
                           variant="caption"
                           color="text.secondary"
-                          sx={{ mt: 1, display: "block", ...wrapTextBox }}
+                          sx={{ mt: 1, display: "block" }}
                         >
                           <strong>{t.hintLabel}</strong> {q.hint}
                         </Typography>
