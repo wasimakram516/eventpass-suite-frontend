@@ -51,7 +51,8 @@ const translations = {
     questionsButton: "Questions",
     resultsButton: "Results",
     deleteGameTitle: "Delete Game?",
-    deleteGameMessage: "Are you sure you want to move this item to the Recycle Bin?",
+    deleteGameMessage:
+      "Are you sure you want to move this item to the Recycle Bin?",
     manageGames: "Manage Games",
     selectBusiness: "Select Business",
     noGames: "No games found.",
@@ -83,7 +84,8 @@ const translations = {
     questionsButton: "الأسئلة",
     resultsButton: "النتائج",
     deleteGameTitle: "حذف اللعبة؟",
-    deleteGameMessage: "هل أنت متأكد أنك تريد نقل هذا العنصر إلى سلة المحذوفات؟",
+    deleteGameMessage:
+      "هل أنت متأكد أنك تريد نقل هذا العنصر إلى سلة المحذوفات؟",
     manageGames: "إدارة الألعاب",
     selectBusiness: "اختر العمل",
     noGames: "لا توجد ألعاب.",
@@ -349,7 +351,12 @@ export default function GamesPage() {
                       {["coverImage", "nameImage", "backgroundImage"].map(
                         (imgKey) => (
                           <Box key={imgKey}>
-                            <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5, fontSize: "0.7rem" }}>
+                            <Typography
+                              variant="caption"
+                              color="text.secondary"
+                              display="block"
+                              sx={{ mb: 0.5, fontSize: "0.7rem" }}
+                            >
                               {t[`${imgKey}Label`]}
                             </Typography>
                             <Box
@@ -475,8 +482,9 @@ export default function GamesPage() {
         <ShareLinkModal
           open={shareModalOpen}
           onClose={() => setShareModalOpen(false)}
-          url={`${typeof window !== "undefined" ? window.location.origin : ""
-            }/quiznest/${gameToShare?.slug}`}
+          url={`${
+            typeof window !== "undefined" ? window.location.origin : ""
+          }/quiznest/${gameToShare?.slug}`}
           name={gameToShare?.title}
         />
 
@@ -487,6 +495,7 @@ export default function GamesPage() {
           editMode={editMode}
           initialValues={selectedGame || {}}
           onSubmit={handleSubmitGame}
+          module="quiznest"
         />
 
         <ConfirmationDialog

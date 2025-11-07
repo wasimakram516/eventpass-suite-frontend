@@ -112,6 +112,7 @@ const GameFormModal = ({
   initialValues = {},
   selectedGame = null,
   onSubmit,
+  module = "eventduel",
 }) => {
   const [form, setForm] = useState({
     title: "",
@@ -358,67 +359,71 @@ const GameFormModal = ({
           />
 
           {/* 🧩 Team Mode Section */}
-          <Box sx={{ borderTop: "1px solid #eee", pt: 2 }}>
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={form.isTeamMode}
-                  onChange={(e) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      isTeamMode: e.target.checked,
-                    }))
-                  }
-                />
-              }
-              label={t.teamMode}
-            />
-
-            {form.isTeamMode && (
-              <Box
-                sx={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 2,
-                  mt: 2,
-                }}
-              >
-                <TextField
-                  label={t.maxTeams}
-                  name="maxTeams"
-                  type="number"
-                  value={form.maxTeams}
-                  inputProps={{ min: 2, max: 10 }}
-                  onChange={handleChange}
-                  error={!!errors.maxTeams}
-                  helperText={errors.maxTeams}
-                />
-
-                <TextField
-                  label={t.playersPerTeam}
-                  name="playersPerTeam"
-                  type="number"
-                  value={form.playersPerTeam}
-                  inputProps={{ min: 2, max: 10 }}
-                  onChange={handleChange}
-                  error={!!errors.playersPerTeam}
-                  helperText={errors.playersPerTeam}
-                />
-
-                <Typography variant="subtitle1">{t.teamNames}</Typography>
-                {Array.from({ length: form.maxTeams || 0 }).map((_, i) => (
-                  <TextField
-                    key={i}
-                    label={t.teamNamePlaceholder.replace("{number}", i + 1)}
-                    value={form.teamNames[i] || ""}
-                    onChange={(e) => handleTeamNameChange(i, e.target.value)}
-                    error={!!errors.teamNames}
-                    helperText={i === form.maxTeams - 1 ? errors.teamNames : ""}
+          {module === "eventduel" && (
+            <Box sx={{ borderTop: "1px solid #eee", pt: 2 }}>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={form.isTeamMode}
+                    onChange={(e) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        isTeamMode: e.target.checked,
+                      }))
+                    }
                   />
-                ))}
-              </Box>
-            )}
-          </Box>
+                }
+                label={t.teamMode}
+              />
+
+              {form.isTeamMode && (
+                <Box
+                  sx={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 2,
+                    mt: 2,
+                  }}
+                >
+                  <TextField
+                    label={t.maxTeams}
+                    name="maxTeams"
+                    type="number"
+                    value={form.maxTeams}
+                    inputProps={{ min: 2, max: 10 }}
+                    onChange={handleChange}
+                    error={!!errors.maxTeams}
+                    helperText={errors.maxTeams}
+                  />
+
+                  <TextField
+                    label={t.playersPerTeam}
+                    name="playersPerTeam"
+                    type="number"
+                    value={form.playersPerTeam}
+                    inputProps={{ min: 2, max: 10 }}
+                    onChange={handleChange}
+                    error={!!errors.playersPerTeam}
+                    helperText={errors.playersPerTeam}
+                  />
+
+                  <Typography variant="subtitle1">{t.teamNames}</Typography>
+                  {Array.from({ length: form.maxTeams || 0 }).map((_, i) => (
+                    <TextField
+                      key={i}
+                      label={t.teamNamePlaceholder.replace("{number}", i + 1)}
+                      value={form.teamNames[i] || ""}
+                      onChange={(e) => handleTeamNameChange(i, e.target.value)}
+                      error={!!errors.teamNames}
+                      helperText={
+                        i === form.maxTeams - 1 ? errors.teamNames : ""
+                      }
+                    />
+                  ))}
+                </Box>
+              )}
+            </Box>
+          )}
 
           {/* File Uploads */}
           {["coverImage", "nameImage", "backgroundImage"].map((key) => {

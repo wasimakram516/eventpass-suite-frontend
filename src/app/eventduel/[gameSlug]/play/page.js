@@ -234,10 +234,14 @@ export default function PlayPage() {
 
       let index = 0;
       const translatedQuestion = results[index++] || questionObj.question;
-      const translatedAnswers = questionObj.answers.map(() =>
-        results[index++] || questionObj.answers[index - 1 - questionObj.answers.length]
+      const translatedAnswers = questionObj.answers.map(
+        () =>
+          results[index++] ||
+          questionObj.answers[index - 1 - questionObj.answers.length]
       );
-      const translatedHint = questionObj.hint ? (results[index++] || questionObj.hint) : questionObj.hint;
+      const translatedHint = questionObj.hint
+        ? results[index++] || questionObj.hint
+        : questionObj.hint;
 
       setTranslatedContent({
         question: translatedQuestion,
@@ -358,10 +362,10 @@ export default function PlayPage() {
 
     const allTeamsReady = isTeamMode
       ? pendingSession.teams?.every(
-        (t) =>
-          (t.players?.length || 0) >=
-          (pendingSession.gameId?.playersPerTeam || 0)
-      )
+          (t) =>
+            (t.players?.length || 0) >=
+            (pendingSession.gameId?.playersPerTeam || 0)
+        )
       : false;
 
     const sessionReady = isTeamMode ? allTeamsReady : bothJoined;
@@ -568,10 +572,10 @@ export default function PlayPage() {
     // For Team Mode:
     const allTeamsReady = isTeamMode
       ? pendingSession.teams?.every(
-        (t) =>
-          (t.players?.length || 0) >=
-          (pendingSession.gameId?.playersPerTeam || 0)
-      )
+          (t) =>
+            (t.players?.length || 0) >=
+            (pendingSession.gameId?.playersPerTeam || 0)
+        )
       : false;
 
     const sessionReady = isTeamMode ? allTeamsReady : bothPlayersJoined;
@@ -1136,11 +1140,25 @@ export default function PlayPage() {
                   translatedContent?.answers?.map((opt, i) => {
                     const isSelected = selected === i;
                     const isCorrect = i === currentQuestion.correctAnswerIndex;
-                    const bg = isSelected
-                      ? isCorrect
-                        ? "#c8e6c9"
-                        : "#ffcdd2"
-                      : "#f5f5f5";
+                    const { bg, borderColor, borderWidth } = (() => {
+                      if (isSelected && isCorrect)
+                        return {
+                          bg: "#c8e6c9",
+                          borderColor: "#81c784",
+                          borderWidth: 3,
+                        };
+                      if (isSelected && !isCorrect)
+                        return {
+                          bg: "#ffcdd2",
+                          borderColor: "#e57373",
+                          borderWidth: 3,
+                        };
+                      return {
+                        bg: "#f5f5f5",
+                        borderColor: "#e0e0e0",
+                        borderWidth: 2,
+                      };
+                    })();
                     return (
                       <Grid
                         item
@@ -1158,58 +1176,60 @@ export default function PlayPage() {
                           flexShrink: 0,
                         }}
                       >
-                        <Button
-                          fullWidth
-                          variant="outlined"
+                        <Box
                           onClick={() => handleSelect(i)}
                           sx={{
+                            cursor: "pointer",
                             backgroundColor: bg,
-                            fontWeight: "bold",
-                            fontSize: (() => {
-                              const textLength = opt.length;
-                              if (textLength <= 10) {
-                                return {
-                                  xs: "0.8rem",
-                                  sm: "0.9rem",
-                                  md: "1.1rem",
-                                };
-                              } else if (textLength <= 30) {
-                                return {
-                                  xs: "0.7rem",
-                                  sm: "0.8rem",
-                                  md: "1rem",
-                                };
-                              } else if (textLength <= 60) {
-                                return {
-                                  xs: "0.6rem",
-                                  sm: "0.7rem",
-                                  md: "0.8rem",
-                                };
-                              } else {
-                                return {
-                                  xs: "0.5rem",
-                                  sm: "0.6rem",
-                                  md: "0.7rem",
-                                };
-                              }
-                            })(),
+                            border: `${borderWidth}px solid ${borderColor}`,
                             borderRadius: 2,
+                            fontWeight: "bold",
                             textTransform: "none",
                             whiteSpace: "normal",
                             wordBreak: "break-word",
                             overflowWrap: "break-word",
-                            minHeight: { xs: "100px", sm: "120px", md: "150px" },
-                            maxWidth: "100%",
+                            minHeight: { xs: 100, sm: 120, md: 150 },
                             width: "100%",
                             display: "flex",
                             flexDirection: "column",
-                            justifyContent: currentQuestion?.answerImages?.[i] ? "space-between" : "center",
+                            justifyContent: currentQuestion?.answerImages?.[i]
+                              ? "space-between"
+                              : "center",
                             alignItems: "center",
                             p: { xs: 1, sm: 1.5, md: 2 },
                             overflow: "hidden",
                             boxSizing: "border-box",
                             flexShrink: 0,
-                            minWidth: 0,
+                            userSelect: "none",
+                            transition: "border 0.2s ease",
+                            "&:hover": { backgroundColor: bg, borderColor },
+                            "&:active": { backgroundColor: bg, borderColor },
+                            fontSize: (() => {
+                              const len = opt.length;
+                              if (len <= 10)
+                                return {
+                                  xs: "0.8rem",
+                                  sm: "0.9rem",
+                                  md: "1.1rem",
+                                };
+                              if (len <= 30)
+                                return {
+                                  xs: "0.7rem",
+                                  sm: "0.8rem",
+                                  md: "1rem",
+                                };
+                              if (len <= 60)
+                                return {
+                                  xs: "0.6rem",
+                                  sm: "0.7rem",
+                                  md: "0.8rem",
+                                };
+                              return {
+                                xs: "0.5rem",
+                                sm: "0.6rem",
+                                md: "0.7rem",
+                              };
+                            })(),
                           }}
                         >
                           <Box
@@ -1217,7 +1237,9 @@ export default function PlayPage() {
                               width: "100%",
                               maxWidth: "100%",
                               display: "flex",
-                              alignItems: currentQuestion?.answerImages?.[i] ? "flex-start" : "center",
+                              alignItems: currentQuestion?.answerImages?.[i]
+                                ? "flex-start"
+                                : "center",
                               justifyContent: "center",
                               textAlign: "center",
                               px: 1,
@@ -1248,12 +1270,12 @@ export default function PlayPage() {
                                   maxWidth: "clamp(80px, 30vw, 150px)",
                                   maxHeight: "clamp(60px, 20vh, 120px)",
                                   objectFit: "contain",
-                                  borderRadius: "4px",
+                                  borderRadius: 4,
                                 }}
                               />
                             </Box>
                           )}
-                        </Button>
+                        </Box>
                       </Grid>
                     );
                   })}
@@ -1318,8 +1340,8 @@ export default function PlayPage() {
       const backgroundGradient = isTie
         ? "linear-gradient(135deg, #FFC107CC, #FF9800CC)"
         : isWinner
-          ? "linear-gradient(135deg, #4CAF50CC, #388E3CCC)"
-          : "linear-gradient(135deg, #F44336CC, #E53935CC)";
+        ? "linear-gradient(135deg, #4CAF50CC, #388E3CCC)"
+        : "linear-gradient(135deg, #F44336CC, #E53935CC)";
 
       return (
         <Box
@@ -1486,8 +1508,8 @@ export default function PlayPage() {
     const backgroundGradient = isTie
       ? "linear-gradient(135deg, #FFC107CC, #FF9800CC)"
       : isWinner
-        ? "linear-gradient(135deg, #4CAF50CC, #388E3CCC)"
-        : "linear-gradient(135deg, #F44336CC, #E53935CC)";
+      ? "linear-gradient(135deg, #4CAF50CC, #388E3CCC)"
+      : "linear-gradient(135deg, #F44336CC, #E53935CC)";
 
     return (
       <Box
