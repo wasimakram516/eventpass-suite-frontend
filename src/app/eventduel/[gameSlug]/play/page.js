@@ -25,7 +25,7 @@ import {
 } from "@/services/eventduel/gameSessionService";
 import LanguageSelector from "@/components/LanguageSelector";
 import useI18nLayout from "@/hooks/useI18nLayout";
-import { translateText } from "@/services/translationService";
+import { translateTexts } from "@/services/translationService";
 import useEventDuelWebSocketData from "@/hooks/modules/eventduel/useEventDuelWebSocketData";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
@@ -208,24 +208,60 @@ export default function PlayPage() {
   // ─── 7. QUESTION TRANSLATION HELPER ────────────────────────────────────
   const translateQuestion = async (questionObj) => {
     if (!questionObj) return;
-    const [q, answers, hint] = await Promise.all([
-      translateText(questionObj.question, language),
-      Promise.all(questionObj.answers.map((a) => translateText(a, language))),
-      questionObj.hint ? translateText(questionObj.hint, language) : null,
-    ]);
-    setTranslatedContent({
-      question: q || questionObj.question,
-      answers:
-        answers.length === questionObj.answers.length
-          ? answers
-          : questionObj.answers,
-      hint: hint || questionObj.hint,
-      uiLabels: {
-        questionLabel: t.question,
-        ofLabel: t.of,
-        countdownLabel: t.countdown,
-      },
-    });
+
+    const textsToTranslate = [];
+
+    if (questionObj.question) textsToTranslate.push(questionObj.question);
+    if (questionObj.answers) textsToTranslate.push(...questionObj.answers);
+    if (questionObj.hint) textsToTranslate.push(questionObj.hint);
+
+    if (!textsToTranslate.length) {
+      setTranslatedContent({
+        question: questionObj.question,
+        answers: questionObj.answers,
+        hint: questionObj.hint,
+        uiLabels: {
+          questionLabel: t.question,
+          ofLabel: t.of,
+          countdownLabel: t.countdown,
+        },
+      });
+      return;
+    }
+
+    try {
+      const results = await translateTexts(textsToTranslate, language);
+
+      let index = 0;
+      const translatedQuestion = results[index++] || questionObj.question;
+      const translatedAnswers = questionObj.answers.map(() =>
+        results[index++] || questionObj.answers[index - 1 - questionObj.answers.length]
+      );
+      const translatedHint = questionObj.hint ? (results[index++] || questionObj.hint) : questionObj.hint;
+
+      setTranslatedContent({
+        question: translatedQuestion,
+        answers: translatedAnswers,
+        hint: translatedHint,
+        uiLabels: {
+          questionLabel: t.question,
+          ofLabel: t.of,
+          countdownLabel: t.countdown,
+        },
+      });
+    } catch (err) {
+      console.error("Translation error:", err);
+      setTranslatedContent({
+        question: questionObj.question,
+        answers: questionObj.answers,
+        hint: questionObj.hint,
+        uiLabels: {
+          questionLabel: t.question,
+          ofLabel: t.of,
+          countdownLabel: t.countdown,
+        },
+      });
+    }
   };
 
   // ─── 8. EFFECTS ─────────────────────────────────────────────────────────
@@ -322,10 +358,10 @@ export default function PlayPage() {
 
     const allTeamsReady = isTeamMode
       ? pendingSession.teams?.every(
-          (t) =>
-            (t.players?.length || 0) >=
-            (pendingSession.gameId?.playersPerTeam || 0)
-        )
+        (t) =>
+          (t.players?.length || 0) >=
+          (pendingSession.gameId?.playersPerTeam || 0)
+      )
       : false;
 
     const sessionReady = isTeamMode ? allTeamsReady : bothJoined;
@@ -532,10 +568,10 @@ export default function PlayPage() {
     // For Team Mode:
     const allTeamsReady = isTeamMode
       ? pendingSession.teams?.every(
-          (t) =>
-            (t.players?.length || 0) >=
-            (pendingSession.gameId?.playersPerTeam || 0)
-        )
+        (t) =>
+          (t.players?.length || 0) >=
+          (pendingSession.gameId?.playersPerTeam || 0)
+      )
       : false;
 
     const sessionReady = isTeamMode ? allTeamsReady : bothPlayersJoined;
@@ -994,13 +1030,14 @@ export default function PlayPage() {
             <Paper
               elevation={4}
               sx={{
-                width: "95%",
-                p: 4,
+                width: { xs: "95%", md: "85%", lg: "75%" },
+                maxWidth: "1200px",
+                p: { xs: 4, md: 3 },
                 textAlign: "center",
                 backdropFilter: "blur(6px)",
                 backgroundColor: "rgba(255,255,255,0.5)",
                 borderRadius: 4,
-                marginTop: "10vh",
+                my: { xs: 2, md: 3 },
               }}
             >
               <Typography
@@ -1056,6 +1093,28 @@ export default function PlayPage() {
                 {translatedContent?.question}
               </Typography>
 
+              {currentQuestion?.questionImage && (
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "center",
+                    mt: 2,
+                    mb: 2,
+                  }}
+                >
+                  <img
+                    src={currentQuestion.questionImage}
+                    alt="Question"
+                    style={{
+                      maxWidth: "clamp(200px, 50vw, 400px)",
+                      maxHeight: "clamp(150px, 30vh, 300px)",
+                      objectFit: "contain",
+                      borderRadius: "8px",
+                    }}
+                  />
+                </Box>
+              )}
+
               <Grid
                 container
                 spacing={2}
@@ -1068,6 +1127,9 @@ export default function PlayPage() {
                   display: "grid",
                   gridTemplateColumns: "repeat(2, 1fr)",
                   gridAutoRows: "1fr",
+                  overflow: "hidden",
+                  boxSizing: "border-box",
+                  gap: "8px",
                 }}
               >
                 {currentQuestion &&
@@ -1080,7 +1142,22 @@ export default function PlayPage() {
                         : "#ffcdd2"
                       : "#f5f5f5";
                     return (
-                      <Grid item xs={12} sm={6} key={i}>
+                      <Grid
+                        item
+                        xs={12}
+                        sm={6}
+                        key={i}
+                        sx={{
+                          display: "flex",
+                          minHeight: "150px",
+                          maxWidth: "100%",
+                          width: "100%",
+                          gridColumn: i === 4 ? "1 / -1" : "auto",
+                          overflow: "hidden",
+                          boxSizing: "border-box",
+                          flexShrink: 0,
+                        }}
+                      >
                         <Button
                           fullWidth
                           variant="outlined"
@@ -1089,52 +1166,99 @@ export default function PlayPage() {
                             backgroundColor: bg,
                             fontWeight: "bold",
                             fontSize: (() => {
-                              const optionLength = opt?.length || 0;
-                              if (optionLength <= 20) {
+                              const textLength = opt.length;
+                              if (textLength <= 10) {
                                 return {
-                                  xs: "1.5rem",
-                                  sm: "2rem",
-                                  md: "2.5rem",
+                                  xs: "0.8rem",
+                                  sm: "0.9rem",
+                                  md: "1.1rem",
                                 };
-                              } else if (optionLength <= 40) {
+                              } else if (textLength <= 30) {
                                 return {
-                                  xs: "1.25rem",
-                                  sm: "1.75rem",
-                                  md: "2rem",
+                                  xs: "0.7rem",
+                                  sm: "0.8rem",
+                                  md: "1rem",
                                 };
-                              } else if (optionLength <= 60) {
+                              } else if (textLength <= 60) {
                                 return {
-                                  xs: "1rem",
-                                  sm: "1.5rem",
-                                  md: "1.75rem",
+                                  xs: "0.6rem",
+                                  sm: "0.7rem",
+                                  md: "0.8rem",
                                 };
                               } else {
                                 return {
-                                  xs: "0.875rem",
-                                  sm: "1.25rem",
-                                  md: "1.5rem",
+                                  xs: "0.5rem",
+                                  sm: "0.6rem",
+                                  md: "0.7rem",
                                 };
                               }
                             })(),
                             borderRadius: 2,
                             textTransform: "none",
-                            minHeight: "150px",
-                            p: 2,
-                            lineHeight: { xs: 1.2, sm: 1.3, md: 1.4 },
+                            whiteSpace: "normal",
                             wordBreak: "break-word",
                             overflowWrap: "break-word",
+                            minHeight: { xs: "100px", sm: "120px", md: "150px" },
+                            maxWidth: "100%",
+                            width: "100%",
+                            display: "flex",
+                            flexDirection: "column",
+                            justifyContent: currentQuestion?.answerImages?.[i] ? "space-between" : "center",
+                            alignItems: "center",
+                            p: { xs: 1, sm: 1.5, md: 2 },
+                            overflow: "hidden",
+                            boxSizing: "border-box",
+                            flexShrink: 0,
+                            minWidth: 0,
                           }}
                         >
-                          <Box sx={{ width: "100%", textAlign: "center" }}>
+                          <Box
+                            sx={{
+                              width: "100%",
+                              maxWidth: "100%",
+                              display: "flex",
+                              alignItems: currentQuestion?.answerImages?.[i] ? "flex-start" : "center",
+                              justifyContent: "center",
+                              textAlign: "center",
+                              px: 1,
+                              wordBreak: "break-word",
+                              overflowWrap: "break-word",
+                              boxSizing: "border-box",
+                              flexShrink: 0,
+                              minWidth: 0,
+                              hyphens: "auto",
+                            }}
+                          >
                             {opt}
                           </Box>
+
+                          {currentQuestion?.answerImages?.[i] && (
+                            <Box
+                              sx={{
+                                display: "flex",
+                                justifyContent: "center",
+                                alignItems: "flex-end",
+                                mt: 1,
+                              }}
+                            >
+                              <img
+                                src={currentQuestion.answerImages[i]}
+                                alt={`Answer ${i + 1}`}
+                                style={{
+                                  maxWidth: "clamp(80px, 30vw, 150px)",
+                                  maxHeight: "clamp(60px, 20vh, 120px)",
+                                  objectFit: "contain",
+                                  borderRadius: "4px",
+                                }}
+                              />
+                            </Box>
+                          )}
                         </Button>
                       </Grid>
                     );
                   })}
               </Grid>
-
-              {showHint && currentQuestion.hint && (
+              {showHint && translatedContent?.hint && (
                 <Typography
                   variant="body2"
                   color="error"
@@ -1142,7 +1266,7 @@ export default function PlayPage() {
                     mt: 3,
                     fontStyle: "italic",
                     fontSize: (() => {
-                      const hintText = `${t.hint}: ${currentQuestion.hint}`;
+                      const hintText = `${t.hint}: ${translatedContent.hint}`;
                       const hintLength = hintText?.length || 0;
                       if (hintLength <= 50) {
                         return { xs: "0.875rem", sm: "1rem", md: "1.125rem" };
@@ -1161,7 +1285,7 @@ export default function PlayPage() {
                     overflowWrap: "break-word",
                   }}
                 >
-                  {t.hint}: {currentQuestion.hint}
+                  {t.hint}: {translatedContent.hint}
                 </Typography>
               )}
             </Paper>
@@ -1194,8 +1318,8 @@ export default function PlayPage() {
       const backgroundGradient = isTie
         ? "linear-gradient(135deg, #FFC107CC, #FF9800CC)"
         : isWinner
-        ? "linear-gradient(135deg, #4CAF50CC, #388E3CCC)"
-        : "linear-gradient(135deg, #F44336CC, #E53935CC)";
+          ? "linear-gradient(135deg, #4CAF50CC, #388E3CCC)"
+          : "linear-gradient(135deg, #F44336CC, #E53935CC)";
 
       return (
         <Box
@@ -1362,8 +1486,8 @@ export default function PlayPage() {
     const backgroundGradient = isTie
       ? "linear-gradient(135deg, #FFC107CC, #FF9800CC)"
       : isWinner
-      ? "linear-gradient(135deg, #4CAF50CC, #388E3CCC)"
-      : "linear-gradient(135deg, #F44336CC, #E53935CC)";
+        ? "linear-gradient(135deg, #4CAF50CC, #388E3CCC)"
+        : "linear-gradient(135deg, #F44336CC, #E53935CC)";
 
     return (
       <Box
