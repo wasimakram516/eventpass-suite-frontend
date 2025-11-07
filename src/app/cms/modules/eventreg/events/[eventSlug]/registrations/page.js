@@ -290,6 +290,7 @@ export default function ViewRegistrations() {
 
     if (!evRes?.error) {
       setEventDetails(evRes);
+      setTotalRegistrations(evRes.registrations);
     }
     setDynamicFields(fieldsLocal);
     setFieldMetaMap(
@@ -334,7 +335,6 @@ export default function ViewRegistrations() {
         _haystack: buildHaystack(r),
       }));
       setAllRegistrations(prepped);
-      setTotalRegistrations(prepped.length);
     }
 
     setLoading(false);

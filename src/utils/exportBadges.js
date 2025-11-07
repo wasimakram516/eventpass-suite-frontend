@@ -48,7 +48,6 @@ export async function exportAllBadges(registrations = [], eventDetails) {
             r.customFields?.["organization"] ||
             r.customFields?.["institution"] ||
             r.company ||
-            eventDetails?.name ||
             "",
           title:
             r.customFields?.["Title"] ||
