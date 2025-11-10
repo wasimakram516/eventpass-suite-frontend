@@ -222,7 +222,7 @@ export default function HomePage() {
       </Box>
     </>
   );
-}
+} 
 
 function FeatureBadge({ iconKey, label, hue, route }) {
   const iconEl = getModuleIcon(iconKey);
