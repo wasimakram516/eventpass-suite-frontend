@@ -71,6 +71,14 @@ export const getRegistrationsByEvent = withApiHandler(
   }
 );
 
+// Get initial 50 registrations with progressive loading
+export const getInitialRegistrations = withApiHandler(async (slug) => {
+  const { data } = await api.get(
+    `/eventreg/registrations/event/${slug}/all?initialLoad=true`
+  );
+  return data;
+});
+
 // Get all public registrations for export (no pagination)
 export const getAllPublicRegistrationsByEvent = withApiHandler(async (slug) => {
   const { data } = await api.get(`/eventreg/registrations/event/${slug}/all`);
