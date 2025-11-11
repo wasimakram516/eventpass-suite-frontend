@@ -71,10 +71,16 @@ export const getRegistrationsByEvent = withApiHandler(
   }
 );
 
-// Get initial 50 registrations with progressive loading
+// Get initial registrations (first 50)
 export const getInitialRegistrations = withApiHandler(async (slug) => {
+  const { data } = await api.get(`/eventreg/registrations/event/${slug}/all`);
+  return data;
+});
+
+// Get batch of registrations for progressive loading
+export const getRegistrationBatch = withApiHandler(async (eventSlug, skip, limit) => {
   const { data } = await api.get(
-    `/eventreg/registrations/event/${slug}/all?initialLoad=true`
+    `/eventreg/registrations/event/${eventSlug}/batch?skip=${skip}&limit=${limit}`
   );
   return data;
 });
