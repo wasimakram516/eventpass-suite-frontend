@@ -88,12 +88,11 @@ const translations = {
 
 export default function EventsPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, selectedBusiness, setSelectedBusiness } = useAuth();
   const { t, dir, align } = useI18nLayout(translations);
 
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedBusiness, setSelectedBusiness] = useState(null);
   const [allBusinesses, setAllBusinesses] = useState([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [openModal, setOpenModal] = useState(false);
@@ -111,10 +110,10 @@ export default function EventsPage() {
   }, []);
 
   useEffect(() => {
-    if (user?.role === "business" && user.business?.slug) {
+    if (user?.role === "business" && user.business?.slug && !selectedBusiness) {
       setSelectedBusiness(user.business.slug);
     }
-  }, [user]);
+  }, [user, selectedBusiness, setSelectedBusiness]);
 
   useEffect(() => {
     if (!selectedBusiness) {
