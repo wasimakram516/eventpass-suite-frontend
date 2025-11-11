@@ -868,10 +868,6 @@ export default function ViewRegistrations() {
             size="small"
             sx={{
               minWidth: { xs: "100%", sm: 150 },
-              "& .MuiSelect-icon": {
-                left: dir === "rtl" ? "auto" : 7,
-                right: dir === "rtl" ? 7 : "auto",
-              },
             }}
           >
             <InputLabel>{t.recordsPerPage}</InputLabel>
@@ -879,9 +875,6 @@ export default function ViewRegistrations() {
               value={limit}
               onChange={handleLimitChange}
               label={t.recordsPerPage}
-              sx={{
-                textAlign: dir === "rtl" ? "left" : "right",
-              }}
             >
               {[5, 10, 20, 50, 100, 250, 500].map((n) => (
                 <MenuItem key={n} value={n}>

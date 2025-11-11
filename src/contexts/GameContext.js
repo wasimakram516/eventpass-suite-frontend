@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 
 import { getGameBySlug as getQuiznestGame } from "@/services/quiznest/gameService";
 import { getGameBySlug as getEventduelGame } from "@/services/eventduel/gameService";
+import { getGameBySlug as getTapmatchGame } from "@/services/tapmatch/gameService";
 
 const GameContext = createContext();
 
@@ -16,19 +17,27 @@ export const GameProvider = ({ children, module = "quiznest" }) => {
 
   // Choose service method dynamically
   const fetchGameFunc =
-    module === "eventduel" ? getEventduelGame : getQuiznestGame;
+    module === "eventduel"
+      ? getEventduelGame
+      : module === "tapmatch"
+      ? getTapmatchGame
+      : getQuiznestGame;
 
   useEffect(() => {
     if (!gameSlug) return;
 
     const fetchGame = async () => {
-      const result = await fetchGameFunc(gameSlug);
-      if (!result?.error) {
-        setGame(result);
+      setLoading(true);
+      try {
+        const result = await fetchGameFunc(gameSlug);
+        if (!result?.error) {
+          setGame(result);
+        }
+      } catch (err) {
+        console.error(`Error loading ${module} game:`, err.message);
+      } finally {
+        setLoading(false);
       }
-      console.log(`Game for Module: ${module}:`, result);
-      
-      setLoading(false);
     };
 
     fetchGame();

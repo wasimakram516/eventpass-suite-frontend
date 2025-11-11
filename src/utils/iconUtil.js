@@ -109,7 +109,8 @@ import {
   AdminPanelSettings as AdminPanelSettingsIcon,
   FlashOn as FlashOnIcon,
   Print as PrintIcon,
-  Key as KeyIcon
+  Key as KeyIcon,
+  GridView as GridViewIcon
 } from "@mui/icons-material";
 
 // Screen Sharing
@@ -258,6 +259,7 @@ const ICONS = {
   flash: FlashOnIcon,
   print: PrintIcon,
   key: KeyIcon,
+  grid: GridViewIcon,
 
   // Screen Sharing / Device Icons
   desktop: DesktopWindowsIcon,

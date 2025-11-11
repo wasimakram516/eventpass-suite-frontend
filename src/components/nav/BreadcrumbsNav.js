@@ -71,8 +71,12 @@ const segmentMap = {
     icon: <ICONS.quiz fontSize="small" sx={{ mr: 0.5 }} />,
   },
   eventduel: {
-    label: "Event Duel",
+    label: "EventDuel",
     icon: <ICONS.games fontSize="small" sx={{ mr: 0.5 }} />,
+  },
+  tapmatch: {
+    label: "TapMatch",
+    icon: <ICONS.grid fontSize="small" sx={{ mr: 0.5 }} />,
   },
   votecast: {
     label: "VoteCast",

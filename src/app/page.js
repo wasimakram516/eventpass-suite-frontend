@@ -30,6 +30,7 @@ const translations = {
     features: {
       quiz: "QuizNest",
       games: "Event Duel",
+      tapmatch: "TapMatch",
       poll: "VoteCast",
       forum: "StageQ",
       image: "MosaicWall",
@@ -45,15 +46,16 @@ const translations = {
       "شغّل الاختبارات التفاعلية، التصويت، جدار الصور، أسئلة الجمهور، التسجيل والدخول — كل ذلك في مكان واحد.",
     button: "اذهب إلى لوحة التحكم",
     features: {
-      quiz: "كويزنيست",
-      games: "مبارزة الفعالية",
-      poll: "تصويت كاست",
-      forum: "أسئلة الجمهور",
-      image: "جدار الصور",
-      assignment: "تسجيل الفعالية",
-      checkin: "تسجيل الدخول",
-      trophy: "عجلة الجوائز",
-      email: "سيرفي جورو",
+      quiz: "QuizNest",
+      games: "Event Duel",
+      tapmatch: "TapMatch",
+      poll: "VoteCast",
+      forum: "StageQ",
+      image: "MosaicWall",
+      assignment: "Event Reg",
+      checkin: "Check-In",
+      trophy: "Event Wheel",
+      email: "SurveyGuru",
     },
   },
 };
@@ -78,7 +80,12 @@ export default function HomePage() {
       hue: "#5e35b1",
       route: "/eventduel",
     },
-
+    {
+      key: "grid",
+      label: t.features.tapmatch,
+      hue: "#00897b",
+      route: "/tapmatch",
+    },
     {
       key: "assignment",
       label: t.features.assignment,

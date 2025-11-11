@@ -20,6 +20,7 @@ export default function ClientLayout({ children }) {
     "/votecast",
     "/stageq",
     "/eventduel",
+    "/tapmatch",
     "/mosaicwall",
     "/eventreg",
     "/checkin",
