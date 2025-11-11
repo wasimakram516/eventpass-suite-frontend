@@ -9,9 +9,9 @@ import {
   Font,
 } from "@react-pdf/renderer";
 
-import regularFont from "../fonts/IBMPlexSansArabic-Regular.ttf";
-import mediumFont from "../fonts/IBMPlexSansArabic-Medium.ttf";
-import boldFont from "../fonts/IBMPlexSansArabic-Bold.ttf";
+import regularFont from "../../fonts/IBMPlexSansArabic-Regular.ttf";
+import mediumFont from "../../fonts/IBMPlexSansArabic-Medium.ttf";
+import boldFont from "../../fonts/IBMPlexSansArabic-Bold.ttf";
 
 Font.register({
   family: "IBM Plex Sans Arabic",
