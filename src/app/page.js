@@ -79,7 +79,7 @@ export default function HomePage() {
       label: t.features.games,
       hue: "#5e35b1",
       route: "/eventduel",
-    },
+    }, 
     {
       key: "grid",
       label: t.features.tapmatch,
