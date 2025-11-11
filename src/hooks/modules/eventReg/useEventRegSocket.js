@@ -6,12 +6,11 @@ const useEventRegSocket = ({ eventId, onUploadProgress, onEmailProgress, onLoadi
   const [emailProgress, setEmailProgress] = useState({ sent: 0, total: 0 });
   const [loadingProgress, setLoadingProgress] = useState({ loaded: 0, total: 0 });
 
-  // ---- Loading Progress Handler ----
   const handleLoadingProgress = useCallback(
-    (data) => {
-      if (data.eventId === eventId) {
-        setLoadingProgress({ loaded: data.loaded, total: data.total });
-        if (onLoadingProgress) onLoadingProgress(data);
+    (payload) => {
+      if (payload.eventId === eventId) {
+        setLoadingProgress({ loaded: payload.loaded, total: payload.total });
+        if (onLoadingProgress) onLoadingProgress(payload);
       }
     },
     [eventId, onLoadingProgress]
