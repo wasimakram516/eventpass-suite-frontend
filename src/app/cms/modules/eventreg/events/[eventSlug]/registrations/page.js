@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Box,
   Typography,
@@ -40,6 +40,7 @@ import {
   sendBulkEmails,
   updateRegistration,
   getInitialRegistrations,
+  getRegistrationBatch
 } from "@/services/eventreg/registrationService";
 import { getPublicEventBySlug } from "@/services/eventreg/eventService";
 
@@ -240,15 +241,47 @@ export default function ViewRegistrations() {
     eventId: eventDetails?._id,
   });
 
-  // Update loaded count when loading progress changes
+  // Fetch records progressively as socket emits progress
   useEffect(() => {
-    if (loadingProgress.loaded > 0) {
-      setLoadedCount(loadingProgress.loaded);
-      if (loadingProgress.loaded >= loadingProgress.total) {
-        setIsLoadingMore(false);
+    if (!loadingProgress.loaded || loadingProgress.loaded <= 50) return;
+    if (allRegistrations.length >= loadingProgress.loaded) return;
+
+    const fetchMissingRecords = async () => {
+      try {
+        const skip = allRegistrations.length;
+        const needed = loadingProgress.loaded - allRegistrations.length;
+
+        const res = await getRegistrationBatch(eventSlug, skip, needed);
+
+        if (res?.data?.length) {
+          const processed = res.data.map((r) => ({
+            ...r,
+            _createdAtMs: Date.parse(r.createdAt),
+            _scannedAtMs: (r.walkIns || []).map((w) => Date.parse(w.scannedAt)),
+            _haystack: buildHaystack(r, dynamicFields),
+          }));
+
+          setAllRegistrations((prev) => {
+            // Prevent duplicates by checking IDs
+            const existingIds = new Set(prev.map(r => r._id));
+            const newRecords = processed.filter(r => !existingIds.has(r._id));
+            return [...prev, ...newRecords];
+          });
+        }
+
+        setLoadedCount(loadingProgress.loaded);
+
+        if (loadingProgress.loaded >= loadingProgress.total) {
+          setIsLoadingMore(false);
+        }
+      } catch (err) {
+        console.error("Failed to fetch progressive records:", err);
       }
-    }
-  }, [loadingProgress]);
+    };
+
+    fetchMissingRecords();
+  }, [loadingProgress.loaded, eventSlug, dynamicFields, allRegistrations.length, loadingProgress.total]);
+
 
   const handleSaveEdit = async (updatedFields) => {
     const res = await updateRegistration(editingReg._id, updatedFields);
@@ -278,6 +311,29 @@ export default function ViewRegistrations() {
       setUnsentEmailCount(0);
       setSendingEmails(false);
     }
+  };
+
+  // Helper to build search haystack (component level)
+  const buildHaystack = (reg, fieldsLocal) => {
+    const dyn = fieldsLocal.map(
+      (f) => reg.customFields?.[f.name] ?? reg[f.name]
+    );
+    const walk = (reg.walkIns || []).flatMap((w) => [
+      w.scannedBy?.name,
+      w.scannedBy?.email,
+    ]);
+    return [
+      reg.fullName,
+      reg.email,
+      reg.phone,
+      reg.company,
+      reg.token,
+      ...dyn,
+      ...walk,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
   };
 
   const fetchData = async () => {
@@ -312,33 +368,8 @@ export default function ViewRegistrations() {
       )
     );
 
-    // Ensure filters include ALL dynamic keys
     setFilters((prev) => buildFilterState(fieldsLocal, prev));
 
-    // 2) Helper to build search haystack ONCE per record (includes all dynamic fields)
-    function buildHaystack(reg) {
-      const dyn = fieldsLocal.map(
-        (f) => reg.customFields?.[f.name] ?? reg[f.name]
-      );
-      const walk = (reg.walkIns || []).flatMap((w) => [
-        w.scannedBy?.name,
-        w.scannedBy?.email,
-      ]);
-      return [
-        reg.fullName,
-        reg.email,
-        reg.phone,
-        reg.company,
-        reg.token,
-        ...dyn,
-        ...walk,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-    }
-
-    // 3) Fetch initial 50 registrations and start progressive loading
     const regsRes = await getInitialRegistrations(eventSlug);
     if (!regsRes?.error) {
       const initialData = regsRes.data || [];
@@ -346,8 +377,9 @@ export default function ViewRegistrations() {
         ...r,
         _createdAtMs: Date.parse(r.createdAt),
         _scannedAtMs: (r.walkIns || []).map((w) => Date.parse(w.scannedAt)),
-        _haystack: buildHaystack(r),
+        _haystack: buildHaystack(r, fieldsLocal),
       }));
+
       setAllRegistrations(prepped);
       setLoadedCount(regsRes.loaded || initialData.length);
 
@@ -507,7 +539,7 @@ export default function ViewRegistrations() {
     } else {
       const res = await getAllPublicRegistrationsByEvent(eventSlug);
       if (res?.error) return;
-      registrationsToExport = res;
+      registrationsToExport = res.data || res;
     }
 
     const lines = [];
@@ -791,24 +823,24 @@ export default function ViewRegistrations() {
         mb={3}
         px={{ xs: 1, sm: 2 }}
       >
-{/* Left: Record info with loading progress */}
-      <Box width="100%" maxWidth={{ xs: "100%", md: "50%" }}>
-        {isLoadingMore && (
-          <Typography 
-            variant="body2" 
-            color="info.main" 
-            fontWeight="500"
-            sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.5 }}
-          >
-            <CircularProgress size={14} thickness={5} sx={{ mr: 0.5 }} />
-            Loading {loadedCount} of {totalRegistrations} records
+        {/* Left: Record info with loading progress */}
+        <Box width="100%" maxWidth={{ xs: "100%", md: "50%" }}>
+          {isLoadingMore && (
+            <Typography
+              variant="body2"
+              color="info.main"
+              fontWeight="500"
+              sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.5 }}
+            >
+              <CircularProgress size={14} thickness={5} sx={{ mr: 0.5 }} />
+              Loading {allRegistrations.length} of {totalRegistrations} records
+            </Typography>
+          )}
+          <Typography variant="body2" color="text.secondary">
+            {t.showing} {(page - 1) * limit + 1}-
+            {Math.min(page * limit, totalRegistrations)} {t.of}{" "}
+            {totalRegistrations} {t.records}
           </Typography>
-        )}
-        <Typography variant="body2" color="text.secondary">
-          {t.showing} {(page - 1) * limit + 1}-
-          {Math.min(page * limit, totalRegistrations)} {t.of}{" "}
-          {totalRegistrations} {t.records}
-        </Typography>
 
           {/* Matching results counter */}
           {(searchTerm || Object.keys(filters).some((k) => filters[k])) && (
