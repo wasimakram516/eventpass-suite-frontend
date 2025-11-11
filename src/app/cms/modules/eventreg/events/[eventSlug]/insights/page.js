@@ -50,6 +50,7 @@ const translations = {
         generating: "Generating...",
         exportInsights: "Export Insights",
         exporting: "Exporting...",
+        exportRawData: "Export Raw Data",
     },
     ar: {
         pageTitle: "تحليلات ذكية",
@@ -66,6 +67,7 @@ const translations = {
         generate: "إنشاء",
         generating: "جاري الإنشاء...",
         exportInsights: "تصدير التحليلات",
+        exportRawData: "تصدير البيانات الأولية",
         exporting: "جاري التصدير...",
     },
 };
@@ -538,6 +540,7 @@ export default function AnalyticsDashboard() {
     const [loading, setLoading] = useState(true);
     const [chartRefs, setChartRefs] = useState({});
     const [exportLoading, setExportLoading] = useState(false);
+    const [exportRawLoading, setExportRawLoading] = useState(false);
     const [eventInfo, setEventInfo] = useState(null);
 
     const getFieldParam = (fieldName, paramName, defaultValue) => {
@@ -791,6 +794,98 @@ export default function AnalyticsDashboard() {
         }
         setExportLoading(false);
     };
+
+    const handleExportRawData = () => {
+        if (selectedFields.length === 0 || !eventInfo) return;
+
+        setExportRawLoading(true);
+        try {
+            const lines = [];
+
+            // Event Details section
+            lines.push([`Logo URL:`, eventInfo.logoUrl || `N/A`].join(`,`));
+            lines.push([`Event Name:`, eventInfo.name || `N/A`].join(`,`));
+            const formatDateTimeForCSV = (dateString) => {
+                return dayjs(dateString).format('DD-MMM-YY, hh:mm a');
+            };
+
+            lines.push([`From:`, eventInfo.startDate ? `"${formatDateTimeForCSV(eventInfo.startDate)}"` : `N/A`].join(`,`));
+            lines.push([`To:`, eventInfo.endDate ? `"${formatDateTimeForCSV(eventInfo.endDate)}"` : `N/A`].join(`,`));
+            lines.push([`Venue:`, eventInfo.venue || `N/A`].join(`,`));
+            lines.push([`Total Registrations:`, `\t${eventInfo.registrations || 0}`].join(`,`));
+            lines.push([]);
+            // Data sections for each selected field
+            selectedFields.forEach((fieldName) => {
+                const field = availableFields.find((f) => f.name === fieldName);
+                const data = chartData[fieldName];
+
+                if (!field || !data) return;
+
+                lines.push([`=== ${field.label} ===`]);
+
+                if (data.chartType === "pie") {
+                    const topN = getFieldParam(fieldName, "topN", 10);
+                    lines.push([`Top N:`, `\t${topN}`].join(`,`));
+                    lines.push([`Category`, `Count`, `Percentage`].join(`,`));
+
+                    const total = data.data.reduce((sum, d) => sum + d.value, 0);
+                    data.data.forEach((item) => {
+                        const percentage = ((item.value / total) * 100).toFixed(2);
+                        const labelValue = item.label.replace(/"/g, `""`);
+                        const formattedLabel = /^\d+$/.test(labelValue) ? `\t${labelValue}` : `"${labelValue}"`;
+                        lines.push([
+                            formattedLabel,
+                            `\t${item.value}`,
+                            `\t${percentage}%`,
+                        ].join(`,`));
+                    });
+                } else if (data.chartType === "line") {
+                    const startDateTime = getFieldParam(
+                        fieldName,
+                        "startDateTime",
+                        dayjs().subtract(30, "day").startOf("day")
+                    );
+                    const endDateTime = getFieldParam(
+                        fieldName,
+                        "endDateTime",
+                        dayjs().endOf("day")
+                    );
+                    const intervalMinutes = getFieldParam(fieldName, "intervalMinutes", 60);
+
+                    const formatDateTimeForCSV = (dateTime) => {
+                        return dayjs(dateTime).format('DD-MMM-YY, hh:mm a');
+                    };
+
+                    lines.push([`From:`, `"${formatDateTimeForCSV(startDateTime)}"`].join(`,`));
+                    lines.push([`To:`, `"${formatDateTimeForCSV(endDateTime)}"`].join(`,`));
+                    lines.push([`Interval (minutes):`, `\t${intervalMinutes}`].join(`,`));
+                    lines.push([`Timestamp`, `Count`].join(`,`));
+
+                    data.xData.forEach((label, idx) => {
+                        const formattedLabel = formatDateTimeForCSV(label);
+                        lines.push([
+                            `"${formattedLabel}"`,
+                            `\t${data.yData[idx]}`,
+                        ].join(`,`));
+                    });
+                }
+
+                lines.push([]);
+            });
+
+            // Generate and download CSV
+            const csvContent = `\uFEFF` + lines.join(`\n`);
+            const blob = new Blob([csvContent], { type: `text/csv;charset=utf-8;` });
+            const link = document.createElement(`a`);
+            link.href = URL.createObjectURL(blob);
+            link.download = `${eventInfo.slug || `event`}_insights_raw_data.csv`;
+            link.click();
+        } catch (error) {
+            console.error("Raw data export failed:", error);
+        }
+        setExportRawLoading(false);
+    };
+
     const handleGenerate = async (fieldName) => {
         setGeneratingFields((prev) => ({ ...prev, [fieldName]: true }));
         setAppliedParams((prev) => ({
@@ -842,27 +937,51 @@ export default function AnalyticsDashboard() {
                         sx={{ width: { xs: "100%", sm: "auto" }, gap: { xs: 1, sm: 2 } }}
                     >
                         {selectedFields.length > 0 && (
-                            <Button
-                                variant="contained"
-                                onClick={handleExportPDF}
-                                disabled={exportLoading}
-                                startIcon={
-                                    exportLoading ? (
-                                        <CircularProgress size={20} color="inherit" />
-                                    ) : (
-                                        <ICONS.download />
-                                    )
-                                }
-                                sx={{
-                                    whiteSpace: "nowrap",
-                                    width: { xs: "100%", sm: "auto" },
-                                    minWidth: { xs: "100%", sm: "fit-content" },
-                                    py: 1,
-                                    ...getStartIconSpacing(dir),
-                                }}
-                            >
-                                {exportLoading ? t.exporting : t.exportInsights}
-                            </Button>
+                            <>
+                                <Button
+                                    variant="outlined"
+                                    onClick={handleExportRawData}
+                                    disabled={exportRawLoading}
+                                    startIcon={
+                                        exportRawLoading ? (
+                                            <CircularProgress size={20} color="inherit" />
+                                        ) : (
+                                            <ICONS.download />
+                                        )
+                                    }
+                                    sx={{
+                                        whiteSpace: "nowrap",
+                                        width: { xs: "100%", sm: "auto" },
+                                        minWidth: { xs: "100%", sm: "fit-content" },
+                                        py: 1,
+                                        ...getStartIconSpacing(dir),
+                                    }}
+                                >
+                                    {exportRawLoading ? t.exporting : t.exportRawData}
+                                </Button>
+
+                                <Button
+                                    variant="contained"
+                                    onClick={handleExportPDF}
+                                    disabled={exportLoading}
+                                    startIcon={
+                                        exportLoading ? (
+                                            <CircularProgress size={20} color="inherit" />
+                                        ) : (
+                                            <ICONS.download />
+                                        )
+                                    }
+                                    sx={{
+                                        whiteSpace: "nowrap",
+                                        width: { xs: "100%", sm: "auto" },
+                                        minWidth: { xs: "100%", sm: "fit-content" },
+                                        py: 1,
+                                        ...getStartIconSpacing(dir),
+                                    }}
+                                >
+                                    {exportLoading ? t.exporting : t.exportInsights}
+                                </Button>
+                            </>
                         )}
                     </Stack>
                 </Stack>

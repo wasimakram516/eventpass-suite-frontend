@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Box,
   Typography,
@@ -39,6 +39,7 @@ import {
   getUnsentCount,
   sendBulkEmails,
   updateRegistration,
+  getInitialRegistrations,
 } from "@/services/eventreg/registrationService";
 import { getPublicEventBySlug } from "@/services/eventreg/eventService";
 
@@ -195,6 +196,8 @@ export default function ViewRegistrations() {
   const [fieldMetaMap, setFieldMetaMap] = useState({});
   const [allRegistrations, setAllRegistrations] = useState([]);
   const [totalRegistrations, setTotalRegistrations] = useState(0);
+  const [loadedCount, setLoadedCount] = useState(0);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [unsentEmailCount, setUnsentEmailCount] = useState(0);
 
   const [page, setPage] = useState(1);
@@ -226,16 +229,42 @@ export default function ViewRegistrations() {
   }, [eventSlug]);
 
   useEffect(() => {
-    const id = setTimeout(
-      () => setSearchTerm(rawSearch.trim().toLowerCase()),
-      20
-    );
+    const id = setTimeout(() => {
+      setSearchTerm(rawSearch.trim().toLowerCase());
+      setPage(1);
+    }, 20);
     return () => clearTimeout(id);
   }, [rawSearch]);
 
-  const { uploadProgress, emailProgress } = useEventRegSocket({
+  const handleLoadingProgress = useCallback((payload) => {
+    if (payload.data?.length) {
+      const processed = payload.data.map((r) => ({
+        ...r,
+        _createdAtMs: Date.parse(r.createdAt),
+        _scannedAtMs: (r.walkIns || []).map((w) => Date.parse(w.scannedAt)),
+        _haystack: buildHaystack(r, dynamicFields),
+      }));
+
+      setAllRegistrations((prev) => {
+        const existingIds = new Set(prev.map(r => r._id));
+        const newRecords = processed.filter(r => !existingIds.has(r._id));
+        return [...prev, ...newRecords];
+      });
+    }
+  }, [dynamicFields]);
+
+  const { uploadProgress, emailProgress, loadingProgress } = useEventRegSocket({
     eventId: eventDetails?._id,
+    onLoadingProgress: handleLoadingProgress,
   });
+
+  useEffect(() => {
+    setLoadedCount(loadingProgress.loaded);
+    if (loadingProgress.loaded >= loadingProgress.total && loadingProgress.total > 0) {
+      setIsLoadingMore(false);
+    }
+  }, [loadingProgress]);
+
 
   const handleSaveEdit = async (updatedFields) => {
     const res = await updateRegistration(editingReg._id, updatedFields);
@@ -267,6 +296,29 @@ export default function ViewRegistrations() {
     }
   };
 
+  // Helper to build search haystack (component level)
+  const buildHaystack = (reg, fieldsLocal) => {
+    const dyn = fieldsLocal.map(
+      (f) => reg.customFields?.[f.name] ?? reg[f.name]
+    );
+    const walk = (reg.walkIns || []).flatMap((w) => [
+      w.scannedBy?.name,
+      w.scannedBy?.email,
+    ]);
+    return [
+      reg.fullName,
+      reg.email,
+      reg.phone,
+      reg.company,
+      reg.token,
+      ...dyn,
+      ...walk,
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+  };
+
   const fetchData = async () => {
     setLoading(true);
 
@@ -277,16 +329,16 @@ export default function ViewRegistrations() {
     const fieldsLocal =
       !evRes?.error && evRes.formFields?.length
         ? evRes.formFields.map((f) => ({
-            name: f.inputName,
-            type: (f.inputType || "text").toLowerCase(),
-            values: Array.isArray(f.values) ? f.values : [],
-          }))
+          name: f.inputName,
+          type: (f.inputType || "text").toLowerCase(),
+          values: Array.isArray(f.values) ? f.values : [],
+        }))
         : [
-            { name: "fullName", type: "text", values: [] },
-            { name: "email", type: "text", values: [] },
-            { name: "phone", type: "text", values: [] },
-            { name: "company", type: "text", values: [] },
-          ];
+          { name: "fullName", type: "text", values: [] },
+          { name: "email", type: "text", values: [] },
+          { name: "phone", type: "text", values: [] },
+          { name: "company", type: "text", values: [] },
+        ];
 
     if (!evRes?.error) {
       setEventDetails(evRes);
@@ -299,42 +351,25 @@ export default function ViewRegistrations() {
       )
     );
 
-    // Ensure filters include ALL dynamic keys
     setFilters((prev) => buildFilterState(fieldsLocal, prev));
 
-    // 2) Helper to build search haystack ONCE per record (includes all dynamic fields)
-    function buildHaystack(reg) {
-      const dyn = fieldsLocal.map(
-        (f) => reg.customFields?.[f.name] ?? reg[f.name]
-      );
-      const walk = (reg.walkIns || []).flatMap((w) => [
-        w.scannedBy?.name,
-        w.scannedBy?.email,
-      ]);
-      return [
-        reg.fullName,
-        reg.email,
-        reg.phone,
-        reg.company,
-        reg.token,
-        ...dyn,
-        ...walk,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-    }
-
-    // 3) Fetch ALL registrations ONCE and preprocess
-    const regsRes = await getAllPublicRegistrationsByEvent(eventSlug);
+    const regsRes = await getInitialRegistrations(eventSlug);
     if (!regsRes?.error) {
-      const prepped = regsRes.map((r) => ({
+      const initialData = regsRes.data || [];
+      const prepped = initialData.map((r) => ({
         ...r,
         _createdAtMs: Date.parse(r.createdAt),
         _scannedAtMs: (r.walkIns || []).map((w) => Date.parse(w.scannedAt)),
-        _haystack: buildHaystack(r),
+        _haystack: buildHaystack(r, fieldsLocal),
       }));
+
       setAllRegistrations(prepped);
+      setLoadedCount(regsRes.loaded || initialData.length);
+
+      // If more records exist, show loading indicator
+      if (regsRes.total > regsRes.loaded) {
+        setIsLoadingMore(true);
+      }
     }
 
     setLoading(false);
@@ -396,8 +431,8 @@ export default function ViewRegistrations() {
           (key === "token"
             ? reg.token
             : key === "createdAt"
-            ? reg.createdAt
-            : "");
+              ? reg.createdAt
+              : "");
 
         const v = String(regValue ?? "").toLowerCase();
         const f = String(rawValue).toLowerCase();
@@ -424,9 +459,8 @@ export default function ViewRegistrations() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `${
-        eventDetails.slug || "event"
-      }_registrations_template.xlsx`;
+      link.download = `${eventDetails.slug || "event"
+        }_registrations_template.xlsx`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -488,7 +522,7 @@ export default function ViewRegistrations() {
     } else {
       const res = await getAllPublicRegistrationsByEvent(eventSlug);
       if (res?.error) return;
-      registrationsToExport = res;
+      registrationsToExport = res.data || res;
     }
 
     const lines = [];
@@ -500,10 +534,10 @@ export default function ViewRegistrations() {
       [
         `Event Dates:`,
         formatDate(eventDetails.startDate) +
-          (eventDetails.endDate &&
+        (eventDetails.endDate &&
           eventDetails.endDate !== eventDetails.startDate
-            ? ` to ${formatDate(eventDetails.endDate)}`
-            : ``),
+          ? ` to ${formatDate(eventDetails.endDate)}`
+          : ``),
       ].join(`,`)
     );
     lines.push([`Venue:`, eventDetails.venue || `N/A`].join(`,`));
@@ -595,9 +629,8 @@ export default function ViewRegistrations() {
 
     const link = document.createElement(`a`);
     link.href = URL.createObjectURL(blob);
-    link.download = `${eventDetails.slug || `event`}_${
-      isFiltered ? "filtered" : "all"
-    }_registrations.csv`;
+    link.download = `${eventDetails.slug || `event`}_${isFiltered ? "filtered" : "all"
+      }_registrations.csv`;
     link.click();
 
     setExportLoading(false);
@@ -686,8 +719,8 @@ export default function ViewRegistrations() {
           {uploading && uploadProgress
             ? `${t.uploading} ${uploadProgress.uploaded}/${uploadProgress.total}`
             : uploading
-            ? t.uploading
-            : t.uploadFile}
+              ? t.uploading
+              : t.uploadFile}
           <input
             type="file"
             hidden
@@ -714,8 +747,8 @@ export default function ViewRegistrations() {
             {sendingEmails && emailProgress
               ? `${t.sendingEmails} ${emailProgress.sent}/${unsentEmailCount}`
               : sendingEmails
-              ? t.sendingEmails
-              : t.sendBulkEmails}
+                ? t.sendingEmails
+                : t.sendBulkEmails}
           </Button>
         )}
 
@@ -736,8 +769,8 @@ export default function ViewRegistrations() {
             {exportLoading
               ? t.exporting
               : searchTerm || Object.keys(filters).some((k) => filters[k])
-              ? t.exportFiltered
-              : t.exportAll}
+                ? t.exportFiltered
+                : t.exportAll}
           </Button>
         )}
 
@@ -773,8 +806,19 @@ export default function ViewRegistrations() {
         mb={3}
         px={{ xs: 1, sm: 2 }}
       >
-        {/* Left: Record info */}
+        {/* Left: Record info with loading progress */}
         <Box width="100%" maxWidth={{ xs: "100%", md: "50%" }}>
+          {isLoadingMore && (
+            <Typography
+              variant="body2"
+              color="info.main"
+              fontWeight="500"
+              sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.5 }}
+            >
+              <CircularProgress size={14} thickness={5} sx={{ mr: 0.5 }} />
+              Loading {allRegistrations.length} of {totalRegistrations} records
+            </Typography>
+          )}
           <Typography variant="body2" color="text.secondary">
             {t.showing} {(page - 1) * limit + 1}-
             {Math.min(page * limit, totalRegistrations)} {t.of}{" "}
@@ -793,13 +837,13 @@ export default function ViewRegistrations() {
               <ICONS.search fontSize="small" sx={{ opacity: 0.7 }} />
               {filteredRegistrations.length === 1
                 ? t.matchingRecords.replace(
-                    "{count}",
-                    filteredRegistrations.length
-                  )
+                  "{count}",
+                  filteredRegistrations.length
+                )
                 : t.matchingRecordsPlural.replace(
-                    "{count}",
-                    filteredRegistrations.length
-                  )}{" "}
+                  "{count}",
+                  filteredRegistrations.length
+                )}{" "}
               {t.found}
             </Typography>
           )}
@@ -814,9 +858,9 @@ export default function ViewRegistrations() {
           sx={
             dir === "rtl"
               ? {
-                  columnGap: 1.5,
-                  rowGap: 1.5,
-                }
+                columnGap: 1.5,
+                rowGap: 1.5,
+              }
               : {}
           }
         >
@@ -840,8 +884,8 @@ export default function ViewRegistrations() {
               sx:
                 dir === "rtl"
                   ? {
-                      paddingRight: 2,
-                    }
+                    paddingRight: 2,
+                  }
                   : {},
             }}
             sx={{
@@ -899,28 +943,24 @@ export default function ViewRegistrations() {
         if (filters.createdAtFromMs || filters.createdAtToMs) {
           activeFilterEntries.push([
             "Registered At",
-            `${
-              filters.createdAtFromMs
-                ? formatDateTimeWithLocale(filters.createdAtFromMs)
-                : "—"
-            } → ${
-              filters.createdAtToMs
-                ? formatDateTimeWithLocale(filters.createdAtToMs)
-                : "—"
+            `${filters.createdAtFromMs
+              ? formatDateTimeWithLocale(filters.createdAtFromMs)
+              : "—"
+            } → ${filters.createdAtToMs
+              ? formatDateTimeWithLocale(filters.createdAtToMs)
+              : "—"
             }`,
           ]);
         }
         if (filters.scannedAtFromMs || filters.scannedAtToMs) {
           activeFilterEntries.push([
             "Scanned At",
-            `${
-              filters.scannedAtFromMs
-                ? formatDateTimeWithLocale(filters.scannedAtFromMs)
-                : "—"
-            } → ${
-              filters.scannedAtToMs
-                ? formatDateTimeWithLocale(filters.scannedAtToMs)
-                : "—"
+            `${filters.scannedAtFromMs
+              ? formatDateTimeWithLocale(filters.scannedAtFromMs)
+              : "—"
+            } → ${filters.scannedAtToMs
+              ? formatDateTimeWithLocale(filters.scannedAtToMs)
+              : "—"
             }`,
           ]);
         }
@@ -947,12 +987,12 @@ export default function ViewRegistrations() {
                 key === "token"
                   ? t.token
                   : key === "Registered At"
-                  ? t.registeredAt
-                  : key === "Scanned At"
-                  ? t.scannedAt
-                  : key === "scannedBy"
-                  ? t.scannedBy
-                  : getFieldLabel(key);
+                    ? t.registeredAt
+                    : key === "Scanned At"
+                      ? t.scannedAt
+                      : key === "scannedBy"
+                        ? t.scannedBy
+                        : getFieldLabel(key);
               return (
                 <Chip
                   key={key}
@@ -978,12 +1018,12 @@ export default function ViewRegistrations() {
                   sx={
                     dir === "rtl"
                       ? {
-                          pr: 4.5,
-                          pl: 2,
-                          "& .MuiChip-label": {
-                            whiteSpace: "nowrap",
-                          },
-                        }
+                        pr: 4.5,
+                        pl: 2,
+                        "& .MuiChip-label": {
+                          whiteSpace: "nowrap",
+                        },
+                      }
                       : {}
                   }
                 />
@@ -1349,8 +1389,8 @@ export default function ViewRegistrations() {
               {["radio", "list", "select", "dropdown"].includes(
                 (f.type || "").toLowerCase()
               ) &&
-              Array.isArray(f.values) &&
-              f.values.length > 0 ? (
+                Array.isArray(f.values) &&
+                f.values.length > 0 ? (
                 <FormControl fullWidth size="small">
                   <InputLabel>{`Select ${getFieldLabel(f.name)}`}</InputLabel>
                   <Select

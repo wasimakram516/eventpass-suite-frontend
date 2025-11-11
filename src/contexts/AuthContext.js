@@ -18,12 +18,17 @@ const getMsLeft = (token) => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [selectedBusiness, setSelectedBusiness] = useState(null);
 
   // Load user from sessionStorage on mount
   useEffect(() => {
     const storedUser = sessionStorage.getItem("user");
+    const storedBusiness = localStorage.getItem("selectedBusiness");
     if (storedUser) {
       setUser(JSON.parse(storedUser));
+    }
+    if (storedBusiness) {
+      setSelectedBusiness(storedBusiness);
     }
     setLoading(false);
   }, []);
@@ -78,6 +83,15 @@ export const AuthProvider = ({ children }) => {
     setUser(userData);
   };
 
+  const handleSetSelectedBusiness = (businessSlug) => {
+    if (businessSlug) {
+      localStorage.setItem("selectedBusiness", businessSlug);
+    } else {
+      localStorage.removeItem("selectedBusiness");
+    }
+    setSelectedBusiness(businessSlug);
+  };
+
   const logout = async () => {
     try {
       await logoutUser();
@@ -85,12 +99,20 @@ export const AuthProvider = ({ children }) => {
       console.error("Logout failed:", error);
     } finally {
       handleSetUser(null);
+      handleSetSelectedBusiness(null);
     }
   };
 
   return (
     <AuthContext.Provider
-      value={{ user, setUser: handleSetUser, logout, loading }}
+      value={{
+        user,
+        setUser: handleSetUser,
+        selectedBusiness,
+        setSelectedBusiness: handleSetSelectedBusiness,
+        logout,
+        loading
+      }}
     >
       {children}
     </AuthContext.Provider>
