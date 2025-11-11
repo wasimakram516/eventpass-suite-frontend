@@ -18,7 +18,7 @@ import {
   TextField,
 } from "@mui/material";
 
-import BreadcrumbsNav from "@/components/BreadcrumbsNav";
+import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import { useEffect, useState } from "react";
 import { useMessage } from "@/contexts/MessageContext";
 import { getAllBusinesses } from "@/services/businessService";
@@ -27,9 +27,9 @@ import {
   updateQuestion,
   deleteQuestion,
 } from "@/services/stageq/questionService";
-import ConfirmationDialog from "@/components/ConfirmationDialog";
+import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import { useAuth } from "@/contexts/AuthContext";
-import BusinessDrawer from "@/components/BusinessDrawer";
+import BusinessDrawer from "@/components/drawers/BusinessDrawer";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import EmptyBusinessState from "@/components/EmptyBusinessState";

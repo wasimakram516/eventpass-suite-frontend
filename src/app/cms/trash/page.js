@@ -26,7 +26,7 @@ import {
   useTheme,
 } from "@mui/material";
 
-import BreadcrumbsNav from "@/components/BreadcrumbsNav";
+import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import {
   getTrash,
   restoreTrashItem,
@@ -39,10 +39,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import ICONS from "@/utils/iconUtil";
 import NoDataAvailable from "@/components/NoDataAvailable";
-import ConfirmationDialog from "@/components/ConfirmationDialog";
+import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import { wrapTextBox } from "@/utils/wrapTextStyles";
 import { formatDateTimeWithLocale, formatDate } from "@/utils/dateUtils";
-import FilterModal from "@/components/FilterModal";
+import FilterModal from "@/components/modals/FilterModal";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import { getModuleCounts } from "@/services/trashService";
 import { getModuleIcon } from "@/utils/iconMapper";

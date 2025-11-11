@@ -23,12 +23,12 @@ import {
 } from "@/services/eventreg/insightsService";
 import { getPublicEventBySlug } from "@/services/eventreg/eventService";
 import ICONS from "@/utils/iconUtil";
-import BreadcrumbsNav from "@/components/BreadcrumbsNav";
+import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
-import { exportChartsToPDF } from "@/components/pdfExportCharts";
+import { exportChartsToPDF } from "@/components/badges/pdfExportCharts";
 import { Button, CircularProgress } from "@mui/material";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import { formatDateTimeWithLocale } from "@/utils/dateUtils";

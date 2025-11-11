@@ -24,7 +24,7 @@ import { printZpl } from "@/utils/printZpl";
 import { useMessage } from "@/contexts/MessageContext";
 import { pdf } from "@react-pdf/renderer";
 import QRCode from "qrcode";
-import BadgePDF from "@/components/BadgePDF";
+import BadgePDF from "@/components/badges/BadgePDF";
 import { useAuth } from "@/contexts/AuthContext";
 
 const translations = {

@@ -8,7 +8,7 @@ import {
 import ICONS from "@/utils/iconUtil";
 import { forwardRef } from "react";
 import useI18nLayout from "@/hooks/useI18nLayout";
-import EmptyBusinessState from "./EmptyBusinessState";
+import EmptyBusinessState from "../EmptyBusinessState";
 
 const Transition = forwardRef(function Transition(props, ref) {
   return <Slide direction="left" ref={ref} {...props} />;

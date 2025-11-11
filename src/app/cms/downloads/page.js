@@ -15,8 +15,8 @@ import {
 
 import { Dialog, DialogContent } from "@mui/material";
 
-import BreadcrumbsNav from "@/components/BreadcrumbsNav";
-import BusinessDrawer from "@/components/BusinessDrawer";
+import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
+import BusinessDrawer from "@/components/drawers/BusinessDrawer";
 import EmptyBusinessState from "@/components/EmptyBusinessState";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import useI18nLayout from "@/hooks/useI18nLayout";
@@ -28,10 +28,10 @@ import {
   updateFile,
   deleteFile,
 } from "@/services/fileResourceService";
-import FileUploadDialog from "@/components/FileUploadDialog";
+import FileUploadDialog from "@/components/modals/FileUploadDialog";
 import AppCard from "@/components/cards/AppCard";
-import ShareLinkModal from "@/components/ShareLinkModal";
-import ConfirmationDialog from "@/components/ConfirmationDialog";
+import ShareLinkModal from "@/components/modals/ShareLinkModal";
+import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import ICONS from "@/utils/iconUtil";
 
 const translations = {

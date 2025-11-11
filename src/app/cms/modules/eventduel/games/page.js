@@ -14,9 +14,9 @@ import {
   Stack,
   Tooltip,
 } from "@mui/material";
-import GameFormModal from "@/components/GameFormModal";
-import ConfirmationDialog from "@/components/ConfirmationDialog";
-import BreadcrumbsNav from "@/components/BreadcrumbsNav";
+import GameFormModal from "@/components/modals/GameFormModal";
+import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
+import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 
 import {
   getGamesByBusiness,
@@ -27,8 +27,8 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { getAllBusinesses } from "@/services/businessService";
-import BusinessDrawer from "@/components/BusinessDrawer";
-import ShareLinkModal from "@/components/ShareLinkModal";
+import BusinessDrawer from "@/components/drawers/BusinessDrawer";
+import ShareLinkModal from "@/components/modals/ShareLinkModal";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import EmptyBusinessState from "@/components/EmptyBusinessState";

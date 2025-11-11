@@ -15,7 +15,7 @@ import {
   FormControlLabel,
 } from "@mui/material";
 import { useState, useEffect } from "react";
-import { useMessage } from "../contexts/MessageContext";
+import { useMessage } from "../../contexts/MessageContext";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import slugify from "@/utils/slugify";
 import ICONS from "@/utils/iconUtil";

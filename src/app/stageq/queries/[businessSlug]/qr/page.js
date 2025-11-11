@@ -5,7 +5,7 @@ import { useParams } from "next/navigation";
 import { Box, Typography, CircularProgress } from "@mui/material";
 import QRCode from "react-qr-code";
 import Image from "next/image";
-import Footer from "@/components/Footer";
+import Footer from "@/components/nav/Footer";
 import { getBusinessBySlug } from "@/services/businessService";
 import LanguageSelector from "@/components/LanguageSelector";
 import useI18nLayout from "@/hooks/useI18nLayout";

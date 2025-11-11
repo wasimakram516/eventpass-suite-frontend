@@ -16,7 +16,7 @@ import {
 } from "@mui/material";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import ReplayIcon from "@mui/icons-material/Replay";
-import ResultsChart from "@/components/ResultsChart";
+import ResultsChart from "@/components/cards/ResultsChart";
 
 export default function DemoPoll() {
   const [currentPollIndex, setCurrentPollIndex] = useState(0);

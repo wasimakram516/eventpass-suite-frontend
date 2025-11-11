@@ -15,8 +15,8 @@ import {
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import ConfirmationDialog from "@/components/ConfirmationDialog";
-import LanguageSelector from "./LanguageSelector";
+import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
+import LanguageSelector from "../LanguageSelector";
 import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";

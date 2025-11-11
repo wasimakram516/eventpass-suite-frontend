@@ -22,8 +22,8 @@ import {
   deleteDisplayMedia,
 } from "@/services/mosaicwall/displayMediaService";
 import { useAuth } from "@/contexts/AuthContext";
-import BreadcrumbsNav from "@/components/BreadcrumbsNav";
-import ConfirmationDialog from "@/components/ConfirmationDialog";
+import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
+import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import { formatDateTimeWithLocale } from "@/utils/dateUtils";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";

@@ -10,13 +10,13 @@ import {
   CardContent,
   Grid,
 } from "@mui/material";
-import BreadcrumbsNav from "@/components/BreadcrumbsNav";
+import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import { useEffect, useState } from "react";
 import { getAllVisitors } from "@/services/stageq/visitorService";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@mui/material";
 import { getAllBusinesses } from "@/services/businessService";
-import BusinessDrawer from "@/components/BusinessDrawer";
+import BusinessDrawer from "@/components/drawers/BusinessDrawer";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import EmptyBusinessState from "@/components/EmptyBusinessState";

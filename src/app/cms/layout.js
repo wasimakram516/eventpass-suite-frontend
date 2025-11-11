@@ -3,8 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { Box, CircularProgress } from "@mui/material";
-import Navbar from "@/components/Navbar";
-import Sidebar from "@/components/Sidebar";
+import Navbar from "@/components/nav/Navbar";
+import Sidebar from "@/components/nav/Sidebar";
 import { useEffect } from "react";
 import LoadingState from "@/components/LoadingState";
 

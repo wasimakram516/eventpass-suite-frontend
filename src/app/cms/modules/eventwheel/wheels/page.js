@@ -30,10 +30,10 @@ import {
   deleteSpinWheel,
 } from "@/services/eventwheel/spinWheelService";
 import { getAllBusinesses } from "@/services/businessService";
-import ShareLinkModal from "@/components/ShareLinkModal";
-import ConfirmationDialog from "@/components/ConfirmationDialog";
-import BusinessDrawer from "@/components/BusinessDrawer";
-import BreadcrumbsNav from "@/components/BreadcrumbsNav";
+import ShareLinkModal from "@/components/modals/ShareLinkModal";
+import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
+import BusinessDrawer from "@/components/drawers/BusinessDrawer";
+import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import EmptyBusinessState from "@/components/EmptyBusinessState";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import { useAuth } from "@/contexts/AuthContext";

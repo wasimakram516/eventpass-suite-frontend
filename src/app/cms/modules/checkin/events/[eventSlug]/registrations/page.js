@@ -28,9 +28,9 @@ import {
 } from "@/services/checkin/checkinRegistrationService";
 import { getCheckInEventBySlug } from "@/services/checkin/checkinEventService";
 
-import ConfirmationDialog from "@/components/ConfirmationDialog";
-import WalkInModal from "@/components/WalkInModal";
-import BreadcrumbsNav from "@/components/BreadcrumbsNav";
+import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
+import WalkInModal from "@/components/modals/WalkInModal";
+import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import { formatDate, formatDateTimeWithLocale } from "@/utils/dateUtils";
 import { useParams } from "next/navigation";
 import ICONS from "@/utils/iconUtil";

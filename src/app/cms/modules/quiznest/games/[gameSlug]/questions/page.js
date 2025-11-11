@@ -31,11 +31,11 @@ import UploadFileIcon from "@mui/icons-material/UploadFile";
 import DownloadIcon from "@mui/icons-material/Download";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import ICONS from "@/utils/iconUtil";
-import BreadcrumbsNav from "@/components/BreadcrumbsNav";
+import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import QuestionFormModal from "@/components/QuestionFormModal";
-import ConfirmationDialog from "@/components/ConfirmationDialog";
+import QuestionFormModal from "@/components/modals/QuestionFormModal";
+import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import { useMessage } from "@/contexts/MessageContext";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import {

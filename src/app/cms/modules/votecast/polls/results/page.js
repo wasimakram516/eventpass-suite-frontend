@@ -14,10 +14,10 @@ import {
   FormControl,
   InputLabel,
 } from "@mui/material";
-import ResultsChart from "@/components/ResultsChart";
-import BreadcrumbsNav from "@/components/BreadcrumbsNav";
-import ConfirmationDialog from "@/components/ConfirmationDialog";
-import BusinessDrawer from "@/components/BusinessDrawer";
+import ResultsChart from "@/components/cards/ResultsChart";
+import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
+import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
+import BusinessDrawer from "@/components/drawers/BusinessDrawer";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMessage } from "@/contexts/MessageContext";
 import { getResults } from "@/services/votecast/pollsResultService";
@@ -25,7 +25,7 @@ import { resetVotes } from "@/services/votecast/pollService";
 import { getAllBusinesses } from "@/services/businessService";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import ICONS from "@/utils/iconUtil";
-import FilterDrawer from "@/components/FilterModal";
+import FilterDrawer from "@/components/modals/FilterModal";
 import EmptyBusinessState from "@/components/EmptyBusinessState";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";

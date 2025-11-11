@@ -8,7 +8,7 @@ import { getCheckInEventBySlug } from "@/services/checkin/checkinEventService";
 import LanguageSelector from "@/components/LanguageSelector";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import Background from "@/components/Background";
-import EventWelcomeCard from "@/components/EventWelcomeCard";
+import EventWelcomeCard from "@/components/cards/EventWelcomeCard";
 import ICONS from "@/utils/iconUtil";
 
 export default function EventDetails() {

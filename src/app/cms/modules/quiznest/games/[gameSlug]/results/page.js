@@ -16,7 +16,7 @@ import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import EditNoteIcon from "@mui/icons-material/EditNote";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import BreadcrumbsNav from "@/components/BreadcrumbsNav";
+import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 
 import { useMessage } from "@/contexts/MessageContext";
 import { useAuth } from "@/contexts/AuthContext";

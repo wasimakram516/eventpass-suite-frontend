@@ -13,7 +13,7 @@ import SupportAgentIcon from "@mui/icons-material/SupportAgent";
 import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
 import PhoneOutlinedIcon from "@mui/icons-material/PhoneOutlined";
 
-import DashboardCard from "@/components/DashboardCard";
+import DashboardCard from "@/components/cards/DashboardCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { getModules } from "@/services/moduleService";
 import { getModuleIcon } from "@/utils/iconMapper";

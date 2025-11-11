@@ -33,11 +33,11 @@ import {
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMessage } from "@/contexts/MessageContext";
-import BreadcrumbsNav from "@/components/BreadcrumbsNav";
-import BusinessDrawer from "@/components/BusinessDrawer";
+import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
+import BusinessDrawer from "@/components/drawers/BusinessDrawer";
 import EmptyBusinessState from "@/components/EmptyBusinessState";
 import NoDataAvailable from "@/components/NoDataAvailable";
-import ConfirmationDialog from "@/components/ConfirmationDialog";
+import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import ICONS from "@/utils/iconUtil";

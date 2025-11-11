@@ -11,7 +11,7 @@ import {
 } from "@mui/material";
 import { useRouter } from "next/navigation";
 import useI18nLayout from "@/hooks/useI18nLayout";
-import BreadcrumbsNav from "./BreadcrumbsNav";
+import BreadcrumbsNav from "./nav/BreadcrumbsNav";
 
 export default function ModuleLandingPage({
   moduleIcon: Icon,

@@ -1,6 +1,6 @@
 import { pdf, Document } from "@react-pdf/renderer";
 import QRCode from "qrcode";
-import BadgePDF from "@/components/BadgePDF";
+import BadgePDF from "@/components/badges/BadgePDF";
 
 /**
  * Exports all badges to a multi-page PDF in browser.

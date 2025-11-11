@@ -21,7 +21,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { useEffect, useState } from "react";
-import BreadcrumbsNav from "@/components/BreadcrumbsNav";
+import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import {
   getAllBusinesses,
   createBusiness,
@@ -32,7 +32,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import slugify from "@/utils/slugify";
-import ConfirmationDialog from "@/components/ConfirmationDialog";
+import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import ICONS from "@/utils/iconUtil";
 import NoDataAvailable from "@/components/NoDataAvailable";

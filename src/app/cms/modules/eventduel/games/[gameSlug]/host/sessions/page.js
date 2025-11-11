@@ -19,7 +19,7 @@ import {
   FormControl,
   CircularProgress,
 } from "@mui/material";
-import ConfirmationDialog from "@/components/ConfirmationDialog";
+import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 
 import ICONS from "@/utils/iconUtil";
 import {
@@ -29,7 +29,7 @@ import {
 } from "@/services/eventduel/gameSessionService";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import useI18nLayout from "@/hooks/useI18nLayout";
-import BreadcrumbsNav from "@/components/BreadcrumbsNav";
+import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import LoadingState from "@/components/LoadingState";
 

@@ -1,6 +1,6 @@
 "use client";
 
-import Navbar from "@/components/Navbar";
+import Navbar from "@/components/nav/Navbar";
 import { Box } from "@mui/material";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";

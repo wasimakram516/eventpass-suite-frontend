@@ -19,7 +19,7 @@ import useI18nLayout from "@/hooks/useI18nLayout";
 import LoadingState from "@/components/LoadingState";
 import LanguageSelector from "@/components/LanguageSelector";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
-import Footer from "@/components/Footer";
+import Footer from "@/components/nav/Footer";
 
 const translations = {
   en: {

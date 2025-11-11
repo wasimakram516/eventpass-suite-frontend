@@ -7,7 +7,7 @@ import HorizontalCarousel from "@/components/HorizontalCarousel";
 import { getPublicEventBySlug } from "@/services/eventreg/eventService";
 import { translateTexts } from "@/services/translationService"; // ✅ updated import
 import Background from "@/components/Background";
-import EventWelcomeCard from "@/components/EventWelcomeCard";
+import EventWelcomeCard from "@/components/cards/EventWelcomeCard";
 import ICONS from "@/utils/iconUtil";
 import LanguageSelector from "@/components/LanguageSelector";
 

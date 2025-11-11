@@ -14,7 +14,7 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { useAuth } from "@/contexts/AuthContext";
-import BusinessAlertModal from "@/components/BusinessAlertModal";
+import BusinessAlertModal from "@/components/modals/BusinessAlertModal";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import {

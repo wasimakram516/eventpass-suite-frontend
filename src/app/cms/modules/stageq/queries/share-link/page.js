@@ -15,12 +15,12 @@ import {
   Divider,
 } from "@mui/material";
 import { useEffect, useState } from "react";
-import BreadcrumbsNav from "@/components/BreadcrumbsNav";
+import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import { getAllBusinesses } from "@/services/businessService";
 import { useAuth } from "@/contexts/AuthContext";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
-import ShareLinkModal from "@/components/ShareLinkModal";
+import ShareLinkModal from "@/components/modals/ShareLinkModal";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import EmptyBusinessState from "@/components/EmptyBusinessState";
 

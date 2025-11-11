@@ -9,7 +9,7 @@ import {
   getWallConfigs,
 } from "@/services/mosaicwall/wallConfigService";
 import LoadingState from "@/components/LoadingState";
-import BreadcrumbsNav from "@/components/BreadcrumbsNav";
+import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import {
   Box,
   Button,
@@ -34,12 +34,12 @@ import {
   Stack,
   Tooltip,
 } from "@mui/material";
-import ShareLinkModal from "@/components/ShareLinkModal";
-import ConfirmationDialog from "@/components/ConfirmationDialog";
+import ShareLinkModal from "@/components/modals/ShareLinkModal";
+import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import { formatDate } from "@/utils/dateUtils";
 import { getAllBusinesses } from "@/services/businessService";
 import { useAuth } from "@/contexts/AuthContext";
-import BusinessDrawer from "@/components/BusinessDrawer";
+import BusinessDrawer from "@/components/drawers/BusinessDrawer";
 import EmptyBusinessState from "@/components/EmptyBusinessState";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import useI18nLayout from "@/hooks/useI18nLayout";

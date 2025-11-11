@@ -26,9 +26,9 @@ import {
 import { getAllBusinesses } from "@/services/businessService";
 import { useMessage } from "@/contexts/MessageContext";
 import { useAuth } from "@/contexts/AuthContext";
-import BreadcrumbsNav from "@/components/BreadcrumbsNav";
-import PollFormDrawer from "@/components/PollFormDrawer";
-import ConfirmationDialog from "@/components/ConfirmationDialog";
+import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
+import PollFormDrawer from "@/components/drawers/PollFormDrawer";
+import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import ICONS from "@/utils/iconUtil";
 import {
   getPolls,
@@ -38,12 +38,12 @@ import {
   clonePoll,
   exportPollsToExcel,
 } from "@/services/votecast/pollService";
-import BusinessDrawer from "@/components/BusinessDrawer";
+import BusinessDrawer from "@/components/drawers/BusinessDrawer";
 import useI18nLayout from "@/hooks/useI18nLayout";
-import FilterModal from "@/components/FilterModal";
+import FilterModal from "@/components/modals/FilterModal";
 import EmptyBusinessState from "@/components/EmptyBusinessState";
 import NoDataAvailable from "@/components/NoDataAvailable";
-import ShareLinkModal from "@/components/ShareLinkModal";
+import ShareLinkModal from "@/components/modals/ShareLinkModal";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 const translations = {
   en: {

@@ -1,8 +1,8 @@
 "use client";
 
 import { Container, Grid, Typography, Divider, Stack } from "@mui/material";
-import DashboardCard from "@/components/DashboardCard";
-import BreadcrumbsNav from "@/components/BreadcrumbsNav";
+import DashboardCard from "@/components/cards/DashboardCard";
+import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import ICONS from "@/utils/iconUtil";
 

@@ -19,8 +19,8 @@ import {
   Divider
 } from "@mui/material";
 import { useState, useEffect } from "react";
-import useI18nLayout from "../hooks/useI18nLayout";
-import ICONS from "../utils/iconUtil";
+import useI18nLayout from "../../hooks/useI18nLayout";
+import ICONS from "../../utils/iconUtil";
 import AddPhotoAlternateIcon from "@mui/icons-material/AddPhotoAlternate";
 import CloseIcon from "@mui/icons-material/Close";
 

@@ -8,7 +8,7 @@ import { getWallConfigBySlug } from "@/services/mosaicwall/wallConfigService";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import LanguageSelector from "@/components/LanguageSelector";
 import LoadingState from "@/components/LoadingState";
-import Footer from "@/components/Footer";
+import Footer from "@/components/nav/Footer";
 
 const translations = {
   en: {

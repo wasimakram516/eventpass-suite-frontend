@@ -1,7 +1,7 @@
 "use client";
 
 import { Box, Typography, Divider, Grid, Container } from "@mui/material";
-import DashboardCard from "@/components/DashboardCard";
+import DashboardCard from "@/components/cards/DashboardCard";
 import SettingsIcon from "@mui/icons-material/Settings";
 import BusinessIcon from "@mui/icons-material/Business";
 import { useAuth } from "@/contexts/AuthContext";

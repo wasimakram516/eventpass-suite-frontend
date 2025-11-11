@@ -1,9 +1,9 @@
 "use client";
 import { Container, Grid, Typography, Divider, Stack } from "@mui/material";
-import DashboardCard from "@/components/DashboardCard";
+import DashboardCard from "@/components/cards/DashboardCard";
 import AssignmentIcon from "@mui/icons-material/Assignment";
 import BarChartIcon from "@mui/icons-material/BarChart";
-import BreadcrumbsNav from "@/components/BreadcrumbsNav";
+import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import useI18nLayout from "@/hooks/useI18nLayout";
 const translations = {
   en: {

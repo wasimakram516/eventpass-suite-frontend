@@ -28,7 +28,7 @@ import {
 
 import { useParams } from "next/navigation";
 import { formatDateTimeWithLocale } from "@/utils/dateUtils";
-import BreadcrumbsNav from "@/components/BreadcrumbsNav";
+import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";

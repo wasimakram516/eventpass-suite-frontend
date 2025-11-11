@@ -25,7 +25,7 @@ import {
 } from "@/services/eventduel/gameSessionService";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import useI18nLayout from "@/hooks/useI18nLayout";
-import BreadcrumbsNav from "@/components/BreadcrumbsNav";
+import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 
 const translations = {

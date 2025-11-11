@@ -6,7 +6,7 @@ import useMediaSocket from "@/hooks/modules/mosaicwall/useMosaicWallMediaSocket"
 import { Box, Typography, Container } from "@mui/material";
 import { getWallConfigBySlug } from "@/services/mosaicwall/wallConfigService";
 import MosaicGrid from "@/components/MosaicGrid";
-import CardsGrid from "@/components/CardsGrid";
+import CardsGrid from "@/components/cards/CardsGrid";
 import { Shift } from "ambient-cbg";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import LoadingState from "@/components/LoadingState";

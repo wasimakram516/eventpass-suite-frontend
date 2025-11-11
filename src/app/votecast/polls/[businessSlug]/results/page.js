@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { Box, CircularProgress, Typography } from "@mui/material";
 import { getResults } from "@/services/votecast/pollsResultService";
-import ResultsChart from "@/components/ResultsChart";
+import ResultsChart from "@/components/cards/ResultsChart";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import LanguageSelector from "@/components/LanguageSelector";
 const translations = {

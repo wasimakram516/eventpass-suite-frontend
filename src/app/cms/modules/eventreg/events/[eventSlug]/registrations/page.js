@@ -29,7 +29,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 dayjs.extend(utc);
 
-import FilterDialog from "@/components/FilterModal";
+import FilterDialog from "@/components/modals/FilterModal";
 import {
   getRegistrationsByEvent,
   deleteRegistration,
@@ -42,19 +42,19 @@ import {
 } from "@/services/eventreg/registrationService";
 import { getPublicEventBySlug } from "@/services/eventreg/eventService";
 
-import ConfirmationDialog from "@/components/ConfirmationDialog";
-import BreadcrumbsNav from "@/components/BreadcrumbsNav";
+import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
+import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import { formatDate, formatDateTimeWithLocale } from "@/utils/dateUtils";
 import { useParams } from "next/navigation";
 import ICONS from "@/utils/iconUtil";
-import WalkInModal from "@/components/WalkInModal";
+import WalkInModal from "@/components/modals/WalkInModal";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import { wrapTextBox } from "@/utils/wrapTextStyles";
 import useEventRegSocket from "@/hooks/modules/eventReg/useEventRegSocket";
 import { exportAllBadges } from "@/utils/exportBadges";
-import EditRegistrationModal from "@/components/EditRegistrationModal";
+import EditRegistrationModal from "@/components/modals/EditRegistrationModal";
 
 const translations = {
   en: {

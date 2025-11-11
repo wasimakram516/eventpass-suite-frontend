@@ -11,8 +11,8 @@ import {
 import useI18nLayout from "@/hooks/useI18nLayout";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
-import LoadingState from "./LoadingState";
-import NoDataAvailable from "./NoDataAvailable";
+import LoadingState from "../LoadingState";
+import NoDataAvailable from "../NoDataAvailable";
 
 export default function BusinessDrawer({
   open,

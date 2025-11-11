@@ -12,11 +12,11 @@ import {
   Divider,
 } from "@mui/material";
 import BusinessIcon from "@mui/icons-material/Business";
-import BreadcrumbsNav from "@/components/BreadcrumbsNav";
-import BusinessDrawer from "@/components/BusinessDrawer";
-import ConfirmationDialog from "@/components/ConfirmationDialog";
-import EventFormModal from "@/components/EventModal";
-import ShareLinkModal from "@/components/ShareLinkModal";
+import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
+import BusinessDrawer from "@/components/drawers/BusinessDrawer";
+import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
+import EventFormModal from "@/components/modals/EventModal";
+import ShareLinkModal from "@/components/modals/ShareLinkModal";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import ICONS from "@/utils/iconUtil";
 import { getEventStatus, formatDate } from "@/utils/dateUtils";
@@ -31,7 +31,7 @@ import {
 import EmptyBusinessState from "@/components/EmptyBusinessState";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
-import EventCardBase from "@/components/EventCard";
+import EventCardBase from "@/components/cards/EventCard";
 
 const translations = {
   en: {

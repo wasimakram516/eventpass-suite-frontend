@@ -37,8 +37,8 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
 } from "@mui/icons-material";
-import BreadcrumbsNav from "@/components/BreadcrumbsNav";
-import ConfirmationDialog from "@/components/ConfirmationDialog";
+import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
+import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import {
   getGlobalConfig,
   updateGlobalConfig,

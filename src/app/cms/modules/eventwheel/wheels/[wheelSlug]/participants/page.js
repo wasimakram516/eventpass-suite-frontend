@@ -28,8 +28,8 @@ import {
   getParticipantsBySlug,
 } from "@/services/eventwheel/spinWheelParticipantService";
 import { getSpinWheelBySlug } from "@/services/eventwheel/spinWheelService";
-import ConfirmationDialog from "@/components/ConfirmationDialog";
-import BreadcrumbsNav from "@/components/BreadcrumbsNav";
+import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
+import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";

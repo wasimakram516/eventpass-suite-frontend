@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { Box, CircularProgress, Typography } from "@mui/material";
 import { getQuestionsByBusiness } from "@/services/stageq/questionService";
-import Footer from "@/components/Footer";
+import Footer from "@/components/nav/Footer";
 import { getBusinessBySlug } from "@/services/businessService";
 import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
 import Background from "@/components/Background";
