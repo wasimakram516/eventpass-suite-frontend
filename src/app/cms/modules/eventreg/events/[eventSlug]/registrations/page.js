@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Box,
   Typography,
@@ -40,7 +40,6 @@ import {
   sendBulkEmails,
   updateRegistration,
   getInitialRegistrations,
-  getRegistrationBatch
 } from "@/services/eventreg/registrationService";
 import { getPublicEventBySlug } from "@/services/eventreg/eventService";
 
@@ -230,57 +229,41 @@ export default function ViewRegistrations() {
   }, [eventSlug]);
 
   useEffect(() => {
-    const id = setTimeout(
-      () => setSearchTerm(rawSearch.trim().toLowerCase()),
-      20
-    );
+    const id = setTimeout(() => {
+      setSearchTerm(rawSearch.trim().toLowerCase());
+      setPage(1);
+    }, 20);
     return () => clearTimeout(id);
   }, [rawSearch]);
 
+  const handleLoadingProgress = useCallback((payload) => {
+    if (payload.data?.length) {
+      const processed = payload.data.map((r) => ({
+        ...r,
+        _createdAtMs: Date.parse(r.createdAt),
+        _scannedAtMs: (r.walkIns || []).map((w) => Date.parse(w.scannedAt)),
+        _haystack: buildHaystack(r, dynamicFields),
+      }));
+
+      setAllRegistrations((prev) => {
+        const existingIds = new Set(prev.map(r => r._id));
+        const newRecords = processed.filter(r => !existingIds.has(r._id));
+        return [...prev, ...newRecords];
+      });
+    }
+  }, [dynamicFields]);
+
   const { uploadProgress, emailProgress, loadingProgress } = useEventRegSocket({
     eventId: eventDetails?._id,
+    onLoadingProgress: handleLoadingProgress,
   });
 
-  // Fetch records progressively as socket emits progress
   useEffect(() => {
-    if (!loadingProgress.loaded || loadingProgress.loaded <= 50) return;
-    if (allRegistrations.length >= loadingProgress.loaded) return;
-
-    const fetchMissingRecords = async () => {
-      try {
-        const skip = allRegistrations.length;
-        const needed = loadingProgress.loaded - allRegistrations.length;
-
-        const res = await getRegistrationBatch(eventSlug, skip, needed);
-
-        if (res?.data?.length) {
-          const processed = res.data.map((r) => ({
-            ...r,
-            _createdAtMs: Date.parse(r.createdAt),
-            _scannedAtMs: (r.walkIns || []).map((w) => Date.parse(w.scannedAt)),
-            _haystack: buildHaystack(r, dynamicFields),
-          }));
-
-          setAllRegistrations((prev) => {
-            // Prevent duplicates by checking IDs
-            const existingIds = new Set(prev.map(r => r._id));
-            const newRecords = processed.filter(r => !existingIds.has(r._id));
-            return [...prev, ...newRecords];
-          });
-        }
-
-        setLoadedCount(loadingProgress.loaded);
-
-        if (loadingProgress.loaded >= loadingProgress.total) {
-          setIsLoadingMore(false);
-        }
-      } catch (err) {
-        console.error("Failed to fetch progressive records:", err);
-      }
-    };
-
-    fetchMissingRecords();
-  }, [loadingProgress.loaded, eventSlug, dynamicFields, allRegistrations.length, loadingProgress.total]);
+    setLoadedCount(loadingProgress.loaded);
+    if (loadingProgress.loaded >= loadingProgress.total && loadingProgress.total > 0) {
+      setIsLoadingMore(false);
+    }
+  }, [loadingProgress]);
 
 
   const handleSaveEdit = async (updatedFields) => {
