@@ -77,13 +77,6 @@ export const getInitialRegistrations = withApiHandler(async (slug) => {
   return data;
 });
 
-// Get batch of registrations for progressive loading
-export const getRegistrationBatch = withApiHandler(async (eventSlug, skip, limit) => {
-  const { data } = await api.get(
-    `/eventreg/registrations/event/${eventSlug}/batch?skip=${skip}&limit=${limit}`
-  );
-  return data;
-});
 
 // Get all public registrations for export (no pagination)
 export const getAllPublicRegistrationsByEvent = withApiHandler(async (slug) => {
