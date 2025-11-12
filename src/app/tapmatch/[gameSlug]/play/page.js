@@ -291,7 +291,7 @@ export default function TapMatchPlayPage() {
             variant="h1"
             sx={{
               fontWeight: "bold",
-              fontSize: { xs: "25vw", md: "50vw" },
+              fontSize: { xs: "25vw", md: "40vw" },
               color: "#FFD700",
               textShadow:
                 "0 0 20px rgba(255,215,0,0.9), 0 0 40px rgba(255,215,0,0.7)",
