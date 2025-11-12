@@ -541,12 +541,12 @@ export default function TapMatchPlayPage() {
       {/* CARD GRID */}
       <Grid
         container
-        spacing={2}
+        spacing={{ xs: 1, sm: 2, md: 3 }}
         justifyContent="center"
         alignItems="center"
         columns={{ xs: 8, sm: 12, md: 12 }}
         sx={{
-          maxWidth: 800,
+          maxWidth: "min(90vw, 900px)",
           position: "absolute",
           top: "50%",
           left: "50%",
@@ -572,7 +572,7 @@ export default function TapMatchPlayPage() {
                 sx={{
                   perspective: "1000px",
                   cursor: isMatched ? "default" : "pointer",
-                  width: "130px",
+                  width: "clamp(60px, 10vw, 140px)",
                   aspectRatio: "1 / 1",
                   position: "relative",
                 }}
