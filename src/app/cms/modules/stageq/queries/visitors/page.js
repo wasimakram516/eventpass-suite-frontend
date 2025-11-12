@@ -58,8 +58,7 @@ export default function VisitorsPage() {
   const [loading, setLoading] = useState(true);
   const [businesses, setBusinesses] = useState([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [selectedBusiness, setSelectedBusiness] = useState(null);
-  const { user } = useAuth();
+  const { user, selectedBusiness, setSelectedBusiness } = useAuth();
   const fetchVisitorsWithBusinessList = async (businessSlug, businessList) => {
     const data = await getAllVisitors();
     if (businessSlug) {
@@ -89,22 +88,33 @@ export default function VisitorsPage() {
     const fetchBusinesses = async () => {
       const businessList = await getAllBusinesses();
       setBusinesses(businessList);
-
-      if (user?.role === "business") {
-        const userBusiness = businessList.find(
-          (business) => business.slug === user.business?.slug
-        );
-        if (userBusiness) {
-          setSelectedBusiness(userBusiness.slug);
-          fetchVisitorsWithBusinessList(userBusiness.slug, businessList);
-        }
-      } else {
-        setLoading(false);
-      }
     };
 
     fetchBusinesses();
-  }, [user]);
+  }, []);
+
+  useEffect(() => {
+    if (user?.role === "business" && user.business?.slug && !selectedBusiness) {
+      setSelectedBusiness(user.business.slug);
+    }
+  }, [user, selectedBusiness, setSelectedBusiness]);
+
+  useEffect(() => {
+    if (!selectedBusiness) {
+      setVisitors([]);
+      setLoading(false);
+      return;
+    }
+
+    const loadVisitors = async () => {
+      setLoading(true);
+      await fetchVisitorsWithBusinessList(selectedBusiness, businesses);
+    };
+
+    if (businesses.length > 0) {
+      loadVisitors();
+    }
+  }, [selectedBusiness, businesses]);
 
   const handleBusinessSelect = (businessSlug) => {
     setSelectedBusiness(businessSlug);

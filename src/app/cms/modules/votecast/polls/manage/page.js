@@ -129,7 +129,7 @@ const translations = {
 };
 
 export default function ManagePollsPage() {
-  const { user } = useAuth();
+  const { user, selectedBusiness, setSelectedBusiness } = useAuth();
   const { showMessage } = useMessage();
   const { t, dir } = useI18nLayout(translations);
 
@@ -143,7 +143,6 @@ export default function ManagePollsPage() {
   const [shareOpen, setShareOpen] = useState(false);
   const [sharePoll, setSharePoll] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [selectedBusiness, setSelectedBusiness] = useState(null);
   const [pollStatus, setPollStatus] = useState("all"); // "all", "active", "archived"
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   useEffect(() => {
@@ -151,7 +150,7 @@ export default function ManagePollsPage() {
       const businessList = await getAllBusinesses();
       setBusinesses(businessList);
 
-      if (user?.role === "business") {
+      if (user?.role === "business" && !selectedBusiness) {
         const userBusiness = businessList.find(
           (business) =>
             business.slug === user.business?.slug ||
@@ -161,11 +160,13 @@ export default function ManagePollsPage() {
           setSelectedBusiness(userBusiness.slug);
           fetchPolls(userBusiness.slug, pollStatus);
         }
+      } else if (selectedBusiness) {
+        fetchPolls(selectedBusiness, pollStatus);
       }
     };
 
     fetchBusinesses();
-  }, [user, pollStatus]);
+  }, [user, pollStatus, selectedBusiness, setSelectedBusiness]);
 
   // / --- Fetch polls from API ---
   const fetchPolls = async (businessSlug = "", status = "all") => {

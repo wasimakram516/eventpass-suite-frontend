@@ -130,7 +130,7 @@ const translations = {
 };
 
 export default function RecipientsManagePage() {
-  const { user } = useAuth();
+  const { user, selectedBusiness: contextBusinessSlug, setSelectedBusiness } = useAuth();
   const { showMessage } = useMessage();
   const { t, dir } = useI18nLayout(translations);
 
@@ -177,16 +177,15 @@ export default function RecipientsManagePage() {
     (async () => {
       const list = await getAllBusinesses();
       setBusinesses(list || []);
-      if (user?.role === "business") {
-        const mine =
-          list.find(
-            (b) =>
-              b.slug === user.business?.slug || b._id === user.business?._id
-          ) || null;
-        if (mine) setSelectedBizSlug(mine.slug);
+      if (contextBusinessSlug) {
+        setSelectedBizSlug(contextBusinessSlug);
+      } else if (user?.role === "business" && user.business?.slug) {
+        const slug = user.business.slug;
+        setSelectedBizSlug(slug);
+        setSelectedBusiness(slug);
       }
     })();
-  }, [user]);
+  }, [user, contextBusinessSlug, setSelectedBusiness]);
 
   useEffect(() => {
     (async () => {
@@ -392,6 +391,7 @@ export default function RecipientsManagePage() {
         selectedBusinessSlug={selectedBizSlug}
         onSelect={(slug) => {
           setSelectedBizSlug(slug);
+          setSelectedBusiness(slug);
           setBizDrawerOpen(false);
         }}
       />

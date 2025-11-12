@@ -123,9 +123,8 @@ export default function WallConfigsPage() {
   const [currentConfig, setCurrentConfig] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [wallToDelete, setWallToDelete] = useState(null);
-  const { user } = useAuth();
+  const { user, selectedBusiness, setSelectedBusiness } = useAuth();
   const [businesses, setBusinesses] = useState([]);
-  const [selectedBusiness, setSelectedBusiness] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { t, dir, align } = useI18nLayout(translations);
   const [formData, setFormData] = useState({
@@ -142,23 +141,24 @@ export default function WallConfigsPage() {
       const businessList = await getAllBusinesses();
       setBusinesses(businessList);
 
-      if (user?.role === "business") {
+      if (user?.role === "business" && !selectedBusiness) {
         const userBusiness = businessList.find(
-          (business) =>
-            business.slug === user.business?.slug ||
-            business._id === user.business?._id
+          (business) => business.slug === user.business?.slug
         );
         if (userBusiness) {
           setSelectedBusiness(userBusiness.slug);
           fetchWallConfigs(userBusiness.slug);
         }
+      } else if (selectedBusiness) {
+        fetchWallConfigs(selectedBusiness);
       }
 
       setIsLoading(false);
     };
 
     fetchBusinesses();
-  }, [user]);
+  }, [user, selectedBusiness, setSelectedBusiness]);
+  
   const fetchWallConfigs = async (businessSlug = "") => {
     setIsLoading(true);
     const response = await getWallConfigs();

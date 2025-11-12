@@ -107,12 +107,11 @@ const translations = {
 
 export default function GamesPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, selectedBusiness, setSelectedBusiness } = useAuth();
   const { t, dir, align } = useI18nLayout(translations);
 
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedBusiness, setSelectedBusiness] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [openModal, setOpenModal] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -135,10 +134,10 @@ export default function GamesPage() {
   }, []);
 
   useEffect(() => {
-    if (user?.role === "business" && user.business?._id) {
+    if (user?.role === "business" && user.business?._id && !selectedBusiness) {
       setSelectedBusiness(user.business.slug);
     }
-  }, [user]);
+  }, [user, selectedBusiness, setSelectedBusiness]);
 
   // Fetch games for selected business
   useEffect(() => {
@@ -484,7 +483,7 @@ export default function GamesPage() {
           onClose={() => setShareModalOpen(false)}
           url={`${
             typeof window !== "undefined" ? window.location.origin : ""
-          }/quiznest/${gameToShare?.slug}`}
+            }/quiznest/${gameToShare?.slug}`}
           name={gameToShare?.title}
         />
 

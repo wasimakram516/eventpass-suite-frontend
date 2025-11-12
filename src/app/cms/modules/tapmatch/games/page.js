@@ -87,12 +87,11 @@ const translations = {
 
 export default function TapMatchGamesPage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, selectedBusiness, setSelectedBusiness } = useAuth();
   const { t, dir } = useI18nLayout(translations);
 
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedBusiness, setSelectedBusiness] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [openModal, setOpenModal] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -112,9 +111,9 @@ export default function TapMatchGamesPage() {
   }, []);
 
   useEffect(() => {
-    if (user?.role === "business" && user.business?._id)
+    if (user?.role === "business" && user.business?._id && !selectedBusiness)
       setSelectedBusiness(user.business.slug);
-  }, [user]);
+  }, [user, selectedBusiness, setSelectedBusiness]);
 
   useEffect(() => {
     if (!selectedBusiness) {
@@ -389,7 +388,7 @@ export default function TapMatchGamesPage() {
           onClose={() => setShareModalOpen(false)}
           url={`${
             typeof window !== "undefined" ? window.location.origin : ""
-          }/tapmatch/${gameToShare?.slug}`}
+            }/tapmatch/${gameToShare?.slug}`}
           name={gameToShare?.title}
         />
 

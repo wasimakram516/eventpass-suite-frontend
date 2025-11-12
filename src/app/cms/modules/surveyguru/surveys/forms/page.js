@@ -185,7 +185,7 @@ const emptyQuestion = () => ({
 
 export default function SurveyFormsManagePage() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, selectedBusiness: contextBusinessSlug, setSelectedBusiness } = useAuth();
   const { showMessage } = useMessage();
   const { t, dir } = useI18nLayout(translations);
 
@@ -294,18 +294,15 @@ export default function SurveyFormsManagePage() {
     setErrors(e);
     return Object.keys(e).length === 0;
   };
-
   const fetchBusinesses = async () => {
     const list = await getAllBusinesses();
     setBusinesses(list || []);
-    if (user?.role === "business") {
-      const myBiz =
-        list.find(
-          (b) => b.slug === user.business?.slug || b._id === user.business?._id
-        ) || null;
-      if (myBiz) {
-        setSelectedBizSlug(myBiz.slug);
-      }
+    if (contextBusinessSlug) {
+      setSelectedBizSlug(contextBusinessSlug);
+    } else if (user?.role === "business" && user.business?.slug) {
+      const slug = user.business.slug;
+      setSelectedBizSlug(slug);
+      setSelectedBusiness(slug);
     }
   };
 
@@ -331,7 +328,7 @@ export default function SurveyFormsManagePage() {
 
   useEffect(() => {
     fetchBusinesses();
-  }, []);
+  }, [user, contextBusinessSlug, setSelectedBusiness]);
 
   useEffect(() => {
     if (selectedBusiness?._id) {
@@ -583,6 +580,7 @@ export default function SurveyFormsManagePage() {
         selectedBusinessSlug={selectedBizSlug}
         onSelect={(slug) => {
           setSelectedBizSlug(slug);
+          setSelectedBusiness(slug);
           setBizDrawerOpen(false);
         }}
       />
