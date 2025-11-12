@@ -45,7 +45,9 @@ import {
   deleteRecipient,
   clearRecipientsForForm,
   exportRecipientsCsv,
+  sendBulkSurveyEmails,
 } from "@/services/surveyguru/surveyRecipientService";
+import useSurveyGuruSocket from "@/hooks/modules/surveyguru/useSurveyGuruSocket";
 
 import FilterDialog from "@/components/modals/FilterModal";
 
@@ -88,6 +90,13 @@ const translations = {
     name: "Name",
     company: "Company",
     copyLink: "Copy survey link",
+    bulkEmail: "Send Bulk Emails",
+    bulkEmailConfirmTitle: "Send Bulk Survey Emails",
+    bulkEmailConfirmMsg:
+      "This will send survey invitation emails to all queued recipients for the selected form. Do you want to proceed?",
+    sendingEmails: "Sending Emails...",
+    bulkEmailSuccess:
+      "Bulk emails completed — {sent} sent, {failed} failed, out of {total} total.",
   },
   ar: {
     title: "إدارة المستلمين",
@@ -118,7 +127,6 @@ const translations = {
     confirmDeleteMsg: "هل أنت متأكد أنك تريد نقل هذا العنصر إلى سلة المحذوفات؟",
     delete: "حذف",
 
-
     copied: "تم نسخ الرابط!",
     noFormSelected: "استخدم عوامل التصفية لاختيار نموذج وتحميل المستلمين.",
     selections: "الاختيارات",
@@ -126,11 +134,22 @@ const translations = {
     name: "الاسم",
     company: "الشركة",
     copyLink: "نسخ رابط الاستبيان",
+    bulkEmail: "إرسال البريد الجماعي",
+    bulkEmailConfirmTitle: "إرسال بريد الاستبيان الجماعي",
+    bulkEmailConfirmMsg:
+      "سيتم إرسال دعوات الاستبيان إلى جميع المستلمين قيد الانتظار للنموذج المحدد. هل تريد المتابعة؟",
+    sendingEmails: "جاري إرسال البريد...",
+    bulkEmailSuccess:
+      "اكتمل إرسال البريد الجماعي — {sent} تم الإرسال، {failed} فشل، من أصل {total}.",
   },
 };
 
 export default function RecipientsManagePage() {
-  const { user, selectedBusiness: contextBusinessSlug, setSelectedBusiness } = useAuth();
+  const {
+    user,
+    selectedBusiness: contextBusinessSlug,
+    setSelectedBusiness,
+  } = useAuth();
   const { showMessage } = useMessage();
   const { t, dir } = useI18nLayout(translations);
 
@@ -172,6 +191,15 @@ export default function RecipientsManagePage() {
 
   const [confirmDelete, setConfirmDelete] = useState({ open: false, id: null });
   const [confirmClear, setConfirmClear] = useState(false);
+
+  const [sendingEmails, setSendingEmails] = useState(false);
+  const [confirmEmailDialogOpen, setConfirmEmailDialogOpen] = useState(false);
+
+  const { emailProgress, syncProgress } = useSurveyGuruSocket({
+    formId,
+    onEmailProgress: (data) => console.log("Survey email progress:", data),
+    onSyncProgress: (data) => console.log("Survey sync progress:", data),
+  });
 
   useEffect(() => {
     (async () => {
@@ -247,6 +275,20 @@ export default function RecipientsManagePage() {
       setRows(refreshed || []);
     }
     setSyncLoading(false);
+    setActionsOpen(false);
+  };
+
+  const handleSendBulkSurveyEmails = async () => {
+    setConfirmEmailDialogOpen(false);
+    setSendingEmails(true);
+    try {
+      await sendBulkSurveyEmails(formId);
+    } catch (err) {
+      console.error("Bulk survey email send failed:", err);
+    } finally {
+      handleSync();
+      setSendingEmails(false);
+    }
   };
 
   const handleExport = async () => {
@@ -322,8 +364,9 @@ export default function RecipientsManagePage() {
   const onCopySurveyLink = (r) => {
     if (!selectedForm?.slug || !r?.token) return;
     const base = typeof window !== "undefined" ? window.location.origin : "";
-    const url = `${base}/surveyguru/${selectedForm.slug
-      }?token=${encodeURIComponent(r.token)}`;
+    const url = `${base}/surveyguru/${
+      selectedForm.slug
+    }?token=${encodeURIComponent(r.token)}`;
     navigator.clipboard.writeText(url);
     showMessage(t.copied, "info");
   };
@@ -332,7 +375,7 @@ export default function RecipientsManagePage() {
     <Card variant="outlined" sx={{ borderRadius: 2 }}>
       <CardContent sx={{ pb: 1.5 }}>
         <Stack
-          direction={dir === 'rtl' ? 'row-reverse' : 'row'}
+          direction={dir === "rtl" ? "row-reverse" : "row"}
           justifyContent="space-between"
           alignItems="center"
           width="100%"
@@ -346,8 +389,8 @@ export default function RecipientsManagePage() {
             color={r.status === "responded" ? "success" : "default"}
             label={r.status || "queued"}
             sx={{
-              minWidth: dir === 'rtl' ? '120px' : 'auto', // Wider in Arabic
-              ml: 2
+              minWidth: dir === "rtl" ? "120px" : "auto", // Wider in Arabic
+              ml: 2,
             }}
           />
         </Stack>
@@ -428,7 +471,9 @@ export default function RecipientsManagePage() {
                 <Chip
                   size="small"
                   icon={<ICONS.business fontSize="small" />}
-                  label={`${t.selections}: ${selectedBusiness?.name || selectedBusiness?.slug}`}
+                  label={`${t.selections}: ${
+                    selectedBusiness?.name || selectedBusiness?.slug
+                  }`}
                   sx={{ minWidth: 140, px: 1.5 }}
                 />
               )}
@@ -438,7 +483,11 @@ export default function RecipientsManagePage() {
                     size="small"
                     icon={<ICONS.event fontSize="small" />}
                     label={selectedEvent?.name}
-                    sx={{ minWidth: 120, px: 1.5, ...(dir === "rtl" ? { mr: 2 } : {}), }}
+                    sx={{
+                      minWidth: 120,
+                      px: 1.5,
+                      ...(dir === "rtl" ? { mr: 2 } : {}),
+                    }}
                   />
                 </Box>
               )}
@@ -460,7 +509,7 @@ export default function RecipientsManagePage() {
             sx={{
               alignItems: "stretch",
               width: { xs: "100%", sm: "auto" },
-              gap: dir === "rtl" ? 2 : 1
+              gap: dir === "rtl" ? 2 : 1,
             }}
           >
             <Button
@@ -490,6 +539,26 @@ export default function RecipientsManagePage() {
               sx={getStartIconSpacing(dir)}
             >
               {t.actions}
+            </Button>
+            <Button
+              variant="contained"
+              color="secondary"
+              disabled={sendingEmails || !formId}
+              startIcon={
+                sendingEmails ? (
+                  <CircularProgress size={20} color="inherit" />
+                ) : (
+                  <ICONS.email fontSize="small" />
+                )
+              }
+              onClick={() => setConfirmEmailDialogOpen(true)}
+              sx={getStartIconSpacing(dir)}
+            >
+              {sendingEmails && emailProgress.total
+                ? `${t.sendingEmails} ${emailProgress.sent}/${emailProgress.total}`
+                : sendingEmails
+                ? t.sendingEmails
+                : t.bulkEmail}
             </Button>
           </Stack>
         </Box>
@@ -547,6 +616,17 @@ export default function RecipientsManagePage() {
           message={t.confirmClearMsg}
           confirmButtonText={t.clearAll}
           confirmButtonIcon={<ICONS.delete fontSize="small" />}
+        />
+
+        <ConfirmationDialog
+          open={confirmEmailDialogOpen}
+          onClose={() => setConfirmEmailDialogOpen(false)}
+          onConfirm={handleSendBulkSurveyEmails}
+          title={t.bulkEmailConfirmTitle}
+          message={t.bulkEmailConfirmMsg}
+          confirmButtonText={t.bulkEmail}
+          confirmButtonIcon={<ICONS.email fontSize="small" />}
+          confirmButtonColor="secondary"
         />
       </Container>
 
@@ -659,7 +739,11 @@ export default function RecipientsManagePage() {
             onClick={handleSync}
             sx={getStartIconSpacing(dir)}
           >
-            {t.sync}
+            {syncLoading && syncProgress.total
+              ? `${t.sync} ${syncProgress.synced}/${syncProgress.total}`
+              : syncLoading
+              ? `${t.sync}...`
+              : t.sync}
           </Button>
 
           <Button

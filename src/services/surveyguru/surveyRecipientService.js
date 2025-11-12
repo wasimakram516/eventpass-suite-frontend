@@ -11,6 +11,13 @@ export const syncRecipientsForEvent = withApiHandler(
     const { data } = await api.post(`/surveyguru/forms/${formId}/recipients/sync`);
     return data; 
   },
+);
+
+export const sendBulkSurveyEmails = withApiHandler(
+  async (formId) => {
+    const { data } = await api.post(`/surveyguru/forms/${formId}/recipients/bulk-email`);
+    return data;
+  },
   { showSuccess: true }
 );
 
