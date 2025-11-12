@@ -15,6 +15,7 @@ import { useGame } from "@/contexts/GameContext";
 import LanguageSelector from "@/components/LanguageSelector";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import ICONS from "@/utils/iconUtil";
+import { translateTexts } from "@/services/translationService";
 
 const tapMatchInstructions = {
   en: {
@@ -42,6 +43,21 @@ export default function TapMatchInstructionsPage() {
   const { game, loading } = useGame();
   const [playerInfo, setPlayerInfo] = useState(null);
   const { t, dir, align, language } = useI18nLayout(tapMatchInstructions);
+  const [translatedTitle, setTranslatedTitle] = useState("");
+
+  useEffect(() => {
+        const fetchTranslation = async () => {
+          if (!game?.title) return;
+           try {
+              const result = await translateTexts([game.title], language);
+              setTranslatedTitle(result[0] || game.title);
+            } catch (error) {
+              console.error("Translation failed:", error);
+              setTranslatedTitle(game.title);
+            }
+        };
+        fetchTranslation();
+      }, [game?.title, language]);
 
   useEffect(() => {
     const stored = sessionStorage.getItem("playerInfo");
@@ -128,7 +144,7 @@ export default function TapMatchInstructionsPage() {
             gutterBottom
             sx={{ mb: 3, color: "primary.main", textTransform: "capitalize" }}
           >
-            {game.title}
+            {translatedTitle}
           </Typography>
 
           <Typography
@@ -147,11 +163,7 @@ export default function TapMatchInstructionsPage() {
             <Stack
               direction="row"
               alignItems="center"
-              spacing={1}
-              sx={{
-                flexDirection: language === "ar" ? "row-reverse" : "row",
-                justifyContent: language === "ar" ? "flex-end" : "flex-start",
-              }}
+              spacing={2}
             >
               <ICONS.grid color="primary" />
               <Typography
@@ -172,11 +184,7 @@ export default function TapMatchInstructionsPage() {
             <Stack
               direction="row"
               alignItems="center"
-              spacing={1}
-              sx={{
-                flexDirection: language === "ar" ? "row-reverse" : "row",
-                justifyContent: language === "ar" ? "flex-end" : "flex-start",
-              }}
+              spacing={2}
             >
               <ICONS.time color="primary" />
               <Typography

@@ -38,6 +38,7 @@ const translations = {
     playAgain: "Play Again",
     matchingPairs: "Matching Pairs",
     allMatched: "You’ve matched all pairs!",
+    tap: "Tap",
   },
   ar: {
     countdown: "ثانية",
@@ -50,6 +51,7 @@ const translations = {
     playAgain: "العب مجددًا",
     matchingPairs: "مطابقة البطاقات",
     allMatched: "لقد طابقت جميع الأزواج!",
+    tap: "اضغط",
   },
 };
 
@@ -289,7 +291,7 @@ export default function TapMatchPlayPage() {
             variant="h1"
             sx={{
               fontWeight: "bold",
-              fontSize: { xs: "5rem", md: "10rem" },
+              fontSize: { xs: "25vw", md: "50vw" },
               color: "#FFD700",
               textShadow:
                 "0 0 20px rgba(255,215,0,0.9), 0 0 40px rgba(255,215,0,0.7)",
@@ -460,206 +462,208 @@ export default function TapMatchPlayPage() {
   const accuracy = moves > 0 ? ((matchesCount / moves) * 100).toFixed(1) : 0;
 
   return (
-    <Box
-      dir={dir}
-      sx={{
-        height: "100vh",
-        width: "100vw",
-        backgroundImage: `url("${encodeURI(game.backgroundImage)}")`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        px: 2,
-        py: 3,
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        position: "relative",
-        overflow: "hidden",
-      }}
-    >
+    <>
       <LanguageSelector top={20} right={20} />
-
-      {/* TIMER */}
       <Box
+        dir={dir}
         sx={{
-          textAlign: "center",
-          mt: 3,
+          height: "100vh",
+          width: "100vw",
+          backgroundImage: `url("${encodeURI(game.backgroundImage)}")`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          px: 2,
+          py: 3,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          position: "relative",
+          overflow: "hidden",
         }}
       >
-        <Typography
-          variant="h2"
+        {/* TIMER */}
+        <Box
           sx={{
-            color: "#FFD700",
-            fontWeight: "bold",
-            fontSize: "clamp(3rem, 10vw, 8rem)",
-            textShadow:
-              "0 0 15px rgba(255,215,0,0.9), 0 0 30px rgba(255,215,0,0.6)",
+            textAlign: "center",
+            mt: 3,
           }}
         >
-          {timeLeft}
           <Typography
-            component="span"
+            variant="h2"
             sx={{
-              fontSize: "clamp(0.8rem, 2vw, 1.5rem)",
-              ml: 1,
               color: "#FFD700",
-              opacity: 0.8,
+              fontWeight: "bold",
+              fontSize: "clamp(3rem, 10vw, 8rem)",
+              textShadow:
+                "0 0 15px rgba(255,215,0,0.9), 0 0 30px rgba(255,215,0,0.6)",
             }}
           >
-            {t.countdown}
-          </Typography>
-        </Typography>
-      </Box>
-
-      {/* STATS */}
-      <Box
-        sx={{
-          mt: 1,
-          display: "flex",
-          justifyContent: "center",
-          gap: 3,
-          color: "#fff",
-          fontWeight: "bold",
-          textShadow: "0 0 10px rgba(0,0,0,0.5)",
-          fontSize: { xs: "0.9rem", sm: "1rem" },
-        }}
-      >
-        <Typography>
-          {t.moves}: {moves}
-        </Typography>
-        <Typography>
-          {t.matches}: {matchesCount}
-        </Typography>
-        <Typography>
-          {t.misses}: {misses}
-        </Typography>
-        <Typography>
-          {t.accuracy}: {accuracy}%
-        </Typography>
-      </Box>
-
-      {/* CARD GRID */}
-      <Grid
-        container
-        spacing={{ xs: 1, sm: 2, md: 3 }}
-        justifyContent="center"
-        alignItems="center"
-        columns={{ xs: 8, sm: 12, md: 12 }}
-        sx={{
-          maxWidth: "min(90vw, 900px)",
-          position: "absolute",
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
-          mx: "auto",
-          mt: 6,
-        }}
-      >
-        {cards.map((card, index) => {
-          const isFlipped = flipped.includes(index) || matched.includes(index);
-          const isMatched = matched.includes(index);
-
-          return (
-            <Grid
-              item
-              key={card.id}
-              xs={3}
-              sm={2}
-              md={2}
-              sx={{ display: "flex", justifyContent: "center" }}
+            {timeLeft}
+            <Typography
+              component="span"
+              sx={{
+                fontSize: "clamp(0.8rem, 2vw, 1.5rem)",
+                ml: 1,
+                color: "#FFD700",
+                opacity: 0.8,
+              }}
             >
-              <Box
-                sx={{
-                  perspective: "1000px",
-                  cursor: isMatched ? "default" : "pointer",
-                  width: "clamp(60px, 10vw, 140px)",
-                  aspectRatio: "1 / 1",
-                  position: "relative",
-                }}
-                onClick={() => handleFlip(index)}
+              {t.countdown}
+            </Typography>
+          </Typography>
+        </Box>
+
+        {/* STATS */}
+        <Box
+          sx={{
+            mt: 1,
+            display: "flex",
+            justifyContent: "center",
+            gap: 3,
+            color: "#fff",
+            fontWeight: "bold",
+            textShadow: "0 0 10px rgba(0,0,0,0.5)",
+            fontSize: { xs: "0.9rem", sm: "1rem" },
+          }}
+        >
+          <Typography>
+            {t.moves}: {moves}
+          </Typography>
+          <Typography>
+            {t.matches}: {matchesCount}
+          </Typography>
+          <Typography>
+            {t.misses}: {misses}
+          </Typography>
+          <Typography>
+            {t.accuracy}: {accuracy}%
+          </Typography>
+        </Box>
+
+        {/* CARD GRID */}
+        <Grid
+          container
+          spacing={{ xs: 1, sm: 2, md: 3 }}
+          justifyContent="center"
+          alignItems="center"
+          columns={{ xs: 8, sm: 12, md: 12 }}
+          sx={{
+            width: "90vw",
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            mx: "auto",
+            mt: 6,
+          }}
+        >
+          {cards.map((card, index) => {
+            const isFlipped =
+              flipped.includes(index) || matched.includes(index);
+            const isMatched = matched.includes(index);
+
+            return (
+              <Grid
+                item
+                key={card.id}
+                xs={3}
+                sm={2}
+                md={2}
+                sx={{ display: "flex", justifyContent: "center" }}
               >
-                <motion.div
-                  animate={{ rotateY: isFlipped ? 180 : 0 }}
-                  transition={{ duration: 0.5 }}
-                  style={{
-                    width: "100%",
-                    height: "100%",
+                <Box
+                  sx={{
+                    perspective: "1000px",
+                    cursor: isMatched ? "default" : "pointer",
+                    width: "clamp(60px, 20vw, 300px)",
+                    aspectRatio: "1 / 1",
                     position: "relative",
-                    transformStyle: "preserve-3d",
                   }}
+                  onClick={() => handleFlip(index)}
                 >
-                  {/* Front Face */}
-                  <Box
-                    sx={{
-                      position: "absolute",
-                      inset: 0,
-                      backfaceVisibility: "hidden",
-                      transform: "rotateY(0deg)",
-                      borderRadius: 2,
-                      background: "linear-gradient(145deg, #1976d2, #42a5f5)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: "#fff",
-                      fontWeight: "bold",
-                      fontSize: "1rem",
-                      boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+                  <motion.div
+                    animate={{ rotateY: isFlipped ? 180 : 0 }}
+                    transition={{ duration: 0.5 }}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      position: "relative",
+                      transformStyle: "preserve-3d",
                     }}
                   >
-                    Tap
-                  </Box>
-
-                  {/* Back Face */}
-                  <Box
-                    sx={{
-                      position: "absolute",
-                      inset: 0,
-                      backfaceVisibility: "hidden",
-                      transform: "rotateY(180deg)",
-                      borderRadius: 2,
-                      overflow: "hidden",
-                    }}
-                  >
-                    <img
-                      src={card.url}
-                      alt="Memory card"
-                      style={{
-                        width: "100%",
-                        height: "100%",
-                        objectFit: "cover",
-                        borderRadius: "8px",
+                    {/* Front Face */}
+                    <Box
+                      sx={{
+                        position: "absolute",
+                        inset: 0,
+                        backfaceVisibility: "hidden",
+                        transform: "rotateY(0deg)",
+                        borderRadius: 2,
+                        background: "linear-gradient(145deg, #1976d2, #42a5f5)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "#fff",
+                        fontWeight: "bold",
+                        fontSize: "clamp(1rem, 4vw, 5rem)",
+                        boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
                       }}
-                    />
+                    >
+                      {t.tap}
+                    </Box>
 
-                    {isMatched && (
-                      <Box
-                        sx={{
-                          position: "absolute",
-                          inset: 0,
-                          backgroundColor: "rgba(0,255,0,0.3)",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          borderRadius: 2,
-                          transition: "opacity 0.3s ease-in-out",
+                    {/* Back Face */}
+                    <Box
+                      sx={{
+                        position: "absolute",
+                        inset: 0,
+                        backfaceVisibility: "hidden",
+                        transform: "rotateY(180deg)",
+                        borderRadius: 2,
+                        overflow: "hidden",
+                      }}
+                    >
+                      <img
+                        src={card.url}
+                        alt="Memory card"
+                        style={{
+                          width: "100%",
+                          height: "100%",
+                          objectFit: "cover",
+                          borderRadius: "8px",
                         }}
-                      >
-                        <CheckCircle
+                      />
+
+                      {isMatched && (
+                        <Box
                           sx={{
-                            fontSize: 60,
-                            color: "rgba(255,255,255,0.9)",
-                            textShadow: "0 0 10px rgba(0,128,0,0.8)",
+                            position: "absolute",
+                            inset: 0,
+                            backgroundColor: "rgba(0,255,0,0.3)",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            borderRadius: 2,
+                            transition: "opacity 0.3s ease-in-out",
                           }}
-                        />
-                      </Box>
-                    )}
-                  </Box>
-                </motion.div>
-              </Box>
-            </Grid>
-          );
-        })}
-      </Grid>
-    </Box>
+                        >
+                          <CheckCircle
+                            sx={{
+                              fontSize: 60,
+                              color: "rgba(255,255,255,0.9)",
+                              textShadow: "0 0 10px rgba(0,128,0,0.8)",
+                            }}
+                          />
+                        </Box>
+                      )}
+                    </Box>
+                  </motion.div>
+                </Box>
+              </Grid>
+            );
+          })}
+        </Grid>
+      </Box>
+    </>
   );
 }

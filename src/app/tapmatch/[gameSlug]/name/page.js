@@ -11,11 +11,12 @@ import {
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import { useGame } from "@/contexts/GameContext";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { joinGame } from "@/services/tapmatch/playerService";
 import LanguageSelector from "@/components/LanguageSelector";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { translateTexts } from "@/services/translationService";
 
 const entryDialogTranslations = {
   en: {
@@ -35,10 +36,24 @@ const entryDialogTranslations = {
 export default function TapMatchNamePage() {
   const { game, loading } = useGame();
   const router = useRouter();
-  const { t, dir, align } = useI18nLayout(entryDialogTranslations);
-
+  const { t, dir, align, language } = useI18nLayout(entryDialogTranslations);
+  const [translatedTitle, setTranslatedTitle] = useState("");
   const [form, setForm] = useState({ name: "", company: "", phone: "" });
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+      const fetchTranslation = async () => {
+        if (!game?.title) return;
+         try {
+            const result = await translateTexts([game.title], language);
+            setTranslatedTitle(result[0] || game.title);
+          } catch (error) {
+            console.error("Translation failed:", error);
+            setTranslatedTitle(game.title);
+          }
+      };
+      fetchTranslation();
+    }, [game?.title, language]);
 
   const handleSubmit = async () => {
     if (!form.name.trim() || submitting) return;
@@ -134,7 +149,7 @@ export default function TapMatchNamePage() {
               fontWeight: 700,
             }}
           >
-            {game.title}
+            {translatedTitle}
           </Typography>
 
           {/* Name */}
@@ -150,6 +165,7 @@ export default function TapMatchNamePage() {
           {/* Phone */}
           <TextField
             label={t.phoneLabel}
+            type="number"
             fullWidth
             sx={{ mb: 4 }}
             value={form.phone}

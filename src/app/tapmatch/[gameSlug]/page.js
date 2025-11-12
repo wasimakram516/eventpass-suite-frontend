@@ -8,9 +8,11 @@ import {
   Paper,
 } from "@mui/material";
 import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { useGame } from "@/contexts/GameContext";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import LanguageSelector from "@/components/LanguageSelector";
+import { translateTexts } from "@/services/translationService";
 
 const gameStartTranslations = {
   en: {
@@ -24,11 +26,27 @@ const gameStartTranslations = {
 export default function TapMatchHomePage() {
   const { game, loading } = useGame();
   const router = useRouter();
-  const { t, dir, align } = useI18nLayout(gameStartTranslations);
+  const { t, dir, align, language } = useI18nLayout(gameStartTranslations);
+  const [translatedTitle, setTranslatedTitle] = useState("");
 
   const handleStart = () => {
     router.push(`/tapmatch/${game.slug}/name`);
   };
+
+  // Translate the game title dynamically
+  useEffect(() => {
+    const fetchTranslation = async () => {
+      if (!game?.title) return;
+       try {
+          const result = await translateTexts([game.title], language);
+          setTranslatedTitle(result[0] || game.title);
+        } catch (error) {
+          console.error("Translation failed:", error);
+          setTranslatedTitle(game.title);
+        }
+    };
+    fetchTranslation();
+  }, [game?.title, language]);
 
   if (loading || !game) {
     return (
@@ -89,7 +107,7 @@ export default function TapMatchHomePage() {
               textTransform: "capitalize",
             }}
           >
-            {game.title}
+            {translatedTitle || game.title}
           </Typography>
 
           <Button
