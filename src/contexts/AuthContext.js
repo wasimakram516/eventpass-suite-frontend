@@ -23,7 +23,7 @@ export const AuthProvider = ({ children }) => {
   // Load user from sessionStorage on mount
   useEffect(() => {
     const storedUser = sessionStorage.getItem("user");
-    const storedBusiness = localStorage.getItem("selectedBusiness");
+    const storedBusiness = sessionStorage.getItem("selectedBusiness");
     if (storedUser) {
       setUser(JSON.parse(storedUser));
     }
@@ -85,9 +85,9 @@ export const AuthProvider = ({ children }) => {
 
   const handleSetSelectedBusiness = (businessSlug) => {
     if (businessSlug) {
-      localStorage.setItem("selectedBusiness", businessSlug);
+      sessionStorage.setItem("selectedBusiness", businessSlug);
     } else {
-      localStorage.removeItem("selectedBusiness");
+      sessionStorage.removeItem("selectedBusiness");
     }
     setSelectedBusiness(businessSlug);
   };
