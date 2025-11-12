@@ -78,34 +78,39 @@ const translations = {
   },
 };
 export default function ResultsPage() {
-  const { user } = useAuth();
+  const { user, selectedBusiness, setSelectedBusiness } = useAuth();
   const { showMessage } = useMessage();
   const { t, dir } = useI18nLayout(translations);
   const [businesses, setBusinesses] = useState([]);
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [selectedBusiness, setSelectedBusiness] = useState(null);
   const [pollStatus, setPollStatus] = useState("all");
   const [confirmReset, setConfirmReset] = useState(false);
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
 
   useEffect(() => {
     const fetchBusinesses = async () => {
-      setLoading(true);
       const businessList = await getAllBusinesses();
       setBusinesses(businessList);
 
-      if (user?.role === "business") {
-        const businessSlug = user.business.slug || businessList[0]?.slug || "";
-        setSelectedBusiness(businessSlug);
-        fetchResults(businessSlug, pollStatus);
+      if (user?.role === "business" && !selectedBusiness) {
+        const userBusiness = businessList.find(
+          (business) =>
+            business.slug === user.business?.slug ||
+            business._id === user.business?._id
+        );
+        if (userBusiness) {
+          setSelectedBusiness(userBusiness.slug);
+         fetchResults(userBusiness.slug, pollStatus);
+        }
+      } else if (selectedBusiness) {
+       fetchResults(selectedBusiness, pollStatus);
       }
-      setLoading(false);
     };
 
     fetchBusinesses();
-  }, [user]);
+  }, [user, pollStatus, selectedBusiness, setSelectedBusiness]);
 
   const fetchResults = async (businessSlug = "", status = "all") => {
     setLoading(true);

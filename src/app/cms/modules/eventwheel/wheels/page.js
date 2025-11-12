@@ -117,7 +117,7 @@ const translations = {
 
 const Dashboard = () => {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, selectedBusiness, setSelectedBusiness } = useAuth();
   const { t, dir } = useI18nLayout(translations);
   const [spinWheels, setSpinWheels] = useState([]);
   const [businesses, setBusinesses] = useState([]);
@@ -129,7 +129,6 @@ const Dashboard = () => {
   const [shareUrl, setShareUrl] = useState("");
   const [shareTitle, setShareTitle] = useState("");
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [selectedBusiness, setSelectedBusiness] = useState(null);
   const eventTypes = [
     { label: t.collectInfoLabel, value: "collect_info" },
     {
@@ -156,7 +155,7 @@ const Dashboard = () => {
       const businessList = await getAllBusinesses();
       setBusinesses(businessList);
 
-      if (user?.role === "business") {
+      if (user?.role === "business" && !selectedBusiness) {
         const userBusiness = businessList.find(
           (business) =>
             business.slug === user.business?.slug ||
@@ -166,12 +165,14 @@ const Dashboard = () => {
           setSelectedBusiness(userBusiness.slug);
           fetchSpinWheels(userBusiness.slug);
         }
+      } else if (selectedBusiness) {
+        fetchSpinWheels(selectedBusiness);
       }
       setLoading(false);
     };
 
     initializeBusinesses();
-  }, [user]);
+  }, [user, selectedBusiness, setSelectedBusiness]);
 
   const fetchSpinWheels = useCallback(
     async (businessSlug = "") => {

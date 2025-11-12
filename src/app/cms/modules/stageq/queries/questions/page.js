@@ -88,12 +88,11 @@ const translations = {
 };
 export default function ManageQuestionsPage() {
   const { showMessage } = useMessage();
-  const { user } = useAuth();
+  const { user, selectedBusiness, setSelectedBusiness } = useAuth();
   const { t, dir } = useI18nLayout(translations);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [businesses, setBusinesses] = useState([]);
   const [questions, setQuestions] = useState([]);
-  const [selectedBusiness, setSelectedBusiness] = useState(null);
   const [loading, setLoading] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editData, setEditData] = useState(null);
@@ -103,8 +102,7 @@ export default function ManageQuestionsPage() {
     const data = await getAllBusinesses();
     setBusinesses(data);
 
-    // Auto-select business for business users
-    if (user?.role === "business") {
+    if (user?.role === "business" && !selectedBusiness) {
       const userBusiness = data.find(
         (business) => business.slug === user.business?.slug
       );
@@ -112,6 +110,8 @@ export default function ManageQuestionsPage() {
         setSelectedBusiness(userBusiness.slug);
         fetchQuestions(userBusiness.slug);
       }
+    } else if (selectedBusiness) {
+      fetchQuestions(selectedBusiness);
     }
   };
 
