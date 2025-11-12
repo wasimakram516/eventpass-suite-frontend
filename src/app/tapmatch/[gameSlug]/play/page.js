@@ -491,7 +491,7 @@ export default function TapMatchPlayPage() {
           sx={{
             color: "#FFD700",
             fontWeight: "bold",
-            fontSize: "8rem",
+            fontSize: "clamp(3rem, 10vw, 8rem)",
             textShadow:
               "0 0 15px rgba(255,215,0,0.9), 0 0 30px rgba(255,215,0,0.6)",
           }}
@@ -500,7 +500,7 @@ export default function TapMatchPlayPage() {
           <Typography
             component="span"
             sx={{
-              fontSize: "1rem",
+              fontSize: "clamp(0.8rem, 2vw, 1.5rem)",
               ml: 1,
               color: "#FFD700",
               opacity: 0.8,
