@@ -19,6 +19,11 @@ import { getPublicFormBySlug } from "@/services/surveyguru/surveyFormService";
 import { submitSurveyResponseBySlug } from "@/services/surveyguru/surveyResponseService";
 import ICONS from "@/utils/iconUtil";
 import Background from "@/components/Background";
+import useI18nLayout from "@/hooks/useI18nLayout";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { translateTexts } from "@/services/translationService";
+import LanguageSelector from "@/components/LanguageSelector";
+import getStartIconSpacing from "@/utils/getStartIconSpacing";
 
 const guessType = (q) => (q?.type || q?.questionType || "").toLowerCase();
 
@@ -51,8 +56,77 @@ const BASE_PALETTES = [
   },
 ];
 
+export const surveyTranslations = {
+  en: {
+    // General
+    loading: "Loading…",
+    surveyUnavailable: "Survey unavailable",
+    surveyNotFound: "This survey cannot be found.",
+    noQuestionFound: "No question found",
+    noQuestionsToDisplay: "There are no questions to display in this survey.",
+    thankYouTitle: "Thank you!",
+    thankYouMessage: "Your response has been recorded successfully.",
+    youMayClose: "You may close this tab now.",
+
+    // Attendee screen
+    fullName: "Full Name",
+    fullNameRequired: "Full name is required",
+    email: "Email",
+    emailRequired: "Email is required",
+    companyOptional: "Company (optional)",
+    startSurvey: "Start survey",
+
+    // Survey footer
+    previous: "Previous",
+    next: "Next",
+    nextQuestion: "Next question",
+    submit: "Submit",
+
+    // Text question placeholder
+    typeYourAnswer: "Type your answer",
+
+    // Anonymous mode (if needed for any badge)
+    anonymousSurvey: "Anonymous Survey",
+  },
+
+  ar: {
+    // General
+    loading: "جاري التحميل…",
+    surveyUnavailable: "الاستبيان غير متاح",
+    surveyNotFound: "تعذر العثور على هذا الاستبيان.",
+    noQuestionFound: "لا توجد أسئلة",
+    noQuestionsToDisplay: "لا توجد أسئلة لعرضها في هذا الاستبيان.",
+    thankYouTitle: "شكرًا لك!",
+    thankYouMessage: "تم تسجيل إجابتك بنجاح.",
+    youMayClose: "يمكنك الآن إغلاق هذه الصفحة.",
+
+    // Attendee screen
+    fullName: "الاسم الكامل",
+    fullNameRequired: "الاسم الكامل مطلوب",
+    email: "البريد الإلكتروني",
+    emailRequired: "البريد الإلكتروني مطلوب",
+    companyOptional: "الشركة (اختياري)",
+    startSurvey: "ابدأ الاستبيان",
+
+    // Survey footer
+    previous: "السابق",
+    next: "التالي",
+    nextQuestion: "السؤال التالي",
+    submit: "إرسال",
+
+    // Text question placeholder
+    typeYourAnswer: "اكتب إجابتك هنا",
+
+    // Anonymous mode
+    anonymousSurvey: "استبيان مجهول الهوية",
+  },
+};
+
 export default function PublicSurveyPage() {
   const { formSlug: slug } = useParams();
+  const { language } = useLanguage();
+  const { t: trans, dir } = useI18nLayout(surveyTranslations);
+
   const tokenRef = useRef("");
   const gestureAccumRef = useRef(0);
   const gestureCooldownRef = useRef(false);
@@ -71,6 +145,7 @@ export default function PublicSurveyPage() {
   const INTRA_STEP_THRESHOLD = GESTURE_THRESHOLD / STEPS_PER_QUESTION;
 
   const [form, setForm] = useState(null);
+  const [tForm, setTForm] = useState(null);
   const [loading, setLoading] = useState(true);
   const [phase, setPhase] = useState("attendee"); // "attendee" | "survey" | "submitted"s
   const [attendee, setAttendee] = useState({
@@ -139,6 +214,65 @@ export default function PublicSurveyPage() {
       mounted = false;
     };
   }, [slug]);
+
+  useEffect(() => {
+    if (!form) return;
+
+    const translateDynamic = async () => {
+      const dynamicTexts = [];
+
+      // Form-level fields
+      dynamicTexts.push(form.title || "");
+      dynamicTexts.push(form.description || "");
+
+      // Question fields
+      form.questions.forEach((q) => {
+        dynamicTexts.push(q.label || "");
+        dynamicTexts.push(q.helpText || "");
+        if (Array.isArray(q.options)) {
+          q.options.forEach((opt) => dynamicTexts.push(opt.label || ""));
+        }
+      });
+
+      const results = await translateTexts(dynamicTexts, language);
+
+      let idx = 0;
+
+      const tTitle = results[idx++] || form.title;
+      const tDesc = results[idx++] || form.description;
+
+      const tQuestions = form.questions.map((q) => {
+        const label = results[idx++] || q.label;
+        const help = results[idx++] || q.helpText;
+
+        let tOptions = [];
+        if (Array.isArray(q.options)) {
+          tOptions = q.options.map((opt) => {
+            return {
+              ...opt,
+              label: results[idx++] || opt.label,
+            };
+          });
+        }
+
+        return {
+          ...q,
+          label,
+          helpText: help,
+          options: tOptions,
+        };
+      });
+
+      setTForm({
+        ...form,
+        title: tTitle,
+        description: tDesc,
+        questions: tQuestions,
+      });
+    };
+
+    translateDynamic();
+  }, [form, language]);
 
   // ---- scroll by gestures ----
   useEffect(() => {
@@ -240,8 +374,8 @@ export default function PublicSurveyPage() {
     }
 
     const errs = {};
-    if (!attendee.name.trim()) errs.name = "Full name is required";
-    if (!attendee.email.trim()) errs.email = "Email is required";
+    if (!attendee.name.trim()) errs.name = trans.fullNameRequired;
+    if (!attendee.email.trim()) errs.email = trans.emailRequired;
     setAttendeeErr(errs);
     if (Object.keys(errs).length) return;
 
@@ -305,8 +439,9 @@ export default function PublicSurveyPage() {
           backgroundPosition: "center",
         }}
       >
-        <Container maxWidth="sm" sx={{ py: 6, zIndex: 1 }}>
-          <Typography variant="h6">Loading…</Typography>
+        <LanguageSelector top={20} right={20} />
+        <Container dir={dir} maxWidth="sm" sx={{ py: 6, zIndex: 1 }}>
+          <Typography variant="h6">{trans.loading}</Typography>
           <LinearProgress sx={{ mt: 2 }} />
         </Container>
       </Box>
@@ -333,13 +468,12 @@ export default function PublicSurveyPage() {
           backgroundPosition: "center",
         }}
       >
-        <Container maxWidth="sm" sx={{ py: 8, zIndex: 1 }}>
+        <LanguageSelector top={20} right={20} />
+        <Container dir={dir} maxWidth="sm" sx={{ py: 8, zIndex: 1 }}>
           <Typography variant="h5" fontWeight={700} gutterBottom>
-            Survey unavailable
+            {trans.surveyUnavailable}
           </Typography>
-          <Typography color="text.secondary">
-            {"This survey cannot be found."}
-          </Typography>
+          <Typography color="text.secondary">{trans.surveyNotFound}</Typography>
         </Container>
       </Box>
     );
@@ -366,7 +500,8 @@ export default function PublicSurveyPage() {
           p: { xs: 2.5, sm: 4 },
         }}
       >
-        <Container maxWidth="sm" sx={{ position: "relative" }}>
+        <LanguageSelector top={20} right={20} />
+        <Container dir={dir} maxWidth="sm" sx={{ position: "relative" }}>
           {/* subtle ambient blobs */}
           <Box
             sx={{
@@ -468,12 +603,12 @@ export default function PublicSurveyPage() {
                 color: "transparent",
               }}
             >
-              Thank you!
+              {trans.thankYouTitle}
             </Typography>
 
             {/* message */}
             <Typography color="text.secondary" sx={{ mb: 2.5 }}>
-              Your response has been recorded successfully.
+              {trans.thankYouMessage}
             </Typography>
 
             {/* optional fine print */}
@@ -481,7 +616,7 @@ export default function PublicSurveyPage() {
               variant="caption"
               sx={{ color: "text.disabled", display: "block" }}
             >
-              You may close this tab now.
+              {trans.youMayClose}
             </Typography>
           </Paper>
         </Container>
@@ -516,6 +651,7 @@ export default function PublicSurveyPage() {
           p: { xs: 1.5, sm: 2.5 },
         }}
       >
+        <LanguageSelector top={20} right={20} />
         <Paper
           elevation={3}
           sx={{
@@ -538,16 +674,16 @@ export default function PublicSurveyPage() {
               sx={{ fontSize: 40, color: "primary.main", mr: 1.5 }}
             />
             <Typography variant="h5" fontWeight={800} component="h1">
-              {form.title}
+              {tForm?.title}
             </Typography>
           </Box>
 
-          {form.description && (
+          {tForm?.description && (
             <Typography
               color="text.secondary"
               sx={{ mb: 3, textAlign: "center" }}
             >
-              {form.description}
+              {tForm?.description}
             </Typography>
           )}
 
@@ -560,10 +696,10 @@ export default function PublicSurveyPage() {
             }}
             noValidate
           >
-            <Stack>
+            <Stack dir={dir}>
               <TextField
                 id="attendee-name"
-                label="Full Name"
+                label={trans.fullName}
                 value={attendee.name}
                 onChange={(e) =>
                   setAttendee((s) => ({ ...s, name: e.target.value }))
@@ -582,7 +718,7 @@ export default function PublicSurveyPage() {
 
               <TextField
                 id="attendee-email"
-                label="Email"
+                label={trans.email}
                 type="email"
                 value={attendee.email}
                 onChange={(e) =>
@@ -605,7 +741,7 @@ export default function PublicSurveyPage() {
 
               <TextField
                 id="attendee-company"
-                label="Company (optional)"
+                label={trans.companyOptional}
                 value={attendee.company}
                 onChange={(e) =>
                   setAttendee((s) => ({ ...s, company: e.target.value }))
@@ -624,13 +760,14 @@ export default function PublicSurveyPage() {
                 variant="contained"
                 fullWidth
                 disabled={!canStart}
-                endIcon={<ICONS.next />}
+                startIcon={<ICONS.next />}
                 sx={{
                   py: 1.25,
                   fontWeight: 800,
+                  ...getStartIconSpacing(dir),
                 }}
               >
-                Start survey
+                {trans.startSurvey}
               </Button>
             </Stack>
           </Box>
@@ -641,7 +778,7 @@ export default function PublicSurveyPage() {
 
   // --- Survey phase ---
   if (phase === "survey") {
-    const questions = form.questions || [];
+    const questions = tForm?.questions || [];
     const safeIdx = Math.min(
       Math.max(currentIdx, 0),
       Math.max(questions.length - 1, 0)
@@ -667,12 +804,13 @@ export default function PublicSurveyPage() {
             backgroundPosition: "center",
           }}
         >
-          <Container maxWidth="sm" sx={{ py: 8, zIndex: 1 }}>
+          <LanguageSelector top={20} right={20} />
+          <Container dir={dir} maxWidth="sm" sx={{ py: 8, zIndex: 1 }}>
             <Typography variant="h5" fontWeight={700} gutterBottom>
-              No question found
+              {trans.noQuestionFound}
             </Typography>
             <Typography color="text.secondary">
-              There are no questions to display in this survey.
+              {trans.noQuestionsToDisplay}
             </Typography>
           </Container>
         </Box>
@@ -719,8 +857,12 @@ export default function PublicSurveyPage() {
         }}
       >
         <Background />
+        <LanguageSelector top={20} right={20} />
         {/* ============ MOBILE VIEW (xs only) ============ */}
-        <Box sx={{ display: { xs: "block", md: "none" }, width: "100%" }}>
+        <Box
+          dir={dir}
+          sx={{ display: { xs: "block", md: "none" }, width: "100%" }}
+        >
           <Box
             sx={{
               width: "100%",
@@ -1028,7 +1170,7 @@ export default function PublicSurveyPage() {
                     onChange={(e) =>
                       setAnswer(currentQ._id, { text: e.target.value })
                     }
-                    placeholder="Type your answer"
+                    placeholder={trans.typeYourAnswer}
                     sx={{
                       width: "100%",
                       maxWidth: 720,
@@ -1063,6 +1205,7 @@ export default function PublicSurveyPage() {
                     gap: 1,
                   }}
                 >
+                  {/* PREVIOUS */}
                   <Button
                     variant="outlined"
                     disabled={currentIdx === 0}
@@ -1070,7 +1213,8 @@ export default function PublicSurveyPage() {
                       setCurrentIdx((idx) => Math.max(0, idx - 1));
                       setProgressStep(0);
                     }}
-                    startIcon={<ICONS.back />}
+                    startIcon={dir === "ltr" ? <ICONS.back /> : null}
+                    endIcon={dir === "rtl" ? <ICONS.back /> : null}
                     sx={{
                       width: "100%",
                       minWidth: 0,
@@ -1078,15 +1222,17 @@ export default function PublicSurveyPage() {
                       color: actionColor,
                       fontWeight: 700,
                       borderRadius: 2,
+                      ...getStartIconSpacing(dir),
                       "&:hover": {
                         borderColor: actionColor,
                         bgcolor: "rgba(0,0,0,0.02)",
                       },
                     }}
                   >
-                    Previous
+                    {trans.previous}
                   </Button>
 
+                  {/* NEXT or SUBMIT */}
                   {currentIdx < questions.length - 1 ? (
                     <Button
                       variant="contained"
@@ -1096,7 +1242,8 @@ export default function PublicSurveyPage() {
                         );
                         setProgressStep(0);
                       }}
-                      endIcon={<ICONS.next />}
+                      startIcon={dir === "rtl" ? <ICONS.next /> : null}
+                      endIcon={dir === "ltr" ? <ICONS.next /> : null}
                       sx={{
                         width: "100%",
                         minWidth: 0,
@@ -1104,24 +1251,27 @@ export default function PublicSurveyPage() {
                         "&:hover": { bgcolor: actionColor },
                         fontWeight: 800,
                         borderRadius: 2,
+                        ...getStartIconSpacing(dir),
                       }}
                     >
-                      Next
+                      {trans.next}
                     </Button>
                   ) : (
                     <Button
                       variant="contained"
                       color="success"
                       onClick={onSubmit}
-                      startIcon={<ICONS.send />}
+                      startIcon={dir === "ltr" ? <ICONS.send /> : null}
+                      endIcon={dir === "rtl" ? <ICONS.send /> : null}
                       sx={{
                         width: "100%",
                         minWidth: 0,
                         fontWeight: 800,
                         borderRadius: 2,
+                        ...getStartIconSpacing(dir),
                       }}
                     >
-                      Submit
+                      {trans.submit}
                     </Button>
                   )}
                 </Box>
@@ -1132,6 +1282,7 @@ export default function PublicSurveyPage() {
 
         {/* ============ DESKTOP VIEW (md+) ============ */}
         <Box
+          dir={dir}
           sx={{
             display: { xs: "none", md: "flex" },
             bgcolor: "#fff",
@@ -1156,10 +1307,10 @@ export default function PublicSurveyPage() {
             }}
           >
             <Typography variant="h4" fontWeight={800} gutterBottom>
-              {form.title}
+              {tForm?.title}
             </Typography>
             <Typography color="text.secondary" sx={{ mb: 3 }}>
-              {form.description}
+              {tForm?.description}
             </Typography>
             <Box sx={{ flex: 1, overflowY: "auto" }}>
               {questions.map((q, idx) => (
@@ -1465,7 +1616,7 @@ export default function PublicSurveyPage() {
                     onChange={(e) =>
                       setAnswer(currentQ._id, { text: e.target.value })
                     }
-                    placeholder="Type your answer"
+                    placeholder={trans.typeYourAnswer}
                     sx={{
                       width: "100%",
                       maxWidth: 720,
@@ -1489,6 +1640,7 @@ export default function PublicSurveyPage() {
                   pt: 1,
                 }}
               >
+                {/* PREVIOUS BUTTON */}
                 <Button
                   variant="outlined"
                   disabled={currentIdx === 0}
@@ -1496,7 +1648,8 @@ export default function PublicSurveyPage() {
                     setCurrentIdx((idx) => Math.max(0, idx - 1));
                     setProgressStep(0);
                   }}
-                  startIcon={<ICONS.back />}
+                  startIcon={dir === "ltr" ? <ICONS.back /> : null}
+                  endIcon={dir === "rtl" ? <ICONS.back /> : null}
                   sx={{
                     borderColor: actionColor,
                     color: actionColor,
@@ -1506,10 +1659,13 @@ export default function PublicSurveyPage() {
                       borderColor: actionColor,
                       bgcolor: "rgba(0,0,0,0.02)",
                     },
+                    ...getStartIconSpacing(dir),
                   }}
                 >
-                  Previous
+                  {trans.previous}
                 </Button>
+
+                {/* NEXT OR SUBMIT */}
                 {currentIdx < questions.length - 1 ? (
                   <Button
                     variant="contained"
@@ -1519,25 +1675,32 @@ export default function PublicSurveyPage() {
                       );
                       setProgressStep(0);
                     }}
-                    endIcon={<ICONS.next />}
+                    startIcon={dir === "rtl" ? <ICONS.next /> : null}
+                    endIcon={dir === "ltr" ? <ICONS.next /> : null}
                     sx={{
                       bgcolor: actionColor,
                       "&:hover": { bgcolor: actionColor },
                       minWidth: 160,
                       fontWeight: 800,
+                      ...getStartIconSpacing(dir),
                     }}
                   >
-                    Next question
+                    {trans.nextQuestion}
                   </Button>
                 ) : (
                   <Button
                     variant="contained"
                     color="success"
                     onClick={onSubmit}
-                    startIcon={<ICONS.send />}
-                    sx={{ minWidth: 160, fontWeight: 800 }}
+                    startIcon={dir === "ltr" ? <ICONS.send /> : null}
+                    endIcon={dir === "rtl" ? <ICONS.send /> : null}
+                    sx={{
+                      minWidth: 160,
+                      fontWeight: 800,
+                      ...getStartIconSpacing(dir),
+                    }}
                   >
-                    Submit
+                    {trans.submit}
                   </Button>
                 )}
               </Box>
