@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
 export default function Page() {
-  return redirect(`/cms/modules/quiznest/games`);
+  return redirect(`/cms/modules/tapmatch/games`);
 }
