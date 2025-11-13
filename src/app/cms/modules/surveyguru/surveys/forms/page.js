@@ -55,6 +55,7 @@ import slugify from "@/utils/slugify";
 
 import { useTheme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
+import ShareLinkModal from "@/components/modals/ShareLinkModal";
 
 const translations = {
   en: {
@@ -66,7 +67,7 @@ const translations = {
     newForm: "Create Form",
     editForm: "Edit Survey Form",
     createForm: "Create Survey Form",
-    copyLink: "Copy public link",
+    copyLink: "Share Public Link",
     linkCopied: "Link copied!",
     delete: "Delete",
     confirmDeleteTitle: "Delete Form",
@@ -126,7 +127,7 @@ const translations = {
     newForm: "إنشاء نموذج",
     editForm: "تحرير نموذج الاستبيان",
     createForm: "إنشاء نموذج الاستبيان",
-    copyLink: "نسخ الرابط العام",
+    copyLink: "مشاركة الرابط العام",
     linkCopied: "تم نسخ الرابط!",
     delete: "حذف",
     confirmDeleteTitle: "حذف النموذج",
@@ -225,6 +226,8 @@ export default function SurveyFormsManagePage() {
   const [optionFiles, setOptionFiles] = useState({});
   const [optionPreviews, setOptionPreviews] = useState({});
   const previewUrlsRef = useRef({});
+  const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [formToShare, setFormToShare] = useState(null);
 
   const [errors, setErrors] = useState({});
 
@@ -232,13 +235,6 @@ export default function SurveyFormsManagePage() {
     () => businesses.find((b) => b.slug === selectedBizSlug),
     [businesses, selectedBizSlug]
   );
-
-  const handleCopyLink = (slug) => {
-    const base = window.location.origin;
-    const url = `${base}/surveyguru/${slug}`;
-    navigator.clipboard.writeText(url);
-    showMessage(t.linkCopied, "info");
-  };
 
   // Helpers for previews cleanup
   const setPreviewUrl = (key, url) => {
@@ -806,10 +802,16 @@ export default function SurveyFormsManagePage() {
 
                   <CardActions sx={{ justifyContent: "center" }}>
                     <Tooltip title={t.copyLink}>
-                      <IconButton onClick={() => handleCopyLink(f.slug)}>
-                        <ICONS.copy />
+                      <IconButton
+                        onClick={() => {
+                          setFormToShare(f);
+                          setShareModalOpen(true);
+                        }}
+                      >
+                        <ICONS.share />
                       </IconButton>
                     </Tooltip>
+
                     <Tooltip title={t.editForm}>
                       <IconButton color="primary" onClick={() => openEdit(f)}>
                         <ICONS.edit fontSize="small" />
@@ -1290,6 +1292,18 @@ export default function SurveyFormsManagePage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <ShareLinkModal
+        open={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+        url={
+          typeof window !== "undefined" && formToShare?.slug
+            ? `${window.location.origin}/surveyguru/${formToShare.slug}`
+            : ""
+        }
+        name={formToShare?.title || "survey-form"}
+        title={t.copyLink}
+      />
     </Box>
   );
 }
