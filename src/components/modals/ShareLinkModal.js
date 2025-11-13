@@ -35,7 +35,8 @@ const translations = {
   },
   ar: {
     shareTitle: "مشاركة الرابط",
-    description: "شارك هذا الرابط باستخدام الرابط أو رمز الاستجابة السريعة أدناه.",
+    description:
+      "شارك هذا الرابط باستخدام الرابط أو رمز الاستجابة السريعة أدناه.",
     copySuccess: "تم نسخ الرابط!",
     copyError: "فشل في نسخ الرابط.",
     qrError: "فشل في إنشاء رمز الاستجابة السريعة.",
@@ -47,7 +48,7 @@ export default function ShareLinkModal({
   open,
   onClose,
   url = "",
-  qrUrl = "", 
+  qrUrl = "",
   title,
   description,
   name = "qr-code",
@@ -157,7 +158,18 @@ export default function ShareLinkModal({
             gap: 2,
           }}
         >
-          <QRCodeCanvas value={qrValue} size={180} />
+          <QRCodeCanvas
+            value={qrValue}
+            size={180}
+            bgColor="#ffffff"
+            includeMargin={true}
+            style={{
+              padding: "12px",
+              background: "#ffffff",
+              borderRadius: "8px",
+            }}
+          />
+          
           <Button
             variant="contained"
             startIcon={<ICONS.download />}

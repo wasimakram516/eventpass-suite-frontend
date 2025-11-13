@@ -85,105 +85,102 @@ export default function Registration() {
     fetchEvent();
   }, [eventSlug, isArabic]);
 
-  
-// Prepare dynamic fields + batch translation for event & form fields
-useEffect(() => {
-  if (!event) return;
+  // Prepare dynamic fields + batch translation for event & form fields
+  useEffect(() => {
+    if (!event) return;
 
-  const defaultFields = [
-    { name: "fullName", label: "Full Name", type: "text", required: true },
-    { name: "phone", label: "Phone Number", type: "text", required: true },
-    { name: "email", label: "Email", type: "text", required: true },
-    { name: "company", label: "Company", type: "text", required: false },
-  ];
+    const defaultFields = [
+      { name: "fullName", label: "Full Name", type: "text", required: true },
+      { name: "phone", label: "Phone Number", type: "text", required: true },
+      { name: "email", label: "Email", type: "text", required: true },
+      { name: "company", label: "Company", type: "text", required: false },
+    ];
 
-  const fields = event.formFields?.length
-    ? event.formFields
-        .filter((f) => f.visible !== false)
-        .map((f) => ({
-          name: f.inputName,
-          label: f.inputName,
-          type: f.inputType,
-          options: f.values || [],
-          required: f.required,
-          placeholder: f.placeholder || "",
-        }))
-    : defaultFields;
+    const fields = event.formFields?.length
+      ? event.formFields
+          .filter((f) => f.visible !== false)
+          .map((f) => ({
+            name: f.inputName,
+            label: f.inputName,
+            type: f.inputType,
+            options: f.values || [],
+            required: f.required,
+            placeholder: f.placeholder || "",
+          }))
+      : defaultFields;
 
-  // initialize form
-  const initial = {};
-  fields.forEach((f) => (initial[f.name] = ""));
-  setDynamicFields(fields);
-  setFormData(initial);
+    // initialize form
+    const initial = {};
+    fields.forEach((f) => (initial[f.name] = ""));
+    setDynamicFields(fields);
+    setFormData(initial);
 
-  const translateAll = async () => {
-  const textsToTranslate = new Set();
+    const translateAll = async () => {
+      const textsToTranslate = new Set();
 
-  // Event-level fields
-  if (event.name) textsToTranslate.add(event.name);
-  if (event.venue) textsToTranslate.add(event.venue);
-  if (event.description) textsToTranslate.add(event.description);
+      // Event-level fields
+      if (event.name) textsToTranslate.add(event.name);
+      if (event.venue) textsToTranslate.add(event.venue);
+      if (event.description) textsToTranslate.add(event.description);
 
-  // Form fields: labels, options, placeholders
-  fields.forEach((f) => {
-    if (f.label) textsToTranslate.add(f.label);
-    if (f.placeholder) textsToTranslate.add(f.placeholder);
-    (f.options || []).forEach((o) => textsToTranslate.add(o));
-  });
+      // Form fields: labels, options, placeholders
+      fields.forEach((f) => {
+        if (f.label) textsToTranslate.add(f.label);
+        if (f.placeholder) textsToTranslate.add(f.placeholder);
+        (f.options || []).forEach((o) => textsToTranslate.add(o));
+      });
 
-  // ✅ Convert Set → Array first, then filter
-  const textArray = Array.from(textsToTranslate).filter(
-    (t) => typeof t === "string" && t.trim() !== ""
-  );
+      // ✅ Convert Set → Array first, then filter
+      const textArray = Array.from(textsToTranslate).filter(
+        (t) => typeof t === "string" && t.trim() !== ""
+      );
 
-  if (!textArray.length) {
-    setTranslatedEvent(event);
-    setTranslationsReady(true);
-    return;
-  }
+      if (!textArray.length) {
+        setTranslatedEvent(event);
+        setTranslationsReady(true);
+        return;
+      }
 
-  try {
-    const results = await translateTexts(textArray, lang);
-    const map = {};
-    textArray.forEach((txt, i) => (map[txt] = results[i] || txt));
+      try {
+        const results = await translateTexts(textArray, lang);
+        const map = {};
+        textArray.forEach((txt, i) => (map[txt] = results[i] || txt));
 
-    const translatedEvent = {
-      ...event,
-      name: map[event.name] || event.name,
-      venue: map[event.venue] || event.venue,
-      description: map[event.description] || event.description,
-      formFields:
-        event.formFields?.map((f) => ({
-          ...f,
-          inputName: map[f.inputName] || f.inputName,
-          values: f.values?.map((v) => map[v] || v) || f.values,
-          placeholder: map[f.placeholder] || f.placeholder,
-        })) || event.formFields,
+        const translatedEvent = {
+          ...event,
+          name: map[event.name] || event.name,
+          venue: map[event.venue] || event.venue,
+          description: map[event.description] || event.description,
+          formFields:
+            event.formFields?.map((f) => ({
+              ...f,
+              inputName: map[f.inputName] || f.inputName,
+              values: f.values?.map((v) => map[v] || v) || f.values,
+              placeholder: map[f.placeholder] || f.placeholder,
+            })) || event.formFields,
+        };
+
+        const translationMap = {};
+        fields.forEach((f) => {
+          translationMap[f.label] = map[f.label] || f.label;
+          (f.options || []).forEach((o) => {
+            translationMap[o] = map[o] || o;
+          });
+        });
+
+        setTranslations(translationMap);
+        setTranslatedEvent(translatedEvent);
+      } catch (err) {
+        console.error("⚠️ Translation error:", err);
+        setTranslatedEvent(event);
+      } finally {
+        setTranslationsReady(true);
+      }
     };
 
-    const translationMap = {};
-    fields.forEach((f) => {
-      translationMap[f.label] = map[f.label] || f.label;
-      (f.options || []).forEach((o) => {
-        translationMap[o] = map[o] || o;
-      });
-    });
-
-    setTranslations(translationMap);
-    setTranslatedEvent(translatedEvent);
-  } catch (err) {
-    console.error("⚠️ Translation error:", err);
-    setTranslatedEvent(event);
-  } finally {
-    setTranslationsReady(true);
-  }
-};
-
-
-  setTranslationsReady(false);
-  translateAll();
-}, [event, lang]);
-
+    setTranslationsReady(false);
+    translateAll();
+  }, [event, lang]);
 
   // Handlers
   const handleInputChange = (e) => {
@@ -475,7 +472,17 @@ useEffect(() => {
                     display: "inline-block",
                   }}
                 >
-                  <QRCodeCanvas value={qrToken} size={180} />
+                  <QRCodeCanvas
+                    value={qrToken}
+                    size={180}
+                    bgColor="#ffffff"
+                    includeMargin={true}
+                    style={{
+                      padding: "12px",
+                      background: "#ffffff",
+                      borderRadius: "8px",
+                    }}
+                  />
                 </Paper>
               </Box>
             </>
