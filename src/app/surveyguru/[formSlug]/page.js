@@ -108,6 +108,13 @@ export default function PublicSurveyPage() {
   const actionColor = palette.action;
   const rightGradient = palette.gradient;
 
+  // Auto-skip attendee phase if form is anonymous
+  useEffect(() => {
+    if (form?.isAnonymous) {
+      setPhase("survey");
+    }
+  }, [form?.isAnonymous]);
+
   useEffect(() => {
     progressRef.current = progressStep;
   }, [progressStep]);
@@ -226,11 +233,18 @@ export default function PublicSurveyPage() {
   }, [form?.questions?.length]);
 
   const startSurvey = () => {
+    if (form?.isAnonymous) {
+      // skip attendee validation
+      setPhase("survey");
+      return;
+    }
+
     const errs = {};
     if (!attendee.name.trim()) errs.name = "Full name is required";
     if (!attendee.email.trim()) errs.email = "Email is required";
     setAttendeeErr(errs);
     if (Object.keys(errs).length) return;
+
     setPhase("survey");
   };
 
@@ -243,7 +257,9 @@ export default function PublicSurveyPage() {
     await new Promise((resolve) => setTimeout(resolve, 150));
 
     const payload = {
-      attendee,
+      attendee: form?.isAnonymous
+        ? { name: null, email: null, company: null }
+        : attendee,
       answers: questions.map((q) => {
         const questionId = q._id;
         const a = answers[questionId] || {};
@@ -702,7 +718,7 @@ export default function PublicSurveyPage() {
           width: "100%",
         }}
       >
-        <Background/>
+        <Background />
         {/* ============ MOBILE VIEW (xs only) ============ */}
         <Box sx={{ display: { xs: "block", md: "none" }, width: "100%" }}>
           <Box

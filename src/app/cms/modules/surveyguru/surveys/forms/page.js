@@ -78,6 +78,7 @@ const translations = {
     fSlug: "Slug",
     fDesc: "Description",
     fActive: "Active",
+    fAnonymous: "Anonymous Responses",
     fEvent: "Event",
     fSelectEventPlaceholder: "Select an event",
     questions: "Questions",
@@ -136,6 +137,7 @@ const translations = {
     fSlug: "المُعرف (Slug)",
     fDesc: "الوصف",
     fActive: "نشط",
+    fAnonymous: "ردود مجهولة",
     fEvent: "الفعالية",
     fSelectEventPlaceholder: "اختر فعالية",
     questions: "الأسئلة",
@@ -216,6 +218,7 @@ export default function SurveyFormsManagePage() {
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
   const [isActive, setIsActive] = useState(true);
+  const [isAnonymous, setIsAnonymous] = useState(false);
   const [questions, setQuestions] = useState([]);
   const [selectedEventId, setSelectedEventId] = useState("");
 
@@ -263,6 +266,7 @@ export default function SurveyFormsManagePage() {
     setSlug("");
     setDescription("");
     setIsActive(true);
+    setIsAnonymous(false);
     setQuestions([]);
     setSelectedEventId("");
     setErrors({});
@@ -366,6 +370,7 @@ export default function SurveyFormsManagePage() {
     setSlug(form.slug || "");
     setDescription(form.description || "");
     setIsActive(!!form.isActive);
+    setIsAnonymous(!!form.isAnonymous);
 
     const evId = form.eventId?._id || form.eventId || "";
     setSelectedEventId(evId);
@@ -508,6 +513,7 @@ export default function SurveyFormsManagePage() {
     fd.append("slug", slug.trim());
     fd.append("description", description || "");
     fd.append("isActive", String(!!isActive));
+    fd.append("isAnonymous", String(!!isAnonymous));
 
     // Normalize questions: ensure order & numbers
     const qs = (questions || []).map((q, qi) => ({
@@ -704,6 +710,8 @@ export default function SurveyFormsManagePage() {
               <Grid item xs={12} sm={6} md={4} lg={3} key={f._id}>
                 <Card
                   sx={{
+                    width: "100%",
+                    maxWidth: 340,
                     height: "100%",
                     display: "flex",
                     flexDirection: "column",
@@ -742,6 +750,17 @@ export default function SurveyFormsManagePage() {
                         size="small"
                         color={f.isActive ? "success" : "default"}
                       />
+                      {f.isAnonymous && (
+                        <Chip
+                          label="Anonymous"
+                          size="small"
+                          color="warning"
+                          sx={{
+                            ml: dir === "rtl" ? 0 : 1,
+                            mr: dir === "rtl" ? 1 : 0,
+                          }}
+                        />
+                      )}
                     </Stack>
 
                     <Typography
@@ -905,6 +924,16 @@ export default function SurveyFormsManagePage() {
                 />
               }
               label={t.fActive}
+            />
+
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={isAnonymous}
+                  onChange={(e) => setIsAnonymous(e.target.checked)}
+                />
+              }
+              label={t.fAnonymous}
             />
 
             <Stack

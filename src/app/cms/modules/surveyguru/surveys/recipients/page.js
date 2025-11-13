@@ -362,11 +362,16 @@ export default function RecipientsManagePage() {
   };
 
   const onCopySurveyLink = (r) => {
-    if (!selectedForm?.slug || !r?.token) return;
+    if (!selectedForm?.slug) return;
+
     const base = typeof window !== "undefined" ? window.location.origin : "";
-    const url = `${base}/surveyguru/${
-      selectedForm.slug
-    }?token=${encodeURIComponent(r.token)}`;
+    const slug = selectedForm.slug;
+
+    // Anonymous → no token
+    const url = selectedForm.isAnonymous
+      ? `${base}/surveyguru/${slug}`
+      : `${base}/surveyguru/${slug}?token=${encodeURIComponent(r.token || "")}`;
+
     navigator.clipboard.writeText(url);
     showMessage(t.copied, "info");
   };
