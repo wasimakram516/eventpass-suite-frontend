@@ -23,6 +23,7 @@ import {
   Grid,
   useMediaQuery,
   useTheme,
+  Pagination,
 } from "@mui/material";
 
 import { useAuth } from "@/contexts/AuthContext";
@@ -97,6 +98,10 @@ const translations = {
     sendingEmails: "Sending Emails...",
     bulkEmailSuccess:
       "Bulk emails completed — {sent} sent, {failed} failed, out of {total} total.",
+    showing: "Showing",
+    of: "of",
+    records: "records",
+    recordsPerPage: "Records per page",
   },
   ar: {
     title: "إدارة المستلمين",
@@ -141,6 +146,10 @@ const translations = {
     sendingEmails: "جاري إرسال البريد...",
     bulkEmailSuccess:
       "اكتمل إرسال البريد الجماعي — {sent} تم الإرسال، {failed} فشل، من أصل {total}.",
+    showing: "عرض",
+    of: "من",
+    records: "السجلات",
+    recordsPerPage: "السجلات في كل صفحة",
   },
 };
 
@@ -194,6 +203,10 @@ export default function RecipientsManagePage() {
 
   const [sendingEmails, setSendingEmails] = useState(false);
   const [confirmEmailDialogOpen, setConfirmEmailDialogOpen] = useState(false);
+
+  const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
+  const [total, setTotal] = useState(0);
 
   const { emailProgress, syncProgress } = useSurveyGuruSocket({
     formId,
@@ -253,13 +266,18 @@ export default function RecipientsManagePage() {
       const qTrim = (q || "").trim();
       const res = await listRecipients({
         formId,
+        page,
+        limit,
         ...(qTrim ? { q: qTrim } : {}),
         ...(status ? { status } : {}),
       });
-      setRows(res || []);
+
+      setRows(res?.recipients || []);
+      setTotal(res?.pagination?.total || 0);
+
       setLoading(false);
     })();
-  }, [formId, q, status]);
+  }, [formId, q, status, page, limit]);
 
   const handleSync = async () => {
     if (!formId) return;
@@ -341,6 +359,7 @@ export default function RecipientsManagePage() {
     const nextQ = (mQ || "").trim();
     const nextStatus = mStatus || "";
 
+    setPage(1);
     setEventId(nextEventId);
     setFormId(nextFormId);
     setQ(nextQ);
@@ -570,6 +589,44 @@ export default function RecipientsManagePage() {
 
         <Divider sx={{ my: 2 }} />
 
+        {rows.length > 0 && (
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 3,
+              px: 2,
+            }}
+          >
+            <Typography variant="body1">
+              {t.showing} {Math.min((page - 1) * limit + 1, total)}–
+              {Math.min(page * limit, total)} {t.of} {total} {t.records}
+            </Typography>
+
+            <FormControl size="small" sx={{ minWidth: 150 }}>
+              <InputLabel id="limit-select-label">
+                {t.recordsPerPage}
+              </InputLabel>
+              <Select
+                labelId="limit-select-label"
+                value={limit}
+                onChange={(e) => {
+                  setLimit(e.target.value);
+                  setPage(1);
+                }}
+                label={t.recordsPerPage}
+              >
+                {[5, 10, 20, 50, 100].map((value) => (
+                  <MenuItem key={value} value={value}>
+                    {value}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+        )}
+
         {/* Recipients responsive list */}
         {!formId ? (
           <Typography variant="body2" color="text.secondary">
@@ -586,20 +643,38 @@ export default function RecipientsManagePage() {
             {rows.map((r) => (
               <RecipientCard key={r._id} r={r} />
             ))}
+            <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+              <Pagination
+                dir="ltr"
+                count={Math.ceil(total / limit)}
+                page={page}
+                onChange={(_, value) => setPage(value)}
+              />
+            </Box>
           </Stack>
         ) : (
-          <Grid
-            container
-            justifyContent="center"
-            spacing={1.5}
-            id="recipients-list"
-          >
-            {rows.map((r) => (
-              <Grid item xs={12} md={6} lg={4} key={r._id}>
-                <RecipientCard r={r} />
-              </Grid>
-            ))}
-          </Grid>
+          <>
+            <Grid
+              container
+              justifyContent="center"
+              spacing={1.5}
+              id="recipients-list"
+            >
+              {rows.map((r) => (
+                <Grid item xs={12} md={6} lg={4} key={r._id}>
+                  <RecipientCard r={r} />
+                </Grid>
+              ))}
+            </Grid>
+            <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+              <Pagination
+                dir="ltr"
+                count={Math.ceil(total / limit)}
+                page={page}
+                onChange={(_, value) => setPage(value)}
+              />
+            </Box>
+          </>
         )}
 
         {/* Delete & Clear confirmations */}
