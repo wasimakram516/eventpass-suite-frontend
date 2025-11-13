@@ -211,7 +211,27 @@ export default function RecipientsManagePage() {
   const { emailProgress, syncProgress } = useSurveyGuruSocket({
     formId,
     onEmailProgress: (data) => console.log("Survey email progress:", data),
-    onSyncProgress: (data) => console.log("Survey sync progress:", data),
+    onSyncProgress: (data) => {
+      const { formId: incomingForm, synced, total } = data;
+      if (String(incomingForm) !== String(formId)) return;
+
+      setSyncLoading(true);
+      syncProgress.synced = synced;
+      syncProgress.total = total;
+
+      // SYNC COMPLETED — now reload REAL data from DB
+      if (synced === total) {
+        setSyncLoading(false);
+
+        listRecipients({ formId, page, limit }).then((res) => {
+          setRows(res.recipients || []);
+          setTotal(res.pagination.total);
+        });
+
+        showMessage(t.synced, "success");
+        setActionsOpen(false);
+      }
+    },
   });
 
   useEffect(() => {
@@ -281,19 +301,9 @@ export default function RecipientsManagePage() {
 
   const handleSync = async () => {
     if (!formId) return;
+
     setSyncLoading(true);
-    const r = await syncRecipientsForEvent(formId);
-    if (!r?.error) {
-      const qTrim = (q || "").trim();
-      const refreshed = await listRecipients({
-        formId,
-        ...(qTrim ? { q: qTrim } : {}),
-        ...(status ? { status } : {}),
-      });
-      setRows(refreshed || []);
-    }
-    setSyncLoading(false);
-    setActionsOpen(false);
+    await syncRecipientsForEvent(formId);
   };
 
   const handleSendBulkSurveyEmails = async () => {
