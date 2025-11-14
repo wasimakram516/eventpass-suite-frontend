@@ -314,7 +314,10 @@ export default function RecipientsManagePage() {
     } catch (err) {
       console.error("Bulk survey email send failed:", err);
     } finally {
-      handleSync();
+      listRecipients({ formId, page, limit }).then((res) => {
+        setRows(res.recipients || []);
+        setTotal(res.pagination.total);
+      });
       setSendingEmails(false);
     }
   };
