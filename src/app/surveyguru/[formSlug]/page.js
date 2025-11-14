@@ -872,7 +872,7 @@ export default function PublicSurveyPage() {
               alignItems: "stretch",
               justifyContent: "stretch",
               p: 2,
-              minHeight: "100vh",
+              minHeight: "90vh",
               overflowX: "hidden",
             }}
           >
@@ -1213,8 +1213,7 @@ export default function PublicSurveyPage() {
                       setCurrentIdx((idx) => Math.max(0, idx - 1));
                       setProgressStep(0);
                     }}
-                    startIcon={dir === "ltr" ? <ICONS.back /> : null}
-                    endIcon={dir === "rtl" ? <ICONS.back /> : null}
+                    startIcon={dir === "ltr" ? <ICONS.back /> : <ICONS.next />}
                     sx={{
                       width: "100%",
                       minWidth: 0,
@@ -1242,8 +1241,9 @@ export default function PublicSurveyPage() {
                         );
                         setProgressStep(0);
                       }}
-                      startIcon={dir === "rtl" ? <ICONS.next /> : null}
-                      endIcon={dir === "ltr" ? <ICONS.next /> : null}
+                      startIcon={
+                        dir === "rtl" ? <ICONS.next /> : <ICONS.back />
+                      }
                       sx={{
                         width: "100%",
                         minWidth: 0,
@@ -1261,8 +1261,7 @@ export default function PublicSurveyPage() {
                       variant="contained"
                       color="success"
                       onClick={onSubmit}
-                      startIcon={dir === "ltr" ? <ICONS.send /> : null}
-                      endIcon={dir === "rtl" ? <ICONS.send /> : null}
+                      startIcon={<ICONS.send />}
                       sx={{
                         width: "100%",
                         minWidth: 0,
@@ -1648,8 +1647,7 @@ export default function PublicSurveyPage() {
                     setCurrentIdx((idx) => Math.max(0, idx - 1));
                     setProgressStep(0);
                   }}
-                  startIcon={dir === "ltr" ? <ICONS.back /> : null}
-                  endIcon={dir === "rtl" ? <ICONS.back /> : null}
+                  startIcon={dir === "ltr" ? <ICONS.back /> : <ICONS.next />}
                   sx={{
                     borderColor: actionColor,
                     color: actionColor,
@@ -1675,8 +1673,7 @@ export default function PublicSurveyPage() {
                       );
                       setProgressStep(0);
                     }}
-                    startIcon={dir === "rtl" ? <ICONS.next /> : null}
-                    endIcon={dir === "ltr" ? <ICONS.next /> : null}
+                    startIcon={dir === "rtl" ? <ICONS.back /> : <ICONS.next />}
                     sx={{
                       bgcolor: actionColor,
                       "&:hover": { bgcolor: actionColor },
@@ -1692,8 +1689,7 @@ export default function PublicSurveyPage() {
                     variant="contained"
                     color="success"
                     onClick={onSubmit}
-                    startIcon={dir === "ltr" ? <ICONS.send /> : null}
-                    endIcon={dir === "rtl" ? <ICONS.send /> : null}
+                    startIcon={<ICONS.send />}
                     sx={{
                       minWidth: 160,
                       fontWeight: 800,

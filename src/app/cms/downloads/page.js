@@ -152,7 +152,7 @@ export default function FileStorePage() {
     const base = typeof window !== "undefined" ? window.origin : "";
     setShareData({
       open: true,
-      url: `${base}/${slug}`,
+      url: `${base}/downloads/${slug}`,
       name: title || slug,
     });
   };

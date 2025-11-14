@@ -214,7 +214,7 @@ export default function FileDownloadPage() {
       sx={{
         display: "flex",
         flexDirection: "column",
-        height: "calc(100vh - 40px)",
+        height: "calc(95vh - 40px)",
         backgroundColor: "#fafafa",
       }}
       dir={dir}
