@@ -1243,9 +1243,7 @@ export default function PublicSurveyPage() {
                         );
                         setProgressStep(0);
                       }}
-                      startIcon={
-                        dir === "rtl" ? <ICONS.next /> : <ICONS.back />
-                      }
+                      startIcon={dir === "rtl" ? <ICONS.back /> : <ICONS.next />}
                       sx={{
                         width: "100%",
                         minWidth: 0,
