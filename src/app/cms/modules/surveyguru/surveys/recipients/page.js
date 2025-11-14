@@ -210,16 +210,33 @@ export default function RecipientsManagePage() {
 
   const { emailProgress, syncProgress } = useSurveyGuruSocket({
     formId,
-    onEmailProgress: (data) => console.log("Survey email progress:", data),
+    onEmailProgress: (data) => {
+      const { sent, total } = data;
+
+      // if finished
+      if (data.processed === data.total) {
+        setSendingEmails(false);
+
+        showMessage(
+          t.bulkEmailSuccess
+            .replace("{sent}", data.sent)
+            .replace("{failed}", data.failed)
+            .replace("{total}", data.total),
+          "success"
+        );
+
+        listRecipients({ formId, page, limit }).then((res) => {
+          setRows(res.recipients || []);
+          setTotal(res.pagination.total);
+        });
+      }
+    },
     onSyncProgress: (data) => {
       const { formId: incomingForm, synced, total } = data;
       if (String(incomingForm) !== String(formId)) return;
 
       setSyncLoading(true);
-      syncProgress.synced = synced;
-      syncProgress.total = total;
 
-      // SYNC COMPLETED — now reload REAL data from DB
       if (synced === total) {
         setSyncLoading(false);
 
@@ -309,16 +326,11 @@ export default function RecipientsManagePage() {
   const handleSendBulkSurveyEmails = async () => {
     setConfirmEmailDialogOpen(false);
     setSendingEmails(true);
+
     try {
       await sendBulkSurveyEmails(formId);
     } catch (err) {
       console.error("Bulk survey email send failed:", err);
-    } finally {
-      listRecipients({ formId, page, limit }).then((res) => {
-        setRows(res.recipients || []);
-        setTotal(res.pagination.total);
-      });
-      setSendingEmails(false);
     }
   };
 
@@ -599,7 +611,7 @@ export default function RecipientsManagePage() {
               sx={getStartIconSpacing(dir)}
             >
               {sendingEmails && emailProgress.total
-                ? `${t.sendingEmails} ${emailProgress.sent}/${emailProgress.total}`
+                ? `${t.sendingEmails} ${emailProgress.processed}/${emailProgress.total}`
                 : sendingEmails
                 ? t.sendingEmails
                 : t.bulkEmail}

@@ -19,7 +19,12 @@ const useSurveyGuruSocket = ({
   const [syncProgress, setSyncProgress] = useState({ synced: 0, total: 0 });
 
   // Email sending progress
-  const [emailProgress, setEmailProgress] = useState({ sent: 0, total: 0 });
+  const [emailProgress, setEmailProgress] = useState({
+    sent: 0,
+    failed: 0,
+    processed: 0,
+    total: 0,
+  });
 
   // ---- Recipient Sync Progress Handler ----
   const handleSyncProgress = useCallback(
@@ -36,7 +41,13 @@ const useSurveyGuruSocket = ({
   const handleEmailProgress = useCallback(
     (data) => {
       if (data.formId === formId) {
-        setEmailProgress({ sent: data.sent, total: data.total });
+        setEmailProgress({
+          sent: data.sent,
+          failed: data.failed,
+          processed: data.processed,
+          total: data.total,
+        });
+
         if (onEmailProgress) onEmailProgress(data);
       }
     },
