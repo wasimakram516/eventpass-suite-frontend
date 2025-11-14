@@ -383,10 +383,14 @@ export default function RecipientsManagePage() {
       setLoading(true);
       const res = await listRecipients({
         formId: nextFormId,
+        page: 1,
+        limit,
         ...(nextQ ? { q: nextQ } : {}),
         ...(nextStatus ? { status: nextStatus } : {}),
       });
-      setRows(res || []);
+
+      setRows(res.recipients || []);
+      setTotal(res.pagination.total || 0);
       setLoading(false);
     } else {
       setRows([]);
