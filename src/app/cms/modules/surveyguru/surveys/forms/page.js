@@ -220,6 +220,7 @@ export default function SurveyFormsManagePage() {
   const [description, setDescription] = useState("");
   const [isActive, setIsActive] = useState(true);
   const [isAnonymous, setIsAnonymous] = useState(false);
+  const [defaultLanguage, setDefaultLanguage] = useState("en");
   const [questions, setQuestions] = useState([]);
   const [selectedEventId, setSelectedEventId] = useState("");
 
@@ -263,6 +264,7 @@ export default function SurveyFormsManagePage() {
     setDescription("");
     setIsActive(true);
     setIsAnonymous(false);
+    setDefaultLanguage("en");
     setQuestions([]);
     setSelectedEventId("");
     setErrors({});
@@ -367,6 +369,7 @@ export default function SurveyFormsManagePage() {
     setDescription(form.description || "");
     setIsActive(!!form.isActive);
     setIsAnonymous(!!form.isAnonymous);
+    setDefaultLanguage(form.defaultLanguage || "en");
 
     const evId = form.eventId?._id || form.eventId || "";
     setSelectedEventId(evId);
@@ -510,6 +513,7 @@ export default function SurveyFormsManagePage() {
     fd.append("description", description || "");
     fd.append("isActive", String(!!isActive));
     fd.append("isAnonymous", String(!!isAnonymous));
+    fd.append("defaultLanguage", defaultLanguage);
 
     // Normalize questions: ensure order & numbers
     const qs = (questions || []).map((q, qi) => ({
@@ -918,6 +922,73 @@ export default function SurveyFormsManagePage() {
               minRows={2}
             />
 
+            {/* Default Language Selector */}
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+              <Box
+                onClick={() =>
+                  setDefaultLanguage((prev) => (prev === "en" ? "ar" : "en"))
+                }
+                sx={{
+                  width: 64,
+                  height: 32,
+                  borderRadius: 32,
+                  backgroundColor: "background.paper",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  px: 1,
+                  cursor: "pointer",
+                  overflow: "hidden",
+                  boxShadow: `
+        2px 2px 6px rgba(0, 0, 0, 0.15),
+        -2px -2px 6px rgba(255, 255, 255, 0.5),
+        inset 2px 2px 5px rgba(0, 0, 0, 0.2),
+        inset -2px -2px 5px rgba(255, 255, 255, 0.7)
+      `,
+                  position: "relative",
+                }}
+              >
+                <Typography
+                  variant="caption"
+                  sx={{
+                    fontWeight: 600,
+                    color: defaultLanguage === "en" ? "#fff" : "text.secondary",
+                    zIndex: 2,
+                    transition: "color 0.3s",
+                  }}
+                >
+                  EN
+                </Typography>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    fontWeight: 600,
+                    color: defaultLanguage === "ar" ? "#fff" : "text.secondary",
+                    zIndex: 2,
+                    transition: "color 0.3s",
+                  }}
+                >
+                  AR
+                </Typography>
+
+                <Box
+                  sx={{
+                    position: "absolute",
+                    width: 28,
+                    height: 28,
+                    borderRadius: "50%",
+                    top: 2,
+                    left: defaultLanguage === "ar" ? 34 : 2,
+                    backgroundColor: "#1976d2",
+                    zIndex: 1,
+                    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.3)",
+                    transition:
+                      "left 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)",
+                  }}
+                />
+              </Box>
+            </Box>
+
             <FormControlLabel
               control={
                 <Switch
@@ -1298,7 +1369,7 @@ export default function SurveyFormsManagePage() {
         onClose={() => setShareModalOpen(false)}
         url={
           typeof window !== "undefined" && formToShare?.slug
-            ? `${window.location.origin}/surveyguru/${formToShare.slug}`
+            ? `${window.location.origin}/surveyguru/${formToShare.defaultLanguage}/${formToShare.slug}`
             : ""
         }
         name={formToShare?.title || "survey-form"}

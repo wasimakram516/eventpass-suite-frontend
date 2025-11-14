@@ -398,11 +398,14 @@ export default function RecipientsManagePage() {
 
     const base = typeof window !== "undefined" ? window.location.origin : "";
     const slug = selectedForm.slug;
+    const lang = selectedForm.defaultLanguage || "en";
 
     // Anonymous → no token
     const url = selectedForm.isAnonymous
-      ? `${base}/surveyguru/${slug}`
-      : `${base}/surveyguru/${slug}?token=${encodeURIComponent(r.token || "")}`;
+      ? `${base}/surveyguru/${lang}/${slug}`
+      : `${base}/surveyguru/${lang}/${slug}?token=${encodeURIComponent(
+          r.token || ""
+        )}`;
 
     navigator.clipboard.writeText(url);
     showMessage(t.copied, "info");

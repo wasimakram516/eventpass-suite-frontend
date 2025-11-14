@@ -123,9 +123,9 @@ export const surveyTranslations = {
 };
 
 export default function PublicSurveyPage() {
-  const { formSlug: slug } = useParams();
-  const { language } = useLanguage();
-  const { t: trans, dir } = useI18nLayout(surveyTranslations);
+  const { lang, formSlug: slug } = useParams();
+  const urlLanguage = lang === "ar" ? "ar" : "en";
+  const { t: trans, dir, language } = useI18nLayout(surveyTranslations, urlLanguage);
 
   const tokenRef = useRef("");
   const gestureAccumRef = useRef(0);
