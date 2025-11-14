@@ -854,6 +854,7 @@ export default function PublicSurveyPage() {
           alignItems: "center",
           justifyContent: "center",
           width: "100%",
+          position: "relative",
         }}
       >
         <Background />
@@ -867,7 +868,8 @@ export default function PublicSurveyPage() {
             sx={{
               width: "100%",
               background: rightGradient,
-              position: "relative",
+              position: "fixed",
+              top: 0,
               display: "flex",
               alignItems: "stretch",
               justifyContent: "stretch",
