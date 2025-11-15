@@ -56,6 +56,7 @@ import { wrapTextBox } from "@/utils/wrapTextStyles";
 import useEventRegSocket from "@/hooks/modules/eventReg/useEventRegSocket";
 import { exportAllBadges } from "@/utils/exportBadges";
 import EditRegistrationModal from "@/components/modals/EditRegistrationModal";
+import { useMessage } from "@/contexts/MessageContext";
 
 const translations = {
   en: {
@@ -174,6 +175,7 @@ const translations = {
 export default function ViewRegistrations() {
   const { eventSlug } = useParams();
   const { dir, t } = useI18nLayout(translations);
+  const { showMessage } = useMessage();
 
   const BASE_DATE_FILTERS = {
     createdAtFromMs: null,
@@ -236,98 +238,6 @@ export default function ViewRegistrations() {
     }, 20);
     return () => clearTimeout(id);
   }, [rawSearch]);
-
-  // ---- Loading Progress Handler ----
-  const handleLoadingProgress = useCallback((payload) => {
-    if (!payload) return;
-
-    const { loaded, total, data } = payload;
-
-    // Prevent infinite loop if backend keeps sending same loaded value
-    if (lastLoadedRef.current === loaded) return;
-    lastLoadedRef.current = loaded;
-
-    if (data?.length) {
-      const processed = data.map((r) => ({
-        ...r,
-        _createdAtMs: Date.parse(r.createdAt),
-        _scannedAtMs: (r.walkIns || []).map((w) => Date.parse(w.scannedAt)),
-        _haystack: buildHaystack(r, dynamicFieldsRef.current),
-      }));
-
-      setAllRegistrations((prev) => {
-        const map = new Map(prev.map((r) => [r._id, r]));
-        processed.forEach((r) => map.set(r._id, r));
-        return Array.from(map.values());
-      });
-    }
-
-    if (loaded >= total) {
-      setIsLoadingMore(false);
-    }
-  }, []);
-
-  // ---- Upload Progress Handler ----
-  const handleUploadProgress = useCallback((data) => {
-    const { uploaded, total } = data;
-
-    // When upload completes
-    if (uploaded === total && total > 0) {
-      setUploading(false);
-
-      // Refresh ONLY after upload finishes
-      fetchData();
-    }
-  }, []);
-
-  // ---- Email Progress Handler ----
-  const handleEmailProgress = useCallback((data) => {
-    const { processed, total } = data;
-
-    if (processed === total) {
-      setSendingEmails(false);
-      fetchData();
-      setUnsentEmailCount(0);
-    }
-  }, []);
-
-  // ---- Use hook with stable callbacks ----
-  const { uploadProgress, emailProgress } = useEventRegSocket({
-    eventId: eventDetails?._id,
-    onLoadingProgress: handleLoadingProgress,
-    onUploadProgress: handleUploadProgress,
-    onEmailProgress: handleEmailProgress,
-  });
-
-  const handleSaveEdit = async (updatedFields) => {
-    const res = await updateRegistration(editingReg._id, updatedFields);
-    if (!res?.error) {
-      setAllRegistrations((prev) =>
-        prev.map((r) =>
-          r._id === editingReg._id
-            ? { ...r, customFields: { ...r.customFields, ...updatedFields } }
-            : r
-        )
-      );
-      setEditModalOpen(false);
-    } else {
-      alert(res.error);
-    }
-  };
-
-  const handleSendBulkEmails = async () => {
-    setConfirmEmailDialogOpen(false);
-
-    // reset UI progress
-    setSendingEmails(true);
-
-    try {
-      await sendBulkEmails(eventSlug);
-    } catch (err) {
-      console.error("Bulk email send failed:", err);
-      setSendingEmails(false);
-    }
-  };
 
   // Helper to build search haystack (component level)
   const buildHaystack = (reg, fieldsLocal) => {
@@ -408,6 +318,110 @@ export default function ViewRegistrations() {
     }
 
     setLoading(false);
+  };
+
+  // ---- Loading Progress Handler ----
+  const handleLoadingProgress = useCallback((payload) => {
+    if (!payload) return;
+
+    const { loaded, total, data } = payload;
+
+    // Prevent infinite loop if backend keeps sending same loaded value
+    if (lastLoadedRef.current === loaded) return;
+    lastLoadedRef.current = loaded;
+
+    if (data?.length) {
+      const processed = data.map((r) => ({
+        ...r,
+        _createdAtMs: Date.parse(r.createdAt),
+        _scannedAtMs: (r.walkIns || []).map((w) => Date.parse(w.scannedAt)),
+        _haystack: buildHaystack(r, dynamicFieldsRef.current),
+      }));
+
+      setAllRegistrations((prev) => {
+        const map = new Map(prev.map((r) => [r._id, r]));
+        processed.forEach((r) => map.set(r._id, r));
+        return Array.from(map.values());
+      });
+    }
+
+    if (loaded >= total) {
+      setIsLoadingMore(false);
+    }
+  }, []);
+
+  // ---- Upload Progress Handler ----
+  const handleUploadProgress = useCallback((data) => {
+    const { uploaded, total } = data;
+
+    // When upload completes
+    if (uploaded === total && total > 0) {
+      setUploading(false);
+
+      // Refresh ONLY after upload finishes
+      fetchData();
+    }
+  }, []);
+
+  // ---- Email Progress Handler ----
+  const handleEmailProgress = useCallback(
+    (data) => {
+      const { processed, total, sent, failed } = data;
+
+      // finished
+      if (processed === total) {
+        setSendingEmails(false);
+
+        // refresh UI
+        fetchData();
+        setUnsentEmailCount(0);
+
+        // show toast message
+        showMessage(
+          `Bulk emails completed — ${sent} sent, ${failed} failed, out of ${total} total.`,
+          "success"
+        );
+      }
+    },
+    [showMessage, fetchData]
+  );
+
+  // ---- Use hook with stable callbacks ----
+  const { uploadProgress, emailProgress } = useEventRegSocket({
+    eventId: eventDetails?._id,
+    onLoadingProgress: handleLoadingProgress,
+    onUploadProgress: handleUploadProgress,
+    onEmailProgress: handleEmailProgress,
+  });
+
+  const handleSaveEdit = async (updatedFields) => {
+    const res = await updateRegistration(editingReg._id, updatedFields);
+    if (!res?.error) {
+      setAllRegistrations((prev) =>
+        prev.map((r) =>
+          r._id === editingReg._id
+            ? { ...r, customFields: { ...r.customFields, ...updatedFields } }
+            : r
+        )
+      );
+      setEditModalOpen(false);
+    } else {
+      alert(res.error);
+    }
+  };
+
+  const handleSendBulkEmails = async () => {
+    setConfirmEmailDialogOpen(false);
+
+    // reset UI progress
+    setSendingEmails(true);
+
+    try {
+      await sendBulkEmails(eventSlug);
+    } catch (err) {
+      console.error("Bulk email send failed:", err);
+      setSendingEmails(false);
+    }
   };
 
   const filteredRegistrations = React.useMemo(() => {
