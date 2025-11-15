@@ -248,6 +248,7 @@ export default function TrashPage() {
       "event-eventreg": "Event (EventReg)",
       "event-checkin": "Event (CheckIn)",
       "game-quiznest": "Game (QuizNest)",
+      "game-tapmatch": "Game (TapMatch)",
       "game-eventduel": "Game (EventDuel)",
       "gamesession-quiznest": "Game Session (QuizNest)",
       "gamesession-eventduel": "Game Session (EventDuel)",
@@ -371,7 +372,7 @@ export default function TrashPage() {
 
   const fetchAllModules = async () => {
     try {
-      const res = await getModuleCounts(); // ✅ use counts API
+      const res = await getModuleCounts(); 
       const modules = Object.keys(res || {}).filter((m) => res[m] > 0);
 
       setAllAvailableModules(modules);
