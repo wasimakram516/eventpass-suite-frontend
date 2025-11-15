@@ -9,16 +9,46 @@ import {
   Font,
 } from "@react-pdf/renderer";
 
-import regularFont from "../../fonts/IBMPlexSansArabic-Regular.ttf";
-import mediumFont from "../../fonts/IBMPlexSansArabic-Medium.ttf";
-import boldFont from "../../fonts/IBMPlexSansArabic-Bold.ttf";
+// ---- FUTURA ----
+import Futura_Bold from "../../fonts/futura/FuturaStdBold.otf";
+import Futura_Book from "../../fonts/futura/FuturaStdBook.otf";
+import Futura_Medium from "../../fonts/futura/FuturaStdMedium.otf";
+
+// ---- IBM PLEX ----
+import IBM_Regular from "../../fonts/IBMPlexSansArabic/IBMPlexSansArabic-Regular.ttf";
+import IBM_Medium from "../../fonts/IBMPlexSansArabic/IBMPlexSansArabic-Medium.ttf";
+import IBM_Bold from "../../fonts/IBMPlexSansArabic/IBMPlexSansArabic-Bold.ttf";
+
+// ---- Arial -----
+import Arial_Regular from "../../fonts/arial/ArialRegular.ttf";
+import Arial_Bold from "../../fonts/arial/ArialBold.ttf";
+
+// --------------------------------------------------------------
+// STATIC FONT REGISTRATION (DONE ONCE, GLOBALLY)
+// --------------------------------------------------------------
+Font.register({
+  family: "Futura",
+  fonts: [
+    { src: Futura_Book, fontWeight: 400 },
+    { src: Futura_Medium, fontWeight: 500 },
+    { src: Futura_Bold, fontWeight: 700 },
+  ],
+});
 
 Font.register({
   family: "IBM Plex Sans Arabic",
   fonts: [
-    { src: regularFont, fontWeight: "normal" },
-    { src: mediumFont, fontWeight: "500" },
-    { src: boldFont, fontWeight: "bold" },
+    { src: IBM_Regular, fontWeight: 400 },
+    { src: IBM_Medium, fontWeight: 500 },
+    { src: IBM_Bold, fontWeight: 700 },
+  ],
+});
+
+Font.register({
+  family: "Arial",
+  fonts: [
+    { src: Arial_Regular, fontWeight: 400 },
+    { src: Arial_Bold, fontWeight: 700 },
   ],
 });
 
@@ -37,7 +67,7 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     justifyContent: "center",
     alignItems: "center",
-    fontFamily: "IBM Plex Sans Arabic",
+    fontFamily: "Arial",
   },
   contentArea: {
     width: "100%",
@@ -60,15 +90,43 @@ const styles = StyleSheet.create({
     letterSpacing: 0.7,
     textAlign: "center",
   },
-  name: { fontSize: 18, fontWeight: "bold", color: "#000" },
-  company: { fontSize: 14, color: "#000", marginTop: 1 },
-  title: { fontSize: 11, color: "#444", marginTop: 4 },
+  name: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#000",
+    maxWidth: "80%",
+    lineHeight: 1.2,
+    textAlign: "center",
+    alignSelf: "center",
+  },
+  company: {
+    fontSize: 14,
+    color: "#000",
+    marginTop: 1,
+    maxWidth: "80%",
+    lineHeight: 1.2,
+    textAlign: "center",
+    alignSelf: "center",
+  },
+  title: {
+    fontSize: 11,
+    color: "#444",
+    marginTop: 4,
+    maxWidth: "80%",
+    lineHeight: 1.2,
+    textAlign: "center",
+    alignSelf: "center",
+  },
   badgeIdentifier: {
     fontSize: 14,
     fontWeight: "bold",
     textTransform: "uppercase",
     color: "#0077b6",
     marginTop: 10,
+    maxWidth: "80%",
+    lineHeight: 1.2,
+    textAlign: "center",
+    alignSelf: "center",
   },
 });
 
