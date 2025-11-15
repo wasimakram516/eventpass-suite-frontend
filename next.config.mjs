@@ -15,15 +15,20 @@ const nextConfig = {
         source: "/event/:slug*",
         destination: "/eventreg/en/event/:slug*",
       },
+      // Downloads route
+      {
+        source: "/:slug*",
+        destination: "/downloads/:slug*",
+      }
     ];
   },
 
   webpack(config) {
     config.module.rules.push({
-      test: /\.ttf$/,
+      test: /\.(ttf|otf)$/i,
       type: "asset/resource",
       generator: {
-        filename: "static/fonts/[name][ext]", 
+        filename: "static/fonts/[name][ext]",
       },
     });
     return config;
