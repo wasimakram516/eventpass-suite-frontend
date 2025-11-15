@@ -1,51 +1,56 @@
-import { useState, useMemo, useCallback } from "react";
+import { useRef, useEffect, useMemo, useState } from "react";
 import useSocket from "@/utils/useSocket";
 
-const useEventRegSocket = ({ eventId, onUploadProgress, onEmailProgress, onLoadingProgress } = {}) => {
-  const [uploadProgress, setUploadProgress] = useState({ uploaded: 0, total: 0 });
-  const [emailProgress, setEmailProgress] = useState({ sent: 0, total: 0 });
-  const [loadingProgress, setLoadingProgress] = useState({ loaded: 0, total: 0 });
+export default function useEventRegSocket({
+  eventId,
+  onLoadingProgress,
+  onUploadProgress,
+  onEmailProgress,
+}) {
+  const handlersRef = useRef({
+    onLoadingProgress,
+    onUploadProgress,
+    onEmailProgress,
+  });
 
-  const handleLoadingProgress = useCallback(
-    (payload) => {
-      if (payload.eventId === eventId) {
-        setLoadingProgress({ loaded: payload.loaded, total: payload.total });
-        if (onLoadingProgress) onLoadingProgress(payload);
-      }
-    },
-    [eventId, onLoadingProgress]
-  );
+  const [uploadProgress, setUploadProgress] = useState(null);
+  const [emailProgress, setEmailProgress] = useState(null);
+  const [loadingProgress, setLoadingProgress] = useState(null);
 
-  // ---- Upload Progress Handler ----
-  const handleUploadProgress = useCallback(
-    (data) => {
-      if (data.eventId === eventId) {
-        setUploadProgress({ uploaded: data.uploaded, total: data.total });
-        if (onUploadProgress) onUploadProgress(data);
-      }
-    },
-    [eventId, onUploadProgress]
-  );
+  // keep handlers fresh without changing events reference
+  useEffect(() => {
+    handlersRef.current = {
+      onLoadingProgress,
+      onUploadProgress,
+      onEmailProgress,
+    };
+  }, [onLoadingProgress, onUploadProgress, onEmailProgress]);
 
-  // ---- Email Progress Handler ----
-  const handleEmailProgress = useCallback(
-    (data) => {
-      if (data.eventId === eventId) {
-        setEmailProgress({ sent: data.sent, total: data.total });
-        if (onEmailProgress) onEmailProgress(data);
-      }
-    },
-    [eventId, onEmailProgress]
-  );
-
-  // ---- Register socket events ----
+  // STABLE events (critical)
   const events = useMemo(
     () => ({
-      registrationUploadProgress: handleUploadProgress,
-      registrationEmailProgress: handleEmailProgress,
-      registrationLoadingProgress: handleLoadingProgress,
+      registrationLoadingProgress: (data) => {
+        if (data.eventId !== eventId) return;
+
+        setLoadingProgress(data);  
+        handlersRef.current.onLoadingProgress?.(data);
+      },
+
+      registrationUploadProgress: (data) => {
+        if (data.eventId !== eventId) return;
+
+        setUploadProgress(data);   
+        handlersRef.current.onUploadProgress?.(data);
+      },
+
+      registrationEmailProgress: (data) => {
+        if (data.eventId !== eventId) return;
+
+        setEmailProgress(data);    
+        handlersRef.current.onEmailProgress?.(data);
+      },
     }),
-    [handleUploadProgress, handleEmailProgress, handleLoadingProgress]
+    [eventId]
   );
 
   const { socket, connected, connectionError } = useSocket(events);
@@ -54,10 +59,8 @@ const useEventRegSocket = ({ eventId, onUploadProgress, onEmailProgress, onLoadi
     socket,
     connected,
     connectionError,
-    uploadProgress,
-    emailProgress,
-    loadingProgress,
+    uploadProgress: uploadProgress || { uploaded: 0, total: 0 },
+    emailProgress: emailProgress || { sent: 0, failed: 0, processed: 0, total: 0 },
+    loadingProgress: loadingProgress || { loaded: 0, total: 0, data: null },
   };
-};
-
-export default useEventRegSocket;
+}

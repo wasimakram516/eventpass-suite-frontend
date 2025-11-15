@@ -211,17 +211,17 @@ export default function RecipientsManagePage() {
   const { emailProgress, syncProgress } = useSurveyGuruSocket({
     formId,
     onEmailProgress: (data) => {
-      const { sent, total } = data;
+      const { sent, total, failed, processed } = data;
 
       // if finished
-      if (data.processed === data.total) {
+      if (processed === total) {
         setSendingEmails(false);
 
         showMessage(
           t.bulkEmailSuccess
-            .replace("{sent}", data.sent)
-            .replace("{failed}", data.failed)
-            .replace("{total}", data.total),
+            .replace("{sent}", sent)
+            .replace("{failed}", failed)
+            .replace("{total}", total),
           "success"
         );
 

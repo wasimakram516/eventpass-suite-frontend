@@ -190,13 +190,14 @@ export default function ViewRegistrations() {
     );
     return { ...BASE_DATE_FILTERS, ...dynamic };
   }
+  const dynamicFieldsRef = useRef([]);
+  const lastLoadedRef = useRef(null);
 
   const [eventDetails, setEventDetails] = useState(null);
   const [dynamicFields, setDynamicFields] = useState([]);
   const [fieldMetaMap, setFieldMetaMap] = useState({});
   const [allRegistrations, setAllRegistrations] = useState([]);
   const [totalRegistrations, setTotalRegistrations] = useState(0);
-  const [loadedCount, setLoadedCount] = useState(0);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [unsentEmailCount, setUnsentEmailCount] = useState(0);
 
@@ -236,35 +237,67 @@ export default function ViewRegistrations() {
     return () => clearTimeout(id);
   }, [rawSearch]);
 
+  // ---- Loading Progress Handler ----
   const handleLoadingProgress = useCallback((payload) => {
-    if (payload.data?.length) {
-      const processed = payload.data.map((r) => ({
+    if (!payload) return;
+
+    const { loaded, total, data } = payload;
+
+    // Prevent infinite loop if backend keeps sending same loaded value
+    if (lastLoadedRef.current === loaded) return;
+    lastLoadedRef.current = loaded;
+
+    if (data?.length) {
+      const processed = data.map((r) => ({
         ...r,
         _createdAtMs: Date.parse(r.createdAt),
         _scannedAtMs: (r.walkIns || []).map((w) => Date.parse(w.scannedAt)),
-        _haystack: buildHaystack(r, dynamicFields),
+        _haystack: buildHaystack(r, dynamicFieldsRef.current),
       }));
 
       setAllRegistrations((prev) => {
-        const existingIds = new Set(prev.map(r => r._id));
-        const newRecords = processed.filter(r => !existingIds.has(r._id));
-        return [...prev, ...newRecords];
+        const map = new Map(prev.map((r) => [r._id, r]));
+        processed.forEach((r) => map.set(r._id, r));
+        return Array.from(map.values());
       });
     }
-  }, [dynamicFields]);
 
-  const { uploadProgress, emailProgress, loadingProgress } = useEventRegSocket({
-    eventId: eventDetails?._id,
-    onLoadingProgress: handleLoadingProgress,
-  });
-
-  useEffect(() => {
-    setLoadedCount(loadingProgress.loaded);
-    if (loadingProgress.loaded >= loadingProgress.total && loadingProgress.total > 0) {
+    if (loaded >= total) {
       setIsLoadingMore(false);
     }
-  }, [loadingProgress]);
+  }, []);
 
+  // ---- Upload Progress Handler ----
+  const handleUploadProgress = useCallback((data) => {
+    const { uploaded, total } = data;
+
+    // When upload completes
+    if (uploaded === total && total > 0) {
+      setUploading(false);
+
+      // Refresh ONLY after upload finishes
+      fetchData();
+    }
+  }, []);
+
+  // ---- Email Progress Handler ----
+  const handleEmailProgress = useCallback((data) => {
+    const { processed, total } = data;
+
+    if (processed === total) {
+      setSendingEmails(false);
+      fetchData();
+      setUnsentEmailCount(0);
+    }
+  }, []);
+
+  // ---- Use hook with stable callbacks ----
+  const { uploadProgress, emailProgress } = useEventRegSocket({
+    eventId: eventDetails?._id,
+    onLoadingProgress: handleLoadingProgress,
+    onUploadProgress: handleUploadProgress,
+    onEmailProgress: handleEmailProgress,
+  });
 
   const handleSaveEdit = async (updatedFields) => {
     const res = await updateRegistration(editingReg._id, updatedFields);
@@ -284,14 +317,14 @@ export default function ViewRegistrations() {
 
   const handleSendBulkEmails = async () => {
     setConfirmEmailDialogOpen(false);
+
+    // reset UI progress
     setSendingEmails(true);
+
     try {
       await sendBulkEmails(eventSlug);
     } catch (err) {
       console.error("Bulk email send failed:", err);
-    } finally {
-      fetchData();
-      setUnsentEmailCount(0);
       setSendingEmails(false);
     }
   };
@@ -321,6 +354,7 @@ export default function ViewRegistrations() {
 
   const fetchData = async () => {
     setLoading(true);
+    setIsLoadingMore(false);
 
     const evRes = await getPublicEventBySlug(eventSlug);
     const unsentRes = await getUnsentCount(eventSlug);
@@ -329,22 +363,24 @@ export default function ViewRegistrations() {
     const fieldsLocal =
       !evRes?.error && evRes.formFields?.length
         ? evRes.formFields.map((f) => ({
-          name: f.inputName,
-          type: (f.inputType || "text").toLowerCase(),
-          values: Array.isArray(f.values) ? f.values : [],
-        }))
+            name: f.inputName,
+            type: (f.inputType || "text").toLowerCase(),
+            values: Array.isArray(f.values) ? f.values : [],
+          }))
         : [
-          { name: "fullName", type: "text", values: [] },
-          { name: "email", type: "text", values: [] },
-          { name: "phone", type: "text", values: [] },
-          { name: "company", type: "text", values: [] },
-        ];
+            { name: "fullName", type: "text", values: [] },
+            { name: "email", type: "text", values: [] },
+            { name: "phone", type: "text", values: [] },
+            { name: "company", type: "text", values: [] },
+          ];
 
     if (!evRes?.error) {
       setEventDetails(evRes);
       setTotalRegistrations(evRes.registrations);
     }
     setDynamicFields(fieldsLocal);
+    dynamicFieldsRef.current = fieldsLocal;
+
     setFieldMetaMap(
       Object.fromEntries(
         fieldsLocal.map((f) => [f.name, { type: f.type, values: f.values }])
@@ -364,7 +400,6 @@ export default function ViewRegistrations() {
       }));
 
       setAllRegistrations(prepped);
-      setLoadedCount(regsRes.loaded || initialData.length);
 
       // If more records exist, show loading indicator
       if (regsRes.total > regsRes.loaded) {
@@ -431,8 +466,8 @@ export default function ViewRegistrations() {
           (key === "token"
             ? reg.token
             : key === "createdAt"
-              ? reg.createdAt
-              : "");
+            ? reg.createdAt
+            : "");
 
         const v = String(regValue ?? "").toLowerCase();
         const f = String(rawValue).toLowerCase();
@@ -459,8 +494,9 @@ export default function ViewRegistrations() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `${eventDetails.slug || "event"
-        }_registrations_template.xlsx`;
+      link.download = `${
+        eventDetails.slug || "event"
+      }_registrations_template.xlsx`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -478,12 +514,10 @@ export default function ViewRegistrations() {
     setUploading(true);
     try {
       await uploadRegistrations(eventSlug, file);
-      // Refresh after upload
-      fetchData();
     } catch (err) {
       console.error("Upload failed:", err);
+      setUploading(false);
     }
-    setUploading(false);
   };
 
   const handlePageChange = (_, value) => setPage(value);
@@ -534,10 +568,10 @@ export default function ViewRegistrations() {
       [
         `Event Dates:`,
         formatDate(eventDetails.startDate) +
-        (eventDetails.endDate &&
+          (eventDetails.endDate &&
           eventDetails.endDate !== eventDetails.startDate
-          ? ` to ${formatDate(eventDetails.endDate)}`
-          : ``),
+            ? ` to ${formatDate(eventDetails.endDate)}`
+            : ``),
       ].join(`,`)
     );
     lines.push([`Venue:`, eventDetails.venue || `N/A`].join(`,`));
@@ -629,8 +663,9 @@ export default function ViewRegistrations() {
 
     const link = document.createElement(`a`);
     link.href = URL.createObjectURL(blob);
-    link.download = `${eventDetails.slug || `event`}_${isFiltered ? "filtered" : "all"
-      }_registrations.csv`;
+    link.download = `${eventDetails.slug || `event`}_${
+      isFiltered ? "filtered" : "all"
+    }_registrations.csv`;
     link.click();
 
     setExportLoading(false);
@@ -716,11 +751,12 @@ export default function ViewRegistrations() {
           disabled={uploading}
           sx={getStartIconSpacing(dir)}
         >
-          {uploading && uploadProgress
+          {uploading && uploadProgress?.total
             ? `${t.uploading} ${uploadProgress.uploaded}/${uploadProgress.total}`
             : uploading
-              ? t.uploading
-              : t.uploadFile}
+            ? t.uploading
+            : t.uploadFile}
+
           <input
             type="file"
             hidden
@@ -744,11 +780,11 @@ export default function ViewRegistrations() {
             onClick={() => setConfirmEmailDialogOpen(true)}
             sx={getStartIconSpacing(dir)}
           >
-            {sendingEmails && emailProgress
-              ? `${t.sendingEmails} ${emailProgress.sent}/${unsentEmailCount}`
+            {sendingEmails && emailProgress.total
+              ? `${t.sendingEmails} ${emailProgress.processed}/${emailProgress.total}`
               : sendingEmails
-                ? t.sendingEmails
-                : t.sendBulkEmails}
+              ? t.sendingEmails
+              : t.sendBulkEmails}
           </Button>
         )}
 
@@ -769,8 +805,8 @@ export default function ViewRegistrations() {
             {exportLoading
               ? t.exporting
               : searchTerm || Object.keys(filters).some((k) => filters[k])
-                ? t.exportFiltered
-                : t.exportAll}
+              ? t.exportFiltered
+              : t.exportAll}
           </Button>
         )}
 
@@ -837,13 +873,13 @@ export default function ViewRegistrations() {
               <ICONS.search fontSize="small" sx={{ opacity: 0.7 }} />
               {filteredRegistrations.length === 1
                 ? t.matchingRecords.replace(
-                  "{count}",
-                  filteredRegistrations.length
-                )
+                    "{count}",
+                    filteredRegistrations.length
+                  )
                 : t.matchingRecordsPlural.replace(
-                  "{count}",
-                  filteredRegistrations.length
-                )}{" "}
+                    "{count}",
+                    filteredRegistrations.length
+                  )}{" "}
               {t.found}
             </Typography>
           )}
@@ -858,9 +894,9 @@ export default function ViewRegistrations() {
           sx={
             dir === "rtl"
               ? {
-                columnGap: 1.5,
-                rowGap: 1.5,
-              }
+                  columnGap: 1.5,
+                  rowGap: 1.5,
+                }
               : {}
           }
         >
@@ -884,8 +920,8 @@ export default function ViewRegistrations() {
               sx:
                 dir === "rtl"
                   ? {
-                    paddingRight: 2,
-                  }
+                      paddingRight: 2,
+                    }
                   : {},
             }}
             sx={{
@@ -943,24 +979,28 @@ export default function ViewRegistrations() {
         if (filters.createdAtFromMs || filters.createdAtToMs) {
           activeFilterEntries.push([
             "Registered At",
-            `${filters.createdAtFromMs
-              ? formatDateTimeWithLocale(filters.createdAtFromMs)
-              : "—"
-            } → ${filters.createdAtToMs
-              ? formatDateTimeWithLocale(filters.createdAtToMs)
-              : "—"
+            `${
+              filters.createdAtFromMs
+                ? formatDateTimeWithLocale(filters.createdAtFromMs)
+                : "—"
+            } → ${
+              filters.createdAtToMs
+                ? formatDateTimeWithLocale(filters.createdAtToMs)
+                : "—"
             }`,
           ]);
         }
         if (filters.scannedAtFromMs || filters.scannedAtToMs) {
           activeFilterEntries.push([
             "Scanned At",
-            `${filters.scannedAtFromMs
-              ? formatDateTimeWithLocale(filters.scannedAtFromMs)
-              : "—"
-            } → ${filters.scannedAtToMs
-              ? formatDateTimeWithLocale(filters.scannedAtToMs)
-              : "—"
+            `${
+              filters.scannedAtFromMs
+                ? formatDateTimeWithLocale(filters.scannedAtFromMs)
+                : "—"
+            } → ${
+              filters.scannedAtToMs
+                ? formatDateTimeWithLocale(filters.scannedAtToMs)
+                : "—"
             }`,
           ]);
         }
@@ -987,12 +1027,12 @@ export default function ViewRegistrations() {
                 key === "token"
                   ? t.token
                   : key === "Registered At"
-                    ? t.registeredAt
-                    : key === "Scanned At"
-                      ? t.scannedAt
-                      : key === "scannedBy"
-                        ? t.scannedBy
-                        : getFieldLabel(key);
+                  ? t.registeredAt
+                  : key === "Scanned At"
+                  ? t.scannedAt
+                  : key === "scannedBy"
+                  ? t.scannedBy
+                  : getFieldLabel(key);
               return (
                 <Chip
                   key={key}
@@ -1018,12 +1058,12 @@ export default function ViewRegistrations() {
                   sx={
                     dir === "rtl"
                       ? {
-                        pr: 4.5,
-                        pl: 2,
-                        "& .MuiChip-label": {
-                          whiteSpace: "nowrap",
-                        },
-                      }
+                          pr: 4.5,
+                          pl: 2,
+                          "& .MuiChip-label": {
+                            whiteSpace: "nowrap",
+                          },
+                        }
                       : {}
                   }
                 />
@@ -1389,8 +1429,8 @@ export default function ViewRegistrations() {
               {["radio", "list", "select", "dropdown"].includes(
                 (f.type || "").toLowerCase()
               ) &&
-                Array.isArray(f.values) &&
-                f.values.length > 0 ? (
+              Array.isArray(f.values) &&
+              f.values.length > 0 ? (
                 <FormControl fullWidth size="small">
                   <InputLabel>{`Select ${getFieldLabel(f.name)}`}</InputLabel>
                   <Select

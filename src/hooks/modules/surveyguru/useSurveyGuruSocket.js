@@ -1,24 +1,29 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import useSocket from "@/utils/useSocket";
 
 /**
  * Real-time socket hook for SurveyGuru module.
- * Tracks progress of syncing recipients, sending survey emails, and any other async jobs.
- *
- * @param {object} options
- * @param {string} options.formId - The current Survey Form ID
- * @param {function} [options.onSyncProgress] - Callback for recipient sync progress
- * @param {function} [options.onEmailProgress] - Callback for email sending progress
+ * Tracks progress of syncing recipients, sending survey emails, and any async jobs.
  */
 const useSurveyGuruSocket = ({
   formId,
   onSyncProgress,
   onEmailProgress,
 } = {}) => {
-  // Sync (import) progress
-  const [syncProgress, setSyncProgress] = useState({ synced: 0, total: 0 });
 
-  // Email sending progress
+  // ---- callback refs (prevent re-renders and loops) ----
+  const syncCbRef = useRef(onSyncProgress);
+  const emailCbRef = useRef(onEmailProgress);
+
+  useEffect(() => { syncCbRef.current = onSyncProgress }, [onSyncProgress]);
+  useEffect(() => { emailCbRef.current = onEmailProgress }, [onEmailProgress]);
+
+  // ---- socket progress states ----
+  const [syncProgress, setSyncProgress] = useState({
+    synced: 0,
+    total: 0,
+  });
+
   const [emailProgress, setEmailProgress] = useState({
     sent: 0,
     failed: 0,
@@ -26,41 +31,41 @@ const useSurveyGuruSocket = ({
     total: 0,
   });
 
-  // ---- Recipient Sync Progress Handler ----
-  const handleSyncProgress = useCallback(
-    (data) => {
-      if (data.formId === formId) {
-        setSyncProgress({ synced: data.synced, total: data.total });
-        if (onSyncProgress) onSyncProgress(data);
-      }
-    },
-    [formId, onSyncProgress]
-  );
+  // ---- Sync Progress Handler (stable, guarded) ----
+  const handleSyncEvent = useCallback((data) => {
+    if (data.formId !== formId) return;
 
-  // ---- Email Progress Handler ----
-  const handleEmailProgress = useCallback(
-    (data) => {
-      if (data.formId === formId) {
-        setEmailProgress({
-          sent: data.sent,
-          failed: data.failed,
-          processed: data.processed,
-          total: data.total,
-        });
+    setSyncProgress({
+      synced: data.synced,
+      total: data.total,
+    });
 
-        if (onEmailProgress) onEmailProgress(data);
-      }
-    },
-    [formId, onEmailProgress]
-  );
+    if (syncCbRef.current) syncCbRef.current(data);
 
-  // ---- Register socket events ----
+  }, [formId]);
+
+  // ---- Email Progress Handler (stable, guarded) ----
+  const handleEmailEvent = useCallback((data) => {
+    if (data.formId !== formId) return;
+
+    setEmailProgress({
+      sent: data.sent,
+      failed: data.failed,
+      processed: data.processed,
+      total: data.total,
+    });
+
+    if (emailCbRef.current) emailCbRef.current(data);
+
+  }, [formId]);
+
+  // ---- Stable event map ----
   const events = useMemo(
     () => ({
-      surveySyncProgress: handleSyncProgress, // optional if you emit during sync
-      surveyEmailProgress: handleEmailProgress,
+      surveySyncProgress: handleSyncEvent,
+      surveyEmailProgress: handleEmailEvent,
     }),
-    [handleSyncProgress, handleEmailProgress]
+    [handleSyncEvent, handleEmailEvent]
   );
 
   const { socket, connected, connectionError } = useSocket(events);
