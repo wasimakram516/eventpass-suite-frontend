@@ -15,11 +15,6 @@ const nextConfig = {
         source: "/event/:slug*",
         destination: "/eventreg/en/event/:slug*",
       },
-      // Downloads route
-      {
-        source: "/:slug*",
-        destination: "/downloads/:slug*",
-      }
     ];
   },
 
