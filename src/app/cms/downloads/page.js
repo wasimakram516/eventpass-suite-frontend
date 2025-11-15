@@ -363,7 +363,7 @@ export default function FileStorePage() {
             title={t.deleteConfirmTitle}
             message={t.deleteConfirmMsg}
             confirmButtonText={t.yesDelete}
-            confirmButtonIcon={<DeleteIcon />}
+            confirmButtonIcon={<ICONS.delete />}
             confirmButtonColor="error"
           />
         )}
