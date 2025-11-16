@@ -43,6 +43,18 @@ export const downloadSampleExcel = async (slug) => {
   return response.data;
 };
 
+// Export CSV (with filters)
+export const exportRegistrations = async (slug, query = {}) => {
+  const qs = new URLSearchParams(query).toString();
+
+  const url = `/eventreg/registrations/event/${slug}/export${qs ? `?${qs}` : ""}`;
+
+  // Must use axios native because withApiHandler breaks blob downloads
+  const response = await api.get(url, { responseType: "blob" });
+
+  return response.data;
+};
+
 // Upload filled Excel
 export const uploadRegistrations = withApiHandler(
   async (slug, file) => {

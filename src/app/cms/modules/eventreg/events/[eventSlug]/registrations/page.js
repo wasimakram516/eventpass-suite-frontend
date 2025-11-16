@@ -40,6 +40,7 @@ import {
   sendBulkEmails,
   updateRegistration,
   getInitialRegistrations,
+  exportRegistrations,
 } from "@/services/eventreg/registrationService";
 import { getPublicEventBySlug } from "@/services/eventreg/eventService";
 
@@ -88,8 +89,8 @@ const translations = {
     matchingRecords: "{count} matching record",
     matchingRecordsPlural: "{count} matching records",
     found: "found",
-    exportAll: "Export All",
-    exportFiltered: "Export Filtered",
+    exportAll: "Export All to CSV",
+    exportFiltered: "Export Filtered to CSV",
     filters: "Filters",
     applyFilters: "Apply",
     clearFilters: "Clear",
@@ -143,8 +144,8 @@ const translations = {
     matchingRecords: "{count} سجل مطابق",
     matchingRecordsPlural: "{count} سجلات مطابقة",
     found: "تم العثور عليها",
-    exportAll: "تصدير الكل",
-    exportFiltered: "تصدير النتائج المصفاة",
+    exportAll: "تصدير الكل إلى CSV",
+    exportFiltered: "تصدير المصفى إلى CSV",
     filters: "تصفية",
     applyFilters: "تطبيق",
     clearFilters: "مسح",
@@ -557,130 +558,56 @@ export default function ViewRegistrations() {
 
     setExportLoading(true);
 
-    const isFiltered =
-      searchTerm ||
-      Object.keys(filters).some(
-        (k) => filters[k] && !k.endsWith("From") && !k.endsWith("To")
-      );
+    try {
+      // -------------------------------
+      // Build query params for backend
+      // -------------------------------
+      const query = {};
 
-    let registrationsToExport = [];
+      // Search
+      if (searchTerm) query.search = searchTerm;
 
-    if (isFiltered) {
-      registrationsToExport = filteredRegistrations;
-    } else {
-      const res = await getAllPublicRegistrationsByEvent(eventSlug);
-      if (res?.error) return;
-      registrationsToExport = res.data || res;
-    }
+      // Token
+      if (filters.token) query.token = filters.token;
 
-    const lines = [];
+      // Date filters (created)
+      if (filters.createdAtFromMs) query.createdFrom = filters.createdAtFromMs;
+      if (filters.createdAtToMs) query.createdTo = filters.createdAtToMs;
 
-    // ---- Event metadata ----
-    lines.push([`Event Slug:`, eventDetails.slug || `N/A`].join(`,`));
-    lines.push([`Event Name:`, eventDetails.name || `N/A`].join(`,`));
-    lines.push(
-      [
-        `Event Dates:`,
-        formatDate(eventDetails.startDate) +
-          (eventDetails.endDate &&
-          eventDetails.endDate !== eventDetails.startDate
-            ? ` to ${formatDate(eventDetails.endDate)}`
-            : ``),
-      ].join(`,`)
-    );
-    lines.push([`Venue:`, eventDetails.venue || `N/A`].join(`,`));
-    lines.push([`Description:`, eventDetails.description || `N/A`].join(`,`));
-    lines.push([`Logo URL:`, eventDetails.logoUrl || `N/A`].join(`,`));
-    lines.push([`Event Type:`, eventDetails.eventType || `N/A`].join(`,`));
-    lines.push([]);
+      // Date filters (scanned)
+      if (filters.scannedAtFromMs) query.scannedFrom = filters.scannedAtFromMs;
+      if (filters.scannedAtToMs) query.scannedTo = filters.scannedAtToMs;
 
-    // ---- Registrations Section ----
-    lines.push([`=== Registrations ===`]);
-    const regHeaders = [
-      ...dynamicFields.map((f) => getFieldLabel(f.name)),
-      t.token,
-      t.registeredAt,
-    ];
-    lines.push(regHeaders.join(`,`));
+      // Scanned By
+      if (filters.scannedBy) query.scannedBy = filters.scannedBy;
 
-    registrationsToExport.forEach((reg) => {
-      const row = dynamicFields.map((f) => {
-        return `"${(reg.customFields?.[f.name] ?? reg[f.name] ?? ``)
-          .toString()
-          .replace(/"/g, `""`)}"`;
+      // Dynamic fields using backend format: field_<name>
+      dynamicFields.forEach((f) => {
+        const v = filters[f.name];
+        if (v) query[`field_${f.name}`] = v;
       });
-      row.push(
-        `"${reg.token}"`,
-        `"${formatDateTimeWithLocale(reg.createdAt)}"`
-      );
-      lines.push(row.join(`,`));
-    });
 
-    // ---- Walk-ins Section ----
-    const allWalkIns = registrationsToExport.flatMap((reg) =>
-      (reg.walkIns || []).map((w) => ({
-        ...w,
-        regData: reg,
-      }))
-    );
+      // -------------------------------
+      // CALL YOUR SERVICE METHOD
+      // -------------------------------
+      const blob = await exportRegistrations(eventSlug, query);
 
-    if (allWalkIns.length > 0) {
-      lines.push([]);
-      lines.push([`=== Walk-ins ===`]);
+      // -------------------------------
+      // Download CSV
+      // -------------------------------
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
 
-      const walkInHeaders = [
-        ...dynamicFields.map((f) => getFieldLabel(f.name)),
-        t.token,
-        t.registeredAt,
-        t.scannedAt,
-        t.scannedBy,
-        t.staffType,
-      ];
-      lines.push(walkInHeaders.join(`,`));
+      const suffix = Object.keys(query).length > 0 ? "filtered" : "all";
+      a.download = `${eventDetails.slug}_${suffix}_registrations.csv`;
 
-      allWalkIns.forEach((w) => {
-        const reg = w.regData;
+      a.href = url;
+      a.click();
 
-        const row = dynamicFields.map((f) => {
-          return `"${(reg.customFields?.[f.name] ?? reg[f.name] ?? "")
-            .toString()
-            .replace(/"/g, `""`)}"`;
-        });
-
-        // Capitalize staff type safely
-        const staffTypeRaw = w.scannedBy?.staffType || "N/A";
-        const staffType =
-          staffTypeRaw && staffTypeRaw !== "N/A"
-            ? staffTypeRaw.charAt(0).toUpperCase() + staffTypeRaw.slice(1)
-            : "N/A";
-
-        row.push(
-          `"${reg.token}"`,
-          `"${reg.createdAt ? formatDateTimeWithLocale(reg.createdAt) : ""}"`,
-          `"${w.scannedAt ? formatDateTimeWithLocale(w.scannedAt) : ""}"`,
-          `"${(w.scannedBy?.name || w.scannedBy?.email || "Unknown").replace(
-            /"/g,
-            `""`
-          )}"`,
-          `"${staffType}"`
-        );
-
-        lines.push(row.join(`,`));
-      });
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Export failed:", err);
     }
-
-    // ---- Save CSV ----
-    const csvContent = `\uFEFF` + lines.join(`\n`);
-    const blob = new Blob([csvContent], {
-      type: `text/csv;charset=utf-8;`,
-    });
-
-    const link = document.createElement(`a`);
-    link.href = URL.createObjectURL(blob);
-    link.download = `${eventDetails.slug || `event`}_${
-      isFiltered ? "filtered" : "all"
-    }_registrations.csv`;
-    link.click();
 
     setExportLoading(false);
   };
