@@ -29,6 +29,7 @@ import { getPublicEventBySlug } from "@/services/eventreg/eventService";
 import ICONS from "@/utils/iconUtil";
 import { translateTexts } from "@/services/translationService"; // ✅ use batched version
 import Background from "@/components/Background";
+import getStartIconSpacing from "@/utils/getStartIconSpacing";
 
 export default function Registration() {
   const { eventSlug, lang } = useParams();
@@ -498,11 +499,22 @@ export default function Registration() {
 
         <DialogActions sx={{ justifyContent: "center", pb: 2 }}>
           {event?.showQrAfterRegistration ? (
-            <Button onClick={handleDialogClose} variant="contained" color="error">
+            <Button
+              onClick={handleDialogClose}
+              variant="contained"
+              color="error"
+              startIcon={<ICONS.close />}
+              sx={getStartIconSpacing(dir)}
+            >
               {t.registerAnother}
             </Button>
           ) : (
-            <Button onClick={handleDialogClose} variant="contained">
+            <Button
+              onClick={handleDialogClose}
+              variant="contained"
+              startIcon={<ICONS.event />}
+              sx={getStartIconSpacing(dir)}
+            >
               {t.viewEvent}
             </Button>
           )}
