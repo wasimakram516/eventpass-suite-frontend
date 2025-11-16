@@ -59,6 +59,9 @@ export default function Registration() {
     registrationFailed: isArabic ? "فشل التسجيل." : "Failed to register.",
     yourToken: isArabic ? "رمزك" : "Your Token",
     saveQr: isArabic ? "حفظ رمز QR" : "Save QR Code",
+    registerAnother: isArabic
+      ? "إغلاق وإجراء تسجيل آخر"
+      : "Close and Make Another Registration",
   };
 
   const [event, setEvent] = useState(null);
@@ -98,15 +101,15 @@ export default function Registration() {
 
     const fields = event.formFields?.length
       ? event.formFields
-          .filter((f) => f.visible !== false)
-          .map((f) => ({
-            name: f.inputName,
-            label: f.inputName,
-            type: f.inputType,
-            options: f.values || [],
-            required: f.required,
-            placeholder: f.placeholder || "",
-          }))
+        .filter((f) => f.visible !== false)
+        .map((f) => ({
+          name: f.inputName,
+          label: f.inputName,
+          type: f.inputType,
+          options: f.values || [],
+          required: f.required,
+          placeholder: f.placeholder || "",
+        }))
       : defaultFields;
 
     // initialize form
@@ -317,8 +320,8 @@ export default function Registration() {
           field.type === "number"
             ? "number"
             : field.type === "email"
-            ? "email"
-            : "text"
+              ? "email"
+              : "text"
         }
       />
     );
@@ -495,19 +498,8 @@ export default function Registration() {
 
         <DialogActions sx={{ justifyContent: "center", pb: 2 }}>
           {event?.showQrAfterRegistration ? (
-            <Button
-              variant="outlined"
-              sx={{ mt: 2 }}
-              onClick={() => {
-                const canvas = document.querySelector("#qr-container canvas");
-                const url = canvas.toDataURL("image/png");
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = `EventQR-${qrToken}.png`;
-                a.click();
-              }}
-            >
-              {t.saveQr}
+            <Button onClick={handleDialogClose} variant="contained" color="error">
+              {t.registerAnother}
             </Button>
           ) : (
             <Button onClick={handleDialogClose} variant="contained">
