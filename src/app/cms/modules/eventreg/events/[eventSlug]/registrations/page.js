@@ -23,6 +23,7 @@ import {
   Tooltip,
   TextField,
   Chip,
+  Alert,
 } from "@mui/material";
 import { DateTimePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
@@ -274,16 +275,16 @@ export default function ViewRegistrations() {
     const fieldsLocal =
       !evRes?.error && evRes.formFields?.length
         ? evRes.formFields.map((f) => ({
-            name: f.inputName,
-            type: (f.inputType || "text").toLowerCase(),
-            values: Array.isArray(f.values) ? f.values : [],
-          }))
+          name: f.inputName,
+          type: (f.inputType || "text").toLowerCase(),
+          values: Array.isArray(f.values) ? f.values : [],
+        }))
         : [
-            { name: "fullName", type: "text", values: [] },
-            { name: "email", type: "text", values: [] },
-            { name: "phone", type: "text", values: [] },
-            { name: "company", type: "text", values: [] },
-          ];
+          { name: "fullName", type: "text", values: [] },
+          { name: "email", type: "text", values: [] },
+          { name: "phone", type: "text", values: [] },
+          { name: "company", type: "text", values: [] },
+        ];
 
     if (!evRes?.error) {
       setEventDetails(evRes);
@@ -399,11 +400,23 @@ export default function ViewRegistrations() {
     const res = await updateRegistration(editingReg._id, updatedFields);
     if (!res?.error) {
       setAllRegistrations((prev) =>
-        prev.map((r) =>
-          r._id === editingReg._id
-            ? { ...r, customFields: { ...r.customFields, ...updatedFields } }
-            : r
-        )
+        prev.map((r) => {
+          if (r._id === editingReg._id) {
+            const hasCustomFields = eventDetails?.formFields?.length > 0;
+            if (hasCustomFields) {
+              return { ...r, customFields: { ...r.customFields, ...updatedFields } };
+            } else {
+              return {
+                ...r,
+                fullName: updatedFields["Full Name"] !== undefined ? updatedFields["Full Name"] : r.fullName,
+                email: updatedFields["Email"] !== undefined ? updatedFields["Email"] : r.email,
+                phone: updatedFields["Phone"] !== undefined ? updatedFields["Phone"] : r.phone,
+                company: updatedFields["Company"] !== undefined ? updatedFields["Company"] : r.company,
+              };
+            }
+          }
+          return r;
+        })
       );
       setEditModalOpen(false);
     } else {
@@ -481,8 +494,8 @@ export default function ViewRegistrations() {
           (key === "token"
             ? reg.token
             : key === "createdAt"
-            ? reg.createdAt
-            : "");
+              ? reg.createdAt
+              : "");
 
         const v = String(regValue ?? "").toLowerCase();
         const f = String(rawValue).toLowerCase();
@@ -509,9 +522,8 @@ export default function ViewRegistrations() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `${
-        eventDetails.slug || "event"
-      }_registrations_template.xlsx`;
+      link.download = `${eventDetails.slug || "event"
+        }_registrations_template.xlsx`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -528,10 +540,17 @@ export default function ViewRegistrations() {
 
     setUploading(true);
     try {
-      await uploadRegistrations(eventSlug, file);
+      const result = await uploadRegistrations(eventSlug, file);
+      if (result?.error) {
+        setUploading(false);
+        e.target.value = "";
+        return;
+      }
+      e.target.value = "";
     } catch (err) {
       console.error("Upload failed:", err);
       setUploading(false);
+      e.target.value = "";
     }
   };
 
@@ -695,8 +714,8 @@ export default function ViewRegistrations() {
           {uploading && uploadProgress?.total
             ? `${t.uploading} ${uploadProgress.uploaded}/${uploadProgress.total}`
             : uploading
-            ? t.uploading
-            : t.uploadFile}
+              ? t.uploading
+              : t.uploadFile}
 
           <input
             type="file"
@@ -724,8 +743,8 @@ export default function ViewRegistrations() {
             {sendingEmails && emailProgress.total
               ? `${t.sendingEmails} ${emailProgress.processed}/${emailProgress.total}`
               : sendingEmails
-              ? t.sendingEmails
-              : t.sendBulkEmails}
+                ? t.sendingEmails
+                : t.sendBulkEmails}
           </Button>
         )}
 
@@ -746,8 +765,8 @@ export default function ViewRegistrations() {
             {exportLoading
               ? t.exporting
               : searchTerm || Object.keys(filters).some((k) => filters[k])
-              ? t.exportFiltered
-              : t.exportAll}
+                ? t.exportFiltered
+                : t.exportAll}
           </Button>
         )}
 
@@ -814,13 +833,13 @@ export default function ViewRegistrations() {
               <ICONS.search fontSize="small" sx={{ opacity: 0.7 }} />
               {filteredRegistrations.length === 1
                 ? t.matchingRecords.replace(
-                    "{count}",
-                    filteredRegistrations.length
-                  )
+                  "{count}",
+                  filteredRegistrations.length
+                )
                 : t.matchingRecordsPlural.replace(
-                    "{count}",
-                    filteredRegistrations.length
-                  )}{" "}
+                  "{count}",
+                  filteredRegistrations.length
+                )}{" "}
               {t.found}
             </Typography>
           )}
@@ -835,9 +854,9 @@ export default function ViewRegistrations() {
           sx={
             dir === "rtl"
               ? {
-                  columnGap: 1.5,
-                  rowGap: 1.5,
-                }
+                columnGap: 1.5,
+                rowGap: 1.5,
+              }
               : {}
           }
         >
@@ -861,8 +880,8 @@ export default function ViewRegistrations() {
               sx:
                 dir === "rtl"
                   ? {
-                      paddingRight: 2,
-                    }
+                    paddingRight: 2,
+                  }
                   : {},
             }}
             sx={{
@@ -920,28 +939,24 @@ export default function ViewRegistrations() {
         if (filters.createdAtFromMs || filters.createdAtToMs) {
           activeFilterEntries.push([
             "Registered At",
-            `${
-              filters.createdAtFromMs
-                ? formatDateTimeWithLocale(filters.createdAtFromMs)
-                : "—"
-            } → ${
-              filters.createdAtToMs
-                ? formatDateTimeWithLocale(filters.createdAtToMs)
-                : "—"
+            `${filters.createdAtFromMs
+              ? formatDateTimeWithLocale(filters.createdAtFromMs)
+              : "—"
+            } → ${filters.createdAtToMs
+              ? formatDateTimeWithLocale(filters.createdAtToMs)
+              : "—"
             }`,
           ]);
         }
         if (filters.scannedAtFromMs || filters.scannedAtToMs) {
           activeFilterEntries.push([
             "Scanned At",
-            `${
-              filters.scannedAtFromMs
-                ? formatDateTimeWithLocale(filters.scannedAtFromMs)
-                : "—"
-            } → ${
-              filters.scannedAtToMs
-                ? formatDateTimeWithLocale(filters.scannedAtToMs)
-                : "—"
+            `${filters.scannedAtFromMs
+              ? formatDateTimeWithLocale(filters.scannedAtFromMs)
+              : "—"
+            } → ${filters.scannedAtToMs
+              ? formatDateTimeWithLocale(filters.scannedAtToMs)
+              : "—"
             }`,
           ]);
         }
@@ -968,12 +983,12 @@ export default function ViewRegistrations() {
                 key === "token"
                   ? t.token
                   : key === "Registered At"
-                  ? t.registeredAt
-                  : key === "Scanned At"
-                  ? t.scannedAt
-                  : key === "scannedBy"
-                  ? t.scannedBy
-                  : getFieldLabel(key);
+                    ? t.registeredAt
+                    : key === "Scanned At"
+                      ? t.scannedAt
+                      : key === "scannedBy"
+                        ? t.scannedBy
+                        : getFieldLabel(key);
               return (
                 <Chip
                   key={key}
@@ -999,12 +1014,12 @@ export default function ViewRegistrations() {
                   sx={
                     dir === "rtl"
                       ? {
-                          pr: 4.5,
-                          pl: 2,
-                          "& .MuiChip-label": {
-                            whiteSpace: "nowrap",
-                          },
-                        }
+                        pr: 4.5,
+                        pl: 2,
+                        "& .MuiChip-label": {
+                          whiteSpace: "nowrap",
+                        },
+                      }
                       : {}
                   }
                 />
@@ -1370,8 +1385,8 @@ export default function ViewRegistrations() {
               {["radio", "list", "select", "dropdown"].includes(
                 (f.type || "").toLowerCase()
               ) &&
-              Array.isArray(f.values) &&
-              f.values.length > 0 ? (
+                Array.isArray(f.values) &&
+                f.values.length > 0 ? (
                 <FormControl fullWidth size="small">
                   <InputLabel>{`Select ${getFieldLabel(f.name)}`}</InputLabel>
                   <Select
