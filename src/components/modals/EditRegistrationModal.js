@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -20,18 +20,43 @@ export default function EditRegistrationModal({
 }) {
   const [values, setValues] = useState({});
 
+  const hasCustomFields = useMemo(() => formFields && formFields.length > 0, [formFields]);
+  const classicFields = useMemo(
+    () => [
+      { inputName: "Full Name", inputType: "text" },
+      { inputName: "Email", inputType: "email" },
+      { inputName: "Phone", inputType: "text" },
+      { inputName: "Company", inputType: "text" },
+    ],
+    []
+  );
+  const fieldsToRender = useMemo(
+    () => (hasCustomFields ? formFields : classicFields),
+    [hasCustomFields, formFields, classicFields]
+  );
+
   useEffect(() => {
-    if (registration) {
+    if (registration && fieldsToRender.length > 0) {
       const init = {};
-      formFields.forEach((f) => {
-        init[f.inputName] =
-          registration.customFields?.[f.inputName] ||
-          registration[f.inputName] ||
-          "";
+      fieldsToRender.forEach((f) => {
+        if (hasCustomFields) {
+          init[f.inputName] =
+            registration.customFields?.[f.inputName] ||
+            registration[f.inputName] ||
+            "";
+        } else {
+          const fieldMap = {
+            "Full Name": registration.fullName,
+            Email: registration.email,
+            Phone: registration.phone,
+            Company: registration.company,
+          };
+          init[f.inputName] = fieldMap[f.inputName] || "";
+        }
       });
       setValues(init);
     }
-  }, [registration, formFields]);
+  }, [registration, fieldsToRender, hasCustomFields]);
 
   const handleChange = (key, value) => {
     setValues((prev) => ({ ...prev, [key]: value }));
@@ -44,7 +69,7 @@ export default function EditRegistrationModal({
       <DialogTitle>Edit Registration</DialogTitle>
       <DialogContent dividers>
         <Stack spacing={2} mt={1}>
-          {formFields.map((f) => {
+          {fieldsToRender.map((f) => {
             const value = values[f.inputName] ?? "";
             if (["radio", "list"].includes(f.inputType)) {
               return (
@@ -73,7 +98,7 @@ export default function EditRegistrationModal({
                 onChange={(e) => handleChange(f.inputName, e.target.value)}
                 fullWidth
                 size="small"
-                type={f.inputType === "number" ? "number" : "text"}
+                type={f.inputType === "number" ? "number" : f.inputType === "email" ? "email" : "text"}
               />
             );
           })}
