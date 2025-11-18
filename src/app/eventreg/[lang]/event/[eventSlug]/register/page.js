@@ -95,7 +95,7 @@ export default function Registration() {
 
     const defaultFields = [
       { name: "fullName", label: "Full Name", type: "text", required: true },
-      { name: "phone", label: "Phone Number", type: "text", required: true },
+      { name: "phone", label: "Phone Number", type: "text", required: false },
       { name: "email", label: "Email", type: "text", required: true },
       { name: "company", label: "Company", type: "text", required: false },
     ];
@@ -258,13 +258,17 @@ export default function Registration() {
       onChange: handleInputChange,
       error: !!errorMsg,
       helperText: errorMsg || "",
+      required: field.required,
       sx: { mb: 2 },
     };
 
     if (field.type === "radio")
       return (
         <Box key={field.name} sx={{ mb: 2, textAlign: "center" }}>
-          <Typography sx={{ mb: 1 }}>{fieldLabel}</Typography>
+          <Typography sx={{ mb: 1 }}>
+            {fieldLabel}
+            {field.required && <span style={{ color: "red" }}> *</span>}
+          </Typography>
           <RadioGroup
             row
             name={field.name}
@@ -291,7 +295,7 @@ export default function Registration() {
 
     if (field.type === "list")
       return (
-        <FormControl fullWidth key={field.name} sx={{ mb: 2 }}>
+        <FormControl fullWidth key={field.name} sx={{ mb: 2 }} required={field.required}>
           <InputLabel>{fieldLabel}</InputLabel>
           <Select
             name={field.name}
