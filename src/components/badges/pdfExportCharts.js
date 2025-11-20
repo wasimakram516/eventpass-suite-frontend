@@ -2,7 +2,7 @@ import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { formatDateTimeWithLocale, formatDate } from "@/utils/dateUtils";
 
-const addEventHeader = async (pdf, eventInfo, pageWidth, margin) => {
+const addEventHeader = async (pdf, eventInfo, pageWidth, margin, surveyInfo = null) => {
   if (!eventInfo) return margin;
 
   const logoMaxWidth = 40;
@@ -39,7 +39,7 @@ const addEventHeader = async (pdf, eventInfo, pageWidth, margin) => {
   pdf.setFontSize(16);
   pdf.setFont("helvetica", "bold");
   pdf.setTextColor(31, 41, 55);
-  pdf.text(eventInfo.name, margin, currentY + 5);
+  pdf.text(String(eventInfo.name || ""), margin, currentY + 5);
 
   currentY += 10;
 
@@ -52,10 +52,31 @@ const addEventHeader = async (pdf, eventInfo, pageWidth, margin) => {
 
   pdf.text(`From: ${fromDate}`, margin, currentY);
   pdf.text(`To: ${toDate}`, margin, currentY + 5);
-  pdf.text(`Venue: ${eventInfo.venue}`, margin, currentY + 10);
-  pdf.text(`Registrations: ${eventInfo.registrations}`, margin, currentY + 15);
+  pdf.text(`Venue: ${String(eventInfo.venue || "")}`, margin, currentY + 10);
+  pdf.text(`Registrations: ${String(eventInfo.registrations || 0)}`, margin, currentY + 15);
 
   currentY += 20;
+
+  //survey-specific fields only if surveyInfo is provided (survey guru only)
+  if (surveyInfo) {
+    if (surveyInfo.title) {
+      pdf.text(`Title of survey: ${String(surveyInfo.title)}`, margin, currentY);
+      currentY += 5;
+    }
+
+    if (surveyInfo.description) {
+      const description = String(surveyInfo.description || "");
+      const maxWidth = pageWidth - margin * 2;
+      const lines = pdf.splitTextToSize(`Description: ${description}`, maxWidth);
+      pdf.text(lines, margin, currentY);
+      currentY += lines.length * 5;
+    }
+
+    if (surveyInfo.totalResponses !== undefined && surveyInfo.totalResponses !== null) {
+      pdf.text(`Total Responses: ${String(surveyInfo.totalResponses)}`, margin, currentY);
+      currentY += 5;
+    }
+  }
 
   pdf.setDrawColor(229, 231, 235);
   pdf.setLineWidth(0.5);
@@ -68,7 +89,8 @@ export const exportChartsToPDF = async (
   chartRefs,
   fieldLabels,
   chartDataArray,
-  eventInfo
+  eventInfo,
+  surveyInfo = null
 ) => {
   const pdf = new jsPDF("p", "mm", "a4");
   const pageWidth = pdf.internal.pageSize.getWidth();
@@ -79,7 +101,7 @@ export const exportChartsToPDF = async (
   const titleHeight = 10;
   const spacing = 8;
 
-  let yPosition = (await addEventHeader(pdf, eventInfo, pageWidth, margin)) + spacing;
+  let yPosition = (await addEventHeader(pdf, eventInfo, pageWidth, margin, surveyInfo)) + spacing;
   let isFirstChart = true;
 
   for (let i = 0; i < chartRefs.length; i++) {
@@ -127,7 +149,7 @@ export const exportChartsToPDF = async (
 
       if (
         chartData.chartType === "pie" &&
-        (chartData.type === "text" || chartData.type === "number")
+        (chartData.type === "text" || chartData.type === "number" || chartData.type === "multi" || chartData.questionType === "multi")
       ) {
         pdf.text(`Top ${chartData.topN || 10}`, margin, yPosition);
         yPosition += 5;
