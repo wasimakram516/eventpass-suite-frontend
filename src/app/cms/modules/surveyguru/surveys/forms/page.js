@@ -842,6 +842,18 @@ export default function SurveyFormsManagePage() {
                         <ICONS.results fontSize="small" />
                       </IconButton>
                     </Tooltip>
+                    <Tooltip title={t.insights || "Insights"}>
+                      <IconButton
+                        color="info"
+                        onClick={() =>
+                          router.push(
+                            `/cms/modules/surveyguru/surveys/forms/${f.slug}/insights`
+                          )
+                        }
+                      >
+                        <ICONS.insights fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
                   </CardActions>
                 </Card>
               </Grid>
