@@ -147,9 +147,29 @@ export const exportChartsToPDF = async (
       pdf.setFont("helvetica", "normal");
       pdf.setTextColor(107, 114, 128);
 
+      if (surveyInfo && chartData) {
+        const fieldType = chartData.questionType || chartData.type;
+        let typeLabel = "";
+        if (fieldType === "time") {
+          typeLabel = "";
+        } else if (fieldType === "multi") {
+          typeLabel = "MCQ";
+        } else if (fieldType === "rating") {
+          typeLabel = "Rating";
+        } else if (fieldType === "nps") {
+          typeLabel = "NPS";
+        }
+
+        if (typeLabel) {
+          pdf.text(`Type: ${typeLabel}`, margin, yPosition);
+          yPosition += 5;
+        }
+      }
+
       if (
         chartData.chartType === "pie" &&
-        (chartData.type === "text" || chartData.type === "number" || chartData.type === "multi" || chartData.questionType === "multi")
+        (chartData.type === "text" || chartData.type === "number" || chartData.type === "multi" || chartData.questionType === "multi") &&
+        !surveyInfo
       ) {
         pdf.text(`Top ${chartData.topN || 10}`, margin, yPosition);
         yPosition += 5;
