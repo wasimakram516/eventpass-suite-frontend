@@ -42,7 +42,6 @@ const translations = {
         selectQuestionPrompt: "Select a question to view insights",
         distributionOverview: "Distribution Overview",
         historicalTrend: "Historical Trend",
-        topN: "Top N",
         from: "From",
         to: "To",
         intervalMinutes: "Interval (min)",
@@ -60,7 +59,6 @@ const translations = {
         selectQuestionPrompt: "اختر سؤالاً لعرض التحليلات",
         distributionOverview: "نظرة عامة على التوزيع",
         historicalTrend: "الاتجاه التاريخي",
-        topN: "أعلى N",
         from: "من",
         to: "إلى",
         intervalMinutes: "الفاصل الزمني (دقيقة)",
@@ -102,6 +100,23 @@ const determineChartType = (field) => {
     if (field.type === "time") return "line";
     return "pie";
 };
+
+const getFieldTypeLabel = (field) => {
+    if (!field) return "";
+    const type = field.questionType || field.type;
+    if (type === "time") return "";
+    switch (type) {
+        case "multi":
+            return "MCQ";
+        case "rating":
+            return "Rating";
+        case "nps":
+            return "NPS";
+        default:
+            return "";
+    }
+};
+
 dayjs.extend(utc);
 
 const QuestionChip = ({ field, isSelected, onClick }) => {
@@ -130,14 +145,12 @@ const QuestionChip = ({ field, isSelected, onClick }) => {
 const ChartVisualization = ({
     selectedField,
     chartData,
-    onTopNChange,
     onIntervalChange,
     onStartDateTimeChange,
     onEndDateTimeChange,
     onGenerate,
     startDateTime,
     endDateTime,
-    topN,
     intervalMinutes,
     isGenerating,
     t,
@@ -156,9 +169,8 @@ const ChartVisualization = ({
         return t.historicalTrend;
     };
 
-    const showTopNControl = field.questionType === "multi";
     const showIntervalControl = field.type === "time";
-    const showGenerateButton = showTopNControl || showIntervalControl;
+    const showGenerateButton = showIntervalControl;
     const hasNoData =
         field.chartType === "pie" && (!field.data || field.data.length === 0);
 
@@ -205,9 +217,21 @@ const ChartVisualization = ({
                         >
                             {field.label}
                         </Typography>
-                        <Typography variant="caption" color="textSecondary">
-                            {getChartDescription()}
-                        </Typography>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                            <Typography variant="caption" color="textSecondary">
+                                {getChartDescription()}
+                            </Typography>
+                            {getFieldTypeLabel(field) && (
+                                <>
+                                    <Typography variant="caption" color="textSecondary">
+                                        •
+                                    </Typography>
+                                    <Typography variant="caption" color="textSecondary">
+                                        {getFieldTypeLabel(field)}
+                                    </Typography>
+                                </>
+                            )}
+                        </Box>
                     </Box>
                 </Box>
                 <Box
@@ -218,23 +242,6 @@ const ChartVisualization = ({
                         alignItems: "flex-end",
                     }}
                 >
-                    {showTopNControl && (
-                        <TextField
-                            label={t.topN}
-                            type="number"
-                            size="small"
-                            value={topN}
-                            onChange={(e) => {
-                                const val =
-                                    e.target.value === "" ? 0 : parseInt(e.target.value);
-                                onTopNChange(isNaN(val) ? 0 : val);
-                            }}
-                            InputProps={{ inputProps: { min: 0, max: 50 } }}
-                            sx={{ width: "120px" }}
-                            disabled={isGenerating}
-                        />
-                    )}
-
                     {showIntervalControl && (
                         <>
                             <DateTimePicker
@@ -597,7 +604,7 @@ export default function SurveyGuruInsightsPage() {
 
                 const defaultParams = {};
                 response.data.categoricalFields.forEach((f) => {
-                    defaultParams[f.name] = { topN: 10 };
+                    defaultParams[f.name] = {};
                 });
                 response.data.timeFields.forEach((f) => {
                     defaultParams[f.name] = {
@@ -650,7 +657,6 @@ export default function SurveyGuruInsightsPage() {
                 const appliedFieldParams = appliedParams[questionId];
                 if (!appliedFieldParams) continue;
 
-                const topN = appliedFieldParams.topN ?? 10;
                 const intervalMinutes = appliedFieldParams.intervalMinutes ?? 60;
                 const startDateTime =
                     appliedFieldParams.startDateTime ??
@@ -693,20 +699,9 @@ export default function SurveyGuruInsightsPage() {
                             [questionId]: { ...field, xData, yData },
                         }));
                     } else {
-                        const useTopN = field.questionType === "multi" ? topN : null;
-
-                        if (useTopN === 0) {
-                            setChartData((prev) => ({
-                                ...prev,
-                                [questionId]: { ...field, data: [] },
-                            }));
-                            continue;
-                        }
-
                         response = await getQuestionDistribution(
                             slug,
-                            questionId,
-                            useTopN
+                            questionId
                         );
 
                         const data = response.data.data.map((item, idx) => ({
@@ -769,7 +764,6 @@ export default function SurveyGuruInsightsPage() {
                 const data = chartData[questionId];
                 return {
                     ...data,
-                    topN: getFieldParam(questionId, "topN", 10),
                     intervalMinutes: getFieldParam(questionId, "intervalMinutes", 60),
                     startDateTime: getFieldParam(
                         questionId,
@@ -852,10 +846,12 @@ export default function SurveyGuruInsightsPage() {
                 if (!field || !data) return;
 
                 lines.push([`=== ${field.label} ===`]);
+                const fieldTypeLabel = getFieldTypeLabel(field);
+                if (fieldTypeLabel) {
+                    lines.push([`Type:`, fieldTypeLabel].join(`,`));
+                }
 
                 if (data.chartType === "pie") {
-                    const topN = getFieldParam(questionId, "topN", 10);
-                    lines.push([`Top N:`, `\t${topN}`].join(`,`));
                     lines.push([`Value`, `Count`, `Percentage`].join(`,`));
 
                     const total = data.data.reduce((sum, d) => sum + d.value, 0);
@@ -1106,7 +1102,6 @@ export default function SurveyGuruInsightsPage() {
                             <ChartVisualization
                                 selectedField={questionId}
                                 chartData={chartData}
-                                topN={getFieldParam(questionId, "topN", 10)}
                                 intervalMinutes={getFieldParam(
                                     questionId,
                                     "intervalMinutes",
@@ -1122,7 +1117,6 @@ export default function SurveyGuruInsightsPage() {
                                     "endDateTime",
                                     dayjs().endOf("day")
                                 )}
-                                onTopNChange={(val) => updateFieldParam(questionId, "topN", val)}
                                 onIntervalChange={(val) =>
                                     updateFieldParam(questionId, "intervalMinutes", val)
                                 }
