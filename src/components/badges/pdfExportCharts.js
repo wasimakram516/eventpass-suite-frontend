@@ -163,8 +163,8 @@ const addEventHeader = async (
   currentY -= 14.17;
 
   // Event details
-  const fromDate = formatDate(eventInfo.startDate);
-  const toDate = formatDate(eventInfo.endDate);
+  const fromDate = eventInfo.startDateFormatted || formatDate(eventInfo.startDate);
+  const toDate = eventInfo.endDateFormatted || formatDate(eventInfo.endDate);
 
   const fromLabel = translations.from || "From";
   const toLabel = translations.to || "To";
@@ -177,7 +177,10 @@ const addEventHeader = async (
   currentY -= LINE_HEIGHT;
   renderLabelValue(page, venueLabel, String(eventInfo.venue || ""), margin, currentY, pageWidth, margin, isRTL, font, boldFont, FONT_LABEL);
   currentY -= LINE_HEIGHT;
-  renderLabelValue(page, registrationsLabel, String(eventInfo.registrations || 0), margin, currentY, pageWidth, margin, isRTL, font, boldFont, FONT_LABEL);
+  const registrationsValue = eventInfo.registrationsFormatted !== undefined
+    ? eventInfo.registrationsFormatted
+    : String(eventInfo.registrations || 0);
+  renderLabelValue(page, registrationsLabel, registrationsValue, margin, currentY, pageWidth, margin, isRTL, font, boldFont, FONT_LABEL);
   currentY -= LINE_HEIGHT;
 
   // Survey-specific fields only if surveyInfo is provided
@@ -318,7 +321,10 @@ const addEventHeader = async (
     }
 
     if (surveyInfo.totalResponses !== undefined && surveyInfo.totalResponses !== null) {
-      renderLabelValue(page, totalResponsesLabel, String(surveyInfo.totalResponses), margin, currentY, pageWidth, margin, isRTL, font, boldFont, FONT_LABEL);
+      const totalResponsesValue = surveyInfo.totalResponsesFormatted !== undefined
+        ? surveyInfo.totalResponsesFormatted
+        : String(surveyInfo.totalResponses);
+      renderLabelValue(page, totalResponsesLabel, totalResponsesValue, margin, currentY, pageWidth, margin, isRTL, font, boldFont, FONT_LABEL);
       currentY -= LINE_HEIGHT;
     }
   }
@@ -472,9 +478,9 @@ export const exportChartsToPDF = async (
         renderLabelValue(page, topNLabel, String(chartData.topN || 10), margin, yPosition, pageWidth, margin, isRTL, font, boldFont, FONT_LABEL);
         yPosition -= LINE_HEIGHT;
       } else if (chartData.chartType === "line" && chartData.type === "time") {
-        const startDate = formatDateTimeWithLocale(chartData.startDateTime);
-        const endDate = formatDateTimeWithLocale(chartData.endDateTime);
-        const intervalValue = `${chartData.intervalMinutes || 60} min`;
+        const startDate = chartData.startDateTimeFormatted || formatDateTimeWithLocale(chartData.startDateTime);
+        const endDate = chartData.endDateTimeFormatted || formatDateTimeWithLocale(chartData.endDateTime);
+        const intervalValue = chartData.intervalMinutesFormatted || `${chartData.intervalMinutes || 60} min`;
 
         renderLabelValue(page, translations.from || "From", startDate, margin, yPosition, pageWidth, margin, isRTL, font, boldFont, FONT_LABEL);
         yPosition -= LINE_HEIGHT;
@@ -482,7 +488,79 @@ export const exportChartsToPDF = async (
         yPosition -= LINE_HEIGHT;
 
         const intervalBase = intervalLabel.replace(/\s*\(.*?\)\s*/, "").trim();
-        renderLabelValue(page, intervalBase, intervalValue, margin, yPosition, pageWidth, margin, isRTL, font, boldFont, FONT_LABEL);
+        if (chartData.intervalMinutesFormatted && chartData.intervalMinutesSuffix) {
+          const intervalNumber = chartData.intervalMinutesFormatted;
+          const intervalSuffix = chartData.intervalMinutesSuffix;
+          const spacing = 2.8;
+          const colon = ":";
+
+          if (isRTL) {
+            const labelText = String(intervalBase);
+            const labelWidth = boldFont.widthOfTextAtSize(labelText, FONT_LABEL);
+            const colonWidth = font.widthOfTextAtSize(colon, FONT_LABEL);
+            const numberWidth = font.widthOfTextAtSize(intervalNumber, FONT_LABEL);
+            const minWidth = font.widthOfTextAtSize(intervalSuffix, FONT_LABEL);
+            const spaceWidth = font.widthOfTextAtSize(" ", FONT_LABEL);
+
+            const labelX = pageWidth - margin - labelWidth;
+            const colonX = labelX - spacing - colonWidth;
+            const valueTotalWidth = numberWidth + spaceWidth + minWidth;
+            const valueX = colonX - spacing - valueTotalWidth;
+            const numberX = valueX;
+            const minX = numberX + numberWidth + spaceWidth;
+
+            page.drawText(labelText, {
+              x: labelX,
+              y: yPosition,
+              size: FONT_LABEL,
+              font: boldFont,
+            });
+            page.drawText(colon, {
+              x: colonX,
+              y: yPosition,
+              size: FONT_LABEL,
+              font: font,
+            });
+            page.drawText(intervalNumber, {
+              x: numberX,
+              y: yPosition,
+              size: FONT_LABEL,
+              font: font,
+            });
+            page.drawText(intervalSuffix, {
+              x: minX,
+              y: yPosition,
+              size: FONT_LABEL,
+              font: font,
+            });
+          } else {
+            const labelText = `${intervalBase}${colon} `;
+            const labelWidth = boldFont.widthOfTextAtSize(labelText, FONT_LABEL);
+            const numberWidth = font.widthOfTextAtSize(intervalNumber, FONT_LABEL);
+            const spaceWidth = font.widthOfTextAtSize(" ", FONT_LABEL);
+
+            page.drawText(labelText, {
+              x: margin,
+              y: yPosition,
+              size: FONT_LABEL,
+              font: boldFont,
+            });
+            page.drawText(intervalNumber, {
+              x: margin + labelWidth,
+              y: yPosition,
+              size: FONT_LABEL,
+              font: font,
+            });
+            page.drawText(` ${intervalSuffix}`, {
+              x: margin + labelWidth + numberWidth,
+              y: yPosition,
+              size: FONT_LABEL,
+              font: font,
+            });
+          }
+        } else {
+          renderLabelValue(page, intervalBase, intervalValue, margin, yPosition, pageWidth, margin, isRTL, font, boldFont, FONT_LABEL);
+        }
         yPosition -= LINE_HEIGHT;
       }
 
