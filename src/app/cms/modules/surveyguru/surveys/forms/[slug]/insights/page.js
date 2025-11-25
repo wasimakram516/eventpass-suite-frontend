@@ -27,12 +27,17 @@ import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
+import "dayjs/locale/ar";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
+import { LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { exportChartsToPDF } from "@/components/badges/pdfExportCharts";
 import { Button, CircularProgress } from "@mui/material";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
-import { formatDateTimeWithLocale } from "@/utils/dateUtils";
+import { formatDateTimeWithLocale, formatDateWithShortMonth } from "@/utils/dateUtils";
 import * as XLSX from "xlsx";
+import { translateTexts } from "@/services/translationService";
+import { toArabicDigits } from "@/utils/arabicDigits";
 
 const translations = {
     en: {
@@ -109,6 +114,83 @@ const translations = {
 
 const FIELD_COLOR = "#0077b6";
 
+
+// Format percentage with % sign on the right (even in RTL)
+const formatPercentage = (value, language) => {
+    const percentage = typeof value === "number" ? value.toFixed(1) : String(value);
+    if (language === "ar") {
+        const arabicDigits = toArabicDigits(percentage, language);
+        return `\u202D${arabicDigits}%\u202C`;
+    }
+    return `${percentage}%`;
+};
+
+// Custom format function for DateTimePicker that converts digits to Arabic and AM/PM to ص/م
+const formatDateForPicker = (date, formatString, language) => {
+    if (!date) return "";
+    const formatted = date.format(formatString);
+    if (language === "ar") {
+        let arabicFormatted = toArabicDigits(formatted, language);
+        arabicFormatted = arabicFormatted.replace(/\bAM\b/gi, "ص");
+        arabicFormatted = arabicFormatted.replace(/\bPM\b/gi, "م");
+        return arabicFormatted;
+    }
+    return formatted;
+};
+
+//  format function for DateTimePicker that returns Arabic formatted date
+const createArabicFormatFunction = (language) => {
+    return (date) => {
+        if (!date) return "";
+        return formatDateForPicker(date, "DD/MM/YYYY hh:mm A", language);
+    };
+};
+
+// Function to convert digits in a DOM element to Arabic-Indic numerals
+const convertDigitsInElement = (element, language) => {
+    if (language !== "ar" || !element) return;
+
+    const walker = document.createTreeWalker(
+        element,
+        NodeFilter.SHOW_TEXT,
+        null
+    );
+
+    const textNodes = [];
+    let node;
+    while (node = walker.nextNode()) {
+        if (node.nodeValue && /\d/.test(node.nodeValue)) {
+            textNodes.push(node);
+        }
+    }
+
+    textNodes.forEach(textNode => {
+        textNode.nodeValue = toArabicDigits(textNode.nodeValue, language);
+    });
+
+    const contentEditableElements = element.querySelectorAll('[contenteditable="true"]');
+    contentEditableElements.forEach(el => {
+        if (el.textContent && /\d/.test(el.textContent)) {
+            const converted = toArabicDigits(el.textContent, language);
+            if (el.textContent !== converted) {
+                el.textContent = converted;
+            }
+        }
+    });
+
+    const elementsWithAria = element.querySelectorAll('[aria-valuetext], [aria-valuenow]');
+    elementsWithAria.forEach(el => {
+        if (el.getAttribute('aria-valuetext') && /\d/.test(el.getAttribute('aria-valuetext'))) {
+            const converted = toArabicDigits(el.getAttribute('aria-valuetext'), language);
+            el.setAttribute('aria-valuetext', converted);
+        }
+        if (el.getAttribute('aria-valuenow') && /\d/.test(el.getAttribute('aria-valuenow'))) {
+            const converted = toArabicDigits(el.getAttribute('aria-valuenow'), language);
+            el.setAttribute('aria-valuenow', converted);
+        }
+    });
+};
+
 const hslToHex = (h, s, l) => {
     s /= 100;
     l /= 100;
@@ -156,10 +238,10 @@ const getFieldTypeLabel = (field) => {
 
 dayjs.extend(utc);
 
-const QuestionChip = ({ field, isSelected, onClick }) => {
+const QuestionChip = ({ field, translatedLabel, isSelected, onClick }) => {
     return (
         <Chip
-            label={field.label}
+            label={translatedLabel || field.label}
             onClick={onClick}
             sx={{
                 backgroundColor: isSelected ? field.color : "#ffffff",
@@ -182,6 +264,8 @@ const QuestionChip = ({ field, isSelected, onClick }) => {
 const ChartVisualization = ({
     selectedField,
     chartData,
+    translatedChartData,
+    translatedQuestions,
     onIntervalChange,
     onStartDateTimeChange,
     onEndDateTimeChange,
@@ -192,14 +276,66 @@ const ChartVisualization = ({
     isGenerating,
     t,
     onRefReady,
+    language,
 }) => {
-    if (!selectedField || !chartData[selectedField]) {
+    const { dir } = useI18nLayout();
+
+    const field = translatedChartData[selectedField] || chartData[selectedField];
+
+    const translatedQuestion = translatedQuestions.find((q) => q.name === selectedField);
+    const questionLabel = translatedQuestion?.label || field?.label || "";
+
+    useEffect(() => {
+        if (language === "ar" && field && selectedField) {
+            const convertInputDigits = () => {
+                const container = document.getElementById(`date-picker-container-${selectedField}`);
+                if (!container) return;
+
+                const inputs = container.querySelectorAll('input[type="text"]');
+                inputs.forEach(input => {
+                    if (input.value && (/\d/.test(input.value) || /\b(AM|PM)\b/i.test(input.value))) {
+                        if (input.value.match(/\d{1,2}\/\d{1,2}\/\d{4}/) || input.value.match(/\d{1,2}:\d{2}/)) {
+                            let converted = toArabicDigits(input.value, language);
+                            converted = converted.replace(/\bAM\b/gi, "ص");
+                            converted = converted.replace(/\bPM\b/gi, "م");
+                            if (input.value !== converted && document.activeElement !== input) {
+                                input.value = converted;
+                            }
+                        }
+                    }
+                });
+
+                const pickerSections = container.querySelectorAll('.MuiPickersSectionList-sectionContent[contenteditable="true"]');
+                pickerSections.forEach(section => {
+                    if (section.textContent && /\d/.test(section.textContent)) {
+                        const converted = toArabicDigits(section.textContent, language);
+                        if (section.textContent !== converted && document.activeElement !== section) {
+                            section.textContent = converted;
+                        }
+                    }
+                });
+
+                const ariaElements = container.querySelectorAll('[aria-valuetext]');
+                ariaElements.forEach(el => {
+                    const ariaValue = el.getAttribute('aria-valuetext');
+                    if (ariaValue && /\d/.test(ariaValue)) {
+                        const converted = toArabicDigits(ariaValue, language);
+                        if (ariaValue !== converted) {
+                            el.setAttribute('aria-valuetext', converted);
+                        }
+                    }
+                });
+            };
+
+            convertInputDigits();
+            const interval = setInterval(convertInputDigits, 100);
+            return () => clearInterval(interval);
+        }
+    }, [language, startDateTime, endDateTime, field, selectedField]);
+
+    if (!selectedField || !chartData[selectedField] || !field) {
         return null;
     }
-    const { dir } = useI18nLayout();
-    const field = chartData[selectedField];
-
-    if (!field) return null;
 
     const getChartDescription = () => {
         if (field.chartType === "pie") return t.distributionOverview;
@@ -252,7 +388,7 @@ const ChartVisualization = ({
                             variant="h6"
                             sx={{ fontWeight: "bold", color: "#1f2937" }}
                         >
-                            {field.label}
+                            {questionLabel}
                         </Typography>
                         <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                             <Typography variant="caption" color="textSecondary">
@@ -281,29 +417,157 @@ const ChartVisualization = ({
                 >
                     {showIntervalControl && (
                         <>
-                            <DateTimePicker
-                                label={t.from}
-                                value={startDateTime}
-                                onChange={(val) => onStartDateTimeChange(val)}
-                                ampm={true}
-                                format="DD/MM/YYYY hh:mm A"
-                                slotProps={{
-                                    textField: { size: "small", sx: { width: "200px" } },
-                                }}
-                                disabled={isGenerating}
-                            />
-                            <DateTimePicker
-                                label={t.to}
-                                value={endDateTime}
-                                onChange={(val) => onEndDateTimeChange(val)}
-                                ampm={true}
-                                format="DD/MM/YYYY hh:mm A"
-                                slotProps={{
-                                    textField: { size: "small", sx: { width: "200px" } },
-                                }}
-                                disabled={isGenerating}
-                            />
+                            <LocalizationProvider
+                                dateAdapter={AdapterDayjs}
+                                adapterLocale={language === "ar" ? "ar" : "en"}
+                            >
+                                <Box
+                                    id={`date-picker-container-${selectedField}`}
+                                    sx={{
+                                        position: "relative",
+                                        display: "flex",
+                                        gap: language === "ar" ? 3 : 1.5,
+                                        flexWrap: "wrap",
+                                    }}
+                                >
+                                    <DateTimePicker
+                                        key={`from-${language}`}
+                                        label={t.from}
+                                        value={startDateTime}
+                                        onChange={(val) => onStartDateTimeChange(val)}
+                                        ampm={true}
+                                        format="DD/MM/YYYY hh:mm A"
+                                        slotProps={{
+                                            textField: {
+                                                size: "small",
+                                                sx: {
+                                                    width: language === "ar" ? "240px" : "200px",
+                                                },
+                                                onFocus: (e) => {
+                                                    if (language === "ar" && e.target.value) {
+                                                        let converted = toArabicDigits(e.target.value, language);
+                                                        converted = converted.replace(/\bAM\b/gi, "ص");
+                                                        converted = converted.replace(/\bPM\b/gi, "م");
+                                                        e.target.value = converted;
+                                                    }
+                                                    setTimeout(() => {
+                                                        const picker = document.querySelector('[role="dialog"]');
+                                                        if (picker && language === "ar") {
+                                                            convertDigitsInElement(picker, language);
+                                                        }
+                                                    }, 100);
+                                                },
+                                                onBlur: (e) => {
+                                                    if (language === "ar" && e.target.value) {
+                                                        let converted = toArabicDigits(e.target.value, language);
+                                                        converted = converted.replace(/\bAM\b/gi, "ص");
+                                                        converted = converted.replace(/\bPM\b/gi, "م");
+                                                        e.target.value = converted;
+                                                    }
+                                                },
+                                            },
+                                            actionBar: {
+                                                actions: ["cancel", "ok"],
+                                            },
+                                        }}
+                                        disabled={isGenerating}
+                                        onOpen={() => {
+                                            setTimeout(() => {
+                                                const picker = document.querySelector('[role="dialog"]');
+                                                if (picker && language === "ar") {
+                                                    convertDigitsInElement(picker, language);
+                                                    const observer = new MutationObserver(() => {
+                                                        convertDigitsInElement(picker, language);
+                                                    });
+                                                    observer.observe(picker, {
+                                                        childList: true,
+                                                        subtree: true,
+                                                        characterData: true,
+                                                    });
+                                                    if (picker) {
+                                                        picker._arabicObserver = observer;
+                                                    }
+                                                }
+                                            }, 100);
+                                        }}
+                                        onClose={() => {
+                                            const picker = document.querySelector('[role="dialog"]');
+                                            if (picker && picker._arabicObserver) {
+                                                picker._arabicObserver.disconnect();
+                                            }
+                                        }}
+                                    />
+                                    <DateTimePicker
+                                        key={`to-${language}`}
+                                        label={t.to}
+                                        value={endDateTime}
+                                        onChange={(val) => onEndDateTimeChange(val)}
+                                        ampm={true}
+                                        format="DD/MM/YYYY hh:mm A"
+                                        slotProps={{
+                                            textField: {
+                                                size: "small",
+                                                sx: {
+                                                    width: language === "ar" ? "240px" : "200px",
+                                                },
+                                                onFocus: (e) => {
+                                                    if (language === "ar" && e.target.value) {
+                                                        let converted = toArabicDigits(e.target.value, language);
+                                                        converted = converted.replace(/\bAM\b/gi, "ص");
+                                                        converted = converted.replace(/\bPM\b/gi, "م");
+                                                        e.target.value = converted;
+                                                    }
+                                                    setTimeout(() => {
+                                                        const picker = document.querySelector('[role="dialog"]');
+                                                        if (picker && language === "ar") {
+                                                            convertDigitsInElement(picker, language);
+                                                        }
+                                                    }, 100);
+                                                },
+                                                onBlur: (e) => {
+                                                    if (language === "ar" && e.target.value) {
+                                                        let converted = toArabicDigits(e.target.value, language);
+                                                        converted = converted.replace(/\bAM\b/gi, "ص");
+                                                        converted = converted.replace(/\bPM\b/gi, "م");
+                                                        e.target.value = converted;
+                                                    }
+                                                },
+                                            },
+                                            actionBar: {
+                                                actions: ["cancel", "ok"],
+                                            },
+                                        }}
+                                        disabled={isGenerating}
+                                        onOpen={() => {
+                                            setTimeout(() => {
+                                                const picker = document.querySelector('[role="dialog"]');
+                                                if (picker && language === "ar") {
+                                                    convertDigitsInElement(picker, language);
+                                                    const observer = new MutationObserver(() => {
+                                                        convertDigitsInElement(picker, language);
+                                                    });
+                                                    observer.observe(picker, {
+                                                        childList: true,
+                                                        subtree: true,
+                                                        characterData: true,
+                                                    });
+                                                    if (picker) {
+                                                        picker._arabicObserver = observer;
+                                                    }
+                                                }
+                                            }, 100);
+                                        }}
+                                        onClose={() => {
+                                            const picker = document.querySelector('[role="dialog"]');
+                                            if (picker && picker._arabicObserver) {
+                                                picker._arabicObserver.disconnect();
+                                            }
+                                        }}
+                                    />
+                                </Box>
+                            </LocalizationProvider>
                             <TextField
+                                key={`interval-${language}`}
                                 label={t.intervalMinutes}
                                 type="number"
                                 size="small"
@@ -422,7 +686,7 @@ const ChartVisualization = ({
                                                 const percentage = ((item.value / total) * 100).toFixed(
                                                     1
                                                 );
-                                                return `${percentage}%`;
+                                                return formatPercentage(percentage, language);
                                             },
                                         },
                                     ]}
@@ -486,11 +750,11 @@ const ChartVisualization = ({
                                                     color: "#1f2937",
                                                     whiteSpace: "nowrap",
                                                     fontSize: { xs: "0.875rem", md: "0.875rem" },
-                                                    direction: "ltr",
-                                                    textAlign: "left",
+                                                    direction: language === "ar" ? "rtl" : "ltr",
+                                                    textAlign: language === "ar" ? "right" : "left",
                                                 }}
                                             >
-                                                {item.label} {percentage}% ({item.value})
+                                                {item.label} {formatPercentage(percentage, language)} ({toArabicDigits(item.value, language)})
                                             </Typography>
                                         </Box>
                                     );
@@ -517,10 +781,10 @@ const ChartVisualization = ({
                             <LineChart
                                 xAxis={[{
                                     scaleType: 'point',
-                                    data: field.xData,
+                                    data: field.xData.map(label => toArabicDigits(label, language)),
                                     tickLabelStyle: {
-                                        direction: 'ltr',
-                                        textAlign: 'left',
+                                        direction: language === "ar" ? "rtl" : "ltr",
+                                        textAlign: language === "ar" ? "right" : "left",
                                     },
                                 }]}
                                 yAxis={[
@@ -528,9 +792,10 @@ const ChartVisualization = ({
                                         min: 0,
                                         max: Math.max(...field.yData) + Math.ceil(Math.max(...field.yData) * 0.05),
                                         tickLabelStyle: {
-                                            direction: 'ltr',
-                                            textAlign: 'left',
+                                            direction: language === "ar" ? "rtl" : "ltr",
+                                            textAlign: language === "ar" ? "right" : "left",
                                         },
+                                        valueFormatter: (value) => toArabicDigits(String(value), language),
                                     }
                                 ]}
                                 series={[
@@ -563,10 +828,10 @@ const ChartVisualization = ({
                             alignItems: { xs: 'center', md: 'flex-start' }
                         }}>
                             {field.xData.map((label, idx) => (
-                                <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5, direction: 'ltr' }}>
+                                <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5, direction: language === "ar" ? "rtl" : "ltr" }}>
                                     <Box sx={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: field.color, flexShrink: 0 }} />
-                                    <Typography variant="body2" sx={{ fontWeight: 500, color: '#1f2937', whiteSpace: 'nowrap', fontSize: { xs: '0.875rem', md: '0.875rem' }, direction: 'ltr', textAlign: 'left' }}>
-                                        {label} ({field.yData[idx]})
+                                    <Typography variant="body2" sx={{ fontWeight: 500, color: '#1f2937', whiteSpace: 'nowrap', fontSize: { xs: '0.875rem', md: '0.875rem' }, direction: language === "ar" ? "rtl" : "ltr", textAlign: language === "ar" ? "right" : "left" }}>
+                                        {toArabicDigits(label, language)} ({toArabicDigits(field.yData[idx], language)})
                                     </Typography>
                                 </Box>
                             ))}
@@ -581,6 +846,14 @@ const ChartVisualization = ({
 export default function SurveyGuruInsightsPage() {
     const { slug } = useParams();
     const { t, dir, language } = useI18nLayout(translations);
+
+    useEffect(() => {
+        if (language === "ar") {
+            dayjs.locale("ar");
+        } else {
+            dayjs.locale("en");
+        }
+    }, [language]);
     const [selectedQuestions, setSelectedQuestions] = useState([]);
     const [chartData, setChartData] = useState({});
     const [fieldParams, setFieldParams] = useState({});
@@ -594,6 +867,10 @@ export default function SurveyGuruInsightsPage() {
     const [formInfo, setFormInfo] = useState(null);
     const [totalResponses, setTotalResponses] = useState(0);
     const [eventInfo, setEventInfo] = useState(null);
+    const [translatedQuestions, setTranslatedQuestions] = useState([]);
+    const [translatedChartData, setTranslatedChartData] = useState({});
+    const [translatedEventInfo, setTranslatedEventInfo] = useState(null);
+    const [translatedFormInfo, setTranslatedFormInfo] = useState(null);
 
     const getFieldParam = (fieldName, paramName, defaultValue) => {
         return fieldParams[fieldName]?.[paramName] ?? defaultValue;
@@ -683,6 +960,148 @@ export default function SurveyGuruInsightsPage() {
         fetchQuestions();
     }, [slug]);
 
+    // Re-translate when language changes
+    useEffect(() => {
+        if (!availableQuestions.length) return;
+
+        const translateQuestions = async () => {
+            try {
+                if (language === "ar") {
+                    const textsToTranslate = availableQuestions.map((f) => f.label || "");
+                    const translatedLabels = await translateTexts(textsToTranslate, language);
+
+                    const translated = availableQuestions.map((f, idx) => ({
+                        ...f,
+                        label: toArabicDigits(translatedLabels[idx] || f.label, language),
+                    }));
+
+                    setTranslatedQuestions(translated);
+                } else {
+                    setTranslatedQuestions(availableQuestions);
+                }
+            } catch (error) {
+                console.error("Error translating questions:", error);
+                setTranslatedQuestions(availableQuestions);
+            }
+        };
+
+        translateQuestions();
+    }, [language, availableQuestions]);
+
+    // Re-translate form and event info when language changes
+    useEffect(() => {
+        if (!formInfo) return;
+
+        const translateFormInfo = async () => {
+            try {
+                if (language === "ar") {
+                    const textsToTranslate = [
+                        formInfo.title || "",
+                        formInfo.description || "",
+                    ].filter(Boolean);
+
+                    if (textsToTranslate.length > 0) {
+                        const translated = await translateTexts(textsToTranslate, language);
+                        setTranslatedFormInfo({
+                            ...formInfo,
+                            title: toArabicDigits(translated[0] || formInfo.title, language),
+                            description: toArabicDigits(translated[1] || formInfo.description, language),
+                        });
+                    } else {
+                        setTranslatedFormInfo(formInfo);
+                    }
+                } else {
+                    setTranslatedFormInfo(formInfo);
+                }
+            } catch (error) {
+                console.error("Error translating form info:", error);
+                setTranslatedFormInfo(formInfo);
+            }
+        };
+
+        translateFormInfo();
+    }, [language, formInfo]);
+
+    useEffect(() => {
+        if (!eventInfo) return;
+
+        const translateEventInfo = async () => {
+            try {
+                if (language === "ar") {
+                    const textsToTranslate = [
+                        eventInfo.name || "",
+                        eventInfo.venue || "",
+                        eventInfo.description || "",
+                    ].filter(Boolean);
+
+                    if (textsToTranslate.length > 0) {
+                        const translated = await translateTexts(textsToTranslate, language);
+                        setTranslatedEventInfo({
+                            ...eventInfo,
+                            name: toArabicDigits(translated[0] || eventInfo.name, language),
+                            venue: toArabicDigits(translated[1] || eventInfo.venue, language),
+                            description: toArabicDigits(translated[2] || eventInfo.description, language),
+                        });
+                    } else {
+                        setTranslatedEventInfo(eventInfo);
+                    }
+                } else {
+                    setTranslatedEventInfo(eventInfo);
+                }
+            } catch (error) {
+                console.error("Error translating event info:", error);
+                setTranslatedEventInfo(eventInfo);
+            }
+        };
+
+        translateEventInfo();
+    }, [language, eventInfo]);
+
+    // Re-translate chart data option labels when language changes
+    useEffect(() => {
+        if (Object.keys(chartData).length === 0) return;
+
+        const reTranslateChartData = async () => {
+            if (language !== "ar") {
+                setTranslatedChartData(chartData);
+                return;
+            }
+
+            try {
+                const updated = {};
+                for (const questionId of Object.keys(chartData)) {
+                    const data = chartData[questionId];
+                    if (data.chartType === "pie" && data.data && data.data.length > 0) {
+                        const labelsToTranslate = data.data.map((item) => item.label || "");
+                        const translatedLabels = await translateTexts(labelsToTranslate, language);
+
+                        const translatedData = data.data.map((item, idx) => ({
+                            ...item,
+                            label: toArabicDigits(translatedLabels[idx] || item.label, language),
+                        }));
+
+                        updated[questionId] = { ...data, data: translatedData };
+                    } else if (data.chartType === "line") {
+                        const field = availableQuestions.find((f) => f.name === questionId);
+                        if (field && data.xData) {
+                            updated[questionId] = data;
+                        } else {
+                            updated[questionId] = data;
+                        }
+                    } else {
+                        updated[questionId] = data;
+                    }
+                }
+                setTranslatedChartData(updated);
+            } catch (error) {
+                console.error("Error re-translating chart data:", error);
+                setTranslatedChartData(chartData);
+            }
+        };
+
+        reTranslateChartData();
+    }, [language, chartData, availableQuestions]);
+
     useEffect(() => {
         const fetchChartData = async () => {
             if (
@@ -732,11 +1151,16 @@ export default function SurveyGuruInsightsPage() {
                         });
 
                         const xData = filteredData.map((d) =>
-                            formatDateTimeWithLocale(d.timestamp)
+                            formatDateTimeWithLocale(d.timestamp, language === "ar" ? "ar-SA" : "en-GB")
                         );
                         const yData = filteredData.map((d) => d.count);
 
                         setChartData((prev) => ({
+                            ...prev,
+                            [questionId]: { ...field, xData, yData },
+                        }));
+
+                        setTranslatedChartData((prev) => ({
                             ...prev,
                             [questionId]: { ...field, xData, yData },
                         }));
@@ -757,6 +1181,37 @@ export default function SurveyGuruInsightsPage() {
                             ...prev,
                             [questionId]: { ...field, data },
                         }));
+
+                        const translateOptionLabels = async () => {
+                            try {
+                                if (language === "ar" && data.length > 0) {
+                                    const labelsToTranslate = data.map((item) => item.label || "");
+                                    const translatedLabels = await translateTexts(labelsToTranslate, language);
+
+                                    const translatedData = data.map((item, idx) => ({
+                                        ...item,
+                                        label: toArabicDigits(translatedLabels[idx] || item.label, language),
+                                    }));
+
+                                    setTranslatedChartData((prev) => ({
+                                        ...prev,
+                                        [questionId]: { ...field, data: translatedData },
+                                    }));
+                                } else {
+                                    setTranslatedChartData((prev) => ({
+                                        ...prev,
+                                        [questionId]: { ...field, data },
+                                    }));
+                                }
+                            } catch (error) {
+                                console.error("Error translating option labels:", error);
+                                setTranslatedChartData((prev) => ({
+                                    ...prev,
+                                    [questionId]: { ...field, data },
+                                }));
+                            }
+                        };
+                        translateOptionLabels();
                     }
                 } catch (error) {
                     console.error(`Error loading chart data for ${questionId}:`, error);
@@ -765,7 +1220,7 @@ export default function SurveyGuruInsightsPage() {
         };
 
         fetchChartData();
-    }, [selectedQuestions, slug, availableQuestions, appliedParams]);
+    }, [selectedQuestions, slug, availableQuestions, appliedParams, language]);
 
     const handleExportPDF = async () => {
         if (selectedQuestions.length === 0) return;
@@ -797,39 +1252,79 @@ export default function SurveyGuruInsightsPage() {
                 return;
             }
 
+            const questionsToUse = translatedQuestions.length > 0 ? translatedQuestions : availableQuestions;
             const labels = selectedQuestions.map((questionId) => {
-                const field = availableQuestions.find((f) => f.name === questionId);
+                const field = questionsToUse.find((f) => f.name === questionId);
                 return field?.label || questionId;
             });
 
+            const chartDataToUse = Object.keys(translatedChartData).length > 0 ? translatedChartData : chartData;
             const chartDataArray = selectedQuestions.map((questionId) => {
-                const data = chartData[questionId];
+                const data = chartDataToUse[questionId] || chartData[questionId];
+                const startDateTime = getFieldParam(
+                    questionId,
+                    "startDateTime",
+                    dayjs().subtract(30, "day").startOf("day")
+                );
+                const endDateTime = getFieldParam(
+                    questionId,
+                    "endDateTime",
+                    dayjs().endOf("day")
+                );
+                const intervalMinutes = getFieldParam(questionId, "intervalMinutes", 60);
+
                 return {
                     ...data,
-                    intervalMinutes: getFieldParam(questionId, "intervalMinutes", 60),
-                    startDateTime: getFieldParam(
-                        questionId,
-                        "startDateTime",
-                        dayjs().subtract(30, "day").startOf("day")
-                    ).toDate(),
-                    endDateTime: getFieldParam(
-                        questionId,
-                        "endDateTime",
-                        dayjs().endOf("day")
-                    ).toDate(),
+                    intervalMinutes: intervalMinutes,
+                    startDateTime: startDateTime.toDate(),
+                    endDateTime: endDateTime.toDate(),
+                    startDateTimeFormatted: formatDateTimeWithLocale(
+                        startDateTime.toISOString(),
+                        language === "ar" ? "ar-SA" : "en-GB"
+                    ),
+                    endDateTimeFormatted: formatDateTimeWithLocale(
+                        endDateTime.toISOString(),
+                        language === "ar" ? "ar-SA" : "en-GB"
+                    ),
+                    intervalMinutesFormatted: language === "ar"
+                        ? toArabicDigits(String(intervalMinutes), language)
+                        : String(intervalMinutes),
+                    intervalMinutesSuffix: "min",
                     legend: false,
                 };
             });
 
-            // Prepare survey info for PDF export
+            const formInfoToUse = translatedFormInfo || formInfo;
             const surveyInfo = {
-                title: formInfo?.title || null,
-                description: formInfo?.description || null,
+                title: formInfoToUse?.title || null,
+                description: formInfoToUse?.description || null,
                 totalResponses: totalResponses || 0,
+                totalResponsesFormatted: language === "ar"
+                    ? toArabicDigits(String(totalResponses || 0), language)
+                    : String(totalResponses || 0),
             };
 
-            // Use eventInfo if available, otherwise fallback to formInfo
-            const eventDataForExport = currentEventInfo || formInfo || {};
+
+            const eventDataForExport = (translatedEventInfo || currentEventInfo) || formInfoToUse || {};
+
+            if (eventDataForExport.startDate) {
+                eventDataForExport.startDateFormatted = formatDateWithShortMonth(
+                    eventDataForExport.startDate,
+                    language === "ar" ? "ar-SA" : "en-GB"
+                );
+            }
+            if (eventDataForExport.endDate) {
+                eventDataForExport.endDateFormatted = formatDateWithShortMonth(
+                    eventDataForExport.endDate,
+                    language === "ar" ? "ar-SA" : "en-GB"
+                );
+            }
+
+            if (eventDataForExport.registrations !== undefined) {
+                eventDataForExport.registrationsFormatted = language === "ar"
+                    ? toArabicDigits(String(eventDataForExport.registrations || 0), language)
+                    : String(eventDataForExport.registrations || 0);
+            }
 
             await exportChartsToPDF(
                 refs,
@@ -869,7 +1364,7 @@ export default function SurveyGuruInsightsPage() {
             }
 
             const formatDateTimeForExcel = (dateString) => {
-                return dayjs(dateString).format('DD-MMM-YY, hh:mm a');
+                return formatDateTimeWithLocale(dateString, language === "ar" ? "ar-SA" : "en-GB");
             };
 
             const wb = XLSX.utils.book_new();
@@ -886,11 +1381,13 @@ export default function SurveyGuruInsightsPage() {
                 return val;
             };
             const formatCountValue = (val) => {
-                return language === "ar" ? val : String(val);
+                const strVal = String(val);
+                return language === "ar" ? toArabicDigits(strVal, language) : strVal;
             };
             const leftAlignNumber = (value, fallback = 0) => {
                 const resolved = value !== undefined && value !== null ? value : fallback;
-                return `${resolved}`;
+                const strVal = `${resolved}`;
+                return language === "ar" ? toArabicDigits(strVal, language) : strVal;
             };
             const pushRow = (...cols) => {
                 const normalized = cols.map((col) =>
@@ -913,26 +1410,31 @@ export default function SurveyGuruInsightsPage() {
                 wsData.push(normalized);
             };
 
+            const eventInfoToUse = translatedEventInfo || currentEventInfo;
+            const formInfoToUse = translatedFormInfo || formInfo;
+            const questionsToUse = translatedQuestions.length > 0 ? translatedQuestions : availableQuestions;
+            const chartDataToUse = Object.keys(translatedChartData).length > 0 ? translatedChartData : chartData;
+
             // Event Details section (same format as eventreg)
-            if (currentEventInfo) {
-                pushRow(t.logoUrl, currentEventInfo.logoUrl || "N/A");
-                pushRow(t.eventName, currentEventInfo.name || "N/A");
-                pushRow(t.from, currentEventInfo.startDate ? formatDateTimeForExcel(currentEventInfo.startDate) : "N/A");
-                pushRow(t.to, currentEventInfo.endDate ? formatDateTimeForExcel(currentEventInfo.endDate) : "N/A");
-                pushRow(t.venue, currentEventInfo.venue || "N/A");
-                pushRow(t.totalRegistrations, leftAlignNumber(currentEventInfo.registrations, 0));
+            if (eventInfoToUse) {
+                pushRow(t.logoUrl, eventInfoToUse.logoUrl || "N/A");
+                pushRow(t.eventName, eventInfoToUse.name || "N/A");
+                pushRow(t.from, eventInfoToUse.startDate ? formatDateTimeForExcel(eventInfoToUse.startDate) : "N/A");
+                pushRow(t.to, eventInfoToUse.endDate ? formatDateTimeForExcel(eventInfoToUse.endDate) : "N/A");
+                pushRow(t.venue, eventInfoToUse.venue || "N/A");
+                pushRow(t.totalRegistrations, leftAlignNumber(eventInfoToUse.registrations, 0));
             }
 
             // Survey Details section
-            pushRow(t.titleOfSurvey, formInfo.title || "N/A");
-            pushRow(t.description, formInfo.description || "N/A");
+            pushRow(t.titleOfSurvey, formInfoToUse.title || "N/A");
+            pushRow(t.description, formInfoToUse.description || "N/A");
             pushRow(t.totalResponses, leftAlignNumber(totalResponses, 0));
             wsData.push([]);
 
             // Data sections for each selected question
             selectedQuestions.forEach((questionId) => {
-                const field = availableQuestions.find((f) => f.name === questionId);
-                const data = chartData[questionId];
+                const field = questionsToUse.find((f) => f.name === questionId);
+                const data = chartDataToUse[questionId] || chartData[questionId];
 
                 if (!field || !data) return;
 
@@ -948,7 +1450,10 @@ export default function SurveyGuruInsightsPage() {
                     const total = data.data.reduce((sum, d) => sum + d.value, 0);
                     data.data.forEach((item) => {
                         const percentage = ((item.value / total) * 100).toFixed(2);
-                        pushRow(toNumericIfPossible(item.label), formatCountValue(item.value), `${percentage}%`);
+                        const percentageStr = language === "ar"
+                            ? toArabicDigits(percentage, language) + "%"
+                            : `${percentage}%`;
+                        pushRow(toNumericIfPossible(item.label), formatCountValue(item.value), percentageStr);
                     });
                 } else if (data.chartType === "line") {
                     const startDateTime = getFieldParam(
@@ -963,13 +1468,14 @@ export default function SurveyGuruInsightsPage() {
                     );
                     const intervalMinutes = getFieldParam(questionId, "intervalMinutes", 60);
 
-                    pushRow(t.from, formatDateTimeForExcel(startDateTime));
-                    pushRow(t.to, formatDateTimeForExcel(endDateTime));
+                    pushRow(t.from, formatDateTimeForExcel(startDateTime.format()));
+                    pushRow(t.to, formatDateTimeForExcel(endDateTime.format()));
                     pushRow(t.intervalMinutesFull, formatCountValue(intervalMinutes));
                     pushRow(t.timestamp, t.count);
 
                     data.xData.forEach((label, idx) => {
-                        const formattedLabel = formatDateTimeForExcel(label);
+
+                        const formattedLabel = label;
                         pushRow(formattedLabel, formatCountValue(data.yData[idx]));
                     });
                 }
@@ -1137,11 +1643,12 @@ export default function SurveyGuruInsightsPage() {
                         maxWidth: "100%",
                     }}
                 >
-                    {availableQuestions.map((field) => (
+                    {(translatedQuestions.length > 0 ? translatedQuestions : availableQuestions).map((field) => (
                         <QuestionChip
                             key={field.name}
                             fieldKey={field.name}
                             field={field}
+                            translatedLabel={field.label}
                             isSelected={selectedQuestions.includes(field.name)}
                             onClick={() => {
                                 setSelectedQuestions((prev) =>
@@ -1186,6 +1693,8 @@ export default function SurveyGuruInsightsPage() {
                             <ChartVisualization
                                 selectedField={questionId}
                                 chartData={chartData}
+                                translatedChartData={translatedChartData}
+                                translatedQuestions={translatedQuestions.length > 0 ? translatedQuestions : availableQuestions}
                                 intervalMinutes={getFieldParam(
                                     questionId,
                                     "intervalMinutes",
@@ -1228,6 +1737,7 @@ export default function SurveyGuruInsightsPage() {
                                     }
                                 }}
                                 t={t}
+                                language={language}
                             />
                         </Paper>
                     ))
