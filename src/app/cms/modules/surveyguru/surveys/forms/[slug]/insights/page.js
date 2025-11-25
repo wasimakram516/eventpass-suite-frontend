@@ -32,6 +32,7 @@ import { exportChartsToPDF } from "@/components/badges/pdfExportCharts";
 import { Button, CircularProgress } from "@mui/material";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import { formatDateTimeWithLocale } from "@/utils/dateUtils";
+import * as XLSX from "xlsx";
 
 const translations = {
     en: {
@@ -50,6 +51,24 @@ const translations = {
         exportInsights: "Export Insights",
         exporting: "Exporting...",
         exportRawData: "Export Raw Data",
+        venue: "Venue",
+        registrations: "Registrations",
+        type: "Type",
+        page: "Page",
+        of: "of",
+        rating: "Rating",
+        titleOfSurvey: "Title of survey",
+        description: "Description",
+        totalResponses: "Total Responses",
+        logoUrl: "Logo URL",
+        eventName: "Event Name",
+        category: "Category",
+        count: "Count",
+        percentage: "Percentage",
+        value: "Value",
+        intervalMinutesFull: "Interval (minutes)",
+        timestamp: "Timestamp",
+        totalRegistrations: "Total Registrations",
     },
     ar: {
         pageTitle: "تحليلات ذكية",
@@ -67,6 +86,24 @@ const translations = {
         exportInsights: "تصدير التحليلات",
         exportRawData: "تصدير البيانات الأولية",
         exporting: "جاري التصدير...",
+        venue: "الموقع",
+        registrations: "التسجيلات",
+        type: "النوع",
+        page: "صفحة",
+        of: "من",
+        rating: "التقييم",
+        titleOfSurvey: "عنوان الاستطلاع",
+        description: "الوصف",
+        totalResponses: "إجمالي الردود",
+        logoUrl: "رابط الشعار",
+        eventName: "اسم الحدث",
+        category: "الفئة",
+        count: "العدد",
+        percentage: "النسبة المئوية",
+        value: "القيمة",
+        intervalMinutesFull: "الفاصل الزمني (بالدقائق)",
+        timestamp: "الطابع الزمني",
+        totalRegistrations: "إجمالي التسجيلات",
     },
 };
 
@@ -410,11 +447,12 @@ const ChartVisualization = ({
                                     minWidth: { xs: "100%", md: "220px" },
                                     width: { xs: "100%", md: "auto" },
                                     overflow: "auto",
-                                    pr: { xs: 0, md: 1 },
+                                    px: { xs: 0, md: 2.5 },
                                     display: "flex",
                                     flexDirection: "column",
                                     justifyContent: "center",
                                     alignItems: { xs: "center", md: "flex-start" },
+                                    direction: "ltr",
                                 }}
                             >
                                 {field.data.map((item, idx) => {
@@ -428,6 +466,8 @@ const ChartVisualization = ({
                                                 alignItems: "center",
                                                 gap: 1,
                                                 mb: 1.5,
+                                                direction: "ltr",
+                                                ml: { xs: 0, md: 1 },
                                             }}
                                         >
                                             <Box
@@ -446,6 +486,8 @@ const ChartVisualization = ({
                                                     color: "#1f2937",
                                                     whiteSpace: "nowrap",
                                                     fontSize: { xs: "0.875rem", md: "0.875rem" },
+                                                    direction: "ltr",
+                                                    textAlign: "left",
                                                 }}
                                             >
                                                 {item.label} {percentage}% ({item.value})
@@ -538,7 +580,7 @@ const ChartVisualization = ({
 
 export default function SurveyGuruInsightsPage() {
     const { slug } = useParams();
-    const { t, dir } = useI18nLayout(translations);
+    const { t, dir, language } = useI18nLayout(translations);
     const [selectedQuestions, setSelectedQuestions] = useState([]);
     const [chartData, setChartData] = useState({});
     const [fieldParams, setFieldParams] = useState({});
@@ -789,7 +831,16 @@ export default function SurveyGuruInsightsPage() {
             // Use eventInfo if available, otherwise fallback to formInfo
             const eventDataForExport = currentEventInfo || formInfo || {};
 
-            await exportChartsToPDF(refs, labels, chartDataArray, eventDataForExport, surveyInfo);
+            await exportChartsToPDF(
+                refs,
+                labels,
+                chartDataArray,
+                eventDataForExport,
+                surveyInfo,
+                language,
+                dir,
+                t
+            );
         } catch (error) {
             console.error("PDF export failed:", error);
             alert("Failed to export PDF. Please try again.");
@@ -817,26 +868,66 @@ export default function SurveyGuruInsightsPage() {
                 }
             }
 
-            const lines = [];
-            const formatDateTimeForCSV = (dateString) => {
+            const formatDateTimeForExcel = (dateString) => {
                 return dayjs(dateString).format('DD-MMM-YY, hh:mm a');
+            };
+
+            const wb = XLSX.utils.book_new();
+            const wsData = [];
+            const toNumericIfPossible = (val) => {
+                if (language !== "ar") return val;
+                if (typeof val === "number") return val;
+                if (typeof val === "string") {
+                    const trimmed = val.trim();
+                    if (trimmed !== "" && Number.isFinite(Number(trimmed))) {
+                        return Number(trimmed);
+                    }
+                }
+                return val;
+            };
+            const formatCountValue = (val) => {
+                return language === "ar" ? val : String(val);
+            };
+            const leftAlignNumber = (value, fallback = 0) => {
+                const resolved = value !== undefined && value !== null ? value : fallback;
+                return `${resolved}`;
+            };
+            const pushRow = (...cols) => {
+                const normalized = cols.map((col) =>
+                    col === undefined || col === null ? "" : col
+                );
+                if (language === "ar") {
+                    if (normalized.length === 1) {
+                        wsData.push(["", "", normalized[0]]);
+                        return;
+                    }
+                    if (normalized.length === 2) {
+                        wsData.push(["", normalized[1], normalized[0]]);
+                        return;
+                    }
+                    if (normalized.length === 3) {
+                        wsData.push([normalized[2], normalized[1], normalized[0]]);
+                        return;
+                    }
+                }
+                wsData.push(normalized);
             };
 
             // Event Details section (same format as eventreg)
             if (currentEventInfo) {
-                lines.push([`Logo URL:`, currentEventInfo.logoUrl || `N/A`].join(`,`));
-                lines.push([`Event Name:`, currentEventInfo.name || `N/A`].join(`,`));
-                lines.push([`From:`, currentEventInfo.startDate ? `"${formatDateTimeForCSV(currentEventInfo.startDate)}"` : `N/A`].join(`,`));
-                lines.push([`To:`, currentEventInfo.endDate ? `"${formatDateTimeForCSV(currentEventInfo.endDate)}"` : `N/A`].join(`,`));
-                lines.push([`Venue:`, currentEventInfo.venue || `N/A`].join(`,`));
-                lines.push([`Total Registrations:`, `\t${currentEventInfo.registrations || 0}`].join(`,`));
+                pushRow(t.logoUrl, currentEventInfo.logoUrl || "N/A");
+                pushRow(t.eventName, currentEventInfo.name || "N/A");
+                pushRow(t.from, currentEventInfo.startDate ? formatDateTimeForExcel(currentEventInfo.startDate) : "N/A");
+                pushRow(t.to, currentEventInfo.endDate ? formatDateTimeForExcel(currentEventInfo.endDate) : "N/A");
+                pushRow(t.venue, currentEventInfo.venue || "N/A");
+                pushRow(t.totalRegistrations, leftAlignNumber(currentEventInfo.registrations, 0));
             }
 
             // Survey Details section
-            lines.push([`Title of survey:`, formInfo.title || `N/A`].join(`,`));
-            lines.push([`Description:`, formInfo.description || `N/A`].join(`,`));
-            lines.push([`Total Responses:`, `\t${totalResponses || 0}`].join(`,`));
-            lines.push([]);
+            pushRow(t.titleOfSurvey, formInfo.title || "N/A");
+            pushRow(t.description, formInfo.description || "N/A");
+            pushRow(t.totalResponses, leftAlignNumber(totalResponses, 0));
+            wsData.push([]);
 
             // Data sections for each selected question
             selectedQuestions.forEach((questionId) => {
@@ -845,25 +936,19 @@ export default function SurveyGuruInsightsPage() {
 
                 if (!field || !data) return;
 
-                lines.push([`=== ${field.label} ===`]);
+                pushRow(`=== ${field.label} ===`);
                 const fieldTypeLabel = getFieldTypeLabel(field);
                 if (fieldTypeLabel) {
-                    lines.push([`Type:`, fieldTypeLabel].join(`,`));
+                    pushRow(t.type, fieldTypeLabel);
                 }
 
                 if (data.chartType === "pie") {
-                    lines.push([`Value`, `Count`, `Percentage`].join(`,`));
+                    pushRow(t.value, t.count, t.percentage);
 
                     const total = data.data.reduce((sum, d) => sum + d.value, 0);
                     data.data.forEach((item) => {
                         const percentage = ((item.value / total) * 100).toFixed(2);
-                        const labelValue = item.label.replace(/"/g, `""`);
-                        const formattedLabel = /^\d+$/.test(labelValue) ? `\t${labelValue}` : `"${labelValue}"`;
-                        lines.push([
-                            formattedLabel,
-                            `\t${item.value}`,
-                            `\t${percentage}%`,
-                        ].join(`,`));
+                        pushRow(toNumericIfPossible(item.label), formatCountValue(item.value), `${percentage}%`);
                     });
                 } else if (data.chartType === "line") {
                     const startDateTime = getFieldParam(
@@ -878,34 +963,33 @@ export default function SurveyGuruInsightsPage() {
                     );
                     const intervalMinutes = getFieldParam(questionId, "intervalMinutes", 60);
 
-                    const formatDateTimeForCSV = (dateTime) => {
-                        return dayjs(dateTime).format('DD-MMM-YY, hh:mm a');
-                    };
-
-                    lines.push([`From:`, `"${formatDateTimeForCSV(startDateTime)}"`].join(`,`));
-                    lines.push([`To:`, `"${formatDateTimeForCSV(endDateTime)}"`].join(`,`));
-                    lines.push([`Interval (minutes):`, `\t${intervalMinutes}`].join(`,`));
-                    lines.push([`Timestamp`, `Count`].join(`,`));
+                    pushRow(t.from, formatDateTimeForExcel(startDateTime));
+                    pushRow(t.to, formatDateTimeForExcel(endDateTime));
+                    pushRow(t.intervalMinutesFull, formatCountValue(intervalMinutes));
+                    pushRow(t.timestamp, t.count);
 
                     data.xData.forEach((label, idx) => {
-                        const formattedLabel = formatDateTimeForCSV(label);
-                        lines.push([
-                            `"${formattedLabel}"`,
-                            `\t${data.yData[idx]}`,
-                        ].join(`,`));
+                        const formattedLabel = formatDateTimeForExcel(label);
+                        pushRow(formattedLabel, formatCountValue(data.yData[idx]));
                     });
                 }
 
-                lines.push([]);
+                wsData.push([]);
             });
 
-            // Generate and download CSV
-            const csvContent = `\uFEFF` + lines.join(`\n`);
-            const blob = new Blob([csvContent], { type: `text/csv;charset=utf-8;` });
-            const link = document.createElement(`a`);
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+            if (language === "ar") {
+                ws["!views"] = [{ rightToLeft: true }];
+            }
+            XLSX.utils.book_append_sheet(wb, ws, "Insights Data");
+
+            const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+            const blob = new Blob([excelBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+            const link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
-            link.download = `${formInfo.slug || `form`}_insights_raw_data.csv`;
+            link.download = `${formInfo.slug || "form"}_insights_raw_data.xlsx`;
             link.click();
+            URL.revokeObjectURL(link.href);
         } catch (error) {
             console.error("Raw data export failed:", error);
         }
