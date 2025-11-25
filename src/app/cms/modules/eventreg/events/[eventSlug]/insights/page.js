@@ -32,6 +32,7 @@ import { exportChartsToPDF } from "@/components/badges/pdfExportCharts";
 import { Button, CircularProgress } from "@mui/material";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import { formatDateTimeWithLocale } from "@/utils/dateUtils";
+import * as XLSX from "xlsx";
 
 const translations = {
     en: {
@@ -51,6 +52,20 @@ const translations = {
         exportInsights: "Export Insights",
         exporting: "Exporting...",
         exportRawData: "Export Raw Data",
+        venue: "Venue",
+        registrations: "Registrations",
+        type: "Type",
+        page: "Page",
+        of: "of",
+        rating: "Rating",
+        logoUrl: "Logo URL",
+        eventName: "Event Name",
+        category: "Category",
+        count: "Count",
+        percentage: "Percentage",
+        intervalMinutesFull: "Interval (minutes)",
+        timestamp: "Timestamp",
+        totalRegistrations: "Total Registrations",
     },
     ar: {
         pageTitle: "تحليلات ذكية",
@@ -69,6 +84,20 @@ const translations = {
         exportInsights: "تصدير التحليلات",
         exportRawData: "تصدير البيانات الأولية",
         exporting: "جاري التصدير...",
+        venue: "الموقع",
+        registrations: "التسجيلات",
+        type: "النوع",
+        page: "صفحة",
+        of: "من",
+        rating: "التقييم",
+        logoUrl: "رابط الشعار",
+        eventName: "اسم الحدث",
+        category: "الفئة",
+        count: "العدد",
+        percentage: "النسبة المئوية",
+        intervalMinutesFull: "الفاصل الزمني (بالدقائق)",
+        timestamp: "الطابع الزمني",
+        totalRegistrations: "إجمالي التسجيلات",
     },
 };
 
@@ -402,11 +431,12 @@ const ChartVisualization = ({
                                     minWidth: { xs: "100%", md: "220px" },
                                     width: { xs: "100%", md: "auto" },
                                     overflow: "auto",
-                                    pr: { xs: 0, md: 1 },
+                                    px: { xs: 0, md: 2.5 },
                                     display: "flex",
                                     flexDirection: "column",
                                     justifyContent: "center",
                                     alignItems: { xs: "center", md: "flex-start" },
+                                    direction: "ltr",
                                 }}
                             >
                                 {field.data.map((item, idx) => {
@@ -420,6 +450,8 @@ const ChartVisualization = ({
                                                 alignItems: "center",
                                                 gap: 1,
                                                 mb: 1.5,
+                                                direction: "ltr",
+                                                ml: { xs: 0, md: 1 },
                                             }}
                                         >
                                             <Box
@@ -438,6 +470,8 @@ const ChartVisualization = ({
                                                     color: "#1f2937",
                                                     whiteSpace: "nowrap",
                                                     fontSize: { xs: "0.875rem", md: "0.875rem" },
+                                                    direction: "ltr",
+                                                    textAlign: "left",
                                                 }}
                                             >
                                                 {item.label} {percentage}% ({item.value})
@@ -530,7 +564,7 @@ const ChartVisualization = ({
 
 export default function AnalyticsDashboard() {
     const { eventSlug } = useParams();
-    const { t, dir } = useI18nLayout(translations);
+    const { t, dir, language } = useI18nLayout(translations);
     const [selectedFields, setSelectedFields] = useState([]);
     const [chartData, setChartData] = useState({});
     const [fieldParams, setFieldParams] = useState({});
@@ -788,7 +822,16 @@ export default function AnalyticsDashboard() {
                 };
             });
 
-            await exportChartsToPDF(refs, labels, chartDataArray, eventInfo);
+            await exportChartsToPDF(
+                refs,
+                labels,
+                chartDataArray,
+                eventInfo,
+                null,
+                language,
+                dir,
+                t
+            );
         } catch (error) {
             console.error("PDF export failed:", error);
         }
@@ -800,20 +843,60 @@ export default function AnalyticsDashboard() {
 
         setExportRawLoading(true);
         try {
-            const lines = [];
-
-            // Event Details section
-            lines.push([`Logo URL:`, eventInfo.logoUrl || `N/A`].join(`,`));
-            lines.push([`Event Name:`, eventInfo.name || `N/A`].join(`,`));
-            const formatDateTimeForCSV = (dateString) => {
+            const formatDateTimeForExcel = (dateString) => {
                 return dayjs(dateString).format('DD-MMM-YY, hh:mm a');
             };
 
-            lines.push([`From:`, eventInfo.startDate ? `"${formatDateTimeForCSV(eventInfo.startDate)}"` : `N/A`].join(`,`));
-            lines.push([`To:`, eventInfo.endDate ? `"${formatDateTimeForCSV(eventInfo.endDate)}"` : `N/A`].join(`,`));
-            lines.push([`Venue:`, eventInfo.venue || `N/A`].join(`,`));
-            lines.push([`Total Registrations:`, `\t${eventInfo.registrations || 0}`].join(`,`));
-            lines.push([]);
+            const wb = XLSX.utils.book_new();
+            const wsData = [];
+            const toNumericIfPossible = (val) => {
+                if (language !== "ar") return val;
+                if (typeof val === "number") return val;
+                if (typeof val === "string") {
+                    const trimmed = val.trim();
+                    if (trimmed !== "" && Number.isFinite(Number(trimmed))) {
+                        return Number(trimmed);
+                    }
+                }
+                return val;
+            };
+            const formatCountValue = (val) => {
+                return language === "ar" ? val : String(val);
+            };
+            const leftAlignNumber = (value, fallback = 0) => {
+                const resolved = value !== undefined && value !== null ? value : fallback;
+                return `${resolved}`;
+            };
+            const pushRow = (...cols) => {
+                const normalized = cols.map((col) =>
+                    col === undefined || col === null ? "" : col
+                );
+                if (language === "ar") {
+                    if (normalized.length === 1) {
+                        wsData.push(["", "", normalized[0]]);
+                        return;
+                    }
+                    if (normalized.length === 2) {
+                        wsData.push(["", normalized[1], normalized[0]]);
+                        return;
+                    }
+                    if (normalized.length === 3) {
+                        wsData.push([normalized[2], normalized[1], normalized[0]]);
+                        return;
+                    }
+                }
+                wsData.push(normalized);
+            };
+
+            // Event Details section
+            pushRow(t.logoUrl, eventInfo.logoUrl || "N/A");
+            pushRow(t.eventName, eventInfo.name || "N/A");
+            pushRow(t.from, eventInfo.startDate ? formatDateTimeForExcel(eventInfo.startDate) : "N/A");
+            pushRow(t.to, eventInfo.endDate ? formatDateTimeForExcel(eventInfo.endDate) : "N/A");
+            pushRow(t.venue, eventInfo.venue || "N/A");
+            pushRow(t.totalRegistrations, leftAlignNumber(eventInfo.registrations, 0));
+            wsData.push([]);
+
             // Data sections for each selected field
             selectedFields.forEach((fieldName) => {
                 const field = availableFields.find((f) => f.name === fieldName);
@@ -821,23 +904,17 @@ export default function AnalyticsDashboard() {
 
                 if (!field || !data) return;
 
-                lines.push([`=== ${field.label} ===`]);
+                pushRow(`=== ${field.label} ===`);
 
                 if (data.chartType === "pie") {
                     const topN = getFieldParam(fieldName, "topN", 10);
-                    lines.push([`Top N:`, `\t${topN}`].join(`,`));
-                    lines.push([`Category`, `Count`, `Percentage`].join(`,`));
+                    pushRow(t.topN, formatCountValue(topN));
+                    pushRow(t.category, t.count, t.percentage);
 
                     const total = data.data.reduce((sum, d) => sum + d.value, 0);
                     data.data.forEach((item) => {
                         const percentage = ((item.value / total) * 100).toFixed(2);
-                        const labelValue = item.label.replace(/"/g, `""`);
-                        const formattedLabel = /^\d+$/.test(labelValue) ? `\t${labelValue}` : `"${labelValue}"`;
-                        lines.push([
-                            formattedLabel,
-                            `\t${item.value}`,
-                            `\t${percentage}%`,
-                        ].join(`,`));
+                        pushRow(toNumericIfPossible(item.label), formatCountValue(item.value), `${percentage}%`);
                     });
                 } else if (data.chartType === "line") {
                     const startDateTime = getFieldParam(
@@ -852,34 +929,34 @@ export default function AnalyticsDashboard() {
                     );
                     const intervalMinutes = getFieldParam(fieldName, "intervalMinutes", 60);
 
-                    const formatDateTimeForCSV = (dateTime) => {
-                        return dayjs(dateTime).format('DD-MMM-YY, hh:mm a');
-                    };
-
-                    lines.push([`From:`, `"${formatDateTimeForCSV(startDateTime)}"`].join(`,`));
-                    lines.push([`To:`, `"${formatDateTimeForCSV(endDateTime)}"`].join(`,`));
-                    lines.push([`Interval (minutes):`, `\t${intervalMinutes}`].join(`,`));
-                    lines.push([`Timestamp`, `Count`].join(`,`));
+                    pushRow(t.from, formatDateTimeForExcel(startDateTime));
+                    pushRow(t.to, formatDateTimeForExcel(endDateTime));
+                    pushRow(t.intervalMinutesFull, formatCountValue(intervalMinutes));
+                    pushRow(t.timestamp, t.count);
 
                     data.xData.forEach((label, idx) => {
-                        const formattedLabel = formatDateTimeForCSV(label);
-                        lines.push([
-                            `"${formattedLabel}"`,
-                            `\t${data.yData[idx]}`,
-                        ].join(`,`));
+                        const formattedLabel = formatDateTimeForExcel(label);
+                        pushRow(formattedLabel, formatCountValue(data.yData[idx]));
                     });
                 }
 
-                lines.push([]);
+                wsData.push([]);
             });
 
-            // Generate and download CSV
-            const csvContent = `\uFEFF` + lines.join(`\n`);
-            const blob = new Blob([csvContent], { type: `text/csv;charset=utf-8;` });
-            const link = document.createElement(`a`);
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+            if (language === "ar") {
+                ws["!views"] = [{ rightToLeft: true }];
+            }
+
+            XLSX.utils.book_append_sheet(wb, ws, "Insights Data");
+            const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+            const blob = new Blob([excelBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+            const link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
-            link.download = `${eventInfo.slug || `event`}_insights_raw_data.csv`;
+            link.download = `${eventInfo.slug || "event"}_insights_raw_data.xlsx`;
             link.click();
+            URL.revokeObjectURL(link.href);
         } catch (error) {
             console.error("Raw data export failed:", error);
         }
