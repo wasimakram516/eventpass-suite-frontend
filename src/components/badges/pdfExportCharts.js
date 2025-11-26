@@ -1,88 +1,343 @@
 import html2canvas from "html2canvas";
-import jsPDF from "jspdf";
+import { PDFDocument, rgb } from "pdf-lib";
+import fontkit from "@pdf-lib/fontkit";
 import { formatDateTimeWithLocale, formatDate } from "@/utils/dateUtils";
 
-const addEventHeader = async (pdf, eventInfo, pageWidth, margin, surveyInfo = null) => {
-  if (!eventInfo) return margin;
+// Layout & font sizes
+const FONT_TITLE = 16;
+const FONT_SECTION = 14;
+const FONT_LABEL = 9;
+const FONT_VALUE = 9;
+const FONT_PAGENUM = 10;
 
-  const logoMaxWidth = 40;
-  const logoMaxHeight = 20;
-  let currentY = margin;
+const LEFT_MARGIN = 42.52;
+const PAGE_WIDTH = 595;
+const PAGE_HEIGHT = 842;
+const TEXT_WRAP_WIDTH = 520;
+const LINE_HEIGHT = 14.17;
+const CHART_MAX_HEIGHT = 283.47;
+const SPACING = 22.68;
+
+// Load Cairo fonts for Arabic support
+const loadCairoFonts = async (pdf) => {
+  try {
+    const regularResponse = await fetch("/fonts/cairo/Cairo-Regular.ttf");
+    const regularBytes = await regularResponse.arrayBuffer();
+    const font = await pdf.embedFont(regularBytes);
+
+    const boldResponse = await fetch("/fonts/cairo/Cairo-Bold.ttf");
+    const boldBytes = await boldResponse.arrayBuffer();
+    const bold = await pdf.embedFont(boldBytes);
+
+    return { font, bold };
+  } catch (error) {
+    console.error("Error loading Cairo fonts:", error);
+    return null;
+  }
+};
+
+// function to get text X position based on RTL/LTR
+const getTextX = (text, x, pageWidth, margin, isRTL, align = "left", font, fontSize) => {
+  if (isRTL && align === "left") {
+    const textWidth = font.widthOfTextAtSize(text, fontSize);
+    return pageWidth - margin - textWidth;
+  }
+  return x;
+};
+
+// function to render label and value with proper RTL/LTR positioning
+const renderLabelValue = (page, label, value, x, y, pageWidth, margin, isRTL, font, boldFont, fontSize) => {
+  const colon = ":";
+  const spacing = 2.8;
+
+  if (isRTL) {
+    const valueText = String(value);
+    const labelText = String(label);
+    const labelWidth = boldFont.widthOfTextAtSize(labelText, fontSize);
+    const colonWidth = font.widthOfTextAtSize(colon, fontSize);
+    const valueWidth = font.widthOfTextAtSize(valueText, fontSize);
+    const labelX = pageWidth - margin - labelWidth;
+    const colonX = labelX - spacing - colonWidth;
+    const valueX = colonX - spacing - valueWidth;
+
+    page.drawText(valueText, {
+      x: valueX,
+      y: y,
+      size: fontSize,
+      font: font,
+    });
+    page.drawText(colon, {
+      x: colonX,
+      y: y,
+      size: fontSize,
+      font: font,
+    });
+    page.drawText(labelText, {
+      x: labelX,
+      y: y,
+      size: fontSize,
+      font: boldFont,
+    });
+  } else {
+    const labelText = `${label}${colon} `;
+    const labelWidth = boldFont.widthOfTextAtSize(labelText, fontSize);
+
+    page.drawText(labelText, {
+      x: x,
+      y: y,
+      size: fontSize,
+      font: boldFont,
+    });
+
+    page.drawText(String(value), {
+      x: x + labelWidth,
+      y: y,
+      size: fontSize,
+      font: font,
+    });
+  }
+};
+
+
+const addEventHeader = async (
+  pdf,
+  page,
+  eventInfo,
+  pageWidth,
+  margin,
+  surveyInfo = null,
+  language = "en",
+  isRTL = false,
+  translations = {},
+  font,
+  boldFont
+) => {
+  if (!eventInfo) return PAGE_HEIGHT - margin;
+
+  const logoMaxWidth = 113.39;
+  const logoMaxHeight = 56.69;
+  let currentY = PAGE_HEIGHT - margin;
 
   if (eventInfo.logoUrl) {
     try {
       const response = await fetch(eventInfo.logoUrl);
       const blob = await response.blob();
-      const base64 = await new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.readAsDataURL(blob);
+      const arrayBuffer = await blob.arrayBuffer();
+
+      let image;
+      if (blob.type === "image/png") {
+        image = await pdf.embedPng(arrayBuffer);
+      } else if (blob.type === "image/jpeg" || blob.type === "image/jpg") {
+        image = await pdf.embedJpg(arrayBuffer);
+      } else {
+        image = await pdf.embedPng(arrayBuffer);
+      }
+
+      const imgDims = image.scale(Math.min(
+        logoMaxWidth / image.width,
+        logoMaxHeight / image.height
+      ));
+
+      const logoX = isRTL ? pageWidth - margin - imgDims.width : margin;
+      page.drawImage(image, {
+        x: logoX,
+        y: currentY - imgDims.height,
+        width: imgDims.width,
+        height: imgDims.height,
       });
-
-      const img = new Image();
-      img.src = base64;
-      await new Promise((res) => (img.onload = res));
-      const ratio = Math.min(
-        logoMaxWidth / img.width,
-        logoMaxHeight / img.height
-      );
-      const logoWidth = img.width * ratio;
-      const logoHeight = img.height * ratio;
-
-      pdf.addImage(base64, "PNG", margin, currentY, logoWidth, logoHeight);
-      currentY += logoHeight + 3;
+      currentY -= imgDims.height + 17;
     } catch (error) {
       console.error("Error loading event logo:", error);
     }
   }
 
-  pdf.setFontSize(16);
-  pdf.setFont("helvetica", "bold");
-  pdf.setTextColor(31, 41, 55);
-  pdf.text(String(eventInfo.name || ""), margin, currentY + 5);
+  const eventName = String(eventInfo.name || "");
+  const eventNameX = getTextX(eventName, margin, pageWidth, margin, isRTL, "left", boldFont, FONT_TITLE);
+  page.drawText(eventName, {
+    x: eventNameX,
+    y: currentY,
+    size: FONT_TITLE,
+    font: boldFont,
+    color: rgb(0.12, 0.16, 0.22), // #1f2937
+  });
+  currentY -= 14.17;
 
-  currentY += 10;
+  // Event details
+  const fromDate = eventInfo.startDateFormatted || formatDate(eventInfo.startDate);
+  const toDate = eventInfo.endDateFormatted || formatDate(eventInfo.endDate);
 
-  pdf.setFontSize(9);
-  pdf.setFont("helvetica", "normal");
-  pdf.setTextColor(107, 114, 128);
+  const fromLabel = translations.from || "From";
+  const toLabel = translations.to || "To";
+  const venueLabel = translations.venue || "Venue";
+  const registrationsLabel = translations.registrations || "Registrations";
 
-  const fromDate = formatDate(eventInfo.startDate);
-  const toDate = formatDate(eventInfo.endDate);
+  renderLabelValue(page, fromLabel, fromDate, margin, currentY, pageWidth, margin, isRTL, font, boldFont, FONT_LABEL);
+  currentY -= LINE_HEIGHT;
+  renderLabelValue(page, toLabel, toDate, margin, currentY, pageWidth, margin, isRTL, font, boldFont, FONT_LABEL);
+  currentY -= LINE_HEIGHT;
+  renderLabelValue(page, venueLabel, String(eventInfo.venue || ""), margin, currentY, pageWidth, margin, isRTL, font, boldFont, FONT_LABEL);
+  currentY -= LINE_HEIGHT;
+  const registrationsValue = eventInfo.registrationsFormatted !== undefined
+    ? eventInfo.registrationsFormatted
+    : String(eventInfo.registrations || 0);
+  renderLabelValue(page, registrationsLabel, registrationsValue, margin, currentY, pageWidth, margin, isRTL, font, boldFont, FONT_LABEL);
+  currentY -= LINE_HEIGHT;
 
-  pdf.text(`From: ${fromDate}`, margin, currentY);
-  pdf.text(`To: ${toDate}`, margin, currentY + 5);
-  pdf.text(`Venue: ${String(eventInfo.venue || "")}`, margin, currentY + 10);
-  pdf.text(`Registrations: ${String(eventInfo.registrations || 0)}`, margin, currentY + 15);
-
-  currentY += 20;
-
-  //survey-specific fields only if surveyInfo is provided (survey guru only)
+  // Survey-specific fields only if surveyInfo is provided
   if (surveyInfo) {
+    const titleOfSurveyLabel = translations.titleOfSurvey || "Title of survey";
+    const descriptionLabel = translations.description || "Description";
+    const totalResponsesLabel = translations.totalResponses || "Total Responses";
+
     if (surveyInfo.title) {
-      pdf.text(`Title of survey: ${String(surveyInfo.title)}`, margin, currentY);
-      currentY += 5;
+      renderLabelValue(page, titleOfSurveyLabel, String(surveyInfo.title), margin, currentY, pageWidth, margin, isRTL, font, boldFont, FONT_LABEL);
+      currentY -= LINE_HEIGHT;
     }
 
     if (surveyInfo.description) {
       const description = String(surveyInfo.description || "");
-      const maxWidth = pageWidth - margin * 2;
-      const lines = pdf.splitTextToSize(`Description: ${description}`, maxWidth);
-      pdf.text(lines, margin, currentY);
-      currentY += lines.length * 5;
+      const maxWidth = (pageWidth - margin * 2) * 0.8;
+
+      if (isRTL) {
+        const labelText = String(descriptionLabel);
+        const colon = ":";
+        const spacing = 2.8;
+
+        const labelWidth = boldFont.widthOfTextAtSize(labelText, FONT_LABEL);
+        const colonWidth = font.widthOfTextAtSize(colon, FONT_LABEL);
+        const labelX = pageWidth - margin - labelWidth;
+        const colonX = labelX - spacing - colonWidth;
+
+        const availableWidth = colonX - margin - spacing;
+
+        const words = description.split(" ");
+        const lines = [];
+        let currentLine = "";
+
+        for (const word of words) {
+          const testLine = currentLine ? `${currentLine} ${word}` : word;
+          const testWidth = font.widthOfTextAtSize(testLine, FONT_VALUE);
+
+          if (testWidth > availableWidth && currentLine) {
+            lines.push(currentLine);
+            currentLine = word;
+          } else {
+            currentLine = testLine;
+          }
+        }
+        if (currentLine) lines.push(currentLine);
+
+        page.drawText(labelText, {
+          x: labelX,
+          y: currentY,
+          size: FONT_LABEL,
+          font: boldFont,
+        });
+        page.drawText(colon, {
+          x: colonX,
+          y: currentY,
+          size: FONT_LABEL,
+          font: font,
+        });
+
+        if (lines.length > 0 && lines[0]) {
+          const firstLineWidth = font.widthOfTextAtSize(lines[0], FONT_VALUE);
+          const firstLineX = colonX - spacing - firstLineWidth;
+          page.drawText(lines[0], {
+            x: firstLineX,
+            y: currentY,
+            size: FONT_VALUE,
+            font: font,
+          });
+          currentY -= LINE_HEIGHT;
+
+          for (let i = 1; i < lines.length; i++) {
+            const lineWidth = font.widthOfTextAtSize(lines[i], FONT_VALUE);
+            const lineX = pageWidth - margin - lineWidth;
+            page.drawText(lines[i], {
+              x: lineX,
+              y: currentY,
+              size: FONT_VALUE,
+              font: font,
+            });
+            currentY -= LINE_HEIGHT;
+          }
+        } else {
+          currentY -= LINE_HEIGHT;
+        }
+      } else {
+        const labelText = `${descriptionLabel}: `;
+        const labelWidth = boldFont.widthOfTextAtSize(labelText, FONT_LABEL);
+
+        page.drawText(labelText, {
+          x: margin,
+          y: currentY,
+          size: FONT_LABEL,
+          font: boldFont,
+        });
+
+        const descriptionStartX = margin + labelWidth;
+        const availableWidth = maxWidth - labelWidth;
+
+        const words = description.split(" ");
+        const lines = [];
+        let currentLine = "";
+
+        for (const word of words) {
+          const testLine = currentLine ? `${currentLine} ${word}` : word;
+          const testWidth = font.widthOfTextAtSize(testLine, FONT_VALUE);
+
+          if (testWidth > availableWidth && currentLine) {
+            lines.push(currentLine);
+            currentLine = word;
+          } else {
+            currentLine = testLine;
+          }
+        }
+        if (currentLine) lines.push(currentLine);
+
+        if (lines.length > 0 && lines[0]) {
+          page.drawText(lines[0], {
+            x: descriptionStartX,
+            y: currentY,
+            size: FONT_VALUE,
+            font: font,
+          });
+          currentY -= LINE_HEIGHT;
+
+          for (let i = 1; i < lines.length; i++) {
+            page.drawText(lines[i], {
+              x: margin,
+              y: currentY,
+              size: FONT_VALUE,
+              font: font,
+            });
+            currentY -= LINE_HEIGHT;
+          }
+        } else {
+          currentY -= LINE_HEIGHT;
+        }
+      }
     }
 
     if (surveyInfo.totalResponses !== undefined && surveyInfo.totalResponses !== null) {
-      pdf.text(`Total Responses: ${String(surveyInfo.totalResponses)}`, margin, currentY);
-      currentY += 5;
+      const totalResponsesValue = surveyInfo.totalResponsesFormatted !== undefined
+        ? surveyInfo.totalResponsesFormatted
+        : String(surveyInfo.totalResponses);
+      renderLabelValue(page, totalResponsesLabel, totalResponsesValue, margin, currentY, pageWidth, margin, isRTL, font, boldFont, FONT_LABEL);
+      currentY -= LINE_HEIGHT;
     }
   }
 
-  pdf.setDrawColor(229, 231, 235);
-  pdf.setLineWidth(0.5);
-  pdf.line(margin, currentY, pageWidth - margin, currentY);
+  // Separator line
+  page.drawLine({
+    start: { x: margin, y: currentY },
+    end: { x: pageWidth - margin, y: currentY },
+    thickness: 0.5,
+    color: rgb(0.6, 0.6, 0.6),
+  });
 
-  return currentY;
+  return currentY - 8.5;
 };
 
 export const exportChartsToPDF = async (
@@ -90,19 +345,55 @@ export const exportChartsToPDF = async (
   fieldLabels,
   chartDataArray,
   eventInfo,
-  surveyInfo = null
+  surveyInfo = null,
+  language = "en",
+  dir = "ltr",
+  translations = {}
 ) => {
-  const pdf = new jsPDF("p", "mm", "a4");
-  const pageWidth = pdf.internal.pageSize.getWidth();
-  const pageHeight = pdf.internal.pageSize.getHeight();
-  const margin = 15;
-  const chartWidth = pageWidth - margin * 2;
-  const maxChartHeight = 100;
-  const titleHeight = 10;
-  const spacing = 8;
+  const pdf = await PDFDocument.create();
+  pdf.registerFontkit(fontkit);
 
-  let yPosition = (await addEventHeader(pdf, eventInfo, pageWidth, margin, surveyInfo)) + spacing;
+  const isRTL = dir === "rtl";
+  const pageWidth = PAGE_WIDTH;
+  const pageHeight = PAGE_HEIGHT;
+  const margin = LEFT_MARGIN;
+  const chartWidth = pageWidth - margin * 2;
+  const maxChartHeight = CHART_MAX_HEIGHT;
+  const spacing = SPACING;
+
+  let font, boldFont;
+  const fonts = await loadCairoFonts(pdf);
+  if (fonts) {
+    font = fonts.font;
+    boldFont = fonts.bold;
+  } else {
+    font = await pdf.embedFont("Helvetica");
+    boldFont = await pdf.embedFont("Helvetica-Bold");
+  }
+
+  let page = pdf.addPage([pageWidth, pageHeight]);
+  let yPosition = await addEventHeader(
+    pdf,
+    page,
+    eventInfo,
+    pageWidth,
+    margin,
+    surveyInfo,
+    language,
+    isRTL,
+    translations,
+    font,
+    boldFont
+  );
+  yPosition -= spacing;
   let isFirstChart = true;
+
+  const ensureSpace = async (needed) => {
+    if (yPosition < needed + margin) {
+      page = pdf.addPage([pageWidth, pageHeight]);
+      yPosition = pageHeight - margin;
+    }
+  };
 
   for (let i = 0; i < chartRefs.length; i++) {
     const chartElement = chartRefs[i];
@@ -126,74 +417,171 @@ export const exportChartsToPDF = async (
       legendElements.forEach((el) => (el.style.display = ""));
 
       const imgData = canvas.toDataURL("image/png");
+      const imgBytes = await fetch(imgData).then((res) => res.arrayBuffer());
+      const chartImage = await pdf.embedPng(imgBytes);
+
       const imgAspectRatio = canvas.width / canvas.height;
       const chartHeight = Math.min(chartWidth / imgAspectRatio, maxChartHeight);
 
-      const totalHeight = titleHeight + spacing + chartHeight + spacing;
+      const titleHeight = 14;
+      const metadataHeight = chartData.chartType === "line" ? 45 : chartData.questionType || chartData.type === "multi" || chartData.type === "rating" || chartData.type === "nps" ? 14 : chartData.chartType === "pie" && (chartData.type === "text" || chartData.type === "number" || chartData.type === "multi" || chartData.questionType === "multi") && !surveyInfo ? 14 : 0;
+      const totalHeight = titleHeight + spacing + metadataHeight + spacing + chartHeight + spacing;
 
-      if (yPosition + totalHeight > pageHeight - margin && !isFirstChart) {
-        pdf.addPage();
-        yPosition = margin + spacing;
+      await ensureSpace(totalHeight);
+
+      if (yPosition - totalHeight < margin && !isFirstChart) {
+        page = pdf.addPage([pageWidth, pageHeight]);
+        yPosition = pageHeight - margin;
       }
 
-      pdf.setFontSize(14);
-      pdf.setFont("helvetica", "bold");
-      pdf.setTextColor(31, 41, 55);
-      pdf.text(fieldLabel, margin, yPosition);
+      const fieldLabelX = getTextX(fieldLabel, margin, pageWidth, margin, isRTL, "left", boldFont, FONT_SECTION);
+      page.drawText(fieldLabel, {
+        x: fieldLabelX,
+        y: yPosition,
+        size: FONT_SECTION,
+        font: boldFont,
+        color: rgb(0.12, 0.16, 0.22), // #1f2937
+      });
+      yPosition -= 20;
 
-      yPosition += 7;
-
-      pdf.setFontSize(9);
-      pdf.setFont("helvetica", "normal");
-      pdf.setTextColor(107, 114, 128);
+      const typeLabel = translations.type || "Type";
+      const topNLabel = translations.topN || "Top N";
+      const intervalLabel = translations.intervalMinutes || "Interval (min)";
 
       if (surveyInfo && chartData) {
         const fieldType = chartData.questionType || chartData.type;
-        let typeLabel = "";
+        let typeValue = "";
         if (fieldType === "time") {
-          typeLabel = "";
+          typeValue = "";
         } else if (fieldType === "multi") {
-          typeLabel = "MCQ";
+          typeValue = "MCQ";
         } else if (fieldType === "rating") {
-          typeLabel = "Rating";
+          typeValue = "Rating";
         } else if (fieldType === "nps") {
-          typeLabel = "NPS";
+          typeValue = "NPS";
         }
 
-        if (typeLabel) {
-          pdf.text(`Type: ${typeLabel}`, margin, yPosition);
-          yPosition += 5;
+        if (typeValue) {
+          renderLabelValue(page, typeLabel, typeValue, margin, yPosition, pageWidth, margin, isRTL, font, boldFont, FONT_LABEL);
+          yPosition -= LINE_HEIGHT;
         }
       }
 
       if (
         chartData.chartType === "pie" &&
-        (chartData.type === "text" || chartData.type === "number" || chartData.type === "multi" || chartData.questionType === "multi") &&
+        (chartData.type === "text" ||
+          chartData.type === "number" ||
+          chartData.type === "multi" ||
+          chartData.questionType === "multi") &&
         !surveyInfo
       ) {
-        pdf.text(`Top ${chartData.topN || 10}`, margin, yPosition);
-        yPosition += 5;
+        renderLabelValue(page, topNLabel, String(chartData.topN || 10), margin, yPosition, pageWidth, margin, isRTL, font, boldFont, FONT_LABEL);
+        yPosition -= LINE_HEIGHT;
       } else if (chartData.chartType === "line" && chartData.type === "time") {
-        const startDate = formatDateTimeWithLocale(chartData.startDateTime);
-        const endDate = formatDateTimeWithLocale(chartData.endDateTime);
-        pdf.text(`From: ${startDate}`, margin, yPosition);
-        pdf.text(`To: ${endDate}`, margin, yPosition + 5);
-        pdf.text(
-          `Interval: ${chartData.intervalMinutes || 60} min`,
-          margin,
-          yPosition + 10
-        );
-        yPosition += 15;
+        const startDate = chartData.startDateTimeFormatted || formatDateTimeWithLocale(chartData.startDateTime);
+        const endDate = chartData.endDateTimeFormatted || formatDateTimeWithLocale(chartData.endDateTime);
+        const intervalValue = chartData.intervalMinutesFormatted || `${chartData.intervalMinutes || 60} min`;
+
+        renderLabelValue(page, translations.from || "From", startDate, margin, yPosition, pageWidth, margin, isRTL, font, boldFont, FONT_LABEL);
+        yPosition -= LINE_HEIGHT;
+        renderLabelValue(page, translations.to || "To", endDate, margin, yPosition, pageWidth, margin, isRTL, font, boldFont, FONT_LABEL);
+        yPosition -= LINE_HEIGHT;
+
+        const intervalBase = intervalLabel.replace(/\s*\(.*?\)\s*/, "").trim();
+        if (chartData.intervalMinutesFormatted && chartData.intervalMinutesSuffix) {
+          const intervalNumber = chartData.intervalMinutesFormatted;
+          const intervalSuffix = chartData.intervalMinutesSuffix;
+          const spacing = 2.8;
+          const colon = ":";
+
+          if (isRTL) {
+            const labelText = String(intervalBase);
+            const labelWidth = boldFont.widthOfTextAtSize(labelText, FONT_LABEL);
+            const colonWidth = font.widthOfTextAtSize(colon, FONT_LABEL);
+            const numberWidth = font.widthOfTextAtSize(intervalNumber, FONT_LABEL);
+            const minWidth = font.widthOfTextAtSize(intervalSuffix, FONT_LABEL);
+            const spaceWidth = font.widthOfTextAtSize(" ", FONT_LABEL);
+
+            const labelX = pageWidth - margin - labelWidth;
+            const colonX = labelX - spacing - colonWidth;
+            const valueTotalWidth = numberWidth + spaceWidth + minWidth;
+            const valueX = colonX - spacing - valueTotalWidth;
+            const numberX = valueX;
+            const minX = numberX + numberWidth + spaceWidth;
+
+            page.drawText(labelText, {
+              x: labelX,
+              y: yPosition,
+              size: FONT_LABEL,
+              font: boldFont,
+            });
+            page.drawText(colon, {
+              x: colonX,
+              y: yPosition,
+              size: FONT_LABEL,
+              font: font,
+            });
+            page.drawText(intervalNumber, {
+              x: numberX,
+              y: yPosition,
+              size: FONT_LABEL,
+              font: font,
+            });
+            page.drawText(intervalSuffix, {
+              x: minX,
+              y: yPosition,
+              size: FONT_LABEL,
+              font: font,
+            });
+          } else {
+            const labelText = `${intervalBase}${colon} `;
+            const labelWidth = boldFont.widthOfTextAtSize(labelText, FONT_LABEL);
+            const numberWidth = font.widthOfTextAtSize(intervalNumber, FONT_LABEL);
+            const spaceWidth = font.widthOfTextAtSize(" ", FONT_LABEL);
+
+            page.drawText(labelText, {
+              x: margin,
+              y: yPosition,
+              size: FONT_LABEL,
+              font: boldFont,
+            });
+            page.drawText(intervalNumber, {
+              x: margin + labelWidth,
+              y: yPosition,
+              size: FONT_LABEL,
+              font: font,
+            });
+            page.drawText(` ${intervalSuffix}`, {
+              x: margin + labelWidth + numberWidth,
+              y: yPosition,
+              size: FONT_LABEL,
+              font: font,
+            });
+          }
+        } else {
+          renderLabelValue(page, intervalBase, intervalValue, margin, yPosition, pageWidth, margin, isRTL, font, boldFont, FONT_LABEL);
+        }
+        yPosition -= LINE_HEIGHT;
       }
 
-      yPosition += spacing + 3;
-      pdf.addImage(imgData, "PNG", margin, yPosition, chartWidth, chartHeight);
-      yPosition += chartHeight + spacing;
+      yPosition -= spacing + 8.5;
 
-      pdf.setDrawColor(229, 231, 235);
-      pdf.setLineWidth(0.3);
-      pdf.line(margin, yPosition, pageWidth - margin, yPosition);
-      yPosition += spacing;
+      const chartX = isRTL ? pageWidth - margin - chartWidth : margin;
+      page.drawImage(chartImage, {
+        x: chartX,
+        y: yPosition - chartHeight,
+        width: chartWidth,
+        height: chartHeight,
+      });
+      yPosition -= chartHeight + spacing;
+
+      page.drawLine({
+        start: { x: margin, y: yPosition },
+        end: { x: pageWidth - margin, y: yPosition },
+        thickness: 0.3,
+        color: rgb(0.6, 0.6, 0.6),
+      });
+      yPosition -= spacing;
 
       isFirstChart = false;
     } catch (error) {
@@ -201,18 +589,41 @@ export const exportChartsToPDF = async (
     }
   }
 
-  const totalPages = pdf.internal.getNumberOfPages();
-  for (let i = 1; i <= totalPages; i++) {
-    pdf.setPage(i);
-    pdf.setFontSize(10);
-    pdf.setTextColor(120);
-    pdf.text(
-      `Page ${i} of ${totalPages}`,
-      pageWidth / 2,
-      pageHeight - 10,
-      { align: "center" }
-    );
+  // Add page numbers
+  const pages = pdf.getPages();
+  const totalPages = pages.length;
+  const pageLabel = translations.page || "Page";
+  const ofLabel = translations.of || "of";
+
+  for (let i = 0; i < totalPages; i++) {
+    const pg = pages[i];
+    const pageText = language === "ar"
+      ? `الصفحة ${i + 1} من ${totalPages}`
+      : `${pageLabel} ${i + 1} ${ofLabel} ${totalPages}`;
+
+    const textWidth = font.widthOfTextAtSize(pageText, FONT_PAGENUM);
+    const centeredX = (pageWidth - textWidth) / 2;
+
+    pg.drawText(pageText, {
+      x: centeredX,
+      y: 20,
+      size: FONT_PAGENUM,
+      font: font,
+      color: rgb(0.47, 0.47, 0.47), // #787878
+    });
   }
 
-  pdf.save(`${eventInfo?.name || "insights"}_charts.pdf`);
+  // Save PDF
+  const pdfBytes = await pdf.save();
+  const blob = new Blob([pdfBytes], { type: "application/pdf" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+
+  const name = surveyInfo?.title || eventInfo?.name || "insights";
+  const sanitizedName = name.replace(/[^a-zA-Z0-9_-]/g, "_").replace(/_+/g, "_").trim();
+  link.download = `${sanitizedName}_insights.pdf`;
+
+  link.click();
+  URL.revokeObjectURL(url);
 };

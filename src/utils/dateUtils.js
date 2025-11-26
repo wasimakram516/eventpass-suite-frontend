@@ -15,12 +15,13 @@ export const formatDate = (dateString) => {
 /**
  * Formats a date with time in a locale-aware way, including hour and minute.
  * @param {string} dateString - The date string to format.
+ * @param {string} locale - The locale to use (e.g., "en-GB" or "ar-SA"). Defaults to "en-GB".
  * @returns {string} - Formatted date and time string.
  */
-export const formatDateTimeWithLocale = (dateString) => {
+export const formatDateTimeWithLocale = (dateString, locale = "en-GB") => {
   const date = new Date(dateString);
 
-  return date.toLocaleString("en-GB", {
+  const formatted = date.toLocaleString("en-GB", {
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -28,6 +29,22 @@ export const formatDateTimeWithLocale = (dateString) => {
     minute: "2-digit",
     hour12: true,
   });
+
+  if (locale === "ar-SA") {
+    let translatedDate = formatted.replace(
+      /Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec/,
+      (match) => monthTranslations[match]
+    );
+
+    translatedDate = translatedDate.replace(/\bAM\b/gi, "ص");
+    translatedDate = translatedDate.replace(/\bPM\b/gi, "م");
+
+    return translatedDate.replace(/\d/g, (digit) =>
+      String.fromCharCode(digit.charCodeAt(0) + 0x0630)
+    );
+  }
+
+  return formatted;
 };
 
 /**
