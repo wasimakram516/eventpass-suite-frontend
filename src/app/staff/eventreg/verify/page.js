@@ -54,6 +54,9 @@ const translations = {
     printBadge: "Print Badge",
     printZebra: "Print Badge (Zebra)",
     printing: "Printing...",
+    registrationNotApproved: "This registration is not approved",
+    registrationPending: "This registration is pending approval from the admin",
+    registrationRejected: "This registration has been rejected by the admin",
     tooltip: {
       openScanner: "Open QR Scanner",
       cancel: "Cancel scanning",
@@ -87,6 +90,9 @@ const translations = {
     printBadge: "طباعة الشارة",
     printZebra: "طباعة الشارة (Zebra)",
     printing: "جارٍ الطباعة...",
+    registrationNotApproved: "لم يتم الموافقة على هذا التسجيل",
+    registrationPending: "هذا التسجيل في انتظار الموافقة من قبل المسؤول",
+    registrationRejected: "تم رفض هذا التسجيل من قبل المسؤول",
     tooltip: {
       openScanner: "افتح الماسح الضوئي",
       cancel: "إلغاء المسح",
@@ -108,6 +114,7 @@ export default function VerifyPage() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
+  const [approvalErrorStatus, setApprovalErrorStatus] = useState(null);
   const [printing, setPrinting] = useState(false);
   const [showPdfModal, setShowPdfModal] = useState(false);
 
@@ -160,12 +167,19 @@ export default function VerifyPage() {
     setResult(null);
 
     const res = await verifyRegistrationByToken(cleaned);
-    if (res?.error) {
+
+    if (res?.notApproved) {
       errorAudioRef.current?.play();
+      setApprovalErrorStatus(res?.approvalStatus || "pending");
+      setError(null);
+    } else if (res?.error || res?.success === false) {
+      errorAudioRef.current?.play();
+      setApprovalErrorStatus(null);
       setError(res.message || "Invalid token.");
     } else {
       successAudioRef.current?.play();
       setResult(res);
+      setApprovalErrorStatus(null);
     }
 
     setLoading(false);
@@ -191,6 +205,7 @@ export default function VerifyPage() {
     setToken("");
     setResult(null);
     setError(null);
+    setApprovalErrorStatus(null);
     setShowScanner(false);
     setManualMode(false);
     setPrinting(false);
@@ -314,7 +329,7 @@ export default function VerifyPage() {
       alignItems="center"
     >
       {/* Initial Options */}
-      {!showScanner && !loading && !result && !error && (
+      {!showScanner && !loading && !result && !error && !approvalErrorStatus && (
         <Box textAlign="center" my={4} width="100%">
           <Stack spacing={2} alignItems="center">
             <Typography variant="h6" fontWeight={600}>
@@ -437,90 +452,95 @@ export default function VerifyPage() {
             {t.verified}
           </Typography>
 
-          <List sx={{ width: "100%", maxWidth: 400 }}>
-            <ListItem>
-              <ListItemIcon>
-                <ICONS.key sx={{ color: "text.secondary" }} />
-              </ListItemIcon>
-              <ListItemText
-                primary={t.token}
-                secondary={result.token}
-                primaryTypographyProps={{ fontWeight: 500 }}
-              />
-            </ListItem>
-            {result.badgeIdentifier && (
+          {result.requiresApproval && user?.staffType === "door" ? (
+            null
+          ) : (
+
+            <List sx={{ width: "100%", maxWidth: 400 }}>
               <ListItem>
                 <ListItemIcon>
-                  <ICONS.badge sx={{ color: "text.secondary" }} />
+                  <ICONS.key sx={{ color: "text.secondary" }} />
                 </ListItemIcon>
                 <ListItemText
-                  primary={t.badgeIdentifier}
-                  secondary={result.badgeIdentifier}
+                  primary={t.token}
+                  secondary={result.token}
                   primaryTypographyProps={{ fontWeight: 500 }}
                 />
               </ListItem>
-            )}
-            <ListItem>
-              <ListItemIcon>
-                <ICONS.person sx={{ color: "text.secondary" }} />
-              </ListItemIcon>
-              <ListItemText
-                primary={t.name}
-                secondary={result.fullName || "—"}
-                primaryTypographyProps={{ fontWeight: 500 }}
-              />
-            </ListItem>
-
-            {result.title && (
+              {result.badgeIdentifier && (
+                <ListItem>
+                  <ListItemIcon>
+                    <ICONS.badge sx={{ color: "text.secondary" }} />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={t.badgeIdentifier}
+                    secondary={result.badgeIdentifier}
+                    primaryTypographyProps={{ fontWeight: 500 }}
+                  />
+                </ListItem>
+              )}
               <ListItem>
                 <ListItemIcon>
-                  <ICONS.badge sx={{ color: "text.secondary" }} />
+                  <ICONS.person sx={{ color: "text.secondary" }} />
                 </ListItemIcon>
                 <ListItemText
-                  primary={t.title}
-                  secondary={result.title}
+                  primary={t.name}
+                  secondary={result.fullName || "—"}
                   primaryTypographyProps={{ fontWeight: 500 }}
                 />
               </ListItem>
-            )}
 
-            {result.company && (
+              {result.title && (
+                <ListItem>
+                  <ListItemIcon>
+                    <ICONS.badge sx={{ color: "text.secondary" }} />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={t.title}
+                    secondary={result.title}
+                    primaryTypographyProps={{ fontWeight: 500 }}
+                  />
+                </ListItem>
+              )}
+
+              {result.company && (
+                <ListItem>
+                  <ListItemIcon>
+                    <ICONS.business sx={{ color: "text.secondary" }} />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={t.company}
+                    secondary={result.company}
+                    primaryTypographyProps={{ fontWeight: 500 }}
+                  />
+                </ListItem>
+              )}
+
+              {result.wing && (
+                <ListItem>
+                  <ListItemIcon>
+                    <ICONS.business sx={{ color: "text.secondary" }} />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={t.wing}
+                    secondary={result.wing}
+                    primaryTypographyProps={{ fontWeight: 500 }}
+                  />
+                </ListItem>
+              )}
+
               <ListItem>
                 <ListItemIcon>
-                  <ICONS.business sx={{ color: "text.secondary" }} />
+                  <ICONS.event sx={{ color: "text.secondary" }} />
                 </ListItemIcon>
                 <ListItemText
-                  primary={t.company}
-                  secondary={result.company}
+                  primary={t.event}
+                  secondary={result.eventName}
                   primaryTypographyProps={{ fontWeight: 500 }}
                 />
               </ListItem>
-            )}
-
-            {result.wing && (
-              <ListItem>
-                <ListItemIcon>
-                  <ICONS.business sx={{ color: "text.secondary" }} />
-                </ListItemIcon>
-                <ListItemText
-                  primary={t.wing}
-                  secondary={result.wing}
-                  primaryTypographyProps={{ fontWeight: 500 }}
-                />
-              </ListItem>
-            )}
-
-            <ListItem>
-              <ListItemIcon>
-                <ICONS.event sx={{ color: "text.secondary" }} />
-              </ListItemIcon>
-              <ListItemText
-                primary={t.event}
-                secondary={result.eventName}
-                primaryTypographyProps={{ fontWeight: 500 }}
-              />
-            </ListItem>
-          </List>
+            </List>
+          )}
 
           <Stack direction="column" spacing={2} mt={2}>
             {user?.staffType === "desk" && (
@@ -553,11 +573,15 @@ export default function VerifyPage() {
       )}
 
       {/* Error */}
-      {error && (
+      {(error || approvalErrorStatus) && (
         <Stack spacing={2} alignItems="center" textAlign="center" mt={5}>
           <ICONS.errorOutline sx={{ fontSize: 64, color: "error.main" }} />
           <Typography variant="h6" color="error.main">
-            {error}
+            {approvalErrorStatus === "rejected"
+              ? t.registrationRejected
+              : approvalErrorStatus === "pending"
+                ? t.registrationPending
+                : error}
           </Typography>
           <Tooltip title={t.tooltip.retry}>
             <Button
