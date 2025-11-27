@@ -63,6 +63,12 @@ export default function Registration() {
     registerAnother: isArabic
       ? "إغلاق وإجراء تسجيل آخر"
       : "Close and Make Another Registration",
+    thankYouForRegistering: isArabic
+      ? "شكرًا لتسجيلك."
+      : "Thank you for registering.",
+    approvalPendingMessage: isArabic
+      ? "يرجى الانتظار حتى يوافق المسؤول على تسجيلك."
+      : "Please wait for the admin to approve your registration.",
   };
 
   const [event, setEvent] = useState(null);
@@ -446,7 +452,31 @@ export default function Registration() {
         </DialogTitle>
 
         <DialogContent sx={{ textAlign: "center" }}>
-          {event?.showQrAfterRegistration ? (
+          {event?.requiresApproval ? (
+            <>
+              <Typography variant="body1" sx={{ mb: 2 }}>
+                {t.thankYouForRegistering}
+              </Typography>
+              <Box
+                sx={{
+                  backgroundColor: "#fff3e0",
+                  borderLeft: dir === "rtl" ? "none" : "4px solid #ff6f00",
+                  borderRight: dir === "rtl" ? "4px solid #ff6f00" : "none",
+                  borderRadius: 1,
+                  p: 2,
+                  mb: 2,
+                  textAlign: dir === "rtl" ? "right" : "left",
+                  mx: "auto",
+                  width: "fit-content",
+                  maxWidth: "100%",
+                }}
+              >
+                <Typography variant="body1" sx={{ color: "text.primary" }}>
+                  {t.approvalPendingMessage}
+                </Typography>
+              </Box>
+            </>
+          ) : event?.showQrAfterRegistration ? (
             <>
               <Typography variant="subtitle2" sx={{ color: "text.secondary" }}>
                 {t.yourToken}
