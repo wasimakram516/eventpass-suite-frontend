@@ -74,6 +74,7 @@ const translations = {
     downloadTemplateError: "Failed to download template.",
     showQrToggle: "Show QR code after registration?",
     showQrOnBadgeToggle: "Show QR Code on Printed Badge?",
+    requiresApprovalToggle: "Require admin approval for registrations?",
     downloadTemplateSuccess: "Template downloaded successfully",
   },
   ar: {
@@ -121,6 +122,7 @@ const translations = {
     downloadTemplateError: "فشل في تحميل القالب.",
     showQrToggle: "عرض رمز الاستجابة السريعة بعد التسجيل؟",
     showQrOnBadgeToggle: "عرض رمز QR على بطاقة الطباعة؟",
+    requiresApprovalToggle: "يتطلب موافقة المسؤول على التسجيلات؟",
     downloadTemplateSuccess: "تم تحميل القالب بنجاح",
   },
 };
@@ -161,6 +163,7 @@ const EventModal = ({
     useCustomFields: false,
     showQrAfterRegistration: false,
     showQrOnBadge: true,
+    requiresApproval: false,
     defaultLanguage: "en",
   });
 
@@ -208,6 +211,7 @@ const EventModal = ({
         showQrAfterRegistration:
           initialValues?.showQrAfterRegistration || false,
         showQrOnBadge: initialValues?.showQrOnBadge ?? true,
+        requiresApproval: initialValues?.requiresApproval || false,
         defaultLanguage: initialValues?.defaultLanguage || "en",
       }));
     } else {
@@ -236,6 +240,7 @@ const EventModal = ({
         useCustomFields: false,
         showQrAfterRegistration: false,
         showQrOnBadge: true,
+        requiresApproval: false,
         defaultLanguage: "en",
       }));
     }
@@ -450,6 +455,7 @@ const EventModal = ({
     }
     payload.append("showQrAfterRegistration", formData.showQrAfterRegistration.toString());
     payload.append("showQrOnBadge", formData.showQrOnBadge.toString());
+    payload.append("requiresApproval", formData.requiresApproval.toString());
     payload.append("defaultLanguage", formData.defaultLanguage);
 
     if (formData.eventType === "public" && formData.useCustomFields) {
@@ -581,6 +587,26 @@ const EventModal = ({
                 />
               }
               label={t.showQrOnBadgeToggle}
+              sx={{ alignSelf: "start" }}
+            />
+          </Box>
+
+          {/* Requires Approval Toggle */}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <FormControlLabel
+              control={
+                <Checkbox
+                  checked={formData.requiresApproval}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      requiresApproval: e.target.checked,
+                    }))
+                  }
+                  color="primary"
+                />
+              }
+              label={t.requiresApprovalToggle}
               sx={{ alignSelf: "start" }}
             />
           </Box>
