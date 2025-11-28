@@ -113,3 +113,13 @@ export const updateRegistration = withApiHandler(
   },
   { showSuccess: true }
 );
+
+export const updateRegistrationApproval = withApiHandler(
+  async (id, status) => {
+    const { data } = await api.patch(`/eventreg/registrations/${id}/approval`, {
+      status,
+    });
+    return data;
+  },
+  { showSuccess: true }
+);

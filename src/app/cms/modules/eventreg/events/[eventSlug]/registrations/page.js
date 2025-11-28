@@ -40,6 +40,7 @@ import {
   getUnsentCount,
   sendBulkEmails,
   updateRegistration,
+  updateRegistrationApproval,
   getInitialRegistrations,
   exportRegistrations,
 } from "@/services/eventreg/registrationService";
@@ -116,6 +117,11 @@ const translations = {
     exportBadges: "Export Badges",
     editRegistration: "Edit Registration",
     copyToken: "Copy Token",
+    approve: "Approve",
+    reject: "Reject",
+    approved: "Approved",
+    rejected: "Rejected",
+    pending: "Pending",
   },
   ar: {
     title: "تفاصيل الحدث",
@@ -171,6 +177,11 @@ const translations = {
     exportbadges: "تصدير الشارات",
     editRegistration: "تعديل التسجيل",
     copyToken: "نسخ الرمز",
+    approve: "موافقة",
+    reject: "رفض",
+    approved: "موافق عليه",
+    rejected: "مرفوض",
+    pending: "قيد الانتظار",
   },
 };
 
@@ -304,12 +315,15 @@ export default function ViewRegistrations() {
     const regsRes = await getInitialRegistrations(eventSlug);
     if (!regsRes?.error) {
       const initialData = regsRes.data || [];
-      const prepped = initialData.map((r) => ({
-        ...r,
-        _createdAtMs: Date.parse(r.createdAt),
-        _scannedAtMs: (r.walkIns || []).map((w) => Date.parse(w.scannedAt)),
-        _haystack: buildHaystack(r, fieldsLocal),
-      }));
+      const prepped = initialData.map((r) => {
+        return {
+          ...r,
+          approvalStatus: r.approvalStatus || "pending",
+          _createdAtMs: Date.parse(r.createdAt),
+          _scannedAtMs: (r.walkIns || []).map((w) => Date.parse(w.scannedAt)),
+          _haystack: buildHaystack(r, fieldsLocal),
+        };
+      });
 
       setAllRegistrations(prepped);
 
@@ -333,16 +347,22 @@ export default function ViewRegistrations() {
     lastLoadedRef.current = loaded;
 
     if (data?.length) {
-      const processed = data.map((r) => ({
-        ...r,
-        _createdAtMs: Date.parse(r.createdAt),
-        _scannedAtMs: (r.walkIns || []).map((w) => Date.parse(w.scannedAt)),
-        _haystack: buildHaystack(r, dynamicFieldsRef.current),
-      }));
+      const processed = data.map((r) => {
+        return {
+          ...r,
+          approvalStatus: r.approvalStatus || "pending",
+          _createdAtMs: Date.parse(r.createdAt),
+          _scannedAtMs: (r.walkIns || []).map((w) => Date.parse(w.scannedAt)),
+          _haystack: buildHaystack(r, dynamicFieldsRef.current),
+        };
+      });
 
       setAllRegistrations((prev) => {
         const map = new Map(prev.map((r) => [r._id, r]));
-        processed.forEach((r) => map.set(r._id, r));
+        processed.forEach((r) => {
+          const existing = map.get(r._id) || {};
+          map.set(r._id, { ...existing, ...r });
+        });
         return Array.from(map.values());
       });
     }
@@ -388,12 +408,39 @@ export default function ViewRegistrations() {
     [showMessage, fetchData]
   );
 
+  const handleNewRegistration = useCallback(
+    (data) => {
+      if (!data?.registration) return;
+
+      const reg = data.registration;
+
+      const processed = {
+        ...reg,
+        approvalStatus: reg.approvalStatus || "pending",
+        _createdAtMs: Date.parse(reg.createdAt),
+        _scannedAtMs: (reg.walkIns || []).map((w) => Date.parse(w.scannedAt)),
+        _haystack: buildHaystack(reg, dynamicFieldsRef.current),
+      };
+
+      setAllRegistrations((prev) => {
+        const exists = prev.some((r) => r._id === processed._id);
+        if (exists) return prev;
+
+        return [processed, ...prev];
+      });
+
+      setTotalRegistrations((prev) => prev + 1);
+    },
+    []
+  );
+
   // ---- Use hook with stable callbacks ----
   const { uploadProgress, emailProgress } = useEventRegSocket({
     eventId: eventDetails?._id,
     onLoadingProgress: handleLoadingProgress,
     onUploadProgress: handleUploadProgress,
     onEmailProgress: handleEmailProgress,
+    onNewRegistration: handleNewRegistration,
   });
 
   const handleSaveEdit = async (updatedFields) => {
@@ -570,6 +617,18 @@ export default function ViewRegistrations() {
       setTotalRegistrations((t) => t - 1);
     }
     setDeleteDialogOpen(false);
+  };
+
+  const handleApprovalChange = async (registrationId, status) => {
+    const res = await updateRegistrationApproval(registrationId, status);
+    if (!res?.error) {
+      const newStatus = res?.approvalStatus || status;
+      setAllRegistrations((prev) =>
+        prev.map((r) =>
+          r._id === registrationId ? { ...r, approvalStatus: newStatus } : r
+        )
+      );
+    }
   };
 
   const handleExportRegs = async () => {
@@ -1266,51 +1325,85 @@ export default function ViewRegistrations() {
                       borderTop: "1px solid rgba(0,0,0,0.08)",
                       bgcolor: "rgba(0,0,0,0.02)",
                       py: 1,
+                      flexDirection: "column",
+                      gap: 1,
                     }}
                   >
-                    <Tooltip title={t.viewWalkIns}>
-                      <IconButton
-                        color="info"
-                        onClick={() => {
-                          setSelectedRegistration(reg);
-                          setWalkInModalOpen(true);
-                        }}
-                        sx={{
-                          "&:hover": { transform: "scale(1.1)" },
-                          transition: "0.2s",
-                        }}
-                      >
-                        <ICONS.view />
-                      </IconButton>
-                    </Tooltip>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: eventDetails?.requiresApproval
+                          ? "space-between"
+                          : "center",
+                        gap: 1.2,
+                        width: "100%",
+                      }}
+                    >
+                      {/* Approval Dropdown - Only show if event requires approval */}
+                      {eventDetails?.requiresApproval && (
+                        <FormControl size="small" sx={{ minWidth: 120, ml: 1 }}>
+                          <Select
+                            value={reg.approvalStatus || "pending"}
+                            onChange={(e) =>
+                              handleApprovalChange(reg._id, e.target.value)
+                            }
+                            sx={{ fontSize: "0.875rem" }}
+                          >
+                            <MenuItem value="pending">{t.pending}</MenuItem>
+                            <MenuItem value="approved">{t.approved}</MenuItem>
+                            <MenuItem value="rejected">{t.rejected}</MenuItem>
+                          </Select>
+                        </FormControl>
+                      )}
 
-                    <Tooltip title={t.editRegistration}>
-                      <IconButton
-                        color="primary"
-                        onClick={() => {
-                          setEditingReg(reg);
-                          setEditModalOpen(true);
-                        }}
-                      >
-                        <ICONS.edit fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
+                      <Box sx={{ display: "flex", gap: 0.5 }}>
+                        <Tooltip title={t.viewWalkIns}>
+                          <IconButton
+                            color="info"
+                            onClick={() => {
+                              setSelectedRegistration(reg);
+                              setWalkInModalOpen(true);
+                            }}
+                            sx={{
+                              "&:hover": { transform: "scale(1.1)" },
+                              transition: "0.2s",
+                            }}
+                          >
+                            <ICONS.view />
+                          </IconButton>
+                        </Tooltip>
 
-                    <Tooltip title={t.deleteRecord}>
-                      <IconButton
-                        color="error"
-                        onClick={() => {
-                          setRegistrationToDelete(reg._id);
-                          setDeleteDialogOpen(true);
-                        }}
-                        sx={{
-                          "&:hover": { transform: "scale(1.1)" },
-                          transition: "0.2s",
-                        }}
-                      >
-                        <ICONS.delete />
-                      </IconButton>
-                    </Tooltip>
+                        <Tooltip title={t.editRegistration}>
+                          <IconButton
+                            color="primary"
+                            onClick={() => {
+                              setEditingReg(reg);
+                              setEditModalOpen(true);
+                            }}
+                          >
+                            <ICONS.edit fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+
+                        <Tooltip title={t.deleteRecord}>
+                          <IconButton
+                            color="error"
+                            onClick={() => {
+                              setRegistrationToDelete(reg._id);
+                              setDeleteDialogOpen(true);
+                            }}
+                            sx={{
+                              "&:hover": { transform: "scale(1.1)" },
+                              transition: "0.2s",
+                            }}
+                          >
+                            <ICONS.delete />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
+                    </Box>
                   </CardActions>
                 </Card>
               </Grid>

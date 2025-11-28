@@ -6,11 +6,13 @@ export default function useEventRegSocket({
   onLoadingProgress,
   onUploadProgress,
   onEmailProgress,
+  onNewRegistration,
 }) {
   const handlersRef = useRef({
     onLoadingProgress,
     onUploadProgress,
     onEmailProgress,
+    onNewRegistration,
   });
 
   const [uploadProgress, setUploadProgress] = useState(null);
@@ -23,33 +25,44 @@ export default function useEventRegSocket({
       onLoadingProgress,
       onUploadProgress,
       onEmailProgress,
+      onNewRegistration,
     };
-  }, [onLoadingProgress, onUploadProgress, onEmailProgress]);
+  }, [onLoadingProgress, onUploadProgress, onEmailProgress, onNewRegistration]);
 
   // STABLE events (critical)
   const events = useMemo(
-    () => ({
-      registrationLoadingProgress: (data) => {
-        if (data.eventId !== eventId) return;
+    () => {
+      const eventIdStr = eventId?.toString();
 
-        setLoadingProgress(data);  
-        handlersRef.current.onLoadingProgress?.(data);
-      },
+      return {
+        registrationLoadingProgress: (data) => {
+          if (data.eventId?.toString() !== eventIdStr) return;
 
-      registrationUploadProgress: (data) => {
-        if (data.eventId !== eventId) return;
+          setLoadingProgress(data);
+          handlersRef.current.onLoadingProgress?.(data);
+        },
 
-        setUploadProgress(data);   
-        handlersRef.current.onUploadProgress?.(data);
-      },
+        registrationUploadProgress: (data) => {
+          if (data.eventId?.toString() !== eventIdStr) return;
 
-      registrationEmailProgress: (data) => {
-        if (data.eventId !== eventId) return;
+          setUploadProgress(data);
+          handlersRef.current.onUploadProgress?.(data);
+        },
 
-        setEmailProgress(data);    
-        handlersRef.current.onEmailProgress?.(data);
-      },
-    }),
+        registrationEmailProgress: (data) => {
+          if (data.eventId?.toString() !== eventIdStr) return;
+
+          setEmailProgress(data);
+          handlersRef.current.onEmailProgress?.(data);
+        },
+
+        registrationNew: (data) => {
+          if (data.eventId?.toString() !== eventIdStr) return;
+
+          handlersRef.current.onNewRegistration?.(data);
+        },
+      };
+    },
     [eventId]
   );
 
