@@ -43,6 +43,10 @@ const translations = {
     brandingMedia: "Upload Branding Media",
     currentImage: "Current Logo:",
     preview: "Preview:",
+    uploadBackground: "Upload Background",
+    uploadBackgroundEn: "Upload Background (EN)",
+    uploadBackgroundAr: "Upload Background (AR)",
+    currentBackground: "Current Background:",
     downloadTemplate: "Download Employee Template",
     uploadEmployee: "Upload Employee Data",
     uploadTables: "Upload Table Images",
@@ -91,6 +95,10 @@ const translations = {
     brandingMedia: "رفع الوسائط التسويقية",
     currentImage: "الشعار الحالي:",
     preview: "معاينة:",
+    uploadBackground: "رفع الخلفية",
+    uploadBackgroundEn: "رفع الخلفية (إنجليزي)",
+    uploadBackgroundAr: "رفع الخلفية (عربي)",
+    currentBackground: "الخلفية الحالية:",
     downloadTemplate: "تحميل قالب الموظفين",
     uploadEmployee: "رفع بيانات الموظفين",
     uploadTables: "رفع صور الطاولات",
@@ -148,8 +156,12 @@ const EventModal = ({
     description: "",
     logo: null,
     logoPreview: "",
-    background: null,
-    backgroundPreview: "",
+    backgroundEn: null,
+    backgroundEnPreview: "",
+    backgroundEnFileType: null,
+    backgroundAr: null,
+    backgroundArPreview: "",
+    backgroundArFileType: null,
     brandingLogos: [], // array of { _id?, name, website, logoUrl, file? }
     removeBrandingLogoIds: [],
     clearAllBrandingLogos: false,
@@ -166,7 +178,8 @@ const EventModal = ({
     requiresApproval: false,
     defaultLanguage: "en",
     removeLogo: false,
-    removeBackground: false,
+    removeBackgroundEn: false,
+    removeBackgroundAr: false,
   });
 
   useEffect(() => {
@@ -188,15 +201,19 @@ const EventModal = ({
           initialValues.eventType || (isEmployee ? "employee" : "public"),
         logo: null,
         logoPreview: initialValues.logoUrl || "",
-        background: null,
-        backgroundPreview: initialValues.backgroundUrl || "",
+        backgroundEn: null,
+        backgroundEnPreview: initialValues.background?.en?.url || initialValues.backgroundUrl || "",
+        backgroundEnFileType: initialValues.background?.en?.fileType || (initialValues.backgroundUrl ? "image" : null),
+        backgroundAr: null,
+        backgroundArPreview: initialValues.background?.ar?.url || "",
+        backgroundArFileType: initialValues.background?.ar?.fileType || null,
         brandingLogos: Array.isArray(initialValues.brandingMedia)
           ? initialValues.brandingMedia.map((l) => ({
-              _id: l._id,
-              name: l.name || "",
-              website: l.website || "",
-              logoUrl: l.logoUrl || "",
-            }))
+            _id: l._id,
+            name: l.name || "",
+            website: l.website || "",
+            logoUrl: l.logoUrl || "",
+          }))
           : [],
         removeBrandingLogoIds: [],
         clearAllBrandingLogos: false,
@@ -216,7 +233,8 @@ const EventModal = ({
         requiresApproval: initialValues?.requiresApproval || false,
         defaultLanguage: initialValues?.defaultLanguage || "en",
         removeLogo: false,
-        removeBackground: false,
+        removeBackgroundEn: false,
+        removeBackgroundAr: false,
       }));
     } else {
       setFormData((prev) => ({
@@ -229,8 +247,12 @@ const EventModal = ({
         description: "",
         logo: null,
         logoPreview: "",
-        background: null,
-        backgroundPreview: "",
+        backgroundEn: null,
+        backgroundEnPreview: "",
+        backgroundEnFileType: null,
+        backgroundAr: null,
+        backgroundArPreview: "",
+        backgroundArFileType: null,
         brandingLogos: [],
         removeBrandingLogoIds: [],
         clearAllBrandingLogos: false,
@@ -247,7 +269,8 @@ const EventModal = ({
         requiresApproval: false,
         defaultLanguage: "en",
         removeLogo: false,
-        removeBackground: false,
+        removeBackgroundEn: false,
+        removeBackgroundAr: false,
       }));
     }
   }, [initialValues, isEmployee]);
@@ -263,13 +286,26 @@ const EventModal = ({
           logoPreview: URL.createObjectURL(file),
         }));
       }
-    } else if (name === "background" && files?.[0]) {
+    } else if (name === "backgroundEn" && files?.[0]) {
       const file = files[0];
-      if (file.type.startsWith("image/")) {
+      if (file.type.startsWith("image/") || file.type.startsWith("video/")) {
         setFormData((prev) => ({
           ...prev,
-          background: file,
-          backgroundPreview: URL.createObjectURL(file),
+          backgroundEn: file,
+          backgroundEnPreview: URL.createObjectURL(file),
+          backgroundEnFileType: file.type.startsWith("video/") ? "video" : "image",
+          removeBackgroundEn: false,
+        }));
+      }
+    } else if (name === "backgroundAr" && files?.[0]) {
+      const file = files[0];
+      if (file.type.startsWith("image/") || file.type.startsWith("video/")) {
+        setFormData((prev) => ({
+          ...prev,
+          backgroundAr: file,
+          backgroundArPreview: URL.createObjectURL(file),
+          backgroundArFileType: file.type.startsWith("video/") ? "video" : "image",
+          removeBackgroundAr: false,
         }));
       }
     } else if (name === "agenda" && files?.[0]) {
@@ -417,7 +453,8 @@ const EventModal = ({
     payload.append("capacity", formData.capacity || "999");
     payload.append("eventType", formData.eventType);
     if (formData.logo) payload.append("logo", formData.logo);
-    if (formData.background) payload.append("background", formData.background);
+    if (formData.backgroundEn) payload.append("backgroundEn", formData.backgroundEn);
+    if (formData.backgroundAr) payload.append("backgroundAr", formData.backgroundAr);
     if (formData.clearAllBrandingLogos) {
       payload.append("clearAllBrandingLogos", "true");
     } else {
@@ -470,8 +507,12 @@ const EventModal = ({
       payload.append("removeLogo", "true");
     }
 
-    if (formData.removeBackground) {
-      payload.append("removeBackground", "true");
+    if (formData.removeBackgroundEn) {
+      payload.append("removeBackgroundEn", "true");
+    }
+
+    if (formData.removeBackgroundAr) {
+      payload.append("removeBackgroundAr", "true");
     }
 
     if (formData.eventType === "public" && formData.useCustomFields) {
@@ -764,60 +805,183 @@ const EventModal = ({
               display: "flex",
               flexDirection: "column",
               alignItems: "flex-start",
+              gap: 2,
+              width: "100%",
             }}
           >
-            <Button component="label" variant="outlined">
-              Upload Background Image (optional)
-              <input
-                hidden
-                name="background"
-                type="file"
-                accept="image/*"
-                onChange={handleInputChange}
-              />
-            </Button>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+              {t.uploadBackground}
+            </Typography>
 
-            {formData.backgroundPreview && !formData.removeBackground && (
-              <Box sx={{ mt: 1.5, position: "relative" }}>
-                <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
-                  {initialValues && !formData.background
-                    ? "Current Background:"
-                    : "Preview:"}
-                </Typography>
-
-                <img
-                  src={formData.backgroundPreview}
-                  alt="Background preview"
-                  style={{
-                    maxHeight: 120,
-                    borderRadius: 6,
-                    objectFit: "cover",
-                  }}
+            {/* English Background Upload */}
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "flex-start",
+                width: "100%",
+              }}
+            >
+              <Button component="label" variant="outlined" size="small">
+                {t.uploadBackgroundEn}
+                <input
+                  hidden
+                  name="backgroundEn"
+                  type="file"
+                  accept="image/*,video/*"
+                  onChange={handleInputChange}
                 />
+              </Button>
 
-                <IconButton
-                  size="small"
-                  onClick={() =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      background: null,
-                      backgroundPreview: "",
-                      removeBackground: true,
-                    }))
-                  }
-                  sx={{
-                    position: "absolute",
-                    top: 6,
-                    right: 6,
-                    bgcolor: "error.main",
-                    color: "#fff",
-                    "&:hover": { bgcolor: "error.dark" },
-                  }}
-                >
-                  <ICONS.delete sx={{ fontSize: 18 }} />
-                </IconButton>
-              </Box>
-            )}
+              {formData.backgroundEnPreview && !formData.removeBackgroundEn && (
+                <Box sx={{ mt: 1.5 }}>
+                  <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                    {initialValues && !formData.backgroundEn
+                      ? t.currentBackground + " (EN)"
+                      : t.preview + " (EN)"}
+                  </Typography>
+
+                  <Box sx={{ position: "relative", display: "inline-block" }}>
+                    {formData.backgroundEn?.type?.startsWith("video/") ||
+                      formData.backgroundEnFileType === "video" ||
+                      (formData.backgroundEnPreview &&
+                        !formData.backgroundEnPreview.startsWith("blob:") &&
+                        (formData.backgroundEnPreview.includes("video") ||
+                          formData.backgroundEnPreview.match(/\.(mp4|webm|ogg)$/i))) ? (
+                      <video
+                        src={formData.backgroundEnPreview}
+                        controls
+                        style={{
+                          maxHeight: 200,
+                          maxWidth: "100%",
+                          borderRadius: 6,
+                          objectFit: "contain",
+                        }}
+                      />
+                    ) : (
+                      <img
+                        src={formData.backgroundEnPreview}
+                        alt="Background EN preview"
+                        style={{
+                          maxHeight: 120,
+                          maxWidth: "100%",
+                          borderRadius: 6,
+                          objectFit: "cover",
+                        }}
+                      />
+                    )}
+
+                    <IconButton
+                      size="small"
+                      onClick={() =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          backgroundEn: null,
+                          backgroundEnPreview: "",
+                          backgroundEnFileType: null,
+                          removeBackgroundEn: true,
+                        }))
+                      }
+                      sx={{
+                        position: "absolute",
+                        top: -18,
+                        right: 6,
+                        bgcolor: "error.main",
+                        color: "#fff",
+                        "&:hover": { bgcolor: "error.dark" },
+                      }}
+                    >
+                      <ICONS.delete sx={{ fontSize: 18 }} />
+                    </IconButton>
+                  </Box>
+                </Box>
+              )}
+            </Box>
+
+            {/* Arabic Background Upload */}
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "flex-start",
+                width: "100%",
+              }}
+            >
+              <Button component="label" variant="outlined" size="small">
+                {t.uploadBackgroundAr}
+                <input
+                  hidden
+                  name="backgroundAr"
+                  type="file"
+                  accept="image/*,video/*"
+                  onChange={handleInputChange}
+                />
+              </Button>
+
+              {formData.backgroundArPreview && !formData.removeBackgroundAr && (
+                <Box sx={{ mt: 1.5 }}>
+                  <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                    {initialValues && !formData.backgroundAr
+                      ? t.currentBackground + " (AR)"
+                      : t.preview + " (AR)"}
+                  </Typography>
+
+                  <Box sx={{ position: "relative", display: "inline-block" }}>
+                    {formData.backgroundAr?.type?.startsWith("video/") ||
+                      formData.backgroundArFileType === "video" ||
+                      (formData.backgroundArPreview &&
+                        !formData.backgroundArPreview.startsWith("blob:") &&
+                        (formData.backgroundArPreview.includes("video") ||
+                          formData.backgroundArPreview.match(/\.(mp4|webm|ogg)$/i))) ? (
+                      <video
+                        src={formData.backgroundArPreview}
+                        controls
+                        style={{
+                          maxHeight: 200,
+                          maxWidth: "100%",
+                          borderRadius: 6,
+                          objectFit: "contain",
+                        }}
+                      />
+                    ) : (
+                      <img
+                        src={formData.backgroundArPreview}
+                        alt="Background AR preview"
+                        style={{
+                          maxHeight: 120,
+                          maxWidth: "100%",
+                          borderRadius: 6,
+                          objectFit: "cover",
+                        }}
+                      />
+                    )}
+
+                    <IconButton
+                      size="small"
+                      onClick={() =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          backgroundAr: null,
+                          backgroundArPreview: "",
+                          backgroundArFileType: null,
+                          removeBackgroundAr: true,
+                        }))
+                      }
+                      sx={{
+                        position: "absolute",
+                        top: -18,
+                        right: 6,
+                        bgcolor: "error.main",
+                        color: "#fff",
+                        "&:hover": { bgcolor: "error.dark" },
+                      }}
+                    >
+                      <ICONS.delete sx={{ fontSize: 18 }} />
+                    </IconButton>
+                  </Box>
+                </Box>
+              )}
+            </Box>
           </Box>
 
           {/* Branding Logos Upload and List */}
@@ -1115,60 +1279,60 @@ const EventModal = ({
 
                       {(field.inputType === "radio" ||
                         field.inputType === "list") && (
-                        <Box>
-                          <Typography variant="subtitle2">
-                            {t.options}
-                          </Typography>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              flexWrap: "wrap",
-                              gap: 1,
-                              mb: 1,
-                            }}
-                          >
-                            {field.values.map((option, i) => (
-                              <Chip
-                                key={i}
-                                label={option}
-                                onDelete={() => {
-                                  const updated = [...field.values];
-                                  updated.splice(i, 1);
-                                  handleFormFieldChange(
-                                    index,
-                                    "values",
-                                    updated
-                                  );
-                                }}
-                                color="primary"
-                                variant="outlined"
-                              />
-                            ))}
-                          </Box>
-                          <TextField
-                            placeholder={t.optionPlaceholder}
-                            value={field._temp || ""}
-                            onChange={(e) => {
-                              const newValue = e.target.value;
-                              if (newValue.endsWith(",")) {
-                                const option = newValue.slice(0, -1).trim();
-                                if (option && !field.values.includes(option)) {
-                                  const updated = [...field.values, option];
-                                  handleFormFieldChange(
-                                    index,
-                                    "values",
-                                    updated
-                                  );
+                          <Box>
+                            <Typography variant="subtitle2">
+                              {t.options}
+                            </Typography>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                flexWrap: "wrap",
+                                gap: 1,
+                                mb: 1,
+                              }}
+                            >
+                              {field.values.map((option, i) => (
+                                <Chip
+                                  key={i}
+                                  label={option}
+                                  onDelete={() => {
+                                    const updated = [...field.values];
+                                    updated.splice(i, 1);
+                                    handleFormFieldChange(
+                                      index,
+                                      "values",
+                                      updated
+                                    );
+                                  }}
+                                  color="primary"
+                                  variant="outlined"
+                                />
+                              ))}
+                            </Box>
+                            <TextField
+                              placeholder={t.optionPlaceholder}
+                              value={field._temp || ""}
+                              onChange={(e) => {
+                                const newValue = e.target.value;
+                                if (newValue.endsWith(",")) {
+                                  const option = newValue.slice(0, -1).trim();
+                                  if (option && !field.values.includes(option)) {
+                                    const updated = [...field.values, option];
+                                    handleFormFieldChange(
+                                      index,
+                                      "values",
+                                      updated
+                                    );
+                                  }
+                                  handleFormFieldChange(index, "_temp", "");
+                                } else {
+                                  handleFormFieldChange(index, "_temp", newValue);
                                 }
-                                handleFormFieldChange(index, "_temp", "");
-                              } else {
-                                handleFormFieldChange(index, "_temp", newValue);
-                              }
-                            }}
-                            fullWidth
-                          />
-                        </Box>
-                      )}
+                              }}
+                              fullWidth
+                            />
+                          </Box>
+                        )}
 
                       <Box
                         sx={{ display: "flex", alignItems: "center", gap: 2 }}
@@ -1263,8 +1427,8 @@ const EventModal = ({
               ? t.updating
               : t.creating
             : initialValues
-            ? t.update
-            : t.create}
+              ? t.update
+              : t.create}
         </Button>
       </DialogActions>
     </Dialog>
