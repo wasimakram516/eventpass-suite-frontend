@@ -1,11 +1,13 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Box, Typography, CircularProgress } from "@mui/material";
+import { Box, Typography, CircularProgress, IconButton, Button } from "@mui/material";
+import VolumeUpIcon from "@mui/icons-material/VolumeUp";
+import VolumeOffIcon from "@mui/icons-material/VolumeOff";
 import HorizontalCarousel from "@/components/HorizontalCarousel";
 import { getPublicEventBySlug } from "@/services/eventreg/eventService";
-import { translateTexts } from "@/services/translationService"; 
+import { translateTexts } from "@/services/translationService";
 import Background from "@/components/Background";
 import EventWelcomeCard from "@/components/cards/EventWelcomeCard";
 import ICONS from "@/utils/iconUtil";
@@ -26,12 +28,16 @@ export default function EventDetails() {
     takesSeconds: isArabic ? "يستغرق فقط ٥ ثوانٍ!" : "Takes only 5 seconds!",
     dateNotAvailable: isArabic ? "التاريخ غير متوفر" : "Date not available",
     to: isArabic ? "إلى" : "to",
+    showEventDetails: isArabic ? "عرض تفاصيل الحدث" : "Show Event Details",
   };
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [translatedEvent, setTranslatedEvent] = useState(null);
+  const [isMuted, setIsMuted] = useState(true);
+  const [showEventDetails, setShowEventDetails] = useState(false);
+  const videoRef = useRef(null);
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -45,7 +51,7 @@ export default function EventDetails() {
       setLoading(false);
     };
     fetchEvent();
-  }, [eventSlug, isArabic]);
+  }, [eventSlug, lang]);
 
   const translateEventData = async (eventData, targetLang) => {
     try {
@@ -80,6 +86,57 @@ export default function EventDetails() {
   };
 
   const brandingMedia = useMemo(() => event?.brandingMedia || [], [event]);
+
+  // Get background based on language
+  const getBackground = useMemo(() => {
+    if (!event || !event.background) return null;
+
+    const langKey = lang === "ar" ? "ar" : "en";
+    const bg = event.background[langKey];
+
+    if (bg && typeof bg === 'object' && bg.url && String(bg.url).trim() !== '') {
+      let fileType = bg.fileType;
+      if (!fileType) {
+        const urlLower = String(bg.url).toLowerCase();
+        if (urlLower.match(/\.(mp4|webm|ogg|mov|avi)$/)) {
+          fileType = "video";
+        } else {
+          fileType = "image";
+        }
+      }
+      return {
+        url: bg.url,
+        fileType: fileType,
+      };
+    }
+
+    const otherLangKey = lang === "ar" ? "en" : "ar";
+    const otherBg = event.background[otherLangKey];
+    if (otherBg && typeof otherBg === 'object' && otherBg.url && String(otherBg.url).trim() !== '') {
+      let fileType = otherBg.fileType;
+      if (!fileType) {
+        const urlLower = String(otherBg.url).toLowerCase();
+        if (urlLower.match(/\.(mp4|webm|ogg|mov|avi)$/)) {
+          fileType = "video";
+        } else {
+          fileType = "image";
+        }
+      }
+      return {
+        url: otherBg.url,
+        fileType: fileType,
+      };
+    }
+
+    if (event.backgroundUrl) {
+      return {
+        url: event.backgroundUrl,
+        fileType: "image",
+      };
+    }
+
+    return null;
+  }, [event, lang]);
 
   if (loading) {
     return (
@@ -117,6 +174,8 @@ export default function EventDetails() {
   const { name, description, venue, startDate, endDate, logoUrl } =
     translatedEvent || event;
 
+  const background = getBackground;
+
   return (
     <Box
       sx={{
@@ -126,75 +185,178 @@ export default function EventDetails() {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        justifyContent: "center",
-        gap: 2,
+        justifyContent: "flex-start",
         position: "relative",
-        backgroundImage: event?.backgroundUrl
-          ? `url(${event.backgroundUrl})`
-          : "none",
-        backgroundSize: "cover",
-        backgroundPosition: "center center",
-        backgroundRepeat: "no-repeat",
-        backgroundAttachment: "fixed",
         zIndex: 0,
+        overflow: "hidden",
       }}
     >
-      {/* Default background component if no bgUrl */}
-      {!event?.backgroundUrl && <Background />}
+      {/* Image Background */}
+      {background && background.fileType === "image" && background.url && (
+        <Box
+          component="img"
+          src={background.url}
+          alt="Event background"
+          sx={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            zIndex: -1,
+            pointerEvents: "none",
+          }}
+        />
+      )}
 
-      {/* Logo outside the container */}
-      {logoUrl && (
+      {/* Video Background */}
+      {background?.fileType === "video" && background?.url && (
         <Box
           sx={{
-            width: { xs: "100%", sm: 320, md: 500 },
-            borderRadius: 3,
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            zIndex: -1,
             overflow: "hidden",
-            boxShadow: 3,
-            mt: { xs: 6, sm: 0 },
           }}
         >
-          <Box
-            component="img"
-            src={logoUrl}
-            alt={`${name} Logo`}
-            sx={{
-              display: "block",
+          <video
+            ref={videoRef}
+            src={background.url}
+            autoPlay
+            playsInline
+            loop
+            muted={isMuted}
+            style={{
               width: "100%",
-              height: "auto",
-              objectFit: "contain",
+              height: "100%",
+              objectFit: "cover",
             }}
           />
         </Box>
       )}
 
-      {/* Main details container */}
-      <EventWelcomeCard
-        t={t}
-        name={name}
-        description={description}
-        venue={venue}
-        startDate={startDate}
-        endDate={endDate}
-        router={router}
-        dir={dir}
-        actionLabel={t.registerNow}
-        actionIcon={<ICONS.appRegister />}
-        actionRoute={`/${lang}/event/${eventSlug}/register`}
-        isArabic={isArabic}
-      />
+      {/* Mute/Unmute Button for Video */}
+      {background?.fileType === "video" && (
+        <IconButton
+          onClick={() => {
+            setIsMuted(!isMuted);
+            if (videoRef.current) {
+              videoRef.current.muted = !isMuted;
+            }
+          }}
+          sx={{
+            position: "fixed",
+            bottom: 20,
+            right: 20,
+            bgcolor: "rgba(0,0,0,0.5)",
+            color: "white",
+            zIndex: 1000,
+            "&:hover": { bgcolor: "rgba(0,0,0,0.7)" },
+          }}
+        >
+          {isMuted ? <VolumeOffIcon /> : <VolumeUpIcon />}
+        </IconButton>
+      )}
 
-      {/* Branding media carousel */}
-      <HorizontalCarousel
-        items={brandingMedia}
-        showBorders={false}
-        maxWidth="lg"
-        itemHeight={{ xs: 40, sm: 50, md: 60 }}
-        itemMaxWidth={{ xs: 150, sm: 200, md: 250 }}
-        containerPadding={{ xs: 2, md: 3 }}
-        itemPadding={{ xs: 2, sm: 3 }}
-        pauseOnHover={true}
-        reducedMotionSupport={true}
-      />
+      {!background && <Background />}
+
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "space-between",
+          width: "100%",
+          maxWidth: "lg",
+          minHeight: "calc(100vh - 80px)",
+          gap: 3,
+          zIndex: 1,
+        }}
+      >
+        {logoUrl && (
+          <Box
+            sx={{
+              width: { xs: "auto", sm: 320, md: 500 },
+              maxWidth: { xs: "100%", sm: 320, md: 500 },
+              maxHeight: { xs: 120, sm: "none" },
+              borderRadius: 3,
+              overflow: "hidden",
+              boxShadow: 3,
+              mt: { xs: 2, sm: 0 },
+              display: "inline-block",
+            }}
+          >
+            <Box
+              component="img"
+              src={logoUrl}
+              alt={`${name} Logo`}
+              sx={{
+                display: "block",
+                width: "100%",
+                height: "auto",
+                maxHeight: { xs: 120, sm: "none" },
+                maxWidth: { xs: "100%", sm: "none" },
+                objectFit: "contain",
+              }}
+            />
+          </Box>
+        )}
+
+        {/* Main details container */}
+        {showEventDetails ? (
+          <EventWelcomeCard
+            t={t}
+            name={name}
+            description={description}
+            venue={venue}
+            startDate={startDate}
+            endDate={endDate}
+            router={router}
+            dir={dir}
+            actionLabel={t.registerNow}
+            actionIcon={<ICONS.appRegister />}
+            actionRoute={`/${lang}/event/${eventSlug}/register`}
+            isArabic={isArabic}
+          />
+        ) : (
+          <Button
+            variant="contained"
+            size="large"
+            onClick={() => setShowEventDetails(true)}
+            sx={{
+              px: 4,
+              py: 1.5,
+              fontSize: { xs: 16, md: 18 },
+              fontWeight: 600,
+              borderRadius: 2,
+              textTransform: "none",
+            }}
+          >
+            {t.showEventDetails}
+          </Button>
+        )}
+
+        {/* Branding media carousel */}
+        {brandingMedia.length > 0 && (
+          <Box sx={{ width: "100%", mb: { xs: 2, md: 0 } }}>
+            <HorizontalCarousel
+              items={brandingMedia}
+              showBorders={false}
+              maxWidth="lg"
+              itemHeight={{ xs: 40, sm: 50, md: 60 }}
+              itemMaxWidth={{ xs: 150, sm: 200, md: 250 }}
+              containerPadding={{ xs: 2, md: 3 }}
+              itemPadding={{ xs: 2, sm: 3 }}
+              pauseOnHover={true}
+              reducedMotionSupport={true}
+            />
+          </Box>
+        )}
+      </Box>
 
       <LanguageSelector top={20} right={20} />
     </Box>
