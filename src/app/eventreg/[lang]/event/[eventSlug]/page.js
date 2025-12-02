@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Box, Typography, CircularProgress } from "@mui/material";
 import HorizontalCarousel from "@/components/HorizontalCarousel";
 import { getPublicEventBySlug } from "@/services/eventreg/eventService";
-import { translateTexts } from "@/services/translationService"; // ✅ updated import
+import { translateTexts } from "@/services/translationService"; 
 import Background from "@/components/Background";
 import EventWelcomeCard from "@/components/cards/EventWelcomeCard";
 import ICONS from "@/utils/iconUtil";
@@ -47,11 +47,6 @@ export default function EventDetails() {
     fetchEvent();
   }, [eventSlug, isArabic]);
 
-  /**
-   * 🔤 BATCH TRANSLATION
-   * Instead of calling translateText() 3 times,
-   * we send one array of texts to translateTexts().
-   */
   const translateEventData = async (eventData, targetLang) => {
     try {
       // Collect all fields that need translation
@@ -67,7 +62,6 @@ export default function EventDetails() {
         return;
       }
 
-      // 🟢 Send one batched call
       const results = await translateTexts(textsToTranslate, targetLang);
 
       // Map translations back to event fields

@@ -20,6 +20,7 @@ import {
   Select,
   InputLabel,
   FormControl,
+  IconButton,
 } from "@mui/material";
 import { QRCodeCanvas } from "qrcode.react";
 import { useParams, useRouter } from "next/navigation";
@@ -27,7 +28,7 @@ import LanguageSelector from "@/components/LanguageSelector";
 import { createRegistration } from "@/services/eventreg/registrationService";
 import { getPublicEventBySlug } from "@/services/eventreg/eventService";
 import ICONS from "@/utils/iconUtil";
-import { translateTexts } from "@/services/translationService"; // ✅ use batched version
+import { translateTexts } from "@/services/translationService";
 import Background from "@/components/Background";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 
@@ -66,6 +67,7 @@ export default function Registration() {
     thankYouForRegistering: isArabic
       ? "شكرًا لتسجيلك."
       : "Thank you for registering.",
+    downloadQr: isArabic ? "تحميل رمز الاستجابة السريعة" : "Download QR Code",
     approvalPendingMessage: isArabic
       ? "يرجى الانتظار حتى يوافق المسؤول على تسجيلك."
       : "Please wait for the admin to approve your registration.",
@@ -108,15 +110,15 @@ export default function Registration() {
 
     const fields = event.formFields?.length
       ? event.formFields
-        .filter((f) => f.visible !== false)
-        .map((f) => ({
-          name: f.inputName,
-          label: f.inputName,
-          type: f.inputType,
-          options: f.values || [],
-          required: f.required,
-          placeholder: f.placeholder || "",
-        }))
+          .filter((f) => f.visible !== false)
+          .map((f) => ({
+            name: f.inputName,
+            label: f.inputName,
+            type: f.inputType,
+            options: f.values || [],
+            required: f.required,
+            placeholder: f.placeholder || "",
+          }))
       : defaultFields;
 
     // initialize form
@@ -233,7 +235,7 @@ export default function Registration() {
 
   const handleDialogClose = () => {
     setShowDialog(false);
-    router.replace(`/eventreg/${lang}/event/${eventSlug}`);
+    router.replace(`/${lang}/event/${eventSlug}`);
   };
 
   // Loading
@@ -301,7 +303,12 @@ export default function Registration() {
 
     if (field.type === "list")
       return (
-        <FormControl fullWidth key={field.name} sx={{ mb: 2 }} required={field.required}>
+        <FormControl
+          fullWidth
+          key={field.name}
+          sx={{ mb: 2 }}
+          required={field.required}
+        >
           <InputLabel>{fieldLabel}</InputLabel>
           <Select
             name={field.name}
@@ -331,8 +338,8 @@ export default function Registration() {
           field.type === "number"
             ? "number"
             : field.type === "email"
-              ? "email"
-              : "text"
+            ? "email"
+            : "text"
         }
       />
     );
@@ -442,7 +449,27 @@ export default function Registration() {
         fullWidth
         dir={dir}
       >
-        <DialogTitle sx={{ textAlign: "center" }}>
+        <DialogTitle sx={{ textAlign: "center", position: "relative" }}>
+          {/* Close IconButton */}
+          <IconButton
+            onClick={handleDialogClose}
+            sx={{
+              position: "absolute",
+              top: 10,
+              right: 10,
+              width: 36,
+              height: 36,
+              bgcolor: "error.main",
+              color: "#fff",
+              boxShadow: 2,
+              "&:hover": {
+                bgcolor: "error.dark",
+              },
+            }}
+          >
+            <ICONS.close sx={{ fontSize: 22 }} />
+          </IconButton>
+
           <Box display="flex" flexDirection="column" alignItems="center">
             <ICONS.checkCircle sx={{ fontSize: 70, color: "#28a745", mb: 2 }} />
             <Typography variant="h5" fontWeight="bold">
@@ -452,31 +479,34 @@ export default function Registration() {
         </DialogTitle>
 
         <DialogContent sx={{ textAlign: "center" }}>
-          {event?.requiresApproval ? (
-            <>
-              <Typography variant="body1" sx={{ mb: 2 }}>
-                {t.thankYouForRegistering}
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            {t.thankYouForRegistering}
+          </Typography>
+
+          {/* Approval message (does NOT block QR anymore) */}
+          {event?.requiresApproval && (
+            <Box
+              sx={{
+                backgroundColor: "#fff3e0",
+                borderLeft: dir === "rtl" ? "none" : "4px solid #ff6f00",
+                borderRight: dir === "rtl" ? "4px solid #ff6f00" : "none",
+                borderRadius: 1,
+                p: 2,
+                mb: 3,
+                textAlign: dir === "rtl" ? "right" : "left",
+                mx: "auto",
+                width: "fit-content",
+                maxWidth: "100%",
+              }}
+            >
+              <Typography variant="body1">
+                {t.approvalPendingMessage}
               </Typography>
-              <Box
-                sx={{
-                  backgroundColor: "#fff3e0",
-                  borderLeft: dir === "rtl" ? "none" : "4px solid #ff6f00",
-                  borderRight: dir === "rtl" ? "4px solid #ff6f00" : "none",
-                  borderRadius: 1,
-                  p: 2,
-                  mb: 2,
-                  textAlign: dir === "rtl" ? "right" : "left",
-                  mx: "auto",
-                  width: "fit-content",
-                  maxWidth: "100%",
-                }}
-              >
-                <Typography variant="body1" sx={{ color: "text.primary" }}>
-                  {t.approvalPendingMessage}
-                </Typography>
-              </Box>
-            </>
-          ) : event?.showQrAfterRegistration ? (
+            </Box>
+          )}
+
+          {/* Show QR ONLY if event.showQrAfterRegistration is true */}
+          {event?.showQrAfterRegistration && qrToken && (
             <>
               <Typography variant="subtitle2" sx={{ color: "text.secondary" }}>
                 {t.yourToken}
@@ -499,6 +529,7 @@ export default function Registration() {
                 </Box>
               </Box>
 
+              {/* QR canvas */}
               <Box mt={2} display="flex" justifyContent="center">
                 <Paper
                   id="qr-container"
@@ -511,10 +542,11 @@ export default function Registration() {
                   }}
                 >
                   <QRCodeCanvas
+                    id="qr-code"
                     value={qrToken}
                     size={180}
                     bgColor="#ffffff"
-                    includeMargin={true}
+                    includeMargin
                     style={{
                       padding: "12px",
                       background: "#ffffff",
@@ -524,32 +556,28 @@ export default function Registration() {
                 </Paper>
               </Box>
             </>
-          ) : (
-            <Typography variant="body1" sx={{ mb: 2 }}>
-              {t.thankYou}
-            </Typography>
           )}
         </DialogContent>
 
         <DialogActions sx={{ justifyContent: "center", pb: 2 }}>
-          {event?.showQrAfterRegistration ? (
+          {/* Download QR button (only when QR is shown) */}
+          {event?.showQrAfterRegistration && qrToken && (
             <Button
-              onClick={handleDialogClose}
               variant="contained"
-              color="error"
-              startIcon={<ICONS.close />}
-              sx={getStartIconSpacing(dir)}
+              color="primary"
+              onClick={() => {
+                const canvas = document.getElementById("qr-code");
+                const pngUrl = canvas
+                  .toDataURL("image/png")
+                  .replace("image/png", "image/octet-stream");
+
+                const link = document.createElement("a");
+                link.href = pngUrl;
+                link.download = `qr-${qrToken}.png`;
+                link.click();
+              }}
             >
-              {t.registerAnother}
-            </Button>
-          ) : (
-            <Button
-              onClick={handleDialogClose}
-              variant="contained"
-              startIcon={<ICONS.event />}
-              sx={getStartIconSpacing(dir)}
-            >
-              {t.viewEvent}
+              {t.downloadQr}
             </Button>
           )}
         </DialogActions>

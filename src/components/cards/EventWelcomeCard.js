@@ -66,9 +66,12 @@ export default function EventWelcomeCard({
         alignItems="center"
         flexWrap="wrap"
       >
-        <ICONS.location color="primary" sx={{
-          ...(dir === "rtl" ? { ml: 1 } : { ml: 0 })
-        }} />
+        <ICONS.location
+          color="primary"
+          sx={{
+            ...(dir === "rtl" ? { ml: 1 } : { ml: 0 }),
+          }}
+        />
         <Typography variant="h6" sx={{ fontSize: { xs: 16, md: 20 } }}>
           {venue || t.dateNotAvailable}
         </Typography>
@@ -83,18 +86,29 @@ export default function EventWelcomeCard({
         flexWrap="wrap"
         sx={{ my: 2 }}
       >
-        <ICONS.event color="primary" sx={{
-          ...(dir === "rtl" ? { ml: 1 } : { ml: 0 })
-        }} />
+        <ICONS.event
+          color="primary"
+          sx={{
+            ...(dir === "rtl" ? { ml: 1 } : { ml: 0 }),
+          }}
+        />
         {startDate && endDate ? (
           startDate === endDate ? (
             <Typography variant="h6" sx={{ fontSize: { xs: 16, md: 20 } }}>
-              {formatDateWithShortMonth(startDate, isArabic ? "ar-SA" : "en-GB")}
+              {formatDateWithShortMonth(
+                startDate,
+                isArabic ? "ar-SA" : "en-GB"
+              )}
             </Typography>
           ) : (
             <Typography variant="h6" sx={{ fontSize: { xs: 16, md: 20 } }}>
-              {`${formatDateWithShortMonth(startDate, isArabic ? "ar-SA" : "en-GB")} ${t.to
-                } ${formatDateWithShortMonth(endDate, isArabic ? "ar-SA" : "en-GB")}`}
+              {`${formatDateWithShortMonth(
+                startDate,
+                isArabic ? "ar-SA" : "en-GB"
+              )} ${t.to} ${formatDateWithShortMonth(
+                endDate,
+                isArabic ? "ar-SA" : "en-GB"
+              )}`}
             </Typography>
           )
         ) : (
@@ -105,7 +119,7 @@ export default function EventWelcomeCard({
       </Stack>
 
       {/* Thank you message */}
-      <Typography
+      {/* <Typography
         variant="body2"
         sx={{
           fontSize: { xs: 14, md: 16 },
@@ -114,7 +128,7 @@ export default function EventWelcomeCard({
         }}
       >
         {t.thankYou}
-      </Typography>
+      </Typography> */}
 
       {/* Action button (centered) */}
       <Box sx={{ display: "flex", justifyContent: "center" }}>
@@ -145,7 +159,7 @@ export default function EventWelcomeCard({
       </Box>
 
       {/* Footer note */}
-      <Stack
+      {/* <Stack
         direction="row"
         spacing={dir === "ltr" ? 1 : 0}
         justifyContent="center"
@@ -158,7 +172,7 @@ export default function EventWelcomeCard({
         <Typography variant="caption" fontSize={14}>
           {t.takesSeconds}
         </Typography>
-      </Stack>
+      </Stack> */}
     </AppCard>
   );
 }

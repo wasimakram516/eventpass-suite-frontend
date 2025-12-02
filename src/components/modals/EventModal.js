@@ -165,6 +165,8 @@ const EventModal = ({
     showQrOnBadge: true,
     requiresApproval: false,
     defaultLanguage: "en",
+    removeLogo: false,
+    removeBackground: false,
   });
 
   useEffect(() => {
@@ -190,11 +192,11 @@ const EventModal = ({
         backgroundPreview: initialValues.backgroundUrl || "",
         brandingLogos: Array.isArray(initialValues.brandingMedia)
           ? initialValues.brandingMedia.map((l) => ({
-            _id: l._id,
-            name: l.name || "",
-            website: l.website || "",
-            logoUrl: l.logoUrl || "",
-          }))
+              _id: l._id,
+              name: l.name || "",
+              website: l.website || "",
+              logoUrl: l.logoUrl || "",
+            }))
           : [],
         removeBrandingLogoIds: [],
         clearAllBrandingLogos: false,
@@ -213,6 +215,8 @@ const EventModal = ({
         showQrOnBadge: initialValues?.showQrOnBadge ?? true,
         requiresApproval: initialValues?.requiresApproval || false,
         defaultLanguage: initialValues?.defaultLanguage || "en",
+        removeLogo: false,
+        removeBackground: false,
       }));
     } else {
       setFormData((prev) => ({
@@ -242,6 +246,8 @@ const EventModal = ({
         showQrOnBadge: true,
         requiresApproval: false,
         defaultLanguage: "en",
+        removeLogo: false,
+        removeBackground: false,
       }));
     }
   }, [initialValues, isEmployee]);
@@ -453,10 +459,20 @@ const EventModal = ({
         payload.append("tableImages", file)
       );
     }
-    payload.append("showQrAfterRegistration", formData.showQrAfterRegistration.toString());
+    payload.append(
+      "showQrAfterRegistration",
+      formData.showQrAfterRegistration.toString()
+    );
     payload.append("showQrOnBadge", formData.showQrOnBadge.toString());
     payload.append("requiresApproval", formData.requiresApproval.toString());
     payload.append("defaultLanguage", formData.defaultLanguage);
+    if (formData.removeLogo) {
+      payload.append("removeLogo", "true");
+    }
+
+    if (formData.removeBackground) {
+      payload.append("removeBackground", "true");
+    }
 
     if (formData.eventType === "public" && formData.useCustomFields) {
       payload.append("formFields", JSON.stringify(formData.formFields));
@@ -644,7 +660,10 @@ const EventModal = ({
                 variant="caption"
                 sx={{
                   fontWeight: 600,
-                  color: formData.defaultLanguage === "en" ? "#fff" : "text.secondary",
+                  color:
+                    formData.defaultLanguage === "en"
+                      ? "#fff"
+                      : "text.secondary",
                   zIndex: 2,
                   transition: "color 0.3s",
                 }}
@@ -655,7 +674,10 @@ const EventModal = ({
                 variant="caption"
                 sx={{
                   fontWeight: 600,
-                  color: formData.defaultLanguage === "ar" ? "#fff" : "text.secondary",
+                  color:
+                    formData.defaultLanguage === "ar"
+                      ? "#fff"
+                      : "text.secondary",
                   zIndex: 2,
                   transition: "color 0.3s",
                 }}
@@ -673,14 +695,21 @@ const EventModal = ({
                   backgroundColor: "#1976d2",
                   zIndex: 1,
                   boxShadow: "0 4px 8px rgba(0, 0, 0, 0.3)",
-                  transition: "left 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)",
+                  transition:
+                    "left 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)",
                 }}
               />
             </Box>
           </Box>
 
           {/* Logo Upload */}
-          <Box>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "flex-start",
+            }}
+          >
             <Button component="label" variant="outlined">
               {t.logo}
               <input
@@ -691,22 +720,52 @@ const EventModal = ({
                 onChange={handleInputChange}
               />
             </Button>
-            {formData.logoPreview && (
-              <Box sx={{ mt: 1 }}>
+
+            {formData.logoPreview && !formData.removeLogo && (
+              <Box sx={{ mt: 1.5, position: "relative" }}>
                 <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
                   {initialValues && !formData.logo ? t.currentImage : t.preview}
                 </Typography>
+
                 <img
                   src={formData.logoPreview}
                   alt="Logo preview"
                   style={{ maxHeight: 100, borderRadius: 6 }}
                 />
+
+                <IconButton
+                  size="small"
+                  onClick={() =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      logo: null,
+                      logoPreview: "",
+                      removeLogo: true,
+                    }))
+                  }
+                  sx={{
+                    position: "absolute",
+                    top: 6,
+                    right: 6,
+                    bgcolor: "error.main",
+                    color: "#fff",
+                    "&:hover": { bgcolor: "error.dark" },
+                  }}
+                >
+                  <ICONS.delete sx={{ fontSize: 18 }} />
+                </IconButton>
               </Box>
             )}
           </Box>
 
           {/* Background Upload */}
-          <Box>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "flex-start",
+            }}
+          >
             <Button component="label" variant="outlined">
               Upload Background Image (optional)
               <input
@@ -717,13 +776,15 @@ const EventModal = ({
                 onChange={handleInputChange}
               />
             </Button>
-            {formData.backgroundPreview && (
-              <Box sx={{ mt: 1 }}>
+
+            {formData.backgroundPreview && !formData.removeBackground && (
+              <Box sx={{ mt: 1.5, position: "relative" }}>
                 <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
                   {initialValues && !formData.background
                     ? "Current Background:"
                     : "Preview:"}
                 </Typography>
+
                 <img
                   src={formData.backgroundPreview}
                   alt="Background preview"
@@ -733,9 +794,32 @@ const EventModal = ({
                     objectFit: "cover",
                   }}
                 />
+
+                <IconButton
+                  size="small"
+                  onClick={() =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      background: null,
+                      backgroundPreview: "",
+                      removeBackground: true,
+                    }))
+                  }
+                  sx={{
+                    position: "absolute",
+                    top: 6,
+                    right: 6,
+                    bgcolor: "error.main",
+                    color: "#fff",
+                    "&:hover": { bgcolor: "error.dark" },
+                  }}
+                >
+                  <ICONS.delete sx={{ fontSize: 18 }} />
+                </IconButton>
               </Box>
             )}
           </Box>
+
           {/* Branding Logos Upload and List */}
           <Box>
             <Box
@@ -1031,60 +1115,60 @@ const EventModal = ({
 
                       {(field.inputType === "radio" ||
                         field.inputType === "list") && (
-                          <Box>
-                            <Typography variant="subtitle2">
-                              {t.options}
-                            </Typography>
-                            <Box
-                              sx={{
-                                display: "flex",
-                                flexWrap: "wrap",
-                                gap: 1,
-                                mb: 1,
-                              }}
-                            >
-                              {field.values.map((option, i) => (
-                                <Chip
-                                  key={i}
-                                  label={option}
-                                  onDelete={() => {
-                                    const updated = [...field.values];
-                                    updated.splice(i, 1);
-                                    handleFormFieldChange(
-                                      index,
-                                      "values",
-                                      updated
-                                    );
-                                  }}
-                                  color="primary"
-                                  variant="outlined"
-                                />
-                              ))}
-                            </Box>
-                            <TextField
-                              placeholder={t.optionPlaceholder}
-                              value={field._temp || ""}
-                              onChange={(e) => {
-                                const newValue = e.target.value;
-                                if (newValue.endsWith(",")) {
-                                  const option = newValue.slice(0, -1).trim();
-                                  if (option && !field.values.includes(option)) {
-                                    const updated = [...field.values, option];
-                                    handleFormFieldChange(
-                                      index,
-                                      "values",
-                                      updated
-                                    );
-                                  }
-                                  handleFormFieldChange(index, "_temp", "");
-                                } else {
-                                  handleFormFieldChange(index, "_temp", newValue);
-                                }
-                              }}
-                              fullWidth
-                            />
+                        <Box>
+                          <Typography variant="subtitle2">
+                            {t.options}
+                          </Typography>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              flexWrap: "wrap",
+                              gap: 1,
+                              mb: 1,
+                            }}
+                          >
+                            {field.values.map((option, i) => (
+                              <Chip
+                                key={i}
+                                label={option}
+                                onDelete={() => {
+                                  const updated = [...field.values];
+                                  updated.splice(i, 1);
+                                  handleFormFieldChange(
+                                    index,
+                                    "values",
+                                    updated
+                                  );
+                                }}
+                                color="primary"
+                                variant="outlined"
+                              />
+                            ))}
                           </Box>
-                        )}
+                          <TextField
+                            placeholder={t.optionPlaceholder}
+                            value={field._temp || ""}
+                            onChange={(e) => {
+                              const newValue = e.target.value;
+                              if (newValue.endsWith(",")) {
+                                const option = newValue.slice(0, -1).trim();
+                                if (option && !field.values.includes(option)) {
+                                  const updated = [...field.values, option];
+                                  handleFormFieldChange(
+                                    index,
+                                    "values",
+                                    updated
+                                  );
+                                }
+                                handleFormFieldChange(index, "_temp", "");
+                              } else {
+                                handleFormFieldChange(index, "_temp", newValue);
+                              }
+                            }}
+                            fullWidth
+                          />
+                        </Box>
+                      )}
 
                       <Box
                         sx={{ display: "flex", alignItems: "center", gap: 2 }}
@@ -1179,8 +1263,8 @@ const EventModal = ({
               ? t.updating
               : t.creating
             : initialValues
-              ? t.update
-              : t.create}
+            ? t.update
+            : t.create}
         </Button>
       </DialogActions>
     </Dialog>
