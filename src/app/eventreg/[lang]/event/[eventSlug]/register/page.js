@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   Box,
   Typography,
@@ -95,7 +95,7 @@ export default function Registration() {
       setLoading(false);
     };
     fetchEvent();
-  }, [eventSlug, isArabic]);
+  }, [eventSlug, lang]);
 
   // Prepare dynamic fields + batch translation for event & form fields
   useEffect(() => {
@@ -110,15 +110,15 @@ export default function Registration() {
 
     const fields = event.formFields?.length
       ? event.formFields
-          .filter((f) => f.visible !== false)
-          .map((f) => ({
-            name: f.inputName,
-            label: f.inputName,
-            type: f.inputType,
-            options: f.values || [],
-            required: f.required,
-            placeholder: f.placeholder || "",
-          }))
+        .filter((f) => f.visible !== false)
+        .map((f) => ({
+          name: f.inputName,
+          label: f.inputName,
+          type: f.inputType,
+          options: f.values || [],
+          required: f.required,
+          placeholder: f.placeholder || "",
+        }))
       : defaultFields;
 
     // initialize form
@@ -238,6 +238,32 @@ export default function Registration() {
     router.replace(`/${lang}/event/${eventSlug}`);
   };
 
+  // image background only (no videos on registration page)
+  const getImageBackground = useMemo(() => {
+    if (!event || !event.background) return null;
+
+    const langKey = lang === "ar" ? "ar" : "en";
+    const bg = event.background[langKey];
+
+    if (bg && typeof bg === 'object' && bg.url && bg.fileType === "image") {
+      return bg.url;
+    }
+
+    const otherLangKey = lang === "ar" ? "en" : "ar";
+    const otherBg = event.background[otherLangKey];
+    if (otherBg && typeof otherBg === 'object' && otherBg.url && otherBg.fileType === "image") {
+      return otherBg.url;
+    }
+
+    if (event.backgroundUrl) {
+      return event.backgroundUrl;
+    }
+
+    return null;
+  }, [event, lang]);
+
+  const imageBackgroundUrl = getImageBackground;
+
   // Loading
   if (loading || !event || !translatedEvent || !translationsReady) {
     return (
@@ -338,15 +364,14 @@ export default function Registration() {
           field.type === "number"
             ? "number"
             : field.type === "email"
-            ? "email"
-            : "text"
+              ? "email"
+              : "text"
         }
       />
     );
   };
 
-  const { name, description, logoUrl, backgroundUrl } =
-    translatedEvent || event;
+  const { name, description, logoUrl } = translatedEvent || event;
 
   return (
     <Box
@@ -359,15 +384,29 @@ export default function Registration() {
         gap: 2,
         px: 2,
         py: 4,
-        backgroundImage: backgroundUrl ? `url(${backgroundUrl})` : "none",
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        backgroundRepeat: "no-repeat",
-        backgroundAttachment: "fixed",
         position: "relative",
+        overflow: "hidden",
       }}
     >
-      {!backgroundUrl && <Background />}
+      {/* Image Background */}
+      {imageBackgroundUrl && (
+        <Box
+          component="img"
+          src={imageBackgroundUrl}
+          alt="Event background"
+          sx={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            zIndex: -1,
+            pointerEvents: "none",
+          }}
+        />
+      )}
+      {!imageBackgroundUrl && <Background />}
 
       {logoUrl && (
         <Box
