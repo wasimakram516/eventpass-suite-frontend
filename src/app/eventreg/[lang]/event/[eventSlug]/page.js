@@ -2,7 +2,13 @@
 
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Box, Typography, CircularProgress, IconButton, Button } from "@mui/material";
+import {
+  Box,
+  Typography,
+  CircularProgress,
+  IconButton,
+  Button,
+} from "@mui/material";
 import VolumeUpIcon from "@mui/icons-material/VolumeUp";
 import VolumeOffIcon from "@mui/icons-material/VolumeOff";
 import HorizontalCarousel from "@/components/HorizontalCarousel";
@@ -94,7 +100,12 @@ export default function EventDetails() {
     const langKey = lang === "ar" ? "ar" : "en";
     const bg = event.background[langKey];
 
-    if (bg && typeof bg === 'object' && bg.url && String(bg.url).trim() !== '') {
+    if (
+      bg &&
+      typeof bg === "object" &&
+      bg.url &&
+      String(bg.url).trim() !== ""
+    ) {
       let fileType = bg.fileType;
       if (!fileType) {
         const urlLower = String(bg.url).toLowerCase();
@@ -112,7 +123,12 @@ export default function EventDetails() {
 
     const otherLangKey = lang === "ar" ? "en" : "ar";
     const otherBg = event.background[otherLangKey];
-    if (otherBg && typeof otherBg === 'object' && otherBg.url && String(otherBg.url).trim() !== '') {
+    if (
+      otherBg &&
+      typeof otherBg === "object" &&
+      otherBg.url &&
+      String(otherBg.url).trim() !== ""
+    ) {
       let fileType = otherBg.fileType;
       if (!fileType) {
         const urlLower = String(otherBg.url).toLowerCase();
@@ -269,7 +285,7 @@ export default function EventDetails() {
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          justifyContent: "space-between",
+          position: "relative",
           width: "100%",
           maxWidth: "lg",
           minHeight: "calc(100vh - 80px)",
@@ -280,14 +296,18 @@ export default function EventDetails() {
         {logoUrl && (
           <Box
             sx={{
-              width: { xs: "auto", sm: 320, md: 500 },
-              maxWidth: { xs: "100%", sm: 320, md: 500 },
+              width: { xs: "100%" },
+              maxWidth: { xs: 300, sm: 400, md: 500 },
+              height: "auto",
               maxHeight: { xs: 120, sm: "none" },
               borderRadius: 3,
               overflow: "hidden",
               boxShadow: 3,
               mt: { xs: 2, sm: 0 },
-              display: "inline-block",
+              position: "absolute",
+              top: 0,
+              left: "50%",
+              transform: "translateX(-50%)",
             }}
           >
             <Box
@@ -300,14 +320,16 @@ export default function EventDetails() {
                 height: "auto",
                 maxHeight: { xs: 120, sm: "none" },
                 maxWidth: { xs: "100%", sm: "none" },
-                objectFit: "contain",
+                objectFit: "cover",
               }}
             />
           </Box>
         )}
 
         {/* Main details container */}
-        {showEventDetails ? (
+        {showEventDetails ||
+        background === null ||
+        background.fileType !== "video" ? (
           <EventWelcomeCard
             t={t}
             name={name}
@@ -334,6 +356,13 @@ export default function EventDetails() {
               fontWeight: 600,
               borderRadius: 2,
               textTransform: "none",
+              display: `${
+                background === null || background.fileType !== "video"
+                  ? "none"
+                  : "block"
+              }`,
+              position: "absolute",
+              top: "60%",
             }}
           >
             {t.showEventDetails}
@@ -342,7 +371,16 @@ export default function EventDetails() {
 
         {/* Branding media carousel */}
         {brandingMedia.length > 0 && (
-          <Box sx={{ width: "100%", mb: { xs: 2, md: 0 } }}>
+          <Box
+            sx={{
+              width: "100%",
+              mb: { xs: 2, md: 0 },
+              position: "absolute",
+              bottom: 0,
+              left: "50%",
+              transform: "translateX(-50%)",
+            }}
+          >
             <HorizontalCarousel
               items={brandingMedia}
               showBorders={false}
