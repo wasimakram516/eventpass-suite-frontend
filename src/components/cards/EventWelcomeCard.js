@@ -29,7 +29,7 @@ export default function EventWelcomeCard({
         textAlign: "center",
         p: 4,
         position: "absolute",
-        top: "50%",
+        top: { xs: "35%", md: "50%" },
       }}
     >
       {/* Title */}
