@@ -28,6 +28,8 @@ export default function EventWelcomeCard({
         maxWidth: 800,
         textAlign: "center",
         p: 4,
+        position: "absolute",
+        top: "50%",
       }}
     >
       {/* Title */}
@@ -149,7 +151,6 @@ export default function EventWelcomeCard({
             transition: "0.3s",
             "&:hover": {
               background: "secondary.main",
-              transform: "scale(1.05)",
             },
             ...getStartIconSpacing(dir),
           }}
