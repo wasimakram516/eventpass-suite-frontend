@@ -21,11 +21,17 @@ import {
   Paper,
   Tooltip,
 } from "@mui/material";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import slugify from "@/utils/slugify";
 import { useMessage } from "@/contexts/MessageContext";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { downloadEmployeeTemplate } from "@/services/checkin/checkinEventService";
+import { deleteMedia } from "@/services/mediaService";
+import { getPublicEventById, updatePublicEvent, updatePublicEventWithProgress } from "@/services/eventreg/eventService";
+import { updateCheckInEvent } from "@/services/checkin/checkinEventService";
+import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
+import MediaUploadProgress from "@/components/common/MediaUploadProgress";
+import { batchUploadMediaWithProgress } from "@/services/uploadService";
 import ICONS from "@/utils/iconUtil";
 
 const translations = {
@@ -80,6 +86,9 @@ const translations = {
     showQrOnBadgeToggle: "Show QR Code on Printed Badge?",
     requiresApprovalToggle: "Require admin approval for registrations?",
     downloadTemplateSuccess: "Template downloaded successfully",
+    deleteMediaTitle: "Delete Media",
+    deleteMediaMessage: "Are you sure you want to delete this media? This action cannot be undone.",
+    deleteConfirm: "Delete",
   },
   ar: {
     createTitle: "إنشاء فعالية",
@@ -132,6 +141,9 @@ const translations = {
     showQrOnBadgeToggle: "عرض رمز QR على بطاقة الطباعة؟",
     requiresApprovalToggle: "يتطلب موافقة المسؤول على التسجيلات؟",
     downloadTemplateSuccess: "تم تحميل القالب بنجاح",
+    deleteMediaTitle: "حذف الوسائط",
+    deleteMediaMessage: "هل أنت متأكد من حذف هذه الوسائط؟ لا يمكن التراجع عن هذا الإجراء.",
+    deleteConfirm: "حذف",
   },
 };
 
@@ -142,11 +154,16 @@ const EventModal = ({
   initialValues,
   selectedBusiness,
   isEmployee = false,
+  onEventUpdated,
 }) => {
   const { t, dir } = useI18nLayout(translations);
   const { showMessage } = useMessage();
 
   const [loading, setLoading] = useState(false);
+  const [uploadingMedia, setUploadingMedia] = useState({
+    agenda: false,
+    employeeData: false,
+  });
   const [formData, setFormData] = useState({
     name: "",
     slug: "",
@@ -177,10 +194,55 @@ const EventModal = ({
     showQrOnBadge: true,
     requiresApproval: false,
     defaultLanguage: "en",
-    removeLogo: false,
-    removeBackgroundEn: false,
-    removeBackgroundAr: false,
   });
+
+  const [deleteConfirm, setDeleteConfirm] = useState({
+    open: false,
+    type: null,
+    fileUrl: null,
+    index: null,
+  });
+
+  const [uploadProgress, setUploadProgress] = useState({
+    open: false,
+    uploads: [],
+  });
+
+  const [deletedMedia, setDeletedMedia] = useState({
+    logo: false,
+    backgroundEn: false,
+    backgroundAr: false,
+  });
+
+  const logoButtonRef = useRef(null);
+  const backgroundEnButtonRef = useRef(null);
+  const backgroundArButtonRef = useRef(null);
+
+  const [buttonWidths, setButtonWidths] = useState({
+    logo: null,
+    backgroundEn: null,
+    backgroundAr: null,
+  });
+
+  useEffect(() => {
+    const measureWidths = () => {
+      const widths = {
+        logo: logoButtonRef.current?.offsetWidth || null,
+        backgroundEn: backgroundEnButtonRef.current?.offsetWidth || null,
+        backgroundAr: backgroundArButtonRef.current?.offsetWidth || null,
+      };
+      setButtonWidths(widths);
+    };
+
+    const timeoutId = setTimeout(measureWidths, 100);
+
+    window.addEventListener("resize", measureWidths);
+
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener("resize", measureWidths);
+    };
+  }, [formData.logoPreview, formData.backgroundEnPreview, formData.backgroundArPreview]);
 
   useEffect(() => {
     if (initialValues && Object.keys(initialValues).length > 0) {
@@ -232,10 +294,8 @@ const EventModal = ({
         showQrOnBadge: initialValues?.showQrOnBadge ?? true,
         requiresApproval: initialValues?.requiresApproval || false,
         defaultLanguage: initialValues?.defaultLanguage || "en",
-        removeLogo: false,
-        removeBackgroundEn: false,
-        removeBackgroundAr: false,
       }));
+      setDeletedMedia({ logo: false, backgroundEn: false, backgroundAr: false });
     } else {
       setFormData((prev) => ({
         ...prev,
@@ -268,67 +328,158 @@ const EventModal = ({
         showQrOnBadge: true,
         requiresApproval: false,
         defaultLanguage: "en",
-        removeLogo: false,
-        removeBackgroundEn: false,
-        removeBackgroundAr: false,
       }));
+      setDeletedMedia({ logo: false, backgroundEn: false, backgroundAr: false });
     }
   }, [initialValues, isEmployee]);
 
-  const handleInputChange = (e) => {
+  const handleInputChange = async (e) => {
     const { name, value, files } = e.target;
     if (name === "logo" && files?.[0]) {
       const file = files[0];
       if (file.type.startsWith("image/")) {
+        setDeletedMedia((prev) => ({ ...prev, logo: false }));
+
+        const previewUrl = URL.createObjectURL(file);
         setFormData((prev) => ({
           ...prev,
           logo: file,
-          logoPreview: URL.createObjectURL(file),
+          logoPreview: previewUrl,
         }));
       }
     } else if (name === "backgroundEn" && files?.[0]) {
       const file = files[0];
       if (file.type.startsWith("image/") || file.type.startsWith("video/")) {
+        const fileType = file.type.startsWith("video/") ? "video" : "image";
+        setDeletedMedia((prev) => ({ ...prev, backgroundEn: false }));
+
+        const previewUrl = URL.createObjectURL(file);
         setFormData((prev) => ({
           ...prev,
           backgroundEn: file,
-          backgroundEnPreview: URL.createObjectURL(file),
-          backgroundEnFileType: file.type.startsWith("video/") ? "video" : "image",
-          removeBackgroundEn: false,
+          backgroundEnPreview: previewUrl,
+          backgroundEnFileType: fileType,
         }));
       }
     } else if (name === "backgroundAr" && files?.[0]) {
       const file = files[0];
       if (file.type.startsWith("image/") || file.type.startsWith("video/")) {
+        const fileType = file.type.startsWith("video/") ? "video" : "image";
+        setDeletedMedia((prev) => ({ ...prev, backgroundAr: false }));
+
+        const previewUrl = URL.createObjectURL(file);
         setFormData((prev) => ({
           ...prev,
           backgroundAr: file,
-          backgroundArPreview: URL.createObjectURL(file),
-          backgroundArFileType: file.type.startsWith("video/") ? "video" : "image",
-          removeBackgroundAr: false,
+          backgroundArPreview: previewUrl,
+          backgroundArFileType: fileType,
         }));
       }
     } else if (name === "agenda" && files?.[0]) {
       const file = files[0];
       if (file.type === "application/pdf") {
-        setFormData((prev) => ({
-          ...prev,
-          agenda: file,
-          agendaPreview: file.name,
-        }));
+
+        if (initialValues?._id) {
+          setUploadingMedia((prev) => ({ ...prev, agenda: true }));
+          try {
+            const uploadPayload = new FormData();
+            uploadPayload.append("agenda", file);
+
+            const updatedEvent = isEmployee
+              ? await updateCheckInEvent(initialValues._id, uploadPayload)
+              : await updatePublicEvent(initialValues._id, uploadPayload);
+
+            if (updatedEvent && !updatedEvent.error) {
+              setFormData((prev) => ({
+                ...prev,
+                agenda: null,
+                agendaPreview: updatedEvent.agendaUrl || file.name,
+              }));
+
+              if (initialValues) {
+                initialValues.agendaUrl = updatedEvent.agendaUrl;
+              }
+
+              if (onEventUpdated) {
+                onEventUpdated(updatedEvent);
+              }
+
+              showMessage("Agenda uploaded successfully", "success");
+            }
+          } catch (err) {
+            console.error("Failed to upload agenda:", err);
+            showMessage("Failed to upload agenda. Please try again.", "error");
+          } finally {
+            setUploadingMedia((prev) => ({ ...prev, agenda: false }));
+          }
+        } else {
+          setFormData((prev) => ({
+            ...prev,
+            agenda: file,
+            agendaPreview: file.name,
+          }));
+        }
       }
     } else if (name === "employeeData" && files?.[0]) {
-      setFormData((prev) => ({ ...prev, employeeData: files[0] }));
+      const file = files[0];
+
+      if (initialValues?._id && isEmployee) {
+        setUploadingMedia((prev) => ({ ...prev, employeeData: true }));
+        try {
+          const uploadPayload = new FormData();
+          uploadPayload.append("employeeData", file);
+
+          formData.tableImages.forEach((imgFile) => {
+            uploadPayload.append("tableImages", imgFile);
+          });
+
+          const updatedEvent = await updateCheckInEvent(initialValues._id, uploadPayload);
+
+          if (updatedEvent && !updatedEvent.error) {
+
+            setFormData((prev) => ({
+              ...prev,
+              employeeData: null,
+              tableImages: [],
+            }));
+
+
+            if (initialValues) {
+              initialValues.employeeData = updatedEvent.employeeData;
+            }
+
+
+            if (onEventUpdated) {
+              onEventUpdated(updatedEvent);
+            }
+
+            showMessage("Employee data uploaded successfully", "success");
+          }
+        } catch (err) {
+          console.error("Failed to upload employee data:", err);
+          showMessage("Failed to upload employee data. Please try again.", "error");
+        } finally {
+          setUploadingMedia((prev) => ({ ...prev, employeeData: false }));
+        }
+      } else {
+
+        setFormData((prev) => ({ ...prev, employeeData: file }));
+      }
     } else if (name === "tableImages" && files?.length > 0) {
-      setFormData((prev) => ({ ...prev, tableImages: [...files] }));
+      const fileArray = Array.from(files);
+
+      setFormData((prev) => ({ ...prev, tableImages: [...prev.tableImages, ...fileArray] }));
+
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
 
-  const handleAddBrandingLogos = (e) => {
+  const handleAddBrandingLogos = async (e) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
+
+    e.target.value = "";
 
     const newItems = files.map((file, index) => ({
       name: "",
@@ -342,7 +493,6 @@ const EventModal = ({
       ...prev,
       brandingLogos: [...prev.brandingLogos, ...newItems],
     }));
-    e.target.value = "";
   };
 
   const handleBrandingLogoFieldChange = (index, key, value) => {
@@ -354,21 +504,29 @@ const EventModal = ({
   };
 
   const handleRemoveBrandingLogo = (index) => {
-    setFormData((prev) => {
-      const arr = [...prev.brandingLogos];
-      const removed = arr.splice(index, 1)[0];
-      const removeIds = [...prev.removeBrandingLogoIds];
+    const item = formData.brandingLogos[index];
+    if (!item) return;
 
-      if (removed && removed._id) {
-        removeIds.push(removed._id);
-      }
+    if (item.logoUrl && item.logoUrl.startsWith("blob:")) {
+      setFormData((prev) => {
+        const arr = [...prev.brandingLogos];
+        arr.splice(index, 1);
+        return {
+          ...prev,
+          brandingLogos: arr,
+        };
+      });
+      return;
+    }
 
-      return {
-        ...prev,
-        brandingLogos: arr,
-        removeBrandingLogoIds: removeIds,
-      };
-    });
+    if (item.logoUrl && !item.logoUrl.startsWith("blob:")) {
+      setDeleteConfirm({
+        open: true,
+        type: "brandingLogo",
+        fileUrl: item.logoUrl,
+        index: index,
+      });
+    }
   };
 
   const handleClearAllBrandingLogos = () => {
@@ -423,6 +581,122 @@ const EventModal = ({
     }
   };
 
+
+  const handleDeleteMedia = (type, fileUrl) => {
+
+    if (fileUrl && fileUrl.startsWith("blob:")) {
+      if (type === "logo") {
+        setFormData((prev) => ({
+          ...prev,
+          logo: null,
+          logoPreview: "",
+        }));
+      } else if (type === "backgroundEn") {
+        setFormData((prev) => ({
+          ...prev,
+          backgroundEn: null,
+          backgroundEnPreview: "",
+          backgroundEnFileType: null,
+        }));
+      } else if (type === "backgroundAr") {
+        setFormData((prev) => ({
+          ...prev,
+          backgroundAr: null,
+          backgroundArPreview: "",
+          backgroundArFileType: null,
+        }));
+      }
+      return;
+    }
+
+
+    setDeleteConfirm({
+      open: true,
+      type,
+      fileUrl,
+    });
+  };
+
+  const confirmDeleteMedia = async () => {
+    try {
+
+      const deletePayload = {
+        fileUrl: deleteConfirm.fileUrl,
+        storageType: "s3",
+      };
+
+      if (initialValues?._id) {
+        deletePayload.eventId = initialValues._id;
+        deletePayload.eventType = isEmployee ? "employee" : "public";
+        deletePayload.mediaType = deleteConfirm.type;
+
+
+        if (deleteConfirm.type === "brandingLogo") {
+          const item = formData.brandingLogos[deleteConfirm.index];
+          if (item?._id) {
+            deletePayload.removeBrandingLogoIds = [item._id];
+          }
+        }
+      }
+
+
+      const updatedEvent = await deleteMedia(deletePayload);
+
+
+      if (initialValues?._id && onEventUpdated && updatedEvent && !updatedEvent.error) {
+        onEventUpdated(updatedEvent);
+      }
+
+
+      if (deleteConfirm.type === "logo") {
+        setFormData((prev) => ({
+          ...prev,
+          logo: null,
+          logoPreview: "",
+        }));
+        setDeletedMedia((prev) => ({ ...prev, logo: true }));
+      } else if (deleteConfirm.type === "backgroundEn") {
+        setFormData((prev) => ({
+          ...prev,
+          backgroundEn: null,
+          backgroundEnPreview: "",
+          backgroundEnFileType: null,
+        }));
+        setDeletedMedia((prev) => ({ ...prev, backgroundEn: true }));
+      } else if (deleteConfirm.type === "backgroundAr") {
+        setFormData((prev) => ({
+          ...prev,
+          backgroundAr: null,
+          backgroundArPreview: "",
+          backgroundArFileType: null,
+        }));
+        setDeletedMedia((prev) => ({ ...prev, backgroundAr: true }));
+      } else if (deleteConfirm.type === "brandingLogo") {
+
+        setFormData((prev) => {
+          const arr = [...prev.brandingLogos];
+          const removed = arr.splice(deleteConfirm.index, 1)[0];
+          const removeIds = [...prev.removeBrandingLogoIds];
+
+          if (removed && removed._id) {
+            removeIds.push(removed._id);
+          }
+
+          return {
+            ...prev,
+            brandingLogos: arr,
+            removeBrandingLogoIds: removeIds,
+          };
+        });
+      }
+
+      setDeleteConfirm({ open: false, type: null, fileUrl: null, index: null });
+      showMessage("Media deleted successfully", "success");
+    } catch (err) {
+      showMessage(err.message || "Failed to delete media", "error");
+    }
+  };
+
   const handleSubmit = async () => {
     if (
       !formData.name ||
@@ -441,85 +715,373 @@ const EventModal = ({
       return;
     }
     setLoading(true);
-    const payload = new FormData();
-    if (!initialValues && selectedBusiness)
-      payload.append("businessSlug", selectedBusiness);
-    payload.append("name", formData.name);
-    payload.append("slug", formData.slug || slugify(formData.name));
-    payload.append("startDate", formData.startDate);
-    payload.append("endDate", formData.endDate);
-    payload.append("venue", formData.venue);
-    payload.append("description", formData.description);
-    payload.append("capacity", formData.capacity || "999");
-    payload.append("eventType", formData.eventType);
-    if (formData.logo) payload.append("logo", formData.logo);
-    if (formData.backgroundEn) payload.append("backgroundEn", formData.backgroundEn);
-    if (formData.backgroundAr) payload.append("backgroundAr", formData.backgroundAr);
-    if (formData.clearAllBrandingLogos) {
-      payload.append("clearAllBrandingLogos", "true");
-    } else {
-      const meta = [];
-      formData.brandingLogos.forEach((item) => {
-        if (item.file) {
-          payload.append("brandingMedia", item.file);
-          meta.push({ name: item.name || "", website: item.website || "" });
+
+    try {
+      const mediaFiles = [];
+      const uploadLabels = {};
+
+      if (formData.logo) {
+        mediaFiles.push({ type: 'logo', file: formData.logo });
+        uploadLabels['logo'] = t.logo || "Event Logo";
+      }
+
+      if (formData.backgroundEn) {
+        mediaFiles.push({ type: 'backgroundEn', file: formData.backgroundEn });
+        uploadLabels['backgroundEn'] = t.uploadBackgroundEn || "Background (EN)";
+      }
+
+      if (formData.backgroundAr) {
+        mediaFiles.push({ type: 'backgroundAr', file: formData.backgroundAr });
+        uploadLabels['backgroundAr'] = t.uploadBackgroundAr || "Background (AR)";
+      }
+
+      if (formData.brandingLogos) {
+        formData.brandingLogos.forEach((item, idx) => {
+          if (item.file) {
+            mediaFiles.push({
+              type: 'brandingMedia',
+              file: item.file,
+              name: item.name || "",
+              website: item.website || ""
+            });
+            uploadLabels[`brandingMedia-${idx}`] = `Branding Logo ${idx + 1}`;
+          }
+        });
+      }
+
+      if (formData.agenda) {
+        mediaFiles.push({ type: 'agenda', file: formData.agenda });
+        uploadLabels['agenda'] = "Agenda PDF";
+      }
+
+      const payload = new FormData();
+
+      if (!initialValues && selectedBusiness) {
+
+        payload.append("businessSlug", selectedBusiness);
+        payload.append("name", formData.name);
+        payload.append("slug", formData.slug || slugify(formData.name));
+        payload.append("startDate", formData.startDate);
+        payload.append("endDate", formData.endDate);
+        payload.append("venue", formData.venue);
+        payload.append("description", formData.description);
+        payload.append("capacity", formData.capacity || "999");
+        payload.append("eventType", formData.eventType);
+
+        if (formData.eventType === "employee") {
+          if (formData.employeeData)
+            payload.append("employeeData", formData.employeeData);
+          formData.tableImages.forEach((file) =>
+            payload.append("tableImages", file)
+          );
         }
-      });
-      if (meta.length) {
-        payload.append("brandingMediaMeta", JSON.stringify(meta));
+
+        payload.append("showQrAfterRegistration", formData.showQrAfterRegistration.toString());
+        payload.append("showQrOnBadge", formData.showQrOnBadge.toString());
+        payload.append("requiresApproval", formData.requiresApproval.toString());
+        payload.append("defaultLanguage", formData.defaultLanguage);
+
+        if (formData.eventType === "public" && formData.useCustomFields) {
+          payload.append("formFields", JSON.stringify(formData.formFields));
+        }
+
+
+        let savedEvent;
+        try {
+          savedEvent = await onSubmit(payload, false, mediaFiles.length > 0);
+
+          if (savedEvent?.error) {
+            const errorMsg = savedEvent?.message || "Failed to create event";
+            showMessage(errorMsg, "error");
+            setLoading(false);
+            return;
+          }
+        } catch (error) {
+          const errorMsg = error?.message || error?.response?.data?.message || "Failed to create event";
+          showMessage(errorMsg, "error");
+          setLoading(false);
+          return;
+        }
+
+
+        let eventId = savedEvent?._id || savedEvent?.id || savedEvent?.data?._id || savedEvent?.data?.id;
+
+        if (!eventId && savedEvent) {
+          console.log("Event creation response:", savedEvent);
+
+          if (savedEvent.name && savedEvent.slug) {
+            eventId = savedEvent._id || savedEvent.id;
+          }
+        }
+
+        if (!eventId) {
+          const errorMsg = savedEvent?.message || savedEvent?.error || "Failed to save event: Event ID not returned";
+          console.error("Event creation failed - no ID found:", savedEvent);
+          showMessage(errorMsg, "error");
+          setLoading(false);
+          return;
+        }
+
+        if (mediaFiles.length > 0) {
+          const initialUploads = mediaFiles.map((item, idx) => ({
+            label: uploadLabels[item.type === 'brandingMedia' ? `brandingMedia-${idx}` : item.type] || item.type,
+            type: item.type,
+            percent: 0,
+            loaded: 0,
+            total: 0,
+          }));
+
+          setUploadProgress({
+            open: true,
+            uploads: initialUploads,
+          });
+
+          try {
+            await batchUploadMediaWithProgress(
+              eventId,
+              { mediaFiles },
+              (progressData) => {
+                setUploadProgress((prev) => {
+                  const updatedUploads = prev.uploads.map((u, idx) => {
+                    if (idx === progressData.taskIndex) {
+
+                      if (u.percent === 100) {
+                        return u;
+                      }
+
+                      if (progressData.percent !== undefined && progressData.percent !== null) {
+                        return {
+                          ...u,
+                          percent: progressData.percent,
+                          loaded: progressData.loaded || u.loaded,
+                          total: progressData.total || u.total
+                        };
+                      }
+                      return u;
+                    }
+                    return u;
+                  });
+
+                  return {
+                    ...prev,
+                    uploads: updatedUploads,
+                  };
+                });
+              }
+            );
+
+            setUploadProgress((prev) => ({
+              ...prev,
+              uploads: prev.uploads.map((u) => ({
+                ...u,
+                percent: 100,
+              })),
+            }));
+          } catch (error) {
+            const errorMsg = error?.message || error?.error || "Failed to upload media";
+            console.error("Media upload error:", error);
+            showMessage(errorMsg, "error");
+            setUploadProgress({ open: false, uploads: [] });
+            setLoading(false);
+            return;
+          }
+        }
+
+
+        if (onEventUpdated) {
+          try {
+            const refreshedEvent = await getPublicEventById(eventId);
+            onEventUpdated(refreshedEvent);
+          } catch (error) {
+            console.error("Failed to refresh event:", error);
+          }
+        }
+
+        setLoading(false);
+        if (mediaFiles.length > 0) {
+          setUploadProgress({ open: false, uploads: [] });
+          setTimeout(() => {
+            onClose();
+          }, 500);
+        } else {
+
+          onClose();
+        }
+      } else {
+
+        payload.append("name", formData.name);
+        payload.append("slug", formData.slug || slugify(formData.name));
+        payload.append("startDate", formData.startDate);
+        payload.append("endDate", formData.endDate);
+        payload.append("venue", formData.venue);
+        payload.append("description", formData.description);
+        payload.append("capacity", formData.capacity || "999");
+        payload.append("eventType", formData.eventType);
+
+        if (formData.logo) payload.append("logo", formData.logo);
+        if (formData.backgroundEn) payload.append("backgroundEn", formData.backgroundEn);
+        if (formData.backgroundAr) payload.append("backgroundAr", formData.backgroundAr);
+        if (formData.agenda) payload.append("agenda", formData.agenda);
+
+        const brandingMeta = [];
+        formData.brandingLogos.forEach((item) => {
+          if (item.file) {
+            payload.append("brandingMedia", item.file);
+            brandingMeta.push({ name: item.name || "", website: item.website || "" });
+          }
+        });
+        if (brandingMeta.length > 0) {
+          payload.append("brandingMediaMeta", JSON.stringify(brandingMeta));
+        }
+
+        if (deletedMedia.logo) payload.append("removeLogo", "true");
+        if (deletedMedia.backgroundEn) payload.append("removeBackgroundEn", "true");
+        if (deletedMedia.backgroundAr) payload.append("removeBackgroundAr", "true");
+
+        if (formData.clearAllBrandingLogos) {
+          payload.append("clearAllBrandingLogos", "true");
+        } else {
+
+          const existingBrandingUrls = formData.brandingLogos
+            .filter((item) => !item.file && item.logoUrl)
+            .map((item) => ({
+              name: item.name || "",
+              website: item.website || "",
+              logoUrl: item.logoUrl,
+            }));
+          if (existingBrandingUrls.length > 0) {
+            payload.append("brandingMediaUrls", JSON.stringify(existingBrandingUrls));
+          }
+
+          if (formData.removeBrandingLogoIds.length > 0) {
+            payload.append("removeBrandingLogoIds", JSON.stringify(formData.removeBrandingLogoIds));
+          }
+        }
+
+        if (formData.eventType === "employee") {
+          if (formData.employeeData)
+            payload.append("employeeData", formData.employeeData);
+          formData.tableImages.forEach((file) =>
+            payload.append("tableImages", file)
+          );
+        }
+
+        payload.append("showQrAfterRegistration", formData.showQrAfterRegistration.toString());
+        payload.append("showQrOnBadge", formData.showQrOnBadge.toString());
+        payload.append("requiresApproval", formData.requiresApproval.toString());
+        payload.append("defaultLanguage", formData.defaultLanguage);
+
+        if (formData.eventType === "public" && formData.useCustomFields) {
+          payload.append("formFields", JSON.stringify(formData.formFields));
+        }
+
+
+        const hasMediaOperations = mediaFiles.length > 0 || deletedMedia.logo || deletedMedia.backgroundEn || deletedMedia.backgroundAr || formData.clearAllBrandingLogos || formData.removeBrandingLogoIds.length > 0;
+
+        if (hasMediaOperations) {
+
+          const initialUploads = mediaFiles.length > 0
+            ? mediaFiles.map((item, idx) => ({
+              label: uploadLabels[item.type === 'brandingMedia' ? `brandingMedia-${idx}` : item.type] || item.type,
+              type: item.type,
+              percent: 0,
+              loaded: 0,
+              total: 0,
+            }))
+            : [];
+          if (mediaFiles.length > 0) {
+            setUploadProgress({
+              open: true,
+              uploads: initialUploads,
+            });
+          }
+
+          try {
+
+            const updatedEvent = await updatePublicEventWithProgress(
+              initialValues._id,
+              payload,
+              (progressData) => {
+
+                setUploadProgress((prev) => {
+                  const updatedUploads = prev.uploads.map((u, idx) => {
+                    if (idx === progressData.taskIndex) {
+
+                      if (u.percent === 100) {
+                        return u;
+                      }
+                      return {
+                        ...u,
+                        percent: progressData.percent || 0,
+                        loaded: progressData.loaded || 0,
+                        total: progressData.total || 0
+                      };
+                    }
+                    return u;
+                  });
+
+                  const allComplete = updatedUploads.every((u) => u.percent === 100 || u.error);
+
+                  return {
+                    ...prev,
+                    uploads: updatedUploads,
+
+                    allComplete
+                  };
+                });
+              }
+            );
+
+
+            if (mediaFiles.length > 0) {
+              setUploadProgress((prev) => ({
+                ...prev,
+                uploads: prev.uploads.map((u) => ({
+                  ...u,
+                  percent: 100,
+                })),
+                allComplete: true,
+              }));
+
+              setUploadProgress({ open: false, uploads: [] });
+            }
+
+
+            if (onEventUpdated && updatedEvent) {
+              onEventUpdated(updatedEvent);
+            }
+
+            setLoading(false);
+
+            onClose();
+          } catch (error) {
+            showMessage(error.message || "Failed to update event", "error");
+            setUploadProgress({ open: false, uploads: [] });
+            setLoading(false);
+          }
+        } else {
+
+          try {
+            const updatedEvent = await onSubmit(payload, true);
+
+
+            if (onEventUpdated && updatedEvent) {
+              onEventUpdated(updatedEvent);
+            }
+
+            setLoading(false);
+            onClose();
+          } catch (error) {
+            showMessage(error.message || "Failed to update event", "error");
+            setLoading(false);
+          }
+        }
       }
+    } catch (err) {
+      showMessage(err.message || "Failed to save event", "error");
+      setUploadProgress({ open: false, uploads: [] });
+      setLoading(false);
     }
-
-    if (initialValues && !formData.clearAllBrandingLogos) {
-      const existingBrandingUrls = formData.brandingLogos
-        .filter((item) => !item.file && item.logoUrl)
-        .map((item) => ({
-          name: item.name || "",
-          website: item.website || "",
-          logoUrl: item.logoUrl,
-        }));
-      payload.append("brandingMediaUrls", JSON.stringify(existingBrandingUrls));
-
-      if (formData.removeBrandingLogoIds.length > 0) {
-        payload.append(
-          "removeBrandingLogoIds",
-          JSON.stringify(formData.removeBrandingLogoIds)
-        );
-      }
-    }
-
-    if (formData.agenda) payload.append("agenda", formData.agenda);
-    if (formData.eventType === "employee") {
-      if (formData.employeeData)
-        payload.append("employeeData", formData.employeeData);
-      formData.tableImages.forEach((file) =>
-        payload.append("tableImages", file)
-      );
-    }
-    payload.append(
-      "showQrAfterRegistration",
-      formData.showQrAfterRegistration.toString()
-    );
-    payload.append("showQrOnBadge", formData.showQrOnBadge.toString());
-    payload.append("requiresApproval", formData.requiresApproval.toString());
-    payload.append("defaultLanguage", formData.defaultLanguage);
-    if (formData.removeLogo) {
-      payload.append("removeLogo", "true");
-    }
-
-    if (formData.removeBackgroundEn) {
-      payload.append("removeBackgroundEn", "true");
-    }
-
-    if (formData.removeBackgroundAr) {
-      payload.append("removeBackgroundAr", "true");
-    }
-
-    if (formData.eventType === "public" && formData.useCustomFields) {
-      payload.append("formFields", JSON.stringify(formData.formFields));
-    }
-    await onSubmit(payload, !!initialValues);
-    setLoading(false);
   };
 
   return (
@@ -751,50 +1313,63 @@ const EventModal = ({
               alignItems: "flex-start",
             }}
           >
-            <Button component="label" variant="outlined">
-              {t.logo}
+            <Button
+              ref={logoButtonRef}
+              component="label"
+              variant="outlined"
+              disabled={uploadingMedia.logo}
+              startIcon={uploadingMedia.logo ? <CircularProgress size={16} /> : null}
+            >
+              {uploadingMedia.logo ? "Uploading..." : t.logo}
               <input
                 hidden
                 name="logo"
                 type="file"
                 accept="image/*"
                 onChange={handleInputChange}
+                disabled={uploadingMedia.logo}
               />
             </Button>
 
-            {formData.logoPreview && !formData.removeLogo && (
-              <Box sx={{ mt: 1.5, position: "relative" }}>
+            {formData.logoPreview && !uploadingMedia.logo && (
+              <Box sx={{ mt: 1.5 }}>
                 <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
                   {initialValues && !formData.logo ? t.currentImage : t.preview}
                 </Typography>
 
-                <img
-                  src={formData.logoPreview}
-                  alt="Logo preview"
-                  style={{ maxHeight: 100, borderRadius: 6 }}
-                />
+                <Box sx={{ position: "relative", display: "inline-block", width: buttonWidths.logo || "auto" }}>
+                  <img
+                    src={formData.logoPreview}
+                    alt="Logo preview"
+                    style={{
+                      width: buttonWidths.logo ? `${buttonWidths.logo}px` : "auto",
+                      maxHeight: 100,
+                      height: "auto",
+                      borderRadius: 6,
+                      objectFit: "cover",
+                    }}
+                  />
 
-                <IconButton
-                  size="small"
-                  onClick={() =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      logo: null,
-                      logoPreview: "",
-                      removeLogo: true,
-                    }))
-                  }
-                  sx={{
-                    position: "absolute",
-                    top: 6,
-                    right: 6,
-                    bgcolor: "error.main",
-                    color: "#fff",
-                    "&:hover": { bgcolor: "error.dark" },
-                  }}
-                >
-                  <ICONS.delete sx={{ fontSize: 18 }} />
-                </IconButton>
+                  <IconButton
+                    size="small"
+                    disabled={uploadingMedia.logo}
+                    onClick={() => {
+                      const fileUrl = initialValues?.logoUrl || formData.logoPreview;
+                      handleDeleteMedia("logo", fileUrl);
+                    }}
+                    sx={{
+                      position: "absolute",
+                      top: -18,
+                      right: 6,
+                      bgcolor: "error.main",
+                      color: "#fff",
+                      "&:hover": { bgcolor: "error.dark" },
+                      "&:disabled": { opacity: 0.5 },
+                    }}
+                  >
+                    <ICONS.delete sx={{ fontSize: 18 }} />
+                  </IconButton>
+                </Box>
               </Box>
             )}
           </Box>
@@ -822,7 +1397,12 @@ const EventModal = ({
                 width: "100%",
               }}
             >
-              <Button component="label" variant="outlined" size="small">
+              <Button
+                ref={backgroundEnButtonRef}
+                component="label"
+                variant="outlined"
+                size="small"
+              >
                 {t.uploadBackgroundEn}
                 <input
                   hidden
@@ -833,7 +1413,7 @@ const EventModal = ({
                 />
               </Button>
 
-              {formData.backgroundEnPreview && !formData.removeBackgroundEn && (
+              {formData.backgroundEnPreview && (
                 <Box sx={{ mt: 1.5 }}>
                   <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
                     {initialValues && !formData.backgroundEn
@@ -841,7 +1421,7 @@ const EventModal = ({
                       : t.preview + " (EN)"}
                   </Typography>
 
-                  <Box sx={{ position: "relative", display: "inline-block" }}>
+                  <Box sx={{ position: "relative", display: "inline-block", width: buttonWidths.backgroundEn || "auto" }}>
                     {formData.backgroundEn?.type?.startsWith("video/") ||
                       formData.backgroundEnFileType === "video" ||
                       (formData.backgroundEnPreview &&
@@ -852,10 +1432,11 @@ const EventModal = ({
                         src={formData.backgroundEnPreview}
                         controls
                         style={{
+                          width: buttonWidths.backgroundEn ? `${buttonWidths.backgroundEn}px` : "auto",
                           maxHeight: 200,
-                          maxWidth: "100%",
+                          height: "auto",
                           borderRadius: 6,
-                          objectFit: "contain",
+                          objectFit: "cover",
                         }}
                       />
                     ) : (
@@ -863,8 +1444,9 @@ const EventModal = ({
                         src={formData.backgroundEnPreview}
                         alt="Background EN preview"
                         style={{
+                          width: buttonWidths.backgroundEn ? `${buttonWidths.backgroundEn}px` : "auto",
                           maxHeight: 120,
-                          maxWidth: "100%",
+                          height: "auto",
                           borderRadius: 6,
                           objectFit: "cover",
                         }}
@@ -873,15 +1455,10 @@ const EventModal = ({
 
                     <IconButton
                       size="small"
-                      onClick={() =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          backgroundEn: null,
-                          backgroundEnPreview: "",
-                          backgroundEnFileType: null,
-                          removeBackgroundEn: true,
-                        }))
-                      }
+                      onClick={() => {
+                        const fileUrl = initialValues?.background?.en?.url || formData.backgroundEnPreview;
+                        handleDeleteMedia("backgroundEn", fileUrl);
+                      }}
                       sx={{
                         position: "absolute",
                         top: -18,
@@ -907,7 +1484,12 @@ const EventModal = ({
                 width: "100%",
               }}
             >
-              <Button component="label" variant="outlined" size="small">
+              <Button
+                ref={backgroundArButtonRef}
+                component="label"
+                variant="outlined"
+                size="small"
+              >
                 {t.uploadBackgroundAr}
                 <input
                   hidden
@@ -918,7 +1500,7 @@ const EventModal = ({
                 />
               </Button>
 
-              {formData.backgroundArPreview && !formData.removeBackgroundAr && (
+              {formData.backgroundArPreview && (
                 <Box sx={{ mt: 1.5 }}>
                   <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
                     {initialValues && !formData.backgroundAr
@@ -926,7 +1508,7 @@ const EventModal = ({
                       : t.preview + " (AR)"}
                   </Typography>
 
-                  <Box sx={{ position: "relative", display: "inline-block" }}>
+                  <Box sx={{ position: "relative", display: "inline-block", width: buttonWidths.backgroundAr || "auto" }}>
                     {formData.backgroundAr?.type?.startsWith("video/") ||
                       formData.backgroundArFileType === "video" ||
                       (formData.backgroundArPreview &&
@@ -937,10 +1519,11 @@ const EventModal = ({
                         src={formData.backgroundArPreview}
                         controls
                         style={{
+                          width: buttonWidths.backgroundAr ? `${buttonWidths.backgroundAr}px` : "auto",
                           maxHeight: 200,
-                          maxWidth: "100%",
+                          height: "auto",
                           borderRadius: 6,
-                          objectFit: "contain",
+                          objectFit: "cover",
                         }}
                       />
                     ) : (
@@ -948,8 +1531,9 @@ const EventModal = ({
                         src={formData.backgroundArPreview}
                         alt="Background AR preview"
                         style={{
+                          width: buttonWidths.backgroundAr ? `${buttonWidths.backgroundAr}px` : "auto",
                           maxHeight: 120,
-                          maxWidth: "100%",
+                          height: "auto",
                           borderRadius: 6,
                           objectFit: "cover",
                         }}
@@ -958,15 +1542,10 @@ const EventModal = ({
 
                     <IconButton
                       size="small"
-                      onClick={() =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          backgroundAr: null,
-                          backgroundArPreview: "",
-                          backgroundArFileType: null,
-                          removeBackgroundAr: true,
-                        }))
-                      }
+                      onClick={() => {
+                        const fileUrl = initialValues?.background?.ar?.url || formData.backgroundArPreview;
+                        handleDeleteMedia("backgroundAr", fileUrl);
+                      }}
                       sx={{
                         position: "absolute",
                         top: -18,
@@ -1140,17 +1719,23 @@ const EventModal = ({
             </Box>
           </Box>
           <Box>
-            <Button component="label" variant="outlined">
-              Upload Agenda (PDF)
+            <Button
+              component="label"
+              variant="outlined"
+              disabled={uploadingMedia.agenda}
+              startIcon={uploadingMedia.agenda ? <CircularProgress size={16} /> : null}
+            >
+              {uploadingMedia.agenda ? "Uploading..." : "Upload Agenda (PDF)"}
               <input
                 hidden
                 name="agenda"
                 type="file"
                 accept="application/pdf"
                 onChange={handleInputChange}
+                disabled={uploadingMedia.agenda}
               />
             </Button>
-            {formData.agendaPreview && (
+            {formData.agendaPreview && !uploadingMedia.agenda && (
               <Box sx={{ mt: 1 }}>
                 <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
                   {initialValues && !formData.agenda
@@ -1170,8 +1755,9 @@ const EventModal = ({
                 {t.downloadTemplate}
               </Button>
               <Box>
-                <Typography variant="subtitle2" color="primary">
+                <Typography variant="subtitle2" color="primary" sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                   {t.uploadEmployee}
+                  {uploadingMedia.employeeData && <CircularProgress size={16} />}
                 </Typography>
                 <TextField
                   name="employeeData"
@@ -1179,6 +1765,7 @@ const EventModal = ({
                   inputProps={{ accept: ".csv,.xlsx,.xls" }}
                   onChange={handleInputChange}
                   fullWidth
+                  disabled={uploadingMedia.employeeData}
                 />
               </Box>
               <Box>
@@ -1191,6 +1778,7 @@ const EventModal = ({
                   inputProps={{ accept: "image/*", multiple: true }}
                   onChange={handleInputChange}
                   fullWidth
+                  disabled={uploadingMedia.employeeData}
                 />
               </Box>
               {formData.tableImages.length > 0 && (
@@ -1431,6 +2019,26 @@ const EventModal = ({
               : t.create}
         </Button>
       </DialogActions>
+
+      {/* Confirmation Dialog for Media Deletion */}
+      <ConfirmationDialog
+        open={deleteConfirm.open}
+        onClose={() => setDeleteConfirm({ open: false, type: null, fileUrl: null, index: null })}
+        onConfirm={confirmDeleteMedia}
+        title={t.deleteMediaTitle}
+        message={t.deleteMediaMessage}
+        confirmButtonText={t.deleteConfirm}
+        confirmButtonIcon={<ICONS.delete />}
+        confirmButtonColor="error"
+      />
+
+      {/* Media Upload Progress Dialog */}
+      <MediaUploadProgress
+        open={uploadProgress.open}
+        uploads={uploadProgress.uploads}
+        onClose={() => setUploadProgress({ open: false, uploads: [] })}
+        allowClose={false}
+      />
     </Dialog>
   );
 };
