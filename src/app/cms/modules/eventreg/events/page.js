@@ -180,10 +180,13 @@ export default function EventsPage() {
   };
 
   const handleEventUpdated = (updatedEvent) => {
-    if (updatedEvent && !updatedEvent.error) {
-      setEvents((prev) => prev.map((e) => (e._id === updatedEvent._id ? updatedEvent : e)));
-      if (selectedEvent && selectedEvent._id === updatedEvent._id) {
-        setSelectedEvent(updatedEvent);
+    if (updatedEvent && !updatedEvent.error && updatedEvent._id) {
+      const eventToUpdate = updatedEvent.event || updatedEvent.record || updatedEvent;
+      if (eventToUpdate && eventToUpdate._id) {
+        setEvents((prev) => prev.map((e) => (e._id === eventToUpdate._id ? eventToUpdate : e)));
+        if (selectedEvent && selectedEvent._id === eventToUpdate._id) {
+          setSelectedEvent(eventToUpdate);
+        }
       }
     }
   };
