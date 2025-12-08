@@ -156,19 +156,37 @@ export default function EventsPage() {
     setEditMode(false);
   };
 
-  const handleSubmitEvent = async (formData, isEdit) => {
+  const handleSubmitEvent = async (formData, isEdit, skipClose = false) => {
     let res;
     if (isEdit) {
       res = await updatePublicEvent(selectedEvent._id, formData);
       if (!res?.error) {
         setEvents((prev) => prev.map((e) => (e._id === res._id ? res : e)));
-        handleCloseModal();
+        if (!skipClose) {
+          handleCloseModal();
+        }
       }
+      return res;
     } else {
       res = await createPublicEvent(formData);
       if (!res?.error) {
         setEvents((prev) => [...prev, res]);
-        handleCloseModal();
+        if (!skipClose) {
+          handleCloseModal();
+        }
+      }
+      return res;
+    }
+  };
+
+  const handleEventUpdated = (updatedEvent) => {
+    if (updatedEvent && !updatedEvent.error && updatedEvent._id) {
+      const eventToUpdate = updatedEvent.event || updatedEvent.record || updatedEvent;
+      if (eventToUpdate && eventToUpdate._id) {
+        setEvents((prev) => prev.map((e) => (e._id === eventToUpdate._id ? eventToUpdate : e)));
+        if (selectedEvent && selectedEvent._id === eventToUpdate._id) {
+          setSelectedEvent(eventToUpdate);
+        }
       }
     }
   };
@@ -305,6 +323,7 @@ export default function EventsPage() {
           initialValues={selectedEvent}
           selectedBusiness={selectedBusiness}
           isEmployee={false}
+          onEventUpdated={handleEventUpdated}
         />
 
         <ConfirmationDialog
