@@ -244,58 +244,90 @@ const EventModal = ({
     };
   }, [formData.logoPreview, formData.backgroundEnPreview, formData.backgroundArPreview]);
 
-  useEffect(() => {
-    if (initialValues && Object.keys(initialValues).length > 0) {
-      setFormData((prev) => ({
-        ...prev,
-        name: initialValues.name || "",
-        slug: initialValues.slug || "",
-        startDate: initialValues.startDate
-          ? new Date(initialValues.startDate).toISOString().split("T")[0]
-          : "",
-        endDate: initialValues.endDate
-          ? new Date(initialValues.endDate).toISOString().split("T")[0]
-          : "",
-        venue: initialValues.venue || "",
-        description: initialValues.description || "",
-        capacity: initialValues.capacity?.toString() || "",
-        eventType:
-          initialValues.eventType || (isEmployee ? "employee" : "public"),
-        logo: null,
-        logoPreview: initialValues.logoUrl || "",
-        backgroundEn: null,
-        backgroundEnPreview: initialValues.background?.en?.url || initialValues.backgroundUrl || "",
-        backgroundEnFileType: initialValues.background?.en?.fileType || (initialValues.backgroundUrl ? "image" : null),
-        backgroundAr: null,
-        backgroundArPreview: initialValues.background?.ar?.url || "",
-        backgroundArFileType: initialValues.background?.ar?.fileType || null,
-        brandingLogos: Array.isArray(initialValues.brandingMedia)
-          ? initialValues.brandingMedia.map((l) => ({
-            _id: l._id,
-            name: l.name || "",
-            website: l.website || "",
-            logoUrl: l.logoUrl || "",
-          }))
-          : [],
-        removeBrandingLogoIds: [],
-        clearAllBrandingLogos: false,
-        agenda: null,
-        agendaPreview: initialValues.agendaUrl || "",
-        employeeData: null,
-        tableImages: [],
-        formFields: (initialValues.formFields || []).map((f) => ({
-          ...f,
-          _temp: "",
-        })),
+  const prevInitialValuesIdRef = useRef(null);
 
-        useCustomFields: !!initialValues.formFields?.length,
-        showQrAfterRegistration:
-          initialValues?.showQrAfterRegistration || false,
-        showQrOnBadge: initialValues?.showQrOnBadge ?? true,
-        requiresApproval: initialValues?.requiresApproval || false,
-        defaultLanguage: initialValues?.defaultLanguage || "en",
-      }));
-      setDeletedMedia({ logo: false, backgroundEn: false, backgroundAr: false });
+  useEffect(() => {
+    const isSameEvent = prevInitialValuesIdRef.current === initialValues?._id;
+    const isModalOpen = open;
+
+    if (initialValues && Object.keys(initialValues).length > 0) {
+      if (isSameEvent && isModalOpen) {
+        setFormData((prev) => ({
+          ...prev,
+          logo: prev.logo,
+          logoPreview: initialValues.logoUrl || prev.logoPreview || "",
+          backgroundEn: prev.backgroundEn,
+          backgroundEnPreview: initialValues.background?.en?.url || initialValues.backgroundUrl || prev.backgroundEnPreview || "",
+          backgroundEnFileType: initialValues.background?.en?.fileType || (initialValues.backgroundUrl ? "image" : null) || prev.backgroundEnFileType,
+          backgroundAr: prev.backgroundAr,
+          backgroundArPreview: initialValues.background?.ar?.url || prev.backgroundArPreview || "",
+          backgroundArFileType: initialValues.background?.ar?.fileType || prev.backgroundArFileType,
+          brandingLogos: Array.isArray(initialValues.brandingMedia)
+            ? initialValues.brandingMedia.map((l) => ({
+              _id: l._id,
+              name: l.name || "",
+              website: l.website || "",
+              logoUrl: l.logoUrl || "",
+            }))
+            : prev.brandingLogos,
+          agenda: prev.agenda,
+          agendaPreview: initialValues.agendaUrl || prev.agendaPreview || "",
+        }));
+      } else {
+
+        setFormData((prev) => ({
+          ...prev,
+          name: initialValues.name || "",
+          slug: initialValues.slug || "",
+          startDate: initialValues.startDate
+            ? new Date(initialValues.startDate).toISOString().split("T")[0]
+            : "",
+          endDate: initialValues.endDate
+            ? new Date(initialValues.endDate).toISOString().split("T")[0]
+            : "",
+          venue: initialValues.venue || "",
+          description: initialValues.description || "",
+          capacity: initialValues.capacity?.toString() || "",
+          eventType:
+            initialValues.eventType || (isEmployee ? "employee" : "public"),
+          logo: null,
+          logoPreview: initialValues.logoUrl || "",
+          backgroundEn: null,
+          backgroundEnPreview: initialValues.background?.en?.url || initialValues.backgroundUrl || "",
+          backgroundEnFileType: initialValues.background?.en?.fileType || (initialValues.backgroundUrl ? "image" : null),
+          backgroundAr: null,
+          backgroundArPreview: initialValues.background?.ar?.url || "",
+          backgroundArFileType: initialValues.background?.ar?.fileType || null,
+          brandingLogos: Array.isArray(initialValues.brandingMedia)
+            ? initialValues.brandingMedia.map((l) => ({
+              _id: l._id,
+              name: l.name || "",
+              website: l.website || "",
+              logoUrl: l.logoUrl || "",
+            }))
+            : [],
+          removeBrandingLogoIds: [],
+          clearAllBrandingLogos: false,
+          agenda: null,
+          agendaPreview: initialValues.agendaUrl || "",
+          employeeData: null,
+          tableImages: [],
+          formFields: (initialValues.formFields || []).map((f) => ({
+            ...f,
+            _temp: "",
+          })),
+
+          useCustomFields: !!initialValues.formFields?.length,
+          showQrAfterRegistration:
+            initialValues?.showQrAfterRegistration || false,
+          showQrOnBadge: initialValues?.showQrOnBadge ?? true,
+          requiresApproval: initialValues?.requiresApproval || false,
+          defaultLanguage: initialValues?.defaultLanguage || "en",
+        }));
+        setDeletedMedia({ logo: false, backgroundEn: false, backgroundAr: false });
+      }
+
+      prevInitialValuesIdRef.current = initialValues._id;
     } else {
       setFormData((prev) => ({
         ...prev,
@@ -330,8 +362,16 @@ const EventModal = ({
         defaultLanguage: "en",
       }));
       setDeletedMedia({ logo: false, backgroundEn: false, backgroundAr: false });
+      prevInitialValuesIdRef.current = null;
     }
-  }, [initialValues, isEmployee]);
+  }, [initialValues, isEmployee, open]);
+
+  // Reset the ref when modal closes to ensure proper behavior on reopen
+  useEffect(() => {
+    if (!open) {
+      prevInitialValuesIdRef.current = null;
+    }
+  }, [open]);
 
   const handleInputChange = async (e) => {
     const { name, value, files } = e.target;
@@ -1048,7 +1088,10 @@ const EventModal = ({
 
 
             if (onEventUpdated && updatedEvent) {
-              onEventUpdated(updatedEvent);
+              const eventToUpdate = updatedEvent.event || updatedEvent.record || updatedEvent;
+              if (eventToUpdate && eventToUpdate._id) {
+                onEventUpdated(eventToUpdate);
+              }
             }
 
             setLoading(false);
@@ -1066,7 +1109,10 @@ const EventModal = ({
 
 
             if (onEventUpdated && updatedEvent) {
-              onEventUpdated(updatedEvent);
+              const eventToUpdate = updatedEvent.event || updatedEvent.record || updatedEvent;
+              if (eventToUpdate && eventToUpdate._id) {
+                onEventUpdated(eventToUpdate);
+              }
             }
 
             setLoading(false);
