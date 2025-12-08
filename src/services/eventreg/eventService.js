@@ -89,7 +89,7 @@ export const updatePublicEventWithProgress = async (id, formData, onProgress) =>
                   onProgress({ taskIndex: i, percent: 100, complete: true });
                 }
               }
-              resolve(data.event || data);
+              resolve(data.event || data.record || data);
               return;
             } else {
 
@@ -126,7 +126,7 @@ export const updatePublicEventWithProgress = async (id, formData, onProgress) =>
 
           if (lastData?.allComplete) {
             isComplete = true;
-            resolve(lastData.event || lastData);
+            resolve(lastData.event || lastData.record || lastData);
           } else if (lastData?.error) {
             isComplete = true;
             reject(new Error(lastData.error));
