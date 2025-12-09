@@ -85,7 +85,7 @@ export default function HomePage() {
       label: t.features.tapmatch,
       hue: "#00897b",
       route: "/tapmatch",
-    },
+    }, 
     {
       key: "assignment",
       label: t.features.assignment,
