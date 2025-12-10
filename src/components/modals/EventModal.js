@@ -21,7 +21,7 @@ import {
   Paper,
   Tooltip,
 } from "@mui/material";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import slugify from "@/utils/slugify";
 import { useMessage } from "@/contexts/MessageContext";
 import useI18nLayout from "@/hooks/useI18nLayout";
@@ -29,6 +29,8 @@ import { downloadEmployeeTemplate } from "@/services/checkin/checkinEventService
 import ICONS from "@/utils/iconUtil";
 import { uploadMediaFiles, uploadSingleFile } from "@/utils/mediaUpload";
 import MediaUploadProgress from "@/components/MediaUploadProgress";
+import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
+import { deleteMedia } from "@/services/deleteMediaService";
 
 const translations = {
   en: {
@@ -82,6 +84,9 @@ const translations = {
     showQrOnBadgeToggle: "Show QR Code on Printed Badge?",
     requiresApprovalToggle: "Require admin approval for registrations?",
     downloadTemplateSuccess: "Template downloaded successfully",
+    deleteMediaTitle: "Delete Media",
+    deleteMediaMessage: "Are you sure you want to delete this media? This action cannot be undone.",
+    deleteConfirm: "Delete",
   },
   ar: {
     createTitle: "إنشاء فعالية",
@@ -134,6 +139,9 @@ const translations = {
     showQrOnBadgeToggle: "عرض رمز QR على بطاقة الطباعة؟",
     requiresApprovalToggle: "يتطلب موافقة المسؤول على التسجيلات؟",
     downloadTemplateSuccess: "تم تحميل القالب بنجاح",
+    deleteMediaTitle: "حذف الوسائط",
+    deleteMediaMessage: "هل أنت متأكد من حذف هذه الوسائط؟ لا يمكن التراجع عن هذا الإجراء.",
+    deleteConfirm: "حذف",
   },
 };
 
@@ -151,6 +159,23 @@ const EventModal = ({
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState([]);
   const [showUploadProgress, setShowUploadProgress] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState({
+    open: false,
+    type: null,
+    fileUrl: null,
+    index: null,
+  });
+
+  const logoButtonRef = useRef(null);
+  const backgroundEnButtonRef = useRef(null);
+  const backgroundArButtonRef = useRef(null);
+
+  const [buttonWidths, setButtonWidths] = useState({
+    logo: null,
+    backgroundEn: null,
+    backgroundAr: null,
+  });
+
   const [formData, setFormData] = useState({
     name: "",
     slug: "",
@@ -279,6 +304,26 @@ const EventModal = ({
     }
   }, [initialValues, isEmployee]);
 
+  useEffect(() => {
+    const measureWidths = () => {
+      const widths = {
+        logo: logoButtonRef.current?.offsetWidth || null,
+        backgroundEn: backgroundEnButtonRef.current?.offsetWidth || null,
+        backgroundAr: backgroundArButtonRef.current?.offsetWidth || null,
+      };
+      setButtonWidths(widths);
+    };
+
+    const timeoutId = setTimeout(measureWidths, 100);
+
+    window.addEventListener("resize", measureWidths);
+
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener("resize", measureWidths);
+    };
+  }, [formData.logoPreview, formData.backgroundEnPreview, formData.backgroundArPreview]);
+
   const handleInputChange = (e) => {
     const { name, value, files } = e.target;
     if (name === "logo" && files?.[0]) {
@@ -288,6 +333,7 @@ const EventModal = ({
           ...prev,
           logo: file,
           logoPreview: URL.createObjectURL(file),
+          removeLogo: false,
         }));
       }
     } else if (name === "backgroundEn" && files?.[0]) {
@@ -357,22 +403,152 @@ const EventModal = ({
     });
   };
 
-  const handleRemoveBrandingLogo = (index) => {
-    setFormData((prev) => {
-      const arr = [...prev.brandingLogos];
-      const removed = arr.splice(index, 1)[0];
-      const removeIds = [...prev.removeBrandingLogoIds];
+  const handleDeleteMedia = (type, fileUrl, index = null) => {
+    if (fileUrl && fileUrl.startsWith("blob:")) {
+      if (type === "logo") {
+        setFormData((prev) => ({
+          ...prev,
+          logo: null,
+          logoPreview: "",
+          removeLogo: false,
+        }));
+      } else if (type === "backgroundEn") {
+        setFormData((prev) => ({
+          ...prev,
+          backgroundEn: null,
+          backgroundEnPreview: "",
+          backgroundEnFileType: null,
+          removeBackgroundEn: false,
+        }));
+      } else if (type === "backgroundAr") {
+        setFormData((prev) => ({
+          ...prev,
+          backgroundAr: null,
+          backgroundArPreview: "",
+          backgroundArFileType: null,
+          removeBackgroundAr: false,
+        }));
+      } else if (type === "agenda") {
+        setFormData((prev) => ({
+          ...prev,
+          agenda: null,
+          agendaPreview: "",
+        }));
+      }
+      return;
+    }
 
-      if (removed && removed._id) {
-        removeIds.push(removed._id);
+    setDeleteConfirm({
+      open: true,
+      type,
+      fileUrl,
+      index,
+    });
+  };
+
+  const confirmDeleteMedia = async () => {
+    try {
+      const deletePayload = {
+        fileUrl: deleteConfirm.fileUrl,
+        storageType: "s3",
+      };
+
+      if (initialValues?._id) {
+        deletePayload.eventId = initialValues._id;
+        deletePayload.eventType = isEmployee ? "employee" : "public";
+        deletePayload.mediaType = deleteConfirm.type;
+
+        if (deleteConfirm.type === "brandingLogo") {
+          const item = formData.brandingLogos[deleteConfirm.index];
+          if (item?._id) {
+            deletePayload.removeBrandingLogoIds = [item._id];
+          }
+        }
       }
 
-      return {
-        ...prev,
-        brandingLogos: arr,
-        removeBrandingLogoIds: removeIds,
-      };
-    });
+      const updatedEvent = await deleteMedia(deletePayload);
+
+      if (deleteConfirm.type === "logo") {
+        setFormData((prev) => ({
+          ...prev,
+          logo: null,
+          logoPreview: "",
+          removeLogo: true,
+        }));
+      } else if (deleteConfirm.type === "backgroundEn") {
+        setFormData((prev) => ({
+          ...prev,
+          backgroundEn: null,
+          backgroundEnPreview: "",
+          backgroundEnFileType: null,
+          removeBackgroundEn: true,
+        }));
+      } else if (deleteConfirm.type === "backgroundAr") {
+        setFormData((prev) => ({
+          ...prev,
+          backgroundAr: null,
+          backgroundArPreview: "",
+          backgroundArFileType: null,
+          removeBackgroundAr: true,
+        }));
+      } else if (deleteConfirm.type === "agenda") {
+        setFormData((prev) => ({
+          ...prev,
+          agenda: null,
+          agendaPreview: "",
+        }));
+      } else if (deleteConfirm.type === "brandingLogo") {
+        setFormData((prev) => {
+          const arr = [...prev.brandingLogos];
+          const removed = arr.splice(deleteConfirm.index, 1)[0];
+          const removeIds = [...prev.removeBrandingLogoIds];
+
+          if (removed && removed._id) {
+            removeIds.push(removed._id);
+          }
+
+          return {
+            ...prev,
+            brandingLogos: arr,
+            removeBrandingLogoIds: removeIds,
+          };
+        });
+      }
+
+      // Update initialValues if event was updated
+      if (initialValues?._id && updatedEvent && !updatedEvent.error) {
+        if (updatedEvent._id) {
+          Object.assign(initialValues, updatedEvent);
+        }
+      }
+
+      setDeleteConfirm({ open: false, type: null, fileUrl: null, index: null });
+      showMessage("Media deleted successfully", "success");
+    } catch (err) {
+      showMessage(err.message || "Failed to delete media", "error");
+    }
+  };
+
+  const handleRemoveBrandingLogo = (index) => {
+    const item = formData.brandingLogos[index];
+    if (!item) return;
+
+    if (item.logoUrl && item.logoUrl.startsWith("blob:")) {
+      setFormData((prev) => {
+        const arr = [...prev.brandingLogos];
+        arr.splice(index, 1);
+        return {
+          ...prev,
+          brandingLogos: arr,
+        };
+      });
+      return;
+    }
+
+    // For existing branding logos, use handleDeleteMedia
+    if (item.logoUrl && !item.logoUrl.startsWith("blob:")) {
+      handleDeleteMedia("brandingLogo", item.logoUrl, index);
+    }
   };
 
   const handleClearAllBrandingLogos = () => {
@@ -906,7 +1082,11 @@ const EventModal = ({
                 alignItems: "flex-start",
               }}
             >
-              <Button component="label" variant="outlined">
+              <Button
+                ref={logoButtonRef}
+                component="label"
+                variant="outlined"
+              >
                 {t.logo}
                 <input
                   hidden
@@ -918,38 +1098,42 @@ const EventModal = ({
               </Button>
 
               {formData.logoPreview && !formData.removeLogo && (
-                <Box sx={{ mt: 1.5, position: "relative" }}>
+                <Box sx={{ mt: 1.5 }}>
                   <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
                     {initialValues && !formData.logo ? t.currentImage : t.preview}
                   </Typography>
 
-                  <img
-                    src={formData.logoPreview}
-                    alt="Logo preview"
-                    style={{ maxHeight: 100, borderRadius: 6 }}
-                  />
+                  <Box sx={{ position: "relative", display: "inline-block", width: buttonWidths.logo || "auto" }}>
+                    <img
+                      src={formData.logoPreview}
+                      alt="Logo preview"
+                      style={{
+                        width: buttonWidths.logo ? `${buttonWidths.logo}px` : "auto",
+                        maxHeight: 100,
+                        height: "auto",
+                        borderRadius: 6,
+                        objectFit: "cover",
+                      }}
+                    />
 
-                  <IconButton
-                    size="small"
-                    onClick={() =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        logo: null,
-                        logoPreview: "",
-                        removeLogo: true,
-                      }))
-                    }
-                    sx={{
-                      position: "absolute",
-                      top: 6,
-                      right: 6,
-                      bgcolor: "error.main",
-                      color: "#fff",
-                      "&:hover": { bgcolor: "error.dark" },
-                    }}
-                  >
-                    <ICONS.delete sx={{ fontSize: 18 }} />
-                  </IconButton>
+                    <IconButton
+                      size="small"
+                      onClick={() => {
+                        const fileUrl = initialValues?.logoUrl || formData.logoPreview;
+                        handleDeleteMedia("logo", fileUrl);
+                      }}
+                      sx={{
+                        position: "absolute",
+                        top: -18,
+                        right: 6,
+                        bgcolor: "error.main",
+                        color: "#fff",
+                        "&:hover": { bgcolor: "error.dark" },
+                      }}
+                    >
+                      <ICONS.delete sx={{ fontSize: 18 }} />
+                    </IconButton>
+                  </Box>
                 </Box>
               )}
             </Box>
@@ -977,7 +1161,12 @@ const EventModal = ({
                   width: "100%",
                 }}
               >
-                <Button component="label" variant="outlined" size="small">
+                <Button
+                  ref={backgroundEnButtonRef}
+                  component="label"
+                  variant="outlined"
+                  size="small"
+                >
                   {t.uploadBackgroundEn}
                   <input
                     hidden
@@ -996,7 +1185,7 @@ const EventModal = ({
                         : t.preview + " (EN)"}
                     </Typography>
 
-                    <Box sx={{ position: "relative", display: "inline-block" }}>
+                    <Box sx={{ position: "relative", display: "inline-block", width: buttonWidths.backgroundEn || "auto" }}>
                       {formData.backgroundEn?.type?.startsWith("video/") ||
                         formData.backgroundEnFileType === "video" ||
                         (formData.backgroundEnPreview &&
@@ -1007,10 +1196,11 @@ const EventModal = ({
                           src={formData.backgroundEnPreview}
                           controls
                           style={{
+                            width: buttonWidths.backgroundEn ? `${buttonWidths.backgroundEn}px` : "auto",
                             maxHeight: 200,
-                            maxWidth: "100%",
+                            height: "auto",
                             borderRadius: 6,
-                            objectFit: "contain",
+                            objectFit: "cover",
                           }}
                         />
                       ) : (
@@ -1018,8 +1208,9 @@ const EventModal = ({
                           src={formData.backgroundEnPreview}
                           alt="Background EN preview"
                           style={{
+                            width: buttonWidths.backgroundEn ? `${buttonWidths.backgroundEn}px` : "auto",
                             maxHeight: 120,
-                            maxWidth: "100%",
+                            height: "auto",
                             borderRadius: 6,
                             objectFit: "cover",
                           }}
@@ -1028,15 +1219,10 @@ const EventModal = ({
 
                       <IconButton
                         size="small"
-                        onClick={() =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            backgroundEn: null,
-                            backgroundEnPreview: "",
-                            backgroundEnFileType: null,
-                            removeBackgroundEn: true,
-                          }))
-                        }
+                        onClick={() => {
+                          const fileUrl = initialValues?.background?.en?.url || formData.backgroundEnPreview;
+                          handleDeleteMedia("backgroundEn", fileUrl);
+                        }}
                         sx={{
                           position: "absolute",
                           top: -18,
@@ -1062,7 +1248,12 @@ const EventModal = ({
                   width: "100%",
                 }}
               >
-                <Button component="label" variant="outlined" size="small">
+                <Button
+                  ref={backgroundArButtonRef}
+                  component="label"
+                  variant="outlined"
+                  size="small"
+                >
                   {t.uploadBackgroundAr}
                   <input
                     hidden
@@ -1081,7 +1272,7 @@ const EventModal = ({
                         : t.preview + " (AR)"}
                     </Typography>
 
-                    <Box sx={{ position: "relative", display: "inline-block" }}>
+                    <Box sx={{ position: "relative", display: "inline-block", width: buttonWidths.backgroundAr || "auto" }}>
                       {formData.backgroundAr?.type?.startsWith("video/") ||
                         formData.backgroundArFileType === "video" ||
                         (formData.backgroundArPreview &&
@@ -1092,10 +1283,11 @@ const EventModal = ({
                           src={formData.backgroundArPreview}
                           controls
                           style={{
+                            width: buttonWidths.backgroundAr ? `${buttonWidths.backgroundAr}px` : "auto",
                             maxHeight: 200,
-                            maxWidth: "100%",
+                            height: "auto",
                             borderRadius: 6,
-                            objectFit: "contain",
+                            objectFit: "cover",
                           }}
                         />
                       ) : (
@@ -1103,8 +1295,9 @@ const EventModal = ({
                           src={formData.backgroundArPreview}
                           alt="Background AR preview"
                           style={{
+                            width: buttonWidths.backgroundAr ? `${buttonWidths.backgroundAr}px` : "auto",
                             maxHeight: 120,
-                            maxWidth: "100%",
+                            height: "auto",
                             borderRadius: 6,
                             objectFit: "cover",
                           }}
@@ -1113,15 +1306,10 @@ const EventModal = ({
 
                       <IconButton
                         size="small"
-                        onClick={() =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            backgroundAr: null,
-                            backgroundArPreview: "",
-                            backgroundArFileType: null,
-                            removeBackgroundAr: true,
-                          }))
-                        }
+                        onClick={() => {
+                          const fileUrl = initialValues?.background?.ar?.url || formData.backgroundArPreview;
+                          handleDeleteMedia("backgroundAr", fileUrl);
+                        }}
                         sx={{
                           position: "absolute",
                           top: -18,
@@ -1592,6 +1780,18 @@ const EventModal = ({
         uploads={uploadProgress}
         onClose={() => setShowUploadProgress(false)}
         allowClose={false}
+      />
+
+      {/* Confirmation Dialog for Media Deletion */}
+      <ConfirmationDialog
+        open={deleteConfirm.open}
+        onClose={() => setDeleteConfirm({ open: false, type: null, fileUrl: null, index: null })}
+        onConfirm={confirmDeleteMedia}
+        title={t.deleteMediaTitle}
+        message={t.deleteMediaMessage}
+        confirmButtonText={t.deleteConfirm}
+        confirmButtonIcon={<ICONS.delete />}
+        confirmButtonColor="error"
       />
     </>
   );
