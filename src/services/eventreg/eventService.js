@@ -22,32 +22,28 @@ export const getPublicEventById = withApiHandler(async (id) => {
 });
 
 export const getEventsByBusinessId = withApiHandler(async (businessId) => {
-  const {data} = await api.get(`/eventreg/events/business/${businessId}`);
+  const { data } = await api.get(`/eventreg/events/business/${businessId}`);
   return data;
 });
 
 export const getEventsByBusinessSlug = withApiHandler(async (slug) => {
-  const {data} = await api.get(`/eventreg/events/business/slug/${slug}`);
+  const { data } = await api.get(`/eventreg/events/business/slug/${slug}`);
   return data.events;
 });
 
-// Create a new event (FormData with optional logo)
+// Create a new event (JSON with media URLs)
 export const createPublicEvent = withApiHandler(
-  async (formData) => {
-    const { data } = await api.post("/eventreg/events", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+  async (eventData) => {
+    const { data } = await api.post("/eventreg/events", eventData);
     return data;
   },
   { showSuccess: true }
 );
 
-// Update an event by ID (FormData with optional logo)
+// Update an event by ID (JSON with media URLs)
 export const updatePublicEvent = withApiHandler(
-  async (id, formData) => {
-    const { data } = await api.put(`/eventreg/events/${id}`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+  async (id, eventData) => {
+    const { data } = await api.put(`/eventreg/events/${id}`, eventData);
     return data;
   },
   { showSuccess: true }
