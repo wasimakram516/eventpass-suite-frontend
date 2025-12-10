@@ -27,6 +27,8 @@ import { useMessage } from "@/contexts/MessageContext";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { downloadEmployeeTemplate } from "@/services/checkin/checkinEventService";
 import ICONS from "@/utils/iconUtil";
+import { uploadMediaFiles, uploadSingleFile } from "@/utils/mediaUpload";
+import MediaUploadProgress from "@/components/MediaUploadProgress";
 
 const translations = {
   en: {
@@ -147,6 +149,8 @@ const EventModal = ({
   const { showMessage } = useMessage();
 
   const [loading, setLoading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState([]);
+  const [showUploadProgress, setShowUploadProgress] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     slug: "",
@@ -440,998 +444,1156 @@ const EventModal = ({
       showMessage(t.invalidCapacity, "error");
       return;
     }
+
+    if (!selectedBusiness) {
+      showMessage("Business is required", "error");
+      return;
+    }
+
     setLoading(true);
-    const payload = new FormData();
-    if (!initialValues && selectedBusiness)
-      payload.append("businessSlug", selectedBusiness);
-    payload.append("name", formData.name);
-    payload.append("slug", formData.slug || slugify(formData.name));
-    payload.append("startDate", formData.startDate);
-    payload.append("endDate", formData.endDate);
-    payload.append("venue", formData.venue);
-    payload.append("description", formData.description);
-    payload.append("capacity", formData.capacity || "999");
-    payload.append("eventType", formData.eventType);
-    if (formData.logo) payload.append("logo", formData.logo);
-    if (formData.backgroundEn) payload.append("backgroundEn", formData.backgroundEn);
-    if (formData.backgroundAr) payload.append("backgroundAr", formData.backgroundAr);
-    if (formData.clearAllBrandingLogos) {
-      payload.append("clearAllBrandingLogos", "true");
-    } else {
-      const meta = [];
+
+    try {
+      const filesToUpload = [];
+
+      let logoUrl = formData.removeLogo ? null : (formData.logo ? null : (formData.logoPreview || null));
+      let backgroundEn = null;
+      let backgroundAr = null;
+      let agendaUrl = formData.agenda
+        ? null
+        : (formData.agendaPreview && formData.agendaPreview.startsWith('http')
+          ? formData.agendaPreview
+          : (initialValues?.agendaUrl || null));
+      const brandingMediaFiles = [];
+
+      if (formData.logo && !formData.removeLogo) {
+        filesToUpload.push({
+          file: formData.logo,
+          type: "logo",
+          label: "Logo",
+        });
+      }
+
+      if (formData.backgroundEn && !formData.removeBackgroundEn) {
+        filesToUpload.push({
+          file: formData.backgroundEn,
+          type: "backgroundEn",
+          label: "Background (EN)",
+          fileType: formData.backgroundEnFileType || "image",
+        });
+      }
+
+      if (formData.backgroundAr && !formData.removeBackgroundAr) {
+        filesToUpload.push({
+          file: formData.backgroundAr,
+          type: "backgroundAr",
+          label: "Background (AR)",
+          fileType: formData.backgroundArFileType || "image",
+        });
+      }
+
       formData.brandingLogos.forEach((item) => {
         if (item.file) {
-          payload.append("brandingMedia", item.file);
-          meta.push({ name: item.name || "", website: item.website || "" });
+          brandingMediaFiles.push({
+            file: item.file,
+            meta: { name: item.name || "", website: item.website || "" },
+          });
+          filesToUpload.push({
+            file: item.file,
+            type: "branding",
+            label: item.name || "Branding Logo",
+          });
         }
       });
-      if (meta.length) {
-        payload.append("brandingMediaMeta", JSON.stringify(meta));
-      }
-    }
 
-    if (initialValues && !formData.clearAllBrandingLogos) {
-      const existingBrandingUrls = formData.brandingLogos
-        .filter((item) => !item.file && item.logoUrl)
-        .map((item) => ({
-          name: item.name || "",
-          website: item.website || "",
-          logoUrl: item.logoUrl,
+      if (formData.agenda) {
+        filesToUpload.push({
+          file: formData.agenda,
+          type: "agenda",
+          label: "Agenda",
+        });
+      }
+
+      if (filesToUpload.length > 0) {
+        setShowUploadProgress(true);
+        const uploads = filesToUpload.map((item) => ({
+          file: item.file,
+          label: item.label,
+          percent: 0,
+          loaded: 0,
+          total: item.file.size,
+          error: null,
+          url: null,
+          type: item.type,
+          fileType: item.fileType,
         }));
-      payload.append("brandingMediaUrls", JSON.stringify(existingBrandingUrls));
 
-      if (formData.removeBrandingLogoIds.length > 0) {
-        payload.append(
-          "removeBrandingLogoIds",
-          JSON.stringify(formData.removeBrandingLogoIds)
-        );
+        setUploadProgress(uploads);
+
+        try {
+
+          const urls = await uploadMediaFiles({
+            files: filesToUpload.map((item) => item.file),
+            businessSlug: selectedBusiness,
+            moduleName: "EventReg",
+            onProgress: (progressUploads) => {
+              progressUploads.forEach((progressUpload, index) => {
+                if (uploads[index]) {
+                  uploads[index].percent = progressUpload.percent;
+                  uploads[index].loaded = progressUpload.loaded;
+                  uploads[index].total = progressUpload.total;
+                  uploads[index].error = progressUpload.error;
+                  uploads[index].url = progressUpload.url;
+                }
+              });
+              setUploadProgress([...uploads]);
+            },
+          });
+
+          const uploadResults = urls.map((url, index) => ({
+            type: uploads[index].type,
+            url,
+            fileType: uploads[index].fileType,
+          }));
+
+          uploadResults.forEach((result) => {
+            if (result.type === "logo") logoUrl = result.url;
+            else if (result.type === "backgroundEn")
+              backgroundEn = {
+                url: result.url,
+                fileType: result.fileType || "image",
+              };
+            else if (result.type === "backgroundAr")
+              backgroundAr = {
+                url: result.url,
+                fileType: result.fileType || "image",
+              };
+            else if (result.type === "agenda") agendaUrl = result.url;
+          });
+
+          let brandingIndex = 0;
+          uploadResults.forEach((result) => {
+            if (result.type === "branding") {
+              brandingMediaFiles[brandingIndex].url = result.url;
+              brandingIndex++;
+            }
+          });
+        } catch (uploadError) {
+          setShowUploadProgress(false);
+          throw uploadError;
+        }
       }
-    }
 
-    if (formData.agenda) payload.append("agenda", formData.agenda);
-    if (formData.eventType === "employee") {
-      if (formData.employeeData)
-        payload.append("employeeData", formData.employeeData);
-      formData.tableImages.forEach((file) =>
-        payload.append("tableImages", file)
-      );
-    }
-    payload.append(
-      "showQrAfterRegistration",
-      formData.showQrAfterRegistration.toString()
-    );
-    payload.append("showQrOnBadge", formData.showQrOnBadge.toString());
-    payload.append("requiresApproval", formData.requiresApproval.toString());
-    payload.append("defaultLanguage", formData.defaultLanguage);
-    if (formData.removeLogo) {
-      payload.append("removeLogo", "true");
-    }
+      setShowUploadProgress(false);
 
-    if (formData.removeBackgroundEn) {
-      payload.append("removeBackgroundEn", "true");
-    }
+      const background = {};
+      if (formData.removeBackgroundEn) {
+        background.en = null;
+      } else if (backgroundEn) {
+        background.en = backgroundEn;
+      } else if (formData.backgroundEnPreview && initialValues?.background?.en) {
+        background.en = initialValues.background.en;
+      }
 
-    if (formData.removeBackgroundAr) {
-      payload.append("removeBackgroundAr", "true");
-    }
+      if (formData.removeBackgroundAr) {
+        background.ar = null;
+      } else if (backgroundAr) {
+        background.ar = backgroundAr;
+      } else if (formData.backgroundArPreview && initialValues?.background?.ar) {
+        background.ar = initialValues.background.ar;
+      }
 
-    if (formData.eventType === "public" && formData.useCustomFields) {
-      payload.append("formFields", JSON.stringify(formData.formFields));
+      const brandingMedia = [];
+      if (!formData.clearAllBrandingLogos) {
+        brandingMediaFiles.forEach((item) => {
+          if (item.url) {
+            brandingMedia.push({
+              name: item.meta.name,
+              website: item.meta.website,
+              logoUrl: item.url,
+            });
+          }
+        });
+
+        if (initialValues) {
+          formData.brandingLogos
+            .filter(
+              (item) =>
+                !item.file &&
+                item.logoUrl &&
+                !formData.removeBrandingLogoIds.includes(item._id?.toString())
+            )
+            .forEach((item) => {
+              brandingMedia.push({
+                name: item.name || "",
+                website: item.website || "",
+                logoUrl: item.logoUrl,
+              });
+            });
+        }
+      }
+
+      const payload = {
+        name: formData.name,
+        slug: formData.slug || slugify(formData.name),
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        venue: formData.venue,
+        description: formData.description || "",
+        capacity: formData.capacity || 999,
+        logoUrl: formData.removeLogo ? null : logoUrl,
+        ...(Object.keys(background).length > 0 ? { background } : {}),
+        ...(brandingMedia.length > 0 ? { brandingMedia } : {}),
+        agendaUrl: agendaUrl || null,
+        showQrAfterRegistration: formData.showQrAfterRegistration,
+        showQrOnBadge: formData.showQrOnBadge,
+        requiresApproval: formData.requiresApproval,
+        defaultLanguage: formData.defaultLanguage,
+        ...(formData.eventType === "public" && formData.useCustomFields
+          ? { formFields: formData.formFields }
+          : {}),
+        ...(formData.removeLogo ? { removeLogo: "true" } : {}),
+        ...(formData.removeBackgroundEn ? { removeBackgroundEn: "true" } : {}),
+        ...(formData.removeBackgroundAr ? { removeBackgroundAr: "true" } : {}),
+        ...(formData.removeBrandingLogoIds.length > 0
+          ? { removeBrandingLogoIds: formData.removeBrandingLogoIds }
+          : {}),
+        ...(formData.clearAllBrandingLogos
+          ? { clearAllBrandingLogos: "true" }
+          : {}),
+      };
+
+      if (!initialValues) {
+        payload.businessSlug = selectedBusiness;
+      }
+
+      await onSubmit(payload, !!initialValues);
+      setLoading(false);
+    } catch (error) {
+      console.error("Upload or save failed:", error);
+      showMessage(error.message || "Failed to upload media", "error");
+      setLoading(false);
+      setShowUploadProgress(false);
     }
-    await onSubmit(payload, !!initialValues);
-    setLoading(false);
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth dir={dir}>
-      <DialogTitle
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          fontWeight: "bold",
-          px: 3,
-          pt: 3,
-        }}
-      >
-        <Typography fontWeight="bold" fontSize="1.25rem">
-          {initialValues ? t.editTitle : t.createTitle}
-        </Typography>
-
-        <IconButton
-          onClick={onClose}
+    <>
+      <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth dir={dir}>
+        <DialogTitle
           sx={{
-            ml: 2,
-            alignSelf: "flex-start",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            fontWeight: "bold",
+            px: 3,
+            pt: 3,
           }}
         >
-          <ICONS.close />
-        </IconButton>
-      </DialogTitle>
-      <DialogContent>
-        <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 2 }}>
-          <TextField
-            label={`${t.name} *`}
-            name="name"
-            value={formData.name}
-            onChange={handleNameChange}
-            fullWidth
-          />
-          <TextField
-            label={t.slug}
-            name="slug"
-            value={formData.slug}
-            onChange={handleInputChange}
-            fullWidth
-          />
-          <TextField
-            label={`${t.startDate} *`}
-            name="startDate"
-            type="date"
-            value={formData.startDate}
-            onChange={handleInputChange}
-            InputLabelProps={{ shrink: true }}
-            fullWidth
-          />
-          <TextField
-            label={`${t.endDate} *`}
-            name="endDate"
-            type="date"
-            value={formData.endDate}
-            onChange={handleInputChange}
-            InputLabelProps={{ shrink: true }}
-            fullWidth
-          />
-          <TextField
-            label={`${t.venue} *`}
-            name="venue"
-            value={formData.venue}
-            onChange={handleInputChange}
-            fullWidth
-          />
-          <TextField
-            label={t.description}
-            name="description"
-            value={formData.description}
-            onChange={handleInputChange}
-            multiline
-            rows={3}
-            fullWidth
-          />
-          <TextField
-            label={t.capacity}
-            name="capacity"
-            type="number"
-            value={formData.capacity}
-            onChange={handleInputChange}
-            fullWidth
-          />
+          <Typography fontWeight="bold" fontSize="1.25rem">
+            {initialValues ? t.editTitle : t.createTitle}
+          </Typography>
 
-          {/* Show QR After Registration Toggle */}
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={formData.showQrAfterRegistration}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      showQrAfterRegistration: e.target.checked,
-                    }))
-                  }
-                  color="primary"
-                />
-              }
-              label={t.showQrToggle}
-              sx={{ alignSelf: "start" }}
+          <IconButton
+            onClick={onClose}
+            sx={{
+              ml: 2,
+              alignSelf: "flex-start",
+            }}
+          >
+            <ICONS.close />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent>
+          <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 2 }}>
+            <TextField
+              label={`${t.name} *`}
+              name="name"
+              value={formData.name}
+              onChange={handleNameChange}
+              fullWidth
             />
-          </Box>
-
-          {/* Show QR on Badge Toggle */}
-
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={formData.showQrOnBadge}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      showQrOnBadge: e.target.checked,
-                    }))
-                  }
-                  color="primary"
-                />
-              }
-              label={t.showQrOnBadgeToggle}
-              sx={{ alignSelf: "start" }}
+            <TextField
+              label={t.slug}
+              name="slug"
+              value={formData.slug}
+              onChange={handleInputChange}
+              fullWidth
             />
-          </Box>
-
-          {/* Requires Approval Toggle */}
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <FormControlLabel
-              control={
-                <Checkbox
-                  checked={formData.requiresApproval}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      requiresApproval: e.target.checked,
-                    }))
-                  }
-                  color="primary"
-                />
-              }
-              label={t.requiresApprovalToggle}
-              sx={{ alignSelf: "start" }}
+            <TextField
+              label={`${t.startDate} *`}
+              name="startDate"
+              type="date"
+              value={formData.startDate}
+              onChange={handleInputChange}
+              InputLabelProps={{ shrink: true }}
+              fullWidth
             />
-          </Box>
+            <TextField
+              label={`${t.endDate} *`}
+              name="endDate"
+              type="date"
+              value={formData.endDate}
+              onChange={handleInputChange}
+              InputLabelProps={{ shrink: true }}
+              fullWidth
+            />
+            <TextField
+              label={`${t.venue} *`}
+              name="venue"
+              value={formData.venue}
+              onChange={handleInputChange}
+              fullWidth
+            />
+            <TextField
+              label={t.description}
+              name="description"
+              value={formData.description}
+              onChange={handleInputChange}
+              multiline
+              rows={3}
+              fullWidth
+            />
+            <TextField
+              label={t.capacity}
+              name="capacity"
+              type="number"
+              value={formData.capacity}
+              onChange={handleInputChange}
+              fullWidth
+            />
 
-          {/* Default Language Selector */}
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-            <Box
-              onClick={() =>
-                setFormData((prev) => ({
-                  ...prev,
-                  defaultLanguage: prev.defaultLanguage === "en" ? "ar" : "en",
-                }))
-              }
-              sx={{
-                width: 64,
-                height: 32,
-                borderRadius: 32,
-                backgroundColor: "background.paper",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                px: 1,
-                cursor: "pointer",
-                overflow: "hidden",
-                boxShadow: `
+            {/* Show QR After Registration Toggle */}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={formData.showQrAfterRegistration}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        showQrAfterRegistration: e.target.checked,
+                      }))
+                    }
+                    color="primary"
+                  />
+                }
+                label={t.showQrToggle}
+                sx={{ alignSelf: "start" }}
+              />
+            </Box>
+
+            {/* Show QR on Badge Toggle */}
+
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={formData.showQrOnBadge}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        showQrOnBadge: e.target.checked,
+                      }))
+                    }
+                    color="primary"
+                  />
+                }
+                label={t.showQrOnBadgeToggle}
+                sx={{ alignSelf: "start" }}
+              />
+            </Box>
+
+            {/* Requires Approval Toggle */}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={formData.requiresApproval}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        requiresApproval: e.target.checked,
+                      }))
+                    }
+                    color="primary"
+                  />
+                }
+                label={t.requiresApprovalToggle}
+                sx={{ alignSelf: "start" }}
+              />
+            </Box>
+
+            {/* Default Language Selector */}
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+              <Box
+                onClick={() =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    defaultLanguage: prev.defaultLanguage === "en" ? "ar" : "en",
+                  }))
+                }
+                sx={{
+                  width: 64,
+                  height: 32,
+                  borderRadius: 32,
+                  backgroundColor: "background.paper",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  px: 1,
+                  cursor: "pointer",
+                  overflow: "hidden",
+                  boxShadow: `
         2px 2px 6px rgba(0, 0, 0, 0.15),
         -2px -2px 6px rgba(255, 255, 255, 0.5),
         inset 2px 2px 5px rgba(0, 0, 0, 0.2),
         inset -2px -2px 5px rgba(255, 255, 255, 0.7)
       `,
-                position: "relative",
-              }}
-            >
-              <Typography
-                variant="caption"
-                sx={{
-                  fontWeight: 600,
-                  color:
-                    formData.defaultLanguage === "en"
-                      ? "#fff"
-                      : "text.secondary",
-                  zIndex: 2,
-                  transition: "color 0.3s",
+                  position: "relative",
                 }}
               >
-                EN
-              </Typography>
-              <Typography
-                variant="caption"
-                sx={{
-                  fontWeight: 600,
-                  color:
-                    formData.defaultLanguage === "ar"
-                      ? "#fff"
-                      : "text.secondary",
-                  zIndex: 2,
-                  transition: "color 0.3s",
-                }}
-              >
-                AR
-              </Typography>
-              <Box
-                sx={{
-                  position: "absolute",
-                  width: 28,
-                  height: 28,
-                  borderRadius: 999,
-                  top: 2,
-                  left: formData.defaultLanguage === "ar" ? 34 : 2,
-                  backgroundColor: "#1976d2",
-                  zIndex: 1,
-                  boxShadow: "0 4px 8px rgba(0, 0, 0, 0.3)",
-                  transition:
-                    "left 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)",
-                }}
-              />
-            </Box>
-          </Box>
-
-          {/* Logo Upload */}
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "flex-start",
-            }}
-          >
-            <Button component="label" variant="outlined">
-              {t.logo}
-              <input
-                hidden
-                name="logo"
-                type="file"
-                accept="image/*"
-                onChange={handleInputChange}
-              />
-            </Button>
-
-            {formData.logoPreview && !formData.removeLogo && (
-              <Box sx={{ mt: 1.5, position: "relative" }}>
-                <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
-                  {initialValues && !formData.logo ? t.currentImage : t.preview}
-                </Typography>
-
-                <img
-                  src={formData.logoPreview}
-                  alt="Logo preview"
-                  style={{ maxHeight: 100, borderRadius: 6 }}
-                />
-
-                <IconButton
-                  size="small"
-                  onClick={() =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      logo: null,
-                      logoPreview: "",
-                      removeLogo: true,
-                    }))
-                  }
+                <Typography
+                  variant="caption"
                   sx={{
-                    position: "absolute",
-                    top: 6,
-                    right: 6,
-                    bgcolor: "error.main",
-                    color: "#fff",
-                    "&:hover": { bgcolor: "error.dark" },
+                    fontWeight: 600,
+                    color:
+                      formData.defaultLanguage === "en"
+                        ? "#fff"
+                        : "text.secondary",
+                    zIndex: 2,
+                    transition: "color 0.3s",
                   }}
                 >
-                  <ICONS.delete sx={{ fontSize: 18 }} />
-                </IconButton>
+                  EN
+                </Typography>
+                <Typography
+                  variant="caption"
+                  sx={{
+                    fontWeight: 600,
+                    color:
+                      formData.defaultLanguage === "ar"
+                        ? "#fff"
+                        : "text.secondary",
+                    zIndex: 2,
+                    transition: "color 0.3s",
+                  }}
+                >
+                  AR
+                </Typography>
+                <Box
+                  sx={{
+                    position: "absolute",
+                    width: 28,
+                    height: 28,
+                    borderRadius: 999,
+                    top: 2,
+                    left: formData.defaultLanguage === "ar" ? 34 : 2,
+                    backgroundColor: "#1976d2",
+                    zIndex: 1,
+                    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.3)",
+                    transition:
+                      "left 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)",
+                  }}
+                />
               </Box>
-            )}
-          </Box>
+            </Box>
 
-          {/* Background Upload */}
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "flex-start",
-              gap: 2,
-              width: "100%",
-            }}
-          >
-            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-              {t.uploadBackground}
-            </Typography>
-
-            {/* English Background Upload */}
+            {/* Logo Upload */}
             <Box
               sx={{
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "flex-start",
-                width: "100%",
               }}
             >
-              <Button component="label" variant="outlined" size="small">
-                {t.uploadBackgroundEn}
+              <Button component="label" variant="outlined">
+                {t.logo}
                 <input
                   hidden
-                  name="backgroundEn"
-                  type="file"
-                  accept="image/*,video/*"
-                  onChange={handleInputChange}
-                />
-              </Button>
-
-              {formData.backgroundEnPreview && !formData.removeBackgroundEn && (
-                <Box sx={{ mt: 1.5 }}>
-                  <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
-                    {initialValues && !formData.backgroundEn
-                      ? t.currentBackground + " (EN)"
-                      : t.preview + " (EN)"}
-                  </Typography>
-
-                  <Box sx={{ position: "relative", display: "inline-block" }}>
-                    {formData.backgroundEn?.type?.startsWith("video/") ||
-                      formData.backgroundEnFileType === "video" ||
-                      (formData.backgroundEnPreview &&
-                        !formData.backgroundEnPreview.startsWith("blob:") &&
-                        (formData.backgroundEnPreview.includes("video") ||
-                          formData.backgroundEnPreview.match(/\.(mp4|webm|ogg)$/i))) ? (
-                      <video
-                        src={formData.backgroundEnPreview}
-                        controls
-                        style={{
-                          maxHeight: 200,
-                          maxWidth: "100%",
-                          borderRadius: 6,
-                          objectFit: "contain",
-                        }}
-                      />
-                    ) : (
-                      <img
-                        src={formData.backgroundEnPreview}
-                        alt="Background EN preview"
-                        style={{
-                          maxHeight: 120,
-                          maxWidth: "100%",
-                          borderRadius: 6,
-                          objectFit: "cover",
-                        }}
-                      />
-                    )}
-
-                    <IconButton
-                      size="small"
-                      onClick={() =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          backgroundEn: null,
-                          backgroundEnPreview: "",
-                          backgroundEnFileType: null,
-                          removeBackgroundEn: true,
-                        }))
-                      }
-                      sx={{
-                        position: "absolute",
-                        top: -18,
-                        right: 6,
-                        bgcolor: "error.main",
-                        color: "#fff",
-                        "&:hover": { bgcolor: "error.dark" },
-                      }}
-                    >
-                      <ICONS.delete sx={{ fontSize: 18 }} />
-                    </IconButton>
-                  </Box>
-                </Box>
-              )}
-            </Box>
-
-            {/* Arabic Background Upload */}
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "flex-start",
-                width: "100%",
-              }}
-            >
-              <Button component="label" variant="outlined" size="small">
-                {t.uploadBackgroundAr}
-                <input
-                  hidden
-                  name="backgroundAr"
-                  type="file"
-                  accept="image/*,video/*"
-                  onChange={handleInputChange}
-                />
-              </Button>
-
-              {formData.backgroundArPreview && !formData.removeBackgroundAr && (
-                <Box sx={{ mt: 1.5 }}>
-                  <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
-                    {initialValues && !formData.backgroundAr
-                      ? t.currentBackground + " (AR)"
-                      : t.preview + " (AR)"}
-                  </Typography>
-
-                  <Box sx={{ position: "relative", display: "inline-block" }}>
-                    {formData.backgroundAr?.type?.startsWith("video/") ||
-                      formData.backgroundArFileType === "video" ||
-                      (formData.backgroundArPreview &&
-                        !formData.backgroundArPreview.startsWith("blob:") &&
-                        (formData.backgroundArPreview.includes("video") ||
-                          formData.backgroundArPreview.match(/\.(mp4|webm|ogg)$/i))) ? (
-                      <video
-                        src={formData.backgroundArPreview}
-                        controls
-                        style={{
-                          maxHeight: 200,
-                          maxWidth: "100%",
-                          borderRadius: 6,
-                          objectFit: "contain",
-                        }}
-                      />
-                    ) : (
-                      <img
-                        src={formData.backgroundArPreview}
-                        alt="Background AR preview"
-                        style={{
-                          maxHeight: 120,
-                          maxWidth: "100%",
-                          borderRadius: 6,
-                          objectFit: "cover",
-                        }}
-                      />
-                    )}
-
-                    <IconButton
-                      size="small"
-                      onClick={() =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          backgroundAr: null,
-                          backgroundArPreview: "",
-                          backgroundArFileType: null,
-                          removeBackgroundAr: true,
-                        }))
-                      }
-                      sx={{
-                        position: "absolute",
-                        top: -18,
-                        right: 6,
-                        bgcolor: "error.main",
-                        color: "#fff",
-                        "&:hover": { bgcolor: "error.dark" },
-                      }}
-                    >
-                      <ICONS.delete sx={{ fontSize: 18 }} />
-                    </IconButton>
-                  </Box>
-                </Box>
-              )}
-            </Box>
-          </Box>
-
-          {/* Branding Logos Upload and List */}
-          <Box>
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: { xs: "column", sm: "row" },
-                gap: 1,
-                width: { xs: "100%", sm: "auto" },
-                mb: 1,
-              }}
-            >
-              <Button
-                variant="outlined"
-                component="label"
-                sx={{ width: { xs: "100%", sm: "auto" } }}
-                disabled={formData.clearAllBrandingLogos}
-              >
-                {t.brandingMedia}
-                <input
+                  name="logo"
                   type="file"
                   accept="image/*"
-                  multiple
-                  hidden
-                  onChange={handleAddBrandingLogos}
+                  onChange={handleInputChange}
                 />
               </Button>
-              <Button
-                variant={
-                  formData.clearAllBrandingLogos ? "contained" : "outlined"
-                }
-                color="error"
-                onClick={handleClearAllBrandingLogos}
-              >
-                {formData.clearAllBrandingLogos
-                  ? t.willClearAll || "Will Clear All (toggle off?)"
-                  : t.clearAllLogos || "Clear All Logos"}
-              </Button>
+
+              {formData.logoPreview && !formData.removeLogo && (
+                <Box sx={{ mt: 1.5, position: "relative" }}>
+                  <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                    {initialValues && !formData.logo ? t.currentImage : t.preview}
+                  </Typography>
+
+                  <img
+                    src={formData.logoPreview}
+                    alt="Logo preview"
+                    style={{ maxHeight: 100, borderRadius: 6 }}
+                  />
+
+                  <IconButton
+                    size="small"
+                    onClick={() =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        logo: null,
+                        logoPreview: "",
+                        removeLogo: true,
+                      }))
+                    }
+                    sx={{
+                      position: "absolute",
+                      top: 6,
+                      right: 6,
+                      bgcolor: "error.main",
+                      color: "#fff",
+                      "&:hover": { bgcolor: "error.dark" },
+                    }}
+                  >
+                    <ICONS.delete sx={{ fontSize: 18 }} />
+                  </IconButton>
+                </Box>
+              )}
             </Box>
 
+            {/* Background Upload */}
             <Box
-              sx={{ maxHeight: { xs: 420, md: 360 }, overflow: "auto", pr: 1 }}
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "flex-start",
+                gap: 2,
+                width: "100%",
+              }}
             >
-              <List disablePadding>
-                {formData.brandingLogos.map((item, idx) => (
-                  <ListItem
-                    key={item.uniqueKey || item._id || `b-${idx}`}
-                    disableGutters
-                    sx={{ px: 0, mb: 1 }}
-                  >
-                    <Paper
-                      variant="outlined"
-                      sx={{ p: 1.5, borderRadius: 1.5, width: "100%" }}
-                    >
-                      <Box
+              <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                {t.uploadBackground}
+              </Typography>
+
+              {/* English Background Upload */}
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "flex-start",
+                  width: "100%",
+                }}
+              >
+                <Button component="label" variant="outlined" size="small">
+                  {t.uploadBackgroundEn}
+                  <input
+                    hidden
+                    name="backgroundEn"
+                    type="file"
+                    accept="image/*,video/*"
+                    onChange={handleInputChange}
+                  />
+                </Button>
+
+                {formData.backgroundEnPreview && !formData.removeBackgroundEn && (
+                  <Box sx={{ mt: 1.5 }}>
+                    <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                      {initialValues && !formData.backgroundEn
+                        ? t.currentBackground + " (EN)"
+                        : t.preview + " (EN)"}
+                    </Typography>
+
+                    <Box sx={{ position: "relative", display: "inline-block" }}>
+                      {formData.backgroundEn?.type?.startsWith("video/") ||
+                        formData.backgroundEnFileType === "video" ||
+                        (formData.backgroundEnPreview &&
+                          !formData.backgroundEnPreview.startsWith("blob:") &&
+                          (formData.backgroundEnPreview.includes("video") ||
+                            formData.backgroundEnPreview.match(/\.(mp4|webm|ogg)$/i))) ? (
+                        <video
+                          src={formData.backgroundEnPreview}
+                          controls
+                          style={{
+                            maxHeight: 200,
+                            maxWidth: "100%",
+                            borderRadius: 6,
+                            objectFit: "contain",
+                          }}
+                        />
+                      ) : (
+                        <img
+                          src={formData.backgroundEnPreview}
+                          alt="Background EN preview"
+                          style={{
+                            maxHeight: 120,
+                            maxWidth: "100%",
+                            borderRadius: 6,
+                            objectFit: "cover",
+                          }}
+                        />
+                      )}
+
+                      <IconButton
+                        size="small"
+                        onClick={() =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            backgroundEn: null,
+                            backgroundEnPreview: "",
+                            backgroundEnFileType: null,
+                            removeBackgroundEn: true,
+                          }))
+                        }
                         sx={{
-                          display: "flex",
-                          flexDirection: { xs: "column", sm: "row" },
-                          alignItems: { xs: "stretch", sm: "center" },
-                          gap: 1.5,
-                          minWidth: 0,
+                          position: "absolute",
+                          top: -18,
+                          right: 6,
+                          bgcolor: "error.main",
+                          color: "#fff",
+                          "&:hover": { bgcolor: "error.dark" },
                         }}
                       >
-                        <Box
-                          sx={{
-                            flexShrink: 0,
-                            alignSelf: { xs: "center", sm: "flex-start" },
-                          }}
-                        >
-                          <img
-                            src={item.logoUrl}
-                            alt="branding"
-                            style={{
-                              width: 72,
-                              height: 72,
-                              objectFit: "cover",
-                              borderRadius: 4,
-                            }}
-                          />
-                        </Box>
+                        <ICONS.delete sx={{ fontSize: 18 }} />
+                      </IconButton>
+                    </Box>
+                  </Box>
+                )}
+              </Box>
 
+              {/* Arabic Background Upload */}
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "flex-start",
+                  width: "100%",
+                }}
+              >
+                <Button component="label" variant="outlined" size="small">
+                  {t.uploadBackgroundAr}
+                  <input
+                    hidden
+                    name="backgroundAr"
+                    type="file"
+                    accept="image/*,video/*"
+                    onChange={handleInputChange}
+                  />
+                </Button>
+
+                {formData.backgroundArPreview && !formData.removeBackgroundAr && (
+                  <Box sx={{ mt: 1.5 }}>
+                    <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                      {initialValues && !formData.backgroundAr
+                        ? t.currentBackground + " (AR)"
+                        : t.preview + " (AR)"}
+                    </Typography>
+
+                    <Box sx={{ position: "relative", display: "inline-block" }}>
+                      {formData.backgroundAr?.type?.startsWith("video/") ||
+                        formData.backgroundArFileType === "video" ||
+                        (formData.backgroundArPreview &&
+                          !formData.backgroundArPreview.startsWith("blob:") &&
+                          (formData.backgroundArPreview.includes("video") ||
+                            formData.backgroundArPreview.match(/\.(mp4|webm|ogg)$/i))) ? (
+                        <video
+                          src={formData.backgroundArPreview}
+                          controls
+                          style={{
+                            maxHeight: 200,
+                            maxWidth: "100%",
+                            borderRadius: 6,
+                            objectFit: "contain",
+                          }}
+                        />
+                      ) : (
+                        <img
+                          src={formData.backgroundArPreview}
+                          alt="Background AR preview"
+                          style={{
+                            maxHeight: 120,
+                            maxWidth: "100%",
+                            borderRadius: 6,
+                            objectFit: "cover",
+                          }}
+                        />
+                      )}
+
+                      <IconButton
+                        size="small"
+                        onClick={() =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            backgroundAr: null,
+                            backgroundArPreview: "",
+                            backgroundArFileType: null,
+                            removeBackgroundAr: true,
+                          }))
+                        }
+                        sx={{
+                          position: "absolute",
+                          top: -18,
+                          right: 6,
+                          bgcolor: "error.main",
+                          color: "#fff",
+                          "&:hover": { bgcolor: "error.dark" },
+                        }}
+                      >
+                        <ICONS.delete sx={{ fontSize: 18 }} />
+                      </IconButton>
+                    </Box>
+                  </Box>
+                )}
+              </Box>
+            </Box>
+
+            {/* Branding Logos Upload and List */}
+            <Box>
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: { xs: "column", sm: "row" },
+                  gap: 1,
+                  width: { xs: "100%", sm: "auto" },
+                  mb: 1,
+                }}
+              >
+                <Button
+                  variant="outlined"
+                  component="label"
+                  sx={{ width: { xs: "100%", sm: "auto" } }}
+                  disabled={formData.clearAllBrandingLogos}
+                >
+                  {t.brandingMedia}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    hidden
+                    onChange={handleAddBrandingLogos}
+                  />
+                </Button>
+                <Button
+                  variant={
+                    formData.clearAllBrandingLogos ? "contained" : "outlined"
+                  }
+                  color="error"
+                  onClick={handleClearAllBrandingLogos}
+                >
+                  {formData.clearAllBrandingLogos
+                    ? t.willClearAll || "Will Clear All (toggle off?)"
+                    : t.clearAllLogos || "Clear All Logos"}
+                </Button>
+              </Box>
+
+              <Box
+                sx={{ maxHeight: { xs: 420, md: 360 }, overflow: "auto", pr: 1 }}
+              >
+                <List disablePadding>
+                  {formData.brandingLogos.map((item, idx) => (
+                    <ListItem
+                      key={item.uniqueKey || item._id || `b-${idx}`}
+                      disableGutters
+                      sx={{ px: 0, mb: 1 }}
+                    >
+                      <Paper
+                        variant="outlined"
+                        sx={{ p: 1.5, borderRadius: 1.5, width: "100%" }}
+                      >
                         <Box
                           sx={{
                             display: "flex",
                             flexDirection: { xs: "column", sm: "row" },
+                            alignItems: { xs: "stretch", sm: "center" },
                             gap: 1.5,
-                            flex: 1,
                             minWidth: 0,
                           }}
                         >
                           <Box
                             sx={{
-                              flex: 1,
-                              minWidth: { xs: "100%", sm: 120 },
+                              flexShrink: 0,
+                              alignSelf: { xs: "center", sm: "flex-start" },
                             }}
                           >
-                            <TextField
-                              size="small"
-                              fullWidth
-                              label={t.nameOptional || "Client Name (optional)"}
-                              value={item.name}
-                              onChange={(e) =>
-                                handleBrandingLogoFieldChange(
-                                  idx,
-                                  "name",
-                                  e.target.value
-                                )
-                              }
+                            <img
+                              src={item.logoUrl}
+                              alt="branding"
+                              style={{
+                                width: 72,
+                                height: 72,
+                                objectFit: "cover",
+                                borderRadius: 4,
+                              }}
                             />
                           </Box>
+
                           <Box
                             sx={{
-                              flex: 1.2,
-                              minWidth: { xs: "100%", sm: 140 },
+                              display: "flex",
+                              flexDirection: { xs: "column", sm: "row" },
+                              gap: 1.5,
+                              flex: 1,
+                              minWidth: 0,
                             }}
                           >
-                            <TextField
-                              size="small"
-                              fullWidth
-                              label={t.websiteOptional || "Website (optional)"}
-                              value={item.website}
-                              onChange={(e) =>
-                                handleBrandingLogoFieldChange(
-                                  idx,
-                                  "website",
-                                  e.target.value
-                                )
-                              }
-                            />
+                            <Box
+                              sx={{
+                                flex: 1,
+                                minWidth: { xs: "100%", sm: 120 },
+                              }}
+                            >
+                              <TextField
+                                size="small"
+                                fullWidth
+                                label={t.nameOptional || "Client Name (optional)"}
+                                value={item.name}
+                                onChange={(e) =>
+                                  handleBrandingLogoFieldChange(
+                                    idx,
+                                    "name",
+                                    e.target.value
+                                  )
+                                }
+                              />
+                            </Box>
+                            <Box
+                              sx={{
+                                flex: 1.2,
+                                minWidth: { xs: "100%", sm: 140 },
+                              }}
+                            >
+                              <TextField
+                                size="small"
+                                fullWidth
+                                label={t.websiteOptional || "Website (optional)"}
+                                value={item.website}
+                                onChange={(e) =>
+                                  handleBrandingLogoFieldChange(
+                                    idx,
+                                    "website",
+                                    e.target.value
+                                  )
+                                }
+                              />
+                            </Box>
+                          </Box>
+
+                          <Box
+                            sx={{
+                              flexShrink: 0,
+                              alignSelf: { xs: "stretch", sm: "flex-start" },
+                            }}
+                          >
+                            <Tooltip title={t.remove || "Remove"}>
+                              <IconButton
+                                color="error"
+                                onClick={() => handleRemoveBrandingLogo(idx)}
+                                size="small"
+                                sx={{ width: { xs: "100%", sm: "auto" } }}
+                              >
+                                <ICONS.delete />
+                              </IconButton>
+                            </Tooltip>
                           </Box>
                         </Box>
-
-                        <Box
-                          sx={{
-                            flexShrink: 0,
-                            alignSelf: { xs: "stretch", sm: "flex-start" },
-                          }}
-                        >
-                          <Tooltip title={t.remove || "Remove"}>
-                            <IconButton
-                              color="error"
-                              onClick={() => handleRemoveBrandingLogo(idx)}
-                              size="small"
-                              sx={{ width: { xs: "100%", sm: "auto" } }}
-                            >
-                              <ICONS.delete />
-                            </IconButton>
-                          </Tooltip>
-                        </Box>
-                      </Box>
-                    </Paper>
-                  </ListItem>
-                ))}
-              </List>
-            </Box>
-          </Box>
-          <Box>
-            <Button component="label" variant="outlined">
-              Upload Agenda (PDF)
-              <input
-                hidden
-                name="agenda"
-                type="file"
-                accept="application/pdf"
-                onChange={handleInputChange}
-              />
-            </Button>
-            {formData.agendaPreview && (
-              <Box sx={{ mt: 1 }}>
-                <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
-                  {initialValues && !formData.agenda
-                    ? "Current Agenda:"
-                    : "Selected Agenda:"}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {formData.agendaPreview}
-                </Typography>
-              </Box>
-            )}
-          </Box>
-
-          {formData.eventType === "employee" && (
-            <>
-              <Button variant="outlined" onClick={handleDownloadTemplate}>
-                {t.downloadTemplate}
-              </Button>
-              <Box>
-                <Typography variant="subtitle2" color="primary">
-                  {t.uploadEmployee}
-                </Typography>
-                <TextField
-                  name="employeeData"
-                  type="file"
-                  inputProps={{ accept: ".csv,.xlsx,.xls" }}
-                  onChange={handleInputChange}
-                  fullWidth
-                />
-              </Box>
-              <Box>
-                <Typography variant="subtitle2" color="primary">
-                  {t.uploadTables}
-                </Typography>
-                <TextField
-                  name="tableImages"
-                  type="file"
-                  inputProps={{ accept: "image/*", multiple: true }}
-                  onChange={handleInputChange}
-                  fullWidth
-                />
-              </Box>
-              {formData.tableImages.length > 0 && (
-                <List>
-                  {Array.from(formData.tableImages).map((file, i) => (
-                    <ListItem key={i}>
-                      <ListItemText primary={file.name} />
+                      </Paper>
                     </ListItem>
                   ))}
                 </List>
-              )}
-            </>
-          )}
-
-          {/* Public Custom Field Toggle */}
-          {formData.eventType === "public" && (
-            <>
-              <Typography variant="subtitle2" color="primary">
-                {t.useCustomFields}
-              </Typography>
-              <Button
-                variant="outlined"
-                onClick={() =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    useCustomFields: !prev.useCustomFields,
-                  }))
-                }
-              >
-                {formData.useCustomFields
-                  ? t.switchToClassic
-                  : t.switchToCustom}
+              </Box>
+            </Box>
+            <Box>
+              <Button component="label" variant="outlined">
+                Upload Agenda (PDF)
+                <input
+                  hidden
+                  name="agenda"
+                  type="file"
+                  accept="application/pdf"
+                  onChange={handleInputChange}
+                />
               </Button>
-
-              {formData.useCustomFields ? (
-                <>
-                  {formData.formFields.map((field, index) => (
-                    <Box
-                      key={index}
-                      sx={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 1,
-                        mb: 2,
-                      }}
-                    >
-                      <TextField
-                        label={t.fieldLabel}
-                        value={field.inputName}
-                        onChange={(e) =>
-                          handleFormFieldChange(
-                            index,
-                            "inputName",
-                            e.target.value
-                          )
-                        }
-                        fullWidth
-                      />
-
-                      <TextField
-                        label={t.inputType}
-                        select
-                        SelectProps={{ native: true }}
-                        value={field.inputType}
-                        onChange={(e) =>
-                          handleFormFieldChange(
-                            index,
-                            "inputType",
-                            e.target.value
-                          )
-                        }
-                        fullWidth
-                      >
-                        {[
-                          { value: "text", label: t.textType },
-                          { value: "email", label: t.emailType },
-                          { value: "number", label: t.numberType },
-                          { value: "radio", label: t.radioType },
-                          { value: "list", label: t.listType },
-                        ].map((type) => (
-                          <option key={type.value} value={type.value}>
-                            {type.label}
-                          </option>
-                        ))}
-                      </TextField>
-
-                      {(field.inputType === "radio" ||
-                        field.inputType === "list") && (
-                          <Box>
-                            <Typography variant="subtitle2">
-                              {t.options}
-                            </Typography>
-                            <Box
-                              sx={{
-                                display: "flex",
-                                flexWrap: "wrap",
-                                gap: 1,
-                                mb: 1,
-                              }}
-                            >
-                              {field.values.map((option, i) => (
-                                <Chip
-                                  key={i}
-                                  label={option}
-                                  onDelete={() => {
-                                    const updated = [...field.values];
-                                    updated.splice(i, 1);
-                                    handleFormFieldChange(
-                                      index,
-                                      "values",
-                                      updated
-                                    );
-                                  }}
-                                  color="primary"
-                                  variant="outlined"
-                                />
-                              ))}
-                            </Box>
-                            <TextField
-                              placeholder={t.optionPlaceholder}
-                              value={field._temp || ""}
-                              onChange={(e) => {
-                                const newValue = e.target.value;
-                                if (newValue.endsWith(",")) {
-                                  const option = newValue.slice(0, -1).trim();
-                                  if (option && !field.values.includes(option)) {
-                                    const updated = [...field.values, option];
-                                    handleFormFieldChange(
-                                      index,
-                                      "values",
-                                      updated
-                                    );
-                                  }
-                                  handleFormFieldChange(index, "_temp", "");
-                                } else {
-                                  handleFormFieldChange(index, "_temp", newValue);
-                                }
-                              }}
-                              fullWidth
-                            />
-                          </Box>
-                        )}
-
-                      <Box
-                        sx={{ display: "flex", alignItems: "center", gap: 2 }}
-                      >
-                        <FormControlLabel
-                          control={
-                            <Checkbox
-                              checked={field.required}
-                              onChange={(e) =>
-                                handleFormFieldChange(
-                                  index,
-                                  "required",
-                                  e.target.checked
-                                )
-                              }
-                              color="primary"
-                            />
-                          }
-                          label={t.requiredField}
-                        />
-
-                        <FormControlLabel
-                          control={
-                            <Checkbox
-                              checked={field.visible}
-                              onChange={(e) =>
-                                handleFormFieldChange(
-                                  index,
-                                  "visible",
-                                  e.target.checked
-                                )
-                              }
-                              color="primary"
-                            />
-                          }
-                          label={t.visibleField}
-                        />
-
-                        <Button
-                          size="small"
-                          variant="text"
-                          color="error"
-                          onClick={() => removeFormField(index)}
-                        >
-                          {t.remove}
-                        </Button>
-                      </Box>
-                    </Box>
-                  ))}
-                  <Button onClick={addFormField} variant="outlined">
-                    {t.addField}
-                  </Button>
-                </>
-              ) : (
-                <Typography variant="body2" sx={{ fontStyle: "italic" }}>
-                  {t.classicFieldsNote}
-                </Typography>
+              {formData.agendaPreview && (
+                <Box sx={{ mt: 1 }}>
+                  <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                    {initialValues && !formData.agenda
+                      ? "Current Agenda:"
+                      : "Selected Agenda:"}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {formData.agendaPreview}
+                  </Typography>
+                </Box>
               )}
-            </>
-          )}
-        </Box>
-      </DialogContent>
+            </Box>
 
-      <DialogActions
-        sx={{ p: 3, flexDirection: { xs: "column", sm: "row" }, gap: 1 }}
-      >
-        <Button
-          onClick={onClose}
-          variant="outlined"
-          color="inherit"
-          disabled={loading}
-          fullWidth
-          startIcon={<ICONS.cancel />}
+            {formData.eventType === "employee" && (
+              <>
+                <Button variant="outlined" onClick={handleDownloadTemplate}>
+                  {t.downloadTemplate}
+                </Button>
+                <Box>
+                  <Typography variant="subtitle2" color="primary">
+                    {t.uploadEmployee}
+                  </Typography>
+                  <TextField
+                    name="employeeData"
+                    type="file"
+                    inputProps={{ accept: ".csv,.xlsx,.xls" }}
+                    onChange={handleInputChange}
+                    fullWidth
+                  />
+                </Box>
+                <Box>
+                  <Typography variant="subtitle2" color="primary">
+                    {t.uploadTables}
+                  </Typography>
+                  <TextField
+                    name="tableImages"
+                    type="file"
+                    inputProps={{ accept: "image/*", multiple: true }}
+                    onChange={handleInputChange}
+                    fullWidth
+                  />
+                </Box>
+                {formData.tableImages.length > 0 && (
+                  <List>
+                    {Array.from(formData.tableImages).map((file, i) => (
+                      <ListItem key={i}>
+                        <ListItemText primary={file.name} />
+                      </ListItem>
+                    ))}
+                  </List>
+                )}
+              </>
+            )}
+
+            {/* Public Custom Field Toggle */}
+            {formData.eventType === "public" && (
+              <>
+                <Typography variant="subtitle2" color="primary">
+                  {t.useCustomFields}
+                </Typography>
+                <Button
+                  variant="outlined"
+                  onClick={() =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      useCustomFields: !prev.useCustomFields,
+                    }))
+                  }
+                >
+                  {formData.useCustomFields
+                    ? t.switchToClassic
+                    : t.switchToCustom}
+                </Button>
+
+                {formData.useCustomFields ? (
+                  <>
+                    {formData.formFields.map((field, index) => (
+                      <Box
+                        key={index}
+                        sx={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 1,
+                          mb: 2,
+                        }}
+                      >
+                        <TextField
+                          label={t.fieldLabel}
+                          value={field.inputName}
+                          onChange={(e) =>
+                            handleFormFieldChange(
+                              index,
+                              "inputName",
+                              e.target.value
+                            )
+                          }
+                          fullWidth
+                        />
+
+                        <TextField
+                          label={t.inputType}
+                          select
+                          SelectProps={{ native: true }}
+                          value={field.inputType}
+                          onChange={(e) =>
+                            handleFormFieldChange(
+                              index,
+                              "inputType",
+                              e.target.value
+                            )
+                          }
+                          fullWidth
+                        >
+                          {[
+                            { value: "text", label: t.textType },
+                            { value: "email", label: t.emailType },
+                            { value: "number", label: t.numberType },
+                            { value: "radio", label: t.radioType },
+                            { value: "list", label: t.listType },
+                          ].map((type) => (
+                            <option key={type.value} value={type.value}>
+                              {type.label}
+                            </option>
+                          ))}
+                        </TextField>
+
+                        {(field.inputType === "radio" ||
+                          field.inputType === "list") && (
+                            <Box>
+                              <Typography variant="subtitle2">
+                                {t.options}
+                              </Typography>
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  flexWrap: "wrap",
+                                  gap: 1,
+                                  mb: 1,
+                                }}
+                              >
+                                {field.values.map((option, i) => (
+                                  <Chip
+                                    key={i}
+                                    label={option}
+                                    onDelete={() => {
+                                      const updated = [...field.values];
+                                      updated.splice(i, 1);
+                                      handleFormFieldChange(
+                                        index,
+                                        "values",
+                                        updated
+                                      );
+                                    }}
+                                    color="primary"
+                                    variant="outlined"
+                                  />
+                                ))}
+                              </Box>
+                              <TextField
+                                placeholder={t.optionPlaceholder}
+                                value={field._temp || ""}
+                                onChange={(e) => {
+                                  const newValue = e.target.value;
+                                  if (newValue.endsWith(",")) {
+                                    const option = newValue.slice(0, -1).trim();
+                                    if (option && !field.values.includes(option)) {
+                                      const updated = [...field.values, option];
+                                      handleFormFieldChange(
+                                        index,
+                                        "values",
+                                        updated
+                                      );
+                                    }
+                                    handleFormFieldChange(index, "_temp", "");
+                                  } else {
+                                    handleFormFieldChange(index, "_temp", newValue);
+                                  }
+                                }}
+                                fullWidth
+                              />
+                            </Box>
+                          )}
+
+                        <Box
+                          sx={{ display: "flex", alignItems: "center", gap: 2 }}
+                        >
+                          <FormControlLabel
+                            control={
+                              <Checkbox
+                                checked={field.required}
+                                onChange={(e) =>
+                                  handleFormFieldChange(
+                                    index,
+                                    "required",
+                                    e.target.checked
+                                  )
+                                }
+                                color="primary"
+                              />
+                            }
+                            label={t.requiredField}
+                          />
+
+                          <FormControlLabel
+                            control={
+                              <Checkbox
+                                checked={field.visible}
+                                onChange={(e) =>
+                                  handleFormFieldChange(
+                                    index,
+                                    "visible",
+                                    e.target.checked
+                                  )
+                                }
+                                color="primary"
+                              />
+                            }
+                            label={t.visibleField}
+                          />
+
+                          <Button
+                            size="small"
+                            variant="text"
+                            color="error"
+                            onClick={() => removeFormField(index)}
+                          >
+                            {t.remove}
+                          </Button>
+                        </Box>
+                      </Box>
+                    ))}
+                    <Button onClick={addFormField} variant="outlined">
+                      {t.addField}
+                    </Button>
+                  </>
+                ) : (
+                  <Typography variant="body2" sx={{ fontStyle: "italic" }}>
+                    {t.classicFieldsNote}
+                  </Typography>
+                )}
+              </>
+            )}
+          </Box>
+        </DialogContent>
+
+        <DialogActions
+          sx={{ p: 3, flexDirection: { xs: "column", sm: "row" }, gap: 1 }}
         >
-          {t.cancel}
-        </Button>
-        <Button
-          onClick={handleSubmit}
-          variant="contained"
-          disabled={loading}
-          startIcon={
-            loading ? (
-              <CircularProgress size={20} color="inherit" />
-            ) : (
-              <ICONS.save />
-            )
-          }
-          fullWidth
-        >
-          {loading
-            ? initialValues
-              ? t.updating
-              : t.creating
-            : initialValues
-              ? t.update
-              : t.create}
-        </Button>
-      </DialogActions>
-    </Dialog>
+          <Button
+            onClick={onClose}
+            variant="outlined"
+            color="inherit"
+            disabled={loading}
+            fullWidth
+            startIcon={<ICONS.cancel />}
+          >
+            {t.cancel}
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            variant="contained"
+            disabled={loading}
+            startIcon={
+              loading ? (
+                <CircularProgress size={20} color="inherit" />
+              ) : (
+                <ICONS.save />
+              )
+            }
+            fullWidth
+          >
+            {loading
+              ? initialValues
+                ? t.updating
+                : t.creating
+              : initialValues
+                ? t.update
+                : t.create}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <MediaUploadProgress
+        open={showUploadProgress}
+        uploads={uploadProgress}
+        onClose={() => setShowUploadProgress(false)}
+        allowClose={false}
+      />
+    </>
   );
 };
 
