@@ -13,12 +13,15 @@ import {
   CircularProgress,
   Switch,
   FormControlLabel,
+  IconButton,
 } from "@mui/material";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useMessage } from "@/contexts/MessageContext";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import slugify from "@/utils/slugify";
 import ICONS from "@/utils/iconUtil";
+import { uploadMediaFiles } from "@/utils/mediaUpload";
+import MediaUploadProgress from "@/components/MediaUploadProgress";
 
 const translations = {
   en: {
@@ -111,6 +114,7 @@ const GameFormModal = ({
   selectedGame = null,
   onSubmit,
   module = "eventduel", // also supports "tapmatch"
+  selectedBusiness, // business slug for uploads
 }) => {
   const [form, setForm] = useState({
     title: "",
@@ -134,7 +138,20 @@ const GameFormModal = ({
 
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState([]);
+  const [showUploadProgress, setShowUploadProgress] = useState(false);
+  const [buttonWidths, setButtonWidths] = useState({
+    cover: null,
+    name: null,
+    background: null,
+  });
+
+  const coverButtonRef = useRef(null);
+  const nameButtonRef = useRef(null);
+  const backgroundButtonRef = useRef(null);
+
   const { t } = useI18nLayout(translations);
+  const { showMessage } = useMessage();
 
   const isTapMatch = module === "tapmatch";
 
@@ -192,6 +209,25 @@ const GameFormModal = ({
     }
   }, [open, editMode, initialValues]);
 
+  useEffect(() => {
+    const measureWidths = () => {
+      const widths = {
+        cover: coverButtonRef.current?.offsetWidth || null,
+        name: nameButtonRef.current?.offsetWidth || null,
+        background: backgroundButtonRef.current?.offsetWidth || null,
+      };
+      setButtonWidths(widths);
+    };
+
+    const timeoutId = setTimeout(measureWidths, 100);
+    window.addEventListener("resize", measureWidths);
+
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener("resize", measureWidths);
+    };
+  }, [form.coverPreview, form.namePreview, form.backgroundPreview]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => {
@@ -220,16 +256,32 @@ const GameFormModal = ({
         memoryImages: valid,
         memoryPreviews: valid.map((f) => URL.createObjectURL(f)),
       }));
+      setErrors((prev) => {
+        const updated = { ...prev };
+        delete updated.memoryImages;
+        return updated;
+      });
       return;
     }
 
     const file = files[0];
     if (file && file.type.startsWith("image/")) {
+      const previewKeyMap = {
+        coverImage: "coverPreview",
+        nameImage: "namePreview",
+        backgroundImage: "backgroundPreview",
+      };
+
       setForm((prev) => ({
         ...prev,
         [key]: file,
-        [`${key}Preview`]: URL.createObjectURL(file),
+        [previewKeyMap[key] || `${key}Preview`]: URL.createObjectURL(file),
       }));
+      setErrors((prev) => {
+        const updated = { ...prev };
+        delete updated[key];
+        return updated;
+      });
     } else {
       setErrors((prev) => ({
         ...prev,
@@ -237,6 +289,7 @@ const GameFormModal = ({
       }));
     }
   };
+
 
   const handleTeamNameChange = (i, value) => {
     const updated = [...form.teamNames];
@@ -254,10 +307,15 @@ const GameFormModal = ({
     if (!form.gameSessionTimer)
       newErrors.gameSessionTimer = te.quizTimeRequired;
 
-    if (!editMode && !form.coverImage) newErrors.coverImage = te.coverRequired;
-    if (!editMode && !form.nameImage) newErrors.nameImage = te.nameRequired;
-    if (!editMode && !form.backgroundImage)
+    if (!form.coverImage && !form.coverPreview) {
+      newErrors.coverImage = te.coverRequired;
+    }
+    if (!form.nameImage && !form.namePreview) {
+      newErrors.nameImage = te.nameRequired;
+    }
+    if (!form.backgroundImage && !form.backgroundPreview) {
       newErrors.backgroundImage = te.backgroundRequired;
+    }
 
     if (!isTapMatch && !form.choicesCount)
       newErrors.choicesCount = te.optionsRequired;
@@ -279,35 +337,160 @@ const GameFormModal = ({
   };
 
   const handleSubmit = async () => {
-    if (!validate()) return;
+    if (!validate()) {
+      const errorFields = Object.keys(errors);
+      if (errorFields.length > 0) {
+        const fieldNames = errorFields.map((field) => {
+          if (field === "coverImage") return "Cover Image";
+          if (field === "nameImage") return "Name Image";
+          if (field === "backgroundImage") return "Background Image";
+          return field;
+        });
+        showMessage(`Please fill in all required fields: ${fieldNames.join(", ")}`, "error");
+      }
+      return;
+    }
+    if (!selectedBusiness) {
+      showMessage("Business is required", "error");
+      return;
+    }
+
     setLoading(true);
 
-    const payload = new FormData();
-    payload.append("title", form.title);
-    payload.append("slug", form.slug);
-    payload.append("countdownTimer", form.countdownTimer);
-    payload.append("gameSessionTimer", form.gameSessionTimer);
+    try {
+      const filesToUpload = [];
+      let coverImageUrl = form.coverImage ? null : (form.coverPreview || null);
+      let nameImageUrl = form.nameImage ? null : (form.namePreview || null);
+      let backgroundImageUrl = form.backgroundImage ? null : (form.backgroundPreview || null);
+      const memoryImageUrls = [];
 
-    if (!isTapMatch) payload.append("choicesCount", form.choicesCount);
-    if (form.coverImage) payload.append("cover", form.coverImage);
-    if (form.nameImage) payload.append("name", form.nameImage);
-    if (form.backgroundImage)
-      payload.append("background", form.backgroundImage);
-    if (isTapMatch && form.memoryImages.length) {
-      form.memoryImages.forEach((img) => payload.append("memoryImages", img));
+      if (form.coverImage) {
+        filesToUpload.push({
+          file: form.coverImage,
+          type: "cover",
+          label: "Cover Image",
+        });
+      }
+
+      if (form.nameImage) {
+        filesToUpload.push({
+          file: form.nameImage,
+          type: "name",
+          label: "Name Image",
+        });
+      }
+
+      if (form.backgroundImage) {
+        filesToUpload.push({
+          file: form.backgroundImage,
+          type: "background",
+          label: "Background Image",
+        });
+      }
+
+      if (isTapMatch && form.memoryImages.length) {
+        form.memoryImages.forEach((img, idx) => {
+          filesToUpload.push({
+            file: img,
+            type: "memory",
+            label: `Memory Image ${idx + 1}`,
+          });
+        });
+      }
+
+      if (filesToUpload.length > 0) {
+        setShowUploadProgress(true);
+        const uploads = filesToUpload.map((item) => ({
+          file: item.file,
+          label: item.label,
+          percent: 0,
+          loaded: 0,
+          total: item.file.size,
+          error: null,
+          url: null,
+          type: item.type,
+        }));
+
+        setUploadProgress(uploads);
+
+        try {
+          const urls = await uploadMediaFiles({
+            files: filesToUpload.map((item) => item.file),
+            businessSlug: selectedBusiness,
+            moduleName: "QuizNest",
+            onProgress: (progressUploads) => {
+              progressUploads.forEach((progressUpload, index) => {
+                if (uploads[index]) {
+                  uploads[index].percent = progressUpload.percent;
+                  uploads[index].loaded = progressUpload.loaded;
+                  uploads[index].total = progressUpload.total;
+                  uploads[index].error = progressUpload.error;
+                  uploads[index].url = progressUpload.url;
+                }
+              });
+              setUploadProgress([...uploads]);
+            },
+          });
+
+          const uploadResults = urls.map((url, index) => ({
+            type: uploads[index].type,
+            url,
+          }));
+
+          uploadResults.forEach((result) => {
+            if (result.type === "cover") coverImageUrl = result.url;
+            else if (result.type === "name") nameImageUrl = result.url;
+            else if (result.type === "background") backgroundImageUrl = result.url;
+            else if (result.type === "memory") memoryImageUrls.push(result.url);
+          });
+        } catch (uploadError) {
+          setShowUploadProgress(false);
+          throw uploadError;
+        }
+      }
+
+      setShowUploadProgress(false);
+
+      if (!coverImageUrl || !nameImageUrl || !backgroundImageUrl) {
+        const missingFields = [];
+        if (!coverImageUrl) missingFields.push("Cover Image");
+        if (!nameImageUrl) missingFields.push("Name Image");
+        if (!backgroundImageUrl) missingFields.push("Background Image");
+        showMessage(`Please upload required media: ${missingFields.join(", ")}`, "error");
+        setLoading(false);
+        return;
+      }
+
+      const payload = {
+        title: form.title,
+        slug: form.slug,
+        countdownTimer: form.countdownTimer,
+        gameSessionTimer: form.gameSessionTimer,
+        coverImage: coverImageUrl,
+        nameImage: nameImageUrl,
+        backgroundImage: backgroundImageUrl,
+      };
+
+      if (!isTapMatch) payload.choicesCount = form.choicesCount;
+      if (isTapMatch && memoryImageUrls.length) {
+        payload.memoryImages = memoryImageUrls;
+      }
+
+      if (form.isTeamMode) {
+        payload.isTeamMode = form.isTeamMode;
+        payload.maxTeams = form.maxTeams;
+        payload.playersPerTeam = form.playersPerTeam;
+        payload.teamNames = form.teamNames;
+      }
+
+      await onSubmit(payload, editMode);
+      setLoading(false);
+    } catch (error) {
+      console.error("Upload or save failed:", error);
+      showMessage(error.message || "Failed to upload media", "error");
+      setLoading(false);
+      setShowUploadProgress(false);
     }
-
-    if (form.isTeamMode) {
-      payload.append("isTeamMode", form.isTeamMode);
-      payload.append("maxTeams", form.maxTeams);
-      payload.append("playersPerTeam", form.playersPerTeam);
-      form.teamNames.forEach((name, i) =>
-        payload.append(`teamNames[${i}]`, name)
-      );
-    }
-
-    await onSubmit(payload, editMode);
-    setLoading(false);
   };
 
   return (
@@ -424,39 +607,147 @@ const GameFormModal = ({
             </Box>
           )}
 
-          {/* Existing Image Fields + Preview logic unchanged */}
-          {["coverImage", "nameImage", "backgroundImage"].map((key) => {
-            const label = t[key];
-            const previewSrc =
-              editMode && !form[key]
-                ? form[key.replace("Image", "Preview")]
-                : form[`${key}Preview`];
-            return (
-              <Box key={key}>
-                <Button component="label" variant="outlined">
-                  {label}
-                  <input
-                    hidden
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleFileChange(e, key)}
+          {/* Image Fields with Preview and Delete */}
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "flex-start",
+            }}
+          >
+            <Button
+              ref={coverButtonRef}
+              component="label"
+              variant="outlined"
+            >
+              {t.coverImage}
+              <input
+                hidden
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleFileChange(e, "coverImage")}
+              />
+            </Button>
+            {errors.coverImage && (
+              <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
+                {errors.coverImage}
+              </Typography>
+            )}
+            {form.coverPreview && (
+              <Box sx={{ mt: 1.5 }}>
+                <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                  {editMode && !form.coverImage ? t.currentImage : t.preview}
+                </Typography>
+                <Box sx={{ display: "inline-block", width: buttonWidths.cover || "auto" }}>
+                  <img
+                    src={form.coverPreview}
+                    alt="Cover preview"
+                    style={{
+                      width: buttonWidths.cover ? `${buttonWidths.cover}px` : "auto",
+                      maxHeight: 100,
+                      height: "auto",
+                      borderRadius: 6,
+                      objectFit: "cover",
+                    }}
                   />
-                </Button>
-                {previewSrc && (
-                  <Box sx={{ mt: 1 }}>
-                    <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
-                      {t.preview}
-                    </Typography>
-                    <img
-                      src={previewSrc}
-                      alt={key}
-                      style={{ maxHeight: 100, borderRadius: 6 }}
-                    />
-                  </Box>
-                )}
+                </Box>
               </Box>
-            );
-          })}
+            )}
+          </Box>
+
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "flex-start",
+            }}
+          >
+            <Button
+              ref={nameButtonRef}
+              component="label"
+              variant="outlined"
+            >
+              {t.nameImage}
+              <input
+                hidden
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleFileChange(e, "nameImage")}
+              />
+            </Button>
+            {errors.nameImage && (
+              <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
+                {errors.nameImage}
+              </Typography>
+            )}
+            {form.namePreview && (
+              <Box sx={{ mt: 1.5 }}>
+                <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                  {editMode && !form.nameImage ? t.currentImage : t.preview}
+                </Typography>
+                <Box sx={{ display: "inline-block", width: buttonWidths.name || "auto" }}>
+                  <img
+                    src={form.namePreview}
+                    alt="Name preview"
+                    style={{
+                      width: buttonWidths.name ? `${buttonWidths.name}px` : "auto",
+                      maxHeight: 100,
+                      height: "auto",
+                      borderRadius: 6,
+                      objectFit: "cover",
+                    }}
+                  />
+                </Box>
+              </Box>
+            )}
+          </Box>
+
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "flex-start",
+            }}
+          >
+            <Button
+              ref={backgroundButtonRef}
+              component="label"
+              variant="outlined"
+            >
+              {t.backgroundImage}
+              <input
+                hidden
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleFileChange(e, "backgroundImage")}
+              />
+            </Button>
+            {errors.backgroundImage && (
+              <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
+                {errors.backgroundImage}
+              </Typography>
+            )}
+            {form.backgroundPreview && (
+              <Box sx={{ mt: 1.5 }}>
+                <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                  {editMode && !form.backgroundImage ? t.currentImage : t.preview}
+                </Typography>
+                <Box sx={{ display: "inline-block", width: buttonWidths.background || "auto" }}>
+                  <img
+                    src={form.backgroundPreview}
+                    alt="Background preview"
+                    style={{
+                      width: buttonWidths.background ? `${buttonWidths.background}px` : "auto",
+                      maxHeight: 100,
+                      height: "auto",
+                      borderRadius: 6,
+                      objectFit: "cover",
+                    }}
+                  />
+                </Box>
+              </Box>
+            )}
+          </Box>
 
           {/* ✅ TapMatch Memory Image Upload */}
           {isTapMatch && (
@@ -532,10 +823,16 @@ const GameFormModal = ({
               ? t.updating
               : t.creating
             : editMode
-            ? t.update
-            : t.create}
+              ? t.update
+              : t.create}
         </Button>
       </DialogActions>
+      <MediaUploadProgress
+        open={showUploadProgress}
+        uploads={uploadProgress}
+        onClose={() => setShowUploadProgress(false)}
+        allowClose={false}
+      />
     </Dialog>
   );
 };
