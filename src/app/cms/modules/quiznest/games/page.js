@@ -481,8 +481,7 @@ export default function GamesPage() {
         <ShareLinkModal
           open={shareModalOpen}
           onClose={() => setShareModalOpen(false)}
-          url={`${
-            typeof window !== "undefined" ? window.location.origin : ""
+          url={`${typeof window !== "undefined" ? window.location.origin : ""
             }/quiznest/${gameToShare?.slug}`}
           name={gameToShare?.title}
         />
@@ -495,6 +494,7 @@ export default function GamesPage() {
           initialValues={selectedGame || {}}
           onSubmit={handleSubmitGame}
           module="quiznest"
+          selectedBusiness={selectedBusiness}
         />
 
         <ConfirmationDialog

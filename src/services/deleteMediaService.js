@@ -12,6 +12,9 @@ export const deleteMedia = withApiHandler(
         mediaType,
         eventType = "public",
         removeBrandingLogoIds,
+        gameId,
+        questionId,
+        answerImageIndex,
     }) => {
         if (!fileUrl) {
             throw new Error("File URL is required");
@@ -26,6 +29,9 @@ export const deleteMedia = withApiHandler(
         if (mediaType) payload.mediaType = mediaType;
         if (eventType) payload.eventType = eventType;
         if (removeBrandingLogoIds) payload.removeBrandingLogoIds = removeBrandingLogoIds;
+        if (gameId) payload.gameId = gameId;
+        if (questionId) payload.questionId = questionId;
+        if (answerImageIndex !== undefined) payload.answerImageIndex = answerImageIndex;
 
         const { data } = await api.post("/media/delete", payload);
         return data;

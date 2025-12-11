@@ -27,9 +27,11 @@ export const getGameBySlug = withApiHandler(async (gameSlug) => {
 
 // Create new game
 export const createGame = withApiHandler(
-  async (businessSlug, formData) => {
-    formData.append("businessSlug", businessSlug);
-    const { data } = await api.post("/quiznest/games", formData);
+  async (businessSlug, payload) => {
+    const { data } = await api.post("/quiznest/games", {
+      ...payload,
+      businessSlug,
+    });
     return data;
   },
   { showSuccess: true }
@@ -37,8 +39,8 @@ export const createGame = withApiHandler(
 
 // Update game
 export const updateGame = withApiHandler(
-  async (id, formData) => {
-    const { data } = await api.put(`/quiznest/games/${id}`, formData);
+  async (id, payload) => {
+    const { data } = await api.put(`/quiznest/games/${id}`, payload);
     return data;
   },
   { showSuccess: true }

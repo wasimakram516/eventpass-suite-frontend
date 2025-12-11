@@ -171,6 +171,34 @@ export default function QuestionsPage() {
     setOpenModal(false);
   };
 
+  const handleMediaDeleted = (mediaType, answerIndex) => {
+    if (!selectedQuestion?._id) return;
+
+    setQuestions((prev) => {
+      const updatedQuestions = prev.map((q) => {
+        if (q._id === selectedQuestion._id) {
+          const updated = { ...q };
+          if (mediaType === "question") {
+            updated.questionImage = null;
+          } else if (mediaType === "answer" && answerIndex !== null) {
+            const updatedAnswerImages = [...(updated.answerImages || [])];
+            updatedAnswerImages[answerIndex] = null;
+            updated.answerImages = updatedAnswerImages;
+          }
+          return updated;
+        }
+        return q;
+      });
+
+      const updatedQuestion = updatedQuestions.find((q) => q._id === selectedQuestion._id);
+      if (updatedQuestion) {
+        setSelectedQuestion(updatedQuestion);
+      }
+
+      return updatedQuestions;
+    });
+  };
+
   // Delete question
   const handleDelete = async () => {
     await deleteQuestion(game._id, selectedQuestion._id);
@@ -456,6 +484,9 @@ export default function QuestionsPage() {
           initialValues={selectedQuestion}
           onSubmit={(values) => handleAddEdit(values, editMode)}
           optionCount={game?.choicesCount}
+          selectedBusiness={game?.businessId?.slug || (typeof game?.businessId === 'object' ? game?.businessId?.slug : null)}
+          gameId={game?._id}
+          onMediaDeleted={handleMediaDeleted}
         />
 
         <ConfirmationDialog

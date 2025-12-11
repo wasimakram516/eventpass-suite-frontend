@@ -10,29 +10,7 @@ export const getQuestions = withApiHandler(async (gameId) => {
 // Add a single question
 export const addQuestion = withApiHandler(
   async (gameId, payload) => {
-    const formData = new FormData();
-
-    formData.append('question', payload.question);
-    formData.append('answers', JSON.stringify(payload.answers));
-    formData.append('correctAnswerIndex', payload.correctAnswerIndex);
-    if (payload.hint) formData.append('hint', payload.hint);
-
-    if (payload.questionImage) {
-      formData.append('questionImage', payload.questionImage);
-    }
-
-    if (payload.answerImages) {
-      payload.answerImages.forEach((item) => {
-        if (item.file) {
-          formData.append('answerImages', item.file);
-          formData.append('answerImageIndices', item.index);
-        }
-      });
-    }
-
-    const { data } = await api.post(`/quiznest/questions/${gameId}`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
+    const { data } = await api.post(`/quiznest/questions/${gameId}`, payload);
     return data;
   },
   { showSuccess: true }
@@ -41,40 +19,9 @@ export const addQuestion = withApiHandler(
 // Update a question
 export const updateQuestion = withApiHandler(
   async (gameId, questionId, payload) => {
-    const formData = new FormData();
-
-    formData.append('question', payload.question);
-    formData.append('answers', JSON.stringify(payload.answers));
-    formData.append('correctAnswerIndex', payload.correctAnswerIndex);
-    if (payload.hint !== undefined) formData.append('hint', payload.hint);
-
-    if (payload.removeQuestionImage) {
-      formData.append('removeQuestionImage', 'true');
-    }
-
-    if (payload.removeAnswerImages?.length > 0) {
-      formData.append('removeAnswerImages', JSON.stringify(payload.removeAnswerImages));
-    }
-
-    if (payload.questionImage) {
-      formData.append('questionImage', payload.questionImage);
-    }
-
-    if (payload.answerImages) {
-      payload.answerImages.forEach((item) => {
-        if (item.file) {
-          formData.append('answerImages', item.file);
-          formData.append('answerImageIndices', item.index);
-        }
-      });
-    }
-
     const { data } = await api.put(
       `/quiznest/questions/${gameId}/${questionId}`,
-      formData,
-      {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      }
+      payload
     );
     return data;
   },
