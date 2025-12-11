@@ -18,11 +18,17 @@ import {
   Avatar,
   Divider
 } from "@mui/material";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import useI18nLayout from "../../hooks/useI18nLayout";
 import ICONS from "../../utils/iconUtil";
 import AddPhotoAlternateIcon from "@mui/icons-material/AddPhotoAlternate";
 import CloseIcon from "@mui/icons-material/Close";
+import { uploadMediaFiles } from "@/utils/mediaUpload";
+import MediaUploadProgress from "@/components/MediaUploadProgress";
+import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
+import { deleteMedia } from "@/services/deleteMediaService";
+import { useMessage } from "@/contexts/MessageContext";
+import { getGameById } from "@/services/quiznest/gameService";
 
 const QuestionFormModal = ({
   open,
@@ -31,6 +37,9 @@ const QuestionFormModal = ({
   initialValues = {},
   onSubmit,
   optionCount = 4,
+  selectedBusiness,
+  gameId,
+  onMediaDeleted,
 }) => {
   const [form, setForm] = useState({
     question: "",
@@ -46,6 +55,21 @@ const QuestionFormModal = ({
   const [removeQuestionImage, setRemoveQuestionImage] = useState(false);
   const [removeAnswerImages, setRemoveAnswerImages] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState([]);
+  const [showUploadProgress, setShowUploadProgress] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState({
+    open: false,
+    type: null,
+    fileUrl: null,
+    index: null,
+  });
+  const [buttonWidths, setButtonWidths] = useState({
+    question: null,
+  });
+  const questionButtonRef = useRef(null);
+  const answerButtonRefs = useRef([]);
+
+  const { showMessage } = useMessage();
 
   useEffect(() => {
     if (!open) return;
@@ -67,6 +91,28 @@ const QuestionFormModal = ({
     setRemoveQuestionImage(false);
     setRemoveAnswerImages([]);
   }, [open, initialValues, optionCount]);
+
+  useEffect(() => {
+    const measureWidths = () => {
+      const widths = {
+        question: questionButtonRef.current?.offsetWidth || null,
+      };
+      answerButtonRefs.current.forEach((ref, idx) => {
+        if (ref) {
+          widths[`answer${idx}`] = ref.offsetWidth || null;
+        }
+      });
+      setButtonWidths(widths);
+    };
+
+    const timeoutId = setTimeout(measureWidths, 100);
+    window.addEventListener("resize", measureWidths);
+
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener("resize", measureWidths);
+    };
+  }, [questionImagePreview, answerImagePreviews]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -103,25 +149,76 @@ const QuestionFormModal = ({
     }
   };
 
-  const handleRemoveQuestionImage = () => {
-    setQuestionImage(null);
-    setQuestionImagePreview(null);
-    if (editMode && initialValues?.questionImage) {
-      setRemoveQuestionImage(true);
+  const handleDeleteMedia = (type, fileUrl, index = null) => {
+    if (fileUrl && fileUrl.startsWith("blob:")) {
+      if (type === "question") {
+        setQuestionImage(null);
+        setQuestionImagePreview(null);
+        setRemoveQuestionImage(false);
+      } else if (type === "answer") {
+        const updatedImages = [...answerImages];
+        updatedImages[index] = null;
+        setAnswerImages(updatedImages);
+
+        const updatedPreviews = [...answerImagePreviews];
+        updatedPreviews[index] = null;
+        setAnswerImagePreviews(updatedPreviews);
+      }
+      return;
     }
+
+    setDeleteConfirm({
+      open: true,
+      type,
+      fileUrl,
+      index,
+    });
   };
 
-  const handleRemoveAnswerImage = (index) => {
-    const updatedImages = [...answerImages];
-    updatedImages[index] = null;
-    setAnswerImages(updatedImages);
+  const confirmDeleteMedia = async () => {
+    try {
+      const deletePayload = {
+        fileUrl: deleteConfirm.fileUrl,
+        storageType: "s3",
+      };
 
-    const updatedPreviews = [...answerImagePreviews];
-    updatedPreviews[index] = null;
-    setAnswerImagePreviews(updatedPreviews);
+      if (gameId && initialValues?._id) {
+        deletePayload.gameId = gameId;
+        deletePayload.questionId = initialValues._id;
+        deletePayload.mediaType = deleteConfirm.type;
+        if (deleteConfirm.type === "answer" && deleteConfirm.index !== null) {
+          deletePayload.answerImageIndex = deleteConfirm.index;
+        }
+      }
 
-    if (editMode && initialValues?.answerImages?.[index]) {
-      setRemoveAnswerImages([...removeAnswerImages, index]);
+      await deleteMedia(deletePayload);
+
+      if (deleteConfirm.type === "question") {
+        setQuestionImage(null);
+        setQuestionImagePreview(null);
+        setRemoveQuestionImage(true);
+      } else if (deleteConfirm.type === "answer") {
+        const updatedImages = [...answerImages];
+        updatedImages[deleteConfirm.index] = null;
+        setAnswerImages(updatedImages);
+
+        const updatedPreviews = [...answerImagePreviews];
+        updatedPreviews[deleteConfirm.index] = null;
+        setAnswerImagePreviews(updatedPreviews);
+
+        if (!removeAnswerImages.includes(deleteConfirm.index)) {
+          setRemoveAnswerImages([...removeAnswerImages, deleteConfirm.index]);
+        }
+      }
+
+      setDeleteConfirm({ open: false, type: null, fileUrl: null, index: null });
+      showMessage("Media deleted successfully", "success");
+
+      if (onMediaDeleted) {
+        onMediaDeleted(deleteConfirm.type, deleteConfirm.index);
+      }
+    } catch (err) {
+      showMessage(err.message || "Failed to delete media", "error");
     }
   };
 
@@ -129,21 +226,126 @@ const QuestionFormModal = ({
     if (!form.question || form.answers.some((a) => !a)) return;
 
     setLoading(true);
+
     try {
-      const answerImagesWithIndices = answerImages.map((img, index) => ({
-        file: img,
-        index: index
-      })).filter(item => item.file !== null);
+      const filesToUpload = [];
+      let questionImageUrl = form.removeQuestionImage ? null : (questionImage ? null : (questionImagePreview || null));
+      const answerImageUrls = Array(optionCount).fill(null);
+
+      if (questionImage && !form.removeQuestionImage) {
+        filesToUpload.push({
+          file: questionImage,
+          type: "question",
+          label: "Question Image",
+        });
+      }
+
+      answerImages.forEach((img, idx) => {
+        if (img && !removeAnswerImages.includes(idx)) {
+          filesToUpload.push({
+            file: img,
+            type: "answer",
+            label: `Answer Image ${String.fromCharCode(65 + idx)}`,
+            index: idx,
+          });
+        }
+      });
+
+      if (filesToUpload.length > 0) {
+        let businessSlug = selectedBusiness;
+
+        if (!businessSlug && gameId) {
+          try {
+            const gameData = await getGameById(gameId);
+            if (gameData?.businessId?.slug) {
+              businessSlug = gameData.businessId.slug;
+            } else if (typeof gameData?.businessId === 'object' && gameData?.businessId?.slug) {
+              businessSlug = gameData.businessId.slug;
+            }
+          } catch (err) {
+            console.error("Failed to fetch game for business slug:", err);
+          }
+        }
+
+        if (!businessSlug) {
+          showMessage("Business information is missing. Please refresh the page and try again.", "error");
+          setLoading(false);
+          return;
+        }
+        setShowUploadProgress(true);
+        const uploads = filesToUpload.map((item) => ({
+          file: item.file,
+          label: item.label,
+          percent: 0,
+          loaded: 0,
+          total: item.file.size,
+          error: null,
+          url: null,
+          type: item.type,
+          index: item.index,
+        }));
+
+        setUploadProgress(uploads);
+
+        try {
+          const urls = await uploadMediaFiles({
+            files: filesToUpload.map((item) => item.file),
+            businessSlug: businessSlug,
+            moduleName: "QuizNest",
+            onProgress: (progressUploads) => {
+              progressUploads.forEach((progressUpload, index) => {
+                if (uploads[index]) {
+                  uploads[index].percent = progressUpload.percent;
+                  uploads[index].loaded = progressUpload.loaded;
+                  uploads[index].total = progressUpload.total;
+                  uploads[index].error = progressUpload.error;
+                  uploads[index].url = progressUpload.url;
+                }
+              });
+              setUploadProgress([...uploads]);
+            },
+          });
+
+          const uploadResults = urls.map((url, index) => ({
+            type: uploads[index].type,
+            url,
+            index: uploads[index].index,
+          }));
+
+          uploadResults.forEach((result) => {
+            if (result.type === "question") {
+              questionImageUrl = result.url;
+            } else if (result.type === "answer" && result.index !== undefined) {
+              answerImageUrls[result.index] = result.url;
+            }
+          });
+        } catch (uploadError) {
+          setShowUploadProgress(false);
+          throw uploadError;
+        }
+      }
+
+      setShowUploadProgress(false);
+
+      answerImagePreviews.forEach((preview, idx) => {
+        if (!answerImageUrls[idx] && preview && !preview.startsWith("blob:") && !removeAnswerImages.includes(idx)) {
+          answerImageUrls[idx] = preview;
+        }
+      });
 
       await onSubmit({
         ...form,
-        questionImage,
-        answerImages: answerImagesWithIndices,
+        questionImage: questionImageUrl,
+        answerImages: answerImageUrls,
         removeQuestionImage,
         removeAnswerImages,
       });
+    } catch (error) {
+      console.error("Upload or save failed:", error);
+      showMessage(error.message || "Failed to upload media", "error");
     } finally {
       setLoading(false);
+      setShowUploadProgress(false);
     }
   };
 
@@ -165,6 +367,11 @@ const QuestionFormModal = ({
       emptyOption: "(empty)",
       uploadImage: "Upload Image",
       removeImage: "Remove",
+      currentImage: "Current Image:",
+      preview: "Preview:",
+      deleteMediaTitle: "Delete Media",
+      deleteMediaMessage: "Are you sure you want to delete this media? This action cannot be undone.",
+      deleteConfirm: "Delete",
     },
     ar: {
       editTitle: "تعديل السؤال",
@@ -183,6 +390,11 @@ const QuestionFormModal = ({
       emptyOption: "(فارغ)",
       uploadImage: "تحميل صورة",
       removeImage: "إزالة",
+      currentImage: ":الصورة الحالية",
+      preview: ":معاينة",
+      deleteMediaTitle: "حذف الوسائط",
+      deleteMediaMessage: "هل أنت متأكد من حذف هذه الوسائط؟ لا يمكن التراجع عن هذا الإجراء.",
+      deleteConfirm: "حذف",
     },
   });
 
@@ -202,47 +414,66 @@ const QuestionFormModal = ({
         />
 
         {/* Question Image Upload */}
-        <Box>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <Button
-              component="label"
-              variant="outlined"
-              size="small"
-              startIcon={<AddPhotoAlternateIcon />}
-            >
-              {t.uploadImage}
-              <input
-                type="file"
-                hidden
-                accept="image/*"
-                onChange={handleQuestionImageChange}
-              />
-            </Button>
-            {questionImagePreview && (
-              <Box sx={{ position: "relative" }}>
-                <Avatar
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-start",
+          }}
+        >
+          <Button
+            ref={questionButtonRef}
+            component="label"
+            variant="outlined"
+            size="small"
+            startIcon={<AddPhotoAlternateIcon />}
+          >
+            {t.uploadImage}
+            <input
+              type="file"
+              hidden
+              accept="image/*"
+              onChange={handleQuestionImageChange}
+            />
+          </Button>
+          {questionImagePreview && !form.removeQuestionImage && (
+            <Box sx={{ mt: 1.5 }}>
+              <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                {editMode && !questionImage ? t.currentImage || "Current Image:" : t.preview || "Preview:"}
+              </Typography>
+              <Box sx={{ position: "relative", display: "inline-block", width: buttonWidths.question || "auto" }}>
+                <img
                   src={questionImagePreview}
-                  variant="rounded"
-                  sx={{ width: 56, height: 56 }}
+                  alt="Question preview"
+                  style={{
+                    width: buttonWidths.question ? `${buttonWidths.question}px` : "auto",
+                    maxHeight: 100,
+                    height: "auto",
+                    borderRadius: 6,
+                    objectFit: "cover",
+                  }}
                 />
                 <IconButton
                   size="small"
+                  onClick={() => {
+                    const fileUrl = initialValues?.questionImage || questionImagePreview;
+                    handleDeleteMedia("question", fileUrl);
+                  }}
                   sx={{
                     position: "absolute",
-                    top: -8,
-                    right: -8,
-                    bgcolor: "background.paper",
-                    boxShadow: 1,
-                    "&:hover": { bgcolor: "error.light" },
+                    top: -18,
+                    right: 6,
+                    bgcolor: "error.main",
+                    color: "#fff",
+                    "&:hover": { bgcolor: "error.dark" },
                   }}
-                  onClick={handleRemoveQuestionImage}
                 >
-                  <CloseIcon fontSize="small" />
+                  <ICONS.delete sx={{ fontSize: 18 }} />
                 </IconButton>
               </Box>
-            )}
-          </Box>
-          <Divider sx={{ mt: 2 }} />
+            </Box>
+          )}
+          <Divider sx={{ mt: 2, width: "100%" }} />
         </Box>
 
         {/* Answer Options with Images */}
@@ -256,8 +487,17 @@ const QuestionFormModal = ({
               required
             />
 
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "flex-start",
+              }}
+            >
               <Button
+                ref={(el) => {
+                  if (el) answerButtonRefs.current[idx] = el;
+                }}
                 component="label"
                 variant="outlined"
                 size="small"
@@ -271,27 +511,41 @@ const QuestionFormModal = ({
                   onChange={(e) => handleAnswerImageChange(idx, e)}
                 />
               </Button>
-              {answerImagePreviews[idx] && (
-                <Box sx={{ position: "relative" }}>
-                  <Avatar
-                    src={answerImagePreviews[idx]}
-                    variant="rounded"
-                    sx={{ width: 56, height: 56 }}
-                  />
-                  <IconButton
-                    size="small"
-                    sx={{
-                      position: "absolute",
-                      top: -8,
-                      right: -8,
-                      bgcolor: "background.paper",
-                      boxShadow: 1,
-                      "&:hover": { bgcolor: "error.light" },
-                    }}
-                    onClick={() => handleRemoveAnswerImage(idx)}
-                  >
-                    <CloseIcon fontSize="small" />
-                  </IconButton>
+              {answerImagePreviews[idx] && !removeAnswerImages.includes(idx) && (
+                <Box sx={{ mt: 1.5 }}>
+                  <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                    {editMode && !answerImages[idx] ? t.currentImage || "Current Image:" : t.preview || "Preview:"}
+                  </Typography>
+                  <Box sx={{ position: "relative", display: "inline-block", width: buttonWidths[`answer${idx}`] || "auto" }}>
+                    <img
+                      src={answerImagePreviews[idx]}
+                      alt={`Answer ${String.fromCharCode(65 + idx)} preview`}
+                      style={{
+                        width: buttonWidths[`answer${idx}`] ? `${buttonWidths[`answer${idx}`]}px` : "auto",
+                        maxHeight: 100,
+                        height: "auto",
+                        borderRadius: 6,
+                        objectFit: "cover",
+                      }}
+                    />
+                    <IconButton
+                      size="small"
+                      onClick={() => {
+                        const fileUrl = initialValues?.answerImages?.[idx] || answerImagePreviews[idx];
+                        handleDeleteMedia("answer", fileUrl, idx);
+                      }}
+                      sx={{
+                        position: "absolute",
+                        top: -18,
+                        right: 6,
+                        bgcolor: "error.main",
+                        color: "#fff",
+                        "&:hover": { bgcolor: "error.dark" },
+                      }}
+                    >
+                      <ICONS.delete sx={{ fontSize: 18 }} />
+                    </IconButton>
+                  </Box>
                 </Box>
               )}
             </Box>
@@ -374,6 +628,22 @@ const QuestionFormModal = ({
           </Button>
         </Box>
       </DialogActions>
+      <MediaUploadProgress
+        open={showUploadProgress}
+        uploads={uploadProgress}
+        onClose={() => setShowUploadProgress(false)}
+        allowClose={false}
+      />
+      <ConfirmationDialog
+        open={deleteConfirm.open}
+        onClose={() => setDeleteConfirm({ open: false, type: null, fileUrl: null, index: null })}
+        onConfirm={confirmDeleteMedia}
+        title={t.deleteMediaTitle || "Delete Media"}
+        message={t.deleteMediaMessage || "Are you sure you want to delete this media? This action cannot be undone."}
+        confirmButtonText={t.deleteConfirm || "Delete"}
+        confirmButtonIcon={<ICONS.delete />}
+        confirmButtonColor="error"
+      />
     </Dialog>
   );
 };
