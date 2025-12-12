@@ -21,9 +21,11 @@ export const getGameBySlug = withApiHandler(async (slug) => {
 
 // Create PvP game for a business 
 export const createGame = withApiHandler(
-  async (businessSlug, formData) => {
-    formData.append("businessSlug", businessSlug);
-    const { data } = await api.post("/eventduel/games", formData);
+  async (businessSlug, payload) => {
+    const { data } = await api.post("/eventduel/games", {
+      ...payload,
+      businessSlug,
+    });
     return data;
   },
   { showSuccess: true }
@@ -31,8 +33,8 @@ export const createGame = withApiHandler(
 
 // Update game
 export const updateGame = withApiHandler(
-  async (id, formData) => {
-    const { data } = await api.put(`/eventduel/games/${id}`, formData);
+  async (id, payload) => {
+    const { data } = await api.put(`/eventduel/games/${id}`, payload);
     return data;
   },
   { showSuccess: true }
