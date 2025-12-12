@@ -253,14 +253,18 @@ const GameFormModal = ({
       const valid = files.filter((f) => f.type.startsWith("image/"));
       setForm((prev) => ({
         ...prev,
-        memoryImages: valid,
-        memoryPreviews: valid.map((f) => URL.createObjectURL(f)),
+        memoryImages: [...(prev.memoryImages || []), ...valid],
+        memoryPreviews: [
+          ...(prev.memoryPreviews || []),
+          ...valid.map((f) => URL.createObjectURL(f)),
+        ],
       }));
       setErrors((prev) => {
         const updated = { ...prev };
         delete updated.memoryImages;
         return updated;
       });
+      e.target.value = "";
       return;
     }
 
@@ -350,8 +354,8 @@ const GameFormModal = ({
       }
       return;
     }
-    if (!selectedBusiness) {
-      showMessage("Business is required", "error");
+    if (!selectedBusiness || selectedBusiness.trim() === "") {
+      showMessage("Business information is missing. Please refresh the page and try again.", "error");
       return;
     }
 
@@ -388,17 +392,29 @@ const GameFormModal = ({
         });
       }
 
-      if (isTapMatch && form.memoryImages.length) {
-        form.memoryImages.forEach((img, idx) => {
-          filesToUpload.push({
-            file: img,
-            type: "memory",
-            label: `Memory Image ${idx + 1}`,
+      if (isTapMatch) {
+        const existingMemoryUrls = form.memoryPreviews.filter(
+          (preview) => preview && preview.startsWith("http") && !preview.startsWith("blob:")
+        );
+        memoryImageUrls.push(...existingMemoryUrls);
+
+        if (form.memoryImages.length) {
+          form.memoryImages.forEach((img, idx) => {
+            filesToUpload.push({
+              file: img,
+              type: "memory",
+              label: `Memory Image ${idx + 1}`,
+            });
           });
-        });
+        }
       }
 
       if (filesToUpload.length > 0) {
+        if (!selectedBusiness || selectedBusiness.trim() === "") {
+          showMessage("Business information is missing. Please refresh the page and try again.", "error");
+          setLoading(false);
+          return;
+        }
         setShowUploadProgress(true);
         const uploads = filesToUpload.map((item) => ({
           file: item.file,
@@ -417,7 +433,7 @@ const GameFormModal = ({
           const urls = await uploadMediaFiles({
             files: filesToUpload.map((item) => item.file),
             businessSlug: selectedBusiness,
-            moduleName: "QuizNest",
+            moduleName: module === "eventduel" ? "EventDuel" : module === "tapmatch" ? "TapMatch" : "QuizNest",
             onProgress: (progressUploads) => {
               progressUploads.forEach((progressUpload, index) => {
                 if (uploads[index]) {
@@ -472,8 +488,17 @@ const GameFormModal = ({
       };
 
       if (!isTapMatch) payload.choicesCount = form.choicesCount;
-      if (isTapMatch && memoryImageUrls.length) {
-        payload.memoryImages = memoryImageUrls;
+      if (isTapMatch) {
+        if (memoryImageUrls.length > 0) {
+          payload.memoryImages = memoryImageUrls;
+        } else if (editMode && form.memoryPreviews.length > 0) {
+          const existingUrls = form.memoryPreviews.filter(
+            (preview) => preview && preview.startsWith("http") && !preview.startsWith("blob:")
+          );
+          if (existingUrls.length > 0) {
+            payload.memoryImages = existingUrls;
+          }
+        }
       }
 
       if (form.isTeamMode) {

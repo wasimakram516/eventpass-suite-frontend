@@ -27,10 +27,10 @@ export const getGameBySlug = withApiHandler(async (slug) => {
 
 // Create new TapMatch game
 export const createGame = withApiHandler(
-  async (businessSlug, formData) => {
-    formData.append("businessSlug", businessSlug);
-    const { data } = await api.post("/tapmatch/games", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
+  async (businessSlug, payload) => {
+    const { data } = await api.post("/tapmatch/games", {
+      ...payload,
+      businessSlug,
     });
     return data;
   },
@@ -39,10 +39,8 @@ export const createGame = withApiHandler(
 
 // Update TapMatch game
 export const updateGame = withApiHandler(
-  async (id, formData) => {
-    const { data } = await api.put(`/tapmatch/games/${id}`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+  async (id, payload) => {
+    const { data } = await api.put(`/tapmatch/games/${id}`, payload);
     return data;
   },
   { showSuccess: true }

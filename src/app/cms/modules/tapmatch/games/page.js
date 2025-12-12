@@ -139,9 +139,16 @@ export default function TapMatchGamesPage() {
   };
 
   const handleOpenEdit = (game) => {
-    setSelectedGame(game);
+    const updatedGame = games.find((g) => g._id === game._id) || game;
+    setSelectedGame(updatedGame);
     setEditMode(true);
     setOpenModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setOpenModal(false);
+    setSelectedGame(null);
+    setEditMode(false);
   };
 
   const handleSubmitGame = async (formData, isEdit) => {
@@ -150,12 +157,11 @@ export default function TapMatchGamesPage() {
       : await createGame(selectedBusiness, formData);
 
     if (!response.error) {
-      setGames((prev) =>
-        isEdit
-          ? prev.map((g) => (g._id === selectedGame._id ? response : g))
-          : [...prev, response]
-      );
-      setOpenModal(false);
+      const updatedGames = isEdit
+        ? games.map((g) => (g._id === selectedGame._id ? response : g))
+        : [...games, response];
+      setGames(updatedGames);
+      handleCloseModal();
     }
   };
 
@@ -395,11 +401,12 @@ export default function TapMatchGamesPage() {
         <GameFormModal
           key={selectedGame?._id || "new"}
           open={openModal}
-          onClose={() => setOpenModal(false)}
+          onClose={handleCloseModal}
           editMode={editMode}
           initialValues={selectedGame || {}}
           onSubmit={handleSubmitGame}
           module="tapmatch"
+          selectedBusiness={selectedBusiness}
         />
 
         <ConfirmationDialog

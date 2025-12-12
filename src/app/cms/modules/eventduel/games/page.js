@@ -463,6 +463,8 @@ export default function GamesPage() {
           editMode={editMode}
           initialValues={selectedGame || {}}
           onSubmit={handleSubmitGame}
+          module="eventduel"
+          selectedBusiness={selectedBusiness}
         />
 
         <ConfirmationDialog
