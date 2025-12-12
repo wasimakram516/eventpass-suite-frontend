@@ -15,20 +15,17 @@ import {
   Box,
   IconButton,
   Typography,
-  Avatar,
   Divider
 } from "@mui/material";
 import { useState, useEffect, useRef } from "react";
 import useI18nLayout from "../../hooks/useI18nLayout";
 import ICONS from "../../utils/iconUtil";
 import AddPhotoAlternateIcon from "@mui/icons-material/AddPhotoAlternate";
-import CloseIcon from "@mui/icons-material/Close";
 import { uploadMediaFiles } from "@/utils/mediaUpload";
 import MediaUploadProgress from "@/components/MediaUploadProgress";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import { deleteMedia } from "@/services/deleteMediaService";
 import { useMessage } from "@/contexts/MessageContext";
-import { getGameById } from "@/services/quiznest/gameService";
 
 const QuestionFormModal = ({
   open,
@@ -40,6 +37,7 @@ const QuestionFormModal = ({
   selectedBusiness,
   gameId,
   onMediaDeleted,
+  module = "quiznest",
 }) => {
   const [form, setForm] = useState({
     question: "",
@@ -252,22 +250,7 @@ const QuestionFormModal = ({
       });
 
       if (filesToUpload.length > 0) {
-        let businessSlug = selectedBusiness;
-
-        if (!businessSlug && gameId) {
-          try {
-            const gameData = await getGameById(gameId);
-            if (gameData?.businessId?.slug) {
-              businessSlug = gameData.businessId.slug;
-            } else if (typeof gameData?.businessId === 'object' && gameData?.businessId?.slug) {
-              businessSlug = gameData.businessId.slug;
-            }
-          } catch (err) {
-            console.error("Failed to fetch game for business slug:", err);
-          }
-        }
-
-        if (!businessSlug) {
+        if (!selectedBusiness || selectedBusiness.trim() === "") {
           showMessage("Business information is missing. Please refresh the page and try again.", "error");
           setLoading(false);
           return;
@@ -290,8 +273,8 @@ const QuestionFormModal = ({
         try {
           const urls = await uploadMediaFiles({
             files: filesToUpload.map((item) => item.file),
-            businessSlug: businessSlug,
-            moduleName: "QuizNest",
+            businessSlug: selectedBusiness,
+            moduleName: module === "eventduel" ? "EventDuel" : "QuizNest",
             onProgress: (progressUploads) => {
               progressUploads.forEach((progressUpload, index) => {
                 if (uploads[index]) {
