@@ -52,6 +52,9 @@ import {
   deleteSurveyForm,
 } from "@/services/surveyguru/surveyFormService";
 import slugify from "@/utils/slugify";
+import { uploadMediaFiles } from "@/utils/mediaUpload";
+import MediaUploadProgress from "@/components/MediaUploadProgress";
+import { deleteMedia } from "@/services/deleteMediaService";
 
 import { useTheme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
@@ -229,6 +232,14 @@ export default function SurveyFormsManagePage() {
   const previewUrlsRef = useRef({});
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [formToShare, setFormToShare] = useState(null);
+  const [showUploadProgress, setShowUploadProgress] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState([]);
+  const [deleteConfirm, setDeleteConfirm] = useState({
+    open: false,
+    qi: null,
+    oi: null,
+    fileUrl: null,
+  });
 
   const [errors, setErrors] = useState({});
 
@@ -362,20 +373,20 @@ export default function SurveyFormsManagePage() {
   };
 
   const openEdit = (form) => {
+    const latestForm = forms.find((f) => f._id === form._id) || form;
     resetBuilder();
-    setEditing(form);
-    setTitle(form.title || "");
-    setSlug(form.slug || "");
-    setDescription(form.description || "");
-    setIsActive(!!form.isActive);
-    setIsAnonymous(!!form.isAnonymous);
-    setDefaultLanguage(form.defaultLanguage || "en");
+    setEditing(latestForm);
+    setTitle(latestForm.title || "");
+    setSlug(latestForm.slug || "");
+    setDescription(latestForm.description || "");
+    setIsActive(!!latestForm.isActive);
+    setIsAnonymous(!!latestForm.isAnonymous);
+    setDefaultLanguage(latestForm.defaultLanguage || "en");
 
-    const evId = form.eventId?._id || form.eventId || "";
+    const evId = latestForm.eventId?._id || latestForm.eventId || "";
     setSelectedEventId(evId);
 
-    // load questions + existing previews
-    const qs = (form.questions || []).map((q, idx) => ({
+    const qs = (latestForm.questions || []).map((q, idx) => ({
       label: q.label || "",
       helpText: q.helpText || "",
       type: q.type || "milti",
@@ -389,8 +400,8 @@ export default function SurveyFormsManagePage() {
         q.type === "rating"
           ? q.scale || { min: 1, max: 5, step: 1 }
           : q.type === "nps"
-          ? q.scale || { min: 0, max: 10, step: 1 }
-          : { min: 1, max: 5, step: 1 },
+            ? q.scale || { min: 0, max: 10, step: 1 }
+            : { min: 1, max: 5, step: 1 },
     }));
     setQuestions(qs);
 
@@ -437,9 +448,9 @@ export default function SurveyFormsManagePage() {
       p.map((q, i) =>
         i === qi
           ? {
-              ...q,
-              options: [...(q.options || []), { label: "", imageUrl: null }],
-            }
+            ...q,
+            options: [...(q.options || []), { label: "", imageUrl: null }],
+          }
           : q
       )
     );
@@ -486,91 +497,211 @@ export default function SurveyFormsManagePage() {
     updateOption(qi, oi, { imageRemove: false });
   };
 
-  const onRemoveOptionImage = (qi, oi) => {
-    const key = `${qi}:${oi}`;
-    // remove local file & preview
-    if (optionFiles[key]) {
-      delete optionFiles[key];
-      setOptionFiles({ ...optionFiles });
+  const handleDeleteOptionImage = (qi, oi, fileUrl) => {
+    if (fileUrl && fileUrl.startsWith("blob:")) {
+      const key = `${qi}:${oi}`;
+      // remove local file & preview
+      if (optionFiles[key]) {
+        delete optionFiles[key];
+        setOptionFiles({ ...optionFiles });
+      }
+      if (optionPreviews[key]) {
+        const prev = optionPreviews[key];
+        if (prev.startsWith("blob:")) URL.revokeObjectURL(prev);
+        delete optionPreviews[key];
+        setOptionPreviews({ ...optionPreviews });
+      }
+      updateOption(qi, oi, { imageUrl: null, imageRemove: false });
+      return;
     }
-    if (optionPreviews[key]) {
-      const prev = optionPreviews[key];
-      if (prev.startsWith("blob:")) URL.revokeObjectURL(prev);
-      delete optionPreviews[key];
-      setOptionPreviews({ ...optionPreviews });
-    }
-    // set removal flag (backend will delete old image)
-    updateOption(qi, oi, { imageUrl: null, imageRemove: true });
+
+    setDeleteConfirm({
+      open: true,
+      qi,
+      oi,
+      fileUrl,
+    });
   };
 
-  // Build FormData for backend (multer + Cloudinary)
-  const buildFormData = () => {
-    const fd = new FormData();
-    fd.append("businessId", selectedBusiness?._id || "");
-    fd.append("eventId", selectedEventId || "");
-    fd.append("title", title.trim());
-    fd.append("slug", slug.trim());
-    fd.append("description", description || "");
-    fd.append("isActive", String(!!isActive));
-    fd.append("isAnonymous", String(!!isAnonymous));
-    fd.append("defaultLanguage", defaultLanguage);
+  const confirmDeleteOptionImage = async () => {
+    try {
+      const { qi, oi, fileUrl } = deleteConfirm;
+      const formId = editing?._id;
 
-    // Normalize questions: ensure order & numbers
-    const qs = (questions || []).map((q, qi) => ({
-      label: q.label.trim(),
-      helpText: q.helpText?.trim() || "",
-      type: q.type,
-      required: !!q.required,
-      order: qi,
-      options: (q.options || []).map((o) => ({
-        label: o.label?.trim() || "",
-        imageUrl: o.imageUrl || null,
-        imageRemove: !!o.imageRemove,
-      })),
-      scale:
-        q.type === "rating"
-          ? {
-              min: Number(q.scale?.min ?? 1),
-              max: Number(q.scale?.max ?? 5),
-              step: Number(q.scale?.step ?? 1),
-            }
-          : q.type === "nps"
-          ? {
-              min: Number(q.scale?.min ?? 0),
-              max: Number(q.scale?.max ?? 10),
-              step: Number(q.scale?.step ?? 1),
-            }
-          : { min: 1, max: 5, step: 1 },
-    }));
+      if (formId && fileUrl) {
+        const updatedForm = await deleteMedia({
+          fileUrl,
+          storageType: "s3",
+          formId,
+          mediaType: "optionImage",
+          questionIndex: qi,
+          optionIndex: oi,
+        });
 
-    fd.append("questions", JSON.stringify(qs));
+        if (updatedForm && !updatedForm.error) {
+          setEditing(updatedForm);
+          setForms((prev) =>
+            prev.map((f) => (f._id === formId ? updatedForm : f))
+          );
+        }
+      }
 
-    // attach files with field names optionImage[qi][oi]
-    Object.entries(optionFiles).forEach(([key, file]) => {
-      const [qi, oi] = key.split(":");
-      fd.append(`optionImage[${qi}][${oi}]`, file);
-    });
+      const key = `${qi}:${oi}`;
+      if (optionPreviews[key]) {
+        const prev = optionPreviews[key];
+        if (prev.startsWith("blob:")) URL.revokeObjectURL(prev);
+        delete optionPreviews[key];
+        setOptionPreviews({ ...optionPreviews });
+      }
+      updateOption(qi, oi, { imageUrl: null, imageRemove: true });
 
-    return fd;
+      setDeleteConfirm({ open: false, qi: null, oi: null, fileUrl: null });
+      showMessage("Image deleted successfully", "success");
+    } catch (err) {
+      showMessage(err.message || "Failed to delete image", "error");
+    }
   };
 
   const handleSave = async () => {
     if (!validate()) return;
-    setSaving(true);
-
-    const fd = buildFormData();
-
-    let result;
-    if (editing?._id) {
-      result = await updateSurveyForm(editing._id, fd);
-    } else {
-      result = await createSurveyForm(fd);
+    if (!selectedBusiness?.slug) {
+      showMessage("Business information is missing. Please refresh the page and try again.", "error");
+      return;
     }
 
-    if (!result?.error) {
-      setOpen(false);
-      resetBuilder();
-      fetchForms();
+    setSaving(true);
+
+    try {
+      const filesToUpload = [];
+      const fileKeyMap = {};
+
+      Object.entries(optionFiles).forEach(([key, file]) => {
+        const [qi, oi] = key.split(":");
+        filesToUpload.push({
+          file,
+          type: "optionImage",
+          label: `Q${qi} Option ${oi}`,
+        });
+        fileKeyMap[filesToUpload.length - 1] = { qi: parseInt(qi), oi: parseInt(oi) };
+      });
+
+      let uploadedUrls = {};
+
+      if (filesToUpload.length > 0) {
+        setShowUploadProgress(true);
+        const uploads = filesToUpload.map((item) => ({
+          file: item.file,
+          label: item.label,
+          percent: 0,
+          loaded: 0,
+          total: item.file.size,
+          error: null,
+          url: null,
+          type: item.type,
+        }));
+
+        setUploadProgress(uploads);
+
+        try {
+          const urls = await uploadMediaFiles({
+            files: filesToUpload.map((item) => item.file),
+            businessSlug: selectedBusiness.slug,
+            moduleName: "SurveyGuru",
+            onProgress: (progressUploads) => {
+              progressUploads.forEach((progressUpload, index) => {
+                if (uploads[index]) {
+                  uploads[index].percent = progressUpload.percent;
+                  uploads[index].loaded = progressUpload.loaded;
+                  uploads[index].total = progressUpload.total;
+                  uploads[index].error = progressUpload.error;
+                  uploads[index].url = progressUpload.url;
+                }
+              });
+              setUploadProgress([...uploads]);
+            },
+          });
+
+          urls.forEach((url, index) => {
+            const { qi, oi } = fileKeyMap[index];
+            if (qi !== undefined && oi !== undefined) {
+              uploadedUrls[`${qi}:${oi}`] = url;
+            }
+          });
+        } catch (uploadError) {
+          setShowUploadProgress(false);
+          throw uploadError;
+        }
+      }
+
+      setShowUploadProgress(false);
+
+      const qs = (questions || []).map((q, qi) => ({
+        label: q.label.trim(),
+        helpText: q.helpText?.trim() || "",
+        type: q.type,
+        required: !!q.required,
+        order: qi,
+        options: (q.options || []).map((o, oi) => {
+          const key = `${qi}:${oi}`;
+          let imageUrl = o.imageUrl || null;
+
+          if (uploadedUrls[key]) {
+            imageUrl = uploadedUrls[key];
+          } else if (o.imageRemove) {
+            imageUrl = null;
+          } else if (!imageUrl && optionPreviews[key] && !optionPreviews[key].startsWith("blob:")) {
+            imageUrl = optionPreviews[key];
+          }
+
+          return {
+            label: o.label?.trim() || "",
+            imageUrl,
+            imageRemove: !!o.imageRemove,
+          };
+        }),
+        scale:
+          q.type === "rating"
+            ? {
+              min: Number(q.scale?.min ?? 1),
+              max: Number(q.scale?.max ?? 5),
+              step: Number(q.scale?.step ?? 1),
+            }
+            : q.type === "nps"
+              ? {
+                min: Number(q.scale?.min ?? 0),
+                max: Number(q.scale?.max ?? 10),
+                step: Number(q.scale?.step ?? 1),
+              }
+              : { min: 1, max: 5, step: 1 },
+      }));
+
+      const payload = {
+        businessId: selectedBusiness._id,
+        eventId: selectedEventId || "",
+        title: title.trim(),
+        slug: slug.trim(),
+        description: description || "",
+        isActive: !!isActive,
+        isAnonymous: !!isAnonymous,
+        defaultLanguage,
+        questions: qs,
+      };
+
+      let result;
+      if (editing?._id) {
+        result = await updateSurveyForm(editing._id, payload);
+      } else {
+        result = await createSurveyForm(payload);
+      }
+
+      if (!result?.error) {
+        setOpen(false);
+        resetBuilder();
+        fetchForms();
+      }
+    } catch (error) {
+      console.error("Save failed:", error);
+      showMessage(error.message || "Failed to save form", "error");
     }
 
     setSaving(false);
@@ -1063,8 +1194,8 @@ export default function SurveyFormsManagePage() {
                             type === "rating"
                               ? { min: 1, max: 5, step: 1 }
                               : type === "nps"
-                              ? { min: 0, max: 10, step: 1 }
-                              : { min: 1, max: 5, step: 1 };
+                                ? { min: 0, max: 10, step: 1 }
+                                : { min: 1, max: 5, step: 1 };
                           const resetOptions =
                             type === "multi" ? q.options : [];
                           updateQuestion(qi, {
@@ -1146,24 +1277,47 @@ export default function SurveyFormsManagePage() {
                                 spacing={1}
                                 alignItems="center"
                               >
-                                <Avatar
-                                  variant="rounded"
-                                  sx={{ width: 48, height: 48 }}
-                                >
-                                  {preview ? (
-                                    <img
-                                      alt="opt"
-                                      src={preview}
-                                      style={{
-                                        width: "100%",
-                                        height: "100%",
-                                        objectFit: "cover",
+                                <Box sx={{ position: "relative", display: "inline-block" }}>
+                                  <Avatar
+                                    variant="rounded"
+                                    sx={{ width: 48, height: 48 }}
+                                  >
+                                    {preview ? (
+                                      <img
+                                        alt="opt"
+                                        src={preview}
+                                        style={{
+                                          width: "100%",
+                                          height: "100%",
+                                          objectFit: "cover",
+                                        }}
+                                      />
+                                    ) : (
+                                      <ICONS.image fontSize="small" />
+                                    )}
+                                  </Avatar>
+                                  {preview && (
+                                    <IconButton
+                                      size="small"
+                                      onClick={() => {
+                                        const fileUrl = opt.imageUrl || preview;
+                                        handleDeleteOptionImage(qi, oi, fileUrl);
                                       }}
-                                    />
-                                  ) : (
-                                    <ICONS.image fontSize="small" />
+                                      sx={{
+                                        position: "absolute",
+                                        top: -8,
+                                        right: -8,
+                                        bgcolor: "error.main",
+                                        color: "#fff",
+                                        width: 20,
+                                        height: 20,
+                                        "&:hover": { bgcolor: "error.dark" },
+                                      }}
+                                    >
+                                      <ICONS.delete sx={{ fontSize: 14 }} />
+                                    </IconButton>
                                   )}
-                                </Avatar>
+                                </Box>
 
                                 <TextField
                                   label={t.optLabel}
@@ -1176,7 +1330,6 @@ export default function SurveyFormsManagePage() {
                                   fullWidth
                                 />
 
-                                {/* file input */}
                                 <input
                                   id={`file-${key}`}
                                   type="file"
@@ -1185,39 +1338,22 @@ export default function SurveyFormsManagePage() {
                                   onChange={(e) => {
                                     const file = e.target.files?.[0];
                                     if (file) onPickOptionFile(qi, oi, file);
+                                    e.target.value = "";
                                   }}
                                 />
-                                <Stack direction="row" spacing={1}>
-                                  <label htmlFor={`file-${key}`}>
-                                    <Button
-                                      variant="outlined"
-                                      size="small"
-                                      component="span"
-                                      startIcon={
-                                        <ICONS.upload fontSize="small" />
-                                      }
-                                      sx={{ mt: 1.5 }} // Added margin top to align with other fields
-                                    >
-                                      {t.upload}
-                                    </Button>
-                                  </label>
-
-                                  {preview && (
-                                    <Button
-                                      variant="text"
-                                      size="small"
-                                      color="error"
-                                      startIcon={
-                                        <ICONS.clear fontSize="small" />
-                                      }
-                                      onClick={() =>
-                                        onRemoveOptionImage(qi, oi)
-                                      }
-                                    >
-                                      {t.removeImage}
-                                    </Button>
-                                  )}
-                                </Stack>
+                                <label htmlFor={`file-${key}`}>
+                                  <Button
+                                    variant="outlined"
+                                    size="small"
+                                    component="span"
+                                    startIcon={
+                                      <ICONS.upload fontSize="small" />
+                                    }
+                                    sx={{ mt: 1.5 }}
+                                  >
+                                    {t.upload}
+                                  </Button>
+                                </label>
 
                                 <IconButton
                                   color="error"
@@ -1370,8 +1506,8 @@ export default function SurveyFormsManagePage() {
                 ? t.updating
                 : t.saving
               : editing
-              ? t.save
-              : t.create}
+                ? t.save
+                : t.create}
           </Button>
         </DialogActions>
       </Dialog>
@@ -1386,6 +1522,26 @@ export default function SurveyFormsManagePage() {
         }
         name={formToShare?.title || "survey-form"}
         title={t.copyLink}
+      />
+
+      <MediaUploadProgress
+        open={showUploadProgress}
+        uploads={uploadProgress}
+        onClose={() => {
+          if (uploadProgress.every((u) => u.percent === 100 || u.error)) {
+            setShowUploadProgress(false);
+          }
+        }}
+        allowClose={uploadProgress.every((u) => u.percent === 100 || u.error)}
+      />
+
+      <ConfirmationDialog
+        open={deleteConfirm.open}
+        onClose={() => setDeleteConfirm({ open: false, qi: null, oi: null, fileUrl: null })}
+        onConfirm={confirmDeleteOptionImage}
+        title="Delete Image"
+        message="Are you sure you want to delete this image? This action cannot be undone."
+        confirmText="Delete"
       />
     </Box>
   );
