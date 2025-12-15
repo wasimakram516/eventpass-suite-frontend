@@ -20,6 +20,9 @@ import LoadingState from "@/components/LoadingState";
 import LanguageSelector from "@/components/LanguageSelector";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import Footer from "@/components/nav/Footer";
+import { uploadMediaFiles } from "@/utils/mediaUpload";
+import MediaUploadProgress from "@/components/MediaUploadProgress";
+import { useMessage } from "@/contexts/MessageContext";
 
 const translations = {
   en: {
@@ -67,6 +70,7 @@ const translations = {
 export default function UploadPage() {
   const { slug } = useParams();
   const { t, dir, align } = useI18nLayout(translations);
+  const { showMessage } = useMessage();
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const [stream, setStream] = useState(null);
@@ -76,12 +80,16 @@ export default function UploadPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [cameraOn, setCameraOn] = useState(false);
   const [mode, setMode] = useState(null);
+  const [wallConfig, setWallConfig] = useState(null);
+  const [showUploadProgress, setShowUploadProgress] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState([]);
 
   useEffect(() => {
     const loadWallConfigs = async () => {
       const response = await getWallConfigBySlug(slug);
-      const wallConfig = response;
-      setMode(wallConfig.mode);
+      const config = response;
+      setWallConfig(config);
+      setMode(config.mode);
     };
 
     loadWallConfigs();
@@ -164,19 +172,70 @@ export default function UploadPage() {
   const submitPhoto = async () => {
     if (!capturedImage) return;
 
+    if (!wallConfig?.business?.slug) {
+      showMessage("Business information is missing", "error");
+      return;
+    }
+
     setIsSubmitting(true);
 
-    const result = await createDisplayMedia({
-      file: capturedImage,
-      text: mode === "card" ? text.trim() : "",
-      slug: slug,
-    });
+    try {
+      const file = capturedImage instanceof File
+        ? capturedImage
+        : new File([capturedImage], "captured-image.jpg", { type: "image/jpeg" });
 
-    setTimeout(() => {
-      setCapturedImage(null);
-      setText("");
-    }, 3000);
-    setIsSubmitting(false);
+      setShowUploadProgress(true);
+      const uploads = [{
+        file,
+        label: "Image",
+        percent: 0,
+        loaded: 0,
+        total: file.size,
+        error: null,
+        url: null,
+      }];
+
+      setUploadProgress(uploads);
+
+      const urls = await uploadMediaFiles({
+        files: [file],
+        businessSlug: wallConfig.business.slug,
+        moduleName: "MosaicWall",
+        onProgress: (progressUploads) => {
+          progressUploads.forEach((progressUpload, index) => {
+            if (uploads[index]) {
+              uploads[index].percent = progressUpload.percent;
+              uploads[index].loaded = progressUpload.loaded;
+              uploads[index].total = progressUpload.total;
+              uploads[index].error = progressUpload.error;
+              uploads[index].url = progressUpload.url;
+            }
+          });
+          setUploadProgress([...uploads]);
+        },
+      });
+
+      setShowUploadProgress(false);
+
+      if (urls && urls.length > 0) {
+        await createDisplayMedia({
+          imageUrl: urls[0],
+          text: mode === "card" ? text.trim() : "",
+          slug: slug,
+        });
+
+        setTimeout(() => {
+          setCapturedImage(null);
+          setText("");
+        }, 3000);
+      }
+    } catch (error) {
+      console.error("Upload failed:", error);
+      showMessage(error.message || "Failed to upload image", "error");
+      setShowUploadProgress(false);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -483,6 +542,12 @@ export default function UploadPage() {
         <Footer />
       </Box>
       <LanguageSelector top={10} right={20} />
+      <MediaUploadProgress
+        open={showUploadProgress}
+        uploads={uploadProgress}
+        onClose={() => setShowUploadProgress(false)}
+        allowClose={false}
+      />
     </Container>
   );
 }
