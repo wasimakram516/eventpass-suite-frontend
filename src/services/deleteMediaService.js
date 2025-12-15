@@ -18,6 +18,7 @@ export const deleteMedia = withApiHandler(
         formId,
         questionIndex,
         optionIndex,
+        pollId,
     }) => {
         if (!fileUrl) {
             throw new Error("File URL is required");
@@ -38,6 +39,7 @@ export const deleteMedia = withApiHandler(
         if (formId) payload.formId = formId;
         if (questionIndex !== undefined) payload.questionIndex = questionIndex;
         if (optionIndex !== undefined) payload.optionIndex = optionIndex;
+        if (pollId) payload.pollId = pollId;
 
         const { data } = await api.post("/media/delete", payload);
         return data;
