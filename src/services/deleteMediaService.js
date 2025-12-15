@@ -19,6 +19,7 @@ export const deleteMedia = withApiHandler(
         questionIndex,
         optionIndex,
         pollId,
+        spinWheelId,
     }) => {
         if (!fileUrl) {
             throw new Error("File URL is required");
@@ -40,6 +41,7 @@ export const deleteMedia = withApiHandler(
         if (questionIndex !== undefined) payload.questionIndex = questionIndex;
         if (optionIndex !== undefined) payload.optionIndex = optionIndex;
         if (pollId) payload.pollId = pollId;
+        if (spinWheelId) payload.spinWheelId = spinWheelId;
 
         const { data } = await api.post("/media/delete", payload);
         return data;
