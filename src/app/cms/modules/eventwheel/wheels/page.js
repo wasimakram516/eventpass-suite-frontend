@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   Box,
   Button,
@@ -43,6 +43,10 @@ import LoadingState from "@/components/LoadingState";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import slugify from "@/utils/slugify";
 import CircularProgress from "@mui/material/CircularProgress";
+import { uploadMediaFiles } from "@/utils/mediaUpload";
+import MediaUploadProgress from "@/components/MediaUploadProgress";
+import { deleteMedia } from "@/services/deleteMediaService";
+import { useMessage } from "@/contexts/MessageContext";
 const translations = {
   en: {
     spinWheelManagement: "Spin Wheel Management",
@@ -119,6 +123,7 @@ const Dashboard = () => {
   const router = useRouter();
   const { user, selectedBusiness, setSelectedBusiness } = useAuth();
   const { t, dir } = useI18nLayout(translations);
+  const { showMessage } = useMessage();
   const [spinWheels, setSpinWheels] = useState([]);
   const [businesses, setBusinesses] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -143,11 +148,28 @@ const Dashboard = () => {
     type: "collect_info",
     logo: null,
     background: null,
+    logoPreview: "",
+    backgroundPreview: "",
+    removeLogo: false,
+    removeBackground: false,
   });
   const [logoPreview, setLogoPreview] = useState(null);
   const [backgroundPreview, setBackgroundPreview] = useState(null);
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
+  const [showUploadProgress, setShowUploadProgress] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState([]);
+  const [deleteConfirm, setDeleteConfirm] = useState({
+    open: false,
+    type: null,
+    fileUrl: null,
+  });
+  const [buttonWidths, setButtonWidths] = useState({
+    logo: null,
+    background: null,
+  });
+  const logoButtonRef = useRef(null);
+  const backgroundButtonRef = useRef(null);
 
   useEffect(() => {
     const initializeBusinesses = async () => {
@@ -217,6 +239,10 @@ const Dashboard = () => {
           type: wheel.type,
           logo: null,
           background: null,
+          logoPreview: wheel.logoUrl || "",
+          backgroundPreview: wheel.backgroundUrl || "",
+          removeLogo: false,
+          removeBackground: false,
         }
         : {
           business: selectedBusinessObject?._id || "",
@@ -225,29 +251,64 @@ const Dashboard = () => {
           type: "collect_info",
           logo: null,
           background: null,
+          logoPreview: "",
+          backgroundPreview: "",
+          removeLogo: false,
+          removeBackground: false,
         }
     );
     setLogoPreview(wheel?.logoUrl || null);
     setBackgroundPreview(wheel?.backgroundUrl || null);
     setErrors({});
+    setShowUploadProgress(false);
+    setUploadProgress([]);
+    setDeleteConfirm({ open: false, type: null, fileUrl: null });
     setOpenModal(true);
   };
 
   const handleFileChange = (e) => {
     const { name, files } = e.target;
     const file = files[0];
-    setForm((prev) => ({
-      ...prev,
-      [name]: file,
-    }));
 
     if (name === "logo" && file) {
-      setLogoPreview(URL.createObjectURL(file));
+      const preview = URL.createObjectURL(file);
+      setForm((prev) => ({
+        ...prev,
+        logo: file,
+        logoPreview: preview,
+        removeLogo: false,
+      }));
+      setLogoPreview(preview);
     }
     if (name === "background" && file) {
-      setBackgroundPreview(URL.createObjectURL(file));
+      const preview = URL.createObjectURL(file);
+      setForm((prev) => ({
+        ...prev,
+        background: file,
+        backgroundPreview: preview,
+        removeBackground: false,
+      }));
+      setBackgroundPreview(preview);
     }
   };
+
+  useEffect(() => {
+    const measureWidths = () => {
+      const widths = {
+        logo: logoButtonRef.current?.offsetWidth || null,
+        background: backgroundButtonRef.current?.offsetWidth || null,
+      };
+      setButtonWidths(widths);
+    };
+
+    const timeoutId = setTimeout(measureWidths, 100);
+    window.addEventListener("resize", measureWidths);
+
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener("resize", measureWidths);
+    };
+  }, [form.logoPreview, form.backgroundPreview]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -281,46 +342,202 @@ const Dashboard = () => {
     if (!form.type || form.type.trim() === "") {
       newErrors.type = "Type is required";
     }
-    if (!form.logo && !logoPreview) newErrors.logo = "Logo is required";
-    if (!form.background && !backgroundPreview)
-      newErrors.background = "Background is required";
+    // Logo and background are optional, so no validation needed
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
+  const handleDeleteMedia = (type, fileUrl) => {
+    if (fileUrl && fileUrl.startsWith("blob:")) {
+      if (type === "logo") {
+        setForm((prev) => ({
+          ...prev,
+          logo: null,
+          logoPreview: "",
+          removeLogo: false,
+        }));
+        setLogoPreview("");
+        URL.revokeObjectURL(fileUrl);
+      } else if (type === "background") {
+        setForm((prev) => ({
+          ...prev,
+          background: null,
+          backgroundPreview: "",
+          removeBackground: false,
+        }));
+        setBackgroundPreview("");
+        URL.revokeObjectURL(fileUrl);
+      }
+      return;
+    }
+
+    setDeleteConfirm({
+      open: true,
+      type,
+      fileUrl,
+    });
+  };
+
+  const confirmDeleteMedia = async () => {
+    try {
+      const selectedBusinessObject = businesses.find(
+        (business) => business.slug === selectedBusiness
+      );
+
+      if (!selectedBusinessObject?.slug) {
+        showMessage("Business information is missing", "error");
+        return;
+      }
+
+      const deletePayload = {
+        fileUrl: deleteConfirm.fileUrl,
+        storageType: "s3",
+      };
+
+      if (selectedWheel?._id) {
+        deletePayload.spinWheelId = selectedWheel._id;
+        deletePayload.mediaType = deleteConfirm.type;
+      }
+
+      const updatedWheel = await deleteMedia(deletePayload);
+
+      if (deleteConfirm.type === "logo") {
+        setForm((prev) => ({
+          ...prev,
+          logo: null,
+          logoPreview: "",
+          removeLogo: true,
+        }));
+        setLogoPreview("");
+      } else if (deleteConfirm.type === "background") {
+        setForm((prev) => ({
+          ...prev,
+          background: null,
+          backgroundPreview: "",
+          removeBackground: true,
+        }));
+        setBackgroundPreview("");
+      }
+
+      if (selectedWheel?._id && updatedWheel && !updatedWheel.error) {
+        if (updatedWheel._id) {
+          Object.assign(selectedWheel, updatedWheel);
+        }
+      }
+
+      setDeleteConfirm({ open: false, type: null, fileUrl: null });
+      showMessage("Media deleted successfully", "success");
+    } catch (err) {
+      showMessage(err.message || "Failed to delete media", "error");
+    }
+  };
+
   const handleSaveEvent = async () => {
     if (!validateForm()) return;
-    setSaving(true);
-    const formattedSlug = validateShortName(form.slug);
+
     const selectedBusinessObject = businesses.find(
       (business) => business.slug === selectedBusiness
     );
 
-    const formData = new FormData();
-    formData.append(
-      "business",
-      form.business || selectedBusinessObject?._id || ""
-    );
-    formData.append("title", form.title);
-    formData.append("slug", formattedSlug);
-    formData.append("type", form.type);
-
-    if (form.logo) {
-      formData.append("logo", form.logo);
-    }
-    if (form.background) {
-      formData.append("background", form.background);
+    if (!selectedBusinessObject?.slug) {
+      showMessage("Business information is missing", "error");
+      return;
     }
 
-    if (selectedWheel) {
-      await updateSpinWheel(selectedWheel._id, formData);
-    } else {
-      await createSpinWheel(formData);
-    }
+    setSaving(true);
 
-    fetchSpinWheels(selectedBusiness);
-    setOpenModal(false);
-    setSaving(false);
+    try {
+      const filesToUpload = [];
+      let logoUrl = form.removeLogo ? null : (form.logo ? null : (form.logoPreview || null));
+      let backgroundUrl = form.removeBackground ? null : (form.background ? null : (form.backgroundPreview || null));
+
+      if (form.logo && !form.removeLogo) {
+        filesToUpload.push({
+          file: form.logo,
+          type: "logo",
+          label: "Logo",
+        });
+      }
+
+      if (form.background && !form.removeBackground) {
+        filesToUpload.push({
+          file: form.background,
+          type: "background",
+          label: "Background",
+        });
+      }
+
+      if (filesToUpload.length > 0) {
+        setShowUploadProgress(true);
+        const uploads = filesToUpload.map((item) => ({
+          file: item.file,
+          label: item.label,
+          percent: 0,
+          loaded: 0,
+          total: item.file.size,
+          error: null,
+          url: null,
+        }));
+
+        setUploadProgress(uploads);
+
+        const urls = await uploadMediaFiles({
+          files: filesToUpload.map((item) => item.file),
+          businessSlug: selectedBusinessObject.slug,
+          moduleName: "EventWheel",
+          onProgress: (progressUploads) => {
+            progressUploads.forEach((progressUpload, index) => {
+              if (uploads[index]) {
+                uploads[index].percent = progressUpload.percent;
+                uploads[index].loaded = progressUpload.loaded;
+                uploads[index].total = progressUpload.total;
+                uploads[index].error = progressUpload.error;
+                uploads[index].url = progressUpload.url;
+              }
+            });
+            setUploadProgress([...uploads]);
+          },
+        });
+
+        setShowUploadProgress(false);
+
+
+        filesToUpload.forEach((item, index) => {
+          if (urls && urls[index]) {
+            if (item.type === "logo") {
+              logoUrl = urls[index];
+            } else if (item.type === "background") {
+              backgroundUrl = urls[index];
+            }
+          }
+        });
+      }
+
+      const formattedSlug = validateShortName(form.slug);
+      const payload = {
+        business: form.business || selectedBusinessObject?._id || "",
+        title: form.title,
+        slug: formattedSlug,
+        type: form.type,
+        logoUrl: logoUrl || null,
+        backgroundUrl: backgroundUrl || null,
+      };
+
+      if (selectedWheel) {
+        await updateSpinWheel(selectedWheel._id, payload);
+      } else {
+        await createSpinWheel(payload);
+      }
+
+      fetchSpinWheels(selectedBusiness);
+      setOpenModal(false);
+    } catch (error) {
+      console.error("Save failed:", error);
+      showMessage(error.message || "Failed to save spin wheel", "error");
+    } finally {
+      setSaving(false);
+      setShowUploadProgress(false);
+    }
   };
 
   const handleDeleteEvent = (wheel) => {
@@ -644,7 +861,17 @@ const Dashboard = () => {
               ))}
             </TextField>
 
-            <Box sx={{ mt: 2 }}>
+            {/* Logo Upload */}
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "flex-start",
+                gap: 2,
+                width: "100%",
+                mt: 2,
+              }}
+            >
               <input
                 accept="image/*"
                 style={{ display: "none" }}
@@ -654,32 +881,69 @@ const Dashboard = () => {
                 onChange={handleFileChange}
               />
               <label htmlFor="logo-upload">
-                <Button variant="outlined" component="span" fullWidth>
+                <Button
+                  variant="outlined"
+                  component="span"
+                  ref={logoButtonRef}
+                  startIcon={<ICONS.upload />}
+                  sx={getStartIconSpacing(dir)}
+                >
                   {t.uploadLogo}
                 </Button>
               </label>
-              {logoPreview && (
-                <>
-                  <Typography variant="body2" color="text.secondary">
-                    Preview:
+
+              {form.logoPreview && !form.removeLogo && (
+                <Box sx={{ mt: 1.5 }}>
+                  <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                    {selectedWheel && !form.logo ? "Current Image" : "Preview"}
                   </Typography>
-                  <Box sx={{ mt: 1, mb: 1 }}>
+
+                  <Box sx={{ position: "relative", display: "inline-block", width: buttonWidths.logo || "auto" }}>
                     <img
-                      src={logoPreview}
-                      alt="Logo Preview"
-                      style={{ maxWidth: "100%", maxHeight: 120 }}
+                      src={form.logoPreview}
+                      alt="Logo preview"
+                      style={{
+                        width: buttonWidths.logo ? `${buttonWidths.logo}px` : "auto",
+                        maxHeight: 100,
+                        height: "auto",
+                        borderRadius: 6,
+                        objectFit: "cover",
+                      }}
                     />
+
+                    <IconButton
+                      size="small"
+                      onClick={() => {
+                        const fileUrl = selectedWheel?.logoUrl || form.logoPreview;
+                        handleDeleteMedia("logo", fileUrl);
+                      }}
+                      sx={{
+                        position: "absolute",
+                        top: -18,
+                        right: 6,
+                        bgcolor: "error.main",
+                        color: "#fff",
+                        "&:hover": { bgcolor: "error.dark" },
+                      }}
+                    >
+                      <ICONS.delete sx={{ fontSize: 18 }} />
+                    </IconButton>
                   </Box>
-                </>
-              )}
-              {errors.logo && (
-                <Typography variant="caption" color="error">
-                  {errors.logo}
-                </Typography>
+                </Box>
               )}
             </Box>
 
-            <Box sx={{ mt: 2 }}>
+            {/* Background Upload */}
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "flex-start",
+                gap: 2,
+                width: "100%",
+                mt: 2,
+              }}
+            >
               <input
                 accept="image/*"
                 style={{ display: "none" }}
@@ -689,28 +953,55 @@ const Dashboard = () => {
                 onChange={handleFileChange}
               />
               <label htmlFor="background-upload">
-                <Button variant="outlined" component="span" fullWidth>
+                <Button
+                  variant="outlined"
+                  component="span"
+                  ref={backgroundButtonRef}
+                  startIcon={<ICONS.upload />}
+                  sx={getStartIconSpacing(dir)}
+                >
                   {t.uploadBackground}
                 </Button>
               </label>
-              {backgroundPreview && (
-                <>
-                  <Typography variant="body2" color="text.secondary">
-                    Preview:
+
+              {form.backgroundPreview && !form.removeBackground && (
+                <Box sx={{ mt: 1.5 }}>
+                  <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                    {selectedWheel && !form.background ? "Current Image" : "Preview"}
                   </Typography>
-                  <Box sx={{ mt: 1, mb: 1 }}>
+
+                  <Box sx={{ position: "relative", display: "inline-block", width: buttonWidths.background || "auto" }}>
                     <img
-                      src={backgroundPreview}
-                      alt="Background Preview"
-                      style={{ maxWidth: "100%", maxHeight: 120 }}
+                      src={form.backgroundPreview}
+                      alt="Background preview"
+                      style={{
+                        width: buttonWidths.background ? `${buttonWidths.background}px` : "auto",
+                        maxHeight: 100,
+                        height: "auto",
+                        borderRadius: 6,
+                        objectFit: "cover",
+                      }}
                     />
+
+                    <IconButton
+                      size="small"
+                      onClick={() => {
+                        const fileUrl = selectedWheel?.backgroundUrl || form.backgroundPreview;
+                        handleDeleteMedia("background", fileUrl);
+                      }}
+                      sx={{
+                        position: "absolute",
+                        top: -18,
+                        right: 6,
+                        bgcolor: "error.main",
+                        color: "#fff",
+                        "&:hover": { bgcolor: "error.dark" },
+                      }}
+                    >
+                      <ICONS.delete sx={{ fontSize: 18 }} />
+                    </IconButton>
                   </Box>
-                </>
-              )}
-              {errors.background && (
-                <Typography variant="caption" color="error">
-                  {errors.background}
-                </Typography>
+                </Box>
               )}
             </Box>
           </DialogContent>
@@ -737,6 +1028,25 @@ const Dashboard = () => {
           message={t.deleteWheelMessage}
           confirmButtonText={t.delete}
           confirmButtonIcon={<ICONS.delete />}
+        />
+
+        {/* Media Delete Confirmation */}
+        <ConfirmationDialog
+          open={deleteConfirm.open}
+          onClose={() => setDeleteConfirm({ open: false, type: null, fileUrl: null })}
+          onConfirm={confirmDeleteMedia}
+          title="Delete Media?"
+          message="Are you sure you want to delete this media? This action cannot be undone."
+          confirmButtonText="Delete"
+          confirmButtonIcon={<ICONS.delete />}
+        />
+
+        {/* Media Upload Progress */}
+        <MediaUploadProgress
+          open={showUploadProgress}
+          uploads={uploadProgress}
+          onClose={() => setShowUploadProgress(false)}
+          allowClose={false}
         />
       </Container>
     </Box>

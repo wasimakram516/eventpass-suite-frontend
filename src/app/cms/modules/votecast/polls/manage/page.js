@@ -176,6 +176,18 @@ export default function ManagePollsPage() {
 
     setLoading(false);
   };
+  const handleMediaDeleted = (optionIndex, updatedPoll) => {
+    if (!updatedPoll?._id) return;
+
+    setPolls((prev) =>
+      prev.map((poll) => (poll._id === updatedPoll._id ? updatedPoll : poll))
+    );
+
+    if (editPoll?._id === updatedPoll._id) {
+      setEditPoll(updatedPoll);
+    }
+  };
+
   // Poll creation and update ---
   const handleSubmit = async (formData, id = null) => {
     setLoading(true);
@@ -561,6 +573,7 @@ export default function ManagePollsPage() {
           onSubmit={handleSubmit}
           initialValues={editPoll}
           business={selectedBusinessObject}
+          onMediaDeleted={handleMediaDeleted}
         />
 
         {/* Delete Poll Dialog */}

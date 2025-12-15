@@ -15,19 +15,15 @@ export const getMediaById = withApiHandler(async (id) => {
 
 // Create display media (image + optional text) linked to wallSlug
 export const createDisplayMedia = withApiHandler(
-  async ({ file, text = "", slug }) => {
-    const formData = new FormData();
-    formData.append("image", file);
-    formData.append("text", text);
+  async ({ imageUrl, text = "", slug }) => {
+    const payload = {
+      imageUrl,
+      text,
+    };
 
     const response = await api.post(
       `/mosaicwall/display-media/upload/${slug}`,
-      formData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      }
+      payload
     );
 
     return response.data;
@@ -37,16 +33,12 @@ export const createDisplayMedia = withApiHandler(
 
 // Update media (text and/or new image)
 export const updateDisplayMedia = withApiHandler(
-  async (id, { file, text }) => {
-    const formData = new FormData();
-    if (file) formData.append("image", file);
-    if (text !== undefined) formData.append("text", text);
+  async (id, { imageUrl, text }) => {
+    const payload = {};
+    if (imageUrl) payload.imageUrl = imageUrl;
+    if (text !== undefined) payload.text = text;
 
-    const response = await api.put(`/mosaicwall/display-media/${id}`, formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
+    const response = await api.put(`/mosaicwall/display-media/${id}`, payload);
 
     return response.data;
   },

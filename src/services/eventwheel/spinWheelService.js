@@ -19,23 +19,19 @@ export const getSpinWheelBySlug = withApiHandler(async (slug) => {
   return data;
 });
 
-// Create spin wheel — supports FormData (logo + background)
+// Create spin wheel — supports JSON payload (logoUrl + backgroundUrl)
 export const createSpinWheel = withApiHandler(
-  async (formData) => {
-    const { data } = await api.post("/eventwheel/wheels", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+  async (payload) => {
+    const { data } = await api.post("/eventwheel/wheels", payload);
     return data;
   },
   { showSuccess: true }
 );
 
-// Update spin wheel — supports FormData (logo + background)
+// Update spin wheel — supports JSON payload (logoUrl + backgroundUrl)
 export const updateSpinWheel = withApiHandler(
-  async (id, formData) => {
-    const { data } = await api.put(`/eventwheel/wheels/${id}`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+  async (id, payload) => {
+    const { data } = await api.put(`/eventwheel/wheels/${id}`, payload);
     return data;
   },
   { showSuccess: true }
