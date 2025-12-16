@@ -43,6 +43,7 @@ import {
   updateRegistrationApproval,
   getInitialRegistrations,
   exportRegistrations,
+  createRegistration,
 } from "@/services/eventreg/registrationService";
 import { getPublicEventBySlug } from "@/services/eventreg/eventService";
 
@@ -58,7 +59,7 @@ import NoDataAvailable from "@/components/NoDataAvailable";
 import { wrapTextBox } from "@/utils/wrapTextStyles";
 import useEventRegSocket from "@/hooks/modules/eventReg/useEventRegSocket";
 import { exportAllBadges } from "@/utils/exportBadges";
-import EditRegistrationModal from "@/components/modals/EditRegistrationModal";
+import RegistrationModal from "@/components/modals/RegistrationModal";
 import { useMessage } from "@/contexts/MessageContext";
 
 const translations = {
@@ -116,6 +117,7 @@ const translations = {
     emailNotSent: "Email Not Sent",
     exportBadges: "Export Badges",
     editRegistration: "Edit Registration",
+    createRegistration: "Create Registration",
     copyToken: "Copy Token",
     approve: "Approve",
     reject: "Reject",
@@ -176,6 +178,7 @@ const translations = {
     emailNotSent: "لم يتم الإرسال",
     exportbadges: "تصدير الشارات",
     editRegistration: "تعديل التسجيل",
+    createRegistration: "إنشاء تسجيل",
     copyToken: "نسخ الرمز",
     approve: "موافقة",
     reject: "رفض",
@@ -239,6 +242,7 @@ export default function ViewRegistrations() {
 
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingReg, setEditingReg] = useState(null);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
 
   useEffect(() => {
     if (eventSlug) fetchData();
@@ -469,6 +473,33 @@ export default function ViewRegistrations() {
     } else {
       alert(res.error);
     }
+  };
+
+  const handleCreateRegistration = async (fields) => {
+    const hasCustomFields = eventDetails?.formFields?.length > 0;
+    let payload = { slug: eventSlug };
+
+    if (hasCustomFields) {
+      payload = { ...fields, slug: eventSlug };
+    } else {
+      const fieldMap = {
+        "Full Name": "fullName",
+        Email: "email",
+        Phone: "phone",
+        Company: "company",
+      };
+      Object.keys(fields).forEach((key) => {
+        const mappedKey = fieldMap[key] || key;
+        payload[mappedKey] = fields[key];
+      });
+    }
+
+    const res = await createRegistration(payload);
+    if (res?.error) {
+      throw new Error(res.message || "Failed to create registration");
+    }
+    setCreateModalOpen(false);
+    showMessage("Registration created successfully", "success");
   };
 
   const handleSendBulkEmails = async () => {
@@ -752,6 +783,16 @@ export default function ViewRegistrations() {
           gap: dir === "rtl" ? 1 : 0,
         }}
       >
+        <Button
+          variant="contained"
+          color="primary"
+          startIcon={<ICONS.add />}
+          onClick={() => setCreateModalOpen(true)}
+          sx={getStartIconSpacing(dir)}
+        >
+          {t.createRegistration}
+        </Button>
+
         <Button
           variant="outlined"
           startIcon={<ICONS.download />}
@@ -1423,12 +1464,22 @@ export default function ViewRegistrations() {
         </>
       )}
 
-      <EditRegistrationModal
+      <RegistrationModal
         open={editModalOpen}
         onClose={() => setEditModalOpen(false)}
         registration={editingReg}
-        formFields={eventDetails.formFields || []}
+        formFields={eventDetails?.formFields || []}
         onSave={handleSaveEdit}
+        mode="edit"
+      />
+
+      <RegistrationModal
+        open={createModalOpen}
+        onClose={() => setCreateModalOpen(false)}
+        registration={null}
+        formFields={eventDetails?.formFields || []}
+        onSave={handleCreateRegistration}
+        mode="create"
       />
 
       <ConfirmationDialog
@@ -1459,6 +1510,27 @@ export default function ViewRegistrations() {
         open={walkInModalOpen}
         onClose={() => setWalkInModalOpen(false)}
         registration={selectedRegistration}
+        onCheckInSuccess={async () => {
+          if (selectedRegistration?._id) {
+            const regsRes = await getInitialRegistrations(eventSlug);
+            if (!regsRes?.error) {
+              const initialData = regsRes.data || [];
+              const prepped = initialData.map((r) => {
+                return {
+                  ...r,
+                  _createdAtMs: Date.parse(r.createdAt),
+                  _scannedAtMs: (r.walkIns || []).map((w) => Date.parse(w.scannedAt)),
+                  _haystack: buildHaystack(r, dynamicFieldsRef.current),
+                };
+              });
+              setAllRegistrations(prepped);
+              const updatedReg = prepped.find((r) => r._id === selectedRegistration._id);
+              if (updatedReg) {
+                setSelectedRegistration(updatedReg);
+              }
+            }
+          }
+        }}
       />
 
       <FilterDialog
