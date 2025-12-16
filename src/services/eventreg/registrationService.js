@@ -123,3 +123,11 @@ export const updateRegistrationApproval = withApiHandler(
   },
   { showSuccess: true }
 );
+
+export const createWalkIn = withApiHandler(
+  async (id) => {
+    const { data } = await api.post(`/eventreg/registrations/${id}/walkin`);
+    return data;
+  },
+  { showSuccess: true }
+);
