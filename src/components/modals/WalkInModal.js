@@ -29,7 +29,9 @@ const WalkInModal = ({ open, onClose, registration, onCheckInSuccess }) => {
   const { user } = useAuth();
   const [checkingIn, setCheckingIn] = useState(false);
 
-  const isAdmin = user?.role === "admin";
+  const canCheckIn =
+    user?.role === "admin" ||
+    user?.role === "business";
   const { t, dir } = useI18nLayout({
     en: {
       title: "Walk-in Records",
@@ -56,7 +58,7 @@ const WalkInModal = ({ open, onClose, registration, onCheckInSuccess }) => {
   });
 
   const handleCheckIn = async () => {
-    if (!registration?._id || checkingIn || !isAdmin) return;
+    if (!registration?._id || checkingIn || !canCheckIn) return;
 
     setCheckingIn(true);
     try {
@@ -195,7 +197,7 @@ const WalkInModal = ({ open, onClose, registration, onCheckInSuccess }) => {
         )}
       </DialogContent>
 
-      {onCheckInSuccess && isAdmin && (
+      {onCheckInSuccess && canCheckIn && (
         <DialogActions sx={{ justifyContent: "center" }}>
           <Button
             onClick={handleCheckIn}
