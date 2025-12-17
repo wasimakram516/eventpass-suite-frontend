@@ -449,30 +449,30 @@ export default function ViewRegistrations() {
 
   const handleSaveEdit = async (updatedFields) => {
     const res = await updateRegistration(editingReg._id, updatedFields);
-    if (!res?.error) {
-      setAllRegistrations((prev) =>
-        prev.map((r) => {
-          if (r._id === editingReg._id) {
-            const hasCustomFields = eventDetails?.formFields?.length > 0;
-            if (hasCustomFields) {
-              return { ...r, customFields: { ...r.customFields, ...updatedFields } };
-            } else {
-              return {
-                ...r,
-                fullName: updatedFields["Full Name"] !== undefined ? updatedFields["Full Name"] : r.fullName,
-                email: updatedFields["Email"] !== undefined ? updatedFields["Email"] : r.email,
-                phone: updatedFields["Phone"] !== undefined ? updatedFields["Phone"] : r.phone,
-                company: updatedFields["Company"] !== undefined ? updatedFields["Company"] : r.company,
-              };
-            }
-          }
-          return r;
-        })
-      );
-      setEditModalOpen(false);
-    } else {
-      alert(res.error);
+    if (res?.error) {
+      showMessage(res.message || "Failed to update registration", "error");
+      return;
     }
+    setAllRegistrations((prev) =>
+      prev.map((r) => {
+        if (r._id === editingReg._id) {
+          const hasCustomFields = eventDetails?.formFields?.length > 0;
+          if (hasCustomFields) {
+            return { ...r, customFields: { ...r.customFields, ...updatedFields } };
+          } else {
+            return {
+              ...r,
+              fullName: updatedFields["Full Name"] !== undefined ? updatedFields["Full Name"] : r.fullName,
+              email: updatedFields["Email"] !== undefined ? updatedFields["Email"] : r.email,
+              phone: updatedFields["Phone"] !== undefined ? updatedFields["Phone"] : r.phone,
+              company: updatedFields["Company"] !== undefined ? updatedFields["Company"] : r.company,
+            };
+          }
+        }
+        return r;
+      })
+    );
+    setEditModalOpen(false);
   };
 
   const handleCreateRegistration = async (fields) => {
