@@ -25,7 +25,7 @@ import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import { useAuth } from "@/contexts/AuthContext";
 import { createWalkIn } from "@/services/eventreg/registrationService";
 
-const WalkInModal = ({ open, onClose, registration, onCheckInSuccess }) => {
+const WalkInModal = ({ open, onClose, registration, onCheckInSuccess, createWalkInFn }) => {
   const { user } = useAuth();
   const [checkingIn, setCheckingIn] = useState(false);
 
@@ -62,7 +62,8 @@ const WalkInModal = ({ open, onClose, registration, onCheckInSuccess }) => {
 
     setCheckingIn(true);
     try {
-      await createWalkIn(registration._id);
+      const createFn = createWalkInFn || createWalkIn;
+      await createFn(registration._id);
       if (onCheckInSuccess) {
         onCheckInSuccess();
       }
