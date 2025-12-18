@@ -1,9 +1,50 @@
 import api from "@/services/api";
 import withApiHandler from "@/utils/withApiHandler";
 
-// Create public registration (no auth required)
+// Create registration (CMS use)
 export const createCheckInRegistration = withApiHandler(async (payload) => {
   const { data } = await api.post("/checkin/registrations", payload);
+  return data;
+});
+
+// Download sample Excel template
+export const downloadCheckInSampleExcel = async (slug) => {
+  const response = await api.get(
+    `/checkin/registrations/event/${slug}/sample-excel`,
+    { responseType: "blob" }
+  );
+  return response.data;
+};
+
+// Upload filled Excel
+export const uploadCheckInRegistrations = withApiHandler(
+  async (slug, file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const { data } = await api.post(
+      `/checkin/registrations/event/${slug}/upload`,
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      }
+    );
+    return data;
+  },
+  { showSuccess: true }
+);
+
+// Export CSV (with filters)
+export const exportCheckInRegistrations = async (slug, query = {}) => {
+  const qs = new URLSearchParams(query).toString();
+  const url = `/checkin/registrations/event/${slug}/export${qs ? `?${qs}` : ""}`;
+  const response = await api.get(url, { responseType: "blob" });
+  return response.data;
+};
+
+// Get initial registrations (first batch)
+export const getCheckInInitialRegistrations = withApiHandler(async (slug) => {
+  const { data } = await api.get(`/checkin/registrations/event/${slug}/all`);
   return data;
 });
 
@@ -26,6 +67,25 @@ export const deleteCheckInRegistration = withApiHandler(
   { showSuccess: true }
 );
 
+// Update a registration by ID (CMS use)
+export const updateCheckInRegistration = withApiHandler(
+  async (id, fields) => {
+    const { data } = await api.put(`/checkin/registrations/${id}`, { fields });
+    return data;
+  },
+  { showSuccess: true }
+);
+
+export const updateCheckInRegistrationApproval = withApiHandler(
+  async (id, status) => {
+    const { data } = await api.patch(`/checkin/registrations/${id}/approval`, {
+      status,
+    });
+    return data;
+  },
+  { showSuccess: true }
+);
+
 // Verify registration by QR token (Staff use)
 export const verifyRegistrationByToken = withApiHandler(
   async (token) => {
@@ -40,4 +100,30 @@ export const getAllCheckInRegistrationsByEvent = withApiHandler(
     const { data } = await api.get(`/checkin/registrations/event/${slug}/all`);
     return data;
   }
+);
+
+// Create walk-in record for a registration
+export const createCheckInWalkIn = withApiHandler(
+  async (id) => {
+    const { data } = await api.post(`/checkin/registrations/${id}/walkin`);
+    return data;
+  },
+  { showSuccess: true }
+);
+
+// Get registration by token (public endpoint for confirmation page)
+export const getCheckInRegistrationByToken = withApiHandler(async (token) => {
+  const { data } = await api.get(`/checkin/registrations/by-token?token=${token}`);
+  return data;
+});
+
+// Confirm presence (public endpoint - updates approvalStatus to confirmed)
+export const confirmCheckInPresence = withApiHandler(
+  async (token) => {
+    const { data } = await api.post("/checkin/registrations/confirm-presence", {
+      token,
+    });
+    return data;
+  },
+  { showSuccess: true }
 );
