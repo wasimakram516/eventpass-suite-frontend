@@ -285,11 +285,12 @@ export default function EventDetails() {
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
+          justifyContent: "center",
           position: "relative",
           width: "100%",
           maxWidth: "lg",
           minHeight: "calc(100vh - 80px)",
-          gap: 3,
+          gap: 2,
           zIndex: 1,
         }}
       >
@@ -303,11 +304,6 @@ export default function EventDetails() {
               borderRadius: 3,
               overflow: "hidden",
               boxShadow: 3,
-              mt: { xs: 2, sm: 0 },
-              position: "absolute",
-              top: 0,
-              left: "50%",
-              transform: "translateX(-50%)",
             }}
           >
             <Box
@@ -328,8 +324,8 @@ export default function EventDetails() {
 
         {/* Main details container */}
         {showEventDetails ||
-        background === null ||
-        background.fileType !== "video" ? (
+          background === null ||
+          background.fileType !== "video" ? (
           <EventWelcomeCard
             t={t}
             name={name}
@@ -356,11 +352,10 @@ export default function EventDetails() {
               fontWeight: 600,
               borderRadius: 2,
               textTransform: "none",
-              display: `${
-                background === null || background.fileType !== "video"
-                  ? "none"
-                  : "block"
-              }`,
+              display: `${background === null || background.fileType !== "video"
+                ? "none"
+                : "block"
+                }`,
               position: "absolute",
               top: "60%",
             }}
