@@ -19,6 +19,7 @@ export default function EventWelcomeCard({
   actionIcon,
   actionRoute,
   isArabic,
+  hideActionButton = false,
 }) {
   return (
     <AppCard
@@ -133,31 +134,33 @@ export default function EventWelcomeCard({
       </Typography> */}
 
       {/* Action button (centered) */}
-      <Box sx={{ display: "flex", justifyContent: "center" }}>
-        <Button
-          variant="contained"
-          size="large"
-          onClick={() => router.replace(actionRoute)}
-          startIcon={actionIcon}
-          sx={{
-            width: "100%",
-            maxWidth: 300,
-            fontSize: { xs: 16, md: 18 },
-            p: "12px",
-            fontWeight: "bold",
-            borderRadius: 2,
-            textTransform: "none",
-            background: "primary.main",
-            transition: "0.3s",
-            "&:hover": {
-              background: "secondary.main",
-            },
-            ...getStartIconSpacing(dir),
-          }}
-        >
-          {actionLabel}
-        </Button>
-      </Box>
+      {!hideActionButton && (
+        <Box sx={{ display: "flex", justifyContent: "center" }}>
+          <Button
+            variant="contained"
+            size="large"
+            onClick={() => router.replace(actionRoute)}
+            startIcon={actionIcon}
+            sx={{
+              width: "100%",
+              maxWidth: 300,
+              fontSize: { xs: 16, md: 18 },
+              p: "12px",
+              fontWeight: "bold",
+              borderRadius: 2,
+              textTransform: "none",
+              background: "primary.main",
+              transition: "0.3s",
+              "&:hover": {
+                background: "secondary.main",
+              },
+              ...getStartIconSpacing(dir),
+            }}
+          >
+            {actionLabel}
+          </Button>
+        </Box>
+      )}
 
       {/* Footer note */}
       {/* <Stack

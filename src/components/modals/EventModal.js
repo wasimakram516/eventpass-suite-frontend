@@ -25,7 +25,6 @@ import { useState, useEffect, useRef } from "react";
 import slugify from "@/utils/slugify";
 import { useMessage } from "@/contexts/MessageContext";
 import useI18nLayout from "@/hooks/useI18nLayout";
-import { downloadEmployeeTemplate } from "@/services/checkin/checkinEventService";
 import ICONS from "@/utils/iconUtil";
 import { uploadMediaFiles, uploadSingleFile } from "@/utils/mediaUpload";
 import MediaUploadProgress from "@/components/MediaUploadProgress";
@@ -591,18 +590,6 @@ const EventModal = ({
     setFormData((prev) => ({ ...prev, formFields: updated }));
   };
 
-  const handleDownloadTemplate = async () => {
-    try {
-      await downloadEmployeeTemplate();
-      showMessage(
-        t.downloadTemplateSuccess || "Template downloaded successfully",
-        "success"
-      );
-    } catch (err) {
-      showMessage(err.message, "error");
-    }
-  };
-
   const handleSubmit = async () => {
     if (
       !formData.name ||
@@ -710,7 +697,7 @@ const EventModal = ({
           const urls = await uploadMediaFiles({
             files: filesToUpload.map((item) => item.file),
             businessSlug: selectedBusiness,
-            moduleName: "EventReg",
+            moduleName: isEmployee ? "CheckIn" : "EventReg",
             onProgress: (progressUploads) => {
               progressUploads.forEach((progressUpload, index) => {
                 if (uploads[index]) {
@@ -824,7 +811,7 @@ const EventModal = ({
         showQrOnBadge: formData.showQrOnBadge,
         requiresApproval: formData.requiresApproval,
         defaultLanguage: formData.defaultLanguage,
-        ...(formData.eventType === "public" && formData.useCustomFields
+        ...(formData.useCustomFields
           ? { formFields: formData.formFields }
           : {}),
         ...(formData.removeLogo ? { removeLogo: "true" } : {}),
@@ -938,66 +925,66 @@ const EventModal = ({
               fullWidth
             />
 
-            {/* Show QR After Registration Toggle */}
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={formData.showQrAfterRegistration}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        showQrAfterRegistration: e.target.checked,
-                      }))
+            {!isEmployee && (
+              <>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={formData.showQrAfterRegistration}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            showQrAfterRegistration: e.target.checked,
+                          }))
+                        }
+                        color="primary"
+                      />
                     }
-                    color="primary"
+                    label={t.showQrToggle}
+                    sx={{ alignSelf: "start" }}
                   />
-                }
-                label={t.showQrToggle}
-                sx={{ alignSelf: "start" }}
-              />
-            </Box>
+                </Box>
 
-            {/* Show QR on Badge Toggle */}
-
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={formData.showQrOnBadge}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        showQrOnBadge: e.target.checked,
-                      }))
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={formData.showQrOnBadge}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            showQrOnBadge: e.target.checked,
+                          }))
+                        }
+                        color="primary"
+                      />
                     }
-                    color="primary"
+                    label={t.showQrOnBadgeToggle}
+                    sx={{ alignSelf: "start" }}
                   />
-                }
-                label={t.showQrOnBadgeToggle}
-                sx={{ alignSelf: "start" }}
-              />
-            </Box>
+                </Box>
 
-            {/* Requires Approval Toggle */}
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={formData.requiresApproval}
-                    onChange={(e) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        requiresApproval: e.target.checked,
-                      }))
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={formData.requiresApproval}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            requiresApproval: e.target.checked,
+                          }))
+                        }
+                        color="primary"
+                      />
                     }
-                    color="primary"
+                    label={t.requiresApprovalToggle}
+                    sx={{ alignSelf: "start" }}
                   />
-                }
-                label={t.requiresApprovalToggle}
-                sx={{ alignSelf: "start" }}
-              />
-            </Box>
+                </Box>
+              </>
+            )}
 
             {/* Default Language Selector */}
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
@@ -1482,74 +1469,34 @@ const EventModal = ({
                 </List>
               </Box>
             </Box>
-            <Box>
-              <Button component="label" variant="outlined">
-                Upload Agenda (PDF)
-                <input
-                  hidden
-                  name="agenda"
-                  type="file"
-                  accept="application/pdf"
-                  onChange={handleInputChange}
-                />
-              </Button>
-              {formData.agendaPreview && (
-                <Box sx={{ mt: 1 }}>
-                  <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
-                    {initialValues && !formData.agenda
-                      ? "Current Agenda:"
-                      : "Selected Agenda:"}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {formData.agendaPreview}
-                  </Typography>
-                </Box>
-              )}
-            </Box>
-
-            {formData.eventType === "employee" && (
-              <>
-                <Button variant="outlined" onClick={handleDownloadTemplate}>
-                  {t.downloadTemplate}
+            {!isEmployee && (
+              <Box>
+                <Button component="label" variant="outlined">
+                  Upload Agenda (PDF)
+                  <input
+                    hidden
+                    name="agenda"
+                    type="file"
+                    accept="application/pdf"
+                    onChange={handleInputChange}
+                  />
                 </Button>
-                <Box>
-                  <Typography variant="subtitle2" color="primary">
-                    {t.uploadEmployee}
-                  </Typography>
-                  <TextField
-                    name="employeeData"
-                    type="file"
-                    inputProps={{ accept: ".csv,.xlsx,.xls" }}
-                    onChange={handleInputChange}
-                    fullWidth
-                  />
-                </Box>
-                <Box>
-                  <Typography variant="subtitle2" color="primary">
-                    {t.uploadTables}
-                  </Typography>
-                  <TextField
-                    name="tableImages"
-                    type="file"
-                    inputProps={{ accept: "image/*", multiple: true }}
-                    onChange={handleInputChange}
-                    fullWidth
-                  />
-                </Box>
-                {formData.tableImages.length > 0 && (
-                  <List>
-                    {Array.from(formData.tableImages).map((file, i) => (
-                      <ListItem key={i}>
-                        <ListItemText primary={file.name} />
-                      </ListItem>
-                    ))}
-                  </List>
+                {formData.agendaPreview && (
+                  <Box sx={{ mt: 1 }}>
+                    <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                      {initialValues && !formData.agenda
+                        ? "Current Agenda:"
+                        : "Selected Agenda:"}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {formData.agendaPreview}
+                    </Typography>
+                  </Box>
                 )}
-              </>
+              </Box>
             )}
 
-            {/* Public Custom Field Toggle */}
-            {formData.eventType === "public" && (
+            {(isEmployee || formData.eventType === "public") && (
               <>
                 <Typography variant="subtitle2" color="primary">
                   {t.useCustomFields}

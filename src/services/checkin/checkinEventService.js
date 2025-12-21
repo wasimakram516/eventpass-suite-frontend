@@ -23,10 +23,8 @@ export const getCheckInEventById = withApiHandler(async (id) => {
 
 // Create event (supports logo upload via FormData)
 export const createCheckInEvent = withApiHandler(
-  async (formData) => {
-    const { data } = await api.post("/checkin/events", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+  async (eventData) => {
+    const { data } = await api.post("/checkin/events", eventData);
     return data;
   },
   { showSuccess: true }
@@ -34,10 +32,8 @@ export const createCheckInEvent = withApiHandler(
 
 // Update event by ID (supports logo upload via FormData)
 export const updateCheckInEvent = withApiHandler(
-  async (id, formData) => {
-    const { data } = await api.put(`/checkin/events/${id}`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
+  async (id, eventData) => {
+    const { data } = await api.put(`/checkin/events/${id}`, eventData);
     return data;
   },
   { showSuccess: true }
@@ -69,8 +65,8 @@ export const downloadEmployeeTemplate = async () => {
   } catch (err) {
     throw new Error(
       err?.response?.data?.message ||
-        err?.message ||
-        "Failed to download template"
+      err?.message ||
+      "Failed to download template"
     );
   }
 };
