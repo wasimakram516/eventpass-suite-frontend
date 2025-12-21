@@ -38,10 +38,10 @@ function HorizontalCarousel({
 
   const isFew = validItems.length <= 5;
 
-  // Calculate animation duration (constraint: max speed = 10s)
+  // Calculate animation duration (slower speed)
   const duration = isFew
-    ? Math.max(8, Math.min(10, validItems.length * 4))
-    : 15;
+    ? Math.max(15, Math.min(20, validItems.length * 6))
+    : 25;
 
   return (
     <Box
@@ -93,7 +93,7 @@ function HorizontalCarousel({
             "linear-gradient(to right, rgba(0,0,0,0), rgba(0,0,0,1) 20%, rgba(0,0,0,1) 80%, rgba(0,0,0,0))",
           maskRepeat: "no-repeat",
           maskSize: "100% 100%",
-          width: { xs: "95vw", sm: "60vw" },
+          width: "95vw",
           margin: "0 auto",
           px: 1,
         }}
@@ -104,9 +104,8 @@ function HorizontalCarousel({
               display: "flex",
               flexWrap: "nowrap",
               width: "max-content",
-              animation: `${
-                isFew ? marqueeFew : marqueeMany
-              } ${duration}s linear infinite`,
+              animation: `${isFew ? marqueeFew : marqueeMany
+                } ${duration}s linear infinite`,
               ...(pauseOnHover && {
                 "&:hover": { animationPlayState: "paused" },
               }),
