@@ -54,6 +54,10 @@ Font.register({
 
 const A6_WIDTH = 297.6;
 const A6_HEIGHT = 419.5;
+const NAME_WIDTH_PERCENT = 0.9;
+const AVAILABLE_NAME_WIDTH = A6_WIDTH * NAME_WIDTH_PERCENT;
+const COMPANY_WIDTH_PERCENT = 0.7;
+const AVAILABLE_COMPANY_WIDTH = A6_WIDTH * COMPANY_WIDTH_PERCENT;
 
 const styles = StyleSheet.create({
   page: {
@@ -75,7 +79,7 @@ const styles = StyleSheet.create({
   },
   qrWrapper: {
     position: "absolute",
-    bottom: 35,
+    bottom: 20,
     left: 25,
     width: 90,
     display: "flex",
@@ -91,25 +95,23 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   name: {
-    fontSize: 18,
     fontWeight: "bold",
     color: "#000",
-    maxWidth: "80%",
+    width: `${NAME_WIDTH_PERCENT * 100}%`,
     lineHeight: 1.2,
     textAlign: "center",
     alignSelf: "center",
   },
   company: {
-    fontSize: 14,
     color: "#000",
     marginTop: 1,
-    maxWidth: "80%",
+    width: `${COMPANY_WIDTH_PERCENT * 100}%`,
     lineHeight: 1.2,
     textAlign: "center",
     alignSelf: "center",
   },
   title: {
-    fontSize: 11,
+    fontSize: 14,
     color: "#444",
     marginTop: 4,
     maxWidth: "80%",
@@ -130,17 +132,73 @@ const styles = StyleSheet.create({
   },
 });
 
-/**
- * Reusable Badge PDF component
- * - When `single` = true → wraps with <Document> (for one-off print/download)
- * - When `single` = false → returns only <Page> (for batch export)
- */
+function calculateNameFontSize(name) {
+  if (!name) return 32;
+
+  const length = name.length;
+  const avgCharWidthRatio = 0.6;
+
+  const maxFontSize = AVAILABLE_NAME_WIDTH / (length * avgCharWidthRatio);
+
+  const minFontSize = 18;
+  const maxAllowedFontSize = 42;
+
+  if (length <= 10) {
+    return Math.min(maxAllowedFontSize, Math.max(minFontSize, maxFontSize));
+  }
+
+  return Math.min(maxAllowedFontSize, Math.max(minFontSize, maxFontSize));
+}
+
+function calculateCompanyFontSize(company) {
+  if (!company) return 24;
+
+  const length = company.length;
+  const avgCharWidthRatio = 0.55;
+  const safetyMargin = 0.9;
+
+  const maxFontSize = (AVAILABLE_COMPANY_WIDTH * safetyMargin) / (length * avgCharWidthRatio);
+
+  const minFontSize = 14;
+  const maxAllowedFontSize = 30;
+
+  if (length <= 10) {
+    return Math.min(maxAllowedFontSize, Math.max(minFontSize, maxFontSize));
+  }
+
+  return Math.min(maxAllowedFontSize, Math.max(minFontSize, maxFontSize));
+}
+
 export default function BadgePDF({ data, qrCodeDataUrl, single = true }) {
+  const nameFontSize = calculateNameFontSize(data?.fullName);
+  const nameStyle = {
+    fontWeight: "bold",
+    color: "#000",
+    width: `${NAME_WIDTH_PERCENT * 100}%`,
+    lineHeight: 1.2,
+    textAlign: "center",
+    alignSelf: "center",
+    fontSize: nameFontSize,
+  };
+
+  let companyFontSize = calculateCompanyFontSize(data?.company);
+  const maxCompanyFontSize = nameFontSize * 0.75;
+  companyFontSize = Math.min(companyFontSize, maxCompanyFontSize);
+  const companyStyle = {
+    color: "#000",
+    marginTop: 1,
+    width: `${COMPANY_WIDTH_PERCENT * 100}%`,
+    lineHeight: 1.2,
+    textAlign: "center",
+    alignSelf: "center",
+    fontSize: companyFontSize,
+  };
+
   const content = (
     <Page size={[A6_WIDTH, A6_HEIGHT]} style={styles.page}>
       <View style={styles.contentArea}>
-        {data.fullName && <Text style={styles.name}>{data.fullName}</Text>}
-        {data.company && <Text style={styles.company}>{data.company}</Text>}
+        {data.fullName && <Text style={nameStyle}>{data.fullName}</Text>}
+        {data.company && <Text style={companyStyle}>{data.company}</Text>}
         {data.title && <Text style={styles.title}>{data.title}</Text>}
         {data.badgeIdentifier && (
           <Text style={styles.badgeIdentifier}>{data.badgeIdentifier}</Text>
