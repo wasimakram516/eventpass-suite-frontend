@@ -61,6 +61,9 @@ import useEventRegSocket from "@/hooks/modules/eventReg/useEventRegSocket";
 import { exportAllBadges } from "@/utils/exportBadges";
 import RegistrationModal from "@/components/modals/RegistrationModal";
 import { useMessage } from "@/contexts/MessageContext";
+import { pdf } from "@react-pdf/renderer";
+import QRCode from "qrcode";
+import BadgePDF from "@/components/badges/BadgePDF";
 
 const translations = {
   en: {
@@ -116,6 +119,7 @@ const translations = {
     emailSent: "Email Sent",
     emailNotSent: "Email Not Sent",
     exportBadges: "Export Badges",
+    printBadge: "Print Badge",
     editRegistration: "Edit Registration",
     createRegistration: "Create Registration",
     copyToken: "Copy Token",
@@ -177,6 +181,7 @@ const translations = {
     emailSent: "تم الإرسال",
     emailNotSent: "لم يتم الإرسال",
     exportbadges: "تصدير الشارات",
+    printBadge: "طباعة الشارة",
     editRegistration: "تعديل التسجيل",
     createRegistration: "إنشاء تسجيل",
     copyToken: "نسخ الرمز",
@@ -729,6 +734,135 @@ export default function ViewRegistrations() {
       console.error("Badge export failed:", err);
     } finally {
       setExportingBadges(false);
+    }
+  };
+
+  const handlePrintBadge = async (registration) => {
+    if (!registration?.token) return;
+
+    try {
+      let qrCodeDataUrl = "";
+      try {
+        qrCodeDataUrl = await QRCode.toDataURL(registration.token, {
+          width: 300,
+          margin: 1,
+          color: { dark: "#000000", light: "#ffffff" },
+        });
+      } catch {
+        // ignore minor QR errors (badge can still print)
+      }
+
+      const fullName =
+        registration.customFields?.["Full Name"] ||
+        registration.customFields?.["fullName"] ||
+        registration.customFields?.["Name"] ||
+        registration.customFields?.["name"] ||
+        (
+          (registration.customFields?.["First Name"] ||
+            registration.customFields?.["firstName"] ||
+            registration.customFields?.["FirstName"] ||
+            "") +
+          " " +
+          (registration.customFields?.["Last Name"] ||
+            registration.customFields?.["lastName"] ||
+            registration.customFields?.["LastName"] ||
+            "")
+        ).trim() ||
+        registration.fullName ||
+        "Unnamed Visitor";
+
+      const company =
+        registration.customFields?.["Company"] ||
+        registration.customFields?.["Institution"] ||
+        registration.customFields?.["Organization"] ||
+        registration.customFields?.["organization"] ||
+        registration.customFields?.["institution"] ||
+        registration.company ||
+        "";
+
+      const title =
+        registration.customFields?.["Title"] ||
+        registration.customFields?.["Position"] ||
+        registration.customFields?.["position"] ||
+        registration.title ||
+        "";
+
+      const badgeData = {
+        fullName,
+        company,
+        title,
+        badgeIdentifier: registration.badgeIdentifier || "",
+        token: registration.token,
+        showQrOnBadge: eventDetails?.showQrOnBadge ?? true,
+      };
+
+      const doc = <BadgePDF data={badgeData} qrCodeDataUrl={qrCodeDataUrl} />;
+      const blob = await pdf(doc).toBlob();
+      if (!blob || blob.size === 0) throw new Error("Empty PDF generated");
+
+      const blobUrl = URL.createObjectURL(blob);
+      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+      if (isMobile) {
+        const printWindow = window.open(blobUrl, "_blank");
+        if (!printWindow) {
+          showMessage("Please allow pop-ups to print the badge.", "warning");
+          return;
+        }
+        printWindow.onload = () => {
+          printWindow.focus();
+          printWindow.print();
+        };
+        return;
+      }
+
+      const width = Math.floor(window.outerWidth * 0.9);
+      const height = Math.floor(window.outerHeight * 0.9);
+      const left = window.screenX + (window.outerWidth - width) / 2;
+      const top = window.screenY + (window.outerHeight - height) / 2;
+
+      const printWindow = window.open(
+        "",
+        "_blank",
+        `width=${width},height=${height},left=${left},top=${top},resizable=no,scrollbars=no,status=no`
+      );
+
+      if (!printWindow) {
+        showMessage("Please allow pop-ups to print the badge.", "warning");
+        return;
+      }
+
+      printWindow.document.write(`
+      <html>
+        <head>
+          <title>Print Badge</title>
+          <style>
+            html, body {
+              margin: 0;
+              padding: 0;
+              height: 100%;
+              overflow: hidden;
+              background: #fff;
+            }
+            iframe {
+              width: 100%;
+              height: 100%;
+              border: none;
+            }
+          </style>
+        </head>
+        <body>
+          <iframe
+            src="${blobUrl}"
+            onload="this.contentWindow.focus(); this.contentWindow.print();"
+          ></iframe>
+        </body>
+      </html>
+    `);
+      printWindow.document.close();
+    } catch (err) {
+      showMessage("Badge could not be generated. Please try again.", "warning");
+      console.error("Print badge error:", err);
     }
   };
 
@@ -1400,6 +1534,19 @@ export default function ViewRegistrations() {
                       )}
 
                       <Box sx={{ display: "flex", gap: 0.5 }}>
+                        <Tooltip title={t.printBadge}>
+                          <IconButton
+                            color="secondary"
+                            onClick={() => handlePrintBadge(reg)}
+                            sx={{
+                              "&:hover": { transform: "scale(1.1)" },
+                              transition: "0.2s",
+                            }}
+                          >
+                            <ICONS.print />
+                          </IconButton>
+                        </Tooltip>
+
                         <Tooltip title={t.viewWalkIns}>
                           <IconButton
                             color="info"
