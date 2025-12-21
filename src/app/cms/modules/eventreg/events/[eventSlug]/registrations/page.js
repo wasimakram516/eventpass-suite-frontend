@@ -1646,7 +1646,7 @@ export default function ViewRegistrations() {
         title={t.sendBulkEmails}
         message={t.confirmBulkEmails.replace(
           "{count}",
-          unsentEmailCount.toString()
+          totalRegistrations.toString()
         )}
         confirmButtonText={t.sendBulkEmails}
         confirmButtonIcon={<ICONS.email />}
