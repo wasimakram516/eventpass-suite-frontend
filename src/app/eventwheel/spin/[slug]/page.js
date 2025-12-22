@@ -79,8 +79,40 @@ const SpinningPage = () => {
   }, [fetchParticipants, fetchSpinWheelData, router]);
 
   // ---------- Wheel geometry ----------
-  const size = 450;
+  const useWheelSize = () => {
+    const getSize = () => {
+      if (typeof window === "undefined") return 320;
+
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const base = Math.min(vw, vh);
+
+      // HARD clamp: mobile-safe → kiosk-safe
+      return Math.max(240, Math.min(base * 0.75, 520));
+    };
+
+    const [size, setSize] = useState(getSize);
+
+    useEffect(() => {
+      const onResize = () => setSize(getSize());
+      window.addEventListener("resize", onResize);
+      window.addEventListener("orientationchange", onResize);
+      return () => {
+        window.removeEventListener("resize", onResize);
+        window.removeEventListener("orientationchange", onResize);
+      };
+    }, []);
+
+    return size;
+  };
+
+  const size = useWheelSize();
   const r = size / 2;
+
+  const pointerSize = size * 0.12;
+  const trophySize = size * 0.14;
+  const spinBtnWidth = Math.max(120, Math.min(size * 0.35, 220));
+  const spinBtnHeight = Math.max(42, Math.min(size * 0.12, 70));
 
   const count = participants.length;
   const slice = count > 0 ? 360 / count : 0;
@@ -215,7 +247,8 @@ const SpinningPage = () => {
   return (
     <Box
       sx={{
-        minHeight: "100vh",
+        height: "100vh",
+        overflow: "hidden",
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
@@ -260,17 +293,16 @@ const SpinningPage = () => {
         {/* WINNER */}
         {selectedWinner && !spinning && (
           <Typography
-            variant="h1"
             sx={{
               fontWeight: 800,
               letterSpacing: 2,
               color: "white",
-              animation: "winnerReveal 700ms ease-out",
+              fontSize: `clamp(2rem, ${size * 0.08}px, 4.5rem)`,
               textShadow: `
-          0 4px 20px rgba(0,0,0,0.7),
-          0 0 35px rgba(255,215,0,0.9),
-          0 0 70px rgba(255,215,0,0.6)
-        `,
+      0 4px 20px rgba(0,0,0,0.7),
+      0 0 35px rgba(255,215,0,0.9),
+      0 0 70px rgba(255,215,0,0.6)
+    `,
             }}
           >
             {selectedWinner.name}
@@ -333,14 +365,15 @@ const SpinningPage = () => {
       </Box>
 
       {/* Pointer (top centered) */}
+
       <Box
         sx={{
           position: "absolute",
-          top: "15%",
+          top: `calc(50% - ${size / 2 + pointerSize * 0.35}px)`,
           left: "50%",
           transform: "translateX(-50%) rotate(180deg)",
-          width: "50px",
-          height: "50px",
+          width: pointerSize,
+          height: pointerSize,
           backgroundColor: "primary.main",
           clipPath: "polygon(50% 0%, 100% 100%, 0% 100%)",
           zIndex: 10,
@@ -410,7 +443,7 @@ const SpinningPage = () => {
         {/* Static center trophy overlay (NOT rotating) */}
         <ICONS.trophy
           sx={{
-            fontSize: 60,
+            fontSize: trophySize,
             color: "gold",
             position: "absolute",
             top: "50%",
@@ -427,14 +460,25 @@ const SpinningPage = () => {
         onClick={handleSpinWheel}
         disabled={spinning || participants.length === 0}
         sx={{
-          width: 150,
-          height: 50,
-          mt: 4,
+          width: spinBtnWidth,
+          height: spinBtnHeight,
+          mt: size * 0.01,
           backgroundImage: `url(${spinning ? btnSpinClicked : btnSpin})`,
-          backgroundSize: "cover",
+          backgroundSize: "contain",
+          backgroundRepeat: "no-repeat",
           backgroundPosition: "center",
-          borderRadius: 2,
-          "&:hover": { opacity: 0.8 },
+          borderRadius: spinBtnHeight / 2,
+          transition: "transform 0.15s ease, opacity 0.15s ease",
+          "&:hover": {
+            opacity: 0.9,
+            transform: "scale(1.04)",
+          },
+          "&:active": {
+            transform: "scale(0.96)",
+          },
+          "&.Mui-disabled": {
+            opacity: 0.5,
+          },
         }}
       />
     </Box>
