@@ -119,6 +119,8 @@ const ParticipantsAdminPage = () => {
   useEffect(() => {
     if (syncing && isSyncComplete) {
       setSyncing(false);
+      setSyncDialogOpen(false);
+      setSelectedScanners([]);
       fetchParticipants();
     }
   }, [syncing, isSyncComplete]);
@@ -153,8 +155,6 @@ const ParticipantsAdminPage = () => {
         scannedBy: selectedScanners,
       },
     });
-
-    setSyncDialogOpen(false);
   };
 
   const validateForm = () => {

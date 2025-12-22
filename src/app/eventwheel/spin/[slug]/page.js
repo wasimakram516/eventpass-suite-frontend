@@ -32,8 +32,8 @@ const translations = {
   },
 };
 
-const SPINS = 6; // deterministic spins
-const DURATION_MS = 4000; // must match transition duration
+const SPINS = 10; // deterministic spins
+const DURATION_MS = 10000; // must match transition duration
 const EASING = "cubic-bezier(0.17, 0.67, 0.32, 1)";
 
 const normalizeDeg = (deg) => ((deg % 360) + 360) % 360;
@@ -249,89 +249,88 @@ const SpinningPage = () => {
       {selectedWinner && <Confetti numberOfPieces={500} recycle={false} />}
 
       <Box
-  sx={{
-    mb: 8,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    textAlign: "center",
-  }}
->
-  {/* WINNER */}
-  {selectedWinner && !spinning && (
-    <Typography
-      variant="h1"
-      sx={{
-        fontWeight: 800,
-        letterSpacing: 2,
-        color: "white",
-        animation: "winnerReveal 700ms ease-out",
-        textShadow: `
+        sx={{
+          mb: 8,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          textAlign: "center",
+        }}
+      >
+        {/* WINNER */}
+        {selectedWinner && !spinning && (
+          <Typography
+            variant="h1"
+            sx={{
+              fontWeight: 800,
+              letterSpacing: 2,
+              color: "white",
+              animation: "winnerReveal 700ms ease-out",
+              textShadow: `
           0 4px 20px rgba(0,0,0,0.7),
           0 0 35px rgba(255,215,0,0.9),
           0 0 70px rgba(255,215,0,0.6)
         `,
-      }}
-    >
-      {selectedWinner.name}
-    </Typography>
-  )}
+            }}
+          >
+            {selectedWinner.name}
+          </Typography>
+        )}
 
-  {/* SPINNING */}
-  {spinning && (
-    <Typography
-      variant="h4"
-      sx={{
-        color: "white",
-        opacity: 0.85,
-        letterSpacing: 1.5,
-        animation: "pulse 1.2s ease-in-out infinite",
-      }}
-    >
-      {t.spinning}
-    </Typography>
-  )}
+        {/* SPINNING */}
+        {spinning && (
+          <Typography
+            variant="h4"
+            sx={{
+              color: "white",
+              opacity: 0.85,
+              letterSpacing: 1.5,
+              animation: "pulse 1.2s ease-in-out infinite",
+            }}
+          >
+            {t.spinning}
+          </Typography>
+        )}
 
-  {/* IDLE */}
-  {!spinning && !selectedWinner && (
-    <Typography
-      variant="h4"
-      sx={{
-        color: "white",
-        opacity: 0.8,
-        letterSpacing: 1.5,
-      }}
-    >
-      {t.spinTheWheel}
-    </Typography>
-  )}
+        {/* IDLE */}
+        {!spinning && !selectedWinner && (
+          <Typography
+            variant="h4"
+            sx={{
+              color: "white",
+              opacity: 0.8,
+              letterSpacing: 1.5,
+            }}
+          >
+            {t.spinTheWheel}
+          </Typography>
+        )}
 
-  <style jsx>{`
-    @keyframes winnerReveal {
-      0% {
-        transform: scale(0.85);
-        opacity: 0;
-        filter: blur(4px);
-      }
-      100% {
-        transform: scale(1);
-        opacity: 1;
-        filter: blur(0);
-      }
-    }
+        <style jsx>{`
+          @keyframes winnerReveal {
+            0% {
+              transform: scale(0.85);
+              opacity: 0;
+              filter: blur(4px);
+            }
+            100% {
+              transform: scale(1);
+              opacity: 1;
+              filter: blur(0);
+            }
+          }
 
-    @keyframes pulse {
-      0%,
-      100% {
-        opacity: 0.6;
-      }
-      50% {
-        opacity: 1;
-      }
-    }
-  `}</style>
-</Box>
-
+          @keyframes pulse {
+            0%,
+            100% {
+              opacity: 0.6;
+            }
+            50% {
+              opacity: 1;
+            }
+          }
+        `}</style>
+      </Box>
 
       {/* Pointer (top centered) */}
       <Box

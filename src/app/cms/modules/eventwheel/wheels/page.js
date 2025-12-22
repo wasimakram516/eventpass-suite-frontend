@@ -206,7 +206,7 @@ const Dashboard = () => {
 
   const [events, setEvents] = useState([]);
   const [selectedEventId, setSelectedEventId] = useState("");
-  
+
   const wheelType = form.type;
   const selectedBusinessObject = businesses.find(
     (business) => business.slug === selectedBusiness
@@ -281,6 +281,7 @@ const Dashboard = () => {
 
   const handleOpenModal = (wheel = null) => {
     setSelectedWheel(wheel);
+
     setForm(
       wheel
         ? {
@@ -312,6 +313,13 @@ const Dashboard = () => {
             removeBackground: false,
           }
     );
+
+    if (wheel?.type === "synced") {
+      setSelectedEventId(wheel?.eventSource?.eventId || "");
+    } else {
+      setSelectedEventId("");
+    }
+
     setLogoPreview(wheel?.logoUrl || null);
     setBackgroundPreview(wheel?.backgroundUrl || null);
     setErrors({});
