@@ -58,6 +58,8 @@ const NAME_WIDTH_PERCENT = 0.9;
 const AVAILABLE_NAME_WIDTH = A6_WIDTH * NAME_WIDTH_PERCENT;
 const COMPANY_WIDTH_PERCENT = 0.7;
 const AVAILABLE_COMPANY_WIDTH = A6_WIDTH * COMPANY_WIDTH_PERCENT;
+const TITLE_WIDTH_PERCENT = 0.75;
+const AVAILABLE_TITLE_WIDTH = A6_WIDTH * TITLE_WIDTH_PERCENT;
 
 const styles = StyleSheet.create({
   page: {
@@ -136,16 +138,13 @@ function calculateNameFontSize(name) {
   if (!name) return 32;
 
   const length = name.length;
-  const avgCharWidthRatio = 0.6;
+  const avgCharWidthRatio = 0.7;
+  const safetyMargin = 0.75;
 
-  const maxFontSize = AVAILABLE_NAME_WIDTH / (length * avgCharWidthRatio);
+  const maxFontSize = (AVAILABLE_NAME_WIDTH * safetyMargin) / (length * avgCharWidthRatio);
 
   const minFontSize = 18;
-  const maxAllowedFontSize = 42;
-
-  if (length <= 10) {
-    return Math.min(maxAllowedFontSize, Math.max(minFontSize, maxFontSize));
-  }
+  const maxAllowedFontSize = 38;
 
   return Math.min(maxAllowedFontSize, Math.max(minFontSize, maxFontSize));
 }
@@ -154,17 +153,28 @@ function calculateCompanyFontSize(company) {
   if (!company) return 24;
 
   const length = company.length;
-  const avgCharWidthRatio = 0.55;
-  const safetyMargin = 0.9;
+  const avgCharWidthRatio = 0.75;
+  const safetyMargin = 0.7;
 
   const maxFontSize = (AVAILABLE_COMPANY_WIDTH * safetyMargin) / (length * avgCharWidthRatio);
 
-  const minFontSize = 14;
+  const minFontSize = 12;
   const maxAllowedFontSize = 30;
 
-  if (length <= 10) {
-    return Math.min(maxAllowedFontSize, Math.max(minFontSize, maxFontSize));
-  }
+  return Math.min(maxAllowedFontSize, Math.max(minFontSize, maxFontSize));
+}
+
+function calculateTitleFontSize(title) {
+  if (!title) return 14;
+
+  const length = title.length;
+  const avgCharWidthRatio = 0.65;
+  const safetyMargin = 0.8;
+
+  const maxFontSize = (AVAILABLE_TITLE_WIDTH * safetyMargin) / (length * avgCharWidthRatio);
+
+  const minFontSize = 6;
+  const maxAllowedFontSize = 16;
 
   return Math.min(maxAllowedFontSize, Math.max(minFontSize, maxFontSize));
 }
@@ -194,12 +204,26 @@ export default function BadgePDF({ data, qrCodeDataUrl, single = true }) {
     fontSize: companyFontSize,
   };
 
+  const targetTitleFontSize = Math.max(companyFontSize - 1.5, 6);
+  let titleFontSize = calculateTitleFontSize(data?.title);
+  titleFontSize = Math.max(titleFontSize, targetTitleFontSize);
+  const titleStyle = {
+    fontSize: titleFontSize,
+    color: "#444",
+    marginTop: 4,
+    width: `${TITLE_WIDTH_PERCENT * 100}%`,
+    lineHeight: 1.2,
+    textAlign: "center",
+    alignSelf: "center",
+    maxWidth: `${TITLE_WIDTH_PERCENT * 100}%`,
+  };
+
   const content = (
     <Page size={[A6_WIDTH, A6_HEIGHT]} style={styles.page}>
       <View style={styles.contentArea}>
         {data.fullName && <Text style={nameStyle}>{data.fullName}</Text>}
         {data.company && <Text style={companyStyle}>{data.company}</Text>}
-        {data.title && <Text style={styles.title}>{data.title}</Text>}
+        {data.title && <Text style={titleStyle}>{data.title}</Text>}
         {data.badgeIdentifier && (
           <Text style={styles.badgeIdentifier}>{data.badgeIdentifier}</Text>
         )}
