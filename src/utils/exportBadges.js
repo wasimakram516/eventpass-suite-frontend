@@ -49,12 +49,13 @@ export async function exportAllBadges(registrations = [], eventDetails) {
             r.customFields?.["institution"] ||
             r.company ||
             "",
-          title:
-            r.customFields?.["Title"] ||
-            r.customFields?.["Position"] ||
-            r.customFields?.["position"] ||
-            r.title ||
-            "",
+
+          // title:
+          //   r.customFields?.["Title"] ||
+          //   r.customFields?.["Position"] ||
+          //   r.customFields?.["position"] ||
+          //   r.title ||
+          //   "",
           badgeIdentifier: r.badgeIdentifier || "",
 
           token: r.token,
