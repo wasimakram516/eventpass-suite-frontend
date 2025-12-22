@@ -203,222 +203,240 @@ export default function EventDetails() {
   return (
     <Box
       sx={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
         minHeight: "100vh",
         px: 2,
         py: { xs: 2, md: 4 },
-        gap: 2,
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        justifyContent: "flex-start",
         position: "relative",
+        zIndex: 0,
+        overflow: "hidden",
       }}
     >
       <Background />
 
-      {/* Logo shown outside the card */}
-      {logoUrl && (
-        <Box
-          sx={{
-            width: { xs: "100%", sm: 320, md: 500 },
-            borderRadius: 3,
-            overflow: "hidden",
-            boxShadow: 3,
-            mt: { xs: 6, sm: 0 },
-          }}
-        >
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          position: "relative",
+          width: "100%",
+          maxWidth: "lg",
+          minHeight: "calc(100vh - 80px)",
+          gap: 2,
+          zIndex: 1,
+        }}
+      >
+        {/* Logo shown outside the card */}
+        {logoUrl && (
           <Box
-            component="img"
-            src={logoUrl}
-            alt={`${name} Logo`}
             sx={{
-              display: "block",
-              width: "100%",
+              width: { xs: "100%" },
+              maxWidth: { xs: 300, sm: 400, md: 500 },
               height: "auto",
-              objectFit: "contain",
+              maxHeight: { xs: 120, sm: "none" },
+              borderRadius: 3,
+              overflow: "hidden",
+              boxShadow: 3,
             }}
-          />
-        </Box>
-      )}
-
-      {/* Main welcome card */}
-      {token ? (
-        <Box
-          sx={{
-            width: "100%",
-            maxWidth: 800,
-            textAlign: "center",
-            position: "absolute",
-            top: { xs: "35%", md: "50%" },
-            px: 2,
-          }}
-        >
-          {loadingRegistration ? (
-            <CircularProgress />
-          ) : registrationError ? (
-            <Alert severity="error">{registrationError}</Alert>
-          ) : registration ? (
+          >
             <Box
+              component="img"
+              src={logoUrl}
+              alt={`${name} Logo`}
               sx={{
-                backgroundColor: "background.paper",
-                borderRadius: 3,
-                p: 4,
-                boxShadow: 3,
+                display: "block",
+                width: "100%",
+                height: "auto",
+                maxHeight: { xs: 120, sm: "none" },
+                maxWidth: { xs: "100%", sm: "none" },
+                objectFit: "cover",
               }}
-            >
-              {/* Welcome message with name */}
-              <Typography
-                variant="h3"
-                fontWeight="bold"
+            />
+          </Box>
+        )}
+
+        {/* Main welcome card */}
+        {token ? (
+          <Box
+            sx={{
+              width: "100%",
+              maxWidth: 800,
+              textAlign: "center",
+              px: 2,
+            }}
+          >
+            {loadingRegistration ? (
+              <CircularProgress />
+            ) : registrationError ? (
+              <Alert severity="error">{registrationError}</Alert>
+            ) : registration ? (
+              <Box
                 sx={{
-                  fontSize: { xs: 32, md: 48 },
-                  color: "primary.main",
-                  mb: 2,
+                  backgroundColor: "background.paper",
+                  borderRadius: 3,
+                  p: 4,
+                  boxShadow: 3,
                 }}
               >
-                {t.welcome} {registration.fullName || "Guest"}!
-              </Typography>
-
-              {/* Event name */}
-              <Typography
-                variant="h4"
-                fontWeight="bold"
-                sx={{
-                  fontSize: { xs: 24, md: 32 },
-                  color: "text.primary",
-                  mb: 2,
-                }}
-              >
-                {name}
-              </Typography>
-
-              {/* Description */}
-              {description && (
+                {/* Welcome message with name */}
                 <Typography
-                  variant="body1"
+                  variant="h3"
+                  fontWeight="bold"
                   sx={{
-                    fontSize: { xs: 16, md: 18 },
-                    color: "text.secondary",
-                    mb: 3,
+                    fontSize: { xs: 32, md: 48 },
+                    color: "primary.main",
+                    mb: 2,
                   }}
                 >
-                  {description}
+                  {t.welcome} {registration.fullName || "Guest"}!
                 </Typography>
-              )}
 
-              {/* Venue */}
-              <Stack
-                direction="row"
-                spacing={dir === "ltr" ? 1 : 0}
-                justifyContent="center"
-                alignItems="center"
-                flexWrap="wrap"
-                sx={{ mb: 2 }}
-              >
-                <ICONS.location
-                  color="primary"
+                {/* Event name */}
+                <Typography
+                  variant="h4"
+                  fontWeight="bold"
                   sx={{
-                    ...(dir === "rtl" ? { ml: 1 } : { ml: 0 }),
+                    fontSize: { xs: 24, md: 32 },
+                    color: "text.primary",
+                    mb: 2,
                   }}
-                />
-                <Typography variant="h6" sx={{ fontSize: { xs: 16, md: 20 } }}>
-                  {venue || t.dateNotAvailable}
+                >
+                  {name}
                 </Typography>
-              </Stack>
 
-              {/* Dates */}
-              <Stack
-                direction="row"
-                spacing={dir === "ltr" ? 1 : 0}
-                justifyContent="center"
-                alignItems="center"
-                flexWrap="wrap"
-                sx={{ mb: 3 }}
-              >
-                <ICONS.event
-                  color="primary"
-                  sx={{
-                    ...(dir === "rtl" ? { ml: 1 } : { ml: 0 }),
-                  }}
-                />
-                {startDate && endDate ? (
-                  startDate === endDate ? (
-                    <Typography variant="h6" sx={{ fontSize: { xs: 16, md: 20 } }}>
-                      {formatDateWithShortMonth(
-                        startDate,
-                        isArabic ? "ar-SA" : "en-GB"
-                      )}
-                    </Typography>
-                  ) : (
-                    <Typography variant="h6" sx={{ fontSize: { xs: 16, md: 20 } }}>
-                      {`${formatDateWithShortMonth(
-                        startDate,
-                        isArabic ? "ar-SA" : "en-GB"
-                      )} ${t.to} ${formatDateWithShortMonth(
-                        endDate,
-                        isArabic ? "ar-SA" : "en-GB"
-                      )}`}
-                    </Typography>
-                  )
-                ) : (
-                  <Typography variant="h6" sx={{ fontSize: { xs: 16, md: 20 } }}>
-                    {t.dateNotAvailable}
-                  </Typography>
-                )}
-              </Stack>
-
-              {/* Confirmation status */}
-              {confirmed ? (
-                <Alert severity="success" sx={{ mb: 3 }}>
-                  {justConfirmed ? t.presenceConfirmed : t.alreadyConfirmed}
-                </Alert>
-              ) : (
-                <>
-                  {registrationError && (
-                    <Alert severity="error" sx={{ mb: 3 }}>
-                      {registrationError}
-                    </Alert>
-                  )}
-                  <Button
-                    variant="contained"
-                    size="large"
-                    onClick={handleConfirmPresenceClick}
-                    disabled={confirming}
-                    startIcon={<ICONS.checkCircle />}
+                {/* Description */}
+                {description && (
+                  <Typography
+                    variant="body1"
                     sx={{
                       fontSize: { xs: 16, md: 18 },
-                      p: "12px 32px",
-                      fontWeight: "bold",
-                      borderRadius: 2,
-                      textTransform: "none",
-                      ...getStartIconSpacing(dir),
+                      color: "text.secondary",
+                      mb: 3,
                     }}
                   >
-                    {t.confirmPresence}
-                  </Button>
-                </>
-              )}
-            </Box>
-          ) : null}
-        </Box>
-      ) : (
-        // Regular event view (no token)
-        <EventWelcomeCard
-          t={t}
-          name={name}
-          description={description}
-          venue={venue}
-          startDate={startDate}
-          endDate={endDate}
-          router={router}
-          dir={dir}
-          actionLabel={t.confirmPresence}
-          actionIcon={<ICONS.checkCircle />}
-          actionRoute={`/checkin/event/${eventSlug}`}
-          hideActionButton={true}
-          isArabic={isArabic}
-        />
-      )}
+                    {description}
+                  </Typography>
+                )}
+
+                {/* Venue */}
+                <Stack
+                  direction="row"
+                  spacing={dir === "ltr" ? 1 : 0}
+                  justifyContent="center"
+                  alignItems="center"
+                  flexWrap="wrap"
+                  sx={{ mb: 2 }}
+                >
+                  <ICONS.location
+                    color="primary"
+                    sx={{
+                      ...(dir === "rtl" ? { ml: 1 } : { ml: 0 }),
+                    }}
+                  />
+                  <Typography variant="h6" sx={{ fontSize: { xs: 16, md: 20 } }}>
+                    {venue || t.dateNotAvailable}
+                  </Typography>
+                </Stack>
+
+                {/* Dates */}
+                <Stack
+                  direction="row"
+                  spacing={dir === "ltr" ? 1 : 0}
+                  justifyContent="center"
+                  alignItems="center"
+                  flexWrap="wrap"
+                  sx={{ mb: 3 }}
+                >
+                  <ICONS.event
+                    color="primary"
+                    sx={{
+                      ...(dir === "rtl" ? { ml: 1 } : { ml: 0 }),
+                    }}
+                  />
+                  {startDate && endDate ? (
+                    startDate === endDate ? (
+                      <Typography variant="h6" sx={{ fontSize: { xs: 16, md: 20 } }}>
+                        {formatDateWithShortMonth(
+                          startDate,
+                          isArabic ? "ar-SA" : "en-GB"
+                        )}
+                      </Typography>
+                    ) : (
+                      <Typography variant="h6" sx={{ fontSize: { xs: 16, md: 20 } }}>
+                        {`${formatDateWithShortMonth(
+                          startDate,
+                          isArabic ? "ar-SA" : "en-GB"
+                        )} ${t.to} ${formatDateWithShortMonth(
+                          endDate,
+                          isArabic ? "ar-SA" : "en-GB"
+                        )}`}
+                      </Typography>
+                    )
+                  ) : (
+                    <Typography variant="h6" sx={{ fontSize: { xs: 16, md: 20 } }}>
+                      {t.dateNotAvailable}
+                    </Typography>
+                  )}
+                </Stack>
+
+                {/* Confirmation status */}
+                {confirmed ? (
+                  <Alert severity="success" sx={{ mb: 3 }}>
+                    {justConfirmed ? t.presenceConfirmed : t.alreadyConfirmed}
+                  </Alert>
+                ) : (
+                  <>
+                    {registrationError && (
+                      <Alert severity="error" sx={{ mb: 3 }}>
+                        {registrationError}
+                      </Alert>
+                    )}
+                    <Button
+                      variant="contained"
+                      size="large"
+                      onClick={handleConfirmPresenceClick}
+                      disabled={confirming}
+                      startIcon={<ICONS.checkCircle />}
+                      sx={{
+                        fontSize: { xs: 16, md: 18 },
+                        p: "12px 32px",
+                        fontWeight: "bold",
+                        borderRadius: 2,
+                        textTransform: "none",
+                        ...getStartIconSpacing(dir),
+                      }}
+                    >
+                      {t.confirmPresence}
+                    </Button>
+                  </>
+                )}
+              </Box>
+            ) : null}
+          </Box>
+        ) : (
+          // Regular event view (no token)
+          <EventWelcomeCard
+            t={t}
+            name={name}
+            description={description}
+            venue={venue}
+            startDate={startDate}
+            endDate={endDate}
+            router={router}
+            dir={dir}
+            actionLabel={t.confirmPresence}
+            actionIcon={<ICONS.checkCircle />}
+            actionRoute={`/checkin/event/${eventSlug}`}
+            hideActionButton={true}
+            isArabic={isArabic}
+          />
+        )}
+      </Box>
 
       <LanguageSelector top={20} right={20} />
 

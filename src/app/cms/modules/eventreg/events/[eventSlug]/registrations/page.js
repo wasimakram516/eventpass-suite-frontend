@@ -780,12 +780,25 @@ export default function ViewRegistrations() {
         registration.company ||
         "";
 
-      const title =
-        registration.customFields?.["Title"] ||
-        registration.customFields?.["Position"] ||
-        registration.customFields?.["position"] ||
-        registration.title ||
-        "";
+      const customFields = registration.customFields || {};
+      const pickTitle = (fields) => {
+        if (!fields || typeof fields !== "object") return null;
+        const normalize = (str = "") => String(str).toLowerCase().replace(/[^a-z0-9]/g, "");
+        const target = "title";
+        const candidates = new Set([
+          target,
+          normalize("designation"),
+          normalize("job title"),
+          normalize("position"),
+          normalize("role"),
+        ]);
+        for (const [key, value] of Object.entries(fields)) {
+          const nk = normalize(key);
+          if (candidates.has(nk)) return value;
+        }
+        return null;
+      };
+      const title = pickTitle(customFields) || registration.title || "";
 
       const badgeData = {
         fullName,
