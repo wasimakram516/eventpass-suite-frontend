@@ -361,12 +361,29 @@ export default function ViewRegistrations() {
         setTotalRegistrations((prev) => prev + 1);
     }, []);
 
+    const handlePresenceConfirmed = useCallback((data) => {
+        const reg = data?.registration;
+        if (!reg) return;
+        setAllRegistrations((prev) =>
+            prev.map((r) => {
+                if (r._id === reg._id) {
+                    return {
+                        ...r,
+                        approvalStatus: "confirmed",
+                    };
+                }
+                return r;
+            })
+        );
+    }, []);
+
     useCheckInSocket({
         eventId: eventDetails?._id,
         onLoadingProgress: handleLoadingProgress,
         onUploadProgress: handleUploadProgress,
         onEmailProgress: () => { },
         onNewRegistration: handleNewRegistration,
+        onPresenceConfirmed: handlePresenceConfirmed,
     });
 
     const filteredRegistrations = React.useMemo(() => {
