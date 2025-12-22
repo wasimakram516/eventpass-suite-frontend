@@ -21,11 +21,14 @@ import {
   DialogContent,
   DialogActions,
   CircularProgress,
+  MenuItem,
 } from "@mui/material";
 import {
   addParticipant,
   deleteParticipant,
   getParticipantsBySlug,
+  getSpinWheelSyncFilters,
+  syncSpinWheelParticipants,
 } from "@/services/eventwheel/spinWheelParticipantService";
 import { getSpinWheelBySlug } from "@/services/eventwheel/spinWheelService";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
@@ -35,6 +38,7 @@ import useI18nLayout from "@/hooks/useI18nLayout";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import LoadingState from "@/components/LoadingState";
 import NoDataAvailable from "@/components/NoDataAvailable";
+import useSpinWheelSocket from "@/hooks/modules/eventwheel/useSpinWheelSocket";
 
 const translations = {
   en: {
@@ -47,8 +51,10 @@ const translations = {
     company: "Company",
     deleteParticipant: "Delete Participant",
     deleteTitle: "Delete Participant?",
-    deleteMessage: "Are you sure you want to move this item to the Recycle Bin?",
+    deleteMessage:
+      "Are you sure you want to move this item to the Recycle Bin?",
     delete: "Delete",
+    syncParticipants: "Sync Participants",
   },
   ar: {
     participants: "المشاركون",
@@ -62,11 +68,13 @@ const translations = {
     deleteTitle: "حذف المشارك؟",
     deleteMessage: "هل أنت متأكد أنك تريد نقل هذا العنصر إلى سلة المحذوفات؟",
     delete: "حذف",
+    syncParticipants: "مزامنة المشاركين",
   },
 };
 
 const ParticipantsAdminPage = () => {
   const router = useRouter();
+  const { t, dir } = useI18nLayout(translations);
   const params = useParams();
   const slug = params?.wheelSlug;
   const [participants, setParticipants] = useState([]);
@@ -77,13 +85,24 @@ const ParticipantsAdminPage = () => {
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [selectedParticipant, setSelectedParticipant] = useState(null);
-  const { t, dir } = useI18nLayout(translations);
+  const [syncing, setSyncing] = useState(false);
+  const [syncDialogOpen, setSyncDialogOpen] = useState(false);
+  const [availableScanners, setAvailableScanners] = useState([]);
+  const [selectedScanners, setSelectedScanners] = useState([]);
+
+  const { syncProgress } = useSpinWheelSocket({
+    spinWheelId: event?._id,
+  });
+
+  const isSyncComplete =
+    syncProgress.total > 0 && syncProgress.synced >= syncProgress.total;
 
   const fetchData = useCallback(async () => {
     if (!slug) return;
     const eventData = await getSpinWheelBySlug(slug);
     setEvent(eventData);
   }, [slug]);
+
   const fetchParticipants = useCallback(async () => {
     if (!slug) return;
     const participantsData = await getParticipantsBySlug(slug);
@@ -97,14 +116,45 @@ const ParticipantsAdminPage = () => {
     }
   }, [slug, fetchData, fetchParticipants]);
 
+  useEffect(() => {
+    if (syncing && isSyncComplete) {
+      setSyncing(false);
+      fetchParticipants();
+    }
+  }, [syncing, isSyncComplete]);
+
   const handleOpenModal = () => {
     setForm({ name: "", phone: "", company: "" });
     setErrors({});
     setOpenModal(true);
   };
+
   const handleCloseModal = () => {
     setOpenModal(false);
     setErrors({});
+  };
+
+  const handleOpenSyncModal = async () => {
+    setSyncDialogOpen(true);
+
+    try {
+      const res = await getSpinWheelSyncFilters(event._id);
+      setAvailableScanners(res.scannedBy || []);
+    } catch {
+      setAvailableScanners([]);
+    }
+  };
+
+  const handleSync = async () => {
+    setSyncing(true);
+
+    await syncSpinWheelParticipants(event._id, {
+      filters: {
+        scannedBy: selectedScanners,
+      },
+    });
+
+    setSyncDialogOpen(false);
   };
 
   const validateForm = () => {
@@ -168,23 +218,28 @@ const ParticipantsAdminPage = () => {
               {t.manageParticipants} {event.title}
             </Typography>
           </Box>
-          <Stack
-            direction={{ xs: "column", sm: "row" }}
-            spacing={2}
-            sx={{
-              flexShrink: 0,
-              alignItems: "stretch",
-              width: { xs: "100%", sm: "auto" },
-            }}
-          >
-            <Button
-              variant="contained"
-              startIcon={<ICONS.add />}
-              onClick={handleOpenModal}
-              sx={getStartIconSpacing(dir)}
-            >
-              {t.addParticipant}
-            </Button>
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+            {event.type === "admin" && (
+              <Button
+                variant="contained"
+                startIcon={<ICONS.add />}
+                onClick={handleOpenModal}
+                sx={getStartIconSpacing(dir)}
+              >
+                {t.addParticipant}
+              </Button>
+            )}
+
+            {event.type === "synced" && (
+              <Button
+                variant="contained"
+                color="info"
+                startIcon={<ICONS.sync />}
+                onClick={handleOpenSyncModal}
+              >
+                {t.syncParticipants}
+              </Button>
+            )}
           </Stack>
         </Box>
 
@@ -213,12 +268,16 @@ const ParticipantsAdminPage = () => {
                   >
                     <CardHeader title={participant.name} sx={{ pb: 0 }} />
                     <CardContent sx={{ flexGrow: 1 }}>
-                      <Typography variant="body2" color="text.secondary">
-                        <strong>{t.phone}:</strong> {participant.phone}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        <strong>{t.company}:</strong> {participant.company}
-                      </Typography>
+                      {participant.phone && (
+                        <Typography variant="body2" color="text.secondary">
+                          <strong>{t.phone}:</strong> {participant.phone}
+                        </Typography>
+                      )}
+                      {participant.company && (
+                        <Typography variant="body2" color="text.secondary">
+                          <strong>{t.company}:</strong> {participant.company}
+                        </Typography>
+                      )}
                     </CardContent>
                     <Divider />
                     <CardActions sx={{ justifyContent: "flex-end", p: 1.5 }}>
@@ -314,6 +373,49 @@ const ParticipantsAdminPage = () => {
           confirmButtonText={t.delete}
           confirmButtonIcon={<ICONS.delete />}
         />
+
+        <Dialog open={syncDialogOpen} onClose={() => setSyncDialogOpen(false)}>
+          <DialogTitle>Sync Participants</DialogTitle>
+          <DialogContent>
+            <TextField
+              select
+              label="Scanned By"
+              fullWidth
+              SelectProps={{ multiple: true }}
+              value={selectedScanners}
+              onChange={(e) => setSelectedScanners(e.target.value)}
+            >
+              {availableScanners.map((user) => (
+                <MenuItem key={user._id} value={user._id}>
+                  {user.fullName || user.email}
+                </MenuItem>
+              ))}
+            </TextField>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setSyncDialogOpen(false)}>Cancel</Button>
+            <Button
+              variant="contained"
+              onClick={handleSync}
+              disabled={syncing}
+              startIcon={syncing && <CircularProgress size={18} />}
+              sx={{
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 0.5,
+                minWidth: 200,
+              }}
+            >
+              <Typography variant="button">{t.syncParticipants}</Typography>
+
+              {syncing && (
+                <Typography variant="caption">
+                  Synced {syncProgress.synced} / {syncProgress.total}
+                </Typography>
+              )}
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Container>
     </Box>
   );

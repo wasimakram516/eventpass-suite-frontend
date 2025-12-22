@@ -47,6 +47,7 @@ import { uploadMediaFiles } from "@/utils/mediaUpload";
 import MediaUploadProgress from "@/components/MediaUploadProgress";
 import { deleteMedia } from "@/services/deleteMediaService";
 import { useMessage } from "@/contexts/MessageContext";
+import { getEventsByBusinessId } from "@/services/eventreg/eventService";
 const translations = {
   en: {
     spinWheelManagement: "Spin Wheel Management",
@@ -78,9 +79,14 @@ const translations = {
     cancel: "Cancel",
     save: "Save",
     deleteWheelTitle: "Delete Spin Wheel?",
-    deleteWheelMessage: "Are you sure you want to move this item to the Recycle Bin?",
-    collectInfoLabel: "Collect Info (Admin adds names)",
-    enterNamesLabel: "Enter Names (Participants enter their names)",
+    deleteWheelMessage:
+      "Are you sure you want to move this item to the Recycle Bin?",
+    adminLabel: "Admin (Admin adds names)",
+    adminChipLabel: "Admin",
+    onSpotLabel: "On-Spot (Participants enter their names)",
+    onSpotChipLabel: "On-Spot",
+    syncedLabel: "Sync Registrations (Sync with event registrations)",
+    syncedChipLabel: "Synced",
     shareSpinWheelTitle: "Share Spin Wheel",
   },
   ar: {
@@ -112,9 +118,14 @@ const translations = {
     cancel: "إلغاء",
     save: "حفظ",
     deleteWheelTitle: "حذف عجلة الدوران؟",
-    deleteWheelMessage: "هل أنت متأكد أنك تريد نقل هذا العنصر إلى سلة المحذوفات؟",
-    collectInfoLabel: "جمع المعلومات (المشرف يضيف الأسماء)",
-    enterNamesLabel: "إدخال الأسماء (المشاركون يدخلون أسماءهم)",
+    deleteWheelMessage:
+      "هل أنت متأكد أنك تريد نقل هذا العنصر إلى سلة المحذوفات؟",
+    adminLabel: "إدارة (المشرف يضيف الأسماء)",
+    adminChipLabel: "إدارة",
+    onSpotLabel: "على الفور (المشاركون يدخلون أسماءهم)",
+    onSpotChipLabel: "على الفور",
+    syncedLabel: "مزامنة التسجيلات (مزامنة مع تسجيلات الحدث)",
+    syncedChipLabel: "متزامن",
     shareSpinWheelTitle: "مشاركة عجلة الدوران",
   },
 };
@@ -135,17 +146,39 @@ const Dashboard = () => {
   const [shareTitle, setShareTitle] = useState("");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const eventTypes = [
-    { label: t.collectInfoLabel, value: "collect_info" },
+    { label: t.adminLabel, value: "admin" },
     {
-      label: t.enterNamesLabel,
-      value: "enter_names",
+      label: t.onSpotLabel,
+      value: "onspot",
+    },
+    {
+      label: t.syncedLabel,
+      value: "synced",
     },
   ];
+  const typeMap = {
+    admin: {
+      chipText: t.adminChipLabel,
+      label: t.adminLabel,
+      color: "primary",
+    },
+    onspot: {
+      chipText: t.onSpotChipLabel,
+      label: t.onSpotLabel,
+      color: "secondary",
+    },
+    synced: {
+      chipText: t.syncedChipLabel,
+      label: t.syncedLabel,
+      color: "info",
+    },
+  };
+
   const [form, setForm] = useState({
     business: "",
     title: "",
     slug: "",
-    type: "collect_info",
+    type: "admin",
     logo: null,
     background: null,
     logoPreview: "",
@@ -170,6 +203,32 @@ const Dashboard = () => {
   });
   const logoButtonRef = useRef(null);
   const backgroundButtonRef = useRef(null);
+
+  const [events, setEvents] = useState([]);
+  const [selectedEventId, setSelectedEventId] = useState("");
+  
+  const wheelType = form.type;
+  const selectedBusinessObject = businesses.find(
+    (business) => business.slug === selectedBusiness
+  );
+
+  const selectedBusinessId = selectedBusinessObject?._id || "";
+
+  useEffect(() => {
+    if (wheelType !== "synced" || !selectedBusinessId) {
+      setEvents([]);
+      setSelectedEventId("");
+      return;
+    }
+
+    getEventsByBusinessId(selectedBusinessId)
+      .then((res) => {
+        setEvents(res?.events || []);
+      })
+      .catch(() => {
+        setEvents([]);
+      });
+  }, [wheelType, selectedBusinessId]);
 
   useEffect(() => {
     const initializeBusinesses = async () => {
@@ -202,11 +261,11 @@ const Dashboard = () => {
       const wheelList = await getAllSpinWheels();
       const filteredWheels = businessSlug
         ? wheelList.filter(
-          (wheel) =>
-            wheel.business?.slug === businessSlug ||
-            wheel.business?._id ===
-            businesses.find((b) => b.slug === businessSlug)?._id
-        )
+            (wheel) =>
+              wheel.business?.slug === businessSlug ||
+              wheel.business?._id ===
+                businesses.find((b) => b.slug === businessSlug)?._id
+          )
         : wheelList;
 
       setSpinWheels(filteredWheels);
@@ -221,41 +280,37 @@ const Dashboard = () => {
   };
 
   const handleOpenModal = (wheel = null) => {
-    const selectedBusinessObject = businesses.find(
-      (business) => business.slug === selectedBusiness
-    );
-
     setSelectedWheel(wheel);
     setForm(
       wheel
         ? {
-          business:
-            wheel.business?._id ||
-            wheel.business ||
-            selectedBusinessObject?._id ||
-            "",
-          title: wheel.title,
-          slug: wheel.slug,
-          type: wheel.type,
-          logo: null,
-          background: null,
-          logoPreview: wheel.logoUrl || "",
-          backgroundPreview: wheel.backgroundUrl || "",
-          removeLogo: false,
-          removeBackground: false,
-        }
+            business:
+              wheel.business?._id ||
+              wheel.business ||
+              selectedBusinessObject?._id ||
+              "",
+            title: wheel.title,
+            slug: wheel.slug,
+            type: wheel.type,
+            logo: null,
+            background: null,
+            logoPreview: wheel.logoUrl || "",
+            backgroundPreview: wheel.backgroundUrl || "",
+            removeLogo: false,
+            removeBackground: false,
+          }
         : {
-          business: selectedBusinessObject?._id || "",
-          title: "",
-          slug: "",
-          type: "collect_info",
-          logo: null,
-          background: null,
-          logoPreview: "",
-          backgroundPreview: "",
-          removeLogo: false,
-          removeBackground: false,
-        }
+            business: selectedBusinessObject?._id || "",
+            title: "",
+            slug: "",
+            type: "admin",
+            logo: null,
+            background: null,
+            logoPreview: "",
+            backgroundPreview: "",
+            removeLogo: false,
+            removeBackground: false,
+          }
     );
     setLogoPreview(wheel?.logoUrl || null);
     setBackgroundPreview(wheel?.backgroundUrl || null);
@@ -380,10 +435,6 @@ const Dashboard = () => {
 
   const confirmDeleteMedia = async () => {
     try {
-      const selectedBusinessObject = businesses.find(
-        (business) => business.slug === selectedBusiness
-      );
-
       if (!selectedBusinessObject?.slug) {
         showMessage("Business information is missing", "error");
         return;
@@ -435,10 +486,6 @@ const Dashboard = () => {
   const handleSaveEvent = async () => {
     if (!validateForm()) return;
 
-    const selectedBusinessObject = businesses.find(
-      (business) => business.slug === selectedBusiness
-    );
-
     if (!selectedBusinessObject?.slug) {
       showMessage("Business information is missing", "error");
       return;
@@ -448,8 +495,16 @@ const Dashboard = () => {
 
     try {
       const filesToUpload = [];
-      let logoUrl = form.removeLogo ? null : (form.logo ? null : (form.logoPreview || null));
-      let backgroundUrl = form.removeBackground ? null : (form.background ? null : (form.backgroundPreview || null));
+      let logoUrl = form.removeLogo
+        ? null
+        : form.logo
+        ? null
+        : form.logoPreview || null;
+      let backgroundUrl = form.removeBackground
+        ? null
+        : form.background
+        ? null
+        : form.backgroundPreview || null;
 
       if (form.logo && !form.removeLogo) {
         filesToUpload.push({
@@ -501,7 +556,6 @@ const Dashboard = () => {
 
         setShowUploadProgress(false);
 
-
         filesToUpload.forEach((item, index) => {
           if (urls && urls[index]) {
             if (item.type === "logo") {
@@ -522,6 +576,13 @@ const Dashboard = () => {
         logoUrl: logoUrl || null,
         backgroundUrl: backgroundUrl || null,
       };
+
+      if (wheelType === "synced") {
+        payload.eventSource = {
+          enabled: true,
+          eventId: selectedEventId,
+        };
+      }
 
       if (selectedWheel) {
         await updateSpinWheel(selectedWheel._id, payload);
@@ -560,12 +621,13 @@ const Dashboard = () => {
 
   const handleOpenShareModal = (slug, type) => {
     const url =
-      type === "collect_info"
+      type === "admin" || type === "synced"
         ? `${window.location.origin}/eventwheel/spin/${slug}`
         : `${window.location.origin}/eventwheel/wheels/${slug}`;
     setShareUrl(url);
     setShareTitle(
-      `${t.shareSpinWheelTitle}: ${spinWheels.find((w) => w.slug === slug)?.title || slug
+      `${t.shareSpinWheelTitle}: ${
+        spinWheels.find((w) => w.slug === slug)?.title || slug
       }`
     );
 
@@ -578,10 +640,6 @@ const Dashboard = () => {
     setOpenModal(false);
     setErrors({});
   };
-
-  const selectedBusinessObject = businesses.find(
-    (business) => business.slug === selectedBusiness
-  );
 
   return (
     <Box dir={dir} sx={{ display: "flex", minHeight: "100vh" }}>
@@ -669,136 +727,137 @@ const Dashboard = () => {
           <NoDataAvailable />
         ) : (
           <Grid container spacing={3} justifyContent={"center"}>
-            {spinWheels.map((wheel) => (
-              <Grid item xs={12} sm={6} md={4} lg={3} key={wheel._id}>
-                <Card
-                  elevation={3}
-                  sx={{
-                    position: "relative",
-                    height: "100%",
-                    minWidth: "250px",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "space-between",
-                    borderRadius: 2,
-                    boxShadow: "0 2px 10px rgba(0,0,0,0.06)",
-                    transition: "transform 0.2s, box-shadow 0.2s",
-                  }}
-                >
-                  <Chip
-                    label={
-                      wheel.type === "collect_info"
-                        ? t.collectInfo
-                        : t.enterNames
-                    }
-                    color={
-                      wheel.type === "collect_info" ? "primary" : "secondary"
-                    }
-                    size="small"
+            {spinWheels.map((wheel) => {
+              const typeConfig = typeMap[wheel.type] || {};
+              return (
+                <Grid item xs={12} sm={6} md={4} lg={3} key={wheel._id}>
+                  <Card
+                    elevation={3}
                     sx={{
-                      position: "absolute",
-                      top: 12,
-                      right: 12,
-                      fontWeight: 500,
-                      fontSize: "0.75rem",
-                      textTransform: "capitalize",
-                      zIndex: 2,
+                      position: "relative",
+                      height: "100%",
+                      minWidth: "250px",
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "space-between",
+                      borderRadius: 2,
+                      boxShadow: "0 2px 10px rgba(0,0,0,0.06)",
+                      transition: "transform 0.2s, box-shadow 0.2s",
                     }}
-                  />
+                  >
+                    <Chip
+                      label={typeConfig.chipText}
+                      color={typeConfig.color}
+                      size="small"
+                      sx={{
+                        position: "absolute",
+                        top: 12,
+                        right: 12,
+                        fontWeight: 500,
+                        fontSize: "0.75rem",
+                        textTransform: "capitalize",
+                        zIndex: 2,
+                      }}
+                    />
 
-                  <CardContent sx={{ flexGrow: 1, pt: 4 }}>
-                    <Typography variant="h6" fontWeight="bold" gutterBottom>
-                      {wheel.title}
-                    </Typography>
+                    <CardContent sx={{ flexGrow: 1, pt: 4 }}>
+                      <Typography variant="h6" fontWeight="bold" gutterBottom>
+                        {wheel.title}
+                      </Typography>
 
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ mb: 2, wordBreak: "break-word" }}
-                    >
-                      <strong>{t.slug}:</strong> {wheel.slug}
-                    </Typography>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ mb: 2, wordBreak: "break-word" }}
+                      >
+                        <strong>{t.slug}:</strong> {wheel.slug}
+                      </Typography>
 
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ mb: 2, wordBreak: "break-word" }}
-                    >
-                      <strong>{t.business}:</strong>{" "}
-                      {wheel.business?.name || t.noBusiness}
-                    </Typography>
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ mb: 2, wordBreak: "break-word" }}
+                      >
+                        <strong>{t.business}:</strong>{" "}
+                        {wheel.business?.name || t.noBusiness}
+                      </Typography>
 
-                    <Typography variant="caption" color="text.secondary">
-                      {t.created}:{" "}
-                      {(() => {
-                        try {
-                          if (!wheel.createdAt) return t.notAvailable;
-                          const testDate = new Date(wheel.createdAt);
-                          if (isNaN(testDate.getTime())) return t.invalidDate;
-                          return new Date(wheel.createdAt).toLocaleDateString();
-                        } catch (error) {
-                          console.error(
-                            "Error formatting date:",
-                            error,
-                            wheel.createdAt
-                          );
-                          return t.invalidDate;
-                        }
-                      })()}
-                    </Typography>
-                  </CardContent>
-                  <Divider />
-                  <CardActions sx={{ justifyContent: "space-between", p: 1.5 }}>
-                    <Box>
-                      <Tooltip title={t.shareSpinWheel}>
-                        <IconButton
-                          size="small"
-                          onClick={() =>
-                            handleOpenShareModal(wheel.slug, wheel.type)
+                      <Typography variant="caption" color="text.secondary">
+                        {t.created}:{" "}
+                        {(() => {
+                          try {
+                            if (!wheel.createdAt) return t.notAvailable;
+                            const testDate = new Date(wheel.createdAt);
+                            if (isNaN(testDate.getTime())) return t.invalidDate;
+                            return new Date(
+                              wheel.createdAt
+                            ).toLocaleDateString();
+                          } catch (error) {
+                            console.error(
+                              "Error formatting date:",
+                              error,
+                              wheel.createdAt
+                            );
+                            return t.invalidDate;
                           }
-                          aria-label="Share"
-                        >
-                          <ICONS.share fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      {wheel.type === "collect_info" && (
-                        <Tooltip title={t.manageParticipants}>
+                        })()}
+                      </Typography>
+                    </CardContent>
+                    <Divider />
+                    <CardActions
+                      sx={{ justifyContent: "space-between", p: 1.5 }}
+                    >
+                      <Box>
+                        <Tooltip title={t.shareSpinWheel}>
                           <IconButton
                             size="small"
                             onClick={() =>
-                              handleNavigateToParticipants(wheel.slug)
+                              handleOpenShareModal(wheel.slug, wheel.type)
                             }
-                            aria-label="Manage Participants"
+                            aria-label="Share"
                           >
-                            <ICONS.people fontSize="small" color="primary" />
+                            <ICONS.share fontSize="small" />
                           </IconButton>
                         </Tooltip>
-                      )}
-                    </Box>
-                    <Box>
-                      <Tooltip title={t.editSpinWheel}>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleOpenModal(wheel)}
-                          aria-label={t.edit}
-                        >
-                          <ICONS.edit fontSize="small" color="primary" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title={t.deleteSpinWheel}>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleDeleteEvent(wheel)}
-                          aria-label={t.delete}
-                        >
-                          <ICONS.delete fontSize="small" color="error" />
-                        </IconButton>
-                      </Tooltip>
-                    </Box>
-                  </CardActions>
-                </Card>
-              </Grid>
-            ))}
+                        {["admin", "onspot", "synced"].includes(wheel.type) && (
+                          <Tooltip title={t.manageParticipants}>
+                            <IconButton
+                              size="small"
+                              onClick={() =>
+                                handleNavigateToParticipants(wheel.slug)
+                              }
+                              aria-label="Manage Participants"
+                            >
+                              <ICONS.people fontSize="small" color="primary" />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                      </Box>
+                      <Box>
+                        <Tooltip title={t.editSpinWheel}>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleOpenModal(wheel)}
+                            aria-label={t.edit}
+                          >
+                            <ICONS.edit fontSize="small" color="primary" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title={t.deleteSpinWheel}>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleDeleteEvent(wheel)}
+                            aria-label={t.delete}
+                          >
+                            <ICONS.delete fontSize="small" color="error" />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
+                    </CardActions>
+                  </Card>
+                </Grid>
+              );
+            })}
           </Grid>
         )}
 
@@ -861,6 +920,24 @@ const Dashboard = () => {
               ))}
             </TextField>
 
+            {wheelType === "synced" && (
+              <TextField
+                select
+                fullWidth
+                label={t.selectEvent}
+                value={selectedEventId}
+                onChange={(e) => setSelectedEventId(e.target.value)}
+                required
+              >
+                {Array.isArray(events) &&
+                  events.map((event) => (
+                    <MenuItem key={event._id} value={event._id}>
+                      {event.name}
+                    </MenuItem>
+                  ))}
+              </TextField>
+            )}
+
             {/* Logo Upload */}
             <Box
               sx={{
@@ -898,12 +975,20 @@ const Dashboard = () => {
                     {selectedWheel && !form.logo ? "Current Image" : "Preview"}
                   </Typography>
 
-                  <Box sx={{ position: "relative", display: "inline-block", width: buttonWidths.logo || "auto" }}>
+                  <Box
+                    sx={{
+                      position: "relative",
+                      display: "inline-block",
+                      width: buttonWidths.logo || "auto",
+                    }}
+                  >
                     <img
                       src={form.logoPreview}
                       alt="Logo preview"
                       style={{
-                        width: buttonWidths.logo ? `${buttonWidths.logo}px` : "auto",
+                        width: buttonWidths.logo
+                          ? `${buttonWidths.logo}px`
+                          : "auto",
                         maxHeight: 100,
                         height: "auto",
                         borderRadius: 6,
@@ -914,7 +999,8 @@ const Dashboard = () => {
                     <IconButton
                       size="small"
                       onClick={() => {
-                        const fileUrl = selectedWheel?.logoUrl || form.logoPreview;
+                        const fileUrl =
+                          selectedWheel?.logoUrl || form.logoPreview;
                         handleDeleteMedia("logo", fileUrl);
                       }}
                       sx={{
@@ -967,15 +1053,25 @@ const Dashboard = () => {
               {form.backgroundPreview && !form.removeBackground && (
                 <Box sx={{ mt: 1.5 }}>
                   <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
-                    {selectedWheel && !form.background ? "Current Image" : "Preview"}
+                    {selectedWheel && !form.background
+                      ? "Current Image"
+                      : "Preview"}
                   </Typography>
 
-                  <Box sx={{ position: "relative", display: "inline-block", width: buttonWidths.background || "auto" }}>
+                  <Box
+                    sx={{
+                      position: "relative",
+                      display: "inline-block",
+                      width: buttonWidths.background || "auto",
+                    }}
+                  >
                     <img
                       src={form.backgroundPreview}
                       alt="Background preview"
                       style={{
-                        width: buttonWidths.background ? `${buttonWidths.background}px` : "auto",
+                        width: buttonWidths.background
+                          ? `${buttonWidths.background}px`
+                          : "auto",
                         maxHeight: 100,
                         height: "auto",
                         borderRadius: 6,
@@ -986,7 +1082,9 @@ const Dashboard = () => {
                     <IconButton
                       size="small"
                       onClick={() => {
-                        const fileUrl = selectedWheel?.backgroundUrl || form.backgroundPreview;
+                        const fileUrl =
+                          selectedWheel?.backgroundUrl ||
+                          form.backgroundPreview;
                         handleDeleteMedia("background", fileUrl);
                       }}
                       sx={{
@@ -1033,7 +1131,9 @@ const Dashboard = () => {
         {/* Media Delete Confirmation */}
         <ConfirmationDialog
           open={deleteConfirm.open}
-          onClose={() => setDeleteConfirm({ open: false, type: null, fileUrl: null })}
+          onClose={() =>
+            setDeleteConfirm({ open: false, type: null, fileUrl: null })
+          }
           onConfirm={confirmDeleteMedia}
           title="Delete Media?"
           message="Are you sure you want to delete this media? This action cannot be undone."

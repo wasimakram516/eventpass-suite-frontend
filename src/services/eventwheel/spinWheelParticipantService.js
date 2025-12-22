@@ -1,58 +1,91 @@
 import api from "@/services/api";
 import withApiHandler from "@/utils/withApiHandler";
 
-// Add participant
-export const addParticipant = withApiHandler(async (payload) => {
-  console.log("Inside Participant Service:")
-  const { data } = await api.post("/eventwheel/participants", payload);
-  console.log("After Participant Service:");
-  return data;
-}, { showSuccess: true });
+/* =========================
+   CREATE / MUTATE
+========================= */
 
-// Add/update participants in bulk
-export const addOrUpdateParticipantsInBulk = withApiHandler(async (payload) => {
-  const { data } = await api.post("/eventwheel/participants/bulk", payload);
-  return data;
-}, { showSuccess: true });
+// Add participant (admin wheels only)
+export const addParticipant = withApiHandler(
+  async (payload) => {
+    const { data } = await api.post("/eventwheel/participants", payload);
+    return data;
+  },
+  { showSuccess: true }
+);
 
-// Public API to get spin wheel details by ID
-export const getPublicSpinWheelById = withApiHandler(async (id) => {
-  const { data } = await api.get(`/eventwheel/participants/public/spinwheel/${id}`);
-  return data;
-});
+// Add participants on the spot (onspot wheels only)
+export const addParticipantsOnSpot = withApiHandler(
+  async (payload) => {
+    const { data } = await api.post("/eventwheel/participants/onspot", payload);
+    return data;
+  },
+  { showSuccess: true }
+);
 
-// Get all participants (optionally by spinWheelId)
-export const getAllParticipants = withApiHandler(async (spinWheelId) => {
-  const { data } = await api.get(`/eventwheel/participants/${spinWheelId}`);
-  return data;
-});
+// Sync participants from event registrations (synced wheels only)
+export const syncSpinWheelParticipants = withApiHandler(
+  async (spinWheelId, payload = {}) => {
+    const { data } = await api.post(
+      `/eventwheel/participants/sync/${spinWheelId}`,
+      payload
+    );
+    return data;
+  },
+  { showSuccess: true }
+);
 
-// Get participants by slug
+/* =========================
+   READ
+========================= */
+
+// Get participants by wheel slug (admin + public spin view)
 export const getParticipantsBySlug = withApiHandler(async (slug) => {
-  const { data } = await api.get(`/eventwheel/participants/slug/${slug}`);
+  const { data } = await api.get(
+    `/eventwheel/participants/slug/${slug}`
+  );
   return data;
 });
 
-// Get bulk participant names (for enter_names wheels)
-export const getBulkParticipantsForSpinWheel = withApiHandler(async (slug) => {
-  const { data } = await api.get(`/eventwheel/participants/bulk/${slug}`);
-  return data;
-});
-
-// Get single participant
+// Get single participant by ID (admin/internal)
 export const getParticipantById = withApiHandler(async (id) => {
-  const { data } = await api.get(`/eventwheel/participants/single/${id}`);
+  const { data } = await api.get(
+    `/eventwheel/participants/single/${id}`
+  );
   return data;
 });
 
-// Update participant
-export const updateParticipant = withApiHandler(async (id, payload) => {
-  const { data } = await api.put(`/eventwheel/participants/${id}`, payload);
+// Get sync filters for a spin wheel (synced wheels only)
+export const getSpinWheelSyncFilters = withApiHandler(async (spinWheelId) => {
+  const { data } = await api.get(
+    `/eventwheel/participants/sync/filters/${spinWheelId}`
+  );
   return data;
-}, { showSuccess: true });
+});
 
-// Delete participant
-export const deleteParticipant = withApiHandler(async (id) => {
-  const { data } = await api.delete(`/eventwheel/participants/${id}`);
-  return data;
-}, { showSuccess: true });
+/* =========================
+   UPDATE / DELETE
+========================= */
+
+// Update participant (blocked for synced wheels by backend)
+export const updateParticipant = withApiHandler(
+  async (id, payload) => {
+    const { data } = await api.put(
+      `/eventwheel/participants/${id}`,
+      payload
+    );
+    return data;
+  },
+  { showSuccess: true }
+);
+
+// Delete participant (permanent for synced wheels)
+export const deleteParticipant = withApiHandler(
+  async (id) => {
+    const { data } = await api.delete(
+      `/eventwheel/participants/${id}`
+    );
+    return data;
+  },
+  { showSuccess: true }
+);
