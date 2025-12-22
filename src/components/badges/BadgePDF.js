@@ -135,48 +135,104 @@ const styles = StyleSheet.create({
 });
 
 function calculateNameFontSize(name) {
-  if (!name) return 32;
+  if (!name) return 25;
 
   const length = name.length;
-  const avgCharWidthRatio = 0.7;
-  const safetyMargin = 0.75;
+  const avgCharsPerLine = 25;
+  const maxLines = 2;
+  const maxChars = avgCharsPerLine * maxLines;
 
-  const maxFontSize = (AVAILABLE_NAME_WIDTH * safetyMargin) / (length * avgCharWidthRatio);
-
-  const minFontSize = 18;
-  const maxAllowedFontSize = 38;
-
-  return Math.min(maxAllowedFontSize, Math.max(minFontSize, maxFontSize));
+  if (length <= 15) {
+    return 25;
+  } else if (length <= avgCharsPerLine) {
+    const fontSize = 25 - (length - 15) * 0.5;
+    return Math.max(20, fontSize);
+  } else if (length <= maxChars) {
+    const fontSize = 20 - (length - avgCharsPerLine) * 0.35;
+    return Math.max(15, fontSize);
+  } else {
+    const fontSize = 15 - (length - maxChars) * 0.25;
+    return Math.max(12, fontSize);
+  }
 }
 
 function calculateCompanyFontSize(company) {
-  if (!company) return 24;
+  if (!company) return 20;
 
   const length = company.length;
-  const avgCharWidthRatio = 0.75;
-  const safetyMargin = 0.7;
+  const avgCharsPerLine = 30;
+  const maxLines = 2;
+  const maxChars = avgCharsPerLine * maxLines;
 
-  const maxFontSize = (AVAILABLE_COMPANY_WIDTH * safetyMargin) / (length * avgCharWidthRatio);
-
-  const minFontSize = 12;
-  const maxAllowedFontSize = 30;
-
-  return Math.min(maxAllowedFontSize, Math.max(minFontSize, maxFontSize));
+  if (length <= 20) {
+    return 20;
+  } else if (length <= avgCharsPerLine) {
+    const fontSize = 20 - (length - 20) * 0.4;
+    return Math.max(16, fontSize);
+  } else if (length <= maxChars) {
+    const fontSize = 16 - (length - avgCharsPerLine) * 0.3;
+    return Math.max(12, fontSize);
+  } else {
+    const fontSize = 12 - (length - maxChars) * 0.2;
+    return Math.max(10, fontSize);
+  }
 }
 
-function calculateTitleFontSize(title) {
-  if (!title) return 14;
+// Commented out - Title/Designation not displayed on badge anymore (might be needed in future)
+// function calculateTitleFontSize(title) {
+//   if (!title) return 14;
 
-  const length = title.length;
-  const avgCharWidthRatio = 0.65;
-  const safetyMargin = 0.8;
+//   const length = title.length;
+//   const avgCharsPerLine = 35;
+//   const maxLines = 2;
+//   const maxChars = avgCharsPerLine * maxLines;
 
-  const maxFontSize = (AVAILABLE_TITLE_WIDTH * safetyMargin) / (length * avgCharWidthRatio);
+//   if (length <= 25) {
+//     return 14;
+//   } else if (length <= avgCharsPerLine) {
+//     const fontSize = 14 - (length - 25) * 0.3;
+//     return Math.max(12, fontSize);
+//   } else if (length <= maxChars) {
+//     const fontSize = 12 - (length - avgCharsPerLine) * 0.25;
+//     return Math.max(10, fontSize);
+//   } else {
+//     const fontSize = 10 - (length - maxChars) * 0.15;
+//     return Math.max(8, fontSize);
+//   }
+// }
 
-  const minFontSize = 6;
-  const maxAllowedFontSize = 16;
+function wrapTextAtWords(text, fontSize, availableWidth, isBold = false) {
+  if (!text) return [text];
 
-  return Math.min(maxAllowedFontSize, Math.max(minFontSize, maxFontSize));
+  const words = text.trim().split(/\s+/);
+  if (words.length === 0) return [text];
+
+  const charWidthRatio = isBold ? 0.75 : 0.65;
+  const estimatedCharWidth = fontSize * charWidthRatio;
+  const safetyMargin = 0.85;
+  const effectiveWidth = availableWidth * safetyMargin;
+
+  const lines = [];
+  let currentLine = "";
+
+  for (let i = 0; i < words.length; i++) {
+    const word = words[i];
+    const testLine = currentLine ? `${currentLine} ${word}` : word;
+    const estimatedWidth = testLine.length * estimatedCharWidth;
+
+    if (estimatedWidth > effectiveWidth && currentLine && lines.length < 1) {
+      lines.push(currentLine);
+      currentLine = word;
+    } else {
+      currentLine = testLine;
+    }
+  }
+
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+
+  return lines.slice(0, 2);
 }
 
 export default function BadgePDF({ data, qrCodeDataUrl, single = true }) {
@@ -184,46 +240,67 @@ export default function BadgePDF({ data, qrCodeDataUrl, single = true }) {
   const nameStyle = {
     fontWeight: "bold",
     color: "#000",
-    width: `${NAME_WIDTH_PERCENT * 100}%`,
     lineHeight: 1.2,
     textAlign: "center",
-    alignSelf: "center",
     fontSize: nameFontSize,
   };
 
   let companyFontSize = calculateCompanyFontSize(data?.company);
-  const maxCompanyFontSize = nameFontSize * 0.75;
+  const maxCompanyFontSize = nameFontSize * 0.85;
   companyFontSize = Math.min(companyFontSize, maxCompanyFontSize);
   const companyStyle = {
     color: "#000",
     marginTop: 1,
-    width: `${COMPANY_WIDTH_PERCENT * 100}%`,
     lineHeight: 1.2,
     textAlign: "center",
     alignSelf: "center",
     fontSize: companyFontSize,
   };
 
-  const targetTitleFontSize = Math.max(companyFontSize - 1.5, 6);
-  let titleFontSize = calculateTitleFontSize(data?.title);
-  titleFontSize = Math.max(titleFontSize, targetTitleFontSize);
-  const titleStyle = {
-    fontSize: titleFontSize,
-    color: "#444",
-    marginTop: 4,
-    width: `${TITLE_WIDTH_PERCENT * 100}%`,
-    lineHeight: 1.2,
-    textAlign: "center",
-    alignSelf: "center",
-    maxWidth: `${TITLE_WIDTH_PERCENT * 100}%`,
-  };
+  // Commented out - Title/Designation not displayed on badge anymore (might be needed in future)
+  // const targetTitleFontSize = Math.max(companyFontSize - 2, 8);
+  // let titleFontSize = calculateTitleFontSize(data?.title);
+  // titleFontSize = Math.max(titleFontSize, targetTitleFontSize);
+  // const titleStyle = {
+  //   fontSize: titleFontSize,
+  //   color: "#444",
+  //   marginTop: 4,
+  //   width: `${TITLE_WIDTH_PERCENT * 100}%`,
+  //   lineHeight: 1.2,
+  //   textAlign: "center",
+  //   alignSelf: "center",
+  //   maxWidth: `${TITLE_WIDTH_PERCENT * 100}%`,
+  // };
+
+  const nameLines = data?.fullName ? wrapTextAtWords(data.fullName, nameFontSize, AVAILABLE_NAME_WIDTH, true) : [];
+  const companyLines = data?.company ? wrapTextAtWords(data.company, companyFontSize, AVAILABLE_COMPANY_WIDTH, false) : [];
+  // const titleLines = data?.title ? wrapTextAtWords(data.title, titleFontSize, AVAILABLE_TITLE_WIDTH, false) : [];
 
   const content = (
     <Page size={[A6_WIDTH, A6_HEIGHT]} style={styles.page}>
       <View style={styles.contentArea}>
-        {data.fullName && <Text style={nameStyle}>{data.fullName}</Text>}
-        {data.company && <Text style={companyStyle}>{data.company}</Text>}
-        {data.title && <Text style={titleStyle}>{data.title}</Text>}
+        {nameLines.length > 0 && (
+          <View style={{ width: `${NAME_WIDTH_PERCENT * 100}%`, alignSelf: "center" }}>
+            {nameLines.map((line, index) => (
+              <Text key={index} style={nameStyle}>{line}</Text>
+            ))}
+          </View>
+        )}
+        {companyLines.length > 0 && (
+          <View style={{ width: `${COMPANY_WIDTH_PERCENT * 100}%`, alignSelf: "center" }}>
+            {companyLines.map((line, index) => (
+              <Text key={index} style={companyStyle}>{line}</Text>
+            ))}
+          </View>
+        )}
+        {/* Commented out - Title/Designation not displayed on badge anymore (might be needed in future) */}
+        {/* {titleLines.length > 0 && (
+          <View>
+            {titleLines.map((line, index) => (
+              <Text key={index} style={titleStyle}>{line}</Text>
+            ))}
+          </View>
+        )} */}
         {data.badgeIdentifier && (
           <Text style={styles.badgeIdentifier}>{data.badgeIdentifier}</Text>
         )}
