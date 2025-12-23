@@ -22,6 +22,8 @@ import slugify from "@/utils/slugify";
 import ICONS from "@/utils/iconUtil";
 import { uploadMediaFiles } from "@/utils/mediaUpload";
 import MediaUploadProgress from "@/components/MediaUploadProgress";
+import { deleteMedia } from "@/services/deleteMediaService";
+import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 
 const translations = {
   en: {
@@ -63,6 +65,11 @@ const translations = {
       teamNamesRequired: "All team names are required",
       memoryImagesRequired: "At least one memory image is required",
     },
+    deleteMemoryImageTitle: "Delete Memory Image",
+    deleteMemoryImageMessage: "Are you sure you want to delete this memory image? This action cannot be undone.",
+    deleteAllMemoryImagesTitle: "Delete All Memory Images",
+    deleteAllMemoryImagesMessage: "Are you sure you want to delete all memory images? This action cannot be undone.",
+    deleteConfirm: "Delete",
   },
   ar: {
     dialogTitleUpdate: "تحديث اللعبة",
@@ -103,6 +110,11 @@ const translations = {
       teamNamesRequired: "يرجى إدخال أسماء جميع الفرق",
       memoryImagesRequired: "يجب رفع صورة واحدة على الأقل للبطاقات",
     },
+    deleteMemoryImageTitle: "حذف صورة الذاكرة",
+    deleteMemoryImageMessage: "هل أنت متأكد من حذف صورة الذاكرة هذه؟ لا يمكن التراجع عن هذا الإجراء.",
+    deleteAllMemoryImagesTitle: "حذف جميع صور الذاكرة",
+    deleteAllMemoryImagesMessage: "هل أنت متأكد من حذف جميع صور الذاكرة؟ لا يمكن التراجع عن هذا الإجراء.",
+    deleteConfirm: "حذف",
   },
 };
 
@@ -115,6 +127,8 @@ const GameFormModal = ({
   onSubmit,
   module = "eventduel", // also supports "tapmatch"
   selectedBusiness, // business slug for uploads
+  gameId, // game ID for memory image deletion
+  onGameUpdate,
 }) => {
   const [form, setForm] = useState({
     title: "",
@@ -127,6 +141,9 @@ const GameFormModal = ({
     backgroundPreview: "",
     memoryImages: [],
     memoryPreviews: [],
+    existingMemoryImages: [],
+    removeMemoryImageIds: [],
+    clearAllMemoryImages: false,
     choicesCount: "4",
     countdownTimer: "5",
     gameSessionTimer: "60",
@@ -140,6 +157,13 @@ const GameFormModal = ({
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState([]);
   const [showUploadProgress, setShowUploadProgress] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState({
+    open: false,
+    index: null,
+    imageId: null,
+    isExisting: false,
+    isDeleteAll: false,
+  });
   const [buttonWidths, setButtonWidths] = useState({
     cover: null,
     name: null,
@@ -154,6 +178,7 @@ const GameFormModal = ({
   const { showMessage } = useMessage();
 
   const isTapMatch = module === "tapmatch";
+  const currentGameId = gameId || selectedGame?._id || initialValues?._id;
 
   useEffect(() => {
     if (!open) return;
@@ -170,6 +195,9 @@ const GameFormModal = ({
         backgroundPreview: "",
         memoryImages: [],
         memoryPreviews: [],
+        existingMemoryImages: [],
+        removeMemoryImageIds: [],
+        clearAllMemoryImages: false,
         choicesCount: "4",
         countdownTimer: "5",
         gameSessionTimer: "60",
@@ -195,7 +223,10 @@ const GameFormModal = ({
         coverPreview: initialValues.coverImage || "",
         namePreview: initialValues.nameImage || "",
         backgroundPreview: initialValues.backgroundImage || "",
+        existingMemoryImages: initialValues.memoryImages || [],
         memoryPreviews: initialValues.memoryImages?.map((img) => img.url) || [],
+        removeMemoryImageIds: [],
+        clearAllMemoryImages: false,
         choicesCount: initialValues.choicesCount?.toString() || "4",
         countdownTimer: initialValues.countdownTimer?.toString() || "5",
         gameSessionTimer: initialValues.gameSessionTimer?.toString() || "60",
@@ -301,6 +332,187 @@ const GameFormModal = ({
     setForm((prev) => ({ ...prev, teamNames: updated }));
   };
 
+  const handleRemoveMemoryImage = (index, imageId) => {
+    const isNewImage = !imageId;
+
+    if (!isNewImage && editMode && currentGameId) {
+      setDeleteConfirm({
+        open: true,
+        index,
+        imageId,
+        isExisting: true,
+      });
+    } else {
+      setForm((prev) => {
+        const newPreviews = [...prev.memoryPreviews];
+        const newMemoryImages = [...prev.memoryImages];
+        const newExisting = [...prev.existingMemoryImages];
+        const newRemoveIds = [...prev.removeMemoryImageIds];
+        const prevExistingCount = prev.existingMemoryImages.length;
+
+        if (isNewImage) {
+          const newImageIndex = index - prevExistingCount;
+          if (newImageIndex >= 0 && newImageIndex < newMemoryImages.length) {
+            newMemoryImages.splice(newImageIndex, 1);
+          }
+          newPreviews.splice(index, 1);
+        } else {
+          if (!newRemoveIds.includes(imageId)) {
+            newRemoveIds.push(imageId);
+          }
+          const existingIndex = newExisting.findIndex((img) => img._id === imageId);
+          if (existingIndex !== -1) {
+            newExisting.splice(existingIndex, 1);
+          }
+          newPreviews.splice(index, 1);
+        }
+
+        return {
+          ...prev,
+          memoryPreviews: newPreviews,
+          memoryImages: newMemoryImages,
+          existingMemoryImages: newExisting,
+          removeMemoryImageIds: newRemoveIds,
+        };
+      });
+    }
+  };
+
+  const confirmDeleteMemoryImage = async () => {
+    const { index, imageId, isExisting, isDeleteAll } = deleteConfirm;
+
+    if (isDeleteAll && editMode && currentGameId) {
+      try {
+        await deleteMedia({
+          gameId: currentGameId,
+          mediaType: "memoryImage",
+          deleteAllMemoryImages: true,
+          storageType: "s3",
+        });
+
+        setForm((prev) => ({
+          ...prev,
+          memoryPreviews: [],
+          memoryImages: [],
+          existingMemoryImages: [],
+          removeMemoryImageIds: [],
+        }));
+
+        setDeleteConfirm({ open: false, index: null, imageId: null, isExisting: false, isDeleteAll: false });
+        showMessage("All memory images deleted successfully", "success");
+
+        if (onGameUpdate && currentGameId) {
+          onGameUpdate(currentGameId, []);
+        }
+      } catch (error) {
+        showMessage(error.message || "Failed to delete all memory images", "error");
+        setDeleteConfirm({ open: false, index: null, imageId: null, isExisting: false, isDeleteAll: false });
+      }
+    } else if (editMode && isExisting && currentGameId) {
+      try {
+        const existingImg = form.existingMemoryImages.find((img) => img._id === imageId);
+        if (existingImg) {
+          await deleteMedia({
+            fileUrl: existingImg.url,
+            gameId: currentGameId,
+            mediaType: "memoryImage",
+            memoryImageId: imageId,
+            storageType: "s3",
+          });
+
+          const newExisting = form.existingMemoryImages.filter((img) => img._id !== imageId);
+
+          setForm((prev) => {
+            const newPreviews = [...prev.memoryPreviews];
+            newPreviews.splice(index, 1);
+
+            return {
+              ...prev,
+              memoryPreviews: newPreviews,
+              existingMemoryImages: newExisting,
+              removeMemoryImageIds: prev.removeMemoryImageIds.filter((id) => id !== imageId),
+            };
+          });
+
+          setDeleteConfirm({ open: false, index: null, imageId: null, isExisting: false, isDeleteAll: false });
+          showMessage("Memory image deleted successfully", "success");
+
+          if (onGameUpdate && currentGameId) {
+            onGameUpdate(currentGameId, newExisting);
+          }
+        }
+      } catch (error) {
+        showMessage(error.message || "Failed to delete memory image", "error");
+        setDeleteConfirm({ open: false, index: null, imageId: null, isExisting: false, isDeleteAll: false });
+      }
+    } else {
+      setForm((prev) => {
+        const newPreviews = [...prev.memoryPreviews];
+        const newMemoryImages = [...prev.memoryImages];
+        const newExisting = [...prev.existingMemoryImages];
+        const newRemoveIds = [...prev.removeMemoryImageIds];
+        const prevExistingCount = prev.existingMemoryImages.length;
+
+        if (imageId) {
+          if (!newRemoveIds.includes(imageId)) {
+            newRemoveIds.push(imageId);
+          }
+          const existingIndex = newExisting.findIndex((img) => img._id === imageId);
+          if (existingIndex !== -1) {
+            newExisting.splice(existingIndex, 1);
+          }
+          newPreviews.splice(index, 1);
+        } else {
+          if (index >= prevExistingCount) {
+            const newImageIndex = index - prevExistingCount;
+            newMemoryImages.splice(newImageIndex, 1);
+            newPreviews.splice(index, 1);
+          } else {
+            const existingImg = prev.existingMemoryImages[index];
+            if (existingImg?._id && !newRemoveIds.includes(existingImg._id)) {
+              newRemoveIds.push(existingImg._id);
+            }
+            newExisting.splice(index, 1);
+            newPreviews.splice(index, 1);
+          }
+        }
+
+        return {
+          ...prev,
+          memoryPreviews: newPreviews,
+          memoryImages: newMemoryImages,
+          existingMemoryImages: newExisting,
+          removeMemoryImageIds: newRemoveIds,
+        };
+      });
+
+      setDeleteConfirm({ open: false, index: null, imageId: null, isExisting: false, isDeleteAll: false });
+    }
+  };
+
+  const handleClearAllMemoryImages = () => {
+    const hasExistingImages = form.existingMemoryImages.length > 0;
+
+    if (editMode && currentGameId && hasExistingImages) {
+      setDeleteConfirm({
+        open: true,
+        index: null,
+        imageId: null,
+        isExisting: false,
+        isDeleteAll: true,
+      });
+    } else {
+      setForm((prev) => ({
+        ...prev,
+        memoryPreviews: [],
+        memoryImages: [],
+        existingMemoryImages: [],
+        removeMemoryImageIds: prev.existingMemoryImages.map((img) => img._id).filter(Boolean),
+        clearAllMemoryImages: hasExistingImages,
+      }));
+    }
+  };
+
   const validate = () => {
     const newErrors = {};
     const te = t.errors;
@@ -324,8 +536,6 @@ const GameFormModal = ({
     if (!isTapMatch && !form.choicesCount)
       newErrors.choicesCount = te.optionsRequired;
 
-    if (isTapMatch && !form.memoryImages.length && !editMode)
-      newErrors.memoryImages = te.memoryImagesRequired;
 
     if (form.isTeamMode) {
       if (!form.maxTeams || form.maxTeams < 2)
@@ -489,14 +699,20 @@ const GameFormModal = ({
 
       if (!isTapMatch) payload.choicesCount = form.choicesCount;
       if (isTapMatch) {
-        if (memoryImageUrls.length > 0) {
-          payload.memoryImages = memoryImageUrls;
-        } else if (editMode && form.memoryPreviews.length > 0) {
-          const existingUrls = form.memoryPreviews.filter(
-            (preview) => preview && preview.startsWith("http") && !preview.startsWith("blob:")
-          );
-          if (existingUrls.length > 0) {
-            payload.memoryImages = existingUrls;
+        if (form.clearAllMemoryImages) {
+          payload.clearAllMemoryImages = "true";
+        } else {
+          if (editMode && form.removeMemoryImageIds.length > 0) {
+            payload.removeMemoryImageIds = JSON.stringify(form.removeMemoryImageIds);
+          }
+          if (!editMode) {
+            if (memoryImageUrls.length > 0) {
+              payload.memoryImages = memoryImageUrls;
+            }
+          } else {
+            if (memoryImageUrls.length > 0) {
+              payload.memoryImages = memoryImageUrls;
+            }
           }
         }
       }
@@ -777,38 +993,81 @@ const GameFormModal = ({
           {/* ✅ TapMatch Memory Image Upload */}
           {isTapMatch && (
             <Box>
-              <Button component="label" variant="outlined">
-                {t.memoryImages}
-                <input
-                  hidden
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={(e) => handleFileChange(e, "memoryImages", true)}
-                />
-              </Button>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                <Button component="label" variant="outlined">
+                  {t.memoryImages}
+                  <input
+                    hidden
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={(e) => handleFileChange(e, "memoryImages", true)}
+                  />
+                </Button>
+                {form.memoryPreviews.length > 0 && (
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    size="small"
+                    onClick={handleClearAllMemoryImages}
+                    startIcon={<ICONS.delete />}
+                  >
+                    Delete All
+                  </Button>
+                )}
+              </Box>
               {form.memoryPreviews.length > 0 && (
                 <Box
                   sx={{
-                    mt: 1,
+                    mt: 3,
                     display: "grid",
                     gridTemplateColumns: "repeat(auto-fill, 80px)",
                     gap: 1,
                   }}
                 >
-                  {form.memoryPreviews.map((src, i) => (
-                    <img
-                      key={i}
-                      src={src}
-                      alt={`Memory ${i}`}
-                      style={{
-                        width: 80,
-                        height: 80,
-                        objectFit: "cover",
-                        borderRadius: 6,
-                      }}
-                    />
-                  ))}
+                  {form.memoryPreviews.map((src, i) => {
+                    const existingCount = form.existingMemoryImages.length;
+                    let imageId = null;
+                    if (i < existingCount) {
+                      imageId = form.existingMemoryImages[i]?._id;
+                    }
+                    return (
+                      <Box
+                        key={i}
+                        sx={{
+                          position: "relative",
+                          width: 80,
+                          height: 80,
+                        }}
+                      >
+                        <img
+                          src={src}
+                          alt={`Memory ${i}`}
+                          style={{
+                            width: 80,
+                            height: 80,
+                            objectFit: "cover",
+                            borderRadius: 6,
+                          }}
+                        />
+                        <IconButton
+                          size="small"
+                          sx={{
+                            position: "absolute",
+                            top: -18,
+                            right: 6,
+                            bgcolor: "error.main",
+                            color: "#fff",
+                            "&:hover": { bgcolor: "error.dark" },
+                            zIndex: 1,
+                          }}
+                          onClick={() => handleRemoveMemoryImage(i, imageId)}
+                        >
+                          <ICONS.delete sx={{ fontSize: 18 }} />
+                        </IconButton>
+                      </Box>
+                    );
+                  })}
                 </Box>
               )}
               {errors.memoryImages && (
@@ -857,6 +1116,16 @@ const GameFormModal = ({
         uploads={uploadProgress}
         onClose={() => setShowUploadProgress(false)}
         allowClose={false}
+      />
+      <ConfirmationDialog
+        open={deleteConfirm.open}
+        onClose={() => setDeleteConfirm({ open: false, index: null, imageId: null, isExisting: false, isDeleteAll: false })}
+        onConfirm={confirmDeleteMemoryImage}
+        title={deleteConfirm.isDeleteAll ? t.deleteAllMemoryImagesTitle : t.deleteMemoryImageTitle}
+        message={deleteConfirm.isDeleteAll ? t.deleteAllMemoryImagesMessage : t.deleteMemoryImageMessage}
+        confirmButtonText={t.deleteConfirm}
+        confirmButtonIcon={<ICONS.delete />}
+        confirmButtonColor="error"
       />
     </Dialog>
   );
