@@ -44,6 +44,7 @@ import {
   getInitialRegistrations,
   exportRegistrations,
   createRegistration,
+  createWalkIn,
 } from "@/services/eventreg/registrationService";
 import { getPublicEventBySlug } from "@/services/eventreg/eventService";
 
@@ -500,7 +501,7 @@ export default function ViewRegistrations() {
     }
 
     const res = await createRegistration(payload);
-    
+
     setCreateModalOpen(false);
     showMessage("Registration created successfully", "success");
   };
@@ -811,7 +812,7 @@ export default function ViewRegistrations() {
 
       const doc = <BadgePDF data={badgeData} qrCodeDataUrl={qrCodeDataUrl} />;
       const blob = await pdf(doc).toBlob();
-      
+
       const blobUrl = URL.createObjectURL(blob);
       const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
@@ -821,9 +822,11 @@ export default function ViewRegistrations() {
           showMessage("Please allow pop-ups to print the badge.", "warning");
           return;
         }
-        printWindow.onload = () => {
+        printWindow.onload = async () => {
           printWindow.focus();
           printWindow.print();
+          await createWalkIn(registration._id);
+          await refreshRegistrationWalkIns(registration._id);
         };
         return;
       }
@@ -872,9 +875,37 @@ export default function ViewRegistrations() {
       </html>
     `);
       printWindow.document.close();
+
+      await createWalkIn(registration._id);
+      await refreshRegistrationWalkIns(registration._id);
     } catch (err) {
       showMessage("Badge could not be generated. Please try again.", "warning");
       console.error("Print badge error:", err);
+    }
+  };
+
+  const refreshRegistrationWalkIns = async (registrationId) => {
+    if (!registrationId) return;
+    try {
+      const regsRes = await getInitialRegistrations(eventSlug);
+      if (!regsRes?.error) {
+        const initialData = regsRes.data || [];
+        const prepped = initialData.map((r) => {
+          return {
+            ...r,
+            _createdAtMs: Date.parse(r.createdAt),
+            _scannedAtMs: (r.walkIns || []).map((w) => Date.parse(w.scannedAt)),
+            _haystack: buildHaystack(r, dynamicFieldsRef.current),
+          };
+        });
+        setAllRegistrations(prepped);
+        const updatedReg = prepped.find((r) => r._id === registrationId);
+        if (updatedReg && selectedRegistration?._id === registrationId) {
+          setSelectedRegistration(updatedReg);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to refresh registration walk-ins:", err);
     }
   };
 

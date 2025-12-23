@@ -151,6 +151,26 @@ export default function TapMatchGamesPage() {
     setEditMode(false);
   };
 
+  const handleGameUpdate = (gameId, updatedMemoryImages) => {
+    setGames((prev) =>
+      prev.map((g) => {
+        if (g._id === gameId) {
+          return {
+            ...g,
+            memoryImages: updatedMemoryImages || [],
+          };
+        }
+        return g;
+      })
+    );
+    if (selectedGame?._id === gameId) {
+      setSelectedGame((prev) => ({
+        ...prev,
+        memoryImages: updatedMemoryImages || [],
+      }));
+    }
+  };
+
   const handleSubmitGame = async (formData, isEdit) => {
     const response = isEdit
       ? await updateGame(selectedGame._id, formData)
@@ -392,8 +412,7 @@ export default function TapMatchGamesPage() {
         <ShareLinkModal
           open={shareModalOpen}
           onClose={() => setShareModalOpen(false)}
-          url={`${
-            typeof window !== "undefined" ? window.location.origin : ""
+          url={`${typeof window !== "undefined" ? window.location.origin : ""
             }/tapmatch/${gameToShare?.slug}`}
           name={gameToShare?.title}
         />
@@ -404,9 +423,12 @@ export default function TapMatchGamesPage() {
           onClose={handleCloseModal}
           editMode={editMode}
           initialValues={selectedGame || {}}
+          selectedGame={selectedGame}
           onSubmit={handleSubmitGame}
           module="tapmatch"
           selectedBusiness={selectedBusiness}
+          gameId={selectedGame?._id}
+          onGameUpdate={handleGameUpdate}
         />
 
         <ConfirmationDialog

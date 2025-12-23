@@ -20,16 +20,18 @@ export const deleteMedia = withApiHandler(
         optionIndex,
         pollId,
         spinWheelId,
+        memoryImageId,
+        deleteAllMemoryImages,
     }) => {
-        if (!fileUrl) {
+        if (!fileUrl && mediaType !== "memoryImage") {
             throw new Error("File URL is required");
         }
 
         const payload = {
-            fileUrl,
             storageType,
         };
 
+        if (fileUrl) payload.fileUrl = fileUrl;
         if (eventId) payload.eventId = eventId;
         if (mediaType) payload.mediaType = mediaType;
         if (eventType) payload.eventType = eventType;
@@ -42,6 +44,8 @@ export const deleteMedia = withApiHandler(
         if (optionIndex !== undefined) payload.optionIndex = optionIndex;
         if (pollId) payload.pollId = pollId;
         if (spinWheelId) payload.spinWheelId = spinWheelId;
+        if (memoryImageId) payload.memoryImageId = memoryImageId;
+        if (deleteAllMemoryImages) payload.deleteAllMemoryImages = deleteAllMemoryImages;
 
         const { data } = await api.post("/media/delete", payload);
         return data;
