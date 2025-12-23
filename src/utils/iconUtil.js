@@ -154,10 +154,12 @@ import {
   Desk as DeskIcon,
   Insights as InsightsIcon,
   CloudUpload as cloudIcon,
+  Sync as syncIcon,
 } from "@mui/icons-material";
 
 const ICONS = {
   // General UI / Navigation
+  sync: syncIcon,
   cloud: cloudIcon,
   star: StarIcon,
   starBorder: StarBorderIcon,

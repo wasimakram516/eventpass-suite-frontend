@@ -1,15 +1,23 @@
 "use client";
-import React, { useEffect, useState, useRef, useCallback } from "react";
+import React, {
+  useEffect,
+  useState,
+  useRef,
+  useCallback,
+  useMemo,
+} from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Box, Typography, Button, IconButton } from "@mui/material";
 import Confetti from "react-confetti";
+
 import { getParticipantsBySlug } from "@/services/eventwheel/spinWheelParticipantService";
-const btnSpin = "/freespin1.png";
-const btnSpinClicked = "/freespin2.png";
 import { getSpinWheelBySlug } from "@/services/eventwheel/spinWheelService";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import LanguageSelector from "@/components/LanguageSelector";
+
+const btnSpin = "/freespin1.png";
+const btnSpinClicked = "/freespin2.png";
 
 const translations = {
   en: {
@@ -24,90 +32,223 @@ const translations = {
   },
 };
 
+const SPINS = 10; // deterministic spins
+const DURATION_MS = 10000; // must match transition duration
+const EASING = "cubic-bezier(0.17, 0.67, 0.32, 1)";
+
+const normalizeDeg = (deg) => ((deg % 360) + 360) % 360;
+
 const SpinningPage = () => {
   const params = useParams();
   const router = useRouter();
   const shortName = params.slug;
+
   const [participants, setParticipants] = useState([]);
+  const participantsRef = useRef([]);
+  const [eventData, setEventData] = useState(null);
+
   const [spinning, setSpinning] = useState(false);
   const [selectedWinner, setSelectedWinner] = useState(null);
-  const [wheelKey, setWheelKey] = useState(0); // 🔄 Force Re-render of the Wheel
+
   const wheelRef = useRef(null);
-  const [eventData, setEventData] = useState([]);
+  const rotationRef = useRef(0); // stores accumulated rotation in degrees
+
   const { t, dir, align } = useI18nLayout(translations);
 
   const fetchParticipants = useCallback(async () => {
     const data = await getParticipantsBySlug(shortName);
-    if (!data) {
-      router.push("/");
-      return;
-    }
+    if (!data) return null;
+
     setParticipants(data);
+    participantsRef.current = data;
+    return data;
   }, [shortName]);
 
   const fetchSpinWheelData = useCallback(async () => {
     const wheelData = await getSpinWheelBySlug(shortName);
-    if (wheelData) {
-      setEventData(wheelData);
-    }
+    if (wheelData) setEventData(wheelData);
+    return wheelData;
   }, [shortName]);
 
   useEffect(() => {
-    fetchParticipants();
-    fetchSpinWheelData();
-  }, [fetchParticipants, fetchSpinWheelData]);
+    (async () => {
+      const p = await fetchParticipants();
+      if (!p) router.push("/");
+      await fetchSpinWheelData();
+    })();
+  }, [fetchParticipants, fetchSpinWheelData, router]);
 
-  const resetWheel = () => {
-    if (wheelRef.current) {
-      wheelRef.current.style.transition = "none"; // 🔄 Remove animation
-      wheelRef.current.style.transform = "rotate(0deg)"; // 🔄 Reset rotation
-    }
-    setWheelKey((prevKey) => prevKey + 1); // 🔄 Force re-render
+  // ---------- Wheel geometry ----------
+  const useWheelSize = () => {
+    const getSize = () => {
+      if (typeof window === "undefined") return 320;
+
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const base = Math.min(vw, vh);
+
+      // HARD clamp: mobile-safe → kiosk-safe
+      return Math.max(240, Math.min(base * 0.75, 520));
+    };
+
+    const [size, setSize] = useState(getSize);
+
+    useEffect(() => {
+      const onResize = () => setSize(getSize());
+      window.addEventListener("resize", onResize);
+      window.addEventListener("orientationchange", onResize);
+      return () => {
+        window.removeEventListener("resize", onResize);
+        window.removeEventListener("orientationchange", onResize);
+      };
+    }, []);
+
+    return size;
   };
 
+  const size = useWheelSize();
+  const r = size / 2;
+
+  const pointerSize = size * 0.12;
+  const trophySize = size * 0.14;
+  const spinBtnWidth = Math.max(120, Math.min(size * 0.35, 220));
+  const spinBtnHeight = Math.max(42, Math.min(size * 0.12, 70));
+
+  const count = participants.length;
+  const slice = count > 0 ? 360 / count : 0;
+
+  // Key alignment: shift wheel so pointer is exactly on center of slice 0 when rotationRef=0
+  const baseOffset = useMemo(
+    () => (count > 0 ? -slice / 2 : 0),
+    [count, slice]
+  );
+
+  const labelRadius = Math.round(r * 0.72);
+
+  const labelChord = useMemo(() => {
+    if (!count) return 80;
+    const rad = (slice * Math.PI) / 180;
+    // chord length at labelRadius minus padding; clamp to keep sane
+    return Math.max(42, Math.floor(2 * labelRadius * Math.sin(rad / 2) - 14));
+  }, [count, slice, labelRadius]);
+
+  const fontSize = useMemo(() => {
+    if (!count) return 10;
+    if (slice >= 30) return 14;
+    if (slice >= 20) return 12;
+    if (slice >= 14) return 11;
+    return 10;
+  }, [count, slice]);
+
+  const wheelBg = useMemo(() => {
+    if (!count) return "conic-gradient(#666 0deg 360deg)";
+    return `conic-gradient(${participants
+      .map((_, i) => {
+        const a0 = i * slice;
+        const a1 = (i + 1) * slice;
+        const c = `hsl(${(i * 360) / count}, 70%, 50%)`;
+        return `${c} ${a0}deg ${a1}deg`;
+      })
+      .join(", ")})`;
+  }, [participants, count, slice]);
+
+  const applyRotation = useCallback(
+    (degRaw) => {
+      if (!wheelRef.current) return;
+      // Transform is always degRaw + baseOffset (baseOffset is what makes “top=center of segment”)
+      wheelRef.current.style.transform = `rotate(${degRaw + baseOffset}deg)`;
+    },
+    [baseOffset]
+  );
+
+  // Re-apply alignment when participant count changes (e.g., fetch updates)
+  useEffect(() => {
+    applyRotation(rotationRef.current);
+  }, [applyRotation, count]);
+
+  const getWinnerIndexFromRotation = useCallback((degRaw, localCount) => {
+    // This is the corrected version (NO +slice/2), because baseOffset already centers the pointer.
+    if (!localCount) return -1;
+    const localSlice = 360 / localCount;
+    const thetaApplied = normalizeDeg(degRaw + -localSlice / 2); // same as baseOffset for that count
+    const alpha = (360 - thetaApplied) % 360;
+    const eps = 1e-6; // avoid boundary floating error
+    return Math.floor((alpha + eps) / localSlice);
+  }, []);
+
   const handleSpinWheel = async () => {
-    if (spinning || participants.length === 0) return;
+    if (spinning) return;
 
     setSpinning(true);
     setSelectedWinner(null);
 
-    // 🔄 Reset Wheel Before Spinning Again
-    resetWheel();
-
-    // 🔄 Fetch Updated Participants and Spin Wheel Data
-    await fetchParticipants();
+    // Always spin using fresh data (avoid stale state)
+    const freshParticipants = await fetchParticipants();
     await fetchSpinWheelData();
 
-    if (participants.length === 0) {
+    const list = freshParticipants ?? participantsRef.current;
+    const n = list?.length ?? 0;
+
+    if (!n) {
       setSpinning(false);
       return;
     }
 
-    const totalSpins = 6; // Fixed number of spins
-    const sectorSize = 360 / participants.length;
-    const winnerIndex = Math.floor(Math.random() * participants.length); // Random winner
+    const localSlice = 360 / n;
 
-    // 🎯 Calculate Final Rotation to Align Winner under Pointer
-    const finalAngle = 360 - winnerIndex * sectorSize - sectorSize / 2;
-    const totalRotation = totalSpins * 360 + finalAngle; // Always clockwise
+    // Ensure current transform is “locked” before starting (no visual jump)
+    if (wheelRef.current) {
+      wheelRef.current.style.transition = "none";
+      applyRotation(rotationRef.current);
+      // force reflow
+      void wheelRef.current.offsetHeight;
+    }
 
-    setTimeout(() => {
-      if (wheelRef.current) {
-        wheelRef.current.style.transition = "transform 4s ease-out";
-        wheelRef.current.style.transform = `rotate(${totalRotation}deg)`;
-      }
-    }, 100); // ⏳ Small delay to ensure reset is applied
+    // Choose landing index
+    const landingIndex = Math.floor(Math.random() * n);
 
-    setTimeout(() => {
-      setSelectedWinner(participants[winnerIndex]);
+    // Desired rotationRef modulo 360 such that landingIndex center is at the top pointer:
+    // With baseOffset = -slice/2, this simplifies to: desiredMod = 360 - landingIndex*slice
+    const currentMod = normalizeDeg(rotationRef.current);
+    const desiredMod = normalizeDeg(360 - landingIndex * localSlice);
+    const needed = normalizeDeg(desiredMod - currentMod);
+
+    rotationRef.current += SPINS * 360 + needed;
+
+    // Animate
+    if (wheelRef.current) {
+      wheelRef.current.style.transition = `transform ${DURATION_MS}ms ${EASING}`;
+      applyRotation(rotationRef.current);
+    }
+
+    // Winner computed from final rotation (source of truth)
+    window.setTimeout(() => {
+      const finalList = participantsRef.current?.length
+        ? participantsRef.current
+        : list;
+      const finalN = finalList.length;
+
+      const idx = getWinnerIndexFromRotation(rotationRef.current, finalN);
+      const w = idx >= 0 ? finalList[idx] : null;
+
+      setSelectedWinner(w);
       setSpinning(false);
-    }, 4100);
+
+      // Optional: normalize large rotations to keep numbers small (no visible change)
+      requestAnimationFrame(() => {
+        if (!wheelRef.current) return;
+        wheelRef.current.style.transition = "none";
+        rotationRef.current = normalizeDeg(rotationRef.current);
+        applyRotation(rotationRef.current);
+      });
+    }, DURATION_MS + 30);
   };
 
   return (
     <Box
       sx={{
-        minHeight: "100vh",
+        height: "100vh",
+        overflow: "hidden",
         display: "flex",
         flexDirection: "column",
         justifyContent: "center",
@@ -140,26 +281,99 @@ const SpinningPage = () => {
 
       {selectedWinner && <Confetti numberOfPieces={500} recycle={false} />}
 
-      <Typography
-        variant="h2"
-        sx={{ mb: 2, color: "white", textAlign: "center" }}
+      <Box
+        sx={{
+          mb: 8,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          textAlign: "center",
+        }}
       >
-        {selectedWinner
-          ? `${t.winner}  ${selectedWinner.name}`
-          : spinning
-          ? t.spinning
-          : t.spinTheWheel}
-      </Typography>
+        {/* WINNER */}
+        {selectedWinner && !spinning && (
+          <Typography
+            sx={{
+              fontWeight: 800,
+              letterSpacing: 2,
+              color: "white",
+              fontSize: `clamp(2rem, ${size * 0.08}px, 4.5rem)`,
+              textShadow: `
+      0 4px 20px rgba(0,0,0,0.7),
+      0 0 35px rgba(255,215,0,0.9),
+      0 0 70px rgba(255,215,0,0.6)
+    `,
+            }}
+          >
+            {selectedWinner.name}
+          </Typography>
+        )}
 
-      {/* 🎯 Enhanced Pointer Indicator (Now at the top, pointing downward) */}
+        {/* SPINNING */}
+        {spinning && (
+          <Typography
+            variant="h4"
+            sx={{
+              color: "white",
+              opacity: 0.85,
+              letterSpacing: 1.5,
+              animation: "pulse 1.2s ease-in-out infinite",
+            }}
+          >
+            {t.spinning}
+          </Typography>
+        )}
+
+        {/* IDLE */}
+        {!spinning && !selectedWinner && (
+          <Typography
+            variant="h4"
+            sx={{
+              color: "white",
+              opacity: 0.8,
+              letterSpacing: 1.5,
+            }}
+          >
+            {t.spinTheWheel}
+          </Typography>
+        )}
+
+        <style jsx>{`
+          @keyframes winnerReveal {
+            0% {
+              transform: scale(0.85);
+              opacity: 0;
+              filter: blur(4px);
+            }
+            100% {
+              transform: scale(1);
+              opacity: 1;
+              filter: blur(0);
+            }
+          }
+
+          @keyframes pulse {
+            0%,
+            100% {
+              opacity: 0.6;
+            }
+            50% {
+              opacity: 1;
+            }
+          }
+        `}</style>
+      </Box>
+
+      {/* Pointer (top centered) */}
+
       <Box
         sx={{
           position: "absolute",
-          top: "20%",
+          top: `calc(50% - ${size / 2 + pointerSize * 0.35}px)`,
           left: "50%",
           transform: "translateX(-50%) rotate(180deg)",
-          width: "50px",
-          height: "50px",
+          width: pointerSize,
+          height: pointerSize,
           backgroundColor: "primary.main",
           clipPath: "polygon(50% 0%, 100% 100%, 0% 100%)",
           zIndex: 10,
@@ -167,76 +381,76 @@ const SpinningPage = () => {
         }}
       />
 
-      {/* 🎡 Spinning Wheel with Borders */}
-      <Box
-        sx={{
-          position: "relative",
-          width: 350,
-          height: 350,
-        }}
-      >
-        {/* 🎡 The Wheel */}
+      {/* Wheel */}
+      <Box sx={{ position: "relative", width: size, height: size }}>
+        {/* Rotating wheel */}
         <Box
-          key={wheelKey} // 🔄 Force Re-render when Wheel Resets
           ref={wheelRef}
           sx={{
-            width: 350,
-            height: 350,
+            width: size,
+            height: size,
             borderRadius: "50%",
             border: "6px solid #fff",
             boxShadow: "0px 6px 15px rgba(0, 0, 0, 0.6)",
-            background: `conic-gradient(${participants
-              .map(
-                (_, i) =>
-                  `hsl(${(i * 360) / participants.length}, 70%, 50%) ${
-                    i * (360 / participants.length)
-                  }deg ${(i + 1) * (360 / participants.length)}deg`
-              )
-              .join(", ")})`,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            transition: spinning ? "transform 4s ease-out" : "none",
+            background: wheelBg,
+            position: "relative",
+            willChange: "transform",
+            display: "block",
           }}
         >
-          {/* 🏷️ Display Names inside the Wheel */}
-          {participants.map((participant, index) => {
-            const angle = (index * 360) / participants.length;
-            const fontSize = participants.length > 10 ? "8px" : "10px";
+          {/* Labels */}
+          {participants.map((p, i) => {
+            const angle = i * slice + slice / 2;
             return (
-              <Typography
-                key={participant._id}
-                variant="body2"
+              <Box
+                key={p._id}
                 sx={{
                   position: "absolute",
-                  transform: `rotate(${angle}deg) translate(110px) rotate(-${angle}deg)`,
+                  top: "50%",
+                  left: "50%",
+                  width: 0,
+                  height: 0,
+                  transform: `rotate(${angle}deg) translateY(-${labelRadius}px)`,
                   transformOrigin: "center",
-                  color: "white",
-                  fontWeight: "bold",
-                  fontSize: fontSize,
-                  textAlign: align,
-                  width: "80px",
-                  backgroundColor: "rgba(0, 0, 0, 0.5)",
-                  borderRadius: "4px",
-                  padding: "2px 4px",
+                  pointerEvents: "none",
                 }}
               >
-                {participant.name}
-              </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    width: `${labelChord}px`,
+                    transform: "translateX(-50%) rotate(90deg)",
+                    transformOrigin: "center",
+                    textAlign: "center",
+                    color: "white",
+                    fontWeight: 700,
+                    fontSize: `${fontSize}px`,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    lineHeight: 1.1,
+                    userSelect: "none",
+                  }}
+                  title={p.name}
+                >
+                  {p.name}
+                </Typography>
+              </Box>
             );
           })}
         </Box>
 
-        {/* 🏆 Enhanced Center Icon */}
+        {/* Static center trophy overlay (NOT rotating) */}
         <ICONS.trophy
           sx={{
-            fontSize: 60,
+            fontSize: trophySize,
             color: "gold",
             position: "absolute",
             top: "50%",
             left: "50%",
             transform: "translate(-50%, -50%)",
             zIndex: 11,
+            pointerEvents: "none",
             textShadow: "0px 6px 12px rgba(0, 0, 0, 0.6)",
           }}
         />
@@ -244,23 +458,29 @@ const SpinningPage = () => {
 
       <Button
         onClick={handleSpinWheel}
-        disabled={spinning}
+        disabled={spinning || participants.length === 0}
         sx={{
-          width: 150,
-          height: 50,
-          mt: 4,
-          backgroundImage: `url(${
-            spinning
-              ? btnSpinClicked.src || btnSpinClicked
-              : btnSpin.src || btnSpin
-          })`, // 🔥 Switch on Click
-          backgroundSize: "cover",
+          width: spinBtnWidth,
+          height: spinBtnHeight,
+          mt: size * 0.01,
+          backgroundImage: `url(${spinning ? btnSpinClicked : btnSpin})`,
+          backgroundSize: "contain",
+          backgroundRepeat: "no-repeat",
           backgroundPosition: "center",
-          borderRadius: 2,
-          "&:hover": { opacity: 0.8 },
+          borderRadius: spinBtnHeight / 2,
+          transition: "transform 0.15s ease, opacity 0.15s ease",
+          "&:hover": {
+            opacity: 0.9,
+            transform: "scale(1.04)",
+          },
+          "&:active": {
+            transform: "scale(0.96)",
+          },
+          "&.Mui-disabled": {
+            opacity: 0.5,
+          },
         }}
       />
-      <LanguageSelector top={20} right={20} />
     </Box>
   );
 };

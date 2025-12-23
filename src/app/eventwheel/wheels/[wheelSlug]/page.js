@@ -3,14 +3,14 @@ import React, { useState, useEffect } from "react";
 import { Box, Button, TextField, Typography } from "@mui/material";
 import { useParams, useRouter } from "next/navigation";
 import {
-  addOrUpdateParticipantsInBulk,
-  getBulkParticipantsForSpinWheel,
+  addParticipantsOnSpot,
+  getParticipantsBySlug,
 } from "@/services/eventwheel/spinWheelParticipantService";
-const btnReady = "/icons%20and%20assets/ready1.png";
-const btnReadyClicked = "/icons%20and%20assets/ready2.png";
+const btnReady = "/ready1.png";
+const btnReadyClicked = "/ready2.png";
 const background = "/prize-1080x1920.jpg";
-const imgDivider = "/icons%20and%20assets/divider.png";
-const imgShuffle = "/icons%20and%20assets/shuffle.png";
+const imgDivider = "/divider.png";
+const imgShuffle = "/shuffle.png";
 import { getSpinWheelBySlug } from "@/services/eventwheel/spinWheelService";
 import Image from "next/image";
 import useI18nLayout from "@/hooks/useI18nLayout";
@@ -51,9 +51,7 @@ const ParticipantsUserPage = () => {
     const fetchEventAndParticipants = async () => {
       const eventData = await getSpinWheelBySlug(shortName);
       setEvent(eventData);
-      const existingParticipants = await getBulkParticipantsForSpinWheel(
-        shortName
-      );
+      const existingParticipants = await getParticipantsBySlug(shortName);
       if (existingParticipants.length > 0) {
         setBulkNames(existingParticipants.map((p) => p.name).join("\n"));
       }
@@ -80,13 +78,13 @@ const ParticipantsUserPage = () => {
     const formattedNames = bulkNames.split("\n").map((name) => name.trim());
 
     setLoading(true);
-    await addOrUpdateParticipantsInBulk({
+    await addParticipantsOnSpot({
       slug: shortName,
       participants: formattedNames,
     });
     router.push(`/eventwheel/spin/${shortName}`);
     setLoading(false);
-    setTimeout(() => setBtnClicked(false), 2000); // 🔥 Reset Button After 2 Secs
+    setTimeout(() => setBtnClicked(false), 2000);
   };
   if (!event) return <LoadingState />;
   return (

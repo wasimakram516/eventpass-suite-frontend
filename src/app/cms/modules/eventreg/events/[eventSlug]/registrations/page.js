@@ -500,9 +500,7 @@ export default function ViewRegistrations() {
     }
 
     const res = await createRegistration(payload);
-    if (res?.error) {
-      throw new Error(res.message || "Failed to create registration");
-    }
+    
     setCreateModalOpen(false);
     showMessage("Registration created successfully", "success");
   };
@@ -813,8 +811,7 @@ export default function ViewRegistrations() {
 
       const doc = <BadgePDF data={badgeData} qrCodeDataUrl={qrCodeDataUrl} />;
       const blob = await pdf(doc).toBlob();
-      if (!blob || blob.size === 0) throw new Error("Empty PDF generated");
-
+      
       const blobUrl = URL.createObjectURL(blob);
       const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 
