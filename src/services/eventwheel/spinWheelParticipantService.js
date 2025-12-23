@@ -64,6 +64,52 @@ export const getSpinWheelSyncFilters = withApiHandler(async (spinWheelId) => {
 });
 
 /* =========================
+   EXPORT
+========================= */
+
+// Export participants to XLSX (synced + non-synced wheels)
+export const exportSpinWheelParticipantsXlsx = withApiHandler(
+  async (spinWheelId) => {
+    const response = await api.get(
+      `/eventwheel/participants/export/${spinWheelId}/xlsx`,
+      {
+        responseType: "blob", // IMPORTANT for file downloads
+      }
+    );
+
+    // Create file download
+    const blob = new Blob([response.data], {
+      type:
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+
+    // Try to extract filename from headers, fallback if missing
+    const contentDisposition = response.headers["content-disposition"];
+    let filename = "spinwheel_participants.xlsx";
+
+    if (contentDisposition) {
+      const match = contentDisposition.match(/filename="?(.+)"?/);
+      if (match?.[1]) filename = match[1];
+    }
+
+    link.setAttribute("download", filename);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+
+    return true;
+  },
+  {
+    showSuccess: false, 
+  }
+);
+
+/* =========================
    UPDATE / DELETE
 ========================= */
 

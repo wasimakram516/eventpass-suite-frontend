@@ -26,6 +26,7 @@ import {
 import {
   addParticipant,
   deleteParticipant,
+  exportSpinWheelParticipantsXlsx,
   getParticipantsBySlug,
   getSpinWheelSyncFilters,
   syncSpinWheelParticipants,
@@ -55,6 +56,7 @@ const translations = {
       "Are you sure you want to move this item to the Recycle Bin?",
     delete: "Delete",
     syncParticipants: "Sync Participants",
+    exportParticipants: "Export Participants",
   },
   ar: {
     participants: "المشاركون",
@@ -69,6 +71,7 @@ const translations = {
     deleteMessage: "هل أنت متأكد أنك تريد نقل هذا العنصر إلى سلة المحذوفات؟",
     delete: "حذف",
     syncParticipants: "مزامنة المشاركين",
+    exportParticipants: "تصدير المشاركين",
   },
 };
 
@@ -124,6 +127,10 @@ const ParticipantsAdminPage = () => {
       fetchParticipants();
     }
   }, [syncing, isSyncComplete]);
+
+  const handleExport = async () => {
+  await exportSpinWheelParticipantsXlsx(event._id);
+};
 
   const handleOpenModal = () => {
     setForm({ name: "", phone: "", company: "" });
@@ -219,6 +226,16 @@ const ParticipantsAdminPage = () => {
             </Typography>
           </Box>
           <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+            <Button
+              variant="outlined"
+              color="primary"
+              onClick={handleExport}
+              startIcon={<ICONS.download />}
+              sx={getStartIconSpacing(dir)}
+            >
+              {t.exportParticipants}
+            </Button>
+
             {event.type === "admin" && (
               <Button
                 variant="contained"
