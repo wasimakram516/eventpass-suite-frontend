@@ -51,6 +51,7 @@ const translations = {
         notConfirmed: "Not Confirmed",
         all: "All",
         filterByStatus: "Filter by Status",
+        defaultEmailInfo: "When sending default bulk messages, the system will use the default Email and WhatsApp invitation templates.",
     },
     ar: {
         title: "إرسال بريد جماعي",
@@ -66,6 +67,7 @@ const translations = {
         notConfirmed: "غير مؤكد",
         all: "الكل",
         filterByStatus: "تصفية حسب الحالة",
+        defaultEmailInfo: "عند إرسال رسائل جماعية افتراضية، سيستخدم النظام قوالب الدعوة الافتراضية للبريد الإلكتروني والواتساب.",
     },
 };
 
@@ -489,6 +491,21 @@ const BulkEmailModal = ({
                             }}
                         />
                     </RadioGroup>
+
+                    {emailType === "default" && (
+                    <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{
+                        mt: 1,
+                        maxWidth: 520,
+                        fontSize: "0.85rem",
+                        lineHeight: 1.6,
+                        }}
+                    >
+                        {t.defaultEmailInfo}
+                    </Typography>
+                    )}
 
                     {emailType === "custom" && (
                         <>

@@ -79,7 +79,7 @@ export default function Modules() {
 
   return (
     <Box dir={dir} sx={{ pb: 8, bgcolor: "background.default" }}>
-      <Container>
+     
         <Box sx={{ mb: 3 }}>
           <Typography
             variant="h2"
@@ -162,7 +162,6 @@ export default function Modules() {
             ))}
           </Grid>
         )}
-      </Container>
     </Box>
   );
 }
