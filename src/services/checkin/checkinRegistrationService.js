@@ -127,3 +127,15 @@ export const confirmCheckInPresence = withApiHandler(
   },
   { showSuccess: true }
 );
+
+// Send bulk registration emails for an event (CMS admin use)
+export const sendCheckInBulkEmails = withApiHandler(
+  async (slug, customEmail = null) => {
+    const { data } = await api.post(
+      `/checkin/registrations/event/${slug}/bulk-email`,
+      customEmail || {}
+    );
+    return data;
+  },
+  { showSuccess: true }
+);
