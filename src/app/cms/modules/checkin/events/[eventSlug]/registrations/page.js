@@ -53,10 +53,11 @@ import NoDataAvailable from "@/components/NoDataAvailable";
 import useCheckInSocket from "@/hooks/modules/checkin/useCheckInSocket";
 import RegistrationModal from "@/components/modals/RegistrationModal";
 import WalkInModal from "@/components/modals/WalkInModal";
+import BulkEmailModal from "@/components/modals/BulkEmailModal";
 import { useMessage } from "@/contexts/MessageContext";
 import { formatDateTimeWithLocale } from "@/utils/dateUtils";
 import { wrapTextBox } from "@/utils/wrapTextStyles";
-import { createCheckInWalkIn } from "@/services/checkin/checkinRegistrationService";
+import { createCheckInWalkIn, sendCheckInBulkEmails } from "@/services/checkin/checkinRegistrationService";
 
 const translations = {
     en: {
@@ -83,6 +84,7 @@ const translations = {
         filters: "Filters",
         searchPlaceholder: "Search...",
         sendBulkEmails: "Send Bulk Emails",
+        sendingEmails: "Sending Emails...",
         inviteSent: "Invitation sent",
         inviteNotSent: "Invitation not sent",
         emailSent: "Email Sent",
@@ -134,6 +136,7 @@ const translations = {
         filters: "تصفية",
         searchPlaceholder: "بحث...",
         sendBulkEmails: "إرسال رسائل البريد الجماعية",
+        sendingEmails: "جاري إرسال الرسائل...",
         inviteSent: "تم إرسال الدعوة",
         inviteNotSent: "لم تُرسل الدعوة",
         emailSent: "تم إرسال البريد",
@@ -237,6 +240,8 @@ export default function ViewRegistrations() {
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [editingReg, setEditingReg] = useState(null);
     const [createModalOpen, setCreateModalOpen] = useState(false);
+    const [bulkEmailModalOpen, setBulkEmailModalOpen] = useState(false);
+    const [sendingEmails, setSendingEmails] = useState(false);
 
     const fetchData = async () => {
         setLoading(true);
@@ -377,11 +382,37 @@ export default function ViewRegistrations() {
         );
     }, []);
 
-    useCheckInSocket({
+    const handleEmailProgress = useCallback(
+        (data) => {
+            const { processed, total, sent, failed } = data;
+
+            // (handle case when total is 0)
+            if (processed === total) {
+                setSendingEmails(false);
+                setBulkEmailModalOpen(false);
+                fetchData();
+
+                if (total === 0) {
+                    showMessage(
+                        "No emails to send. No registrations match the selected filter.",
+                        "info"
+                    );
+                } else {
+                    showMessage(
+                        `Bulk emails completed — ${sent} sent, ${failed} failed, out of ${total} total.`,
+                        "success"
+                    );
+                }
+            }
+        },
+        [showMessage]
+    );
+
+    const { emailProgress } = useCheckInSocket({
         eventId: eventDetails?._id,
         onLoadingProgress: handleLoadingProgress,
         onUploadProgress: handleUploadProgress,
-        onEmailProgress: () => { },
+        onEmailProgress: handleEmailProgress,
         onNewRegistration: handleNewRegistration,
         onPresenceConfirmed: handlePresenceConfirmed,
     });
@@ -734,11 +765,22 @@ export default function ViewRegistrations() {
                     <Button
                         variant="contained"
                         color="secondary"
-                        onClick={() => showMessage("Bulk emails not implemented yet", "info")}
-                        startIcon={<ICONS.email />}
+                        disabled={sendingEmails}
+                        onClick={() => setBulkEmailModalOpen(true)}
+                        startIcon={
+                            sendingEmails ? (
+                                <CircularProgress size={20} color="inherit" />
+                            ) : (
+                                <ICONS.email />
+                            )
+                        }
                         sx={getStartIconSpacing(dir)}
                     >
-                        {t.sendBulkEmails}
+                        {sendingEmails && emailProgress.total
+                            ? `${t.sendingEmails} ${emailProgress.processed}/${emailProgress.total}`
+                            : sendingEmails
+                                ? t.sendingEmails
+                                : t.sendBulkEmails}
                     </Button>
                 )}
 
@@ -1603,6 +1645,52 @@ export default function ViewRegistrations() {
                         }
                     }
                 }}
+            />
+
+            <BulkEmailModal
+                open={bulkEmailModalOpen}
+                onClose={() => {
+                    if (!sendingEmails) {
+                        setBulkEmailModalOpen(false);
+                    }
+                }}
+                onSendEmail={async (data) => {
+                    if (data.type === "default") {
+                        setSendingEmails(true);
+                        const result = await sendCheckInBulkEmails(eventSlug, {
+                            statusFilter: data.statusFilter || "all",
+                        });
+                        if (result?.error) {
+                            setSendingEmails(false);
+                            showMessage(result.message || "Failed to send emails", "error");
+                        }
+                        // Progress will be handled by socket callback
+                    } else {
+                        // Custom email
+                        if (!data.subject || !data.body) {
+                            showMessage("Subject and body are required for custom emails", "error");
+                            return;
+                        }
+                        setSendingEmails(true);
+                        const result = await sendCheckInBulkEmails(eventSlug, {
+                            subject: data.subject,
+                            body: data.body,
+                            statusFilter: data.statusFilter || "all",
+                        });
+                        if (result?.error) {
+                            setSendingEmails(false);
+                            showMessage(result.message || "Failed to send emails", "error");
+                        }
+                        // Progress will be handled by socket callback
+                    }
+                }}
+                onSendWhatsApp={(data) => {
+                    // TODO: Implement send WhatsApp functionality
+                    console.log("Send WhatsApp:", data);
+                    showMessage("WhatsApp sending functionality will be implemented", "info");
+                }}
+                sendingEmails={sendingEmails}
+                emailProgress={emailProgress}
             />
         </Container>
     );
