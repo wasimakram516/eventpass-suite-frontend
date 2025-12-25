@@ -409,17 +409,7 @@ const BulkEmailModal = ({
     };
 
     const handleSendWhatsApp = () => {
-        if (emailType === "custom" && !subject.trim()) {
-            setSubjectError(true);
-            return;
-        }
-        setSubjectError(false);
-        onSendWhatsApp({
-            type: emailType,
-            subject: emailType === "custom" ? subject : undefined,
-            body: emailType === "custom" ? body : undefined,
-            statusFilter: emailType === "custom" ? statusFilter : undefined,
-        });
+        onSendWhatsApp();
         handleClose();
     };
 
@@ -493,18 +483,18 @@ const BulkEmailModal = ({
                     </RadioGroup>
 
                     {emailType === "default" && (
-                    <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{
-                        mt: 1,
-                        maxWidth: 520,
-                        fontSize: "0.85rem",
-                        lineHeight: 1.6,
-                        }}
-                    >
-                        {t.defaultEmailInfo}
-                    </Typography>
+                        <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{
+                                mt: 1,
+                                maxWidth: 520,
+                                fontSize: "0.85rem",
+                                lineHeight: 1.6,
+                            }}
+                        >
+                            {t.defaultEmailInfo}
+                        </Typography>
                     )}
 
                     {emailType === "custom" && (
@@ -578,16 +568,18 @@ const BulkEmailModal = ({
                     py: 2,
                 }}
             >
-                <Button
-                    variant="contained"
-                    color="success"
-                    startIcon={<ICONS.whatsapp />}
-                    onClick={handleSendWhatsApp}
-                    disabled={sendingEmails}
-                    sx={getStartIconSpacing(dir)}
-                >
-                    {t.sendWhatsApp}
-                </Button>
+                {emailType === "default" && (
+                    <Button
+                        variant="contained"
+                        color="success"
+                        startIcon={<ICONS.whatsapp />}
+                        onClick={handleSendWhatsApp}
+                        disabled={sendingEmails}
+                        sx={getStartIconSpacing(dir)}
+                    >
+                        {t.sendWhatsApp}
+                    </Button>
+                )}
                 <Button
                     variant="contained"
                     color="primary"

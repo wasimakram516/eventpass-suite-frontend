@@ -57,7 +57,7 @@ import BulkEmailModal from "@/components/modals/BulkEmailModal";
 import { useMessage } from "@/contexts/MessageContext";
 import { formatDateTimeWithLocale } from "@/utils/dateUtils";
 import { wrapTextBox } from "@/utils/wrapTextStyles";
-import { createCheckInWalkIn, sendCheckInBulkEmails } from "@/services/checkin/checkinRegistrationService";
+import { createCheckInWalkIn, sendCheckInBulkEmails, sendCheckInBulkWhatsApp } from "@/services/checkin/checkinRegistrationService";
 
 const translations = {
     en: {
@@ -83,8 +83,8 @@ const translations = {
         deleteRecord: "Delete Registration",
         filters: "Filters",
         searchPlaceholder: "Search...",
-        sendBulkEmails: "Send Bulk Emails",
-        sendingEmails: "Sending Emails...",
+        sendBulkEmails: "Send Bulk Notifications",
+        sendingEmails: "Sending notifications...",
         inviteSent: "Invitation sent",
         inviteNotSent: "Invitation not sent",
         emailSent: "Email Sent",
@@ -135,8 +135,8 @@ const translations = {
         deleteRecord: "حذف التسجيل",
         filters: "تصفية",
         searchPlaceholder: "بحث...",
-        sendBulkEmails: "إرسال رسائل البريد الجماعية",
-        sendingEmails: "جاري إرسال الرسائل...",
+        sendBulkEmails: "إرسال الإشعارات الجماعية",
+        sendingEmails: "جاري إرسال الإشعارات...",
         inviteSent: "تم إرسال الدعوة",
         inviteNotSent: "لم تُرسل الدعوة",
         emailSent: "تم إرسال البريد",
@@ -1155,47 +1155,64 @@ export default function ViewRegistrations() {
                                     </Box>
 
                                     <CardContent sx={{ flexGrow: 1, px: 2, py: 1.5 }}>
-                                        {dynamicFields.map((f) => (
-                                            <Box
-                                                key={f.name}
-                                                sx={{
-                                                    display: "flex",
-                                                    justifyContent: "space-between",
-                                                    alignItems: "flex-start",
-                                                    py: 0.8,
-                                                    borderBottom: "1px solid",
-                                                    borderColor: "divider",
-                                                    "&:last-of-type": { borderBottom: "none" },
-                                                }}
-                                            >
-                                                <Typography
-                                                    variant="body2"
+                                        {dynamicFields.map((f) => {
+                                            const isPhoneField = f.name?.toLowerCase().includes("phone") || f.type === "phone";
+                                            const fieldValue = reg.customFields?.[f.name] ?? reg[f.name] ?? null;
+                                            let displayValue = "—";
+
+                                            if (fieldValue) {
+                                                const valueStr = String(fieldValue).trim();
+                                                if (valueStr) {
+                                                    if (isPhoneField && !valueStr.startsWith("+92")) {
+                                                        displayValue = `+92${valueStr}`;
+                                                    } else {
+                                                        displayValue = valueStr;
+                                                    }
+                                                }
+                                            }
+
+                                            return (
+                                                <Box
+                                                    key={f.name}
                                                     sx={{
                                                         display: "flex",
-                                                        alignItems: "center",
-                                                        gap: 0.6,
-                                                        color: "text.secondary",
+                                                        justifyContent: "space-between",
+                                                        alignItems: "flex-start",
+                                                        py: 0.8,
+                                                        borderBottom: "1px solid",
+                                                        borderColor: "divider",
+                                                        "&:last-of-type": { borderBottom: "none" },
                                                     }}
                                                 >
-                                                    <ICONS.personOutline fontSize="small" sx={{ opacity: 0.6 }} />
-                                                    {getFieldLabel(f.name)}
-                                                </Typography>
+                                                    <Typography
+                                                        variant="body2"
+                                                        sx={{
+                                                            display: "flex",
+                                                            alignItems: "center",
+                                                            gap: 0.6,
+                                                            color: "text.secondary",
+                                                        }}
+                                                    >
+                                                        <ICONS.personOutline fontSize="small" sx={{ opacity: 0.6 }} />
+                                                        {getFieldLabel(f.name)}
+                                                    </Typography>
 
-                                                <Typography
-                                                    variant="body2"
-                                                    fontWeight={500}
-                                                    sx={{
-                                                        ml: 2,
-                                                        textAlign: dir === "rtl" ? "left" : "right",
-                                                        flex: 1,
-                                                        color: "text.primary",
-                                                        ...wrapTextBox,
-                                                    }}
-                                                >
-                                                    {reg.customFields?.[f.name] ?? reg[f.name] ?? "—"}
-                                                </Typography>
-                                            </Box>
-                                        ))}
+                                                    <Typography
+                                                        variant="body2"
+                                                        fontWeight={500}
+                                                        sx={{
+                                                            ml: 2,
+                                                            textAlign: dir === "rtl" ? "left" : "right",
+                                                            flex: 1,
+                                                            color: "text.primary",
+                                                            ...wrapTextBox,
+                                                        }}
+                                                    >
+                                                        {displayValue}
+                                                    </Typography>
+                                                </Box>
+                                            );
+                                        })}
                                     </CardContent>
 
                                     <CardActions
@@ -1684,10 +1701,13 @@ export default function ViewRegistrations() {
                         // Progress will be handled by socket callback
                     }
                 }}
-                onSendWhatsApp={(data) => {
-                    // TODO: Implement send WhatsApp functionality
-                    console.log("Send WhatsApp:", data);
-                    showMessage("WhatsApp sending functionality will be implemented", "info");
+                onSendWhatsApp={async () => {
+                    setSendingEmails(true);
+                    const result = await sendCheckInBulkWhatsApp(eventSlug);
+                    if (result?.error) {
+                        setSendingEmails(false);
+                        showMessage(result.message || "Failed to send WhatsApp messages", "error");
+                    }
                 }}
                 sendingEmails={sendingEmails}
                 emailProgress={emailProgress}

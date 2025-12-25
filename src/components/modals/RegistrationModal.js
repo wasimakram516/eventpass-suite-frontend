@@ -19,6 +19,7 @@ import {
     Typography,
     FormHelperText,
     CircularProgress,
+    InputAdornment,
 } from "@mui/material";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
@@ -191,6 +192,8 @@ export default function RegistrationModal({
             );
         }
 
+        const isPhoneField = f.inputName?.toLowerCase().includes("phone") || f.inputType === "phone";
+
         return (
             <TextField
                 key={f.inputName}
@@ -203,6 +206,13 @@ export default function RegistrationModal({
                 error={!!errorMsg}
                 helperText={errorMsg || ""}
                 type={f.inputType === "number" ? "number" : f.inputType === "email" ? "email" : "text"}
+                InputProps={
+                    isPhoneField
+                        ? {
+                            startAdornment: <InputAdornment position="start">+92</InputAdornment>,
+                        }
+                        : undefined
+                }
             />
         );
     };

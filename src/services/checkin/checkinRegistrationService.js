@@ -139,3 +139,15 @@ export const sendCheckInBulkEmails = withApiHandler(
   },
   { showSuccess: true }
 );
+
+// Send bulk WhatsApp messages for an event (CMS admin use)
+export const sendCheckInBulkWhatsApp = withApiHandler(
+  async (slug) => {
+    const { data } = await api.post(
+      `/checkin/registrations/event/${slug}/bulk-whatsapp`,
+      {}
+    );
+    return data;
+  },
+  { showSuccess: true }
+);
