@@ -1158,13 +1158,14 @@ export default function ViewRegistrations() {
                                         {dynamicFields.map((f) => {
                                             const isPhoneField = f.name?.toLowerCase().includes("phone") || f.type === "phone";
                                             const fieldValue = reg.customFields?.[f.name] ?? reg[f.name] ?? null;
+                                            const countryCode = process.env.NEXT_PUBLIC_WHATSAPP_COUNTRY_CODE || "+92";
                                             let displayValue = "—";
 
                                             if (fieldValue) {
                                                 const valueStr = String(fieldValue).trim();
                                                 if (valueStr) {
-                                                    if (isPhoneField && !valueStr.startsWith("+92")) {
-                                                        displayValue = `+92${valueStr}`;
+                                                    if (isPhoneField && !valueStr.startsWith(countryCode)) {
+                                                        displayValue = `${countryCode}${valueStr}`;
                                                     } else {
                                                         displayValue = valueStr;
                                                     }

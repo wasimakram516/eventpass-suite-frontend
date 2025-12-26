@@ -51,6 +51,7 @@ const translations = {
     slugLabel: "Slug:",
     dateRange: "Dates",
     venue: "Venue",
+    registrations: "Registrations",
     edit: "Edit",
     delete: "Delete",
     shareTitle: "Share",
@@ -73,6 +74,7 @@ const translations = {
     slugLabel: ":المعرف",
     dateRange: "التواريخ",
     venue: "الموقع",
+    registrations: "التسجيلات",
     edit: "تعديل",
     delete: "حذف",
     shareTitle: "مشاركة",
@@ -275,7 +277,7 @@ export default function EventsPage() {
                     event={event}
                     t={t}
                     status={eventStatus}
-                    showRegistrations={false}
+                    showRegistrations
                     onView={
                       event.slug
                         ? () =>

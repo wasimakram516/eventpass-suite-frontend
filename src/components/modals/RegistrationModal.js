@@ -24,6 +24,8 @@ import {
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 
+const WHATSAPP_COUNTRY_CODE = process.env.NEXT_PUBLIC_WHATSAPP_COUNTRY_CODE || "+968";
+
 export default function RegistrationModal({
     open,
     onClose,
@@ -103,6 +105,35 @@ export default function RegistrationModal({
 
     const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
+    const isPhoneField = (field) => {
+        return field.inputName?.toLowerCase().includes("phone") || field.inputType === "phone";
+    };
+
+    const validatePhoneNumber = (phone) => {
+        if (!phone) return null;
+        const digits = phone.toString().replace(/\D/g, "");
+
+        if (WHATSAPP_COUNTRY_CODE === "+968") {
+            if (digits.length === 8) {
+                return null;
+            }
+            if (digits.length < 8) {
+                return "Phone number must be 8 digits";
+            }
+            return "Phone number must be 8 digits";
+        } else if (WHATSAPP_COUNTRY_CODE === "+92") {
+            if (digits.length === 10) {
+                return null;
+            }
+            if (digits.length < 10) {
+                return "Phone number must be 10 digits";
+            }
+            return "Phone number must be 10 digits";
+        }
+
+        return "Invalid phone number format";
+    };
+
     const validateFields = () => {
         const errors = {};
         fieldsToRender.forEach((f) => {
@@ -115,6 +146,13 @@ export default function RegistrationModal({
 
             if ((f.inputType === "email" || f.inputName === "Email") && val && !isValidEmail(val)) {
                 errors[f.inputName] = "Invalid email address";
+            }
+
+            if (isPhoneField(f) && val) {
+                const phoneError = validatePhoneNumber(val);
+                if (phoneError) {
+                    errors[f.inputName] = phoneError;
+                }
             }
         });
 
@@ -205,11 +243,11 @@ export default function RegistrationModal({
                 required={required}
                 error={!!errorMsg}
                 helperText={errorMsg || ""}
-                type={f.inputType === "number" ? "number" : f.inputType === "email" ? "email" : "text"}
+                type={isPhoneField ? "number" : f.inputType === "number" ? "number" : f.inputType === "email" ? "email" : "text"}
                 InputProps={
                     isPhoneField
                         ? {
-                            startAdornment: <InputAdornment position="start">+92</InputAdornment>,
+                            startAdornment: <InputAdornment position="start">{WHATSAPP_COUNTRY_CODE}</InputAdornment>,
                         }
                         : undefined
                 }
