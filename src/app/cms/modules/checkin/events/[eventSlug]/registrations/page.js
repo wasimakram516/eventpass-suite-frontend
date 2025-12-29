@@ -54,6 +54,7 @@ import useCheckInSocket from "@/hooks/modules/checkin/useCheckInSocket";
 import RegistrationModal from "@/components/modals/RegistrationModal";
 import WalkInModal from "@/components/modals/WalkInModal";
 import BulkEmailModal from "@/components/modals/BulkEmailModal";
+import ShareLinkModal from "@/components/modals/ShareLinkModal";
 import { useMessage } from "@/contexts/MessageContext";
 import { formatDateTimeWithLocale } from "@/utils/dateUtils";
 import { wrapTextBox } from "@/utils/wrapTextStyles";
@@ -95,6 +96,7 @@ const translations = {
         confirmed: "Confirmed",
         pending: "Pending",
         notConfirmed: "Not confirmed",
+        shareLink: "Share Link",
         recordsPerPage: "Records per page",
         showing: "Showing",
         of: "of",
@@ -147,6 +149,7 @@ const translations = {
         confirmed: "مؤكد",
         pending: "قيد الانتظار",
         notConfirmed: "غير مؤكد",
+        shareLink: "مشاركة الرابط",
         recordsPerPage: "عدد السجلات لكل صفحة",
         showing: "عرض",
         of: "من",
@@ -242,6 +245,8 @@ export default function ViewRegistrations() {
     const [createModalOpen, setCreateModalOpen] = useState(false);
     const [bulkEmailModalOpen, setBulkEmailModalOpen] = useState(false);
     const [sendingEmails, setSendingEmails] = useState(false);
+    const [shareModalOpen, setShareModalOpen] = useState(false);
+    const [registrationToShare, setRegistrationToShare] = useState(null);
 
     const fetchData = async () => {
         setLoading(true);
@@ -374,7 +379,7 @@ export default function ViewRegistrations() {
                 if (r._id === reg._id) {
                     return {
                         ...r,
-                        approvalStatus: "confirmed",
+                        approvalStatus: reg.approvalStatus || "pending",
                     };
                 }
                 return r;
@@ -663,19 +668,29 @@ export default function ViewRegistrations() {
     );
 
     const renderConfirmation = (reg) => {
-        const confirmed = (reg.approvalStatus || "").toLowerCase() === "confirmed";
+        const status = (reg.approvalStatus || "pending").toLowerCase();
+        const isConfirmed = status === "confirmed";
+        const isNotConfirmed = status === "not_confirmed";
+
+        let statusText = t.pending;
+        if (isConfirmed) {
+            statusText = t.confirmed;
+        } else if (isNotConfirmed) {
+            statusText = t.notConfirmed;
+        }
+
         return (
             <Typography
                 variant="caption"
-                color={confirmed ? "success.main" : "warning.main"}
+                color={isConfirmed ? "success.main" : "warning.main"}
                 sx={{ display: "flex", alignItems: "center", gap: 0.6, fontWeight: 500 }}
             >
-                {confirmed ? (
+                {isConfirmed ? (
                     <ICONS.checkCircle fontSize="small" />
                 ) : (
                     <ICONS.warning fontSize="small" />
                 )}
-                {confirmed ? t.confirmed : t.notConfirmed}
+                {statusText}
             </Typography>
         );
     };
@@ -1156,19 +1171,13 @@ export default function ViewRegistrations() {
 
                                     <CardContent sx={{ flexGrow: 1, px: 2, py: 1.5 }}>
                                         {dynamicFields.map((f) => {
-                                            const isPhoneField = f.name?.toLowerCase().includes("phone") || f.type === "phone";
                                             const fieldValue = reg.customFields?.[f.name] ?? reg[f.name] ?? null;
-                                            const countryCode = process.env.NEXT_PUBLIC_WHATSAPP_COUNTRY_CODE || "+92";
                                             let displayValue = "—";
 
                                             if (fieldValue) {
                                                 const valueStr = String(fieldValue).trim();
                                                 if (valueStr) {
-                                                    if (isPhoneField && !valueStr.startsWith(countryCode)) {
-                                                        displayValue = `${countryCode}${valueStr}`;
-                                                    } else {
-                                                        displayValue = valueStr;
-                                                    }
+                                                    displayValue = valueStr;
                                                 }
                                             }
 
@@ -1244,6 +1253,7 @@ export default function ViewRegistrations() {
                                                 >
                                                     <MenuItem value="pending">{t.pending}</MenuItem>
                                                     <MenuItem value="confirmed">{t.confirmed}</MenuItem>
+                                                    <MenuItem value="not_confirmed">{t.notConfirmed}</MenuItem>
                                                 </Select>
                                             </FormControl>
 
@@ -1266,10 +1276,14 @@ export default function ViewRegistrations() {
 
                                                 <Tooltip title={t.editRegistration}>
                                                     <IconButton
-                                                        color="primary"
+                                                        color="warning"
                                                         onClick={() => {
                                                             setEditingReg(reg);
                                                             setEditModalOpen(true);
+                                                        }}
+                                                        sx={{
+                                                            "&:hover": { transform: "scale(1.1)" },
+                                                            transition: "0.2s",
                                                         }}
                                                     >
                                                         <ICONS.edit fontSize="small" />
@@ -1289,6 +1303,22 @@ export default function ViewRegistrations() {
                                                         }}
                                                     >
                                                         <ICONS.delete />
+                                                    </IconButton>
+                                                </Tooltip>
+
+                                                <Tooltip title={t.shareLink}>
+                                                    <IconButton
+                                                        color="info"
+                                                        onClick={() => {
+                                                            setRegistrationToShare(reg);
+                                                            setShareModalOpen(true);
+                                                        }}
+                                                        sx={{
+                                                            "&:hover": { transform: "scale(1.1)" },
+                                                            transition: "0.2s",
+                                                        }}
+                                                    >
+                                                        <ICONS.share fontSize="small" />
                                                     </IconButton>
                                                 </Tooltip>
                                             </Box>
@@ -1712,6 +1742,21 @@ export default function ViewRegistrations() {
                 }}
                 sendingEmails={sendingEmails}
                 emailProgress={emailProgress}
+            />
+
+            <ShareLinkModal
+                open={shareModalOpen}
+                onClose={() => {
+                    setShareModalOpen(false);
+                    setRegistrationToShare(null);
+                }}
+                url={
+                    registrationToShare && typeof window !== "undefined"
+                        ? `${window.location.origin}/checkin/event/${eventSlug}?token=${registrationToShare.token}`
+                        : ""
+                }
+                name={registrationToShare?.fullName || registrationToShare?.token || "registration"}
+                title={t.shareLink}
             />
         </Container>
     );
