@@ -9,12 +9,19 @@ import {
   Button,
   Alert,
   Stack,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  IconButton,
 } from "@mui/material";
 
 import { getCheckInEventBySlug } from "@/services/checkin/checkinEventService";
 import {
   getCheckInRegistrationByToken,
   confirmCheckInPresence,
+  updateCheckInAttendanceStatus,
 } from "@/services/checkin/checkinRegistrationService";
 import LanguageSelector from "@/components/LanguageSelector";
 import useI18nLayout from "@/hooks/useI18nLayout";
@@ -23,7 +30,6 @@ import EventWelcomeCard from "@/components/cards/EventWelcomeCard";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import { formatDateWithShortMonth } from "@/utils/dateUtils";
-import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 
 export default function EventDetails() {
   const { eventSlug } = useParams();
@@ -36,20 +42,21 @@ export default function EventDetails() {
       welcome: "Welcome",
       welcomeTo: "Welcome to",
       thankYou:
-        "Thank you for joining us! Please confirm your presence using the link provided in your invitation.",
-      confirmPresence: "Confirm Your Presence",
+        "Thank you for joining us! Please confirm your attendance using the link provided in your invitation.",
+      confirmPresence: "Confirm Your Attendance",
       confirming: "Confirming...",
-      presenceConfirmed: "Your presence has been confirmed!",
-      alreadyConfirmed: "Your presence is already confirmed.",
+      presenceConfirmed: "Your attendance has been confirmed!",
+      alreadyConfirmed: "Your attendance is already confirmed.",
       takesSeconds: "Takes only 5 seconds!",
       dateNotAvailable: "Date not available",
       to: "to",
       registrationNotFound: "Registration not found. Please check your link.",
-      failedToConfirm: "Failed to confirm presence. Please try again.",
-      confirmPresenceTitle: "Confirm Your Presence",
+      failedToConfirm: "Failed to confirm attendance. Please try again.",
+      confirmPresenceTitle: "Confirm Your Attendance",
       confirmPresenceMessage:
-        "Are you sure you want to confirm your presence for this event? This action will update your registration status.",
-      confirmButton: "Yes, Confirm",
+        "Kindly confirm that you are planning to attend. Don't worry, you can always inform the organizer if your plans change. For any further information, please don't hesitate to contact the organizer.",
+      confirmButton: "Confirmed",
+      notConfirmedButton: "Not Confirmed",
       cancelButton: "Cancel",
     },
     ar: {
@@ -68,8 +75,9 @@ export default function EventDetails() {
       failedToConfirm: "فشل تأكيد الحضور. يرجى المحاولة مرة أخرى.",
       confirmPresenceTitle: "أكد حضورك",
       confirmPresenceMessage:
-        "هل أنت متأكد أنك تريد تأكيد حضورك لهذا الحدث؟ سيتم تحديث حالة تسجيلك.",
-      confirmButton: "نعم، أكد",
+        "يرجى تأكيد أنك تخطط للحضور، لا تقلق يمكنك دائمًا إبلاغ المنظم إذا تغيرت خططك، لمزيد من المعلومات لا تتردد في الاتصال بالمنظم.",
+      confirmButton: "مؤكد",
+      notConfirmedButton: "غير مؤكد",
       cancelButton: "إلغاء",
     },
   });
@@ -78,19 +86,19 @@ export default function EventDetails() {
     setShowConfirmModal(true);
   };
 
-  const handleConfirmPresence = async () => {
+  const handleConfirmAttendance = async (status) => {
     if (!token) return;
     setShowConfirmModal(false);
     setConfirming(true);
     setRegistrationError("");
     setJustConfirmed(false);
     try {
-      const result = await confirmCheckInPresence(token);
+      const result = await updateCheckInAttendanceStatus(token, status);
       if (!result?.error) {
-        setConfirmed(true);
+        setConfirmed(status === "confirmed");
         setJustConfirmed(true);
         setRegistration((prev) =>
-          prev ? { ...prev, approvalStatus: "confirmed" } : null
+          prev ? { ...prev, approvalStatus: status } : null
         );
       } else {
         setRegistrationError(result.message || t.failedToConfirm);
@@ -100,6 +108,14 @@ export default function EventDetails() {
     } finally {
       setConfirming(false);
     }
+  };
+
+  const handleConfirm = () => {
+    handleConfirmAttendance("confirmed");
+  };
+
+  const handleNotConfirmed = () => {
+    handleConfirmAttendance("not_confirmed");
   };
 
   const [event, setEvent] = useState(null);
@@ -441,16 +457,116 @@ export default function EventDetails() {
       <LanguageSelector top={20} right={20} />
 
       {/* Confirmation Modal */}
-      <ConfirmationDialog
+      <Dialog
         open={showConfirmModal}
-        onClose={() => setShowConfirmModal(false)}
-        onConfirm={handleConfirmPresence}
-        title={t.confirmPresenceTitle}
-        message={t.confirmPresenceMessage}
-        confirmButtonText={t.confirmButton}
-        confirmButtonIcon={<ICONS.checkCircle />}
-        confirmButtonColor="success"
-      />
+        onClose={confirming ? null : () => setShowConfirmModal(false)}
+        dir={dir}
+        disableScrollLock={true}
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            padding: 2,
+            maxWidth: "500px",
+            width: "100%",
+            backgroundColor: "#f9fafb",
+            boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            fontWeight: "bold",
+            fontSize: "1.5rem",
+            color: "#333",
+            textAlign: "center",
+            position: "relative",
+            pb: 1,
+          }}
+        >
+          <IconButton
+            onClick={() => setShowConfirmModal(false)}
+            disabled={confirming}
+            sx={{
+              position: "absolute",
+              top: 8,
+              right: 8,
+              width: 36,
+              height: 36,
+              color: "text.secondary",
+              "&:hover": {
+                backgroundColor: "action.hover",
+              },
+            }}
+          >
+            <ICONS.close sx={{ fontSize: 22 }} />
+          </IconButton>
+          {t.confirmPresenceTitle}
+        </DialogTitle>
+        <DialogContent>
+          <Box
+            sx={{
+              textAlign: "center",
+              margin: "1rem 0",
+            }}
+          >
+            <DialogContentText
+              sx={{
+                fontSize: "1rem",
+                color: "#555",
+                lineHeight: 1.6,
+              }}
+            >
+              {t.confirmPresenceMessage}
+            </DialogContentText>
+          </Box>
+        </DialogContent>
+        <DialogActions
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            gap: 2,
+            paddingBottom: "1rem",
+            flexDirection: { xs: "column", sm: "row" },
+          }}
+        >
+          <Button
+            onClick={handleNotConfirmed}
+            variant="outlined"
+            color="error"
+            disabled={confirming}
+            startIcon={<ICONS.cancel />}
+            sx={{
+              fontWeight: "bold",
+              textTransform: "uppercase",
+              padding: "0.5rem 2rem",
+              ...getStartIconSpacing(dir),
+            }}
+          >
+            {t.notConfirmedButton}
+          </Button>
+          <Button
+            onClick={handleConfirm}
+            variant="contained"
+            color="success"
+            disabled={confirming}
+            startIcon={
+              confirming ? (
+                <CircularProgress size={20} color="inherit" />
+              ) : (
+                <ICONS.checkCircle />
+              )
+            }
+            sx={{
+              fontWeight: "bold",
+              textTransform: "uppercase",
+              padding: "0.5rem 2rem",
+              ...getStartIconSpacing(dir),
+            }}
+          >
+            {t.confirmButton}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
