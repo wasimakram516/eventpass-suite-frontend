@@ -128,6 +128,18 @@ export const confirmCheckInPresence = withApiHandler(
   { showSuccess: true }
 );
 
+// Update attendance status by token
+export const updateCheckInAttendanceStatus = withApiHandler(
+  async (token, status) => {
+    const { data } = await api.post("/checkin/registrations/update-attendance-status", {
+      token,
+      status,
+    });
+    return data;
+  },
+  { showSuccess: true }
+);
+
 // Send bulk registration emails for an event (CMS admin use)
 export const sendCheckInBulkEmails = withApiHandler(
   async (slug, customEmail = null) => {

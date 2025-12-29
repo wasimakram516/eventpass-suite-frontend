@@ -19,12 +19,10 @@ import {
     Typography,
     FormHelperText,
     CircularProgress,
-    InputAdornment,
 } from "@mui/material";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 
-const WHATSAPP_COUNTRY_CODE = process.env.NEXT_PUBLIC_WHATSAPP_COUNTRY_CODE || "+968";
 
 export default function RegistrationModal({
     open,
@@ -111,27 +109,38 @@ export default function RegistrationModal({
 
     const validatePhoneNumber = (phone) => {
         if (!phone) return null;
-        const digits = phone.toString().replace(/\D/g, "");
+        const phoneStr = phone.toString().trim();
 
-        if (WHATSAPP_COUNTRY_CODE === "+968") {
-            if (digits.length === 8) {
-                return null;
-            }
-            if (digits.length < 8) {
-                return "Phone number must be 8 digits";
-            }
-            return "Phone number must be 8 digits";
-        } else if (WHATSAPP_COUNTRY_CODE === "+92") {
-            if (digits.length === 10) {
-                return null;
-            }
-            if (digits.length < 10) {
-                return "Phone number must be 10 digits";
-            }
-            return "Phone number must be 10 digits";
+        if (!phoneStr.startsWith("+")) {
+            return "Phone number must start with country code (e.g., +92, +968, +1)";
         }
 
-        return "Invalid phone number format";
+        const digits = phoneStr.replace(/\D/g, "");
+
+        if (phoneStr.startsWith("+92")) {
+            const localDigits = digits.replace(/^92/, "");
+            if (localDigits.length !== 10) {
+                return "Pakistan phone number must be 10 digits (excluding country code +92)";
+            }
+            return null;
+        }
+
+        if (phoneStr.startsWith("+968")) {
+            const localDigits = digits.replace(/^968/, "");
+            if (localDigits.length !== 8) {
+                return "Oman phone number must be 8 digits (excluding country code +968)";
+            }
+            return null;
+        }
+
+        if (digits.length < 8) {
+            return "Phone number is too short";
+        }
+        if (digits.length > 15) {
+            return "Phone number is too long";
+        }
+
+        return null;
     };
 
     const validateFields = () => {
@@ -242,15 +251,8 @@ export default function RegistrationModal({
                 size="small"
                 required={required}
                 error={!!errorMsg}
-                helperText={errorMsg || ""}
-                type={isPhoneField ? "number" : f.inputType === "number" ? "number" : f.inputType === "email" ? "email" : "text"}
-                InputProps={
-                    isPhoneField
-                        ? {
-                            startAdornment: <InputAdornment position="start">{WHATSAPP_COUNTRY_CODE}</InputAdornment>,
-                        }
-                        : undefined
-                }
+                helperText={errorMsg || (isPhoneField ? "Enter your phone number along with country code (e.g., +1234567890)" : "")}
+                type={isPhoneField ? "tel" : f.inputType === "number" ? "number" : f.inputType === "email" ? "email" : "text"}
             />
         );
     };
