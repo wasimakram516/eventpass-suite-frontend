@@ -84,10 +84,14 @@ const translations = {
         deleteRecord: "Delete Registration",
         filters: "Filters",
         searchPlaceholder: "Search...",
-        sendBulkEmails: "Send Bulk Notifications",
+        sendBulkEmails: "Send Notifications",
         sendingEmails: "Sending notifications...",
         inviteSent: "Invitation sent",
         inviteNotSent: "Invitation not sent",
+        emailInvitationSent: "Email Invitation sent",
+        emailInvitationNotSent: "Email Invitation not sent",
+        whatsappInvitationSent: "WhatsApp Invitation sent",
+        whatsappInvitationNotSent: "WhatsApp Invitation not sent",
         emailSent: "Email Sent",
         emailNotSent: "Email Not Sent",
         copyToken: "Copy Token",
@@ -137,10 +141,14 @@ const translations = {
         deleteRecord: "حذف التسجيل",
         filters: "تصفية",
         searchPlaceholder: "بحث...",
-        sendBulkEmails: "إرسال الإشعارات الجماعية",
+        sendBulkEmails: "إرسال الإشعارات",
         sendingEmails: "جاري إرسال الإشعارات...",
         inviteSent: "تم إرسال الدعوة",
         inviteNotSent: "لم تُرسل الدعوة",
+        emailInvitationSent: "تم إرسال دعوة البريد الإلكتروني",
+        emailInvitationNotSent: "لم يتم إرسال دعوة البريد الإلكتروني",
+        whatsappInvitationSent: "تم إرسال دعوة واتساب",
+        whatsappInvitationNotSent: "لم يتم إرسال دعوة واتساب",
         emailSent: "تم إرسال البريد",
         emailNotSent: "لم يتم الإرسال",
         copyToken: "نسخ الرمز",
@@ -351,6 +359,12 @@ export default function ViewRegistrations() {
         }
     }, []);
 
+    const handleUploadComplete = useCallback((data) => {
+        if (data.duplicateMessage) {
+            showMessage(data.duplicateMessage, "error");
+        }
+    }, [showMessage]);
+
     const handleNewRegistration = useCallback((data) => {
         const reg = data?.registration;
         if (!reg) return;
@@ -399,12 +413,12 @@ export default function ViewRegistrations() {
 
                 if (total === 0) {
                     showMessage(
-                        "No emails to send. No registrations match the selected filter.",
+                        "No notifications to send. No registrations match the selected filter.",
                         "info"
                     );
                 } else {
                     showMessage(
-                        `Bulk emails completed — ${sent} sent, ${failed} failed, out of ${total} total.`,
+                        `Bulk notifications completed — ${sent} sent, ${failed} failed, out of ${total} total.`,
                         "success"
                     );
                 }
@@ -420,6 +434,7 @@ export default function ViewRegistrations() {
         onEmailProgress: handleEmailProgress,
         onNewRegistration: handleNewRegistration,
         onPresenceConfirmed: handlePresenceConfirmed,
+        onUploadComplete: handleUploadComplete,
     });
 
     const filteredRegistrations = React.useMemo(() => {
@@ -640,6 +655,8 @@ export default function ViewRegistrations() {
                 const v = filters[f.name];
                 if (v) query[`field_${f.name}`] = v;
             });
+            // Client timezone for date formatting
+            query.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
             const data = await exportCheckInRegistrations(eventSlug, query);
             const blob = new Blob([data], { type: "text/csv;charset=utf-8;" });
             const link = document.createElement("a");
@@ -653,18 +670,36 @@ export default function ViewRegistrations() {
     };
 
     const renderInvitationStatus = (reg) => (
-        <Typography
-            variant="caption"
-            color={reg.emailSent ? "success.main" : "warning.main"}
-            sx={{ display: "flex", alignItems: "center", gap: 0.6, fontWeight: 500 }}
-        >
-            {reg.emailSent ? (
-                <ICONS.checkCircle fontSize="small" />
-            ) : (
-                <ICONS.email fontSize="small" />
-            )}
-            {reg.emailSent ? t.inviteSent : t.inviteNotSent}
-        </Typography>
+        <Stack spacing={0.5} sx={{ width: "100%" }}>
+            <Typography
+                variant="caption"
+                color={reg.emailSent ? "success.main" : "warning.main"}
+                sx={{ display: "flex", alignItems: "center", gap: 0.6, fontWeight: 500 }}
+            >
+                <ICONS.email fontSize="small" sx={{ color: "primary.main" }} />
+                {reg.emailSent && (
+                    <ICONS.checkCircle fontSize="small" sx={{ color: "success.main" }} />
+                )}
+                <Box component="span">
+                    {reg.emailSent ? t.emailInvitationSent : t.emailInvitationNotSent}
+                </Box>
+            </Typography>
+
+            {/* WhatsApp Invitation Status */}
+            <Typography
+                variant="caption"
+                color={reg.whatsappSent ? "success.main" : "warning.main"}
+                sx={{ display: "flex", alignItems: "center", gap: 0.6, fontWeight: 500 }}
+            >
+                <ICONS.whatsapp fontSize="small" sx={{ color: "#25D366" }} />
+                {reg.whatsappSent && (
+                    <ICONS.checkCircle fontSize="small" sx={{ color: "success.main" }} />
+                )}
+                <Box component="span">
+                    {reg.whatsappSent ? t.whatsappInvitationSent : t.whatsappInvitationNotSent}
+                </Box>
+            </Typography>
+        </Stack>
     );
 
     const renderConfirmation = (reg) => {
@@ -673,23 +708,26 @@ export default function ViewRegistrations() {
         const isNotConfirmed = status === "not_confirmed";
 
         let statusText = t.pending;
+        let statusColor = "warning.main";
+        let statusIcon = <ICONS.warning fontSize="small" />;
+
         if (isConfirmed) {
             statusText = t.confirmed;
+            statusColor = "success.main";
+            statusIcon = <ICONS.checkCircle fontSize="small" />;
         } else if (isNotConfirmed) {
             statusText = t.notConfirmed;
+            statusColor = "error.main";
+            statusIcon = <ICONS.close fontSize="small" />;
         }
 
         return (
             <Typography
                 variant="caption"
-                color={isConfirmed ? "success.main" : "warning.main"}
+                color={statusColor}
                 sx={{ display: "flex", alignItems: "center", gap: 0.6, fontWeight: 500 }}
             >
-                {isConfirmed ? (
-                    <ICONS.checkCircle fontSize="small" />
-                ) : (
-                    <ICONS.warning fontSize="small" />
-                )}
+                {statusIcon}
                 {statusText}
             </Typography>
         );
@@ -1439,7 +1477,7 @@ export default function ViewRegistrations() {
                                             setFilters((f) => ({
                                                 ...f,
                                                 createdAtToMs: val
-                                                    ? dayjs(val).utc().endOf("day").valueOf()
+                                                    ? dayjs(val).utc().valueOf()
                                                     : null,
                                             }))
                                         }
@@ -1456,7 +1494,7 @@ export default function ViewRegistrations() {
                                             setFilters((f) => ({
                                                 ...f,
                                                 createdAtFromMs: val
-                                                    ? dayjs(val).utc().startOf("day").valueOf()
+                                                    ? dayjs(val).utc().valueOf()
                                                     : null,
                                             }))
                                         }
@@ -1476,7 +1514,7 @@ export default function ViewRegistrations() {
                                             setFilters((f) => ({
                                                 ...f,
                                                 createdAtFromMs: val
-                                                    ? dayjs(val).utc().startOf("day").valueOf()
+                                                    ? dayjs(val).utc().valueOf()
                                                     : null,
                                             }))
                                         }
@@ -1493,7 +1531,7 @@ export default function ViewRegistrations() {
                                             setFilters((f) => ({
                                                 ...f,
                                                 createdAtToMs: val
-                                                    ? dayjs(val).utc().endOf("day").valueOf()
+                                                    ? dayjs(val).utc().valueOf()
                                                     : null,
                                             }))
                                         }
@@ -1544,7 +1582,7 @@ export default function ViewRegistrations() {
                                             setFilters((f) => ({
                                                 ...f,
                                                 scannedAtToMs: val
-                                                    ? dayjs(val).utc().endOf("day").valueOf()
+                                                    ? dayjs(val).utc().valueOf()
                                                     : null,
                                             }))
                                         }
@@ -1563,7 +1601,7 @@ export default function ViewRegistrations() {
                                             setFilters((f) => ({
                                                 ...f,
                                                 scannedAtFromMs: val
-                                                    ? dayjs(val).utc().startOf("day").valueOf()
+                                                    ? dayjs(val).utc().valueOf()
                                                     : null,
                                             }))
                                         }
@@ -1585,7 +1623,7 @@ export default function ViewRegistrations() {
                                             setFilters((f) => ({
                                                 ...f,
                                                 scannedAtFromMs: val
-                                                    ? dayjs(val).utc().startOf("day").valueOf()
+                                                    ? dayjs(val).utc().valueOf()
                                                     : null,
                                             }))
                                         }
@@ -1604,7 +1642,7 @@ export default function ViewRegistrations() {
                                             setFilters((f) => ({
                                                 ...f,
                                                 scannedAtToMs: val
-                                                    ? dayjs(val).utc().endOf("day").valueOf()
+                                                    ? dayjs(val).utc().valueOf()
                                                     : null,
                                             }))
                                         }
@@ -1707,16 +1745,18 @@ export default function ViewRegistrations() {
                         setSendingEmails(true);
                         const result = await sendCheckInBulkEmails(eventSlug, {
                             statusFilter: data.statusFilter || "all",
+                            emailSentFilter: data.emailSentFilter || "all",
+                            whatsappSentFilter: data.whatsappSentFilter || "all",
                         });
                         if (result?.error) {
                             setSendingEmails(false);
-                            showMessage(result.message || "Failed to send emails", "error");
+                            showMessage(result.message || "Failed to send notifications", "error");
                         }
                         // Progress will be handled by socket callback
                     } else {
                         // Custom email
                         if (!data.subject || !data.body) {
-                            showMessage("Subject and body are required for custom emails", "error");
+                            showMessage("Subject and body are required for custom notifications", "error");
                             return;
                         }
                         setSendingEmails(true);
@@ -1724,20 +1764,26 @@ export default function ViewRegistrations() {
                             subject: data.subject,
                             body: data.body,
                             statusFilter: data.statusFilter || "all",
+                            emailSentFilter: data.emailSentFilter || "all",
+                            whatsappSentFilter: data.whatsappSentFilter || "all",
                         });
                         if (result?.error) {
                             setSendingEmails(false);
-                            showMessage(result.message || "Failed to send emails", "error");
+                            showMessage(result.message || "Failed to send notifications", "error");
                         }
                         // Progress will be handled by socket callback
                     }
                 }}
-                onSendWhatsApp={async () => {
+                onSendWhatsApp={async (data) => {
                     setSendingEmails(true);
-                    const result = await sendCheckInBulkWhatsApp(eventSlug);
+                    const result = await sendCheckInBulkWhatsApp(eventSlug, {
+                        statusFilter: data?.statusFilter || "all",
+                        emailSentFilter: data?.emailSentFilter || "all",
+                        whatsappSentFilter: data?.whatsappSentFilter || "all",
+                    });
                     if (result?.error) {
                         setSendingEmails(false);
-                        showMessage(result.message || "Failed to send WhatsApp messages", "error");
+                        showMessage(result.message || "Failed to send notifications", "error");
                     }
                 }}
                 sendingEmails={sendingEmails}
