@@ -1766,7 +1766,7 @@ export default function ViewRegistrations() {
                             statusFilter: data.statusFilter || "all",
                             emailSentFilter: data.emailSentFilter || "all",
                             whatsappSentFilter: data.whatsappSentFilter || "all",
-                        });
+                        }, data.file);
                         if (result?.error) {
                             setSendingEmails(false);
                             showMessage(result.message || "Failed to send notifications", "error");
@@ -1775,12 +1775,21 @@ export default function ViewRegistrations() {
                     }
                 }}
                 onSendWhatsApp={async (data) => {
+                    if (data.type === "custom") {
+                        if (!data.subject || !data.body) {
+                            showMessage("Subject and body are required for custom notifications", "error");
+                            return;
+                        }
+                    }
                     setSendingEmails(true);
                     const result = await sendCheckInBulkWhatsApp(eventSlug, {
+                        type: data.type,
+                        subject: data.subject,
+                        body: data.body,
                         statusFilter: data?.statusFilter || "all",
                         emailSentFilter: data?.emailSentFilter || "all",
                         whatsappSentFilter: data?.whatsappSentFilter || "all",
-                    });
+                    }, data.file);
                     if (result?.error) {
                         setSendingEmails(false);
                         showMessage(result.message || "Failed to send notifications", "error");
