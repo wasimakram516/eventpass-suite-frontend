@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useMemo } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
   Box,
@@ -16,6 +16,8 @@ import {
   DialogActions,
   IconButton,
 } from "@mui/material";
+import VolumeUpIcon from "@mui/icons-material/VolumeUp";
+import VolumeOffIcon from "@mui/icons-material/VolumeOff";
 
 import { getCheckInEventBySlug } from "@/services/checkin/checkinEventService";
 import {
@@ -37,7 +39,7 @@ export default function EventDetails() {
   const searchParams = useSearchParams();
   const token = searchParams?.get("token");
 
-  const { t, dir } = useI18nLayout({
+  const { t, dir, language } = useI18nLayout({
     en: {
       welcome: "Welcome",
       welcomeTo: "Welcome to",
@@ -47,6 +49,8 @@ export default function EventDetails() {
       confirming: "Confirming...",
       presenceConfirmed: "Your attendance has been confirmed!",
       alreadyConfirmed: "Your attendance is already confirmed.",
+      attendanceNotConfirmed: "You have marked your attendance as not confirmed.",
+      alreadyNotConfirmed: "Your attendance is already marked as not confirmed.",
       takesSeconds: "Takes only 5 seconds!",
       dateNotAvailable: "Date not available",
       to: "to",
@@ -68,6 +72,8 @@ export default function EventDetails() {
       confirming: "جاري التأكيد...",
       presenceConfirmed: "تم تأكيد حضورك!",
       alreadyConfirmed: "تم تأكيد حضورك مسبقاً.",
+      attendanceNotConfirmed: "لقد قمت بتحديد حضورك على أنه غير مؤكد.",
+      alreadyNotConfirmed: "تم تحديد حضورك بالفعل على أنه غير مؤكد.",
       takesSeconds: "يستغرق فقط 5 ثوانٍ!",
       dateNotAvailable: "التاريخ غير متوفر",
       to: "إلى",
@@ -92,11 +98,17 @@ export default function EventDetails() {
     setConfirming(true);
     setRegistrationError("");
     setJustConfirmed(false);
+    setJustNotConfirmed(false);
     try {
       const result = await updateCheckInAttendanceStatus(token, status);
       if (!result?.error) {
         setConfirmed(status === "confirmed");
-        setJustConfirmed(true);
+        setNotConfirmed(status === "not_confirmed");
+        if (status === "confirmed") {
+          setJustConfirmed(true);
+        } else if (status === "not_confirmed") {
+          setJustNotConfirmed(true);
+        }
         setRegistration((prev) =>
           prev ? { ...prev, approvalStatus: status } : null
         );
@@ -125,11 +137,15 @@ export default function EventDetails() {
   const [loadingRegistration, setLoadingRegistration] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
+  const [notConfirmed, setNotConfirmed] = useState(false);
   const [justConfirmed, setJustConfirmed] = useState(false);
+  const [justNotConfirmed, setJustNotConfirmed] = useState(false);
   const [registrationError, setRegistrationError] = useState("");
   const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
   const eventFetchedRef = useRef(null);
   const registrationFetchedRef = useRef(null);
+  const videoRef = useRef(null);
 
   useEffect(() => {
     if (eventFetchedRef.current === eventSlug) return;
@@ -162,9 +178,11 @@ export default function EventDetails() {
         const result = await getCheckInRegistrationByToken(token);
         if (!result?.error) {
           setRegistration(result.registration);
-          // Check if already confirmed
+          // Check if already confirmed or not confirmed
           if (result.registration.approvalStatus === "confirmed") {
             setConfirmed(true);
+          } else if (result.registration.approvalStatus === "not_confirmed") {
+            setNotConfirmed(true);
           }
         } else {
           setRegistrationError(result.message || "Registration not found.");
@@ -177,6 +195,67 @@ export default function EventDetails() {
     };
     fetchRegistration();
   }, [token, event?._id]);
+
+  // Get background based on language
+  const getBackground = useMemo(() => {
+    if (!event || !event.background) return null;
+
+    const langKey = language === "ar" ? "ar" : "en";
+    const bg = event.background[langKey];
+
+    if (
+      bg &&
+      typeof bg === "object" &&
+      bg.url &&
+      String(bg.url).trim() !== ""
+    ) {
+      let fileType = bg.fileType;
+      if (!fileType) {
+        const urlLower = String(bg.url).toLowerCase();
+        if (urlLower.match(/\.(mp4|webm|ogg|mov|avi)$/)) {
+          fileType = "video";
+        } else {
+          fileType = "image";
+        }
+      }
+      return {
+        url: bg.url,
+        fileType: fileType,
+      };
+    }
+
+    const otherLangKey = language === "ar" ? "en" : "ar";
+    const otherBg = event.background[otherLangKey];
+    if (
+      otherBg &&
+      typeof otherBg === "object" &&
+      otherBg.url &&
+      String(otherBg.url).trim() !== ""
+    ) {
+      let fileType = otherBg.fileType;
+      if (!fileType) {
+        const urlLower = String(otherBg.url).toLowerCase();
+        if (urlLower.match(/\.(mp4|webm|ogg|mov|avi)$/)) {
+          fileType = "video";
+        } else {
+          fileType = "image";
+        }
+      }
+      return {
+        url: otherBg.url,
+        fileType: fileType,
+      };
+    }
+
+    if (event.backgroundUrl) {
+      return {
+        url: event.backgroundUrl,
+        fileType: "image",
+      };
+    }
+
+    return null;
+  }, [event, language]);
 
   if (loading) {
     return (
@@ -215,6 +294,7 @@ export default function EventDetails() {
 
   const { name, venue, startDate, endDate, logoUrl, description } = event;
   const isArabic = dir === "rtl";
+  const background = getBackground;
 
   return (
     <Box
@@ -231,7 +311,78 @@ export default function EventDetails() {
         overflow: "hidden",
       }}
     >
-      <Background />
+      {/* Image Background */}
+      {background && background.fileType === "image" && background.url && (
+        <Box
+          component="img"
+          src={background.url}
+          alt="Event background"
+          sx={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            zIndex: -1,
+            pointerEvents: "none",
+          }}
+        />
+      )}
+
+      {/* Video Background */}
+      {background?.fileType === "video" && background?.url && (
+        <Box
+          sx={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            zIndex: -1,
+            overflow: "hidden",
+          }}
+        >
+          <video
+            ref={videoRef}
+            src={background.url}
+            autoPlay
+            playsInline
+            loop
+            muted={isMuted}
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+            }}
+          />
+        </Box>
+      )}
+
+      {/* Mute/Unmute Button for Video */}
+      {background?.fileType === "video" && (
+        <IconButton
+          onClick={() => {
+            setIsMuted(!isMuted);
+            if (videoRef.current) {
+              videoRef.current.muted = !isMuted;
+            }
+          }}
+          sx={{
+            position: "fixed",
+            bottom: 20,
+            right: 20,
+            bgcolor: "rgba(0,0,0,0.5)",
+            color: "white",
+            zIndex: 1000,
+            "&:hover": { bgcolor: "rgba(0,0,0,0.7)" },
+          }}
+        >
+          {isMuted ? <VolumeOffIcon /> : <VolumeUpIcon />}
+        </IconButton>
+      )}
+
+      {!background && <Background />}
 
       <Box
         sx={{
@@ -404,6 +555,10 @@ export default function EventDetails() {
                 {confirmed ? (
                   <Alert severity="success" sx={{ mb: 3 }}>
                     {justConfirmed ? t.presenceConfirmed : t.alreadyConfirmed}
+                  </Alert>
+                ) : notConfirmed ? (
+                  <Alert severity="error" sx={{ mb: 3 }}>
+                    {justNotConfirmed ? t.attendanceNotConfirmed : t.alreadyNotConfirmed}
                   </Alert>
                 ) : (
                   <>

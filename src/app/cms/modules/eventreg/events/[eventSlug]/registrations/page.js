@@ -700,6 +700,9 @@ export default function ViewRegistrations() {
         if (v) query[`field_${f.name}`] = v;
       });
 
+      // Client timezone for date formatting
+      query.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
       // -------------------------------
       // CALL YOUR SERVICE METHOD
       // -------------------------------
@@ -1820,7 +1823,7 @@ export default function ViewRegistrations() {
                   setFilters((f) => ({
                     ...f,
                     createdAtFromMs: val
-                      ? dayjs(val).utc().startOf("day").valueOf()
+                      ? dayjs(val).utc().valueOf()
                       : null,
                   }))
                 }
@@ -1835,7 +1838,7 @@ export default function ViewRegistrations() {
                   setFilters((f) => ({
                     ...f,
                     createdAtToMs: val
-                      ? dayjs(val).utc().endOf("day").valueOf()
+                      ? dayjs(val).utc().valueOf()
                       : null,
                   }))
                 }
@@ -1884,7 +1887,7 @@ export default function ViewRegistrations() {
                       setFilters((f) => ({
                         ...f,
                         scannedAtToMs: val
-                          ? dayjs(val).utc().endOf("day").valueOf()
+                          ? dayjs(val).utc().valueOf()
                           : null,
                       }))
                     }
@@ -1903,7 +1906,7 @@ export default function ViewRegistrations() {
                       setFilters((f) => ({
                         ...f,
                         scannedAtFromMs: val
-                          ? dayjs(val).utc().startOf("day").valueOf()
+                          ? dayjs(val).utc().valueOf()
                           : null,
                       }))
                     }
@@ -1925,7 +1928,7 @@ export default function ViewRegistrations() {
                       setFilters((f) => ({
                         ...f,
                         scannedAtFromMs: val
-                          ? dayjs(val).utc().startOf("day").valueOf()
+                          ? dayjs(val).utc().valueOf()
                           : null,
                       }))
                     }
@@ -1944,7 +1947,7 @@ export default function ViewRegistrations() {
                       setFilters((f) => ({
                         ...f,
                         scannedAtToMs: val
-                          ? dayjs(val).utc().endOf("day").valueOf()
+                          ? dayjs(val).utc().valueOf()
                           : null,
                       }))
                     }
