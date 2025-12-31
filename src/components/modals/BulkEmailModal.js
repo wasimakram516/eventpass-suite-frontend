@@ -51,6 +51,10 @@ const translations = {
         notConfirmed: "Not Confirmed",
         all: "All",
         filterByStatus: "Filter by Status",
+        emailSent: "Email Sent",
+        emailNotSent: "Email Not Sent",
+        whatsappSent: "WhatsApp Sent",
+        whatsappNotSent: "WhatsApp Not Sent",
         defaultEmailInfo: "When sending default bulk messages, the system will use the default Email and WhatsApp invitation templates.",
     },
     ar: {
@@ -67,6 +71,10 @@ const translations = {
         notConfirmed: "غير مؤكد",
         all: "الكل",
         filterByStatus: "تصفية حسب الحالة",
+        emailSent: "تم إرسال البريد",
+        emailNotSent: "لم يتم إرسال البريد",
+        whatsappSent: "تم إرسال واتساب",
+        whatsappNotSent: "لم يتم إرسال واتساب",
         defaultEmailInfo: "عند إرسال رسائل جماعية افتراضية، سيستخدم النظام قوالب الدعوة الافتراضية للبريد الإلكتروني والواتساب.",
     },
 };
@@ -382,6 +390,8 @@ const BulkEmailModal = ({
     const [subject, setSubject] = useState("");
     const [body, setBody] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
+    const [emailSentFilter, setEmailSentFilter] = useState("all");
+    const [whatsappSentFilter, setWhatsappSentFilter] = useState("all");
     const [subjectError, setSubjectError] = useState(false);
 
     const handleClose = () => {
@@ -389,6 +399,8 @@ const BulkEmailModal = ({
         setSubject("");
         setBody("");
         setStatusFilter("all");
+        setEmailSentFilter("all");
+        setWhatsappSentFilter("all");
         setSubjectError(false);
         onClose();
     };
@@ -403,13 +415,19 @@ const BulkEmailModal = ({
             type: emailType,
             subject: emailType === "custom" ? subject : undefined,
             body: emailType === "custom" ? body : undefined,
-            statusFilter: emailType === "custom" ? statusFilter : "all", // Default emails send to all
+            statusFilter: statusFilter,
+            emailSentFilter: emailSentFilter,
+            whatsappSentFilter: whatsappSentFilter,
         });
         handleClose();
     };
 
     const handleSendWhatsApp = () => {
-        onSendWhatsApp();
+        onSendWhatsApp({
+            statusFilter: statusFilter,
+            emailSentFilter: emailSentFilter,
+            whatsappSentFilter: whatsappSentFilter,
+        });
         handleClose();
     };
 
@@ -442,6 +460,68 @@ const BulkEmailModal = ({
 
             <DialogContent dividers>
                 <Stack spacing={3}>
+                    {/* Filter Chips - All in one row */}
+                    <Box>
+                        <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+                            {t.filterByStatus}:
+                        </Typography>
+                        <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 1 }}>
+                            <Chip
+                                label={t.all}
+                                onClick={() => {
+                                    setStatusFilter("all");
+                                    setEmailSentFilter("all");
+                                    setWhatsappSentFilter("all");
+                                }}
+                                color={statusFilter === "all" && emailSentFilter === "all" && whatsappSentFilter === "all" ? "primary" : "default"}
+                                variant={statusFilter === "all" && emailSentFilter === "all" && whatsappSentFilter === "all" ? "filled" : "outlined"}
+                                clickable
+                            />
+                            <Chip
+                                label={t.confirmed}
+                                onClick={() => setStatusFilter("confirmed")}
+                                color={statusFilter === "confirmed" ? "primary" : "default"}
+                                variant={statusFilter === "confirmed" ? "filled" : "outlined"}
+                                clickable
+                            />
+                            <Chip
+                                label={t.notConfirmed}
+                                onClick={() => setStatusFilter("notConfirmed")}
+                                color={statusFilter === "notConfirmed" ? "primary" : "default"}
+                                variant={statusFilter === "notConfirmed" ? "filled" : "outlined"}
+                                clickable
+                            />
+                            <Chip
+                                label={t.emailSent}
+                                onClick={() => setEmailSentFilter("sent")}
+                                color={emailSentFilter === "sent" ? "primary" : "default"}
+                                variant={emailSentFilter === "sent" ? "filled" : "outlined"}
+                                clickable
+                            />
+                            <Chip
+                                label={t.emailNotSent}
+                                onClick={() => setEmailSentFilter("notSent")}
+                                color={emailSentFilter === "notSent" ? "primary" : "default"}
+                                variant={emailSentFilter === "notSent" ? "filled" : "outlined"}
+                                clickable
+                            />
+                            <Chip
+                                label={t.whatsappSent}
+                                onClick={() => setWhatsappSentFilter("sent")}
+                                color={whatsappSentFilter === "sent" ? "primary" : "default"}
+                                variant={whatsappSentFilter === "sent" ? "filled" : "outlined"}
+                                clickable
+                            />
+                            <Chip
+                                label={t.whatsappNotSent}
+                                onClick={() => setWhatsappSentFilter("notSent")}
+                                color={whatsappSentFilter === "notSent" ? "primary" : "default"}
+                                variant={whatsappSentFilter === "notSent" ? "filled" : "outlined"}
+                                clickable
+                            />
+                        </Stack>
+                    </Box>
+
                     <RadioGroup
                         value={emailType}
                         onChange={(e) => setEmailType(e.target.value)}
@@ -499,35 +579,6 @@ const BulkEmailModal = ({
 
                     {emailType === "custom" && (
                         <>
-                            <Box>
-                                <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
-                                    {t.filterByStatus}:
-                                </Typography>
-                                <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 1 }}>
-                                    <Chip
-                                        label={t.all}
-                                        onClick={() => setStatusFilter("all")}
-                                        color={statusFilter === "all" ? "primary" : "default"}
-                                        variant={statusFilter === "all" ? "filled" : "outlined"}
-                                        clickable
-                                    />
-                                    <Chip
-                                        label={t.confirmed}
-                                        onClick={() => setStatusFilter("confirmed")}
-                                        color={statusFilter === "confirmed" ? "primary" : "default"}
-                                        variant={statusFilter === "confirmed" ? "filled" : "outlined"}
-                                        clickable
-                                    />
-                                    <Chip
-                                        label={t.notConfirmed}
-                                        onClick={() => setStatusFilter("notConfirmed")}
-                                        color={statusFilter === "notConfirmed" ? "primary" : "default"}
-                                        variant={statusFilter === "notConfirmed" ? "filled" : "outlined"}
-                                        clickable
-                                    />
-                                </Stack>
-                            </Box>
-
                             <TextField
                                 fullWidth
                                 label={t.subject}
