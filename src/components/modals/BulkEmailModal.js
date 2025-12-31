@@ -38,7 +38,7 @@ import { Popover, Select, MenuItem, FormControl } from "@mui/material";
 
 const translations = {
     en: {
-        title: "Send Bulk Email",
+        title: "Send Notifications",
         default: "Default",
         custom: "Custom",
         subject: "Subject",
@@ -56,9 +56,12 @@ const translations = {
         whatsappSent: "WhatsApp Sent",
         whatsappNotSent: "WhatsApp Not Sent",
         defaultEmailInfo: "When sending default bulk messages, the system will use the default Email and WhatsApp invitation templates.",
+        uploadFile: "Upload File",
+        attachedFile: "Attached File",
+        removeFile: "Remove",
     },
     ar: {
-        title: "إرسال بريد جماعي",
+        title: "إرسال الإشعارات",
         default: "افتراضي",
         custom: "مخصص",
         subject: "الموضوع",
@@ -76,6 +79,9 @@ const translations = {
         whatsappSent: "تم إرسال واتساب",
         whatsappNotSent: "لم يتم إرسال واتساب",
         defaultEmailInfo: "عند إرسال رسائل جماعية افتراضية، سيستخدم النظام قوالب الدعوة الافتراضية للبريد الإلكتروني والواتساب.",
+        uploadFile: "رفع ملف",
+        attachedFile: "الملف المرفق",
+        removeFile: "إزالة",
     },
 };
 
@@ -389,20 +395,36 @@ const BulkEmailModal = ({
     const [emailType, setEmailType] = useState("default");
     const [subject, setSubject] = useState("");
     const [body, setBody] = useState("");
-    const [statusFilter, setStatusFilter] = useState("all");
-    const [emailSentFilter, setEmailSentFilter] = useState("all");
-    const [whatsappSentFilter, setWhatsappSentFilter] = useState("all");
+    const [selectedFilter, setSelectedFilter] = useState("all");
     const [subjectError, setSubjectError] = useState(false);
+    const [attachedFile, setAttachedFile] = useState(null);
+    const fileInputRef = useRef(null);
 
     const handleClose = () => {
         setEmailType("default");
         setSubject("");
         setBody("");
-        setStatusFilter("all");
-        setEmailSentFilter("all");
-        setWhatsappSentFilter("all");
+        setSelectedFilter("all");
         setSubjectError(false);
+        setAttachedFile(null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
         onClose();
+    };
+
+    const handleFileChange = (e) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setAttachedFile(file);
+        }
+    };
+
+    const handleRemoveFile = () => {
+        setAttachedFile(null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
     };
 
     const handleSendEmail = () => {
@@ -411,22 +433,57 @@ const BulkEmailModal = ({
             return;
         }
         setSubjectError(false);
+
+        const filterStates = selectedFilter === "all"
+            ? { statusFilter: "all", emailSentFilter: "all", whatsappSentFilter: "all" }
+            : selectedFilter === "confirmed"
+                ? { statusFilter: "confirmed", emailSentFilter: "all", whatsappSentFilter: "all" }
+                : selectedFilter === "notConfirmed"
+                    ? { statusFilter: "notConfirmed", emailSentFilter: "all", whatsappSentFilter: "all" }
+                    : selectedFilter === "emailSent"
+                        ? { statusFilter: "all", emailSentFilter: "sent", whatsappSentFilter: "all" }
+                        : selectedFilter === "emailNotSent"
+                            ? { statusFilter: "all", emailSentFilter: "notSent", whatsappSentFilter: "all" }
+                            : selectedFilter === "whatsappSent"
+                                ? { statusFilter: "all", emailSentFilter: "all", whatsappSentFilter: "sent" }
+                                : { statusFilter: "all", emailSentFilter: "all", whatsappSentFilter: "notSent" };
+
         onSendEmail({
             type: emailType,
             subject: emailType === "custom" ? subject : undefined,
             body: emailType === "custom" ? body : undefined,
-            statusFilter: statusFilter,
-            emailSentFilter: emailSentFilter,
-            whatsappSentFilter: whatsappSentFilter,
+            file: emailType === "custom" ? attachedFile : undefined,
+            ...filterStates,
         });
         handleClose();
     };
 
     const handleSendWhatsApp = () => {
+        if (emailType === "custom" && !subject.trim()) {
+            setSubjectError(true);
+            return;
+        }
+        setSubjectError(false);
+        const filterStates = selectedFilter === "all"
+            ? { statusFilter: "all", emailSentFilter: "all", whatsappSentFilter: "all" }
+            : selectedFilter === "confirmed"
+                ? { statusFilter: "confirmed", emailSentFilter: "all", whatsappSentFilter: "all" }
+                : selectedFilter === "notConfirmed"
+                    ? { statusFilter: "notConfirmed", emailSentFilter: "all", whatsappSentFilter: "all" }
+                    : selectedFilter === "emailSent"
+                        ? { statusFilter: "all", emailSentFilter: "sent", whatsappSentFilter: "all" }
+                        : selectedFilter === "emailNotSent"
+                            ? { statusFilter: "all", emailSentFilter: "notSent", whatsappSentFilter: "all" }
+                            : selectedFilter === "whatsappSent"
+                                ? { statusFilter: "all", emailSentFilter: "all", whatsappSentFilter: "sent" }
+                                : { statusFilter: "all", emailSentFilter: "all", whatsappSentFilter: "notSent" };
+
         onSendWhatsApp({
-            statusFilter: statusFilter,
-            emailSentFilter: emailSentFilter,
-            whatsappSentFilter: whatsappSentFilter,
+            type: emailType,
+            subject: emailType === "custom" ? subject : undefined,
+            body: emailType === "custom" ? body : undefined,
+            file: emailType === "custom" ? attachedFile : undefined,
+            ...filterStates,
         });
         handleClose();
     };
@@ -468,55 +525,51 @@ const BulkEmailModal = ({
                         <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 1 }}>
                             <Chip
                                 label={t.all}
-                                onClick={() => {
-                                    setStatusFilter("all");
-                                    setEmailSentFilter("all");
-                                    setWhatsappSentFilter("all");
-                                }}
-                                color={statusFilter === "all" && emailSentFilter === "all" && whatsappSentFilter === "all" ? "primary" : "default"}
-                                variant={statusFilter === "all" && emailSentFilter === "all" && whatsappSentFilter === "all" ? "filled" : "outlined"}
+                                onClick={() => setSelectedFilter("all")}
+                                color={selectedFilter === "all" ? "primary" : "default"}
+                                variant={selectedFilter === "all" ? "filled" : "outlined"}
                                 clickable
                             />
                             <Chip
                                 label={t.confirmed}
-                                onClick={() => setStatusFilter("confirmed")}
-                                color={statusFilter === "confirmed" ? "primary" : "default"}
-                                variant={statusFilter === "confirmed" ? "filled" : "outlined"}
+                                onClick={() => setSelectedFilter("confirmed")}
+                                color={selectedFilter === "confirmed" ? "primary" : "default"}
+                                variant={selectedFilter === "confirmed" ? "filled" : "outlined"}
                                 clickable
                             />
                             <Chip
                                 label={t.notConfirmed}
-                                onClick={() => setStatusFilter("notConfirmed")}
-                                color={statusFilter === "notConfirmed" ? "primary" : "default"}
-                                variant={statusFilter === "notConfirmed" ? "filled" : "outlined"}
+                                onClick={() => setSelectedFilter("notConfirmed")}
+                                color={selectedFilter === "notConfirmed" ? "primary" : "default"}
+                                variant={selectedFilter === "notConfirmed" ? "filled" : "outlined"}
                                 clickable
                             />
                             <Chip
                                 label={t.emailSent}
-                                onClick={() => setEmailSentFilter("sent")}
-                                color={emailSentFilter === "sent" ? "primary" : "default"}
-                                variant={emailSentFilter === "sent" ? "filled" : "outlined"}
+                                onClick={() => setSelectedFilter("emailSent")}
+                                color={selectedFilter === "emailSent" ? "primary" : "default"}
+                                variant={selectedFilter === "emailSent" ? "filled" : "outlined"}
                                 clickable
                             />
                             <Chip
                                 label={t.emailNotSent}
-                                onClick={() => setEmailSentFilter("notSent")}
-                                color={emailSentFilter === "notSent" ? "primary" : "default"}
-                                variant={emailSentFilter === "notSent" ? "filled" : "outlined"}
+                                onClick={() => setSelectedFilter("emailNotSent")}
+                                color={selectedFilter === "emailNotSent" ? "primary" : "default"}
+                                variant={selectedFilter === "emailNotSent" ? "filled" : "outlined"}
                                 clickable
                             />
                             <Chip
                                 label={t.whatsappSent}
-                                onClick={() => setWhatsappSentFilter("sent")}
-                                color={whatsappSentFilter === "sent" ? "primary" : "default"}
-                                variant={whatsappSentFilter === "sent" ? "filled" : "outlined"}
+                                onClick={() => setSelectedFilter("whatsappSent")}
+                                color={selectedFilter === "whatsappSent" ? "primary" : "default"}
+                                variant={selectedFilter === "whatsappSent" ? "filled" : "outlined"}
                                 clickable
                             />
                             <Chip
                                 label={t.whatsappNotSent}
-                                onClick={() => setWhatsappSentFilter("notSent")}
-                                color={whatsappSentFilter === "notSent" ? "primary" : "default"}
-                                variant={whatsappSentFilter === "notSent" ? "filled" : "outlined"}
+                                onClick={() => setSelectedFilter("whatsappNotSent")}
+                                color={selectedFilter === "whatsappNotSent" ? "primary" : "default"}
+                                variant={selectedFilter === "whatsappNotSent" ? "filled" : "outlined"}
                                 clickable
                             />
                         </Stack>
@@ -606,6 +659,40 @@ const BulkEmailModal = ({
                                     dir={dir}
                                 />
                             </Box>
+
+                            <Box>
+                                <input
+                                    ref={fileInputRef}
+                                    type="file"
+                                    accept="*/*"
+                                    onChange={handleFileChange}
+                                    style={{ display: "none" }}
+                                />
+                                <Stack direction="row" spacing={2} alignItems="center">
+                                    <Button
+                                        variant="outlined"
+                                        component="label"
+                                        onClick={() => fileInputRef.current?.click()}
+                                        size="small"
+                                    >
+                                        {t.uploadFile}
+                                    </Button>
+                                    {attachedFile && (
+                                        <Stack direction="row" spacing={1} alignItems="center" sx={{ flex: 1 }}>
+                                            <Typography variant="body2" color="text.secondary">
+                                                {attachedFile.name}
+                                            </Typography>
+                                            <IconButton
+                                                size="small"
+                                                onClick={handleRemoveFile}
+                                                color="error"
+                                            >
+                                                <ICONS.close />
+                                            </IconButton>
+                                        </Stack>
+                                    )}
+                                </Stack>
+                            </Box>
                         </>
                     )}
                 </Stack>
@@ -620,6 +707,18 @@ const BulkEmailModal = ({
                 }}
             >
                 {emailType === "default" && (
+                    <Button
+                        variant="contained"
+                        color="success"
+                        startIcon={<ICONS.whatsapp />}
+                        onClick={handleSendWhatsApp}
+                        disabled={sendingEmails}
+                        sx={getStartIconSpacing(dir)}
+                    >
+                        {t.sendWhatsApp}
+                    </Button>
+                )}
+                {emailType === "custom" && (
                     <Button
                         variant="contained"
                         color="success"
