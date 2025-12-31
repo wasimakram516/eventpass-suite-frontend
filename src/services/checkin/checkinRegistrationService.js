@@ -142,10 +142,27 @@ export const updateCheckInAttendanceStatus = withApiHandler(
 
 // Send bulk registration emails for an event (CMS admin use)
 export const sendCheckInBulkEmails = withApiHandler(
-  async (slug, customEmail = null) => {
+  async (slug, customEmail = null, file = null) => {
+    const formData = new FormData();
+
+    if (customEmail) {
+      Object.keys(customEmail).forEach((key) => {
+        if (customEmail[key] !== undefined && customEmail[key] !== null) {
+          if (key === "file") {
+            return;
+          }
+          formData.append(key, customEmail[key]);
+        }
+      });
+    }
+
+    if (file) {
+      formData.append("file", file);
+    }
+
     const { data } = await api.post(
       `/checkin/registrations/event/${slug}/bulk-email`,
-      customEmail || {}
+      formData
     );
     return data;
   },
@@ -154,10 +171,25 @@ export const sendCheckInBulkEmails = withApiHandler(
 
 // Send bulk WhatsApp messages for an event (CMS admin use)
 export const sendCheckInBulkWhatsApp = withApiHandler(
-  async (slug, filters = {}) => {
+  async (slug, filters = {}, file = null) => {
+    const formData = new FormData();
+
+    Object.keys(filters).forEach((key) => {
+      if (filters[key] !== undefined && filters[key] !== null) {
+        if (key === "file") {
+          return;
+        }
+        formData.append(key, filters[key]);
+      }
+    });
+
+    if (file) {
+      formData.append("file", file);
+    }
+
     const { data } = await api.post(
       `/checkin/registrations/event/${slug}/bulk-whatsapp`,
-      filters
+      formData
     );
     return data;
   },
