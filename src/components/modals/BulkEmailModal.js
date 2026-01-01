@@ -16,7 +16,6 @@ import {
     Typography,
     Stack,
     Toolbar,
-    Chip,
     CircularProgress,
 } from "@mui/material";
 import ICONS from "@/utils/iconUtil";
@@ -39,6 +38,7 @@ import { Popover, Select, MenuItem, FormControl } from "@mui/material";
 const translations = {
     en: {
         title: "Send Notifications",
+        messageType: "Message Type",
         default: "Default",
         custom: "Custom",
         subject: "Subject",
@@ -49,6 +49,7 @@ const translations = {
         placeholderBody: "Enter email body...",
         confirmed: "Confirmed",
         notConfirmed: "Not Confirmed",
+        pending: "Pending",
         all: "All",
         filterByStatus: "Filter by Status",
         emailSent: "Email Sent",
@@ -59,9 +60,11 @@ const translations = {
         uploadFile: "Upload File",
         attachedFile: "Attached File",
         removeFile: "Remove",
+        uploadHelperText: "Optional: Attach media files (Image, Video, or PDF) to include with your message",
     },
     ar: {
         title: "إرسال الإشعارات",
+        messageType: "نوع الرسالة",
         default: "افتراضي",
         custom: "مخصص",
         subject: "الموضوع",
@@ -72,6 +75,7 @@ const translations = {
         placeholderBody: "أدخل محتوى البريد الإلكتروني...",
         confirmed: "مؤكد",
         notConfirmed: "غير مؤكد",
+        pending: "قيد الانتظار",
         all: "الكل",
         filterByStatus: "تصفية حسب الحالة",
         emailSent: "تم إرسال البريد",
@@ -82,6 +86,7 @@ const translations = {
         uploadFile: "رفع ملف",
         attachedFile: "الملف المرفق",
         removeFile: "إزالة",
+        uploadHelperText: "اختياري: يمكنك إرفاق ملفات الوسائط (صورة أو فيديو أو PDF) لتضمينها مع رسالتك",
     },
 };
 
@@ -434,19 +439,22 @@ const BulkEmailModal = ({
         }
         setSubjectError(false);
 
+        // Convert selectedFilter to individual filter states
         const filterStates = selectedFilter === "all"
             ? { statusFilter: "all", emailSentFilter: "all", whatsappSentFilter: "all" }
             : selectedFilter === "confirmed"
                 ? { statusFilter: "confirmed", emailSentFilter: "all", whatsappSentFilter: "all" }
                 : selectedFilter === "notConfirmed"
                     ? { statusFilter: "notConfirmed", emailSentFilter: "all", whatsappSentFilter: "all" }
-                    : selectedFilter === "emailSent"
-                        ? { statusFilter: "all", emailSentFilter: "sent", whatsappSentFilter: "all" }
-                        : selectedFilter === "emailNotSent"
-                            ? { statusFilter: "all", emailSentFilter: "notSent", whatsappSentFilter: "all" }
-                            : selectedFilter === "whatsappSent"
-                                ? { statusFilter: "all", emailSentFilter: "all", whatsappSentFilter: "sent" }
-                                : { statusFilter: "all", emailSentFilter: "all", whatsappSentFilter: "notSent" };
+                    : selectedFilter === "pending"
+                        ? { statusFilter: "pending", emailSentFilter: "all", whatsappSentFilter: "all" }
+                        : selectedFilter === "emailSent"
+                            ? { statusFilter: "all", emailSentFilter: "sent", whatsappSentFilter: "all" }
+                            : selectedFilter === "emailNotSent"
+                                ? { statusFilter: "all", emailSentFilter: "notSent", whatsappSentFilter: "all" }
+                                : selectedFilter === "whatsappSent"
+                                    ? { statusFilter: "all", emailSentFilter: "all", whatsappSentFilter: "sent" }
+                                    : { statusFilter: "all", emailSentFilter: "all", whatsappSentFilter: "notSent" };
 
         onSendEmail({
             type: emailType,
@@ -470,13 +478,15 @@ const BulkEmailModal = ({
                 ? { statusFilter: "confirmed", emailSentFilter: "all", whatsappSentFilter: "all" }
                 : selectedFilter === "notConfirmed"
                     ? { statusFilter: "notConfirmed", emailSentFilter: "all", whatsappSentFilter: "all" }
-                    : selectedFilter === "emailSent"
-                        ? { statusFilter: "all", emailSentFilter: "sent", whatsappSentFilter: "all" }
-                        : selectedFilter === "emailNotSent"
-                            ? { statusFilter: "all", emailSentFilter: "notSent", whatsappSentFilter: "all" }
-                            : selectedFilter === "whatsappSent"
-                                ? { statusFilter: "all", emailSentFilter: "all", whatsappSentFilter: "sent" }
-                                : { statusFilter: "all", emailSentFilter: "all", whatsappSentFilter: "notSent" };
+                    : selectedFilter === "pending"
+                        ? { statusFilter: "pending", emailSentFilter: "all", whatsappSentFilter: "all" }
+                        : selectedFilter === "emailSent"
+                            ? { statusFilter: "all", emailSentFilter: "sent", whatsappSentFilter: "all" }
+                            : selectedFilter === "emailNotSent"
+                                ? { statusFilter: "all", emailSentFilter: "notSent", whatsappSentFilter: "all" }
+                                : selectedFilter === "whatsappSent"
+                                    ? { statusFilter: "all", emailSentFilter: "all", whatsappSentFilter: "sent" }
+                                    : { statusFilter: "all", emailSentFilter: "all", whatsappSentFilter: "notSent" };
 
         onSendWhatsApp({
             type: emailType,
@@ -517,103 +527,73 @@ const BulkEmailModal = ({
 
             <DialogContent dividers>
                 <Stack spacing={3}>
-                    {/* Filter Chips - All in one row */}
+                    {/* Filter Dropdown */}
                     <Box>
                         <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
                             {t.filterByStatus}:
                         </Typography>
-                        <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 1 }}>
-                            <Chip
-                                label={t.all}
-                                onClick={() => setSelectedFilter("all")}
-                                color={selectedFilter === "all" ? "primary" : "default"}
-                                variant={selectedFilter === "all" ? "filled" : "outlined"}
-                                clickable
-                            />
-                            <Chip
-                                label={t.confirmed}
-                                onClick={() => setSelectedFilter("confirmed")}
-                                color={selectedFilter === "confirmed" ? "primary" : "default"}
-                                variant={selectedFilter === "confirmed" ? "filled" : "outlined"}
-                                clickable
-                            />
-                            <Chip
-                                label={t.notConfirmed}
-                                onClick={() => setSelectedFilter("notConfirmed")}
-                                color={selectedFilter === "notConfirmed" ? "primary" : "default"}
-                                variant={selectedFilter === "notConfirmed" ? "filled" : "outlined"}
-                                clickable
-                            />
-                            <Chip
-                                label={t.emailSent}
-                                onClick={() => setSelectedFilter("emailSent")}
-                                color={selectedFilter === "emailSent" ? "primary" : "default"}
-                                variant={selectedFilter === "emailSent" ? "filled" : "outlined"}
-                                clickable
-                            />
-                            <Chip
-                                label={t.emailNotSent}
-                                onClick={() => setSelectedFilter("emailNotSent")}
-                                color={selectedFilter === "emailNotSent" ? "primary" : "default"}
-                                variant={selectedFilter === "emailNotSent" ? "filled" : "outlined"}
-                                clickable
-                            />
-                            <Chip
-                                label={t.whatsappSent}
-                                onClick={() => setSelectedFilter("whatsappSent")}
-                                color={selectedFilter === "whatsappSent" ? "primary" : "default"}
-                                variant={selectedFilter === "whatsappSent" ? "filled" : "outlined"}
-                                clickable
-                            />
-                            <Chip
-                                label={t.whatsappNotSent}
-                                onClick={() => setSelectedFilter("whatsappNotSent")}
-                                color={selectedFilter === "whatsappNotSent" ? "primary" : "default"}
-                                variant={selectedFilter === "whatsappNotSent" ? "filled" : "outlined"}
-                                clickable
-                            />
-                        </Stack>
+                        <FormControl fullWidth size="small">
+                            <Select
+                                value={selectedFilter}
+                                onChange={(e) => setSelectedFilter(e.target.value)}
+                                displayEmpty
+                            >
+                                <MenuItem value="all">{t.all}</MenuItem>
+                                <MenuItem value="confirmed">{t.confirmed}</MenuItem>
+                                <MenuItem value="notConfirmed">{t.notConfirmed}</MenuItem>
+                                <MenuItem value="pending">{t.pending}</MenuItem>
+                                <MenuItem value="emailSent">{t.emailSent}</MenuItem>
+                                <MenuItem value="emailNotSent">{t.emailNotSent}</MenuItem>
+                                <MenuItem value="whatsappSent">{t.whatsappSent}</MenuItem>
+                                <MenuItem value="whatsappNotSent">{t.whatsappNotSent}</MenuItem>
+                            </Select>
+                        </FormControl>
                     </Box>
 
-                    <RadioGroup
-                        value={emailType}
-                        onChange={(e) => setEmailType(e.target.value)}
-                        row={true}
-                        sx={{
-                            flexDirection: dir === "rtl" ? "row-reverse" : "row",
-                            direction: dir,
-                            marginLeft: dir === "rtl" ? "auto" : 0,
-                            marginRight: dir === "rtl" ? 0 : "auto",
-                            width: "fit-content",
-                        }}
-                    >
-                        <FormControlLabel
-                            value="default"
-                            control={<Radio color="primary" />}
-                            label={t.default}
-                            labelPlacement={dir === "rtl" ? "start" : "end"}
+                    <Box>
+                        <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+                            {t.messageType}:
+                        </Typography>
+                        <RadioGroup
+                            value={emailType}
+                            onChange={(e) => setEmailType(e.target.value)}
+                            row={true}
                             sx={{
+                                flexDirection: dir === "rtl" ? "row-reverse" : "row",
                                 direction: dir,
-                                marginRight: dir === "rtl" ? 2 : 0,
-                                marginLeft: dir === "rtl" ? 0 : 2,
-                                "&:first-of-type": {
-                                    marginLeft: dir === "rtl" ? 2 : 0,
-                                    marginRight: dir === "rtl" ? 0 : 2,
-                                },
+                                marginLeft: dir === "rtl" ? "auto" : 0,
+                                marginRight: dir === "rtl" ? 0 : "auto",
+                                width: "fit-content",
                             }}
-                        />
-                        <FormControlLabel
-                            value="custom"
-                            control={<Radio color="primary" />}
-                            label={t.custom}
-                            labelPlacement={dir === "rtl" ? "start" : "end"}
-                            sx={{
-                                direction: dir,
-                                marginRight: dir === "rtl" ? 2 : 0,
-                                marginLeft: dir === "rtl" ? 0 : 2,
-                            }}
-                        />
-                    </RadioGroup>
+                        >
+                            <FormControlLabel
+                                value="default"
+                                control={<Radio color="primary" />}
+                                label={t.default}
+                                labelPlacement={dir === "rtl" ? "start" : "end"}
+                                sx={{
+                                    direction: dir,
+                                    marginRight: dir === "rtl" ? 2 : 0,
+                                    marginLeft: dir === "rtl" ? 0 : 2,
+                                    "&:first-of-type": {
+                                        marginLeft: dir === "rtl" ? 2 : 0,
+                                        marginRight: dir === "rtl" ? 0 : 2,
+                                    },
+                                }}
+                            />
+                            <FormControlLabel
+                                value="custom"
+                                control={<Radio color="primary" />}
+                                label={t.custom}
+                                labelPlacement={dir === "rtl" ? "start" : "end"}
+                                sx={{
+                                    direction: dir,
+                                    marginRight: dir === "rtl" ? 2 : 0,
+                                    marginLeft: dir === "rtl" ? 0 : 2,
+                                }}
+                            />
+                        </RadioGroup>
+                    </Box>
 
                     {emailType === "default" && (
                         <Typography
@@ -674,6 +654,8 @@ const BulkEmailModal = ({
                                         component="label"
                                         onClick={() => fileInputRef.current?.click()}
                                         size="small"
+                                        startIcon={<ICONS.upload />}
+                                        sx={getStartIconSpacing(dir)}
                                     >
                                         {t.uploadFile}
                                     </Button>
@@ -692,6 +674,13 @@ const BulkEmailModal = ({
                                         </Stack>
                                     )}
                                 </Stack>
+                                <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                    sx={{ mt: 0.5, display: "block" }}
+                                >
+                                    {t.uploadHelperText}
+                                </Typography>
                             </Box>
                         </>
                     )}
