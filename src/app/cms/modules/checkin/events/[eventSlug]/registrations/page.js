@@ -681,7 +681,7 @@ export default function ViewRegistrations() {
                     <ICONS.checkCircle fontSize="small" sx={{ color: "success.main" }} />
                 )}
                 <Box component="span">
-                    {reg.emailSent ? t.emailInvitationSent : t.emailInvitationNotSent}
+                    {reg.emailSent ? t.inviteSent : t.inviteNotSent}
                 </Box>
             </Typography>
 
@@ -696,7 +696,7 @@ export default function ViewRegistrations() {
                     <ICONS.checkCircle fontSize="small" sx={{ color: "success.main" }} />
                 )}
                 <Box component="span">
-                    {reg.whatsappSent ? t.whatsappInvitationSent : t.whatsappInvitationNotSent}
+                    {reg.whatsappSent ? t.inviteSent : t.inviteNotSent}
                 </Box>
             </Typography>
         </Stack>
