@@ -83,6 +83,10 @@ const translations = {
     showQrOnBadgeToggle: "Show QR Code on Printed Badge?",
     requiresApprovalToggle: "Require admin approval for registrations?",
     downloadTemplateSuccess: "Template downloaded successfully",
+    organizerDetails: "Organizer Details",
+    organizerName: "Organizer Name",
+    organizerEmail: "Organizer Email",
+    organizerPhone: "Organizer Phone",
     deleteMediaTitle: "Delete Media",
     deleteMediaMessage: "Are you sure you want to delete this media? This action cannot be undone.",
     deleteConfirm: "Delete",
@@ -138,6 +142,10 @@ const translations = {
     showQrOnBadgeToggle: "عرض رمز QR على بطاقة الطباعة؟",
     requiresApprovalToggle: "يتطلب موافقة المسؤول على التسجيلات؟",
     downloadTemplateSuccess: "تم تحميل القالب بنجاح",
+    organizerDetails: "تفاصيل المنظم",
+    organizerName: "اسم المنظم",
+    organizerEmail: "بريد المنظم الإلكتروني",
+    organizerPhone: "هاتف المنظم",
     deleteMediaTitle: "حذف الوسائط",
     deleteMediaMessage: "هل أنت متأكد من حذف هذه الوسائط؟ لا يمكن التراجع عن هذا الإجراء.",
     deleteConfirm: "حذف",
@@ -158,6 +166,7 @@ const EventModal = ({
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState([]);
   const [showUploadProgress, setShowUploadProgress] = useState(false);
+  const [organizerPhoneError, setOrganizerPhoneError] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState({
     open: false,
     type: null,
@@ -208,6 +217,9 @@ const EventModal = ({
     removeLogo: false,
     removeBackgroundEn: false,
     removeBackgroundAr: false,
+    organizerName: "",
+    organizerEmail: "",
+    organizerPhone: "",
   });
 
   useEffect(() => {
@@ -263,6 +275,9 @@ const EventModal = ({
         removeLogo: false,
         removeBackgroundEn: false,
         removeBackgroundAr: false,
+        organizerName: initialValues?.organizerName || "",
+        organizerEmail: initialValues?.organizerEmail || "",
+        organizerPhone: initialValues?.organizerPhone || "",
       }));
     } else {
       setFormData((prev) => ({
@@ -323,6 +338,42 @@ const EventModal = ({
     };
   }, [formData.logoPreview, formData.backgroundEnPreview, formData.backgroundArPreview]);
 
+  const validatePhoneNumber = (phone) => {
+    if (!phone) return null;
+    const phoneStr = phone.toString().trim();
+
+    if (!phoneStr.startsWith("+")) {
+      return "Phone number must start with country code (e.g., +92, +968, +1)";
+    }
+
+    const digits = phoneStr.replace(/\D/g, "");
+
+    if (phoneStr.startsWith("+92")) {
+      const localDigits = digits.replace(/^92/, "");
+      if (localDigits.length !== 10) {
+        return "Pakistan phone number must be 10 digits (excluding country code +92)";
+      }
+      return null;
+    }
+
+    if (phoneStr.startsWith("+968")) {
+      const localDigits = digits.replace(/^968/, "");
+      if (localDigits.length !== 8) {
+        return "Oman phone number must be 8 digits (excluding country code +968)";
+      }
+      return null;
+    }
+
+    if (digits.length < 8) {
+      return "Phone number is too short";
+    }
+    if (digits.length > 15) {
+      return "Phone number is too long";
+    }
+
+    return null;
+  };
+
   const handleInputChange = (e) => {
     const { name, value, files } = e.target;
     if (name === "logo" && files?.[0]) {
@@ -372,6 +423,13 @@ const EventModal = ({
       setFormData((prev) => ({ ...prev, tableImages: [...files] }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
+
+      if (name === "organizerPhone" && isEmployee) {
+        const error = validatePhoneNumber(value);
+        setOrganizerPhoneError(error || "");
+      } else if (name === "organizerPhone") {
+        setOrganizerPhoneError("");
+      }
     }
   };
 
@@ -613,6 +671,15 @@ const EventModal = ({
       return;
     }
 
+    if (isEmployee && formData.organizerPhone) {
+      const phoneError = validatePhoneNumber(formData.organizerPhone);
+      if (phoneError) {
+        setOrganizerPhoneError(phoneError);
+        showMessage(phoneError, "error");
+        return;
+      }
+    }
+
     setLoading(true);
 
     try {
@@ -823,6 +890,13 @@ const EventModal = ({
         ...(formData.clearAllBrandingLogos
           ? { clearAllBrandingLogos: "true" }
           : {}),
+        ...(isEmployee
+          ? {
+            organizerName: formData.organizerName || "",
+            organizerEmail: formData.organizerEmail || "",
+            organizerPhone: formData.organizerPhone || "",
+          }
+          : {}),
       };
 
       if (!initialValues) {
@@ -924,6 +998,39 @@ const EventModal = ({
               onChange={handleInputChange}
               fullWidth
             />
+
+            {/* Organizer Details - Only for CheckIn */}
+            {isEmployee && (
+              <>
+                <Typography variant="h6" sx={{ mt: 2, mb: 1, fontWeight: 600 }}>
+                  {t.organizerDetails}
+                </Typography>
+                <TextField
+                  label={t.organizerName}
+                  name="organizerName"
+                  value={formData.organizerName}
+                  onChange={handleInputChange}
+                  fullWidth
+                />
+                <TextField
+                  label={t.organizerEmail}
+                  name="organizerEmail"
+                  type="email"
+                  value={formData.organizerEmail}
+                  onChange={handleInputChange}
+                  fullWidth
+                />
+                <TextField
+                  label={t.organizerPhone}
+                  name="organizerPhone"
+                  value={formData.organizerPhone}
+                  onChange={handleInputChange}
+                  error={!!organizerPhoneError}
+                  helperText={organizerPhoneError || "Enter phone number with country code (e.g., +92, +968, +1)"}
+                  fullWidth
+                />
+              </>
+            )}
 
             {!isEmployee && (
               <>
