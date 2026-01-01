@@ -20,6 +20,10 @@ export default function EventWelcomeCard({
   actionRoute,
   isArabic,
   hideActionButton = false,
+  organizerName,
+  organizerEmail,
+  organizerPhone,
+  contactOrganizer,
 }) {
   return (
     <AppCard
@@ -118,6 +122,99 @@ export default function EventWelcomeCard({
           </Typography>
         )}
       </Stack>
+
+      {/* Organizer Contact Details */}
+      {(organizerName || organizerEmail || organizerPhone) && (
+        <Box
+          sx={{
+            width: "100%",
+            mt: 3,
+            mb: 2,
+            p: 2,
+            backgroundColor: "rgba(0, 74, 173, 0.05)",
+            borderRadius: 2,
+            border: "1px solid rgba(0, 74, 173, 0.1)",
+          }}
+        >
+          <Typography
+            variant="body2"
+            sx={{
+              mb: 1.5,
+              textAlign: "center",
+              color: "text.secondary",
+              fontSize: { xs: 14, md: 15 },
+            }}
+          >
+            {contactOrganizer}
+          </Typography>
+          <Stack spacing={1.5} alignItems="center">
+            {organizerName && (
+              <Stack
+                direction="row"
+                spacing={1}
+                alignItems="center"
+                sx={{
+                  fontSize: { xs: 16, md: 18 },
+                  fontWeight: 600,
+                  color: "primary.main",
+                }}
+              >
+                <ICONS.person fontSize="small" color="primary" />
+                <Typography
+                  variant="h6"
+                  sx={{
+                    fontSize: { xs: 16, md: 18 },
+                    fontWeight: 600,
+                    color: "primary.main",
+                  }}
+                >
+                  {organizerName}
+                </Typography>
+              </Stack>
+            )}
+            {organizerEmail && (
+              <Stack
+                direction="row"
+                spacing={1}
+                alignItems="center"
+                sx={{
+                  fontSize: { xs: 14, md: 16 },
+                  color: "text.primary",
+                }}
+              >
+                <ICONS.email fontSize="small" color="primary" />
+                <Typography
+                  sx={{
+                    color: "primary.main",
+                  }}
+                >
+                  {organizerEmail}
+                </Typography>
+              </Stack>
+            )}
+            {organizerPhone && (
+              <Stack
+                direction="row"
+                spacing={1}
+                alignItems="center"
+                sx={{
+                  fontSize: { xs: 14, md: 16 },
+                  color: "text.primary",
+                }}
+              >
+                <ICONS.phone fontSize="small" color="primary" />
+                <Typography
+                  sx={{
+                    color: "primary.main",
+                  }}
+                >
+                  {organizerPhone}
+                </Typography>
+              </Stack>
+            )}
+          </Stack>
+        </Box>
+      )}
 
       {/* Thank you message */}
       {/* <Typography
