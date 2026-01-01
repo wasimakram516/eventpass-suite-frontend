@@ -18,6 +18,7 @@ import {
 } from "@mui/material";
 import VolumeUpIcon from "@mui/icons-material/VolumeUp";
 import VolumeOffIcon from "@mui/icons-material/VolumeOff";
+import { QRCodeCanvas } from "qrcode.react";
 
 import { getCheckInEventBySlug } from "@/services/checkin/checkinEventService";
 import {
@@ -62,6 +63,9 @@ export default function EventDetails() {
       confirmButton: "Confirmed",
       notConfirmedButton: "Not Confirmed",
       cancelButton: "Cancel",
+      downloadQr: "Download QR Code",
+      contactOrganizer: "Please contact the organizer for more information",
+      organizerContact: "Organizer Contact",
     },
     ar: {
       welcome: "مرحباً",
@@ -85,6 +89,9 @@ export default function EventDetails() {
       confirmButton: "مؤكد",
       notConfirmedButton: "غير مؤكد",
       cancelButton: "إلغاء",
+      downloadQr: "تحميل رمز الاستجابة السريعة",
+      contactOrganizer: "يرجى الاتصال بالمنظم للحصول على مزيد من المعلومات",
+      organizerContact: "جهة اتصال المنظم",
     },
   });
 
@@ -551,28 +558,168 @@ export default function EventDetails() {
                   )}
                 </Stack>
 
+                {/* Organizer Contact Details */}
+                {(event?.organizerName || event?.organizerEmail || event?.organizerPhone) && (
+                  <Box
+                    sx={{
+                      width: "100%",
+                      mt: 3,
+                      mb: 2,
+                      p: 2,
+                      backgroundColor: "rgba(0, 74, 173, 0.05)",
+                      borderRadius: 2,
+                      border: "1px solid rgba(0, 74, 173, 0.1)",
+                    }}
+                  >
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        mb: 1.5,
+                        textAlign: "center",
+                        color: "text.secondary",
+                        fontSize: { xs: 14, md: 15 },
+                      }}
+                    >
+                      {t.contactOrganizer}
+                    </Typography>
+                    <Stack spacing={1.5} alignItems="center">
+                      {event.organizerName && (
+                        <Stack
+                          direction="row"
+                          spacing={1}
+                          alignItems="center"
+                          sx={{
+                            fontSize: { xs: 16, md: 18 },
+                            fontWeight: 600,
+                            color: "primary.main",
+                          }}
+                        >
+                          <ICONS.person fontSize="small" color="primary" />
+                          <Typography
+                            variant="h6"
+                            sx={{
+                              fontSize: { xs: 16, md: 18 },
+                              fontWeight: 600,
+                              color: "primary.main",
+                            }}
+                          >
+                            {event.organizerName}
+                          </Typography>
+                        </Stack>
+                      )}
+                      {event.organizerEmail && (
+                        <Stack
+                          direction="row"
+                          spacing={1}
+                          alignItems="center"
+                          sx={{
+                            fontSize: { xs: 14, md: 16 },
+                            color: "text.primary",
+                          }}
+                        >
+                          <ICONS.email fontSize="small" color="primary" />
+                          <Typography
+                            sx={{
+                              color: "primary.main",
+                            }}
+                          >
+                            {event.organizerEmail}
+                          </Typography>
+                        </Stack>
+                      )}
+                      {event.organizerPhone && (
+                        <Stack
+                          direction="row"
+                          spacing={1}
+                          alignItems="center"
+                          sx={{
+                            fontSize: { xs: 14, md: 16 },
+                            color: "text.primary",
+                          }}
+                        >
+                          <ICONS.phone fontSize="small" color="primary" />
+                          <Typography
+                            sx={{
+                              color: "primary.main",
+                            }}
+                          >
+                            {event.organizerPhone}
+                          </Typography>
+                        </Stack>
+                      )}
+                    </Stack>
+                  </Box>
+                )}
+
+                {/* QR Code (hidden, used for download) */}
+                {registration?.token && (
+                  <Box sx={{ display: "none" }}>
+                    <QRCodeCanvas
+                      id="qr-code-checkin"
+                      value={registration.token}
+                      size={180}
+                      bgColor="#ffffff"
+                      includeMargin
+                    />
+                  </Box>
+                )}
+
                 {/* Confirmation status */}
-                {confirmed ? (
-                  <Alert severity="success" sx={{ mb: 3 }}>
-                    {justConfirmed ? t.presenceConfirmed : t.alreadyConfirmed}
-                  </Alert>
-                ) : notConfirmed ? (
-                  <Alert severity="error" sx={{ mb: 3 }}>
-                    {justNotConfirmed ? t.attendanceNotConfirmed : t.alreadyNotConfirmed}
-                  </Alert>
-                ) : (
-                  <>
-                    {registrationError && (
-                      <Alert severity="error" sx={{ mb: 3 }}>
-                        {registrationError}
-                      </Alert>
-                    )}
+                <Stack spacing={2} alignItems="center" sx={{ width: "100%" }}>
+                  {confirmed ? (
+                    <Alert severity="success" sx={{ mb: 0, width: "100%" }}>
+                      {justConfirmed ? t.presenceConfirmed : t.alreadyConfirmed}
+                    </Alert>
+                  ) : notConfirmed ? (
+                    <Alert severity="error" sx={{ mb: 0, width: "100%" }}>
+                      {justNotConfirmed ? t.attendanceNotConfirmed : t.alreadyNotConfirmed}
+                    </Alert>
+                  ) : (
+                    <>
+                      {registrationError && (
+                        <Alert severity="error" sx={{ mb: 0, width: "100%" }}>
+                          {registrationError}
+                        </Alert>
+                      )}
+                      <Button
+                        variant="contained"
+                        size="large"
+                        onClick={handleConfirmPresenceClick}
+                        disabled={confirming}
+                        startIcon={<ICONS.checkCircle />}
+                        sx={{
+                          fontSize: { xs: 16, md: 18 },
+                          p: "12px 32px",
+                          fontWeight: "bold",
+                          borderRadius: 2,
+                          textTransform: "none",
+                          ...getStartIconSpacing(dir),
+                        }}
+                      >
+                        {t.confirmPresence}
+                      </Button>
+                    </>
+                  )}
+
+                  {/* Download QR button (appears in all cases when token exists) */}
+                  {registration?.token && (
                     <Button
                       variant="contained"
                       size="large"
-                      onClick={handleConfirmPresenceClick}
-                      disabled={confirming}
-                      startIcon={<ICONS.checkCircle />}
+                      startIcon={<ICONS.download />}
+                      onClick={() => {
+                        const canvas = document.getElementById("qr-code-checkin");
+                        if (canvas) {
+                          const pngUrl = canvas
+                            .toDataURL("image/png")
+                            .replace("image/png", "image/octet-stream");
+
+                          const link = document.createElement("a");
+                          link.href = pngUrl;
+                          link.download = `qr-${registration.token}.png`;
+                          link.click();
+                        }
+                      }}
                       sx={{
                         fontSize: { xs: 16, md: 18 },
                         p: "12px 32px",
@@ -582,10 +729,10 @@ export default function EventDetails() {
                         ...getStartIconSpacing(dir),
                       }}
                     >
-                      {t.confirmPresence}
+                      {t.downloadQr}
                     </Button>
-                  </>
-                )}
+                  )}
+                </Stack>
               </Box>
             ) : null}
           </Box>
@@ -605,6 +752,10 @@ export default function EventDetails() {
             actionRoute={`/checkin/event/${eventSlug}`}
             hideActionButton={true}
             isArabic={isArabic}
+            organizerName={event?.organizerName}
+            organizerEmail={event?.organizerEmail}
+            organizerPhone={event?.organizerPhone}
+            contactOrganizer={t.contactOrganizer}
           />
         )}
       </Box>
