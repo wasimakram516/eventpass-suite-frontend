@@ -408,7 +408,6 @@ export default function ViewRegistrations() {
             // (handle case when total is 0)
             if (processed === total) {
                 setSendingEmails(false);
-                setBulkEmailModalOpen(false);
                 fetchData();
 
                 if (total === 0) {
@@ -1744,6 +1743,7 @@ export default function ViewRegistrations() {
                 onSendEmail={async (data) => {
                     if (data.type === "default") {
                         setSendingEmails(true);
+                        setBulkEmailModalOpen(false);
                         const result = await sendCheckInBulkEmails(eventSlug, {
                             statusFilter: data.statusFilter || "all",
                             emailSentFilter: data.emailSentFilter || "all",
@@ -1751,6 +1751,7 @@ export default function ViewRegistrations() {
                         });
                         if (result?.error) {
                             setSendingEmails(false);
+                            setBulkEmailModalOpen(false);
                             showMessage(result.message || "Failed to send notifications", "error");
                         }
                         // Progress will be handled by socket callback
@@ -1761,6 +1762,7 @@ export default function ViewRegistrations() {
                             return;
                         }
                         setSendingEmails(true);
+                        setBulkEmailModalOpen(false);
                         const result = await sendCheckInBulkEmails(eventSlug, {
                             subject: data.subject,
                             body: data.body,
@@ -1770,6 +1772,7 @@ export default function ViewRegistrations() {
                         }, data.file);
                         if (result?.error) {
                             setSendingEmails(false);
+                            setBulkEmailModalOpen(false);
                             showMessage(result.message || "Failed to send notifications", "error");
                         }
                         // Progress will be handled by socket callback
@@ -1783,6 +1786,7 @@ export default function ViewRegistrations() {
                         }
                     }
                     setSendingEmails(true);
+                    setBulkEmailModalOpen(false);
                     const result = await sendCheckInBulkWhatsApp(eventSlug, {
                         type: data.type,
                         subject: data.subject,
@@ -1793,6 +1797,7 @@ export default function ViewRegistrations() {
                     }, data.file);
                     if (result?.error) {
                         setSendingEmails(false);
+                        setBulkEmailModalOpen(false);
                         showMessage(result.message || "Failed to send notifications", "error");
                     }
                 }}
