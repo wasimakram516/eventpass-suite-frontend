@@ -39,6 +39,7 @@ import {
   uploadRegistrations,
   getUnsentCount,
   sendBulkEmails,
+  sendBulkWhatsApp,
   updateRegistration,
   updateRegistrationApproval,
   getInitialRegistrations,
@@ -54,6 +55,7 @@ import { formatDate, formatDateTimeWithLocale } from "@/utils/dateUtils";
 import { useParams } from "next/navigation";
 import ICONS from "@/utils/iconUtil";
 import WalkInModal from "@/components/modals/WalkInModal";
+import BulkEmailModal from "@/components/modals/BulkEmailModal";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import NoDataAvailable from "@/components/NoDataAvailable";
@@ -96,8 +98,8 @@ const translations = {
     matchingRecords: "{count} matching record",
     matchingRecordsPlural: "{count} matching records",
     found: "found",
-    exportAll: "Export All to CSV",
-    exportFiltered: "Export Filtered to CSV",
+    exportAll: "Export All",
+    exportFiltered: "Export filtered",
     filters: "Filters",
     applyFilters: "Apply",
     clearFilters: "Clear",
@@ -113,16 +115,20 @@ const translations = {
     apply: "Apply",
     clear: "Clear",
     filterRegistrations: "Filter Registrations",
-    sendBulkEmails: "Send Bulk Emails",
-    sendingEmails: "Sending Emails...",
+    sendBulkEmails: "Notifications",
+    sendingEmails: "Sending notifications...",
     confirmBulkEmails:
-      "Are you sure you want to send {count} bulk emails for this event?",
+      "Are you sure you want to send {count} bulk notifications for this event?",
     emailSent: "Email Sent",
     emailNotSent: "Email Not Sent",
+    whatsappSent: "WhatsApp Sent",
+    whatsappNotSent: "WhatsApp Not Sent",
+    inviteSent: "Invitation sent",
+    inviteNotSent: "Invitation not sent",
     exportBadges: "Export Badges",
     printBadge: "Print Badge",
     editRegistration: "Edit Registration",
-    createRegistration: "Create Registration",
+    createRegistration: "New",
     copyToken: "Copy Token",
     approve: "Approve",
     reject: "Reject",
@@ -158,8 +164,8 @@ const translations = {
     matchingRecords: "{count} سجل مطابق",
     matchingRecordsPlural: "{count} سجلات مطابقة",
     found: "تم العثور عليها",
-    exportAll: "تصدير الكل إلى CSV",
-    exportFiltered: "تصدير المصفى إلى CSV",
+    exportAll: "تصدير الكل",
+    exportFiltered: "تصدير المصفى",
     filters: "تصفية",
     applyFilters: "تطبيق",
     clearFilters: "مسح",
@@ -175,16 +181,20 @@ const translations = {
     apply: "تطبيق",
     clear: "مسح",
     filterRegistrations: "تصفية التسجيلات",
-    sendBulkEmails: "إرسال رسائل البريد الإلكتروني الجماعية",
-    sendingEmails: "جاري إرسال الرسائل...",
+    sendBulkEmails: "الإشعارات",
+    sendingEmails: "جاري إرسال الإشعارات...",
     confirmBulkEmails:
-      "هل أنت متأكد أنك تريد إرسال {count} رسالة بريد إلكتروني جماعية لهذا الحدث؟",
+      "هل أنت متأكد أنك تريد إرسال {count} إشعارات جماعية لهذا الحدث؟",
     emailSent: "تم الإرسال",
     emailNotSent: "لم يتم الإرسال",
+    whatsappSent: "تم إرسال واتساب",
+    whatsappNotSent: "لم يتم إرسال واتساب",
+    inviteSent: "تم إرسال الدعوة",
+    inviteNotSent: "لم تُرسل الدعوة",
     exportbadges: "تصدير الشارات",
     printBadge: "طباعة الشارة",
     editRegistration: "تعديل التسجيل",
-    createRegistration: "إنشاء تسجيل",
+    createRegistration: "جديد",
     copyToken: "نسخ الرمز",
     approve: "موافقة",
     reject: "رفض",
@@ -244,7 +254,7 @@ export default function ViewRegistrations() {
   const [filters, setFilters] = useState(BASE_DATE_FILTERS);
 
   const [sendingEmails, setSendingEmails] = useState(false);
-  const [confirmEmailDialogOpen, setConfirmEmailDialogOpen] = useState(false);
+  const [bulkEmailModalOpen, setBulkEmailModalOpen] = useState(false);
 
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [editingReg, setEditingReg] = useState(null);
@@ -403,16 +413,23 @@ export default function ViewRegistrations() {
       // finished
       if (processed === total) {
         setSendingEmails(false);
+        setBulkEmailModalOpen(false);
 
         // refresh UI
         fetchData();
         setUnsentEmailCount(0);
 
-        // show toast message
-        showMessage(
-          `Bulk emails completed — ${sent} sent, ${failed} failed, out of ${total} total.`,
-          "success"
-        );
+        if (total === 0) {
+          showMessage(
+            "No notifications to send. No registrations match the selected filter.",
+            "info"
+          );
+        } else {
+          showMessage(
+            `Bulk notification completed — ${sent} sent, ${failed} failed, out of ${total} total.`,
+            "success"
+          );
+        }
       }
     },
     [showMessage, fetchData]
@@ -502,23 +519,15 @@ export default function ViewRegistrations() {
 
     const res = await createRegistration(payload);
 
+    if (res?.error) {
+      return;
+    }
+
     setCreateModalOpen(false);
     showMessage("Registration created successfully", "success");
+    fetchData();
   };
 
-  const handleSendBulkEmails = async () => {
-    setConfirmEmailDialogOpen(false);
-
-    // reset UI progress
-    setSendingEmails(true);
-
-    try {
-      await sendBulkEmails(eventSlug);
-    } catch (err) {
-      console.error("Bulk email send failed:", err);
-      setSendingEmails(false);
-    }
-  };
 
   const filteredRegistrations = React.useMemo(() => {
     const {
@@ -664,6 +673,69 @@ export default function ViewRegistrations() {
         )
       );
     }
+  };
+
+  const renderInvitationStatus = (reg) => (
+    <Stack spacing={0.5} sx={{ width: "100%" }}>
+      <Typography
+        variant="caption"
+        color={reg.emailSent ? "success.main" : "warning.main"}
+        sx={{ display: "flex", alignItems: "center", gap: 0.6, fontWeight: 500 }}
+      >
+        <ICONS.email fontSize="small" sx={{ color: "primary.main" }} />
+        {reg.emailSent && (
+          <ICONS.checkCircle fontSize="small" sx={{ color: "success.main" }} />
+        )}
+        <Box component="span">
+          {reg.emailSent ? t.inviteSent : t.inviteNotSent}
+        </Box>
+      </Typography>
+
+      <Typography
+        variant="caption"
+        color={reg.whatsappSent ? "success.main" : "warning.main"}
+        sx={{ display: "flex", alignItems: "center", gap: 0.6, fontWeight: 500 }}
+      >
+        <ICONS.whatsapp fontSize="small" sx={{ color: "#25D366" }} />
+        {reg.whatsappSent && (
+          <ICONS.checkCircle fontSize="small" sx={{ color: "success.main" }} />
+        )}
+        <Box component="span">
+          {reg.whatsappSent ? t.inviteSent : t.inviteNotSent}
+        </Box>
+      </Typography>
+    </Stack>
+  );
+
+  const renderConfirmation = (reg) => {
+    const status = (reg.approvalStatus || "pending").toLowerCase();
+    const isApproved = status === "approved";
+    const isRejected = status === "rejected";
+
+    let statusText = t.pending;
+    let statusColor = "warning.main";
+    let statusIcon = <ICONS.warning fontSize="small" />;
+
+    if (isApproved) {
+      statusText = t.approved;
+      statusColor = "success.main";
+      statusIcon = <ICONS.checkCircle fontSize="small" />;
+    } else if (isRejected) {
+      statusText = t.rejected;
+      statusColor = "error.main";
+      statusIcon = <ICONS.close fontSize="small" />;
+    }
+
+    return (
+      <Typography
+        variant="caption"
+        color={statusColor}
+        sx={{ display: "flex", alignItems: "center", gap: 0.6, fontWeight: 500 }}
+      >
+        {statusIcon}
+        {statusText}
+      </Typography>
+    );
   };
 
   const handleExportRegs = async () => {
@@ -1017,7 +1089,7 @@ export default function ViewRegistrations() {
                 <ICONS.email />
               )
             }
-            onClick={() => setConfirmEmailDialogOpen(true)}
+            onClick={() => setBulkEmailModalOpen(true)}
             sx={getStartIconSpacing(dir)}
           >
             {sendingEmails && emailProgress.total
@@ -1030,14 +1102,15 @@ export default function ViewRegistrations() {
 
         {totalRegistrations > 0 && (
           <Button
-            variant="contained"
+            variant="outlined"
+            color="success"
             onClick={handleExportRegs}
             disabled={exportLoading}
             startIcon={
               exportLoading ? (
                 <CircularProgress size={20} color="inherit" />
               ) : (
-                <ICONS.download />
+                <ICONS.description />
               )
             }
             sx={getStartIconSpacing(dir)}
@@ -1052,7 +1125,7 @@ export default function ViewRegistrations() {
 
         {totalRegistrations > 0 && (
           <Button
-            variant="contained"
+            variant="outlined"
             color="primary"
             disabled={exportingBadges}
             startIcon={
@@ -1065,7 +1138,7 @@ export default function ViewRegistrations() {
             onClick={handleExportBadges}
             sx={getStartIconSpacing(dir)}
           >
-            {exportingBadges ? t.exporting : `${t.exportBadges} (Page ${page})`}
+            {exportingBadges ? t.exporting : t.exportBadges}
           </Button>
         )}
       </Stack>
@@ -1454,39 +1527,26 @@ export default function ViewRegistrations() {
                         </Box>
                       </Typography>
                     </Stack>
-                    {/* Email Sent Status */}
+                    {/* Invitation Status - Show for all events */}
                     <Stack
                       direction="row"
                       alignItems="center"
                       spacing={0.6}
                       sx={{ mt: 0.3 }}
                     >
-                      {reg.emailSent ? (
-                        <>
-                          <ICONS.checkCircle
-                            sx={{ fontSize: 20, color: "success.main" }}
-                          />
-                          <Typography
-                            variant="caption"
-                            sx={{ color: "success.main", fontWeight: 500 }}
-                          >
-                            {t.emailSent || "Email Sent"}
-                          </Typography>
-                        </>
-                      ) : (
-                        <>
-                          <ICONS.checkCircleOutline
-                            sx={{ fontSize: 20, color: "warning.main" }}
-                          />
-                          <Typography
-                            variant="caption"
-                            sx={{ color: "warning.main", fontWeight: 500 }}
-                          >
-                            {t.emailNotSent || "Not Sent"}
-                          </Typography>
-                        </>
-                      )}
+                      {renderInvitationStatus(reg)}
                     </Stack>
+
+                    {/* Approval Status - Show for approval-based events */}
+                    {eventDetails?.requiresApproval && (
+                      <Stack
+                        direction="row"
+                        alignItems="center"
+                        spacing={0.6}
+                      >
+                        {renderConfirmation(reg)}
+                      </Stack>
+                    )}
                   </Box>
 
                   {/* Dynamic Fields */}
@@ -1685,18 +1745,71 @@ export default function ViewRegistrations() {
         confirmButtonIcon={<ICONS.delete />}
       />
 
-      <ConfirmationDialog
-        open={confirmEmailDialogOpen}
-        onClose={() => setConfirmEmailDialogOpen(false)}
-        onConfirm={handleSendBulkEmails}
-        title={t.sendBulkEmails}
-        message={t.confirmBulkEmails.replace(
-          "{count}",
-          totalRegistrations.toString()
-        )}
-        confirmButtonText={t.sendBulkEmails}
-        confirmButtonIcon={<ICONS.email />}
-        confirmButtonColor="secondary"
+      <BulkEmailModal
+        open={bulkEmailModalOpen}
+        isApprovalBased={eventDetails?.requiresApproval}
+        useApprovedRejected={true}
+        onClose={() => {
+          if (!sendingEmails) {
+            setBulkEmailModalOpen(false);
+          }
+        }}
+        onSendEmail={async (data) => {
+          if (data.type === "default") {
+            setSendingEmails(true);
+            setBulkEmailModalOpen(false);
+            const result = await sendBulkEmails(eventSlug, {
+              statusFilter: data.statusFilter || "all",
+              emailSentFilter: data.emailSentFilter || "all",
+              whatsappSentFilter: data.whatsappSentFilter || "all",
+            });
+            if (result?.error) {
+              setSendingEmails(false);
+              showMessage(result.message || "Failed to send notifications", "error");
+            }
+          } else {
+            if (!data.subject || !data.body) {
+              showMessage("Subject and body are required for custom notifications", "error");
+              return;
+            }
+            setSendingEmails(true);
+            setBulkEmailModalOpen(false);
+            const result = await sendBulkEmails(eventSlug, {
+              subject: data.subject,
+              body: data.body,
+              statusFilter: data.statusFilter || "all",
+              emailSentFilter: data.emailSentFilter || "all",
+              whatsappSentFilter: data.whatsappSentFilter || "all",
+            }, data.file);
+            if (result?.error) {
+              setSendingEmails(false);
+              showMessage(result.message || "Failed to send notifications", "error");
+            }
+          }
+        }}
+        onSendWhatsApp={async (data) => {
+          if (data.type === "custom") {
+            if (!data.subject || !data.body) {
+              showMessage("Subject and body are required for custom notifications", "error");
+              return;
+            }
+          }
+          setSendingEmails(true);
+          setBulkEmailModalOpen(false);
+          const result = await sendBulkWhatsApp(eventSlug, {
+            type: data.type || "default",
+            subject: data.subject,
+            body: data.body,
+            statusFilter: data.statusFilter || "all",
+            emailSentFilter: data.emailSentFilter || "all",
+            whatsappSentFilter: data.whatsappSentFilter || "all",
+          }, data.file);
+          if (result?.error) {
+            setSendingEmails(false);
+            showMessage(result.message || "Failed to send notifications", "error");
+          }
+        }}
+        sendingEmails={sendingEmails}
       />
 
       <WalkInModal
