@@ -424,12 +424,10 @@ const EventModal = ({
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
 
-      if (name === "organizerPhone" && isEmployee) {
-        const error = validatePhoneNumber(value);
-        setOrganizerPhoneError(error || "");
-      } else if (name === "organizerPhone") {
-        setOrganizerPhoneError("");
-      }
+        if (name === "organizerPhone") {
+          const error = validatePhoneNumber(value);
+          setOrganizerPhoneError(error || "");
+        }
     }
   };
 
@@ -671,7 +669,7 @@ const EventModal = ({
       return;
     }
 
-    if (isEmployee && formData.organizerPhone) {
+    if (formData.organizerPhone) {
       const phoneError = validatePhoneNumber(formData.organizerPhone);
       if (phoneError) {
         setOrganizerPhoneError(phoneError);
@@ -890,13 +888,9 @@ const EventModal = ({
         ...(formData.clearAllBrandingLogos
           ? { clearAllBrandingLogos: "true" }
           : {}),
-        ...(isEmployee
-          ? {
-            organizerName: formData.organizerName || "",
-            organizerEmail: formData.organizerEmail || "",
-            organizerPhone: formData.organizerPhone || "",
-          }
-          : {}),
+        organizerName: formData.organizerName || "",
+        organizerEmail: formData.organizerEmail || "",
+        organizerPhone: formData.organizerPhone || "",
       };
 
       if (!initialValues) {
@@ -999,38 +993,34 @@ const EventModal = ({
               fullWidth
             />
 
-            {/* Organizer Details - Only for CheckIn */}
-            {isEmployee && (
-              <>
-                <Typography variant="h6" sx={{ mt: 2, mb: 1, fontWeight: 600 }}>
-                  {t.organizerDetails}
-                </Typography>
-                <TextField
-                  label={t.organizerName}
-                  name="organizerName"
-                  value={formData.organizerName}
-                  onChange={handleInputChange}
-                  fullWidth
-                />
-                <TextField
-                  label={t.organizerEmail}
-                  name="organizerEmail"
-                  type="email"
-                  value={formData.organizerEmail}
-                  onChange={handleInputChange}
-                  fullWidth
-                />
-                <TextField
-                  label={t.organizerPhone}
-                  name="organizerPhone"
-                  value={formData.organizerPhone}
-                  onChange={handleInputChange}
-                  error={!!organizerPhoneError}
-                  helperText={organizerPhoneError || "Enter phone number with country code (e.g., +92, +968, +1)"}
-                  fullWidth
-                />
-              </>
-            )}
+            {/* Organizer Details */}
+            <Typography variant="h6" sx={{ mt: 2, mb: 1, fontWeight: 600 }}>
+              {t.organizerDetails}
+            </Typography>
+            <TextField
+              label={t.organizerName}
+              name="organizerName"
+              value={formData.organizerName}
+              onChange={handleInputChange}
+              fullWidth
+            />
+            <TextField
+              label={t.organizerEmail}
+              name="organizerEmail"
+              type="email"
+              value={formData.organizerEmail}
+              onChange={handleInputChange}
+              fullWidth
+            />
+            <TextField
+              label={t.organizerPhone}
+              name="organizerPhone"
+              value={formData.organizerPhone}
+              onChange={handleInputChange}
+              error={!!organizerPhoneError}
+              helperText={organizerPhoneError || "Enter phone number with country code (e.g., +92, +968, +1)"}
+              fullWidth
+            />
 
             {!isEmployee && (
               <>
