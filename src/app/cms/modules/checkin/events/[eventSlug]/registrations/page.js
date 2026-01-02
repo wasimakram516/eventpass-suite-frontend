@@ -65,8 +65,8 @@ const translations = {
         title: "Manage Registrations",
         description:
             "View event details and manage registrations for this event. Export registration data or delete entries as needed.",
-        exportAll: "Export All to CSV",
-        exportFiltered: "Export Filtered to CSV",
+        exportAll: "Export All",
+        exportFiltered: "Export filtered",
         exporting: "Exporting...",
         downloadSample: "Download Sample",
         uploadFile: "Upload File",
@@ -84,7 +84,7 @@ const translations = {
         deleteRecord: "Delete Registration",
         filters: "Filters",
         searchPlaceholder: "Search...",
-        sendBulkEmails: "Send Notifications",
+        sendBulkEmails: "Notifications",
         sendingEmails: "Sending notifications...",
         inviteSent: "Invitation sent",
         inviteNotSent: "Invitation not sent",
@@ -96,7 +96,7 @@ const translations = {
         emailNotSent: "Email Not Sent",
         copyToken: "Copy Token",
         editRegistration: "Edit Registration",
-        createRegistration: "Create Registration",
+        createRegistration: "New",
         confirmed: "Confirmed",
         pending: "Pending",
         notConfirmed: "Not confirmed",
@@ -123,8 +123,8 @@ const translations = {
         title: "إدارة التسجيلات",
         description:
             "اعرض تفاصيل الحدث وقم بإدارة التسجيلات. يمكنك تصدير البيانات أو حذف السجلات.",
-        exportAll: "تصدير الكل إلى CSV",
-        exportFiltered: "تصدير المصفى إلى CSV",
+        exportAll: "تصدير الكل",
+        exportFiltered: "تصدير المصفى",
         exporting: "جاري التصدير...",
         downloadSample: "تنزيل نموذج",
         uploadFile: "رفع ملف",
@@ -141,7 +141,7 @@ const translations = {
         deleteRecord: "حذف التسجيل",
         filters: "تصفية",
         searchPlaceholder: "بحث...",
-        sendBulkEmails: "إرسال الإشعارات",
+        sendBulkEmails: "الإشعارات",
         sendingEmails: "جاري إرسال الإشعارات...",
         inviteSent: "تم إرسال الدعوة",
         inviteNotSent: "لم تُرسل الدعوة",
@@ -153,7 +153,7 @@ const translations = {
         emailNotSent: "لم يتم الإرسال",
         copyToken: "نسخ الرمز",
         editRegistration: "تعديل التسجيل",
-        createRegistration: "إنشاء تسجيل",
+        createRegistration: "جديد",
         confirmed: "مؤكد",
         pending: "قيد الانتظار",
         notConfirmed: "غير مؤكد",
@@ -839,13 +839,14 @@ export default function ViewRegistrations() {
 
                 {totalRegistrations > 0 && (
                     <Button
-                        variant="contained"
+                        variant="outlined"
+                        color="success"
                         disabled={exportLoading}
                         startIcon={
                             exportLoading ? (
                                 <CircularProgress size={18} color="inherit" />
                             ) : (
-                                <ICONS.download />
+                                <ICONS.description />
                             )
                         }
                         onClick={handleExportRegs}
