@@ -16,7 +16,6 @@ import {
     Typography,
     Stack,
     Toolbar,
-    CircularProgress,
 } from "@mui/material";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
@@ -49,6 +48,8 @@ const translations = {
         placeholderBody: "Enter email body...",
         confirmed: "Confirmed",
         notConfirmed: "Not Confirmed",
+        approved: "Approved",
+        rejected: "Rejected",
         pending: "Pending",
         all: "All",
         filterByStatus: "Filter by Status",
@@ -75,6 +76,8 @@ const translations = {
         placeholderBody: "أدخل محتوى البريد الإلكتروني...",
         confirmed: "مؤكد",
         notConfirmed: "غير مؤكد",
+        approved: "موافق عليه",
+        rejected: "مرفوض",
         pending: "قيد الانتظار",
         all: "الكل",
         filterByStatus: "تصفية حسب الحالة",
@@ -394,7 +397,8 @@ const BulkEmailModal = ({
     onSendEmail,
     onSendWhatsApp,
     sendingEmails = false,
-    emailProgress = { sent: 0, failed: 0, processed: 0, total: 0 },
+    isApprovalBased = true,
+    useApprovedRejected = false,
 }) => {
     const { t, dir } = useI18nLayout(translations);
     const [emailType, setEmailType] = useState("default");
@@ -404,6 +408,24 @@ const BulkEmailModal = ({
     const [subjectError, setSubjectError] = useState(false);
     const [attachedFile, setAttachedFile] = useState(null);
     const fileInputRef = useRef(null);
+
+    useEffect(() => {
+        setSelectedFilter("all");
+    }, [isApprovalBased]);
+
+    useEffect(() => {
+        if (!open) {
+            setEmailType("default");
+            setSubject("");
+            setBody("");
+            setSelectedFilter("all");
+            setSubjectError(false);
+            setAttachedFile(null);
+            if (fileInputRef.current) {
+                fileInputRef.current.value = "";
+            }
+        }
+    }, [open]);
 
     const handleClose = () => {
         setEmailType("default");
@@ -442,19 +464,23 @@ const BulkEmailModal = ({
         // Convert selectedFilter to individual filter states
         const filterStates = selectedFilter === "all"
             ? { statusFilter: "all", emailSentFilter: "all", whatsappSentFilter: "all" }
-            : selectedFilter === "confirmed"
-                ? { statusFilter: "confirmed", emailSentFilter: "all", whatsappSentFilter: "all" }
-                : selectedFilter === "notConfirmed"
-                    ? { statusFilter: "notConfirmed", emailSentFilter: "all", whatsappSentFilter: "all" }
-                    : selectedFilter === "pending"
-                        ? { statusFilter: "pending", emailSentFilter: "all", whatsappSentFilter: "all" }
-                        : selectedFilter === "emailSent"
-                            ? { statusFilter: "all", emailSentFilter: "sent", whatsappSentFilter: "all" }
-                            : selectedFilter === "emailNotSent"
-                                ? { statusFilter: "all", emailSentFilter: "notSent", whatsappSentFilter: "all" }
-                                : selectedFilter === "whatsappSent"
-                                    ? { statusFilter: "all", emailSentFilter: "all", whatsappSentFilter: "sent" }
-                                    : { statusFilter: "all", emailSentFilter: "all", whatsappSentFilter: "notSent" };
+            : selectedFilter === "approved"
+                ? { statusFilter: "approved", emailSentFilter: "all", whatsappSentFilter: "all" }
+                : selectedFilter === "rejected"
+                    ? { statusFilter: "rejected", emailSentFilter: "all", whatsappSentFilter: "all" }
+                    : selectedFilter === "confirmed"
+                        ? { statusFilter: "confirmed", emailSentFilter: "all", whatsappSentFilter: "all" }
+                        : selectedFilter === "notConfirmed"
+                            ? { statusFilter: "notConfirmed", emailSentFilter: "all", whatsappSentFilter: "all" }
+                            : selectedFilter === "pending"
+                                ? { statusFilter: "pending", emailSentFilter: "all", whatsappSentFilter: "all" }
+                                : selectedFilter === "emailSent"
+                                    ? { statusFilter: "all", emailSentFilter: "sent", whatsappSentFilter: "all" }
+                                    : selectedFilter === "emailNotSent"
+                                        ? { statusFilter: "all", emailSentFilter: "notSent", whatsappSentFilter: "all" }
+                                        : selectedFilter === "whatsappSent"
+                                            ? { statusFilter: "all", emailSentFilter: "all", whatsappSentFilter: "sent" }
+                                            : { statusFilter: "all", emailSentFilter: "all", whatsappSentFilter: "notSent" };
 
         onSendEmail({
             type: emailType,
@@ -463,7 +489,6 @@ const BulkEmailModal = ({
             file: emailType === "custom" ? attachedFile : undefined,
             ...filterStates,
         });
-        handleClose();
     };
 
     const handleSendWhatsApp = () => {
@@ -474,19 +499,23 @@ const BulkEmailModal = ({
         setSubjectError(false);
         const filterStates = selectedFilter === "all"
             ? { statusFilter: "all", emailSentFilter: "all", whatsappSentFilter: "all" }
-            : selectedFilter === "confirmed"
-                ? { statusFilter: "confirmed", emailSentFilter: "all", whatsappSentFilter: "all" }
-                : selectedFilter === "notConfirmed"
-                    ? { statusFilter: "notConfirmed", emailSentFilter: "all", whatsappSentFilter: "all" }
-                    : selectedFilter === "pending"
-                        ? { statusFilter: "pending", emailSentFilter: "all", whatsappSentFilter: "all" }
-                        : selectedFilter === "emailSent"
-                            ? { statusFilter: "all", emailSentFilter: "sent", whatsappSentFilter: "all" }
-                            : selectedFilter === "emailNotSent"
-                                ? { statusFilter: "all", emailSentFilter: "notSent", whatsappSentFilter: "all" }
-                                : selectedFilter === "whatsappSent"
-                                    ? { statusFilter: "all", emailSentFilter: "all", whatsappSentFilter: "sent" }
-                                    : { statusFilter: "all", emailSentFilter: "all", whatsappSentFilter: "notSent" };
+            : selectedFilter === "approved"
+                ? { statusFilter: "approved", emailSentFilter: "all", whatsappSentFilter: "all" }
+                : selectedFilter === "rejected"
+                    ? { statusFilter: "rejected", emailSentFilter: "all", whatsappSentFilter: "all" }
+                    : selectedFilter === "confirmed"
+                        ? { statusFilter: "confirmed", emailSentFilter: "all", whatsappSentFilter: "all" }
+                        : selectedFilter === "notConfirmed"
+                            ? { statusFilter: "notConfirmed", emailSentFilter: "all", whatsappSentFilter: "all" }
+                            : selectedFilter === "pending"
+                                ? { statusFilter: "pending", emailSentFilter: "all", whatsappSentFilter: "all" }
+                                : selectedFilter === "emailSent"
+                                    ? { statusFilter: "all", emailSentFilter: "sent", whatsappSentFilter: "all" }
+                                    : selectedFilter === "emailNotSent"
+                                        ? { statusFilter: "all", emailSentFilter: "notSent", whatsappSentFilter: "all" }
+                                        : selectedFilter === "whatsappSent"
+                                            ? { statusFilter: "all", emailSentFilter: "all", whatsappSentFilter: "sent" }
+                                            : { statusFilter: "all", emailSentFilter: "all", whatsappSentFilter: "notSent" };
 
         onSendWhatsApp({
             type: emailType,
@@ -495,7 +524,6 @@ const BulkEmailModal = ({
             file: emailType === "custom" ? attachedFile : undefined,
             ...filterStates,
         });
-        handleClose();
     };
 
     return (
@@ -539,13 +567,36 @@ const BulkEmailModal = ({
                                 displayEmpty
                             >
                                 <MenuItem value="all">{t.all}</MenuItem>
-                                <MenuItem value="confirmed">{t.confirmed}</MenuItem>
-                                <MenuItem value="notConfirmed">{t.notConfirmed}</MenuItem>
-                                <MenuItem value="pending">{t.pending}</MenuItem>
-                                <MenuItem value="emailSent">{t.emailSent}</MenuItem>
-                                <MenuItem value="emailNotSent">{t.emailNotSent}</MenuItem>
-                                <MenuItem value="whatsappSent">{t.whatsappSent}</MenuItem>
-                                <MenuItem value="whatsappNotSent">{t.whatsappNotSent}</MenuItem>
+                                {isApprovalBased ? (
+                                    useApprovedRejected ? (
+                                        [
+                                            <MenuItem key="approved" value="approved">{t.approved}</MenuItem>,
+                                            <MenuItem key="rejected" value="rejected">{t.rejected}</MenuItem>,
+                                            <MenuItem key="pending" value="pending">{t.pending}</MenuItem>,
+                                            <MenuItem key="emailSent" value="emailSent">{t.emailSent}</MenuItem>,
+                                            <MenuItem key="emailNotSent" value="emailNotSent">{t.emailNotSent}</MenuItem>,
+                                            <MenuItem key="whatsappSent" value="whatsappSent">{t.whatsappSent}</MenuItem>,
+                                            <MenuItem key="whatsappNotSent" value="whatsappNotSent">{t.whatsappNotSent}</MenuItem>,
+                                        ]
+                                    ) : (
+                                        [
+                                            <MenuItem key="confirmed" value="confirmed">{t.confirmed}</MenuItem>,
+                                            <MenuItem key="notConfirmed" value="notConfirmed">{t.notConfirmed}</MenuItem>,
+                                            <MenuItem key="pending" value="pending">{t.pending}</MenuItem>,
+                                            <MenuItem key="emailSent" value="emailSent">{t.emailSent}</MenuItem>,
+                                            <MenuItem key="emailNotSent" value="emailNotSent">{t.emailNotSent}</MenuItem>,
+                                            <MenuItem key="whatsappSent" value="whatsappSent">{t.whatsappSent}</MenuItem>,
+                                            <MenuItem key="whatsappNotSent" value="whatsappNotSent">{t.whatsappNotSent}</MenuItem>,
+                                        ]
+                                    )
+                                ) : (
+                                    [
+                                        <MenuItem key="emailSent" value="emailSent">{t.emailSent}</MenuItem>,
+                                        <MenuItem key="emailNotSent" value="emailNotSent">{t.emailNotSent}</MenuItem>,
+                                        <MenuItem key="whatsappSent" value="whatsappSent">{t.whatsappSent}</MenuItem>,
+                                        <MenuItem key="whatsappNotSent" value="whatsappNotSent">{t.whatsappNotSent}</MenuItem>,
+                                    ]
+                                )}
                             </Select>
                         </FormControl>
                     </Box>
@@ -722,22 +773,12 @@ const BulkEmailModal = ({
                 <Button
                     variant="contained"
                     color="primary"
-                    startIcon={
-                        sendingEmails ? (
-                            <CircularProgress size={20} color="inherit" />
-                        ) : (
-                            <ICONS.email />
-                        )
-                    }
+                    startIcon={<ICONS.email />}
                     onClick={handleSendEmail}
                     disabled={sendingEmails}
                     sx={getStartIconSpacing(dir)}
                 >
-                    {sendingEmails && emailProgress.total
-                        ? `${t.sendEmail} ${emailProgress.processed}/${emailProgress.total}`
-                        : sendingEmails
-                            ? t.sendEmail
-                            : t.sendEmail}
+                    {t.sendEmail}
                 </Button>
             </DialogActions>
         </Dialog>

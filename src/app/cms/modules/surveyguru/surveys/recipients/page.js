@@ -91,13 +91,13 @@ const translations = {
     name: "Name",
     company: "Company",
     copyLink: "Copy survey link",
-    bulkEmail: "Send Bulk Emails",
-    bulkEmailConfirmTitle: "Send Bulk Survey Emails",
+    bulkEmail: "Send Bulk Notifications",
+    bulkEmailConfirmTitle: "Send Bulk Survey Notifications",
     bulkEmailConfirmMsg:
       "This will send survey invitation emails to all queued recipients for the selected form. Do you want to proceed?",
     sendingEmails: "Sending Emails...",
     bulkEmailSuccess:
-      "Bulk emails completed — {sent} sent, {failed} failed, out of {total} total.",
+      "Bulk notification completed — {sent} sent, {failed} failed, out of {total} total.",
     showing: "Showing",
     of: "of",
     records: "records",
@@ -139,13 +139,13 @@ const translations = {
     name: "الاسم",
     company: "الشركة",
     copyLink: "نسخ رابط الاستبيان",
-    bulkEmail: "إرسال البريد الجماعي",
-    bulkEmailConfirmTitle: "إرسال بريد الاستبيان الجماعي",
+    bulkEmail: "إرسال الإشعارات الجماعية",
+    bulkEmailConfirmTitle: "إرسال إشعارات الاستبيان الجماعية",
     bulkEmailConfirmMsg:
       "سيتم إرسال دعوات الاستبيان إلى جميع المستلمين قيد الانتظار للنموذج المحدد. هل تريد المتابعة؟",
     sendingEmails: "جاري إرسال البريد...",
     bulkEmailSuccess:
-      "اكتمل إرسال البريد الجماعي — {sent} تم الإرسال، {failed} فشل، من أصل {total}.",
+      "اكتمل إرسال الإشعارات الجماعية — {sent} تم الإرسال، {failed} فشل، من أصل {total}.",
     showing: "عرض",
     of: "من",
     records: "السجلات",
