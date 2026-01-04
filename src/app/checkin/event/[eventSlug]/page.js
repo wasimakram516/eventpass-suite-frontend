@@ -451,7 +451,7 @@ export default function EventDetails() {
             ) : registration ? (
               <Box
                 sx={{
-                  backgroundColor: "rgba(255, 255, 255, 0.80)", // semi-transparent white
+                  backgroundColor: "rgba(255, 255, 255, 0.85)", // semi-transparent white
                   borderRadius: 3,
                   p: 4,
                   boxShadow: 3,
