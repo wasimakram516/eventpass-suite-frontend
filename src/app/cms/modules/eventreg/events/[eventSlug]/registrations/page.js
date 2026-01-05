@@ -135,6 +135,12 @@ const translations = {
     approved: "Approved",
     rejected: "Rejected",
     pending: "Pending",
+    status: "Status",
+    emailStatus: "Email Status",
+    whatsappStatus: "WhatsApp Status",
+    all: "All",
+    sent: "Sent",
+    notSent: "Not Sent",
   },
   ar: {
     title: "تفاصيل الحدث",
@@ -201,6 +207,12 @@ const translations = {
     approved: "موافق عليه",
     rejected: "مرفوض",
     pending: "قيد الانتظار",
+    status: "الحالة",
+    emailStatus: "حالة البريد الإلكتروني",
+    whatsappStatus: "حالة واتساب",
+    all: "الكل",
+    sent: "تم الإرسال",
+    notSent: "لم يتم الإرسال",
   },
 };
 
@@ -216,6 +228,9 @@ export default function ViewRegistrations() {
     scannedAtToMs: null,
     scannedBy: "",
     token: "",
+    status: "",
+    emailSent: "",
+    whatsappSent: "",
   };
 
   function buildFilterState(fieldsLocal, prev = {}) {
@@ -535,11 +550,30 @@ export default function ViewRegistrations() {
       createdAtToMs,
       scannedAtFromMs,
       scannedAtToMs,
+      status,
+      emailSent,
+      whatsappSent,
       ...restFilters
     } = filters;
 
     return allRegistrations.filter((reg) => {
       if (searchTerm && !reg._haystack.includes(searchTerm)) return false;
+
+      if (status && status !== "all") {
+        if ((reg.approvalStatus || "pending") !== status) return false;
+      }
+
+      if (emailSent && emailSent !== "all") {
+        const isSent = !!reg.emailSent;
+        if (emailSent === "sent" && !isSent) return false;
+        if (emailSent === "not_sent" && isSent) return false;
+      }
+
+      if (whatsappSent && whatsappSent !== "all") {
+        const isSent = !!reg.whatsappSent;
+        if (whatsappSent === "sent" && !isSent) return false;
+        if (whatsappSent === "not_sent" && isSent) return false;
+      }
 
       // Date: createdAt (UTC ms bounds)
       if (createdAtFromMs != null && reg._createdAtMs < createdAtFromMs)
@@ -765,6 +799,16 @@ export default function ViewRegistrations() {
 
       // Scanned By
       if (filters.scannedBy) query.scannedBy = filters.scannedBy;
+
+      if (filters.status && filters.status !== "all") {
+        query.status = filters.status;
+      }
+      if (filters.emailSent && filters.emailSent !== "all") {
+        query.emailSent = filters.emailSent;
+      }
+      if (filters.whatsappSent && filters.whatsappSent !== "all") {
+        query.whatsappSent = filters.whatsappSent;
+      }
 
       // Dynamic fields using backend format: field_<name>
       dynamicFields.forEach((f) => {
@@ -1285,7 +1329,9 @@ export default function ViewRegistrations() {
 
         // text-based filters
         Object.entries(filters).forEach(([key, val]) => {
-          if (val && !key.endsWith("Ms")) activeFilterEntries.push([key, val]);
+          if (val && !key.endsWith("Ms") && val !== "all") {
+            activeFilterEntries.push([key, val]);
+          }
         });
 
         // date-based filters
@@ -1341,11 +1387,28 @@ export default function ViewRegistrations() {
                       ? t.scannedAt
                       : key === "scannedBy"
                         ? t.scannedBy
-                        : getFieldLabel(key);
+                        : key === "status"
+                          ? t.status
+                          : key === "emailSent"
+                            ? t.emailStatus
+                            : key === "whatsappSent"
+                              ? t.whatsappStatus
+                              : getFieldLabel(key);
+
+              let displayValue = val;
+              if (key === "status") {
+                if (val === "pending") displayValue = t.pending;
+                else if (val === "approved") displayValue = t.approved;
+                else if (val === "rejected") displayValue = t.rejected;
+              } else if (key === "emailSent" || key === "whatsappSent") {
+                if (val === "sent") displayValue = t.sent;
+                else if (val === "not_sent") displayValue = t.notSent;
+              }
+
               return (
                 <Chip
                   key={key}
-                  label={`${translatedKey}: ${val}`}
+                  label={`${translatedKey}: ${displayValue}`}
                   onDelete={() => {
                     setFilters((prev) => {
                       const updated = { ...prev };
@@ -1845,6 +1908,84 @@ export default function ViewRegistrations() {
         title={t.filterRegistrations || "Filter Registrations"}
       >
         <Stack spacing={2}>
+          {eventDetails?.requiresApproval && (
+            <Box>
+              <Typography variant="subtitle2" gutterBottom>
+                {t.status}
+              </Typography>
+              <FormControl fullWidth size="small">
+                <InputLabel>{`${t.filterBy} ${t.status}`}</InputLabel>
+                <Select
+                  label={`${t.filterBy} ${t.status}`}
+                  value={filters.status ?? "all"}
+                  onChange={(e) =>
+                    setFilters((prev) => ({
+                      ...prev,
+                      status: e.target.value,
+                    }))
+                  }
+                >
+                  <MenuItem value="all">
+                    <em>{t.all}</em>
+                  </MenuItem>
+                  <MenuItem value="pending">{t.pending}</MenuItem>
+                  <MenuItem value="approved">{t.approved}</MenuItem>
+                  <MenuItem value="rejected">{t.rejected}</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
+          )}
+
+          <Box>
+            <Typography variant="subtitle2" gutterBottom>
+              {t.emailStatus}
+            </Typography>
+            <FormControl fullWidth size="small">
+              <InputLabel>{`${t.filterBy} ${t.emailStatus}`}</InputLabel>
+              <Select
+                label={`${t.filterBy} ${t.emailStatus}`}
+                value={filters.emailSent ?? "all"}
+                onChange={(e) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    emailSent: e.target.value,
+                  }))
+                }
+              >
+                <MenuItem value="all">
+                  <em>{t.all}</em>
+                </MenuItem>
+                <MenuItem value="sent">{t.sent}</MenuItem>
+                <MenuItem value="not_sent">{t.notSent}</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
+
+          <Box>
+            <Typography variant="subtitle2" gutterBottom>
+              {t.whatsappStatus}
+            </Typography>
+            <FormControl fullWidth size="small">
+              <InputLabel>{`${t.filterBy} ${t.whatsappStatus}`}</InputLabel>
+              <Select
+                label={`${t.filterBy} ${t.whatsappStatus}`}
+                value={filters.whatsappSent ?? "all"}
+                onChange={(e) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    whatsappSent: e.target.value,
+                  }))
+                }
+              >
+                <MenuItem value="all">
+                  <em>{t.all}</em>
+                </MenuItem>
+                <MenuItem value="sent">{t.sent}</MenuItem>
+                <MenuItem value="not_sent">{t.notSent}</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
+
           {/* --- Dynamic Custom / Classic Fields (use dynamicFields) --- */}
           {dynamicFields.map((f) => (
             <Box key={f.name}>
@@ -2094,6 +2235,9 @@ export default function ViewRegistrations() {
                   scannedAtToMs: null,
                   scannedBy: "",
                   token: "",
+                  status: "",
+                  emailSent: "",
+                  whatsappSent: "",
                 })
               }
               sx={getStartIconSpacing(dir)}
