@@ -8,16 +8,16 @@ const translations = {
   en: {
     title: "Welcome to CheckIn",
     subtitle:
-      "Streamline employee event check-ins with digital solutions.",
+      "Track and verify guest attendance with digital check-in solutions.",
     description:
-      "This platform enables you to create private check-in events for your employees. Generate links or QR codes for easy check-in, and display table numbers and locations instantly after employees enter their Employee ID.",
+      "This platform enables you to create check-in events for your guests and attendees. Build custom registration forms, generate links or QR codes for easy check-in, and track attendance in real-time. Verify entries and manage guest check-ins efficiently.",
     adminLogin: "Admin Login",
   },
   ar: {
     title: "مرحبًا بكم في CheckIn",
-    subtitle: "بسط تسجيل حضور موظفي الفعاليات بالحلول الرقمية.",
+    subtitle: "تتبع وتأكيد دخول الضيوف بالحلول الرقمية لتسجيل الحضور.",
     description:
-      "تتيح هذه المنصة إنشاء فعاليات تسجيل حضور خاصة بالموظفين. أنشئ روابط أو رموز QR لتسجيل الحضور السهل، واعرض أرقام الطاولات والمواقع فورًا بعد إدخال الموظفين لرقم الموظف.",
+      "تتيح هذه المنصة إنشاء فعاليات تسجيل حضور للضيوف والحضور. أنشئ نماذج تسجيل مخصصة، واعرض روابط أو رموز QR لتسجيل الحضور السهل، وتتبع الحضور في الوقت الفعلي. تحقق من الدخول وأدر تسجيل حضور الضيوف بكفاءة.",
     adminLogin: "تسجيل دخول المسؤول",
   },
 };
