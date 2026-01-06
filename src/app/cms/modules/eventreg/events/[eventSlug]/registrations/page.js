@@ -511,6 +511,8 @@ export default function ViewRegistrations() {
       })
     );
     setEditModalOpen(false);
+    setEditingReg(null);
+    fetchData();
   };
 
   const handleCreateRegistration = async (fields) => {

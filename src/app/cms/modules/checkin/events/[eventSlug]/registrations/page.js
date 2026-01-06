@@ -628,6 +628,7 @@ export default function ViewRegistrations() {
       const res = await createCheckInRegistration(payload);
       if (!res?.error) {
         setCreateModalOpen(false);
+        fetchData();
       }
     } catch (err) {
       showMessage(err?.message || "Failed to create registration", "error");
