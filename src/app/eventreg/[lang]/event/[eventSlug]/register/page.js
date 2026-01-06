@@ -449,13 +449,26 @@ export default function Registration() {
           {name}
         </Typography>
         {description && (
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{ mb: 3, whiteSpace: "pre-line" }}
-          >
-            {description}
-          </Typography>
+          <Box
+            sx={{
+              mb: 3,
+              color: "text.secondary",
+              fontSize: "0.875rem",
+              "& h1": { fontSize: "2em", fontWeight: "bold", margin: "0.67em 0" },
+              "& h2": { fontSize: "1.5em", fontWeight: "bold", margin: "0.75em 0" },
+              "& h3": { fontSize: "1.17em", fontWeight: "bold", margin: "0.83em 0" },
+              "& ul, & ol": { margin: "1em 0", paddingLeft: "2.5em" },
+              "& ul": { listStyleType: "disc" },
+              "& ol": { listStyleType: "decimal" },
+              "& li": { margin: "0.5em 0" },
+              "& p": { margin: "1em 0" },
+              "& strong, & b": { fontWeight: "bold" },
+              "& em, & i": { fontStyle: "italic" },
+              "& u": { textDecoration: "underline" },
+              "& s, & strike": { textDecoration: "line-through" },
+            }}
+            dangerouslySetInnerHTML={{ __html: description }}
+          />
         )}
 
         <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>
