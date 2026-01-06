@@ -287,16 +287,16 @@ export default function ViewRegistrations() {
     const fieldsLocal =
       !evRes?.error && evRes.formFields?.length
         ? evRes.formFields.map((f) => ({
-            name: f.inputName,
-            type: (f.inputType || "text").toLowerCase(),
-            values: Array.isArray(f.values) ? f.values : [],
-          }))
+          name: f.inputName,
+          type: (f.inputType || "text").toLowerCase(),
+          values: Array.isArray(f.values) ? f.values : [],
+        }))
         : [
-            { name: "fullName", type: "text", values: [] },
-            { name: "email", type: "text", values: [] },
-            { name: "phone", type: "text", values: [] },
-            { name: "company", type: "text", values: [] },
-          ];
+          { name: "fullName", type: "text", values: [] },
+          { name: "email", type: "text", values: [] },
+          { name: "phone", type: "text", values: [] },
+          { name: "company", type: "text", values: [] },
+        ];
 
     if (!evRes?.error) {
       setEventDetails(evRes);
@@ -587,13 +587,13 @@ export default function ViewRegistrations() {
         prev.map((r) =>
           r._id === editingReg._id
             ? {
-                ...r,
-                customFields: { ...(r.customFields || {}), ...values },
-                fullName: values["Full Name"] || r.fullName,
-                email: values.Email || r.email,
-                phone: values.Phone || r.phone,
-                company: values.Company || r.company,
-              }
+              ...r,
+              customFields: { ...(r.customFields || {}), ...values },
+              fullName: values["Full Name"] || r.fullName,
+              email: values.Email || r.email,
+              phone: values.Phone || r.phone,
+              company: values.Company || r.company,
+            }
             : r
         )
       );
@@ -914,8 +914,8 @@ export default function ViewRegistrations() {
             {sendingEmails && emailProgress.total
               ? `${t.sendingEmails} ${emailProgress.processed}/${emailProgress.total}`
               : sendingEmails
-              ? t.sendingEmails
-              : t.sendBulkEmails}
+                ? t.sendingEmails
+                : t.sendBulkEmails}
           </Button>
         )}
 
@@ -937,8 +937,8 @@ export default function ViewRegistrations() {
             {exportLoading
               ? t.exporting
               : searchTerm || Object.keys(filters).some((k) => filters[k])
-              ? t.exportFiltered
-              : t.exportAll}
+                ? t.exportFiltered
+                : t.exportAll}
           </Button>
         )}
       </Stack>
@@ -984,13 +984,13 @@ export default function ViewRegistrations() {
               <ICONS.search fontSize="small" sx={{ opacity: 0.7 }} />
               {filteredRegistrations.length === 1
                 ? t.matchingRecords.replace(
-                    "{count}",
-                    filteredRegistrations.length
-                  )
+                  "{count}",
+                  filteredRegistrations.length
+                )
                 : t.matchingRecordsPlural.replace(
-                    "{count}",
-                    filteredRegistrations.length
-                  )}{" "}
+                  "{count}",
+                  filteredRegistrations.length
+                )}{" "}
               {t.found}
             </Typography>
           )}
@@ -1072,20 +1072,20 @@ export default function ViewRegistrations() {
         const activeFilterEntries = [];
 
         Object.entries(filters).forEach(([key, val]) => {
-          if (val && !key.endsWith("Ms")) activeFilterEntries.push([key, val]);
+          if (val && !key.endsWith("Ms") && val !== "all") {
+            activeFilterEntries.push([key, val]);
+          }
         });
 
         if (filters.createdAtFromMs || filters.createdAtToMs) {
           activeFilterEntries.push([
             "Registered At",
-            `${
-              filters.createdAtFromMs
-                ? formatDateTimeWithLocale(filters.createdAtFromMs)
-                : "—"
-            } → ${
-              filters.createdAtToMs
-                ? formatDateTimeWithLocale(filters.createdAtToMs)
-                : "—"
+            `${filters.createdAtFromMs
+              ? formatDateTimeWithLocale(filters.createdAtFromMs)
+              : "—"
+            } → ${filters.createdAtToMs
+              ? formatDateTimeWithLocale(filters.createdAtToMs)
+              : "—"
             }`,
           ]);
         }
@@ -1093,14 +1093,12 @@ export default function ViewRegistrations() {
         if (filters.scannedAtFromMs || filters.scannedAtToMs) {
           activeFilterEntries.push([
             "Scanned At",
-            `${
-              filters.scannedAtFromMs
-                ? formatDateTimeWithLocale(filters.scannedAtFromMs)
-                : "—"
-            } → ${
-              filters.scannedAtToMs
-                ? formatDateTimeWithLocale(filters.scannedAtToMs)
-                : "—"
+            `${filters.scannedAtFromMs
+              ? formatDateTimeWithLocale(filters.scannedAtFromMs)
+              : "—"
+            } → ${filters.scannedAtToMs
+              ? formatDateTimeWithLocale(filters.scannedAtToMs)
+              : "—"
             }`,
           ]);
         }
@@ -1127,16 +1125,33 @@ export default function ViewRegistrations() {
                 key === "token"
                   ? t.token
                   : key === "Registered At"
-                  ? t.registeredAt
-                  : key === "Scanned At"
-                  ? t.scannedAt || "Scanned At"
-                  : key === "scannedBy"
-                  ? t.scannedBy || "Scanned By"
-                  : getFieldLabel(key);
+                    ? t.registeredAt
+                    : key === "Scanned At"
+                      ? t.scannedAt || "Scanned At"
+                      : key === "scannedBy"
+                        ? t.scannedBy || "Scanned By"
+                        : key === "status"
+                          ? t.status
+                          : key === "emailSent"
+                            ? t.emailStatus
+                            : key === "whatsappSent"
+                              ? t.whatsappStatus
+                              : getFieldLabel(key);
+
+              let displayValue = val;
+              if (key === "status") {
+                if (val === "pending") displayValue = t.pending;
+                else if (val === "confirmed") displayValue = t.confirmed;
+                else if (val === "not_confirmed") displayValue = t.notConfirmed;
+              } else if (key === "emailSent" || key === "whatsappSent") {
+                if (val === "sent") displayValue = t.sent;
+                else if (val === "not_sent") displayValue = t.notSent;
+              }
+
               return (
                 <Chip
                   key={key}
-                  label={`${translatedKey}: ${val}`}
+                  label={`${translatedKey}: ${displayValue}`}
                   onDelete={() => {
                     setFilters((prev) => {
                       const updated = { ...prev };
@@ -1580,8 +1595,8 @@ export default function ViewRegistrations() {
               {["radio", "list", "select", "dropdown"].includes(
                 (f.type || "").toLowerCase()
               ) &&
-              Array.isArray(f.values) &&
-              f.values.length > 0 ? (
+                Array.isArray(f.values) &&
+                f.values.length > 0 ? (
                 <FormControl fullWidth size="small">
                   <InputLabel>{`Select ${getFieldLabel(f.name)}`}</InputLabel>
                   <Select
