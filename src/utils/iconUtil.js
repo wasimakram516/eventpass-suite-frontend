@@ -33,6 +33,7 @@ import {
   Language as LanguageIcon,
   RestoreFromTrash as RestoreIcon,
   Badge as BadgeIcon,
+  Chat,
 } from "@mui/icons-material";
 
 // Social Media Icons
@@ -155,10 +156,13 @@ import {
   Insights as InsightsIcon,
   CloudUpload as cloudIcon,
   Sync as syncIcon,
+  ReceiptLong as listIcon,
+  Chat as chatIcon,
 } from "@mui/icons-material";
 
 const ICONS = {
   // General UI / Navigation
+  list: listIcon,
   sync: syncIcon,
   cloud: cloudIcon,
   star: StarIcon,
@@ -204,6 +208,7 @@ const ICONS = {
   linkedin: LinkedInIcon,
   twitter: TwitterIcon,
   whatsapp: WhatsAppIcon,
+  chat: chatIcon,
 
   // Outlined / extras
   personOutline: PersonOutlineIcon,

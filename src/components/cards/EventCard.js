@@ -20,6 +20,7 @@ export default function EventCardBase({
   status, // eventStatus or computed status
   showRegistrations = true, // toggle for public vs closed
   onView,
+  onViewWhatsAppLogs,
   onEdit,
   onDelete,
   onShare,
@@ -199,6 +200,23 @@ export default function EventCardBase({
             </IconButton>
           </Tooltip>
         )}
+        {onViewWhatsAppLogs && (
+        <Tooltip title={t.viewWhatsAppLogs || "View WhatsApp Logs"}>
+          <IconButton
+            onClick={onViewWhatsAppLogs}
+            sx={{
+              color: "#25D366", // WhatsApp green
+              "&:hover": {
+                transform: "scale(1.1)",
+                backgroundColor: "rgba(37, 211, 102, 0.12)",
+              },
+              transition: "0.2s",
+            }}
+          >
+            <ICONS.whatsapp />
+          </IconButton>
+        </Tooltip>
+      )}
         {onInsights && (
           <Tooltip title={t.insights || "Insights"}>
             <IconButton

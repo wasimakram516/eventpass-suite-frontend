@@ -11,7 +11,19 @@ const segmentMap = {
     label: "Dashboard",
     icon: <ICONS.home fontSize="small" sx={{ mr: 0.5 }} />,
   },
-  downloads:{
+  whatsapp: {
+    label: "WhatsApp",
+    icon: <ICONS.whatsapp fontSize="small" sx={{ mr: 0.5 }} />,
+  },
+  logs: {
+    label: "Logs",
+    icon: <ICONS.list fontSize="small" sx={{ mr: 0.5 }} />,
+  },
+  inbox: {
+    label: "Inbox",
+    icon: <ICONS.chat fontSize="small" sx={{ mr: 0.5 }} />,
+  },
+  downloads: {
     label: "Manage Files",
     icon: <ICONS.cloud fontSize="small" sx={{ mr: 0.5 }} />,
   },
