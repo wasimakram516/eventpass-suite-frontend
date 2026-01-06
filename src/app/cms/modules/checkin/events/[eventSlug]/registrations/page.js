@@ -599,6 +599,7 @@ export default function ViewRegistrations() {
       );
       setEditModalOpen(false);
       setEditingReg(null);
+      fetchData();
     } catch (err) {
       showMessage(err?.message || "Failed to update registration", "error");
     }
