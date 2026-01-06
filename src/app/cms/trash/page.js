@@ -290,12 +290,19 @@ export default function TrashPage() {
         map[u._id] = u.name || u.fullName || u.email || u._id;
       });
       setUserMap(map);
-    } catch {}
+    } catch { }
   };
 
   const handleLimitChange = (newLimit) => {
     setLimit(newLimit);
     setPageState({}); // reset pagination when limit changes
+  };
+
+  const handlePageChange = (module, page) => {
+    setPageState((prev) => ({
+      ...prev,
+      [module]: page,
+    }));
   };
 
   const fetchModuleData = async () => {
@@ -372,7 +379,7 @@ export default function TrashPage() {
 
   const fetchAllModules = async () => {
     try {
-      const res = await getModuleCounts(); 
+      const res = await getModuleCounts();
       const modules = Object.keys(res || {}).filter((m) => res[m] > 0);
 
       setAllAvailableModules(modules);
@@ -812,7 +819,6 @@ export default function TrashPage() {
                   item.text ||
                   item.question ||
                   item.fullName ||
-                  item.employeeId ||
                   ""
                 ).toLowerCase();
                 return itemText.includes(searchTerm);
@@ -917,7 +923,6 @@ export default function TrashPage() {
                                     item.text ||
                                     item.question ||
                                     item.fullName ||
-                                    item.employeeId ||
                                     safeFormatDate(item.endTime) ||
                                     safeFormatDate(item.createdAt) ||
                                     "Unnamed"}

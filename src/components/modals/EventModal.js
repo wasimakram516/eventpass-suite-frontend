@@ -50,8 +50,6 @@ const translations = {
     uploadBackgroundEn: "Upload Background (EN)",
     uploadBackgroundAr: "Upload Background (AR)",
     currentBackground: "Current Background:",
-    downloadTemplate: "Download Employee Template",
-    uploadEmployee: "Upload Employee Data",
     uploadTables: "Upload Table Images",
     cancel: "Cancel",
     create: "Create Event",
@@ -78,11 +76,9 @@ const translations = {
     numberType: "Number",
     radioType: "Radio",
     listType: "List",
-    downloadTemplateError: "Failed to download template.",
     showQrToggle: "Show QR code after registration?",
     showQrOnBadgeToggle: "Show QR Code on Printed Badge?",
     requiresApprovalToggle: "Require admin approval for registrations?",
-    downloadTemplateSuccess: "Template downloaded successfully",
     organizerDetails: "Organizer Details",
     organizerName: "Organizer Name",
     organizerEmail: "Organizer Email",
@@ -109,8 +105,6 @@ const translations = {
     uploadBackgroundEn: "رفع الخلفية (إنجليزي)",
     uploadBackgroundAr: "رفع الخلفية (عربي)",
     currentBackground: "الخلفية الحالية:",
-    downloadTemplate: "تحميل قالب الموظفين",
-    uploadEmployee: "رفع بيانات الموظفين",
     uploadTables: "رفع صور الطاولات",
     cancel: "إلغاء",
     create: "إنشاء فعالية",
@@ -137,11 +131,9 @@ const translations = {
     numberType: "رقم",
     radioType: "اختيار",
     listType: "قائمة",
-    downloadTemplateError: "فشل في تحميل القالب.",
     showQrToggle: "عرض رمز الاستجابة السريعة بعد التسجيل؟",
     showQrOnBadgeToggle: "عرض رمز QR على بطاقة الطباعة؟",
     requiresApprovalToggle: "يتطلب موافقة المسؤول على التسجيلات؟",
-    downloadTemplateSuccess: "تم تحميل القالب بنجاح",
     organizerDetails: "تفاصيل المنظم",
     organizerName: "اسم المنظم",
     organizerEmail: "بريد المنظم الإلكتروني",
@@ -158,7 +150,7 @@ const EventModal = ({
   onSubmit,
   initialValues,
   selectedBusiness,
-  isEmployee = false,
+  isClosed = false,
 }) => {
   const { t, dir } = useI18nLayout(translations);
   const { showMessage } = useMessage();
@@ -205,9 +197,7 @@ const EventModal = ({
     agenda: null,
     agendaPreview: "",
     capacity: "",
-    eventType: isEmployee ? "employee" : "public",
-    employeeData: null,
-    tableImages: [],
+    eventType: isClosed ? "closed" : "public",
     formFields: [],
     useCustomFields: false,
     showQrAfterRegistration: false,
@@ -238,7 +228,7 @@ const EventModal = ({
         description: initialValues.description || "",
         capacity: initialValues.capacity?.toString() || "",
         eventType:
-          initialValues.eventType || (isEmployee ? "employee" : "public"),
+          initialValues.eventType || (isClosed ? "closed" : "public"),
         logo: null,
         logoPreview: initialValues.logoUrl || "",
         backgroundEn: null,
@@ -259,8 +249,6 @@ const EventModal = ({
         clearAllBrandingLogos: false,
         agenda: null,
         agendaPreview: initialValues.agendaUrl || "",
-        employeeData: null,
-        tableImages: [],
         formFields: (initialValues.formFields || []).map((f) => ({
           ...f,
           _temp: "",
@@ -302,9 +290,7 @@ const EventModal = ({
         agenda: null,
         agendaPreview: "",
         capacity: "",
-        eventType: isEmployee ? "employee" : "public",
-        employeeData: null,
-        tableImages: [],
+        eventType: isClosed ? "closed" : "public",
         formFields: [],
         useCustomFields: false,
         showQrAfterRegistration: false,
@@ -316,7 +302,7 @@ const EventModal = ({
         removeBackgroundAr: false,
       }));
     }
-  }, [initialValues, isEmployee]);
+  }, [initialValues, isClosed]);
 
   useEffect(() => {
     const measureWidths = () => {
@@ -417,17 +403,13 @@ const EventModal = ({
           agendaPreview: file.name,
         }));
       }
-    } else if (name === "employeeData" && files?.[0]) {
-      setFormData((prev) => ({ ...prev, employeeData: files[0] }));
-    } else if (name === "tableImages" && files?.length > 0) {
-      setFormData((prev) => ({ ...prev, tableImages: [...files] }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
 
-        if (name === "organizerPhone") {
-          const error = validatePhoneNumber(value);
-          setOrganizerPhoneError(error || "");
-        }
+      if (name === "organizerPhone") {
+        const error = validatePhoneNumber(value);
+        setOrganizerPhoneError(error || "");
+      }
     }
   };
 
@@ -510,7 +492,7 @@ const EventModal = ({
 
       if (initialValues?._id) {
         deletePayload.eventId = initialValues._id;
-        deletePayload.eventType = isEmployee ? "employee" : "public";
+        deletePayload.eventType = isClosed ? "closed" : "public";
         deletePayload.mediaType = deleteConfirm.type;
 
         if (deleteConfirm.type === "brandingLogo") {
@@ -762,7 +744,7 @@ const EventModal = ({
           const urls = await uploadMediaFiles({
             files: filesToUpload.map((item) => item.file),
             businessSlug: selectedBusiness,
-            moduleName: isEmployee ? "CheckIn" : "EventReg",
+            moduleName: isClosed ? "CheckIn" : "EventReg",
             onProgress: (progressUploads) => {
               progressUploads.forEach((progressUpload, index) => {
                 if (uploads[index]) {
@@ -1022,7 +1004,7 @@ const EventModal = ({
               fullWidth
             />
 
-            {!isEmployee && (
+            {!isClosed && (
               <>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                   <FormControlLabel
@@ -1566,7 +1548,7 @@ const EventModal = ({
                 </List>
               </Box>
             </Box>
-            {!isEmployee && (
+            {!isClosed && (
               <Box>
                 <Button component="label" variant="outlined">
                   Upload Agenda (PDF)
@@ -1593,7 +1575,7 @@ const EventModal = ({
               </Box>
             )}
 
-            {(isEmployee || formData.eventType === "public") && (
+            {(isClosed || formData.eventType === "public") && (
               <>
                 <Typography variant="subtitle2" color="primary">
                   {t.useCustomFields}
