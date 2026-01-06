@@ -15,10 +15,10 @@ import ICONS from "@/utils/iconUtil";
 import { formatDate } from "@/utils/dateUtils";
 
 export default function EventCardBase({
-  event, // event object (works for public or employee)
+  event, // event object (works for public or closed)
   t,
   status, // eventStatus or computed status
-  showRegistrations = true, // toggle for public vs employee
+  showRegistrations = true, // toggle for public vs closed
   onView,
   onEdit,
   onDelete,

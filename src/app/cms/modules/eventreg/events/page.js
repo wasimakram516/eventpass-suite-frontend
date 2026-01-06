@@ -304,7 +304,7 @@ export default function EventsPage() {
           editMode={editMode}
           initialValues={selectedEvent}
           selectedBusiness={selectedBusiness}
-          isEmployee={false}
+          isClosed={false}
         />
 
         <ConfirmationDialog

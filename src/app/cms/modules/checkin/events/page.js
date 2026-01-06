@@ -36,7 +36,7 @@ import EventCardBase from "@/components/cards/EventCard";
 const translations = {
   en: {
     pageTitle: "Manage Events",
-    pageDescription: "Manage all employee check-in events for this business.",
+    pageDescription: "Manage all closed check-in events for this business.",
     createEvent: "Create Event",
     selectBusiness: "Select Business",
     noEvents: "No events found.",
@@ -59,7 +59,7 @@ const translations = {
   },
   ar: {
     pageTitle: "إدارة الفعاليات",
-    pageDescription: "إدارة جميع فعاليات تسجيل الحضور للموظفين لهذا العمل.",
+    pageDescription: "إدارة جميع فعاليات تسجيل الحضور المغلقة لهذا العمل.",
     createEvent: "إنشاء فعالية",
     selectBusiness: "اختر العمل",
     noEvents: "لا توجد فعاليات.",
@@ -309,7 +309,7 @@ export default function EventsPage() {
           editMode={editMode}
           initialValues={selectedEvent}
           selectedBusiness={selectedBusiness}
-          isEmployee={true}
+          isClosed={true}
           translations={translations}
         />
 
