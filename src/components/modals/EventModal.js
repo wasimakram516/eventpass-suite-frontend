@@ -30,6 +30,7 @@ import { uploadMediaFiles, uploadSingleFile } from "@/utils/mediaUpload";
 import MediaUploadProgress from "@/components/MediaUploadProgress";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import { deleteMedia } from "@/services/deleteMediaService";
+import RichTextEditor from "@/components/RichTextEditor";
 
 const translations = {
   en: {
@@ -957,15 +958,17 @@ const EventModal = ({
               onChange={handleInputChange}
               fullWidth
             />
-            <TextField
-              label={t.description}
-              name="description"
-              value={formData.description}
-              onChange={handleInputChange}
-              multiline
-              rows={3}
-              fullWidth
-            />
+            <Box>
+              <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+                {t.description}
+              </Typography>
+              <RichTextEditor
+                value={formData.description}
+                onChange={(html) => setFormData((prev) => ({ ...prev, description: html }))}
+                placeholder={t.description}
+                dir={dir}
+              />
+            </Box>
             <TextField
               label={t.capacity}
               name="capacity"
