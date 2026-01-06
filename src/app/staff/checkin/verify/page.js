@@ -315,63 +315,14 @@ export default function VerifyPage() {
             {t.verified}
           </Typography>
 
-          {result.employeeId && (
-            <ListItem>
-              <ListItemIcon>
-                <ICONS.vpnKey sx={{ color: "text.secondary" }} />
-              </ListItemIcon>
-              <ListItemText
-                primary={t.employeeId || "Employee ID"}
-                secondary={result.employeeId}
-                primaryTypographyProps={{ fontWeight: 500 }}
-              />
-            </ListItem>
-          )}
           <List sx={{ width: "100%", maxWidth: 400 }}>
             <ListItem>
               <ListItemIcon>
-                <ICONS.person sx={{ color: "text.secondary" }} />
+                <ICONS.key sx={{ color: "text.secondary" }} />
               </ListItemIcon>
               <ListItemText
-                primary={t.name}
-                secondary={result.employeeName || "—"}
-                primaryTypographyProps={{ fontWeight: 500 }}
-              />
-            </ListItem>
-
-            {result.tableNumber && (
-              <ListItem>
-                <ListItemIcon>
-                  <ICONS.diningTable sx={{ color: "text.secondary" }} />
-                </ListItemIcon>
-                <ListItemText
-                  primary={t.tableNumber || "Table"}
-                  secondary={result.tableNumber}
-                  primaryTypographyProps={{ fontWeight: 500 }}
-                />
-              </ListItem>
-            )}
-
-            {result.company && (
-              <ListItem>
-                <ListItemIcon>
-                  <ICONS.business sx={{ color: "text.secondary" }} />
-                </ListItemIcon>
-                <ListItemText
-                  primary={t.company}
-                  secondary={result.company}
-                  primaryTypographyProps={{ fontWeight: 500 }}
-                />
-              </ListItem>
-            )}
-
-            <ListItem>
-              <ListItemIcon>
-                <ICONS.event sx={{ color: "text.secondary" }} />
-              </ListItemIcon>
-              <ListItemText
-                primary={t.event}
-                secondary={result.eventName}
+                primary={t.token || "Token"}
+                secondary={result.token || "—"}
                 primaryTypographyProps={{ fontWeight: 500 }}
               />
             </ListItem>
