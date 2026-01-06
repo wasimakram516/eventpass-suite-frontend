@@ -1,0 +1,318 @@
+"use client";
+
+import React, { useState, useRef, useEffect } from "react";
+import {
+    Box,
+    Toolbar,
+    IconButton,
+    Popover,
+    Select,
+    MenuItem,
+    FormControl,
+} from "@mui/material";
+import FormatBoldIcon from "@mui/icons-material/FormatBold";
+import FormatItalicIcon from "@mui/icons-material/FormatItalic";
+import FormatUnderlinedIcon from "@mui/icons-material/FormatUnderlined";
+import FormatColorTextIcon from "@mui/icons-material/FormatColorText";
+import FormatListBulletedIcon from "@mui/icons-material/FormatListBulleted";
+import FormatListNumberedIcon from "@mui/icons-material/FormatListNumbered";
+import StrikethroughSIcon from "@mui/icons-material/StrikethroughS";
+import FormatAlignLeftIcon from "@mui/icons-material/FormatAlignLeft";
+import FormatAlignCenterIcon from "@mui/icons-material/FormatAlignCenter";
+import FormatAlignRightIcon from "@mui/icons-material/FormatAlignRight";
+import FormatAlignJustifyIcon from "@mui/icons-material/FormatAlignJustify";
+import FormatClearIcon from "@mui/icons-material/FormatClear";
+
+const RichTextEditor = ({ value, onChange, placeholder, dir, minHeight, maxHeight }) => {
+    const editorRef = useRef(null);
+    const colorPickerAnchorRef = useRef(null);
+    const [activeCommands, setActiveCommands] = useState({
+        bold: false,
+        italic: false,
+        underline: false,
+        strikethrough: false,
+    });
+    const [colorPickerOpen, setColorPickerOpen] = useState(false);
+
+    useEffect(() => {
+        if (editorRef.current && value !== editorRef.current.innerHTML) {
+            editorRef.current.innerHTML = value || "";
+        }
+    }, [value]);
+
+    const updateActiveCommands = () => {
+        if (editorRef.current && document.activeElement === editorRef.current) {
+            setActiveCommands({
+                bold: document.queryCommandState("bold"),
+                italic: document.queryCommandState("italic"),
+                underline: document.queryCommandState("underline"),
+                strikethrough: document.queryCommandState("strikethrough"),
+            });
+        }
+    };
+
+    const handleInput = () => {
+        if (editorRef.current && onChange) {
+            onChange(editorRef.current.innerHTML);
+        }
+        updateActiveCommands();
+    };
+
+    const handleFocus = () => {
+        updateActiveCommands();
+    };
+
+    const executeCommand = (command, value = null) => {
+        editorRef.current?.focus();
+        document.execCommand(command, false, value);
+        setTimeout(() => {
+            updateActiveCommands();
+            handleInput();
+        }, 0);
+    };
+
+    const handleFontColor = (color) => {
+        executeCommand("foreColor", color);
+        setColorPickerOpen(false);
+    };
+
+    const handleFontSize = (event) => {
+        const size = event.target.value;
+        executeCommand("fontSize", size);
+    };
+
+    return (
+        <Box
+            sx={{
+                border: "1px solid",
+                borderColor: "divider",
+                borderRadius: 1,
+                overflow: "hidden",
+                "&:focus-within": {
+                    borderColor: "primary.main",
+                },
+            }}
+        >
+            <Toolbar
+                variant="dense"
+                sx={{
+                    borderBottom: "1px solid",
+                    borderColor: "divider",
+                    minHeight: "40px !important",
+                    bgcolor: "grey.50",
+                    gap: 0.5,
+                    flexWrap: "wrap",
+                    "& .MuiIconButton-root": {
+                        padding: "4px",
+                    },
+                }}
+            >
+                <Box sx={{ display: "flex", gap: 0.5, borderRight: "1px solid", borderColor: "divider", pr: 0.5 }}>
+                    <IconButton
+                        size="small"
+                        onClick={() => executeCommand("bold")}
+                        sx={{
+                            bgcolor: activeCommands.bold ? "action.selected" : "transparent",
+                        }}
+                        title="Bold (Ctrl+B)"
+                    >
+                        <FormatBoldIcon fontSize="small" />
+                    </IconButton>
+                    <IconButton
+                        size="small"
+                        onClick={() => executeCommand("italic")}
+                        sx={{
+                            bgcolor: activeCommands.italic ? "action.selected" : "transparent",
+                        }}
+                        title="Italic (Ctrl+I)"
+                    >
+                        <FormatItalicIcon fontSize="small" />
+                    </IconButton>
+                    <IconButton
+                        size="small"
+                        onClick={() => executeCommand("underline")}
+                        sx={{
+                            bgcolor: activeCommands.underline ? "action.selected" : "transparent",
+                        }}
+                        title="Underline (Ctrl+U)"
+                    >
+                        <FormatUnderlinedIcon fontSize="small" />
+                    </IconButton>
+                    <IconButton
+                        size="small"
+                        onClick={() => executeCommand("strikethrough")}
+                        sx={{
+                            bgcolor: activeCommands.strikethrough ? "action.selected" : "transparent",
+                        }}
+                        title="Strikethrough"
+                    >
+                        <StrikethroughSIcon fontSize="small" />
+                    </IconButton>
+                </Box>
+
+                <Box sx={{ display: "flex", gap: 0.5, borderRight: "1px solid", borderColor: "divider", px: 0.5 }}>
+                    <IconButton
+                        size="small"
+                        ref={colorPickerAnchorRef}
+                        onClick={() => setColorPickerOpen(true)}
+                        title="Text Color"
+                    >
+                        <FormatColorTextIcon fontSize="small" />
+                    </IconButton>
+                    <Popover
+                        open={colorPickerOpen}
+                        anchorEl={colorPickerAnchorRef.current}
+                        onClose={() => setColorPickerOpen(false)}
+                        anchorOrigin={{
+                            vertical: "bottom",
+                            horizontal: "left",
+                        }}
+                    >
+                        <Box sx={{ p: 2, display: "grid", gridTemplateColumns: "repeat(8, 1fr)", gap: 1 }}>
+                            {[
+                                "#000000", "#333333", "#666666", "#999999",
+                                "#FF0000", "#00FF00", "#0000FF", "#FFFF00",
+                                "#FF00FF", "#00FFFF", "#FFA500", "#800080",
+                                "#FFC0CB", "#A52A2A", "#000080", "#008000",
+                            ].map((color) => (
+                                <Box
+                                    key={color}
+                                    onClick={() => handleFontColor(color)}
+                                    sx={{
+                                        width: 24,
+                                        height: 24,
+                                        bgcolor: color,
+                                        border: "1px solid #ccc",
+                                        cursor: "pointer",
+                                        "&:hover": { border: "2px solid #000" },
+                                    }}
+                                />
+                            ))}
+                        </Box>
+                    </Popover>
+                </Box>
+
+                <Box sx={{ display: "flex", gap: 0.5, borderRight: "1px solid", borderColor: "divider", px: 0.5 }}>
+                    <IconButton
+                        size="small"
+                        onClick={() => executeCommand("insertUnorderedList")}
+                        title="Bullet List"
+                    >
+                        <FormatListBulletedIcon fontSize="small" />
+                    </IconButton>
+                    <IconButton
+                        size="small"
+                        onClick={() => executeCommand("insertOrderedList")}
+                        title="Numbered List"
+                    >
+                        <FormatListNumberedIcon fontSize="small" />
+                    </IconButton>
+                </Box>
+
+                <Box sx={{ display: "flex", gap: 0.5, borderRight: "1px solid", borderColor: "divider", px: 0.5 }}>
+                    <IconButton
+                        size="small"
+                        onClick={() => executeCommand("justifyLeft")}
+                        title="Align Left"
+                    >
+                        <FormatAlignLeftIcon fontSize="small" />
+                    </IconButton>
+                    <IconButton
+                        size="small"
+                        onClick={() => executeCommand("justifyCenter")}
+                        title="Align Center"
+                    >
+                        <FormatAlignCenterIcon fontSize="small" />
+                    </IconButton>
+                    <IconButton
+                        size="small"
+                        onClick={() => executeCommand("justifyRight")}
+                        title="Align Right"
+                    >
+                        <FormatAlignRightIcon fontSize="small" />
+                    </IconButton>
+                    <IconButton
+                        size="small"
+                        onClick={() => executeCommand("justifyFull")}
+                        title="Justify"
+                    >
+                        <FormatAlignJustifyIcon fontSize="small" />
+                    </IconButton>
+                </Box>
+
+                <Box sx={{ display: "flex", gap: 0.5, borderRight: "1px solid", borderColor: "divider", px: 0.5, alignItems: "center" }}>
+                    <FormControl size="small" variant="outlined" sx={{ minWidth: 80 }}>
+                        <Select
+                            defaultValue={4}
+                            onChange={handleFontSize}
+                            displayEmpty
+                            sx={{
+                                height: "32px",
+                                fontSize: "0.875rem",
+                                "& .MuiOutlinedInput-notchedOutline": {
+                                    borderWidth: "1px",
+                                },
+                            }}
+                        >
+                            <MenuItem value={1}>8px</MenuItem>
+                            <MenuItem value={2}>10px</MenuItem>
+                            <MenuItem value={3}>12px</MenuItem>
+                            <MenuItem value={4}>14px</MenuItem>
+                            <MenuItem value={5}>18px</MenuItem>
+                            <MenuItem value={6}>24px</MenuItem>
+                            <MenuItem value={7}>36px</MenuItem>
+                        </Select>
+                    </FormControl>
+                </Box>
+
+                <Box sx={{ display: "flex", gap: 0.5, px: 0.5 }}>
+                    <IconButton
+                        size="small"
+                        onClick={() => executeCommand("removeFormat")}
+                        title="Clear Formatting"
+                    >
+                        <FormatClearIcon fontSize="small" />
+                    </IconButton>
+                </Box>
+            </Toolbar>
+            <Box
+                ref={editorRef}
+                contentEditable
+                onInput={handleInput}
+                onFocus={handleFocus}
+                onMouseUp={updateActiveCommands}
+                onKeyUp={updateActiveCommands}
+                dir={dir}
+                sx={{
+                    minHeight: minHeight || "96px",
+                    maxHeight: maxHeight || "256px",
+                    overflowY: "auto",
+                    p: 2,
+                    outline: "none",
+                    fontSize: "14px",
+                    lineHeight: 1.6,
+                    color: "#333",
+                    "&:empty:before": {
+                        content: `"${placeholder}"`,
+                        color: "text.disabled",
+                    },
+                    "& h1": { fontSize: "2em", fontWeight: "bold", margin: "0.67em 0" },
+                    "& h2": { fontSize: "1.5em", fontWeight: "bold", margin: "0.75em 0" },
+                    "& h3": { fontSize: "1.17em", fontWeight: "bold", margin: "0.83em 0" },
+                    "& ul, & ol": { margin: "1em 0", paddingLeft: "2.5em" },
+                    "& ul": { listStyleType: "disc" },
+                    "& ol": { listStyleType: "decimal" },
+                    "& li": { margin: "0.5em 0" },
+                    "& p": { margin: "1em 0" },
+                    "& strong, & b": { fontWeight: "bold" },
+                    "& em, & i": { fontStyle: "italic" },
+                    "& u": { textDecoration: "underline" },
+                    "& s, & strike": { textDecoration: "line-through" },
+                }}
+            />
+        </Box>
+    );
+};
+
+export default RichTextEditor;
+
