@@ -25,7 +25,7 @@ import {
   getWhatsAppInbox,
   getWhatsAppConversation,
   sendWhatsAppReply,
-} from "@/services/notifications/whatsappInboxService";
+} from "@/services/notifications/whatsAppInboxService";
 
 import { getCheckInEventBySlug } from "@/services/checkin/checkinEventService";
 import useWhatsAppSocket from "@/hooks/modules/notifications/useWhatsAppSocket";
