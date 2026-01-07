@@ -7,14 +7,17 @@ export default function useWhatsAppSocket({
   eventId,
   onInboundMessage,
   onStatusUpdate,
+  onOutboundMessage,
 }) {
   const handlersRef = useRef({
     onInboundMessage,
     onStatusUpdate,
+    onOutboundMessage,
   });
 
   const [lastInbound, setLastInbound] = useState(null);
   const [lastStatus, setLastStatus] = useState(null);
+  const [lastOutBound, setLastOutBound] = useState(null);
 
   /* =========================
      KEEP HANDLERS STABLE
@@ -24,8 +27,9 @@ export default function useWhatsAppSocket({
     handlersRef.current = {
       onInboundMessage,
       onStatusUpdate,
+      onOutboundMessage,
     };
-  }, [onInboundMessage, onStatusUpdate]);
+  }, [onInboundMessage, onStatusUpdate, onOutboundMessage]);
 
   /* =========================
      SOCKET EVENT MAP
@@ -54,6 +58,15 @@ export default function useWhatsAppSocket({
         setLastStatus(data);
         handlersRef.current.onStatusUpdate?.(data);
       },
+
+      /* =========================
+          OUTBOUND MESSAGE
+          ========================= */
+
+      whatsappOutboundMessage: (data) => {
+        if (data.eventId?.toString() !== eventIdStr) return;
+        handlersRef.current.onOutboundMessage?.(data);
+      },
     };
   }, [eventId]);
 
@@ -71,5 +84,6 @@ export default function useWhatsAppSocket({
     // optional reactive state
     lastInbound,
     lastStatus,
+    lastOutBound
   };
 }
