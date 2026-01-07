@@ -1789,6 +1789,7 @@ export default function ViewRegistrations() {
         formFields={eventDetails?.formFields || []}
         onSave={handleSaveEdit}
         mode="edit"
+        event={eventDetails}
       />
 
       <RegistrationModal
@@ -1798,6 +1799,7 @@ export default function ViewRegistrations() {
         formFields={eventDetails?.formFields || []}
         onSave={handleCreateRegistration}
         mode="create"
+        event={eventDetails}
       />
 
       <ConfirmationDialog

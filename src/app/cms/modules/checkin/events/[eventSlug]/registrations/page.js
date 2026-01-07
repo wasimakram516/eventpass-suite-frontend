@@ -1888,6 +1888,7 @@ export default function ViewRegistrations() {
         onSave={handleSaveEdit}
         mode="edit"
         title={t.editRegistration}
+        event={eventDetails}
       />
 
       <RegistrationModal
@@ -1898,6 +1899,7 @@ export default function ViewRegistrations() {
         onSave={handleCreate}
         mode="create"
         title={t.createRegistration}
+        event={eventDetails}
       />
 
       <ConfirmationDialog

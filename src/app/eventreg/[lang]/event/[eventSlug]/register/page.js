@@ -31,6 +31,9 @@ import ICONS from "@/utils/iconUtil";
 import { translateTexts } from "@/services/translationService";
 import Background from "@/components/Background";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
+import CountryCodeSelector from "@/components/CountryCodeSelector";
+import { normalizePhone } from "@/utils/phoneUtils";
+import { DEFAULT_COUNTRY_CODE } from "@/utils/countryCodes";
 
 export default function Registration() {
   const { eventSlug, lang } = useParams();
@@ -84,6 +87,7 @@ export default function Registration() {
   const [translationsReady, setTranslationsReady] = useState(false);
   const [translatedEvent, setTranslatedEvent] = useState(null);
   const [qrToken, setQrToken] = useState(null);
+  const [countryCodes, setCountryCodes] = useState({});
 
   // Fetch event + translate event metadata
   useEffect(() => {
@@ -123,9 +127,18 @@ export default function Registration() {
 
     // initialize form
     const initial = {};
-    fields.forEach((f) => (initial[f.name] = ""));
+    const initialCountryCodes = {};
+    fields.forEach((f) => {
+      if (f.name) {
+        initial[f.name] = "";
+      }
+      if (f.type === "phone" || (!event.formFields?.length && f.name === "phone")) {
+        initialCountryCodes[f.name] = DEFAULT_COUNTRY_CODE;
+      }
+    });
     setDynamicFields(fields);
     setFormData(initial);
+    setCountryCodes(initialCountryCodes);
 
     const translateAll = async () => {
       const textsToTranslate = new Set();
@@ -201,11 +214,45 @@ export default function Registration() {
     setFieldErrors((p) => ({ ...p, [name]: "" }));
   };
 
+  const handleCountryCodeChange = (fieldName, code) => {
+    setCountryCodes((p) => ({ ...p, [fieldName]: code }));
+  };
+
+  const handlePhoneChange = (fieldName, value) => {
+    setFormData((p) => ({ ...p, [fieldName]: value }));
+    setFieldErrors((p) => ({ ...p, [fieldName]: "" }));
+  };
+
   const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+  const validatePhoneNumber = (phone, countryCode = null) => {
+    if (!phone) return null;
+    let phoneStr = phone.toString().trim();
+
+    if (countryCode && !phoneStr.startsWith("+")) {
+      phoneStr = `${countryCode}${phoneStr}`;
+    }
+
+    if (!phoneStr.startsWith("+")) {
+      return "Phone number must start with country code (e.g., +92, +968, +1)";
+    }
+
+    const digits = phoneStr.replace(/\D/g, "");
+
+    if (digits.length < 8) {
+      return "Phone number is too short";
+    }
+    if (digits.length > 15) {
+      return "Phone number is too long";
+    }
+
+    return null;
+  };
 
   const handleSubmit = async () => {
     const errors = {};
     dynamicFields.forEach((f) => {
+      if (!f || !f.name) return;
       const val = formData[f.name]?.trim();
       if (f.required && !val) errors[f.name] = `${f.label} ${t.required}`;
       if (
@@ -214,6 +261,14 @@ export default function Registration() {
         !isValidEmail(val)
       )
         errors[f.name] = t.invalidEmail;
+
+      if ((f.type === "phone" || (!event.formFields?.length && f.name === "phone")) && val) {
+        const countryCode = countryCodes[f.name] || DEFAULT_COUNTRY_CODE;
+        const phoneError = validatePhoneNumber(val, countryCode);
+        if (phoneError) {
+          errors[f.name] = phoneError;
+        }
+      }
     });
 
     if (Object.keys(errors).length) {
@@ -222,7 +277,22 @@ export default function Registration() {
     }
 
     setSubmitting(true);
-    const result = await createRegistration({ ...formData, slug: eventSlug });
+
+    const normalizedFormData = { ...formData };
+    dynamicFields.forEach((f) => {
+      if (f.type === "phone" || (!event.formFields?.length && f.name === "phone")) {
+        const phoneValue = normalizedFormData[f.name];
+        if (phoneValue) {
+          const countryCode = countryCodes[f.name] || DEFAULT_COUNTRY_CODE;
+          const fullPhone = phoneValue.startsWith("+")
+            ? phoneValue
+            : `${countryCode}${phoneValue}`;
+          normalizedFormData[f.name] = normalizePhone(fullPhone);
+        }
+      }
+    });
+
+    const result = await createRegistration({ ...normalizedFormData, slug: eventSlug });
     setSubmitting(false);
 
     if (!result?.error) {
@@ -355,6 +425,33 @@ export default function Registration() {
           )}
         </FormControl>
       );
+
+    const isPhoneField = field.type === "phone" || (!event.formFields?.length && field.name === "phone");
+    const useInternationalNumbers = event.useInternationalNumbers !== false;
+
+    if (isPhoneField) {
+      const countryCode = countryCodes[field.name] || DEFAULT_COUNTRY_CODE;
+      const phoneValue = formData[field.name] || "";
+
+      return (
+        <TextField
+          key={field.name}
+          {...commonProps}
+          value={phoneValue}
+          onChange={(e) => handlePhoneChange(field.name, e.target.value)}
+          InputProps={{
+            startAdornment: (
+              <CountryCodeSelector
+                value={countryCode}
+                onChange={(code) => handleCountryCodeChange(field.name, code)}
+                disabled={!useInternationalNumbers}
+                dir={dir}
+              />
+            ),
+          }}
+        />
+      );
+    }
 
     return (
       <TextField

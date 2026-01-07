@@ -75,8 +75,10 @@ const translations = {
     textType: "Text",
     emailType: "Email",
     numberType: "Number",
+    phoneType: "Phone",
     radioType: "Radio",
     listType: "List",
+    useInternationalNumbers: "Allow International Numbers",
     showQrToggle: "Show QR code after registration?",
     showQrOnBadgeToggle: "Show QR Code on Printed Badge?",
     requiresApprovalToggle: "Require admin approval for registrations?",
@@ -130,8 +132,10 @@ const translations = {
     textType: "نص",
     emailType: "البريد الإلكتروني",
     numberType: "رقم",
+    phoneType: "هاتف",
     radioType: "اختيار",
     listType: "قائمة",
+    useInternationalNumbers: "السماح بالأرقام الدولية",
     showQrToggle: "عرض رمز الاستجابة السريعة بعد التسجيل؟",
     showQrOnBadgeToggle: "عرض رمز QR على بطاقة الطباعة؟",
     requiresApprovalToggle: "يتطلب موافقة المسؤول على التسجيلات؟",
@@ -201,6 +205,7 @@ const EventModal = ({
     eventType: isClosed ? "closed" : "public",
     formFields: [],
     useCustomFields: false,
+    useInternationalNumbers: false,
     showQrAfterRegistration: false,
     showQrOnBadge: true,
     requiresApproval: false,
@@ -256,6 +261,7 @@ const EventModal = ({
         })),
 
         useCustomFields: !!initialValues.formFields?.length,
+        useInternationalNumbers: initialValues?.useInternationalNumbers || false,
         showQrAfterRegistration:
           initialValues?.showQrAfterRegistration || false,
         showQrOnBadge: initialValues?.showQrOnBadge ?? true,
@@ -294,6 +300,7 @@ const EventModal = ({
         eventType: isClosed ? "closed" : "public",
         formFields: [],
         useCustomFields: false,
+        useInternationalNumbers: false,
         showQrAfterRegistration: false,
         showQrOnBadge: true,
         requiresApproval: false,
@@ -334,22 +341,6 @@ const EventModal = ({
     }
 
     const digits = phoneStr.replace(/\D/g, "");
-
-    if (phoneStr.startsWith("+92")) {
-      const localDigits = digits.replace(/^92/, "");
-      if (localDigits.length !== 10) {
-        return "Pakistan phone number must be 10 digits (excluding country code +92)";
-      }
-      return null;
-    }
-
-    if (phoneStr.startsWith("+968")) {
-      const localDigits = digits.replace(/^968/, "");
-      if (localDigits.length !== 8) {
-        return "Oman phone number must be 8 digits (excluding country code +968)";
-      }
-      return null;
-    }
 
     if (digits.length < 8) {
       return "Phone number is too short";
@@ -859,6 +850,7 @@ const EventModal = ({
         showQrOnBadge: formData.showQrOnBadge,
         requiresApproval: formData.requiresApproval,
         defaultLanguage: formData.defaultLanguage,
+        useInternationalNumbers: formData.useInternationalNumbers,
         ...(formData.useCustomFields
           ? { formFields: formData.formFields }
           : {}),
@@ -1067,6 +1059,25 @@ const EventModal = ({
                 </Box>
               </>
             )}
+
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={formData.useInternationalNumbers}
+                    onChange={(e) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        useInternationalNumbers: e.target.checked,
+                      }))
+                    }
+                    color="primary"
+                  />
+                }
+                label={t.useInternationalNumbers}
+                sx={{ alignSelf: "start" }}
+              />
+            </Box>
 
             {/* Default Language Selector */}
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
@@ -1640,6 +1651,7 @@ const EventModal = ({
                             { value: "text", label: t.textType },
                             { value: "email", label: t.emailType },
                             { value: "number", label: t.numberType },
+                            { value: "phone", label: t.phoneType },
                             { value: "radio", label: t.radioType },
                             { value: "list", label: t.listType },
                           ].map((type) => (
