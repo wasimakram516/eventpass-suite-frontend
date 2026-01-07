@@ -186,22 +186,17 @@ export default function WhatsAppLogsPage() {
   /* =========================
      SOCKET UPDATES
   ========================= */
-  const handleInbound = useCallback((payload) => {
-    setLogs((prev) => [payload, ...prev]);
-    setTotal((t) => t + 1);
-  }, []);
+  const handleInbound = useCallback(() => {
+    fetchLogs();
+  }, [fetchLogs]);
 
-  const handleStatus = useCallback((payload) => {
-    setLogs((prev) =>
-      prev.map((l) => (l._id === payload.logId ? { ...l, ...payload } : l))
-    );
-  }, []);
+  const handleStatus = useCallback(() => {
+    fetchLogs();
+  }, [fetchLogs]);
 
-  const handleOutbound = useCallback((payload) => {
-    setLogs((prev) =>
-      prev.map((l) => (l._id === payload.logId ? { ...l, ...payload } : l))
-    );
-  }, []);
+  const handleOutbound = useCallback(() => {
+    fetchLogs();
+  }, [fetchLogs]);
 
   useWhatsAppSocket({
     eventId: event?._id,
