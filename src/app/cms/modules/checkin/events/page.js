@@ -56,6 +56,7 @@ const translations = {
     delete: "Delete",
     shareTitle: "Share",
     viewRegs: "View Registrations",
+    viewWhatsAppLogs: "View WhatsApp Logs",
   },
   ar: {
     pageTitle: "إدارة الفعاليات",
@@ -79,6 +80,7 @@ const translations = {
     delete: "حذف",
     shareTitle: "مشاركة",
     viewRegs: "عرض التسجيلات",
+    viewWhatsAppLogs: "عرض سجلات واتساب",
   },
 };
 
@@ -284,6 +286,14 @@ export default function EventsPage() {
                           router.replace(
                             `/cms/modules/checkin/events/${event.slug}/registrations`
                           )
+                        : undefined
+                    }
+                    onViewWhatsAppLogs={
+                      event.slug
+                        ? () =>
+                            router.push(
+                              `/cms/modules/checkin/events/${event.slug}/whatsapp`
+                            )
                         : undefined
                     }
                     onEdit={() => handleOpenEdit(event)}
