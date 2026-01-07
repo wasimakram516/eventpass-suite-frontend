@@ -174,6 +174,7 @@ export default function TrashPage() {
   const [pendingBulkAction, setPendingBulkAction] = useState(null);
   const [allDeletedByIds, setAllDeletedByIds] = useState(new Set());
   const [userMap, setUserMap] = useState({});
+  const [allModulesTrashData, setAllModulesTrashData] = useState({});
 
   // pagination state PER MODULE
   const [pageState, setPageState] = useState({});
@@ -187,11 +188,47 @@ export default function TrashPage() {
   const [dateTo, setDateTo] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
 
-  //Effect to update available modules whenever trashData changes
+  const filteredTrashData = useMemo(() => {
+    if (!trashData || !currentUser) return trashData;
+
+    if (currentUser.role === "admin") {
+      return trashData;
+    }
+
+    const userId = currentUser.id || currentUser._id;
+    if (!userId) return {};
+
+    const filtered = {};
+    Object.entries(trashData).forEach(([module, moduleData]) => {
+      if (moduleData && moduleData.items && Array.isArray(moduleData.items)) {
+        const filteredItems = moduleData.items.filter((item) => {
+          const deletedBy = item.deletedBy;
+          if (typeof deletedBy === "string") {
+            return deletedBy === userId;
+          } else if (deletedBy && deletedBy._id) {
+            return deletedBy._id === userId;
+          }
+          return false;
+        });
+
+        if (filteredItems.length > 0) {
+          filtered[module] = {
+            ...moduleData,
+            items: filteredItems,
+            total: filteredItems.length,
+          };
+        }
+      }
+    });
+
+    return filtered;
+  }, [trashData, currentUser]);
+
+
   useEffect(() => {
-    if (trashData) {
+    if (filteredTrashData) {
       const newIds = new Set(allDeletedByIds);
-      Object.values(trashData).forEach((moduleData) => {
+      Object.values(filteredTrashData).forEach((moduleData) => {
         if (moduleData && moduleData.items && Array.isArray(moduleData.items)) {
           moduleData.items.forEach((it) => {
             const db = it.deletedBy;
@@ -201,19 +238,97 @@ export default function TrashPage() {
         }
       });
       setAllDeletedByIds(newIds);
+
+      hydrateUsersMap();
     }
-  }, [trashData]);
+  }, [filteredTrashData]);
+
+  const fetchAllModulesTrashData = async () => {
+    try {
+      const params = { limit: 1000, page: 1 };
+
+      // For non-admin users, only fetch their own items
+      if (currentUser && currentUser.role !== "admin") {
+        const userId = currentUser.id || currentUser._id;
+        if (userId) {
+          params.deletedBy = userId;
+        }
+      }
+
+      const res = await getTrash(params);
+      setAllModulesTrashData(res.items || {});
+    } catch (error) {
+      console.error("Error fetching all modules trash data:", error);
+      setAllModulesTrashData({});
+    }
+  };
+
+  const filteredModuleCounts = useMemo(() => {
+    if (currentUser?.role === "admin") {
+      return moduleCounts;
+    }
+
+    if (!allModulesTrashData || Object.keys(allModulesTrashData).length === 0) {
+      return {};
+    }
+
+    const counts = {};
+    Object.entries(allModulesTrashData).forEach(([module, moduleData]) => {
+      if (moduleData) {
+        if (moduleData.items && Array.isArray(moduleData.items)) {
+          const userId = currentUser?.id || currentUser?._id;
+          if (userId) {
+            const filteredItems = moduleData.items.filter((item) => {
+              const deletedBy = item.deletedBy;
+              if (typeof deletedBy === "string") {
+                return deletedBy === userId;
+              } else if (deletedBy && deletedBy._id) {
+                return deletedBy._id === userId;
+              }
+              return false;
+            });
+            counts[module] = filteredItems.length;
+          } else {
+            counts[module] = 0;
+          }
+        } else if (moduleData.total !== undefined) {
+          counts[module] = moduleData.total;
+        }
+      }
+    });
+
+    return counts;
+  }, [allModulesTrashData, moduleCounts, currentUser]);
 
   // Handle page change for a specific module
   useEffect(() => {
     const initializeData = async () => {
       await hydrateUsersMap();
-      await fetchAllModules();
       await fetchModuleCounts();
+      await fetchAllModulesTrashData();
       await fetchModuleData();
     };
     initializeData();
-  }, []);
+  }, [currentUser]);
+
+  useEffect(() => {
+    const counts = currentUser?.role === "admin" ? moduleCounts : filteredModuleCounts;
+    if (counts && Object.keys(counts).length > 0) {
+      const modules = Object.keys(counts).filter((m) => counts[m] > 0);
+      if (modules.length > 0 && moduleFilter === "__ALL__" && allAvailableModules.length === 0) {
+        setModuleFilter(modules[0]);
+      }
+    }
+  }, [filteredModuleCounts, moduleCounts, currentUser]);
+
+  useEffect(() => {
+    if (currentUser && currentUser.role !== "admin") {
+      const userId = currentUser.id || currentUser._id;
+      if (userId && deletedByFilter === "__ALL__") {
+        setDeletedByFilter(userId);
+      }
+    }
+  }, [currentUser]);
 
   // Fetch trash data when filters, pagination, or limit change
   useEffect(() => {
@@ -233,7 +348,14 @@ export default function TrashPage() {
   // Clear filters
   const handleClearAllFilters = () => {
     setSearch("");
-    setDeletedByFilter("__ALL__");
+    if (currentUser?.role === "admin") {
+      setDeletedByFilter("__ALL__");
+    } else {
+      const userId = currentUser?.id || currentUser?._id;
+      if (userId) {
+        setDeletedByFilter(userId);
+      }
+    }
     setDateFrom("");
     setDateTo("");
     setLimit(5);
@@ -273,22 +395,44 @@ export default function TrashPage() {
 
   const getLabelForDeletedBy = (val) => {
     if (!val) return "-";
-    if (typeof val === "string") return userMap[val] || val;
-    return val.fullName || val.name || val.email || val._id || "-";
+
+    if (typeof val === "string") {
+      const name = userMap[val];
+      if (name) return name;
+      return val;
+    }
+
+    if (val && typeof val === "object") {
+      const name = val.fullName || val.name || val.email;
+      if (name) return name;
+
+      const userId = val._id || val.id;
+      if (userId && userMap[userId]) {
+        return userMap[userId];
+      }
+
+      return userId || "-";
+    }
+
+    return "-";
   };
 
   const hydrateUsersMap = async () => {
     try {
-      let users = [];
-      if (isBusiness) {
-        users = await getAllStaffUsers(currentUser?.business?._id);
-      } else {
-        users = await getAllUsers();
-      }
+      const users = await getAllUsers();
       const map = {};
       users.forEach((u) => {
-        map[u._id] = u.name || u.fullName || u.email || u._id;
+        const userId = u._id || u.id;
+        if (userId) {
+          map[userId] = u.name || u.fullName || u.email || userId;
+        }
       });
+      if (currentUser) {
+        const userId = currentUser.id || currentUser._id;
+        if (userId && !map[userId]) {
+          map[userId] = currentUser.name || currentUser.fullName || currentUser.email || userId;
+        }
+      }
       setUserMap(map);
     } catch { }
   };
@@ -319,17 +463,21 @@ export default function TrashPage() {
   const fetchTrash = async (targetModule = moduleFilter) => {
     setLoading(true);
     try {
+      const params = {
+        limit,
+        page: targetModule && targetModule !== "__ALL__" ? (pageState[targetModule] || 1) : 1,
+        ...(deletedByFilter !== "__ALL__" && { deletedBy: deletedByFilter }),
+        ...(dateFrom && { startDate: dateFrom }),
+        ...(dateTo && { endDate: dateTo }),
+      };
+
       if (!targetModule || targetModule === "__ALL__") {
-        const res = await getTrash({ limit, page: 1 });
+        const res = await getTrash(params);
         setTrashData(res.items || {});
       } else {
         const res = await getTrash({
+          ...params,
           model: targetModule,
-          limit,
-          page: pageState[targetModule] || 1,
-          ...(deletedByFilter !== "__ALL__" && { deletedBy: deletedByFilter }),
-          ...(dateFrom && { startDate: dateFrom }),
-          ...(dateTo && { endDate: dateTo }),
         });
         setTrashData(res.items || {});
       }
@@ -342,7 +490,15 @@ export default function TrashPage() {
 
   const updateAvailableModules = async () => {
     try {
-      const res = await getTrash({ limit: 1000 });
+      const params = { limit: 1000 };
+      if (currentUser && currentUser.role !== "admin") {
+        const userId = currentUser.id || currentUser._id;
+        if (userId) {
+          params.deletedBy = userId;
+        }
+      }
+
+      const res = await getTrash(params);
       const modules = Object.keys(res.items || res);
 
       const modulesWithItems = modules.filter((module) => {
@@ -377,21 +533,17 @@ export default function TrashPage() {
     }
   };
 
-  const fetchAllModules = async () => {
-    try {
-      const res = await getModuleCounts();
-      const modules = Object.keys(res || {}).filter((m) => res[m] > 0);
-
+  useEffect(() => {
+    const counts = currentUser?.role === "admin" ? moduleCounts : filteredModuleCounts;
+    if (counts && Object.keys(counts).length > 0) {
+      const modules = Object.keys(counts).filter((m) => counts[m] > 0);
       setAllAvailableModules(modules);
 
-      // Auto-select first module if none selected
-      if (modules.length > 0 && moduleFilter === "__ALL__") {
+      if (modules.length > 0 && moduleFilter !== "__ALL__" && !modules.includes(moduleFilter)) {
         setModuleFilter(modules[0]);
       }
-    } catch (err) {
-      console.error("Error fetching modules:", err);
     }
-  };
+  }, [filteredModuleCounts, moduleCounts, currentUser]);
 
   const openRestoreConfirm = (module, item) => {
     setPendingAction({ type: "restore", module, frontendModule: module, item });
@@ -413,6 +565,7 @@ export default function TrashPage() {
       await restoreTrashItem(pendingAction.module, pendingAction.item._id);
       await fetchTrash();
       await fetchModuleCounts();
+      await fetchAllModulesTrashData();
       await updateAvailableModules();
     } catch (err) {
       console.error("Error restoring item:", err);
@@ -434,6 +587,7 @@ export default function TrashPage() {
       );
       await fetchTrash();
       await fetchModuleCounts();
+      await fetchAllModulesTrashData();
       await updateAvailableModules();
     } catch (err) {
       console.error("Error permanently deleting item:", err);
@@ -486,6 +640,7 @@ export default function TrashPage() {
       );
       await fetchTrash();
       await fetchModuleCounts();
+      await fetchAllModulesTrashData();
       await updateAvailableModules();
     } catch (error) {
       console.error("Error in bulk restore:", error);
@@ -506,6 +661,7 @@ export default function TrashPage() {
       );
       await fetchTrash();
       await fetchModuleCounts();
+      await fetchAllModulesTrashData();
       await updateAvailableModules();
     } catch (error) {
       console.error("Error in bulk delete:", error);
@@ -521,8 +677,8 @@ export default function TrashPage() {
     if (deletedByFilter !== "__ALL__") {
       ids.add(deletedByFilter);
     }
-    if (trashData && typeof trashData === "object") {
-      Object.values(trashData).forEach((moduleData) => {
+    if (filteredTrashData && typeof filteredTrashData === "object") {
+      Object.values(filteredTrashData).forEach((moduleData) => {
         if (moduleData && moduleData.items && Array.isArray(moduleData.items)) {
           moduleData.items.forEach((it) => {
             const db = it.deletedBy;
@@ -532,9 +688,18 @@ export default function TrashPage() {
         }
       });
     }
+
+    if (currentUser && currentUser.role !== "admin") {
+      const userId = currentUser.id || currentUser._id;
+      if (userId) {
+        return [userId];
+      }
+      return [];
+    }
+
     const options = ["__ALL__", ...Array.from(ids)];
     return options;
-  }, [trashData, allDeletedByIds, deletedByFilter]);
+  }, [filteredTrashData, allDeletedByIds, deletedByFilter, currentUser]);
 
   return (
     <Container dir={dir}>
@@ -557,7 +722,7 @@ export default function TrashPage() {
       <Divider sx={{ mb: 2 }} />
 
       {/* Module Count Cards */}
-      {Object.keys(moduleCounts).length > 0 && (
+      {Object.keys(filteredModuleCounts).length > 0 && (
         <Box
           sx={{
             mb: 2,
@@ -579,7 +744,7 @@ export default function TrashPage() {
               gap: 2,
             }}
           >
-            {Object.entries(moduleCounts)
+            {Object.entries(filteredModuleCounts)
               .filter(([, count]) => count > 0)
               .map(([module, count]) => (
                 <Card
@@ -685,28 +850,30 @@ export default function TrashPage() {
           {t.filters}
         </Button>
 
-        {/* Deleted By */}
-        <FormControl
-          size="small"
-          sx={{ minWidth: 180, display: { xs: "none", sm: "flex" } }}
-        >
-          <InputLabel>{t.deletedByLabel}</InputLabel>
-          <Select
-            value={deletedByFilter}
-            label={t.deletedByLabel}
-            onChange={(e) => setDeletedByFilter(e.target.value)}
+        {/* Deleted By  */}
+        {currentUser?.role === "admin" && (
+          <FormControl
+            size="small"
+            sx={{ minWidth: 180, display: { xs: "none", sm: "flex" } }}
           >
-            <MenuItem value="__ALL__">{t.all}</MenuItem>
-            {deletedByOptions.map(
-              (id) =>
-                id !== "__ALL__" && (
-                  <MenuItem key={id} value={id}>
-                    {userMap[id] || id}
-                  </MenuItem>
-                )
-            )}
-          </Select>
-        </FormControl>
+            <InputLabel>{t.deletedByLabel}</InputLabel>
+            <Select
+              value={deletedByFilter}
+              label={t.deletedByLabel}
+              onChange={(e) => setDeletedByFilter(e.target.value)}
+            >
+              <MenuItem value="__ALL__">{t.all}</MenuItem>
+              {deletedByOptions.map(
+                (id) =>
+                  id !== "__ALL__" && (
+                    <MenuItem key={id} value={id}>
+                      {userMap[id] || id}
+                    </MenuItem>
+                  )
+              )}
+            </Select>
+          </FormControl>
+        )}
 
         {/* Module */}
         <FormControl
@@ -788,7 +955,7 @@ export default function TrashPage() {
           sx={{ display: { xs: "none", sm: "flex" } }}
           disabled={
             !search &&
-            deletedByFilter === "__ALL__" &&
+            (currentUser?.role === "admin" ? deletedByFilter === "__ALL__" : true) &&
             moduleFilter === "__ALL__" &&
             !dateFrom &&
             !dateTo
@@ -800,11 +967,11 @@ export default function TrashPage() {
 
       {loading ? (
         <LoadingState />
-      ) : !trashData || Object.keys(trashData).length === 0 ? (
+      ) : !filteredTrashData || Object.keys(filteredTrashData).length === 0 ? (
         <NoDataAvailable message={t.noTrash} />
       ) : (
         (() => {
-          const renderedModules = Object.entries(trashData).map(
+          const renderedModules = Object.entries(filteredTrashData).map(
             ([module, moduleData]) => {
               const { items = [], total = 0 } = moduleData || {};
               const page = pageState[module] || 1;
@@ -1028,21 +1195,23 @@ export default function TrashPage() {
       {/* Filter Modal for mobile */}
       <FilterModal open={filterOpen} onClose={() => setFilterOpen(false)}>
         <Stack spacing={2}>
-          <TextField
-            select
-            label={t.deletedByLabel}
-            value={deletedByFilter}
-            onChange={(e) => setDeletedByFilter(e.target.value)}
-          >
-            <MenuItem value="__ALL__">{t.all}</MenuItem>
-            {deletedByOptions.map((id) =>
-              id === "__ALL__" ? null : (
-                <MenuItem key={id} value={id}>
-                  {userMap[id] || id}
-                </MenuItem>
-              )
-            )}
-          </TextField>
+          {currentUser?.role === "admin" && (
+            <TextField
+              select
+              label={t.deletedByLabel}
+              value={deletedByFilter}
+              onChange={(e) => setDeletedByFilter(e.target.value)}
+            >
+              <MenuItem value="__ALL__">{t.all}</MenuItem>
+              {deletedByOptions.map((id) =>
+                id === "__ALL__" ? null : (
+                  <MenuItem key={id} value={id}>
+                    {userMap[id] || id}
+                  </MenuItem>
+                )
+              )}
+            </TextField>
+          )}
 
           <TextField
             select
@@ -1085,7 +1254,7 @@ export default function TrashPage() {
             }}
             disabled={
               !search &&
-              deletedByFilter === "__ALL__" &&
+              (currentUser?.role === "admin" ? deletedByFilter === "__ALL__" : true) &&
               moduleFilter === "__ALL__" &&
               !dateFrom &&
               !dateTo
