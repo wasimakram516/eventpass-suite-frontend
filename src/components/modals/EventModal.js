@@ -332,25 +332,6 @@ const EventModal = ({
     };
   }, [formData.logoPreview, formData.backgroundEnPreview, formData.backgroundArPreview]);
 
-  const validatePhoneNumber = (phone) => {
-    if (!phone) return null;
-    const phoneStr = phone.toString().trim();
-
-    if (!phoneStr.startsWith("+")) {
-      return "Phone number must start with country code (e.g., +92, +968, +1)";
-    }
-
-    const digits = phoneStr.replace(/\D/g, "");
-
-    if (digits.length < 8) {
-      return "Phone number is too short";
-    }
-    if (digits.length > 15) {
-      return "Phone number is too long";
-    }
-
-    return null;
-  };
 
   const handleInputChange = (e) => {
     const { name, value, files } = e.target;
