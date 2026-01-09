@@ -423,6 +423,16 @@ export default function Registration() {
         </FormControl>
       );
 
+    if (field.type === "number") {
+      return (
+        <TextField
+          key={field.name}
+          {...commonProps}
+          type="number"
+        />
+      );
+    }
+
     const isPhoneField = field.type === "phone" || (!event.formFields?.length && field.name === "phone");
     const useInternationalNumbers = event.useInternationalNumbers !== false;
 
