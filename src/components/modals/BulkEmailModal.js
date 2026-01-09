@@ -38,7 +38,7 @@ const translations = {
         placeholderSubject: "Enter email subject",
         placeholderBody: "Enter email body...",
         confirmed: "Confirmed",
-        notConfirmed: "Not Confirmed",
+        notConfirmed: "Not Attending",
         approved: "Approved",
         rejected: "Rejected",
         pending: "Pending",
