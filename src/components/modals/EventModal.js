@@ -286,19 +286,32 @@ const EventModal = ({
             .filter((cc) => phoneValue.startsWith(cc.code))
             .sort((a, b) => b.code.length - a.code.length)[0];
           if (codeMatch) {
+            const localPhone = phoneValue.substring(codeMatch.code.length).trim();
             setOrganizerPhoneIsoCode(codeMatch.isoCode);
             setFormData((prev) => ({
               ...prev,
-              organizerPhone: phoneValue.substring(codeMatch.code.length).trim(),
+              organizerPhone: localPhone,
             }));
+            if (localPhone) {
+              const error = validatePhoneNumber(localPhone, codeMatch.isoCode);
+              setOrganizerPhoneError(error || "");
+            }
           } else {
             setOrganizerPhoneIsoCode(DEFAULT_ISO_CODE);
+            setOrganizerPhoneError("");
           }
         } else {
           setOrganizerPhoneIsoCode(DEFAULT_ISO_CODE);
+          if (phoneValue.trim()) {
+            const error = validatePhoneNumber(phoneValue, DEFAULT_ISO_CODE);
+            setOrganizerPhoneError(error || "");
+          } else {
+            setOrganizerPhoneError("");
+          }
         }
       } else {
         setOrganizerPhoneIsoCode(DEFAULT_ISO_CODE);
+        setOrganizerPhoneError("");
       }
     } else {
       setFormData((prev) => ({
@@ -358,22 +371,6 @@ const EventModal = ({
     };
   }, [formData.logoPreview, formData.backgroundEnPreview, formData.backgroundArPreview]);
 
-  const validatePhoneNumber = (phone) => {
-    if (!phone) return null;
-    const phoneStr = phone.toString().trim();
-
-    if (!phoneStr.startsWith("+")) {
-      return "Phone number must start with country code (e.g., +92, +968, +1)";
-    }
-
-    const result = validatePhoneNumberByCountry(phoneStr);
-    if (!result.valid) {
-      return result.error;
-    }
-
-    return null;
-  };
-
   const handleInputChange = (e) => {
     const { name, value, files } = e.target;
     if (name === "logo" && files?.[0]) {
@@ -423,8 +420,12 @@ const EventModal = ({
       if (name === "organizerPhone") {
         const digitsOnly = value.replace(/\D/g, "");
         processedValue = digitsOnly;
-        const error = validatePhoneNumber(digitsOnly, organizerPhoneIsoCode);
-        setOrganizerPhoneError(error || "");
+        if (digitsOnly) {
+          const error = validatePhoneNumber(digitsOnly, organizerPhoneIsoCode);
+          setOrganizerPhoneError(error || "");
+        } else {
+          setOrganizerPhoneError("");
+        }
       }
 
       setFormData((prev) => ({ ...prev, [name]: processedValue }));
@@ -1032,9 +1033,11 @@ const EventModal = ({
                     value={organizerPhoneIsoCode}
                     onChange={(iso) => {
                       setOrganizerPhoneIsoCode(iso);
-                      if (formData.organizerPhone) {
+                      if (formData.organizerPhone && formData.organizerPhone.trim()) {
                         const error = validatePhoneNumber(formData.organizerPhone, iso);
                         setOrganizerPhoneError(error || "");
+                      } else {
+                        setOrganizerPhoneError("");
                       }
                     }}
                     disabled={false}

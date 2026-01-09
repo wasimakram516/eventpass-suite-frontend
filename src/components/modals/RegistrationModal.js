@@ -157,7 +157,10 @@ export default function RegistrationModal({
     const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
     const isPhoneField = (field) => {
-        return field.inputName?.toLowerCase().includes("phone") || field.inputType === "phone";
+        if (field.inputType === "number") return false;
+        if (field.inputType === "phone") return true;
+        if (!hasCustomFields && field.inputName === "Phone") return true;
+        return false;
     };
 
 
@@ -284,7 +287,24 @@ export default function RegistrationModal({
             );
         }
 
-        const isPhoneField = f.inputName?.toLowerCase().includes("phone") || f.inputType === "phone";
+        if (f.inputType === "number") {
+            return (
+                <TextField
+                    key={f.inputName}
+                    label={f.inputName}
+                    value={value}
+                    onChange={(e) => handleChange(f.inputName, e.target.value)}
+                    fullWidth
+                    size="small"
+                    required={required}
+                    error={!!errorMsg}
+                    helperText={errorMsg}
+                    type="number"
+                />
+            );
+        }
+
+        const isPhoneField = f.inputType === "phone" || (!hasCustomFields && f.inputName === "Phone");
         const useInternationalNumbers = event?.useInternationalNumbers !== false;
 
         if (isPhoneField) {

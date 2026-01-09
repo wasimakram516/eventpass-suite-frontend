@@ -110,10 +110,10 @@ export default function EventDetails() {
       const result = await updateCheckInAttendanceStatus(token, status);
       if (!result?.error) {
         setConfirmed(status === "confirmed");
-        setNotConfirmed(status === "not_confirmed");
+        setNotConfirmed(status === "not_attending");
         if (status === "confirmed") {
           setJustConfirmed(true);
-        } else if (status === "not_confirmed") {
+        } else if (status === "not_attending") {
           setJustNotConfirmed(true);
         }
         setRegistration((prev) =>
@@ -134,7 +134,7 @@ export default function EventDetails() {
   };
 
   const handleNotConfirmed = () => {
-    handleConfirmAttendance("not_confirmed");
+    handleConfirmAttendance("not_attending");
   };
 
   const [event, setEvent] = useState(null);
@@ -188,7 +188,7 @@ export default function EventDetails() {
           // Check if already confirmed or not confirmed
           if (result.registration.approvalStatus === "confirmed") {
             setConfirmed(true);
-          } else if (result.registration.approvalStatus === "not_confirmed") {
+          } else if (result.registration.approvalStatus === "not_attending") {
             setNotConfirmed(true);
           }
         } else {
