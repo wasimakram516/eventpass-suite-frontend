@@ -809,7 +809,7 @@ export default function ViewRegistrations() {
   const renderConfirmation = (reg) => {
     const status = (reg.approvalStatus || "pending").toLowerCase();
     const isConfirmed = status === "confirmed";
-    const isNotConfirmed = status === "not_confirmed";
+    const isNotConfirmed = status === "not_attending";
 
     let statusText = t.pending;
     let statusColor = "warning.main";
@@ -1169,7 +1169,7 @@ export default function ViewRegistrations() {
               if (key === "status") {
                 if (val === "pending") displayValue = t.pending;
                 else if (val === "confirmed") displayValue = t.confirmed;
-                else if (val === "not_confirmed") displayValue = t.notConfirmed;
+                else if (val === "not_attending") displayValue = t.notConfirmed;
               } else if (key === "emailSent" || key === "whatsappSent") {
                 if (val === "sent") displayValue = t.sent;
                 else if (val === "not_sent") displayValue = t.notSent;
@@ -1446,7 +1446,7 @@ export default function ViewRegistrations() {
                         >
                           <MenuItem value="pending">{t.pending}</MenuItem>
                           <MenuItem value="confirmed">{t.confirmed}</MenuItem>
-                          <MenuItem value="not_confirmed">
+                          <MenuItem value="not_attending">
                             {t.notConfirmed}
                           </MenuItem>
                         </Select>
@@ -1565,7 +1565,7 @@ export default function ViewRegistrations() {
                 </MenuItem>
                 <MenuItem value="pending">{t.pending}</MenuItem>
                 <MenuItem value="confirmed">{t.confirmed}</MenuItem>
-                <MenuItem value="not_confirmed">{t.notConfirmed}</MenuItem>
+                <MenuItem value="not_attending">{t.notConfirmed}</MenuItem>
               </Select>
             </FormControl>
           </Box>
