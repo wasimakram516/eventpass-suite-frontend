@@ -31,6 +31,9 @@ import MediaUploadProgress from "@/components/MediaUploadProgress";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import { deleteMedia } from "@/services/deleteMediaService";
 import RichTextEditor from "@/components/RichTextEditor";
+import CountryCodeSelector from "@/components/CountryCodeSelector";
+import { DEFAULT_ISO_CODE, DEFAULT_COUNTRY_CODE, getCountryCodeByIsoCode, COUNTRY_CODES } from "@/utils/countryCodes";
+import { validatePhoneNumber } from "@/utils/phoneValidation";
 
 const translations = {
   en: {
@@ -164,6 +167,7 @@ const EventModal = ({
   const [uploadProgress, setUploadProgress] = useState([]);
   const [showUploadProgress, setShowUploadProgress] = useState(false);
   const [organizerPhoneError, setOrganizerPhoneError] = useState("");
+  const [organizerPhoneIsoCode, setOrganizerPhoneIsoCode] = useState(DEFAULT_ISO_CODE);
   const [deleteConfirm, setDeleteConfirm] = useState({
     open: false,
     type: null,
@@ -274,6 +278,28 @@ const EventModal = ({
         organizerEmail: initialValues?.organizerEmail || "",
         organizerPhone: initialValues?.organizerPhone || "",
       }));
+
+      if (initialValues?.organizerPhone) {
+        const phoneValue = initialValues.organizerPhone;
+        if (phoneValue.startsWith("+")) {
+          const codeMatch = COUNTRY_CODES
+            .filter((cc) => phoneValue.startsWith(cc.code))
+            .sort((a, b) => b.code.length - a.code.length)[0];
+          if (codeMatch) {
+            setOrganizerPhoneIsoCode(codeMatch.isoCode);
+            setFormData((prev) => ({
+              ...prev,
+              organizerPhone: phoneValue.substring(codeMatch.code.length).trim(),
+            }));
+          } else {
+            setOrganizerPhoneIsoCode(DEFAULT_ISO_CODE);
+          }
+        } else {
+          setOrganizerPhoneIsoCode(DEFAULT_ISO_CODE);
+        }
+      } else {
+        setOrganizerPhoneIsoCode(DEFAULT_ISO_CODE);
+      }
     } else {
       setFormData((prev) => ({
         ...prev,
@@ -332,6 +358,21 @@ const EventModal = ({
     };
   }, [formData.logoPreview, formData.backgroundEnPreview, formData.backgroundArPreview]);
 
+  const validatePhoneNumber = (phone) => {
+    if (!phone) return null;
+    const phoneStr = phone.toString().trim();
+
+    if (!phoneStr.startsWith("+")) {
+      return "Phone number must start with country code (e.g., +92, +968, +1)";
+    }
+
+    const result = validatePhoneNumberByCountry(phoneStr);
+    if (!result.valid) {
+      return result.error;
+    }
+
+    return null;
+  };
 
   const handleInputChange = (e) => {
     const { name, value, files } = e.target;
@@ -377,12 +418,16 @@ const EventModal = ({
         }));
       }
     } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
+      let processedValue = value;
 
       if (name === "organizerPhone") {
-        const error = validatePhoneNumber(value);
+        const digitsOnly = value.replace(/\D/g, "");
+        processedValue = digitsOnly;
+        const error = validatePhoneNumber(digitsOnly, organizerPhoneIsoCode);
         setOrganizerPhoneError(error || "");
       }
+
+      setFormData((prev) => ({ ...prev, [name]: processedValue }));
     }
   };
 
@@ -625,7 +670,7 @@ const EventModal = ({
     }
 
     if (formData.organizerPhone) {
-      const phoneError = validatePhoneNumber(formData.organizerPhone);
+      const phoneError = validatePhoneNumber(formData.organizerPhone, organizerPhoneIsoCode);
       if (phoneError) {
         setOrganizerPhoneError(phoneError);
         showMessage(phoneError, "error");
@@ -846,7 +891,9 @@ const EventModal = ({
           : {}),
         organizerName: formData.organizerName || "",
         organizerEmail: formData.organizerEmail || "",
-        organizerPhone: formData.organizerPhone || "",
+        organizerPhone: formData.organizerPhone
+          ? `${getCountryCodeByIsoCode(organizerPhoneIsoCode)?.code || DEFAULT_COUNTRY_CODE}${formData.organizerPhone}`
+          : "",
       };
 
       if (!initialValues) {
@@ -976,8 +1023,25 @@ const EventModal = ({
               value={formData.organizerPhone}
               onChange={handleInputChange}
               error={!!organizerPhoneError}
-              helperText={organizerPhoneError || "Enter phone number with country code (e.g., +92, +968, +1)"}
+              helperText={organizerPhoneError || "Enter your phone number"}
               fullWidth
+              type="tel"
+              InputProps={{
+                startAdornment: (
+                  <CountryCodeSelector
+                    value={organizerPhoneIsoCode}
+                    onChange={(iso) => {
+                      setOrganizerPhoneIsoCode(iso);
+                      if (formData.organizerPhone) {
+                        const error = validatePhoneNumber(formData.organizerPhone, iso);
+                        setOrganizerPhoneError(error || "");
+                      }
+                    }}
+                    disabled={false}
+                    dir={dir}
+                  />
+                ),
+              }}
             />
 
             {!isClosed && (

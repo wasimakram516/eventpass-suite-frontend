@@ -16,6 +16,15 @@ export const downloadCheckInSampleExcel = async (slug) => {
   return response.data;
 };
 
+// Download country reference Excel file
+export const downloadCheckInCountryReference = async () => {
+  const response = await api.get(
+    `/checkin/registrations/country-reference`,
+    { responseType: "blob" }
+  );
+  return response.data;
+};
+
 // Upload filled Excel
 export const uploadCheckInRegistrations = withApiHandler(
   async (slug, file) => {

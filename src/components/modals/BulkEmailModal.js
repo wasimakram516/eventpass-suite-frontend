@@ -38,7 +38,7 @@ const translations = {
         placeholderSubject: "Enter email subject",
         placeholderBody: "Enter email body...",
         confirmed: "Confirmed",
-        notConfirmed: "Not Confirmed",
+        notConfirmed: "Not Attending",
         approved: "Approved",
         rejected: "Rejected",
         pending: "Pending",
@@ -440,18 +440,6 @@ const BulkEmailModal = ({
                 }}
             >
                 {emailType === "default" && (
-                    <Button
-                        variant="contained"
-                        color="success"
-                        startIcon={<ICONS.whatsapp />}
-                        onClick={handleSendWhatsApp}
-                        disabled={sendingEmails}
-                        sx={getStartIconSpacing(dir)}
-                    >
-                        {t.sendWhatsApp}
-                    </Button>
-                )}
-                {emailType === "custom" && (
                     <Button
                         variant="contained"
                         color="success"
