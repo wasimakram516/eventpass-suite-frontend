@@ -85,6 +85,15 @@ export const downloadSampleExcel = async (slug) => {
   return response.data;
 };
 
+// Download country reference Excel file
+export const downloadCountryReference = async () => {
+  const response = await api.get(
+    `/eventreg/registrations/country-reference`,
+    { responseType: "blob" }
+  );
+  return response.data;
+};
+
 // Export CSV (with filters)
 export const exportRegistrations = async (slug, query = {}) => {
   const qs = new URLSearchParams(query).toString();
