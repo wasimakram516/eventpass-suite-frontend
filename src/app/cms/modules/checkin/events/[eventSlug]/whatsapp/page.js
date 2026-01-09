@@ -69,7 +69,7 @@ export default function WhatsAppDashboard() {
         </Grid>
 
         {/* Inbox */}
-        <Grid item xs={12} sm={6} md={4}>
+        {/* <Grid item xs={12} sm={6} md={4}>
           <DashboardCard
             title={t.inboxTitle}
             description={t.inboxDescription}
@@ -78,7 +78,7 @@ export default function WhatsAppDashboard() {
             color="#25D366" // WhatsApp green
             route={`/cms/modules/checkin/events/${eventSlug}/whatsapp/inbox`}
           />
-        </Grid>
+        </Grid> */}
       </Grid>
     </Container>
   );
