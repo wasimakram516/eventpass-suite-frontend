@@ -23,8 +23,9 @@ import {
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import CountryCodeSelector from "@/components/CountryCodeSelector";
-import { DEFAULT_COUNTRY_CODE, COUNTRY_CODES } from "@/utils/countryCodes";
+import { DEFAULT_COUNTRY_CODE, DEFAULT_ISO_CODE, COUNTRY_CODES, getCountryCodeByIsoCode } from "@/utils/countryCodes";
 import { normalizePhone } from "@/utils/phoneUtils";
+import { validatePhoneNumber } from "@/utils/phoneValidation";
 
 
 export default function RegistrationModal({
@@ -40,7 +41,7 @@ export default function RegistrationModal({
     const [values, setValues] = useState({});
     const [fieldErrors, setFieldErrors] = useState({});
     const [loading, setLoading] = useState(false);
-    const [countryCodes, setCountryCodes] = useState({});
+    const [countryIsoCodes, setCountryIsoCodes] = useState({});
 
     const hasCustomFields = useMemo(() => formFields && formFields.length > 0, [formFields]);
 
@@ -67,7 +68,7 @@ export default function RegistrationModal({
     useEffect(() => {
         if (fieldsToRender.length > 0) {
             const init = {};
-            const initCountryCodes = {};
+            const initCountryIsoCodes = {};
             if (registration && mode === "edit") {
                 fieldsToRender.forEach((f) => {
                     if (hasCustomFields) {
@@ -86,23 +87,28 @@ export default function RegistrationModal({
                     }
                     if (isPhoneField(f)) {
                         const phoneValue = init[f.inputName] || "";
-                        if (phoneValue.startsWith("+")) {
-                            let foundCode = null;
+                        const regIsoCode = registration?.isoCode;
+                        if (regIsoCode) {
+                            initCountryIsoCodes[f.inputName] = regIsoCode.toLowerCase();
+                        } else if (phoneValue.startsWith("+")) {
+                            let foundCountry = null;
+                            let longestMatch = "";
                             for (const country of COUNTRY_CODES) {
                                 if (phoneValue.startsWith(country.code)) {
-                                    if (!foundCode || country.code.length > foundCode.length) {
-                                        foundCode = country.code;
+                                    if (country.code.length > longestMatch.length) {
+                                        longestMatch = country.code;
+                                        foundCountry = country;
                                     }
                                 }
                             }
-                            if (foundCode) {
-                                initCountryCodes[f.inputName] = foundCode;
-                                init[f.inputName] = phoneValue.substring(foundCode.length).trim();
+                            if (foundCountry) {
+                                initCountryIsoCodes[f.inputName] = foundCountry.isoCode;
+                                init[f.inputName] = phoneValue.substring(foundCountry.code.length).trim();
                             } else {
-                                initCountryCodes[f.inputName] = DEFAULT_COUNTRY_CODE;
+                                initCountryIsoCodes[f.inputName] = DEFAULT_ISO_CODE;
                             }
                         } else {
-                            initCountryCodes[f.inputName] = DEFAULT_COUNTRY_CODE;
+                            initCountryIsoCodes[f.inputName] = DEFAULT_ISO_CODE;
                         }
                     }
                 });
@@ -110,16 +116,16 @@ export default function RegistrationModal({
                 fieldsToRender.forEach((f) => {
                     init[f.inputName] = "";
                     if (isPhoneField(f)) {
-                        initCountryCodes[f.inputName] = DEFAULT_COUNTRY_CODE;
+                        initCountryIsoCodes[f.inputName] = DEFAULT_ISO_CODE;
                     }
                 });
             }
             setValues(init);
-            setCountryCodes(initCountryCodes);
+            setCountryIsoCodes(initCountryIsoCodes);
             setFieldErrors({});
             setLoading(false);
         }
-    }, [registration, fieldsToRender, hasCustomFields, mode, open]);
+    }, [registration, fieldsToRender, hasCustomFields, mode, open, registration?.isoCode]);
 
     const handleChange = (key, value) => {
         setValues((prev) => ({ ...prev, [key]: value }));
@@ -132,12 +138,13 @@ export default function RegistrationModal({
         }
     };
 
-    const handleCountryCodeChange = (fieldName, code) => {
-        setCountryCodes((prev) => ({ ...prev, [fieldName]: code }));
+    const handleCountryCodeChange = (fieldName, isoCode) => {
+        setCountryIsoCodes((prev) => ({ ...prev, [fieldName]: isoCode }));
     };
 
     const handlePhoneChange = (fieldName, value) => {
-        setValues((prev) => ({ ...prev, [fieldName]: value }));
+        const digitsOnly = value.replace(/\D/g, "");
+        setValues((prev) => ({ ...prev, [fieldName]: digitsOnly }));
         if (fieldErrors[fieldName]) {
             setFieldErrors((prev) => {
                 const newErrors = { ...prev };
@@ -153,29 +160,6 @@ export default function RegistrationModal({
         return field.inputName?.toLowerCase().includes("phone") || field.inputType === "phone";
     };
 
-    const validatePhoneNumber = (phone, countryCode = null) => {
-        if (!phone) return null;
-        let phoneStr = phone.toString().trim();
-
-        if (countryCode && !phoneStr.startsWith("+")) {
-            phoneStr = `${countryCode}${phoneStr}`;
-        }
-
-        if (!phoneStr.startsWith("+")) {
-            return "Phone number must start with country code (e.g., +92, +968, +1)";
-        }
-
-        const digits = phoneStr.replace(/\D/g, "");
-
-        if (digits.length < 8) {
-            return "Phone number is too short";
-        }
-        if (digits.length > 15) {
-            return "Phone number is too long";
-        }
-
-        return null;
-    };
 
     const validateFields = () => {
         const errors = {};
@@ -192,8 +176,8 @@ export default function RegistrationModal({
             }
 
             if (isPhoneField(f) && val) {
-                const countryCode = countryCodes[f.inputName] || DEFAULT_COUNTRY_CODE;
-                const phoneError = validatePhoneNumber(val, countryCode);
+                const isoCode = countryIsoCodes[f.inputName] || DEFAULT_ISO_CODE;
+                const phoneError = validatePhoneNumber(val, isoCode);
                 if (phoneError) {
                     errors[f.inputName] = phoneError;
                 }
@@ -213,18 +197,31 @@ export default function RegistrationModal({
         setLoading(true);
         try {
             const normalizedValues = { ...values };
+            let phoneIsoCode = null;
+
             fieldsToRender.forEach((f) => {
                 if (isPhoneField(f)) {
                     const phoneValue = normalizedValues[f.inputName];
                     if (phoneValue) {
-                        const countryCode = countryCodes[f.inputName] || DEFAULT_COUNTRY_CODE;
+                        const isoCode = countryIsoCodes[f.inputName] || DEFAULT_ISO_CODE;
+                        const country = getCountryCodeByIsoCode(isoCode);
+                        const countryCode = country?.code || DEFAULT_COUNTRY_CODE;
                         const fullPhone = phoneValue.startsWith("+")
                             ? phoneValue
                             : `${countryCode}${phoneValue}`;
-                        normalizedValues[f.inputName] = normalizePhone(fullPhone);
+                        const normalized = normalizePhone(fullPhone);
+
+                        phoneIsoCode = isoCode;
+
+                        normalizedValues[f.inputName] = phoneValue.trim();
                     }
                 }
             });
+
+            if (phoneIsoCode) {
+                normalizedValues.isoCode = phoneIsoCode;
+            }
+
             await onSave(normalizedValues);
         } finally {
             setLoading(false);
@@ -291,7 +288,7 @@ export default function RegistrationModal({
         const useInternationalNumbers = event?.useInternationalNumbers !== false;
 
         if (isPhoneField) {
-            const countryCode = countryCodes[f.inputName] || DEFAULT_COUNTRY_CODE;
+            const isoCode = countryIsoCodes[f.inputName] || DEFAULT_ISO_CODE;
             const phoneValue = value || "";
 
             return (
@@ -309,8 +306,8 @@ export default function RegistrationModal({
                     InputProps={{
                         startAdornment: (
                             <CountryCodeSelector
-                                value={countryCode}
-                                onChange={(code) => handleCountryCodeChange(f.inputName, code)}
+                                value={isoCode}
+                                onChange={(iso) => handleCountryCodeChange(f.inputName, iso)}
                                 disabled={!useInternationalNumbers}
                                 dir="ltr"
                             />
