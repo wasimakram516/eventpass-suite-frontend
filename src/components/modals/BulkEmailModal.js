@@ -451,18 +451,6 @@ const BulkEmailModal = ({
                         {t.sendWhatsApp}
                     </Button>
                 )}
-                {emailType === "custom" && (
-                    <Button
-                        variant="contained"
-                        color="success"
-                        startIcon={<ICONS.whatsapp />}
-                        onClick={handleSendWhatsApp}
-                        disabled={sendingEmails}
-                        sx={getStartIconSpacing(dir)}
-                    >
-                        {t.sendWhatsApp}
-                    </Button>
-                )}
                 <Button
                     variant="contained"
                     color="primary"
