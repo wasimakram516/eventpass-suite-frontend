@@ -33,7 +33,8 @@ import Background from "@/components/Background";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import CountryCodeSelector from "@/components/CountryCodeSelector";
 import { normalizePhone } from "@/utils/phoneUtils";
-import { DEFAULT_COUNTRY_CODE } from "@/utils/countryCodes";
+import { DEFAULT_COUNTRY_CODE, DEFAULT_ISO_CODE, COUNTRY_CODES, getCountryCodeByIsoCode } from "@/utils/countryCodes";
+import { validatePhoneNumber } from "@/utils/phoneValidation";
 
 export default function Registration() {
   const { eventSlug, lang } = useParams();
@@ -87,7 +88,7 @@ export default function Registration() {
   const [translationsReady, setTranslationsReady] = useState(false);
   const [translatedEvent, setTranslatedEvent] = useState(null);
   const [qrToken, setQrToken] = useState(null);
-  const [countryCodes, setCountryCodes] = useState({});
+  const [countryIsoCodes, setCountryIsoCodes] = useState({});
 
   // Fetch event + translate event metadata
   useEffect(() => {
@@ -127,18 +128,18 @@ export default function Registration() {
 
     // initialize form
     const initial = {};
-    const initialCountryCodes = {};
+    const initialCountryIsoCodes = {};
     fields.forEach((f) => {
       if (f.name) {
         initial[f.name] = "";
       }
       if (f.type === "phone" || (!event.formFields?.length && f.name === "phone")) {
-        initialCountryCodes[f.name] = DEFAULT_COUNTRY_CODE;
+        initialCountryIsoCodes[f.name] = DEFAULT_ISO_CODE;
       }
     });
     setDynamicFields(fields);
     setFormData(initial);
-    setCountryCodes(initialCountryCodes);
+    setCountryIsoCodes(initialCountryIsoCodes);
 
     const translateAll = async () => {
       const textsToTranslate = new Set();
@@ -214,40 +215,18 @@ export default function Registration() {
     setFieldErrors((p) => ({ ...p, [name]: "" }));
   };
 
-  const handleCountryCodeChange = (fieldName, code) => {
-    setCountryCodes((p) => ({ ...p, [fieldName]: code }));
+  const handleCountryCodeChange = (fieldName, isoCode) => {
+    setCountryIsoCodes((p) => ({ ...p, [fieldName]: isoCode }));
   };
 
   const handlePhoneChange = (fieldName, value) => {
-    setFormData((p) => ({ ...p, [fieldName]: value }));
+    const digitsOnly = value.replace(/\D/g, "");
+    setFormData((p) => ({ ...p, [fieldName]: digitsOnly }));
     setFieldErrors((p) => ({ ...p, [fieldName]: "" }));
   };
 
   const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-  const validatePhoneNumber = (phone, countryCode = null) => {
-    if (!phone) return null;
-    let phoneStr = phone.toString().trim();
-
-    if (countryCode && !phoneStr.startsWith("+")) {
-      phoneStr = `${countryCode}${phoneStr}`;
-    }
-
-    if (!phoneStr.startsWith("+")) {
-      return "Phone number must start with country code (e.g., +92, +968, +1)";
-    }
-
-    const digits = phoneStr.replace(/\D/g, "");
-
-    if (digits.length < 8) {
-      return "Phone number is too short";
-    }
-    if (digits.length > 15) {
-      return "Phone number is too long";
-    }
-
-    return null;
-  };
 
   const handleSubmit = async () => {
     const errors = {};
@@ -263,8 +242,8 @@ export default function Registration() {
         errors[f.name] = t.invalidEmail;
 
       if ((f.type === "phone" || (!event.formFields?.length && f.name === "phone")) && val) {
-        const countryCode = countryCodes[f.name] || DEFAULT_COUNTRY_CODE;
-        const phoneError = validatePhoneNumber(val, countryCode);
+        const isoCode = countryIsoCodes[f.name] || DEFAULT_ISO_CODE;
+        const phoneError = validatePhoneNumber(val, isoCode);
         if (phoneError) {
           errors[f.name] = phoneError;
         }
@@ -279,20 +258,38 @@ export default function Registration() {
     setSubmitting(true);
 
     const normalizedFormData = { ...formData };
+    let phoneIsoCode = null;
+
     dynamicFields.forEach((f) => {
       if (f.type === "phone" || (!event.formFields?.length && f.name === "phone")) {
         const phoneValue = normalizedFormData[f.name];
         if (phoneValue) {
-          const countryCode = countryCodes[f.name] || DEFAULT_COUNTRY_CODE;
+          const isoCode = countryIsoCodes[f.name] || DEFAULT_ISO_CODE;
+          const country = getCountryCodeByIsoCode(isoCode);
+          const countryCode = country?.code || DEFAULT_COUNTRY_CODE;
           const fullPhone = phoneValue.startsWith("+")
             ? phoneValue
             : `${countryCode}${phoneValue}`;
-          normalizedFormData[f.name] = normalizePhone(fullPhone);
+          const normalized = normalizePhone(fullPhone);
+
+          phoneIsoCode = isoCode;
+
+          // Store phone without country code
+          if (normalized && normalized.startsWith("+")) {
+            const extracted = normalized.substring(countryCode.length).trim();
+            normalizedFormData[f.name] = extracted;
+          } else {
+            normalizedFormData[f.name] = normalized;
+          }
         }
       }
     });
 
-    const result = await createRegistration({ ...normalizedFormData, slug: eventSlug });
+    const result = await createRegistration({
+      ...normalizedFormData,
+      slug: eventSlug,
+      isoCode: phoneIsoCode,
+    });
     setSubmitting(false);
 
     if (!result?.error) {
@@ -430,7 +427,7 @@ export default function Registration() {
     const useInternationalNumbers = event.useInternationalNumbers !== false;
 
     if (isPhoneField) {
-      const countryCode = countryCodes[field.name] || DEFAULT_COUNTRY_CODE;
+      const isoCode = countryIsoCodes[field.name] || DEFAULT_ISO_CODE;
       const phoneValue = formData[field.name] || "";
 
       return (
@@ -442,8 +439,8 @@ export default function Registration() {
           InputProps={{
             startAdornment: (
               <CountryCodeSelector
-                value={countryCode}
-                onChange={(code) => handleCountryCodeChange(field.name, code)}
+                value={isoCode}
+                onChange={(iso) => handleCountryCodeChange(field.name, iso)}
                 disabled={!useInternationalNumbers}
                 dir={dir}
               />
