@@ -34,6 +34,7 @@ import {
   deleteCheckInRegistration,
   getAllCheckInRegistrationsByEvent,
   downloadCheckInSampleExcel,
+  downloadCheckInCountryReference,
   uploadCheckInRegistrations,
   exportCheckInRegistrations,
   getCheckInInitialRegistrations,
@@ -658,14 +659,38 @@ export default function ViewRegistrations() {
   };
 
   const handleDownloadSample = async () => {
-    const data = await downloadCheckInSampleExcel(eventSlug);
-    const blob = new Blob([data], {
-      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    });
-    const link = document.createElement("a");
-    link.href = window.URL.createObjectURL(blob);
-    link.download = `${eventSlug}_registrations_template.xlsx`;
-    link.click();
+    try {
+      // Download sample Excel file
+      const sampleData = await downloadCheckInSampleExcel(eventSlug);
+      const sampleBlob = new Blob([sampleData], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const sampleLink = document.createElement("a");
+      sampleLink.href = window.URL.createObjectURL(sampleBlob);
+      sampleLink.download = `${eventSlug}_registrations_template.xlsx`;
+      document.body.appendChild(sampleLink);
+      sampleLink.click();
+      document.body.removeChild(sampleLink);
+      URL.revokeObjectURL(sampleLink.href);
+
+      // Download country reference file
+      const countryData = await downloadCheckInCountryReference();
+      const countryBlob = new Blob([countryData], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const countryLink = document.createElement("a");
+      countryLink.href = window.URL.createObjectURL(countryBlob);
+      countryLink.download = "country_reference.xlsx";
+      document.body.appendChild(countryLink);
+      // Small delay to ensure first download starts
+      setTimeout(() => {
+        countryLink.click();
+        document.body.removeChild(countryLink);
+        URL.revokeObjectURL(countryLink.href);
+      }, 100);
+    } catch (err) {
+      console.error("Failed to download sample:", err);
+    }
   };
 
   const handleUpload = async (fileInput) => {
@@ -1377,7 +1402,14 @@ export default function ViewRegistrations() {
                               ...wrapTextBox,
                             }}
                           >
-                            {displayValue}
+                            {(() => {
+                              // If this is a phone field, format it with isoCode
+                              if (f.type === "phone" || (!eventDetails?.formFields?.length && f.name === "phone")) {
+                                const { formatPhoneNumberForDisplay } = require("@/utils/countryCodes");
+                                return formatPhoneNumberForDisplay(displayValue, reg.isoCode);
+                              }
+                              return displayValue;
+                            })()}
                           </Typography>
                         </Box>
                       );

@@ -36,6 +36,7 @@ import {
   deleteRegistration,
   getAllPublicRegistrationsByEvent,
   downloadSampleExcel,
+  downloadCountryReference,
   uploadRegistrations,
   getUnsentCount,
   sendBulkEmails,
@@ -644,17 +645,30 @@ export default function ViewRegistrations() {
   const handleDownloadSample = async () => {
     if (!eventSlug) return;
     try {
-      const blob = await downloadSampleExcel(eventSlug);
-
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `${eventDetails.slug || "event"
+      // Download sample Excel file
+      const sampleBlob = await downloadSampleExcel(eventSlug);
+      const sampleUrl = URL.createObjectURL(sampleBlob);
+      const sampleLink = document.createElement("a");
+      sampleLink.href = sampleUrl;
+      sampleLink.download = `${eventDetails.slug || "event"
         }_registrations_template.xlsx`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      document.body.appendChild(sampleLink);
+      sampleLink.click();
+      document.body.removeChild(sampleLink);
+      URL.revokeObjectURL(sampleUrl);
+
+      // Download country reference file
+      const countryBlob = await downloadCountryReference();
+      const countryUrl = URL.createObjectURL(countryBlob);
+      const countryLink = document.createElement("a");
+      countryLink.href = countryUrl;
+      countryLink.download = "country_reference.xlsx";
+      document.body.appendChild(countryLink);
+      setTimeout(() => {
+        countryLink.click();
+        document.body.removeChild(countryLink);
+        URL.revokeObjectURL(countryUrl);
+      }, 100);
     } catch (err) {
       console.error("Failed to download sample:", err);
     }
@@ -1658,7 +1672,17 @@ export default function ViewRegistrations() {
                             ...wrapTextBox,
                           }}
                         >
-                          {reg.customFields?.[f.name] ?? reg[f.name] ?? "—"}
+                          {(() => {
+                            const fieldValue = reg.customFields?.[f.name] ?? reg[f.name];
+                            if (!fieldValue) return "—";
+
+                            if (f.type === "phone" || (!eventDetails?.formFields?.length && f.name === "phone")) {
+                              const { formatPhoneNumberForDisplay } = require("@/utils/countryCodes");
+                              return formatPhoneNumberForDisplay(fieldValue, reg.isoCode);
+                            }
+
+                            return fieldValue;
+                          })()}
                         </Typography>
                       </Box>
                     ))}
