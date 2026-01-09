@@ -104,7 +104,7 @@ const translations = {
     createRegistration: "New",
     confirmed: "Confirmed",
     pending: "Pending",
-    notConfirmed: "Not confirmed",
+    notConfirmed: "Not attending",
     shareLink: "Share Link",
     recordsPerPage: "Records per page",
     showing: "Showing",
@@ -130,7 +130,7 @@ const translations = {
     all: "All",
     pending: "Pending",
     confirmed: "Confirmed",
-    notConfirmed: "Not Confirmed",
+    notConfirmed: "Not Attending",
 
     sent: "Sent",
     notSent: "Not Sent",
@@ -663,8 +663,8 @@ export default function ViewRegistrations() {
       // Download sample Excel file
       const sampleData = await downloadCheckInSampleExcel(eventSlug);
       const sampleBlob = new Blob([sampleData], {
-        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      });
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
       const sampleLink = document.createElement("a");
       sampleLink.href = window.URL.createObjectURL(sampleBlob);
       sampleLink.download = `${eventSlug}_registrations_template.xlsx`;
