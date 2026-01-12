@@ -417,6 +417,32 @@ export default function TrashPage() {
     return "-";
   };
 
+  const getRecordDisplayInfo = (item) => {
+    const name = item.name || item.title || item.fullName || item.slug || item.text || item.question || null;
+    const email = item.email || null;
+    const phone = item.phone || item.phoneNumber || item.mobile || null;
+
+    if (!name && !email && !phone) {
+      return { primary: "Unnamed", secondary: null };
+    }
+
+    const primary = name || email || phone || "Unnamed";
+    const secondaryParts = [];
+
+    if (name && email) {
+      secondaryParts.push(email);
+    } else if (name && phone) {
+      secondaryParts.push(phone);
+    } else if (!name && email && phone) {
+      secondaryParts.push(phone);
+    }
+
+    return {
+      primary,
+      secondary: secondaryParts.length > 0 ? secondaryParts.join(" • ") : null,
+    };
+  };
+
   const hydrateUsersMap = async () => {
     try {
       const users = await getAllUsers();
@@ -986,6 +1012,10 @@ export default function TrashPage() {
                   item.text ||
                   item.question ||
                   item.fullName ||
+                  item.email ||
+                  item.phone ||
+                  item.phoneNumber ||
+                  item.mobile ||
                   ""
                 ).toLowerCase();
                 return itemText.includes(searchTerm);
@@ -1077,23 +1107,33 @@ export default function TrashPage() {
                               }}
                             >
                               <Avatar sx={{ width: 48, height: 48 }}>
-                                {item.name?.[0] || item.title?.[0] || "?"}
+                                {(() => {
+                                  const displayInfo = getRecordDisplayInfo(item);
+                                  return displayInfo.primary?.[0]?.toUpperCase() || "?";
+                                })()}
                               </Avatar>
                               <Box sx={{ flexGrow: 1, ...wrapTextBox }}>
                                 <Typography
                                   variant="subtitle1"
                                   fontWeight="bold"
                                 >
-                                  {item.name ||
-                                    item.title ||
-                                    item.slug ||
-                                    item.text ||
-                                    item.question ||
-                                    item.fullName ||
-                                    safeFormatDate(item.endTime) ||
-                                    safeFormatDate(item.createdAt) ||
-                                    "Unnamed"}
+                                  {(() => {
+                                    const displayInfo = getRecordDisplayInfo(item);
+                                    return displayInfo.primary;
+                                  })()}
                                 </Typography>
+                                {(() => {
+                                  const displayInfo = getRecordDisplayInfo(item);
+                                  return displayInfo.secondary ? (
+                                    <Typography
+                                      variant="caption"
+                                      color="text.secondary"
+                                      sx={{ display: "block", mt: 0.5 }}
+                                    >
+                                      {displayInfo.secondary}
+                                    </Typography>
+                                  ) : null;
+                                })()}
                               </Box>
                             </Box>
 
