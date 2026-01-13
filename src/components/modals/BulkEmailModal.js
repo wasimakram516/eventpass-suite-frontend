@@ -31,6 +31,7 @@ const translations = {
         messageType: "Message Type",
         default: "Default",
         custom: "Custom",
+        reminder: "Reminder",
         subject: "Subject",
         body: "Body",
         sendEmail: "Send Email",
@@ -59,6 +60,7 @@ const translations = {
         messageType: "نوع الرسالة",
         default: "افتراضي",
         custom: "مخصص",
+        reminder: "تذكير",
         subject: "الموضوع",
         body: "المحتوى",
         sendEmail: "إرسال بريد إلكتروني",
@@ -84,6 +86,51 @@ const translations = {
     },
 };
 
+const getFilterStates = (selectedFilter) => {
+    const defaultFilters = { statusFilter: "all", emailSentFilter: "all", whatsappSentFilter: "all" };
+
+    switch (selectedFilter) {
+        case "all":
+            return defaultFilters;
+        case "approved":
+        case "rejected":
+        case "confirmed":
+        case "notConfirmed":
+        case "pending":
+            return {
+                statusFilter: selectedFilter,
+                emailSentFilter: "all",
+                whatsappSentFilter: "all",
+            };
+        case "emailSent":
+            return {
+                statusFilter: "all",
+                emailSentFilter: "sent",
+                whatsappSentFilter: "all",
+            };
+        case "emailNotSent":
+            return {
+                statusFilter: "all",
+                emailSentFilter: "notSent",
+                whatsappSentFilter: "all",
+            };
+        case "whatsappSent":
+            return {
+                statusFilter: "all",
+                emailSentFilter: "all",
+                whatsappSentFilter: "sent",
+            };
+        case "whatsappNotSent":
+            return {
+                statusFilter: "all",
+                emailSentFilter: "all",
+                whatsappSentFilter: "notSent",
+            };
+        default:
+            return defaultFilters;
+    }
+};
+
 const BulkEmailModal = ({
     open,
     onClose,
@@ -92,9 +139,10 @@ const BulkEmailModal = ({
     sendingEmails = false,
     isApprovalBased = true,
     useApprovedRejected = false,
+    showReminderOption = false,
 }) => {
     const { t, dir } = useI18nLayout(translations);
-    const [emailType, setEmailType] = useState("default");
+    const [notificationType, setNotificationType] = useState("default");
     const [subject, setSubject] = useState("");
     const [body, setBody] = useState("");
     const [selectedFilter, setSelectedFilter] = useState("all");
@@ -108,7 +156,7 @@ const BulkEmailModal = ({
 
     useEffect(() => {
         if (!open) {
-            setEmailType("default");
+            setNotificationType("default");
             setSubject("");
             setBody("");
             setSelectedFilter("all");
@@ -121,7 +169,7 @@ const BulkEmailModal = ({
     }, [open]);
 
     const handleClose = () => {
-        setEmailType("default");
+        setNotificationType("default");
         setSubject("");
         setBody("");
         setSelectedFilter("all");
@@ -148,73 +196,37 @@ const BulkEmailModal = ({
     };
 
     const handleSendEmail = () => {
-        if (emailType === "custom" && !subject.trim()) {
+        if (notificationType === "custom" && !subject.trim()) {
             setSubjectError(true);
             return;
         }
         setSubjectError(false);
 
-        // Convert selectedFilter to individual filter states
-        const filterStates = selectedFilter === "all"
-            ? { statusFilter: "all", emailSentFilter: "all", whatsappSentFilter: "all" }
-            : selectedFilter === "approved"
-                ? { statusFilter: "approved", emailSentFilter: "all", whatsappSentFilter: "all" }
-                : selectedFilter === "rejected"
-                    ? { statusFilter: "rejected", emailSentFilter: "all", whatsappSentFilter: "all" }
-                    : selectedFilter === "confirmed"
-                        ? { statusFilter: "confirmed", emailSentFilter: "all", whatsappSentFilter: "all" }
-                        : selectedFilter === "notConfirmed"
-                            ? { statusFilter: "notConfirmed", emailSentFilter: "all", whatsappSentFilter: "all" }
-                            : selectedFilter === "pending"
-                                ? { statusFilter: "pending", emailSentFilter: "all", whatsappSentFilter: "all" }
-                                : selectedFilter === "emailSent"
-                                    ? { statusFilter: "all", emailSentFilter: "sent", whatsappSentFilter: "all" }
-                                    : selectedFilter === "emailNotSent"
-                                        ? { statusFilter: "all", emailSentFilter: "notSent", whatsappSentFilter: "all" }
-                                        : selectedFilter === "whatsappSent"
-                                            ? { statusFilter: "all", emailSentFilter: "all", whatsappSentFilter: "sent" }
-                                            : { statusFilter: "all", emailSentFilter: "all", whatsappSentFilter: "notSent" };
+        const filterStates = getFilterStates(selectedFilter);
 
         onSendEmail({
-            type: emailType,
-            subject: emailType === "custom" ? subject : undefined,
-            body: emailType === "custom" ? body : undefined,
-            file: emailType === "custom" ? attachedFile : undefined,
+            type: notificationType === "reminder" ? "default" : notificationType,
+            subject: notificationType === "custom" ? subject : undefined,
+            body: notificationType === "custom" ? body : undefined,
+            file: notificationType === "custom" ? attachedFile : undefined,
             ...filterStates,
         });
     };
 
     const handleSendWhatsApp = () => {
-        if (emailType === "custom" && !subject.trim()) {
+        if (notificationType === "custom" && !subject.trim()) {
             setSubjectError(true);
             return;
         }
         setSubjectError(false);
-        const filterStates = selectedFilter === "all"
-            ? { statusFilter: "all", emailSentFilter: "all", whatsappSentFilter: "all" }
-            : selectedFilter === "approved"
-                ? { statusFilter: "approved", emailSentFilter: "all", whatsappSentFilter: "all" }
-                : selectedFilter === "rejected"
-                    ? { statusFilter: "rejected", emailSentFilter: "all", whatsappSentFilter: "all" }
-                    : selectedFilter === "confirmed"
-                        ? { statusFilter: "confirmed", emailSentFilter: "all", whatsappSentFilter: "all" }
-                        : selectedFilter === "notConfirmed"
-                            ? { statusFilter: "notConfirmed", emailSentFilter: "all", whatsappSentFilter: "all" }
-                            : selectedFilter === "pending"
-                                ? { statusFilter: "pending", emailSentFilter: "all", whatsappSentFilter: "all" }
-                                : selectedFilter === "emailSent"
-                                    ? { statusFilter: "all", emailSentFilter: "sent", whatsappSentFilter: "all" }
-                                    : selectedFilter === "emailNotSent"
-                                        ? { statusFilter: "all", emailSentFilter: "notSent", whatsappSentFilter: "all" }
-                                        : selectedFilter === "whatsappSent"
-                                            ? { statusFilter: "all", emailSentFilter: "all", whatsappSentFilter: "sent" }
-                                            : { statusFilter: "all", emailSentFilter: "all", whatsappSentFilter: "notSent" };
+
+        const filterStates = getFilterStates(selectedFilter);
 
         onSendWhatsApp({
-            type: emailType,
-            subject: emailType === "custom" ? subject : undefined,
-            body: emailType === "custom" ? body : undefined,
-            file: emailType === "custom" ? attachedFile : undefined,
+            type: notificationType,
+            subject: notificationType === "custom" ? subject : undefined,
+            body: notificationType === "custom" ? body : undefined,
+            file: notificationType === "custom" ? attachedFile : undefined,
             ...filterStates,
         });
     };
@@ -299,8 +311,8 @@ const BulkEmailModal = ({
                             {t.messageType}:
                         </Typography>
                         <RadioGroup
-                            value={emailType}
-                            onChange={(e) => setEmailType(e.target.value)}
+                            value={notificationType}
+                            onChange={(e) => setNotificationType(e.target.value)}
                             row={true}
                             sx={{
                                 flexDirection: dir === "rtl" ? "row-reverse" : "row",
@@ -336,10 +348,23 @@ const BulkEmailModal = ({
                                     marginLeft: dir === "rtl" ? 0 : 2,
                                 }}
                             />
+                            {showReminderOption && (
+                                <FormControlLabel
+                                    value="reminder"
+                                    control={<Radio color="primary" />}
+                                    label={t.reminder}
+                                    labelPlacement={dir === "rtl" ? "start" : "end"}
+                                    sx={{
+                                        direction: dir,
+                                        marginRight: dir === "rtl" ? 2 : 0,
+                                        marginLeft: dir === "rtl" ? 0 : 2,
+                                    }}
+                                />
+                            )}
                         </RadioGroup>
                     </Box>
 
-                    {emailType === "default" && (
+                    {notificationType === "default" && (
                         <Typography
                             variant="body2"
                             color="text.secondary"
@@ -354,7 +379,7 @@ const BulkEmailModal = ({
                         </Typography>
                     )}
 
-                    {emailType === "custom" && (
+                    {notificationType === "custom" && (
                         <>
                             <TextField
                                 fullWidth
@@ -439,7 +464,7 @@ const BulkEmailModal = ({
                     py: 2,
                 }}
             >
-                {emailType === "default" && (
+                {(notificationType === "default" || notificationType === "reminder") && (
                     <Button
                         variant="contained"
                         color="success"

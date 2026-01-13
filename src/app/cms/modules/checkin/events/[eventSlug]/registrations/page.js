@@ -1973,6 +1973,7 @@ export default function ViewRegistrations() {
 
       <BulkEmailModal
         open={bulkEmailModalOpen}
+        showReminderOption={true}
         onClose={() => {
           if (!sendingEmails) {
             setBulkEmailModalOpen(false);
