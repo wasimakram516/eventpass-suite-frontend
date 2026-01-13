@@ -3,7 +3,7 @@
 import { Typography, Stack, Button, Box } from "@mui/material";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
-import { formatDateWithShortMonth } from "@/utils/dateUtils";
+import { formatDateWithTime, formatTime } from "@/utils/dateUtils";
 import AppCard from "@/components/cards/AppCard";
 
 export default function EventWelcomeCard({
@@ -13,6 +13,9 @@ export default function EventWelcomeCard({
   venue,
   startDate,
   endDate,
+  startTime,
+  endTime,
+  timezone,
   router,
   dir,
   actionLabel,
@@ -110,19 +113,28 @@ export default function EventWelcomeCard({
         {startDate && endDate ? (
           startDate === endDate ? (
             <Typography variant="h6" sx={{ fontSize: { xs: 16, md: 20 } }}>
-              {formatDateWithShortMonth(
+              {formatDateWithTime(
                 startDate,
-                isArabic ? "ar-SA" : "en-GB"
+                startTime || null,
+                isArabic ? "ar-SA" : "en-GB",
+                timezone || null
+              )}
+              {startTime && endTime && startTime !== endTime && (
+                <> - {formatTime(endTime, isArabic ? "ar-SA" : "en-GB", timezone || null, startDate)}</>
               )}
             </Typography>
           ) : (
             <Typography variant="h6" sx={{ fontSize: { xs: 16, md: 20 } }}>
-              {`${formatDateWithShortMonth(
+              {`${formatDateWithTime(
                 startDate,
-                isArabic ? "ar-SA" : "en-GB"
-              )} ${t.to} ${formatDateWithShortMonth(
+                startTime || null,
+                isArabic ? "ar-SA" : "en-GB",
+                timezone || null
+              )} ${t.to} ${formatDateWithTime(
                 endDate,
-                isArabic ? "ar-SA" : "en-GB"
+                endTime || null,
+                isArabic ? "ar-SA" : "en-GB",
+                timezone || null
               )}`}
             </Typography>
           )

@@ -34,6 +34,7 @@ import RichTextEditor from "@/components/RichTextEditor";
 import CountryCodeSelector from "@/components/CountryCodeSelector";
 import { DEFAULT_ISO_CODE, DEFAULT_COUNTRY_CODE, getCountryCodeByIsoCode, COUNTRY_CODES } from "@/utils/countryCodes";
 import { validatePhoneNumber } from "@/utils/phoneValidation";
+import { convertTimeToLocal, convertTimeFromLocal } from "@/utils/dateUtils";
 
 const translations = {
   en: {
@@ -43,6 +44,8 @@ const translations = {
     slug: "Slug",
     startDate: "Start Date",
     endDate: "End Date",
+    startTime: "Start Time",
+    endTime: "End Time",
     venue: "Venue",
     description: "Description",
     capacity: "Capacity",
@@ -100,6 +103,8 @@ const translations = {
     slug: "المعرف",
     startDate: "تاريخ البدء",
     endDate: "تاريخ الانتهاء",
+    startTime: "وقت البدء",
+    endTime: "وقت الانتهاء",
     venue: "المكان",
     description: "الوصف",
     capacity: "السعة",
@@ -185,11 +190,18 @@ const EventModal = ({
     backgroundAr: null,
   });
 
+  const getUserTimezone = () => {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+  };
+
   const [formData, setFormData] = useState({
     name: "",
     slug: "",
     startDate: "",
     endDate: "",
+    startTime: "",
+    endTime: "",
+    timezone: getUserTimezone(),
     venue: "",
     description: "",
     logo: null,
@@ -234,6 +246,13 @@ const EventModal = ({
         endDate: initialValues.endDate
           ? new Date(initialValues.endDate).toISOString().split("T")[0]
           : "",
+        startTime: initialValues.startTime && initialValues.timezone
+          ? convertTimeToLocal(initialValues.startTime, initialValues.startDate, initialValues.timezone)
+          : (initialValues.startTime || ""),
+        endTime: initialValues.endTime && initialValues.timezone
+          ? convertTimeToLocal(initialValues.endTime, initialValues.endDate || initialValues.startDate, initialValues.timezone)
+          : (initialValues.endTime || ""),
+        timezone: getUserTimezone(),
         venue: initialValues.venue || "",
         description: initialValues.description || "",
         capacity: initialValues.capacity?.toString() || "",
@@ -320,6 +339,9 @@ const EventModal = ({
         slug: "",
         startDate: "",
         endDate: "",
+        startTime: "",
+        endTime: "",
+        timezone: getUserTimezone(),
         venue: "",
         description: "",
         logo: null,
@@ -866,6 +888,13 @@ const EventModal = ({
         slug: formData.slug || slugify(formData.name),
         startDate: formData.startDate,
         endDate: formData.endDate,
+        ...(isClosed && formData.startTime
+          ? { startTime: convertTimeFromLocal(formData.startTime, formData.startDate, formData.timezone) }
+          : {}),
+        ...(isClosed && formData.endTime
+          ? { endTime: convertTimeFromLocal(formData.endTime, formData.endDate || formData.startDate, formData.timezone) }
+          : {}),
+        ...(isClosed ? { timezone: formData.timezone } : {}),
         venue: formData.venue,
         description: formData.description || "",
         capacity: formData.capacity || 999,
@@ -972,6 +1001,28 @@ const EventModal = ({
               InputLabelProps={{ shrink: true }}
               fullWidth
             />
+            {isClosed && (
+              <>
+                <TextField
+                  label={t.startTime}
+                  name="startTime"
+                  type="time"
+                  value={formData.startTime}
+                  onChange={handleInputChange}
+                  InputLabelProps={{ shrink: true }}
+                  fullWidth
+                />
+                <TextField
+                  label={t.endTime}
+                  name="endTime"
+                  type="time"
+                  value={formData.endTime}
+                  onChange={handleInputChange}
+                  InputLabelProps={{ shrink: true }}
+                  fullWidth
+                />
+              </>
+            )}
             <TextField
               label={`${t.venue} *`}
               name="venue"

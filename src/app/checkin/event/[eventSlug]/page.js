@@ -32,7 +32,7 @@ import Background from "@/components/Background";
 import EventWelcomeCard from "@/components/cards/EventWelcomeCard";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
-import { formatDateWithShortMonth } from "@/utils/dateUtils";
+import { formatDateWithTime, formatTime } from "@/utils/dateUtils";
 
 export default function EventDetails() {
   const { eventSlug } = useParams();
@@ -299,7 +299,7 @@ export default function EventDetails() {
     );
   }
 
-  const { name, venue, startDate, endDate, logoUrl, description } = event;
+  const { name, venue, startDate, endDate, startTime, endTime, timezone, logoUrl, description } = event;
   const isArabic = dir === "rtl";
   const background = getBackground;
 
@@ -545,19 +545,28 @@ export default function EventDetails() {
                   {startDate && endDate ? (
                     startDate === endDate ? (
                       <Typography variant="h6" sx={{ fontSize: { xs: 16, md: 20 } }}>
-                        {formatDateWithShortMonth(
+                        {formatDateWithTime(
                           startDate,
-                          isArabic ? "ar-SA" : "en-GB"
+                          startTime || null,
+                          isArabic ? "ar-SA" : "en-GB",
+                          timezone || null
+                        )}
+                        {startTime && endTime && startTime !== endTime && (
+                          <> - {formatTime(endTime, isArabic ? "ar-SA" : "en-GB", timezone || null, startDate)}</>
                         )}
                       </Typography>
                     ) : (
                       <Typography variant="h6" sx={{ fontSize: { xs: 16, md: 20 } }}>
-                        {`${formatDateWithShortMonth(
+                        {`${formatDateWithTime(
                           startDate,
-                          isArabic ? "ar-SA" : "en-GB"
-                        )} ${t.to} ${formatDateWithShortMonth(
+                          startTime || null,
+                          isArabic ? "ar-SA" : "en-GB",
+                          timezone || null
+                        )} ${t.to} ${formatDateWithTime(
                           endDate,
-                          isArabic ? "ar-SA" : "en-GB"
+                          endTime || null,
+                          isArabic ? "ar-SA" : "en-GB",
+                          timezone || null
                         )}`}
                       </Typography>
                     )
@@ -755,6 +764,9 @@ export default function EventDetails() {
             venue={venue}
             startDate={startDate}
             endDate={endDate}
+            startTime={startTime}
+            endTime={endTime}
+            timezone={timezone}
             router={router}
             dir={dir}
             actionLabel={t.confirmPresence}

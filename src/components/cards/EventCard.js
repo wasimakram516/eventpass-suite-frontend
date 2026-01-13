@@ -12,7 +12,7 @@ import {
 import AppCard from "@/components/cards/AppCard";
 import InitialsPlaceholder from "@/components/InitialsPlaceholder";
 import ICONS from "@/utils/iconUtil";
-import { formatDate } from "@/utils/dateUtils";
+import { formatDate, formatDateWithTime, formatTime } from "@/utils/dateUtils";
 
 export default function EventCardBase({
   event, // event object (works for public or closed)
@@ -152,10 +152,26 @@ export default function EventCardBase({
           <ICONS.event fontSize="small" sx={{ opacity: 0.7 }} />
           <strong>{t.dateRange}:</strong>&nbsp;
           {event?.startDate
-            ? `${formatDate(event.startDate)} → ${event?.endDate && event.endDate !== event.startDate
-              ? formatDate(event.endDate)
-              : formatDate(event.startDate)
-            }`
+            ? (() => {
+                const eventTimezone = event.timezone || null;
+                if (event?.endDate && event.endDate !== event.startDate) {
+                  const startFormatted = event.startTime
+                    ? formatDateWithTime(event.startDate, event.startTime, "en-GB", eventTimezone)
+                    : formatDate(event.startDate);
+                  const endFormatted = event.endTime
+                    ? formatDateWithTime(event.endDate, event.endTime, "en-GB", eventTimezone)
+                    : formatDate(event.endDate);
+                  return `${startFormatted} → ${endFormatted}`;
+                } else {
+                  const dateFormatted = event.startTime
+                    ? formatDateWithTime(event.startDate, event.startTime, "en-GB", eventTimezone)
+                    : formatDate(event.startDate);
+                  if (event.startTime && event.endTime && event.startTime !== event.endTime) {
+                    return `${dateFormatted} - ${formatTime(event.endTime, "en-GB", eventTimezone, event.startDate)}`;
+                  }
+                  return dateFormatted;
+                }
+              })()
             : "N/A"}
         </Typography>
 
