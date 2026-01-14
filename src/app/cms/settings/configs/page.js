@@ -194,57 +194,63 @@ export default function GlobalConfigPage() {
   useEffect(() => {
     (async () => {
       setLoading(true);
-      const res = await getGlobalConfig();
-      const cfg =
-        res && typeof res === "object" && "data" in res ? res.data : res;
+      try {
+        const res = await getGlobalConfig();
+        const cfg =
+          res && typeof res === "object" && "data" in res ? res.data : res;
 
-      if (!cfg) {
-        setConfig(null);
-        return;
-      }
+        if (!cfg) {
+          setConfig(null);
+          setLoading(false);
+          return;
+        }
 
-      setConfig(cfg);
-      setLoading(false);
-      setForm((prev) => ({
-        ...prev,
-        appName: cfg.appName || "",
-        contact: {
-          email: cfg.contact?.email || "",
-          phone: cfg.contact?.phone || "",
-        },
-        support: {
-          email: cfg.support?.email || "",
-          phone: cfg.support?.phone || "",
-        },
-        poweredBy: {
-          text: cfg.poweredBy?.text || "",
-          mediaUrl: cfg.poweredBy?.mediaUrl || "",
-        },
-        socialLinks: {
-          facebook: cfg.socialLinks?.facebook || "",
-          instagram: cfg.socialLinks?.instagram || "",
-          linkedin: cfg.socialLinks?.linkedin || "",
-          website: cfg.socialLinks?.website || "",
-        },
-        companyLogoUrl: cfg.companyLogoUrl || "",
-        brandingMediaUrl: cfg.brandingMediaUrl || "",
-        clientLogos: Array.isArray(cfg.clientLogos)
-          ? cfg.clientLogos.map((l) => ({
+        setConfig(cfg);
+        setForm((prev) => ({
+          ...prev,
+          appName: cfg.appName || "",
+          contact: {
+            email: cfg.contact?.email || "",
+            phone: cfg.contact?.phone || "",
+          },
+          support: {
+            email: cfg.support?.email || "",
+            phone: cfg.support?.phone || "",
+          },
+          poweredBy: {
+            text: cfg.poweredBy?.text || "",
+            mediaUrl: cfg.poweredBy?.mediaUrl || "",
+          },
+          socialLinks: {
+            facebook: cfg.socialLinks?.facebook || "",
+            instagram: cfg.socialLinks?.instagram || "",
+            linkedin: cfg.socialLinks?.linkedin || "",
+            website: cfg.socialLinks?.website || "",
+          },
+          companyLogoUrl: cfg.companyLogoUrl || "",
+          brandingMediaUrl: cfg.brandingMediaUrl || "",
+          clientLogos: Array.isArray(cfg.clientLogos)
+            ? cfg.clientLogos.map((l) => ({
               _id: l._id,
               name: l.name || "",
               website: l.website || "",
               logoUrl: l.logoUrl || "",
             }))
-          : [],
-        removeLogoIds: [],
-        clearAllClientLogos: false,
-        removeCompanyLogo: false,
-        removeBrandingMedia: false,
-        removePoweredByMedia: false,
-        companyLogoFile: null,
-        brandingMediaFile: null,
-        poweredByMediaFile: null,
-      }));
+            : [],
+          removeLogoIds: [],
+          clearAllClientLogos: false,
+          removeCompanyLogo: false,
+          removeBrandingMedia: false,
+          removePoweredByMedia: false,
+          companyLogoFile: null,
+          brandingMediaFile: null,
+          poweredByMediaFile: null,
+        }));
+      } catch (error) {
+        setConfig(null);
+      } finally {
+        setLoading(false);
+      }
     })();
   }, []);
 
@@ -479,11 +485,11 @@ export default function GlobalConfigPage() {
         },
         clientLogos: Array.isArray(saved.clientLogos)
           ? saved.clientLogos.map((l) => ({
-              _id: l._id,
-              name: l.name || "",
-              website: l.website || "",
-              logoUrl: l.logoUrl || "",
-            }))
+            _id: l._id,
+            name: l.name || "",
+            website: l.website || "",
+            logoUrl: l.logoUrl || "",
+          }))
           : [],
         companyLogoFile: null,
         brandingMediaFile: null,
@@ -1009,7 +1015,7 @@ export default function GlobalConfigPage() {
             >
               {form.brandingMediaUrl &&
                 (form.brandingMediaFile?.type?.startsWith("video/") ||
-                (!form.brandingMediaFile && isVideo(form.brandingMediaUrl)) ? (
+                  (!form.brandingMediaFile && isVideo(form.brandingMediaUrl)) ? (
                   <Box
                     component="video"
                     src={form.brandingMediaUrl}
@@ -1075,8 +1081,8 @@ export default function GlobalConfigPage() {
             >
               {form.poweredBy.mediaUrl &&
                 (form.poweredByMediaFile?.type?.startsWith("video/") ||
-                (!form.poweredByMediaFile &&
-                  isVideo(form.poweredBy.mediaUrl)) ? (
+                  (!form.poweredByMediaFile &&
+                    isVideo(form.poweredBy.mediaUrl)) ? (
                   <Box
                     component="video"
                     src={form.poweredBy.mediaUrl}
@@ -1273,10 +1279,10 @@ export default function GlobalConfigPage() {
                 ? t.saving
                 : t.creating
               : config
-              ? isMobile
-                ? t.save
-                : t.saveChanges
-              : t.create}
+                ? isMobile
+                  ? t.save
+                  : t.saveChanges
+                : t.create}
           </Button>
         </DialogActions>
       </Dialog>
