@@ -663,8 +663,8 @@ export default function ViewRegistrations() {
       // Download sample Excel file
       const sampleData = await downloadCheckInSampleExcel(eventSlug);
       const sampleBlob = new Blob([sampleData], {
-      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    });
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
       const sampleLink = document.createElement("a");
       sampleLink.href = window.URL.createObjectURL(sampleBlob);
       sampleLink.download = `${eventSlug}_registrations_template.xlsx`;
@@ -858,7 +858,16 @@ export default function ViewRegistrations() {
   }
 
   return (
-    <Container dir={dir} maxWidth="lg">
+    <Container
+      dir={dir}
+      maxWidth="lg"
+      sx={{
+        width: "100%",
+        maxWidth: "100%",
+        px: { xs: 2, sm: 3 },
+        boxSizing: "border-box",
+      }}
+    >
       <BreadcrumbsNav />
 
       <Stack
@@ -1229,300 +1238,323 @@ export default function ViewRegistrations() {
         <NoDataAvailable />
       ) : (
         <>
-          <Grid container spacing={4} justifyContent="center">
-            {paginated.map((reg) => (
-              <Grid item xs={12} sm={6} md={4} key={reg._id}>
-                <Card
+          <Box
+            sx={{
+              width: "100%",
+              maxWidth: "100%",
+              boxSizing: "border-box",
+            }}
+          >
+            <Grid container spacing={3} justifyContent="center">
+              {paginated.map((reg) => (
+                <Grid
+                  item
+                  xs={12}
+                  sm={6}
+                  md={4}
+                  key={reg._id}
                   sx={{
-                    width: { xs: "100%", sm: 340 },
-                    height: "100%",
-                    borderRadius: 4,
-                    overflow: "hidden",
-                    boxShadow: "0 6px 18px rgba(0,0,0,0.12)",
-                    display: "flex",
-                    flexDirection: "column",
-                    transition: "all 0.3s ease",
-                    "&:hover": {
-                      transform: "translateY(-2px)",
-                      boxShadow: "0 12px 28px rgba(0,0,0,0.25)",
-                    },
+                    width: { xs: "100%", sm: "auto" },
+                    boxSizing: "border-box",
                   }}
                 >
-                  <Box
+                  <Card
                     sx={{
-                      background: "linear-gradient(to right, #f5f5f5, #fafafa)",
-                      borderBottom: "1px solid",
-                      borderColor: "divider",
-                      p: 2,
-                    }}
-                  >
-                    <Stack spacing={0.6}>
-                      <Stack
-                        direction="row"
-                        alignItems="center"
-                        sx={{ gap: dir === "rtl" ? 1 : 1 }}
-                      >
-                        <ICONS.qrcode
-                          sx={{ fontSize: 28, color: "primary.main" }}
-                        />
-                        <Box
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 1,
-                            bgcolor: "rgba(0,0,0,0.04)",
-                            px: 1.2,
-                            py: 0.5,
-                            borderRadius: 1.5,
-                            flexWrap: "wrap",
-                            flex: 1,
-                          }}
-                        >
-                          <Typography
-                            variant="subtitle2"
-                            sx={{ fontWeight: 600, color: "text.secondary" }}
-                          >
-                            {t.token}:
-                          </Typography>
-                          <Typography
-                            variant="subtitle1"
-                            fontWeight="bold"
-                            sx={{
-                              fontFamily: "monospace",
-                              wordBreak: "break-all",
-                              color: "primary.main",
-                            }}
-                          >
-                            {reg.token}
-                          </Typography>
-                          <Tooltip title={t.copyToken}>
-                            <IconButton
-                              size="small"
-                              onClick={() =>
-                                navigator.clipboard.writeText(reg.token)
-                              }
-                              sx={{
-                                p: 0.5,
-                                color: "primary.main",
-                                "&:hover": {
-                                  backgroundColor: "transparent",
-                                  opacity: 0.8,
-                                },
-                              }}
-                            >
-                              <ICONS.copy fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        </Box>
-                      </Stack>
-
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 0.5,
-                          color: "text.secondary",
-                        }}
-                      >
-                        <ICONS.time fontSize="inherit" sx={{ opacity: 0.7 }} />
-                        <Box
-                          component="span"
-                          sx={{ direction: "ltr", unicodeBidi: "embed" }}
-                        >
-                          {formatDateTimeWithLocale(reg.createdAt)}
-                        </Box>
-                      </Typography>
-
-                      <Stack
-                        direction="row"
-                        alignItems="center"
-                        spacing={0.6}
-                        sx={{ mt: 0.3 }}
-                      >
-                        {renderInvitationStatus(reg)}
-                      </Stack>
-
-                      <Stack direction="row" alignItems="center" spacing={0.6}>
-                        {renderConfirmation(reg)}
-                      </Stack>
-                    </Stack>
-                  </Box>
-
-                  <CardContent sx={{ flexGrow: 1, px: 2, py: 1.5 }}>
-                    {dynamicFields.map((f) => {
-                      const fieldValue =
-                        reg.customFields?.[f.name] ?? reg[f.name] ?? null;
-                      let displayValue = "—";
-
-                      if (fieldValue) {
-                        const valueStr = String(fieldValue).trim();
-                        if (valueStr) {
-                          displayValue = valueStr;
-                        }
-                      }
-
-                      return (
-                        <Box
-                          key={f.name}
-                          sx={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "flex-start",
-                            py: 0.8,
-                            borderBottom: "1px solid",
-                            borderColor: "divider",
-                            "&:last-of-type": { borderBottom: "none" },
-                          }}
-                        >
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 0.6,
-                              color: "text.secondary",
-                            }}
-                          >
-                            <ICONS.personOutline
-                              fontSize="small"
-                              sx={{ opacity: 0.6 }}
-                            />
-                            {getFieldLabel(f.name)}
-                          </Typography>
-
-                          <Typography
-                            variant="body2"
-                            fontWeight={500}
-                            sx={{
-                              ml: 2,
-                              textAlign: dir === "rtl" ? "left" : "right",
-                              flex: 1,
-                              color: "text.primary",
-                              ...wrapTextBox,
-                            }}
-                          >
-                            {(() => {
-                              // If this is a phone field, format it with isoCode
-                              if (f.type === "phone" || (!eventDetails?.formFields?.length && f.name === "phone")) {
-                                const { formatPhoneNumberForDisplay } = require("@/utils/countryCodes");
-                                return formatPhoneNumberForDisplay(displayValue, reg.isoCode);
-                              }
-                              return displayValue;
-                            })()}
-                          </Typography>
-                        </Box>
-                      );
-                    })}
-                  </CardContent>
-
-                  <CardActions
-                    sx={{
-                      justifyContent: "space-between",
-                      borderTop: "1px solid rgba(0,0,0,0.08)",
-                      bgcolor: "rgba(0,0,0,0.02)",
-                      py: 1,
+                      width: "100%",
+                      height: "100%",
+                      borderRadius: 4,
+                      overflow: "hidden",
+                      boxShadow: "0 6px 18px rgba(0,0,0,0.12)",
+                      display: "flex",
                       flexDirection: "column",
-                      gap: 1,
+                      transition: "all 0.3s ease",
+                      "&:hover": {
+                        transform: "translateY(-2px)",
+                        boxShadow: "0 12px 28px rgba(0,0,0,0.25)",
+                      },
                     }}
                   >
                     <Box
                       sx={{
-                        display: "flex",
-                        flexDirection: "row",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        gap: 1.2,
-                        width: "100%",
+                        background: "linear-gradient(to right, #f5f5f5, #fafafa)",
+                        borderBottom: "1px solid",
+                        borderColor: "divider",
+                        p: 2,
                       }}
                     >
-                      <FormControl size="small" sx={{ minWidth: 140 }}>
-                        <Select
-                          value={reg.approvalStatus || "pending"}
-                          onChange={(e) =>
-                            handleApprovalChange(reg._id, e.target.value)
-                          }
-                          sx={{ fontSize: "0.9rem" }}
+                      <Stack spacing={0.6}>
+                        <Stack
+                          direction="row"
+                          alignItems="center"
+                          sx={{
+                            gap: dir === "rtl" ? 1 : 1,
+                            width: "100%",
+                          }}
                         >
-                          <MenuItem value="pending">{t.pending}</MenuItem>
-                          <MenuItem value="confirmed">{t.confirmed}</MenuItem>
-                          <MenuItem value="not_attending">
-                            {t.notConfirmed}
-                          </MenuItem>
-                        </Select>
-                      </FormControl>
-
-                      <Box sx={{ display: "flex", gap: 0.5 }}>
-                        <Tooltip title={t.viewWalkIns}>
-                          <IconButton
-                            color="info"
-                            onClick={() => {
-                              setSelectedRegistration(reg);
-                              setWalkInModalOpen(true);
-                            }}
+                          <ICONS.qrcode
+                            sx={{ fontSize: 28, color: "primary.main" }}
+                          />
+                          <Box
                             sx={{
-                              "&:hover": { transform: "scale(1.1)" },
-                              transition: "0.2s",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 1,
+                              bgcolor: "rgba(0,0,0,0.04)",
+                              px: 1.2,
+                              py: 0.5,
+                              borderRadius: 1.5,
+                              flexWrap: "wrap",
+                              flex: 1,
+                              minWidth: 0,
                             }}
                           >
-                            <ICONS.view />
-                          </IconButton>
-                        </Tooltip>
+                            <Typography
+                              variant="subtitle2"
+                              sx={{ fontWeight: 600, color: "text.secondary" }}
+                            >
+                              {t.token}:
+                            </Typography>
+                            <Typography
+                              variant="subtitle1"
+                              fontWeight="bold"
+                              sx={{
+                                fontFamily: "monospace",
+                                wordBreak: "break-all",
+                                color: "primary.main",
+                              }}
+                            >
+                              {reg.token}
+                            </Typography>
+                            <Tooltip title={t.copyToken}>
+                              <IconButton
+                                size="small"
+                                onClick={() =>
+                                  navigator.clipboard.writeText(reg.token)
+                                }
+                                sx={{
+                                  p: 0.5,
+                                  color: "primary.main",
+                                  "&:hover": {
+                                    backgroundColor: "transparent",
+                                    opacity: 0.8,
+                                  },
+                                }}
+                              >
+                                <ICONS.copy fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          </Box>
+                        </Stack>
 
-                        <Tooltip title={t.editRegistration}>
-                          <IconButton
-                            color="warning"
-                            onClick={() => {
-                              setEditingReg(reg);
-                              setEditModalOpen(true);
-                            }}
-                            sx={{
-                              "&:hover": { transform: "scale(1.1)" },
-                              transition: "0.2s",
-                            }}
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 0.5,
+                            color: "text.secondary",
+                          }}
+                        >
+                          <ICONS.time fontSize="inherit" sx={{ opacity: 0.7 }} />
+                          <Box
+                            component="span"
+                            sx={{ direction: "ltr", unicodeBidi: "embed" }}
                           >
-                            <ICONS.edit fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
+                            {formatDateTimeWithLocale(reg.createdAt)}
+                          </Box>
+                        </Typography>
 
-                        <Tooltip title={t.deleteRecord}>
-                          <IconButton
-                            color="error"
-                            onClick={() => {
-                              setRegistrationToDelete(reg._id);
-                              setDeleteDialogOpen(true);
-                            }}
-                            sx={{
-                              "&:hover": { transform: "scale(1.1)" },
-                              transition: "0.2s",
-                            }}
-                          >
-                            <ICONS.delete />
-                          </IconButton>
-                        </Tooltip>
+                        <Stack
+                          direction="row"
+                          alignItems="center"
+                          spacing={0.6}
+                          sx={{ mt: 0.3 }}
+                        >
+                          {renderInvitationStatus(reg)}
+                        </Stack>
 
-                        <Tooltip title={t.shareLink}>
-                          <IconButton
-                            color="info"
-                            onClick={() => {
-                              setRegistrationToShare(reg);
-                              setShareModalOpen(true);
-                            }}
-                            sx={{
-                              "&:hover": { transform: "scale(1.1)" },
-                              transition: "0.2s",
-                            }}
-                          >
-                            <ICONS.share fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      </Box>
+                        <Stack direction="row" alignItems="center" spacing={0.6}>
+                          {renderConfirmation(reg)}
+                        </Stack>
+                      </Stack>
                     </Box>
-                  </CardActions>
-                </Card>
-              </Grid>
-            ))}
-          </Grid>
+
+                    <CardContent sx={{ flexGrow: 1, px: 2, py: 1.5 }}>
+                      {dynamicFields.map((f) => {
+                        const fieldValue =
+                          reg.customFields?.[f.name] ?? reg[f.name] ?? null;
+                        let displayValue = "—";
+
+                        if (fieldValue) {
+                          const valueStr = String(fieldValue).trim();
+                          if (valueStr) {
+                            displayValue = valueStr;
+                          }
+                        }
+
+                        return (
+                          <Box
+                            key={f.name}
+                            sx={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "flex-start",
+                              py: 0.8,
+                              borderBottom: "1px solid",
+                              borderColor: "divider",
+                              "&:last-of-type": { borderBottom: "none" },
+                            }}
+                          >
+                            <Typography
+                              variant="body2"
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 0.6,
+                                color: "text.secondary",
+                              }}
+                            >
+                              <ICONS.personOutline
+                                fontSize="small"
+                                sx={{ opacity: 0.6 }}
+                              />
+                              {getFieldLabel(f.name)}
+                            </Typography>
+
+                            <Typography
+                              variant="body2"
+                              fontWeight={500}
+                              sx={{
+                                ml: 2,
+                                textAlign: dir === "rtl" ? "left" : "right",
+                                flex: 1,
+                                color: "text.primary",
+                                ...wrapTextBox,
+                              }}
+                            >
+                              {(() => {
+                                // If this is a phone field, format it with isoCode
+                                if (f.type === "phone" || (!eventDetails?.formFields?.length && f.name === "phone")) {
+                                  const { formatPhoneNumberForDisplay } = require("@/utils/countryCodes");
+                                  return formatPhoneNumberForDisplay(displayValue, reg.isoCode);
+                                }
+                                return displayValue;
+                              })()}
+                            </Typography>
+                          </Box>
+                        );
+                      })}
+                    </CardContent>
+
+                    <CardActions
+                      sx={{
+                        justifyContent: "space-between",
+                        borderTop: "1px solid rgba(0,0,0,0.08)",
+                        bgcolor: "rgba(0,0,0,0.02)",
+                        py: 1,
+                        flexDirection: "column",
+                        gap: 1,
+                      }}
+                    >
+                      <Box
+                        sx={{
+                          display: "flex",
+                          flexDirection: "row",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          gap: 1.2,
+                          width: "100%",
+                          flexWrap: { xs: "wrap", sm: "nowrap" },
+                        }}
+                      >
+                        <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 140 }, flexShrink: 0 }}>
+                          <Select
+                            value={reg.approvalStatus || "pending"}
+                            onChange={(e) =>
+                              handleApprovalChange(reg._id, e.target.value)
+                            }
+                            sx={{ fontSize: "0.9rem" }}
+                          >
+                            <MenuItem value="pending">{t.pending}</MenuItem>
+                            <MenuItem value="confirmed">{t.confirmed}</MenuItem>
+                            <MenuItem value="not_attending">
+                              {t.notConfirmed}
+                            </MenuItem>
+                          </Select>
+                        </FormControl>
+
+                        <Box sx={{ display: "flex", gap: 0.5, justifyContent: { xs: "center", sm: "flex-end" }, width: { xs: "100%", sm: "auto" } }}>
+                          <Tooltip title={t.viewWalkIns}>
+                            <IconButton
+                              color="info"
+                              onClick={() => {
+                                setSelectedRegistration(reg);
+                                setWalkInModalOpen(true);
+                              }}
+                              sx={{
+                                "&:hover": { transform: "scale(1.1)" },
+                                transition: "0.2s",
+                              }}
+                            >
+                              <ICONS.view />
+                            </IconButton>
+                          </Tooltip>
+
+                          <Tooltip title={t.editRegistration}>
+                            <IconButton
+                              color="warning"
+                              onClick={() => {
+                                setEditingReg(reg);
+                                setEditModalOpen(true);
+                              }}
+                              sx={{
+                                "&:hover": { transform: "scale(1.1)" },
+                                transition: "0.2s",
+                              }}
+                            >
+                              <ICONS.edit fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+
+                          <Tooltip title={t.deleteRecord}>
+                            <IconButton
+                              color="error"
+                              onClick={() => {
+                                setRegistrationToDelete(reg._id);
+                                setDeleteDialogOpen(true);
+                              }}
+                              sx={{
+                                "&:hover": { transform: "scale(1.1)" },
+                                transition: "0.2s",
+                              }}
+                            >
+                              <ICONS.delete />
+                            </IconButton>
+                          </Tooltip>
+
+                          <Tooltip title={t.shareLink}>
+                            <IconButton
+                              color="info"
+                              onClick={() => {
+                                setRegistrationToShare(reg);
+                                setShareModalOpen(true);
+                              }}
+                              sx={{
+                                "&:hover": { transform: "scale(1.1)" },
+                                transition: "0.2s",
+                              }}
+                            >
+                              <ICONS.share fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
+                      </Box>
+                    </CardActions>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
+          </Box>
 
           <Box display="flex" justifyContent="center" mt={3}>
             {filteredRegistrations.length > limit && (
