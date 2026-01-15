@@ -8,6 +8,7 @@ import {
   Container,
   Divider,
   Stack,
+  CircularProgress,
 } from "@mui/material";
 import SupportAgentIcon from "@mui/icons-material/SupportAgent";
 import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
@@ -19,6 +20,7 @@ import { getModules } from "@/services/moduleService";
 import { getModuleIcon } from "@/utils/iconMapper";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
+import { useRouter } from "next/navigation";
 
 const translations = {
   en: {
@@ -43,9 +45,13 @@ export default function Modules() {
   const { globalConfig } = useGlobalConfig();
   const { dir, align, language, t } = useI18nLayout(translations);
   const [modules, setModules] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   useEffect(() => {
     const fetchModules = async () => {
+      if (!user) return;
+
       const data = await getModules();
 
       // Filter by user role
@@ -54,11 +60,33 @@ export default function Modules() {
           ? data.filter((mod) => user.modulePermissions.includes(mod.key))
           : null;
 
+      if (user?.role === "staff" && permitted?.length === 1) {
+        router.replace(`/staff/${permitted[0].key}/verify`);
+        return;
+      }
+
       setModules(permitted);
+      setLoading(false);
     };
 
     fetchModules();
-  }, [user]);
+  }, [user, router]);
+
+  if (loading) {
+    return (
+      <Box
+        sx={{
+          minHeight: "calc(100vh - 40px)",
+          bgcolor: "background.default",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
 
   return (
     <Box dir={dir} sx={{ py: 4, bgcolor: "background.default" }}>
@@ -114,9 +142,9 @@ export default function Modules() {
             )}
           </Stack>
         ) : (
-          <Grid 
-            container 
-            spacing={3} 
+          <Grid
+            container
+            spacing={3}
             justifyContent="center"
           >
             {modules?.map((mod) => (

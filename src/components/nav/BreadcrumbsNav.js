@@ -118,6 +118,16 @@ const segmentMap = {
     label: "SurveyGuru",
     icon: <ICONS.email fontSize="small" sx={{ mr: 0.5 }} />,
   },
+  digipass: {
+    label: "DigiPass",
+    icon: <ICONS.badge fontSize="small" sx={{ mr: 0.5 }} />,
+  },
+
+  // Staff pages
+  verify: {
+    label: "Verify",
+    icon: <ICONS.checkCircle fontSize="small" sx={{ mr: 0.5 }} />,
+  },
 
   // Sub pages
   events: {
@@ -179,12 +189,29 @@ export default function BreadcrumbsNav() {
   const pathname = usePathname();
   const router = useRouter();
 
-  const segments = pathname.split("/").filter((seg) => seg && seg !== "cms");
+  const isStaffPath = pathname.startsWith("/staff");
+  const basePath = isStaffPath ? "/staff" : "/cms";
+  const baseLabel = isStaffPath ? "Modules" : "Dashboard";
+  const filterSeg = isStaffPath ? "staff" : "cms";
 
-  const paths = segments.map((seg, i) => ({
-    segment: seg,
-    href: "/cms/" + segments.slice(0, i + 1).join("/"),
-  }));
+  if (isStaffPath && pathname === "/staff") {
+    return null;
+  }
+
+  const segments = pathname.split("/").filter((seg) => seg && seg !== filterSeg && seg !== "");
+
+  const paths = segments.map((seg, i) => {
+    if (isStaffPath && i === 0 && segments.length > 1 && segments[1] === "verify") {
+      return {
+        segment: seg,
+        href: basePath,
+      };
+    }
+    return {
+      segment: seg,
+      href: basePath + "/" + segments.slice(0, i + 1).join("/"),
+    };
+  });
 
   return (
     <Box sx={{ mb: 3 }}>
@@ -192,15 +219,15 @@ export default function BreadcrumbsNav() {
         <Link
           underline="hover"
           color="inherit"
-          href="/cms"
+          href={basePath}
           onClick={(e) => {
             e.preventDefault();
-            router.push("/cms");
+            router.push(basePath);
           }}
         >
           <Box sx={{ display: "flex", alignItems: "center" }}>
             <ICONS.home fontSize="small" sx={{ mr: 0.5 }} />
-            Dashboard
+            {baseLabel}
           </Box>
         </Link>
 
