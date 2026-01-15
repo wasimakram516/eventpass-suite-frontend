@@ -13,6 +13,7 @@ import {
   ListItem,
   ListItemText,
   ListItemIcon,
+  Container,
 } from "@mui/material";
 
 import QrScanner from "@/components/QrScanner";
@@ -22,6 +23,7 @@ import useI18nLayout from "@/hooks/useI18nLayout";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import { printZpl } from "@/utils/printZpl";
 import { useMessage } from "@/contexts/MessageContext";
+import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 
 const translations = {
   en: {
@@ -166,221 +168,224 @@ export default function VerifyPage() {
   };
 
   return (
-    <Box
-      dir={dir}
-      p={3}
-      maxWidth={500}
-      mx="auto"
-      minHeight="90vh"
-      display="flex"
-      flexDirection="column"
-      justifyContent="center"
-      alignItems="center"
-    >
-      {/* Initial Options */}
-      {!showScanner && !loading && !result && !error && (
-        <Box textAlign="center" my={4} width="100%">
-          <Stack spacing={2} alignItems="center">
-            <Typography variant="h6" fontWeight={600}>
-              {t.startVerification}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {t.scanMessage}
-            </Typography>
+    <Container maxWidth="lg" sx={{ py: 3 }}>
+      <BreadcrumbsNav />
+      <Box
+        dir={dir}
+        p={3}
+        maxWidth={500}
+        mx="auto"
+        minHeight="90vh"
+        display="flex"
+        flexDirection="column"
+        justifyContent="center"
+        alignItems="center"
+      >
+        {/* Initial Options */}
+        {!showScanner && !loading && !result && !error && (
+          <Box textAlign="center" my={4} width="100%">
+            <Stack spacing={2} alignItems="center">
+              <Typography variant="h6" fontWeight={600}>
+                {t.startVerification}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {t.scanMessage}
+              </Typography>
 
-            {!manualMode ? (
-              <>
-                {/* Open Scanner CTA */}
-                <Tooltip title={t.tooltip.openScanner}>
+              {!manualMode ? (
+                <>
+                  {/* Open Scanner CTA */}
+                  <Tooltip title={t.tooltip.openScanner}>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      size="large"
+                      startIcon={<ICONS.qrCodeScanner />}
+                      onClick={() => setShowScanner(true)}
+                      sx={getStartIconSpacing(dir)}
+                      fullWidth
+                    >
+                      {t.openScanner}
+                    </Button>
+                  </Tooltip>
+
+                  {/* Manual Verification CTA */}
                   <Button
-                    variant="contained"
+                    variant="outlined"
                     color="primary"
-                    size="large"
-                    startIcon={<ICONS.qrCodeScanner />}
-                    onClick={() => setShowScanner(true)}
-                    sx={getStartIconSpacing(dir)}
-                    fullWidth
-                  >
-                    {t.openScanner}
-                  </Button>
-                </Tooltip>
-
-                {/* Manual Verification CTA */}
-                <Button
-                  variant="outlined"
-                  color="primary"
-                  startIcon={<ICONS.key />}
-                  onClick={() => {
-                    setManualMode(true);
-                    setToken("");
-                  }}
-                  fullWidth
-                >
-                  {t.manualVerification}
-                </Button>
-
-                {/* Check Printer CTA */}
-                <Button
-                  variant="outlined"
-                  color="secondary"
-                  startIcon={<ICONS.print />}
-                  onClick={checkPrinter}
-                  fullWidth
-                >
-                  {t.checkPrinter}
-                </Button>
-              </>
-            ) : (
-              <>
-                {/* Manual Mode Instructions */}
-                <Typography
-                  variant="body2"
-                  sx={{ mb: 1 }}
-                  color="text.secondary"
-                >
-                  {t.manualInstructions}
-                </Typography>
-
-                <Stack direction="row" spacing={1} width="100%" maxWidth={350}>
-                  <TextField
-                    fullWidth
-                    label={t.enterToken}
-                    value={token}
-                    onChange={(e) => setToken(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && token.trim().length === 10) {
-                        doVerify(token);
-                      }
+                    startIcon={<ICONS.key />}
+                    onClick={() => {
+                      setManualMode(true);
+                      setToken("");
                     }}
-                    inputProps={{ maxLength: 10 }}
-                  />
-                  <Button
-                    variant="contained"
-                    color="secondary"
-                    startIcon={<ICONS.check />}
-                    disabled={token.trim().length !== 10}
-                    onClick={() => doVerify(token)}
-                    sx={{ ...getStartIconSpacing(dir), minWidth: 120, mx: 2 }}
+                    fullWidth
                   >
-                    {t.verify}
+                    {t.manualVerification}
                   </Button>
-                </Stack>
-              </>
-            )}
-          </Stack>
-        </Box>
-      )}
 
-      {/* QR Scanner */}
-      {showScanner && (
-        <Box>
-          <QrScanner
-            onScanSuccess={handleScanSuccess}
-            onError={(err) => {
-              console.error("QR Error", err);
-              setError(err?.toString() || "Camera error. Try again.");
-              setShowScanner(false);
-            }}
-            onCancel={() => setShowScanner(false)}
-          />
-          <Box textAlign="center" mt={2}>
-            <Tooltip title={t.tooltip.cancel}>
+                  {/* Check Printer CTA */}
+                  <Button
+                    variant="outlined"
+                    color="secondary"
+                    startIcon={<ICONS.print />}
+                    onClick={checkPrinter}
+                    fullWidth
+                  >
+                    {t.checkPrinter}
+                  </Button>
+                </>
+              ) : (
+                <>
+                  {/* Manual Mode Instructions */}
+                  <Typography
+                    variant="body2"
+                    sx={{ mb: 1 }}
+                    color="text.secondary"
+                  >
+                    {t.manualInstructions}
+                  </Typography>
+
+                  <Stack direction="row" spacing={1} width="100%" maxWidth={350}>
+                    <TextField
+                      fullWidth
+                      label={t.enterToken}
+                      value={token}
+                      onChange={(e) => setToken(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && token.trim().length === 10) {
+                          doVerify(token);
+                        }
+                      }}
+                      inputProps={{ maxLength: 10 }}
+                    />
+                    <Button
+                      variant="contained"
+                      color="secondary"
+                      startIcon={<ICONS.check />}
+                      disabled={token.trim().length !== 10}
+                      onClick={() => doVerify(token)}
+                      sx={{ ...getStartIconSpacing(dir), minWidth: 120, mx: 2 }}
+                    >
+                      {t.verify}
+                    </Button>
+                  </Stack>
+                </>
+              )}
+            </Stack>
+          </Box>
+        )}
+
+        {/* QR Scanner */}
+        {showScanner && (
+          <Box>
+            <QrScanner
+              onScanSuccess={handleScanSuccess}
+              onError={(err) => {
+                console.error("QR Error", err);
+                setError(err?.toString() || "Camera error. Try again.");
+                setShowScanner(false);
+              }}
+              onCancel={() => setShowScanner(false)}
+            />
+            <Box textAlign="center" mt={2}>
+              <Tooltip title={t.tooltip.cancel}>
+                <Button
+                  variant="text"
+                  color="error"
+                  startIcon={<ICONS.close />}
+                  onClick={() => setShowScanner(false)}
+                  sx={getStartIconSpacing(dir)}
+                >
+                  {t.cancel}
+                </Button>
+              </Tooltip>
+            </Box>
+          </Box>
+        )}
+
+        {/* Loading */}
+        {loading && (
+          <Stack spacing={2} alignItems="center" mt={5}>
+            <CircularProgress />
+            <Typography variant="body2">{t.verifying}</Typography>
+          </Stack>
+        )}
+
+        {/* Success */}
+        {result && (
+          <Stack spacing={3} alignItems="center" textAlign="center" mt={5}>
+            <ICONS.checkCircle sx={{ fontSize: 64, color: "success.main" }} />
+            <Typography variant="h2" color="success.main">
+              {t.verified}
+            </Typography>
+
+            <List sx={{ width: "100%", maxWidth: 400 }}>
+              <ListItem>
+                <ListItemIcon>
+                  <ICONS.key sx={{ color: "text.secondary" }} />
+                </ListItemIcon>
+                <ListItemText
+                  primary={t.token || "Token"}
+                  secondary={result.token || "—"}
+                  primaryTypographyProps={{ fontWeight: 500 }}
+                />
+              </ListItem>
+            </List>
+
+            {/* Print Badge */}
+            <Tooltip title={t.tooltip.print}>
+              <span>
+                <Button
+                  variant="contained"
+                  color="primary"
+                  startIcon={<ICONS.print />}
+                  onClick={handlePrint}
+                  disabled={printing || !result?.zpl}
+                  sx={{ mt: 1, ...getStartIconSpacing(dir) }}
+                >
+                  {printing ? t.printing : t.printBadge}
+                </Button>
+              </span>
+            </Tooltip>
+
+            {/* Scan Another */}
+            <Tooltip title={t.tooltip.scan}>
               <Button
-                variant="text"
-                color="error"
-                startIcon={<ICONS.close />}
-                onClick={() => setShowScanner(false)}
-                sx={getStartIconSpacing(dir)}
+                variant="outlined"
+                startIcon={<ICONS.qrCodeScanner />}
+                onClick={reset}
+                sx={{ mt: 2, ...getStartIconSpacing(dir) }}
               >
-                {t.cancel}
+                {t.scanAnother}
               </Button>
             </Tooltip>
-          </Box>
-        </Box>
-      )}
+          </Stack>
+        )}
 
-      {/* Loading */}
-      {loading && (
-        <Stack spacing={2} alignItems="center" mt={5}>
-          <CircularProgress />
-          <Typography variant="body2">{t.verifying}</Typography>
-        </Stack>
-      )}
-
-      {/* Success */}
-      {result && (
-        <Stack spacing={3} alignItems="center" textAlign="center" mt={5}>
-          <ICONS.checkCircle sx={{ fontSize: 64, color: "success.main" }} />
-          <Typography variant="h2" color="success.main">
-            {t.verified}
-          </Typography>
-
-          <List sx={{ width: "100%", maxWidth: 400 }}>
-            <ListItem>
-              <ListItemIcon>
-                <ICONS.key sx={{ color: "text.secondary" }} />
-              </ListItemIcon>
-              <ListItemText
-                primary={t.token || "Token"}
-                secondary={result.token || "—"}
-                primaryTypographyProps={{ fontWeight: 500 }}
-              />
-            </ListItem>
-          </List>
-
-          {/* Print Badge */}
-          <Tooltip title={t.tooltip.print}>
-            <span>
+        {/* Error */}
+        {error && (
+          <Stack spacing={2} alignItems="center" textAlign="center" mt={5}>
+            <ICONS.errorOutline sx={{ fontSize: 64, color: "error.main" }} />
+            <Typography variant="h6" color="error.main">
+              {error}
+            </Typography>
+            <Tooltip title={t.tooltip.retry}>
               <Button
-                variant="contained"
-                color="primary"
-                startIcon={<ICONS.print />}
-                onClick={handlePrint}
-                disabled={printing || !result?.zpl}
-                sx={{ mt: 1, ...getStartIconSpacing(dir) }}
+                variant="outlined"
+                color="error"
+                startIcon={<ICONS.replay />}
+                onClick={reset}
+                sx={getStartIconSpacing(dir)}
               >
-                {printing ? t.printing : t.printBadge}
+                {t.tryAgain}
               </Button>
-            </span>
-          </Tooltip>
+            </Tooltip>
+          </Stack>
+        )}
 
-          {/* Scan Another */}
-          <Tooltip title={t.tooltip.scan}>
-            <Button
-              variant="outlined"
-              startIcon={<ICONS.qrCodeScanner />}
-              onClick={reset}
-              sx={{ mt: 2, ...getStartIconSpacing(dir) }}
-            >
-              {t.scanAnother}
-            </Button>
-          </Tooltip>
-        </Stack>
-      )}
-
-      {/* Error */}
-      {error && (
-        <Stack spacing={2} alignItems="center" textAlign="center" mt={5}>
-          <ICONS.errorOutline sx={{ fontSize: 64, color: "error.main" }} />
-          <Typography variant="h6" color="error.main">
-            {error}
-          </Typography>
-          <Tooltip title={t.tooltip.retry}>
-            <Button
-              variant="outlined"
-              color="error"
-              startIcon={<ICONS.replay />}
-              onClick={reset}
-              sx={getStartIconSpacing(dir)}
-            >
-              {t.tryAgain}
-            </Button>
-          </Tooltip>
-        </Stack>
-      )}
-
-      <audio ref={successAudioRef} src="/correct.wav" preload="auto" />
-      <audio ref={errorAudioRef} src="/wrong.wav" preload="auto" />
-    </Box>
+        <audio ref={successAudioRef} src="/correct.wav" preload="auto" />
+        <audio ref={errorAudioRef} src="/wrong.wav" preload="auto" />
+      </Box>
+    </Container>
   );
 }
