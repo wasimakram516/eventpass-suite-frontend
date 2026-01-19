@@ -48,6 +48,7 @@ import { getModuleCounts } from "@/services/trashService";
 import { getModuleIcon } from "@/utils/iconMapper";
 import { getModules } from "@/services/moduleService";
 import LoadingState from "@/components/LoadingState";
+import { pickFullName, pickEmail } from "@/utils/customFieldUtils";
 const translations = {
   en: {
     title: "Recycle Bin",
@@ -417,9 +418,23 @@ export default function TrashPage() {
     return "-";
   };
 
-  const getRecordDisplayInfo = (item) => {
-    const name = item.name || item.title || item.fullName || item.slug || item.text || item.question || null;
-    const email = item.email || null;
+  const getRecordDisplayInfo = (item, module) => {
+
+    let name = item.name || item.title || item.fullName || item.slug || item.text || item.question || null;
+    let email = item.email || null;
+
+    if ((module === "registration-eventreg" || module === "registration-checkin") && item.customFields) {
+      const extractedName = pickFullName(item.customFields);
+      const extractedEmail = pickEmail(item.customFields);
+
+      if (!name && extractedName) {
+        name = extractedName;
+      }
+      if (!email && extractedEmail) {
+        email = extractedEmail;
+      }
+    }
+
     const phone = item.phone || item.phoneNumber || item.mobile || null;
 
     if (!name && !email && !phone) {
@@ -1005,7 +1020,8 @@ export default function TrashPage() {
               const filtered = items.filter((item) => {
                 if (!search.trim()) return true;
                 const searchTerm = search.trim().toLowerCase();
-                const itemText = (
+
+                let itemText = (
                   item.name ||
                   item.title ||
                   item.slug ||
@@ -1018,6 +1034,17 @@ export default function TrashPage() {
                   item.mobile ||
                   ""
                 ).toLowerCase();
+
+                if ((module === "registration-eventreg" || module === "registration-checkin") && item.customFields) {
+                  const extractedName = pickFullName(item.customFields);
+                  const extractedEmail = pickEmail(item.customFields);
+                  if (extractedName) itemText += " " + String(extractedName).toLowerCase();
+                  if (extractedEmail) itemText += " " + String(extractedEmail).toLowerCase();
+                  Object.values(item.customFields || {}).forEach((val) => {
+                    if (val) itemText += " " + String(val).toLowerCase();
+                  });
+                }
+
                 return itemText.includes(searchTerm);
               });
 
@@ -1108,7 +1135,7 @@ export default function TrashPage() {
                             >
                               <Avatar sx={{ width: 48, height: 48 }}>
                                 {(() => {
-                                  const displayInfo = getRecordDisplayInfo(item);
+                                  const displayInfo = getRecordDisplayInfo(item, module);
                                   return displayInfo.primary?.[0]?.toUpperCase() || "?";
                                 })()}
                               </Avatar>
@@ -1118,12 +1145,12 @@ export default function TrashPage() {
                                   fontWeight="bold"
                                 >
                                   {(() => {
-                                    const displayInfo = getRecordDisplayInfo(item);
+                                    const displayInfo = getRecordDisplayInfo(item, module);
                                     return displayInfo.primary;
                                   })()}
                                 </Typography>
                                 {(() => {
-                                  const displayInfo = getRecordDisplayInfo(item);
+                                  const displayInfo = getRecordDisplayInfo(item, module);
                                   return displayInfo.secondary ? (
                                     <Typography
                                       variant="caption"
