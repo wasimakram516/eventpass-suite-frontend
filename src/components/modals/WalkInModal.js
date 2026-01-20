@@ -25,16 +25,20 @@ import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import { useAuth } from "@/contexts/AuthContext";
 import { createWalkIn } from "@/services/eventreg/registrationService";
 
-const WalkInModal = ({ open, onClose, registration, onCheckInSuccess, createWalkInFn }) => {
+const WalkInModal = ({ open, onClose, registration, onCheckInSuccess, createWalkInFn, isDigiPass = false }) => {
   const { user } = useAuth();
   const [checkingIn, setCheckingIn] = useState(false);
 
   const canCheckIn =
     user?.role === "admin" ||
     user?.role === "business";
+
+  const walkInsCount = registration?.walkIns?.length || 0;
+
   const { t, dir } = useI18nLayout({
     en: {
       title: "Walk-in Records",
+      totalRegistrations: "Total Registrations",
       noRecords: "No walk-in records found for this registration.",
       scannedBy: "Scanned by",
       scannedAt: "Scanned at",
@@ -46,6 +50,7 @@ const WalkInModal = ({ open, onClose, registration, onCheckInSuccess, createWalk
     },
     ar: {
       title: "سجلات الحضور",
+      totalRegistrations: "إجمالي التسجيلات",
       noRecords: "لا توجد سجلات حضور لهذا التسجيل.",
       scannedBy: "تم المسح بواسطة",
       scannedAt: "تم في",
@@ -56,6 +61,10 @@ const WalkInModal = ({ open, onClose, registration, onCheckInSuccess, createWalk
       checkIn: "تسجيل الحضور",
     },
   });
+
+  const modalTitle = isDigiPass
+    ? `${t.totalRegistrations}: ${walkInsCount}`
+    : t.title;
 
   const handleCheckIn = async () => {
     if (!registration?._id || checkingIn || !canCheckIn) return;
@@ -89,7 +98,7 @@ const WalkInModal = ({ open, onClose, registration, onCheckInSuccess, createWalk
         }}
       >
         <Typography variant="h6" fontWeight="bold" component="div">
-          {t.title}
+          {modalTitle}
         </Typography>
         <IconButton
           onClick={onClose}
@@ -198,7 +207,7 @@ const WalkInModal = ({ open, onClose, registration, onCheckInSuccess, createWalk
         )}
       </DialogContent>
 
-      {onCheckInSuccess && canCheckIn && (
+      {!isDigiPass && onCheckInSuccess && canCheckIn && (
         <DialogActions sx={{ justifyContent: "center" }}>
           <Button
             onClick={handleCheckIn}

@@ -19,6 +19,8 @@ export default function EventCardBase({
   t,
   status, // eventStatus or computed status
   showRegistrations = true, // toggle for public vs closed
+  hideVenue = false, // hide venue field
+  hideDates = false, // hide dates field
   onView,
   onViewWhatsAppLogs,
   onEdit,
@@ -108,6 +110,7 @@ export default function EventCardBase({
       {/* Info Section */}
       <CardContent sx={{ px: 2, py: 2, flexGrow: 1 }}>
         {/* Venue */}
+        {!hideVenue && (
         <Typography
           variant="body2"
           sx={{
@@ -121,6 +124,7 @@ export default function EventCardBase({
           <ICONS.location fontSize="small" sx={{ opacity: 0.7 }} />
           {event.venue || "N/A"}
         </Typography>
+        )}
 
         {/* Slug */}
         <Typography
@@ -138,6 +142,7 @@ export default function EventCardBase({
         </Typography>
 
         {/* Dates */}
+        {!hideDates && (
         <Typography
           variant="body2"
           sx={{
@@ -174,6 +179,7 @@ export default function EventCardBase({
               })()
             : "N/A"}
         </Typography>
+        )}
 
         {/* Registrations (public only) */}
         {showRegistrations && (

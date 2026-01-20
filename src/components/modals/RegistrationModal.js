@@ -167,7 +167,8 @@ export default function RegistrationModal({
     const validateFields = () => {
         const errors = {};
         fieldsToRender.forEach((f) => {
-            const val = values[f.inputName]?.trim();
+            const rawValue = values[f.inputName];
+            const val = rawValue != null ? String(rawValue).trim() : "";
             const required = f.required || false;
 
             if (required && !val) {
