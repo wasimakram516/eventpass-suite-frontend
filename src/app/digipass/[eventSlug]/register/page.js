@@ -8,10 +8,6 @@ import {
   Button,
   CircularProgress,
   Paper,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
   Alert,
   MenuItem,
   RadioGroup,
@@ -35,11 +31,13 @@ import { normalizePhone } from "@/utils/phoneUtils";
 import { DEFAULT_COUNTRY_CODE, DEFAULT_ISO_CODE, COUNTRY_CODES, getCountryCodeByIsoCode } from "@/utils/countryCodes";
 import { validatePhoneNumber } from "@/utils/phoneValidation";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useMessage } from "@/contexts/MessageContext";
 
 export default function DigiPassRegistration() {
   const { eventSlug } = useParams();
   const router = useRouter();
   const { language } = useLanguage();
+  const { showMessage } = useMessage();
   const isArabic = language === "ar";
   const dir = isArabic ? "rtl" : "ltr";
 
@@ -68,7 +66,6 @@ export default function DigiPassRegistration() {
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [showDialog, setShowDialog] = useState(false);
   const [dynamicFields, setDynamicFields] = useState([]);
   const [formData, setFormData] = useState({});
   const [fieldErrors, setFieldErrors] = useState({});
@@ -254,15 +251,11 @@ export default function DigiPassRegistration() {
     setSubmitting(false);
 
     if (!result?.error) {
-      setShowDialog(true);
+      showMessage(t.registrationSuccess, "success");
+      router.replace(`/digipass/${eventSlug}/signin`);
     } else {
       setFieldErrors({ _global: result.message || t.registrationFailed });
     }
-  };
-
-  const handleDialogClose = () => {
-    setShowDialog(false);
-    router.replace(`/digipass/${eventSlug}/signin`);
   };
 
   const getImageBackground = useMemo(() => {
@@ -552,58 +545,7 @@ export default function DigiPassRegistration() {
       </Paper>
 
       {/* Success dialog */}
-      <Dialog
-        open={showDialog}
-        onClose={handleDialogClose}
-        maxWidth="md"
-        fullWidth
-        dir={dir}
-      >
-        <DialogTitle sx={{ textAlign: "center", position: "relative" }}>
-          <IconButton
-            onClick={handleDialogClose}
-            sx={{
-              position: "absolute",
-              top: 10,
-              right: 10,
-              width: 36,
-              height: 36,
-              bgcolor: "error.main",
-              color: "#fff",
-              boxShadow: 2,
-              "&:hover": {
-                bgcolor: "error.dark",
-              },
-            }}
-          >
-            <ICONS.close sx={{ fontSize: 22 }} />
-          </IconButton>
-
-          <Box display="flex" flexDirection="column" alignItems="center">
-            <ICONS.checkCircle sx={{ fontSize: 70, color: "#28a745", mb: 2 }} />
-            <Typography variant="h5" fontWeight="bold">
-              {t.registrationSuccess}
-            </Typography>
-          </Box>
-        </DialogTitle>
-
-        <DialogContent sx={{ textAlign: "center" }}>
-          <Typography variant="body1" sx={{ mb: 2 }}>
-            {t.thankYouForRegistering}
-          </Typography>
-        </DialogContent>
-
-        <DialogActions sx={{ justifyContent: "center", pb: 2 }}>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={handleDialogClose}
-          >
-            {t.viewEvent}
-          </Button>
-        </DialogActions>
-      </Dialog>
-    </Box>
+    </Box >
   );
 }
 

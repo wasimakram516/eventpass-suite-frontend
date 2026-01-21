@@ -5,16 +5,22 @@ export default function useDigiPassSocket({
     eventId,
     registrationId,
     onTaskCompletedUpdate,
+    onNewRegistration,
+    onWalkInNew,
 }) {
     const handlersRef = useRef({
         onTaskCompletedUpdate,
+        onNewRegistration,
+        onWalkInNew,
     });
 
     useEffect(() => {
         handlersRef.current = {
             onTaskCompletedUpdate,
+            onNewRegistration,
+            onWalkInNew,
         };
-    }, [onTaskCompletedUpdate]);
+    }, [onTaskCompletedUpdate, onNewRegistration, onWalkInNew]);
 
     const events = useMemo(() => {
         const eventIdStr = eventId?.toString();
@@ -23,9 +29,20 @@ export default function useDigiPassSocket({
         return {
             digipassTaskCompletedUpdate: (data) => {
                 if (data.eventId?.toString() !== eventIdStr) return;
-                if (data.registrationId?.toString() !== registrationIdStr) return;
+                if (registrationIdStr && data.registrationId?.toString() !== registrationIdStr) return;
 
                 handlersRef.current.onTaskCompletedUpdate?.(data);
+            },
+            digipassRegistrationNew: (data) => {
+                if (data.eventId?.toString() !== eventIdStr) return;
+
+                handlersRef.current.onNewRegistration?.(data);
+            },
+            digipassWalkInNew: (data) => {
+                if (data.eventId?.toString() !== eventIdStr) return;
+                if (registrationIdStr && data.registrationId?.toString() !== registrationIdStr) return;
+
+                handlersRef.current.onWalkInNew?.(data);
             },
         };
     }, [eventId, registrationId]);

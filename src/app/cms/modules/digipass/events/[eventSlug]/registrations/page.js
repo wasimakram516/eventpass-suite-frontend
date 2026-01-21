@@ -55,6 +55,7 @@ import { wrapTextBox } from "@/utils/wrapTextStyles";
 import RegistrationModal from "@/components/modals/RegistrationModal";
 import { useMessage } from "@/contexts/MessageContext";
 import { pickFullName, pickEmail } from "@/utils/customFieldUtils";
+import useDigiPassSocket from "@/hooks/modules/digipass/useDigiPassSocket";
 import useSocket from "@/utils/useSocket";
 
 const translations = {
@@ -326,6 +327,31 @@ export default function ViewRegistrations() {
         fetchData();
     };
 
+    const handleNewRegistration = React.useCallback(
+        (data) => {
+            if (!data?.registration) return;
+
+            const reg = data.registration;
+
+            const processed = {
+                ...reg,
+                _createdAtMs: Date.parse(reg.createdAt),
+                _scannedAtMs: (reg.walkIns || []).map((w) => Date.parse(w.scannedAt)),
+                _haystack: buildHaystack(reg, dynamicFieldsRef.current),
+            };
+
+            setAllRegistrations((prev) => {
+                const exists = prev.some((r) => r._id === processed._id);
+                if (exists) return prev;
+
+                return [processed, ...prev];
+            });
+
+            setTotalRegistrations((prev) => prev + 1);
+        },
+        []
+    );
+
     const filteredRegistrations = React.useMemo(() => {
         const {
             createdAtFromMs,
@@ -446,24 +472,122 @@ export default function ViewRegistrations() {
         }
     };
 
+    const handleUploadProgress = React.useCallback(
+        (data) => {
+            if (data.eventId?.toString() === eventDetails?._id?.toString()) {
+                setUploadProgress({ uploaded: data.uploaded, total: data.total });
+                if (data.uploaded >= data.total) {
+                    setTimeout(() => {
+                        fetchData();
+                        setUploading(false);
+                        setUploadProgress(null);
+                    }, 1000);
+                }
+            }
+        },
+        [eventDetails?._id]
+    );
+
+    const handleWalkInNew = React.useCallback(
+        (data) => {
+            if (!data?.walkIn || !data?.registrationId) return;
+
+            const walkIn = data.walkIn;
+            const registrationId = data.registrationId.toString();
+
+            setAllRegistrations((prev) => {
+                return prev.map((reg) => {
+                    if (reg._id.toString() === registrationId) {
+                        const existingWalkIns = reg.walkIns || [];
+                        const walkInExists = existingWalkIns.some(
+                            (w) => w._id?.toString() === walkIn._id?.toString()
+                        );
+
+                        if (walkInExists) {
+                            return reg;
+                        }
+
+                        const updatedWalkIns = [...existingWalkIns, walkIn];
+                        return {
+                            ...reg,
+                            walkIns: updatedWalkIns,
+                            _scannedAtMs: updatedWalkIns.map((w) => Date.parse(w.scannedAt)),
+                        };
+                    }
+                    return reg;
+                });
+            });
+
+            setSelectedRegistration((prev) => {
+                if (!prev || prev._id.toString() !== registrationId) {
+                    return prev;
+                }
+
+                const existingWalkIns = prev.walkIns || [];
+                const walkInExists = existingWalkIns.some(
+                    (w) => w._id?.toString() === walkIn._id?.toString()
+                );
+
+                if (walkInExists) {
+                    return prev;
+                }
+
+                const updatedWalkIns = [...existingWalkIns, walkIn];
+                return {
+                    ...prev,
+                    walkIns: updatedWalkIns,
+                };
+            });
+        },
+        []
+    );
+
+    const handleTaskCompletedUpdate = React.useCallback(
+        (data) => {
+            if (!data?.registrationId || data.tasksCompleted === undefined) return;
+
+            const registrationId = data.registrationId.toString();
+
+            setAllRegistrations((prev) => {
+                return prev.map((reg) => {
+                    if (reg._id.toString() === registrationId) {
+                        return {
+                            ...reg,
+                            tasksCompleted: data.tasksCompleted,
+                        };
+                    }
+                    return reg;
+                });
+            });
+
+            setSelectedRegistration((prev) => {
+                if (!prev || prev._id.toString() !== registrationId) {
+                    return prev;
+                }
+
+                return {
+                    ...prev,
+                    tasksCompleted: data.tasksCompleted,
+                };
+            });
+        },
+        []
+    );
+
+    useDigiPassSocket({
+        eventId: eventDetails?._id,
+        onNewRegistration: handleNewRegistration,
+        onWalkInNew: handleWalkInNew,
+        onTaskCompletedUpdate: handleTaskCompletedUpdate,
+    });
+
     const eventIdStr = eventDetails?._id?.toString();
     const { socket } = useSocket(
         React.useMemo(
             () => ({
-                digipassRegistrationUploadProgress: (data) => {
-                    if (data.eventId?.toString() === eventIdStr) {
-                        setUploadProgress({ uploaded: data.uploaded, total: data.total });
-                        if (data.uploaded >= data.total) {
-                            setTimeout(() => {
-                                fetchData();
-                                setUploading(false);
-                                setUploadProgress(null);
-                            }, 1000);
-                        }
-                    }
-                },
+                digipassRegistrationUploadProgress: handleUploadProgress,
             }),
-            [eventIdStr]
+            [handleUploadProgress]
         )
     );
 

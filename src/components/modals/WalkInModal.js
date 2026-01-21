@@ -38,7 +38,7 @@ const WalkInModal = ({ open, onClose, registration, onCheckInSuccess, createWalk
   const { t, dir } = useI18nLayout({
     en: {
       title: "Walk-in Records",
-      totalRegistrations: "Total Registrations",
+      activitiesCompleted: "Completed Activities",
       noRecords: "No walk-in records found for this registration.",
       scannedBy: "Scanned by",
       scannedAt: "Scanned at",
@@ -50,7 +50,7 @@ const WalkInModal = ({ open, onClose, registration, onCheckInSuccess, createWalk
     },
     ar: {
       title: "سجلات الحضور",
-      totalRegistrations: "إجمالي التسجيلات",
+      activitiesCompleted: "الأنشطة المكتملة",
       noRecords: "لا توجد سجلات حضور لهذا التسجيل.",
       scannedBy: "تم المسح بواسطة",
       scannedAt: "تم في",
@@ -63,7 +63,7 @@ const WalkInModal = ({ open, onClose, registration, onCheckInSuccess, createWalk
   });
 
   const modalTitle = isDigiPass
-    ? `${t.totalRegistrations}: ${walkInsCount}`
+    ? `${t.activitiesCompleted}: ${walkInsCount}`
     : t.title;
 
   const handleCheckIn = async () => {
