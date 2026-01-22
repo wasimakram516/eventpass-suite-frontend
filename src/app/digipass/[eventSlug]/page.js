@@ -192,7 +192,7 @@ export default function DigiPassEventDetails() {
                         {/* Sultanate Image */}
                         <Box
                             component="img"
-                            src="/Sultanate.png"
+                            src="/sultanate of oman.png"
                             alt="Sultanate of Oman"
                             sx={{
                                 width: "100%",
@@ -345,8 +345,8 @@ export default function DigiPassEventDetails() {
                     >
                         <Box
                             component="img"
-                            src="/orangeLogo.png"
-                            alt="Logo"
+                            src="/OQ-orange.png"
+                            alt="OQ Logo"
                             sx={{
                                 width: "100%",
                                 height: "auto",

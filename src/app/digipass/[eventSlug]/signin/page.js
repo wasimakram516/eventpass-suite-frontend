@@ -599,7 +599,7 @@ export default function DigiPassSignIn() {
           {/* Sultanate Image */}
           <Box
             component="img"
-            src="/Sultanate.png"
+            src="/sultanate of oman.png"
             alt="Sultanate of Oman"
             sx={{
               width: "100%",
