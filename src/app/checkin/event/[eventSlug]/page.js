@@ -409,8 +409,8 @@ export default function EventDetails() {
         {logoUrl && (
           <Box
             sx={{
-              width: { xs: "100%" },
-              maxWidth: { xs: 300, sm: 400, md: 500 },
+              width: "100%",
+              maxWidth: 800,
               height: "auto",
               maxHeight: { xs: 120, sm: "none" },
               borderRadius: 3,
