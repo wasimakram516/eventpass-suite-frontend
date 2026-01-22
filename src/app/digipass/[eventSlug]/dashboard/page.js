@@ -9,12 +9,11 @@ import {
   LinearProgress,
   Stack,
   IconButton,
+  Card,
 } from "@mui/material";
 import { useParams, useRouter } from "next/navigation";
-import LanguageSelector from "@/components/LanguageSelector";
 import { getDigipassEventBySlug } from "@/services/digipass/digipassEventService";
 import ICONS from "@/utils/iconUtil";
-import Background from "@/components/Background";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { pickFullName } from "@/utils/customFieldUtils";
 import { QRCodeCanvas } from "qrcode.react";
@@ -29,12 +28,10 @@ export default function DigiPassDashboard() {
 
   const t = {
     welcome: isArabic ? "مرحباً بك" : "Welcome",
-    dashboard: isArabic ? "لوحة التحكم" : "Dashboard",
-    signedIn: isArabic ? "تم تسجيل الدخول بنجاح" : "Successfully signed in",
-    thisIsADummyPage: isArabic
-      ? "هذه صفحة تجريبية"
-      : "This is a dummy page",
-    activitiesCompleted: isArabic ? "الأنشطة المكتملة" : "Activities Completed",
+    activities: isArabic ? "الأنشطة" : "Activities",
+    leftOutOf: isArabic ? "متبقي من" : "left out of",
+    soFar: isArabic ? "حتى الآن..." : "So Far So Good!",
+    scanQrCode: isArabic ? "امسح رمز QR" : "Scan QR Code",
   };
 
   const [event, setEvent] = useState(null);
@@ -94,72 +91,22 @@ export default function DigiPassDashboard() {
     onTaskCompletedUpdate: handleTaskCompletedUpdate,
   });
 
-  const getImageBackground = useMemo(() => {
-    if (!event || !event.background) return null;
-
-    const langKey = language === "ar" ? "ar" : "en";
-    const bg = event.background[langKey];
-
-    if (bg && typeof bg === 'object' && bg.url && bg.fileType === "image") {
-      return bg.url;
-    }
-
-    const otherLangKey = language === "ar" ? "en" : "ar";
-    const otherBg = event.background[otherLangKey];
-    if (otherBg && typeof otherBg === 'object' && otherBg.url && otherBg.fileType === "image") {
-      return otherBg.url;
-    }
-
-    return null;
-  }, [event, language]);
-
-  const imageBackgroundUrl = getImageBackground;
 
   if (loading || !event) {
     return (
       <Box
-        minHeight="100vh"
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
+        sx={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          position: "relative",
+        }}
       >
-        <Background type="dynamic" />
-        <CircularProgress />
-      </Box>
-    );
-  }
-
-  const { name, logoUrl } = event;
-  const userName = registration?.customFields
-    ? pickFullName(registration.customFields)
-    : null;
-  const welcomeMessage = userName
-    ? `${t.welcome}, ${userName}!`
-    : `${t.welcome}!`;
-  const token = registration?.token || "";
-
-  return (
-    <Box
-      sx={{
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: 2,
-        px: 2,
-        py: 4,
-        position: "relative",
-        overflow: "hidden",
-      }}
-      dir={dir}
-    >
-      {/* Image Background */}
-      {imageBackgroundUrl && (
         <Box
           component="img"
-          src={imageBackgroundUrl}
-          alt="Event background"
+          src="/bf-digiPass.png"
+          alt="Background"
           sx={{
             position: "fixed",
             top: 0,
@@ -168,149 +115,352 @@ export default function DigiPassDashboard() {
             height: "100%",
             objectFit: "cover",
             zIndex: -1,
-            pointerEvents: "none",
           }}
         />
-      )}
-      {!imageBackgroundUrl && <Background type="dynamic" />}
+        <CircularProgress />
+      </Box>
+    );
+  }
 
-      <LanguageSelector top={20} right={20} />
+  const userName = registration?.customFields
+    ? pickFullName(registration.customFields)
+    : null;
+  const welcomeMessage = userName
+    ? `${t.welcome}, ${userName}!`
+    : `${t.welcome}!`;
+  const token = registration?.token || "";
+  const tasksLeft = maxTasksPerUser !== null && maxTasksPerUser !== undefined
+    ? maxTasksPerUser - tasksCompleted
+    : 0;
 
-      <IconButton
-        size="small"
-        onClick={() => router.push(`/digipass/${eventSlug}`)}
+  return (
+    <Box
+      sx={{
+        height: "100vh",
+        width: "100vw",
+        display: "flex",
+        flexDirection: "column",
+        position: "relative",
+        overflow: "hidden",
+      }}
+      dir={dir}
+    >
+      {/* Base Background */}
+      <Box
+        component="img"
+        src="/bf-digiPass.png"
+        alt="Background"
         sx={{
-          position: "fixed",
-          top: 20,
-          left: 20,
-          bgcolor: "primary.main",
-          color: "white",
-          zIndex: 1000,
-          "&:hover": {
-            bgcolor: "primary.dark",
-          },
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          zIndex: 0,
+        }}
+      />
+
+      {/* Top 60% Section */}
+      <Box
+        sx={{
+          height: "60%",
+          width: "100%",
+          position: "relative",
+          display: "flex",
+          flexDirection: "column",
+          zIndex: 1,
         }}
       >
-        <ICONS.back />
-      </IconButton>
+        {/* Back Button */}
+        <IconButton
+          onClick={() => router.push(`/digipass/${eventSlug}?view=card`)}
+          sx={{
+            position: "absolute",
+            top: { xs: "1.5vw", sm: "1.2vw", md: "1vw" },
+            left: { xs: "1.5vw", sm: "1.2vw", md: "1vw" },
+            bgcolor: "rgba(255, 255, 255, 0.7)",
+            color: "#591c17",
+            width: { xs: "10vw", sm: "8vw", md: "6vw" },
+            height: { xs: "10vw", sm: "8vw", md: "6vw" },
+            minWidth: "40px",
+            minHeight: "40px",
+            maxWidth: "60px",
+            maxHeight: "60px",
+            zIndex: 1000,
+            "&:hover": {
+              bgcolor: "rgba(255, 255, 255, 0.9)",
+            },
+            boxShadow: 2,
+          }}
+        >
+          <ICONS.back sx={{ fontSize: { xs: "5vw", sm: "4vw", md: "3vw" }, maxFontSize: "24px" }} />
+        </IconButton>
 
-      {logoUrl && (
+        {/* Welcome Text */}
+        <Typography
+          sx={{
+            position: "absolute",
+            top: { xs: "3vh", sm: "2.5vh", md: "2vh" },
+            left: "50%",
+            transform: "translateX(-50%)",
+            color: "white",
+            fontSize: { xs: "6vw", sm: "5vw", md: "4.5vw" },
+            fontWeight: "bold",
+            zIndex: 100,
+            textAlign: "center",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {welcomeMessage}
+        </Typography>
+
+        {/* Purple Circle Overlay */}
+        <Box
+          component="img"
+          src="/purpleCircle.png"
+          alt="Purple Circle"
+          sx={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "62vh",
+            zIndex: 2,
+            objectFit: "cover",
+            objectPosition: "center",
+          }}
+        />
+
+        {/* Brain Image with Progress Reveal */}
         <Box
           sx={{
-            width: { xs: "100%", sm: 320, md: 500 },
-            borderRadius: 3,
+            position: "absolute",
+            top: "50%",
+            left: "45%",
+            transform: "translate(-50%, -50%)",
+            width: { xs: "95vw", sm: "85vw", md: "75vw" },
+            maxWidth: "850px",
+            zIndex: 3,
             overflow: "hidden",
-            boxShadow: 3,
-            mt: { xs: 6, sm: 0 },
+            display: "flex",
+            alignItems: "flex-start",
+            justifyContent: "center",
           }}
         >
           <Box
-            component="img"
-            src={logoUrl}
-            alt={`${name} Logo`}
             sx={{
-              display: "block",
+              position: "relative",
               width: "100%",
-              height: "auto",
-              objectFit: "contain",
             }}
-          />
+          >
+            {/* Grayscale Base Layer (Always Visible) */}
+            <Box
+              component="img"
+              src="/Brain.png"
+              alt="Brain"
+              sx={{
+                width: "100%",
+                height: "auto",
+                display: "block",
+                objectFit: "contain",
+                filter: "grayscale(100%)",
+                position: "relative",
+                zIndex: 1000,
+              }}
+            />
+            {/* Colored Reveal Layer (Revealed from Bottom) */}
+            {maxTasksPerUser !== null && maxTasksPerUser !== undefined ? (
+              <Box
+                component="img"
+                src="/Brain.png"
+                alt="Brain"
+                sx={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  width: "100%",
+                  height: "auto",
+                  display: "block",
+                  objectFit: "contain",
+                  filter: "grayscale(0%) drop-shadow(0 0 8px rgba(100, 181, 246, 0.9)) drop-shadow(0 0 15px rgba(100, 181, 246, 0.7))",
+                  clipPath: `inset(${100 - ((tasksCompleted / maxTasksPerUser) * 100)}% 0 0 0)`,
+                  transition: "clip-path 0.5s ease-in-out",
+                  zIndex: 2,
+                }}
+              />
+            ) : null}
+          </Box>
         </Box>
-      )}
+      </Box>
 
-      <Paper
-        dir={dir}
-        elevation={3}
+      {/* Bottom 40% Card Section */}
+      <Box
         sx={{
+          height: "40%",
           width: "100%",
-          maxWidth: 600,
-          borderRadius: 3,
-          p: 4,
-          textAlign: "center",
-          backdropFilter: "blur(6px)",
-          backgroundColor: "rgba(255,255,255,0.9)",
+          position: "relative",
+          zIndex: 0,
+          display: "flex",
+          alignItems: "flex-start",
+          justifyContent: "center",
+          px: 0,
+          pt: { xs: "2vh", sm: "1.5vh", md: "1vh" },
+          pb: { xs: "3vh", sm: "2.5vh", md: "2vh" },
         }}
       >
-        <Box display="flex" flexDirection="column" alignItems="center" gap={3}>
-          <Typography variant="h4" fontWeight="bold">
-            {welcomeMessage}
+        <Paper
+          elevation={3}
+          sx={{
+            width: "80%",
+            height: "100%",
+            borderRadius: { xs: "20px", sm: "25px", md: "30px" },
+            backgroundColor: "white",
+            p: { xs: "2.5vw", sm: "2vw", md: "1.5vw" },
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
+            boxSizing: "border-box",
+          }}
+        >
+          {/* Activities Title */}
+          <Typography
+            sx={{
+              fontSize: { xs: "4.5vw", sm: "3.8vw", md: "3vw" },
+              fontWeight: "bold",
+              color: "#333",
+              mb: { xs: "1.2vh", sm: "1vh", md: "0.8vh" },
+              lineHeight: 1.2,
+              textAlign: "center",
+            }}
+          >
+            {t.activities}
           </Typography>
 
+          {/* Fire Icon and Progress Section Row */}
+          <Stack
+            direction="row"
+            alignItems="center"
+            spacing={{ xs: "2.5vw", sm: "2vw", md: "1.5vw" }}
+            sx={{ mb: "2vh" }}
+          >
+            {/* Fire Icon Card */}
+            <Card
+              sx={{
+                width: "25vw",
+                height: "21vw",
+                borderRadius: { xs: "10px", sm: "12px", md: "14px" },
+                border: "2px solid #FFA726",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                p: { xs: "1.2vw", sm: "1vw", md: "0.8vw" },
+                backgroundColor: "white",
+                flexShrink: 0,
+              }}
+            >
+              <Box
+                component="img"
+                src="/fire.png"
+                alt="Fire"
+                sx={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "contain",
+                }}
+              />
+            </Card>
+
+            {/* Right Side: Tasks Text, Progress Bar, and So Far Text */}
+            <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+              {/* Tasks Left Text */}
+              {maxTasksPerUser !== null && maxTasksPerUser !== undefined && (
+                <Typography
+                  sx={{
+                    fontSize: { xs: "4vw", sm: "3.2vw", md: "2.4vw" },
+                    fontWeight: "600",
+                    color: "#FF6B35",
+                    mb: { xs: "0.6vh", sm: "0.5vh", md: "0.4vh" },
+                    lineHeight: 1.2,
+                  }}
+                >
+                  {tasksLeft} {t.leftOutOf} {maxTasksPerUser}
+                </Typography>
+              )}
+
+              {/* Progress Bar */}
+              {maxTasksPerUser !== null && maxTasksPerUser !== undefined && (
+                <Box
+                  sx={{
+                    width: "100%",
+                    mb: { xs: "0.6vh", sm: "0.5vh", md: "0.4vh" },
+                  }}
+                >
+                  <LinearProgress
+                    variant="determinate"
+                    value={(tasksCompleted / maxTasksPerUser) * 100}
+                    sx={{
+                      height: { xs: "1.5vh", sm: "1.3vh", md: "1.2vh" },
+                      borderRadius: { xs: "8px", sm: "10px", md: "12px" },
+                      bgcolor: "#E0E0E0",
+                      "& .MuiLinearProgress-bar": {
+                        borderRadius: { xs: "8px", sm: "10px", md: "12px" },
+                        bgcolor: "#FF6B35",
+                        transition: "transform 0.4s linear",
+                      },
+                    }}
+                  />
+                </Box>
+              )}
+
+              {/* So Far Text */}
+              <Typography
+                sx={{
+                  fontSize: { xs: "3.5vw", sm: "2.8vw", md: "2.2vw" },
+                  color: "#666",
+                  lineHeight: 1.2,
+                }}
+              >
+                {t.soFar}
+              </Typography>
+            </Box>
+          </Stack>
+
+          {/* QR Code Section */}
           {token && (
             <Box
               sx={{
-                p: 2,
-                borderRadius: 2,
-                backgroundColor: "#fff",
-                display: "inline-block",
-                boxShadow: 2,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                mt: "2vh",
               }}
             >
-              <QRCodeCanvas
-                value={token}
-                size={200}
-                bgColor="#ffffff"
-                fgColor="#000000"
-                includeMargin
-                style={{
-                  padding: "12px",
-                  background: "#ffffff",
-                  borderRadius: "8px",
-                }}
-              />
-            </Box>
-          )}
-
-          {maxTasksPerUser !== null && maxTasksPerUser !== undefined && (
-            <Box sx={{ width: "100%", maxWidth: 400 }}>
-              <LinearProgress
-                variant="determinate"
-                value={(tasksCompleted / maxTasksPerUser) * 100}
+              <Box
                 sx={{
-                  height: 12,
-                  borderRadius: 6,
-                  bgcolor: "rgba(0, 0, 0, 0.1)",
-                  "& .MuiLinearProgress-bar": {
-                    borderRadius: 6,
-                    bgcolor: "#4caf50",
-                    transition: "transform 0.4s linear",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  "& canvas": {
+                    width: { xs: "18vw", sm: "15vw", md: "12vw" },
+                    height: "auto",
+                    maxWidth: "116px",
+                    maxHeight: "117px",
                   },
                 }}
-              />
-              <Stack
-                direction="row"
-                alignItems="center"
-                justifyContent="space-between"
-                spacing={2}
-                sx={{ mt: 2 }}
               >
-                <Box
-                  sx={{
-                    bgcolor: "#4caf50",
-                    color: "white",
-                    px: 2,
-                    py: 1,
-                    borderRadius: 2,
-                    fontWeight: 600,
-                    fontSize: "1.1rem",
-                  }}
-                >
-                  {tasksCompleted}/{maxTasksPerUser}
-                </Box>
-                <Typography
-                  variant="body1"
-                  sx={{
-                    fontWeight: 500,
-                    color: "text.primary",
-                  }}
-                >
-                  {t.activitiesCompleted}
-                </Typography>
-              </Stack>
+                <QRCodeCanvas
+                  value={token}
+                  size={150}
+                  bgColor="#ffffff"
+                  fgColor="#000000"
+                  includeMargin
+                />
+              </Box>
             </Box>
           )}
-        </Box>
-      </Paper>
+        </Paper>
+      </Box>
     </Box>
   );
 }

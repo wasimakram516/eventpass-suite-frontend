@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Typography,
   TextField,
   Button,
   CircularProgress,
-  Paper,
+  Card,
   Alert,
   MenuItem,
   RadioGroup,
@@ -16,14 +16,14 @@ import {
   Select,
   InputLabel,
   FormControl,
+  Container,
+  IconButton,
 } from "@mui/material";
 import { useParams, useRouter } from "next/navigation";
-import LanguageSelector from "@/components/LanguageSelector";
 import { signInDigipass } from "@/services/digipass/digipassRegistrationService";
 import { getDigipassEventBySlug } from "@/services/digipass/digipassEventService";
 import ICONS from "@/utils/iconUtil";
 import { translateTexts } from "@/services/translationService";
-import Background from "@/components/Background";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import CountryCodeSelector from "@/components/CountryCodeSelector";
 import { normalizePhone } from "@/utils/phoneUtils";
@@ -190,6 +190,23 @@ export default function DigiPassSignIn() {
 
   const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
+  // Set body background to transparent
+  useEffect(() => {
+    document.body.style.backgroundColor = "transparent";
+    document.documentElement.style.backgroundColor = "transparent";
+    const nextRoot = document.getElementById("__next");
+    if (nextRoot) {
+      nextRoot.style.backgroundColor = "transparent";
+    }
+    return () => {
+      document.body.style.backgroundColor = "";
+      document.documentElement.style.backgroundColor = "";
+      if (nextRoot) {
+        nextRoot.style.backgroundColor = "";
+      }
+    };
+  }, []);
+
   const handleSubmit = async () => {
     const errors = {};
     identityFields.forEach((f) => {
@@ -256,37 +273,21 @@ export default function DigiPassSignIn() {
     }
   };
 
-  const getImageBackground = useMemo(() => {
-    if (!event || !event.background) return null;
-
-    const langKey = language === "ar" ? "ar" : "en";
-    const bg = event.background[langKey];
-
-    if (bg && typeof bg === 'object' && bg.url && bg.fileType === "image") {
-      return bg.url;
-    }
-
-    const otherLangKey = language === "ar" ? "en" : "ar";
-    const otherBg = event.background[otherLangKey];
-    if (otherBg && typeof otherBg === 'object' && otherBg.url && otherBg.fileType === "image") {
-      return otherBg.url;
-    }
-
-    return null;
-  }, [event, language]);
-
-  const imageBackgroundUrl = getImageBackground;
-
   if (loading || !event || !translatedEvent || !translationsReady) {
     return (
       <Box
-        minHeight="100vh"
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
+        sx={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundImage: "url('/bf-digiPass.png')",
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundRepeat: "no-repeat",
+        }}
       >
-        <Background type="dynamic" />
-        <CircularProgress />
+        <CircularProgress sx={{ color: "white" }} />
       </Box>
     );
   }
@@ -304,15 +305,42 @@ export default function DigiPassSignIn() {
       error: !!errorMsg,
       helperText: errorMsg || "",
       required: field.required,
-      sx: { mb: 2 },
+      sx: {
+        mb: 2,
+        "& .MuiInputLabel-root": {
+          color: "white",
+          "&.Mui-focused": {
+            color: "white",
+          },
+        },
+        "& .MuiOutlinedInput-root": {
+          color: "white",
+          backgroundColor: "#591c17",
+          "& fieldset": {
+            borderColor: "white",
+          },
+          "&:hover fieldset": {
+            borderColor: "white",
+          },
+          "&.Mui-focused fieldset": {
+            borderColor: "white",
+          },
+        },
+        "& .MuiInputBase-input": {
+          color: "white",
+        },
+        "& .MuiFormHelperText-root": {
+          color: "rgba(255, 255, 255, 0.7)",
+        },
+      },
     };
 
     if (field.type === "radio")
       return (
         <Box key={field.name} sx={{ mb: 2, textAlign: "center" }}>
-          <Typography sx={{ mb: 1 }}>
+          <Typography sx={{ mb: 1, color: "white" }}>
             {fieldLabel}
-            {field.required && <span style={{ color: "red" }}> *</span>}
+            {field.required && <span style={{ color: "rgba(255, 255, 255, 0.8)" }}> *</span>}
           </Typography>
           <RadioGroup
             row
@@ -325,13 +353,23 @@ export default function DigiPassSignIn() {
               <FormControlLabel
                 key={`${field.name}-${opt}`}
                 value={opt}
-                control={<Radio sx={{ p: 0.5 }} />}
-                label={translations[opt] || opt}
+                control={
+                  <Radio
+                    sx={{
+                      p: 0.5,
+                      color: "white",
+                      "&.Mui-checked": {
+                        color: "white",
+                      },
+                    }}
+                  />
+                }
+                label={<Typography sx={{ color: "white" }}>{translations[opt] || opt}</Typography>}
               />
             ))}
           </RadioGroup>
           {errorMsg && (
-            <Typography variant="caption" color="error">
+            <Typography variant="caption" sx={{ color: "rgba(255, 255, 255, 0.7)" }}>
               {errorMsg}
             </Typography>
           )}
@@ -343,7 +381,31 @@ export default function DigiPassSignIn() {
         <FormControl
           fullWidth
           key={field.name}
-          sx={{ mb: 2 }}
+          sx={{
+            mb: 2,
+            "& .MuiInputLabel-root": {
+              color: "white",
+              "&.Mui-focused": {
+                color: "white",
+              },
+            },
+            "& .MuiOutlinedInput-root": {
+              color: "white",
+              backgroundColor: "#591c17",
+              "& fieldset": {
+                borderColor: "white",
+              },
+              "&:hover fieldset": {
+                borderColor: "white",
+              },
+              "&.Mui-focused fieldset": {
+                borderColor: "white",
+              },
+            },
+            "& .MuiSvgIcon-root": {
+              color: "white",
+            },
+          }}
           required={field.required}
         >
           <InputLabel>{fieldLabel}</InputLabel>
@@ -352,6 +414,19 @@ export default function DigiPassSignIn() {
             value={formData[field.name]}
             onChange={handleInputChange}
             label={fieldLabel}
+            MenuProps={{
+              PaperProps: {
+                sx: {
+                  backgroundColor: "#f5f5f5",
+                  "& .MuiMenuItem-root": {
+                    color: "#333",
+                    "&:hover": {
+                      backgroundColor: "#e0e0e0",
+                    },
+                  },
+                },
+              },
+            }}
           >
             {field.options.map((opt) => (
               <MenuItem key={`${field.name}-${opt}`} value={opt}>
@@ -360,7 +435,7 @@ export default function DigiPassSignIn() {
             ))}
           </Select>
           {errorMsg && (
-            <Typography variant="caption" color="error">
+            <Typography variant="caption" sx={{ color: "rgba(255, 255, 255, 0.7)" }}>
               {errorMsg}
             </Typography>
           )}
@@ -389,12 +464,14 @@ export default function DigiPassSignIn() {
           onChange={(e) => handlePhoneChange(field.name, e.target.value)}
           InputProps={{
             startAdornment: (
-              <CountryCodeSelector
-                value={isoCode}
-                onChange={(iso) => handleCountryCodeChange(field.name, iso)}
-                disabled={false}
-                dir={dir}
-              />
+              <Box sx={{ color: "white" }}>
+                <CountryCodeSelector
+                  value={isoCode}
+                  onChange={(iso) => handleCountryCodeChange(field.name, iso)}
+                  disabled={false}
+                  dir={dir}
+                />
+              </Box>
             ),
           }}
         />
@@ -416,7 +493,7 @@ export default function DigiPassSignIn() {
     );
   };
 
-  const { name, logoUrl } = translatedEvent || event;
+  const { logoUrl } = translatedEvent || event;
 
   return (
     <Box
@@ -426,100 +503,192 @@ export default function DigiPassSignIn() {
         flexDirection: "column",
         alignItems: "center",
         justifyContent: "center",
-        gap: 2,
-        px: 2,
-        py: 4,
         position: "relative",
         overflow: "hidden",
+        px: { xs: 2, sm: 3 },
+        py: { xs: 4, sm: 6 },
       }}
       dir={dir}
     >
-      {/* Image Background */}
-      {imageBackgroundUrl && (
-        <Box
-          component="img"
-          src={imageBackgroundUrl}
-          alt="Event background"
+      {/* Background Image */}
+      <Box
+        component="img"
+        src="/bf-digiPass.png"
+        alt="Background"
+        sx={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          zIndex: -1,
+          pointerEvents: "none",
+        }}
+      />
+
+      {/* Back Button */}
+      <IconButton
+        onClick={() => router.push(`/digipass/${eventSlug}?view=card`)}
+        sx={{
+          position: "absolute",
+          top: { xs: "1.5vw", sm: "1.2vw", md: "1vw" },
+          left: { xs: "1.5vw", sm: "1.2vw", md: "1vw" },
+          bgcolor: "rgba(255, 255, 255, 0.7)",
+          color: "#591c17",
+          width: { xs: "10vw", sm: "8vw", md: "6vw" },
+          height: { xs: "10vw", sm: "8vw", md: "6vw" },
+          minWidth: "40px",
+          minHeight: "40px",
+          maxWidth: "60px",
+          maxHeight: "60px",
+          zIndex: 1000,
+          "&:hover": {
+            bgcolor: "rgba(255, 255, 255, 0.9)",
+          },
+          boxShadow: 2,
+        }}
+      >
+        <ICONS.back sx={{ fontSize: { xs: "5vw", sm: "4vw", md: "3vw" }, maxFontSize: "24px" }} />
+      </IconButton>
+
+      {/* Orange Circle Background */}
+      <Box
+        component="img"
+        src="/orangeCircle.png"
+        alt="Orange Circle"
+        sx={{
+          position: "absolute",
+          top: 0,
+          right: "-19vw",
+          width: "96%",
+          height: "57%",
+          zIndex: 0,
+          pointerEvents: "none",
+        }}
+      />
+
+      <Container
+        maxWidth="sm"
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          position: "relative",
+          zIndex: 1,
+          width: "100%",
+        }}
+      >
+        {/* Card */}
+        <Card
           sx={{
-            position: "fixed",
-            top: 0,
-            left: 0,
             width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            zIndex: -1,
-            pointerEvents: "none",
-          }}
-        />
-      )}
-      {!imageBackgroundUrl && <Background type="dynamic" />}
-
-      <LanguageSelector top={20} right={20} />
-
-      {logoUrl && (
-        <Box
-          sx={{
-            width: { xs: "100%", sm: 320, md: 500 },
-            borderRadius: 3,
-            overflow: "hidden",
-            boxShadow: 3,
-            mt: { xs: 6, sm: 0 },
+            maxWidth: { xs: "100%", sm: 450, md: 500 },
+            backgroundColor: "#591c17",
+            borderRadius: { xs: 3, sm: 4 },
+            p: { xs: 4, sm: 5, md: 6 },
+            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.2)",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: { xs: 3, sm: 4 },
+            minHeight: { xs: 500, sm: 600, md: 700 },
           }}
         >
+          {/* Sultanate Image */}
           <Box
             component="img"
-            src={logoUrl}
-            alt={`${name} Logo`}
+            src="/Sultanate.png"
+            alt="Sultanate of Oman"
             sx={{
-              display: "block",
               width: "100%",
+              maxWidth: { xs: 200, sm: 250, md: 300 },
               height: "auto",
               objectFit: "contain",
             }}
           />
-        </Box>
-      )}
 
-      <Paper
-        dir={dir}
-        elevation={3}
-        sx={{
-          width: "100%",
-          maxWidth: 600,
-          borderRadius: 3,
-          p: 4,
-          textAlign: "center",
-          backdropFilter: "blur(6px)",
-          backgroundColor: "rgba(255,255,255,0.9)",
-        }}
-      >
-        <Typography variant="h5" fontWeight="bold" sx={{ mb: 1 }}>
-          {name}
-        </Typography>
+          {/* Event Logo */}
+          {logoUrl && (
+            <Box
+              sx={{
+                width: "100%",
+                maxWidth: { xs: 220, sm: 280, md: 350 },
+                height: "auto",
+                display: "flex",
+                justifyContent: "center",
+              }}
+            >
+              <Box
+                component="img"
+                src={logoUrl}
+                alt="Event Logo"
+                sx={{
+                  width: "100%",
+                  height: "auto",
+                  maxHeight: { xs: 150, sm: 200, md: 250 },
+                  objectFit: "contain",
+                }}
+              />
+            </Box>
+          )}
 
-        <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>
-          {t.signIn}
-        </Typography>
+          {/* Global Error Alert */}
+          {fieldErrors._global && (
+            <Alert
+              severity="error"
+              sx={{
+                width: "100%",
+                mb: 2,
+                "& .MuiAlert-message": {
+                  color: "white",
+                },
+                backgroundColor: "rgba(211, 47, 47, 0.2)",
+              }}
+            >
+              {fieldErrors._global}
+            </Alert>
+          )}
 
-        {fieldErrors._global && (
-          <Alert severity="error" sx={{ mb: 3 }}>
-            {fieldErrors._global}
-          </Alert>
-        )}
+          {/* Form Fields */}
+          <Box
+            sx={{
+              width: "100%",
+              display: "flex",
+              flexDirection: "column",
+              gap: 2,
+            }}
+          >
+            {identityFields.map((f) => renderField(f))}
+          </Box>
 
-        {identityFields.map((f) => renderField(f))}
+          {/* Sign In Button */}
+          <Button
+            variant="outlined"
+            size="large"
+            fullWidth
+            disabled={submitting}
+            onClick={handleSubmit}
+            startIcon={submitting ? <CircularProgress size={20} sx={{ color: "white" }} /> : <ICONS.login />}
+            sx={{
 
-        <Button
-          variant="contained"
-          fullWidth
-          disabled={submitting}
-          onClick={handleSubmit}
-          startIcon={<ICONS.login />}
-          sx={{ mt: 2, ...getStartIconSpacing(dir) }}
-        >
-          {submitting ? <CircularProgress size={22} /> : t.submit}
-        </Button>
-      </Paper>
+              borderColor: "white",
+              color: "white",
+              "&:hover": {
+                borderColor: "white",
+                backgroundColor: "rgba(255, 255, 255, 0.1)",
+              },
+              "&:disabled": {
+                borderColor: "rgba(255, 255, 255, 0.3)",
+                color: "rgba(255, 255, 255, 0.5)",
+              },
+            }}
+          >
+            {submitting ? "Signing in..." : t.submit}
+          </Button>
+        </Card>
+      </Container>
     </Box>
   );
 }
