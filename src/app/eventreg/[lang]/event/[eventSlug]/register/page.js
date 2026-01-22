@@ -515,7 +515,8 @@ export default function Registration() {
       {logoUrl && (
         <Box
           sx={{
-            width: { xs: "100%", sm: 320, md: 500 },
+            width: "100%",
+            maxWidth: 600,
             borderRadius: 3,
             overflow: "hidden",
             boxShadow: 3,
