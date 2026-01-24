@@ -137,16 +137,18 @@ export default function ResultsChart({ poll }) {
               textAlign: dir === "rtl" ? "right" : "left",
               minWidth: 0,
             }}>
-              <Typography
-                variant="body2"
-                fontWeight="bold"
-                sx={{
-                  color: COLORS[idx % COLORS.length],
-                  wordBreak: "break-word",
-                }}
-              >
-                {option.text}
-              </Typography>
+              {option.text && (
+                <Typography
+                  variant="body2"
+                  fontWeight="bold"
+                  sx={{
+                    color: COLORS[idx % COLORS.length],
+                    wordBreak: "break-word",
+                  }}
+                >
+                  {option.text}
+                </Typography>
+              )}
             </Box>
 
             {/* Percentage */}

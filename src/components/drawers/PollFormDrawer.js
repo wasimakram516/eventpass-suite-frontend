@@ -34,6 +34,7 @@ export default function PollFormDrawer({
   onSubmit,
   initialValues = null,
   business = "",
+  event = null,
   onMediaDeleted,
 }) {
   const isEdit = !!(initialValues && initialValues._id);
@@ -92,12 +93,12 @@ export default function PollFormDrawer({
 
   const [form, setForm] = useState({
     businessId: "",
+    eventId: "",
     question: "",
     options: [
       { text: "", imageFile: null, imagePreview: "", removeImage: false },
       { text: "", imageFile: null, imagePreview: "", removeImage: false },
     ],
-    status: "active",
     type: "options",
   });
 
@@ -122,7 +123,8 @@ export default function PollFormDrawer({
       }
 
       setForm({
-        businessId: initialValues?.business?._id || business?._id || "",
+        businessId: initialValues?.business?._id || business?._id || event?.businessId || "",
+        eventId: initialValues?.eventId?._id || initialValues?.eventId || event?._id || "",
         question: initialValues?.question || "",
         options:
           initialValues?.options?.length > 0
@@ -136,7 +138,6 @@ export default function PollFormDrawer({
               { text: "", imageFile: null, imagePreview: "", removeImage: false },
               { text: "", imageFile: null, imagePreview: "", removeImage: false },
             ],
-        status: initialValues?.status || "active",
         type: initialValues?.type || "options",
       });
       setErrors({});
@@ -262,9 +263,15 @@ export default function PollFormDrawer({
 
   const validate = () => {
     const newErrors = {};
-    if (!form.businessId) newErrors.businessId = "Business is required";
+    if (!form.eventId && !form.businessId) newErrors.eventId = "Event is required";
     if (!form.question) newErrors.question = t.errors.question;
-    if (form.options.filter((opt) => opt.text.trim() !== "").length < 2) {
+    // Each option must have either text or image
+    const validOptions = form.options.filter((opt) => {
+      const hasText = opt.text && opt.text.trim() !== "";
+      const hasImage = opt.imagePreview && opt.imagePreview.trim() !== "" && !opt.removeImage;
+      return hasText || hasImage;
+    });
+    if (validOptions.length < 2) {
       newErrors.options = t.errors.options;
     }
     if (!["options", "slider"].includes(form.type)) {
@@ -277,8 +284,9 @@ export default function PollFormDrawer({
   const handleSubmit = async () => {
     if (!validate()) return;
 
-    if (!business?.slug) {
-      showMessage("Business information is missing", "error");
+    const businessSlug = business?.slug || event?.businessId?.slug || "";
+    if (!businessSlug && !form.eventId) {
+      showMessage("Event or business information is missing", "error");
       return;
     }
 
@@ -318,7 +326,7 @@ export default function PollFormDrawer({
         try {
           const urls = await uploadMediaFiles({
             files: filesToUpload.map((item) => item.file),
-            businessSlug: business.slug,
+            businessSlug: businessSlug,
             moduleName: "VoteCast",
             onProgress: (progressUploads) => {
               progressUploads.forEach((progressUpload, index) => {
@@ -371,9 +379,8 @@ export default function PollFormDrawer({
       });
 
       const payload = {
-        businessId: form.businessId,
+        ...(form.eventId ? { eventId: form.eventId } : { businessId: form.businessId }),
         question: form.question,
-        status: form.status,
         type: form.type,
         options: JSON.stringify(optionsPayload),
       };
@@ -388,12 +395,6 @@ export default function PollFormDrawer({
     }
   };
 
-  const toggleStatus = () => {
-    setForm((prev) => ({
-      ...prev,
-      status: prev.status === "active" ? "archived" : "active",
-    }));
-  };
 
   return (
     <Drawer
@@ -426,17 +427,6 @@ export default function PollFormDrawer({
           </IconButton>
         </Stack>
 
-        <FormControlLabel
-          control={
-            <Switch
-              checked={form.status === "active"}
-              onChange={toggleStatus}
-              color="primary"
-            />
-          }
-          label={form.status === "active" ? t.active : t.archived}
-          sx={{ mb: 2 }}
-        />
 
         <Stack spacing={2} sx={{ flexGrow: 1, overflowY: "auto", pt: 2 }}>
           <TextField

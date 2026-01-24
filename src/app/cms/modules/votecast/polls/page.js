@@ -8,9 +8,9 @@ import useI18nLayout from "@/hooks/useI18nLayout";
 const translations = {
   en: {
     title: "Polls Management",
-    subtitle: "Create, manage, and view poll results for all businesses.",
+    subtitle: "Create, manage, and view poll results for all events.",
     managePolls: "Manage Polls",
-    managePollsDesc: "Create, edit, and manage polls for businesses.",
+    managePollsDesc: "Create, edit, and manage polls for events.",
     openPolls: "Open Polls",
     pollResults: "Poll Results",
     pollResultsDesc: "View real-time poll results and insights.",
@@ -18,9 +18,9 @@ const translations = {
   },
   ar: {
     title: "إدارة الاستطلاعات",
-    subtitle: "إنشاء وإدارة وعرض نتائج الاستطلاعات لجميع الشركات.",
+    subtitle: "إنشاء وإدارة وعرض نتائج الاستطلاعات لجميع الفعاليات.",
     managePolls: "إدارة الاستطلاعات",
-    managePollsDesc: "إنشاء وتحرير وإدارة الاستطلاعات للشركات.",
+    managePollsDesc: "إنشاء وتحرير وإدارة الاستطلاعات للفعاليات.",
     openPolls: "فتح الاستطلاعات",
     pollResults: "نتائج الاستطلاعات",
     pollResultsDesc: "عرض نتائج الاستطلاعات والرؤى في الوقت الفعلي.",
@@ -57,7 +57,7 @@ export default function PollsDashboard() {
             buttonLabel={t.openPolls}
             icon={<AssignmentIcon />}
             color="#009688"
-            route="/cms/modules/votecast/polls/manage"
+            route="/cms/modules/votecast/events"
           />
         </Grid>
         <Grid item xs={12} sm={6} md={6}>
@@ -67,7 +67,7 @@ export default function PollsDashboard() {
             buttonLabel={t.viewResults}
             icon={<BarChartIcon />}
             color="#4caf50"
-            route="/cms/modules/votecast/polls/results"
+            route="/cms/modules/votecast/events"
           />
         </Grid>
       </Grid>
