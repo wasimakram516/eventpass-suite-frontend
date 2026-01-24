@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useParams } from "next/navigation";
 import {
   Container,
@@ -85,27 +85,27 @@ function RealPoll({ eventSlug }) {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [finished, setFinished] = useState(false);
+  const autoSubmitRef = useRef(null);
+  const [closeTimer, setCloseTimer] = useState(5);
 
-  const getProgressColor = () => {
-    const percent = ((currentIndex + 1) / polls.length) * 100;
+  useEffect(() => {
+    if (!finished) return;
 
-    if (percent <= 8) return "#B71C1C";
-    if (percent <= 16) return "#C62828";
-    if (percent <= 24) return "#D32F2F";
-    if (percent <= 32) return "#E53935";
-    if (percent <= 40) return "#F4511E";
-    if (percent <= 48) return "#FB8C00";
-    if (percent <= 56) return "#F9A825";
-    if (percent <= 64) return "#FBC02D";
-    if (percent <= 72) return "#C0CA33";
-    if (percent <= 80) return "#7CB342";
-    if (percent <= 88) return "#43A047";
-    return "#388E3C";
-  };
+    setCloseTimer(5);
 
-  const getBackground = useMemo(() => {
-    return getEventBackground(event, currentLang);
-  }, [event, currentLang]);
+    const interval = setInterval(() => {
+      setCloseTimer((prev) => {
+        if (prev <= 1) {
+          clearInterval(interval);
+          handleRestart();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [finished]);
 
   useEffect(() => {
     const fetchEventAndPolls = async () => {
@@ -128,28 +128,49 @@ function RealPoll({ eventSlug }) {
     fetchEventAndPolls();
   }, [eventSlug]);
 
-  const handleVote = async (selectedIdx = null) => {
-    const optionIndex = selectedIdx !== null ? selectedIdx : highlightedOption;
-    const currentPoll = polls[currentIndex];
-    const pollType = currentPoll?.type || "options";
+  const getProgressColor = () => {
+    const percent = ((currentIndex + 1) / polls.length) * 100;
+
+    if (percent <= 8) return "#B71C1C";
+    if (percent <= 16) return "#C62828";
+    if (percent <= 24) return "#D32F2F";
+    if (percent <= 32) return "#E53935";
+    if (percent <= 40) return "#F4511E";
+    if (percent <= 48) return "#FB8C00";
+    if (percent <= 56) return "#F9A825";
+    if (percent <= 64) return "#FBC02D";
+    if (percent <= 72) return "#C0CA33";
+    if (percent <= 80) return "#7CB342";
+    if (percent <= 88) return "#43A047";
+    return "#388E3C";
+  };
+
+  const getBackground = useMemo(() => {
+    return getEventBackground(event, currentLang);
+  }, [event, currentLang]);
+
+  const handleVote = async (optionIndex) => {
+    if (submitting) return;
 
     setSubmitting(true);
-    await voteOnPoll(polls[currentIndex]._id, optionIndex);
 
-    if (currentIndex < polls.length - 1) {
-      setTimeout(
-        () => {
+    try {
+      await voteOnPoll(polls[currentIndex]._id, optionIndex);
+
+      setTimeout(() => {
+        if (currentIndex < polls.length - 1) {
           setCurrentIndex((prev) => prev + 1);
-          setSliderValue(0);
           setHighlightedOption(null);
+          setSliderValue(0);
           setSubmitting(false);
-        },
-        pollType === "options" ? 1000 : 0,
-      );
-    } else {
-      setFinished(true);
+        } else {
+          setFinished(true);
+        }
+      }, 800); // short transition delay
+    } catch (e) {
+      console.error(e);
+      setSubmitting(false);
     }
-    setSubmitting(false);
   };
 
   const handleRestart = () => {
@@ -290,7 +311,7 @@ function RealPoll({ eventSlug }) {
             sx={{
               height: { xs: 90, sm: 120 },
               width: "100%",
-              maxWidth: 800,
+              maxWidth: "95%",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -367,7 +388,7 @@ function RealPoll({ eventSlug }) {
           <ICONS.replay fontSize="large" />
         </IconButton> */}
 
-        {/* Logo and Card Container */}
+        {/* Card Container */}
         <Box
           sx={{
             flex: 1,
@@ -381,7 +402,7 @@ function RealPoll({ eventSlug }) {
             elevation={0}
             sx={{
               width: "100%",
-              maxWidth: 800,
+              maxWidth: "95%",
               borderRadius: 4,
               overflow: "hidden",
 
@@ -438,19 +459,23 @@ function RealPoll({ eventSlug }) {
                         display="flex"
                         flexDirection="column"
                         alignItems="center"
-                        width={{ xs: 100, sm: 100 }}
                         onClick={() => {
                           setHighlightedOption(idx);
                           setSliderValue(idx);
+
+                          clearTimeout(autoSubmitRef.current);
+                          autoSubmitRef.current = setTimeout(() => {
+                            handleVote(idx);
+                          }, 500);
                         }}
                         sx={{
-                          p: 2,
+                          p: 4,
                           borderRadius: 2,
                           transition: "all 0.3s ease",
-                          border:
-                            highlightedOption === idx
-                              ? "2px solid"
-                              : "2px dashed",
+                          // border:
+                          //   highlightedOption === idx
+                          //     ? "2px solid"
+                          //     : "2px dashed",
                           borderColor:
                             highlightedOption === idx ? "#ff8200" : "grey.300",
                           cursor: "pointer",
@@ -462,12 +487,15 @@ function RealPoll({ eventSlug }) {
                             src={option.imageUrl}
                             variant="rounded"
                             sx={{
-                              width: 64,
-                              height: 64,
-                              mt: 1,
+                              width: { xs: 90, sm: 150 },
+                              height: { xs: 90, sm: 150 },
                               mb: 1,
-                              // opacity: highlightedOption === idx ? 1 : 0.4,
-                              transition: "opacity 0.3s",
+                              transition:
+                                "transform 0.25s ease, box-shadow 0.25s ease",
+                              transform:
+                                highlightedOption === idx
+                                  ? "scale(1.3)"
+                                  : "scale(1)",
                             }}
                           />
                         )}
@@ -511,7 +539,14 @@ function RealPoll({ eventSlug }) {
                       : "You can select options by clicking them or moving the slider"}
                   </Typography>
 
-                  <Box width="100%" px={4}>
+                  <Box
+                    sx={{
+                      width: "100%",
+                      display: "flex",
+                      justifyContent: "center",
+                      mt: 1,
+                    }}
+                  >
                     <Slider
                       value={sliderValue}
                       onChange={(e, val) => {
@@ -521,10 +556,19 @@ function RealPoll({ eventSlug }) {
                           setHighlightedOption(closest);
                         }
                       }}
+                      onChangeCommitted={(e, val) => {
+                        const finalIndex = Math.round(val);
+
+                        clearTimeout(autoSubmitRef.current);
+                        autoSubmitRef.current = setTimeout(() => {
+                          handleVote(finalIndex);
+                        }, 700); // intentional pause = confidence
+                      }}
                       step={0.01}
                       min={0}
                       max={optionCount - 1}
                       sx={{
+                        width: { xs: "85%", sm: 400 },
                         mt: 1,
                         "& .MuiSlider-thumb": {
                           width: 24,
@@ -555,10 +599,12 @@ function RealPoll({ eventSlug }) {
                       <Box
                         key={idx}
                         onClick={() => {
-                          if (canSelect && !submitting) {
-                            setHighlightedOption(idx);
+                          setHighlightedOption(idx);
+
+                          clearTimeout(autoSubmitRef.current);
+                          autoSubmitRef.current = setTimeout(() => {
                             handleVote(idx);
-                          }
+                          }, 500);
                         }}
                         sx={{
                           p: 2,
@@ -586,13 +632,35 @@ function RealPoll({ eventSlug }) {
                           {option.imageUrl && (
                             <Avatar
                               src={option.imageUrl}
-                              alt={`Option ${idx + 1}`}
                               variant="rounded"
-                              sx={{ width: 48, height: 48 }}
+                              sx={{
+                                width: { xs: 90, sm: 150 },
+                                height: { xs: 90, sm: 150 },
+
+                                /* IMPORTANT: prevent layout shift */
+                                flexShrink: 0,
+
+                                transition:
+                                  "transform 0.25s ease, box-shadow 0.25s ease",
+                                transformOrigin: "center",
+
+                                transform:
+                                  highlightedOption === idx
+                                    ? "scale(1.3)"
+                                    : "scale(1)",
+                              }}
                             />
                           )}
+
                           {option.text && (
-                            <Typography variant="body1" fontWeight="bold">
+                            <Typography
+                              variant="body1"
+                              fontWeight="bold"
+                              sx={{
+                                transition: "opacity 0.2s ease",
+                                opacity: highlightedOption === idx ? 1 : 0.8,
+                              }}
+                            >
                               {option.text}
                             </Typography>
                           )}
@@ -611,7 +679,7 @@ function RealPoll({ eventSlug }) {
                 </Stack>
               )}
 
-              {/* Next/Submit Button */}
+              {/* Next/Submit Button
               {pollType === "slider" && (
                 <Button
                   variant="contained"
@@ -634,7 +702,7 @@ function RealPoll({ eventSlug }) {
                       ? t.nextPoll
                       : t.finish}
                 </Button>
-              )}
+              )} */}
             </CardContent>
           </Card>
         </Box>
@@ -695,11 +763,11 @@ function RealPoll({ eventSlug }) {
         PaperProps={{
           sx: {
             borderRadius: 4,
-            p: 3,
+            p: 4,
             maxWidth: { xs: "90%", sm: 420 },
             width: { xs: "90%", sm: "auto" },
             mx: "auto",
-            textAlign: align,
+            textAlign: "center",
             boxShadow: 6,
           },
         }}
@@ -709,30 +777,62 @@ function RealPoll({ eventSlug }) {
             fontSize: "2rem",
             fontWeight: "bold",
             color: "#ff8200",
+            textAlign: "center",
             pb: 1,
           }}
         >
           {t.thankYou}
         </DialogTitle>
 
-        <DialogContent sx={{ mt: 1 }}>
+        <DialogContent
+          sx={{
+            mt: 2,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 2,
+          }}
+        >
           <Typography
             variant="body1"
             fontWeight="medium"
             color="text.secondary"
-            sx={{ mb: 2 }}
+            textAlign="center"
           >
             {t.voteRecorded}
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
+
+          <Typography variant="body2" color="text.secondary" textAlign="center">
             {t.waitForResults}
+          </Typography>
+
+          {/* Countdown */}
+          <Box
+            sx={{
+              mt: 3,
+              width: 72,
+              height: 72,
+              borderRadius: "50%",
+              border: "3px solid #ff8200",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Typography variant="h4" fontWeight="bold" color="#ff8200">
+              {closeTimer}
+            </Typography>
+          </Box>
+
+          <Typography variant="caption" color="text.secondary">
+            Closing automatically…
           </Typography>
         </DialogContent>
 
         <DialogActions
           sx={{
             justifyContent: "center",
-            mt: 4,
+            mt: 3,
           }}
         >
           <Button

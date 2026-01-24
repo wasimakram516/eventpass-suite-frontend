@@ -71,7 +71,11 @@ export default function VoteCastEventWelcome() {
   }, [event, currentLang]);
 
   useEffect(() => {
-    if (videoRef.current && getBackground?.fileType === "video" && getBackground?.url) {
+    if (
+      videoRef.current &&
+      getBackground?.fileType === "video" &&
+      getBackground?.url
+    ) {
       videoRef.current.load();
     }
   }, [getBackground]);
@@ -110,7 +114,17 @@ export default function VoteCastEventWelcome() {
     );
   }
 
-  const { name, description, logoUrl, venue, startDate, endDate, startTime, endTime, timezone } = event;
+  const {
+    name,
+    description,
+    logoUrl,
+    venue,
+    startDate,
+    endDate,
+    startTime,
+    endTime,
+    timezone,
+  } = event;
   const background = getBackground;
 
   return (
@@ -208,15 +222,13 @@ export default function VoteCastEventWelcome() {
       {logoUrl && (
         <Box
           sx={{
-            position: "relative",
+            height: { xs: 90, sm: 120 },
             width: "100%",
             maxWidth: 800,
-            height: "auto",
-            maxHeight: { xs: 120, sm: 150 },
-            borderRadius: 3,
-            overflow: "hidden",
-            boxShadow: 3,
-            mb: 3,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            mt: 1,
             zIndex: 1,
           }}
         >
@@ -225,11 +237,8 @@ export default function VoteCastEventWelcome() {
             src={logoUrl}
             alt={`${name} Logo`}
             sx={{
-              display: "block",
+              maxHeight: "100%",
               width: "100%",
-              height: "auto",
-              maxHeight: { xs: 120, sm: 150 },
-              maxWidth: { xs: "100%", sm: "none" },
               objectFit: "contain",
             }}
           />
@@ -238,20 +247,14 @@ export default function VoteCastEventWelcome() {
 
       <Box
         sx={{
+          flex: 1,
+          width: "100%",
           display: "flex",
-          flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
-          position: "relative",
-          width: "100%",
-          maxWidth: "lg",
-          minHeight: "calc(100vh - 80px)",
-          gap: 3,
           zIndex: 1,
         }}
       >
-
-        {/* Event Details Card */}
         <AppCard
           dir={dir}
           sx={{
@@ -259,7 +262,13 @@ export default function VoteCastEventWelcome() {
             maxWidth: 800,
             textAlign: "center",
             p: 4,
-            backgroundColor: "rgba(255,255,255,0.7)",
+
+            /* Glass effect */
+            background: "rgba(255, 255, 255, 0.65)",
+            backdropFilter: "blur(14px)",
+            WebkitBackdropFilter: "blur(14px)",
+            border: "1px solid rgba(255,255,255,0.35)",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.15)",
           }}
         >
           {/* Title */}
@@ -351,29 +360,44 @@ export default function VoteCastEventWelcome() {
               />
               {startDate && endDate ? (
                 startDate === endDate ? (
-                  <Typography variant="h6" sx={{ fontSize: { xs: 16, md: 20 } }}>
+                  <Typography
+                    variant="h6"
+                    sx={{ fontSize: { xs: 16, md: 20 } }}
+                  >
                     {formatDateWithTime(
                       startDate,
                       startTime || null,
                       isArabic ? "ar-SA" : "en-GB",
-                      timezone || null
+                      timezone || null,
                     )}
                     {startTime && endTime && startTime !== endTime && (
-                      <> - {formatTime(endTime, isArabic ? "ar-SA" : "en-GB", timezone || null, startDate)}</>
+                      <>
+                        {" "}
+                        -{" "}
+                        {formatTime(
+                          endTime,
+                          isArabic ? "ar-SA" : "en-GB",
+                          timezone || null,
+                          startDate,
+                        )}
+                      </>
                     )}
                   </Typography>
                 ) : (
-                  <Typography variant="h6" sx={{ fontSize: { xs: 16, md: 20 } }}>
+                  <Typography
+                    variant="h6"
+                    sx={{ fontSize: { xs: 16, md: 20 } }}
+                  >
                     {`${formatDateWithTime(
                       startDate,
                       startTime || null,
                       isArabic ? "ar-SA" : "en-GB",
-                      timezone || null
+                      timezone || null,
                     )} ${t.to} ${formatDateWithTime(
                       endDate,
                       endTime || null,
                       isArabic ? "ar-SA" : "en-GB",
-                      timezone || null
+                      timezone || null,
                     )}`}
                   </Typography>
                 )
@@ -383,7 +407,7 @@ export default function VoteCastEventWelcome() {
                     startDate,
                     startTime || null,
                     isArabic ? "ar-SA" : "en-GB",
-                    timezone || null
+                    timezone || null,
                   )}
                 </Typography>
               ) : (
@@ -402,7 +426,6 @@ export default function VoteCastEventWelcome() {
               onClick={() => router.push(`/votecast/${eventSlug}/vote`)}
               startIcon={<ICONS.next />}
               sx={{
-
                 backgroundColor: "#ff8200",
                 transition: "0.3s",
                 "&:hover": {
@@ -422,4 +445,3 @@ export default function VoteCastEventWelcome() {
     </Box>
   );
 }
-
