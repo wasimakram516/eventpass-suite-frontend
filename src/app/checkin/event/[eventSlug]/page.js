@@ -411,8 +411,6 @@ export default function EventDetails() {
             sx={{
               width: "100%",
               maxWidth: 800,
-              height: "auto",
-              maxHeight: { xs: 120, sm: "none" },
               borderRadius: 3,
               overflow: "hidden",
               boxShadow: 3,
@@ -426,9 +424,7 @@ export default function EventDetails() {
                 display: "block",
                 width: "100%",
                 height: "auto",
-                maxHeight: { xs: 120, sm: "none" },
-                maxWidth: { xs: "100%", sm: "none" },
-                objectFit: "cover",
+                objectFit: "contain",
               }}
             />
           </Box>
