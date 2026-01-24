@@ -144,7 +144,7 @@ function RealPoll({ eventSlug }) {
           setHighlightedOption(null);
           setSubmitting(false);
         },
-        pollType === "options" ? 1000 : 0
+        pollType === "options" ? 1000 : 0,
       );
     } else {
       setFinished(true);
@@ -273,52 +273,44 @@ function RealPoll({ eventSlug }) {
     <>
       {/* <LanguageSelector top={20} right={20} /> */}
 
-      {/* Event Logo - At the top of the page */}
-      {event.logoUrl && (
-        <Box
-          sx={{
-            position: "relative",
-            width: "100%",
-            maxWidth: 800,
-            height: "auto",
-            maxHeight: { xs: 120, sm: 150 },
-            borderRadius: 3,
-            overflow: "hidden",
-            boxShadow: 3,
-            mb: 3,
-            mx: "auto",
-            mt: 2,
-            zIndex: 100,
-          }}
-        >
-          <Box
-            component="img"
-            src={event.logoUrl}
-            alt={`${event.name} Logo`}
-            sx={{
-              display: "block",
-              width: "100%",
-              height: "auto",
-              maxHeight: { xs: 120, sm: 150 },
-              maxWidth: { xs: "100%", sm: "none" },
-              objectFit: "contain",
-            }}
-          />
-        </Box>
-      )}
-
       <Box
         dir={dir}
         sx={{
-          minHeight: "100vh",
+          height: "100vh",
           position: "relative",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          justifyContent: "center",
-          p: 2,
+          overflow: "hidden",
+          px: 2,
         }}
       >
+        {event.logoUrl && (
+          <Box
+            sx={{
+              height: { xs: 90, sm: 120 },
+              width: "100%",
+              maxWidth: 800,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              mt: 1,
+              zIndex: 2,
+            }}
+          >
+            <Box
+              component="img"
+              src={event.logoUrl}
+              alt={`${event.name} Logo`}
+              sx={{
+                maxHeight: "100%",
+                width: "100%",
+                objectFit: "contain",
+              }}
+            />
+          </Box>
+        )}
+
         {/* Background */}
         {getBackground?.fileType === "video" ? (
           <Box
@@ -378,278 +370,273 @@ function RealPoll({ eventSlug }) {
         {/* Logo and Card Container */}
         <Box
           sx={{
+            flex: 1,
             width: "100%",
-            maxWidth: 800,
             display: "flex",
-            flexDirection: "column",
             alignItems: "center",
+            justifyContent: "center",
           }}
         >
-
-          {/* Poll Card */}
-          <Box
+          <Card
+            elevation={0}
             sx={{
               width: "100%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
+              maxWidth: 800,
+              borderRadius: 4,
+              overflow: "hidden",
+
+              /* Glass effect */
+              background: "rgba(255, 255, 255, 0.65)",
+              backdropFilter: "blur(14px)",
+              WebkitBackdropFilter: "blur(14px)",
+
+              /* Glass border + depth */
+              border: "1px solid rgba(255, 255, 255, 0.35)",
+              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.15)",
             }}
           >
-            <Card
-              elevation={0}
+            {/* Content */}
+            <CardContent
               sx={{
-                width: "100%",
-                maxWidth: 800,
-                borderRadius: 4,
-                overflow: "hidden",
-                backgroundColor: "rgba(255, 255, 255, 0.7)",
+                p: 4,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 4,
               }}
             >
-              {/* Content */}
-              <CardContent
+              {/* Question - Moved to white area, horizontally centered */}
+              <Typography
+                variant="h5"
+                fontWeight="bold"
                 sx={{
-                  p: 4,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: 4,
+                  fontSize: { xs: "1.2rem", md: "1.4rem" },
+                  textAlign: "center",
+                  width: "100%",
+                  mb: 2,
                 }}
               >
-                {/* Question - Moved to white area, horizontally centered */}
-                <Typography
-                  variant="h5"
-                  fontWeight="bold"
-                  sx={{
-                    fontSize: { xs: "1.2rem", md: "1.4rem" },
-                    textAlign: "center",
-                    width: "100%",
-                    mb: 2,
-                  }}
-                >
-                  {currentPoll.question}
-                </Typography>
-                {/* Dynamic Options */}
-                {pollType === "slider" ? (
-                  <>
+                {currentPoll.question}
+              </Typography>
+              {/* Dynamic Options */}
+              {pollType === "slider" ? (
+                <>
+                  <Stack
+                    direction="row"
+                    spacing={2}
+                    justifyContent="center"
+                    flexWrap="wrap"
+                    sx={{
+                      rowGap: 3,
+                      mt: 1,
+                      mb: 1,
+                    }}
+                  >
+                    {currentPoll.options.map((option, idx) => (
+                      <Box
+                        key={idx}
+                        display="flex"
+                        flexDirection="column"
+                        alignItems="center"
+                        width={{ xs: 100, sm: 100 }}
+                        onClick={() => {
+                          setHighlightedOption(idx);
+                          setSliderValue(idx);
+                        }}
+                        sx={{
+                          p: 2,
+                          borderRadius: 2,
+                          transition: "all 0.3s ease",
+                          border:
+                            highlightedOption === idx
+                              ? "2px solid"
+                              : "2px dashed",
+                          borderColor:
+                            highlightedOption === idx ? "#ff8200" : "grey.300",
+                          cursor: "pointer",
+                          minHeight: 150,
+                        }}
+                      >
+                        {option.imageUrl && (
+                          <Avatar
+                            src={option.imageUrl}
+                            variant="rounded"
+                            sx={{
+                              width: 64,
+                              height: 64,
+                              mt: 1,
+                              mb: 1,
+                              // opacity: highlightedOption === idx ? 1 : 0.4,
+                              transition: "opacity 0.3s",
+                            }}
+                          />
+                        )}
 
-
-                    <Stack
-                      direction="row"
-                      spacing={2}
-                      justifyContent="center"
-                      flexWrap="wrap"
-                      sx={{
-                        rowGap: 3,
-                        mt: 1,
-                        mb: 1,
-                      }}
-                    >
-                      {currentPoll.options.map((option, idx) => (
-                        <Box
-                          key={idx}
-                          display="flex"
-                          flexDirection="column"
-                          alignItems="center"
-                          width={{ xs: 100, sm: 100 }}
-                          onClick={() => {
-                            setHighlightedOption(idx);
-                            setSliderValue(idx);
-                          }}
-                          sx={{
-                            p: 2,
-                            borderRadius: 2,
-                            transition: "all 0.3s ease",
-                            border:
-                              highlightedOption === idx
-                                ? "2px solid"
-                                : "2px dashed",
-                            borderColor:
+                        {option.text && (
+                          <Typography
+                            variant="caption"
+                            textAlign={align}
+                            fontWeight="bold"
+                            color={
                               highlightedOption === idx
                                 ? "#ff8200"
-                                : "grey.300",
-                            cursor: "pointer",
-                            minHeight: 150,
+                                : "text.secondary"
+                            }
+                            sx={{
+                              wordBreak: "break-word",
+                              fontSize: { xs: "0.75rem", sm: "0.8rem" },
+                              maxWidth: 80,
+                            }}
+                          >
+                            {option.text}
+                          </Typography>
+                        )}
+                      </Box>
+                    ))}
+                  </Stack>
+
+                  {/* Helper text below options */}
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{
+                      textAlign: "center",
+                      mt: 1,
+                      mb: 1,
+                      fontSize: { xs: "0.875rem", sm: "1rem" },
+                    }}
+                  >
+                    {currentLang === "ar"
+                      ? "يمكنك اختيار الخيارات بالنقر عليها أو بتحريك المنزلق"
+                      : "You can select options by clicking them or moving the slider"}
+                  </Typography>
+
+                  <Box width="100%" px={4}>
+                    <Slider
+                      value={sliderValue}
+                      onChange={(e, val) => {
+                        setSliderValue(val);
+                        const closest = Math.round(val);
+                        if (closest !== highlightedOption) {
+                          setHighlightedOption(closest);
+                        }
+                      }}
+                      step={0.01}
+                      min={0}
+                      max={optionCount - 1}
+                      sx={{
+                        mt: 1,
+                        "& .MuiSlider-thumb": {
+                          width: 24,
+                          height: 24,
+                          bgcolor: "white",
+                          border: "2px solid",
+                          borderColor: "#ff8200",
+                        },
+                        "& .MuiSlider-track": {
+                          height: 8,
+                          bgcolor: "#ff8200",
+                        },
+                        "& .MuiSlider-rail": {
+                          height: 8,
+                          bgcolor: "grey.300",
+                        },
+                      }}
+                    />
+                  </Box>
+                </>
+              ) : (
+                <Stack spacing={2} width="100%">
+                  {currentPoll.options.map((option, idx) => {
+                    const isSelected = highlightedOption === idx;
+                    const canSelect = highlightedOption === null;
+
+                    return (
+                      <Box
+                        key={idx}
+                        onClick={() => {
+                          if (canSelect && !submitting) {
+                            setHighlightedOption(idx);
+                            handleVote(idx);
+                          }
+                        }}
+                        sx={{
+                          p: 2,
+                          border: "2px solid",
+                          borderColor: isSelected ? "primary.main" : "grey.300",
+                          borderRadius: 3,
+                          cursor: canSelect ? "pointer" : "default",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          transition: "all 0.3s",
+                          "&:hover": canSelect
+                            ? { bgcolor: "rgba(0,0,0,0.05)" }
+                            : {},
+                        }}
+                      >
+                        <Stack
+                          direction="row"
+                          alignItems="center"
+                          spacing={2}
+                          sx={{
+                            gap: dir === "rtl" ? 2 : 0,
                           }}
                         >
                           {option.imageUrl && (
                             <Avatar
                               src={option.imageUrl}
+                              alt={`Option ${idx + 1}`}
                               variant="rounded"
-                              sx={{
-                                width: 64,
-                                height: 64,
-                                mt: 1,
-                                mb: 1,
-                                opacity: highlightedOption === idx ? 1 : 0.4,
-                                transition: "opacity 0.3s",
-                              }}
+                              sx={{ width: 48, height: 48 }}
                             />
                           )}
-
                           {option.text && (
-                            <Typography
-                              variant="caption"
-                              textAlign={align}
-                              fontWeight="bold"
-                              color={
-                                highlightedOption === idx
-                                  ? "#ff8200"
-                                  : "text.secondary"
-                              }
-                              sx={{
-                                wordBreak: "break-word",
-                                fontSize: { xs: "0.75rem", sm: "0.8rem" },
-                                maxWidth: 80,
-                              }}
-                            >
+                            <Typography variant="body1" fontWeight="bold">
                               {option.text}
                             </Typography>
                           )}
-                        </Box>
-                      ))}
-                    </Stack>
+                        </Stack>
 
-                    {/* Helper text below options */}
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{
-                        textAlign: "center",
-                        mt: 1,
-                        mb: 1,
-                        fontSize: { xs: "0.875rem", sm: "1rem" },
-                      }}
-                    >
-                      {currentLang === "ar"
-                        ? "يمكنك اختيار الخيارات بالنقر عليها أو بتحريك المنزلق"
-                        : "You can select options by clicking them or moving the slider"}
-                    </Typography>
+                        {isSelected &&
+                          (submitting ? (
+                            // <CircularProgress size={24} color="primary" />
+                            <Box sx={{ width: 24, height: 24 }} />
+                          ) : (
+                            <ICONS.checkCircle fontSize="small" />
+                          ))}
+                      </Box>
+                    );
+                  })}
+                </Stack>
+              )}
 
-                    <Box width="100%" px={4}>
-                      <Slider
-                        value={sliderValue}
-                        onChange={(e, val) => {
-                          setSliderValue(val);
-                          const closest = Math.round(val);
-                          if (closest !== highlightedOption) {
-                            setHighlightedOption(closest);
-                          }
-                        }}
-                        step={0.01}
-                        min={0}
-                        max={optionCount - 1}
-                        sx={{
-                          mt: 1,
-                          "& .MuiSlider-thumb": {
-                            width: 24,
-                            height: 24,
-                            bgcolor: "white",
-                            border: "2px solid",
-                            borderColor: "#ff8200",
-                          },
-                          "& .MuiSlider-track": {
-                            height: 8,
-                            bgcolor: "#ff8200",
-                          },
-                          "& .MuiSlider-rail": {
-                            height: 8,
-                            bgcolor: "grey.300",
-                          },
-                        }}
-                      />
-                    </Box>
-                  </>
-                ) : (
-                  <Stack spacing={2} width="100%">
-                    {currentPoll.options.map((option, idx) => {
-                      const isSelected = highlightedOption === idx;
-                      const canSelect = highlightedOption === null;
-
-                      return (
-                        <Box
-                          key={idx}
-                          onClick={() => {
-                            if (canSelect && !submitting) {
-                              setHighlightedOption(idx);
-                              handleVote(idx);
-                            }
-                          }}
-                          sx={{
-                            p: 2,
-                            border: "2px solid",
-                            borderColor: isSelected ? "primary.main" : "grey.300",
-                            borderRadius: 3,
-                            cursor: canSelect ? "pointer" : "default",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            transition: "all 0.3s",
-                            "&:hover": canSelect ? { bgcolor: "rgba(0,0,0,0.05)" } : {},
-                          }}
-                        >
-                          <Stack
-                            direction="row"
-                            alignItems="center"
-                            spacing={2}
-                            sx={{
-                              gap: dir === "rtl" ? 2 : 0,
-                            }}
-                          >
-                            {option.imageUrl && (
-                              <Avatar
-                                src={option.imageUrl}
-                                alt={`Option ${idx + 1}`}
-                                variant="rounded"
-                                sx={{ width: 48, height: 48 }}
-                              />
-                            )}
-                            {option.text && (
-                              <Typography variant="body1" fontWeight="bold">
-                                {option.text}
-                              </Typography>
-                            )}
-                          </Stack>
-
-                          {isSelected &&
-                            (submitting ? (
-                              // <CircularProgress size={24} color="primary" />
-                              <Box sx={{ width: 24, height: 24 }} />
-                            ) : (
-                              <ICONS.checkCircle fontSize="small" />
-                            ))}
-                        </Box>
-                      );
-                    })}
-                  </Stack>
-                )}
-
-                {/* Next/Submit Button */}
-                {pollType === "slider" && (
-                  <Button
-                    variant="contained"
-                    size="large"
-                    disabled={highlightedOption === null || submitting}
-                    onClick={() => handleVote()}
-                    startIcon={
-                      submitting && <CircularProgress size={20} color="inherit" />
-                    }
-                    sx={{
-                      backgroundColor: "#ff8200",
-                      "&:hover": {
-                        backgroundColor: "#e67500",
-                      },
-                    }}
-                  >
-                    {submitting
-                      ? t.processing
-                      : currentIndex < polls.length - 1
-                        ? t.nextPoll
-                        : t.finish}
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-          </Box>
+              {/* Next/Submit Button */}
+              {pollType === "slider" && (
+                <Button
+                  variant="contained"
+                  size="large"
+                  disabled={highlightedOption === null || submitting}
+                  onClick={() => handleVote()}
+                  startIcon={
+                    submitting && <CircularProgress size={20} color="inherit" />
+                  }
+                  sx={{
+                    backgroundColor: "#ff8200",
+                    "&:hover": {
+                      backgroundColor: "#e67500",
+                    },
+                  }}
+                >
+                  {submitting
+                    ? t.processing
+                    : currentIndex < polls.length - 1
+                      ? t.nextPoll
+                      : t.finish}
+                </Button>
+              )}
+            </CardContent>
+          </Card>
         </Box>
 
         {/* Progress Circle - commented out */}
@@ -767,4 +754,3 @@ function RealPoll({ eventSlug }) {
     </>
   );
 }
-
