@@ -32,6 +32,9 @@ export default function DigiPassDashboard() {
     leftOutOf: isArabic ? "متبقي من" : "left out of",
     soFar: isArabic ? "حتى الآن..." : "So Far So Good!",
     scanQrCode: isArabic ? "امسح رمز QR" : "Scan QR Code",
+    allCompleted: isArabic
+      ? "تم إكمال جميع الأنشطة"
+      : "All activities completed",
   };
 
   const [event, setEvent] = useState(null);
@@ -52,7 +55,7 @@ export default function DigiPassDashboard() {
     fetchEvent();
 
     const storedRegistration = sessionStorage.getItem(
-      `digipass_${eventSlug}_registration`
+      `digipass_${eventSlug}_registration`,
     );
     if (storedRegistration) {
       try {
@@ -65,32 +68,34 @@ export default function DigiPassDashboard() {
     }
   }, [eventSlug]);
 
-  const handleTaskCompletedUpdate = useCallback((data) => {
-    if (data.tasksCompleted !== undefined) {
-      setTasksCompleted(data.tasksCompleted);
-      if (registration) {
-        const updatedRegistration = {
-          ...registration,
-          tasksCompleted: data.tasksCompleted,
-        };
-        setRegistration(updatedRegistration);
-        sessionStorage.setItem(
-          `digipass_${eventSlug}_registration`,
-          JSON.stringify(updatedRegistration)
-        );
+  const handleTaskCompletedUpdate = useCallback(
+    (data) => {
+      if (data.tasksCompleted !== undefined) {
+        setTasksCompleted(data.tasksCompleted);
+        if (registration) {
+          const updatedRegistration = {
+            ...registration,
+            tasksCompleted: data.tasksCompleted,
+          };
+          setRegistration(updatedRegistration);
+          sessionStorage.setItem(
+            `digipass_${eventSlug}_registration`,
+            JSON.stringify(updatedRegistration),
+          );
+        }
       }
-    }
-    if (data.maxTasks !== undefined) {
-      setMaxTasksPerUser(data.maxTasks);
-    }
-  }, [registration, eventSlug]);
+      if (data.maxTasks !== undefined) {
+        setMaxTasksPerUser(data.maxTasks);
+      }
+    },
+    [registration, eventSlug],
+  );
 
   useDigiPassSocket({
     eventId: event?._id,
     registrationId: registration?._id,
     onTaskCompletedUpdate: handleTaskCompletedUpdate,
   });
-
 
   if (loading || !event) {
     return (
@@ -129,9 +134,10 @@ export default function DigiPassDashboard() {
     ? `${t.welcome}, ${userName}!`
     : `${t.welcome}!`;
   const token = registration?.token || "";
-  const tasksLeft = maxTasksPerUser !== null && maxTasksPerUser !== undefined
-    ? maxTasksPerUser - tasksCompleted
-    : 0;
+  const tasksLeft =
+    maxTasksPerUser !== null && maxTasksPerUser !== undefined
+      ? maxTasksPerUser - tasksCompleted
+      : 0;
 
   return (
     <Box
@@ -194,7 +200,12 @@ export default function DigiPassDashboard() {
             boxShadow: 2,
           }}
         >
-          <ICONS.back sx={{ fontSize: { xs: "5vw", sm: "4vw", md: "3vw" }, maxFontSize: "24px" }} />
+          <ICONS.back
+            sx={{
+              fontSize: { xs: "5vw", sm: "4vw", md: "3vw" },
+              maxFontSize: "24px",
+            }}
+          />
         </IconButton>
 
         {/* Welcome Text */}
@@ -283,8 +294,9 @@ export default function DigiPassDashboard() {
                   height: "auto",
                   display: "block",
                   objectFit: "contain",
-                  filter: "grayscale(0%) drop-shadow(0 0 8px rgba(100, 181, 246, 0.9)) drop-shadow(0 0 15px rgba(100, 181, 246, 0.7))",
-                  clipPath: `inset(${100 - ((tasksCompleted / maxTasksPerUser) * 100)}% 0 0 0)`,
+                  filter:
+                    "grayscale(0%) drop-shadow(0 0 8px rgba(100, 181, 246, 0.9)) drop-shadow(0 0 15px rgba(100, 181, 246, 0.7))",
+                  clipPath: `inset(${100 - (tasksCompleted / maxTasksPerUser) * 100}% 0 0 0)`,
                   transition: "clip-path 0.5s ease-in-out",
                   zIndex: 2,
                 }}
@@ -372,21 +384,55 @@ export default function DigiPassDashboard() {
             </Card>
 
             {/* Right Side: Tasks Text, Progress Bar, and So Far Text */}
-            <Box sx={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
+            <Box
+              sx={{
+                flex: 1,
+                display: "flex",
+                flexDirection: "column",
+                minWidth: 0,
+              }}
+            >
               {/* Tasks Left Text */}
-              {maxTasksPerUser !== null && maxTasksPerUser !== undefined && (
-                <Typography
-                  sx={{
-                    fontSize: { xs: "4vw", sm: "3.2vw", md: "2.4vw" },
-                    fontWeight: "600",
-                    color: "#FF6B35",
-                    mb: { xs: "0.6vh", sm: "0.5vh", md: "0.4vh" },
-                    lineHeight: 1.2,
-                  }}
-                >
-                  {tasksLeft} {t.leftOutOf} {maxTasksPerUser}
-                </Typography>
-              )}
+              {maxTasksPerUser !== null &&
+                (tasksCompleted >= maxTasksPerUser ? (
+                  <Stack
+                    direction="row"
+                    alignItems="center"
+                    spacing={1}
+                    sx={{
+                      mb: { xs: "0.6vh", sm: "0.5vh", md: "0.4vh" },
+                    }}
+                  >
+                    <ICONS.checkCircle
+                      sx={{
+                        fontSize: { xs: "5vw", sm: "4vw", md: "3vw" },
+                        color: "#2E7D32",
+                      }}
+                    />
+                    <Typography
+                      sx={{
+                        fontSize: { xs: "4vw", sm: "3.2vw", md: "2.4vw" },
+                        fontWeight: "700",
+                        lineHeight: 1.2,
+                        color: "#FF6B35",
+                      }}
+                    >
+                      Completed ({tasksCompleted}/{maxTasksPerUser})
+                    </Typography>
+                  </Stack>
+                ) : (
+                  <Typography
+                    sx={{
+                      fontSize: { xs: "4vw", sm: "3.2vw", md: "2.4vw" },
+                      fontWeight: "600",
+                      color: "#FF6B35",
+                      mb: { xs: "0.6vh", sm: "0.5vh", md: "0.4vh" },
+                      lineHeight: 1.2,
+                    }}
+                  >
+                    {tasksLeft} {t.leftOutOf} {maxTasksPerUser}
+                  </Typography>
+                ))}
 
               {/* Progress Bar */}
               {maxTasksPerUser !== null && maxTasksPerUser !== undefined && (
@@ -464,4 +510,3 @@ export default function DigiPassDashboard() {
     </Box>
   );
 }
-

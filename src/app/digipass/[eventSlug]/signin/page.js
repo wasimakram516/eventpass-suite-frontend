@@ -315,7 +315,7 @@ export default function DigiPassSignIn() {
         },
         "& .MuiOutlinedInput-root": {
           color: "white",
-          backgroundColor: "#591c17",
+          backgroundColor: "#0B1E3D",
           "& fieldset": {
             borderColor: "white",
           },
@@ -391,7 +391,7 @@ export default function DigiPassSignIn() {
             },
             "& .MuiOutlinedInput-root": {
               color: "white",
-              backgroundColor: "#591c17",
+              backgroundColor: "#0B1E3D",
               "& fieldset": {
                 borderColor: "white",
               },
@@ -535,7 +535,7 @@ export default function DigiPassSignIn() {
           top: { xs: "1.5vw", sm: "1.2vw", md: "1vw" },
           left: { xs: "1.5vw", sm: "1.2vw", md: "1vw" },
           bgcolor: "rgba(255, 255, 255, 0.7)",
-          color: "#591c17",
+          color: "#0B1E3D",
           width: { xs: "10vw", sm: "8vw", md: "6vw" },
           height: { xs: "10vw", sm: "8vw", md: "6vw" },
           minWidth: "40px",
@@ -585,7 +585,7 @@ export default function DigiPassSignIn() {
           sx={{
             width: "100%",
             maxWidth: { xs: "100%", sm: 450, md: 500 },
-            backgroundColor: "#591c17",
+            backgroundColor: "#0B1E3D",
             borderRadius: { xs: 3, sm: 4 },
             p: { xs: 4, sm: 5, md: 6 },
             boxShadow: "0 8px 32px rgba(0, 0, 0, 0.2)",
