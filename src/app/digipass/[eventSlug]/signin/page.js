@@ -27,7 +27,11 @@ import { translateTexts } from "@/services/translationService";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import CountryCodeSelector from "@/components/CountryCodeSelector";
 import { normalizePhone } from "@/utils/phoneUtils";
-import { DEFAULT_COUNTRY_CODE, DEFAULT_ISO_CODE, getCountryCodeByIsoCode } from "@/utils/countryCodes";
+import {
+  DEFAULT_COUNTRY_CODE,
+  DEFAULT_ISO_CODE,
+  getCountryCodeByIsoCode,
+} from "@/utils/countryCodes";
 import { validatePhoneNumber } from "@/utils/phoneValidation";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -91,7 +95,9 @@ export default function DigiPassSignIn() {
       }));
 
     if (identityFieldsList.length === 0) {
-      setFieldErrors({ _global: "No identity fields configured for this event" });
+      setFieldErrors({
+        _global: "No identity fields configured for this event",
+      });
       setTranslationsReady(true);
       return;
     }
@@ -123,7 +129,7 @@ export default function DigiPassSignIn() {
       });
 
       const textArray = Array.from(textsToTranslate).filter(
-        (t) => typeof t === "string" && t.trim() !== ""
+        (t) => typeof t === "string" && t.trim() !== "",
       );
 
       if (!textArray.length) {
@@ -211,7 +217,8 @@ export default function DigiPassSignIn() {
     const errors = {};
     identityFields.forEach((f) => {
       if (!f || !f.name) return;
-      const val = formData[f.name] != null ? String(formData[f.name]).trim() : "";
+      const val =
+        formData[f.name] != null ? String(formData[f.name]).trim() : "";
       if (!val) errors[f.name] = `${f.label} ${t.required}`;
       if (f.type === "email" && val && !isValidEmail(val))
         errors[f.name] = t.invalidEmail;
@@ -265,7 +272,7 @@ export default function DigiPassSignIn() {
     if (!result?.error && result?.registration) {
       sessionStorage.setItem(
         `digipass_${eventSlug}_registration`,
-        JSON.stringify(result.registration)
+        JSON.stringify(result.registration),
       );
       router.push(`/digipass/${eventSlug}/dashboard`);
     } else {
@@ -340,7 +347,9 @@ export default function DigiPassSignIn() {
         <Box key={field.name} sx={{ mb: 2, textAlign: "center" }}>
           <Typography sx={{ mb: 1, color: "white" }}>
             {fieldLabel}
-            {field.required && <span style={{ color: "rgba(255, 255, 255, 0.8)" }}> *</span>}
+            {field.required && (
+              <span style={{ color: "rgba(255, 255, 255, 0.8)" }}> *</span>
+            )}
           </Typography>
           <RadioGroup
             row
@@ -364,12 +373,19 @@ export default function DigiPassSignIn() {
                     }}
                   />
                 }
-                label={<Typography sx={{ color: "white" }}>{translations[opt] || opt}</Typography>}
+                label={
+                  <Typography sx={{ color: "white" }}>
+                    {translations[opt] || opt}
+                  </Typography>
+                }
               />
             ))}
           </RadioGroup>
           {errorMsg && (
-            <Typography variant="caption" sx={{ color: "rgba(255, 255, 255, 0.7)" }}>
+            <Typography
+              variant="caption"
+              sx={{ color: "rgba(255, 255, 255, 0.7)" }}
+            >
               {errorMsg}
             </Typography>
           )}
@@ -435,7 +451,10 @@ export default function DigiPassSignIn() {
             ))}
           </Select>
           {errorMsg && (
-            <Typography variant="caption" sx={{ color: "rgba(255, 255, 255, 0.7)" }}>
+            <Typography
+              variant="caption"
+              sx={{ color: "rgba(255, 255, 255, 0.7)" }}
+            >
               {errorMsg}
             </Typography>
           )}
@@ -443,13 +462,7 @@ export default function DigiPassSignIn() {
       );
 
     if (field.type === "number") {
-      return (
-        <TextField
-          key={field.name}
-          {...commonProps}
-          type="number"
-        />
-      );
+      return <TextField key={field.name} {...commonProps} type="number" />;
     }
 
     if (field.type === "phone") {
@@ -529,7 +542,7 @@ export default function DigiPassSignIn() {
 
       {/* Back Button */}
       <IconButton
-        onClick={() => router.push(`/digipass/${eventSlug}?view=card`)}
+        onClick={() => router.push(`/digipass/${eventSlug}`)}
         sx={{
           position: "absolute",
           top: { xs: "1.5vw", sm: "1.2vw", md: "1vw" },
@@ -549,7 +562,12 @@ export default function DigiPassSignIn() {
           boxShadow: 2,
         }}
       >
-        <ICONS.back sx={{ fontSize: { xs: "5vw", sm: "4vw", md: "3vw" }, maxFontSize: "24px" }} />
+        <ICONS.back
+          sx={{
+            fontSize: { xs: "5vw", sm: "4vw", md: "3vw" },
+            maxFontSize: "24px",
+          }}
+        />
       </IconButton>
 
       {/* Orange Circle Background */}
@@ -596,19 +614,6 @@ export default function DigiPassSignIn() {
             minHeight: { xs: 500, sm: 600, md: 700 },
           }}
         >
-          {/* Sultanate Image */}
-          <Box
-            component="img"
-            src="/sultanate of oman.png"
-            alt="Sultanate of Oman"
-            sx={{
-              width: "100%",
-              maxWidth: { xs: 200, sm: 250, md: 300 },
-              height: "auto",
-              objectFit: "contain",
-            }}
-          />
-
           {/* Event Logo */}
           {logoUrl && (
             <Box
@@ -628,7 +633,7 @@ export default function DigiPassSignIn() {
                   width: "100%",
                   height: "auto",
                   maxHeight: { xs: 150, sm: 200, md: 250 },
-                  objectFit: "contain",
+                  objectFit: "cover",
                 }}
               />
             </Box>
@@ -670,9 +675,14 @@ export default function DigiPassSignIn() {
             fullWidth
             disabled={submitting}
             onClick={handleSubmit}
-            startIcon={submitting ? <CircularProgress size={20} sx={{ color: "white" }} /> : <ICONS.login />}
+            startIcon={
+              submitting ? (
+                <CircularProgress size={20} sx={{ color: "white" }} />
+              ) : (
+                <ICONS.login />
+              )
+            }
             sx={{
-
               borderColor: "white",
               color: "white",
               "&:hover": {
@@ -692,4 +702,3 @@ export default function DigiPassSignIn() {
     </Box>
   );
 }
-

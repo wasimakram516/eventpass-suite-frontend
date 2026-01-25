@@ -180,7 +180,7 @@ export default function DigiPassDashboard() {
       >
         {/* Back Button */}
         <IconButton
-          onClick={() => router.push(`/digipass/${eventSlug}?view=card`)}
+          onClick={() => router.push(`/digipass/${eventSlug}`)}
           sx={{
             position: "absolute",
             top: { xs: "1.5vw", sm: "1.2vw", md: "1vw" },

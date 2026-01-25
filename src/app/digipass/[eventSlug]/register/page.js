@@ -27,7 +27,12 @@ import { translateTexts } from "@/services/translationService";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import CountryCodeSelector from "@/components/CountryCodeSelector";
 import { normalizePhone } from "@/utils/phoneUtils";
-import { DEFAULT_COUNTRY_CODE, DEFAULT_ISO_CODE, COUNTRY_CODES, getCountryCodeByIsoCode } from "@/utils/countryCodes";
+import {
+  DEFAULT_COUNTRY_CODE,
+  DEFAULT_ISO_CODE,
+  COUNTRY_CODES,
+  getCountryCodeByIsoCode,
+} from "@/utils/countryCodes";
 import { validatePhoneNumber } from "@/utils/phoneValidation";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useMessage } from "@/contexts/MessageContext";
@@ -89,15 +94,15 @@ export default function DigiPassRegistration() {
 
     const fields = event.formFields?.length
       ? event.formFields
-        .filter((f) => f.visible !== false)
-        .map((f) => ({
-          name: f.inputName,
-          label: f.inputName,
-          type: f.inputType,
-          options: f.values || [],
-          required: f.required,
-          placeholder: f.placeholder || "",
-        }))
+          .filter((f) => f.visible !== false)
+          .map((f) => ({
+            name: f.inputName,
+            label: f.inputName,
+            type: f.inputType,
+            options: f.values || [],
+            required: f.required,
+            placeholder: f.placeholder || "",
+          }))
       : [];
 
     const initial = {};
@@ -127,7 +132,7 @@ export default function DigiPassRegistration() {
       });
 
       const textArray = Array.from(textsToTranslate).filter(
-        (t) => typeof t === "string" && t.trim() !== ""
+        (t) => typeof t === "string" && t.trim() !== "",
       );
 
       if (!textArray.length) {
@@ -274,7 +279,6 @@ export default function DigiPassRegistration() {
     }
   };
 
-
   if (loading || !event || !translatedEvent || !translationsReady) {
     return (
       <Box
@@ -342,7 +346,9 @@ export default function DigiPassRegistration() {
         <Box key={field.name} sx={{ mb: 2, textAlign: "center" }}>
           <Typography sx={{ mb: 1, color: "white" }}>
             {fieldLabel}
-            {field.required && <span style={{ color: "rgba(255, 255, 255, 0.8)" }}> *</span>}
+            {field.required && (
+              <span style={{ color: "rgba(255, 255, 255, 0.8)" }}> *</span>
+            )}
           </Typography>
           <RadioGroup
             row
@@ -366,12 +372,19 @@ export default function DigiPassRegistration() {
                     }}
                   />
                 }
-                label={<Typography sx={{ color: "white" }}>{translations[opt] || opt}</Typography>}
+                label={
+                  <Typography sx={{ color: "white" }}>
+                    {translations[opt] || opt}
+                  </Typography>
+                }
               />
             ))}
           </RadioGroup>
           {errorMsg && (
-            <Typography variant="caption" sx={{ color: "rgba(255, 255, 255, 0.7)" }}>
+            <Typography
+              variant="caption"
+              sx={{ color: "rgba(255, 255, 255, 0.7)" }}
+            >
               {errorMsg}
             </Typography>
           )}
@@ -437,7 +450,10 @@ export default function DigiPassRegistration() {
             ))}
           </Select>
           {errorMsg && (
-            <Typography variant="caption" sx={{ color: "rgba(255, 255, 255, 0.7)" }}>
+            <Typography
+              variant="caption"
+              sx={{ color: "rgba(255, 255, 255, 0.7)" }}
+            >
               {errorMsg}
             </Typography>
           )}
@@ -445,13 +461,7 @@ export default function DigiPassRegistration() {
       );
 
     if (field.type === "number") {
-      return (
-        <TextField
-          key={field.name}
-          {...commonProps}
-          type="number"
-        />
-      );
+      return <TextField key={field.name} {...commonProps} type="number" />;
     }
 
     if (field.type === "phone") {
@@ -531,7 +541,7 @@ export default function DigiPassRegistration() {
 
       {/* Back Button */}
       <IconButton
-        onClick={() => router.push(`/digipass/${eventSlug}?view=card`)}
+        onClick={() => router.push(`/digipass/${eventSlug}`)}
         sx={{
           position: "absolute",
           top: { xs: "1.5vw", sm: "1.2vw", md: "1vw" },
@@ -551,7 +561,12 @@ export default function DigiPassRegistration() {
           boxShadow: 2,
         }}
       >
-        <ICONS.back sx={{ fontSize: { xs: "5vw", sm: "4vw", md: "3vw" }, maxFontSize: "24px" }} />
+        <ICONS.back
+          sx={{
+            fontSize: { xs: "5vw", sm: "4vw", md: "3vw" },
+            maxFontSize: "24px",
+          }}
+        />
       </IconButton>
 
       {/* Orange Circle Background */}
@@ -598,19 +613,6 @@ export default function DigiPassRegistration() {
             minHeight: { xs: 500, sm: 600, md: 700 },
           }}
         >
-          {/* Sultanate Image */}
-          <Box
-            component="img"
-            src="/sultanate of oman.png"
-            alt="Sultanate of Oman"
-            sx={{
-              width: "100%",
-              maxWidth: { xs: 200, sm: 250, md: 300 },
-              height: "auto",
-              objectFit: "contain",
-            }}
-          />
-
           {/* Event Logo */}
           {logoUrl && (
             <Box
@@ -630,7 +632,7 @@ export default function DigiPassRegistration() {
                   width: "100%",
                   height: "auto",
                   maxHeight: { xs: 150, sm: 200, md: 250 },
-                  objectFit: "contain",
+                  objectFit: "cover",
                 }}
               />
             </Box>
@@ -672,9 +674,14 @@ export default function DigiPassRegistration() {
             fullWidth
             disabled={submitting}
             onClick={handleSubmit}
-            startIcon={submitting ? <CircularProgress size={20} sx={{ color: "white" }} /> : <ICONS.register />}
+            startIcon={
+              submitting ? (
+                <CircularProgress size={20} sx={{ color: "white" }} />
+              ) : (
+                <ICONS.register />
+              )
+            }
             sx={{
-
               borderColor: "white",
               color: "white",
               "&:hover": {
@@ -694,4 +701,3 @@ export default function DigiPassRegistration() {
     </Box>
   );
 }
-
