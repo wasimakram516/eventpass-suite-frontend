@@ -174,7 +174,13 @@ function RealPoll({ eventSlug }) {
   };
 
   const handleRestart = () => {
-    window.location.reload();
+    clearTimeout(autoSubmitRef.current);
+
+    setFinished(false);
+    setCurrentIndex(0);
+    setSliderValue(0);
+    setHighlightedOption(null);
+    setSubmitting(false);
   };
 
   if (loading) {
@@ -483,21 +489,31 @@ function RealPoll({ eventSlug }) {
                         }}
                       >
                         {option.imageUrl && (
-                          <Avatar
-                            src={option.imageUrl}
-                            variant="rounded"
+                          <Box
                             sx={{
-                              width: { xs: 90, sm: 150 },
-                              height: { xs: 90, sm: 150 },
-                              mb: 1,
-                              transition:
-                                "transform 0.25s ease, box-shadow 0.25s ease",
+                              width: "100%",
+                              maxWidth: "clamp(50px, 15vw, 120px)",
+                              aspectRatio: "1 / 1",
+                              transition: "transform 0.25s ease",
                               transform:
-                                highlightedOption === idx
-                                  ? "scale(1.3)"
+                                !finished && highlightedOption === idx
+                                  ? "scale(1.15)"
                                   : "scale(1)",
                             }}
-                          />
+                          >
+                            <Box
+                              component="img"
+                              src={option.imageUrl}
+                              alt={option.text || "option"}
+                              sx={{
+                                width: "100%",
+                                height: "100%",
+                                objectFit: "contain",
+                                borderRadius: 2,
+                                display: "block",
+                              }}
+                            />
+                          </Box>
                         )}
 
                         {option.text && (
@@ -630,26 +646,32 @@ function RealPoll({ eventSlug }) {
                           }}
                         >
                           {option.imageUrl && (
-                            <Avatar
-                              src={option.imageUrl}
-                              variant="rounded"
+                            <Box
                               sx={{
-                                width: { xs: 90, sm: 150 },
-                                height: { xs: 90, sm: 150 },
-
-                                /* IMPORTANT: prevent layout shift */
+                                width: "100%",
+                                maxWidth: "clamp(50px, 15vw, 120px)",
+                                aspectRatio: "1 / 1",
                                 flexShrink: 0,
-
-                                transition:
-                                  "transform 0.25s ease, box-shadow 0.25s ease",
-                                transformOrigin: "center",
-
+                                transition: "transform 0.25s ease",
                                 transform:
-                                  highlightedOption === idx
-                                    ? "scale(1.3)"
+                                  !finished && highlightedOption === idx
+                                    ? "scale(1.15)"
                                     : "scale(1)",
                               }}
-                            />
+                            >
+                              <Box
+                                component="img"
+                                src={option.imageUrl}
+                                alt={option.text || "option"}
+                                sx={{
+                                  width: "100%",
+                                  height: "100%",
+                                  objectFit: "contain",
+                                  borderRadius: 2,
+                                  display: "block",
+                                }}
+                              />
+                            </Box>
                           )}
 
                           {option.text && (
