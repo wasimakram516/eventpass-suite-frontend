@@ -95,6 +95,13 @@ const translations = {
     deleteMediaTitle: "Delete Media",
     deleteMediaMessage: "Are you sure you want to delete this media? This action cannot be undone.",
     deleteConfirm: "Delete",
+    useCustomEmailTemplate: "Use custom email template",
+    emailSubject: "Email Subject",
+    emailBody: "Email Body",
+    placeholderSubject: "Enter email subject",
+    placeholderBody: "Enter email body...",
+    emailSubjectRequired: "Email subject is required when using custom email template.",
+    emailBodyRequired: "Email body is required when using custom email template.",
   },
   ar: {
     createTitle: "إنشاء فعالية",
@@ -154,6 +161,13 @@ const translations = {
     deleteMediaTitle: "حذف الوسائط",
     deleteMediaMessage: "هل أنت متأكد من حذف هذه الوسائط؟ لا يمكن التراجع عن هذا الإجراء.",
     deleteConfirm: "حذف",
+    useCustomEmailTemplate: "استخدام قالب بريد إلكتروني مخصص",
+    emailSubject: "موضوع البريد الإلكتروني",
+    emailBody: "نص البريد الإلكتروني",
+    placeholderSubject: "أدخل موضوع البريد الإلكتروني",
+    placeholderBody: "أدخل نص البريد الإلكتروني...",
+    emailSubjectRequired: "موضوع البريد الإلكتروني مطلوب عند استخدام قالب بريد إلكتروني مخصص.",
+    emailBodyRequired: "نص البريد الإلكتروني مطلوب عند استخدام قالب بريد إلكتروني مخصص.",
   },
 };
 
@@ -173,6 +187,8 @@ const EventModal = ({
   const [showUploadProgress, setShowUploadProgress] = useState(false);
   const [organizerPhoneError, setOrganizerPhoneError] = useState("");
   const [organizerPhoneIsoCode, setOrganizerPhoneIsoCode] = useState(DEFAULT_ISO_CODE);
+  const [emailTemplateSubjectError, setEmailTemplateSubjectError] = useState(false);
+  const [emailTemplateBodyError, setEmailTemplateBodyError] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState({
     open: false,
     type: null,
@@ -232,6 +248,9 @@ const EventModal = ({
     organizerName: "",
     organizerEmail: "",
     organizerPhone: "",
+    useCustomEmailTemplate: false,
+    emailTemplateSubject: "",
+    emailTemplateBody: "",
   });
 
   useEffect(() => {
@@ -296,6 +315,9 @@ const EventModal = ({
         organizerName: initialValues?.organizerName || "",
         organizerEmail: initialValues?.organizerEmail || "",
         organizerPhone: initialValues?.organizerPhone || "",
+        useCustomEmailTemplate: initialValues?.useCustomEmailTemplate || false,
+        emailTemplateSubject: initialValues?.emailTemplate?.subject || "",
+        emailTemplateBody: initialValues?.emailTemplate?.body || "",
       }));
 
       if (initialValues?.organizerPhone) {
@@ -369,9 +391,26 @@ const EventModal = ({
         removeLogo: false,
         removeBackgroundEn: false,
         removeBackgroundAr: false,
+        useCustomEmailTemplate: false,
+        emailTemplateSubject: "",
+        emailTemplateBody: "",
       }));
     }
   }, [initialValues, isClosed]);
+
+  useEffect(() => {
+    if (!formData.useCustomEmailTemplate) {
+      setEmailTemplateSubjectError(false);
+      setEmailTemplateBodyError(false);
+    }
+  }, [formData.useCustomEmailTemplate]);
+
+  useEffect(() => {
+    if (!open) {
+      setEmailTemplateSubjectError(false);
+      setEmailTemplateBodyError(false);
+    }
+  }, [open]);
 
   useEffect(() => {
     const measureWidths = () => {
@@ -701,6 +740,19 @@ const EventModal = ({
       }
     }
 
+    if (formData.useCustomEmailTemplate) {
+      if (!formData.emailTemplateSubject || !formData.emailTemplateSubject.trim()) {
+        setEmailTemplateSubjectError(true);
+        showMessage(t.emailSubjectRequired, "error");
+        return;
+      }
+      if (!formData.emailTemplateBody || !formData.emailTemplateBody.trim() || formData.emailTemplateBody === "<p><br></p>" || formData.emailTemplateBody === "<p></p>") {
+        setEmailTemplateBodyError(true);
+        showMessage(t.emailBodyRequired, "error");
+        return;
+      }
+    }
+
     setLoading(true);
 
     try {
@@ -907,6 +959,15 @@ const EventModal = ({
         requiresApproval: formData.requiresApproval,
         defaultLanguage: formData.defaultLanguage,
         useInternationalNumbers: formData.useInternationalNumbers,
+        useCustomEmailTemplate: formData.useCustomEmailTemplate,
+        ...(formData.useCustomEmailTemplate
+          ? {
+            emailTemplate: {
+              subject: formData.emailTemplateSubject,
+              body: formData.emailTemplateBody,
+            },
+          }
+          : {}),
         ...(formData.useCustomFields
           ? { formFields: formData.formFields }
           : {}),
@@ -1177,6 +1238,85 @@ const EventModal = ({
                 sx={{ alignSelf: "start" }}
               />
             </Box>
+
+            {/* Custom Email Template */}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={formData.useCustomEmailTemplate}
+                    onChange={(e) => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        useCustomEmailTemplate: e.target.checked,
+                      }));
+                      if (!e.target.checked) {
+                        setEmailTemplateSubjectError(false);
+                        setEmailTemplateBodyError(false);
+                      }
+                    }}
+                    color="primary"
+                  />
+                }
+                label={t.useCustomEmailTemplate}
+                sx={{ alignSelf: "start" }}
+              />
+            </Box>
+
+            {formData.useCustomEmailTemplate && (
+              <>
+                <TextField
+                  fullWidth
+                  label={t.emailSubject}
+                  value={formData.emailTemplateSubject}
+                  onChange={(e) => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      emailTemplateSubject: e.target.value,
+                    }));
+                    if (emailTemplateSubjectError) {
+                      setEmailTemplateSubjectError(false);
+                    }
+                  }}
+                  placeholder={t.placeholderSubject}
+                  required
+                  error={emailTemplateSubjectError}
+                  helperText={emailTemplateSubjectError ? t.emailSubjectRequired : ""}
+                />
+
+                <Box>
+                  <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+                    {t.emailBody} {emailTemplateBodyError && <span style={{ color: "#d32f2f" }}>*</span>}
+                  </Typography>
+                  <Box
+                    sx={{
+                      border: emailTemplateBodyError ? "1px solid #d32f2f" : "1px solid transparent",
+                      borderRadius: 1,
+                    }}
+                  >
+                    <RichTextEditor
+                      value={formData.emailTemplateBody}
+                      onChange={(html) => {
+                        setFormData((prev) => ({
+                          ...prev,
+                          emailTemplateBody: html,
+                        }));
+                        if (emailTemplateBodyError) {
+                          setEmailTemplateBodyError(false);
+                        }
+                      }}
+                      placeholder={t.placeholderBody}
+                      dir={dir}
+                    />
+                  </Box>
+                  {emailTemplateBodyError && (
+                    <Typography variant="caption" sx={{ color: "#d32f2f", mt: 0.5, display: "block" }}>
+                      {t.emailBodyRequired}
+                    </Typography>
+                  )}
+                </Box>
+              </>
+            )}
 
             {/* Default Language Selector */}
             <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
