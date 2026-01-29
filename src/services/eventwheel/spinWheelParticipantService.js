@@ -23,6 +23,24 @@ export const addParticipantsOnSpot = withApiHandler(
   { showSuccess: true }
 );
 
+// Upload participants from Excel file (admin wheels only)
+export const uploadParticipants = withApiHandler(
+  async (spinWheelId, file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const { data } = await api.post(
+      `/eventwheel/participants/upload/${spinWheelId}`,
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      }
+    );
+    return data;
+  },
+  { showSuccess: true }
+);
+
 // Sync participants from event registrations (synced wheels only)
 export const syncSpinWheelParticipants = withApiHandler(
   async (spinWheelId, payload = {}) => {
@@ -39,13 +57,23 @@ export const syncSpinWheelParticipants = withApiHandler(
    READ
 ========================= */
 
-// Get participants by wheel slug (admin + public spin view)
+// Get participants by wheel slug (admin + public spin view - only visible participants)
 export const getParticipantsBySlug = withApiHandler(async (slug) => {
   const { data } = await api.get(
     `/eventwheel/participants/slug/${slug}`
   );
   return data;
 });
+
+// Get participants for CMS (all participants with pagination and winner status)
+export const getParticipantsForCMS = withApiHandler(
+  async (spinWheelId, page = 1, limit = 10) => {
+    const { data } = await api.get(
+      `/eventwheel/participants/cms/${spinWheelId}?page=${page}&limit=${limit}`
+    );
+    return data;
+  }
+);
 
 // Get single participant by ID (admin/internal)
 export const getParticipantById = withApiHandler(async (id) => {
@@ -105,9 +133,27 @@ export const exportSpinWheelParticipantsXlsx = withApiHandler(
     return true;
   },
   {
-    showSuccess: false, 
+    showSuccess: false,
   }
 );
+
+// Download sample Excel template (admin wheels only)
+export const downloadSampleExcel = async (spinWheelId) => {
+  const response = await api.get(
+    `/eventwheel/participants/sample/${spinWheelId}`,
+    { responseType: "blob" }
+  );
+  return response.data;
+};
+
+// Download country reference Excel file
+export const downloadCountryReference = async () => {
+  const response = await api.get(
+    `/eventwheel/participants/country-reference`,
+    { responseType: "blob" }
+  );
+  return response.data;
+};
 
 /* =========================
    UPDATE / DELETE
@@ -135,3 +181,29 @@ export const deleteParticipant = withApiHandler(
   },
   { showSuccess: true }
 );
+
+// Save Winner
+export const saveWinner = withApiHandler(
+  async (payload) => {
+    const { data } = await api.post("/eventwheel/participants/winner", payload);
+    return data;
+  },
+  { showSuccess: false }
+);
+
+// Remove Winner (set visible to false)
+export const removeWinner = withApiHandler(
+  async (participantId) => {
+    const { data } = await api.put(
+      `/eventwheel/participants/winner/remove/${participantId}`
+    );
+    return data;
+  },
+  { showSuccess: true }
+);
+
+// Get Winners for a SpinWheel by Slug
+export const getWinners = withApiHandler(async (slug) => {
+  const { data } = await api.get(`/eventwheel/participants/winners/${slug}`);
+  return data;
+});
