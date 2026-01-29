@@ -138,10 +138,12 @@ const translations = {
     bulkReject: "Bulk Reject",
     bulkApproveTitle: "Bulk Approve",
     bulkRejectTitle: "Bulk Reject",
-    bulkApproveMessage:
-      "Are you sure you want to approve all currently displayed registrations?",
-    bulkRejectMessage:
-      "Are you sure you want to reject all currently displayed registrations?",
+    bulkApproveAll: "Are you sure you want to approve ALL registrations?",
+    bulkRejectAll: "Are you sure you want to reject ALL registrations?",
+    bulkApproveFiltered:
+      "Are you sure you want to approve all registrations matching the current filters?",
+    bulkRejectFiltered:
+      "Are you sure you want to reject all registrations matching the current filters?",
     approved: "Approved",
     rejected: "Rejected",
     pending: "Pending",
@@ -218,10 +220,12 @@ const translations = {
     bulkReject: "رفض جماعي",
     bulkApproveTitle: "موافقة جماعية",
     bulkRejectTitle: "رفض جماعي",
-    bulkApproveMessage:
-      "هل أنت متأكد أنك تريد الموافقة على جميع التسجيلات المعروضة حاليًا؟",
-    bulkRejectMessage:
-      "هل أنت متأكد أنك تريد رفض جميع التسجيلات المعروضة حاليًا؟",
+    bulkApproveAll: "هل أنت متأكد أنك تريد الموافقة على جميع التسجيلات؟",
+    bulkRejectAll: "هل أنت متأكد أنك تريد رفض جميع التسجيلات؟",
+    bulkApproveFiltered:
+      "هل أنت متأكد أنك تريد الموافقة على جميع التسجيلات المطابقة للفلاتر الحالية؟",
+    bulkRejectFiltered:
+      "هل أنت متأكد أنك تريد رفض جميع التسجيلات المطابقة للفلاتر الحالية؟",
     approved: "موافق عليه",
     rejected: "مرفوض",
     pending: "قيد الانتظار",
@@ -253,7 +257,7 @@ export default function ViewRegistrations() {
 
   function buildFilterState(fieldsLocal, prev = {}) {
     const dynamic = Object.fromEntries(
-      (fieldsLocal || []).map((f) => [f.name, prev[f.name] ?? ""])
+      (fieldsLocal || []).map((f) => [f.name, prev[f.name] ?? ""]),
     );
     return { ...BASE_DATE_FILTERS, ...dynamic };
   }
@@ -311,7 +315,7 @@ export default function ViewRegistrations() {
   // Helper to build search haystack (component level)
   const buildHaystack = (reg, fieldsLocal) => {
     const dyn = fieldsLocal.map(
-      (f) => reg.customFields?.[f.name] ?? reg[f.name]
+      (f) => reg.customFields?.[f.name] ?? reg[f.name],
     );
     const walk = (reg.walkIns || []).flatMap((w) => [
       w.scannedBy?.name,
@@ -342,16 +346,16 @@ export default function ViewRegistrations() {
     const fieldsLocal =
       !evRes?.error && evRes.formFields?.length
         ? evRes.formFields.map((f) => ({
-          name: f.inputName,
-          type: (f.inputType || "text").toLowerCase(),
-          values: Array.isArray(f.values) ? f.values : [],
-        }))
+            name: f.inputName,
+            type: (f.inputType || "text").toLowerCase(),
+            values: Array.isArray(f.values) ? f.values : [],
+          }))
         : [
-          { name: "fullName", type: "text", values: [] },
-          { name: "email", type: "text", values: [] },
-          { name: "phone", type: "text", values: [] },
-          { name: "company", type: "text", values: [] },
-        ];
+            { name: "fullName", type: "text", values: [] },
+            { name: "email", type: "text", values: [] },
+            { name: "phone", type: "text", values: [] },
+            { name: "company", type: "text", values: [] },
+          ];
 
     if (!evRes?.error) {
       setEventDetails(evRes);
@@ -362,8 +366,8 @@ export default function ViewRegistrations() {
 
     setFieldMetaMap(
       Object.fromEntries(
-        fieldsLocal.map((f) => [f.name, { type: f.type, values: f.values }])
-      )
+        fieldsLocal.map((f) => [f.name, { type: f.type, values: f.values }]),
+      ),
     );
 
     setFilters((prev) => buildFilterState(fieldsLocal, prev));
@@ -458,44 +462,41 @@ export default function ViewRegistrations() {
         if (total === 0) {
           showMessage(
             "No notifications to send. No registrations match the selected filter.",
-            "info"
+            "info",
           );
         } else {
           showMessage(
             `Bulk notification completed — ${sent} sent, ${failed} failed, out of ${total} total.`,
-            "success"
+            "success",
           );
         }
       }
     },
-    [showMessage, fetchData]
+    [showMessage, fetchData],
   );
 
-  const handleNewRegistration = useCallback(
-    (data) => {
-      if (!data?.registration) return;
+  const handleNewRegistration = useCallback((data) => {
+    if (!data?.registration) return;
 
-      const reg = data.registration;
+    const reg = data.registration;
 
-      const processed = {
-        ...reg,
-        approvalStatus: reg.approvalStatus || "pending",
-        _createdAtMs: Date.parse(reg.createdAt),
-        _scannedAtMs: (reg.walkIns || []).map((w) => Date.parse(w.scannedAt)),
-        _haystack: buildHaystack(reg, dynamicFieldsRef.current),
-      };
+    const processed = {
+      ...reg,
+      approvalStatus: reg.approvalStatus || "pending",
+      _createdAtMs: Date.parse(reg.createdAt),
+      _scannedAtMs: (reg.walkIns || []).map((w) => Date.parse(w.scannedAt)),
+      _haystack: buildHaystack(reg, dynamicFieldsRef.current),
+    };
 
-      setAllRegistrations((prev) => {
-        const exists = prev.some((r) => r._id === processed._id);
-        if (exists) return prev;
+    setAllRegistrations((prev) => {
+      const exists = prev.some((r) => r._id === processed._id);
+      if (exists) return prev;
 
-        return [processed, ...prev];
-      });
+      return [processed, ...prev];
+    });
 
-      setTotalRegistrations((prev) => prev + 1);
-    },
-    []
-  );
+    setTotalRegistrations((prev) => prev + 1);
+  }, []);
 
   // ---- Use hook with stable callbacks ----
   const { uploadProgress, emailProgress } = useEventRegSocket({
@@ -517,19 +518,34 @@ export default function ViewRegistrations() {
         if (r._id === editingReg._id) {
           const hasCustomFields = eventDetails?.formFields?.length > 0;
           if (hasCustomFields) {
-            return { ...r, customFields: { ...r.customFields, ...updatedFields } };
+            return {
+              ...r,
+              customFields: { ...r.customFields, ...updatedFields },
+            };
           } else {
             return {
               ...r,
-              fullName: updatedFields["Full Name"] !== undefined ? updatedFields["Full Name"] : r.fullName,
-              email: updatedFields["Email"] !== undefined ? updatedFields["Email"] : r.email,
-              phone: updatedFields["Phone"] !== undefined ? updatedFields["Phone"] : r.phone,
-              company: updatedFields["Company"] !== undefined ? updatedFields["Company"] : r.company,
+              fullName:
+                updatedFields["Full Name"] !== undefined
+                  ? updatedFields["Full Name"]
+                  : r.fullName,
+              email:
+                updatedFields["Email"] !== undefined
+                  ? updatedFields["Email"]
+                  : r.email,
+              phone:
+                updatedFields["Phone"] !== undefined
+                  ? updatedFields["Phone"]
+                  : r.phone,
+              company:
+                updatedFields["Company"] !== undefined
+                  ? updatedFields["Company"]
+                  : r.company,
             };
           }
         }
         return r;
-      })
+      }),
     );
     setEditModalOpen(false);
     setEditingReg(null);
@@ -566,6 +582,64 @@ export default function ViewRegistrations() {
     fetchData();
   };
 
+  const hasActiveFilters = React.useMemo(() => {
+    if (searchTerm) return true;
+
+    return Object.entries(filters).some(([key, val]) => {
+      if (val == null || val === "" || val === "all") return false;
+      if (key.endsWith("Ms")) return true; // date filters
+      return true;
+    });
+  }, [filters, searchTerm]);
+
+  const getBulkApprovalMessage = (status) => {
+    const action = status === "approved" ? "approve" : "reject";
+
+    if (hasActiveFilters) {
+      return status === "approved"
+        ? t.bulkApproveFiltered
+        : t.bulkRejectFiltered;
+    }
+
+    return status === "approved" ? t.bulkApproveAll : t.bulkRejectAll;
+  };
+
+  const buildRegistrationQuery = () => {
+    const query = {};
+
+    if (searchTerm) query.search = searchTerm;
+    if (filters.token) query.token = filters.token;
+
+    if (filters.createdAtFromMs) query.createdFrom = filters.createdAtFromMs;
+    if (filters.createdAtToMs) query.createdTo = filters.createdAtToMs;
+
+    if (filters.scannedAtFromMs) query.scannedFrom = filters.scannedAtFromMs;
+    if (filters.scannedAtToMs) query.scannedTo = filters.scannedAtToMs;
+
+    if (filters.scannedBy) query.scannedBy = filters.scannedBy;
+
+    if (filters.status && filters.status !== "all") {
+      query.status = filters.status;
+    }
+
+    if (filters.emailSent && filters.emailSent !== "all") {
+      query.emailSent = filters.emailSent;
+    }
+
+    if (filters.whatsappSent && filters.whatsappSent !== "all") {
+      query.whatsappSent = filters.whatsappSent;
+    }
+
+    dynamicFields.forEach((f) => {
+      if (filters[f.name]) {
+        query[`field_${f.name}`] = filters[f.name];
+      }
+    });
+
+    query.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+    return query;
+  };
 
   const filteredRegistrations = React.useMemo(() => {
     const {
@@ -628,8 +702,8 @@ export default function ViewRegistrations() {
                 v
                   .toString()
                   .toLowerCase()
-                  .includes(String(rawValue).toLowerCase())
-              )
+                  .includes(String(rawValue).toLowerCase()),
+              ),
           );
           if (!hit) return false;
           continue;
@@ -670,8 +744,9 @@ export default function ViewRegistrations() {
       const sampleUrl = URL.createObjectURL(sampleBlob);
       const sampleLink = document.createElement("a");
       sampleLink.href = sampleUrl;
-      sampleLink.download = `${eventDetails.slug || "event"
-        }_registrations_template.xlsx`;
+      sampleLink.download = `${
+        eventDetails.slug || "event"
+      }_registrations_template.xlsx`;
       document.body.appendChild(sampleLink);
       sampleLink.click();
       document.body.removeChild(sampleLink);
@@ -725,7 +800,7 @@ export default function ViewRegistrations() {
     const res = await deleteRegistration(registrationToDelete);
     if (!res?.error) {
       setAllRegistrations((prev) =>
-        prev.filter((r) => r._id !== registrationToDelete)
+        prev.filter((r) => r._id !== registrationToDelete),
       );
 
       setTotalRegistrations((t) => t - 1);
@@ -739,8 +814,8 @@ export default function ViewRegistrations() {
       const newStatus = res?.approvalStatus || status;
       setAllRegistrations((prev) =>
         prev.map((r) =>
-          r._id === registrationId ? { ...r, approvalStatus: newStatus } : r
-        )
+          r._id === registrationId ? { ...r, approvalStatus: newStatus } : r,
+        ),
       );
     }
   };
@@ -749,22 +824,23 @@ export default function ViewRegistrations() {
     if (!eventDetails?.requiresApproval) return;
     if (!eventSlug) return;
 
-    const ids = (paginatedRegistrations || [])
-      .map((r) => r?._id)
-      .filter(Boolean);
-
-    if (ids.length === 0) return;
-
     setBulkApprovalLoading(true);
-    const res = await bulkUpdateRegistrationApproval(eventSlug, ids, status);
+
+    const query = buildRegistrationQuery();
+
+    const res = await bulkUpdateRegistrationApproval(eventSlug, {
+      status,
+      filters: query,
+    });
+
     if (res?.error) {
       setBulkApprovalLoading(false);
       return;
     }
 
-    setAllRegistrations((prev) =>
-      prev.map((r) => (ids.includes(r._id) ? { ...r, approvalStatus: status } : r))
-    );
+    // Refresh data instead of guessing IDs
+    await fetchData();
+
     setBulkApprovalLoading(false);
   };
 
@@ -789,7 +865,12 @@ export default function ViewRegistrations() {
       <Typography
         variant="caption"
         color={reg.emailSent ? "success.main" : "warning.main"}
-        sx={{ display: "flex", alignItems: "center", gap: 0.6, fontWeight: 500 }}
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: 0.6,
+          fontWeight: 500,
+        }}
       >
         <ICONS.email fontSize="small" sx={{ color: "primary.main" }} />
         {reg.emailSent && (
@@ -803,7 +884,12 @@ export default function ViewRegistrations() {
       <Typography
         variant="caption"
         color={reg.whatsappSent ? "success.main" : "warning.main"}
-        sx={{ display: "flex", alignItems: "center", gap: 0.6, fontWeight: 500 }}
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: 0.6,
+          fontWeight: 500,
+        }}
       >
         <ICONS.whatsapp fontSize="small" sx={{ color: "#25D366" }} />
         {reg.whatsappSent && (
@@ -839,7 +925,12 @@ export default function ViewRegistrations() {
       <Typography
         variant="caption"
         color={statusColor}
-        sx={{ display: "flex", alignItems: "center", gap: 0.6, fontWeight: 500 }}
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: 0.6,
+          fontWeight: 500,
+        }}
       >
         {statusIcon}
         {statusText}
@@ -853,61 +944,19 @@ export default function ViewRegistrations() {
     setExportLoading(true);
 
     try {
-      // -------------------------------
-      // Build query params for backend
-      // -------------------------------
-      const query = {};
+      const query = buildRegistrationQuery();
 
-      // Search
-      if (searchTerm) query.search = searchTerm;
-
-      // Token
-      if (filters.token) query.token = filters.token;
-
-      // Date filters (created)
-      if (filters.createdAtFromMs) query.createdFrom = filters.createdAtFromMs;
-      if (filters.createdAtToMs) query.createdTo = filters.createdAtToMs;
-
-      // Date filters (scanned)
-      if (filters.scannedAtFromMs) query.scannedFrom = filters.scannedAtFromMs;
-      if (filters.scannedAtToMs) query.scannedTo = filters.scannedAtToMs;
-
-      // Scanned By
-      if (filters.scannedBy) query.scannedBy = filters.scannedBy;
-
-      if (filters.status && filters.status !== "all") {
-        query.status = filters.status;
-      }
-      if (filters.emailSent && filters.emailSent !== "all") {
-        query.emailSent = filters.emailSent;
-      }
-      if (filters.whatsappSent && filters.whatsappSent !== "all") {
-        query.whatsappSent = filters.whatsappSent;
-      }
-
-      // Dynamic fields using backend format: field_<name>
-      dynamicFields.forEach((f) => {
-        const v = filters[f.name];
-        if (v) query[`field_${f.name}`] = v;
-      });
-
-      // Client timezone for date formatting
-      query.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
-      // -------------------------------
-      // CALL YOUR SERVICE METHOD
-      // -------------------------------
       const blob = await exportRegistrations(eventSlug, query);
 
-      // -------------------------------
-      // Download CSV
-      // -------------------------------
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
 
-      const suffix = Object.keys(query).length > 0 ? "filtered" : "all";
-      a.download = `${eventDetails.slug}_${suffix}_registrations.csv`;
+      const suffix =
+        Object.keys(query).length > 1 // timezone is always present
+          ? "filtered"
+          : "all";
 
+      a.download = `${eventDetails.slug}_${suffix}_registrations.csv`;
       a.href = url;
       a.click();
 
@@ -1033,7 +1082,7 @@ export default function ViewRegistrations() {
       const printWindow = window.open(
         "",
         "_blank",
-        `width=${width},height=${height},left=${left},top=${top},resizable=no,scrollbars=no,status=no`
+        `width=${width},height=${height},left=${left},top=${top},resizable=no,scrollbars=no,status=no`,
       );
 
       if (!printWindow) {
@@ -1271,7 +1320,11 @@ export default function ViewRegistrations() {
             mt: 2,
           }}
         >
-          <Stack direction="row" spacing={1.5} sx={dir === "rtl" ? { gap: 1.5 } : {}}>
+          <Stack
+            direction="row"
+            spacing={1.5}
+            sx={dir === "rtl" ? { gap: 1.5 } : {}}
+          >
             <Button
               variant="outlined"
               color="success"
@@ -1339,13 +1392,13 @@ export default function ViewRegistrations() {
               <ICONS.search fontSize="small" sx={{ opacity: 0.7 }} />
               {filteredRegistrations.length === 1
                 ? t.matchingRecords.replace(
-                  "{count}",
-                  filteredRegistrations.length
-                )
+                    "{count}",
+                    filteredRegistrations.length,
+                  )
                 : t.matchingRecordsPlural.replace(
-                  "{count}",
-                  filteredRegistrations.length
-                )}{" "}
+                    "{count}",
+                    filteredRegistrations.length,
+                  )}{" "}
               {t.found}
             </Typography>
           )}
@@ -1360,9 +1413,9 @@ export default function ViewRegistrations() {
           sx={
             dir === "rtl"
               ? {
-                columnGap: 1.5,
-                rowGap: 1.5,
-              }
+                  columnGap: 1.5,
+                  rowGap: 1.5,
+                }
               : {}
           }
         >
@@ -1386,8 +1439,8 @@ export default function ViewRegistrations() {
               sx:
                 dir === "rtl"
                   ? {
-                    paddingRight: 2,
-                  }
+                      paddingRight: 2,
+                    }
                   : {},
             }}
             sx={{
@@ -1447,24 +1500,28 @@ export default function ViewRegistrations() {
         if (filters.createdAtFromMs || filters.createdAtToMs) {
           activeFilterEntries.push([
             "Registered At",
-            `${filters.createdAtFromMs
-              ? formatDateTimeWithLocale(filters.createdAtFromMs)
-              : "—"
-            } → ${filters.createdAtToMs
-              ? formatDateTimeWithLocale(filters.createdAtToMs)
-              : "—"
+            `${
+              filters.createdAtFromMs
+                ? formatDateTimeWithLocale(filters.createdAtFromMs)
+                : "—"
+            } → ${
+              filters.createdAtToMs
+                ? formatDateTimeWithLocale(filters.createdAtToMs)
+                : "—"
             }`,
           ]);
         }
         if (filters.scannedAtFromMs || filters.scannedAtToMs) {
           activeFilterEntries.push([
             "Scanned At",
-            `${filters.scannedAtFromMs
-              ? formatDateTimeWithLocale(filters.scannedAtFromMs)
-              : "—"
-            } → ${filters.scannedAtToMs
-              ? formatDateTimeWithLocale(filters.scannedAtToMs)
-              : "—"
+            `${
+              filters.scannedAtFromMs
+                ? formatDateTimeWithLocale(filters.scannedAtFromMs)
+                : "—"
+            } → ${
+              filters.scannedAtToMs
+                ? formatDateTimeWithLocale(filters.scannedAtToMs)
+                : "—"
             }`,
           ]);
         }
@@ -1539,12 +1596,12 @@ export default function ViewRegistrations() {
                   sx={
                     dir === "rtl"
                       ? {
-                        pr: 4.5,
-                        pl: 2,
-                        "& .MuiChip-label": {
-                          whiteSpace: "nowrap",
-                        },
-                      }
+                          pr: 4.5,
+                          pl: 2,
+                          "& .MuiChip-label": {
+                            whiteSpace: "nowrap",
+                          },
+                        }
                       : {}
                   }
                 />
@@ -1711,11 +1768,7 @@ export default function ViewRegistrations() {
 
                     {/* Approval Status - Show for approval-based events */}
                     {eventDetails?.requiresApproval && (
-                      <Stack
-                        direction="row"
-                        alignItems="center"
-                        spacing={0.6}
-                      >
+                      <Stack direction="row" alignItems="center" spacing={0.6}>
                         {renderConfirmation(reg)}
                       </Stack>
                     )}
@@ -1766,12 +1819,22 @@ export default function ViewRegistrations() {
                           }}
                         >
                           {(() => {
-                            const fieldValue = reg.customFields?.[f.name] ?? reg[f.name];
+                            const fieldValue =
+                              reg.customFields?.[f.name] ?? reg[f.name];
                             if (!fieldValue) return "—";
 
-                            if (f.type === "phone" || (!eventDetails?.formFields?.length && f.name === "phone")) {
-                              const { formatPhoneNumberForDisplay } = require("@/utils/countryCodes");
-                              return formatPhoneNumberForDisplay(fieldValue, reg.isoCode);
+                            if (
+                              f.type === "phone" ||
+                              (!eventDetails?.formFields?.length &&
+                                f.name === "phone")
+                            ) {
+                              const {
+                                formatPhoneNumberForDisplay,
+                              } = require("@/utils/countryCodes");
+                              return formatPhoneNumberForDisplay(
+                                fieldValue,
+                                reg.isoCode,
+                              );
                             }
 
                             return fieldValue;
@@ -1943,15 +2006,14 @@ export default function ViewRegistrations() {
             ? t.bulkApproveTitle
             : t.bulkRejectTitle
         }
-        message={
-          bulkApprovalStatus === "approved"
-            ? t.bulkApproveMessage
-            : t.bulkRejectMessage
-        }
+        message={getBulkApprovalMessage(bulkApprovalStatus)}
+        
         confirmButtonText={
           bulkApprovalStatus === "approved" ? t.bulkApprove : t.bulkReject
         }
-        confirmButtonColor={bulkApprovalStatus === "approved" ? "success" : "error"}
+        confirmButtonColor={
+          bulkApprovalStatus === "approved" ? "success" : "error"
+        }
         confirmButtonIcon={getBulkConfirmIcon(bulkApprovalStatus)}
       />
 
@@ -1975,48 +2037,71 @@ export default function ViewRegistrations() {
             });
             if (result?.error) {
               setSendingEmails(false);
-              showMessage(result.message || "Failed to send notifications", "error");
+              showMessage(
+                result.message || "Failed to send notifications",
+                "error",
+              );
             }
           } else {
             if (!data.subject || !data.body) {
-              showMessage("Subject and body are required for custom notifications", "error");
+              showMessage(
+                "Subject and body are required for custom notifications",
+                "error",
+              );
               return;
             }
             setSendingEmails(true);
             setBulkEmailModalOpen(false);
-            const result = await sendBulkEmails(eventSlug, {
-              subject: data.subject,
-              body: data.body,
-              statusFilter: data.statusFilter || "all",
-              emailSentFilter: data.emailSentFilter || "all",
-              whatsappSentFilter: data.whatsappSentFilter || "all",
-            }, data.file);
+            const result = await sendBulkEmails(
+              eventSlug,
+              {
+                subject: data.subject,
+                body: data.body,
+                statusFilter: data.statusFilter || "all",
+                emailSentFilter: data.emailSentFilter || "all",
+                whatsappSentFilter: data.whatsappSentFilter || "all",
+              },
+              data.file,
+            );
             if (result?.error) {
               setSendingEmails(false);
-              showMessage(result.message || "Failed to send notifications", "error");
+              showMessage(
+                result.message || "Failed to send notifications",
+                "error",
+              );
             }
           }
         }}
         onSendWhatsApp={async (data) => {
           if (data.type === "custom") {
             if (!data.subject || !data.body) {
-              showMessage("Subject and body are required for custom notifications", "error");
+              showMessage(
+                "Subject and body are required for custom notifications",
+                "error",
+              );
               return;
             }
           }
           setSendingEmails(true);
           setBulkEmailModalOpen(false);
-          const result = await sendBulkWhatsApp(eventSlug, {
-            type: data.type || "default",
-            subject: data.subject,
-            body: data.body,
-            statusFilter: data.statusFilter || "all",
-            emailSentFilter: data.emailSentFilter || "all",
-            whatsappSentFilter: data.whatsappSentFilter || "all",
-          }, data.file);
+          const result = await sendBulkWhatsApp(
+            eventSlug,
+            {
+              type: data.type || "default",
+              subject: data.subject,
+              body: data.body,
+              statusFilter: data.statusFilter || "all",
+              emailSentFilter: data.emailSentFilter || "all",
+              whatsappSentFilter: data.whatsappSentFilter || "all",
+            },
+            data.file,
+          );
           if (result?.error) {
             setSendingEmails(false);
-            showMessage(result.message || "Failed to send notifications", "error");
+            showMessage(
+              result.message || "Failed to send notifications",
+              "error",
+            );
           }
         }}
         sendingEmails={sendingEmails}
@@ -2035,12 +2120,16 @@ export default function ViewRegistrations() {
                 return {
                   ...r,
                   _createdAtMs: Date.parse(r.createdAt),
-                  _scannedAtMs: (r.walkIns || []).map((w) => Date.parse(w.scannedAt)),
+                  _scannedAtMs: (r.walkIns || []).map((w) =>
+                    Date.parse(w.scannedAt),
+                  ),
                   _haystack: buildHaystack(r, dynamicFieldsRef.current),
                 };
               });
               setAllRegistrations(prepped);
-              const updatedReg = prepped.find((r) => r._id === selectedRegistration._id);
+              const updatedReg = prepped.find(
+                (r) => r._id === selectedRegistration._id,
+              );
               if (updatedReg) {
                 setSelectedRegistration(updatedReg);
               }
@@ -2142,10 +2231,10 @@ export default function ViewRegistrations() {
 
               {/* Dropdowns for radio/list/select-like fields */}
               {["radio", "list", "select", "dropdown"].includes(
-                (f.type || "").toLowerCase()
+                (f.type || "").toLowerCase(),
               ) &&
-                Array.isArray(f.values) &&
-                f.values.length > 0 ? (
+              Array.isArray(f.values) &&
+              f.values.length > 0 ? (
                 <FormControl fullWidth size="small">
                   <InputLabel>{`Select ${getFieldLabel(f.name)}`}</InputLabel>
                   <Select
@@ -2223,9 +2312,7 @@ export default function ViewRegistrations() {
                 onChange={(val) =>
                   setFilters((f) => ({
                     ...f,
-                    createdAtFromMs: val
-                      ? dayjs(val).utc().valueOf()
-                      : null,
+                    createdAtFromMs: val ? dayjs(val).utc().valueOf() : null,
                   }))
                 }
                 slotProps={{ textField: { size: "small", fullWidth: true } }}
@@ -2238,9 +2325,7 @@ export default function ViewRegistrations() {
                 onChange={(val) =>
                   setFilters((f) => ({
                     ...f,
-                    createdAtToMs: val
-                      ? dayjs(val).utc().valueOf()
-                      : null,
+                    createdAtToMs: val ? dayjs(val).utc().valueOf() : null,
                   }))
                 }
                 slotProps={{ textField: { size: "small", fullWidth: true } }}
@@ -2287,9 +2372,7 @@ export default function ViewRegistrations() {
                     onChange={(val) =>
                       setFilters((f) => ({
                         ...f,
-                        scannedAtToMs: val
-                          ? dayjs(val).utc().valueOf()
-                          : null,
+                        scannedAtToMs: val ? dayjs(val).utc().valueOf() : null,
                       }))
                     }
                     slotProps={{
@@ -2347,9 +2430,7 @@ export default function ViewRegistrations() {
                     onChange={(val) =>
                       setFilters((f) => ({
                         ...f,
-                        scannedAtToMs: val
-                          ? dayjs(val).utc().valueOf()
-                          : null,
+                        scannedAtToMs: val ? dayjs(val).utc().valueOf() : null,
                       }))
                     }
                     slotProps={{

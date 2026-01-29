@@ -10,7 +10,7 @@ export const createRegistration = withApiHandler(async (payload) => {
 // Get count of unsent registration emails for an event (CMS admin use)
 export const getUnsentCount = withApiHandler(async (eventSlug) => {
   const { data } = await api.get(
-    `/eventreg/registrations/event/${eventSlug}/unsent-count`
+    `/eventreg/registrations/event/${eventSlug}/unsent-count`,
   );
   return data;
 });
@@ -34,11 +34,11 @@ export const sendBulkEmails = withApiHandler(
 
     const { data } = await api.post(
       `/eventreg/registrations/event/${slug}/bulk-email`,
-      formData
+      formData,
     );
     return data;
   },
-  { showSuccess: true }
+  { showSuccess: true },
 );
 
 // Send bulk WhatsApp messages for an event (CMS admin use)
@@ -61,17 +61,17 @@ export const sendBulkWhatsApp = withApiHandler(
 
     const { data } = await api.post(
       `/eventreg/registrations/event/${slug}/bulk-whatsapp`,
-      formData
+      formData,
     );
     return data;
   },
-  { showSuccess: true }
+  { showSuccess: true },
 );
 
 // Verify registration by QR token (Staff use)
 export const verifyRegistrationByToken = withApiHandler(async (token) => {
   const { data } = await api.get(
-    `/eventreg/registrations/verify?token=${token}`
+    `/eventreg/registrations/verify?token=${token}`,
   );
   return data;
 });
@@ -80,17 +80,16 @@ export const verifyRegistrationByToken = withApiHandler(async (token) => {
 export const downloadSampleExcel = async (slug) => {
   const response = await api.get(
     `/eventreg/registrations/event/${slug}/sample-excel`,
-    { responseType: "blob" }
+    { responseType: "blob" },
   );
   return response.data;
 };
 
 // Download country reference Excel file
 export const downloadCountryReference = async () => {
-  const response = await api.get(
-    `/eventreg/registrations/country-reference`,
-    { responseType: "blob" }
-  );
+  const response = await api.get(`/eventreg/registrations/country-reference`, {
+    responseType: "blob",
+  });
   return response.data;
 };
 
@@ -117,21 +116,21 @@ export const uploadRegistrations = withApiHandler(
       formData,
       {
         headers: { "Content-Type": "multipart/form-data" },
-      }
+      },
     );
     return data;
   },
-  { showSuccess: true }
+  { showSuccess: true },
 );
 
 // Get registrations for a specific event (CMS use, by slug)
 export const getRegistrationsByEvent = withApiHandler(
   async (slug, page = 1, limit = 10) => {
     const { data } = await api.get(
-      `/eventreg/registrations/event/${slug}?page=${page}&limit=${limit}`
+      `/eventreg/registrations/event/${slug}?page=${page}&limit=${limit}`,
     );
     return data;
-  }
+  },
 );
 
 // Get initial registrations (first 50)
@@ -139,7 +138,6 @@ export const getInitialRegistrations = withApiHandler(async (slug) => {
   const { data } = await api.get(`/eventreg/registrations/event/${slug}/all`);
   return data;
 });
-
 
 // Get all public registrations for export (no pagination)
 export const getAllPublicRegistrationsByEvent = withApiHandler(async (slug) => {
@@ -153,7 +151,7 @@ export const deleteRegistration = withApiHandler(
     const { data } = await api.delete(`/eventreg/registrations/${id}`);
     return data;
   },
-  { showSuccess: true }
+  { showSuccess: true },
 );
 
 // Update a registration by ID (CMS use)
@@ -162,7 +160,7 @@ export const updateRegistration = withApiHandler(
     const { data } = await api.put(`/eventreg/registrations/${id}`, { fields });
     return data;
   },
-  { showSuccess: true }
+  { showSuccess: true },
 );
 
 export const updateRegistrationApproval = withApiHandler(
@@ -172,18 +170,18 @@ export const updateRegistrationApproval = withApiHandler(
     });
     return data;
   },
-  { showSuccess: true }
+  { showSuccess: true },
 );
 
 export const bulkUpdateRegistrationApproval = withApiHandler(
-  async (slug, ids, status) => {
+  async (slug, payload) => {
     const { data } = await api.patch(
       `/eventreg/registrations/event/${slug}/approval/bulk`,
-      { ids, status }
+      payload,
     );
     return data;
   },
-  { showSuccess: true }
+  { showSuccess: true },
 );
 
 export const createWalkIn = withApiHandler(
@@ -191,5 +189,5 @@ export const createWalkIn = withApiHandler(
     const { data } = await api.post(`/eventreg/registrations/${id}/walkin`);
     return data;
   },
-  { showSuccess: true }
+  { showSuccess: true },
 );
