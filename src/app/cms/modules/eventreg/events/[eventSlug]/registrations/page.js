@@ -43,6 +43,7 @@ import {
   sendBulkWhatsApp,
   updateRegistration,
   updateRegistrationApproval,
+  bulkUpdateRegistrationApproval,
   getInitialRegistrations,
   exportRegistrations,
   createRegistration,
@@ -133,6 +134,14 @@ const translations = {
     copyToken: "Copy Token",
     approve: "Approve",
     reject: "Reject",
+    bulkApprove: "Bulk Approve",
+    bulkReject: "Bulk Reject",
+    bulkApproveTitle: "Bulk Approve",
+    bulkRejectTitle: "Bulk Reject",
+    bulkApproveMessage:
+      "Are you sure you want to approve all currently displayed registrations?",
+    bulkRejectMessage:
+      "Are you sure you want to reject all currently displayed registrations?",
     approved: "Approved",
     rejected: "Rejected",
     pending: "Pending",
@@ -205,6 +214,14 @@ const translations = {
     copyToken: "نسخ الرمز",
     approve: "موافقة",
     reject: "رفض",
+    bulkApprove: "موافقة جماعية",
+    bulkReject: "رفض جماعي",
+    bulkApproveTitle: "موافقة جماعية",
+    bulkRejectTitle: "رفض جماعي",
+    bulkApproveMessage:
+      "هل أنت متأكد أنك تريد الموافقة على جميع التسجيلات المعروضة حاليًا؟",
+    bulkRejectMessage:
+      "هل أنت متأكد أنك تريد رفض جميع التسجيلات المعروضة حاليًا؟",
     approved: "موافق عليه",
     rejected: "مرفوض",
     pending: "قيد الانتظار",
@@ -257,6 +274,9 @@ export default function ViewRegistrations() {
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [registrationToDelete, setRegistrationToDelete] = useState(null);
+  const [bulkApprovalDialogOpen, setBulkApprovalDialogOpen] = useState(false);
+  const [bulkApprovalStatus, setBulkApprovalStatus] = useState(null);
+  const [bulkApprovalLoading, setBulkApprovalLoading] = useState(false);
   const [walkInModalOpen, setWalkInModalOpen] = useState(false);
   const [selectedRegistration, setSelectedRegistration] = useState(null);
   const [exportLoading, setExportLoading] = useState(false);
@@ -723,6 +743,45 @@ export default function ViewRegistrations() {
         )
       );
     }
+  };
+
+  const handleBulkApproval = async (status) => {
+    if (!eventDetails?.requiresApproval) return;
+    if (!eventSlug) return;
+
+    const ids = (paginatedRegistrations || [])
+      .map((r) => r?._id)
+      .filter(Boolean);
+
+    if (ids.length === 0) return;
+
+    setBulkApprovalLoading(true);
+    const res = await bulkUpdateRegistrationApproval(eventSlug, ids, status);
+    if (res?.error) {
+      setBulkApprovalLoading(false);
+      return;
+    }
+
+    setAllRegistrations((prev) =>
+      prev.map((r) => (ids.includes(r._id) ? { ...r, approvalStatus: status } : r))
+    );
+    setBulkApprovalLoading(false);
+  };
+
+  const openBulkApprovalDialog = (status) => {
+    setBulkApprovalStatus(status);
+    setBulkApprovalDialogOpen(true);
+  };
+
+  const handleConfirmBulkApproval = async () => {
+    if (!bulkApprovalStatus) return;
+    await handleBulkApproval(bulkApprovalStatus);
+    setBulkApprovalDialogOpen(false);
+    setBulkApprovalStatus(null);
+  };
+
+  const getBulkConfirmIcon = (status) => {
+    return status === "approved" ? <ICONS.check /> : <ICONS.close />;
   };
 
   const renderInvitationStatus = (reg) => (
@@ -1202,6 +1261,40 @@ export default function ViewRegistrations() {
           </Button>
         )}
       </Stack>
+
+      {eventDetails?.requiresApproval && (
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "flex-start",
+            width: "100%",
+            mt: 2,
+          }}
+        >
+          <Stack direction="row" spacing={1.5} sx={dir === "rtl" ? { gap: 1.5 } : {}}>
+            <Button
+              variant="outlined"
+              color="success"
+              onClick={() => openBulkApprovalDialog("approved")}
+              disabled={!paginatedRegistrations?.length || bulkApprovalLoading}
+              startIcon={<ICONS.check sx={{ color: "success.main" }} />}
+              sx={getStartIconSpacing(dir)}
+            >
+              {t.bulkApprove}
+            </Button>
+            <Button
+              variant="outlined"
+              color="error"
+              onClick={() => openBulkApprovalDialog("rejected")}
+              disabled={!paginatedRegistrations?.length || bulkApprovalLoading}
+              startIcon={<ICONS.close sx={{ color: "error.main" }} />}
+              sx={getStartIconSpacing(dir)}
+            >
+              {t.bulkReject}
+            </Button>
+          </Stack>
+        </Box>
+      )}
 
       <Divider sx={{ my: 3 }} />
 
@@ -1834,6 +1927,32 @@ export default function ViewRegistrations() {
         message={t.deleteMessage}
         confirmButtonText={t.delete}
         confirmButtonIcon={<ICONS.delete />}
+      />
+
+      <ConfirmationDialog
+        open={bulkApprovalDialogOpen}
+        onClose={() => {
+          if (!bulkApprovalLoading) {
+            setBulkApprovalDialogOpen(false);
+            setBulkApprovalStatus(null);
+          }
+        }}
+        onConfirm={handleConfirmBulkApproval}
+        title={
+          bulkApprovalStatus === "approved"
+            ? t.bulkApproveTitle
+            : t.bulkRejectTitle
+        }
+        message={
+          bulkApprovalStatus === "approved"
+            ? t.bulkApproveMessage
+            : t.bulkRejectMessage
+        }
+        confirmButtonText={
+          bulkApprovalStatus === "approved" ? t.bulkApprove : t.bulkReject
+        }
+        confirmButtonColor={bulkApprovalStatus === "approved" ? "success" : "error"}
+        confirmButtonIcon={getBulkConfirmIcon(bulkApprovalStatus)}
       />
 
       <BulkEmailModal
