@@ -237,11 +237,48 @@ const SpinningPage = () => {
       "hsl(240, 70%, 50%)",
       "hsl(60, 70%, 50%)",
     ];
+
+    const assignedColors = [];
+
+    for (let i = 0; i < count; i++) {
+      const prevIndex = i - 1;
+      const prevColor = prevIndex >= 0 ? assignedColors[prevIndex] : null;
+
+      let colorIndex = i % 4;
+      let selectedColor = baseColors[colorIndex];
+
+      if (prevColor && prevColor === selectedColor) {
+        const availableColors = baseColors.filter(c => c !== prevColor);
+        if (availableColors.length > 0) {
+          selectedColor = availableColors[0];
+        }
+      }
+
+      assignedColors.push(selectedColor);
+    }
+
+    if (count > 0 && assignedColors[0] === assignedColors[count - 1]) {
+      const prevColor = count > 1 ? assignedColors[count - 2] : null;
+      const availableColors = baseColors.filter(c => {
+        if (c === assignedColors[0]) return false;
+        if (prevColor && c === prevColor) return false;
+        return true;
+      });
+      if (availableColors.length > 0) {
+        assignedColors[count - 1] = availableColors[0];
+      } else {
+        const fallbackColors = baseColors.filter(c => c !== assignedColors[0]);
+        if (fallbackColors.length > 0) {
+          assignedColors[count - 1] = fallbackColors[0];
+        }
+      }
+    }
+
     return `conic-gradient(${participants
       .map((_, i) => {
         const a0 = i * slice;
         const a1 = (i + 1) * slice;
-        const c = baseColors[i % 4];
+        const c = assignedColors[i];
         return `${c} ${a0}deg ${a1}deg`;
       })
       .join(", ")})`;
@@ -684,9 +721,24 @@ const SpinningPage = () => {
             fontSize: "2rem",
             fontWeight: "bold",
             pb: 1,
+            position: "relative",
           }}
         >
           {t.congratulations}
+          <IconButton
+            onClick={() => setSelectedWinner(null)}
+            sx={{
+              position: "absolute",
+              right: 8,
+              top: 8,
+              color: "white",
+              "&:hover": {
+                backgroundColor: "rgba(255,255,255,0.1)",
+              },
+            }}
+          >
+            <ICONS.close />
+          </IconButton>
         </DialogTitle>
         <DialogContent sx={{ textAlign: "center", pt: 2 }}>
           <Box sx={{ mb: 3 }}>
@@ -731,19 +783,6 @@ const SpinningPage = () => {
             }}
           >
             {t.removeWinner}
-          </Button>
-          <Button
-            variant="contained"
-            onClick={() => setSelectedWinner(null)}
-            sx={{
-              backgroundColor: "white",
-              color: "primary.main",
-              "&:hover": {
-                backgroundColor: "rgba(255,255,255,0.9)",
-              },
-            }}
-          >
-            {t.close}
           </Button>
         </DialogActions>
       </Dialog>
