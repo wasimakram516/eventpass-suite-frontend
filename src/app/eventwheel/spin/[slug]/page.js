@@ -7,10 +7,33 @@ import React, {
   useMemo,
 } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Box, Typography, Button, IconButton } from "@mui/material";
+import {
+  Box,
+  Typography,
+  Button,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Drawer,
+  Tabs,
+  Tab,
+  List,
+  ListItem,
+  ListItemText,
+  TextField,
+} from "@mui/material";
+import { Shuffle as ShuffleIcon, Sort as SortIcon, ChevronRight as ChevronRightIcon } from "@mui/icons-material";
 import Confetti from "react-confetti";
 
-import { getParticipantsBySlug } from "@/services/eventwheel/spinWheelParticipantService";
+import {
+  getParticipantsBySlug,
+  saveWinner,
+  removeWinner,
+  addParticipantsOnSpot,
+  getWinners,
+} from "@/services/eventwheel/spinWheelParticipantService";
 import { getSpinWheelBySlug } from "@/services/eventwheel/spinWheelService";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
@@ -24,11 +47,33 @@ const translations = {
     winner: "Winner",
     spinning: "Spinning... Good Luck!",
     spinTheWheel: "Spin the Wheel!",
+    congratulations: "Congratulations!",
+    removeWinner: "Remove Winner",
+    removeWinnerMessage: "This winner will be removed from the wheel but kept in records.",
+    close: "Close",
+    entries: "Participants",
+    results: "Results",
+    shuffle: "Shuffle",
+    sort: "Sort",
+    ready: "Ready",
+    noWinners: "No winners yet",
+    alertMessage: "Please enter at least one participant name!",
   },
   ar: {
     winner: "الفائز",
     spinning: "جاري الدوران... حظ سعيد!",
     spinTheWheel: "أدر العجلة!",
+    congratulations: "تهانينا!",
+    removeWinner: "إزالة الفائز",
+    removeWinnerMessage: "سيتم إزالة هذا الفائز من العجلة ولكن سيتم الاحتفاظ به في السجلات.",
+    close: "إغلاق",
+    entries: "المشاركون",
+    results: "النتائج",
+    shuffle: "خلط",
+    sort: "ترتيب",
+    ready: "جاهز",
+    noWinners: "لا يوجد فائزون بعد",
+    alertMessage: "يرجى إدخال اسم مشارك واحد على الأقل!",
   },
 };
 
@@ -49,6 +94,12 @@ const SpinningPage = () => {
 
   const [spinning, setSpinning] = useState(false);
   const [selectedWinner, setSelectedWinner] = useState(null);
+
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerTab, setDrawerTab] = useState(0);
+  const [entriesText, setEntriesText] = useState("");
+  const [winners, setWinners] = useState([]);
+  const [loadingWinners, setLoadingWinners] = useState(false);
 
   const wheelRef = useRef(null);
   const rotationRef = useRef(0); // stores accumulated rotation in degrees
@@ -77,6 +128,34 @@ const SpinningPage = () => {
       await fetchSpinWheelData();
     })();
   }, [fetchParticipants, fetchSpinWheelData, router]);
+
+  // Initialize entries text when participants change
+  useEffect(() => {
+    if (participants.length > 0) {
+      setEntriesText(participants.map((p) => p.name).join("\n"));
+    }
+  }, [participants]);
+
+  const fetchWinners = useCallback(async () => {
+    if (!eventData?.slug) return;
+    setLoadingWinners(true);
+    try {
+      const data = await getWinners(eventData.slug);
+      setWinners(data || []);
+    } catch (err) {
+      console.error("Failed to fetch winners:", err);
+      setWinners([]);
+    } finally {
+      setLoadingWinners(false);
+    }
+  }, [eventData?.slug]);
+
+  // Fetch winners on page load/refresh
+  useEffect(() => {
+    if (eventData?.slug) {
+      fetchWinners();
+    }
+  }, [eventData?.slug, fetchWinners]);
 
   // ---------- Wheel geometry ----------
   const useWheelSize = () => {
@@ -123,30 +202,46 @@ const SpinningPage = () => {
     [count, slice]
   );
 
-  const labelRadius = Math.round(r * 0.72);
+  const labelRadius = Math.round(r * 0.90);
 
   const labelChord = useMemo(() => {
     if (!count) return 80;
     const rad = (slice * Math.PI) / 180;
-    // chord length at labelRadius minus padding; clamp to keep sane
-    return Math.max(42, Math.floor(2 * labelRadius * Math.sin(rad / 2) - 14));
+
+    return Math.max(80, Math.floor(2 * labelRadius * Math.sin(rad / 2) - 10));
   }, [count, slice, labelRadius]);
 
   const fontSize = useMemo(() => {
     if (!count) return 10;
-    if (slice >= 30) return 14;
-    if (slice >= 20) return 12;
-    if (slice >= 14) return 11;
-    return 10;
-  }, [count, slice]);
+    // Find the longest name to ensure all names fit
+    const maxNameLength = Math.max(...participants.map(p => p.name?.length || 0), 0);
+    let baseSize = 10;
+    if (slice >= 30) baseSize = 14;
+    else if (slice >= 20) baseSize = 12;
+    else if (slice >= 14) baseSize = 11;
+
+    if (maxNameLength > 20) {
+      baseSize = Math.max(8, baseSize - 2);
+    } else if (maxNameLength > 15) {
+      baseSize = Math.max(9, baseSize - 1);
+    }
+
+    return baseSize;
+  }, [count, slice, participants]);
 
   const wheelBg = useMemo(() => {
     if (!count) return "conic-gradient(#666 0deg 360deg)";
+    const baseColors = [
+      "hsl(0, 70%, 50%)",
+      "hsl(120, 70%, 50%)",
+      "hsl(240, 70%, 50%)",
+      "hsl(60, 70%, 50%)",
+    ];
     return `conic-gradient(${participants
       .map((_, i) => {
         const a0 = i * slice;
         const a1 = (i + 1) * slice;
-        const c = `hsl(${(i * 360) / count}, 70%, 50%)`;
+        const c = baseColors[i % 4];
         return `${c} ${a0}deg ${a1}deg`;
       })
       .join(", ")})`;
@@ -222,7 +317,7 @@ const SpinningPage = () => {
     }
 
     // Winner computed from final rotation (source of truth)
-    window.setTimeout(() => {
+    window.setTimeout(async () => {
       const finalList = participantsRef.current?.length
         ? participantsRef.current
         : list;
@@ -230,6 +325,21 @@ const SpinningPage = () => {
 
       const idx = getWinnerIndexFromRotation(rotationRef.current, finalN);
       const w = idx >= 0 ? finalList[idx] : null;
+
+      if (w && eventData?._id) {
+        try {
+          await saveWinner({
+            spinWheelId: eventData._id,
+            participantId: w._id,
+          });
+          // Refresh winners list immediately after saving
+          if (eventData?.slug) {
+            fetchWinners();
+          }
+        } catch (err) {
+          console.error("Failed to save winner:", err);
+        }
+      }
 
       setSelectedWinner(w);
       setSpinning(false);
@@ -243,6 +353,79 @@ const SpinningPage = () => {
       });
     }, DURATION_MS + 30);
   };
+
+  const handleRemoveWinner = async () => {
+    if (!selectedWinner?._id) return;
+
+    try {
+      await removeWinner(selectedWinner._id);
+      setSelectedWinner(null);
+      await fetchParticipants();
+    } catch (err) {
+      console.error("Failed to remove winner:", err);
+    }
+  };
+
+  // Drawer handlers
+  const handleDrawerOpen = () => {
+    setDrawerOpen(true);
+    if (eventData?.type === "onspot") {
+      setDrawerTab(0);
+      if (participants.length > 0) {
+        setEntriesText(participants.map((p) => p.name).join("\n"));
+      }
+    } else {
+      setDrawerTab(0);
+    }
+  };
+
+  const handleDrawerClose = () => {
+    setDrawerOpen(false);
+  };
+
+  const handleShuffle = () => {
+    const namesArray = entriesText
+      .split("\n")
+      .filter((name) => name.trim() !== "");
+    const shuffled = namesArray.sort(() => Math.random() - 0.5);
+    setEntriesText(shuffled.join("\n"));
+  };
+
+  const handleSort = () => {
+    const namesArray = entriesText
+      .split("\n")
+      .filter((name) => name.trim() !== "");
+    const sorted = namesArray.sort((a, b) => a.localeCompare(b));
+    setEntriesText(sorted.join("\n"));
+  };
+
+  const handleReady = async () => {
+    const formattedNames = entriesText
+      .split("\n")
+      .map((name) => name.trim())
+      .filter((name) => name !== "");
+
+    if (formattedNames.length === 0) {
+      alert(t.alertMessage);
+      return;
+    }
+
+    try {
+      await addParticipantsOnSpot({
+        slug: shortName,
+        participants: formattedNames,
+      });
+      await fetchParticipants();
+      setDrawerOpen(false);
+    } catch (err) {
+      console.error("Failed to update participants:", err);
+    }
+  };
+
+  // Get entries count for tab label
+  const entriesCount = entriesText
+    .split("\n")
+    .filter((name) => name.trim() !== "").length;
 
   return (
     <Box
@@ -279,6 +462,23 @@ const SpinningPage = () => {
         </IconButton>
       )}
 
+      {/* Drawer button (for onspot, admin, and sync types) */}
+      {["onspot", "admin", "synced"].includes(eventData?.type) && !drawerOpen && (
+        <IconButton
+          sx={{
+            position: "fixed",
+            top: { xs: 10, sm: 20 },
+            right: { xs: 10, sm: 20 },
+            backgroundColor: "primary.main",
+            color: "white",
+            zIndex: 9999,
+          }}
+          onClick={handleDrawerOpen}
+        >
+          <ICONS.back sx={{ fontSize: { xs: 24, md: 40 } }} />
+        </IconButton>
+      )}
+
       {selectedWinner && <Confetti numberOfPieces={500} recycle={false} />}
 
       <Box
@@ -290,25 +490,6 @@ const SpinningPage = () => {
           textAlign: "center",
         }}
       >
-        {/* WINNER */}
-        {selectedWinner && !spinning && (
-          <Typography
-            sx={{
-              fontWeight: 800,
-              letterSpacing: 2,
-              color: "white",
-              fontSize: `clamp(2rem, ${size * 0.08}px, 4.5rem)`,
-              textShadow: `
-      0 4px 20px rgba(0,0,0,0.7),
-      0 0 35px rgba(255,215,0,0.9),
-      0 0 70px rgba(255,215,0,0.6)
-    `,
-            }}
-          >
-            {selectedWinner.name}
-          </Typography>
-        )}
-
         {/* SPINNING */}
         {spinning && (
           <Typography
@@ -418,7 +599,8 @@ const SpinningPage = () => {
                 <Typography
                   variant="body2"
                   sx={{
-                    width: `${labelChord}px`,
+                    width: "auto",
+                    maxWidth: `${labelChord * 2}px`,
                     transform: "translateX(-50%) rotate(90deg)",
                     transformOrigin: "center",
                     textAlign: "center",
@@ -426,8 +608,8 @@ const SpinningPage = () => {
                     fontWeight: 700,
                     fontSize: `${fontSize}px`,
                     whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
+                    overflow: "visible",
+                    textOverflow: "clip",
                     lineHeight: 1.1,
                     userSelect: "none",
                   }}
@@ -481,6 +663,258 @@ const SpinningPage = () => {
           },
         }}
       />
+
+      {/* Winner Popup Dialog */}
+      <Dialog
+        open={!!selectedWinner && !spinning}
+        onClose={() => setSelectedWinner(null)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            color: "white",
+          },
+        }}
+      >
+        <DialogTitle
+          sx={{
+            textAlign: "center",
+            fontSize: "2rem",
+            fontWeight: "bold",
+            pb: 1,
+          }}
+        >
+          {t.congratulations}
+        </DialogTitle>
+        <DialogContent sx={{ textAlign: "center", pt: 2 }}>
+          <Box sx={{ mb: 3 }}>
+            <ICONS.trophy
+              sx={{
+                fontSize: 80,
+                color: "gold",
+                mb: 2,
+                filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.3))",
+              }}
+            />
+          </Box>
+          <Typography
+            variant="h4"
+            sx={{
+              fontWeight: 700,
+              mb: 2,
+              textShadow: "0 2px 4px rgba(0,0,0,0.2)",
+            }}
+          >
+            {selectedWinner?.name}
+          </Typography>
+        </DialogContent>
+        <DialogActions
+          sx={{
+            justifyContent: "center",
+            gap: 2,
+            pb: 3,
+            px: 3,
+          }}
+        >
+          <Button
+            variant="outlined"
+            onClick={handleRemoveWinner}
+            sx={{
+              borderColor: "white",
+              color: "white",
+              "&:hover": {
+                borderColor: "white",
+                backgroundColor: "rgba(255,255,255,0.1)",
+              },
+            }}
+          >
+            {t.removeWinner}
+          </Button>
+          <Button
+            variant="contained"
+            onClick={() => setSelectedWinner(null)}
+            sx={{
+              backgroundColor: "white",
+              color: "primary.main",
+              "&:hover": {
+                backgroundColor: "rgba(255,255,255,0.9)",
+              },
+            }}
+          >
+            {t.close}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Drawer for onspot, admin, and sync types */}
+      {["onspot", "admin", "synced"].includes(eventData?.type) && (
+        <Drawer
+          anchor="right"
+          open={drawerOpen}
+          onClose={handleDrawerClose}
+          PaperProps={{
+            sx: {
+              width: { xs: "90%", sm: 400 },
+              backgroundColor: "white",
+              color: "text.primary",
+            },
+          }}
+        >
+          <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+            {/* Tabs */}
+            <Box sx={{ borderBottom: 1, borderColor: "divider", position: "relative" }}>
+              {/* Close button on left side of tabs */}
+              <IconButton
+                onClick={handleDrawerClose}
+                sx={{
+                  position: "absolute",
+                  left: 8,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  zIndex: 1,
+                  backgroundColor: "primary.main",
+                  color: "white",
+                  width: 32,
+                  height: 32,
+                  "&:hover": {
+                    backgroundColor: "primary.dark",
+                  },
+                }}
+              >
+                <ChevronRightIcon sx={{ fontSize: 20 }} />
+              </IconButton>
+              <Tabs
+                value={drawerTab}
+                onChange={(e, newValue) => setDrawerTab(newValue)}
+                sx={{
+                  pl: 6,
+                  "& .MuiTab-root": {
+                    color: "rgba(0, 0, 0, 0.7)",
+                    "&.Mui-selected": {
+                      color: "primary.main",
+                    },
+                  },
+                  "& .MuiTabs-indicator": {
+                    backgroundColor: "primary.main",
+                  },
+                }}
+              >
+                {eventData?.type === "onspot" && (
+                  <Tab label={`${t.entries} ${entriesCount}`} />
+                )}
+                <Tab label={`${t.results} ${winners.length}`} />
+              </Tabs>
+            </Box>
+
+            {/* Tab Content */}
+            <Box sx={{ flex: 1, overflow: "auto", p: 2 }}>
+              {eventData?.type === "onspot" && drawerTab === 0 ? (
+                // Entries Tab (only for onspot type, tab index 0)
+                <Box>
+                  {/* Shuffle and Sort Buttons */}
+                  <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
+                    <Button
+                      variant="outlined"
+                      onClick={handleShuffle}
+                      startIcon={<ShuffleIcon />}
+                      sx={{
+                        flex: 1,
+                      }}
+                    >
+                      {t.shuffle}
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      onClick={handleSort}
+                      startIcon={<SortIcon />}
+                      sx={{
+                        flex: 1,
+                      }}
+                    >
+                      {t.sort}
+                    </Button>
+                  </Box>
+
+                  {/* Editable Names TextField */}
+                  <TextField
+                    fullWidth
+                    multiline
+                    rows={12}
+                    value={entriesText}
+                    onChange={(e) => setEntriesText(e.target.value)}
+                    variant="outlined"
+                    placeholder={t.placeholder}
+                  />
+
+                  {/* Ready Button */}
+                  <Button
+                    variant="contained"
+                    fullWidth
+                    onClick={handleReady}
+                    disabled={entriesCount === 0}
+                    sx={{
+                      mt: 2,
+                      py: 1.5,
+                    }}
+                  >
+                    {t.ready}
+                  </Button>
+                </Box>
+              ) : (
+                // Results Tab (tab index 1 for onspot, or tab index 0 for admin/sync)
+                <Box>
+                  {loadingWinners ? (
+                    <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        Loading...
+                      </Typography>
+                    </Box>
+                  ) : winners.length === 0 ? (
+                    <Box sx={{ textAlign: "center", mt: 4 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        {t.noWinners}
+                      </Typography>
+                    </Box>
+                  ) : (
+                    <List>
+                      {winners.map((winner, index) => (
+                        <ListItem
+                          key={index}
+                          sx={{
+                            backgroundColor: "rgba(0, 0, 0, 0.02)",
+                            mb: 1,
+                            borderRadius: 1,
+                            "&:hover": {
+                              backgroundColor: "rgba(0, 0, 0, 0.05)",
+                            },
+                          }}
+                        >
+                          <ListItemText
+                            primary={winner.name}
+                            secondary={
+                              winner.createdAt
+                                ? new Date(winner.createdAt).toLocaleString()
+                                : undefined
+                            }
+                            primaryTypographyProps={{
+                              sx: { fontWeight: 500 },
+                            }}
+                            secondaryTypographyProps={{
+                              sx: { color: "text.secondary" },
+                            }}
+                          />
+                        </ListItem>
+                      ))}
+                    </List>
+                  )}
+                </Box>
+              )}
+            </Box>
+          </Box>
+        </Drawer>
+      )}
     </Box>
   );
 };

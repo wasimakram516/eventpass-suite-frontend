@@ -22,14 +22,23 @@ import {
   DialogActions,
   CircularProgress,
   MenuItem,
+  Pagination,
+  Chip,
+  Select,
+  FormControl,
+  InputLabel,
 } from "@mui/material";
 import {
   addParticipant,
   deleteParticipant,
   exportSpinWheelParticipantsXlsx,
   getParticipantsBySlug,
+  getParticipantsForCMS,
   getSpinWheelSyncFilters,
   syncSpinWheelParticipants,
+  uploadParticipants,
+  downloadSampleExcel,
+  downloadCountryReference,
 } from "@/services/eventwheel/spinWheelParticipantService";
 import { getSpinWheelBySlug } from "@/services/eventwheel/spinWheelService";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
@@ -40,6 +49,8 @@ import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import LoadingState from "@/components/LoadingState";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import useSpinWheelSocket from "@/hooks/modules/eventwheel/useSpinWheelSocket";
+import CountryCodeSelector from "@/components/CountryCodeSelector";
+import { DEFAULT_ISO_CODE, formatPhoneNumberForDisplay } from "@/utils/countryCodes";
 
 const translations = {
   en: {
@@ -57,6 +68,15 @@ const translations = {
     delete: "Delete",
     syncParticipants: "Sync Participants",
     exportParticipants: "Export Participants",
+    uploadParticipants: "Upload Participants",
+    uploadFile: "Upload File",
+    uploading: "Uploading",
+    downloadSample: "Download Sample",
+    winner: "Winner",
+    recordsPerPage: "Records per page",
+    showing: "Showing",
+    to: "to",
+    of: "of",
   },
   ar: {
     participants: "المشاركون",
@@ -72,6 +92,15 @@ const translations = {
     delete: "حذف",
     syncParticipants: "مزامنة المشاركين",
     exportParticipants: "تصدير المشاركين",
+    uploadParticipants: "رفع المشاركين",
+    uploadFile: "رفع ملف",
+    uploading: "جاري الرفع",
+    downloadSample: "تنزيل النموذج",
+    winner: "الفائز",
+    recordsPerPage: "السجلات لكل صفحة",
+    showing: "عرض",
+    to: "إلى",
+    of: "من",
   },
 };
 
@@ -83,7 +112,7 @@ const ParticipantsAdminPage = () => {
   const [participants, setParticipants] = useState([]);
   const [event, setEvent] = useState(null);
   const [openModal, setOpenModal] = useState(false);
-  const [form, setForm] = useState({ name: "", phone: "", company: "" });
+  const [form, setForm] = useState({ name: "", phone: "", company: "", isoCode: DEFAULT_ISO_CODE });
   const [errors, setErrors] = useState({});
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -92,13 +121,14 @@ const ParticipantsAdminPage = () => {
   const [syncDialogOpen, setSyncDialogOpen] = useState(false);
   const [availableScanners, setAvailableScanners] = useState([]);
   const [selectedScanners, setSelectedScanners] = useState([]);
-
-  const { syncProgress } = useSpinWheelSocket({
-    spinWheelId: event?._id,
+  const [uploading, setUploading] = useState(false);
+  const [pagination, setPagination] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalParticipants: 0,
+    perPage: 10,
   });
-
-  const isSyncComplete =
-    syncProgress.total > 0 && syncProgress.synced >= syncProgress.total;
+  const [loading, setLoading] = useState(false);
 
   const fetchData = useCallback(async () => {
     if (!slug) return;
@@ -106,34 +136,121 @@ const ParticipantsAdminPage = () => {
     setEvent(eventData);
   }, [slug]);
 
-  const fetchParticipants = useCallback(async () => {
-    if (!slug) return;
-    const participantsData = await getParticipantsBySlug(slug);
-    setParticipants(participantsData);
-  }, [slug]);
+  const fetchParticipants = useCallback(async (page = 1, limit = 10) => {
+    if (!event?._id) return;
+    setLoading(true);
+    try {
+      const response = await getParticipantsForCMS(event._id, page, limit);
+      if (response?.data && response?.pagination) {
+        setParticipants(response.data);
+        setPagination(response.pagination);
+      }
+    } catch (err) {
+      console.error("Failed to fetch participants:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [event?._id]);
+
+  const handleUploadProgress = useCallback(
+    (data) => {
+      if (data.uploaded >= data.total && data.total > 0) {
+        setTimeout(() => {
+          setUploading(false);
+          fetchParticipants(pagination.currentPage, pagination.perPage);
+        }, 1000);
+      }
+    },
+    [fetchParticipants, pagination.currentPage, pagination.perPage]
+  );
+
+  const { syncProgress, uploadProgress } = useSpinWheelSocket({
+    spinWheelId: event?._id,
+    onUploadProgress: handleUploadProgress,
+  });
+
+  const isSyncComplete =
+    syncProgress.total > 0 && syncProgress.synced >= syncProgress.total;
 
   useEffect(() => {
     if (slug) {
       fetchData();
-      fetchParticipants();
     }
-  }, [slug, fetchData, fetchParticipants]);
+  }, [slug, fetchData]);
+
+  useEffect(() => {
+    if (event?._id) {
+      const page = pagination.currentPage;
+      const limit = pagination.perPage;
+      fetchParticipants(page, limit);
+    }
+  }, [event?._id, pagination.currentPage, pagination.perPage, fetchParticipants]);
 
   useEffect(() => {
     if (syncing && isSyncComplete) {
       setSyncing(false);
       setSyncDialogOpen(false);
       setSelectedScanners([]);
-      fetchParticipants();
+      fetchParticipants(pagination.currentPage, pagination.perPage);
     }
-  }, [syncing, isSyncComplete]);
+  }, [syncing, isSyncComplete, fetchParticipants, pagination.currentPage, pagination.perPage]);
+
+  const handleUpload = async (e) => {
+    if (!event?._id) return;
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const result = await uploadParticipants(event._id, file);
+      if (result?.error) {
+        setUploading(false);
+        e.target.value = "";
+        return;
+      }
+      e.target.value = "";
+    } catch (err) {
+      console.error("Upload failed:", err);
+      setUploading(false);
+      e.target.value = "";
+    }
+  };
 
   const handleExport = async () => {
-  await exportSpinWheelParticipantsXlsx(event._id);
-};
+    await exportSpinWheelParticipantsXlsx(event._id);
+  };
+
+  const handleDownloadSample = async () => {
+    if (!event?._id) return;
+    try {
+      // Download sample Excel file
+      const sampleBlob = await downloadSampleExcel(event._id);
+      const sampleUrl = URL.createObjectURL(sampleBlob);
+      const sampleLink = document.createElement("a");
+      sampleLink.href = sampleUrl;
+      sampleLink.download = `spinwheel_${event.slug || "participants"}_template.xlsx`;
+      document.body.appendChild(sampleLink);
+      sampleLink.click();
+      document.body.removeChild(sampleLink);
+      URL.revokeObjectURL(sampleUrl);
+
+      // Download country reference file
+      const countryBlob = await downloadCountryReference();
+      const countryUrl = URL.createObjectURL(countryBlob);
+      const countryLink = document.createElement("a");
+      countryLink.href = countryUrl;
+      countryLink.download = "country_reference.xlsx";
+      document.body.appendChild(countryLink);
+      countryLink.click();
+      document.body.removeChild(countryLink);
+      URL.revokeObjectURL(countryUrl);
+    } catch (err) {
+      console.error("Failed to download sample:", err);
+    }
+  };
 
   const handleOpenModal = () => {
-    setForm({ name: "", phone: "", company: "" });
+    setForm({ name: "", phone: "", company: "", isoCode: DEFAULT_ISO_CODE });
     setErrors({});
     setOpenModal(true);
   };
@@ -170,8 +287,6 @@ const ParticipantsAdminPage = () => {
       newErrors.name = "Name is required";
     if (!form.phone || form.phone.trim() === "")
       newErrors.phone = "Phone is required";
-    if (!form.company || form.company.trim() === "")
-      newErrors.company = "Company is required";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -180,23 +295,33 @@ const ParticipantsAdminPage = () => {
     if (!validateForm()) return;
     setSaving(true);
     const payload = {
-      ...form,
+      name: form.name,
+      phone: form.phone,
+      company: form.company,
+      isoCode: form.isoCode,
       spinWheelId: event._id,
     };
     await addParticipant(payload);
-    setForm({ name: "", phone: "", company: "" });
+    setForm({ name: "", phone: "", company: "", isoCode: DEFAULT_ISO_CODE });
     setSaving(false);
     setOpenModal(false);
-    fetchParticipants();
+    fetchParticipants(pagination.currentPage, pagination.perPage);
   };
 
   const handleDeleteParticipant = async () => {
     await deleteParticipant(selectedParticipant);
-    setParticipants((prev) =>
-      prev.filter((p) => p._id !== selectedParticipant)
-    );
     setConfirmDelete(false);
     setSelectedParticipant(null);
+    fetchParticipants(pagination.currentPage, pagination.perPage);
+  };
+
+  const handlePageChange = (event, value) => {
+    setPagination((prev) => ({ ...prev, currentPage: value }));
+  };
+
+  const handlePerPageChange = (e) => {
+    const newPerPage = Number(e.target.value);
+    setPagination((prev) => ({ ...prev, perPage: newPerPage, currentPage: 1 }));
   };
 
   if (!slug || !event) return <LoadingState />;
@@ -226,25 +351,46 @@ const ParticipantsAdminPage = () => {
             </Typography>
           </Box>
           <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-            <Button
-              variant="outlined"
-              color="primary"
-              onClick={handleExport}
-              startIcon={<ICONS.download />}
-              sx={getStartIconSpacing(dir)}
-            >
-              {t.exportParticipants}
-            </Button>
-
             {event.type === "admin" && (
-              <Button
-                variant="contained"
-                startIcon={<ICONS.add />}
-                onClick={handleOpenModal}
-                sx={getStartIconSpacing(dir)}
-              >
-                {t.addParticipant}
-              </Button>
+              <>
+                <Button
+                  variant="contained"
+                  startIcon={<ICONS.add />}
+                  onClick={handleOpenModal}
+                  sx={getStartIconSpacing(dir)}
+                >
+                  {t.addParticipant}
+                </Button>
+                <Button
+                  variant="outlined"
+                  onClick={handleDownloadSample}
+                  startIcon={<ICONS.download />}
+                  sx={getStartIconSpacing(dir)}
+                >
+                  {t.downloadSample}
+                </Button>
+                <Button
+                  variant="outlined"
+                  component="label"
+                  startIcon={
+                    uploading ? <CircularProgress size={20} /> : <ICONS.upload />
+                  }
+                  disabled={uploading}
+                  sx={getStartIconSpacing(dir)}
+                >
+                  {uploading && uploadProgress?.total
+                    ? `${t.uploading} ${uploadProgress.uploaded}/${uploadProgress.total}`
+                    : uploading
+                      ? t.uploading
+                      : t.uploadFile}
+                  <input
+                    type="file"
+                    hidden
+                    accept=".xlsx,.xls"
+                    onChange={handleUpload}
+                  />
+                </Button>
+              </>
             )}
 
             {event.type === "synced" && (
@@ -257,13 +403,83 @@ const ParticipantsAdminPage = () => {
                 {t.syncParticipants}
               </Button>
             )}
+
+            <Button
+              variant="outlined"
+              color="primary"
+              onClick={handleExport}
+              startIcon={<ICONS.download />}
+              sx={getStartIconSpacing(dir)}
+            >
+              {t.exportParticipants}
+            </Button>
           </Stack>
         </Box>
 
         <Divider sx={{ my: 2 }} />
 
+        {/* Search, Filter, and Info Toolbar */}
+        <Box
+          display="flex"
+          flexDirection={{ xs: "column", md: "row" }}
+          justifyContent="space-between"
+          alignItems={{ xs: "flex-start", md: "center" }}
+          gap={2}
+          mb={3}
+          px={{ xs: 1, sm: 2 }}
+        >
+          {/* Left: Record info */}
+          <Box width="100%" maxWidth={{ xs: "100%", md: "50%" }}>
+            <Typography variant="body2" color="text.secondary">
+              {t.showing}{" "}
+              {pagination.totalParticipants === 0
+                ? 0
+                : (pagination.currentPage - 1) * pagination.perPage + 1}
+              -
+              {Math.min(
+                pagination.currentPage * pagination.perPage,
+                pagination.totalParticipants
+              )}{" "}
+              {t.of} {pagination.totalParticipants}
+            </Typography>
+          </Box>
+
+          {/* Right: Records per page */}
+          <Stack
+            direction="row"
+            spacing={2}
+            sx={{
+              width: { xs: "100%", md: "auto" },
+            }}
+          >
+            <FormControl
+              size="small"
+              sx={{
+                minWidth: { xs: "100%", sm: 150 },
+              }}
+            >
+              <InputLabel>{t.recordsPerPage}</InputLabel>
+              <Select
+                value={pagination.perPage}
+                onChange={handlePerPageChange}
+                label={t.recordsPerPage}
+              >
+                {[5, 10, 20, 50, 100, 250, 500].map((n) => (
+                  <MenuItem key={n} value={n}>
+                    {n}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Stack>
+        </Box>
+
         <Box sx={{ py: 2 }}>
-          {participants.length === 0 ? (
+          {loading ? (
+            <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : participants.length === 0 ? (
             <NoDataAvailable />
           ) : (
             <Grid container spacing={3} justifyContent="center">
@@ -283,16 +499,36 @@ const ParticipantsAdminPage = () => {
                       transition: "transform 0.2s, box-shadow 0.2s",
                     }}
                   >
-                    <CardHeader title={participant.name} sx={{ pb: 0 }} />
+                    <CardHeader
+                      title={
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                          <Typography variant="h6">{participant.name}</Typography>
+                          {participant.isWinner && (
+                            <Chip
+                              label={t.winner}
+                              color="success"
+                              size="small"
+                              sx={{ fontWeight: "bold" }}
+                            />
+                          )}
+                        </Box>
+                      }
+                      sx={{ pb: 0 }}
+                    />
                     <CardContent sx={{ flexGrow: 1 }}>
                       {participant.phone && (
                         <Typography variant="body2" color="text.secondary">
-                          <strong>{t.phone}:</strong> {participant.phone}
+                          <strong>{t.phone}:</strong> {formatPhoneNumberForDisplay(participant.phone, participant.isoCode)}
                         </Typography>
                       )}
                       {participant.company && (
                         <Typography variant="body2" color="text.secondary">
                           <strong>{t.company}:</strong> {participant.company}
+                        </Typography>
+                      )}
+                      {participant.visible === false && (
+                        <Typography variant="body2" color="warning.main" sx={{ mt: 1 }}>
+                          <strong>Removed from wheel</strong>
                         </Typography>
                       )}
                     </CardContent>
@@ -314,6 +550,18 @@ const ParticipantsAdminPage = () => {
                 </Grid>
               ))}
             </Grid>
+          )}
+
+          {/* Pagination */}
+          {pagination.totalParticipants > pagination.perPage && (
+            <Box display="flex" justifyContent="center" mt={4}>
+              <Pagination
+                dir="ltr"
+                count={pagination.totalPages}
+                page={pagination.currentPage}
+                onChange={handlePageChange}
+              />
+            </Box>
           )}
         </Box>
 
@@ -351,6 +599,19 @@ const ParticipantsAdminPage = () => {
               required
               error={!!errors.phone}
               helperText={errors.phone}
+              type="tel"
+              InputProps={{
+                startAdornment: (
+                  <CountryCodeSelector
+                    value={form.isoCode}
+                    onChange={(iso) =>
+                      setForm((prev) => ({ ...prev, isoCode: iso }))
+                    }
+                    disabled={false}
+                    dir={dir}
+                  />
+                ),
+              }}
             />
             <TextField
               name="company"
@@ -361,7 +622,6 @@ const ParticipantsAdminPage = () => {
               onChange={(e) =>
                 setForm((prev) => ({ ...prev, company: e.target.value }))
               }
-              required
               error={!!errors.company}
               helperText={errors.company}
             />

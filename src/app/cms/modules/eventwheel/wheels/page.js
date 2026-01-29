@@ -88,6 +88,8 @@ const translations = {
     syncedLabel: "Sync Registrations (Sync with event registrations)",
     syncedChipLabel: "Synced",
     shareSpinWheelTitle: "Share Spin Wheel",
+    participants: "Participants",
+    participantCount: "Participant Count",
   },
   ar: {
     spinWheelManagement: "إدارة عجلة الدوران",
@@ -127,6 +129,8 @@ const translations = {
     syncedLabel: "مزامنة التسجيلات (مزامنة مع تسجيلات الحدث)",
     syncedChipLabel: "متزامن",
     shareSpinWheelTitle: "مشاركة عجلة الدوران",
+    participants: "المشاركون",
+    participantCount: "عدد المشاركين",
   },
 };
 
@@ -788,6 +792,14 @@ const Dashboard = () => {
                       >
                         <strong>{t.business}:</strong>{" "}
                         {wheel.business?.name || t.noBusiness}
+                      </Typography>
+
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ mb: 2 }}
+                      >
+                        <strong>{t.participants}:</strong> {wheel.participantCount || 0}
                       </Typography>
 
                       <Typography variant="caption" color="text.secondary">
