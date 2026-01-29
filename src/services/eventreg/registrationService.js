@@ -175,6 +175,17 @@ export const updateRegistrationApproval = withApiHandler(
   { showSuccess: true }
 );
 
+export const bulkUpdateRegistrationApproval = withApiHandler(
+  async (slug, ids, status) => {
+    const { data } = await api.patch(
+      `/eventreg/registrations/event/${slug}/approval/bulk`,
+      { ids, status }
+    );
+    return data;
+  },
+  { showSuccess: true }
+);
+
 export const createWalkIn = withApiHandler(
   async (id) => {
     const { data } = await api.post(`/eventreg/registrations/${id}/walkin`);
