@@ -9,6 +9,9 @@ import {
   Font,
 } from "@react-pdf/renderer";
 
+// --------------------------------------------------------------
+
+// Auto-generated font imports
 import arial_0 from "../../fonts/arial/ArialBold.ttf";
 import arial_1 from "../../fonts/arial/ArialRegular.ttf";
 import futura_0 from "../../fonts/futura/FuturaStdBold.otf";
@@ -34,10 +37,16 @@ import futura_19 from "../../fonts/futura/FuturaStdMediumOblique.otf";
 import IBMPlexSansArabic_0 from "../../fonts/IBMPlexSansArabic/IBMPlexSansArabic-Bold.ttf";
 import IBMPlexSansArabic_1 from "../../fonts/IBMPlexSansArabic/IBMPlexSansArabic-Medium.ttf";
 import IBMPlexSansArabic_2 from "../../fonts/IBMPlexSansArabic/IBMPlexSansArabic-Regular.ttf";
+import love_0 from "../../fonts/love/LoveDays-2v7Oe.ttf";
 import Midable_0 from "../../fonts/Midable/Midable.ttf";
 import romeo_0 from "../../fonts/romeo/Pinky Peace.otf";
 import welcome_0 from "../../fonts/welcome/Welcome September.ttf";
 
+// --------------------------------------------------------------
+
+// --------------------------------------------------------------
+// STATIC FONT REGISTRATION (AUTO-GENERATED)
+// --------------------------------------------------------------
 Font.register({
   family: "Arial",
   fonts: [
@@ -78,6 +87,13 @@ Font.register({
     { src: IBMPlexSansArabic_0, fontWeight: 700, fontStyle: 'normal' },
     { src: IBMPlexSansArabic_1, fontWeight: 500, fontStyle: 'normal' },
     { src: IBMPlexSansArabic_2, fontWeight: 400, fontStyle: 'normal' }
+  ],
+});
+
+Font.register({
+  family: "Love",
+  fonts: [
+    { src: love_0, fontWeight: 400, fontStyle: 'normal' }
   ],
 });
 

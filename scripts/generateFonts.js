@@ -197,35 +197,36 @@ try {
 
     let updatedContent = badgePDFContent;
 
+
+    const importRegex = /\/\/ Auto-generated font imports[\s\S]*?(?=\n\/\/ -{60,}|\nconst A6_WIDTH|\nFont\.register)/;
+    updatedContent = updatedContent.replace(importRegex, '');
+
+    const registrationRegex = /\/\/ -{60,}\s*\/\/ STATIC FONT REGISTRATION[\s\S]*?(?=\nconst A6_WIDTH)/;
+    updatedContent = updatedContent.replace(registrationRegex, '');
+
+    updatedContent = updatedContent.replace(/\/\/ -{60,}\s*\n\s*\/\/ -{60,}/g, '// --------------------------------------------------------------');
+    updatedContent = updatedContent.replace(/\n{3,}/g, '\n\n');
     const reactPdfImportEnd = updatedContent.indexOf('} from "@react-pdf/renderer";');
     if (reactPdfImportEnd !== -1) {
         const afterReactPdfImport = updatedContent.indexOf('\n', reactPdfImportEnd) + 1;
-        const nextCommentIndex = updatedContent.indexOf('// --------------------------------------------------------------', afterReactPdfImport);
-
-        if (nextCommentIndex !== -1) {
-            updatedContent = updatedContent.slice(0, afterReactPdfImport) + '\n' + newImportSection + '\n' + updatedContent.slice(nextCommentIndex);
-        } else {
-            updatedContent = updatedContent.slice(0, afterReactPdfImport) + '\n' + newImportSection + '\n' + updatedContent.slice(afterReactPdfImport);
+        let insertPoint = afterReactPdfImport;
+        const nextLine = updatedContent.substring(afterReactPdfImport, afterReactPdfImport + 100);
+        if (nextLine.trim() === '' || nextLine.trim().startsWith('//')) {
+            const nextNonEmpty = updatedContent.indexOf('\n', afterReactPdfImport + 1);
+            if (nextNonEmpty !== -1) {
+                insertPoint = nextNonEmpty + 1;
+            }
         }
+        updatedContent = updatedContent.slice(0, insertPoint) + '\n' + newImportSection + '\n' + updatedContent.slice(insertPoint);
     }
 
-    const registrationStartMarker = '// --------------------------------------------------------------\n// STATIC FONT REGISTRATION';
-    const registrationEndMarker = '\nconst A6_WIDTH';
-
-    const regStartIndex = updatedContent.indexOf(registrationStartMarker);
-    const regEndIndex = updatedContent.indexOf(registrationEndMarker);
-
-    if (regStartIndex !== -1 && regEndIndex !== -1 && regEndIndex > regStartIndex) {
-        updatedContent = updatedContent.slice(0, regStartIndex) + newRegistrationSection + updatedContent.slice(regEndIndex + 1);
-    } else {
-        const a6Index = updatedContent.indexOf('const A6_WIDTH');
-        if (a6Index !== -1) {
-            const beforeA6 = updatedContent.lastIndexOf('\n', a6Index);
-            updatedContent = updatedContent.slice(0, beforeA6 + 1) + newRegistrationSection + updatedContent.slice(a6Index);
-        }
+    const a6Index = updatedContent.indexOf('const A6_WIDTH');
+    if (a6Index !== -1) {
+        const beforeA6 = updatedContent.lastIndexOf('\n', a6Index);
+        updatedContent = updatedContent.slice(0, beforeA6 + 1) + newRegistrationSection + updatedContent.slice(a6Index);
     }
 
-    updatedContent = updatedContent.replace(/\/\/ --------------------------------------------------------------\/\/ --------------------------------------------------------------/g, '// --------------------------------------------------------------');
+
     updatedContent = updatedContent.replace(/const A6_WIDTH\s*\n\s*const A6_WIDTH/g, 'const A6_WIDTH');
     updatedContent = updatedContent.replace(/const A6_WIDTHconst A6_WIDTH/g, 'const A6_WIDTH');
 
