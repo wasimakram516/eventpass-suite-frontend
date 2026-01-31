@@ -26,28 +26,129 @@ import FormatClearIcon from "@mui/icons-material/FormatClear";
 const RichTextEditor = ({ value, onChange, placeholder, dir, minHeight, maxHeight }) => {
     const editorRef = useRef(null);
     const colorPickerAnchorRef = useRef(null);
+    const fontSizeSelectRef = useRef(null);
     const [activeCommands, setActiveCommands] = useState({
         bold: false,
         italic: false,
         underline: false,
         strikethrough: false,
     });
+    const [alignment, setAlignment] = useState(null);
+    const [fontSize, setFontSize] = useState(14);
     const [colorPickerOpen, setColorPickerOpen] = useState(false);
+
+    const parseHTMLForFormatting = (html) => {
+        if (!html) return { alignment: null, fontSize: 14 };
+
+        let detectedAlignment = null;
+        let detectedFontSize = 14;
+
+        const textAlignMatch = html.match(/text-align:\s*(center|left|right|justify)/i);
+        if (textAlignMatch) {
+            const align = textAlignMatch[1].toLowerCase();
+            if (align === 'center') detectedAlignment = 'center';
+            else if (align === 'right') detectedAlignment = 'right';
+            else if (align === 'left') detectedAlignment = 'left';
+        }
+
+        const fontSizeMatch = html.match(/font-size:\s*([^;'"]+)/i);
+        if (fontSizeMatch) {
+            const fontSizeStr = fontSizeMatch[1].trim();
+            const fontSizeNum = parseFloat(fontSizeStr);
+            if (fontSizeNum && fontSizeNum >= 8 && fontSizeNum <= 50) {
+                detectedFontSize = Math.round(fontSizeNum);
+            }
+        }
+
+        const fontSizeAttrMatch = html.match(/<font[^>]*size=["']?(\d+)["']?/i);
+        if (fontSizeAttrMatch) {
+            const sizeAttr = parseInt(fontSizeAttrMatch[1]);
+            const sizeMap = {
+                1: 8,
+                2: 10,
+                3: 12,
+                4: 14,
+                5: 18,
+                6: 24,
+                7: 36
+            };
+            if (sizeAttr >= 1 && sizeAttr <= 7) {
+                detectedFontSize = sizeMap[sizeAttr];
+            }
+        }
+
+        return { alignment: detectedAlignment, fontSize: detectedFontSize };
+    };
 
     useEffect(() => {
         if (editorRef.current && value !== editorRef.current.innerHTML) {
             editorRef.current.innerHTML = value || "";
+
+            const formatting = parseHTMLForFormatting(value);
+
+            if (formatting.alignment) {
+                setAlignment(formatting.alignment);
+                setTimeout(() => {
+                    if (editorRef.current) {
+                        editorRef.current.focus();
+                        const range = document.createRange();
+                        range.selectNodeContents(editorRef.current);
+                        range.collapse(false);
+                        const sel = window.getSelection();
+                        sel.removeAllRanges();
+                        sel.addRange(range);
+
+                        if (formatting.alignment === 'center') {
+                            document.execCommand('justifyCenter', false, null);
+                            editorRef.current.style.textAlign = "center";
+                        } else if (formatting.alignment === 'right') {
+                            document.execCommand('justifyRight', false, null);
+                            editorRef.current.style.textAlign = "right";
+                        } else {
+                            document.execCommand('justifyLeft', false, null);
+                            editorRef.current.style.textAlign = "left";
+                        }
+
+                        setTimeout(() => {
+                            updateActiveCommands();
+                        }, 0);
+                    }
+                }, 50);
+            } else {
+                if (editorRef.current) {
+                    editorRef.current.style.textAlign = "left";
+                }
+            }
+
+            if (formatting.fontSize !== fontSize) {
+                setFontSize(formatting.fontSize);
+            }
         }
     }, [value]);
 
     const updateActiveCommands = () => {
-        if (editorRef.current && document.activeElement === editorRef.current) {
+        if (editorRef.current) {
+            const isFocused = document.activeElement === editorRef.current;
             setActiveCommands({
                 bold: document.queryCommandState("bold"),
                 italic: document.queryCommandState("italic"),
                 underline: document.queryCommandState("underline"),
                 strikethrough: document.queryCommandState("strikethrough"),
             });
+
+            const isLeft = document.queryCommandState("justifyLeft");
+            const isCenter = document.queryCommandState("justifyCenter");
+            const isRight = document.queryCommandState("justifyRight");
+
+            if (isCenter && !isLeft && !isRight) {
+                setAlignment("center");
+            } else if (isRight && !isLeft && !isCenter) {
+                setAlignment("right");
+            } else if (isLeft && !isCenter && !isRight) {
+                setAlignment("left");
+            } else {
+                setAlignment(null);
+            }
         }
     };
 
@@ -55,6 +156,18 @@ const RichTextEditor = ({ value, onChange, placeholder, dir, minHeight, maxHeigh
         if (editorRef.current && onChange) {
             onChange(editorRef.current.innerHTML);
         }
+        const isLeft = document.queryCommandState("justifyLeft");
+        const isCenter = document.queryCommandState("justifyCenter");
+        const isRight = document.queryCommandState("justifyRight");
+
+        if (isCenter && !isLeft && !isRight) {
+            editorRef.current.style.textAlign = "center";
+        } else if (isRight && !isLeft && !isCenter) {
+            editorRef.current.style.textAlign = "right";
+        } else {
+            editorRef.current.style.textAlign = "left";
+        }
+
         updateActiveCommands();
     };
 
@@ -71,14 +184,217 @@ const RichTextEditor = ({ value, onChange, placeholder, dir, minHeight, maxHeigh
         }, 0);
     };
 
+    const handleAlignment = (align) => {
+        if (!editorRef.current) return;
+
+        if (alignment === align) {
+            editorRef.current.focus();
+            const selection = window.getSelection();
+            if (selection.rangeCount === 0) {
+                const range = document.createRange();
+                range.selectNodeContents(editorRef.current);
+                selection.removeAllRanges();
+                selection.addRange(range);
+            }
+
+            const allElements = editorRef.current.querySelectorAll("*");
+            allElements.forEach(el => {
+                if (el.style && el.style.textAlign) {
+                    el.style.textAlign = "";
+                }
+            });
+            if (editorRef.current.style && editorRef.current.style.textAlign) {
+                editorRef.current.style.textAlign = "";
+            }
+
+            document.execCommand("justifyLeft", false, null);
+            setAlignment("left");
+            setTimeout(() => {
+                updateActiveCommands();
+                handleInput();
+            }, 0);
+            return;
+        }
+
+        editorRef.current.focus();
+        const selection = window.getSelection();
+        if (selection.rangeCount === 0) {
+            const range = document.createRange();
+            range.selectNodeContents(editorRef.current);
+            selection.removeAllRanges();
+            selection.addRange(range);
+        }
+
+        const range = selection.getRangeAt(0);
+
+        const walker = document.createTreeWalker(
+            editorRef.current,
+            NodeFilter.SHOW_ELEMENT,
+            null
+        );
+
+        const nodesToProcess = [];
+        let node;
+        while (node = walker.nextNode()) {
+            if (node.style && node.style.textAlign) {
+                if (range.intersectsNode(node) || node.contains(range.commonAncestorContainer)) {
+                    nodesToProcess.push(node);
+                }
+            }
+        }
+
+        nodesToProcess.forEach(node => {
+            node.style.textAlign = "";
+        });
+
+        if (editorRef.current.style && editorRef.current.style.textAlign) {
+            editorRef.current.style.textAlign = "";
+        }
+
+        if (align === "left") {
+            document.execCommand("justifyLeft", false, null);
+        } else if (align === "center") {
+            document.execCommand("justifyCenter", false, null);
+        } else if (align === "right") {
+            document.execCommand("justifyRight", false, null);
+        }
+
+        if (align === "center") {
+            editorRef.current.style.textAlign = "center";
+        } else if (align === "right") {
+            editorRef.current.style.textAlign = "right";
+        } else {
+            editorRef.current.style.textAlign = "left";
+        }
+
+        setAlignment(align);
+        setTimeout(() => {
+            updateActiveCommands();
+            handleInput();
+        }, 0);
+    };
+
     const handleFontColor = (color) => {
         executeCommand("foreColor", color);
         setColorPickerOpen(false);
     };
 
     const handleFontSize = (event) => {
-        const size = event.target.value;
-        executeCommand("fontSize", size);
+        const size = parseInt(event.target.value);
+        setFontSize(size);
+
+        if (!editorRef.current) return;
+
+        editorRef.current.focus();
+        const selection = window.getSelection();
+        if (selection.rangeCount === 0) return;
+
+        const range = selection.getRangeAt(0);
+
+        try {
+            document.execCommand("styleWithCSS", false, true);
+        } catch (e) {
+            // Browser doesn't support styleWithCSS
+        }
+
+        const removeFontSize = (element) => {
+            if (element.style && element.style.fontSize) {
+                element.style.fontSize = "";
+            }
+            const children = element.querySelectorAll("[style*='font-size']");
+            children.forEach((child) => {
+                if (child.style) {
+                    child.style.fontSize = "";
+                }
+            });
+        };
+
+        if (range.collapsed) {
+            let node = range.startContainer;
+            while (node && node !== editorRef.current) {
+                if (node.nodeType === Node.ELEMENT_NODE) {
+                    removeFontSize(node);
+                }
+                node = node.parentElement;
+            }
+        } else {
+            const walker = document.createTreeWalker(
+                range.commonAncestorContainer,
+                NodeFilter.SHOW_ELEMENT,
+                {
+                    acceptNode: (node) => {
+                        return range.intersectsNode(node)
+                            ? NodeFilter.FILTER_ACCEPT
+                            : NodeFilter.FILTER_REJECT;
+                    }
+                }
+            );
+
+            let node;
+            const nodesToProcess = [];
+            while (node = walker.nextNode()) {
+                nodesToProcess.push(node);
+            }
+
+            if (range.commonAncestorContainer.nodeType === Node.ELEMENT_NODE) {
+                nodesToProcess.push(range.commonAncestorContainer);
+            }
+
+            nodesToProcess.forEach(removeFontSize);
+        }
+
+        if (range.collapsed) {
+            const span = document.createElement("span");
+            span.style.fontSize = `${size}px`;
+            span.innerHTML = "\u200B";
+            try {
+                range.insertNode(span);
+                range.setStartAfter(span);
+                range.collapse(true);
+                selection.removeAllRanges();
+                selection.addRange(range);
+            } catch (e) {
+                editorRef.current.innerHTML += span.outerHTML;
+            }
+        } else {
+            try {
+                const span = document.createElement("span");
+                span.style.fontSize = `${size}px`;
+                range.surroundContents(span);
+            } catch (e) {
+                const contents = range.extractContents();
+                const span = document.createElement("span");
+                span.style.fontSize = `${size}px`;
+                span.appendChild(contents);
+                range.insertNode(span);
+            }
+        }
+
+        setTimeout(() => {
+            const spans = editorRef.current.querySelectorAll("span[style*='font-size']");
+            spans.forEach((span) => {
+                const parent = span.parentElement;
+                if (parent && parent.tagName === "SPAN" &&
+                    parent.style.fontSize &&
+                    parent.style.fontSize === span.style.fontSize) {
+                    const fragment = document.createDocumentFragment();
+                    while (span.firstChild) {
+                        fragment.appendChild(span.firstChild);
+                    }
+                    parent.insertBefore(fragment, span);
+                    span.remove();
+                }
+            });
+
+            const zwsp = editorRef.current.querySelectorAll("span:not(:has(*))");
+            zwsp.forEach((span) => {
+                if (span.textContent === "\u200B" && span.style.fontSize) {
+                }
+            });
+
+            updateActiveCommands();
+            handleInput();
+        }, 10);
     };
 
     return (
@@ -212,28 +528,40 @@ const RichTextEditor = ({ value, onChange, placeholder, dir, minHeight, maxHeigh
                 <Box sx={{ display: "flex", gap: 0.5, borderRight: "1px solid", borderColor: "divider", px: 0.5 }}>
                     <IconButton
                         size="small"
-                        onClick={() => executeCommand("justifyLeft")}
+                        onClick={() => handleAlignment("left")}
+                        sx={{
+                            bgcolor: alignment === "left" ? "action.selected" : "transparent",
+                        }}
                         title="Align Left"
                     >
                         <FormatAlignLeftIcon fontSize="small" />
                     </IconButton>
                     <IconButton
                         size="small"
-                        onClick={() => executeCommand("justifyCenter")}
+                        onClick={() => handleAlignment("center")}
+                        sx={{
+                            bgcolor: alignment === "center" ? "action.selected" : "transparent",
+                        }}
                         title="Align Center"
                     >
                         <FormatAlignCenterIcon fontSize="small" />
                     </IconButton>
                     <IconButton
                         size="small"
-                        onClick={() => executeCommand("justifyRight")}
+                        onClick={() => handleAlignment("right")}
+                        sx={{
+                            bgcolor: alignment === "right" ? "action.selected" : "transparent",
+                        }}
                         title="Align Right"
                     >
                         <FormatAlignRightIcon fontSize="small" />
                     </IconButton>
                     <IconButton
                         size="small"
-                        onClick={() => executeCommand("justifyFull")}
+                        onClick={() => {
+                            handleAlignment("left");
+                            setAlignment(null);
+                        }}
                         title="Justify"
                     >
                         <FormatAlignJustifyIcon fontSize="small" />
@@ -243,9 +571,17 @@ const RichTextEditor = ({ value, onChange, placeholder, dir, minHeight, maxHeigh
                 <Box sx={{ display: "flex", gap: 0.5, borderRight: "1px solid", borderColor: "divider", px: 0.5, alignItems: "center" }}>
                     <FormControl size="small" variant="outlined" sx={{ minWidth: 80 }}>
                         <Select
-                            defaultValue={4}
+                            value={fontSize}
                             onChange={handleFontSize}
                             displayEmpty
+                            inputRef={fontSizeSelectRef}
+                            MenuProps={{
+                                PaperProps: {
+                                    style: {
+                                        maxHeight: 240,
+                                    },
+                                },
+                            }}
                             sx={{
                                 height: "32px",
                                 fontSize: "0.875rem",
@@ -254,13 +590,11 @@ const RichTextEditor = ({ value, onChange, placeholder, dir, minHeight, maxHeigh
                                 },
                             }}
                         >
-                            <MenuItem value={1}>8px</MenuItem>
-                            <MenuItem value={2}>10px</MenuItem>
-                            <MenuItem value={3}>12px</MenuItem>
-                            <MenuItem value={4}>14px</MenuItem>
-                            <MenuItem value={5}>18px</MenuItem>
-                            <MenuItem value={6}>24px</MenuItem>
-                            <MenuItem value={7}>36px</MenuItem>
+                            {Array.from({ length: 43 }, (_, i) => i + 8).map((size) => (
+                                <MenuItem key={size} value={size}>
+                                    {size}px
+                                </MenuItem>
+                            ))}
                         </Select>
                     </FormControl>
                 </Box>

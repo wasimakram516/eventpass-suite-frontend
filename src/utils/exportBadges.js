@@ -60,12 +60,14 @@ export async function exportAllBadges(registrations = [], eventDetails) {
 
           token: r.token,
           showQrOnBadge: eventDetails?.showQrOnBadge ?? true,
+          customFields: r.customFields || {},
         };
         return (
           <BadgePDF
             key={r._id}
             data={data}
             qrCodeDataUrl={r.qrCodeDataUrl}
+            customizations={eventDetails?.customizations}
             single={false}
           />
         );

@@ -1051,9 +1051,10 @@ export default function ViewRegistrations() {
         badgeIdentifier: registration.badgeIdentifier || "",
         token: registration.token,
         showQrOnBadge: eventDetails?.showQrOnBadge ?? true,
+        customFields: registration.customFields || {},
       };
 
-      const doc = <BadgePDF data={badgeData} qrCodeDataUrl={qrCodeDataUrl} />;
+      const doc = <BadgePDF data={badgeData} qrCodeDataUrl={qrCodeDataUrl} customizations={eventDetails?.customizations} />;
       const blob = await pdf(doc).toBlob();
 
       const blobUrl = URL.createObjectURL(blob);

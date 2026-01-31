@@ -3,8 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "generate-fonts": "node scripts/generateFonts.js",
+    "dev": "node scripts/generateFonts.js && next dev",
+    "build": "node scripts/generateFonts.js && next build",
     "start": "next start",
     "lint": "next lint"
   },
