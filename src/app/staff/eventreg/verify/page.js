@@ -244,7 +244,11 @@ export default function VerifyPage() {
       }
 
       // Generate the PDF blob
-      const doc = <BadgePDF data={result} qrCodeDataUrl={qrCodeDataUrl} />;
+      const badgeData = {
+        ...result,
+        customFields: result.customFields || {},
+      };
+      const doc = <BadgePDF data={badgeData} qrCodeDataUrl={qrCodeDataUrl} customizations={result.eventDetails?.customizations} />;
       const blob = await pdf(doc).toBlob();
       if (!blob || blob.size === 0) throw new Error("Empty PDF generated");
 

@@ -9,46 +9,96 @@ import {
   Font,
 } from "@react-pdf/renderer";
 
-// ---- FUTURA ----
-import Futura_Bold from "../../fonts/futura/FuturaStdBold.otf";
-import Futura_Book from "../../fonts/futura/FuturaStdBook.otf";
-import Futura_Medium from "../../fonts/futura/FuturaStdMedium.otf";
+import arial_0 from "../../fonts/arial/ArialBold.ttf";
+import arial_1 from "../../fonts/arial/ArialRegular.ttf";
+import futura_0 from "../../fonts/futura/FuturaStdBold.otf";
+import futura_1 from "../../fonts/futura/FuturaStdBoldOblique.otf";
+import futura_2 from "../../fonts/futura/FuturaStdBook.otf";
+import futura_3 from "../../fonts/futura/FuturaStdBookOblique.otf";
+import futura_4 from "../../fonts/futura/FuturaStdCondensed.otf";
+import futura_5 from "../../fonts/futura/FuturaStdCondensedBold.otf";
+import futura_6 from "../../fonts/futura/FuturaStdCondensedBoldObl.otf";
+import futura_7 from "../../fonts/futura/FuturaStdCondensedExtraBd.otf";
+import futura_8 from "../../fonts/futura/FuturaStdCondensedLight.otf";
+import futura_9 from "../../fonts/futura/FuturaStdCondensedLightObl.otf";
+import futura_10 from "../../fonts/futura/FuturaStdCondensedOblique.otf";
+import futura_11 from "../../fonts/futura/FuturaStdCondExtraBoldObl.otf";
+import futura_12 from "../../fonts/futura/FuturaStdExtraBold.otf";
+import futura_13 from "../../fonts/futura/FuturaStdExtraBoldOblique.otf";
+import futura_14 from "../../fonts/futura/FuturaStdHeavy.otf";
+import futura_15 from "../../fonts/futura/FuturaStdHeavyOblique.otf";
+import futura_16 from "../../fonts/futura/FuturaStdLight.otf";
+import futura_17 from "../../fonts/futura/FuturaStdLightOblique.otf";
+import futura_18 from "../../fonts/futura/FuturaStdMedium.otf";
+import futura_19 from "../../fonts/futura/FuturaStdMediumOblique.otf";
+import IBMPlexSansArabic_0 from "../../fonts/IBMPlexSansArabic/IBMPlexSansArabic-Bold.ttf";
+import IBMPlexSansArabic_1 from "../../fonts/IBMPlexSansArabic/IBMPlexSansArabic-Medium.ttf";
+import IBMPlexSansArabic_2 from "../../fonts/IBMPlexSansArabic/IBMPlexSansArabic-Regular.ttf";
+import Midable_0 from "../../fonts/Midable/Midable.ttf";
+import romeo_0 from "../../fonts/romeo/Pinky Peace.otf";
+import welcome_0 from "../../fonts/welcome/Welcome September.ttf";
 
-// ---- IBM PLEX ----
-import IBM_Regular from "../../fonts/IBMPlexSansArabic/IBMPlexSansArabic-Regular.ttf";
-import IBM_Medium from "../../fonts/IBMPlexSansArabic/IBMPlexSansArabic-Medium.ttf";
-import IBM_Bold from "../../fonts/IBMPlexSansArabic/IBMPlexSansArabic-Bold.ttf";
+Font.register({
+  family: "Arial",
+  fonts: [
+    { src: arial_0, fontWeight: 700, fontStyle: 'normal' },
+    { src: arial_1, fontWeight: 400, fontStyle: 'normal' }
+  ],
+});
 
-// ---- Arial -----
-import Arial_Regular from "../../fonts/arial/ArialRegular.ttf";
-import Arial_Bold from "../../fonts/arial/ArialBold.ttf";
-
-// --------------------------------------------------------------
-// STATIC FONT REGISTRATION (DONE ONCE, GLOBALLY)
-// --------------------------------------------------------------
 Font.register({
   family: "Futura",
   fonts: [
-    { src: Futura_Book, fontWeight: 400 },
-    { src: Futura_Medium, fontWeight: 500 },
-    { src: Futura_Bold, fontWeight: 700 },
+    { src: futura_0, fontWeight: 700, fontStyle: 'normal' },
+    { src: futura_1, fontWeight: 700, fontStyle: 'italic' },
+    { src: futura_2, fontWeight: 400, fontStyle: 'normal' },
+    { src: futura_3, fontWeight: 400, fontStyle: 'italic' },
+    { src: futura_4, fontWeight: 400, fontStyle: 'normal' },
+    { src: futura_5, fontWeight: 700, fontStyle: 'normal' },
+    { src: futura_6, fontWeight: 700, fontStyle: 'italic' },
+    { src: futura_7, fontWeight: 900, fontStyle: 'normal' },
+    { src: futura_8, fontWeight: 300, fontStyle: 'normal' },
+    { src: futura_9, fontWeight: 300, fontStyle: 'italic' },
+    { src: futura_10, fontWeight: 400, fontStyle: 'italic' },
+    { src: futura_11, fontWeight: 700, fontStyle: 'italic' },
+    { src: futura_12, fontWeight: 700, fontStyle: 'normal' },
+    { src: futura_13, fontWeight: 700, fontStyle: 'italic' },
+    { src: futura_14, fontWeight: 800, fontStyle: 'normal' },
+    { src: futura_15, fontWeight: 800, fontStyle: 'italic' },
+    { src: futura_16, fontWeight: 300, fontStyle: 'normal' },
+    { src: futura_17, fontWeight: 300, fontStyle: 'italic' },
+    { src: futura_18, fontWeight: 500, fontStyle: 'normal' },
+    { src: futura_19, fontWeight: 500, fontStyle: 'italic' }
   ],
 });
 
 Font.register({
   family: "IBM Plex Sans Arabic",
   fonts: [
-    { src: IBM_Regular, fontWeight: 400 },
-    { src: IBM_Medium, fontWeight: 500 },
-    { src: IBM_Bold, fontWeight: 700 },
+    { src: IBMPlexSansArabic_0, fontWeight: 700, fontStyle: 'normal' },
+    { src: IBMPlexSansArabic_1, fontWeight: 500, fontStyle: 'normal' },
+    { src: IBMPlexSansArabic_2, fontWeight: 400, fontStyle: 'normal' }
   ],
 });
 
 Font.register({
-  family: "Arial",
+  family: "Midable",
   fonts: [
-    { src: Arial_Regular, fontWeight: 400 },
-    { src: Arial_Bold, fontWeight: 700 },
+    { src: Midable_0, fontWeight: 400, fontStyle: 'normal' }
+  ],
+});
+
+Font.register({
+  family: "Romeo",
+  fonts: [
+    { src: romeo_0, fontWeight: 400, fontStyle: 'normal' }
+  ],
+});
+
+Font.register({
+  family: "Welcome",
+  fonts: [
+    { src: welcome_0, fontWeight: 400, fontStyle: 'normal' }
   ],
 });
 
@@ -73,6 +123,19 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     justifyContent: "center",
     alignItems: "center",
+    fontFamily: "Arial",
+  },
+  pageCustomized: {
+    width: A6_WIDTH,
+    height: A6_HEIGHT,
+    backgroundColor: "#ffffff",
+    position: "relative",
+    paddingTop: 0,
+    paddingBottom: 0,
+    paddingLeft: 0,
+    paddingRight: 0,
+    display: "flex",
+    flexDirection: "column",
     fontFamily: "Arial",
   },
   contentArea: {
@@ -235,7 +298,302 @@ function wrapTextAtWords(text, fontSize, availableWidth, isBold = false) {
   return lines.slice(0, 2);
 }
 
-export default function BadgePDF({ data, qrCodeDataUrl, single = true }) {
+function parseHTMLToText(html) {
+  if (!html) return {
+    text: "",
+    isBold: false,
+    isItalic: false,
+    isUnderline: false,
+    color: "#000000",
+    fontSize: null
+  };
+
+  let text = html
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .trim();
+
+  const isBold = /<(strong|b)>/i.test(html) || /font-weight:\s*(bold|700|800|900)/i.test(html);
+
+  const isItalic = /<(em|i)>/i.test(html) || /font-style:\s*italic/i.test(html);
+
+  const isUnderline = /<u>/i.test(html) || /text-decoration:\s*underline/i.test(html);
+
+  const colorMatch = html.match(/color:\s*([^;'"]+)/i) || html.match(/color="([^"]+)"/i);
+  const color = colorMatch ? colorMatch[1].trim() : "#000000";
+
+  let fontFamily = null;
+  const fontFamilyMatch = html.match(/font-family:\s*([^;]+)/i);
+  if (fontFamilyMatch) {
+    let fontFamilyStr = fontFamilyMatch[1].trim();
+    fontFamilyStr = fontFamilyStr
+      .replace(/&quot;?/g, '')
+      .replace(/&apos;?/g, '')
+      .replace(/&amp;?/g, '&')
+      .replace(/&lt;?/g, '')
+      .replace(/&gt;?/g, '')
+      .replace(/&[a-z0-9]+;?/gi, '')
+      .replace(/&[^a-z0-9\s]/gi, '')
+      .replace(/['"]/g, '')
+      .trim();
+    // Take the first font name if multiple are specified (e.g., "Arial, sans-serif" -> "Arial")
+    fontFamily = fontFamilyStr.split(',')[0].trim();
+    if (!fontFamily || fontFamily.length === 0 || fontFamily.startsWith('&')) {
+      fontFamily = null;
+    }
+  }
+
+  let fontSize = null;
+
+  const sizeAttrMatch = html.match(/size="?(\d+)"?/i);
+  if (sizeAttrMatch) {
+    const sizeValue = parseInt(sizeAttrMatch[1]);
+    const sizeMap = {
+      1: 10,
+      2: 13,
+      3: 16,
+      4: 18,
+      5: 24,
+      6: 32,
+      7: 48
+    };
+    fontSize = sizeMap[sizeValue] || 16;
+  }
+
+  const fontSizeMatch = html.match(/font-size:\s*([^;'"]+)/i);
+  if (fontSizeMatch) {
+    const sizeStr = fontSizeMatch[1].trim();
+    fontSize = parseFloat(sizeStr);
+  }
+
+  return {
+    text,
+    isBold: !!isBold,
+    isItalic: !!isItalic,
+    isUnderline: !!isUnderline,
+    color,
+    fontSize,
+    fontFamily
+  };
+}
+
+function getFieldValue(fieldName, data) {
+  if (data.customFields && data.customFields[fieldName]) {
+    return String(data.customFields[fieldName]);
+  }
+
+  const fieldMap = {
+    "Full Name": data.fullName,
+    "Name": data.fullName,
+    "Company": data.company,
+    "Email": data.email,
+    "Phone": data.phone,
+  };
+
+  return fieldMap[fieldName] || "";
+}
+
+export default function BadgePDF({ data, qrCodeDataUrl, customizations, single = true }) {
+  const hasCustomizations = customizations && Object.keys(customizations).length > 0;
+
+  if (hasCustomizations) {
+    const customFields = Object.keys(customizations).filter(key => key !== "_qrCode");
+
+    const content = (
+      <Page size={[A6_WIDTH, A6_HEIGHT]} style={styles.pageCustomized}>
+        {customFields.map((fieldName) => {
+          const customization = customizations[fieldName];
+          if (!customization) return null;
+
+          const fieldValue = getFieldValue(fieldName, data);
+          if (!fieldValue) return null;
+
+          let fontSize, color, isBold, isItalic, isUnderline, fontFamily;
+
+          if (customization.content && typeof customization.content === 'string' && customization.content.includes('<')) {
+            const parsed = parseHTMLToText(customization.content);
+            fontSize = parsed.fontSize || 14;
+            color = parsed.color || "#000000";
+            isBold = parsed.isBold || false;
+            isItalic = parsed.isItalic || false;
+            isUnderline = parsed.isUnderline || false;
+            let parsedFontFamily = parsed.fontFamily || "Arial";
+            if (typeof parsedFontFamily === 'string') {
+              parsedFontFamily = parsedFontFamily
+                .replace(/&quot;?/g, '')
+                .replace(/&apos;?/g, '')
+                .replace(/&amp;?/g, '&')
+                .replace(/&lt;?/g, '')
+                .replace(/&gt;?/g, '')
+                .replace(/&[a-z0-9]+;?/gi, '')
+                .replace(/&[^a-z0-9\s]/gi, '')
+                .replace(/['"]/g, '')
+                .trim();
+              parsedFontFamily = parsedFontFamily.split(',')[0].trim() || "Arial";
+              if (!parsedFontFamily || parsedFontFamily.length === 0 || parsedFontFamily.startsWith('&')) {
+                fontFamily = "Arial";
+              } else {
+                fontFamily = parsedFontFamily;
+              }
+            } else {
+              fontFamily = "Arial";
+            }
+          } else {
+            fontSize = customization.fontSize !== undefined ? customization.fontSize : 14;
+            color = customization.color || "#000000";
+            isBold = customization.isBold || false;
+            isItalic = customization.isItalic || false;
+            isUnderline = customization.isUnderline || false;
+            let rawFontFamily = customization.fontFamily || "Arial";
+            if (typeof rawFontFamily === 'string') {
+              rawFontFamily = rawFontFamily
+                .replace(/&quot;?/g, '')
+                .replace(/&apos;?/g, '')
+                .replace(/&amp;?/g, '&')
+                .replace(/&lt;?/g, '')
+                .replace(/&gt;?/g, '')
+                .replace(/&[a-z0-9]+;?/gi, '')
+                .replace(/&[^a-z0-9\s]/gi, '')
+                .replace(/['"]/g, '')
+                .trim();
+              rawFontFamily = rawFontFamily.split(',')[0].trim() || "Arial";
+              if (!rawFontFamily || rawFontFamily.length === 0 || rawFontFamily.startsWith('&')) {
+                fontFamily = "Arial";
+              } else {
+                fontFamily = rawFontFamily;
+              }
+            } else {
+              fontFamily = "Arial";
+            }
+          }
+
+
+          const actualText = fieldValue;
+
+          const yPercent = customization.y || 0;
+          const alignment = customization.alignment || "left";
+
+          const fontSizePt = fontSize * (72 / 96);
+          const baselineAdjustmentPt = fontSizePt * 0.2;
+          const baselineAdjustmentPercent = (baselineAdjustmentPt / A6_HEIGHT) * 100;
+          const adjustedYPercent = Math.max(0, yPercent - baselineAdjustmentPercent);
+
+          let finalFontFamily = fontFamily || "Arial";
+          if (typeof finalFontFamily === 'string') {
+            finalFontFamily = finalFontFamily
+              .replace(/&quot;?/g, '')
+              .replace(/&apos;?/g, '')
+              .replace(/&amp;?/g, '&')
+              .replace(/&lt;?/g, '')
+              .replace(/&gt;?/g, '')
+              .replace(/&[a-z0-9]+;?/gi, '')
+              .replace(/&[^a-z0-9\s]/gi, '')
+              .replace(/['"]/g, '')
+              .trim();
+            finalFontFamily = finalFontFamily.split(',')[0].trim() || "Arial";
+            if (!finalFontFamily || finalFontFamily.length === 0 || /^[&;]+$/.test(finalFontFamily) || finalFontFamily.startsWith('&')) {
+              finalFontFamily = "Arial";
+            }
+          } else {
+            finalFontFamily = "Arial";
+          }
+
+          const textStyle = {
+            fontSize: fontSizePt,
+            color: color,
+            textAlign: alignment,
+            lineHeight: 1.0,
+            fontFamily: finalFontFamily,
+            margin: 0,
+            padding: 0,
+          };
+
+          if (isBold && !isItalic) {
+            textStyle.fontWeight = "bold";
+          } else if (isBold && isItalic) {
+            textStyle.fontWeight = "bold";
+          }
+
+          if (isItalic && !isBold) {
+            textStyle.fontStyle = "italic";
+          }
+
+          if (isUnderline) {
+            textStyle.textDecoration = "underline";
+          }
+
+          let viewStyle = {
+            position: "absolute",
+            top: `${adjustedYPercent}%`,
+            margin: 0,
+            padding: 0,
+          };
+
+          if (alignment === "center") {
+            viewStyle.left = "5%";
+            viewStyle.width = "90%";
+            viewStyle.maxWidth = "90%";
+          } else if (alignment === "right") {
+            viewStyle.right = "0%";
+            viewStyle.maxWidth = "90%";
+          } else {
+            const xPercent = customization.x || 0;
+            viewStyle.left = `${xPercent}%`;
+            viewStyle.maxWidth = "90%";
+          }
+
+          return (
+            <View
+              key={fieldName}
+              style={viewStyle}
+            >
+              <Text style={textStyle}>
+                {actualText}
+              </Text>
+            </View>
+          );
+        })}
+
+        {data.showQrOnBadge && customizations._qrCode && qrCodeDataUrl && (
+          <View
+            style={{
+              position: "absolute",
+              left: `${customizations._qrCode.x || 5}%`,
+              top: `${customizations._qrCode.y || 85}%`,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+            }}
+          >
+            <Image
+              src={qrCodeDataUrl}
+              style={{
+                width: (customizations._qrCode.size || 70) * (72 / 96),
+                height: (customizations._qrCode.size || 70) * (72 / 96),
+              }}
+            />
+            <Text
+              style={{
+                fontSize: ((customizations._qrCode.size || 70) / 70) * 9 * (72 / 96),
+                fontWeight: "bold",
+                color: "#0077b6",
+                letterSpacing: 0.7,
+                marginTop: 2,
+              }}
+            >
+              {data.token}
+            </Text>
+          </View>
+        )}
+      </Page>
+    );
+
+    return single ? <Document>{content}</Document> : content;
+  }
+
   const nameFontSize = calculateNameFontSize(data?.fullName);
   const nameStyle = {
     fontWeight: "bold",
