@@ -45,6 +45,14 @@ const fontFamilies = {
     ]
   },
 
+  love: {
+    name: "Love",
+    family: "Love",
+    files: [
+      { path: "/fonts/love/LoveDays-2v7Oe.ttf", weight: 400, style: "normal" }
+    ]
+  },
+
   Midable: {
     name: "Midable",
     family: "Midable",
