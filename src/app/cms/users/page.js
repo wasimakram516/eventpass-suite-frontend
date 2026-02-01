@@ -40,6 +40,7 @@ import {
   deleteUser,
   createStaffUser,
   getAllStaffUsers,
+  createBusinessUser
 } from "@/services/userService";
 import { getAllBusinesses } from "@/services/businessService";
 import { getModules } from "@/services/moduleService";
@@ -50,8 +51,7 @@ import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import { wrapTextBox } from "@/utils/wrapTextStyles";
 import LoadingState from "@/components/LoadingState";
-import { registerUser } from "@/services/authService"; 
-import { createBusiness, updateBusiness } from "@/services/businessService";
+import { updateBusiness } from "@/services/businessService";
 import slugify from "@/utils/slugify";
 
 const translations = {
@@ -200,6 +200,7 @@ export default function UsersPage() {
     businessId: "",
     userType: "staff",
     staffType: "desk",
+    attachToExistingBusiness: false,
     businessName: "",
     businessSlug: "",
     businessEmail: "",
@@ -215,7 +216,20 @@ export default function UsersPage() {
   useEffect(() => {
     fetchUsers();
     fetchModules();
-    if (currentUser?.role === "admin") getAllBusinesses().then(setBusinesses);
+
+    if (currentUser?.role === "admin") {
+      getAllBusinesses().then((res) => {
+        if (Array.isArray(res)) {
+          setBusinesses(res);
+        } else if (Array.isArray(res?.data)) {
+          setBusinesses(res.data);
+        } else if (Array.isArray(res?.businesses)) {
+          setBusinesses(res.businesses);
+        } else {
+          setBusinesses([]); // fail-safe
+        }
+      });
+    }
   }, []);
 
   const fetchUsers = async () => {
@@ -268,11 +282,11 @@ export default function UsersPage() {
   };
 
   const getRoleColor = (role) =>
-  ({
-    admin: "primary",
-    business: "success",
-    staff: "secondary",
-  }[role] || "default");
+    ({
+      admin: "primary",
+      business: "success",
+      staff: "secondary",
+    })[role] || "default";
 
   const handleOpenEdit = (user) => {
     setSelectedUser(user);
@@ -284,6 +298,7 @@ export default function UsersPage() {
       password: "",
       modulePermissions: user.modulePermissions || [],
       userType: user.role === "business" ? "business" : "staff",
+      attachToExistingBusiness: true,
       businessId: user.business?._id || "",
       staffType: user.staffType || "desk",
       businessName: user.business?.name || "",
@@ -334,8 +349,10 @@ export default function UsersPage() {
       }
     } else if (tabIndex === 1 && form.userType === "business") {
       // Business Profile validation
-      if (!form.businessName.trim()) newErrors.businessName = t.businessNameRequired;
-      if (!form.businessSlug.trim()) newErrors.businessSlug = t.businessSlugRequired;
+      if (!form.businessName.trim())
+        newErrors.businessName = t.businessNameRequired;
+      if (!form.businessSlug.trim())
+        newErrors.businessSlug = t.businessSlugRequired;
       if (!form.businessEmail.trim()) {
         newErrors.businessEmail = t.businessEmailRequired;
       } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.businessEmail)) {
@@ -370,12 +387,20 @@ export default function UsersPage() {
 
     // Business validations
     if (form.userType === "business") {
-      if (!form.businessName.trim()) newErrors.businessName = t.businessNameRequired;
-      if (!form.businessSlug.trim()) newErrors.businessSlug = t.businessSlugRequired;
-      if (!form.businessEmail.trim()) {
-        newErrors.businessEmail = t.businessEmailRequired;
-      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.businessEmail)) {
-        newErrors.businessEmail = t.emailInvalid;
+      if (form.attachToExistingBusiness) {
+        if (!form.businessId) {
+          newErrors.businessId = t.businessRequired;
+        }
+      } else {
+        if (!form.businessName.trim())
+          newErrors.businessName = t.businessNameRequired;
+        if (!form.businessSlug.trim())
+          newErrors.businessSlug = t.businessSlugRequired;
+        if (!form.businessEmail.trim()) {
+          newErrors.businessEmail = t.businessEmailRequired;
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.businessEmail)) {
+          newErrors.businessEmail = t.emailInvalid;
+        }
       }
     }
 
@@ -385,13 +410,17 @@ export default function UsersPage() {
 
   const handleModalSave = async () => {
     const newErrors = {};
+
+    // ---------- User validation ----------
     if (!form.name.trim()) newErrors.name = t.nameRequired;
     if (!form.email.trim()) newErrors.email = t.emailRequired;
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
       newErrors.email = t.emailInvalid;
+
     if (!isEditMode && !form.password.trim())
       newErrors.password = t.passwordRequired;
 
+    // ---------- Staff validation ----------
     if (
       !isEditMode &&
       currentUser?.role === "admin" &&
@@ -401,96 +430,112 @@ export default function UsersPage() {
       newErrors.businessId = t.businessRequired;
     }
 
+    // ---------- Business validation (IMPORTANT FIX) ----------
     if (form.userType === "business") {
-      if (!form.businessName.trim()) newErrors.businessName = t.businessNameRequired;
-      if (!form.businessSlug.trim()) newErrors.businessSlug = t.businessSlugRequired;
-      if (!form.businessEmail.trim()) {
-        newErrors.businessEmail = t.businessEmailRequired;
-      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.businessEmail)) {
-        newErrors.businessEmail = t.emailInvalid;
+      if (form.attachToExistingBusiness) {
+        if (!form.businessId) {
+          newErrors.businessId = t.businessRequired;
+        }
+      } else {
+        if (!form.businessName.trim())
+          newErrors.businessName = t.businessNameRequired;
+        if (!form.businessSlug.trim())
+          newErrors.businessSlug = t.businessSlugRequired;
+        if (!form.businessEmail.trim()) {
+          newErrors.businessEmail = t.businessEmailRequired;
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.businessEmail)) {
+          newErrors.businessEmail = t.emailInvalid;
+        }
       }
     }
 
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length > 0) {
-      const errorMessages = Object.entries(newErrors).map(([field, msg]) => `${msg}`).join(", ");
-      showMessage(errorMessages, "error");
+      showMessage(Object.values(newErrors).join(", "), "error");
       return;
     }
 
     setLoading(true);
-    let userRes = null;
-    let businessRes = null;
 
+    // ===================== EDIT MODE =====================
     if (isEditMode) {
       const payload = { ...form };
       if (!form.password) delete payload.password;
-      userRes = await updateUser(selectedUser._id, payload);
 
+      const userRes = await updateUser(selectedUser._id, payload);
       if (userRes?.error) {
         setLoading(false);
         return;
       }
-      if (form.userType === "business" && selectedUser.business?._id) {
+
+      // ONLY update business if NOT attaching
+      if (
+        form.userType === "business" &&
+        !form.attachToExistingBusiness &&
+        selectedUser.business?._id
+      ) {
         const businessPayload = new FormData();
         businessPayload.append("name", form.businessName);
         businessPayload.append("slug", form.businessSlug);
         businessPayload.append("email", form.businessEmail);
         businessPayload.append("phone", form.businessPhone);
         businessPayload.append("address", form.businessAddress);
-        businessPayload.append("ownerId", selectedUser._id);
         if (form.logoFile) businessPayload.append("file", form.logoFile);
 
-        businessRes = await updateBusiness(selectedUser.business._id, businessPayload);
+        const businessRes = await updateBusiness(
+          selectedUser.business._id,
+          businessPayload,
+        );
 
         if (businessRes?.error) {
           setLoading(false);
           return;
         }
       }
-    } else {
-      if (currentUser?.role === "admin" && form.userType === "business") {
-        userRes = await registerUser(
-          form.name,
-          form.email,
-          form.password,
-          "business",
-          null,
-          form.modulePermissions
-        );
+    }
 
-        if (userRes?.error) {
+    // ===================== CREATE MODE =====================
+    else {
+      if (currentUser?.role === "admin" && form.userType === "business") {
+        const res = await createBusinessUser({
+          name: form.name,
+          email: form.email,
+          password: form.password,
+          modulePermissions: form.modulePermissions,
+
+          attachToExistingBusiness: form.attachToExistingBusiness,
+          businessId: form.attachToExistingBusiness
+            ? form.businessId
+            : undefined,
+
+          business: form.attachToExistingBusiness
+            ? undefined
+            : {
+                name: form.businessName,
+                slug: form.businessSlug,
+                email: form.businessEmail,
+                phone: form.businessPhone,
+                address: form.businessAddress,
+              },
+        });
+
+        if (res?.error) {
           setLoading(false);
           return;
         }
-
-        if (userRes && !userRes.error) {
-          const businessPayload = new FormData();
-          businessPayload.append("name", form.businessName);
-          businessPayload.append("slug", form.businessSlug);
-          businessPayload.append("email", form.businessEmail);
-          businessPayload.append("phone", form.businessPhone);
-          businessPayload.append("address", form.businessAddress);
-          businessPayload.append("ownerId", userRes.user.id);
-          if (form.logoFile) businessPayload.append("file", form.logoFile);
-
-          businessRes = await createBusiness(businessPayload);
-
-          if (businessRes?.error) {
-            setLoading(false);
-            return;
-          }
-        }
       } else {
-        userRes = await createStaffUser(
+        // Staff creation
+        const userRes = await createStaffUser(
           form.name,
           form.email,
           form.password,
           "staff",
-          currentUser?.role === "admin" ? form.businessId : currentUser.business._id,
+          currentUser?.role === "admin"
+            ? form.businessId
+            : currentUser.business._id,
           form.modulePermissions,
-          form.staffType
+          form.staffType,
         );
 
         if (userRes?.error) {
@@ -504,6 +549,7 @@ export default function UsersPage() {
     setModalOpen(false);
     setLoading(false);
   };
+
   const handleDelete = async () => {
     const res = await deleteUser(selectedUser._id);
     if (!res.error) await fetchUsers();
@@ -530,7 +576,7 @@ export default function UsersPage() {
             direction="row"
             spacing={2}
             alignItems="flex-start"
-            sx={{ gap: dir === 'rtl' ? '16px' : '' }}
+            sx={{ gap: dir === "rtl" ? "16px" : "" }}
           >
             <Avatar sx={{ width: 56, height: 56 }}>{user.name?.[0]}</Avatar>
             <Box sx={{ flexGrow: 1, ...wrapTextBox }}>
@@ -538,32 +584,57 @@ export default function UsersPage() {
               <Typography variant="body2" color="text.secondary">
                 {user.email}
               </Typography>
-              <Stack direction="row" spacing={0.5} sx={{ mt: 0.5, flexWrap: 'wrap', gap: 0.5 }}>
+              <Stack
+                direction="row"
+                spacing={0.5}
+                sx={{ mt: 0.5, flexWrap: "wrap", gap: 0.5 }}
+              >
                 <Chip
-                  icon={user.role === 'admin' ? <ICONS.person /> : user.role === 'business' ? <ICONS.business /> : <ICONS.people />}
+                  icon={
+                    user.role === "admin" ? (
+                      <ICONS.person />
+                    ) : user.role === "business" ? (
+                      <ICONS.business />
+                    ) : (
+                      <ICONS.people />
+                    )
+                  }
                   label={user.role.charAt(0).toUpperCase() + user.role.slice(1)}
                   color={getRoleColor(user.role)}
                   size="small"
                   sx={{
-                    ...(dir === 'rtl' && {
-                      '& .MuiChip-icon': {
-                        marginLeft: '5px',
-                        marginRight: '3px'
-                      }
-                    })
+                    ...(dir === "rtl" && {
+                      "& .MuiChip-icon": {
+                        marginLeft: "5px",
+                        marginRight: "3px",
+                      },
+                    }),
                   }}
                 />
                 {user.role === "staff" && user.staffType && (
                   <Chip
-                    icon={user.staffType === 'door' ? <ICONS.door /> : <ICONS.desk />}
-                    label={user.staffType.charAt(0).toUpperCase() + user.staffType.slice(1)}
+                    icon={
+                      user.staffType === "door" ? (
+                        <ICONS.door />
+                      ) : (
+                        <ICONS.desk />
+                      )
+                    }
+                    label={
+                      user.staffType.charAt(0).toUpperCase() +
+                      user.staffType.slice(1)
+                    }
                     sx={{
-                      bgcolor: user.staffType === 'door' ? '#e1bee7' : '#4fc3f7',
-                      color: '#000000',
-                      '& .MuiChip-icon': {
-                        color: '#000000',
-                        ...(dir === 'rtl' && { marginRight: '5px', marginLeft: '8px' })
-                      }
+                      bgcolor:
+                        user.staffType === "door" ? "#e1bee7" : "#4fc3f7",
+                      color: "#000000",
+                      "& .MuiChip-icon": {
+                        color: "#000000",
+                        ...(dir === "rtl" && {
+                          marginRight: "5px",
+                          marginLeft: "8px",
+                        }),
+                      },
                     }}
                     size="small"
                   />
@@ -630,7 +701,7 @@ export default function UsersPage() {
           variant="contained"
           sx={{
             ...getStartIconSpacing(dir),
-            width: { xs: '100%', sm: 'auto' }
+            width: { xs: "100%", sm: "auto" },
           }}
           startIcon={<ICONS.add />}
           onClick={handleOpenCreate}
@@ -666,26 +737,27 @@ export default function UsersPage() {
       >
         <DialogTitle sx={{ pr: 6 }}>
           {isEditMode
-            ? (selectedUser?.role === "admin"
+            ? selectedUser?.role === "admin"
               ? t.editAdminUser
               : selectedUser?.role === "business"
                 ? t.editBusinessUser
-                : t.editStaffUser)
-            : (form.userType === "business" ? t.createBusinessUser : t.createStaffUser)
-          }
+                : t.editStaffUser
+            : form.userType === "business"
+              ? t.createBusinessUser
+              : t.createStaffUser}
           <IconButton
             onClick={() => setModalOpen(false)}
             sx={{
-              position: 'absolute',
-              ...(dir === 'rtl' ? { left: 8 } : { right: 8 }),
+              position: "absolute",
+              ...(dir === "rtl" ? { left: 8 } : { right: 8 }),
               top: 8,
-              color: 'text.secondary',
-              border: '1px solid',
-              borderColor: '#0077b6',
-              '&:hover': {
-                bgcolor: '#0077b6',
-                color: 'primary.contrastText',
-              }
+              color: "text.secondary",
+              border: "1px solid",
+              borderColor: "#0077b6",
+              "&:hover": {
+                bgcolor: "#0077b6",
+                color: "primary.contrastText",
+              },
             }}
           >
             <ICONS.close />
@@ -705,12 +777,12 @@ export default function UsersPage() {
                   setActiveTab(0);
                 }}
                 sx={{
-                  ...(dir === 'rtl' && {
-                    '& .MuiSelect-select': {
-                      textAlign: 'left',
-                      paddingRight: '32px'
-                    }
-                  })
+                  ...(dir === "rtl" && {
+                    "& .MuiSelect-select": {
+                      textAlign: "left",
+                      paddingRight: "32px",
+                    },
+                  }),
                 }}
               >
                 <MenuItem value="staff">{t.staffUser}</MenuItem>
@@ -719,8 +791,12 @@ export default function UsersPage() {
             </FormControl>
           )}
 
-          {(form.userType === "business" || (!isEditMode || selectedUser?.role !== "admin")) && (
-            <Box sx={{ borderBottom: 1, borderColor: 'divider', mt: 2, mx: -3 }}>
+          {(form.userType === "business" ||
+            !isEditMode ||
+            selectedUser?.role !== "admin") && (
+            <Box
+              sx={{ borderBottom: 1, borderColor: "divider", mt: 2, mx: -3 }}
+            >
               <Tabs
                 value={activeTab}
                 onChange={(e, newValue) => setActiveTab(newValue)}
@@ -728,30 +804,40 @@ export default function UsersPage() {
                 sx={{ px: 3 }}
               >
                 <Tab label={t.userDetailsTab} />
-                {form.userType === "business" && <Tab label={t.businessProfileTab} />}
-                {(!isEditMode || selectedUser?.role !== "admin") && <Tab label={t.permissionsTab} />}
+                {form.userType === "business" && (
+                  <Tab label={t.businessProfileTab} />
+                )}
+                {(!isEditMode || selectedUser?.role !== "admin") && (
+                  <Tab label={t.permissionsTab} />
+                )}
               </Tabs>
             </Box>
           )}
 
           {activeTab === 0 && (
             <Box sx={{ mt: 2 }}>
-              {form.userType === "staff" && (!isEditMode || selectedUser?.role === "staff") && (
-                <FormControl fullWidth margin="normal">
-                  <InputLabel id="staff-type-label">{t.staffTypeLabel}</InputLabel>
-                  <Select
-                    labelId="staff-type-label"
-                    value={form.staffType || "desk"}
-                    label={t.staffTypeLabel}
-                    onChange={(e) =>
-                      setForm((prev) => ({ ...prev, staffType: e.target.value }))
-                    }
-                  >
-                    <MenuItem value="desk">{t.deskStaff}</MenuItem>
-                    <MenuItem value="door">{t.doorStaff}</MenuItem>
-                  </Select>
-                </FormControl>
-              )}
+              {form.userType === "staff" &&
+                (!isEditMode || selectedUser?.role === "staff") && (
+                  <FormControl fullWidth margin="normal">
+                    <InputLabel id="staff-type-label">
+                      {t.staffTypeLabel}
+                    </InputLabel>
+                    <Select
+                      labelId="staff-type-label"
+                      value={form.staffType || "desk"}
+                      label={t.staffTypeLabel}
+                      onChange={(e) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          staffType: e.target.value,
+                        }))
+                      }
+                    >
+                      <MenuItem value="desk">{t.deskStaff}</MenuItem>
+                      <MenuItem value="door">{t.doorStaff}</MenuItem>
+                    </Select>
+                  </FormControl>
+                )}
 
               {["name", "email", "password"].map((field) => (
                 <TextField
@@ -779,15 +865,15 @@ export default function UsersPage() {
                   InputProps={
                     field === "password"
                       ? {
-                        endAdornment: (
-                          <IconButton
-                            onClick={() => setShowPassword((prev) => !prev)}
-                            edge="end"
-                          >
-                            {showPassword ? <ICONS.hide /> : <ICONS.view />}
-                          </IconButton>
-                        ),
-                      }
+                          endAdornment: (
+                            <IconButton
+                              onClick={() => setShowPassword((prev) => !prev)}
+                              edge="end"
+                            >
+                              {showPassword ? <ICONS.hide /> : <ICONS.view />}
+                            </IconButton>
+                          ),
+                        }
                       : {}
                   }
                 />
@@ -809,7 +895,10 @@ export default function UsersPage() {
                       value={form.businessId || ""}
                       label={t.selectBusinessLabel}
                       onChange={(e) => {
-                        setForm((prev) => ({ ...prev, businessId: e.target.value }));
+                        setForm((prev) => ({
+                          ...prev,
+                          businessId: e.target.value,
+                        }));
                         if (errors.businessId) {
                           setErrors((prev) => ({ ...prev, businessId: "" }));
                         }
@@ -836,217 +925,261 @@ export default function UsersPage() {
 
           {form.userType === "business" && activeTab === 1 && (
             <Box sx={{ mt: 2 }}>
-              <TextField
-                label={t.businessName}
-                value={form.businessName}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  setForm((prev) => ({
-                    ...prev,
-                    businessName: value,
-                    businessSlug: !isEditMode ? slugify(value, { lower: true }) : prev.businessSlug,
-                  }));
-                  if (errors.businessName) {
-                    setErrors((prev) => ({ ...prev, businessName: "" }));
-                  }
-                }}
-                fullWidth
-                margin="normal"
-                error={!!errors.businessName}
-                helperText={errors.businessName}
-              />
-
-              <TextField
-                label={t.businessSlug}
-                value={form.businessSlug}
-                onChange={(e) => {
-                  setForm((prev) => ({ ...prev, businessSlug: e.target.value }));
-                  if (errors.businessSlug) {
-                    setErrors((prev) => ({ ...prev, businessSlug: "" }));
-                  }
-                }}
-                fullWidth
-                margin="normal"
-                error={!!errors.businessSlug}
-                helperText={errors.businessSlug}
-              />
-
-              <TextField
-                label={t.businessEmail}
-                value={form.businessEmail}
-                onChange={(e) => {
-                  setForm((prev) => ({ ...prev, businessEmail: e.target.value }));
-                  if (errors.businessEmail) {
-                    setErrors((prev) => ({ ...prev, businessEmail: "" }));
-                  }
-                }}
-                fullWidth
-                margin="normal"
-                error={!!errors.businessEmail}
-                helperText={errors.businessEmail}
-              />
-
-              <TextField
-                label={t.businessPhone}
-                value={form.businessPhone}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, businessPhone: e.target.value }))
-                }
-                fullWidth
-                margin="normal"
-                type="tel"
-              />
-
-              <TextField
-                label={t.businessAddress}
-                value={form.businessAddress}
-                onChange={(e) =>
-                  setForm((prev) => ({ ...prev, businessAddress: e.target.value }))
-                }
-                multiline
-                rows={2}
-                fullWidth
-                margin="normal"
-              />
-
-              <Box sx={{ mt: 2 }}>
-                <Typography variant="body2" sx={{ mb: 1 }}>
-                  {t.businessLogo}
-                </Typography>
-                <Stack
-                  direction="row"
-                  spacing={2}
-                  alignItems="center"
-                  sx={{ gap: dir === 'rtl' ? '16px' : '' }}
-                >
-                  <Avatar
-                    src={form.logoPreview}
-                    alt="Preview"
-                    sx={{ width: 64, height: 64 }}
-                  />
-                  <Button variant="outlined" component="label" size="small">
-                    {t.uploadLogo}
-                    <input
-                      type="file"
-                      hidden
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files[0];
-                        if (!file) return;
-                        const reader = new FileReader();
-                        reader.onloadend = () => {
-                          setForm((prev) => ({
-                            ...prev,
-                            logoPreview: reader.result,
-                            logoFile: file,
-                          }));
-                        };
-                        reader.readAsDataURL(file);
-                      }}
+              {currentUser?.role === "admin" && (
+                <FormControlLabel
+                  sx={{ mb: 2 }}
+                  control={
+                    <Checkbox
+                      checked={form.attachToExistingBusiness}
+                      onChange={(e) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          attachToExistingBusiness: e.target.checked,
+                          businessId: "",
+                        }))
+                      }
                     />
-                  </Button>
-                </Stack>
-              </Box>
+                  }
+                  label="Attach to existing business"
+                />
+              )}
+              {form.attachToExistingBusiness && (
+                <FormControl fullWidth margin="normal">
+                  <InputLabel>Select Business</InputLabel>
+                  <Select
+                    value={form.businessId}
+                    label="Select Business"
+                    onChange={(e) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        businessId: e.target.value,
+                      }))
+                    }
+                  >
+                    {businesses.map((biz) => (
+                      <MenuItem key={biz._id} value={biz._id}>
+                        {biz.name}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
+              {!form.attachToExistingBusiness && (
+                <>
+                  <TextField
+                    label={t.businessName}
+                    value={form.businessName}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setForm((prev) => ({
+                        ...prev,
+                        businessName: value,
+                        businessSlug: !isEditMode
+                          ? slugify(value, { lower: true })
+                          : prev.businessSlug,
+                      }));
+                    }}
+                    fullWidth
+                    margin="normal"
+                  />
+
+                  <TextField
+                    label={t.businessSlug}
+                    value={form.businessSlug}
+                    onChange={(e) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        businessSlug: e.target.value,
+                      }))
+                    }
+                    fullWidth
+                    margin="normal"
+                  />
+
+                  <TextField
+                    label={t.businessEmail}
+                    value={form.businessEmail}
+                    onChange={(e) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        businessEmail: e.target.value,
+                      }))
+                    }
+                    fullWidth
+                    margin="normal"
+                  />
+
+                  <TextField
+                    label={t.businessPhone}
+                    value={form.businessPhone}
+                    onChange={(e) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        businessPhone: e.target.value,
+                      }))
+                    }
+                    fullWidth
+                    margin="normal"
+                  />
+
+                  <TextField
+                    label={t.businessAddress}
+                    value={form.businessAddress}
+                    onChange={(e) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        businessAddress: e.target.value,
+                      }))
+                    }
+                    multiline
+                    rows={2}
+                    fullWidth
+                    margin="normal"
+                  />
+                  <Box sx={{ mt: 2 }}>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      {t.businessLogo}
+                    </Typography>
+                    <Stack
+                      direction="row"
+                      spacing={2}
+                      alignItems="center"
+                      sx={{ gap: dir === "rtl" ? "16px" : "" }}
+                    >
+                      <Avatar
+                        src={form.logoPreview}
+                        alt="Preview"
+                        sx={{ width: 64, height: 64 }}
+                      />
+                      <Button variant="outlined" component="label" size="small">
+                        {t.uploadLogo}
+                        <input
+                          type="file"
+                          hidden
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files[0];
+                            if (!file) return;
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              setForm((prev) => ({
+                                ...prev,
+                                logoPreview: reader.result,
+                                logoFile: file,
+                              }));
+                            };
+                            reader.readAsDataURL(file);
+                          }}
+                        />
+                      </Button>
+                    </Stack>
+                  </Box>
+                </>
+              )}
             </Box>
           )}
 
           {((form.userType === "staff" && activeTab === 1) ||
             (form.userType === "business" && activeTab === 2)) && (
-              <Box sx={{ mt: 2 }}>
-                <Typography variant="subtitle1" gutterBottom textAlign={align}>
-                  {t.permissions}
-                </Typography>
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="subtitle1" gutterBottom textAlign={align}>
+                {t.permissions}
+              </Typography>
 
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={
-                        form.modulePermissions.length ===
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={
+                      form.modulePermissions.length ===
+                      (isBusinessUser
+                        ? availableModules.filter((m) =>
+                            currentUser.modulePermissions?.includes(m.key),
+                          ).length
+                        : availableModules.length)
+                    }
+                    indeterminate={
+                      form.modulePermissions.length > 0 &&
+                      form.modulePermissions.length !==
                         (isBusinessUser
                           ? availableModules.filter((m) =>
-                            currentUser.modulePermissions?.includes(m.key)
-                          ).length
+                              currentUser.modulePermissions?.includes(m.key),
+                            ).length
                           : availableModules.length)
-                      }
-                      indeterminate={
-                        form.modulePermissions.length > 0 &&
-                        form.modulePermissions.length !==
-                        (isBusinessUser
-                          ? availableModules.filter((m) =>
-                            currentUser.modulePermissions?.includes(m.key)
-                          ).length
-                          : availableModules.length)
-                      }
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          const allKeys = isBusinessUser
-                            ? availableModules
+                    }
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        const allKeys = isBusinessUser
+                          ? availableModules
                               .filter((m) =>
-                                currentUser.modulePermissions?.includes(m.key)
+                                currentUser.modulePermissions?.includes(m.key),
                               )
                               .map((m) => m.key)
-                            : availableModules.map((m) => m.key);
-                          setForm((prev) => ({
-                            ...prev,
-                            modulePermissions: allKeys,
-                          }));
-                        } else {
-                          setForm((prev) => ({
-                            ...prev,
-                            modulePermissions: [],
-                          }));
-                        }
-                      }}
-                    />
-                  }
-                  label={
-                    form.modulePermissions.length ? t.unselectAll : t.selectAll
-                  }
-                />
-
-                <FormGroup>
-                  {(isBusinessUser
-                    ? availableModules.filter((m) =>
-                      currentUser.modulePermissions?.includes(m.key)
-                    )
-                    : availableModules
-                  ).map((mod) => (
-                    <FormControlLabel
-                      key={mod.key}
-                      control={
-                        <Checkbox
-                          checked={form.modulePermissions.includes(mod.key)}
-                          onChange={() => {
-                            const exists = form.modulePermissions.includes(mod.key);
-                            setForm((prev) => ({
-                              ...prev,
-                              modulePermissions: exists
-                                ? prev.modulePermissions.filter((k) => k !== mod.key)
-                                : [...prev.modulePermissions, mod.key],
-                            }));
-                          }}
-                        />
+                          : availableModules.map((m) => m.key);
+                        setForm((prev) => ({
+                          ...prev,
+                          modulePermissions: allKeys,
+                        }));
+                      } else {
+                        setForm((prev) => ({
+                          ...prev,
+                          modulePermissions: [],
+                        }));
                       }
-                      label={mod.labels?.[language] || mod.key}
-                    />
-                  ))}
-                </FormGroup>
-              </Box>
-            )}
+                    }}
+                  />
+                }
+                label={
+                  form.modulePermissions.length ? t.unselectAll : t.selectAll
+                }
+              />
+
+              <FormGroup>
+                {(isBusinessUser
+                  ? availableModules.filter((m) =>
+                      currentUser.modulePermissions?.includes(m.key),
+                    )
+                  : availableModules
+                ).map((mod) => (
+                  <FormControlLabel
+                    key={mod.key}
+                    control={
+                      <Checkbox
+                        checked={form.modulePermissions.includes(mod.key)}
+                        onChange={() => {
+                          const exists = form.modulePermissions.includes(
+                            mod.key,
+                          );
+                          setForm((prev) => ({
+                            ...prev,
+                            modulePermissions: exists
+                              ? prev.modulePermissions.filter(
+                                  (k) => k !== mod.key,
+                                )
+                              : [...prev.modulePermissions, mod.key],
+                          }));
+                        }}
+                      />
+                    }
+                    label={mod.labels?.[language] || mod.key}
+                  />
+                ))}
+              </FormGroup>
+            </Box>
+          )}
         </DialogContent>
 
         <DialogActions sx={{ px: 3, pb: 3 }}>
           <Stack
             direction="row"
             spacing={2}
-            sx={{ width: '100%', justifyContent: 'flex-end' }}
+            sx={{ width: "100%", justifyContent: "flex-end" }}
           >
             <Stack
               direction="row"
               spacing={2}
               sx={{
-                width: { xs: '100%', sm: 'auto' },
-                gap: dir === 'rtl' ? '16px' : ''
+                width: { xs: "100%", sm: "auto" },
+                gap: dir === "rtl" ? "16px" : "",
               }}
             >
               {activeTab > 0 && (
@@ -1054,18 +1187,20 @@ export default function UsersPage() {
                   variant="outlined"
                   onClick={() => setActiveTab((prev) => prev - 1)}
                   disabled={loading}
-                  startIcon={dir === 'rtl' ? <ICONS.next /> : <ICONS.back />}
+                  startIcon={dir === "rtl" ? <ICONS.next /> : <ICONS.back />}
                   sx={{
                     ...getStartIconSpacing(dir),
-                    flex: { xs: 1, sm: 'initial' }
+                    flex: { xs: 1, sm: "initial" },
                   }}
                 >
                   {t.back}
                 </Button>
               )}
 
-              {((form.userType === "staff" && activeTab < 1 && (!isEditMode || selectedUser?.role !== "admin")) ||
-                (form.userType === "business" && activeTab < 2)) ? (
+              {(form.userType === "staff" &&
+                activeTab < 1 &&
+                (!isEditMode || selectedUser?.role !== "admin")) ||
+              (form.userType === "business" && activeTab < 2) ? (
                 <Button
                   variant="contained"
                   onClick={() => {
@@ -1074,10 +1209,10 @@ export default function UsersPage() {
                     }
                   }}
                   disabled={loading}
-                  startIcon={dir === 'rtl' ? <ICONS.back /> : <ICONS.next />}
+                  startIcon={dir === "rtl" ? <ICONS.back /> : <ICONS.next />}
                   sx={{
                     ...getStartIconSpacing(dir),
-                    flex: { xs: 1, sm: 'initial' }
+                    flex: { xs: 1, sm: "initial" },
                   }}
                 >
                   {t.next}
@@ -1090,7 +1225,7 @@ export default function UsersPage() {
                   startIcon={<ICONS.save />}
                   sx={{
                     ...getStartIconSpacing(dir),
-                    flex: { xs: 1, sm: 'initial' }
+                    flex: { xs: 1, sm: "initial" },
                   }}
                 >
                   {loading ? (isEditMode ? t.saving : t.creating) : t.save}

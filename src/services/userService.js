@@ -24,6 +24,32 @@ export const createStaffUser = withApiHandler(
   { showSuccess: true }
 );
 
+// Create business user (admin only)
+export const createBusinessUser = withApiHandler(
+  async ({
+    name,
+    email,
+    password,
+    modulePermissions = [],
+    attachToExistingBusiness,
+    businessId,
+    business, // object when creating new business
+  }) => {
+    const { data } = await api.post("/users/register/business", {
+      name,
+      email,
+      password,
+      modulePermissions,
+      attachToExistingBusiness,
+      businessId,
+      business,
+    });
+
+    return data;
+  },
+  { showSuccess: true }
+);
+
 // Get all users (admin)
 export const getAllUsers = withApiHandler(async () => {
   const { data } = await api.get("/users");

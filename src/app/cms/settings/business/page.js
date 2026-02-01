@@ -19,6 +19,7 @@ import {
   Tooltip,
   Divider,
   CircularProgress,
+  Chip,
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
@@ -56,8 +57,7 @@ const translations = {
     saving: "Saving...",
     creating: "Creating...",
     confirmDeleteTitle: "Confirm Delete",
-    confirmDeleteMessage:
-      `Are you sure you want to move this item to the Recycle Bin?`,
+    confirmDeleteMessage: `Are you sure you want to move this item to the Recycle Bin?`,
 
     confirmDeleteButton: "Delete",
     owner: "Owner",
@@ -86,8 +86,7 @@ const translations = {
     saving: "جارٍ الحفظ...",
     creating: "جارٍ الإنشاء...",
     confirmDeleteTitle: "تأكيد الحذف",
-    confirmDeleteMessage:
-      `هل أنت متأكد أنك تريد نقل هذا العنصر إلى سلة المحذوفات؟`,
+    confirmDeleteMessage: `هل أنت متأكد أنك تريد نقل هذا العنصر إلى سلة المحذوفات؟`,
 
     confirmDeleteButton: "حذف",
     owner: "المالك",
@@ -120,7 +119,7 @@ export default function BusinessDetailsPage() {
     logoPreview: "",
     logoFile: null,
     address: "",
-    ownerId: "",
+    owners: [],
   });
 
   useEffect(() => {
@@ -133,15 +132,16 @@ export default function BusinessDetailsPage() {
     const list =
       user.role === "admin"
         ? data
-        : data.filter((b) => {
-          const ownerId =
-            typeof b.owner === "string" ? b.owner : b.owner?._id;
-          return ownerId === user.id;
-        });
+        : data.filter(
+            (b) =>
+              Array.isArray(b.owners) &&
+              b.owners.some((o) =>
+                typeof o === "string" ? o === user.id : o._id === user.id,
+              ),
+          );
     setBusinesses(list);
     setLoading(false);
   };
-
 
   const handleOpen = (biz = null) => {
     setEditingBiz(biz);
@@ -154,8 +154,7 @@ export default function BusinessDetailsPage() {
       logoPreview: biz?.logoUrl ?? "",
       logoFile: null,
       address: biz?.address ?? "",
-      ownerId: biz?.owner?._id ?? user.id,
-      ownerName: biz?.owner?.name ?? user.name,
+      owners: biz?.owners ?? [],
     });
 
     setFormOpen(true);
@@ -174,8 +173,7 @@ export default function BusinessDetailsPage() {
         logoPreview: "",
         logoFile: null,
         address: "",
-        ownerId: "",
-        ownerName: "",
+        owners: [],
       });
     }, 200);
   };
@@ -231,7 +229,6 @@ export default function BusinessDetailsPage() {
       email: form.email,
       phone: form.phone,
       address: form.address,
-      ownerId: form.ownerId,
     };
 
     const fd = new FormData();
@@ -307,7 +304,6 @@ export default function BusinessDetailsPage() {
             {t.subtitle}
           </Typography>
         </Box>
-
       </Stack>
       <Divider sx={{ mb: 2 }} />
 
@@ -328,28 +324,37 @@ export default function BusinessDetailsPage() {
       ) : businesses.length === 0 ? (
         <NoDataAvailable />
       ) : (
-        /* ELSE show the grid of businesses (for admin all, for biz user exactly one) */
+        /* ELSE show the grid of businesses
+        - admin: all businesses
+        - business user: all businesses they own */
         <Grid container spacing={2} justifyContent="center">
           {businesses.map((biz) => (
-            <Grid item xs={12} sm={6} md={4} key={biz._id} sx={{
-              display: 'flex',
-              justifyContent: { xs: 'stretch', sm: 'center' },
-              width: { xs: '100%', sm: 'auto' },
-            }}>
+            <Grid
+              item
+              xs={12}
+              sm={6}
+              md={4}
+              key={biz._id}
+              sx={{
+                display: "flex",
+                justifyContent: { xs: "stretch", sm: "center" },
+                width: { xs: "100%", sm: "auto" },
+              }}
+            >
               <Card
                 elevation={3}
                 sx={{
                   p: 2,
                   borderRadius: 2,
-                  width: { xs: '100%', sm: 280, md: 300 },
-                  maxWidth: { xs: '100%', sm: 280, md: 300 },
-                  height: '100%',
-                  position: 'relative',
+                  width: { xs: "100%", sm: 280, md: 300 },
+                  maxWidth: { xs: "100%", sm: 280, md: 300 },
+                  height: "100%",
+                  position: "relative",
                   pb: 6,
                 }}
               >
                 {/* Top: Avatar and Name */}
-                < Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+                <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
                   <Avatar
                     src={biz.logoUrl}
                     alt={biz.name}
@@ -419,23 +424,27 @@ export default function BusinessDetailsPage() {
                       </Typography>
                     </Box>
                   )}
-                  {biz.owner && (
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                        mt: 0.5,
-                      }}
-                    >
-                      <ICONS.person fontSize="small" color="action" />
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        sx={wrapTextBox}
-                      >
-                        {t.owner}: {biz.owner.name || biz.owner}
+                  {Array.isArray(biz.owners) && biz.owners.length > 0 && (
+                    <Box sx={{ mt: 0.5 }}>
+                      <Typography variant="caption" color="text.secondary">
+                        {t.owner}:
                       </Typography>
+
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        flexWrap="wrap"
+                        mt={0.5}
+                      >
+                        {biz.owners.map((o) => (
+                          <Chip
+                            key={typeof o === "string" ? o : o._id}
+                            size="small"
+                            label={typeof o === "string" ? o : o.name}
+                            icon={<ICONS.person fontSize="small" />}
+                          />
+                        ))}
+                      </Stack>
                     </Box>
                   )}
                 </Box>
@@ -443,12 +452,12 @@ export default function BusinessDetailsPage() {
                 {/* Card Actions */}
                 <CardActions
                   sx={{
-                    position: 'absolute',
+                    position: "absolute",
                     bottom: 8,
                     right: 8,
                     justifyContent: "flex-end",
                     px: 0,
-                    pt: 1
+                    pt: 1,
                   }}
                 >
                   <Tooltip title={t.edit}>
@@ -477,8 +486,7 @@ export default function BusinessDetailsPage() {
             </Grid>
           ))}
         </Grid>
-      )
-      }
+      )}
 
       {/* MODAL FORM */}
       <Dialog open={formOpen} onClose={handleClose} fullWidth dir={dir}>
@@ -540,20 +548,6 @@ export default function BusinessDetailsPage() {
             helperText={formErrors.address}
           />
 
-          {user.role === "admin" && (
-            <TextField
-              label={t.owner}
-              name="ownerName"
-              value={form.ownerName}
-              fullWidth
-              margin="normal"
-              disabled
-              InputProps={{
-                readOnly: true,
-              }}
-            />
-          )}
-
           <Box sx={{ mt: 2 }}>
             <Typography variant="body2" sx={{ mb: 1 }}>
               {t.logo}
@@ -562,7 +556,7 @@ export default function BusinessDetailsPage() {
               direction="row"
               spacing={2}
               alignItems="center"
-              sx={{ gap: dir === 'rtl' ? 2 : undefined }}
+              sx={{ gap: dir === "rtl" ? 2 : undefined }}
             >
               <Avatar
                 src={form.logoPreview}
@@ -594,7 +588,10 @@ export default function BusinessDetailsPage() {
             onClick={handleClose}
             startIcon={<ICONS.cancel />}
             disabled={loading}
-            sx={{ width: { xs: "100%", sm: "auto" }, ...getStartIconSpacing(dir) }}
+            sx={{
+              width: { xs: "100%", sm: "auto" },
+              ...getStartIconSpacing(dir),
+            }}
           >
             {t.cancel}
           </Button>
@@ -609,7 +606,10 @@ export default function BusinessDetailsPage() {
                 <ICONS.save />
               )
             }
-            sx={{ width: { xs: "100%", sm: "auto" }, ...getStartIconSpacing(dir) }}
+            sx={{
+              width: { xs: "100%", sm: "auto" },
+              ...getStartIconSpacing(dir),
+            }}
           >
             {loading
               ? editingBiz
@@ -630,6 +630,6 @@ export default function BusinessDetailsPage() {
         confirmButtonText={t.confirmDeleteButton}
         confirmButtonIcon={<ICONS.delete />}
       />
-    </Container >
+    </Container>
   );
 }

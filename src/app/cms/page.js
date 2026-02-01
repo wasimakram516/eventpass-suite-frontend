@@ -121,11 +121,27 @@ export default function HomePage() {
   };
 
   const checkBusinessExists = async () => {
+    if (user?.role !== "business") return;
+
     const businesses = await getAllBusinesses();
+
     const myBusiness = businesses.find((b) => {
-      const ownerId = typeof b.owner === "string" ? b.owner : b.owner?._id;
-      return ownerId === user?.id;
+      // New schema
+      if (Array.isArray(b.owners)) {
+        return b.owners.some((o) =>
+          typeof o === "string" ? o === user.id : o._id === user.id,
+        );
+      }
+
+      // Legacy fallback
+      if (b.owner) {
+        const ownerId = typeof b.owner === "string" ? b.owner : b.owner._id;
+        return ownerId === user.id;
+      }
+
+      return false;
     });
+
     if (!myBusiness) {
       setShowBusinessModal(true);
     }
@@ -143,8 +159,8 @@ export default function HomePage() {
     hours < 12
       ? t.greetingMorning
       : hours < 18
-      ? t.greetingAfternoon
-      : t.greetingEvening;
+        ? t.greetingAfternoon
+        : t.greetingEvening;
 
   const formattedDate = dateTime.toLocaleDateString(undefined, {
     weekday: "long",
@@ -312,7 +328,7 @@ export default function HomePage() {
 
                   {Object.entries(moduleStats.global.totals?.users || {})
                     .filter(
-                      ([role]) => scope === "superadmin" || role === "staff"
+                      ([role]) => scope === "superadmin" || role === "staff",
                     )
                     .map(([role, count]) => (
                       <Grid item xs={6} sm={4} md={3} key={role}>
@@ -365,7 +381,7 @@ export default function HomePage() {
                             return Object.entries(v)
                               .filter(
                                 ([role]) =>
-                                  scope === "superadmin" || role === "staff"
+                                  scope === "superadmin" || role === "staff",
                               )
                               .map(([role, count]) => (
                                 <Chip
@@ -388,7 +404,7 @@ export default function HomePage() {
                               />
                             )
                           );
-                        }
+                        },
                       )}
                     </Box>
                   </Box>

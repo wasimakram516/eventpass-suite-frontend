@@ -9,7 +9,6 @@ import {
   Font,
 } from "@react-pdf/renderer";
 
-// --------------------------------------------------------------
 
 // Auto-generated font imports
 import arial_0 from "../../fonts/arial/ArialBold.ttf";
@@ -43,6 +42,8 @@ import romeo_0 from "../../fonts/romeo/Pinky Peace.otf";
 import welcome_0 from "../../fonts/welcome/Welcome September.ttf";
 
 // --------------------------------------------------------------
+// --------------------------------------------------------------
+
 
 // --------------------------------------------------------------
 // STATIC FONT REGISTRATION (AUTO-GENERATED)
