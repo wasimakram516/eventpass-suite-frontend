@@ -153,10 +153,8 @@ export default function Registration() {
       fields.forEach((f) => {
         if (f.label) textsToTranslate.add(f.label);
         if (f.placeholder) textsToTranslate.add(f.placeholder);
-        (f.options || []).forEach((o) => textsToTranslate.add(o));
       });
 
-      // ✅ Convert Set → Array first, then filter
       const textArray = Array.from(textsToTranslate).filter(
         (t) => typeof t === "string" && t.trim() !== ""
       );
@@ -181,7 +179,7 @@ export default function Registration() {
             event.formFields?.map((f) => ({
               ...f,
               inputName: map[f.inputName] || f.inputName,
-              values: f.values?.map((v) => map[v] || v) || f.values,
+              values: f.values,
               placeholder: map[f.placeholder] || f.placeholder,
             })) || event.formFields,
         };
