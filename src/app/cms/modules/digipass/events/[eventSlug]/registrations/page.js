@@ -242,6 +242,7 @@ export default function ViewRegistrations() {
     const fetchData = async () => {
         setLoading(true);
         setIsLoadingMore(false);
+        lastLoadedRef.current = null;
 
         const evRes = await getDigipassEventBySlug(eventSlug);
 
@@ -574,11 +575,48 @@ export default function ViewRegistrations() {
         []
     );
 
+    const handleLoadingProgress = React.useCallback(
+        (payload) => {
+            if (!payload) return;
+
+            const { loaded, total, data } = payload;
+
+            if (lastLoadedRef.current === loaded) return;
+            lastLoadedRef.current = loaded;
+
+            if (data?.length) {
+                const processed = data.map((r) => {
+                    return {
+                        ...r,
+                        _createdAtMs: Date.parse(r.createdAt),
+                        _scannedAtMs: (r.walkIns || []).map((w) => Date.parse(w.scannedAt)),
+                        _haystack: buildHaystack(r, dynamicFieldsRef.current),
+                    };
+                });
+
+                setAllRegistrations((prev) => {
+                    const map = new Map(prev.map((r) => [r._id, r]));
+                    processed.forEach((r) => {
+                        const existing = map.get(r._id) || {};
+                        map.set(r._id, { ...existing, ...r });
+                    });
+                    return Array.from(map.values());
+                });
+            }
+
+            if (loaded >= total) {
+                setIsLoadingMore(false);
+            }
+        },
+        []
+    );
+
     useDigiPassSocket({
         eventId: eventDetails?._id,
         onNewRegistration: handleNewRegistration,
         onWalkInNew: handleWalkInNew,
         onTaskCompletedUpdate: handleTaskCompletedUpdate,
+        onLoadingProgress: handleLoadingProgress,
     });
 
     const eventIdStr = eventDetails?._id?.toString();
