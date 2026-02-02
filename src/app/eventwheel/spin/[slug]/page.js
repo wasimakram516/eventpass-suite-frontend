@@ -231,45 +231,62 @@ const SpinningPage = () => {
 
   const wheelBg = useMemo(() => {
     if (!count) return "conic-gradient(#666 0deg 360deg)";
-    const baseColors = [
-      "hsl(0, 70%, 50%)",
-      "hsl(120, 70%, 50%)",
-      "hsl(240, 70%, 50%)",
-      "hsl(60, 70%, 50%)",
+
+    const baseColorGradients = [
+      {
+        light: "hsl(0, 70%, 65%)",
+        mid: "hsl(0, 70%, 50%)",
+        dark: "hsl(0, 70%, 48%)",
+      },
+      {
+        light: "hsl(120, 70%, 65%)",
+        mid: "hsl(120, 70%, 50%)",
+        dark: "hsl(120, 70%, 48%)",
+      },
+      {
+        light: "hsl(240, 70%, 65%)",
+        mid: "hsl(240, 70%, 50%)",
+        dark: "hsl(240, 70%, 48%)",
+      },
+      {
+        light: "hsl(60, 70%, 65%)",
+        mid: "hsl(60, 70%, 50%)",
+        dark: "hsl(60, 70%, 48%)",
+      },
     ];
 
-    const assignedColors = [];
+    const assignedColorGradients = [];
 
     for (let i = 0; i < count; i++) {
       const prevIndex = i - 1;
-      const prevColor = prevIndex >= 0 ? assignedColors[prevIndex] : null;
+      const prevGradient = prevIndex >= 0 ? assignedColorGradients[prevIndex] : null;
 
       let colorIndex = i % 4;
-      let selectedColor = baseColors[colorIndex];
+      let selectedGradient = baseColorGradients[colorIndex];
 
-      if (prevColor && prevColor === selectedColor) {
-        const availableColors = baseColors.filter(c => c !== prevColor);
-        if (availableColors.length > 0) {
-          selectedColor = availableColors[0];
+      if (prevGradient && prevGradient.mid === selectedGradient.mid) {
+        const availableGradients = baseColorGradients.filter(g => g.mid !== prevGradient.mid);
+        if (availableGradients.length > 0) {
+          selectedGradient = availableGradients[0];
         }
       }
 
-      assignedColors.push(selectedColor);
+      assignedColorGradients.push(selectedGradient);
     }
 
-    if (count > 0 && assignedColors[0] === assignedColors[count - 1]) {
-      const prevColor = count > 1 ? assignedColors[count - 2] : null;
-      const availableColors = baseColors.filter(c => {
-        if (c === assignedColors[0]) return false;
-        if (prevColor && c === prevColor) return false;
+    if (count > 0 && assignedColorGradients[0].mid === assignedColorGradients[count - 1].mid) {
+      const prevGradient = count > 1 ? assignedColorGradients[count - 2] : null;
+      const availableGradients = baseColorGradients.filter(g => {
+        if (g.mid === assignedColorGradients[0].mid) return false;
+        if (prevGradient && g.mid === prevGradient.mid) return false;
         return true;
       });
-      if (availableColors.length > 0) {
-        assignedColors[count - 1] = availableColors[0];
+      if (availableGradients.length > 0) {
+        assignedColorGradients[count - 1] = availableGradients[0];
       } else {
-        const fallbackColors = baseColors.filter(c => c !== assignedColors[0]);
-        if (fallbackColors.length > 0) {
-          assignedColors[count - 1] = fallbackColors[0];
+        const fallbackGradients = baseColorGradients.filter(g => g.mid !== assignedColorGradients[0].mid);
+        if (fallbackGradients.length > 0) {
+          assignedColorGradients[count - 1] = fallbackGradients[0];
         }
       }
     }
@@ -278,8 +295,10 @@ const SpinningPage = () => {
       .map((_, i) => {
         const a0 = i * slice;
         const a1 = (i + 1) * slice;
-        const c = assignedColors[i];
-        return `${c} ${a0}deg ${a1}deg`;
+        const gradient = assignedColorGradients[i];
+        const segmentSize = a1 - a0;
+        const midPoint = a0 + segmentSize / 2;
+        return `${gradient.light} ${a0}deg, ${gradient.mid} ${midPoint}deg, ${gradient.dark} ${a1}deg`;
       })
       .join(", ")})`;
   }, [participants, count, slice]);
