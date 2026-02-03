@@ -31,6 +31,7 @@ const WalkInModal = ({ open, onClose, registration, onCheckInSuccess, createWalk
 
   const canCheckIn =
     user?.role === "admin" ||
+    user?.role === "superadmin" ||
     user?.role === "business";
   const { t, dir } = useI18nLayout({
     en: {

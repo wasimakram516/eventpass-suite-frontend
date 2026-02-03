@@ -100,7 +100,12 @@ export default function HomePage() {
       try {
         const role = user?.role || "admin";
         const mods = await getModules(role);
-        setModules(mods || []);
+        const list = mods || [];
+        const permitted =
+          user?.role === "admin" && Array.isArray(user?.modulePermissions)
+            ? list.filter((m) => user.modulePermissions.includes(m.key))
+            : list;
+        setModules(permitted);
 
         const res = await getDashboardInsights();
         setInsights(res);
@@ -396,9 +401,8 @@ export default function HomePage() {
                             scope === "superadmin" && (
                               <Chip
                                 key={k}
-                                label={`${
-                                  k.charAt(0).toUpperCase() + k.slice(1)
-                                }: ${v}`}
+                                label={`${k.charAt(0).toUpperCase() + k.slice(1)
+                                  }: ${v}`}
                                 size="small"
                                 sx={{ textTransform: "capitalize" }}
                               />
@@ -542,9 +546,8 @@ export default function HomePage() {
                               {trashEntries.map(([k, v]) => (
                                 <Chip
                                   key={k}
-                                  label={`${
-                                    k.charAt(0).toUpperCase() + k.slice(1)
-                                  }: ${v}`}
+                                  label={`${k.charAt(0).toUpperCase() + k.slice(1)
+                                    }: ${v}`}
                                   size="small"
                                   sx={{ textTransform: "capitalize" }}
                                 />

@@ -265,11 +265,11 @@ const Dashboard = () => {
       const wheelList = await getAllSpinWheels();
       const filteredWheels = businessSlug
         ? wheelList.filter(
-            (wheel) =>
-              wheel.business?.slug === businessSlug ||
-              wheel.business?._id ===
-                businesses.find((b) => b.slug === businessSlug)?._id
-          )
+          (wheel) =>
+            wheel.business?.slug === businessSlug ||
+            wheel.business?._id ===
+            businesses.find((b) => b.slug === businessSlug)?._id
+        )
         : wheelList;
 
       setSpinWheels(filteredWheels);
@@ -289,33 +289,33 @@ const Dashboard = () => {
     setForm(
       wheel
         ? {
-            business:
-              wheel.business?._id ||
-              wheel.business ||
-              selectedBusinessObject?._id ||
-              "",
-            title: wheel.title,
-            slug: wheel.slug,
-            type: wheel.type,
-            logo: null,
-            background: null,
-            logoPreview: wheel.logoUrl || "",
-            backgroundPreview: wheel.backgroundUrl || "",
-            removeLogo: false,
-            removeBackground: false,
-          }
+          business:
+            wheel.business?._id ||
+            wheel.business ||
+            selectedBusinessObject?._id ||
+            "",
+          title: wheel.title,
+          slug: wheel.slug,
+          type: wheel.type,
+          logo: null,
+          background: null,
+          logoPreview: wheel.logoUrl || "",
+          backgroundPreview: wheel.backgroundUrl || "",
+          removeLogo: false,
+          removeBackground: false,
+        }
         : {
-            business: selectedBusinessObject?._id || "",
-            title: "",
-            slug: "",
-            type: "admin",
-            logo: null,
-            background: null,
-            logoPreview: "",
-            backgroundPreview: "",
-            removeLogo: false,
-            removeBackground: false,
-          }
+          business: selectedBusinessObject?._id || "",
+          title: "",
+          slug: "",
+          type: "admin",
+          logo: null,
+          background: null,
+          logoPreview: "",
+          backgroundPreview: "",
+          removeLogo: false,
+          removeBackground: false,
+        }
     );
 
     if (wheel?.type === "synced") {
@@ -510,13 +510,13 @@ const Dashboard = () => {
       let logoUrl = form.removeLogo
         ? null
         : form.logo
-        ? null
-        : form.logoPreview || null;
+          ? null
+          : form.logoPreview || null;
       let backgroundUrl = form.removeBackground
         ? null
         : form.background
-        ? null
-        : form.backgroundPreview || null;
+          ? null
+          : form.backgroundPreview || null;
 
       if (form.logo && !form.removeLogo) {
         filesToUpload.push({
@@ -638,8 +638,7 @@ const Dashboard = () => {
         : `${window.location.origin}/eventwheel/wheels/${slug}`;
     setShareUrl(url);
     setShareTitle(
-      `${t.shareSpinWheelTitle}: ${
-        spinWheels.find((w) => w.slug === slug)?.title || slug
+      `${t.shareSpinWheelTitle}: ${spinWheels.find((w) => w.slug === slug)?.title || slug
       }`
     );
 
@@ -655,7 +654,7 @@ const Dashboard = () => {
 
   return (
     <Box dir={dir} sx={{ display: "flex", minHeight: "100vh" }}>
-      {user?.role === "admin" && (
+      {(user?.role === "admin" || user?.role === "superadmin") && (
         <BusinessDrawer
           open={drawerOpen}
           onClose={() => setDrawerOpen(false)}
@@ -699,7 +698,7 @@ const Dashboard = () => {
               width: { xs: "100%", sm: "auto" },
             }}
           >
-            {user?.role === "admin" && (
+            {(user?.role === "admin" || user?.role === "superadmin") && (
               <Button
                 variant="outlined"
                 onClick={() => setDrawerOpen(true)}

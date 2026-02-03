@@ -15,30 +15,27 @@ import BusinessIcon from "@mui/icons-material/Business";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import BusinessDrawer from "@/components/drawers/BusinessDrawer";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
-import EventFormModal from "@/components/modals/EventModal";
+import DigiPassEventModal from "@/components/modals/DigiPassEventModal";
 import ShareLinkModal from "@/components/modals/ShareLinkModal";
-
 import useI18nLayout from "@/hooks/useI18nLayout";
 import ICONS from "@/utils/iconUtil";
-import { getEventStatus, formatDate } from "@/utils/dateUtils";
 import { useAuth } from "@/contexts/AuthContext";
 import { getAllBusinesses } from "@/services/businessService";
 import {
-  getAllPublicEventsByBusiness,
-  deletePublicEvent,
-  createPublicEvent,
-  updatePublicEvent,
-} from "@/services/eventreg/eventService";
+  getAllDigipassEvents,
+  createDigipassEvent,
+  updateDigipassEvent,
+  deleteDigipassEvent,
+} from "@/services/digipass/digipassEventService";
 import EmptyBusinessState from "@/components/EmptyBusinessState";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
-import InitialsPlaceholder from "@/components/InitialsPlaceholder";
 import EventCardBase from "@/components/cards/EventCard";
 
 const translations = {
   en: {
-    pageTitle: "Manage Events",
-    pageDescription: "Manage all public registration events for this business.",
+    pageTitle: "Manage DigiPass Events",
+    pageDescription: "Manage all DigiPass events for this business.",
     createEvent: "Create Event",
     selectBusiness: "Select Business",
     noEvents: "No events found.",
@@ -50,19 +47,18 @@ const translations = {
     deleteEventTitle: "Delete Event?",
     deleteEventMessage:
       "Are you sure you want to move this item to the Recycle Bin?",
-    delete: "Delete",
     slugLabel: "Slug:",
     dateRange: "Dates",
     venue: "Venue",
     registrations: "Registrations",
     edit: "Edit",
+    delete: "Delete",
     shareTitle: "Share",
     viewRegs: "View Registrations",
-    insights: "Intelligent Insights",
   },
   ar: {
-    pageTitle: "إدارة الفعاليات",
-    pageDescription: "إدارة جميع فعاليات التسجيل العام لهذا العمل.",
+    pageTitle: "إدارة فعاليات DigiPass",
+    pageDescription: "إدارة جميع فعاليات DigiPass لهذا العمل.",
     createEvent: "إنشاء فعالية",
     selectBusiness: "اختر العمل",
     noEvents: "لا توجد فعاليات.",
@@ -82,7 +78,6 @@ const translations = {
     delete: "حذف",
     shareTitle: "مشاركة",
     viewRegs: "عرض التسجيلات",
-    insights: "تحليلات ذكية",
   },
 };
 
@@ -124,7 +119,7 @@ export default function EventsPage() {
 
     const fetchEvents = async () => {
       setLoading(true);
-      const result = await getAllPublicEventsByBusiness(selectedBusiness);
+      const result = await getAllDigipassEvents(selectedBusiness);
       if (!result?.error) setEvents(result.events || []);
       else setEvents([]);
       setLoading(false);
@@ -159,13 +154,13 @@ export default function EventsPage() {
   const handleSubmitEvent = async (formData, isEdit) => {
     let res;
     if (isEdit) {
-      res = await updatePublicEvent(selectedEvent._id, formData);
+      res = await updateDigipassEvent(selectedEvent._id, formData);
       if (!res?.error) {
         setEvents((prev) => prev.map((e) => (e._id === res._id ? res : e)));
         handleCloseModal();
       }
     } else {
-      res = await createPublicEvent(formData);
+      res = await createDigipassEvent(formData);
       if (!res?.error) {
         setEvents((prev) => [...prev, res]);
         handleCloseModal();
@@ -174,7 +169,7 @@ export default function EventsPage() {
   };
 
   const handleDeleteEvent = async () => {
-    const res = await deletePublicEvent(eventToDelete._id);
+    const res = await deleteDigipassEvent(eventToDelete._id);
     if (!res?.error) {
       setEvents((prev) => prev.filter((e) => e._id !== eventToDelete._id));
     }
@@ -260,20 +255,18 @@ export default function EventsPage() {
         ) : (
           <Grid container spacing={3} justifyContent="center">
             {events.map((ev) => {
-              const status =
-                ev?.startDate && ev?.endDate
-                  ? getEventStatus(ev.startDate, ev.endDate)
-                  : "N/A";
               return (
                 <Grid item xs={12} sm={6} md={4} key={ev._id}>
                   <EventCardBase
                     event={ev}
                     t={t}
-                    status={status}
+                    status={null}
                     showRegistrations
+                    hideVenue={true}
+                    hideDates={true}
                     onView={() =>
-                      router.replace(
-                        `/cms/modules/eventreg/events/${ev.slug}/registrations`
+                      router.push(
+                        `/cms/modules/digipass/events/${ev.slug}/registrations`
                       )
                     }
                     onEdit={() => handleOpenEdit(ev)}
@@ -285,11 +278,6 @@ export default function EventsPage() {
                       setEventToShare(ev);
                       setShareModalOpen(true);
                     }}
-                    onInsights={() =>
-                      router.push(
-                        `/cms/modules/eventreg/events/${ev.slug}/insights`
-                      )
-                    }
                   />
                 </Grid>
               );
@@ -297,14 +285,12 @@ export default function EventsPage() {
           </Grid>
         )}
 
-        <EventFormModal
+        <DigiPassEventModal
           open={openModal}
           onClose={handleCloseModal}
           onSubmit={handleSubmitEvent}
-          editMode={editMode}
           initialValues={selectedEvent}
           selectedBusiness={selectedBusiness}
-          isClosed={false}
         />
 
         <ConfirmationDialog
@@ -322,7 +308,7 @@ export default function EventsPage() {
           onClose={() => setShareModalOpen(false)}
           url={
             typeof window !== "undefined" && eventToShare?.slug
-              ? `${window.location.origin}/${eventToShare.defaultLanguage || "en"}/event/${eventToShare.slug}`
+              ? `${window.location.origin}/digipass/${eventToShare.slug}`
               : ""
           }
           name={eventToShare?.name}
@@ -333,3 +319,4 @@ export default function EventsPage() {
     </Box>
   );
 }
+

@@ -124,7 +124,7 @@ export default function VisitorsPage() {
   return (
     <Box dir={dir} sx={{ display: "flex", minHeight: "100vh" }}>
       {/* BusinessDrawer for admin only */}
-      {user?.role === "admin" && (
+      {(user?.role === "admin" || user?.role === "superadmin") && (
         <BusinessDrawer
           open={drawerOpen}
           onClose={() => setDrawerOpen(false)}
@@ -155,7 +155,7 @@ export default function VisitorsPage() {
           </Stack>
 
           {/* Select Business Button (Admin Only) */}
-          {user?.role === "admin" && (
+          {(user?.role === "admin" || user?.role === "superadmin") && (
             <Button
               variant="outlined"
               onClick={() => setDrawerOpen(true)}

@@ -92,15 +92,16 @@ export default function LoginPage() {
         router.push("/staff");
       } else if (
         response.user.role === "business" ||
-        response.user.role === "admin"
+        response.user.role === "admin" ||
+        response.user.role === "superadmin"
       ) {
         router.push("/cms");
       }
     } catch (err) {
       showMessage(
         err?.response?.data?.message ||
-          err?.response?.data?.error ||
-          "Login failed. Please try again.",
+        err?.response?.data?.error ||
+        "Login failed. Please try again.",
         "error"
       );
     } finally {
@@ -118,7 +119,7 @@ export default function LoginPage() {
       }}
       dir={dir}
     >
-      <Background/>
+      <Background />
       <Container maxWidth="sm">
         <Paper elevation={3} sx={{ p: 4, mt: 4, borderRadius: 3 }}>
           <Typography

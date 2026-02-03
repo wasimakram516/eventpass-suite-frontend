@@ -58,10 +58,13 @@ export default function Modules() {
           ? modulesPayload
           : [];
 
-        // If role is 'business', apply allowlist; otherwise keep all
+        // Business and admin: only show modules they have permission for. Superadmin/staff: show all returned.
         const permitted =
-          user?.role === "business" && Array.isArray(user?.modulePermissions)
-            ? serverModules.filter((m) => user.modulePermissions.includes(m.key))
+          (user?.role === "business" || user?.role === "admin") &&
+            Array.isArray(user?.modulePermissions)
+            ? serverModules.filter((m) =>
+              user.modulePermissions.includes(m.key)
+            )
             : serverModules;
 
         setModules(permitted);
@@ -79,89 +82,89 @@ export default function Modules() {
 
   return (
     <Box dir={dir} sx={{ pb: 8, bgcolor: "background.default" }}>
-     
-        <Box sx={{ mb: 3 }}>
+
+      <Box sx={{ mb: 3 }}>
+        <Typography
+          variant="h2"
+          fontWeight="bold"
+          gutterBottom
+          textAlign={align}
+        >
+          {t.title}
+        </Typography>
+        <Typography variant="body1" color="text.secondary" textAlign={align}>
+          {t.subtitle}
+        </Typography>
+        <Divider sx={{ my: 2 }} />
+      </Box>
+
+      {loading ? (
+        <Grid container spacing={3} justifyContent="center">
+          <LoadingState />
+        </Grid>
+      ) : modules?.length === 0 ? (
+        <Stack spacing={2} alignItems="center" sx={{ mt: 5 }}>
+          <SupportAgentIcon color="primary" sx={{ fontSize: 64 }} />
+          <Typography variant="h6" textAlign="center">
+            {t.noPermission}
+          </Typography>
           <Typography
-            variant="h2"
-            fontWeight="bold"
-            gutterBottom
-            textAlign={align}
+            variant="body1"
+            color="text.secondary"
+            textAlign="center"
           >
-            {t.title}
+            {t.contactSupport}
           </Typography>
-          <Typography variant="body1" color="text.secondary" textAlign={align}>
-            {t.subtitle}
-          </Typography>
-          <Divider sx={{ my: 2 }} />
-        </Box>
 
-        {loading ? (
-          <Grid container spacing={3} justifyContent="center">
-            <LoadingState />
-          </Grid>
-        ) : modules?.length === 0 ? (
-          <Stack spacing={2} alignItems="center" sx={{ mt: 5 }}>
-            <SupportAgentIcon color="primary" sx={{ fontSize: 64 }} />
-            <Typography variant="h6" textAlign="center">
-              {t.noPermission}
-            </Typography>
-            <Typography
-              variant="body1"
-              color="text.secondary"
-              textAlign="center"
-            >
-              {t.contactSupport}
-            </Typography>
-
-            {(globalConfig?.support?.email || globalConfig?.support?.phone) && (
-              <Stack spacing={1} textAlign="center" alignItems="center">
-                {globalConfig?.support?.email && (
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <EmailOutlinedIcon fontSize="small" color="action" />
-                    <Typography variant="body2">
-                      {globalConfig.support.email}
-                    </Typography>
-                  </Stack>
-                )}
-                {globalConfig?.support?.phone && (
-                  <Stack direction="row" spacing={1} alignItems="center">
-                    <PhoneOutlinedIcon fontSize="small" color="action" />
-                    <Typography variant="body2">
-                      {globalConfig.support.phone}
-                    </Typography>
-                  </Stack>
-                )}
-              </Stack>
-            )}
-          </Stack>
-        ) : (
-          <Grid
-            container
-            spacing={3}
-            justifyContent="center"
-            sx={{
-              '& > *': {
-                width: { xs: '100%', sm: 'auto' }
+          {(globalConfig?.support?.email || globalConfig?.support?.phone) && (
+            <Stack spacing={1} textAlign="center" alignItems="center">
+              {globalConfig?.support?.email && (
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <EmailOutlinedIcon fontSize="small" color="action" />
+                  <Typography variant="body2">
+                    {globalConfig.support.email}
+                  </Typography>
+                </Stack>
+              )}
+              {globalConfig?.support?.phone && (
+                <Stack direction="row" spacing={1} alignItems="center">
+                  <PhoneOutlinedIcon fontSize="small" color="action" />
+                  <Typography variant="body2">
+                    {globalConfig.support.phone}
+                  </Typography>
+                </Stack>
+              )}
+            </Stack>
+          )}
+        </Stack>
+      ) : (
+        <Grid
+          container
+          spacing={3}
+          justifyContent="center"
+          sx={{
+            '& > *': {
+              width: { xs: '100%', sm: 'auto' }
+            }
+          }}
+        >
+          {modules.map((mod) => (
+            <DashboardCard
+              key={mod.key}
+              title={mod.labels?.[language] ?? mod.labels?.en ?? mod.key}
+              description={
+                mod.descriptions?.[language] ?? mod.descriptions?.en ?? ""
               }
-            }}
-          >
-            {modules.map((mod) => (
-              <DashboardCard
-                key={mod.key}
-                title={mod.labels?.[language] ?? mod.labels?.en ?? mod.key}
-                description={
-                  mod.descriptions?.[language] ?? mod.descriptions?.en ?? ""
-                }
-                buttonLabel={
-                  mod.buttons?.[language] ?? mod.buttons?.en ?? "Open"
-                }
-                icon={getModuleIcon(mod.icon)}
-                color={mod.color || "primary"}
-                route={mod.route}
-              />
-            ))}
-          </Grid>
-        )}
+              buttonLabel={
+                mod.buttons?.[language] ?? mod.buttons?.en ?? "Open"
+              }
+              icon={getModuleIcon(mod.icon)}
+              color={mod.color || "primary"}
+              route={mod.route}
+            />
+          ))}
+        </Grid>
+      )}
     </Box>
   );
 }
