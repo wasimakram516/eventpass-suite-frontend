@@ -50,6 +50,7 @@ const translations = {
     company: "Company",
     wing: "Wing",
     title: "Title",
+    registrationType: "Registration Type",
     event: "Event",
     scanAnother: "Scan Another",
     tryAgain: "Try Again",
@@ -86,6 +87,7 @@ const translations = {
     company: "الشركة",
     wing: "الجناح",
     title: "المسمى الوظيفي",
+    registrationType: "نوع التسجيل",
     event: "الفعالية",
     scanAnother: "مسح رمز آخر",
     tryAgain: "حاول مرة أخرى",
@@ -497,6 +499,19 @@ export default function VerifyPage() {
                     primaryTypographyProps={{ fontWeight: 500 }}
                   />
                 </ListItem>
+
+                {result.registrationType && (
+                  <ListItem>
+                    <ListItemIcon>
+                      <ICONS.badge sx={{ color: "text.secondary" }} />
+                    </ListItemIcon>
+                    <ListItemText
+                      primary={t.registrationType}
+                      secondary={result.registrationType}
+                      primaryTypographyProps={{ fontWeight: 500 }}
+                    />
+                  </ListItem>
+                )}
 
                 {result.title && (
                   <ListItem>
