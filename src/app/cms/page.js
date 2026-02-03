@@ -5,13 +5,13 @@ import {
   Typography,
   Container,
   Grid,
-  Paper,
   Avatar,
   Divider,
   Chip,
   Stack,
   Button,
   CircularProgress,
+  Tooltip,
 } from "@mui/material";
 import { useAuth } from "@/contexts/AuthContext";
 import BusinessAlertModal from "@/components/modals/BusinessAlertModal";
@@ -31,6 +31,8 @@ import { getAllBusinesses } from "@/services/businessService";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import { formatDateTimeWithLocale } from "@/utils/dateUtils";
 import useDashboardSocket from "@/hooks/useDashboardSocket";
+import AppCard from "@/components/cards/AppCard";
+import { PieChart } from "@mui/x-charts";
 
 const translations = {
   en: {
@@ -63,17 +65,17 @@ const translations = {
 
 export default function HomePage() {
   const { user } = useAuth();
-  const { dir, align, language, isArabic, t } = useI18nLayout(translations);
+  const { dir, align, language, t } = useI18nLayout(translations);
   const router = useRouter();
   const [showBusinessModal, setShowBusinessModal] = useState(false);
   const [insights, setInsights] = useState(null);
   const [modules, setModules] = useState([]);
-  const [dateTime, setDateTime] = useState(new Date());
   const [businessModalDismissed, setBusinessModalDismissed] = useState(false);
   const [computing, setComputing] = useState(false);
+  const [animateCharts, setAnimateCharts] = useState(true);
   const effectRan = useRef(false);
 
-  const { connected, socket } = useDashboardSocket({
+  const { connected } = useDashboardSocket({
     onMetricsUpdate: (metrics) => {
       setInsights(metrics);
     },
@@ -85,10 +87,10 @@ export default function HomePage() {
     }
   }, [user, businessModalDismissed]);
 
-  // Real-time clock
+  // Animate charts once, then keep them static to avoid flicker on re-renders
   useEffect(() => {
-    const timer = setInterval(() => setDateTime(new Date()), 1000);
-    return () => clearInterval(timer);
+    const timer = setTimeout(() => setAnimateCharts(false), 800);
+    return () => clearTimeout(timer);
   }, []);
 
   // Load modules + insights
@@ -102,7 +104,8 @@ export default function HomePage() {
         const mods = await getModules(role);
         const list = mods || [];
         const permitted =
-          user?.role === "admin" && Array.isArray(user?.modulePermissions)
+          (user?.role === "admin" || user?.role === "business") &&
+            Array.isArray(user?.modulePermissions)
             ? list.filter((m) => user.modulePermissions.includes(m.key))
             : list;
         setModules(permitted);
@@ -159,7 +162,7 @@ export default function HomePage() {
 
   const { modules: moduleStats = {}, scope } = insights || {};
 
-  const hours = dateTime.getHours();
+  const hours = new Date().getHours();
   const greeting =
     hours < 12
       ? t.greetingMorning
@@ -167,31 +170,189 @@ export default function HomePage() {
         ? t.greetingAfternoon
         : t.greetingEvening;
 
-  const formattedDate = dateTime.toLocaleDateString(undefined, {
-    weekday: "long",
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
+  const Clock = () => {
+    const [now, setNow] = useState(new Date());
 
-  const formattedTime = dateTime.toLocaleTimeString(undefined, {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true,
-  });
+    useEffect(() => {
+      const timer = setInterval(() => setNow(new Date()), 1000);
+      return () => clearInterval(timer);
+    }, []);
+
+    const formattedDate = now.toLocaleDateString(undefined, {
+      weekday: "long",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+
+    const formattedTime = now.toLocaleTimeString(undefined, {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: true,
+    });
+
+    return (
+      <Typography
+        variant="body2"
+        textAlign={align}
+        sx={{ color: "rgba(255,255,255,0.9)" }}
+      >
+        {formattedDate} · {formattedTime}
+      </Typography>
+    );
+  };
+
+  const donutColors = ["#1f77b4", "#ff7f0e", "#2ca02c", "#9467bd", "#8c564b"];
+  const sumValues = (obj = {}) =>
+    Object.values(obj).reduce((sum, val) => sum + (Number(val) || 0), 0);
+
+  const buildTrashTotal = (trash = {}) => {
+    return Object.values(trash).reduce((sum, val) => {
+      if (typeof val === "number") return sum + val;
+      if (val && typeof val === "object") return sum + sumValues(val);
+      return sum;
+    }, 0);
+  };
+
+  const buildDonutData = (data = [], emptyLabel = "Empty") => {
+    const total = data.reduce((sum, item) => sum + (Number(item.value) || 0), 0);
+    if (total === 0) {
+      return {
+        data: [
+          {
+            id: 0,
+            label: emptyLabel,
+            value: 1,
+            color: "rgba(0,0,0,0.08)",
+            isEmpty: true,
+          },
+        ],
+        total: 0,
+      };
+    }
+    return {
+      data: data.map((item, idx) => ({
+        id: idx,
+        label: item.name,
+        ...item,
+        color: donutColors[idx % donutColors.length],
+      })),
+      total,
+    };
+  };
+
+  const buildTrashBreakdown = (trash = {}) => {
+    const entries = Object.entries(trash).map(([key, val]) => {
+      if (typeof val === "number") return { name: key, value: val };
+      if (val && typeof val === "object") return { name: key, value: sumValues(val) };
+      return { name: key, value: 0 };
+    });
+    return entries.filter((e) => e.value > 0);
+  };
+
+  const DonutStat = ({ data, centerLabel, height = 180 }) => {
+    const isEmpty = data.length === 1 && data[0]?.isEmpty;
+    return (
+      <Box
+        sx={{
+          position: "relative",
+          width: "100%",
+          height,
+          minWidth: 180,
+        }}
+      >
+        <PieChart
+          height={height}
+          skipAnimation={!animateCharts}
+          series={[
+            {
+              data,
+              innerRadius: 50,
+              outerRadius: 70,
+              paddingAngle: 2,
+              arcLabel: () => "",
+            },
+          ]}
+          slotProps={{
+            legend: { hidden: true, sx: { display: "none !important" } },
+            tooltip: { trigger: isEmpty ? "none" : "item" },
+          }}
+        />
+        <Typography
+          variant="h6"
+          fontWeight="bold"
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {centerLabel}
+        </Typography>
+      </Box>
+    );
+  };
+
+  const RenderTruncatedChip = ({ label }) => (
+    <Tooltip title={label}>
+      <Chip
+        label={label}
+        size="small"
+        variant="outlined"
+        sx={{
+          maxWidth: 140,
+          "& .MuiChip-label": {
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            whiteSpace: "nowrap",
+          },
+        }}
+      />
+    </Tooltip>
+  );
 
   return (
-    <Box sx={{ pb: 6, bgcolor: "#f8f9fc", minHeight: "100vh" }}>
-      <Box dir={dir}>
+    <Box sx={{ pb: 6, bgcolor: "background.default", minHeight: "100vh" }}>
+      <Container
+        dir={dir}
+        maxWidth={false}
+        sx={{ px: { xs: 2, md: 3, lg: 4 }, maxWidth: "1600px", mx: "auto" }}
+      >
         {/* Welcome Header */}
-        <Paper
+        <AppCard
           sx={{
             p: 4,
             mb: 4,
             borderRadius: 3,
-            background: "linear-gradient(135deg,#667eea,#764ba2)",
             color: "#fff",
+            position: "relative",
+            overflow: "hidden",
+            background:
+              "linear-gradient(135deg, #1b3a7a 0%, #3843b2 45%, #6a2ea0 100%)",
+            boxShadow: "0 18px 40px rgba(27,58,122,0.25)",
+            "&::before": {
+              content: '""',
+              position: "absolute",
+              inset: 0,
+              background:
+                "radial-gradient(circle at 20% 20%, rgba(255,255,255,0.18), transparent 45%), radial-gradient(circle at 80% 30%, rgba(255,255,255,0.14), transparent 40%)",
+              pointerEvents: "none",
+            },
+            "&::after": {
+              content: '""',
+              position: "absolute",
+              right: -120,
+              top: -120,
+              width: 320,
+              height: 320,
+              borderRadius: "50%",
+              background:
+                "radial-gradient(circle, rgba(255,255,255,0.18), rgba(255,255,255,0) 60%)",
+              pointerEvents: "none",
+            },
           }}
         >
           <Box
@@ -201,22 +362,43 @@ export default function HomePage() {
               alignItems: "center",
               justifyContent: "space-between",
               gap: 2,
+              position: "relative",
+              zIndex: 1,
             }}
           >
             {/* Greeting / Info */}
             <Box sx={{ flex: 1 }}>
               <Typography
                 variant="h5"
-                fontWeight="bold"
                 gutterBottom
                 textAlign={align}
+                sx={{
+                  color: "#fff",
+                  letterSpacing: "0.3px",
+                  textShadow: "0 2px 12px rgba(0,0,0,0.28)",
+                  fontWeight: 600,
+                  lineHeight: 1.15,
+                }}
               >
-                {greeting}, {user?.name || "Guest"} 👋
+                {greeting},{" "}
+                <Typography
+                  component="span"
+                  variant="h3"
+                  sx={{
+                    display: "inline-block",
+                    fontWeight: 800,
+                    lineHeight: 1.1,
+                  }}
+                >
+                  {user?.name || "Guest"}
+                </Typography>
               </Typography>
-              <Typography variant="body2" textAlign={align}>
-                {formattedDate} · {formattedTime}
-              </Typography>
-              <Typography variant="body1" sx={{ mt: 2 }} textAlign={align}>
+              <Clock />
+              <Typography
+                variant="body1"
+                sx={{ mt: 2, color: "rgba(255,255,255,0.9)" }}
+                textAlign={align}
+              >
                 {t.overviewIntro}
               </Typography>
             </Box>
@@ -274,7 +456,7 @@ export default function HomePage() {
                 <Typography
                   variant="caption"
                   sx={{
-                    color: "rgba(255,255,255,0.8)",
+                    color: "rgba(255,255,255,0.85)",
                     textAlign: { xs: "left", sm: "right" },
                     mt: 1,
                   }}
@@ -285,7 +467,7 @@ export default function HomePage() {
               )}
             </Box>
           </Box>
-        </Paper>
+        </AppCard>
 
         {!insights ? (
           <LoadingState />
@@ -293,7 +475,7 @@ export default function HomePage() {
           <>
             {/* Global Overview */}
             {moduleStats.global && (
-              <Paper sx={{ p: 3, mt: 4, borderRadius: 3 }}>
+              <AppCard sx={{ p: 3, mt: 2, mb: 3, borderRadius: 3 }}>
                 <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
                   <Avatar sx={{ bgcolor: "#1976d2", mx: 1 }}>
                     <ICONS.business />
@@ -302,118 +484,124 @@ export default function HomePage() {
                 </Box>
                 <Divider sx={{ mb: 2 }} />
 
-                {/* Totals */}
-                <Grid container spacing={2} justifyContent="center">
-                  {scope === "superadmin" && (
-                    <Grid item>
-                      <Paper
-                        sx={{
-                          p: 2,
-                          textAlign: "center",
-                          borderRadius: 2,
-                          height: "100%",
-                          width: { xs: 110, sm: 130 },
-                        }}
-                      >
-                        <ICONS.business
-                          sx={{ fontSize: 32, color: "#1976d2" }}
-                        />
-                        <Typography variant="h4">
-                          {moduleStats.global.totals?.businesses ?? 0}
-                        </Typography>
-                        <Typography
-                          variant="body2"
-                          sx={{ fontSize: 11, textTransform: "capitalize" }}
-                        >
-                          {t.businesses}
-                        </Typography>
-                      </Paper>
-                    </Grid>
-                  )}
+                {/* Donut Charts */}
+                {(() => {
+                  const userTotals = moduleStats.global.totals?.users || {};
+                  const roleKeys = ["superadmin", "admin", "business", "staff"];
+                  const roleLabel = (role) =>
+                    role === "superadmin"
+                      ? "Super Admins"
+                      : role.charAt(0).toUpperCase() + role.slice(1);
 
-                  {Object.entries(moduleStats.global.totals?.users || {})
-                    .filter(
-                      ([role]) => scope === "superadmin" || role === "staff",
-                    )
-                    .map(([role, count]) => (
-                      <Grid item xs={6} sm={4} md={3} key={role}>
-                        <Paper
+                  const userRoleData = roleKeys.map((role) => ({
+                    name: roleLabel(role),
+                    value: Number(userTotals?.[role] || 0),
+                  }));
+                  const { data: usersDonut, total: usersTotal } = buildDonutData(
+                    userRoleData,
+                    t.noTotals,
+                  );
+
+                  const businessesDonut = buildDonutData(
+                    [
+                      {
+                        name: t.businesses,
+                        value: moduleStats.global.totals?.businesses ?? 0,
+                      },
+                    ],
+                    t.noTotals,
+                  );
+
+                  const trashBreakdown = buildTrashBreakdown(
+                    moduleStats.global.trash || {},
+                  );
+                  const { data: trashDonut, total: trashTotal } =
+                    buildDonutData(trashBreakdown, t.noTotals);
+
+                  return (
+                    <Grid
+                      container
+                      spacing={2}
+                      sx={{ mt: 2 }}
+                      justifyContent="center"
+                    >
+                      <Grid item xs={12} md={4}>
+                        <AppCard
                           sx={{
                             p: 2,
-                            textAlign: "center",
-                            borderRadius: 2,
                             height: "100%",
-                            width: { xs: 110, sm: 130 },
+                            width: "100%",
+                            textAlign: "center",
                           }}
                         >
-                          <ICONS.group
-                            sx={{ fontSize: 32, color: "#1976d2" }}
-                          />
-                          <Typography variant="h4">{count}</Typography>
-                          <Typography
-                            variant="body2"
-                            sx={{ fontSize: 11, textTransform: "capitalize" }}
-                          >
-                            {t.users} ({role})
+                          <Typography variant="subtitle1" gutterBottom>
+                            {t.users}
                           </Typography>
-                        </Paper>
-                      </Grid>
-                    ))}
-                </Grid>
-
-                {/* Trash */}
-                {moduleStats.global.trash && (
-                  <Box sx={{ mt: 2 }}>
-                    {/* Trash title row */}
-                    <Box sx={{ display: "flex", gap: 1, mb: 1 }}>
-                      <ICONS.delete fontSize="small" color="error" />
-                      <Typography variant="subtitle2" gutterBottom>
-                        {t.trash}
-                      </Typography>
-                    </Box>
-
-                    <Box
-                      sx={{
-                        display: "flex",
-                        flexWrap: "wrap",
-                        gap: 1,
-                        justifyContent: "flex-start",
-                      }}
-                    >
-                      {Object.entries(moduleStats.global.trash).map(
-                        ([k, v]) => {
-                          if (typeof v === "object" && v !== null) {
-                            return Object.entries(v)
-                              .filter(
-                                ([role]) =>
-                                  scope === "superadmin" || role === "staff",
-                              )
-                              .map(([role, count]) => (
-                                <Chip
-                                  key={`${k}-${role}`}
-                                  label={`Users (${role}): ${count}`}
-                                  size="small"
-                                  sx={{ textTransform: "capitalize" }}
-                                />
-                              ));
-                          }
-                          return (
-                            scope === "superadmin" && (
-                              <Chip
-                                key={k}
-                                label={`${k.charAt(0).toUpperCase() + k.slice(1)
-                                  }: ${v}`}
-                                size="small"
-                                sx={{ textTransform: "capitalize" }}
+                          <DonutStat
+                            data={usersDonut}
+                            centerLabel={usersTotal}
+                            height={200}
+                          />
+                          <Stack
+                            direction="row"
+                            spacing={1}
+                            flexWrap="wrap"
+                            justifyContent="center"
+                            sx={{ mt: 1 }}
+                          >
+                            {roleKeys.map((role) => (
+                              <RenderTruncatedChip
+                                key={role}
+                                label={`${roleLabel(role)}: ${
+                                  Number(userTotals?.[role] || 0)
+                                }`}
                               />
-                            )
-                          );
-                        },
-                      )}
-                    </Box>
-                  </Box>
-                )}
-              </Paper>
+                            ))}
+                          </Stack>
+                        </AppCard>
+                      </Grid>
+                      <Grid item xs={12} md={4}>
+                        <AppCard
+                          sx={{
+                            p: 2,
+                            height: "100%",
+                            width: "100%",
+                            textAlign: "center",
+                          }}
+                        >
+                          <Typography variant="subtitle1" gutterBottom>
+                            {t.businesses}
+                          </Typography>
+                          <DonutStat
+                            data={businessesDonut.data}
+                            centerLabel={businessesDonut.total}
+                            height={200}
+                          />
+                        </AppCard>
+                      </Grid>
+                      <Grid item xs={12} md={4}>
+                        <AppCard
+                          sx={{
+                            p: 2,
+                            height: "100%",
+                            width: "100%",
+                            textAlign: "center",
+                          }}
+                        >
+                          <Typography variant="subtitle1" gutterBottom>
+                            {t.trash}
+                          </Typography>
+                          <DonutStat
+                            data={trashDonut}
+                            centerLabel={trashTotal}
+                            height={200}
+                          />
+                        </AppCard>
+                      </Grid>
+                    </Grid>
+                  );
+                })()}
+              </AppCard>
             )}
 
             {/* Module Cards */}
@@ -424,13 +612,22 @@ export default function HomePage() {
                 const trash = data.trash || {};
                 const totalEntries = Object.entries(totals);
                 const trashEntries = Object.entries(trash);
+                const totalSum = sumValues(totals);
+                const trashSum = sumValues(trash);
+                const totalsDonutInput = totalEntries.map(([k, v]) => ({
+                  name: k.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase()),
+                  value: Number(v || 0),
+                }));
+                const { data: donutData, total: donutTotal } = buildDonutData(
+                  totalsDonutInput,
+                  t.noTotals,
+                );
 
                 return (
                   <Grid item xs={12} sm={6} lg={4} key={mod.key}>
-                    <Paper
+                    <AppCard
                       sx={{
                         p: 3,
-                        mt: 4,
                         borderRadius: 3,
                         boxShadow: "0 6px 12px rgba(0,0,0,0.1)",
                         height: "100%",
@@ -441,7 +638,7 @@ export default function HomePage() {
                         ...wrapTextBox,
                       }}
                     >
-                      <Box>
+                      <Box sx={{ ...wrapTextBox }}>
                         {/* Title + Icon */}
                         <Box
                           sx={{
@@ -454,7 +651,10 @@ export default function HomePage() {
                           {getModuleIcon(mod.icon, {
                             sx: { fontSize: 40, color: mod.color },
                           })}
-                          <Typography variant="h6" sx={{ color: mod.color }}>
+                          <Typography
+                            variant="h6"
+                            sx={{ color: mod.color, ...wrapTextBox }}
+                          >
                             {mod.labels?.[language] ||
                               mod.labels?.en ||
                               mod.key}
@@ -465,57 +665,38 @@ export default function HomePage() {
                           variant="body2"
                           color="text.secondary"
                           gutterBottom
+                          sx={{ ...wrapTextBox, minHeight: 44 }}
                         >
                           {mod.descriptions?.[language] || mod.descriptions?.en}
                         </Typography>
+                        <Box sx={{ mt: 2 }}>
+                          <DonutStat
+                            data={donutData}
+                            centerLabel={donutTotal}
+                            height={160}
+                          />
+                        </Box>
                       </Box>
                       <Box>
                         <Divider sx={{ my: 2 }} />
 
                         {/* Totals */}
-                        <Grid container spacing={2} justifyContent={"center"}>
-                          {totalEntries.length > 0 ? (
-                            totalEntries.map(([k, v]) => (
-                              <Grid
-                                item
-                                xs={6}
+                        {totalEntries.length > 0 ? (
+                          <Stack direction="row" flexWrap="wrap" spacing={1}>
+                            {totalEntries.map(([k, v]) => (
+                              <RenderTruncatedChip
                                 key={k}
-                                justifyContent={"center"}
-                              >
-                                <Paper
-                                  sx={{
-                                    p: 2,
-                                    textAlign: "center",
-                                    bgcolor: mod.color,
-                                    color: "#fff",
-                                    borderRadius: 2,
-                                    minWidth: 80,
-                                    height: "100%",
-                                  }}
-                                >
-                                  <Typography variant="h4">{v}</Typography>
-                                  <Typography
-                                    variant="body2"
-                                    sx={{
-                                      fontSize: 10,
-                                      textTransform: "capitalize",
-                                    }}
-                                  >
-                                    {k.replace(/([A-Z])/g, " $1")}
-                                  </Typography>
-                                </Paper>
-                              </Grid>
-                            ))
-                          ) : (
-                            <Typography
-                              variant="body2"
-                              color="text.secondary"
-                              sx={{ ml: 2 }}
-                            >
-                              {t.noTotals}
-                            </Typography>
-                          )}
-                        </Grid>
+                                label={`${k
+                                  .replace(/([A-Z])/g, " $1")
+                                  .replace(/^./, (c) => c.toUpperCase())}: ${v}`}
+                              />
+                            ))}
+                          </Stack>
+                        ) : (
+                          <Typography variant="body2" color="text.secondary">
+                            {t.noTotals}
+                          </Typography>
+                        )}
 
                         {/* Trash */}
                         {trashEntries.length > 0 && (
@@ -543,20 +724,19 @@ export default function HomePage() {
                                 justifyContent: "flex-start",
                               }}
                             >
-                              {trashEntries.map(([k, v]) => (
-                                <Chip
-                                  key={k}
-                                  label={`${k.charAt(0).toUpperCase() + k.slice(1)
-                                    }: ${v}`}
-                                  size="small"
-                                  sx={{ textTransform: "capitalize" }}
-                                />
-                              ))}
+                          {trashEntries.map(([k, v]) => (
+                            <RenderTruncatedChip
+                              key={k}
+                              label={`${k
+                                .replace(/([A-Z])/g, " $1")
+                                .replace(/^./, (c) => c.toUpperCase())}: ${v}`}
+                            />
+                          ))}
                             </Box>
                           </>
                         )}
                       </Box>
-                    </Paper>
+                    </AppCard>
                   </Grid>
                 );
               })}
@@ -573,7 +753,7 @@ export default function HomePage() {
             setShowBusinessModal(false);
           }}
         />
-      </Box>
+      </Container>
     </Box>
   );
 }

@@ -4,7 +4,6 @@ import {
   Box,
   Typography,
   Grid,
-  Card,
   CardContent,
   CardActions,
   Avatar,
@@ -29,6 +28,10 @@ import {
   FormControl,
   Tabs,
   Tab,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  InputAdornment,
 } from "@mui/material";
 
 import { useEffect, useState } from "react";
@@ -54,6 +57,7 @@ import { wrapTextBox } from "@/utils/wrapTextStyles";
 import LoadingState from "@/components/LoadingState";
 import { updateBusiness } from "@/services/businessService";
 import slugify from "@/utils/slugify";
+import AppCard from "@/components/cards/AppCard";
 
 const translations = {
   en: {
@@ -116,6 +120,14 @@ const translations = {
     next: "Next",
     back: "Back",
     permissionsTab: "Permissions",
+    searchUsers: "Search users...",
+    superAdmins: "Super Admins",
+    admins: "Admins",
+    businesses: "Businesses",
+    unassigned: "Unassigned",
+    desk: "Desk",
+    door: "Door",
+    businessLabel: "Business",
   },
   ar: {
     title: "المستخدمون",
@@ -177,6 +189,14 @@ const translations = {
     next: "التالي",
     back: "رجوع",
     permissionsTab: "الصلاحيات",
+    searchUsers: "ابحث عن المستخدمين...",
+    superAdmins: "المشرفون العامون",
+    admins: "المسؤولون",
+    businesses: "الشركات",
+    unassigned: "غير مُعيّن",
+    desk: "مكتب",
+    door: "باب",
+    businessLabel: "شركة",
   },
 };
 
@@ -200,6 +220,9 @@ export default function UsersPage() {
   const [isPageLoading, setIsPageLoading] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [activeTab, setActiveTab] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
+  const isEditingSuperAdmin =
+    isEditMode && selectedUser?.role === "superadmin";
 
   const defaultForm = {
     name: "",
@@ -255,12 +278,16 @@ export default function UsersPage() {
     }
 
     const groups = {
+      "Super Admins": [],
       Admins: [],
       Unassigned: [],
     };
 
     for (const user of rawUsers) {
-      if (user.role === "superadmin") continue;
+      if (user.role === "superadmin") {
+        groups["Super Admins"].push(user);
+        continue;
+      }
       if (user.role === "admin") {
         groups["Admins"].push(user);
       } else if (!user.business) {
@@ -273,14 +300,20 @@ export default function UsersPage() {
     }
 
     const orderedGroups = {};
-    if (
-      groups["Admins"].length &&
-      currentUser?.role === "superadmin"
-    ) {
-      orderedGroups["Admins"] = groups["Admins"];
+    if (currentUser?.role === "superadmin") {
+      if (groups["Super Admins"].length) {
+        orderedGroups["Super Admins"] = groups["Super Admins"];
+      }
+      if (groups["Admins"].length) {
+        orderedGroups["Admins"] = groups["Admins"];
+      }
     }
     for (const [key, val] of Object.entries(groups)) {
-      if (key !== "Admins" && key !== "Unassigned") {
+      if (
+        key !== "Super Admins" &&
+        key !== "Admins" &&
+        key !== "Unassigned"
+      ) {
         orderedGroups[key] = val;
       }
     }
@@ -586,12 +619,21 @@ export default function UsersPage() {
     setDeleteConfirm(false);
   };
 
-  const renderUserCard = (user, isSelf = false) => (
+  const renderUserCard = (user, isSelf = false) => {
+    const canEditUser =
+      currentUser?.role === "superadmin" || user.role !== "superadmin";
+    const canDeleteUser =
+      !isSelf &&
+      currentUser?.role !== "staff" &&
+      user.role !== "superadmin" &&
+      (user.role !== "admin" || currentUser?.role === "superadmin");
+
+    return (
     <Box
       key={user._id || "self"}
       sx={{ width: { xs: "100%", sm: 300 }, flexShrink: 0 }}
     >
-      <Card
+      <AppCard
         elevation={3}
         sx={{
           p: 0,
@@ -681,14 +723,15 @@ export default function UsersPage() {
           sx={{ px: 2, pb: 2, pt: 0, justifyContent: "flex-end", mt: "auto" }}
         >
           <Tooltip title={t.edit}>
-            <IconButton color="primary" onClick={() => handleOpenEdit(user)}>
+            <IconButton
+              color="primary"
+              onClick={() => handleOpenEdit(user)}
+              disabled={!canEditUser}
+            >
               <ICONS.edit />
             </IconButton>
           </Tooltip>
-          {!isSelf &&
-            currentUser?.role !== "staff" &&
-            user.role !== "admin" &&
-            user.role !== "superadmin" && (
+          {canDeleteUser && (
               <Tooltip title={t.delete}>
                 <IconButton
                   color="error"
@@ -702,9 +745,46 @@ export default function UsersPage() {
               </Tooltip>
             )}
         </CardActions>
-      </Card>
+      </AppCard>
     </Box>
+    );
+  };
+
+  const normalizedSearch = searchQuery.trim().toLowerCase();
+  const filteredGroupedUsers = normalizedSearch
+    ? Object.fromEntries(
+        Object.entries(groupedUsers)
+          .map(([group, users]) => {
+            const filteredUsers = users.filter((user) => {
+              const fields = [
+                user.name,
+                user.email,
+                user.role,
+                user.staffType,
+                user.business?.name,
+              ]
+                .filter(Boolean)
+                .join(" ")
+                .toLowerCase();
+              return fields.includes(normalizedSearch);
+            });
+            return [group, filteredUsers];
+          })
+          .filter(([, users]) => users.length > 0),
+      )
+    : groupedUsers;
+
+  const getGroupCount = (name) => filteredGroupedUsers?.[name]?.length || 0;
+  const businessGroupNames = Object.keys(filteredGroupedUsers || {}).filter(
+    (group) => !["Super Admins", "Admins", "Unassigned"].includes(group),
   );
+  const businessGroupsCount = businessGroupNames.length;
+  const getGroupLabel = (group) => {
+    if (group === "Super Admins") return t.superAdmins;
+    if (group === "Admins") return t.admins;
+    if (group === "Unassigned") return t.unassigned;
+    return group;
+  };
 
   return (
     <Container dir={dir}>
@@ -732,6 +812,65 @@ export default function UsersPage() {
             {t.subtitle}
           </Typography>
         </Box>
+        <Stack
+          direction="row"
+          spacing={1}
+          flexWrap="wrap"
+          sx={{ gap: 1, width: { xs: "100%", sm: "auto" } }}
+        >
+          {getGroupCount("Super Admins") > 0 && (
+            <Chip
+              label={`${t.superAdmins}: ${getGroupCount("Super Admins")}`}
+              color="error"
+              size="small"
+              variant="outlined"
+              sx={{ ml: dir === "rtl" ? 0.5 : 0, mr: dir === "rtl" ? 0 : 0.5 }}
+            />
+          )}
+          {getGroupCount("Admins") > 0 && (
+            <Chip
+              label={`${t.admins}: ${getGroupCount("Admins")}`}
+              color="primary"
+              size="small"
+              variant="outlined"
+              sx={{ ml: dir === "rtl" ? 0.5 : 0, mr: dir === "rtl" ? 0 : 0.5 }}
+            />
+          )}
+          {businessGroupsCount > 0 && (
+            <Chip
+              label={`${t.businesses}: ${businessGroupsCount}`}
+              color="success"
+              size="small"
+              variant="outlined"
+              sx={{ ml: dir === "rtl" ? 0.5 : 0, mr: dir === "rtl" ? 0 : 0.5 }}
+            />
+          )}
+          {getGroupCount("Unassigned") > 0 && (
+            <Chip
+              label={`${t.unassigned}: ${getGroupCount("Unassigned")}`}
+              color="default"
+              size="small"
+              variant="outlined"
+              sx={{ ml: dir === "rtl" ? 0.5 : 0, mr: dir === "rtl" ? 0 : 0.5 }}
+            />
+          )}
+        </Stack>
+        <TextField
+          size="small"
+          placeholder={t.searchUsers}
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          sx={{
+            minWidth: { xs: "100%", sm: 260, md: 320 },
+          }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <ICONS.search sx={{ opacity: 0.7 }} />
+              </InputAdornment>
+            ),
+          }}
+        />
         <Button
           variant="contained"
           sx={{
@@ -748,19 +887,141 @@ export default function UsersPage() {
       {isPageLoading ? (
         <LoadingState />
       ) : (
-        Object.entries(groupedUsers).map(([group, users]) => (
-          <Box key={group} sx={{ mb: 4 }}>
-            <Typography variant="h6" gutterBottom>
-              {group}
-            </Typography>
+        Object.entries(filteredGroupedUsers).map(([group, users]) => {
+          const isBusinessGroup =
+            !["Super Admins", "Admins", "Unassigned"].includes(group);
+
+          const groupContent = (
             <Grid container spacing={3} justifyContent="center">
               {isBusinessUser &&
                 group === currentUser.business.name &&
                 renderUserCard(currentUser, true)}
               {users.map((user) => renderUserCard(user))}
             </Grid>
+          );
+
+          if (isBusinessGroup) {
+            const staffCount = users.filter((u) => u.role === "staff").length;
+            const deskCount = users.filter(
+              (u) => u.role === "staff" && u.staffType === "desk",
+            ).length;
+            const doorCount = users.filter(
+              (u) => u.role === "staff" && u.staffType === "door",
+            ).length;
+            const businessCount = users.filter((u) => u.role === "business")
+              .length;
+            return (
+              <Accordion
+                key={group}
+                disableGutters
+                elevation={0}
+                sx={{
+                  mb: 2,
+                  borderRadius: 3,
+                  border: "1px solid",
+                  borderColor: "divider",
+                  overflow: "hidden",
+                  bgcolor: "background.paper",
+                  boxShadow: "0 6px 18px rgba(0,0,0,0.06)",
+                  "&:before": { display: "none" },
+                  "&.Mui-expanded": {
+                    boxShadow: "0 10px 26px rgba(0,0,0,0.10)",
+                  },
+                }}
+              >
+                <AccordionSummary
+                  expandIcon={<ICONS.down />}
+                  sx={{
+                    px: 2.5,
+                    py: 0.75,
+                    bgcolor: "rgba(0, 119, 182, 0.06)",
+                    "&.Mui-expanded": { minHeight: 52 },
+                    "& .MuiAccordionSummary-content": {
+                      my: 1,
+                      alignItems: "center",
+                      gap: 1,
+                      justifyContent: "space-between",
+                    },
+                  }}
+                >
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    alignItems="center"
+                    sx={{ minWidth: 0 }}
+                  >
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                      {group}
+                    </Typography>
+                    <Chip
+                      label={`${users.length}`}
+                      size="small"
+                      variant="outlined"
+                      sx={{
+                        ml: dir === "rtl" ? 0.75 : 0,
+                        mr: dir === "rtl" ? 0 : 0.75,
+                      }}
+                    />
+                  </Stack>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <Chip
+                      label={`${t.desk}: ${deskCount}`}
+                      size="small"
+                      variant="outlined"
+                      color="info"
+                      sx={{
+                        ml: dir === "rtl" ? 0.75 : 0,
+                        mr: dir === "rtl" ? 0 : 0.75,
+                      }}
+                    />
+                    <Chip
+                      label={`${t.door}: ${doorCount}`}
+                      size="small"
+                      variant="outlined"
+                      color="warning"
+                      sx={{
+                        ml: dir === "rtl" ? 0.75 : 0,
+                        mr: dir === "rtl" ? 0 : 0.75,
+                      }}
+                    />
+                    <Chip
+                      label={`${t.businessLabel}: ${businessCount}`}
+                      size="small"
+                      variant="outlined"
+                      color="success"
+                      sx={{
+                        ml: dir === "rtl" ? 0.75 : 0,
+                        mr: dir === "rtl" ? 0 : 0.75,
+                      }}
+                    />
+                  </Stack>
+                </AccordionSummary>
+                <AccordionDetails sx={{ px: 2.5, pb: 2.5, pt: 1.5 }}>
+                  {groupContent}
+                </AccordionDetails>
+              </Accordion>
+            );
+          }
+
+          return (
+            <Box key={group} sx={{ mb: 4 }}>
+            <Stack
+              direction="row"
+              spacing={1}
+              alignItems="center"
+              sx={{ mb: 1 }}
+            >
+              <Typography variant="h6">{getGroupLabel(group)}</Typography>
+              <Chip
+                label={`${users.length}`}
+                size="small"
+                variant="outlined"
+              />
+            </Stack>
+            {groupContent}
           </Box>
-        ))
+        );
+      })
       )}
 
       <Dialog
@@ -850,7 +1111,8 @@ export default function UsersPage() {
                   )}
                   {(form.userType === "staff" ||
                     form.userType === "admin" ||
-                    form.userType === "business") && (
+                    form.userType === "business") &&
+                    !isEditingSuperAdmin && (
                       <Tab label={t.permissionsTab} />
                     )}
                 </Tabs>
@@ -1122,9 +1384,10 @@ export default function UsersPage() {
             </Box>
           )}
 
-          {((form.userType === "staff" && activeTab === 1) ||
-            (form.userType === "admin" && activeTab === 1) ||
-            (form.userType === "business" && activeTab === 2)) && (
+          {!isEditingSuperAdmin &&
+            ((form.userType === "staff" && activeTab === 1) ||
+              (form.userType === "admin" && activeTab === 1) ||
+              (form.userType === "business" && activeTab === 2)) && (
               <Box sx={{ mt: 2 }}>
                 <Typography variant="subtitle1" gutterBottom textAlign={align}>
                   {t.permissions}
