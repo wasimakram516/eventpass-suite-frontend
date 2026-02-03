@@ -20,7 +20,7 @@ export default function CmsLayout({ children }) {
         user.role !== "superadmin" &&
         user.role !== "business")
     ) {
-      router.replace("/auth/login"); 
+      router.replace("/auth/login");
     }
   }, [loading, user, router]);
 
