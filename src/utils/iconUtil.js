@@ -1,4 +1,4 @@
-// General UI / Navigation Icons
+// Core UI / Navigation
 import {
   Home as HomeIcon,
   Add as AddIcon,
@@ -11,7 +11,6 @@ import {
   Save as SaveIcon,
   Start as StartIcon,
   Stop as StopIcon,
-  Stop as ResumeIcon,
   PlayArrow as PlayArrowIcon,
   Pause as PauseIcon,
   History as HistoryIcon,
@@ -33,10 +32,10 @@ import {
   Language as LanguageIcon,
   RestoreFromTrash as RestoreIcon,
   Badge as BadgeIcon,
-  Chat,
+  ExpandMore as ExpandMoreIcon,
 } from "@mui/icons-material";
 
-// Social Media Icons
+// Social Media
 import {
   Facebook as FacebookIcon,
   Instagram as InstagramIcon,
@@ -45,7 +44,7 @@ import {
   WhatsApp as WhatsAppIcon,
 } from "@mui/icons-material";
 
-// Outlined / extras we need across pages
+// Outlined / Extras
 import {
   PersonOutline as PersonOutlineIcon,
   EmailOutlined as EmailOutlinedIcon,
@@ -66,18 +65,24 @@ import {
   CheckCircleOutline as CheckCircleOutlineIcon,
 } from "@mui/icons-material";
 
-// Authentication Icons
+// Authentication
 import {
   Logout as LogoutIcon,
   Login as LoginIcon,
   PersonAdd as RegisterIcon,
 } from "@mui/icons-material";
 
-// File Actions
+// File & Media
 import {
   FileDownload as FileDownloadIcon,
   FileUpload as FileUploadIcon,
   PictureAsPdf as PictureAsPdfIcon,
+  Image as ImageIcon,
+  Movie as VideoIcon,
+  InsertDriveFile as FileIcon,
+  PhotoLibrary as PhotoLibraryIcon,
+  CameraAlt as CameraIcon,
+  Wallpaper as WallpaperIcon,
 } from "@mui/icons-material";
 
 // Time & Location
@@ -88,7 +93,7 @@ import {
   TableRestaurant as TableRestaurantIcon,
 } from "@mui/icons-material";
 
-// Domain-Specific / App Functionality
+// Domain-Specific / App Features
 import {
   AppRegistration as AppRegistrationIcon,
   QrCodeScanner as QrCodeScannerIcon,
@@ -100,10 +105,6 @@ import {
   ContentCopy as ContentCopyIcon,
   EmojiEvents as EmojiEventsIcon,
   SportsEsports as SportsEsportsIcon,
-  Image as ImageIcon,
-  PictureAsPdf as PdfIcon,
-  Movie as VideoIcon,
-  InsertDriveFile as FileIcon,
   Assignment as AssignmentIcon,
   HowToReg as HowToRegIcon,
   QrCode as QrCodeIcon,
@@ -111,10 +112,11 @@ import {
   FlashOn as FlashOnIcon,
   Print as PrintIcon,
   Key as KeyIcon,
-  GridView as GridViewIcon
+  GridView as GridViewIcon,
+  Insights as InsightsIcon,
 } from "@mui/icons-material";
 
-// Screen Sharing
+// Screen Sharing / Devices
 import {
   ScreenShare as ScreenShareIcon,
   DesktopWindows as DesktopWindowsIcon,
@@ -133,7 +135,7 @@ import {
   SettingsInputComponent as SettingsInputComponentIcon,
 } from "@mui/icons-material";
 
-// Miscellaneous Icons
+// Miscellaneous
 import {
   People as PeopleIcon,
   Forum as ForumIcon,
@@ -142,10 +144,7 @@ import {
   Phone as PhoneIcon,
   Email as EmailIcon,
   SearchOff as EmptyIcon,
-  Wallpaper as WallpaperIcon,
   Clear as ClearIcon,
-  PhotoLibrary as PhotoLibraryIcon,
-  CameraAlt as CameraIcon,
   Refresh as RefreshIcon,
   Send as SendIcon,
   Help as HelpIcon,
@@ -153,155 +152,155 @@ import {
   Description as DescriptionIcon,
   MeetingRoom as DoorIcon,
   Desk as DeskIcon,
-  Insights as InsightsIcon,
-  CloudUpload as cloudIcon,
-  Sync as syncIcon,
-  ReceiptLong as listIcon,
-  Chat as chatIcon,
+  CloudUpload as CloudIcon,
+  Sync as SyncIcon,
+  ReceiptLong as ListIcon,
+  Chat as ChatIcon,
 } from "@mui/icons-material";
 
 const ICONS = {
-  // General UI / Navigation
-  list: listIcon,
-  sync: syncIcon,
-  cloud: cloudIcon,
+  // Core UI / Navigation
+  add: AddIcon,
+  back: ArrowBackIcon,
+  badge: BadgeIcon,
+  cancel: CancelIcon,
+  check: CheckIcon,
+  close: CloseIcon,
+  create: AddIcon,
+  delete: DeleteIcon,
+  down: ExpandMoreIcon,
+  edit: EditIcon,
+  filter: FilterIcon,
+  form: FormIcon,
+  fullscreen: FullscreenIcon,
+  hide: VisibilityOffIcon,
+  history: HistoryIcon,
+  home: HomeIcon,
+  Language: LanguageIcon,
+  list: ListIcon,
+  menu: MenuIcon,
+  module: ModuleIcon,
+  next: ArrowForwardIcon,
+  pause: PauseIcon,
+  play: PlayArrowIcon,
+  leaderboard: LeaderboardIcon,
+  replay: ReplayIcon,
+  results: LeaderboardIcon,
+  resume: StopIcon,
+  restore: RestoreIcon,
+  save: SaveIcon,
+  search: SearchIcon,
+  settings: SettingsIcon,
+  share: ShareIcon,
   star: StarIcon,
   starBorder: StarBorderIcon,
-  form: FormIcon,
-  home: HomeIcon,
-  add: AddIcon,
-  create: AddIcon,
-  edit: EditIcon,
-  delete: DeleteIcon,
-  share: ShareIcon,
-  close: CloseIcon,
-  cancel: CancelIcon,
   start: StartIcon,
   stop: StopIcon,
-  play: PlayArrowIcon,
-  pause: PauseIcon,
-  resume: ResumeIcon,
-  history: HistoryIcon,
-  settings: SettingsIcon,
-  filter: FilterIcon,
-  check: CheckIcon,
-  save: SaveIcon,
-  back: ArrowBackIcon,
-  next: ArrowForwardIcon,
+  sync: SyncIcon,
   view: VisibilityIcon,
-  hide: VisibilityOffIcon,
-  search: SearchIcon,
-  replay: ReplayIcon,
-  leaderboard: LeaderboardIcon,
-  results: LeaderboardIcon,
-  module: ModuleIcon,
-  menu: MenuIcon,
-  fullscreen: FullscreenIcon,
-  Language: LanguageIcon,
-  restore: RestoreIcon,
-  badge: BadgeIcon,
-  door: DoorIcon,
-  desk: DeskIcon,
+
+  // Status & Feedback
+  checkCircle: CheckCircleIcon,
+  checkCircleOutline: CheckCircleOutlineIcon,
+  errorOutline: ErrorOutlineIcon,
+  info: InfoIcon,
+  warning: WarningIcon,
+
+  // Authentication
+  login: LoginIcon,
+  logout: LogoutIcon,
+  register: RegisterIcon,
+
+  // File & Media
+  camera: CameraIcon,
+  download: FileDownloadIcon,
+  files: FileIcon,
+  image: ImageIcon,
+  library: PhotoLibraryIcon,
+  pdf: PictureAsPdfIcon,
+  upload: FileUploadIcon,
+  video: VideoIcon,
+  wallpaper: WallpaperIcon,
+
+  // Time & Location
+  diningTable: TableRestaurantIcon,
+  event: EventIcon,
+  location: LocationIcon,
+  time: AccessTimeIcon,
+
+  // Domain-Specific / App Features
+  adminPanel: AdminPanelSettingsIcon,
+  appRegister: AppRegistrationIcon,
+  assignment: AssignmentIcon,
+  business: BusinessIcon,
+  checkin: HowToRegIcon,
+  copy: ContentCopyIcon,
+  flash: FlashOnIcon,
+  games: SportsEsportsIcon,
+  grid: GridViewIcon,
+  insights: InsightsIcon,
+  key: KeyIcon,
+  peopleAlt: PeopleAltIcon,
+  person: PersonIcon,
+  poll: PollIcon,
+  print: PrintIcon,
+  qrCodeScanner: QrCodeScannerIcon,
+  qrcode: QrCodeIcon,
+  quiz: QuizIcon,
+  trophy: EmojiEventsIcon,
+
   // Social Media
   facebook: FacebookIcon,
   instagram: InstagramIcon,
   linkedin: LinkedInIcon,
   twitter: TwitterIcon,
   whatsapp: WhatsAppIcon,
-  chat: chatIcon,
 
-  // Outlined / extras
-  personOutline: PersonOutlineIcon,
-  emailOutline: EmailOutlinedIcon,
-  apartment: ApartmentOutlinedIcon,
-  timeOutline: QueryBuilderOutlinedIcon,
-  vpnKey: VpnKeyOutlinedIcon,
-  verified: VerifiedOutlinedIcon,
-  assignmentOutline: AssignmentOutlinedIcon,
-  eventOutline: EventOutlinedIcon,
-
-  // Auth
-  login: LoginIcon,
-  logout: LogoutIcon,
-  register: RegisterIcon,
-
-  // File Actions
-  download: FileDownloadIcon,
-  upload: FileUploadIcon,
-  pdf: PictureAsPdfIcon,
-
-  // Status & Feedback
-  info: InfoIcon,
-  warning: WarningIcon,
-  errorOutline: ErrorOutlineIcon,
-  checkCircle: CheckCircleIcon,
-  checkCircleOutline: CheckCircleOutlineIcon,
-
-  // Time & Location
-  location: LocationIcon,
-  event: EventIcon,
-  time: AccessTimeIcon,
-  diningTable: TableRestaurantIcon,
-
-  // Domain-Specific / App Features
-  appRegister: AppRegistrationIcon,
-  qrCodeScanner: QrCodeScannerIcon,
-  business: BusinessIcon,
-  person: PersonIcon,
-  peopleAlt: PeopleAltIcon,
-  quiz: QuizIcon,
-  poll: PollIcon,
-  copy: ContentCopyIcon,
-  trophy: EmojiEventsIcon,
-  games: SportsEsportsIcon,
-  image: ImageIcon,
-  pdf: PdfIcon,
-  video: VideoIcon,
-  files: FileIcon,
-  assignment: AssignmentIcon,
-  checkin: HowToRegIcon,
-  qrcode: QrCodeIcon,
-  screenShare: ScreenShareIcon,
-  adminPanel: AdminPanelSettingsIcon,
-  flash: FlashOnIcon,
-  print: PrintIcon,
-  key: KeyIcon,
-  grid: GridViewIcon,
-
-  // Screen Sharing / Device Icons
-  desktop: DesktopWindowsIcon,
-  devices: DevicesIcon,
-  monitor: MonitorIcon,
-  tv: TvIcon,
-  smartDisplay: SmartDisplayIcon,
-  tablet: TabletMacIcon,
-  laptop: LaptopIcon,
-  phoneAndroid: PhoneAndroidIcon,
-  phoneIphone: PhoneIphoneIcon,
+  // Screen Sharing / Devices
   cast: CastIcon,
   connectedTv: ConnectedTvIcon,
+  desktop: DesktopWindowsIcon,
   developerBoard: DeveloperBoardIcon,
-  settingsInputHdmi: SettingsInputHdmiIcon,
+  devices: DevicesIcon,
+  laptop: LaptopIcon,
+  monitor: MonitorIcon,
+  phoneAndroid: PhoneAndroidIcon,
+  phoneIphone: PhoneIphoneIcon,
+  screenShare: ScreenShareIcon,
   settingsInputComponent: SettingsInputComponentIcon,
+  settingsInputHdmi: SettingsInputHdmiIcon,
+  smartDisplay: SmartDisplayIcon,
+  tablet: TabletMacIcon,
+  tv: TvIcon,
+
+  // Outlined / Extras
+  apartment: ApartmentOutlinedIcon,
+  assignmentOutline: AssignmentOutlinedIcon,
+  emailOutline: EmailOutlinedIcon,
+  eventOutline: EventOutlinedIcon,
+  personOutline: PersonOutlineIcon,
+  timeOutline: QueryBuilderOutlinedIcon,
+  verified: VerifiedOutlinedIcon,
+  vpnKey: VpnKeyOutlinedIcon,
 
   // Miscellaneous
-  people: PeopleIcon,
-  forum: ForumIcon,
-  thumb: ThumbUpIcon,
-  thumbOff: ThumbUpOffAltIcon,
-  phone: PhoneIcon,
+  chat: ChatIcon,
+  clear: ClearIcon,
+  cloud: CloudIcon,
+  description: DescriptionIcon,
+  desk: DeskIcon,
+  door: DoorIcon,
   email: EmailIcon,
   empty: EmptyIcon,
-  wallpaper: WallpaperIcon,
-  clear: ClearIcon,
-  library: PhotoLibraryIcon,
-  camera: CameraIcon,
+  forum: ForumIcon,
+  group: GroupIcon,
+  help: HelpIcon,
+  people: PeopleIcon,
+  phone: PhoneIcon,
   refresh: RefreshIcon,
   send: SendIcon,
-  help: HelpIcon,
-  group: GroupIcon,
-  description: DescriptionIcon,
-  insights: InsightsIcon,
+  thumb: ThumbUpIcon,
+  thumbOff: ThumbUpOffAltIcon,
 };
 
 export default ICONS;

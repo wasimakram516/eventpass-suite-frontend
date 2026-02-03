@@ -5,7 +5,6 @@ import {
   Box,
   Typography,
   Grid,
-  Card,
   CardActions,
   Avatar,
   IconButton,
@@ -49,6 +48,7 @@ import { getModuleIcon } from "@/utils/iconMapper";
 import { getModules } from "@/services/moduleService";
 import LoadingState from "@/components/LoadingState";
 import { pickFullName, pickEmail } from "@/utils/customFieldUtils";
+import AppCard from "@/components/cards/AppCard";
 const translations = {
   en: {
     title: "Recycle Bin",
@@ -188,6 +188,21 @@ export default function TrashPage() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (
+      (currentUser?.role === "admin" || currentUser?.role === "superadmin")
+        ? deletedByFilter !== "__ALL__"
+        : false
+    ) {
+      count += 1;
+    }
+    if (moduleFilter !== "__ALL__") count += 1;
+    if (dateFrom) count += 1;
+    if (dateTo) count += 1;
+    if (limit !== 5) count += 1;
+    return count;
+  }, [deletedByFilter, moduleFilter, dateFrom, dateTo, limit, currentUser]);
 
   const filteredTrashData = useMemo(() => {
     if (!trashData || !currentUser) return trashData;
@@ -788,29 +803,26 @@ export default function TrashPage() {
             {Object.entries(filteredModuleCounts)
               .filter(([, count]) => count > 0)
               .map(([module, count]) => (
-                <Card
+                <AppCard
                   key={module}
-                  elevation={2}
                   sx={{
                     flex: "0 0 auto",
-                    minWidth: 160,
-                    p: 2,
-                    textAlign: "center",
-                    borderRadius: 2,
+                    minWidth: 180,
+                    p: 1.5,
+                    borderRadius: 2.5,
+                    border: "1px solid",
+                    borderColor: "divider",
                     backgroundColor: "background.paper",
-                    transition: "all 0.2s ease-in-out",
-                    "&:hover": {
-                      elevation: 4,
-                      transform: "translateY(-2px)",
-                    },
+                    boxShadow: "0 4px 14px rgba(0,0,0,0.06)",
                   }}
                 >
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                     <Avatar
                       sx={{
                         width: 40,
                         height: 40,
-                        bgcolor: "primary.main",
+                        bgcolor: "rgba(0, 119, 182, 0.12)",
+                        color: "#0077b6",
                         fontSize: "0.875rem",
                       }}
                     >
@@ -828,40 +840,28 @@ export default function TrashPage() {
                         alignItems: "flex-start",
                       }}
                     >
-                      <Typography
-                        variant="h6"
-                        fontWeight="bold"
-                        color="text.primary"
-                      >
+                      <Typography variant="h6" sx={{ lineHeight: 1 }}>
                         {count}
                       </Typography>
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        sx={{ textTransform: "capitalize", lineHeight: 1 }}
-                      >
-                        {module}
+                      <Typography variant="caption" color="text.secondary">
+                        {getModuleDisplayName(module)}
                       </Typography>
                     </Box>
                   </Box>
-                </Card>
+                </AppCard>
               ))}
           </Box>
         </Box>
       )}
 
-      {/* Filters Bar */}
+      {/* Filters Toolbar (Header) */}
       <Box
         sx={{
           mb: 3,
-          p: 2,
-          borderRadius: 2,
-          backgroundColor: "background.paper",
-          boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
           display: "flex",
-          flexWrap: "wrap",
+          flexDirection: { xs: "column", sm: "row" },
+          alignItems: { xs: "stretch", sm: "center" },
           gap: 2,
-          alignItems: "center",
         }}
       >
         {/* Search */}
@@ -882,127 +882,31 @@ export default function TrashPage() {
         <Button
           variant="contained"
           startIcon={<ICONS.filter />}
+          endIcon={
+            activeFilterCount > 0 ? (
+              <Box
+                component="span"
+                sx={{
+                  ml: dir === "rtl" ? 0 : 1,
+                  mr: dir === "rtl" ? 1 : 0,
+                  px: 0.75,
+                  py: 0.15,
+                  borderRadius: 999,
+                  fontSize: "0.75rem",
+                  bgcolor: "rgba(255,255,255,0.2)",
+                }}
+              >
+                {activeFilterCount}
+              </Box>
+            ) : null
+          }
           sx={{
-            display: { xs: "flex", sm: "none" },
-            ...getStartIconSpacing(dir),
+            ...getStartIconSpacing(dir, { includeEnd: true, endSpacing: "0.35rem" }),
+            width: { xs: "100%", sm: "auto" },
           }}
           onClick={() => setFilterOpen(true)}
         >
           {t.filters}
-        </Button>
-
-        {/* Deleted By  */}
-        {(currentUser?.role === "admin" || currentUser?.role === "superadmin") && (
-          <FormControl
-            size="small"
-            sx={{ minWidth: 180, display: { xs: "none", sm: "flex" } }}
-          >
-            <InputLabel>{t.deletedByLabel}</InputLabel>
-            <Select
-              value={deletedByFilter}
-              label={t.deletedByLabel}
-              onChange={(e) => setDeletedByFilter(e.target.value)}
-            >
-              <MenuItem value="__ALL__">{t.all}</MenuItem>
-              {deletedByOptions.map(
-                (id) =>
-                  id !== "__ALL__" && (
-                    <MenuItem key={id} value={id}>
-                      {userMap[id] || id}
-                    </MenuItem>
-                  )
-              )}
-            </Select>
-          </FormControl>
-        )}
-
-        {/* Module */}
-        <FormControl
-          size="small"
-          sx={{ minWidth: 180, display: { xs: "none", sm: "flex" } }}
-        >
-          <InputLabel>{t.moduleLabel}</InputLabel>
-          <Select
-            value={moduleFilter}
-            label={t.moduleLabel}
-            onChange={(e) => setModuleFilter(e.target.value)}
-          >
-            <MenuItem value="__ALL__">{t.all}</MenuItem>
-            {allAvailableModules.map((m) => (
-              <MenuItem key={m} value={m}>
-                {getModuleDisplayName(m)}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-
-        {/* Date Range (single control with 2 inputs side by side) */}
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            border: "1px solid",
-            borderColor: "divider",
-            borderRadius: 1,
-            px: 1,
-            py: 0.5,
-            minWidth: 250,
-            display: { xs: "none", sm: "flex" },
-          }}
-        >
-          <TextField
-            type="date"
-            size="small"
-            value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
-            InputLabelProps={{ shrink: true }}
-            sx={{ flex: 1 }}
-          />
-          <Typography variant="body2" color="text.secondary" sx={{ mx: 1 }}>
-            —
-          </Typography>
-          <TextField
-            type="date"
-            size="small"
-            value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
-            InputLabelProps={{ shrink: true }}
-            sx={{ flex: 1 }}
-          />
-        </Box>
-
-        {/* Records per page */}
-        <FormControl size="small" sx={{ minWidth: 150 }}>
-          <InputLabel>{t.recordsPerPage}</InputLabel>
-          <Select
-            value={limit}
-            label={t.recordsPerPage}
-            onChange={(e) => handleLimitChange(Number(e.target.value))}
-          >
-            {[5, 10, 20, 50].map((n) => (
-              <MenuItem key={n} value={n}>
-                {n}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-
-        {/* Clear Filters Button */}
-        <Button
-          variant="outlined"
-          color="secondary"
-          startIcon={<ICONS.clear />}
-          onClick={handleClearAllFilters}
-          sx={{ display: { xs: "none", sm: "flex" } }}
-          disabled={
-            !search &&
-            ((currentUser?.role === "admin" || currentUser?.role === "superadmin") ? deletedByFilter === "__ALL__" : true) &&
-            moduleFilter === "__ALL__" &&
-            !dateFrom &&
-            !dateTo
-          }
-        >
-          {t.clearFilters}
         </Button>
       </Box>
 
@@ -1101,7 +1005,12 @@ export default function TrashPage() {
                       </Button>
                     </Stack>
                   </Stack>
-                  <Grid container spacing={3} justifyContent="center">
+                  <Grid
+                    container
+                    rowSpacing={{ xs: 2, md: 3 }}
+                    columnSpacing={{ xs: 0, md: 3 }}
+                    justifyContent="center"
+                  >
                     {filtered.map((item) => (
                       <Grid
                         item
@@ -1111,13 +1020,13 @@ export default function TrashPage() {
                         key={item._id}
                         sx={{
                           width: { xs: "100%", md: "auto" },
+                          px: { xs: 0 },
                         }}
                       >
-                        <Card
-                          elevation={3}
+                        <AppCard
                           sx={{
                             p: 2,
-                            borderRadius: 2,
+                            width: "100%",
                             height: "100%",
                             display: "flex",
                             flexDirection: "column",
@@ -1231,7 +1140,7 @@ export default function TrashPage() {
                               </IconButton>
                             </Tooltip>
                           </CardActions>
-                        </Card>
+                        </AppCard>
                       </Grid>
                     ))}
                   </Grid>
@@ -1308,6 +1217,21 @@ export default function TrashPage() {
             onChange={(e) => setDateTo(e.target.value)}
             InputLabelProps={{ shrink: true }}
           />
+
+          <FormControl size="small">
+            <InputLabel>{t.recordsPerPage}</InputLabel>
+            <Select
+              value={limit}
+              label={t.recordsPerPage}
+              onChange={(e) => handleLimitChange(Number(e.target.value))}
+            >
+              {[5, 10, 20, 50].map((n) => (
+                <MenuItem key={n} value={n}>
+                  {n}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
 
           {/* Clear Filters Button - Mobile */}
           <Button

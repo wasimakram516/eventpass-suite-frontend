@@ -4,7 +4,6 @@ import {
   Box,
   Typography,
   Grid,
-  Card,
   CardActions,
   Avatar,
   Button,
@@ -38,6 +37,7 @@ import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import ICONS from "@/utils/iconUtil";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import { wrapTextBox } from "@/utils/wrapTextStyles";
+import AppCard from "@/components/cards/AppCard";
 
 const translations = {
   en: {
@@ -327,7 +327,12 @@ export default function BusinessDetailsPage() {
         /* ELSE show the grid of businesses
         - admin: all businesses
         - business user: all businesses they own */
-        <Grid container spacing={2} justifyContent="center">
+        <Grid
+          container
+          rowSpacing={{ xs: 2, sm: 2 }}
+          columnSpacing={{ xs: 0, sm: 2 }}
+          justifyContent="center"
+        >
           {businesses.map((biz) => (
             <Grid
               item
@@ -337,20 +342,17 @@ export default function BusinessDetailsPage() {
               key={biz._id}
               sx={{
                 display: "flex",
-                justifyContent: { xs: "stretch", sm: "center" },
-                width: { xs: "100%", sm: "auto" },
+                justifyContent: "stretch",
+                px: { xs: 0 },
               }}
             >
-              <Card
-                elevation={3}
+              <AppCard
                 sx={{
                   p: 2,
-                  borderRadius: 2,
-                  width: { xs: "100%", sm: 280, md: 300 },
-                  maxWidth: { xs: "100%", sm: 280, md: 300 },
+                  width: "100%",
                   height: "100%",
-                  position: "relative",
-                  pb: 6,
+                  display: "flex",
+                  flexDirection: "column",
                 }}
               >
                 {/* Top: Avatar and Name */}
@@ -452,9 +454,7 @@ export default function BusinessDetailsPage() {
                 {/* Card Actions */}
                 <CardActions
                   sx={{
-                    position: "absolute",
-                    bottom: 8,
-                    right: 8,
+                    mt: "auto",
                     justifyContent: "flex-end",
                     px: 0,
                     pt: 1,
@@ -482,7 +482,7 @@ export default function BusinessDetailsPage() {
                     </Tooltip>
                   )}
                 </CardActions>
-              </Card>
+              </AppCard>
             </Grid>
           ))}
         </Grid>

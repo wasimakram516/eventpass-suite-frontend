@@ -4,11 +4,6 @@ import {
   Container,
   Typography,
   Divider,
-  List,
-  ListSubheader,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
   Avatar,
   Box,
   Stack,
@@ -51,6 +46,7 @@ import useI18nLayout from "@/hooks/useI18nLayout";
 import ICONS from "@/utils/iconUtil";
 import { useTheme, useMediaQuery } from "@mui/material";
 import LoadingState from "@/components/LoadingState";
+import AppCard from "@/components/cards/AppCard";
 
 const translations = {
   en: {
@@ -507,6 +503,29 @@ export default function GlobalConfigPage() {
     setLoading(false);
   };
 
+  const renderFieldRow = (label, value, icon) => (
+    <Stack direction="row" spacing={1.5} alignItems="center">
+      <Avatar
+        sx={{
+          width: 36,
+          height: 36,
+          bgcolor: "rgba(0, 119, 182, 0.12)",
+          color: "#0077b6",
+        }}
+      >
+        {icon}
+      </Avatar>
+      <Box sx={{ minWidth: 0 }}>
+        <Typography variant="caption" color="text.secondary">
+          {label}
+        </Typography>
+        <Typography variant="body1" sx={{ wordBreak: "break-word" }}>
+          {value || t.none}
+        </Typography>
+      </Box>
+    </Stack>
+  );
+
   return (
     <Container dir={dir}>
       <BreadcrumbsNav />
@@ -588,274 +607,254 @@ export default function GlobalConfigPage() {
           </Button>
         </Box>
       ) : (
-        <List sx={{ mt: 2, bgcolor: "background.paper" }}>
-          {/* App Name */}
-          <ListItem>
-            <ListItemIcon>
-              <SettingsIcon />
-            </ListItemIcon>
-            <ListItemText
-              primary={t.appName}
-              secondary={config?.appName}
-              sx={{ textAlign: align }}
-            />
-          </ListItem>
-          <Divider />
+        <Grid
+          container
+          rowSpacing={{ xs: 2, md: 3 }}
+          columnSpacing={{ xs: 0, md: 3 }}
+          sx={{ mt: 1 }}
+        >
+          <Grid item xs={12} md={6} sx={{ px: { xs: 0 } }}>
+            <AppCard sx={{ p: 2.5, height: "100%", width: "100%" }}>
+              <Stack direction="row" spacing={1.5} alignItems="center">
+                <ICONS.settings sx={{ color: "#0077b6" }} />
+                <Typography variant="h6">{t.appName}</Typography>
+              </Stack>
+              <Divider sx={{ my: 2 }} />
+              <Stack spacing={2}>
+                {renderFieldRow(t.appName, config?.appName, <SettingsIcon />)}
+                {renderFieldRow(
+                  t.poweredByText,
+                  config?.poweredBy?.text,
+                  <SettingsIcon />
+                )}
+              </Stack>
+            </AppCard>
+          </Grid>
 
-          {/* Contact */}
-          <ListSubheader>{t.contact}</ListSubheader>
-          <ListItem>
-            <ListItemIcon>
-              <EmailIcon />
-            </ListItemIcon>
-            <ListItemText
-              secondary={config?.contact?.email}
-              sx={{ textAlign: align }}
-            />
-          </ListItem>
-          <Divider component="li" />
-          <ListItem>
-            <ListItemIcon>
-              <PhoneIcon />
-            </ListItemIcon>
-            <ListItemText
-              secondary={config?.contact?.phone}
-              sx={{ textAlign: align }}
-            />
-          </ListItem>
-          <Divider />
+          <Grid item xs={12} md={6} sx={{ px: { xs: 0 } }}>
+            <AppCard sx={{ p: 2.5, height: "100%", width: "100%" }}>
+              <Stack direction="row" spacing={1.5} alignItems="center">
+                <ICONS.email sx={{ color: "#0077b6" }} />
+                <Typography variant="h6">
+                  {t.contact} & {t.support}
+                </Typography>
+              </Stack>
+              <Divider sx={{ my: 2 }} />
+              <Stack spacing={2}>
+                {renderFieldRow(
+                  t.contactEmail,
+                  config?.contact?.email,
+                  <EmailIcon />
+                )}
+                {renderFieldRow(
+                  t.contactPhone,
+                  config?.contact?.phone,
+                  <PhoneIcon />
+                )}
+                {renderFieldRow(
+                  t.supportEmail,
+                  config?.support?.email,
+                  <EmailIcon />
+                )}
+                {renderFieldRow(
+                  t.supportPhone,
+                  config?.support?.phone,
+                  <PhoneIcon />
+                )}
+              </Stack>
+            </AppCard>
+          </Grid>
 
-          {/* Support */}
-          <ListSubheader>{t.support}</ListSubheader>
-          <ListItem>
-            <ListItemIcon>
-              <EmailIcon />
-            </ListItemIcon>
-            <ListItemText
-              secondary={config?.support?.email}
-              sx={{ textAlign: align }}
-            />
-          </ListItem>
-          <Divider component="li" />
-          <ListItem>
-            <ListItemIcon>
-              <PhoneIcon />
-            </ListItemIcon>
-            <ListItemText
-              secondary={config?.support?.phone}
-              sx={{ textAlign: align }}
-            />
-          </ListItem>
-          <Divider />
+          <Grid item xs={12} md={6} sx={{ px: { xs: 0 } }}>
+            <AppCard sx={{ p: 2.5, height: "100%", width: "100%" }}>
+              <Stack direction="row" spacing={1.5} alignItems="center">
+                <ICONS.image sx={{ color: "#0077b6" }} />
+                <Typography variant="h6">{t.mediaUploadsSection}</Typography>
+              </Stack>
+              <Divider sx={{ my: 2 }} />
+              <Stack spacing={2}>
+                <Stack spacing={1}>
+                  <Typography variant="subtitle2">{t.companyLogo}</Typography>
+                  {config?.companyLogoUrl ? (
+                    <Avatar
+                      src={config?.companyLogoUrl}
+                      alt="Logo"
+                      variant="square"
+                      sx={{ width: 120, height: 120 }}
+                    />
+                  ) : (
+                    <Typography color="text.secondary">{t.none}</Typography>
+                  )}
+                </Stack>
 
-          {/* Powered By */}
-          <ListSubheader>{t.poweredBy}</ListSubheader>
-          <ListItem
-            sx={{ flexDirection: "column", alignItems: "flex-start", gap: 2 }}
-          >
-            <ListItemText
-              secondary={config?.poweredBy?.text || t.none}
-              sx={{ textAlign: align }}
-            />
-            {config?.poweredBy?.mediaUrl &&
-              (isVideo(config?.poweredBy?.mediaUrl) ? (
-                <Box
-                  component="video"
-                  src={config?.poweredBy?.mediaUrl}
-                  controls
-                  sx={{
-                    width: { xs: "100%", md: 200 },
-                    height: { xs: 140, md: 200 },
-                    objectFit: "cover",
-                  }}
-                />
-              ) : (
-                <Avatar
-                  src={config?.poweredBy?.mediaUrl}
-                  variant="square"
-                  sx={{
-                    width: { xs: "100%", md: 200 },
-                    height: { xs: 120, md: 200 },
-                  }}
-                />
-              ))}
-          </ListItem>
-          <Divider />
-
-          {/* Company Logo */}
-          <ListSubheader>{t.companyLogo}</ListSubheader>
-          <ListItem>
-            {config?.companyLogoUrl ? (
-              <Avatar
-                src={config?.companyLogoUrl}
-                variant="square"
-                sx={{
-                  width: { xs: "100%", md: 200 },
-                  height: { xs: 140, md: 200 },
-                }}
-              />
-            ) : (
-              <Typography color="text.secondary">{t.none}</Typography>
-            )}
-          </ListItem>
-          <Divider />
-
-          {/* Branding Media */}
-          <ListSubheader>{t.brandingMedia}</ListSubheader>
-          <ListItem>
-            {config?.brandingMediaUrl ? (
-              isVideo(config?.brandingMediaUrl) ? (
-                <Box
-                  component="video"
-                  src={config?.brandingMediaUrl}
-                  controls
-                  sx={{
-                    width: { xs: "100%", md: 200 },
-                    height: { xs: 140, md: 200 },
-                    objectFit: "cover",
-                  }}
-                />
-              ) : (
-                <Avatar
-                  src={config?.brandingMediaUrl}
-                  alt="Branding"
-                  variant="square"
-                  sx={{
-                    width: { xs: "100%", md: 200 },
-                    height: { xs: 140, md: 200 },
-                  }}
-                />
-              )
-            ) : (
-              <Typography color="text.secondary">{t.none}</Typography>
-            )}
-          </ListItem>
-          <Divider />
-
-          {/* Client Logos */}
-          <ListSubheader>
-            {t.clientLogosSection || "Client Logos"}
-          </ListSubheader>
-
-          {!config?.clientLogos?.length ? (
-            <ListItem>
-              <ListItemText secondary={t.none} sx={{ textAlign: align }} />
-            </ListItem>
-          ) : (
-            <ListItem disableGutters sx={{ px: 2 }}>
-              <Grid container spacing={2}>
-                {config.clientLogos.map((cl, idx) => (
-                  <Grid item xs={6} sm={4} md={3} lg={2} key={cl._id || idx}>
-                    <Stack
-                      spacing={0.5}
-                      alignItems="center"
-                      sx={{ width: "100%" }}
-                    >
-                      {/* logo tile */}
+                <Stack spacing={1}>
+                  <Typography variant="subtitle2">{t.brandingMedia}</Typography>
+                  {config?.brandingMediaUrl ? (
+                    isVideo(config?.brandingMediaUrl) ? (
                       <Box
-                        sx={{
-                          width: "100%",
-                          height: 80,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          p: 1,
-                          border: "1px solid",
-                          borderColor: "divider",
-                          borderRadius: 1,
-                          bgcolor: "background.default",
-                        }}
-                      >
+                        component="video"
+                        src={config?.brandingMediaUrl}
+                        controls
+                        sx={{ width: "100%", maxWidth: 280, height: 180 }}
+                      />
+                    ) : (
+                      <Avatar
+                        src={config?.brandingMediaUrl}
+                        alt="Branding"
+                        variant="square"
+                        sx={{ width: "100%", maxWidth: 280, height: 180 }}
+                      />
+                    )
+                  ) : (
+                    <Typography color="text.secondary">{t.none}</Typography>
+                  )}
+                </Stack>
+
+                <Stack spacing={1}>
+                  <Typography variant="subtitle2">{t.poweredBy}</Typography>
+                  {config?.poweredBy?.mediaUrl ? (
+                    isVideo(config?.poweredBy?.mediaUrl) ? (
+                      <Box
+                        component="video"
+                        src={config?.poweredBy?.mediaUrl}
+                        controls
+                        sx={{ width: "100%", maxWidth: 280, height: 180 }}
+                      />
+                    ) : (
+                      <Avatar
+                        src={config?.poweredBy?.mediaUrl}
+                        alt="Powered By"
+                        variant="square"
+                        sx={{ width: "100%", maxWidth: 280, height: 180 }}
+                      />
+                    )
+                  ) : (
+                    <Typography color="text.secondary">{t.none}</Typography>
+                  )}
+                </Stack>
+              </Stack>
+            </AppCard>
+          </Grid>
+
+          <Grid item xs={12} md={6} sx={{ px: { xs: 0 } }}>
+            <AppCard sx={{ p: 2.5, height: "100%", width: "100%" }}>
+              <Stack direction="row" spacing={1.5} alignItems="center">
+                <ICONS.business sx={{ color: "#0077b6" }} />
+                <Typography variant="h6">
+                  {t.clientLogosSection || "Client Logos"}
+                </Typography>
+              </Stack>
+              <Divider sx={{ my: 2 }} />
+              {!config?.clientLogos?.length ? (
+                <Typography color="text.secondary">{t.none}</Typography>
+              ) : (
+                <Grid container spacing={2}>
+                  {config.clientLogos.map((cl, idx) => (
+                    <Grid item xs={6} sm={4} md={4} key={cl._id || idx}>
+                      <Stack spacing={0.75} alignItems="center">
                         <Box
-                          component="img"
-                          src={cl.logoUrl}
-                          alt={cl.name || "logo"}
                           sx={{
-                            maxWidth: "100%",
-                            maxHeight: "100%",
-                            objectFit: "contain",
-                          }}
-                        />
-                      </Box>
-
-                      {/* meta (only shown if present) */}
-                      {(cl.name || cl.website) && (
-                        <Stack spacing={0} sx={{ width: "100%" }}>
-                          {cl.name ? (
-                            <Typography
-                              variant="caption"
-                              noWrap
-                              title={cl.name}
-                              sx={{ textAlign: align }}
-                            >
-                              {cl.name}
-                            </Typography>
-                          ) : null}
-
-                          {cl.website ? (
-                            <Typography
-                              component="a"
-                              href={normalizeUrl(cl.website)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              noWrap
-                              sx={{
-                                textDecoration: "underline",
-                                color: "blue",
-                                textAlign: align,
-                                cursor: "pointer",
-                                fontSize: "0.75rem",
-                                display: "inline-block",
-                              }}
-                            >
-                              {cl.website}
-                            </Typography>
-                          ) : null}
-                        </Stack>
-                      )}
-                    </Stack>
-                  </Grid>
-                ))}
-              </Grid>
-            </ListItem>
-          )}
-          <Divider />
-
-          {/* Social Links */}
-          <ListSubheader>{t.socialLinks}</ListSubheader>
-          {config?.socialLinks &&
-            [
-              { key: "facebook", icon: <FacebookIcon /> },
-              { key: "instagram", icon: <InstagramIcon /> },
-              { key: "linkedin", icon: <LinkedInIcon /> },
-              { key: "website", icon: <LanguageIcon /> },
-            ].map(({ key, icon }) =>
-              config.socialLinks?.[key] ? (
-                <Box key={key}>
-                  <ListItem>
-                    <ListItemIcon>{icon}</ListItemIcon>
-                    <ListItemText
-                      primary={
-                        <Typography
-                          component="a"
-                          href={config.socialLinks[key]}
-                          target="_blank"
-                          sx={{
-                            textDecoration: "underline",
-                            color: "blue",
-                            textAlign: align,
+                            width: "100%",
+                            height: 90,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            p: 1,
+                            border: "1px solid",
+                            borderColor: "divider",
+                            borderRadius: 2,
+                            bgcolor: "background.default",
                           }}
                         >
-                          {key.charAt(0).toUpperCase() + key.slice(1)}
-                        </Typography>
-                      }
-                    />
-                  </ListItem>
-                  <Divider component="li" />
-                </Box>
-              ) : null
-            )}
-        </List>
+                          <Box
+                            component="img"
+                            src={cl.logoUrl}
+                            alt={cl.name || "logo"}
+                            sx={{
+                              maxWidth: "100%",
+                              maxHeight: "100%",
+                              objectFit: "contain",
+                            }}
+                          />
+                        </Box>
+
+                        {(cl.name || cl.website) && (
+                          <Stack spacing={0} sx={{ width: "100%" }}>
+                            {cl.name ? (
+                              <Typography
+                                variant="caption"
+                                noWrap
+                                title={cl.name}
+                                sx={{ textAlign: align }}
+                              >
+                                {cl.name}
+                              </Typography>
+                            ) : null}
+
+                            {cl.website ? (
+                              <Typography
+                                component="a"
+                                href={normalizeUrl(cl.website)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                noWrap
+                                sx={{
+                                  textDecoration: "underline",
+                                  color: "blue",
+                                  textAlign: align,
+                                  cursor: "pointer",
+                                  fontSize: "0.75rem",
+                                  display: "inline-block",
+                                }}
+                              >
+                                {cl.website}
+                              </Typography>
+                            ) : null}
+                          </Stack>
+                        )}
+                      </Stack>
+                    </Grid>
+                  ))}
+                </Grid>
+              )}
+            </AppCard>
+          </Grid>
+
+          <Grid item xs={12} sx={{ px: { xs: 0 } }}>
+            <AppCard sx={{ p: 2.5, width: "100%" }}>
+              <Stack direction="row" spacing={1.5} alignItems="center">
+                <LanguageIcon sx={{ color: "#0077b6" }} />
+                <Typography variant="h6">{t.socialLinks}</Typography>
+              </Stack>
+              <Divider sx={{ my: 2 }} />
+              {config?.socialLinks &&
+              ["facebook", "instagram", "linkedin", "website"].some(
+                (key) => !!config.socialLinks?.[key]
+              ) ? (
+                <Grid container spacing={2}>
+                  {[
+                    { key: "facebook", icon: <FacebookIcon /> },
+                    { key: "instagram", icon: <InstagramIcon /> },
+                    { key: "linkedin", icon: <LinkedInIcon /> },
+                    { key: "website", icon: <LanguageIcon /> },
+                  ].map(({ key, icon }) =>
+                    config.socialLinks?.[key] ? (
+                      <Grid item xs={12} md={6} key={key}>
+                        {renderFieldRow(
+                          key.charAt(0).toUpperCase() + key.slice(1),
+                          normalizeUrl(config.socialLinks[key]),
+                          icon
+                        )}
+                      </Grid>
+                    ) : null
+                  )}
+                </Grid>
+              ) : (
+                <Typography color="text.secondary">{t.none}</Typography>
+              )}
+            </AppCard>
+          </Grid>
+        </Grid>
       )}
 
       {/* EDIT / CREATE DIALOG */}
