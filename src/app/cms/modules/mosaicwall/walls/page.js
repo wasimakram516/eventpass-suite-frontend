@@ -158,7 +158,7 @@ export default function WallConfigsPage() {
 
     fetchBusinesses();
   }, [user, selectedBusiness, setSelectedBusiness]);
-  
+
   const fetchWallConfigs = async (businessSlug = "") => {
     setIsLoading(true);
     const response = await getWallConfigs();
@@ -277,7 +277,7 @@ export default function WallConfigsPage() {
           sx={{ my: 3 }}
           gap={dir === "rtl" ? 2 : 1}
         >
-          {user?.role === "admin" && (
+          {(user?.role === "admin" || user?.role === "superadmin") && (
             <Button
               variant="outlined"
               onClick={() => setDrawerOpen(true)}
@@ -454,7 +454,7 @@ export default function WallConfigsPage() {
           ))}
         </Grid>
       )}
-      {user?.role === "admin" && (
+      {(user?.role === "admin" || user?.role === "superadmin") && (
         <BusinessDrawer
           open={drawerOpen}
           onClose={() => setDrawerOpen(false)}

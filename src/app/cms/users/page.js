@@ -40,7 +40,8 @@ import {
   deleteUser,
   createStaffUser,
   getAllStaffUsers,
-  createBusinessUser
+  createBusinessUser,
+  createAdminUser,
 } from "@/services/userService";
 import { getAllBusinesses } from "@/services/businessService";
 import { getModules } from "@/services/moduleService";
@@ -63,6 +64,7 @@ const translations = {
     editAdminUser: "Edit Admin User",
     createBusinessUser: "Create Business User",
     editBusinessUser: "Edit Business User",
+    createAdminUser: "Create Admin User",
     createStaffUser: "Create Staff User",
     editStaffUser: "Edit Staff User",
     name: "Name",
@@ -83,6 +85,7 @@ const translations = {
     edit: "Edit",
     delete: "Delete",
     userTypeLabel: "User Type",
+    adminUser: "Admin",
     businessUser: "Business user",
     staffUser: "Staff user",
     selectBusinessLabel: "Select Business",
@@ -122,6 +125,7 @@ const translations = {
     editAdminUser: "تعديل مستخدم مسؤول",
     createBusinessUser: "إنشاء مستخدم شركة",
     editBusinessUser: "تعديل مستخدم شركة",
+    createAdminUser: "إنشاء مستخدم مسؤول",
     createStaffUser: "إنشاء مستخدم موظف",
     editStaffUser: "تعديل مستخدم موظف",
     name: "الاسم",
@@ -142,6 +146,7 @@ const translations = {
     edit: "تعديل",
     delete: "حذف",
     userTypeLabel: "نوع المستخدم",
+    adminUser: "مسؤول",
     businessUser: "مستخدم شركة",
     staffUser: "مستخدم موظف",
     selectBusinessLabel: "اختر الشركة",
@@ -178,6 +183,10 @@ const translations = {
 export default function UsersPage() {
   const { user: currentUser } = useAuth();
   const isBusinessUser = currentUser?.role === "business";
+  const isSuperAdmin = currentUser?.role === "superadmin";
+  const isAdminOrSuperAdmin = ["admin", "superadmin"].includes(
+    currentUser?.role || ""
+  );
   const { dir, align, language, t } = useI18nLayout(translations);
   const { showMessage } = useMessage();
   const [groupedUsers, setGroupedUsers] = useState({});
@@ -217,7 +226,7 @@ export default function UsersPage() {
     fetchUsers();
     fetchModules();
 
-    if (currentUser?.role === "admin") {
+    if (isAdminOrSuperAdmin) {
       getAllBusinesses().then((res) => {
         if (Array.isArray(res)) {
           setBusinesses(res);
@@ -251,6 +260,7 @@ export default function UsersPage() {
     };
 
     for (const user of rawUsers) {
+      if (user.role === "superadmin") continue;
       if (user.role === "admin") {
         groups["Admins"].push(user);
       } else if (!user.business) {
@@ -263,7 +273,12 @@ export default function UsersPage() {
     }
 
     const orderedGroups = {};
-    if (groups["Admins"].length) orderedGroups["Admins"] = groups["Admins"];
+    if (
+      groups["Admins"].length &&
+      currentUser?.role === "superadmin"
+    ) {
+      orderedGroups["Admins"] = groups["Admins"];
+    }
     for (const [key, val] of Object.entries(groups)) {
       if (key !== "Admins" && key !== "Unassigned") {
         orderedGroups[key] = val;
@@ -283,6 +298,7 @@ export default function UsersPage() {
 
   const getRoleColor = (role) =>
     ({
+      superadmin: "error",
       admin: "primary",
       business: "success",
       staff: "secondary",
@@ -297,7 +313,12 @@ export default function UsersPage() {
       email: user.email,
       password: "",
       modulePermissions: user.modulePermissions || [],
-      userType: user.role === "business" ? "business" : "staff",
+      userType:
+        user.role === "admin"
+          ? "admin"
+          : user.role === "business"
+            ? "business"
+            : "staff",
       attachToExistingBusiness: true,
       businessId: user.business?._id || "",
       staffType: user.staffType || "desk",
@@ -319,7 +340,7 @@ export default function UsersPage() {
     setSelectedUser(null);
     setForm({
       ...defaultForm,
-      userType: currentUser?.role === "admin" ? "business" : "staff",
+      userType: isAdminOrSuperAdmin ? "business" : "staff",
       staffType: "desk",
     });
     setErrors({});
@@ -341,7 +362,7 @@ export default function UsersPage() {
 
       if (
         !isEditMode &&
-        currentUser?.role === "admin" &&
+        isAdminOrSuperAdmin &&
         form.userType === "staff" &&
         !form.businessId
       ) {
@@ -378,7 +399,7 @@ export default function UsersPage() {
 
     if (
       !isEditMode &&
-      currentUser?.role === "admin" &&
+      isAdminOrSuperAdmin &&
       form.userType === "staff" &&
       !form.businessId
     ) {
@@ -423,7 +444,7 @@ export default function UsersPage() {
     // ---------- Staff validation ----------
     if (
       !isEditMode &&
-      currentUser?.role === "admin" &&
+      isAdminOrSuperAdmin &&
       form.userType === "staff" &&
       !form.businessId
     ) {
@@ -497,7 +518,18 @@ export default function UsersPage() {
 
     // ===================== CREATE MODE =====================
     else {
-      if (currentUser?.role === "admin" && form.userType === "business") {
+      if (isSuperAdmin && form.userType === "admin") {
+        const res = await createAdminUser({
+          name: form.name,
+          email: form.email,
+          password: form.password,
+          modulePermissions: form.modulePermissions || [],
+        });
+        if (res?.error) {
+          setLoading(false);
+          return;
+        }
+      } else if (isAdminOrSuperAdmin && form.userType === "business") {
         const res = await createBusinessUser({
           name: form.name,
           email: form.email,
@@ -512,12 +544,12 @@ export default function UsersPage() {
           business: form.attachToExistingBusiness
             ? undefined
             : {
-                name: form.businessName,
-                slug: form.businessSlug,
-                email: form.businessEmail,
-                phone: form.businessPhone,
-                address: form.businessAddress,
-              },
+              name: form.businessName,
+              slug: form.businessSlug,
+              email: form.businessEmail,
+              phone: form.businessPhone,
+              address: form.businessAddress,
+            },
         });
 
         if (res?.error) {
@@ -531,9 +563,7 @@ export default function UsersPage() {
           form.email,
           form.password,
           "staff",
-          currentUser?.role === "admin"
-            ? form.businessId
-            : currentUser.business._id,
+          isAdminOrSuperAdmin ? form.businessId : currentUser.business._id,
           form.modulePermissions,
           form.staffType,
         );
@@ -591,7 +621,7 @@ export default function UsersPage() {
               >
                 <Chip
                   icon={
-                    user.role === "admin" ? (
+                    user.role === "admin" || user.role === "superadmin" ? (
                       <ICONS.person />
                     ) : user.role === "business" ? (
                       <ICONS.business />
@@ -599,7 +629,11 @@ export default function UsersPage() {
                       <ICONS.people />
                     )
                   }
-                  label={user.role.charAt(0).toUpperCase() + user.role.slice(1)}
+                  label={
+                    user.role === "superadmin"
+                      ? "Super Admin"
+                      : user.role.charAt(0).toUpperCase() + user.role.slice(1)
+                  }
                   color={getRoleColor(user.role)}
                   size="small"
                   sx={{
@@ -653,7 +687,8 @@ export default function UsersPage() {
           </Tooltip>
           {!isSelf &&
             currentUser?.role !== "staff" &&
-            user.role !== "admin" && (
+            user.role !== "admin" &&
+            user.role !== "superadmin" && (
               <Tooltip title={t.delete}>
                 <IconButton
                   color="error"
@@ -737,14 +772,16 @@ export default function UsersPage() {
       >
         <DialogTitle sx={{ pr: 6 }}>
           {isEditMode
-            ? selectedUser?.role === "admin"
+            ? selectedUser?.role === "admin" || selectedUser?.role === "superadmin"
               ? t.editAdminUser
               : selectedUser?.role === "business"
                 ? t.editBusinessUser
                 : t.editStaffUser
-            : form.userType === "business"
-              ? t.createBusinessUser
-              : t.createStaffUser}
+            : form.userType === "admin"
+              ? t.createAdminUser
+              : form.userType === "business"
+                ? t.createBusinessUser
+                : t.createStaffUser}
           <IconButton
             onClick={() => setModalOpen(false)}
             sx={{
@@ -765,7 +802,7 @@ export default function UsersPage() {
         </DialogTitle>
 
         <DialogContent>
-          {currentUser?.role === "admin" && !isEditMode && (
+          {isAdminOrSuperAdmin && !isEditMode && (
             <FormControl fullWidth margin="normal">
               <InputLabel id="user-type-label">{t.userTypeLabel}</InputLabel>
               <Select
@@ -785,6 +822,9 @@ export default function UsersPage() {
                   }),
                 }}
               >
+                {isSuperAdmin && (
+                  <MenuItem value="admin">{t.adminUser}</MenuItem>
+                )}
                 <MenuItem value="staff">{t.staffUser}</MenuItem>
                 <MenuItem value="business">{t.businessUser}</MenuItem>
               </Select>
@@ -792,32 +832,35 @@ export default function UsersPage() {
           )}
 
           {(form.userType === "business" ||
+            form.userType === "admin" ||
             !isEditMode ||
             selectedUser?.role !== "admin") && (
-            <Box
-              sx={{ borderBottom: 1, borderColor: "divider", mt: 2, mx: -3 }}
-            >
-              <Tabs
-                value={activeTab}
-                onChange={(e, newValue) => setActiveTab(newValue)}
-                aria-label="user tabs"
-                sx={{ px: 3 }}
+              <Box
+                sx={{ borderBottom: 1, borderColor: "divider", mt: 2, mx: -3 }}
               >
-                <Tab label={t.userDetailsTab} />
-                {form.userType === "business" && (
-                  <Tab label={t.businessProfileTab} />
-                )}
-                {(!isEditMode || selectedUser?.role !== "admin") && (
-                  <Tab label={t.permissionsTab} />
-                )}
-              </Tabs>
-            </Box>
-          )}
+                <Tabs
+                  value={activeTab}
+                  onChange={(e, newValue) => setActiveTab(newValue)}
+                  aria-label="user tabs"
+                  sx={{ px: 3 }}
+                >
+                  <Tab label={t.userDetailsTab} />
+                  {form.userType === "business" && (
+                    <Tab label={t.businessProfileTab} />
+                  )}
+                  {(form.userType === "staff" ||
+                    form.userType === "admin" ||
+                    form.userType === "business") && (
+                      <Tab label={t.permissionsTab} />
+                    )}
+                </Tabs>
+              </Box>
+            )}
 
           {activeTab === 0 && (
             <Box sx={{ mt: 2 }}>
-              {form.userType === "staff" &&
-                (!isEditMode || selectedUser?.role === "staff") && (
+              {(form.userType === "staff" &&
+                (!isEditMode || selectedUser?.role === "staff")) && (
                   <FormControl fullWidth margin="normal">
                     <InputLabel id="staff-type-label">
                       {t.staffTypeLabel}
@@ -865,21 +908,21 @@ export default function UsersPage() {
                   InputProps={
                     field === "password"
                       ? {
-                          endAdornment: (
-                            <IconButton
-                              onClick={() => setShowPassword((prev) => !prev)}
-                              edge="end"
-                            >
-                              {showPassword ? <ICONS.hide /> : <ICONS.view />}
-                            </IconButton>
-                          ),
-                        }
+                        endAdornment: (
+                          <IconButton
+                            onClick={() => setShowPassword((prev) => !prev)}
+                            edge="end"
+                          >
+                            {showPassword ? <ICONS.hide /> : <ICONS.view />}
+                          </IconButton>
+                        ),
+                      }
                       : {}
                   }
                 />
               ))}
 
-              {currentUser?.role === "admin" &&
+              {isAdminOrSuperAdmin &&
                 !isEditMode &&
                 form.userType === "staff" && (
                   <FormControl
@@ -925,7 +968,7 @@ export default function UsersPage() {
 
           {form.userType === "business" && activeTab === 1 && (
             <Box sx={{ mt: 2 }}>
-              {currentUser?.role === "admin" && (
+              {isAdminOrSuperAdmin && (
                 <FormControlLabel
                   sx={{ mb: 2 }}
                   control={
@@ -1080,92 +1123,93 @@ export default function UsersPage() {
           )}
 
           {((form.userType === "staff" && activeTab === 1) ||
+            (form.userType === "admin" && activeTab === 1) ||
             (form.userType === "business" && activeTab === 2)) && (
-            <Box sx={{ mt: 2 }}>
-              <Typography variant="subtitle1" gutterBottom textAlign={align}>
-                {t.permissions}
-              </Typography>
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="subtitle1" gutterBottom textAlign={align}>
+                  {t.permissions}
+                </Typography>
 
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={
-                      form.modulePermissions.length ===
-                      (isBusinessUser
-                        ? availableModules.filter((m) =>
-                            currentUser.modulePermissions?.includes(m.key),
-                          ).length
-                        : availableModules.length)
-                    }
-                    indeterminate={
-                      form.modulePermissions.length > 0 &&
-                      form.modulePermissions.length !==
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={
+                        form.modulePermissions.length ===
                         (isBusinessUser
                           ? availableModules.filter((m) =>
-                              currentUser.modulePermissions?.includes(m.key),
-                            ).length
+                            currentUser.modulePermissions?.includes(m.key),
+                          ).length
                           : availableModules.length)
-                    }
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        const allKeys = isBusinessUser
-                          ? availableModules
+                      }
+                      indeterminate={
+                        form.modulePermissions.length > 0 &&
+                        form.modulePermissions.length !==
+                        (isBusinessUser
+                          ? availableModules.filter((m) =>
+                            currentUser.modulePermissions?.includes(m.key),
+                          ).length
+                          : availableModules.length)
+                      }
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          const allKeys = isBusinessUser
+                            ? availableModules
                               .filter((m) =>
                                 currentUser.modulePermissions?.includes(m.key),
                               )
                               .map((m) => m.key)
-                          : availableModules.map((m) => m.key);
-                        setForm((prev) => ({
-                          ...prev,
-                          modulePermissions: allKeys,
-                        }));
-                      } else {
-                        setForm((prev) => ({
-                          ...prev,
-                          modulePermissions: [],
-                        }));
-                      }
-                    }}
-                  />
-                }
-                label={
-                  form.modulePermissions.length ? t.unselectAll : t.selectAll
-                }
-              />
-
-              <FormGroup>
-                {(isBusinessUser
-                  ? availableModules.filter((m) =>
-                      currentUser.modulePermissions?.includes(m.key),
-                    )
-                  : availableModules
-                ).map((mod) => (
-                  <FormControlLabel
-                    key={mod.key}
-                    control={
-                      <Checkbox
-                        checked={form.modulePermissions.includes(mod.key)}
-                        onChange={() => {
-                          const exists = form.modulePermissions.includes(
-                            mod.key,
-                          );
+                            : availableModules.map((m) => m.key);
                           setForm((prev) => ({
                             ...prev,
-                            modulePermissions: exists
-                              ? prev.modulePermissions.filter(
+                            modulePermissions: allKeys,
+                          }));
+                        } else {
+                          setForm((prev) => ({
+                            ...prev,
+                            modulePermissions: [],
+                          }));
+                        }
+                      }}
+                    />
+                  }
+                  label={
+                    form.modulePermissions.length ? t.unselectAll : t.selectAll
+                  }
+                />
+
+                <FormGroup>
+                  {(isBusinessUser
+                    ? availableModules.filter((m) =>
+                      currentUser.modulePermissions?.includes(m.key),
+                    )
+                    : availableModules
+                  ).map((mod) => (
+                    <FormControlLabel
+                      key={mod.key}
+                      control={
+                        <Checkbox
+                          checked={form.modulePermissions.includes(mod.key)}
+                          onChange={() => {
+                            const exists = form.modulePermissions.includes(
+                              mod.key,
+                            );
+                            setForm((prev) => ({
+                              ...prev,
+                              modulePermissions: exists
+                                ? prev.modulePermissions.filter(
                                   (k) => k !== mod.key,
                                 )
-                              : [...prev.modulePermissions, mod.key],
-                          }));
-                        }}
-                      />
-                    }
-                    label={mod.labels?.[language] || mod.key}
-                  />
-                ))}
-              </FormGroup>
-            </Box>
-          )}
+                                : [...prev.modulePermissions, mod.key],
+                            }));
+                          }}
+                        />
+                      }
+                      label={mod.labels?.[language] || mod.key}
+                    />
+                  ))}
+                </FormGroup>
+              </Box>
+            )}
         </DialogContent>
 
         <DialogActions sx={{ px: 3, pb: 3 }}>
@@ -1197,10 +1241,9 @@ export default function UsersPage() {
                 </Button>
               )}
 
-              {(form.userType === "staff" &&
-                activeTab < 1 &&
-                (!isEditMode || selectedUser?.role !== "admin")) ||
-              (form.userType === "business" && activeTab < 2) ? (
+              {((form.userType === "staff" || form.userType === "admin") &&
+                activeTab < 1) ||
+                (form.userType === "business" && activeTab < 2) ? (
                 <Button
                   variant="contained"
                   onClick={() => {

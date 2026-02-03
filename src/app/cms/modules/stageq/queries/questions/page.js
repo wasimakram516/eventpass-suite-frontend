@@ -189,7 +189,7 @@ export default function ManageQuestionsPage() {
               gap: dir === "rtl" ? 1 : 0,
             }}
           >
-            {user?.role === "admin" && (
+            {(user?.role === "admin" || user?.role === "superadmin") && (
               <Button
                 variant="outlined"
                 onClick={() => setDrawerOpen(true)}
@@ -466,7 +466,7 @@ export default function ManageQuestionsPage() {
           </DialogActions>
         </Dialog>
 
-        {user?.role === "admin" && (
+        {(user?.role === "admin" || user?.role === "superadmin") && (
           <BusinessDrawer
             open={drawerOpen}
             onClose={() => setDrawerOpen(false)}

@@ -130,15 +130,15 @@ export default function BusinessDetailsPage() {
     setLoading(true);
     const data = await getAllBusinesses();
     const list =
-      user.role === "admin"
+      (user.role === "admin" || user.role === "superadmin")
         ? data
         : data.filter(
-            (b) =>
-              Array.isArray(b.owners) &&
-              b.owners.some((o) =>
-                typeof o === "string" ? o === user.id : o._id === user.id,
-              ),
-          );
+          (b) =>
+            Array.isArray(b.owners) &&
+            b.owners.some((o) =>
+              typeof o === "string" ? o === user.id : o._id === user.id,
+            ),
+        );
     setBusinesses(list);
     setLoading(false);
   };
@@ -470,7 +470,7 @@ export default function BusinessDetailsPage() {
                     </IconButton>
                   </Tooltip>
 
-                  {user.role === "admin" && (
+                  {(user.role === "admin" || user.role === "superadmin") && (
                     <Tooltip title={t.delete}>
                       <IconButton
                         color="error"

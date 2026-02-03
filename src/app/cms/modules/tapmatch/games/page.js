@@ -195,7 +195,7 @@ export default function TapMatchGamesPage() {
 
   return (
     <Box dir={dir} sx={{ position: "relative", width: "100%" }}>
-      {user?.role === "admin" && (
+      {(user?.role === "admin" || user?.role === "superadmin") && (
         <BusinessDrawer
           open={drawerOpen}
           onClose={() => setDrawerOpen(false)}
@@ -238,7 +238,7 @@ export default function TapMatchGamesPage() {
                 gap: dir === "rtl" ? 2 : 1,
               }}
             >
-              {user?.role === "admin" && (
+              {(user?.role === "admin" || user?.role === "superadmin") && (
                 <Button
                   variant="outlined"
                   startIcon={<ICONS.business />}

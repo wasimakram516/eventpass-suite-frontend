@@ -159,7 +159,7 @@ export default function FileStorePage() {
 
   return (
     <Box dir={dir}>
-      {user?.role === "admin" && (
+      {(user?.role === "admin" || user?.role === "superadmin") && (
         <BusinessDrawer
           open={drawerOpen}
           onClose={() => setDrawerOpen(false)}
@@ -192,7 +192,7 @@ export default function FileStorePage() {
           </Box>
 
           <Box sx={{ display: "flex", gap: 1 }}>
-            {user?.role === "admin" && (
+            {(user?.role === "admin" || user?.role === "superadmin") && (
               <Button
                 variant="outlined"
                 onClick={() => setDrawerOpen(true)}

@@ -24,6 +24,20 @@ export const createStaffUser = withApiHandler(
   { showSuccess: true }
 );
 
+// Create admin user (superadmin only)
+export const createAdminUser = withApiHandler(
+  async ({ name, email, password, modulePermissions = [] }) => {
+    const { data } = await api.post("/users/register/admin", {
+      name,
+      email,
+      password,
+      modulePermissions,
+    });
+    return data;
+  },
+  { showSuccess: true }
+);
+
 // Create business user (admin only)
 export const createBusinessUser = withApiHandler(
   async ({

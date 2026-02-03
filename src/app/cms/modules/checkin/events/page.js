@@ -182,7 +182,7 @@ export default function EventsPage() {
 
   return (
     <Box dir={dir}>
-      {user?.role === "admin" && (
+      {(user?.role === "admin" || user?.role === "superadmin") && (
         <BusinessDrawer
           open={drawerOpen}
           onClose={() => setDrawerOpen(false)}
@@ -225,7 +225,7 @@ export default function EventsPage() {
                 width: { xs: "100%", sm: "auto" },
               }}
             >
-              {user?.role === "admin" && (
+              {(user?.role === "admin" || user?.role === "superadmin") && (
                 <Button
                   variant="outlined"
                   onClick={() => setDrawerOpen(true)}
@@ -291,9 +291,9 @@ export default function EventsPage() {
                     onViewWhatsAppLogs={
                       event.slug
                         ? () =>
-                            router.push(
-                              `/cms/modules/checkin/events/${event.slug}/whatsapp`
-                            )
+                          router.push(
+                            `/cms/modules/checkin/events/${event.slug}/whatsapp`
+                          )
                         : undefined
                     }
                     onEdit={() => handleOpenEdit(event)}

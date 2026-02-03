@@ -192,7 +192,7 @@ export default function TrashPage() {
   const filteredTrashData = useMemo(() => {
     if (!trashData || !currentUser) return trashData;
 
-    if (currentUser.role === "admin") {
+    if ((currentUser.role === "admin" || currentUser.role === "superadmin")) {
       return trashData;
     }
 
@@ -249,7 +249,7 @@ export default function TrashPage() {
       const params = { limit: 1000, page: 1 };
 
       // For non-admin users, only fetch their own items
-      if (currentUser && currentUser.role !== "admin") {
+      if (currentUser && currentUser.role !== "admin" && currentUser.role !== "superadmin") {
         const userId = currentUser.id || currentUser._id;
         if (userId) {
           params.deletedBy = userId;
@@ -265,7 +265,7 @@ export default function TrashPage() {
   };
 
   const filteredModuleCounts = useMemo(() => {
-    if (currentUser?.role === "admin") {
+    if ((currentUser?.role === "admin" || currentUser?.role === "superadmin")) {
       return moduleCounts;
     }
 
@@ -313,7 +313,7 @@ export default function TrashPage() {
   }, [currentUser]);
 
   useEffect(() => {
-    const counts = currentUser?.role === "admin" ? moduleCounts : filteredModuleCounts;
+    const counts = (currentUser?.role === "admin" || currentUser?.role === "superadmin") ? moduleCounts : filteredModuleCounts;
     if (counts && Object.keys(counts).length > 0) {
       const modules = Object.keys(counts).filter((m) => counts[m] > 0);
       if (modules.length > 0 && moduleFilter === "__ALL__" && allAvailableModules.length === 0) {
@@ -323,7 +323,7 @@ export default function TrashPage() {
   }, [filteredModuleCounts, moduleCounts, currentUser]);
 
   useEffect(() => {
-    if (currentUser && currentUser.role !== "admin") {
+    if (currentUser && currentUser.role !== "admin" && currentUser.role !== "superadmin") {
       const userId = currentUser.id || currentUser._id;
       if (userId && deletedByFilter === "__ALL__") {
         setDeletedByFilter(userId);
@@ -349,7 +349,7 @@ export default function TrashPage() {
   // Clear filters
   const handleClearAllFilters = () => {
     setSearch("");
-    if (currentUser?.role === "admin") {
+    if ((currentUser?.role === "admin" || currentUser?.role === "superadmin")) {
       setDeletedByFilter("__ALL__");
     } else {
       const userId = currentUser?.id || currentUser?._id;
@@ -532,7 +532,7 @@ export default function TrashPage() {
   const updateAvailableModules = async () => {
     try {
       const params = { limit: 1000 };
-      if (currentUser && currentUser.role !== "admin") {
+      if (currentUser && currentUser.role !== "admin" && currentUser.role !== "superadmin") {
         const userId = currentUser.id || currentUser._id;
         if (userId) {
           params.deletedBy = userId;
@@ -575,7 +575,7 @@ export default function TrashPage() {
   };
 
   useEffect(() => {
-    const counts = currentUser?.role === "admin" ? moduleCounts : filteredModuleCounts;
+    const counts = (currentUser?.role === "admin" || currentUser?.role === "superadmin") ? moduleCounts : filteredModuleCounts;
     if (counts && Object.keys(counts).length > 0) {
       const modules = Object.keys(counts).filter((m) => counts[m] > 0);
       setAllAvailableModules(modules);
@@ -730,7 +730,7 @@ export default function TrashPage() {
       });
     }
 
-    if (currentUser && currentUser.role !== "admin") {
+    if (currentUser && currentUser.role !== "admin" && currentUser.role !== "superadmin") {
       const userId = currentUser.id || currentUser._id;
       if (userId) {
         return [userId];
@@ -892,7 +892,7 @@ export default function TrashPage() {
         </Button>
 
         {/* Deleted By  */}
-        {currentUser?.role === "admin" && (
+        {(currentUser?.role === "admin" || currentUser?.role === "superadmin") && (
           <FormControl
             size="small"
             sx={{ minWidth: 180, display: { xs: "none", sm: "flex" } }}
@@ -996,7 +996,7 @@ export default function TrashPage() {
           sx={{ display: { xs: "none", sm: "flex" } }}
           disabled={
             !search &&
-            (currentUser?.role === "admin" ? deletedByFilter === "__ALL__" : true) &&
+            ((currentUser?.role === "admin" || currentUser?.role === "superadmin") ? deletedByFilter === "__ALL__" : true) &&
             moduleFilter === "__ALL__" &&
             !dateFrom &&
             !dateTo
@@ -1262,7 +1262,7 @@ export default function TrashPage() {
       {/* Filter Modal for mobile */}
       <FilterModal open={filterOpen} onClose={() => setFilterOpen(false)}>
         <Stack spacing={2}>
-          {currentUser?.role === "admin" && (
+          {(currentUser?.role === "admin" || currentUser?.role === "superadmin") && (
             <TextField
               select
               label={t.deletedByLabel}
@@ -1321,7 +1321,7 @@ export default function TrashPage() {
             }}
             disabled={
               !search &&
-              (currentUser?.role === "admin" ? deletedByFilter === "__ALL__" : true) &&
+              ((currentUser?.role === "admin" || currentUser?.role === "superadmin") ? deletedByFilter === "__ALL__" : true) &&
               moduleFilter === "__ALL__" &&
               !dateFrom &&
               !dateTo
