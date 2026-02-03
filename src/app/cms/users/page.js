@@ -300,7 +300,7 @@ export default function UsersPage() {
     }
 
     const orderedGroups = {};
-    if (currentUser?.role === "superadmin") {
+    if (currentUser?.role === "superadmin" || currentUser?.role === "admin") {
       if (groups["Super Admins"].length) {
         orderedGroups["Super Admins"] = groups["Super Admins"];
       }
@@ -621,12 +621,14 @@ export default function UsersPage() {
 
   const renderUserCard = (user, isSelf = false) => {
     const canEditUser =
-      currentUser?.role === "superadmin" || user.role !== "superadmin";
+      currentUser?.role === "superadmin" ||
+      isSelf ||
+      (currentUser?.role === "admin" &&
+        (user.role === "business" || user.role === "staff"));
     const canDeleteUser =
+      currentUser?.role === "superadmin" &&
       !isSelf &&
-      currentUser?.role !== "staff" &&
-      user.role !== "superadmin" &&
-      (user.role !== "admin" || currentUser?.role === "superadmin");
+      user.role !== "superadmin";
 
     return (
     <Box
@@ -787,7 +789,11 @@ export default function UsersPage() {
   };
 
   return (
-    <Container dir={dir}>
+    <Container
+      dir={dir}
+      maxWidth={false}
+      sx={{ maxWidth: "1500px", px: { xs: 2, md: 3 } }}
+    >
       <BreadcrumbsNav />
       <Box
         sx={{
