@@ -21,6 +21,13 @@ import LanguageSelector from "@/components/LanguageSelector";
 
 export default function EventDetails() {
   const { eventSlug, lang } = useParams();
+
+  useEffect(() => {
+  if (eventSlug === "omnex-b2b") {
+      window.location.href = "https://whitewall.simplybook.me/v2/#book";
+    }
+  }, [eventSlug]);
+
   const router = useRouter();
   const isArabic = lang === "ar";
   const dir = isArabic ? "rtl" : "ltr";
