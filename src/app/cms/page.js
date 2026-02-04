@@ -165,6 +165,9 @@ export default function HomePage() {
   const checkBusinessExists = async () => {
     if (user?.role !== "business") return;
 
+    // If user already has business data attached, don't block them.
+    if (user?.business?._id || user?.businessId) return;
+
     const businesses = await getAllBusinesses();
 
     const myBusiness = businesses.find((b) => {

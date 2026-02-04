@@ -130,15 +130,28 @@ export default function BusinessDetailsPage() {
     setLoading(true);
     const data = await getAllBusinesses();
     const list =
-      (user.role === "admin" || user.role === "superadmin")
+      user.role === "admin" || user.role === "superadmin"
         ? data
         : data.filter(
-          (b) =>
-            Array.isArray(b.owners) &&
-            b.owners.some((o) =>
-              typeof o === "string" ? o === user.id : o._id === user.id,
-            ),
-        );
+            (b) =>
+              Array.isArray(b.owners) &&
+              b.owners.some((o) =>
+                typeof o === "string" ? o === user.id : o._id === user.id,
+              ),
+          );
+
+    // Fallback: for business users, include the business attached to the user
+    // even if owners are not populated on the business record.
+    if (
+      user.role === "business" &&
+      Array.isArray(list) &&
+      list.length === 0 &&
+      user?.business?._id
+    ) {
+      setBusinesses([user.business]);
+      setLoading(false);
+      return;
+    }
     setBusinesses(list);
     setLoading(false);
   };
