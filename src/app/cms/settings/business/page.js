@@ -280,7 +280,11 @@ export default function BusinessDetailsPage() {
   };
 
   return (
-    <Container dir={dir}>
+    <Container
+      dir={dir}
+      maxWidth={false}
+      sx={{ maxWidth: "1500px", px: { xs: 2, md: 3 } }}
+    >
       <BreadcrumbsNav />
 
       {/* HEADER: only show “Create” for admins OR business users with no biz */}
@@ -331,7 +335,8 @@ export default function BusinessDetailsPage() {
           container
           rowSpacing={{ xs: 2, sm: 2 }}
           columnSpacing={{ xs: 0, sm: 2 }}
-          justifyContent="center"
+          justifyContent={{ xs: "stretch", sm: "center" }}
+          sx={{ width: "100%", mx: 0 }}
         >
           {businesses.map((biz) => (
             <Grid
@@ -343,6 +348,8 @@ export default function BusinessDetailsPage() {
               sx={{
                 display: "flex",
                 justifyContent: "stretch",
+                width: { xs: "100%", sm: "auto" },
+                maxWidth: { xs: "100%", sm: "none" },
                 px: { xs: 0 },
               }}
             >
@@ -350,6 +357,7 @@ export default function BusinessDetailsPage() {
                 sx={{
                   p: 2,
                   width: "100%",
+                  maxWidth: { xs: "100%", sm: "none" },
                   height: "100%",
                   display: "flex",
                   flexDirection: "column",

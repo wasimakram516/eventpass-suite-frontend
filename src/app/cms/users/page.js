@@ -797,12 +797,13 @@ export default function UsersPage() {
       <BreadcrumbsNav />
       <Box
         sx={{
-          display: "flex",
-          flexDirection: { xs: "column", sm: "row" },
-          justifyContent: "space-between",
-          alignItems: { xs: "flex-start", sm: "center" },
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", md: "1fr auto" },
+          alignItems: "center",
+          gap: 2,
           mb: 1,
-          gap: 1,
+          width: "100%",
+          maxWidth: "100%",
         }}
       >
         <Box>
@@ -819,75 +820,108 @@ export default function UsersPage() {
           </Typography>
         </Box>
         <Stack
-          direction="row"
-          spacing={1}
-          flexWrap="wrap"
-          sx={{ gap: 1, width: { xs: "100%", sm: "auto" } }}
+          spacing={1.5}
+          sx={{
+            width: "100%",
+            maxWidth: "100%",
+            alignItems: { xs: "stretch", md: "flex-end" },
+          }}
         >
-          {getGroupCount("Super Admins") > 0 && (
-            <Chip
-              label={`${t.superAdmins}: ${getGroupCount("Super Admins")}`}
-              color="error"
+          <Stack
+            direction="row"
+            spacing={1}
+            flexWrap="wrap"
+            sx={{
+              gap: 1,
+              width: "100%",
+              justifyContent: { xs: "flex-start", md: "flex-end" },
+            }}
+          >
+            {getGroupCount("Super Admins") > 0 && (
+              <Chip
+                label={`${t.superAdmins}: ${getGroupCount("Super Admins")}`}
+                color="error"
+                size="small"
+                variant="outlined"
+                sx={{ ml: dir === "rtl" ? 0.5 : 0, mr: dir === "rtl" ? 0 : 0.5 }}
+              />
+            )}
+            {getGroupCount("Admins") > 0 && (
+              <Chip
+                label={`${t.admins}: ${getGroupCount("Admins")}`}
+                color="primary"
+                size="small"
+                variant="outlined"
+                sx={{ ml: dir === "rtl" ? 0.5 : 0, mr: dir === "rtl" ? 0 : 0.5 }}
+              />
+            )}
+            {businessGroupsCount > 0 && (
+              <Chip
+                label={`${t.businesses}: ${businessGroupsCount}`}
+                color="success"
+                size="small"
+                variant="outlined"
+                sx={{ ml: dir === "rtl" ? 0.5 : 0, mr: dir === "rtl" ? 0 : 0.5 }}
+              />
+            )}
+            {getGroupCount("Unassigned") > 0 && (
+              <Chip
+                label={`${t.unassigned}: ${getGroupCount("Unassigned")}`}
+                color="default"
+                size="small"
+                variant="outlined"
+                sx={{ ml: dir === "rtl" ? 0.5 : 0, mr: dir === "rtl" ? 0 : 0.5 }}
+              />
+            )}
+          </Stack>
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={1}
+            sx={{
+              width: "100%",
+              maxWidth: "100%",
+              minWidth: 0,
+              justifyContent: { xs: "flex-start", md: "flex-end" },
+              alignItems: { xs: "stretch", sm: "center" },
+            }}
+          >
+            <TextField
               size="small"
-              variant="outlined"
-              sx={{ ml: dir === "rtl" ? 0.5 : 0, mr: dir === "rtl" ? 0 : 0.5 }}
+              placeholder={t.searchUsers}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              fullWidth
+              sx={{
+                flex: 1,
+                width: "100%",
+                maxWidth: "100%",
+                minWidth: { sm: 220, md: 280 },
+              }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <ICONS.search sx={{ opacity: 0.7 }} />
+                  </InputAdornment>
+                ),
+                sx: { width: "100%", maxWidth: "100%" },
+              }}
             />
-          )}
-          {getGroupCount("Admins") > 0 && (
-            <Chip
-              label={`${t.admins}: ${getGroupCount("Admins")}`}
-              color="primary"
-              size="small"
-              variant="outlined"
-              sx={{ ml: dir === "rtl" ? 0.5 : 0, mr: dir === "rtl" ? 0 : 0.5 }}
-            />
-          )}
-          {businessGroupsCount > 0 && (
-            <Chip
-              label={`${t.businesses}: ${businessGroupsCount}`}
-              color="success"
-              size="small"
-              variant="outlined"
-              sx={{ ml: dir === "rtl" ? 0.5 : 0, mr: dir === "rtl" ? 0 : 0.5 }}
-            />
-          )}
-          {getGroupCount("Unassigned") > 0 && (
-            <Chip
-              label={`${t.unassigned}: ${getGroupCount("Unassigned")}`}
-              color="default"
-              size="small"
-              variant="outlined"
-              sx={{ ml: dir === "rtl" ? 0.5 : 0, mr: dir === "rtl" ? 0 : 0.5 }}
-            />
-          )}
+            <Button
+              variant="contained"
+              fullWidth
+              sx={{
+                ...getStartIconSpacing(dir),
+                width: { xs: "100%", sm: "auto" },
+                maxWidth: "100%",
+                minWidth: 0,
+              }}
+              startIcon={<ICONS.add />}
+              onClick={handleOpenCreate}
+            >
+              {t.createUser}
+            </Button>
+          </Stack>
         </Stack>
-        <TextField
-          size="small"
-          placeholder={t.searchUsers}
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          sx={{
-            minWidth: { xs: "100%", sm: 260, md: 320 },
-          }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <ICONS.search sx={{ opacity: 0.7 }} />
-              </InputAdornment>
-            ),
-          }}
-        />
-        <Button
-          variant="contained"
-          sx={{
-            ...getStartIconSpacing(dir),
-            width: { xs: "100%", sm: "auto" },
-          }}
-          startIcon={<ICONS.add />}
-          onClick={handleOpenCreate}
-        >
-          {t.createUser}
-        </Button>
       </Box>
       <Divider sx={{ mb: 3 }} />
       {isPageLoading ? (
@@ -944,9 +978,15 @@ export default function UsersPage() {
                     "&.Mui-expanded": { minHeight: 52 },
                     "& .MuiAccordionSummary-content": {
                       my: 1,
-                      alignItems: "center",
-                      gap: 1,
-                      justifyContent: "space-between",
+                      gap: 0.75,
+                      justifyContent: { xs: "flex-start", sm: "space-between" },
+                      width: "100%",
+                      flexDirection: { xs: "column", sm: "row" },
+                      alignItems: { xs: "flex-start", sm: "center" },
+                    },
+                    "& .MuiAccordionSummary-expandIconWrapper": {
+                      alignSelf: { xs: "flex-start", sm: "center" },
+                      mt: { xs: 0.5, sm: 0 },
                     },
                   }}
                 >
@@ -954,9 +994,12 @@ export default function UsersPage() {
                     direction="row"
                     spacing={1}
                     alignItems="center"
-                    sx={{ minWidth: 0 }}
+                    sx={{ minWidth: 0, flexWrap: "wrap", rowGap: 0.5 }}
                   >
-                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                    <Typography
+                      variant="h6"
+                      sx={{ fontWeight: 600, wordBreak: "break-word" }}
+                    >
                       {group}
                     </Typography>
                     <Chip
@@ -969,7 +1012,16 @@ export default function UsersPage() {
                       }}
                     />
                   </Stack>
-                  <Stack direction="row" spacing={1} alignItems="center">
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    alignItems="center"
+                    sx={{
+                      width: { xs: "100%", sm: "auto" },
+                      flexWrap: "wrap",
+                      rowGap: 0.5,
+                    }}
+                  >
                     <Chip
                       label={`${t.desk}: ${deskCount}`}
                       size="small"
