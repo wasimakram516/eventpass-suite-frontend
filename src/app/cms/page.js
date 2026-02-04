@@ -77,7 +77,41 @@ export default function HomePage() {
 
   const { connected } = useDashboardSocket({
     onMetricsUpdate: (metrics) => {
-      setInsights(metrics);
+      if (!metrics) return;
+      const isAdmin =
+        user?.role === "superadmin" || user?.role === "admin";
+      const myBusinessId =
+        user?.businessId ||
+        user?.business?._id ||
+        (typeof user?.business === "string" ? user.business : null);
+
+      // Ignore socket updates for a different scope to prevent brief mismatches.
+      if (isAdmin) {
+        if (metrics.scope && metrics.scope !== "superadmin") return;
+      } else if (user?.role === "business") {
+        if (metrics.scope && metrics.scope !== "business") return;
+        if (metrics.businessId && myBusinessId && metrics.businessId !== myBusinessId) {
+          return;
+        }
+      }
+
+      setInsights((prev) => {
+        if (!prev) return metrics;
+        const next = { ...prev, ...metrics };
+        if (prev.modules || metrics.modules) {
+          const mergedModules = { ...(prev.modules || {}) };
+          if (metrics.modules) {
+            Object.entries(metrics.modules).forEach(([key, val]) => {
+              mergedModules[key] = {
+                ...(prev.modules?.[key] || {}),
+                ...(val || {}),
+              };
+            });
+          }
+          next.modules = mergedModules;
+        }
+        return next;
+      });
     },
   });
 
@@ -240,7 +274,7 @@ export default function HomePage() {
       })),
       total,
     };
-  };
+  }; 
 
   const buildTrashBreakdown = (trash = {}) => {
     const entries = Object.entries(trash).map(([key, val]) => {
