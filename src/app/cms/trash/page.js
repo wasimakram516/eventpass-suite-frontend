@@ -14,6 +14,7 @@ import {
   CircularProgress,
   Stack,
   TextField,
+  Chip,
   MenuItem,
   InputAdornment,
   FormControl,
@@ -849,80 +850,54 @@ export default function TrashPage() {
       </Stack>
       <Divider sx={{ mb: 2 }} />
 
-      {/* Module Count Cards */}
+      {/* Module Count Chips */}
       {Object.keys(filteredModuleCounts).length > 0 && (
         <Box
           sx={{
             mb: 2,
-            overflowX: "auto",
-            whiteSpace: "nowrap",
-            pb: 1,
-            "&::-webkit-scrollbar": {
-              height: 6,
-            },
-            "&::-webkit-scrollbar-thumb": {
-              backgroundColor: "rgba(0,0,0,0.2)",
-              borderRadius: 3,
-            },
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 1,
           }}
         >
-          <Box
-            sx={{
-              display: "flex",
-              gap: 2,
-            }}
-          >
-            {Object.entries(filteredModuleCounts)
-              .filter(([, count]) => count > 0)
-              .map(([module, count]) => (
-                <AppCard
+          {Object.entries(filteredModuleCounts)
+            .filter(([, count]) => count > 0)
+            .map(([module, count]) => {
+              const moduleInfo = moduleData.find(
+                (m) => m.key.toLowerCase() === module.toLowerCase()
+              );
+              return (
+                <Chip
                   key={module}
-                  sx={{
-                    flex: "0 0 auto",
-                    minWidth: 180,
-                    p: 1.5,
-                    borderRadius: 2.5,
-                    border: "1px solid",
-                    borderColor: "divider",
-                    backgroundColor: "background.paper",
-                    boxShadow: "0 4px 14px rgba(0,0,0,0.06)",
-                  }}
-                >
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                  avatar={
                     <Avatar
                       sx={{
-                        width: 40,
-                        height: 40,
+                        width: 24,
+                        height: 24,
                         bgcolor: "rgba(0, 119, 182, 0.12)",
                         color: "#0077b6",
-                        fontSize: "0.875rem",
+                        fontSize: "0.75rem",
                       }}
                     >
-                      {(() => {
-                        const moduleInfo = moduleData.find(
-                          (m) => m.key.toLowerCase() === module.toLowerCase()
-                        );
-                        return getModuleIcon(moduleInfo?.icon);
-                      })()}
+                      {getModuleIcon(moduleInfo?.icon)}
                     </Avatar>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "flex-start",
-                      }}
-                    >
-                      <Typography variant="h6" sx={{ lineHeight: 1 }}>
-                        {count}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {getModuleDisplayName(module)}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </AppCard>
-              ))}
-          </Box>
+                  }
+                  label={`${getModuleDisplayName(module)} • ${count}`}
+                  variant="outlined"
+                  sx={{
+                    height: 32,
+                    maxWidth: "100%",
+                    "& .MuiChip-label": {
+                      display: "block",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      maxWidth: { xs: 220, sm: 260, md: 320 },
+                    },
+                  }}
+                />
+              );
+            })}
         </Box>
       )}
 
