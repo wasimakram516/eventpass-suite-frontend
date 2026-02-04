@@ -37,7 +37,7 @@ import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import ICONS from "@/utils/iconUtil";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import { wrapTextBox } from "@/utils/wrapTextStyles";
-import AppCard from "@/components/cards/AppCard";
+import AppCard, { AppCardText } from "@/components/cards/AppCard";
 
 const translations = {
   en: {
@@ -349,7 +349,10 @@ export default function BusinessDetailsPage() {
                 display: "flex",
                 justifyContent: "stretch",
                 width: { xs: "100%", sm: "auto" },
-                maxWidth: { xs: "100%", sm: "none" },
+                maxWidth: { xs: "100%", sm: 380 },
+                flexBasis: { sm: 380 },
+                flexGrow: { sm: 0 },
+                minWidth: 0,
                 px: { xs: 0 },
               }}
             >
@@ -357,10 +360,11 @@ export default function BusinessDetailsPage() {
                 sx={{
                   p: 2,
                   width: "100%",
-                  maxWidth: { xs: "100%", sm: "none" },
+                  maxWidth: { xs: "100%", sm: 360, md: 380 },
                   height: "100%",
                   display: "flex",
                   flexDirection: "column",
+                  ...wrapTextBox,
                 }}
               >
                 {/* Top: Avatar and Name */}
@@ -373,29 +377,59 @@ export default function BusinessDetailsPage() {
                     {biz.name?.[0]}
                   </Avatar>
 
-                  <Box sx={{ flexGrow: 1, ...wrapTextBox }}>
-                    <Typography variant="subtitle1" fontWeight="bold">
+                  <AppCardText sx={{ flexGrow: 1 }}>
+                    <Typography
+                      variant="h6"
+                      fontWeight="bold"
+                      sx={{
+                        ...wrapTextBox,
+                      }}
+                    >
                       {biz.name}
                     </Typography>
-                    <Typography variant="caption" color="text.secondary">
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{
+                        ...wrapTextBox,
+                        display: "-webkit-box",
+                        WebkitLineClamp: 1,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                      }}
+                    >
                       Slug: {biz.slug}
                     </Typography>
-                  </Box>
+                  </AppCardText>
                 </Box>
 
                 {/* Details aligned fully left */}
-                <Box sx={{ mt: 1, pl: 0, ...wrapTextBox }}>
+                <AppCardText sx={{ mt: 1, pl: 0, minHeight: 92 }}>
                   {biz.contact?.email && (
                     <Box
                       sx={{
                         display: "flex",
-                        alignItems: "center",
+                        alignItems: "flex-start",
                         gap: 1,
                         mt: 0.5,
+                        minWidth: 0,
+                        flexWrap: "wrap",
                       }}
                     >
                       <ICONS.email fontSize="small" color="action" />
-                      <Typography variant="body2" sx={wrapTextBox}>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          ...wrapTextBox,
+                          flex: 1,
+                          minWidth: 0,
+                          maxWidth: "100%",
+                          display: "-webkit-box",
+                          WebkitLineClamp: 1,
+                          WebkitBoxOrient: "vertical",
+                          overflow: "hidden",
+                        }}
+                      >
                         {biz.contact.email}
                       </Typography>
                     </Box>
@@ -404,13 +438,27 @@ export default function BusinessDetailsPage() {
                     <Box
                       sx={{
                         display: "flex",
-                        alignItems: "center",
+                        alignItems: "flex-start",
                         gap: 1,
                         mt: 0.5,
+                        minWidth: 0,
+                        flexWrap: "wrap",
                       }}
                     >
                       <ICONS.phone fontSize="small" color="action" />
-                      <Typography variant="body2" sx={wrapTextBox}>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          ...wrapTextBox,
+                          flex: 1,
+                          minWidth: 0,
+                          maxWidth: "100%",
+                          display: "-webkit-box",
+                          WebkitLineClamp: 1,
+                          WebkitBoxOrient: "vertical",
+                          overflow: "hidden",
+                        }}
+                      >
                         {biz.contact.phone}
                       </Typography>
                     </Box>
@@ -419,16 +467,23 @@ export default function BusinessDetailsPage() {
                     <Box
                       sx={{
                         display: "flex",
-                        alignItems: "center",
+                        alignItems: "flex-start",
                         gap: 1,
                         mt: 0.5,
+                        minWidth: 0,
+                        flexWrap: "wrap",
                       }}
                     >
                       <ICONS.location fontSize="small" color="action" />
                       <Typography
                         variant="body2"
                         color="text.secondary"
-                        sx={wrapTextBox}
+                        sx={{
+                          ...wrapTextBox,
+                          flex: 1,
+                          minWidth: 0,
+                          maxWidth: "100%",
+                        }}
                       >
                         {biz.address}
                       </Typography>
@@ -445,6 +500,7 @@ export default function BusinessDetailsPage() {
                         spacing={1}
                         flexWrap="wrap"
                         mt={0.5}
+                        sx={{ minWidth: 0 }}
                       >
                         {biz.owners.map((o) => (
                           <Chip
@@ -452,12 +508,21 @@ export default function BusinessDetailsPage() {
                             size="small"
                             label={typeof o === "string" ? o : o.name}
                             icon={<ICONS.person fontSize="small" />}
+                            sx={{
+                              maxWidth: "100%",
+                              "& .MuiChip-label": {
+                                overflow: "hidden",
+                                textOverflow: "ellipsis",
+                                whiteSpace: "nowrap",
+                                display: "block",
+                              },
+                            }}
                           />
                         ))}
                       </Stack>
                     </Box>
                   )}
-                </Box>
+                </AppCardText>
 
                 {/* Card Actions */}
                 <CardActions
@@ -478,7 +543,7 @@ export default function BusinessDetailsPage() {
                     </IconButton>
                   </Tooltip>
 
-                  {(user.role === "admin" || user.role === "superadmin") && (
+                  {user.role === "superadmin" && (
                     <Tooltip title={t.delete}>
                       <IconButton
                         color="error"
