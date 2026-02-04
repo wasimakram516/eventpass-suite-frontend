@@ -54,6 +54,7 @@ const translations = {
   en: {
     title: "Recycle Bin",
     subtitle: "View, restore or permanently delete trashed items.",
+    filterHint: "Tip: Use Filters or select chips below to narrow results.",
     restore: "Restore",
     delete: "Delete",
     permanentDelete: "Delete Permanently",
@@ -105,6 +106,8 @@ const translations = {
   ar: {
     title: "سلة المحذوفات",
     subtitle: "عرض أو استعادة أو حذف العناصر المحذوفة نهائيًا.",
+    filterHint:
+      "تلميح: استخدم عوامل التصفية أو حدِّد الشرائح أدناه لتضييق النتائج.",
     restore: "استعادة",
     delete: "حذف",
     permanentDelete: "حذف نهائي",
@@ -186,29 +189,40 @@ export default function TrashPage() {
   const [search, setSearch] = useState("");
   const [deletedByFilter, setDeletedByFilter] = useState("__ALL__");
   const [moduleFilter, setModuleFilter] = useState("__ALL__");
+  const [selectedModule, setSelectedModule] = useState("__ALL__");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
   const activeFilterCount = useMemo(() => {
     let count = 0;
     if (
-      (currentUser?.role === "admin" || currentUser?.role === "superadmin")
+      currentUser?.role === "admin" || currentUser?.role === "superadmin"
         ? deletedByFilter !== "__ALL__"
         : false
     ) {
       count += 1;
     }
-    if (moduleFilter !== "__ALL__") count += 1;
+    if (moduleFilter !== "__ALL__" || selectedModule !== "__ALL__") {
+      count += 1;
+    }
     if (dateFrom) count += 1;
     if (dateTo) count += 1;
     if (limit !== 5) count += 1;
     return count;
-  }, [deletedByFilter, moduleFilter, dateFrom, dateTo, limit, currentUser]);
+  }, [
+    deletedByFilter,
+    moduleFilter,
+    selectedModule,
+    dateFrom,
+    dateTo,
+    limit,
+    currentUser,
+  ]);
 
   const filteredTrashData = useMemo(() => {
     if (!trashData || !currentUser) return trashData;
 
-    if ((currentUser.role === "admin" || currentUser.role === "superadmin")) {
+    if (currentUser.role === "admin" || currentUser.role === "superadmin") {
       return trashData;
     }
 
@@ -241,7 +255,6 @@ export default function TrashPage() {
     return filtered;
   }, [trashData, currentUser]);
 
-
   useEffect(() => {
     if (filteredTrashData) {
       const newIds = new Set(allDeletedByIds);
@@ -265,7 +278,11 @@ export default function TrashPage() {
       const params = { limit: 1000, page: 1 };
 
       // For non-admin users, only fetch their own items
-      if (currentUser && currentUser.role !== "admin" && currentUser.role !== "superadmin") {
+      if (
+        currentUser &&
+        currentUser.role !== "admin" &&
+        currentUser.role !== "superadmin"
+      ) {
         const userId = currentUser.id || currentUser._id;
         if (userId) {
           params.deletedBy = userId;
@@ -281,7 +298,7 @@ export default function TrashPage() {
   };
 
   const filteredModuleCounts = useMemo(() => {
-    if ((currentUser?.role === "admin" || currentUser?.role === "superadmin")) {
+    if (currentUser?.role === "admin" || currentUser?.role === "superadmin") {
       return moduleCounts;
     }
 
@@ -329,17 +346,24 @@ export default function TrashPage() {
   }, [currentUser]);
 
   useEffect(() => {
-    const counts = (currentUser?.role === "admin" || currentUser?.role === "superadmin") ? moduleCounts : filteredModuleCounts;
+    const counts =
+      currentUser?.role === "admin" || currentUser?.role === "superadmin"
+        ? moduleCounts
+        : filteredModuleCounts;
     if (counts && Object.keys(counts).length > 0) {
       const modules = Object.keys(counts).filter((m) => counts[m] > 0);
-      if (modules.length > 0 && moduleFilter === "__ALL__" && allAvailableModules.length === 0) {
-        setModuleFilter(modules[0]);
+      if (modules.length > 0 && !selectedModule) {
+        setSelectedModule("__ALL__");
       }
     }
-  }, [filteredModuleCounts, moduleCounts, currentUser]);
+  }, [filteredModuleCounts, moduleCounts, currentUser, selectedModule]);
 
   useEffect(() => {
-    if (currentUser && currentUser.role !== "admin" && currentUser.role !== "superadmin") {
+    if (
+      currentUser &&
+      currentUser.role !== "admin" &&
+      currentUser.role !== "superadmin"
+    ) {
       const userId = currentUser.id || currentUser._id;
       if (userId && deletedByFilter === "__ALL__") {
         setDeletedByFilter(userId);
@@ -365,7 +389,7 @@ export default function TrashPage() {
   // Clear filters
   const handleClearAllFilters = () => {
     setSearch("");
-    if ((currentUser?.role === "admin" || currentUser?.role === "superadmin")) {
+    if (currentUser?.role === "admin" || currentUser?.role === "superadmin") {
       setDeletedByFilter("__ALL__");
     } else {
       const userId = currentUser?.id || currentUser?._id;
@@ -377,6 +401,8 @@ export default function TrashPage() {
     setDateTo("");
     setLimit(5);
     setPageState({});
+    setSelectedModule("__ALL__");
+    setModuleFilter("__ALL__");
   };
 
   // handler for module name based on key
@@ -435,11 +461,21 @@ export default function TrashPage() {
   };
 
   const getRecordDisplayInfo = (item, module) => {
-
-    let name = item.name || item.title || item.fullName || item.slug || item.text || item.question || null;
+    let name =
+      item.name ||
+      item.title ||
+      item.fullName ||
+      item.slug ||
+      item.text ||
+      item.question ||
+      null;
     let email = item.email || null;
 
-    if ((module === "registration-eventreg" || module === "registration-checkin") && item.customFields) {
+    if (
+      (module === "registration-eventreg" ||
+        module === "registration-checkin") &&
+      item.customFields
+    ) {
       const extractedName = pickFullName(item.customFields);
       const extractedEmail = pickEmail(item.customFields);
 
@@ -487,11 +523,15 @@ export default function TrashPage() {
       if (currentUser) {
         const userId = currentUser.id || currentUser._id;
         if (userId && !map[userId]) {
-          map[userId] = currentUser.name || currentUser.fullName || currentUser.email || userId;
+          map[userId] =
+            currentUser.name ||
+            currentUser.fullName ||
+            currentUser.email ||
+            userId;
         }
       }
       setUserMap(map);
-    } catch { }
+    } catch {}
   };
 
   const handleLimitChange = (newLimit) => {
@@ -522,7 +562,10 @@ export default function TrashPage() {
     try {
       const params = {
         limit,
-        page: targetModule && targetModule !== "__ALL__" ? (pageState[targetModule] || 1) : 1,
+        page:
+          targetModule && targetModule !== "__ALL__"
+            ? pageState[targetModule] || 1
+            : 1,
         ...(deletedByFilter !== "__ALL__" && { deletedBy: deletedByFilter }),
         ...(dateFrom && { startDate: dateFrom }),
         ...(dateTo && { endDate: dateTo }),
@@ -548,7 +591,11 @@ export default function TrashPage() {
   const updateAvailableModules = async () => {
     try {
       const params = { limit: 1000 };
-      if (currentUser && currentUser.role !== "admin" && currentUser.role !== "superadmin") {
+      if (
+        currentUser &&
+        currentUser.role !== "admin" &&
+        currentUser.role !== "superadmin"
+      ) {
         const userId = currentUser.id || currentUser._id;
         if (userId) {
           params.deletedBy = userId;
@@ -591,16 +638,45 @@ export default function TrashPage() {
   };
 
   useEffect(() => {
-    const counts = (currentUser?.role === "admin" || currentUser?.role === "superadmin") ? moduleCounts : filteredModuleCounts;
+    const counts =
+      currentUser?.role === "admin" || currentUser?.role === "superadmin"
+        ? moduleCounts
+        : filteredModuleCounts;
     if (counts && Object.keys(counts).length > 0) {
       const modules = Object.keys(counts).filter((m) => counts[m] > 0);
       setAllAvailableModules(modules);
 
-      if (modules.length > 0 && moduleFilter !== "__ALL__" && !modules.includes(moduleFilter)) {
+      if (
+        modules.length > 0 &&
+        moduleFilter !== "__ALL__" &&
+        !modules.includes(moduleFilter)
+      ) {
         setModuleFilter(modules[0]);
       }
     }
   }, [filteredModuleCounts, moduleCounts, currentUser]);
+
+  const handleChipToggle = (moduleKey) => {
+    if (moduleKey === "__ALL__") {
+      setSelectedModule("__ALL__");
+      if (moduleFilter !== "__ALL__") setModuleFilter("__ALL__");
+      return;
+    }
+
+    setSelectedModule((prev) => {
+      const next = prev === moduleKey ? "__ALL__" : moduleKey;
+      if (moduleFilter !== "__ALL__") setModuleFilter("__ALL__");
+      return next;
+    });
+  };
+
+  const chipFilteredTrashData = useMemo(() => {
+    if (!filteredTrashData) return filteredTrashData;
+    if (selectedModule === "__ALL__") return filteredTrashData;
+    return filteredTrashData[selectedModule]
+      ? { [selectedModule]: filteredTrashData[selectedModule] }
+      : {};
+  }, [filteredTrashData, selectedModule]);
 
   const openRestoreConfirm = (module, item) => {
     setPendingAction({ type: "restore", module, frontendModule: module, item });
@@ -640,7 +716,7 @@ export default function TrashPage() {
     try {
       await permanentDeleteTrashItem(
         pendingAction.module,
-        pendingAction.item._id
+        pendingAction.item._id,
       );
       await fetchTrash();
       await fetchModuleCounts();
@@ -693,7 +769,7 @@ export default function TrashPage() {
     try {
       await restoreAllTrashItems(
         pendingBulkAction.frontendModule,
-        pendingBulkAction.filterParams
+        pendingBulkAction.filterParams,
       );
       await fetchTrash();
       await fetchModuleCounts();
@@ -714,7 +790,7 @@ export default function TrashPage() {
     try {
       await permanentDeleteAllTrashItems(
         pendingBulkAction.frontendModule,
-        pendingBulkAction.filterParams
+        pendingBulkAction.filterParams,
       );
       await fetchTrash();
       await fetchModuleCounts();
@@ -746,7 +822,11 @@ export default function TrashPage() {
       });
     }
 
-    if (currentUser && currentUser.role !== "admin" && currentUser.role !== "superadmin") {
+    if (
+      currentUser &&
+      currentUser.role !== "admin" &&
+      currentUser.role !== "superadmin"
+    ) {
       const userId = currentUser.id || currentUser._id;
       if (userId) {
         return [userId];
@@ -783,6 +863,15 @@ export default function TrashPage() {
             textAlign={align}
           >
             {t.subtitle}
+          </Typography>
+          <Typography
+            variant="caption"
+            color="text.secondary"
+            mt={0.75}
+            display="block"
+            textAlign={align}
+          >
+            {t.filterHint}
           </Typography>
         </Box>
         <Box
@@ -838,7 +927,10 @@ export default function TrashPage() {
               ) : null
             }
             sx={{
-              ...getStartIconSpacing(dir, { includeEnd: true, endSpacing: "0.35rem" }),
+              ...getStartIconSpacing(dir, {
+                includeEnd: true,
+                endSpacing: "0.35rem",
+              }),
               width: { xs: "100%", sm: "auto" },
               whiteSpace: "nowrap",
             }}
@@ -860,11 +952,33 @@ export default function TrashPage() {
             gap: 1,
           }}
         >
+          <Chip
+            label={`${t.all} • ${Object.values(filteredModuleCounts).reduce(
+              (sum, val) => sum + (Number(val) || 0),
+              0,
+            )}`}
+            onClick={() => handleChipToggle("__ALL__")}
+            color={selectedModule === "__ALL__" ? "primary" : "default"}
+            variant={selectedModule === "__ALL__" ? "filled" : "outlined"}
+            sx={{
+              ...(selectedModule === "__ALL__"
+                ? {
+                    bgcolor: "primary.main",
+                    color: "primary.contrastText",
+                    "& .MuiChip-label": { fontWeight: 600 },
+                  }
+                : {}),
+              "&.MuiChip-clickable:hover, &.MuiChip-clickable:active": {
+                bgcolor: selectedModule === "__ALL__" ? "primary.main" : "transparent",
+                boxShadow: "none",
+              },
+            }}
+          />
           {Object.entries(filteredModuleCounts)
             .filter(([, count]) => count > 0)
             .map(([module, count]) => {
               const moduleInfo = moduleData.find(
-                (m) => m.key.toLowerCase() === module.toLowerCase()
+                (m) => m.key.toLowerCase() === module.toLowerCase(),
               );
               return (
                 <Chip
@@ -884,17 +998,44 @@ export default function TrashPage() {
                   }
                   label={`${getModuleDisplayName(module)} • ${count}`}
                   variant="outlined"
-                  sx={{
-                    height: 32,
-                    maxWidth: "100%",
-                    "& .MuiChip-label": {
-                      display: "block",
-                      whiteSpace: "nowrap",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      maxWidth: { xs: 220, sm: 260, md: 320 },
-                    },
-                  }}
+                  onClick={() => handleChipToggle(module)}
+                  color={selectedModule === module ? "primary" : "default"}
+                  sx={
+                    selectedModule === module
+                      ? {
+                          height: 32,
+                          maxWidth: "100%",
+                          bgcolor: "primary.main",
+                          color: "primary.contrastText",
+                          "& .MuiChip-label": {
+                            fontWeight: 600,
+                            display: "block",
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            maxWidth: { xs: 220, sm: 260, md: 320 },
+                          },
+                          "&.MuiChip-clickable:hover, &.MuiChip-clickable:active": {
+                            bgcolor: "primary.main",
+                            boxShadow: "none",
+                          },
+                        }
+                      : {
+                          height: 32,
+                          maxWidth: "100%",
+                          "& .MuiChip-label": {
+                            display: "block",
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis",
+                            maxWidth: { xs: 220, sm: 260, md: 320 },
+                          },
+                          "&.MuiChip-clickable:hover, &.MuiChip-clickable:active": {
+                            bgcolor: "transparent",
+                            boxShadow: "none",
+                          },
+                        }
+                  }
                 />
               );
             })}
@@ -903,11 +1044,12 @@ export default function TrashPage() {
 
       {loading ? (
         <LoadingState />
-      ) : !filteredTrashData || Object.keys(filteredTrashData).length === 0 ? (
+      ) : !chipFilteredTrashData ||
+        Object.keys(chipFilteredTrashData).length === 0 ? (
         <NoDataAvailable message={t.noTrash} />
       ) : (
         (() => {
-          const renderedModules = Object.entries(filteredTrashData).map(
+          const renderedModules = Object.entries(chipFilteredTrashData).map(
             ([module, moduleData]) => {
               const { items = [], total = 0 } = moduleData || {};
               const page = pageState[module] || 1;
@@ -930,11 +1072,17 @@ export default function TrashPage() {
                   ""
                 ).toLowerCase();
 
-                if ((module === "registration-eventreg" || module === "registration-checkin") && item.customFields) {
+                if (
+                  (module === "registration-eventreg" ||
+                    module === "registration-checkin") &&
+                  item.customFields
+                ) {
                   const extractedName = pickFullName(item.customFields);
                   const extractedEmail = pickEmail(item.customFields);
-                  if (extractedName) itemText += " " + String(extractedName).toLowerCase();
-                  if (extractedEmail) itemText += " " + String(extractedEmail).toLowerCase();
+                  if (extractedName)
+                    itemText += " " + String(extractedName).toLowerCase();
+                  if (extractedEmail)
+                    itemText += " " + String(extractedEmail).toLowerCase();
                   Object.values(item.customFields || {}).forEach((val) => {
                     if (val) itemText += " " + String(val).toLowerCase();
                   });
@@ -1034,8 +1182,14 @@ export default function TrashPage() {
                             >
                               <Avatar sx={{ width: 48, height: 48 }}>
                                 {(() => {
-                                  const displayInfo = getRecordDisplayInfo(item, module);
-                                  return displayInfo.primary?.[0]?.toUpperCase() || "?";
+                                  const displayInfo = getRecordDisplayInfo(
+                                    item,
+                                    module,
+                                  );
+                                  return (
+                                    displayInfo.primary?.[0]?.toUpperCase() ||
+                                    "?"
+                                  );
                                 })()}
                               </Avatar>
                               <Box sx={{ flexGrow: 1, ...wrapTextBox }}>
@@ -1044,12 +1198,18 @@ export default function TrashPage() {
                                   fontWeight="bold"
                                 >
                                   {(() => {
-                                    const displayInfo = getRecordDisplayInfo(item, module);
+                                    const displayInfo = getRecordDisplayInfo(
+                                      item,
+                                      module,
+                                    );
                                     return displayInfo.primary;
                                   })()}
                                 </Typography>
                                 {(() => {
-                                  const displayInfo = getRecordDisplayInfo(item, module);
+                                  const displayInfo = getRecordDisplayInfo(
+                                    item,
+                                    module,
+                                  );
                                   return displayInfo.secondary ? (
                                     <Typography
                                       variant="caption"
@@ -1147,7 +1307,7 @@ export default function TrashPage() {
                   )}
                 </Box>
               );
-            }
+            },
           );
 
           // if all entries are null, show fallback
@@ -1161,7 +1321,8 @@ export default function TrashPage() {
       {/* Filter Modal for mobile */}
       <FilterModal open={filterOpen} onClose={() => setFilterOpen(false)}>
         <Stack spacing={2}>
-          {(currentUser?.role === "admin" || currentUser?.role === "superadmin") && (
+          {(currentUser?.role === "admin" ||
+            currentUser?.role === "superadmin") && (
             <TextField
               select
               label={t.deletedByLabel}
@@ -1174,7 +1335,7 @@ export default function TrashPage() {
                   <MenuItem key={id} value={id}>
                     {userMap[id] || id}
                   </MenuItem>
-                )
+                ),
               )}
             </TextField>
           )}
@@ -1183,7 +1344,11 @@ export default function TrashPage() {
             select
             label={t.moduleLabel}
             value={moduleFilter}
-            onChange={(e) => setModuleFilter(e.target.value)}
+            onChange={(e) => {
+              const val = e.target.value;
+              setModuleFilter(val);
+              setSelectedModule(val || "__ALL__");
+            }}
           >
             <MenuItem value="__ALL__">{t.all}</MenuItem>
             {allAvailableModules.map((m) => (
@@ -1235,8 +1400,12 @@ export default function TrashPage() {
             }}
             disabled={
               !search &&
-              ((currentUser?.role === "admin" || currentUser?.role === "superadmin") ? deletedByFilter === "__ALL__" : true) &&
+              (currentUser?.role === "admin" ||
+              currentUser?.role === "superadmin"
+                ? deletedByFilter === "__ALL__"
+                : true) &&
               moduleFilter === "__ALL__" &&
+              selectedModule === "__ALL__" &&
               !dateFrom &&
               !dateTo
             }
