@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Paper } from "@mui/material";
+import { Box, Paper } from "@mui/material";
 import { wrapTextBox } from "@/utils/wrapTextStyles";
 
 const AppCard = ({ children, sx, ...props }) => {
@@ -29,5 +29,16 @@ const AppCard = ({ children, sx, ...props }) => {
     </Paper>
   );
 };
+
+export const AppCardText = ({ sx, ...props }) => (
+  <Box
+    sx={{
+      minWidth: 0,
+      ...wrapTextBox,
+      ...sx,
+    }}
+    {...props}
+  />
+);
 
 export default AppCard;
