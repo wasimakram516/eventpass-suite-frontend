@@ -758,10 +758,20 @@ export default function TrashPage() {
   }, [filteredTrashData, allDeletedByIds, deletedByFilter, currentUser]);
 
   return (
-    <Container dir={dir}>
+    <Container
+      dir={dir}
+      maxWidth={false}
+      sx={{ maxWidth: "1500px", px: { xs: 2, md: 3 } }}
+    >
       <BreadcrumbsNav />
-      <Stack direction="row" justifyContent="space-between" mb={2}>
-        <Box>
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
+        justifyContent="space-between"
+        alignItems={{ xs: "stretch", sm: "center" }}
+        mb={2}
+        gap={2}
+      >
+        <Box sx={{ flex: 1, minWidth: 0 }}>
           <Typography variant="h4" fontWeight="bold" textAlign={align}>
             {t.title}
           </Typography>
@@ -773,6 +783,68 @@ export default function TrashPage() {
           >
             {t.subtitle}
           </Typography>
+        </Box>
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: { xs: "column", sm: "row" },
+            alignItems: { xs: "stretch", sm: "center" },
+            justifyContent: { xs: "flex-start", sm: "flex-end" },
+            gap: 2,
+            width: { xs: "100%", sm: "auto" },
+          }}
+        >
+          {/* Search */}
+          <TextField
+            placeholder={t.searchPlaceholder}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            size="small"
+            fullWidth
+            sx={{
+              flex: 1,
+              minWidth: 0,
+              width: "100%",
+              maxWidth: { xs: "100%", sm: 360, md: 420 },
+            }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <ICONS.search fontSize="small" />
+                </InputAdornment>
+              ),
+            }}
+          />
+          <Button
+            variant="contained"
+            startIcon={<ICONS.filter />}
+            endIcon={
+              activeFilterCount > 0 ? (
+                <Box
+                  component="span"
+                  sx={{
+                    ml: dir === "rtl" ? 0 : 1,
+                    mr: dir === "rtl" ? 1 : 0,
+                    px: 0.75,
+                    py: 0.15,
+                    borderRadius: 999,
+                    fontSize: "0.75rem",
+                    bgcolor: "rgba(255,255,255,0.2)",
+                  }}
+                >
+                  {activeFilterCount}
+                </Box>
+              ) : null
+            }
+            sx={{
+              ...getStartIconSpacing(dir, { includeEnd: true, endSpacing: "0.35rem" }),
+              width: { xs: "100%", sm: "auto" },
+              whiteSpace: "nowrap",
+            }}
+            onClick={() => setFilterOpen(true)}
+          >
+            {t.filters}
+          </Button>
         </Box>
       </Stack>
       <Divider sx={{ mb: 2 }} />
@@ -854,62 +926,6 @@ export default function TrashPage() {
         </Box>
       )}
 
-      {/* Filters Toolbar (Header) */}
-      <Box
-        sx={{
-          mb: 3,
-          display: "flex",
-          flexDirection: { xs: "column", sm: "row" },
-          alignItems: { xs: "stretch", sm: "center" },
-          gap: 2,
-        }}
-      >
-        {/* Search */}
-        <TextField
-          placeholder={t.searchPlaceholder}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          size="small"
-          sx={{ flex: 1, minWidth: 220 }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <ICONS.search fontSize="small" />
-              </InputAdornment>
-            ),
-          }}
-        />
-        <Button
-          variant="contained"
-          startIcon={<ICONS.filter />}
-          endIcon={
-            activeFilterCount > 0 ? (
-              <Box
-                component="span"
-                sx={{
-                  ml: dir === "rtl" ? 0 : 1,
-                  mr: dir === "rtl" ? 1 : 0,
-                  px: 0.75,
-                  py: 0.15,
-                  borderRadius: 999,
-                  fontSize: "0.75rem",
-                  bgcolor: "rgba(255,255,255,0.2)",
-                }}
-              >
-                {activeFilterCount}
-              </Box>
-            ) : null
-          }
-          sx={{
-            ...getStartIconSpacing(dir, { includeEnd: true, endSpacing: "0.35rem" }),
-            width: { xs: "100%", sm: "auto" },
-          }}
-          onClick={() => setFilterOpen(true)}
-        >
-          {t.filters}
-        </Button>
-      </Box>
-
       {loading ? (
         <LoadingState />
       ) : !filteredTrashData || Object.keys(filteredTrashData).length === 0 ? (
@@ -965,11 +981,10 @@ export default function TrashPage() {
                       {getModuleDisplayName(module)} - {total}
                     </Typography>
                     <Stack
-                      direction={{ xs: "row", sm: "row" }}
+                      direction={{ xs: "column", sm: "row" }}
                       spacing={1}
                       sx={{
                         width: { xs: "100%", sm: "auto" },
-
                         mt: { xs: 1, sm: 0 },
                       }}
                     >
