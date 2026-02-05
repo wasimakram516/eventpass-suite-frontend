@@ -20,6 +20,11 @@ export default function EventCardBase({
   t,
   status, // eventStatus or computed status
   showRegistrations = true, // toggle for public vs closed
+  showPollCount = false, // toggle for showing poll count instead of registrations
+  hideVenue = false, // hide venue field
+  hideDates = false, // hide dates field
+  showAudit = false, // show created/updated metadata
+  locale = "en-GB",
   onView,
   onViewWhatsAppLogs,
   onEdit,
