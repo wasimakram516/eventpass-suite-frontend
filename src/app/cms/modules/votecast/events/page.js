@@ -54,6 +54,10 @@ const translations = {
         shareTitle: "Share",
         viewPolls: "View Polls",
         viewResults: "View Results",
+        createdBy: "Created:",
+        updatedBy: "Updated:",
+        createdAt: "Created At:",
+        updatedAt: "Updated At:",
     },
     ar: {
         pageTitle: "إدارة فعاليات VoteCast",
@@ -76,13 +80,17 @@ const translations = {
         shareTitle: "مشاركة",
         viewPolls: "عرض الاستطلاعات",
         viewResults: "عرض النتائج",
+        createdBy: "أنشئ:",
+        updatedBy: "حدث:",
+        createdAt: "تاريخ الإنشاء:",
+        updatedAt: "تاريخ التحديث:",
     },
 };
 
 export default function EventsPage() {
     const router = useRouter();
     const { user, selectedBusiness, setSelectedBusiness } = useAuth();
-    const { t, dir, align } = useI18nLayout(translations);
+    const { t, dir, align, language } = useI18nLayout(translations);
 
     const [events, setEvents] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -263,6 +271,8 @@ export default function EventsPage() {
                                         showPollCount={true}
                                         hideVenue={true}
                                         hideDates={true}
+                                        showAudit={true}
+                                        locale={language === "ar" ? "ar-SA" : "en-GB"}
                                         onView={() =>
                                             router.push(
                                                 `/cms/modules/votecast/events/${ev.slug}/polls`

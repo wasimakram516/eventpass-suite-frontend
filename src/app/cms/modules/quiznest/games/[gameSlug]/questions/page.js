@@ -48,6 +48,7 @@ import {
 } from "@/services/quiznest/questionService";
 import { getGameBySlug } from "@/services/quiznest/gameService";
 import NoDataAvailable from "@/components/NoDataAvailable";
+import RecordMetadata from "@/components/RecordMetadata";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import AppCard from "@/components/cards/AppCard";
 
@@ -83,6 +84,10 @@ const translations = {
     downloadTemplate: "Download Template",
     uploadQuestions: "Upload Questions",
     addQuestion: "Add Question",
+    createdBy: "Created:",
+    createdAt: "Created At:",
+    updatedBy: "Updated:",
+    updatedAt: "Updated At:",
   },
   ar: {
     questionsTitle: 'أسئلة لعبة "{gameTitle}"',
@@ -115,10 +120,14 @@ const translations = {
     downloadTemplate: "تحميل النموذج",
     uploadQuestions: "تحميل الأسئلة",
     addQuestion: "إضافة سؤال",
+    createdBy: "أنشئ:",
+    createdAt: "تاريخ الإنشاء:",
+    updatedBy: "حدث:",
+    updatedAt: "تاريخ التحديث:",
   },
 };
 export default function QuestionsPage() {
-  const { t, dir } = useI18nLayout(translations);
+  const { t, dir, language } = useI18nLayout(translations);
   const { gameSlug } = useParams();
   const { showMessage } = useMessage();
   const [game, setGame] = useState(null);
@@ -342,7 +351,7 @@ export default function QuestionsPage() {
                 <AppCard
                   sx={{
                     width: "100%",
-                    maxWidth: { xs: "none", sm: 360 },
+                    maxWidth: { xs: "none", sm: 440 },
                     mx: { xs: 0, sm: "auto" },
                     height: "100%",
                     display: "flex",
@@ -446,6 +455,17 @@ export default function QuestionsPage() {
                       </Typography>
                     )}
                   </CardContent>
+                  <RecordMetadata
+                    createdBy={q.createdBy}
+                    updatedBy={q.updatedBy}
+                    createdAt={q.createdAt}
+                    updatedAt={q.updatedAt}
+                    locale={language === "ar" ? "ar-SA" : "en-GB"}
+                    createdByLabel={t.createdBy}
+                    createdAtLabel={t.createdAt}
+                    updatedByLabel={t.updatedBy}
+                    updatedAtLabel={t.updatedAt}
+                  />
                   <CardActions sx={{ justifyContent: "center" }}>
                     <Tooltip title={t.editTooltip}>
                       <IconButton

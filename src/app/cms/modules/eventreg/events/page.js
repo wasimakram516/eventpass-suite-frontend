@@ -59,6 +59,10 @@ const translations = {
     shareTitle: "Share",
     viewRegs: "View Registrations",
     insights: "Intelligent Insights",
+    createdBy: "Created:",
+    updatedBy: "Updated:",
+    createdAt: "Created At:",
+    updatedAt: "Updated At:",
   },
   ar: {
     pageTitle: "إدارة الفعاليات",
@@ -89,7 +93,7 @@ const translations = {
 export default function EventsPage() {
   const router = useRouter();
   const { user, selectedBusiness, setSelectedBusiness } = useAuth();
-  const { t, dir, align } = useI18nLayout(translations);
+  const { t, dir, align, language } = useI18nLayout(translations);
 
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -271,6 +275,8 @@ export default function EventsPage() {
                     t={t}
                     status={status}
                     showRegistrations
+                    showAudit={true}
+                    locale={language === "ar" ? "ar-SA" : "en-GB"}
                     onView={() =>
                       router.replace(
                         `/cms/modules/eventreg/events/${ev.slug}/registrations`

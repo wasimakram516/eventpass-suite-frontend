@@ -57,6 +57,10 @@ const translations = {
     shareTitle: "Share",
     viewRegs: "View Registrations",
     viewWhatsAppLogs: "View WhatsApp Logs",
+    createdBy: "Created:",
+    updatedBy: "Updated:",
+    createdAt: "Created At:",
+    updatedAt: "Updated At:",
   },
   ar: {
     pageTitle: "إدارة الفعاليات",
@@ -81,13 +85,17 @@ const translations = {
     shareTitle: "مشاركة",
     viewRegs: "عرض التسجيلات",
     viewWhatsAppLogs: "عرض سجلات واتساب",
+    createdBy: "أنشئ:",
+    updatedBy: "حدث:",
+    createdAt: "تاريخ الإنشاء:",
+    updatedAt: "تاريخ التحديث:",
   },
 };
 
 export default function EventsPage() {
   const router = useRouter();
   const { user, selectedBusiness, setSelectedBusiness } = useAuth();
-  const { t, dir, align } = useI18nLayout(translations);
+  const { t, dir, align, language } = useI18nLayout(translations);
 
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -280,6 +288,8 @@ export default function EventsPage() {
                     t={t}
                     status={eventStatus}
                     showRegistrations
+                    showAudit={true}
+                    locale={language === "ar" ? "ar-SA" : "en-GB"}
                     onView={
                       event.slug
                         ? () =>

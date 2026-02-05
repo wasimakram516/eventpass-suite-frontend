@@ -59,9 +59,11 @@ import ICONS from "@/utils/iconUtil";
 import WalkInModal from "@/components/modals/WalkInModal";
 import BulkEmailModal from "@/components/modals/BulkEmailModal";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import RecordMetadata from "@/components/RecordMetadata";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import { wrapTextBox } from "@/utils/wrapTextStyles";
+import { pickFullName } from "@/utils/customFieldUtils";
 import useEventRegSocket from "@/hooks/modules/eventReg/useEventRegSocket";
 import { exportAllBadges } from "@/utils/exportBadges";
 import RegistrationModal from "@/components/modals/RegistrationModal";
@@ -153,6 +155,10 @@ const translations = {
     all: "All",
     sent: "Sent",
     notSent: "Not Sent",
+    createdBy: "Created:",
+    createdAt: "Created At:",
+    updatedBy: "Updated:",
+    updatedAt: "Updated At:",
   },
   ar: {
     title: "تفاصيل الحدث",
@@ -235,12 +241,16 @@ const translations = {
     all: "الكل",
     sent: "تم الإرسال",
     notSent: "لم يتم الإرسال",
+    createdBy: "أنشئ:",
+    createdAt: "تاريخ الإنشاء:",
+    updatedBy: "حدث:",
+    updatedAt: "تاريخ التحديث:",
   },
 };
 
 export default function ViewRegistrations() {
   const { eventSlug } = useParams();
-  const { dir, t } = useI18nLayout(translations);
+  const { dir, t, language } = useI18nLayout(translations);
   const { showMessage } = useMessage();
 
   const BASE_DATE_FILTERS = {
@@ -346,16 +356,16 @@ export default function ViewRegistrations() {
     const fieldsLocal =
       !evRes?.error && evRes.formFields?.length
         ? evRes.formFields.map((f) => ({
-            name: f.inputName,
-            type: (f.inputType || "text").toLowerCase(),
-            values: Array.isArray(f.values) ? f.values : [],
-          }))
+          name: f.inputName,
+          type: (f.inputType || "text").toLowerCase(),
+          values: Array.isArray(f.values) ? f.values : [],
+        }))
         : [
-            { name: "fullName", type: "text", values: [] },
-            { name: "email", type: "text", values: [] },
-            { name: "phone", type: "text", values: [] },
-            { name: "company", type: "text", values: [] },
-          ];
+          { name: "fullName", type: "text", values: [] },
+          { name: "email", type: "text", values: [] },
+          { name: "phone", type: "text", values: [] },
+          { name: "company", type: "text", values: [] },
+        ];
 
     if (!evRes?.error) {
       setEventDetails(evRes);
@@ -515,34 +525,14 @@ export default function ViewRegistrations() {
     }
     setAllRegistrations((prev) =>
       prev.map((r) => {
-        if (r._id === editingReg._id) {
-          const hasCustomFields = eventDetails?.formFields?.length > 0;
-          if (hasCustomFields) {
-            return {
-              ...r,
-              customFields: { ...r.customFields, ...updatedFields },
-            };
-          } else {
-            return {
-              ...r,
-              fullName:
-                updatedFields["Full Name"] !== undefined
-                  ? updatedFields["Full Name"]
-                  : r.fullName,
-              email:
-                updatedFields["Email"] !== undefined
-                  ? updatedFields["Email"]
-                  : r.email,
-              phone:
-                updatedFields["Phone"] !== undefined
-                  ? updatedFields["Phone"]
-                  : r.phone,
-              company:
-                updatedFields["Company"] !== undefined
-                  ? updatedFields["Company"]
-                  : r.company,
-            };
-          }
+        if (r._id === editingReg._id && res && !res.error) {
+          const merged = { ...r, ...res };
+          return {
+            ...merged,
+            _createdAtMs: merged.createdAt ? Date.parse(merged.createdAt) : r._createdAtMs,
+            _scannedAtMs: (merged.walkIns || []).map((w) => Date.parse(w.scannedAt)),
+            _haystack: buildHaystack(merged, dynamicFieldsRef.current),
+          };
         }
         return r;
       }),
@@ -744,9 +734,8 @@ export default function ViewRegistrations() {
       const sampleUrl = URL.createObjectURL(sampleBlob);
       const sampleLink = document.createElement("a");
       sampleLink.href = sampleUrl;
-      sampleLink.download = `${
-        eventDetails.slug || "event"
-      }_registrations_template.xlsx`;
+      sampleLink.download = `${eventDetails.slug || "event"
+        }_registrations_template.xlsx`;
       document.body.appendChild(sampleLink);
       sampleLink.click();
       document.body.removeChild(sampleLink);
@@ -1393,13 +1382,13 @@ export default function ViewRegistrations() {
               <ICONS.search fontSize="small" sx={{ opacity: 0.7 }} />
               {filteredRegistrations.length === 1
                 ? t.matchingRecords.replace(
-                    "{count}",
-                    filteredRegistrations.length,
-                  )
+                  "{count}",
+                  filteredRegistrations.length,
+                )
                 : t.matchingRecordsPlural.replace(
-                    "{count}",
-                    filteredRegistrations.length,
-                  )}{" "}
+                  "{count}",
+                  filteredRegistrations.length,
+                )}{" "}
               {t.found}
             </Typography>
           )}
@@ -1414,9 +1403,9 @@ export default function ViewRegistrations() {
           sx={
             dir === "rtl"
               ? {
-                  columnGap: 1.5,
-                  rowGap: 1.5,
-                }
+                columnGap: 1.5,
+                rowGap: 1.5,
+              }
               : {}
           }
         >
@@ -1440,8 +1429,8 @@ export default function ViewRegistrations() {
               sx:
                 dir === "rtl"
                   ? {
-                      paddingRight: 2,
-                    }
+                    paddingRight: 2,
+                  }
                   : {},
             }}
             sx={{
@@ -1501,28 +1490,24 @@ export default function ViewRegistrations() {
         if (filters.createdAtFromMs || filters.createdAtToMs) {
           activeFilterEntries.push([
             "Registered At",
-            `${
-              filters.createdAtFromMs
-                ? formatDateTimeWithLocale(filters.createdAtFromMs)
-                : "—"
-            } → ${
-              filters.createdAtToMs
-                ? formatDateTimeWithLocale(filters.createdAtToMs)
-                : "—"
+            `${filters.createdAtFromMs
+              ? formatDateTimeWithLocale(filters.createdAtFromMs)
+              : "—"
+            } → ${filters.createdAtToMs
+              ? formatDateTimeWithLocale(filters.createdAtToMs)
+              : "—"
             }`,
           ]);
         }
         if (filters.scannedAtFromMs || filters.scannedAtToMs) {
           activeFilterEntries.push([
             "Scanned At",
-            `${
-              filters.scannedAtFromMs
-                ? formatDateTimeWithLocale(filters.scannedAtFromMs)
-                : "—"
-            } → ${
-              filters.scannedAtToMs
-                ? formatDateTimeWithLocale(filters.scannedAtToMs)
-                : "—"
+            `${filters.scannedAtFromMs
+              ? formatDateTimeWithLocale(filters.scannedAtFromMs)
+              : "—"
+            } → ${filters.scannedAtToMs
+              ? formatDateTimeWithLocale(filters.scannedAtToMs)
+              : "—"
             }`,
           ]);
         }
@@ -1597,12 +1582,12 @@ export default function ViewRegistrations() {
                   sx={
                     dir === "rtl"
                       ? {
-                          pr: 4.5,
-                          pl: 2,
-                          "& .MuiChip-label": {
-                            whiteSpace: "nowrap",
-                          },
-                        }
+                        pr: 4.5,
+                        pl: 2,
+                        "& .MuiChip-label": {
+                          whiteSpace: "nowrap",
+                        },
+                      }
                       : {}
                   }
                 />
@@ -1651,7 +1636,8 @@ export default function ViewRegistrations() {
               >
                 <Card
                   sx={{
-                    width: { xs: "100%", sm: 340 },
+                    width: { xs: "100%", sm: 360 },
+                    maxWidth: 360,
                     height: "100%",
                     borderRadius: 4,
                     overflow: "hidden",
@@ -1845,6 +1831,21 @@ export default function ViewRegistrations() {
                     ))}
                   </CardContent>
 
+                  <RecordMetadata
+                    createdBy={reg.createdBy}
+                    updatedBy={reg.updatedBy}
+                    createdAt={reg.createdAt}
+                    updatedAt={reg.updatedAt}
+                    createdByDisplayName={reg.createdBy == null ? (reg.fullName ?? pickFullName(reg.customFields)) : undefined}
+                    updatedByDisplayName={reg.updatedBy == null && reg.createdBy ? (typeof reg.createdBy === "object" ? reg.createdBy?.name : null) : undefined}
+                    updatedAtFallback={reg.updatedBy == null ? reg.createdAt : undefined}
+                    locale={language === "ar" ? "ar-SA" : "en-GB"}
+                    createdByLabel={t.createdBy}
+                    createdAtLabel={t.createdAt}
+                    updatedByLabel={t.updatedBy}
+                    updatedAtLabel={t.updatedAt}
+                  />
+
                   {/* Actions */}
                   <CardActions
                     sx={{
@@ -2008,7 +2009,7 @@ export default function ViewRegistrations() {
             : t.bulkRejectTitle
         }
         message={getBulkApprovalMessage(bulkApprovalStatus)}
-        
+
         confirmButtonText={
           bulkApprovalStatus === "approved" ? t.bulkApprove : t.bulkReject
         }
@@ -2234,8 +2235,8 @@ export default function ViewRegistrations() {
               {["radio", "list", "select", "dropdown"].includes(
                 (f.type || "").toLowerCase(),
               ) &&
-              Array.isArray(f.values) &&
-              f.values.length > 0 ? (
+                Array.isArray(f.values) &&
+                f.values.length > 0 ? (
                 <FormControl fullWidth size="small">
                   <InputLabel>{`Select ${getFieldLabel(f.name)}`}</InputLabel>
                   <Select

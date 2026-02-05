@@ -36,6 +36,7 @@ import { getVoteCastEventBySlug } from "@/services/votecast/eventService";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import EmptyBusinessState from "@/components/EmptyBusinessState";
 import NoDataAvailable from "@/components/NoDataAvailable";
+import RecordMetadata from "@/components/RecordMetadata";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 
 const translations = {
@@ -63,6 +64,10 @@ const translations = {
     failedToFetchPolls: "Failed to fetch polls.",
     eventNotFound: "Event not found.",
     noBusiness: "No business",
+    createdBy: "Created:",
+    createdAt: "Created At:",
+    updatedBy: "Updated:",
+    updatedAt: "Updated At:",
   },
   ar: {
     title: "إدارة الاستطلاعات",
@@ -88,6 +93,10 @@ const translations = {
     failedToFetchPolls: "فشل في جلب الاستطلاعات.",
     eventNotFound: "الفعالية غير موجودة.",
     noBusiness: "لا توجد شركة",
+    createdBy: "أنشئ:",
+    createdAt: "تاريخ الإنشاء:",
+    updatedBy: "حدث:",
+    updatedAt: "تاريخ التحديث:",
   },
 };
 
@@ -96,7 +105,7 @@ export default function ManagePollsPage() {
   const router = useRouter();
   const { user } = useAuth();
   const { showMessage } = useMessage();
-  const { t, dir } = useI18nLayout(translations);
+  const { t, dir, language } = useI18nLayout(translations);
 
   const [polls, setPolls] = useState([]);
   const [event, setEvent] = useState(null);
@@ -297,13 +306,13 @@ export default function ManagePollsPage() {
                   sx={{
                     display: "flex",
                     justifyContent: "center",
-                    width: { xs: "100%", sm: 300 },
+                    width: { xs: "100%", sm: 420 },
                   }}
                 >
                   <AppCard
                     sx={{
-                      width: { xs: "100%", sm: 300 },
-                      maxWidth: { xs: "100%", sm: 300 },
+                      width: { xs: "100%", sm: 420 },
+                      maxWidth: { xs: "100%", sm: 420 },
                       display: "flex",
                       flexDirection: "column",
                       justifyContent: "space-between",
@@ -379,6 +388,18 @@ export default function ManagePollsPage() {
                         </Stack>
                       </CardContent>
                     </Box>
+
+                    <RecordMetadata
+                      createdBy={poll.createdBy}
+                      updatedBy={poll.updatedBy}
+                      createdAt={poll.createdAt}
+                      updatedAt={poll.updatedAt}
+                      locale={language === "ar" ? "ar-SA" : "en-GB"}
+                      createdByLabel={t.createdBy}
+                      createdAtLabel={t.createdAt}
+                      updatedByLabel={t.updatedBy}
+                      updatedAtLabel={t.updatedAt}
+                    />
 
                     <CardActions
                       sx={{

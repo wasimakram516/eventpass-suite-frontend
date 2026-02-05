@@ -45,6 +45,7 @@ import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import RecordMetadata from "@/components/RecordMetadata";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import LoadingState from "@/components/LoadingState";
 import NoDataAvailable from "@/components/NoDataAvailable";
@@ -77,6 +78,10 @@ const translations = {
     showing: "Showing",
     to: "to",
     of: "of",
+    createdBy: "Created:",
+    createdAt: "Created At:",
+    updatedBy: "Updated:",
+    updatedAt: "Updated At:",
   },
   ar: {
     participants: "المشاركون",
@@ -101,12 +106,16 @@ const translations = {
     showing: "عرض",
     to: "إلى",
     of: "من",
+    createdBy: "أنشئ:",
+    createdAt: "تاريخ الإنشاء:",
+    updatedBy: "حدث:",
+    updatedAt: "تاريخ التحديث:",
   },
 };
 
 const ParticipantsAdminPage = () => {
   const router = useRouter();
-  const { t, dir } = useI18nLayout(translations);
+  const { t, dir, language } = useI18nLayout(translations);
   const params = useParams();
   const slug = params?.wheelSlug;
   const [participants, setParticipants] = useState([]);
@@ -532,6 +541,19 @@ const ParticipantsAdminPage = () => {
                         </Typography>
                       )}
                     </CardContent>
+                    <RecordMetadata
+                      createdBy={participant.createdBy}
+                      updatedBy={participant.updatedBy}
+                      createdAt={participant.createdAt}
+                      updatedAt={participant.updatedAt}
+                      createdByDisplayName={participant.name}
+                      updatedByDisplayName={participant.name}
+                      locale={language === "ar" ? "ar-SA" : "en-GB"}
+                      createdByLabel={t.createdBy}
+                      createdAtLabel={t.createdAt}
+                      updatedByLabel={t.updatedBy}
+                      updatedAtLabel={t.updatedAt}
+                    />
                     <Divider />
                     <CardActions sx={{ justifyContent: "flex-end", p: 1.5 }}>
                       <Tooltip title={t.deleteParticipant}>

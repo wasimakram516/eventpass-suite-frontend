@@ -43,6 +43,7 @@ import BusinessDrawer from "@/components/drawers/BusinessDrawer";
 import EmptyBusinessState from "@/components/EmptyBusinessState";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import RecordMetadata from "@/components/RecordMetadata";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import { useRouter } from "next/navigation";
@@ -78,6 +79,10 @@ const translations = {
     wallConfigCreated: "Wall configuration created successfully",
     wallConfigDeleted: "Wall configuration deleted successfully",
     invalidDate: "Invalid Date",
+    createdBy: "Created:",
+    createdAt: "Created At:",
+    updatedBy: "Updated:",
+    updatedAt: "Updated At:",
     notAvailable: "N/A",
   },
   ar: {
@@ -110,6 +115,10 @@ const translations = {
     wallConfigDeleted: "تم حذف تكوين الجدار بنجاح",
     invalidDate: "تاريخ غير صالح",
     notAvailable: "غير متاح",
+    createdBy: "أنشئ:",
+    createdAt: "تاريخ الإنشاء:",
+    updatedBy: "حدث:",
+    updatedAt: "تاريخ التحديث:",
   },
 };
 export default function WallConfigsPage() {
@@ -126,7 +135,7 @@ export default function WallConfigsPage() {
   const { user, selectedBusiness, setSelectedBusiness } = useAuth();
   const [businesses, setBusinesses] = useState([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const { t, dir, align } = useI18nLayout(translations);
+  const { t, dir, align, language } = useI18nLayout(translations);
   const [formData, setFormData] = useState({
     name: "",
     slug: "",
@@ -386,6 +395,17 @@ export default function WallConfigsPage() {
                     })()}
                   </Typography>
                 </CardContent>
+                <RecordMetadata
+                  createdBy={config.createdBy}
+                  updatedBy={config.updatedBy}
+                  createdAt={config.createdAt}
+                  updatedAt={config.updatedAt}
+                  locale={language === "ar" ? "ar-SA" : "en-GB"}
+                  createdByLabel={t.createdBy}
+                  createdAtLabel={t.createdAt}
+                  updatedByLabel={t.updatedBy}
+                  updatedAtLabel={t.updatedAt}
+                />
                 <Divider />
                 <CardActions sx={{ justifyContent: "space-between", p: 1.5 }}>
                   <Box>

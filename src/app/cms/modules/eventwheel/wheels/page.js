@@ -40,6 +40,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import LoadingState from "@/components/LoadingState";
+import RecordMetadata from "@/components/RecordMetadata";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import slugify from "@/utils/slugify";
 import CircularProgress from "@mui/material/CircularProgress";
@@ -90,6 +91,10 @@ const translations = {
     shareSpinWheelTitle: "Share Spin Wheel",
     participants: "Participants",
     participantCount: "Participant Count",
+    createdBy: "Created:",
+    createdAt: "Created At:",
+    updatedBy: "Updated:",
+    updatedAt: "Updated At:",
   },
   ar: {
     spinWheelManagement: "إدارة عجلة الدوران",
@@ -131,13 +136,17 @@ const translations = {
     shareSpinWheelTitle: "مشاركة عجلة الدوران",
     participants: "المشاركون",
     participantCount: "عدد المشاركين",
+    createdBy: "أنشئ:",
+    createdAt: "تاريخ الإنشاء:",
+    updatedBy: "حدث:",
+    updatedAt: "تاريخ التحديث:",
   },
 };
 
 const Dashboard = () => {
   const router = useRouter();
   const { user, selectedBusiness, setSelectedBusiness } = useAuth();
-  const { t, dir } = useI18nLayout(translations);
+  const { t, dir, language } = useI18nLayout(translations);
   const { showMessage } = useMessage();
   const [spinWheels, setSpinWheels] = useState([]);
   const [businesses, setBusinesses] = useState([]);
@@ -822,6 +831,17 @@ const Dashboard = () => {
                         })()}
                       </Typography>
                     </CardContent>
+                    <RecordMetadata
+                      createdBy={wheel.createdBy}
+                      updatedBy={wheel.updatedBy}
+                      createdAt={wheel.createdAt}
+                      updatedAt={wheel.updatedAt}
+                      locale={language === "ar" ? "ar-SA" : "en-GB"}
+                      createdByLabel={t.createdBy}
+                      createdAtLabel={t.createdAt}
+                      updatedByLabel={t.updatedBy}
+                      updatedAtLabel={t.updatedAt}
+                    />
                     <Divider />
                     <CardActions
                       sx={{ justifyContent: "space-between", p: 1.5 }}

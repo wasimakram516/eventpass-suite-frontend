@@ -39,6 +39,7 @@ import EmptyBusinessState from "@/components/EmptyBusinessState";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import RecordMetadata from "@/components/RecordMetadata";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import ICONS from "@/utils/iconUtil";
 
@@ -120,6 +121,10 @@ const translations = {
     vQOptions: "Multiple choice needs at least 2 options.",
     vScaleMinMax: "Min must be less than Max.",
     vStepPositive: "Step must be a positive number.",
+    createdBy: "Created:",
+    createdAt: "Created At:",
+    updatedBy: "Updated:",
+    updatedAt: "Updated At:",
   },
   ar: {
     title: "إدارة نماذج الاستبيان",
@@ -179,6 +184,10 @@ const translations = {
     vQOptions: "المتعدد يحتاج خيارين على الأقل.",
     vScaleMinMax: "يجب أن يكون الحد الأدنى أقل من الحد الأقصى.",
     vStepPositive: "يجب أن تكون الخطوة رقمًا موجبًا.",
+    createdBy: "أنشئ:",
+    createdAt: "تاريخ الإنشاء:",
+    updatedBy: "حدث:",
+    updatedAt: "تاريخ التحديث:",
   },
 };
 
@@ -200,7 +209,7 @@ export default function SurveyFormsManagePage() {
     setSelectedBusiness,
   } = useAuth();
   const { showMessage } = useMessage();
-  const { t, dir } = useI18nLayout(translations);
+  const { t, dir, language } = useI18nLayout(translations);
 
   const [bizDrawerOpen, setBizDrawerOpen] = useState(false);
 
@@ -842,7 +851,7 @@ export default function SurveyFormsManagePage() {
                 <Card
                   sx={{
                     width: "100%",
-                    maxWidth: 340,
+                    maxWidth: 420,
                     height: "100%",
                     display: "flex",
                     flexDirection: "column",
@@ -934,6 +943,18 @@ export default function SurveyFormsManagePage() {
                       </Stack>
                     </Stack>
                   </CardContent>
+
+                  <RecordMetadata
+                    createdBy={f.createdBy}
+                    updatedBy={f.updatedBy}
+                    createdAt={f.createdAt}
+                    updatedAt={f.updatedAt}
+                    locale={language === "ar" ? "ar-SA" : "en-GB"}
+                    createdByLabel={t.createdBy}
+                    createdAtLabel={t.createdAt}
+                    updatedByLabel={t.updatedBy}
+                    updatedAtLabel={t.updatedAt}
+                  />
 
                   <CardActions sx={{ justifyContent: "center" }}>
                     <Tooltip title={t.copyLink}>

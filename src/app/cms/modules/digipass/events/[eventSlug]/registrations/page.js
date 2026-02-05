@@ -49,6 +49,7 @@ import { useParams } from "next/navigation";
 import ICONS from "@/utils/iconUtil";
 import WalkInModal from "@/components/modals/WalkInModal";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import RecordMetadata from "@/components/RecordMetadata";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import { wrapTextBox } from "@/utils/wrapTextStyles";
@@ -105,6 +106,10 @@ const translations = {
         editRegistration: "Edit Registration",
         createRegistration: "New",
         copyToken: "Copy Token",
+        createdBy: "Created:",
+        createdAt: "Created At:",
+        updatedBy: "Updated:",
+        updatedAt: "Updated At:",
     },
     ar: {
         title: "تفاصيل الحدث",
@@ -151,6 +156,10 @@ const translations = {
         editRegistration: "تعديل التسجيل",
         createRegistration: "جديد",
         copyToken: "نسخ الرمز",
+        createdBy: "أنشئ:",
+        createdAt: "تاريخ الإنشاء:",
+        updatedBy: "حدث:",
+        updatedAt: "تاريخ التحديث:",
     },
 };
 
@@ -192,7 +201,7 @@ const buildHaystack = (reg, fieldsLocal) => {
 
 export default function ViewRegistrations() {
     const { eventSlug } = useParams();
-    const { dir, t } = useI18nLayout(translations);
+    const { dir, t, language } = useI18nLayout(translations);
     const { showMessage } = useMessage();
 
     const dynamicFieldsRef = useRef([]);
@@ -295,11 +304,14 @@ export default function ViewRegistrations() {
         }
         setAllRegistrations((prev) =>
             prev.map((r) => {
-                if (r._id === editingReg._id) {
-                    const hasCustomFields = eventDetails?.formFields?.length > 0;
-                    if (hasCustomFields) {
-                        return { ...r, customFields: { ...r.customFields, ...updatedFields } };
-                    }
+                if (r._id === editingReg._id && res && !res.error) {
+                    const merged = { ...r, ...res };
+                    return {
+                        ...merged,
+                        _createdAtMs: merged.createdAt ? Date.parse(merged.createdAt) : r._createdAtMs,
+                        _scannedAtMs: (merged.walkIns || []).map((w) => Date.parse(w.scannedAt)),
+                        _haystack: buildHaystack(merged, dynamicFieldsRef.current),
+                    };
                 }
                 return r;
             })
@@ -325,6 +337,24 @@ export default function ViewRegistrations() {
 
         setCreateModalOpen(false);
         showMessage("Registration created successfully", "success");
+
+        const reg = {
+            ...res,
+            walkIns: res.walkIns || [],
+        };
+        const processed = {
+            ...reg,
+            _createdAtMs: Date.parse(reg.createdAt),
+            _scannedAtMs: (reg.walkIns || []).map((w) => Date.parse(w.scannedAt)),
+            _haystack: buildHaystack(reg, dynamicFieldsRef.current),
+        };
+        setAllRegistrations((prev) => {
+            const exists = prev.some((r) => r._id === processed._id);
+            if (exists) return prev;
+            return [processed, ...prev];
+        });
+        setTotalRegistrations((prev) => prev + 1);
+
         fetchData();
     };
 
@@ -1111,7 +1141,8 @@ export default function ViewRegistrations() {
                                 >
                                     <Card
                                         sx={{
-                                            width: { xs: "100%", sm: 340 },
+                                            width: { xs: "100%", sm: 360 },
+                                            maxWidth: 360,
                                             height: "100%",
                                             borderRadius: 4,
                                             overflow: "hidden",
@@ -1355,6 +1386,21 @@ export default function ViewRegistrations() {
                                                 </>
                                             )}
                                         </CardContent>
+
+                                        <RecordMetadata
+                                            createdBy={reg.createdBy}
+                                            updatedBy={reg.updatedBy}
+                                            createdAt={reg.createdAt}
+                                            updatedAt={reg.updatedAt}
+                                            createdByDisplayName={reg.createdBy == null ? pickFullName(reg.customFields) : undefined}
+                                            updatedByDisplayName={reg.updatedBy == null && reg.createdBy ? (typeof reg.createdBy === "object" ? reg.createdBy?.name : null) : undefined}
+                                            updatedAtFallback={reg.updatedBy == null ? reg.createdAt : undefined}
+                                            locale={language === "ar" ? "ar-SA" : "en-GB"}
+                                            createdByLabel={t.createdBy}
+                                            createdAtLabel={t.createdAt}
+                                            updatedByLabel={t.updatedBy}
+                                            updatedAtLabel={t.updatedAt}
+                                        />
 
                                         <CardActions
                                             sx={{

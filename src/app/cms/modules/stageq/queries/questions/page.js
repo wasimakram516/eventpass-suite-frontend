@@ -35,6 +35,7 @@ import useI18nLayout from "@/hooks/useI18nLayout";
 import EmptyBusinessState from "@/components/EmptyBusinessState";
 import LoadingState from "@/components/LoadingState";
 import NoDataAvailable from "@/components/NoDataAvailable";
+import RecordMetadata from "@/components/RecordMetadata";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 
 const translations = {
@@ -61,6 +62,10 @@ const translations = {
     vote: "vote",
     votes: "votes",
     failedToUpdateAnsweredStatus: "Failed to update answered status",
+    createdBy: "Created:",
+    createdAt: "Created At:",
+    updatedBy: "Updated:",
+    updatedAt: "Updated At:",
   },
   ar: {
     title: "إدارة الأسئلة",
@@ -84,12 +89,16 @@ const translations = {
     vote: "صوت",
     votes: "أصوات",
     failedToUpdateAnsweredStatus: "فشل في تحديث حالة الإجابة",
+    createdBy: "أنشئ:",
+    createdAt: "تاريخ الإنشاء:",
+    updatedBy: "حدث:",
+    updatedAt: "تاريخ التحديث:",
   },
 };
 export default function ManageQuestionsPage() {
   const { showMessage } = useMessage();
   const { user, selectedBusiness, setSelectedBusiness } = useAuth();
-  const { t, dir } = useI18nLayout(translations);
+  const { t, dir, language } = useI18nLayout(translations);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [businesses, setBusinesses] = useState([]);
   const [questions, setQuestions] = useState([]);
@@ -244,7 +253,7 @@ export default function ManageQuestionsPage() {
                     flexDirection: "column",
                     justifyContent: "space-between",
                     height: "100%",
-                    width: { xs: "100%", sm: "300px" },
+                    width: { xs: "100%", sm: "420px" },
                     borderRadius: 3,
                     boxShadow: 1,
                     bgcolor: "#fefefe",
@@ -360,6 +369,19 @@ export default function ManageQuestionsPage() {
                         </Typography>
                       </Stack>
                     </Stack>
+
+                    <RecordMetadata
+                      createdBy={q.createdBy}
+                      updatedBy={q.updatedBy}
+                      createdAt={q.createdAt}
+                      updatedAt={q.updatedAt}
+                      createdByDisplayName={q.createdBy == null ? q.visitor?.name : undefined}
+                      locale={language === "ar" ? "ar-SA" : "en-GB"}
+                      createdByLabel={t.createdBy}
+                      createdAtLabel={t.createdAt}
+                      updatedByLabel={t.updatedBy}
+                      updatedAtLabel={t.updatedAt}
+                    />
 
                     {/* Actions */}
                     <Stack
