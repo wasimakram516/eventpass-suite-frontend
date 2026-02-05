@@ -35,6 +35,7 @@ import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import EmptyBusinessState from "@/components/EmptyBusinessState";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import AppCard from "@/components/cards/AppCard";
+import RecordMetadata from "@/components/RecordMetadata";
 
 const translations = {
   en: {
@@ -59,6 +60,10 @@ const translations = {
     deleteTooltip: "Delete Game",
     shareTooltip: "Share Game Link",
     delete: "Delete",
+    createdBy: "Created:",
+    createdAt: "Created At:",
+    updatedBy: "Updated:",
+    updatedAt: "Updated At:",
   },
   ar: {
     gamesTitle: "ألعاب TapMatch",
@@ -82,13 +87,17 @@ const translations = {
     deleteTooltip: "حذف اللعبة",
     shareTooltip: "مشاركة رابط اللعبة",
     delete: "حذف",
+    createdBy: "أنشئ:",
+    createdAt: "تاريخ الإنشاء:",
+    updatedBy: "حدث:",
+    updatedAt: "تاريخ التحديث:",
   },
 };
 
 export default function TapMatchGamesPage() {
   const router = useRouter();
   const { user, selectedBusiness, setSelectedBusiness } = useAuth();
-  const { t, dir } = useI18nLayout(translations);
+  const { t, dir, language } = useI18nLayout(translations);
 
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -286,7 +295,7 @@ export default function TapMatchGamesPage() {
                   sx={{
                     p: 2,
                     height: "100%",
-                    maxWidth: "350px",
+                    maxWidth: "420px",
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "space-between",
@@ -344,6 +353,18 @@ export default function TapMatchGamesPage() {
                       )}
                     </Box>
                   </Box>
+
+                  <RecordMetadata
+                    createdBy={g.createdBy}
+                    updatedBy={g.updatedBy}
+                    createdAt={g.createdAt}
+                    updatedAt={g.updatedAt}
+                    locale={language === "ar" ? "ar-SA" : "en-GB"}
+                    createdByLabel={t.createdBy}
+                    createdAtLabel={t.createdAt}
+                    updatedByLabel={t.updatedBy}
+                    updatedAtLabel={t.updatedAt}
+                  />
 
                   <Box sx={{ mt: 2 }}>
                     <Stack

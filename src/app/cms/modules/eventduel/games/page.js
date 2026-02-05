@@ -35,6 +35,7 @@ import EmptyBusinessState from "@/components/EmptyBusinessState";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import LoadingState from "@/components/LoadingState";
 import AppCard from "@/components/cards/AppCard";
+import RecordMetadata from "@/components/RecordMetadata";
 
 const translations = {
   en: {
@@ -70,6 +71,10 @@ const translations = {
     editTooltip: "Edit Game",
     deleteTooltip: "Delete Game",
     shareTooltip: "Share Game Link",
+    createdBy: "Created:",
+    createdAt: "Created At:",
+    updatedBy: "Updated:",
+    updatedAt: "Updated At:",
   },
   ar: {
     gamesTitle: "ألعاب لـ",
@@ -104,13 +109,17 @@ const translations = {
     editTooltip: "تعديل اللعبة",
     deleteTooltip: "حذف اللعبة",
     shareTooltip: "مشاركة رابط اللعبة",
+    createdBy: "أنشئ:",
+    createdAt: "تاريخ الإنشاء:",
+    updatedBy: "حدث:",
+    updatedAt: "تاريخ التحديث:",
   },
 };
 
 export default function GamesPage() {
   const router = useRouter();
   const { user, selectedBusiness, setSelectedBusiness } = useAuth();
-  const { t, dir, align } = useI18nLayout(translations);
+  const { t, dir, align, language } = useI18nLayout(translations);
 
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -307,7 +316,7 @@ export default function GamesPage() {
                 <AppCard
                   sx={{
                     p: 2,
-                    width: { xs: "100%", sm: 360 },
+                    width: { xs: "100%", sm: 420 },
                     height: "100%",
                     mx: "auto",
                     display: "flex",
@@ -372,6 +381,18 @@ export default function GamesPage() {
                       )
                     )}
                   </Box>
+
+                  <RecordMetadata
+                    createdBy={g.createdBy}
+                    updatedBy={g.updatedBy}
+                    createdAt={g.createdAt}
+                    updatedAt={g.updatedAt}
+                    locale={language === "ar" ? "ar-SA" : "en-GB"}
+                    createdByLabel={t.createdBy}
+                    createdAtLabel={t.createdAt}
+                    updatedByLabel={t.updatedBy}
+                    updatedAtLabel={t.updatedAt}
+                  />
 
                   {/* Actions */}
                   <Box

@@ -33,6 +33,7 @@ import BusinessDrawer from "@/components/drawers/BusinessDrawer";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import RecordMetadata from "@/components/RecordMetadata";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import ICONS from "@/utils/iconUtil";
 
@@ -102,6 +103,10 @@ const translations = {
     of: "of",
     records: "records",
     recordsPerPage: "Records per page",
+    createdBy: "Created:",
+    createdAt: "Created At:",
+    updatedBy: "Updated:",
+    updatedAt: "Updated At:",
   },
   ar: {
     title: "إدارة المستلمين",
@@ -150,6 +155,10 @@ const translations = {
     of: "من",
     records: "السجلات",
     recordsPerPage: "السجلات في كل صفحة",
+    createdBy: "أنشئ:",
+    createdAt: "تاريخ الإنشاء:",
+    updatedBy: "حدث:",
+    updatedAt: "تاريخ التحديث:",
   },
 };
 
@@ -160,7 +169,7 @@ export default function RecipientsManagePage() {
     setSelectedBusiness,
   } = useAuth();
   const { showMessage } = useMessage();
-  const { t, dir } = useI18nLayout(translations);
+  const { t, dir, language } = useI18nLayout(translations);
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -420,8 +429,8 @@ export default function RecipientsManagePage() {
     const url = selectedForm.isAnonymous
       ? `${base}/surveyguru/${lang}/${slug}`
       : `${base}/surveyguru/${lang}/${slug}?token=${encodeURIComponent(
-          r.token || ""
-        )}`;
+        r.token || ""
+      )}`;
 
     navigator.clipboard.writeText(url);
     showMessage(t.copied, "info");
@@ -457,6 +466,20 @@ export default function RecipientsManagePage() {
           {t.company}: {r.company || "—"}
         </Typography>
       </CardContent>
+
+      <RecordMetadata
+        createdBy={r.createdBy}
+        updatedBy={r.updatedBy}
+        createdAt={r.createdAt}
+        updatedAt={r.updatedAt}
+        createdByDisplayName={r.fullName}
+        updatedByDisplayName={r.fullName}
+        locale={language === "ar" ? "ar-SA" : "en-GB"}
+        createdByLabel={t.createdBy}
+        createdAtLabel={t.createdAt}
+        updatedByLabel={t.updatedBy}
+        updatedAtLabel={t.updatedAt}
+      />
 
       <CardActions sx={{ justifyContent: "flex-end", pt: 0 }}>
         <Tooltip title={t.copyLink}>
@@ -527,9 +550,8 @@ export default function RecipientsManagePage() {
                 <Chip
                   size="small"
                   icon={<ICONS.business fontSize="small" />}
-                  label={`${t.selections}: ${
-                    selectedBusiness?.name || selectedBusiness?.slug
-                  }`}
+                  label={`${t.selections}: ${selectedBusiness?.name || selectedBusiness?.slug
+                    }`}
                   sx={{ minWidth: 140, px: 1.5 }}
                 />
               )}
@@ -613,8 +635,8 @@ export default function RecipientsManagePage() {
               {sendingEmails && emailProgress.total
                 ? `${t.sendingEmails} ${emailProgress.processed}/${emailProgress.total}`
                 : sendingEmails
-                ? t.sendingEmails
-                : t.bulkEmail}
+                  ? t.sendingEmails
+                  : t.bulkEmail}
             </Button>
           </Stack>
         </Box>
@@ -854,8 +876,8 @@ export default function RecipientsManagePage() {
             {syncLoading && syncProgress.total
               ? `${t.sync} ${syncProgress.synced}/${syncProgress.total}`
               : syncLoading
-              ? `${t.sync}...`
-              : t.sync}
+                ? `${t.sync}...`
+                : t.sync}
           </Button>
 
           <Button

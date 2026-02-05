@@ -11,6 +11,7 @@ import {
 } from "@mui/material";
 import AppCard from "@/components/cards/AppCard";
 import InitialsPlaceholder from "@/components/InitialsPlaceholder";
+import RecordMetadata from "@/components/RecordMetadata";
 import ICONS from "@/utils/iconUtil";
 import { formatDate, formatDateWithTime, formatTime } from "@/utils/dateUtils";
 
@@ -19,6 +20,14 @@ export default function EventCardBase({
   t,
   status, // eventStatus or computed status
   showRegistrations = true, // toggle for public vs closed
+<<<<<<< HEAD
+=======
+  showPollCount = false, // toggle for showing poll count instead of registrations
+  hideVenue = false, // hide venue field
+  hideDates = false, // hide dates field
+  showAudit = false, // show created/updated metadata
+  locale = "en-GB",
+>>>>>>> c7a0023 (Feature/Addded audit trails (#113))
   onView,
   onViewWhatsAppLogs,
   onEdit,
@@ -192,6 +201,20 @@ export default function EventCardBase({
           </Typography>
         )}
       </CardContent>
+
+      {showAudit && (
+        <RecordMetadata
+          createdBy={event.createdBy}
+          updatedBy={event.updatedBy}
+          createdAt={event.createdAt}
+          updatedAt={event.updatedAt}
+          locale={locale}
+          createdByLabel={t.createdBy}
+          updatedByLabel={t.updatedBy}
+          createdAtLabel={t.createdAt}
+          updatedAtLabel={t.updatedAt}
+        />
+      )}
 
       {/* Actions */}
       <CardActions
