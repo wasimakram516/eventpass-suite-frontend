@@ -38,6 +38,7 @@ import ICONS from "@/utils/iconUtil";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import { wrapTextBox } from "@/utils/wrapTextStyles";
 import AppCard, { AppCardText } from "@/components/cards/AppCard";
+import RecordMetadata from "@/components/RecordMetadata";
 
 const translations = {
   en: {
@@ -60,6 +61,10 @@ const translations = {
     confirmDeleteMessage: `Are you sure you want to move this item to the Recycle Bin?`,
 
     confirmDeleteButton: "Delete",
+    createdBy: "Created:",
+    updatedBy: "Updated:",
+    createdAt: "Created At:",
+    updatedAt: "Updated At:",
     owner: "Owner",
     noBiz: "You haven't created a business yet.",
     errors: {
@@ -89,6 +94,10 @@ const translations = {
     confirmDeleteMessage: `هل أنت متأكد أنك تريد نقل هذا العنصر إلى سلة المحذوفات؟`,
 
     confirmDeleteButton: "حذف",
+    createdBy: "أنشئ:",
+    updatedBy: "حدث:",
+    createdAt: "تاريخ الإنشاء:",
+    updatedAt: "تاريخ التحديث:",
     owner: "المالك",
     noBiz: "لم تقم بإنشاء أي شركة بعد.",
     errors: {
@@ -133,12 +142,12 @@ export default function BusinessDetailsPage() {
       user.role === "admin" || user.role === "superadmin"
         ? data
         : data.filter(
-            (b) =>
-              Array.isArray(b.owners) &&
-              b.owners.some((o) =>
-                typeof o === "string" ? o === user.id : o._id === user.id,
-              ),
-          );
+          (b) =>
+            Array.isArray(b.owners) &&
+            b.owners.some((o) =>
+              typeof o === "string" ? o === user.id : o._id === user.id,
+            ),
+        );
 
     // Fallback: for business users, include the business attached to the user
     // even if owners are not populated on the business record.
@@ -536,6 +545,18 @@ export default function BusinessDetailsPage() {
                     </Box>
                   )}
                 </AppCardText>
+
+                <RecordMetadata
+                  createdBy={biz.createdBy}
+                  updatedBy={biz.updatedBy}
+                  createdAt={biz.createdAt}
+                  updatedAt={biz.updatedAt}
+                  locale={language === "ar" ? "ar-SA" : "en-GB"}
+                  createdByLabel={t.createdBy}
+                  createdAtLabel={t.createdAt}
+                  updatedByLabel={t.updatedBy}
+                  updatedAtLabel={t.updatedAt}
+                />
 
                 {/* Card Actions */}
                 <CardActions

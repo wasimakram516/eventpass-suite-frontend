@@ -58,6 +58,7 @@ import LoadingState from "@/components/LoadingState";
 import { updateBusiness } from "@/services/businessService";
 import slugify from "@/utils/slugify";
 import AppCard from "@/components/cards/AppCard";
+import RecordMetadata from "@/components/RecordMetadata";
 
 const translations = {
   en: {
@@ -104,6 +105,10 @@ const translations = {
     staffTypeLabel: "Staff Type",
     deskStaff: "Desk",
     doorStaff: "Door",
+    createdBy: "Created:",
+    updatedBy: "Updated:",
+    createdAt: "Created At:",
+    updatedAt: "Updated At:",
     businessDetails: "Business Details",
     businessName: "Business Name",
     businessSlug: "Business Slug",
@@ -184,6 +189,10 @@ const translations = {
     businessNameRequired: "اسم الشركة مطلوب",
     businessSlugRequired: "معرف الشركة مطلوب",
     businessEmailRequired: "البريد الإلكتروني للشركة مطلوب",
+    createdBy: "أنشئ:",
+    updatedBy: "حدث:",
+    createdAt: "تاريخ الإنشاء:",
+    updatedAt: "تاريخ التحديث:",
     userDetailsTab: "تفاصيل المستخدم",
     businessProfileTab: "ملف الشركة",
     next: "التالي",
@@ -631,109 +640,120 @@ export default function UsersPage() {
       user.role !== "superadmin";
 
     return (
-    <Box
-      key={user._id || "self"}
-      sx={{ width: { xs: "100%", sm: 300 }, flexShrink: 0 }}
-    >
-      <AppCard
-        elevation={3}
-        sx={{
-          p: 0,
-          display: "flex",
-          flexDirection: "column",
-          borderRadius: 2,
-          height: "100%",
-        }}
+      <Box
+        key={user._id || "self"}
+        sx={{ width: { xs: "100%", sm: 360 }, maxWidth: 360, flexShrink: 0 }}
       >
-        <CardContent sx={{ p: 2, flexGrow: 1 }}>
-          <Stack
-            direction="row"
-            spacing={2}
-            alignItems="flex-start"
-            sx={{ gap: dir === "rtl" ? "16px" : "" }}
-          >
-            <Avatar sx={{ width: 56, height: 56 }}>{user.name?.[0]}</Avatar>
-            <Box sx={{ flexGrow: 1, ...wrapTextBox }}>
-              <Typography variant="h6">{user.name}</Typography>
-              <Typography variant="body2" color="text.secondary">
-                {user.email}
-              </Typography>
-              <Stack
-                direction="row"
-                spacing={0.5}
-                sx={{ mt: 0.5, flexWrap: "wrap", gap: 0.5 }}
-              >
-                <Chip
-                  icon={
-                    user.role === "admin" || user.role === "superadmin" ? (
-                      <ICONS.person />
-                    ) : user.role === "business" ? (
-                      <ICONS.business />
-                    ) : (
-                      <ICONS.people />
-                    )
-                  }
-                  label={
-                    user.role === "superadmin"
-                      ? "Super Admin"
-                      : user.role.charAt(0).toUpperCase() + user.role.slice(1)
-                  }
-                  color={getRoleColor(user.role)}
-                  size="small"
-                  sx={{
-                    ...(dir === "rtl" && {
-                      "& .MuiChip-icon": {
-                        marginLeft: "5px",
-                        marginRight: "3px",
-                      },
-                    }),
-                  }}
-                />
-                {user.role === "staff" && user.staffType && (
+        <AppCard
+          elevation={3}
+          sx={{
+            p: 0,
+            display: "flex",
+            flexDirection: "column",
+            borderRadius: 2,
+            height: "100%",
+          }}
+        >
+          <CardContent sx={{ p: 2, flexGrow: 1 }}>
+            <Stack
+              direction="row"
+              spacing={2}
+              alignItems="flex-start"
+              sx={{ gap: dir === "rtl" ? "16px" : "" }}
+            >
+              <Avatar sx={{ width: 56, height: 56 }}>{user.name?.[0]}</Avatar>
+              <Box sx={{ flexGrow: 1, ...wrapTextBox }}>
+                <Typography variant="h6">{user.name}</Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {user.email}
+                </Typography>
+                <Stack
+                  direction="row"
+                  spacing={0.5}
+                  sx={{ mt: 0.5, flexWrap: "wrap", gap: 0.5 }}
+                >
                   <Chip
                     icon={
-                      user.staffType === "door" ? (
-                        <ICONS.door />
+                      user.role === "admin" || user.role === "superadmin" ? (
+                        <ICONS.person />
+                      ) : user.role === "business" ? (
+                        <ICONS.business />
                       ) : (
-                        <ICONS.desk />
+                        <ICONS.people />
                       )
                     }
                     label={
-                      user.staffType.charAt(0).toUpperCase() +
-                      user.staffType.slice(1)
+                      user.role === "superadmin"
+                        ? "Super Admin"
+                        : user.role.charAt(0).toUpperCase() + user.role.slice(1)
                     }
-                    sx={{
-                      bgcolor:
-                        user.staffType === "door" ? "#e1bee7" : "#4fc3f7",
-                      color: "#000000",
-                      "& .MuiChip-icon": {
-                        color: "#000000",
-                        ...(dir === "rtl" && {
-                          marginRight: "5px",
-                          marginLeft: "8px",
-                        }),
-                      },
-                    }}
+                    color={getRoleColor(user.role)}
                     size="small"
+                    sx={{
+                      ...(dir === "rtl" && {
+                        "& .MuiChip-icon": {
+                          marginLeft: "5px",
+                          marginRight: "3px",
+                        },
+                      }),
+                    }}
                   />
-                )}
-              </Stack>
-            </Box>
-          </Stack>
-        </CardContent>
-        <CardActions
-          sx={{ px: 2, pb: 2, pt: 0, justifyContent: "flex-end", mt: "auto" }}
-        >
-          <Tooltip title={t.edit}>
-            <IconButton
-              color="primary"
-              onClick={() => handleOpenEdit(user)}
-              disabled={!canEditUser}
-            >
-              <ICONS.edit />
-            </IconButton>
-          </Tooltip>
-          {canDeleteUser && (
+                  {user.role === "staff" && user.staffType && (
+                    <Chip
+                      icon={
+                        user.staffType === "door" ? (
+                          <ICONS.door />
+                        ) : (
+                          <ICONS.desk />
+                        )
+                      }
+                      label={
+                        user.staffType.charAt(0).toUpperCase() +
+                        user.staffType.slice(1)
+                      }
+                      sx={{
+                        bgcolor:
+                          user.staffType === "door" ? "#e1bee7" : "#4fc3f7",
+                        color: "#000000",
+                        "& .MuiChip-icon": {
+                          color: "#000000",
+                          ...(dir === "rtl" && {
+                            marginRight: "5px",
+                            marginLeft: "8px",
+                          }),
+                        },
+                      }}
+                      size="small"
+                    />
+                  )}
+                </Stack>
+              </Box>
+            </Stack>
+          </CardContent>
+          <RecordMetadata
+            createdBy={user.createdBy}
+            updatedBy={user.updatedBy}
+            createdAt={user.createdAt}
+            updatedAt={user.updatedAt}
+            locale={language === "ar" ? "ar-SA" : "en-GB"}
+            createdByLabel={t.createdBy}
+            createdAtLabel={t.createdAt}
+            updatedByLabel={t.updatedBy}
+            updatedAtLabel={t.updatedAt}
+          />
+          <CardActions
+            sx={{ px: 2, pb: 2, pt: 0, justifyContent: "flex-end", mt: "auto" }}
+          >
+            <Tooltip title={t.edit}>
+              <IconButton
+                color="primary"
+                onClick={() => handleOpenEdit(user)}
+                disabled={!canEditUser}
+              >
+                <ICONS.edit />
+              </IconButton>
+            </Tooltip>
+            {canDeleteUser && (
               <Tooltip title={t.delete}>
                 <IconButton
                   color="error"
@@ -746,34 +766,34 @@ export default function UsersPage() {
                 </IconButton>
               </Tooltip>
             )}
-        </CardActions>
-      </AppCard>
-    </Box>
+          </CardActions>
+        </AppCard>
+      </Box>
     );
   };
 
   const normalizedSearch = searchQuery.trim().toLowerCase();
   const filteredGroupedUsers = normalizedSearch
     ? Object.fromEntries(
-        Object.entries(groupedUsers)
-          .map(([group, users]) => {
-            const filteredUsers = users.filter((user) => {
-              const fields = [
-                user.name,
-                user.email,
-                user.role,
-                user.staffType,
-                user.business?.name,
-              ]
-                .filter(Boolean)
-                .join(" ")
-                .toLowerCase();
-              return fields.includes(normalizedSearch);
-            });
-            return [group, filteredUsers];
-          })
-          .filter(([, users]) => users.length > 0),
-      )
+      Object.entries(groupedUsers)
+        .map(([group, users]) => {
+          const filteredUsers = users.filter((user) => {
+            const fields = [
+              user.name,
+              user.email,
+              user.role,
+              user.staffType,
+              user.business?.name,
+            ]
+              .filter(Boolean)
+              .join(" ")
+              .toLowerCase();
+            return fields.includes(normalizedSearch);
+          });
+          return [group, filteredUsers];
+        })
+        .filter(([, users]) => users.length > 0),
+    )
     : groupedUsers;
 
   const getGroupCount = (name) => filteredGroupedUsers?.[name]?.length || 0;
@@ -1063,23 +1083,23 @@ export default function UsersPage() {
 
           return (
             <Box key={group} sx={{ mb: 4 }}>
-            <Stack
-              direction="row"
-              spacing={1}
-              alignItems="center"
-              sx={{ mb: 1 }}
-            >
-              <Typography variant="h6">{getGroupLabel(group)}</Typography>
-              <Chip
-                label={`${users.length}`}
-                size="small"
-                variant="outlined"
-              />
-            </Stack>
-            {groupContent}
-          </Box>
-        );
-      })
+              <Stack
+                direction="row"
+                spacing={1}
+                alignItems="center"
+                sx={{ mb: 1 }}
+              >
+                <Typography variant="h6">{getGroupLabel(group)}</Typography>
+                <Chip
+                  label={`${users.length}`}
+                  size="small"
+                  variant="outlined"
+                />
+              </Stack>
+              {groupContent}
+            </Box>
+          );
+        })
       )}
 
       <Dialog
