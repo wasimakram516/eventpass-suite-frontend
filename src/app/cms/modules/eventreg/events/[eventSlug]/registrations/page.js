@@ -799,11 +799,11 @@ export default function ViewRegistrations() {
 
   const handleApprovalChange = async (registrationId, status) => {
     const res = await updateRegistrationApproval(registrationId, status);
-    if (!res?.error) {
-      const newStatus = res?.approvalStatus || status;
+    if (!res?.error && res && typeof res === "object") {
+      const updated = res?.data ?? res;
       setAllRegistrations((prev) =>
         prev.map((r) =>
-          r._id === registrationId ? { ...r, approvalStatus: newStatus } : r,
+          r._id === registrationId ? { ...r, ...updated } : r,
         ),
       );
     }

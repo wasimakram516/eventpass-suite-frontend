@@ -30,6 +30,7 @@ import {
 } from "@/services/fileResourceService";
 import FileUploadDialog from "@/components/modals/FileUploadDialog";
 import AppCard from "@/components/cards/AppCard";
+import RecordMetadata from "@/components/RecordMetadata";
 import ShareLinkModal from "@/components/modals/ShareLinkModal";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import ICONS from "@/utils/iconUtil";
@@ -48,6 +49,10 @@ const translations = {
     edit: "Edit",
     delete: "Delete",
     share: "Share",
+    createdBy: "Created:",
+    updatedBy: "Updated:",
+    createdAt: "Created At:",
+    updatedAt: "Updated At:",
     deleteConfirmTitle: "Delete File?",
     deleteConfirmMsg:
       "Are you sure you want to permanently delete this file? This action cannot be undone.",
@@ -66,6 +71,10 @@ const translations = {
     edit: "تعديل",
     delete: "حذف",
     share: "مشاركة",
+    createdBy: "أنشئ:",
+    updatedBy: "حدث:",
+    createdAt: "تاريخ الإنشاء:",
+    updatedAt: "تاريخ التحديث:",
     deleteConfirmTitle: "حذف الملف؟",
     deleteConfirmMsg:
       "هل أنت متأكد أنك تريد حذف هذا الملف نهائيًا؟ لا يمكن التراجع عن هذا الإجراء.",
@@ -75,7 +84,7 @@ const translations = {
 
 export default function FileStorePage() {
   const { user } = useAuth();
-  const { t, dir } = useI18nLayout(translations);
+  const { t, dir, language } = useI18nLayout(translations);
 
   const [allBusinesses, setAllBusinesses] = useState([]);
   const [selectedBusiness, setSelectedBusiness] = useState(null);
@@ -281,6 +290,19 @@ export default function FileStorePage() {
                         {f.contentType}
                       </Typography>
                     </Box>
+
+                    <RecordMetadata
+                      createdBy={f.createdBy}
+                      updatedBy={f.updatedBy}
+                      createdAt={f.createdAt}
+                      updatedAt={f.updatedAt}
+                      locale={language === "ar" ? "ar-SA" : "en-GB"}
+                      createdByLabel={t.createdBy}
+                      createdAtLabel={t.createdAt}
+                      updatedByLabel={t.updatedBy}
+                      updatedAtLabel={t.updatedAt}
+                      sx={{ pl: 0 }}
+                    />
 
                     <Box
                       sx={{
