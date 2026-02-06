@@ -945,15 +945,11 @@ export default function SurveyFormsManagePage() {
                   </CardContent>
 
                   <RecordMetadata
-                    createdBy={f.createdBy}
-                    updatedBy={f.updatedBy}
+                    createdByName={f.createdBy}
+                    updatedByName={f.updatedBy}
                     createdAt={f.createdAt}
                     updatedAt={f.updatedAt}
                     locale={language === "ar" ? "ar-SA" : "en-GB"}
-                    createdByLabel={t.createdBy}
-                    createdAtLabel={t.createdAt}
-                    updatedByLabel={t.updatedBy}
-                    updatedAtLabel={t.updatedAt}
                   />
 
                   <CardActions sx={{ justifyContent: "center" }}>

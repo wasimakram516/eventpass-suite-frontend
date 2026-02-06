@@ -390,15 +390,11 @@ export default function ManagePollsPage() {
                     </Box>
 
                     <RecordMetadata
-                      createdBy={poll.createdBy}
-                      updatedBy={poll.updatedBy}
+                      createdByName={poll.createdBy}
+                      updatedByName={poll.updatedBy}
                       createdAt={poll.createdAt}
                       updatedAt={poll.updatedAt}
                       locale={language === "ar" ? "ar-SA" : "en-GB"}
-                      createdByLabel={t.createdBy}
-                      createdAtLabel={t.createdAt}
-                      updatedByLabel={t.updatedBy}
-                      updatedAtLabel={t.updatedAt}
                     />
 
                     <CardActions

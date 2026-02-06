@@ -1832,18 +1832,14 @@ export default function ViewRegistrations() {
                   </CardContent>
 
                   <RecordMetadata
-                    createdBy={reg.createdBy}
-                    updatedBy={reg.updatedBy}
+                    createdByName={reg.createdBy}
+                    updatedByName={reg.updatedBy}
                     createdAt={reg.createdAt}
                     updatedAt={reg.updatedAt}
                     createdByDisplayName={reg.createdBy == null ? (reg.fullName ?? pickFullName(reg.customFields)) : undefined}
                     updatedByDisplayName={reg.updatedBy == null && reg.createdBy ? (typeof reg.createdBy === "object" ? reg.createdBy?.name : null) : undefined}
                     updatedAtFallback={reg.updatedBy == null ? reg.createdAt : undefined}
                     locale={language === "ar" ? "ar-SA" : "en-GB"}
-                    createdByLabel={t.createdBy}
-                    createdAtLabel={t.createdAt}
-                    updatedByLabel={t.updatedBy}
-                    updatedAtLabel={t.updatedAt}
                   />
 
                   {/* Actions */}

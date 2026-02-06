@@ -371,16 +371,12 @@ export default function ManageQuestionsPage() {
                     </Stack>
 
                     <RecordMetadata
-                      createdBy={q.createdBy}
-                      updatedBy={q.updatedBy}
+                      createdByName={q.createdBy}
+                      updatedByName={q.updatedBy}
                       createdAt={q.createdAt}
                       updatedAt={q.updatedAt}
                       createdByDisplayName={q.createdBy == null ? q.visitor?.name : undefined}
                       locale={language === "ar" ? "ar-SA" : "en-GB"}
-                      createdByLabel={t.createdBy}
-                      createdAtLabel={t.createdAt}
-                      updatedByLabel={t.updatedBy}
-                      updatedAtLabel={t.updatedAt}
                     />
 
                     {/* Actions */}

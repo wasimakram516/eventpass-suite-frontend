@@ -437,15 +437,11 @@ export default function GamesPage() {
                     </Box>
 
                     <RecordMetadata
-                      createdBy={g.createdBy}
-                      updatedBy={g.updatedBy}
+                      createdByName={g.createdBy}
+                      updatedByName={g.updatedBy}
                       createdAt={g.createdAt}
                       updatedAt={g.updatedAt}
                       locale={language === "ar" ? "ar-SA" : "en-GB"}
-                      createdByLabel={t.createdBy}
-                      createdAtLabel={t.createdAt}
-                      updatedByLabel={t.updatedBy}
-                      updatedAtLabel={t.updatedAt}
                     />
 
                     <Box

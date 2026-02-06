@@ -542,17 +542,13 @@ const ParticipantsAdminPage = () => {
                       )}
                     </CardContent>
                     <RecordMetadata
-                      createdBy={participant.createdBy}
-                      updatedBy={participant.updatedBy}
+                      createdByName={participant.createdBy}
+                      updatedByName={participant.updatedBy}
                       createdAt={participant.createdAt}
                       updatedAt={participant.updatedAt}
                       createdByDisplayName={participant.name}
                       updatedByDisplayName={participant.name}
                       locale={language === "ar" ? "ar-SA" : "en-GB"}
-                      createdByLabel={t.createdBy}
-                      createdAtLabel={t.createdAt}
-                      updatedByLabel={t.updatedBy}
-                      updatedAtLabel={t.updatedAt}
                     />
                     <Divider />
                     <CardActions sx={{ justifyContent: "flex-end", p: 1.5 }}>

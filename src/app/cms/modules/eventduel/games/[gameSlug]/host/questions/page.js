@@ -460,15 +460,11 @@ export default function QuestionsPage() {
                       )}
                     </CardContent>
                     <RecordMetadata
-                      createdBy={q.createdBy}
-                      updatedBy={q.updatedBy}
+                      createdByName={q.createdBy}
+                      updatedByName={q.updatedBy}
                       createdAt={q.createdAt}
                       updatedAt={q.updatedAt}
                       locale={language === "ar" ? "ar-SA" : "en-GB"}
-                      createdByLabel={t.createdBy}
-                      createdAtLabel={t.createdAt}
-                      updatedByLabel={t.updatedBy}
-                      updatedAtLabel={t.updatedAt}
                     />
                     <CardActions sx={{ justifyContent: "center" }}>
                       <Tooltip title={t.editTooltip}>

@@ -286,6 +286,7 @@ export default function BusinessDetailsPage() {
 
   // open the delete confirmation dialog
   const openDeleteConfirm = (biz) => {
+    if (user.role !== "superadmin") return;
     setBizToDelete(biz);
     setConfirmOpen(true);
   };
@@ -547,15 +548,11 @@ export default function BusinessDetailsPage() {
                 </AppCardText>
 
                 <RecordMetadata
-                  createdBy={biz.createdBy}
-                  updatedBy={biz.updatedBy}
+                  createdByName={biz.createdBy}
+                  updatedByName={biz.updatedBy}
                   createdAt={biz.createdAt}
                   updatedAt={biz.updatedAt}
                   locale={language === "ar" ? "ar-SA" : "en-GB"}
-                  createdByLabel={t.createdBy}
-                  createdAtLabel={t.createdAt}
-                  updatedByLabel={t.updatedBy}
-                  updatedAtLabel={t.updatedAt}
                 />
 
                 {/* Card Actions */}
@@ -728,15 +725,17 @@ export default function BusinessDetailsPage() {
           </Button>
         </DialogActions>
       </Dialog>
-      <ConfirmationDialog
-        open={confirmOpen}
-        onClose={() => setConfirmOpen(false)}
-        onConfirm={handleDeleteConfirmed}
-        title={t.confirmDeleteTitle}
-        message={t.confirmDeleteMessage}
-        confirmButtonText={t.confirmDeleteButton}
-        confirmButtonIcon={<ICONS.delete />}
-      />
+      {user.role === "superadmin" && (
+        <ConfirmationDialog
+          open={confirmOpen}
+          onClose={() => setConfirmOpen(false)}
+          onConfirm={handleDeleteConfirmed}
+          title={t.confirmDeleteTitle}
+          message={t.confirmDeleteMessage}
+          confirmButtonText={t.confirmDeleteButton}
+          confirmButtonIcon={<ICONS.delete />}
+        />
+      )}
     </Container>
   );
 }

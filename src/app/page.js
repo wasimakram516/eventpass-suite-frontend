@@ -12,7 +12,6 @@ import {
   Paper,
   alpha,
 } from "@mui/material";
-import { keyframes } from "@mui/system";
 import { useRouter } from "next/navigation";
 import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
 import useI18nLayout from "@/hooks/useI18nLayout";
@@ -172,7 +171,7 @@ export default function HomePage() {
               <Button
                 variant="contained"
                 size="large"
-                startIcon={<ICONS.play />}
+                startIcon={<ICONS.module />}
                 onClick={() => router.push("/cms")}
                 sx={(th) => ({
                   mt: 1,

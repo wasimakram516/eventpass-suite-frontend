@@ -1,78 +1,127 @@
 "use client";
 
-import { Box } from "@mui/material";
+import { Box, Stack, Typography, Tooltip } from "@mui/material";
 import { formatDateTimeWithLocale } from "@/utils/dateUtils";
 import ICONS from "@/utils/iconUtil";
 
-const iconSx = { fontSize: "0.875rem", flexShrink: 0, opacity: 0.9 };
+const iconSx = { fontSize: "0.9rem", flexShrink: 0, opacity: 0.7 };
 const rowSx = {
   display: "flex",
   alignItems: "center",
   flexWrap: "nowrap",
-  gap: "2px 3px",
-  minHeight: 20,
+  gap: 0.5,
+  overflow: "hidden",
   whiteSpace: "nowrap",
 };
 
 function RecordMetadata({
-  createdBy,
-  updatedBy,
+  createdByName,
+  updatedByName,
   createdAt,
   updatedAt,
   locale = "en-GB",
-  createdByLabel = "Created:",
-  updatedByLabel = "Updated:",
-  createdAtLabel,
-  updatedAtLabel,
-  createdByDisplayName,
-  updatedByDisplayName,
   updatedAtFallback,
   sx = {},
 }) {
-  const nameFromUser = (user) =>
-    user && (typeof user === "object" ? user.name : user) ? (typeof user === "object" ? user.name : user) : null;
-  const createdByName = nameFromUser(createdBy) ?? createdByDisplayName ?? "N/A";
-  const rawUpdatedByName = nameFromUser(updatedBy) ?? updatedByDisplayName ?? "N/A";
+  const normalizeName = (val) => {
+    if (!val) return null;
+    if (typeof val === "object") return val.name || val.fullName || val.email || null;
+    return val;
+  };
+  const resolvedCreatedByName = normalizeName(createdByName) || "N/A";
+  const rawUpdatedByName = normalizeName(updatedByName) || "N/A";
   const dateStr = (d) => (d ? formatDateTimeWithLocale(d, locale) : "N/A");
   const updatedAtDisplay = updatedAt ?? updatedAtFallback;
   const eitherUpdatedNA = !updatedAtDisplay || rawUpdatedByName === "N/A";
-  const updatedByName = eitherUpdatedNA ? "N/A" : rawUpdatedByName;
+  const updatedByNameDisplay = eitherUpdatedNA ? "N/A" : rawUpdatedByName;
   const updatedAtForDisplay = eitherUpdatedNA ? undefined : updatedAtDisplay;
+
+  const isArabic = String(locale || "").toLowerCase().startsWith("ar");
+  const createdByLabel = isArabic ? "تم الإنشاء" : "Created";
+  const updatedByLabel = isArabic ? "تم التحديث" : "Updated";
 
   const PersonIcon = ICONS.person ?? ICONS.personOutline;
   const TimeIcon = ICONS.time ?? ICONS.timeOutline;
+  const CreatedIcon = ICONS.add ?? ICONS.history ?? ICONS.timeOutline;
+  const UpdatedIcon = ICONS.update ?? ICONS.sync ?? ICONS.timeOutline;
 
   return (
     <Box
       sx={{
         mt: 1.5,
-        pt: 1.5,
-        pb: 1.5,
-        pl: 1.5,
-        pr: 2.5,
+        px: 1,
+        py: 0.6,
         borderTop: "1px solid",
         borderColor: "divider",
-        fontStyle: "italic",
-        fontSize: "0.75rem",
-        lineHeight: 1.5,
-        color: "text.secondary",
+        bgcolor: "transparent",
+        borderRadius: 1.5,
         ...sx,
       }}
     >
-      <Box sx={{ ...rowSx, mb: 0.5 }}>
-        <Box component="span" sx={{ fontWeight: 600 }}>{createdByLabel}</Box>
-        {PersonIcon && <PersonIcon sx={iconSx} />}
-        <Box component="span">{createdByName}</Box>
-        {TimeIcon && <TimeIcon sx={iconSx} />}
-        <Box component="span">{dateStr(createdAt)}</Box>
-      </Box>
-      <Box sx={rowSx}>
-        <Box component="span" sx={{ fontWeight: 600 }}>{updatedByLabel}</Box>
-        {PersonIcon && <PersonIcon sx={iconSx} />}
-        <Box component="span">{updatedByName}</Box>
-        {TimeIcon && <TimeIcon sx={iconSx} />}
-        <Box component="span">{dateStr(updatedAtForDisplay)}</Box>
-      </Box>
+      <Stack spacing={0.35}>
+        <Tooltip title={createdByLabel} arrow>
+          <Box sx={rowSx} component="span">
+            {CreatedIcon && <CreatedIcon sx={{ ...iconSx, color: "success.main" }} />}
+            {PersonIcon && <PersonIcon sx={{ ...iconSx, color: "success.main" }} />}
+            <Typography
+              variant="caption"
+              sx={{ fontSize: "0.65rem", color: "text.secondary" }}
+              noWrap
+            >
+            {resolvedCreatedByName}
+            </Typography>
+            <Box
+              component="span"
+              sx={{
+                width: 3,
+                height: 3,
+                borderRadius: "50%",
+                bgcolor: "text.disabled",
+                opacity: 0.7,
+              }}
+            />
+            {TimeIcon && <TimeIcon sx={{ ...iconSx, color: "success.main" }} />}
+            <Typography
+              variant="caption"
+              sx={{ fontSize: "0.65rem", color: "text.secondary" }}
+              noWrap
+            >
+              {dateStr(createdAt)}
+            </Typography>
+          </Box>
+        </Tooltip>
+        <Tooltip title={updatedByLabel} arrow>
+          <Box sx={rowSx} component="span">
+            {UpdatedIcon && <UpdatedIcon sx={{ ...iconSx, color: "info.main" }} />}
+            {PersonIcon && <PersonIcon sx={{ ...iconSx, color: "info.main" }} />}
+            <Typography
+              variant="caption"
+              sx={{ fontSize: "0.65rem", color: "text.secondary" }}
+              noWrap
+            >
+              {updatedByNameDisplay}
+            </Typography>
+            <Box
+              component="span"
+              sx={{
+                width: 3,
+                height: 3,
+                borderRadius: "50%",
+                bgcolor: "text.disabled",
+                opacity: 0.7,
+              }}
+            />
+            {TimeIcon && <TimeIcon sx={{ ...iconSx, color: "info.main" }} />}
+            <Typography
+              variant="caption"
+              sx={{ fontSize: "0.65rem", color: "text.secondary" }}
+              noWrap
+            >
+              {dateStr(updatedAtForDisplay)}
+            </Typography>
+          </Box>
+        </Tooltip>
+      </Stack>
     </Box>
   );
 }

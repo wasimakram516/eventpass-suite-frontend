@@ -468,17 +468,13 @@ export default function RecipientsManagePage() {
       </CardContent>
 
       <RecordMetadata
-        createdBy={r.createdBy}
-        updatedBy={r.updatedBy}
+        createdByName={r.createdBy}
+        updatedByName={r.updatedBy}
         createdAt={r.createdAt}
         updatedAt={r.updatedAt}
         createdByDisplayName={r.fullName}
         updatedByDisplayName={r.fullName}
         locale={language === "ar" ? "ar-SA" : "en-GB"}
-        createdByLabel={t.createdBy}
-        createdAtLabel={t.createdAt}
-        updatedByLabel={t.updatedBy}
-        updatedAtLabel={t.updatedAt}
       />
 
       <CardActions sx={{ justifyContent: "flex-end", pt: 0 }}>

@@ -832,15 +832,11 @@ const Dashboard = () => {
                       </Typography>
                     </CardContent>
                     <RecordMetadata
-                      createdBy={wheel.createdBy}
-                      updatedBy={wheel.updatedBy}
+                      createdByName={wheel.createdBy}
+                      updatedByName={wheel.updatedBy}
                       createdAt={wheel.createdAt}
                       updatedAt={wheel.updatedAt}
                       locale={language === "ar" ? "ar-SA" : "en-GB"}
-                      createdByLabel={t.createdBy}
-                      createdAtLabel={t.createdAt}
-                      updatedByLabel={t.updatedBy}
-                      updatedAtLabel={t.updatedAt}
                     />
                     <Divider />
                     <CardActions
