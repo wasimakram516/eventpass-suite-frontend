@@ -69,6 +69,7 @@ const translations = {
         minTasksPerUser: "Min Tasks Per User",
         invalidTasks: "Max tasks must be greater than or equal to min tasks.",
         identityFieldsMustBeRequired: "Identity fields must be required. Please check the 'Required' checkbox for all identity fields.",
+        customFieldsRequired: "Please add at least one custom field before creating a DigiPass event.",
         deleteMediaTitle: "Delete Media",
         deleteMediaMessage: "Are you sure you want to delete this media? This action cannot be undone.",
         deleteConfirm: "Delete",
@@ -115,6 +116,7 @@ const translations = {
         minTasksPerUser: "الحد الأدنى للمهام لكل مستخدم",
         invalidTasks: "يجب أن يكون الحد الأقصى للمهام أكبر من أو يساوي الحد الأدنى.",
         identityFieldsMustBeRequired: "يجب أن تكون حقول الهوية إلزامية. يرجى تحديد خانة 'إلزامي' لجميع حقول الهوية.",
+        customFieldsRequired: "يرجى إضافة حقل مخصص واحد على الأقل قبل إنشاء فعالية DigiPass.",
         deleteMediaTitle: "حذف الوسائط",
         deleteMediaMessage: "هل أنت متأكد من حذف هذه الوسائط؟ لا يمكن التراجع عن هذا الإجراء.",
         deleteConfirm: "حذف",
@@ -416,6 +418,16 @@ const DigiPassEventModal = ({
         if (!selectedBusiness) {
             showMessage("Business is required", "error");
             return;
+        }
+
+        if (!initialValues?._id) {
+            const hasCustomFields = (formData.formFields || []).some(
+                (field) => field.inputName && field.inputName.trim().length > 0
+            );
+            if (!hasCustomFields) {
+                showMessage(t.customFieldsRequired, "error");
+                return;
+            }
         }
 
         // Validate tasks
