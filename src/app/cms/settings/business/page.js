@@ -252,9 +252,18 @@ export default function BusinessDetailsPage() {
       phone: form.phone,
       address: form.address,
     };
+    const isCreating = !editingBiz?._id;
+    const currentUserId = user?.id || user?._id;
+    if (isCreating && user.role === "business" && currentUserId) {
+      payload.ownerIds = [currentUserId];
+    }
 
     const fd = new FormData();
     Object.entries(payload).forEach(([k, v]) => {
+      if (k === "ownerIds" && Array.isArray(v)) {
+        v.forEach((id) => fd.append("ownerIds", id));
+        return;
+      }
       fd.append(k, typeof v === "object" ? JSON.stringify(v) : v);
     });
     if (form.logoFile) fd.append("file", form.logoFile);
