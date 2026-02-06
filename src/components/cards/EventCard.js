@@ -222,15 +222,11 @@ export default function EventCardBase({
 
       {showAudit && (
         <RecordMetadata
-          createdBy={event.createdBy}
-          updatedBy={event.updatedBy}
+          createdByName={event.createdBy}
+          updatedByName={event.updatedBy}
           createdAt={event.createdAt}
           updatedAt={event.updatedAt}
           locale={locale}
-          createdByLabel={t.createdBy}
-          updatedByLabel={t.updatedBy}
-          createdAtLabel={t.createdAt}
-          updatedAtLabel={t.updatedAt}
         />
       )}
 

@@ -7,7 +7,10 @@ import {
   IconButton,
   Drawer,
   Stack,
+  TextField,
+  InputAdornment,
 } from "@mui/material";
+import { useMemo, useState } from "react";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
@@ -24,18 +27,29 @@ export default function BusinessDrawer({
   const { t, dir, align } = useI18nLayout({
     en: {
       title: "Select Business",
+      search: "Search businesses...",
       noBusinessesAvailable: "No businesses available",
       loading: "Loading businesses...",
     },
     ar: {
       title: "اختيار العمل",
+      search: "ابحث عن الشركات...",
       noBusinessesAvailable: "لا توجد أعمال متاحة",
-      loading: "جاري تحميل الشركات...",
+      loading: "جارٍ تحميل الشركات...",
     },
   });
 
-
+  const [query, setQuery] = useState("");
   const isLoading = open && businesses === null;
+
+  const filteredBusinesses = useMemo(() => {
+    if (!Array.isArray(businesses)) return [];
+    if (!query.trim()) return businesses;
+    const q = query.trim().toLowerCase();
+    return businesses.filter((b) =>
+      `${b.name || ""} ${b.slug || ""}`.toLowerCase().includes(q)
+    );
+  }, [businesses, query]);
 
   return (
     <Drawer
@@ -59,7 +73,7 @@ export default function BusinessDrawer({
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            mb: 3,
+            mb: 2,
           }}
         >
           <Typography variant="h6" fontWeight={600}>
@@ -76,6 +90,22 @@ export default function BusinessDrawer({
           </IconButton>
         </Box>
 
+        <TextField
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={t.search}
+          size="small"
+          fullWidth
+          sx={{ mb: 2 }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <ICONS.search fontSize="small" />
+              </InputAdornment>
+            ),
+          }}
+        />
+
         {/* Content */}
         {isLoading ? (
           <Stack alignItems="center" spacing={2} sx={{ mt: 6 }}>
@@ -84,10 +114,10 @@ export default function BusinessDrawer({
               {t.loading}
             </Typography>
           </Stack>
-        ) : businesses.length==0 ? (
+        ) : filteredBusinesses.length === 0 ? (
           <NoDataAvailable />
-        ) : businesses.length > 0 ? (
-          businesses.map((business) => (
+        ) : (
+          filteredBusinesses.map((business) => (
             <Button
               key={business._id}
               onClick={() => onSelect(business.slug)}
@@ -100,7 +130,7 @@ export default function BusinessDrawer({
               fullWidth
               sx={{
                 ...getStartIconSpacing(dir),
-                mb: 1.5,
+                mb: 1.25,
                 justifyContent: "flex-start",
                 borderRadius: 3,
                 boxShadow:
@@ -111,16 +141,19 @@ export default function BusinessDrawer({
               }}
               startIcon={<ICONS.business />}
             >
-              {business.name}
+              <Box
+                sx={{
+                  textAlign: align,
+                  flex: 1,
+                  whiteSpace: "normal",
+                  wordBreak: "break-word",
+                  fontSize: "0.9rem",
+                }}
+              >
+                {business.name}
+              </Box>
             </Button>
           ))
-        ) : (
-          <Stack alignItems="center" spacing={2} sx={{ mt: 6 }}>
-            <ICONS.business sx={{ fontSize: 48, color: "grey.400" }} />
-            <Typography variant="body2" color="text.secondary" align={align}>
-              {t.noBusinessesAvailable}
-            </Typography>
-          </Stack>
         )}
       </Box>
     </Drawer>

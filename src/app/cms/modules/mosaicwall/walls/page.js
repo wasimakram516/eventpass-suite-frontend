@@ -396,15 +396,11 @@ export default function WallConfigsPage() {
                   </Typography>
                 </CardContent>
                 <RecordMetadata
-                  createdBy={config.createdBy}
-                  updatedBy={config.updatedBy}
+                  createdByName={config.createdBy}
+                  updatedByName={config.updatedBy}
                   createdAt={config.createdAt}
                   updatedAt={config.updatedAt}
                   locale={language === "ar" ? "ar-SA" : "en-GB"}
-                  createdByLabel={t.createdBy}
-                  createdAtLabel={t.createdAt}
-                  updatedByLabel={t.updatedBy}
-                  updatedAtLabel={t.updatedAt}
                 />
                 <Divider />
                 <CardActions sx={{ justifyContent: "space-between", p: 1.5 }}>

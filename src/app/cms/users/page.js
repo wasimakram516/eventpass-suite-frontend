@@ -34,7 +34,7 @@ import {
   InputAdornment,
 } from "@mui/material";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import {
@@ -228,11 +228,6 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(false);
   const [isPageLoading, setIsPageLoading] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
-  const [activeTab, setActiveTab] = useState(0);
-  const [searchQuery, setSearchQuery] = useState("");
-  const isEditingSuperAdmin =
-    isEditMode && selectedUser?.role === "superadmin";
-
   const defaultForm = {
     name: "",
     email: "",
@@ -253,6 +248,29 @@ export default function UsersPage() {
 
   const [form, setForm] = useState(defaultForm);
   const [errors, setErrors] = useState({});
+  const [activeTab, setActiveTab] = useState(0);
+  const [searchQuery, setSearchQuery] = useState("");
+  const isEditingSuperAdmin =
+    isEditMode && selectedUser?.role === "superadmin";
+  const maxTabIndex = useMemo(() => {
+    let tabs = 1;
+    if (form.userType === "business") tabs += 1;
+    if (
+      !isEditingSuperAdmin &&
+      (form.userType === "staff" ||
+        form.userType === "admin" ||
+        form.userType === "business")
+    ) {
+      tabs += 1;
+    }
+    return Math.max(tabs - 1, 0);
+  }, [form.userType, isEditingSuperAdmin]);
+
+  useEffect(() => {
+    if (activeTab > maxTabIndex) {
+      setActiveTab(maxTabIndex);
+    }
+  }, [activeTab, maxTabIndex]);
 
   useEffect(() => {
     fetchUsers();
@@ -731,15 +749,11 @@ export default function UsersPage() {
             </Stack>
           </CardContent>
           <RecordMetadata
-            createdBy={user.createdBy}
-            updatedBy={user.updatedBy}
+            createdByName={user.createdBy}
+            updatedByName={user.updatedBy}
             createdAt={user.createdAt}
             updatedAt={user.updatedAt}
             locale={language === "ar" ? "ar-SA" : "en-GB"}
-            createdByLabel={t.createdBy}
-            createdAtLabel={t.createdAt}
-            updatedByLabel={t.updatedBy}
-            updatedAtLabel={t.updatedAt}
           />
           <CardActions
             sx={{ px: 2, pb: 2, pt: 0, justifyContent: "flex-end", mt: "auto" }}
@@ -1178,7 +1192,7 @@ export default function UsersPage() {
                 sx={{ borderBottom: 1, borderColor: "divider", mt: 2, mx: -3 }}
               >
                 <Tabs
-                  value={activeTab}
+                  value={Math.min(activeTab, maxTabIndex)}
                   onChange={(e, newValue) => setActiveTab(newValue)}
                   aria-label="user tabs"
                   sx={{ px: 3 }}
@@ -1582,14 +1596,14 @@ export default function UsersPage() {
                 </Button>
               )}
 
-              {((form.userType === "staff" || form.userType === "admin") &&
-                activeTab < 1) ||
-                (form.userType === "business" && activeTab < 2) ? (
+              {activeTab < maxTabIndex ? (
                 <Button
                   variant="contained"
                   onClick={() => {
                     if (validateCurrentTab()) {
-                      setActiveTab((prev) => prev + 1);
+                      setActiveTab((prev) =>
+                        Math.min(prev + 1, maxTabIndex),
+                      );
                     }
                   }}
                   disabled={loading}

@@ -685,6 +685,7 @@ export default function TrashPage() {
   };
 
   const openDeleteConfirm = (module, item) => {
+    if (currentUser?.role !== "superadmin") return;
     setPendingAction({ type: "delete", module, frontendModule: module, item });
 
     setDeleteConfirm(true);
@@ -748,6 +749,7 @@ export default function TrashPage() {
   };
 
   const openBulkDeleteConfirm = (module) => {
+    if (currentUser?.role !== "superadmin") return;
     const filterParams = {
       ...(deletedByFilter !== "__ALL__" && { deletedBy: deletedByFilter }),
       ...(dateFrom && { startDate: dateFrom }),
@@ -1126,21 +1128,22 @@ export default function TrashPage() {
                       >
                         {t.restoreAll}
                       </Button>
-                      <Button
-                        variant="text"
-                        color="error"
-                        size="small"
-                        startIcon={<ICONS.delete />}
-                        onClick={() => openBulkDeleteConfirm(module)}
-                        disabled={filtered.length === 0}
-                        sx={{
-                          ...getStartIconSpacing(dir),
-
-                          width: { xs: "100%", sm: "auto" },
-                        }}
-                      >
-                        {t.deleteAll}
-                      </Button>
+                      {currentUser?.role === "superadmin" && (
+                        <Button
+                          variant="text"
+                          color="error"
+                          size="small"
+                          startIcon={<ICONS.delete />}
+                          onClick={() => openBulkDeleteConfirm(module)}
+                          disabled={filtered.length === 0}
+                          sx={{
+                            ...getStartIconSpacing(dir),
+                            width: { xs: "100%", sm: "auto" },
+                          }}
+                        >
+                          {t.deleteAll}
+                        </Button>
+                      )}
                     </Stack>
                   </Stack>
                   <Grid
@@ -1280,15 +1283,17 @@ export default function TrashPage() {
                                 <ICONS.restore fontSize="small" />
                               </IconButton>
                             </Tooltip>
-                            <Tooltip title={t.permanentDelete}>
-                              <IconButton
-                                color="error"
-                                onClick={() => openDeleteConfirm(module, item)}
-                                size="small"
-                              >
-                                <ICONS.delete fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
+                            {currentUser?.role === "superadmin" && (
+                              <Tooltip title={t.permanentDelete}>
+                                <IconButton
+                                  color="error"
+                                  onClick={() => openDeleteConfirm(module, item)}
+                                  size="small"
+                                >
+                                  <ICONS.delete fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            )}
                           </CardActions>
                         </AppCard>
                       </Grid>
@@ -1425,32 +1430,34 @@ export default function TrashPage() {
         confirmButtonIcon={<ICONS.restore />}
         confirmButtonColor="success"
       />
-      <ConfirmationDialog
-        open={deleteConfirm}
-        onClose={() => setDeleteConfirm(false)}
-        onConfirm={handlePermanentDelete}
-        title={t.confirmDeleteTitle}
-        message={(() => {
-          const frontendModule = pendingAction?.frontendModule;
-          const itemRole = pendingAction?.item?.role;
+      {currentUser?.role === "superadmin" && (
+        <ConfirmationDialog
+          open={deleteConfirm}
+          onClose={() => setDeleteConfirm(false)}
+          onConfirm={handlePermanentDelete}
+          title={t.confirmDeleteTitle}
+          message={(() => {
+            const frontendModule = pendingAction?.frontendModule;
+            const itemRole = pendingAction?.item?.role;
 
-          if (frontendModule === "business") {
-            return t.deleteBusinessMessage;
-          }
+            if (frontendModule === "business") {
+              return t.deleteBusinessMessage;
+            }
 
-          if (itemRole === "staff") {
-            return t.deleteStaffMessage;
-          }
+            if (itemRole === "staff") {
+              return t.deleteStaffMessage;
+            }
 
-          if (frontendModule === "user") {
-            return t.deleteMessagePrefix;
-          }
+            if (frontendModule === "user") {
+              return t.deleteMessagePrefix;
+            }
 
-          return t.confirmDeleteMessage;
-        })()}
-        confirmButtonText={isMobile ? t.delete : t.confirmDeleteButton}
-        confirmButtonIcon={<ICONS.delete />}
-      />
+            return t.confirmDeleteMessage;
+          })()}
+          confirmButtonText={isMobile ? t.delete : t.confirmDeleteButton}
+          confirmButtonIcon={<ICONS.delete />}
+        />
+      )}
       <ConfirmationDialog
         open={bulkRestoreConfirm}
         onClose={() => setBulkRestoreConfirm(false)}
@@ -1461,17 +1468,19 @@ export default function TrashPage() {
         confirmButtonIcon={<ICONS.restore />}
         confirmButtonColor="success"
       />
-      <ConfirmationDialog
-        open={bulkDeleteConfirm}
-        onClose={() => setBulkDeleteConfirm(false)}
-        onConfirm={handleBulkDelete}
-        title={t.confirmBulkDeleteTitle}
-        message={t.confirmBulkDeleteMessage}
-        confirmButtonText={
-          isMobile ? t.deleteAllMobile : t.deleteAllPermanently
-        }
-        confirmButtonIcon={<ICONS.delete />}
-      />
+      {currentUser?.role === "superadmin" && (
+        <ConfirmationDialog
+          open={bulkDeleteConfirm}
+          onClose={() => setBulkDeleteConfirm(false)}
+          onConfirm={handleBulkDelete}
+          title={t.confirmBulkDeleteTitle}
+          message={t.confirmBulkDeleteMessage}
+          confirmButtonText={
+            isMobile ? t.deleteAllMobile : t.deleteAllPermanently
+          }
+          confirmButtonIcon={<ICONS.delete />}
+        />
+      )}
     </Container>
   );
 }
