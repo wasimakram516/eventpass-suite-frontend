@@ -16,13 +16,14 @@ import {
 import { QRCodeCanvas } from "qrcode.react";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import CloseIcon from "@mui/icons-material/Close";
-import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import { useRef } from "react";
 import { useMessage } from "@/contexts/MessageContext";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import slugify from "@/utils/slugify";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
+import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
+import { downloadDefaultQrWrapperAsImage, hasDefaultQrWrapperDesign, hasWrapperDesign } from "@/utils/defaultQrWrapperDownload";
 
 const translations = {
   en: {
@@ -52,13 +53,17 @@ export default function ShareLinkModal({
   title,
   description,
   name = "qr-code",
+  customQrWrapper,
 }) {
   const qrCodeRef = useRef(null);
   const { showMessage } = useMessage();
   const { t, dir } = useI18nLayout(translations);
+  const { globalConfig } = useGlobalConfig();
 
   const downloadName = `${slugify(name)}.png`;
   const qrValue = qrUrl || url;
+  const hasCustomDesign = customQrWrapper && hasWrapperDesign(customQrWrapper);
+  const hasDefaultDesign = hasDefaultQrWrapperDesign(globalConfig);
 
   const handleCopyLink = async () => {
     try {
@@ -69,7 +74,27 @@ export default function ShareLinkModal({
     }
   };
 
-  const handleDownloadQRCode = () => {
+  const handleDownloadQRCode = async () => {
+    if (hasCustomDesign) {
+      try {
+        await downloadDefaultQrWrapperAsImage(customQrWrapper, qrValue, downloadName, {
+          fonts: globalConfig?.fonts ?? [],
+        });
+      } catch (err) {
+        showMessage(t.qrError, "error");
+      }
+      return;
+    }
+    if (hasDefaultDesign && globalConfig?.defaultQrWrapper) {
+      try {
+        await downloadDefaultQrWrapperAsImage(globalConfig.defaultQrWrapper, qrValue, downloadName, {
+          fonts: globalConfig.fonts ?? [],
+        });
+      } catch (err) {
+        showMessage(t.qrError, "error");
+      }
+      return;
+    }
     const canvas = qrCodeRef.current?.querySelector("canvas");
     if (!canvas) {
       showMessage(t.qrError, "error");

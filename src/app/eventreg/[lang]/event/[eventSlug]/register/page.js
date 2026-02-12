@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import {
   Box,
   Typography,
@@ -35,6 +35,9 @@ import CountryCodeSelector from "@/components/CountryCodeSelector";
 import { normalizePhone } from "@/utils/phoneUtils";
 import { DEFAULT_COUNTRY_CODE, DEFAULT_ISO_CODE, COUNTRY_CODES, getCountryCodeByIsoCode } from "@/utils/countryCodes";
 import { validatePhoneNumber } from "@/utils/phoneValidation";
+import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
+import { useMessage } from "@/contexts/MessageContext";
+import { downloadDefaultQrWrapperAsImage, hasDefaultQrWrapperDesign, hasWrapperDesign } from "@/utils/defaultQrWrapperDownload";
 
 export default function Registration() {
   const { eventSlug, lang } = useParams();
@@ -72,6 +75,7 @@ export default function Registration() {
       ? "شكرًا لتسجيلك."
       : "Thank you for registering.",
     downloadQr: isArabic ? "تحميل رمز الاستجابة السريعة" : "Download QR Code",
+    qrError: isArabic ? "فشل في إنشاء رمز الاستجابة السريعة." : "QR Code generation failed.",
     approvalPendingMessage: isArabic
       ? "يرجى الانتظار حتى يوافق المسؤول على تسجيلك."
       : "Please wait for the admin to approve your registration.",
@@ -89,6 +93,11 @@ export default function Registration() {
   const [translatedEvent, setTranslatedEvent] = useState(null);
   const [qrToken, setQrToken] = useState(null);
   const [countryIsoCodes, setCountryIsoCodes] = useState({});
+  const qrCodeRef = useRef(null);
+  const { globalConfig } = useGlobalConfig();
+  const { showMessage } = useMessage();
+  const hasCustomDesign = event?.customQrWrapper && hasWrapperDesign(event.customQrWrapper);
+  const hasDefaultDesign = hasDefaultQrWrapperDesign(globalConfig);
 
   // Fetch event + translate event metadata
   useEffect(() => {
@@ -685,7 +694,7 @@ export default function Registration() {
               </Box>
 
               {/* QR canvas */}
-              <Box mt={2} display="flex" justifyContent="center">
+              <Box mt={2} display="flex" justifyContent="center" ref={qrCodeRef}>
                 <Paper
                   id="qr-container"
                   elevation={3}
@@ -720,15 +729,37 @@ export default function Registration() {
             <Button
               variant="contained"
               color="primary"
-              onClick={() => {
-                const canvas = document.getElementById("qr-code");
-                const pngUrl = canvas
-                  .toDataURL("image/png")
-                  .replace("image/png", "image/octet-stream");
-
+              onClick={async () => {
+                const downloadName = `qr-${qrToken}.png`;
+                if (hasCustomDesign) {
+                  try {
+                    await downloadDefaultQrWrapperAsImage(event.customQrWrapper, qrToken, downloadName, {
+                      fonts: globalConfig?.fonts ?? [],
+                    });
+                  } catch (err) {
+                    showMessage(t.qrError, "error");
+                  }
+                  return;
+                }
+                if (hasDefaultDesign && globalConfig?.defaultQrWrapper) {
+                  try {
+                    await downloadDefaultQrWrapperAsImage(globalConfig.defaultQrWrapper, qrToken, downloadName, {
+                      fonts: globalConfig.fonts ?? [],
+                    });
+                  } catch (err) {
+                    showMessage(t.qrError, "error");
+                  }
+                  return;
+                }
+                const canvas = qrCodeRef.current?.querySelector("canvas");
+                if (!canvas) {
+                  showMessage(t.qrError, "error");
+                  return;
+                }
+                const qrDataURL = canvas.toDataURL("image/png");
                 const link = document.createElement("a");
-                link.href = pngUrl;
-                link.download = `qr-${qrToken}.png`;
+                link.href = qrDataURL;
+                link.download = downloadName;
                 link.click();
               }}
             >

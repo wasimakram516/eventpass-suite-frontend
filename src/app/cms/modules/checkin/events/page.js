@@ -354,6 +354,7 @@ export default function EventsPage() {
           name={eventToShare?.name}
           title={t.shareTitle}
           description={t.description}
+          customQrWrapper={eventToShare?.customQrWrapper}
         />
       </Container>
     </Box>

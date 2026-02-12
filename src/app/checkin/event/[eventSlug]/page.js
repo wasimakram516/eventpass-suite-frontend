@@ -33,6 +33,9 @@ import EventWelcomeCard from "@/components/cards/EventWelcomeCard";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import { formatDateWithTime, formatTime } from "@/utils/dateUtils";
+import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
+import { useMessage } from "@/contexts/MessageContext";
+import { downloadDefaultQrWrapperAsImage, hasDefaultQrWrapperDesign, hasWrapperDesign } from "@/utils/defaultQrWrapperDownload";
 
 export default function EventDetails() {
   const { eventSlug } = useParams();
@@ -64,6 +67,7 @@ export default function EventDetails() {
       notConfirmedButton: "Not Attending",
       cancelButton: "Cancel",
       downloadQr: "Download QR Code",
+      qrError: "QR Code generation failed.",
       contactOrganizer: "Please contact the organizer for more information",
       organizerContact: "Organizer Contact",
     },
@@ -90,6 +94,7 @@ export default function EventDetails() {
       notConfirmedButton: "غير مؤكد",
       cancelButton: "إلغاء",
       downloadQr: "تحميل رمز الاستجابة السريعة",
+      qrError: "فشل في إنشاء رمز الاستجابة السريعة.",
       contactOrganizer: "يرجى الاتصال بالمنظم للحصول على مزيد من المعلومات",
       organizerContact: "جهة اتصال المنظم",
     },
@@ -153,6 +158,11 @@ export default function EventDetails() {
   const eventFetchedRef = useRef(null);
   const registrationFetchedRef = useRef(null);
   const videoRef = useRef(null);
+  const qrCodeRef = useRef(null);
+  const { globalConfig } = useGlobalConfig();
+  const { showMessage } = useMessage();
+  const hasCustomDesign = event?.customQrWrapper && hasWrapperDesign(event.customQrWrapper);
+  const hasDefaultDesign = hasDefaultQrWrapperDesign(globalConfig);
 
   useEffect(() => {
     if (eventFetchedRef.current === eventSlug) return;
@@ -668,7 +678,7 @@ export default function EventDetails() {
 
                 {/* QR Code (hidden, used for download) */}
                 {registration?.token && (
-                  <Box sx={{ display: "none" }}>
+                  <Box sx={{ display: "none" }} ref={qrCodeRef}>
                     <QRCodeCanvas
                       id="qr-code-checkin"
                       value={registration.token}
@@ -716,24 +726,45 @@ export default function EventDetails() {
                     </>
                   )}
 
-                  {/* Download QR button (appears in all cases when token exists) */}
+                  {/* Download QR button  */}
                   {registration?.token && (
                     <Button
                       variant="contained"
                       size="large"
                       startIcon={<ICONS.download />}
-                      onClick={() => {
-                        const canvas = document.getElementById("qr-code-checkin");
-                        if (canvas) {
-                          const pngUrl = canvas
-                            .toDataURL("image/png")
-                            .replace("image/png", "image/octet-stream");
-
-                          const link = document.createElement("a");
-                          link.href = pngUrl;
-                          link.download = `qr-${registration.token}.png`;
-                          link.click();
+                      onClick={async () => {
+                        const downloadName = `qr-${registration.token}.png`;
+                        const qrValue = registration.token;
+                        if (hasCustomDesign) {
+                          try {
+                            await downloadDefaultQrWrapperAsImage(event.customQrWrapper, qrValue, downloadName, {
+                              fonts: globalConfig?.fonts ?? [],
+                            });
+                          } catch (err) {
+                            showMessage(t.qrError, "error");
+                          }
+                          return;
                         }
+                        if (hasDefaultDesign && globalConfig?.defaultQrWrapper) {
+                          try {
+                            await downloadDefaultQrWrapperAsImage(globalConfig.defaultQrWrapper, qrValue, downloadName, {
+                              fonts: globalConfig.fonts ?? [],
+                            });
+                          } catch (err) {
+                            showMessage(t.qrError, "error");
+                          }
+                          return;
+                        }
+                        const canvas = qrCodeRef.current?.querySelector("canvas");
+                        if (!canvas) {
+                          showMessage(t.qrError, "error");
+                          return;
+                        }
+                        const qrDataURL = canvas.toDataURL("image/png");
+                        const link = document.createElement("a");
+                        link.href = qrDataURL;
+                        link.download = downloadName;
+                        link.click();
                       }}
                       sx={{
                         fontSize: { xs: 16, md: 18 },

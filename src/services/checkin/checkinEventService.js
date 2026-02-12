@@ -39,6 +39,17 @@ export const updateCheckInEvent = withApiHandler(
   { showSuccess: true }
 );
 
+// Update event custom QR wrapper (multipart: customQrWrapper JSON + optional files)
+export const updateCheckInEventCustomQrWrapper = withApiHandler(
+  async (id, formData) => {
+    const { data } = await api.put(`/checkin/events/${id}/custom-qr-wrapper`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return data;
+  },
+  { showSuccess: true }
+);
+
 // Delete event by ID
 export const deleteCheckInEvent = withApiHandler(
   async (id) => {

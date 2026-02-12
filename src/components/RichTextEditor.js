@@ -490,6 +490,7 @@ const RichTextEditor = ({ value, onChange, placeholder, dir, minHeight, maxHeigh
                                 "#FF0000", "#00FF00", "#0000FF", "#FFFF00",
                                 "#FF00FF", "#00FFFF", "#FFA500", "#800080",
                                 "#FFC0CB", "#A52A2A", "#000080", "#008000",
+                                "#FFFFFF",
                             ].map((color) => (
                                 <Box
                                     key={color}
@@ -498,7 +499,7 @@ const RichTextEditor = ({ value, onChange, placeholder, dir, minHeight, maxHeigh
                                         width: 24,
                                         height: 24,
                                         bgcolor: color,
-                                        border: "1px solid #ccc",
+                                        border: color === "#FFFFFF" ? "1px solid #999" : "1px solid #ccc",
                                         cursor: "pointer",
                                         "&:hover": { border: "2px solid #000" },
                                     }}

@@ -40,6 +40,7 @@ import {
   createGlobalConfig,
   deleteGlobalConfig,
 } from "@/services/globalConfigService";
+import DefaultQrWrapperModal from "@/components/modals/DefaultQrWrapperModal";
 import { useMessage } from "@/contexts/MessageContext";
 import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
 import useI18nLayout from "@/hooks/useI18nLayout";
@@ -90,6 +91,9 @@ const translations = {
     nameOptional: "Client Name (optional)",
     websiteOptional: "Website (optional)",
     remove: "Remove",
+    defaultQrWrapper: "Default QR Ticket Wrapper",
+    customizeQrWrapper: "Customize QR Wrapper",
+    defaultQrWrapperDesc: "Default template for event QR tickets when a custom design is not set.",
   },
   ar: {
     title: "الإعدادات العامة",
@@ -132,12 +136,15 @@ const translations = {
     nameOptional: "اسم العميل (اختياري)",
     websiteOptional: "الموقع (اختياري)",
     remove: "إزالة",
+    defaultQrWrapper: "قالب تذكرة QR الافتراضي",
+    customizeQrWrapper: "تخصيص غلاف QR",
+    defaultQrWrapperDesc: "القالب الافتراضي لتذاكر QR عند عدم تعيين تصميم مخصص.",
   },
 };
 
 export default function GlobalConfigPage() {
   const { showMessage } = useMessage();
-  const { refetchConfig } = useGlobalConfig();
+  const { refetchConfig, globalConfig } = useGlobalConfig();
   const { dir, align, t } = useI18nLayout(translations);
 
   const theme = useTheme();
@@ -147,6 +154,7 @@ export default function GlobalConfigPage() {
   const [config, setConfig] = useState(null);
   const [openEdit, setOpenEdit] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [openQrWrapperModal, setOpenQrWrapperModal] = useState(false);
 
   const [form, setForm] = useState({
     appName: "",
@@ -249,6 +257,10 @@ export default function GlobalConfigPage() {
       }
     })();
   }, []);
+
+  useEffect(() => {
+    if (globalConfig != null) setConfig(globalConfig);
+  }, [globalConfig]);
 
   const handleDelete = async () => {
     await deleteGlobalConfig();
@@ -820,6 +832,27 @@ export default function GlobalConfigPage() {
             </AppCard>
           </Grid>
 
+          <Grid item xs={12} md={6} sx={{ px: { xs: 0 } }}>
+            <AppCard sx={{ p: 2.5, height: "100%", width: "100%" }}>
+              <Stack direction="row" spacing={1.5} alignItems="center">
+                <ICONS.qrcode sx={{ color: "#0077b6" }} />
+                <Typography variant="h6">{t.defaultQrWrapper}</Typography>
+              </Stack>
+              <Divider sx={{ my: 2 }} />
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                {t.defaultQrWrapperDesc}
+              </Typography>
+              <Button
+                variant="outlined"
+                startIcon={<EditIcon />}
+                sx={getStartIconSpacing(dir)}
+                onClick={() => setOpenQrWrapperModal(true)}
+              >
+                {t.customizeQrWrapper}
+              </Button>
+            </AppCard>
+          </Grid>
+
           <Grid item xs={12} sx={{ px: { xs: 0 } }}>
             <AppCard sx={{ p: 2.5, width: "100%" }}>
               <Stack direction="row" spacing={1.5} alignItems="center">
@@ -1139,7 +1172,20 @@ export default function GlobalConfigPage() {
               </Stack>
             </Stack>
 
-            {/* Client Logos */}
+            <Divider />
+            <Typography variant="subtitle2">{t.defaultQrWrapper}</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              {t.defaultQrWrapperDesc}
+            </Typography>
+            <Button
+              variant="outlined"
+              startIcon={<EditIcon />}
+              sx={{ ...getStartIconSpacing(dir), width: "100%" }}
+              onClick={() => setOpenQrWrapperModal(true)}
+            >
+              {t.customizeQrWrapper}
+            </Button>
+
             <Divider />
             <Typography variant="subtitle2">{t.clientLogosSection}</Typography>
 
@@ -1297,6 +1343,12 @@ export default function GlobalConfigPage() {
         message={t.deleteConfirmMsg}
         confirmButtonText={t.deleteConfirmBtn}
         confirmButtonIcon={<ICONS.delete />}
+      />
+
+      <DefaultQrWrapperModal
+        open={openQrWrapperModal}
+        onClose={() => setOpenQrWrapperModal(false)}
+        config={globalConfig ?? config}
       />
     </Container>
   );

@@ -2138,6 +2138,7 @@ export default function ViewRegistrations() {
           "registration"
         }
         title={t.shareLink}
+        customQrWrapper={eventDetails?.customQrWrapper}
       />
     </Container>
   );

@@ -49,6 +49,17 @@ export const updatePublicEvent = withApiHandler(
   { showSuccess: true }
 );
 
+// Update event custom QR wrapper (multipart: customQrWrapper JSON + optional files)
+export const updatePublicEventCustomQrWrapper = withApiHandler(
+  async (id, formData) => {
+    const { data } = await api.put(`/eventreg/events/${id}/custom-qr-wrapper`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return data;
+  },
+  { showSuccess: true }
+);
+
 // Delete an event by ID
 export const deletePublicEvent = withApiHandler(
   async (id) => {
