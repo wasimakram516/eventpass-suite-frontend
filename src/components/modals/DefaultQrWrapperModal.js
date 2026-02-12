@@ -39,6 +39,9 @@ const PREVIEW_WIDTH = Math.round(TEMPLATE_WIDTH * PREVIEW_SCALE);
 const PREVIEW_HEIGHT = Math.round(TEMPLATE_HEIGHT * PREVIEW_SCALE);
 const DEFAULT_QR_SIZE = 120;
 
+// Maps alignment to default X position
+const ALIGN_X_MAP = { left: 20, center: 50, right: 90, justify: 34 };
+
 const translations = {
   en: {
     title: "Default QR Ticket Wrapper",
@@ -167,7 +170,6 @@ function capitalizeFirst(s) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-/** For width/height: null = auto, number = px.*/
 function widthHeightFromConfig(configVal, defaultPx, hasConfig) {
   if (hasConfig && (configVal === 0 || configVal == null)) return null;
   if (!hasConfig) return defaultPx;
@@ -179,24 +181,15 @@ function ClampedNumberInput({ value, min, max, onChange, label, inputProps = {},
   const displayValue = (value !== undefined && value !== null && !isZeroMinAndZero) ? value : "";
   const handleChange = (e) => {
     const v = e.target.value;
-    if (v === "") {
-      onChange(min);
-      return;
-    }
+    if (v === "") { onChange(min); return; }
     const n = parseFloat(v);
     if (!Number.isNaN(n)) onChange(n);
   };
   const handleBlur = (e) => {
     const v = e.target.value;
-    if (v === "") {
-      onChange(min);
-      return;
-    }
+    if (v === "") { onChange(min); return; }
     const n = parseFloat(v);
-    if (Number.isNaN(n)) {
-      onChange(min);
-      return;
-    }
+    if (Number.isNaN(n)) { onChange(min); return; }
     const clamped = max != null ? Math.min(max, Math.max(min, n)) : Math.max(min, n);
     onChange(clamped);
   };
@@ -277,14 +270,10 @@ function extractFormattingFromHtml(html) {
   const fontFamilyUnquotedMatch = html.match(/font-family:\s*([^;"']+)/i);
   if (fontFamilyQuotedMatch) fontFamily = fontFamilyQuotedMatch[1].trim().replace(/\\"/g, '"');
   else if (fontFamilyUnquotedMatch) fontFamily = fontFamilyUnquotedMatch[1].trim();
+  // Parse all four alignment values including left and justify
   let alignment = "left";
   const alignMatch = html.match(/text-align:\s*(center|left|right|justify)/i);
-  if (alignMatch) {
-    const a = alignMatch[1].toLowerCase();
-    if (a === "center") alignment = "center";
-    else if (a === "right") alignment = "right";
-    else if (a === "justify") alignment = "justify";
-  }
+  if (alignMatch) alignment = alignMatch[1].toLowerCase();
   return { text, fontSize, color, isBold: !!isBold, isItalic: !!isItalic, isUnderline: !!isUnderline, fontFamily, alignment };
 }
 
@@ -301,11 +290,11 @@ function buildHtmlFromFormatting(textValue, fontSizeValue, colorValue, isBoldVal
     styles.push(`font-family: "${escaped}"`);
   }
   if (styles.length > 0) html = `<span style="${styles.join("; ")}">${html}</span>`;
-  const pStyle = alignmentValue && alignmentValue !== "left" ? ` style="text-align: ${alignmentValue}"` : "";
+  // Always write text-align so extractFormattingFromHtml can always read it back
+  const pStyle = ` style="text-align: ${alignmentValue || "left"}"`;
   return `<p${pStyle}>${html}</p>`;
 }
 
-/** Build display HTML from a custom field's separate fields (no content field). */
 function getContentFromField(f) {
   return buildHtmlFromFormatting(
     f.text ?? "",
@@ -373,21 +362,36 @@ function QrWrapperFieldEditor({
     formatting.fontFamily
   );
 
+  // Applies alignment change: updates state, fires onChange + onFormattingChange + onXChange
+  const applyAlignmentChange = (newAlignment, prevFormatting) => {
+    const next = { ...prevFormatting, alignment: newAlignment };
+    lastFormattingRef.current = next;
+    lastAlignmentRef.current = newAlignment;
+    setFormatting(next);
+    const built = buildHtmlFromFormatting(next.text, next.fontSize, next.color, next.isBold, next.isItalic, next.isUnderline, next.alignment, next.fontFamily);
+    onChange(built);
+    // Update X axis position based on alignment
+    if (ALIGN_X_MAP[newAlignment] !== undefined) {
+      onXChangeRef.current?.(ALIGN_X_MAP[newAlignment]);
+    }
+    onFormattingChangeRef.current?.({ text: next.text, fontSize: next.fontSize, color: next.color, isBold: next.isBold, isItalic: next.isItalic, isUnderline: next.isUnderline, fontFamily: next.fontFamily, alignment: next.alignment });
+  };
+
   const handleHTMLChange = (html) => {
     if (isUpdatingFromPropsRef.current) return;
 
     let next = extractFormattingFromHtml(html);
     const prev = lastFormattingRef.current;
 
+    // Preserve fontFamily if editor lost it (browser strips custom fonts)
     if ((!next.fontFamily || next.fontFamily === "Arial") && prev.fontFamily && prev.fontFamily !== "Arial") {
       next = { ...next, fontFamily: prev.fontFamily };
     }
+    // Preserve fontSize if editor reset it
     if (next.fontSize === 14 && prev.fontSize && prev.fontSize !== 14) {
       next = { ...next, fontSize: prev.fontSize };
     }
-    if (next.alignment === "left" && prev.alignment && prev.alignment !== "left") {
-      next = { ...next, alignment: prev.alignment };
-    }
+    // NOTE: Do NOT preserve alignment here — we must allow left to come through
 
     const changed =
       next.text !== prev.text ||
@@ -399,38 +403,25 @@ function QrWrapperFieldEditor({
       next.fontFamily !== prev.fontFamily ||
       next.alignment !== prev.alignment;
 
-    if (changed) {
-      lastFormattingRef.current = next;
-      setFormatting(next);
+    if (!changed) return;
 
-      const built = buildHtmlFromFormatting(next.text, next.fontSize, next.color, next.isBold, next.isItalic, next.isUnderline, next.alignment, next.fontFamily);
-      onChange(built);
+    const alignmentChanged = next.alignment !== prev.alignment;
+    lastFormattingRef.current = next;
+    setFormatting(next);
 
-      if (onFontFamilyChangeRef.current && next.fontFamily !== prev.fontFamily) {
-        onFontFamilyChangeRef.current(next.fontFamily);
-      }
+    const built = buildHtmlFromFormatting(next.text, next.fontSize, next.color, next.isBold, next.isItalic, next.isUnderline, next.alignment, next.fontFamily);
+    onChange(built);
 
-      if (next.alignment !== prev.alignment && onXChangeRef.current) {
-        if (next.alignment === "center") {
-          onXChangeRef.current(50);
-        } else if (next.alignment === "right") {
-          onXChangeRef.current(90);
-        }
-      }
-
-      if (onFormattingChangeRef.current) {
-        onFormattingChangeRef.current({
-          text: next.text,
-          fontSize: next.fontSize,
-          color: next.color,
-          isBold: next.isBold,
-          isItalic: next.isItalic,
-          isUnderline: next.isUnderline,
-          fontFamily: next.fontFamily,
-          alignment: next.alignment
-        });
-      }
+    if (onFontFamilyChangeRef.current && next.fontFamily !== prev.fontFamily) {
+      onFontFamilyChangeRef.current(next.fontFamily);
     }
+
+    // Fire X update whenever alignment changes
+    if (alignmentChanged && ALIGN_X_MAP[next.alignment] !== undefined) {
+      onXChangeRef.current?.(ALIGN_X_MAP[next.alignment]);
+    }
+
+    onFormattingChangeRef.current?.({ text: next.text, fontSize: next.fontSize, color: next.color, isBold: next.isBold, isItalic: next.isItalic, isUnderline: next.isUnderline, fontFamily: next.fontFamily, alignment: next.alignment });
   };
 
   useEffect(() => {
@@ -441,31 +432,22 @@ function QrWrapperFieldEditor({
       const isLeft = document.queryCommandState("justifyLeft");
       const isCenter = document.queryCommandState("justifyCenter");
       const isRight = document.queryCommandState("justifyRight");
+      const isFull = document.queryCommandState("justifyFull");
       let current = null;
-      if (isLeft && !isCenter && !isRight) current = "left";
+      if (isFull) current = "justify";
+      else if (isLeft && !isCenter && !isRight) current = "left";
       else if (isCenter && !isLeft && !isRight) current = "center";
       else if (isRight && !isLeft && !isCenter) current = "right";
       if (current && (isManualClick ? current !== lastAlignmentRef.current : true)) {
-        lastAlignmentRef.current = current;
-        const prev = formattingRef.current;
-        const next = { ...prev, alignment: current };
-        const built = buildHtmlFromFormatting(next.text, next.fontSize, next.color, next.isBold, next.isItalic, next.isUnderline, next.alignment, next.fontFamily);
-        onChange(built);
-        setFormatting(next);
-        if (onFormattingChangeRef.current) {
-          onFormattingChangeRef.current({ text: next.text, fontSize: next.fontSize, color: next.color, isBold: next.isBold, isItalic: next.isItalic, isUnderline: next.isUnderline, fontFamily: next.fontFamily, alignment: next.alignment });
-        }
+        applyAlignmentChange(current, formattingRef.current);
       }
     };
-    const editor = editorContainerRef.current?.querySelector("[contenteditable=\"true\"]");
-    if (editor) {
-      const toolbar = editorContainerRef.current.querySelector(".MuiToolbar-root");
-      if (toolbar) {
-        const alignmentButtons = toolbar.querySelectorAll("button[title*=\"Align\"]");
-        alignmentButtons.forEach((btn) => {
-          btn.addEventListener("click", () => setTimeout(() => checkAlignment(true), 100));
-        });
-      }
+    const toolbar = editorContainerRef.current?.querySelector(".MuiToolbar-root");
+    if (toolbar) {
+      const alignmentButtons = toolbar.querySelectorAll("button[title*=\"Align\"], button[title*=\"Justify\"]");
+      alignmentButtons.forEach((btn) => {
+        btn.addEventListener("click", () => setTimeout(() => checkAlignment(true), 100));
+      });
     }
   }, [onChange]);
 
@@ -475,14 +457,9 @@ function QrWrapperFieldEditor({
     if (!editor) return;
     if (document.activeElement === editor || editor.contains(document.activeElement)) return;
     const expected = buildHtmlFromFormatting(
-      formatting.text,
-      formatting.fontSize,
-      formatting.color,
-      formatting.isBold,
-      formatting.isItalic,
-      formatting.isUnderline,
-      formatting.alignment,
-      formatting.fontFamily
+      formatting.text, formatting.fontSize, formatting.color,
+      formatting.isBold, formatting.isItalic, formatting.isUnderline,
+      formatting.alignment, formatting.fontFamily
     );
     if (editor.innerHTML !== expected) {
       isUpdatingFromPropsRef.current = true;
@@ -491,7 +468,6 @@ function QrWrapperFieldEditor({
       setTimeout(() => { isUpdatingFromPropsRef.current = false; }, 0);
     }
   }, [formatting.text, formatting.fontSize, formatting.color, formatting.isBold, formatting.isItalic, formatting.isUnderline, formatting.alignment, formatting.fontFamily]);
-
 
   useEffect(() => {
     const injectInputs = () => {
@@ -507,94 +483,41 @@ function QrWrapperFieldEditor({
 
       const inputsBox = document.createElement("div");
       inputsBox.className = "qr-wrapper-position-inputs";
-      inputsBox.style.display = "flex";
-      inputsBox.style.gap = "12px";
-      inputsBox.style.alignItems = "center";
-      inputsBox.style.paddingLeft = "8px";
-      inputsBox.style.paddingTop = "8px";
-      inputsBox.style.paddingBottom = "8px";
-      inputsBox.style.borderLeft = "1px solid";
-      inputsBox.style.borderColor = "rgba(0, 0, 0, 0.12)";
-      inputsBox.style.marginLeft = "8px";
-      inputsBox.style.marginTop = "8px";
+      inputsBox.style.cssText = "display:flex;gap:12px;align-items:center;padding-left:8px;padding-top:8px;padding-bottom:8px;border-left:1px solid rgba(0,0,0,0.12);margin-left:8px;margin-top:8px;";
 
-      const xContainer = document.createElement("div");
-      xContainer.style.display = "flex";
-      xContainer.style.alignItems = "center";
-      xContainer.style.gap = "6px";
-      const xLabel = document.createElement("label");
-      xLabel.textContent = t.xAxis;
-      xLabel.style.fontSize = "0.875rem";
-      xLabel.style.color = "rgba(0, 0, 0, 0.6)";
-      xLabel.style.whiteSpace = "nowrap";
-      const xInput = document.createElement("input");
-      xInput.type = "number";
-      xInput.min = 0;
-      xInput.max = 100;
-      xInput.step = 1;
-      xInput.style.width = "80px";
-      xInput.style.height = "32px";
-      xInput.style.padding = "4px 8px";
-      xInput.style.border = "1px solid rgba(0, 0, 0, 0.23)";
-      xInput.style.borderRadius = "4px";
-      xInput.style.fontSize = "0.875rem";
-      xInput.value = x ?? 0;
-      xInput.oninput = (e) => {
-        const val = parseFloat(e.target.value);
-        if (!Number.isNaN(val) && val >= 0 && val <= 100) onXChangeRef.current?.(val);
+      const makeInputRow = (labelText, inputEl) => {
+        const container = document.createElement("div");
+        container.style.cssText = "display:flex;align-items:center;gap:6px;";
+        const label = document.createElement("label");
+        label.textContent = labelText;
+        label.style.cssText = "font-size:0.875rem;color:rgba(0,0,0,0.6);white-space:nowrap;";
+        container.appendChild(label);
+        container.appendChild(inputEl);
+        return container;
       };
+
+      const makeNumberInput = (initialValue, onInput) => {
+        const input = document.createElement("input");
+        input.type = "number";
+        input.min = 0; input.max = 100; input.step = 1;
+        input.style.cssText = "width:80px;height:32px;padding:4px 8px;border:1px solid rgba(0,0,0,0.23);border-radius:4px;font-size:0.875rem;";
+        input.value = initialValue ?? 0;
+        input.oninput = (e) => {
+          const val = parseFloat(e.target.value);
+          if (!Number.isNaN(val) && val >= 0 && val <= 100) onInput(val);
+        };
+        return input;
+      };
+
+      const xInput = makeNumberInput(x, (val) => onXChangeRef.current?.(val));
       xInputRef.current = xInput;
-      xContainer.appendChild(xLabel);
-      xContainer.appendChild(xInput);
-
-      const yContainer = document.createElement("div");
-      yContainer.style.display = "flex";
-      yContainer.style.alignItems = "center";
-      yContainer.style.gap = "6px";
-      const yLabel = document.createElement("label");
-      yLabel.textContent = t.yAxis;
-      yLabel.style.fontSize = "0.875rem";
-      yLabel.style.color = "rgba(0, 0, 0, 0.6)";
-      yLabel.style.whiteSpace = "nowrap";
-      const yInput = document.createElement("input");
-      yInput.type = "number";
-      yInput.min = 0;
-      yInput.max = 100;
-      yInput.step = 1;
-      yInput.style.width = "80px";
-      yInput.style.height = "32px";
-      yInput.style.padding = "4px 8px";
-      yInput.style.border = "1px solid rgba(0, 0, 0, 0.23)";
-      yInput.style.borderRadius = "4px";
-      yInput.style.fontSize = "0.875rem";
-      yInput.value = y ?? 0;
-      yInput.oninput = (e) => {
-        const val = parseFloat(e.target.value);
-        if (!Number.isNaN(val) && val >= 0 && val <= 100) onYChangeRef.current?.(val);
-      };
+      const yInput = makeNumberInput(y, (val) => onYChangeRef.current?.(val));
       yInputRef.current = yInput;
-      yContainer.appendChild(yLabel);
-      yContainer.appendChild(yInput);
 
-      const fontContainer = document.createElement("div");
-      fontContainer.style.display = "flex";
-      fontContainer.style.alignItems = "center";
-      fontContainer.style.gap = "4px";
-      const fontLabel = document.createElement("label");
-      fontLabel.textContent = t.font;
-      fontLabel.style.fontSize = "0.875rem";
-      fontLabel.style.color = "rgba(0, 0, 0, 0.6)";
-      fontLabel.style.whiteSpace = "nowrap";
       const fontSelect = document.createElement("select");
-      fontSelect.style.width = "80px";
-      fontSelect.style.height = "32px";
-      fontSelect.style.padding = "4px";
-      fontSelect.style.border = "1px solid rgba(0, 0, 0, 0.23)";
-      fontSelect.style.borderRadius = "4px";
-      fontSelect.style.fontSize = "0.75rem";
-      fontSelect.style.backgroundColor = "white";
-      fontSelect.value = formatting.fontFamily || "Arial";
+      fontSelect.style.cssText = "width:80px;height:32px;padding:4px;border:1px solid rgba(0,0,0,0.23);border-radius:4px;font-size:0.75rem;background-color:white;";
       fontSelectRef.current = fontSelect;
+
       const fontsToUse = availableFonts?.length > 0 ? availableFonts : [
         { name: "Arial", family: "Arial" },
         { name: "Futura", family: "Futura" },
@@ -609,7 +532,7 @@ function QrWrapperFieldEditor({
         fontSelect.appendChild(option);
       });
       const currentFont = (formattingRef.current?.fontFamily && String(formattingRef.current.fontFamily).trim()) || "Arial";
-      if (currentFont && !Array.from(fontSelect.options).some((o) => o.value === currentFont)) {
+      if (!Array.from(fontSelect.options).some((o) => o.value === currentFont)) {
         const opt = document.createElement("option");
         opt.value = currentFont;
         opt.textContent = capitalizeFirst(currentFont);
@@ -625,16 +548,12 @@ function QrWrapperFieldEditor({
         onChange(built);
         setFormatting(next);
         onFontFamilyChangeRef.current?.(val);
-        if (onFormattingChangeRef.current) {
-          onFormattingChangeRef.current({ text: next.text, fontSize: next.fontSize, color: next.color, isBold: next.isBold, isItalic: next.isItalic, isUnderline: next.isUnderline, fontFamily: next.fontFamily, alignment: next.alignment });
-        }
+        onFormattingChangeRef.current?.({ text: next.text, fontSize: next.fontSize, color: next.color, isBold: next.isBold, isItalic: next.isItalic, isUnderline: next.isUnderline, fontFamily: next.fontFamily, alignment: next.alignment });
       };
-      fontContainer.appendChild(fontLabel);
-      fontContainer.appendChild(fontSelect);
 
-      inputsBox.appendChild(xContainer);
-      inputsBox.appendChild(yContainer);
-      inputsBox.appendChild(fontContainer);
+      inputsBox.appendChild(makeInputRow(t.xAxis, xInput));
+      inputsBox.appendChild(makeInputRow(t.yAxis, yInput));
+      inputsBox.appendChild(makeInputRow(t.font, fontSelect));
       clearFormatBox.appendChild(inputsBox);
       inputsContainerRef.current = inputsBox;
     };
@@ -721,32 +640,26 @@ export default function DefaultQrWrapperModal({
     x: num(wr.logo?.x, 0),
     y: num(wr.logo?.y, 0),
   });
-  const [backgroundImage, setBackgroundImage] = useState({
-    url: wr.backgroundImage?.url ?? "",
-  });
+  const [backgroundImage, setBackgroundImage] = useState({ url: wr.backgroundImage?.url ?? "" });
+
   const normalizeBrandingItems = (w) => {
     if (!w?.brandingMedia) return [];
     if (w.brandingMedia.url) {
       return [{
-        _id: null,
-        url: w.brandingMedia.url,
-        file: null,
+        _id: null, url: w.brandingMedia.url, file: null,
         width: widthHeightFromConfig(w.brandingMedia.width, 200, true),
         height: widthHeightFromConfig(w.brandingMedia.height, 60, true),
-        x: num(w.brandingMedia.x, 50),
-        y: num(w.brandingMedia.y, 15),
+        x: num(w.brandingMedia.x, 50), y: num(w.brandingMedia.y, 15),
       }];
     }
     return (w.brandingMedia.items || []).map((i) => ({
-      _id: i._id,
-      url: i.url || "",
-      file: null,
+      _id: i._id, url: i.url || "", file: null,
       width: widthHeightFromConfig(i.width, 200, true),
       height: widthHeightFromConfig(i.height, 60, true),
-      x: num(i.x, 50),
-      y: num(i.y, 15),
+      x: num(i.x, 50), y: num(i.y, 15),
     }));
   };
+
   const [brandingMediaItems, setBrandingMediaItems] = useState(normalizeBrandingItems(wr));
   const [removeBrandingMediaIds, setRemoveBrandingMediaIds] = useState([]);
   const [pendingClearAllBranding, setPendingClearAllBranding] = useState(false);
@@ -755,15 +668,13 @@ export default function DefaultQrWrapperModal({
   const [confirmRemoveBrandingIndex, setConfirmRemoveBrandingIndex] = useState(null);
   const [confirmClearAllBranding, setConfirmClearAllBranding] = useState(false);
   const [qr, setQr] = useState({
-    x: num(wr.qr?.x, 50),
-    y: num(wr.qr?.y, 55),
-    size: num(wr.qr?.size, DEFAULT_QR_SIZE),
+    x: num(wr.qr?.x, 50), y: num(wr.qr?.y, 55), size: num(wr.qr?.size, DEFAULT_QR_SIZE),
   });
+
   const mapConfigToCustomField = (f) => ({
     id: f.id || `f-${Date.now()}-${Math.random().toString(36).slice(2)}`,
     label: f.label ?? getNextFieldName([]),
-    x: num(f.x, 0),
-    y: num(f.y, 0),
+    x: num(f.x, 0), y: num(f.y, 0),
     fontSize: num(f.fontSize, 14),
     fontFamily: f.fontFamily ?? "Arial",
     text: f.text ?? "",
@@ -791,19 +702,14 @@ export default function DefaultQrWrapperModal({
     const out = [];
     const push = (id, label, rawValue) => {
       const existing = getExistingEventField(id);
-      const text =
-        (existing?.text != null && String(existing.text).trim() !== "")
-          ? String(existing.text).trim()
-          : String(rawValue ?? "").trim();
+      const text = (existing?.text != null && String(existing.text).trim() !== "")
+        ? String(existing.text).trim() : String(rawValue ?? "").trim();
       out.push({
-        id,
-        label,
-        x: num(existing?.x, 0),
-        y: num(existing?.y, out.length * 8),
+        id, label,
+        x: num(existing?.x, 0), y: num(existing?.y, out.length * 8),
         fontSize: num(existing?.fontSize, 14),
         fontFamily: existing?.fontFamily ?? "Arial",
-        text,
-        color: existing?.color ?? "#000000",
+        text, color: existing?.color ?? "#000000",
         isBold: existing?.isBold ?? false,
         isItalic: existing?.isItalic ?? false,
         isUnderline: existing?.isUnderline ?? false,
@@ -826,7 +732,6 @@ export default function DefaultQrWrapperModal({
   };
 
   const [eventFields, setEventFields] = useState([]);
-
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState(logo.url);
   const [backgroundFile, setBackgroundFile] = useState(null);
@@ -846,21 +751,17 @@ export default function DefaultQrWrapperModal({
       url: logoUrl,
       width: widthHeightFromConfig(wr.logo?.width, 150, wr.logo != null),
       height: widthHeightFromConfig(wr.logo?.height, 150, wr.logo != null),
-      x: num(wr.logo?.x, 0),
-      y: num(wr.logo?.y, 0),
+      x: num(wr.logo?.x, 0), y: num(wr.logo?.y, 0),
     });
     setBackgroundImage({ url: wr.backgroundImage?.url ?? "" });
     if (isEventMode && Array.isArray(eventData?.brandingMedia) && eventData.brandingMedia.length > 0) {
       const wrItems = wr.brandingMedia?.items || [];
       setBrandingMediaItems(
         eventData.brandingMedia.map((item, idx) => ({
-          _id: item._id,
-          url: item.logoUrl || item.url || "",
-          file: null,
+          _id: item._id, url: item.logoUrl || item.url || "", file: null,
           width: widthHeightFromConfig(wrItems[idx]?.width, 200, true),
           height: widthHeightFromConfig(wrItems[idx]?.height, 60, true),
-          x: num(wrItems[idx]?.x, 50),
-          y: num(wrItems[idx]?.y, 15),
+          x: num(wrItems[idx]?.x, 50), y: num(wrItems[idx]?.y, 15),
         }))
       );
     } else {
@@ -868,19 +769,14 @@ export default function DefaultQrWrapperModal({
     }
     setRemoveBrandingMediaIds([]);
     setPendingClearAllBranding(false);
-    setQr({
-      x: num(wr.qr?.x, 50),
-      y: num(wr.qr?.y, 55),
-      size: num(wr.qr?.size, DEFAULT_QR_SIZE),
-    });
+    setQr({ x: num(wr.qr?.x, 50), y: num(wr.qr?.y, 55), size: num(wr.qr?.size, DEFAULT_QR_SIZE) });
     if (isEventMode && eventData) {
       setEventFields(buildEventFieldsFromSelection());
-      const extraCustom = (Array.isArray(wr.customFields) ? wr.customFields : []).filter((f) => !EVENT_FIELD_IDS.has(f.id)).map(mapConfigToCustomField);
+      const extraCustom = (Array.isArray(wr.customFields) ? wr.customFields : [])
+        .filter((f) => !EVENT_FIELD_IDS.has(f.id)).map(mapConfigToCustomField);
       setCustomFields(extraCustom);
     } else {
-      setCustomFields(
-        Array.isArray(wr.customFields) ? wr.customFields.map(mapConfigToCustomField) : []
-      );
+      setCustomFields(Array.isArray(wr.customFields) ? wr.customFields.map(mapConfigToCustomField) : []);
     }
     setLogoPreview(isEventMode && eventData?.logoUrl != null ? eventData.logoUrl : (wr.logo?.url ?? ""));
     setBackgroundPreview(wr.backgroundImage?.url ?? "");
@@ -889,32 +785,23 @@ export default function DefaultQrWrapperModal({
     if (logoFileInputRef.current) logoFileInputRef.current.value = "";
     if (backgroundFileInputRef.current) backgroundFileInputRef.current.value = "";
     if (brandingFileInputRef.current) brandingFileInputRef.current.value = "";
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- only sync when modal opens; avoid loop from config/eventData/selectedFields new refs each render
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   useEffect(() => {
     setLogoPreview(logoFile ? URL.createObjectURL(logoFile) : logo.url);
-    return () => {
-      if (logoFile) URL.revokeObjectURL(logoPreview);
-    };
+    return () => { if (logoFile) URL.revokeObjectURL(logoPreview); };
   }, [logoFile, logo.url]);
 
   useEffect(() => {
     setBackgroundPreview(backgroundFile ? URL.createObjectURL(backgroundFile) : backgroundImage.url);
-    return () => {
-      if (backgroundFile) URL.revokeObjectURL(backgroundPreview);
-    };
+    return () => { if (backgroundFile) URL.revokeObjectURL(backgroundPreview); };
   }, [backgroundFile, backgroundImage.url]);
 
   useEffect(() => {
     if (!open) return;
-    QRCode.toDataURL("SAMPLE_TOKEN", {
-      width: qr.size,
-      margin: 1,
-      color: { dark: "#000000", light: "#ffffff" },
-    })
-      .then(setQrCodeDataUrl)
-      .catch(() => setQrCodeDataUrl(""));
+    QRCode.toDataURL("SAMPLE_TOKEN", { width: qr.size, margin: 1, color: { dark: "#000000", light: "#ffffff" } })
+      .then(setQrCodeDataUrl).catch(() => setQrCodeDataUrl(""));
   }, [open, qr.size]);
 
   useEffect(() => {
@@ -934,26 +821,14 @@ export default function DefaultQrWrapperModal({
           const fontPath = file.path.startsWith("/") ? file.path : `/${file.path}`;
           const variantKey = `${file.weight || 400}-${file.style || "normal"}`;
           if (!fontVariants.has(variantKey)) fontVariants.set(variantKey, []);
-          fontVariants.get(variantKey).push({
-            weight: file.weight || 400,
-            style: file.style || "normal",
-            path: fontPath,
-          });
+          fontVariants.get(variantKey).push({ weight: file.weight || 400, style: file.style || "normal", path: fontPath });
         });
         fontVariants.forEach((variants) => {
           if (variants.length > 0) {
             const first = variants[0];
             const format = first.path.endsWith(".otf") ? "opentype" : "truetype";
             const family = font.family || font.name;
-            fontFaceCSS += `
-@font-face {
-  font-family: "${family}";
-  src: url("${first.path}") format("${format}");
-  font-weight: ${first.weight};
-  font-style: ${first.style};
-  font-display: swap;
-}
-`;
+            fontFaceCSS += `\n@font-face {\n  font-family: "${family}";\n  src: url("${first.path}") format("${format}");\n  font-weight: ${first.weight};\n  font-style: ${first.style};\n  font-display: swap;\n}\n`;
           }
         });
       }
@@ -964,78 +839,37 @@ export default function DefaultQrWrapperModal({
   const handleAddField = () => {
     setCustomFields((prev) => {
       const nextName = getNextFieldName(prev);
-      return [
-        ...prev,
-        {
-          id: `f-${Date.now()}-${Math.random().toString(36).slice(2)}`,
-          label: nextName,
-          x: 0,
-          y: 5 + prev.length * 8,
-          fontSize: 14,
-          fontFamily: "Arial",
-          text: "",
-          color: "#000000",
-          isBold: false,
-          isItalic: false,
-          isUnderline: false,
-          alignment: "left",
-        },
-      ];
+      return [...prev, {
+        id: `f-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        label: nextName, x: 0, y: 5 + prev.length * 8,
+        fontSize: 14, fontFamily: "Arial", text: "",
+        color: "#000000", isBold: false, isItalic: false, isUnderline: false, alignment: "left",
+      }];
     });
   };
 
   const handleFieldChange = (id, key, value) => {
-    setCustomFields((prev) =>
-      prev.map((f) => (f.id === id ? { ...f, [key]: value } : f))
-    );
+    setCustomFields((prev) => prev.map((f) => (f.id === id ? { ...f, [key]: value } : f)));
   };
 
+  // Receives built HTML from QrWrapperFieldEditor — parse and update field state
   const handleFieldContentChange = (id, html) => {
     const parsed = extractFormattingFromHtml(html);
     setCustomFields((prev) =>
-      prev.map((f) =>
-        f.id === id
-          ? {
-            ...f,
-            text: parsed.text ?? f.text,
-            fontSize: num(parsed.fontSize, 14),
-            color: parsed.color ?? f.color,
-            isBold: parsed.isBold ?? f.isBold,
-            isItalic: parsed.isItalic ?? f.isItalic,
-            isUnderline: parsed.isUnderline ?? f.isUnderline,
-            alignment: parsed.alignment ?? f.alignment,
-            fontFamily: parsed.fontFamily ?? f.fontFamily,
-          }
-          : f
-      )
+      prev.map((f) => f.id === id ? { ...f, ...parsed, fontSize: num(parsed.fontSize, 14) } : f)
     );
   };
 
   const handleEventFieldContentChange = (id, html) => {
     const parsed = extractFormattingFromHtml(html);
     setEventFields((prev) =>
-      prev.map((f) =>
-        f.id === id
-          ? {
-            ...f,
-            text: parsed.text ?? f.text,
-            fontSize: num(parsed.fontSize, 14),
-            color: parsed.color ?? f.color,
-            isBold: parsed.isBold ?? f.isBold,
-            isItalic: parsed.isItalic ?? f.isItalic,
-            isUnderline: parsed.isUnderline ?? f.isUnderline,
-            alignment: parsed.alignment ?? f.alignment,
-            fontFamily: parsed.fontFamily ?? f.fontFamily,
-          }
-          : f
-      )
+      prev.map((f) => f.id === id ? { ...f, ...parsed, fontSize: num(parsed.fontSize, 14) } : f)
     );
   };
 
-  const handleFormattingChange = (id, formatting) => {
-    setCustomFields((prev) =>
-      prev.map((f) => (f.id === id ? { ...f, ...formatting } : f))
-    );
+  // Receives full formatting object from QrWrapperFieldEditor — merge into field state
+  const handleFormattingChange = (id, fmt) => {
+    setCustomFields((prev) => prev.map((f) => f.id === id ? { ...f, ...fmt } : f));
   };
 
   const handleRemoveField = (id) => {
@@ -1043,37 +877,25 @@ export default function DefaultQrWrapperModal({
   };
 
   const handleEventFieldChange = (id, key, value) => {
-    setEventFields((prev) =>
-      prev.map((f) => (f.id === id ? { ...f, [key]: value } : f))
-    );
+    setEventFields((prev) => prev.map((f) => (f.id === id ? { ...f, [key]: value } : f)));
   };
 
-  const handleEventFormattingChange = (id, formatting) => {
-    setEventFields((prev) =>
-      prev.map((f) => (f.id === id ? { ...f, ...formatting } : f))
-    );
+  const handleEventFormattingChange = (id, fmt) => {
+    setEventFields((prev) => prev.map((f) => f.id === id ? { ...f, ...fmt } : f));
   };
 
   const handleAddBrandingMedia = (e) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
-    const newItems = files.map((file) => ({
-      _id: null,
-      url: URL.createObjectURL(file),
-      file,
-      width: 200,
-      height: 60,
-      x: 50,
-      y: 15,
-    }));
-    setBrandingMediaItems((prev) => [...prev, ...newItems]);
+    setBrandingMediaItems((prev) => [
+      ...prev,
+      ...files.map((file) => ({ _id: null, url: URL.createObjectURL(file), file, width: 200, height: 60, x: 50, y: 15 })),
+    ]);
     e.target.value = "";
   };
 
   const handleBrandingItemFieldChange = (idx, key, value) => {
-    setBrandingMediaItems((prev) =>
-      prev.map((item, i) => (i === idx ? { ...item, [key]: value } : item))
-    );
+    setBrandingMediaItems((prev) => prev.map((item, i) => (i === idx ? { ...item, [key]: value } : item)));
   };
 
   const handleConfirmRemoveBrandingItem = async () => {
@@ -1105,33 +927,28 @@ export default function DefaultQrWrapperModal({
     const payload = {
       logo: {
         ...logo,
-        width: logo.width ?? 0,
-        height: logo.height ?? 0,
+        width: logo.width ?? 0, height: logo.height ?? 0,
         url: logoFile ? "" : (wr.logo?.url ?? logo.url ?? ""),
       },
-      backgroundImage: {
-        url: backgroundFile ? "" : (wr.backgroundImage?.url ?? backgroundImage.url ?? ""),
-      },
+      backgroundImage: { url: backgroundFile ? "" : (wr.backgroundImage?.url ?? backgroundImage.url ?? "") },
       brandingMedia: {
         items: brandingMediaItems
           .filter((i) => i.url && !i.file)
           .map((i) => ({ _id: i._id, url: i.url, width: i.width ?? 0, height: i.height ?? 0, x: i.x, y: i.y })),
       },
       qr: { ...qr },
-      customFields: (isEventMode ? [...eventFields, ...customFields] : customFields).map(({ id, label, x, y, fontSize, fontFamily, text, color, isBold, isItalic, isUnderline, alignment }) => ({
-        id,
-        label,
-        x: num(x, 0),
-        y: num(y, 0),
-        fontSize: num(fontSize, 14),
-        fontFamily: fontFamily ?? "Arial",
-        text: text ?? "",
-        color: color ?? "#000000",
-        isBold: !!isBold,
-        isItalic: !!isItalic,
-        isUnderline: !!isUnderline,
-        alignment: alignment ?? "left",
-      })),
+      customFields: (isEventMode ? [...eventFields, ...customFields] : customFields).map(
+        ({ id, label, x, y, fontSize, fontFamily, text, color, isBold, isItalic, isUnderline, alignment }) => ({
+          id, label,
+          x: num(x, 0), y: num(y, 0),
+          fontSize: num(fontSize, 14),
+          fontFamily: fontFamily ?? "Arial",
+          text: text ?? "",
+          color: color ?? "#000000",
+          isBold: !!isBold, isItalic: !!isItalic, isUnderline: !!isUnderline,
+          alignment: alignment ?? "left",
+        })
+      ),
     };
     const wrapperKey = isEventMode ? "customQrWrapper" : "defaultQrWrapper";
     formData.append(wrapperKey, JSON.stringify(payload));
@@ -1140,12 +957,8 @@ export default function DefaultQrWrapperModal({
     brandingMediaItems.filter((i) => i.file).forEach((i) => formData.append("qrWrapperBrandingMedia", i.file));
     if (removeBrandingMediaIds.length) formData.append("removeBrandingMediaIds", JSON.stringify(removeBrandingMediaIds));
     if (pendingClearAllBranding) formData.append("clearAllBrandingMedia", "true");
-    if (!logoFile && !logoPreview && (logo.url || wr.logo?.url)) {
-      formData.append("removeQrWrapperLogo", "true");
-    }
-    if (!backgroundFile && !backgroundPreview && (backgroundImage.url || wr.backgroundImage?.url)) {
-      formData.append("removeQrWrapperBackground", "true");
-    }
+    if (!logoFile && !logoPreview && (logo.url || wr.logo?.url)) formData.append("removeQrWrapperLogo", "true");
+    if (!backgroundFile && !backgroundPreview && (backgroundImage.url || wr.backgroundImage?.url)) formData.append("removeQrWrapperBackground", "true");
 
     try {
       if (isEventMode && eventId && onSaveEventQrWrapper) {
@@ -1163,8 +976,25 @@ export default function DefaultQrWrapperModal({
     }
   };
 
-  const scaleX = (v) => (v / 100) * PREVIEW_WIDTH;
-  const scaleY = (v) => (v / 100) * PREVIEW_HEIGHT;
+  const renderFieldEditor = (f, onContentChange, onFormattingChangeFn, onXChangeFn, onYChangeFn, onFontFamilyChangeFn) => (
+    <QrWrapperFieldEditor
+      value={getContentFromField(f)}
+      onChange={(html) => onContentChange(f.id, html)}
+      onFormattingChange={(fmt) => onFormattingChangeFn(f.id, fmt)}
+      placeholder={`${f.label}...`}
+      dir={dir}
+      minHeight="100px"
+      maxHeight="200px"
+      x={f.x}
+      y={f.y}
+      fontFamily={f.fontFamily ?? "Arial"}
+      onXChange={(val) => onXChangeFn(f.id, "x", val)}
+      onYChange={(val) => onYChangeFn(f.id, "y", val)}
+      onFontFamilyChange={(val) => onFontFamilyChangeFn(f.id, "fontFamily", val)}
+      t={t}
+      availableFonts={availableFonts || []}
+    />
+  );
 
   return (
     <Dialog
@@ -1175,35 +1005,15 @@ export default function DefaultQrWrapperModal({
       dir={dir}
       PaperProps={{ sx: { height: "90vh", maxHeight: "90vh" } }}
     >
-      <DialogTitle
-        sx={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          fontWeight: "bold",
-          px: 3,
-          pt: 3,
-        }}
-      >
+      <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontWeight: "bold", px: 3, pt: 3 }}>
         <Typography fontWeight="bold" fontSize="1.25rem">
           {isEventMode ? t.titleEvent : t.title}
         </Typography>
-        <IconButton onClick={onClose} size="small">
-          <ICONS.close />
-        </IconButton>
+        <IconButton onClick={onClose} size="small"><ICONS.close /></IconButton>
       </DialogTitle>
 
       <DialogContent sx={{ p: 0, display: "flex", flexDirection: "row", overflow: "hidden" }}>
-        <Box
-          sx={{
-            flex: 1,
-            minWidth: 0,
-            overflowY: "auto",
-            p: 2,
-            borderRight: "1px solid",
-            borderColor: "divider",
-          }}
-        >
+        <Box sx={{ flex: 1, minWidth: 0, overflowY: "auto", p: 2, borderRight: "1px solid", borderColor: "divider" }}>
           <Stack spacing={2}>
             {isEventMode ? (
               <>
@@ -1212,26 +1022,8 @@ export default function DefaultQrWrapperModal({
                     {eventFields.map((f) => (
                       <Paper key={f.id} variant="outlined" sx={{ p: 1.5 }}>
                         <Stack spacing={1.5}>
-                          <Typography variant="subtitle1" fontWeight={600}>
-                            {f.label || f.id}
-                          </Typography>
-                          <QrWrapperFieldEditor
-                            value={getContentFromField(f)}
-                            onChange={(html) => handleEventFieldContentChange(f.id, html)}
-                            onFormattingChange={(fmt) => handleEventFormattingChange(f.id, fmt)}
-                            placeholder={`${f.label}...`}
-                            dir={dir}
-                            minHeight="100px"
-                            maxHeight="200px"
-                            x={f.x}
-                            y={f.y}
-                            fontFamily={f.fontFamily ?? "Arial"}
-                            onXChange={(val) => handleEventFieldChange(f.id, "x", val)}
-                            onYChange={(val) => handleEventFieldChange(f.id, "y", val)}
-                            onFontFamilyChange={(val) => handleEventFieldChange(f.id, "fontFamily", val)}
-                            t={t}
-                            availableFonts={availableFonts || []}
-                          />
+                          <Typography variant="subtitle1" fontWeight={600}>{f.label || f.id}</Typography>
+                          {renderFieldEditor(f, handleEventFieldContentChange, handleEventFormattingChange, handleEventFieldChange, handleEventFieldChange, handleEventFieldChange)}
                         </Stack>
                       </Paper>
                     ))}
@@ -1248,39 +1040,19 @@ export default function DefaultQrWrapperModal({
                           <ICONS.delete />
                         </IconButton>
                       </Stack>
-                      <QrWrapperFieldEditor
-                        value={getContentFromField(f)}
-                        onChange={(html) => handleFieldContentChange(f.id, html)}
-                        onFormattingChange={(fmt) => handleFormattingChange(f.id, fmt)}
-                        placeholder={`Enter value for ${f.label || "field"}...`}
-                        dir={dir}
-                        minHeight="100px"
-                        maxHeight="200px"
-                        x={f.x}
-                        y={f.y}
-                        fontFamily={f.fontFamily ?? "Arial"}
-                        onXChange={(val) => handleFieldChange(f.id, "x", val)}
-                        onYChange={(val) => handleFieldChange(f.id, "y", val)}
-                        onFontFamilyChange={(val) => handleFieldChange(f.id, "fontFamily", val)}
-                        t={t}
-                        availableFonts={availableFonts || []}
-                      />
+                      {renderFieldEditor(f, handleFieldContentChange, handleFormattingChange, handleFieldChange, handleFieldChange, handleFieldChange)}
                     </Stack>
                   </Paper>
                 ))}
                 <Button variant="outlined" fullWidth startIcon={<ICONS.add />} sx={getStartIconSpacing(dir)} onClick={handleAddField}>
                   {t.addFields}
                 </Button>
-                {eventFields.length > 0 || customFields.length > 0 ? <Divider /> : null}
+                {(eventFields.length > 0 || customFields.length > 0) && <Divider />}
 
                 {includeLogo && (
                   <>
-                    <Typography variant="subtitle1" fontWeight={600}>
-                      {t.logo}
-                    </Typography>
-                    {logoPreview && (
-                      <Avatar src={logoPreview} variant="square" sx={{ width: 72, height: 72 }} />
-                    )}
+                    <Typography variant="subtitle1" fontWeight={600}>{t.logo}</Typography>
+                    {logoPreview && <Avatar src={logoPreview} variant="square" sx={{ width: 72, height: 72 }} />}
                     <Stack direction="row" spacing={1.5} flexWrap="wrap" alignItems="center">
                       <WidthHeightField width={logo.width} height={logo.height} onWidthChange={(v) => setLogo((p) => ({ ...p, width: v }))} onHeightChange={(v) => setLogo((p) => ({ ...p, height: v }))} widthLabel={t.logoWidth} heightLabel={t.logoHeight} t={t} minSize={0} defaultPx={150} />
                       <ClampedNumberInput label={t.logoX} value={logo.x} min={0} max={100} onChange={(v) => setLogo((p) => ({ ...p, x: v }))} sx={{ width: 90, minWidth: 80 }} />
@@ -1292,25 +1064,17 @@ export default function DefaultQrWrapperModal({
 
                 {includeBackground && (
                   <>
-                    <Typography variant="subtitle1" fontWeight={600}>
-                      {t.backgroundImage}
-                    </Typography>
-                    {backgroundPreview && (
-                      <Avatar src={backgroundPreview} variant="square" sx={{ width: 72, height: 72 }} />
-                    )}
+                    <Typography variant="subtitle1" fontWeight={600}>{t.backgroundImage}</Typography>
+                    {backgroundPreview && <Avatar src={backgroundPreview} variant="square" sx={{ width: 72, height: 72 }} />}
                     <Divider />
                   </>
                 )}
 
                 {includeBrandingMedia && (
                   <>
-                    <Typography variant="subtitle1" fontWeight={600}>
-                      {t.brandingMedia}
-                    </Typography>
+                    <Typography variant="subtitle1" fontWeight={600}>{t.brandingMedia}</Typography>
                     <Stack spacing={1.5} sx={{ maxHeight: 360, overflow: "auto" }}>
-                      {brandingMediaItems.length === 0 && (
-                        <Typography color="text.secondary">{t.none}</Typography>
-                      )}
+                      {brandingMediaItems.length === 0 && <Typography color="text.secondary">{t.none}</Typography>}
                       {brandingMediaItems.map((item, idx) => (
                         <Paper key={idx} variant="outlined" sx={{ p: 1.5, borderRadius: 1.5 }}>
                           <Stack direction="row" alignItems="flex-start" spacing={2}>
@@ -1321,20 +1085,7 @@ export default function DefaultQrWrapperModal({
                               <ClampedNumberInput label={t.brandingY} value={item.y} min={0} max={100} onChange={(v) => handleBrandingItemFieldChange(idx, "y", v)} sx={{ width: 72, minWidth: 72 }} />
                             </Stack>
                             <Tooltip title={t.remove}>
-                              <IconButton
-                                size="small"
-                                color="error"
-                                onClick={() => {
-                                  if (!item._id) {
-                                    if (item.url && item.url.startsWith("blob:")) URL.revokeObjectURL(item.url);
-                                    setBrandingMediaItems((prev) => prev.filter((_, i) => i !== idx));
-                                  } else {
-                                    setConfirmRemoveBrandingIndex(idx);
-                                  }
-                                }}
-                                aria-label={t.remove}
-                                sx={{ flexShrink: 0 }}
-                              >
+                              <IconButton size="small" color="error" onClick={() => { if (!item._id) { if (item.url?.startsWith("blob:")) URL.revokeObjectURL(item.url); setBrandingMediaItems((prev) => prev.filter((_, i) => i !== idx)); } else { setConfirmRemoveBrandingIndex(idx); } }} aria-label={t.remove} sx={{ flexShrink: 0 }}>
                                 <ICONS.delete />
                               </IconButton>
                             </Tooltip>
@@ -1346,20 +1097,14 @@ export default function DefaultQrWrapperModal({
                   </>
                 )}
               </>
-            ) : null}
-
-            {!isEventMode && (
+            ) : (
               <>
-                <Typography variant="subtitle1" fontWeight={600}>
-                  {t.logo}
-                </Typography>
+                <Typography variant="subtitle1" fontWeight={600}>{t.logo}</Typography>
                 <Stack direction="row" alignItems="center" spacing={2}>
-                  {logoPreview && (
-                    <Avatar src={logoPreview} variant="square" sx={{ width: 72, height: 72 }} />
-                  )}
+                  {logoPreview && <Avatar src={logoPreview} variant="square" sx={{ width: 72, height: 72 }} />}
                   <Button variant="outlined" component="label" size="small">
                     {t.upload}
-                    <input ref={logoFileInputRef} type="file" accept="image/*" hidden onChange={(e) => { const file = e.target.files?.[0] || null; setLogoFile(file); e.target.value = ""; }} />
+                    <input ref={logoFileInputRef} type="file" accept="image/*" hidden onChange={(e) => { setLogoFile(e.target.files?.[0] || null); e.target.value = ""; }} />
                   </Button>
                   {logoPreview && (
                     <Button size="small" color="error" variant="text" onClick={() => { if (logoFile) { setLogoFile(null); setLogo((p) => ({ ...p, url: "" })); setLogoPreview(""); if (logoFileInputRef.current) logoFileInputRef.current.value = ""; } else { setConfirmRemoveLogo(true); } }}>
@@ -1373,14 +1118,13 @@ export default function DefaultQrWrapperModal({
                   <ClampedNumberInput label={t.logoY} value={logo.y} min={0} max={100} onChange={(v) => setLogo((p) => ({ ...p, y: v }))} sx={{ width: 90, minWidth: 80 }} />
                 </Stack>
                 <Divider />
-                <Typography variant="subtitle1" fontWeight={600}>
-                  {t.backgroundImage}
-                </Typography>
+
+                <Typography variant="subtitle1" fontWeight={600}>{t.backgroundImage}</Typography>
                 <Stack direction="row" alignItems="center" spacing={2}>
                   {backgroundPreview && <Avatar src={backgroundPreview} variant="square" sx={{ width: 72, height: 72 }} />}
                   <Button variant="outlined" component="label" size="small">
                     {t.upload}
-                    <input ref={backgroundFileInputRef} type="file" accept="image/*" hidden onChange={(e) => { const file = e.target.files?.[0] || null; setBackgroundFile(file); e.target.value = ""; }} />
+                    <input ref={backgroundFileInputRef} type="file" accept="image/*" hidden onChange={(e) => { setBackgroundFile(e.target.files?.[0] || null); e.target.value = ""; }} />
                   </Button>
                   {backgroundPreview && (
                     <Button size="small" color="error" variant="text" onClick={() => { if (backgroundFile) { setBackgroundFile(null); setBackgroundImage((p) => ({ ...p, url: "" })); setBackgroundPreview(""); if (backgroundFileInputRef.current) backgroundFileInputRef.current.value = ""; } else { setConfirmRemoveBackground(true); } }}>
@@ -1389,15 +1133,15 @@ export default function DefaultQrWrapperModal({
                   )}
                 </Stack>
                 <Divider />
-                <Typography variant="subtitle1" fontWeight={600}>
-                  {t.brandingMedia}
-                </Typography>
+
+                <Typography variant="subtitle1" fontWeight={600}>{t.brandingMedia}</Typography>
                 <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 1 }}>
                   <Button variant="outlined" component="label" size="small">
                     {t.addBrandingMedia}
                     <input ref={brandingFileInputRef} type="file" accept="image/*,video/*" multiple hidden onChange={handleAddBrandingMedia} />
                   </Button>
-                  <Button variant="outlined" color="error" size="small" onClick={() => { const hasExisting = brandingMediaItems.some((i) => i._id); if (hasExisting) setConfirmClearAllBranding(true); else { brandingMediaItems.forEach((i) => { if (i.url && i.url.startsWith("blob:")) URL.revokeObjectURL(i.url); }); setBrandingMediaItems([]); if (brandingFileInputRef.current) brandingFileInputRef.current.value = ""; } }} disabled={brandingMediaItems.length === 0}>
+                  <Button variant="outlined" color="error" size="small" disabled={brandingMediaItems.length === 0}
+                    onClick={() => { const hasExisting = brandingMediaItems.some((i) => i._id); if (hasExisting) { setConfirmClearAllBranding(true); } else { brandingMediaItems.forEach((i) => { if (i.url?.startsWith("blob:")) URL.revokeObjectURL(i.url); }); setBrandingMediaItems([]); if (brandingFileInputRef.current) brandingFileInputRef.current.value = ""; } }}>
                     {t.clearAllBranding}
                   </Button>
                 </Stack>
@@ -1413,7 +1157,7 @@ export default function DefaultQrWrapperModal({
                           <ClampedNumberInput label={t.brandingY} value={item.y} min={0} max={100} onChange={(v) => handleBrandingItemFieldChange(idx, "y", v)} sx={{ width: 72, minWidth: 72 }} />
                         </Stack>
                         <Tooltip title={t.remove}>
-                          <IconButton size="small" color="error" onClick={() => { if (!item._id) { if (item.url && item.url.startsWith("blob:")) URL.revokeObjectURL(item.url); setBrandingMediaItems((prev) => prev.filter((_, i) => i !== idx)); if (brandingFileInputRef.current) brandingFileInputRef.current.value = ""; } else { setConfirmRemoveBrandingIndex(idx); } }} aria-label={t.remove} sx={{ flexShrink: 0 }}>
+                          <IconButton size="small" color="error" onClick={() => { if (!item._id) { if (item.url?.startsWith("blob:")) URL.revokeObjectURL(item.url); setBrandingMediaItems((prev) => prev.filter((_, i) => i !== idx)); if (brandingFileInputRef.current) brandingFileInputRef.current.value = ""; } else { setConfirmRemoveBrandingIndex(idx); } }} aria-label={t.remove} sx={{ flexShrink: 0 }}>
                             <ICONS.delete />
                           </IconButton>
                         </Tooltip>
@@ -1425,15 +1169,12 @@ export default function DefaultQrWrapperModal({
               </>
             )}
 
-            <Typography variant="subtitle1" fontWeight={600}>
-              {t.qrPosition}
-            </Typography>
+            <Typography variant="subtitle1" fontWeight={600}>{t.qrPosition}</Typography>
             <Stack direction="row" spacing={1} flexWrap="wrap">
               <ClampedNumberInput label={t.qrX} value={qr.x} min={0} max={100} onChange={(v) => setQr((p) => ({ ...p, x: v }))} sx={{ width: 90 }} />
               <ClampedNumberInput label={t.qrY} value={qr.y} min={0} max={100} onChange={(v) => setQr((p) => ({ ...p, y: v }))} sx={{ width: 90 }} />
               <ClampedNumberInput label={t.qrSize} value={qr.size} min={60} onChange={(v) => setQr((p) => ({ ...p, size: v }))} sx={{ width: 100 }} />
             </Stack>
-
             <Divider />
 
             {!isEventMode && (
@@ -1447,23 +1188,7 @@ export default function DefaultQrWrapperModal({
                           <ICONS.delete />
                         </IconButton>
                       </Stack>
-                      <QrWrapperFieldEditor
-                        value={getContentFromField(f)}
-                        onChange={(html) => handleFieldContentChange(f.id, html)}
-                        onFormattingChange={(fmt) => handleFormattingChange(f.id, fmt)}
-                        placeholder={`Enter value for ${f.label || "field"}...`}
-                        dir={dir}
-                        minHeight="100px"
-                        maxHeight="200px"
-                        x={f.x}
-                        y={f.y}
-                        fontFamily={f.fontFamily ?? "Arial"}
-                        onXChange={(val) => handleFieldChange(f.id, "x", val)}
-                        onYChange={(val) => handleFieldChange(f.id, "y", val)}
-                        onFontFamilyChange={(val) => handleFieldChange(f.id, "fontFamily", val)}
-                        t={t}
-                        availableFonts={availableFonts || []}
-                      />
+                      {renderFieldEditor(f, handleFieldContentChange, handleFormattingChange, handleFieldChange, handleFieldChange, handleFieldChange)}
                     </Stack>
                   </Paper>
                 ))}
@@ -1475,280 +1200,103 @@ export default function DefaultQrWrapperModal({
           </Stack>
         </Box>
 
-        <Box
-          sx={{
-            width: "380px",
-            flexShrink: 0,
-            p: 2,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            justifyContent: "center",
-            bgcolor: "background.default",
-          }}
-        >
-          <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
-            {t.preview}
-          </Typography>
-          <Box
-            sx={{
-              width: PREVIEW_WIDTH,
-              height: PREVIEW_HEIGHT,
-              position: "relative",
-              bgcolor: "#f5f5f5",
-              borderRadius: 1,
-              overflow: "hidden",
-              border: "1px solid",
-              borderColor: "divider",
-            }}
-          >
-            <Box
-              sx={{
-                position: "absolute",
-                left: 0,
-                top: 0,
-                width: TEMPLATE_WIDTH,
-                height: TEMPLATE_HEIGHT,
-                transform: `scale(${PREVIEW_SCALE})`,
-                transformOrigin: "0 0",
-                bgcolor: "#f5f5f5",
-              }}
-            >
+        <Box sx={{ width: "380px", flexShrink: 0, p: 2, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", bgcolor: "background.default" }}>
+          <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>{t.preview}</Typography>
+          <Box sx={{ width: PREVIEW_WIDTH, height: PREVIEW_HEIGHT, position: "relative", bgcolor: "#f5f5f5", borderRadius: 1, overflow: "hidden", border: "1px solid", borderColor: "divider" }}>
+            <Box sx={{ position: "absolute", left: 0, top: 0, width: TEMPLATE_WIDTH, height: TEMPLATE_HEIGHT, transform: `scale(${PREVIEW_SCALE})`, transformOrigin: "0 0", bgcolor: "#f5f5f5" }}>
               {backgroundPreview && (!isEventMode || includeBackground) && (
-                <Box
-                  component="img"
-                  src={backgroundPreview}
-                  alt=""
-                  sx={{
-                    position: "absolute",
-                    inset: 0,
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "cover",
-                  }}
-                />
+                <Box component="img" src={backgroundPreview} alt="" sx={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
               )}
               {logoPreview && (!isEventMode || includeLogo) && (
-                <Box
-                  component="img"
-                  src={logoPreview}
-                  alt="Logo"
-                  sx={{
-                    position: "absolute",
-                    left: `${logo.x}%`,
-                    top: `${logo.y}%`,
-                    width: (logo.width == null || logo.width === 0) ? "auto" : logo.width,
-                    height: (logo.height == null || logo.height === 0) ? "auto" : logo.height,
-                    ...((logo.width == null || logo.width === 0) && (logo.height == null || logo.height === 0)
-                      ? { maxWidth: TEMPLATE_WIDTH, maxHeight: TEMPLATE_HEIGHT }
-                      : {}),
-                    objectFit: "contain",
-                    transform: "translate(-50%, -50%)",
-                  }}
-                />
+                <Box component="img" src={logoPreview} alt="Logo" sx={{
+                  position: "absolute", left: `${logo.x}%`, top: `${logo.y}%`,
+                  width: (logo.width == null || logo.width === 0) ? "auto" : logo.width,
+                  height: (logo.height == null || logo.height === 0) ? "auto" : logo.height,
+                  ...((logo.width == null || logo.width === 0) && (logo.height == null || logo.height === 0) ? { maxWidth: TEMPLATE_WIDTH, maxHeight: TEMPLATE_HEIGHT } : {}),
+                  objectFit: "contain", transform: "translate(-50%, -50%)",
+                }} />
               )}
               {(!isEventMode || includeBrandingMedia) && brandingMediaItems.map((item, idx) =>
                 item?.url ? (
-                  <Box
-                    key={idx}
-                    component="img"
-                    src={item.url}
-                    alt=""
-                    sx={{
-                      position: "absolute",
-                      left: `${item.x}%`,
-                      top: `${item.y}%`,
-                      width: (item.width == null || item.width === 0) ? "auto" : item.width,
-                      height: (item.height == null || item.height === 0) ? "auto" : item.height,
-                      ...((item.width == null || item.width === 0) && (item.height == null || item.height === 0)
-                        ? { maxWidth: TEMPLATE_WIDTH, maxHeight: TEMPLATE_HEIGHT }
-                        : {}),
-                      objectFit: "contain",
-                      transform: "translate(-50%, -50%)",
-                    }}
-                  />
+                  <Box key={idx} component="img" src={item.url} alt="" sx={{
+                    position: "absolute", left: `${item.x}%`, top: `${item.y}%`,
+                    width: (item.width == null || item.width === 0) ? "auto" : item.width,
+                    height: (item.height == null || item.height === 0) ? "auto" : item.height,
+                    ...((item.width == null || item.width === 0) && (item.height == null || item.height === 0) ? { maxWidth: TEMPLATE_WIDTH, maxHeight: TEMPLATE_HEIGHT } : {}),
+                    objectFit: "contain", transform: "translate(-50%, -50%)",
+                  }} />
                 ) : null
               )}
-              {(isEventMode ? [...eventFields, ...customFields] : customFields).map((f) => {
-                const contentHtml = getContentFromField(f);
-                const alignMatch = contentHtml.match(/text-align:\s*(center|left|right|justify)/i);
-                const textAlign = alignMatch ? alignMatch[1].toLowerCase() : "left";
-                const xPct = num(f.x, 0);
-                const yPct = num(f.y, 0);
-
-                return (
-                  <Box
-                    key={f.id}
-                    sx={{
-                      position: "absolute",
-                      left: `${xPct}%`,
-                      top: `${yPct}%`,
-                      transform: "translate(-50%, -50%)",
-                      fontSize: `${(num(f.fontSize, 14) * PREVIEW_SCALE)}px`,
-                      fontFamily: f.fontFamily || "Arial",
-                      fontWeight: f.isBold ? "bold" : "normal",
-                      fontStyle: f.isItalic ? "italic" : "normal",
-                      textDecoration: f.isUnderline ? "underline" : "none",
-                      color: f.color || "#000000",
-                      textAlign: textAlign,
-                      whiteSpace: "nowrap",
-                      wordBreak: "normal",
-                      padding: 0,
-                      margin: 0,
-                      lineHeight: 1,
-                    }}
-                    dangerouslySetInnerHTML={{
-                      __html: contentHtml
-                        .replace(/<p[^>]*>/gi, "")
-                        .replace(/<\/p>/gi, "")
-                        .trim(),
-                    }}
-                  />
-                );
-              })}
-              {qrCodeDataUrl && (
+              {(isEventMode ? [...eventFields, ...customFields] : customFields).map((f) => (
                 <Box
-                  component="img"
-                  src={qrCodeDataUrl}
-                  alt="QR"
+                  key={f.id}
                   sx={{
                     position: "absolute",
-                    left: `${qr.x}%`,
-                    top: `${qr.y}%`,
-                    width: qr.size,
-                    height: qr.size,
+                    left: `${num(f.x, 0)}%`,
+                    top: `${num(f.y, 0)}%`,
                     transform: "translate(-50%, -50%)",
+                    fontSize: `${num(f.fontSize, 14) * PREVIEW_SCALE}px`,
+                    fontFamily: f.fontFamily || "Arial",
+                    fontWeight: f.isBold ? "bold" : "normal",
+                    fontStyle: f.isItalic ? "italic" : "normal",
+                    textDecoration: f.isUnderline ? "underline" : "none",
+                    color: f.color || "#000000",
+                    textAlign: f.alignment || "left",
+                    // Use minWidth so justify has space to spread — nowrap prevented it
+                    minWidth: (f.alignment === "justify") ? "300px" : "auto",
+                    whiteSpace: (f.alignment === "justify") ? "normal" : "nowrap",
+                    wordBreak: "normal",
+                    padding: 0, margin: 0, lineHeight: 1,
+                  }}
+                  dangerouslySetInnerHTML={{
+                    __html: getContentFromField(f).replace(/<p[^>]*>/gi, "").replace(/<\/p>/gi, "").trim(),
                   }}
                 />
+              ))}
+              {qrCodeDataUrl && (
+                <Box component="img" src={qrCodeDataUrl} alt="QR" sx={{ position: "absolute", left: `${qr.x}%`, top: `${qr.y}%`, width: qr.size, height: qr.size, transform: "translate(-50%, -50%)" }} />
               )}
               {qrCodeDataUrl && logoPreview && (
-                <Box
-                  component="img"
-                  src={logoPreview}
-                  alt=""
-                  sx={{
-                    position: "absolute",
-                    left: `${qr.x}%`,
-                    top: `${qr.y}%`,
-                    width: qr.size * 0.22,
-                    height: qr.size * 0.22,
-                    transform: "translate(-50%, -50%)",
-                    objectFit: "contain",
-                    pointerEvents: "none",
-                  }}
-                />
+                <Box component="img" src={logoPreview} alt="" sx={{ position: "absolute", left: `${qr.x}%`, top: `${qr.y}%`, width: qr.size * 0.22, height: qr.size * 0.22, transform: "translate(-50%, -50%)", objectFit: "contain", pointerEvents: "none" }} />
               )}
             </Box>
           </Box>
         </Box>
       </DialogContent>
 
-      <ConfirmationDialog
-        open={confirmRemoveLogo}
-        onClose={() => setConfirmRemoveLogo(false)}
+      <ConfirmationDialog open={confirmRemoveLogo} onClose={() => setConfirmRemoveLogo(false)}
         onConfirm={async () => {
-          if (isEventMode) {
-            setLogoFile(null);
-            setLogo((p) => ({ ...p, url: "" }));
-            setLogoPreview("");
-            setConfirmRemoveLogo(false);
-            return;
-          }
-          try {
-            await deleteMedia({ mediaType: "defaultQrWrapperLogo" });
-            refetchConfig();
-            setLogoFile(null);
-            setLogo((p) => ({ ...p, url: "" }));
-            setLogoPreview("");
-            setConfirmRemoveLogo(false);
-          } catch (err) {
-            showMessage(err?.message || "Failed to remove logo", "error");
-          }
+          if (isEventMode) { setLogoFile(null); setLogo((p) => ({ ...p, url: "" })); setLogoPreview(""); setConfirmRemoveLogo(false); return; }
+          try { await deleteMedia({ mediaType: "defaultQrWrapperLogo" }); refetchConfig(); setLogoFile(null); setLogo((p) => ({ ...p, url: "" })); setLogoPreview(""); setConfirmRemoveLogo(false); }
+          catch (err) { showMessage(err?.message || "Failed to remove logo", "error"); }
         }}
-        title={t.confirmRemoveLogo}
-        message={t.confirmRemoveLogoMsg}
-        confirmButtonText={t.remove}
-        confirmButtonIcon={<ICONS.delete />}
+        title={t.confirmRemoveLogo} message={t.confirmRemoveLogoMsg} confirmButtonText={t.remove} confirmButtonIcon={<ICONS.delete />}
       />
-      <ConfirmationDialog
-        open={confirmRemoveBackground}
-        onClose={() => setConfirmRemoveBackground(false)}
+      <ConfirmationDialog open={confirmRemoveBackground} onClose={() => setConfirmRemoveBackground(false)}
         onConfirm={async () => {
-          if (isEventMode) {
-            setBackgroundFile(null);
-            setBackgroundImage((p) => ({ ...p, url: "" }));
-            setBackgroundPreview("");
-            setConfirmRemoveBackground(false);
-            return;
-          }
-          try {
-            await deleteMedia({ mediaType: "defaultQrWrapperBackground" });
-            refetchConfig();
-            setBackgroundFile(null);
-            setBackgroundImage((p) => ({ ...p, url: "" }));
-            setBackgroundPreview("");
-            setConfirmRemoveBackground(false);
-          } catch (err) {
-            showMessage(err?.message || "Failed to remove background", "error");
-          }
+          if (isEventMode) { setBackgroundFile(null); setBackgroundImage((p) => ({ ...p, url: "" })); setBackgroundPreview(""); setConfirmRemoveBackground(false); return; }
+          try { await deleteMedia({ mediaType: "defaultQrWrapperBackground" }); refetchConfig(); setBackgroundFile(null); setBackgroundImage((p) => ({ ...p, url: "" })); setBackgroundPreview(""); setConfirmRemoveBackground(false); }
+          catch (err) { showMessage(err?.message || "Failed to remove background", "error"); }
         }}
-        title={t.confirmRemoveBackground}
-        message={t.confirmRemoveBackgroundMsg}
-        confirmButtonText={t.remove}
-        confirmButtonIcon={<ICONS.delete />}
+        title={t.confirmRemoveBackground} message={t.confirmRemoveBackgroundMsg} confirmButtonText={t.remove} confirmButtonIcon={<ICONS.delete />}
       />
-      <ConfirmationDialog
-        open={confirmRemoveBrandingIndex !== null}
-        onClose={() => setConfirmRemoveBrandingIndex(null)}
+      <ConfirmationDialog open={confirmRemoveBrandingIndex !== null} onClose={() => setConfirmRemoveBrandingIndex(null)}
         onConfirm={handleConfirmRemoveBrandingItem}
-        title={t.confirmRemoveBranding}
-        message={t.confirmRemoveBrandingMsg}
-        confirmButtonText={t.remove}
-        confirmButtonIcon={<ICONS.delete />}
+        title={t.confirmRemoveBranding} message={t.confirmRemoveBrandingMsg} confirmButtonText={t.remove} confirmButtonIcon={<ICONS.delete />}
       />
-      <ConfirmationDialog
-        open={confirmClearAllBranding}
-        onClose={() => setConfirmClearAllBranding(false)}
+      <ConfirmationDialog open={confirmClearAllBranding} onClose={() => setConfirmClearAllBranding(false)}
         onConfirm={async () => {
           if (brandingFileInputRef.current) brandingFileInputRef.current.value = "";
-          if (isEventMode) {
-            setPendingClearAllBranding(true);
-            setBrandingMediaItems([]);
-            setConfirmClearAllBranding(false);
-            return;
-          }
-          try {
-            await deleteMedia({ mediaType: "defaultQrWrapperBranding", defaultQrWrapperClearAllBranding: true });
-            refetchConfig();
-            setBrandingMediaItems([]);
-            setPendingClearAllBranding(false);
-            setConfirmClearAllBranding(false);
-          } catch (err) {
-            showMessage(err?.message || "Failed to clear branding media", "error");
-          }
+          if (isEventMode) { setPendingClearAllBranding(true); setBrandingMediaItems([]); setConfirmClearAllBranding(false); return; }
+          try { await deleteMedia({ mediaType: "defaultQrWrapperBranding", defaultQrWrapperClearAllBranding: true }); refetchConfig(); setBrandingMediaItems([]); setPendingClearAllBranding(false); setConfirmClearAllBranding(false); }
+          catch (err) { showMessage(err?.message || "Failed to clear branding media", "error"); }
         }}
-        title={t.confirmClearAllBranding}
-        message={t.confirmClearAllBrandingMsg}
-        confirmButtonText={t.remove}
-        confirmButtonIcon={<ICONS.delete />}
+        title={t.confirmClearAllBranding} message={t.confirmClearAllBrandingMsg} confirmButtonText={t.remove} confirmButtonIcon={<ICONS.delete />}
       />
 
       <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button
-          onClick={onClose}
-          variant="outlined"
-          startIcon={<ICONS.cancel />}
-          sx={getStartIconSpacing(dir)}
-        >
-          {t.cancel}
-        </Button>
-        <Button
-          variant="contained"
-          onClick={handleSave}
-          disabled={saving}
-          startIcon={saving ? null : <ICONS.save />}
-          sx={getStartIconSpacing(dir)}
-        >
+        <Button onClick={onClose} variant="outlined" startIcon={<ICONS.cancel />} sx={getStartIconSpacing(dir)}>{t.cancel}</Button>
+        <Button variant="contained" onClick={handleSave} disabled={saving} startIcon={saving ? null : <ICONS.save />} sx={getStartIconSpacing(dir)}>
           {saving ? "..." : t.save}
         </Button>
       </DialogActions>

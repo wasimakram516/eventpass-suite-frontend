@@ -87,45 +87,45 @@ const RichTextEditor = ({ value, onChange, placeholder, dir, minHeight, maxHeigh
         if (value === el.innerHTML) return;
         el.innerHTML = value || "";
 
-            const formatting = parseHTMLForFormatting(value);
+        const formatting = parseHTMLForFormatting(value);
 
-            if (formatting.alignment) {
-                setAlignment(formatting.alignment);
-                setTimeout(() => {
-                    if (editorRef.current) {
-                        editorRef.current.focus();
-                        const range = document.createRange();
-                        range.selectNodeContents(editorRef.current);
-                        range.collapse(false);
-                        const sel = window.getSelection();
-                        sel.removeAllRanges();
-                        sel.addRange(range);
-
-                        if (formatting.alignment === 'center') {
-                            document.execCommand('justifyCenter', false, null);
-                            editorRef.current.style.textAlign = "center";
-                        } else if (formatting.alignment === 'right') {
-                            document.execCommand('justifyRight', false, null);
-                            editorRef.current.style.textAlign = "right";
-                        } else {
-                            document.execCommand('justifyLeft', false, null);
-                            editorRef.current.style.textAlign = "left";
-                        }
-
-                        setTimeout(() => {
-                            updateActiveCommands();
-                        }, 0);
-                    }
-                }, 50);
-            } else {
+        if (formatting.alignment) {
+            setAlignment(formatting.alignment);
+            setTimeout(() => {
                 if (editorRef.current) {
-                    editorRef.current.style.textAlign = "left";
-                }
-            }
+                    editorRef.current.focus();
+                    const range = document.createRange();
+                    range.selectNodeContents(editorRef.current);
+                    range.collapse(false);
+                    const sel = window.getSelection();
+                    sel.removeAllRanges();
+                    sel.addRange(range);
 
-            if (formatting.fontSize !== fontSize) {
-                setFontSize(formatting.fontSize);
+                    if (formatting.alignment === 'center') {
+                        document.execCommand('justifyCenter', false, null);
+                        editorRef.current.style.textAlign = "center";
+                    } else if (formatting.alignment === 'right') {
+                        document.execCommand('justifyRight', false, null);
+                        editorRef.current.style.textAlign = "right";
+                    } else {
+                        document.execCommand('justifyLeft', false, null);
+                        editorRef.current.style.textAlign = "left";
+                    }
+
+                    setTimeout(() => {
+                        updateActiveCommands();
+                    }, 0);
+                }
+            }, 50);
+        } else {
+            if (editorRef.current) {
+                editorRef.current.style.textAlign = "left";
             }
+        }
+
+        if (formatting.fontSize !== fontSize) {
+            setFontSize(formatting.fontSize);
+        }
     }, [value]);
 
     const updateActiveCommands = () => {
@@ -141,16 +141,13 @@ const RichTextEditor = ({ value, onChange, placeholder, dir, minHeight, maxHeigh
             const isLeft = document.queryCommandState("justifyLeft");
             const isCenter = document.queryCommandState("justifyCenter");
             const isRight = document.queryCommandState("justifyRight");
+            const isFull = document.queryCommandState("justifyFull");
 
-            if (isCenter && !isLeft && !isRight) {
-                setAlignment("center");
-            } else if (isRight && !isLeft && !isCenter) {
-                setAlignment("right");
-            } else if (isLeft && !isCenter && !isRight) {
-                setAlignment("left");
-            } else {
-                setAlignment(null);
-            }
+            if (isFull) setAlignment("justify");
+            else if (isCenter && !isLeft && !isRight) setAlignment("center");
+            else if (isRight && !isLeft && !isCenter) setAlignment("right");
+            else if (isLeft && !isCenter && !isRight) setAlignment("left");
+            else setAlignment(null);
         }
     };
 
@@ -158,17 +155,14 @@ const RichTextEditor = ({ value, onChange, placeholder, dir, minHeight, maxHeigh
         if (editorRef.current && onChange) {
             onChange(editorRef.current.innerHTML);
         }
-        const isLeft = document.queryCommandState("justifyLeft");
         const isCenter = document.queryCommandState("justifyCenter");
         const isRight = document.queryCommandState("justifyRight");
+        const isFull = document.queryCommandState("justifyFull");
 
-        if (isCenter && !isLeft && !isRight) {
-            editorRef.current.style.textAlign = "center";
-        } else if (isRight && !isLeft && !isCenter) {
-            editorRef.current.style.textAlign = "right";
-        } else {
-            editorRef.current.style.textAlign = "left";
-        }
+        if (isFull) editorRef.current.style.textAlign = "justify";
+        else if (isCenter) editorRef.current.style.textAlign = "center";
+        else if (isRight) editorRef.current.style.textAlign = "right";
+        else editorRef.current.style.textAlign = "left";
 
         updateActiveCommands();
     };
@@ -259,15 +253,12 @@ const RichTextEditor = ({ value, onChange, placeholder, dir, minHeight, maxHeigh
             document.execCommand("justifyCenter", false, null);
         } else if (align === "right") {
             document.execCommand("justifyRight", false, null);
+        } else if (align === "justify") {
+            document.execCommand("justifyFull", false, null);
         }
 
-        if (align === "center") {
-            editorRef.current.style.textAlign = "center";
-        } else if (align === "right") {
-            editorRef.current.style.textAlign = "right";
-        } else {
-            editorRef.current.style.textAlign = "left";
-        }
+        const alignMap = { center: "center", right: "right", justify: "justify" };
+        editorRef.current.style.textAlign = alignMap[align] || "left";
 
         setAlignment(align);
         setTimeout(() => {
@@ -561,10 +552,8 @@ const RichTextEditor = ({ value, onChange, placeholder, dir, minHeight, maxHeigh
                     </IconButton>
                     <IconButton
                         size="small"
-                        onClick={() => {
-                            handleAlignment("left");
-                            setAlignment(null);
-                        }}
+                        onClick={() => handleAlignment("justify")}
+                        sx={{ bgcolor: alignment === "justify" ? "action.selected" : "transparent" }}
                         title="Justify"
                     >
                         <FormatAlignJustifyIcon fontSize="small" />

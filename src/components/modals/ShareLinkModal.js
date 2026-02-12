@@ -54,6 +54,7 @@ export default function ShareLinkModal({
   description,
   name = "qr-code",
   customQrWrapper,
+  useCustomQrCode = false,
 }) {
   const qrCodeRef = useRef(null);
   const { showMessage } = useMessage();
@@ -62,7 +63,7 @@ export default function ShareLinkModal({
 
   const downloadName = `${slugify(name)}.png`;
   const qrValue = qrUrl || url;
-  const hasCustomDesign = customQrWrapper && hasWrapperDesign(customQrWrapper);
+  const hasCustomDesign = useCustomQrCode && customQrWrapper && hasWrapperDesign(customQrWrapper);
   const hasDefaultDesign = hasDefaultQrWrapperDesign(globalConfig);
 
   const handleCopyLink = async () => {
@@ -194,7 +195,7 @@ export default function ShareLinkModal({
               borderRadius: "8px",
             }}
           />
-          
+
           <Button
             variant="contained"
             startIcon={<ICONS.download />}

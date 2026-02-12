@@ -3,6 +3,9 @@ import html2canvas from "html2canvas";
 const TEMPLATE_WIDTH = 1280;
 const TEMPLATE_HEIGHT = 960;
 
+// Maps alignment to default X%
+const ALIGN_X_MAP = { left: 20, center: 50, right: 90, justify: 36 };
+
 /** Encode spaces in the URL so fetch works. */
 function normalizeImageUrl(url) {
   if (!url || typeof url !== "string") return url;
@@ -46,31 +49,24 @@ async function resolveImageUrl(url) {
 
 function loadImage(src) {
   return new Promise((resolve) => {
-    if (!src) {
-      resolve(null);
-      return;
-    }
+    if (!src) { resolve(null); return; }
     const img = new Image();
-    if (!src.startsWith("blob:") && !src.startsWith("data:")) {
-      img.crossOrigin = "anonymous";
-    }
+    if (!src.startsWith("blob:") && !src.startsWith("data:")) img.crossOrigin = "anonymous";
     img.onload = () => resolve(img);
     img.onerror = () => resolve(null);
     img.src = src;
   });
 }
 
-/** Resolve stored font name (e.g. "romeo") to actual @font-face family (e.g. "Romeo") from config fonts. */
+/** Resolve stored font name to actual @font-face family from config fonts. */
 function resolveFontFamily(rawFamily, fonts) {
   if (!rawFamily || !Array.isArray(fonts) || fonts.length === 0) return rawFamily;
   const key = String(rawFamily).trim().toLowerCase();
-  const found = fonts.find(
-    (font) => (String(font.family || font.name || "").trim().toLowerCase() === key)
-  );
+  const found = fonts.find((font) => String(font.family || font.name || "").trim().toLowerCase() === key);
   return found ? (found.family || found.name || rawFamily) : rawFamily;
 }
 
-/** Inject @font-face for all font files so each weight/style is available (e.g. normal vs bold). */
+/** Inject @font-face for all font files so each weight/style is available. */
 function ensureFontsLoaded(fonts) {
   if (!Array.isArray(fonts) || typeof document === "undefined") return;
   const id = "qr-download-fonts";
@@ -81,12 +77,10 @@ function ensureFontsLoaded(fonts) {
     const family = font.family || font.name;
     if (!family || !Array.isArray(font.files) || font.files.length === 0) return;
     font.files.forEach((file) => {
-      const format = file.path && file.path.toLowerCase().endsWith(".otf") ? "opentype" : "truetype";
+      const format = file.path?.toLowerCase().endsWith(".otf") ? "opentype" : "truetype";
       const url = file.path ? (file.path.startsWith("http") ? file.path : base + file.path) : "";
       if (!url) return;
-      const weight = file.weight ?? 400;
-      const style = file.style ?? "normal";
-      css += `@font-face{font-family:"${family}";src:url("${url}") format("${format}");font-weight:${weight};font-style:${style};font-display:swap;}\n`;
+      css += `@font-face{font-family:"${family}";src:url("${url}") format("${format}");font-weight:${file.weight ?? 400};font-style:${file.style ?? "normal"};font-display:swap;}\n`;
     });
   });
   if (!css) return;
@@ -96,36 +90,38 @@ function ensureFontsLoaded(fonts) {
   document.head.appendChild(el);
 }
 
-/** Build display HTML from a custom field's separate fields (no content field). */
-function buildTextFromField(f) {
-  return String(f.text ?? "").trim() || (f.label || "field1");
-}
 
-/** Render custom field text in a div with full CSS (so fonts apply), capture with html2canvas, return as Image or null.
- * maxWidthPx: if provided, div width is set to this so wrapping matches preview ( (100-x)% of template ). */
-async function renderCustomFieldAsImage(f, paddingPx, fonts = []) {
-  const text = buildTextFromField(f);
+async function renderCustomFieldAsImage(f, fonts = []) {
+  const text = String(f.text ?? "").trim() || (f.label || "field1");
   if (!text) return null;
 
   const fontSize = Math.round(Math.max(8, Math.min(100, Number(f.fontSize) || 14)));
   const rawFamily = (f.fontFamily && String(f.fontFamily).trim()) ? String(f.fontFamily).trim() : "Arial";
   const resolvedFamily = resolveFontFamily(rawFamily, fonts) || rawFamily;
-  const fontFamilyCss = resolvedFamily === "Arial" || resolvedFamily === "sans-serif"
+  const fontFamilyCss = (resolvedFamily === "Arial" || resolvedFamily === "sans-serif")
     ? "Arial, sans-serif"
     : `"${String(resolvedFamily).replace(/"/g, "")}", sans-serif`;
-  const color = (f.color && String(f.color).trim()) ? f.color : "#333333";
-  const fontWeight = f.isBold ? "bold" : "normal";
-  const fontStyle = f.isItalic ? "italic" : "normal";
-  const textDecoration = f.isUnderline ? "underline" : "none";
 
+  const color = (f.color && String(f.color).trim()) ? f.color : "#333333";
   const alignment = (f.alignment && String(f.alignment).trim()) ? f.alignment : "left";
+  const xPct = Number.isFinite(Number(f.x)) ? Number(f.x) : (ALIGN_X_MAP[alignment] ?? 20);
+
   const div = document.createElement("div");
   div.textContent = text;
+
+  const isJustify = alignment === "justify";
+
+  const justifyWidth = isJustify
+    ? Math.round(TEMPLATE_WIDTH * (1 - xPct / 100) * 0.9)
+    : null;
+
   Object.assign(div.style, {
     position: "fixed",
     left: "-9999px",
     top: "0",
-    display: "inline-block",
+    // inline-block for all alignments; block+fixed-width only for justify
+    display: isJustify ? "block" : "inline-block",
+    width: isJustify ? `${justifyWidth}px` : "auto",
     boxSizing: "border-box",
     padding: "0",
     margin: "0",
@@ -133,12 +129,15 @@ async function renderCustomFieldAsImage(f, paddingPx, fonts = []) {
     fontSize: `${fontSize}px`,
     fontFamily: fontFamilyCss,
     color,
-    fontWeight,
-    fontStyle,
-    textDecoration,
+    fontWeight: f.isBold ? "bold" : "normal",
+    fontStyle: f.isItalic ? "italic" : "normal",
+    textDecoration: f.isUnderline ? "underline" : "none",
     textAlign: alignment,
     lineHeight: "1.2",
+    textAlignLast: isJustify ? "justify" : "auto",
+    whiteSpace: isJustify ? "normal" : "nowrap",
   });
+
   document.body.appendChild(div);
   try {
     const canvas = await html2canvas(div, {
@@ -167,8 +166,6 @@ function drawImageCover(ctx, img, destX, destY, destW, destH) {
   const ih = img.naturalHeight || img.height;
   if (!iw || !ih) return;
   const scale = Math.max(destW / iw, destH / ih);
-  const sw = iw * scale;
-  const sh = ih * scale;
   const sx = (iw - destW / scale) / 2;
   const sy = (ih - destH / scale) / 2;
   ctx.drawImage(img, sx, sy, iw - 2 * sx, ih - 2 * sy, destX, destY, destW, destH);
@@ -182,9 +179,7 @@ function drawImageContain(ctx, img, destX, destY, destW, destH) {
   const scale = Math.min(destW / iw, destH / ih);
   const dw = iw * scale;
   const dh = ih * scale;
-  const dx = destX + (destW - dw) / 2;
-  const dy = destY + (destH - dh) / 2;
-  ctx.drawImage(img, 0, 0, iw, ih, dx, dy, dw, dh);
+  ctx.drawImage(img, 0, 0, iw, ih, destX + (destW - dw) / 2, destY + (destH - dh) / 2, dw, dh);
 }
 
 export async function downloadDefaultQrWrapperAsImage(defaultQrWrapper, qrValue, filename, options = {}) {
@@ -204,9 +199,7 @@ export async function downloadDefaultQrWrapperAsImage(defaultQrWrapper, qrValue,
 
   if (resolvedBgUrl?.startsWith("blob:")) blobUrlsToRevoke.push(resolvedBgUrl);
   if (resolvedLogoUrl?.startsWith("blob:")) blobUrlsToRevoke.push(resolvedLogoUrl);
-  resolvedBrandingUrls.forEach((u) => {
-    if (u?.startsWith("blob:")) blobUrlsToRevoke.push(u);
-  });
+  resolvedBrandingUrls.forEach((u) => { if (u?.startsWith("blob:")) blobUrlsToRevoke.push(u); });
 
   const qrSize = Math.max(1, Number(defaultQrWrapper?.qr?.size) || 120);
   const qrDataURL = await QRCode.toDataURL(qrValue, {
@@ -215,34 +208,31 @@ export async function downloadDefaultQrWrapperAsImage(defaultQrWrapper, qrValue,
     color: { dark: "#000000", light: "#ffffff" },
   });
 
-  const bgImage = resolvedBgUrl ? await loadImage(resolvedBgUrl) : null;
-  const logoImage = resolvedLogoUrl ? await loadImage(resolvedLogoUrl) : null;
-  const brandingImages = await Promise.all(
-    items.map((item, idx) => {
+  const [bgImage, logoImage, qrImage, ...brandingImages] = await Promise.all([
+    resolvedBgUrl ? loadImage(resolvedBgUrl) : Promise.resolve(null),
+    resolvedLogoUrl ? loadImage(resolvedLogoUrl) : Promise.resolve(null),
+    loadImage(qrDataURL),
+    ...items.map((item, idx) => {
       const url = item?.url ? (resolvedBrandingUrls[idx] ?? item.url) : null;
       return url ? loadImage(url) : Promise.resolve(null);
-    })
-  );
-  const qrImage = await loadImage(qrDataURL);
+    }),
+  ]);
 
   const canvas = document.createElement("canvas");
   canvas.width = TEMPLATE_WIDTH;
   canvas.height = TEMPLATE_HEIGHT;
   const ctx = canvas.getContext("2d");
   if (!ctx) {
-    blobUrlsToRevoke.forEach((url) => {
-      try { URL.revokeObjectURL(url); } catch (_) { }
-    });
+    blobUrlsToRevoke.forEach((url) => { try { URL.revokeObjectURL(url); } catch (_) { } });
     throw new Error("Canvas not supported");
   }
 
+  // Background
   ctx.fillStyle = "#f5f5f5";
   ctx.fillRect(0, 0, TEMPLATE_WIDTH, TEMPLATE_HEIGHT);
+  if (bgImage) drawImageCover(ctx, bgImage, 0, 0, TEMPLATE_WIDTH, TEMPLATE_HEIGHT);
 
-  if (bgImage) {
-    drawImageCover(ctx, bgImage, 0, 0, TEMPLATE_WIDTH, TEMPLATE_HEIGHT);
-  }
-
+  // Logo
   if (logoImage && logo) {
     const x = Number(logo.x);
     const y = Number(logo.y);
@@ -252,28 +242,17 @@ export async function downloadDefaultQrWrapperAsImage(defaultQrWrapper, qrValue,
     const logoH = Number(logo.height);
     const autoW = !Number.isFinite(logoW) || logoW === 0;
     const autoH = !Number.isFinite(logoH) || logoH === 0;
-    let w;
-    let h;
-    if (autoW && autoH) {
-      w = Math.min(nw, TEMPLATE_WIDTH);
-      h = Math.min(nh, TEMPLATE_HEIGHT);
-    } else if (autoW && logoH > 0) {
-      h = Math.max(1, logoH);
-      w = Math.max(1, Math.round((nw / nh) * h));
-    } else if (logoW > 0 && autoH) {
-      w = Math.max(1, logoW);
-      h = Math.max(1, Math.round((nh / nw) * w));
-    } else {
-      w = Math.max(1, logoW);
-      h = Math.max(1, logoH);
-    }
+    let w, h;
+    if (autoW && autoH) { w = Math.min(nw, TEMPLATE_WIDTH); h = Math.min(nh, TEMPLATE_HEIGHT); }
+    else if (autoW && logoH > 0) { h = Math.max(1, logoH); w = Math.max(1, Math.round((nw / nh) * h)); }
+    else if (logoW > 0 && autoH) { w = Math.max(1, logoW); h = Math.max(1, Math.round((nh / nw) * w)); }
+    else { w = Math.max(1, logoW); h = Math.max(1, logoH); }
     const centerX = (Number.isFinite(x) ? x : 0) / 100 * TEMPLATE_WIDTH;
     const centerY = (Number.isFinite(y) ? y : 0) / 100 * TEMPLATE_HEIGHT;
-    const leftPx = centerX - w / 2;
-    const topPx = centerY - h / 2;
-    drawImageContain(ctx, logoImage, leftPx, topPx, w, h);
+    drawImageContain(ctx, logoImage, centerX - w / 2, centerY - h / 2, w, h);
   }
 
+  // Branding media
   items.forEach((item, idx) => {
     const img = brandingImages[idx];
     if (!img) return;
@@ -285,69 +264,61 @@ export async function downloadDefaultQrWrapperAsImage(defaultQrWrapper, qrValue,
     const itemH = Number(item.height);
     const autoW = !Number.isFinite(itemW) || itemW === 0;
     const autoH = !Number.isFinite(itemH) || itemH === 0;
-    let w;
-    let h;
-    if (autoW && autoH) {
-      w = Math.min(nw, TEMPLATE_WIDTH);
-      h = Math.min(nh, TEMPLATE_HEIGHT);
-    } else if (autoW && itemH > 0) {
-      h = Math.max(1, itemH);
-      w = Math.max(1, Math.round((nw / nh) * h));
-    } else if (itemW > 0 && autoH) {
-      w = Math.max(1, itemW);
-      h = Math.max(1, Math.round((nh / nw) * w));
-    } else {
-      w = Math.max(1, itemW || 200);
-      h = Math.max(1, itemH || 60);
-    }
+    let w, h;
+    if (autoW && autoH) { w = Math.min(nw, TEMPLATE_WIDTH); h = Math.min(nh, TEMPLATE_HEIGHT); }
+    else if (autoW && itemH > 0) { h = Math.max(1, itemH); w = Math.max(1, Math.round((nw / nh) * h)); }
+    else if (itemW > 0 && autoH) { w = Math.max(1, itemW); h = Math.max(1, Math.round((nh / nw) * w)); }
+    else { w = Math.max(1, itemW || 200); h = Math.max(1, itemH || 60); }
     const centerX = (Number.isFinite(x) ? x : 50) / 100 * TEMPLATE_WIDTH;
     const centerY = (Number.isFinite(y) ? y : 15) / 100 * TEMPLATE_HEIGHT;
-    const leftPx = centerX - w / 2;
-    const topPx = centerY - h / 2;
-    drawImageContain(ctx, img, leftPx, topPx, w, h);
+    drawImageContain(ctx, img, centerX - w / 2, centerY - h / 2, w, h);
   });
 
+  // Custom fields
   const customFields = defaultQrWrapper?.customFields ?? [];
-  const paddingPx = Math.round(0.02 * TEMPLATE_WIDTH);
   ensureFontsLoaded(configFonts);
-  if (typeof document !== "undefined" && document.fonts?.ready) {
-    await document.fonts.ready;
-  }
-  const contentWidthPx = TEMPLATE_WIDTH - 2 * paddingPx;
+  if (typeof document !== "undefined" && document.fonts?.ready) await document.fonts.ready;
+
   for (const f of customFields) {
     const xPct = Number.isFinite(Number(f.x)) ? Number(f.x) : 0;
     const yPct = Number.isFinite(Number(f.y)) ? Number(f.y) : 0;
-    const textImg = await renderCustomFieldAsImage(f, paddingPx, configFonts);
+    const alignment = (f.alignment && String(f.alignment).trim()) ? f.alignment : "left";
+
+    const textImg = await renderCustomFieldAsImage(f, configFonts);
     if (!textImg || !textImg.width || !textImg.height) continue;
 
     const centerX = (xPct / 100) * TEMPLATE_WIDTH;
     const centerY = (yPct / 100) * TEMPLATE_HEIGHT;
-    const imgW = textImg.width;
-    const imgH = textImg.height;
-    const leftPx = centerX - imgW / 2;
-    const topPx = centerY - imgH / 2;
-    ctx.drawImage(textImg, leftPx, topPx, imgW, imgH);
+
+    let leftPx;
+    if (alignment === "center") {
+      leftPx = centerX - textImg.width / 2;
+    } else if (alignment === "right") {
+      leftPx = centerX - textImg.width;
+    } else {
+      leftPx = centerX - textImg.width / 2;
+    }
+    const topPx = centerY - textImg.height / 2;
+    ctx.drawImage(textImg, leftPx, topPx, textImg.width, textImg.height);
   }
 
+  // QR code
   if (qrImage) {
     const qrX = Number(defaultQrWrapper?.qr?.x);
     const qrY = Number(defaultQrWrapper?.qr?.y);
     const qrCenterX = (Number.isFinite(qrX) ? qrX : 50) / 100 * TEMPLATE_WIDTH;
     const qrCenterY = (Number.isFinite(qrY) ? qrY : 55) / 100 * TEMPLATE_HEIGHT;
-    const qrLeft = qrCenterX - qrSize / 2;
-    const qrTop = qrCenterY - qrSize / 2;
-    ctx.drawImage(qrImage, 0, 0, qrSize, qrSize, qrLeft, qrTop, qrSize, qrSize);
+    ctx.drawImage(qrImage, 0, 0, qrSize, qrSize, qrCenterX - qrSize / 2, qrCenterY - qrSize / 2, qrSize, qrSize);
   }
 
+  // Logo overlay on QR
   if (logoImage && resolvedLogoUrl) {
     const qrX = Number(defaultQrWrapper?.qr?.x);
     const qrY = Number(defaultQrWrapper?.qr?.y);
     const qrCenterX = (Number.isFinite(qrX) ? qrX : 50) / 100 * TEMPLATE_WIDTH;
     const qrCenterY = (Number.isFinite(qrY) ? qrY : 55) / 100 * TEMPLATE_HEIGHT;
     const logoSize = Math.max(1, Math.round(qrSize * 0.22));
-    const logoLeft = qrCenterX - logoSize / 2;
-    const logoTop = qrCenterY - logoSize / 2;
-    drawImageContain(ctx, logoImage, logoLeft, logoTop, logoSize, logoSize);
+    drawImageContain(ctx, logoImage, qrCenterX - logoSize / 2, qrCenterY - logoSize / 2, logoSize, logoSize);
   }
 
   const dataURL = canvas.toDataURL("image/png");
@@ -356,22 +327,20 @@ export async function downloadDefaultQrWrapperAsImage(defaultQrWrapper, qrValue,
   link.download = filename || "qr-wrapper.png";
   link.click();
 
-  blobUrlsToRevoke.forEach((url) => {
-    try { URL.revokeObjectURL(url); } catch (_) { }
-  });
+  blobUrlsToRevoke.forEach((url) => { try { URL.revokeObjectURL(url); } catch (_) { } });
 }
 
-/** Returns true if the given wrapper object (default or custom) has any design (logo, background, branding, or custom fields). */
+/** Returns true if the given wrapper object has any design (logo, background, branding, or custom fields). */
 export function hasWrapperDesign(wrapper) {
   if (!wrapper || typeof wrapper !== "object") return false;
-  const hasLogo = wrapper.logo?.url;
-  const hasBg = wrapper.backgroundImage?.url;
-  const hasBranding = Array.isArray(wrapper.brandingMedia?.items) && wrapper.brandingMedia.items.length > 0;
-  const hasFields = Array.isArray(wrapper.customFields) && wrapper.customFields.length > 0;
-  return !!(hasLogo || hasBg || hasBranding || hasFields);
+  return !!(
+    wrapper.logo?.url ||
+    wrapper.backgroundImage?.url ||
+    (Array.isArray(wrapper.brandingMedia?.items) && wrapper.brandingMedia.items.length > 0) ||
+    (Array.isArray(wrapper.customFields) && wrapper.customFields.length > 0)
+  );
 }
 
 export function hasDefaultQrWrapperDesign(config) {
-  const w = config?.defaultQrWrapper;
-  return hasWrapperDesign(w);
+  return hasWrapperDesign(config?.defaultQrWrapper);
 }
