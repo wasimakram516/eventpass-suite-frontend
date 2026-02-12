@@ -335,6 +335,7 @@ export default function EventsPage() {
           title={t.shareTitle}
           description={t.pageDescription}
           customQrWrapper={eventToShare?.customQrWrapper}
+          useCustomQrCode={eventToShare?.useCustomQrCode ?? false}
         />
       </Container>
     </Box>
