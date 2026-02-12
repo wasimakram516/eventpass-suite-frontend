@@ -33,6 +33,9 @@ import { uploadMediaFiles, uploadSingleFile } from "@/utils/mediaUpload";
 import MediaUploadProgress from "@/components/MediaUploadProgress";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import BadgeCustomizationModal from "@/components/modals/BadgeCustomizationModal";
+import DefaultQrWrapperModal from "@/components/modals/DefaultQrWrapperModal";
+import { updatePublicEventCustomQrWrapper } from "@/services/eventreg/eventService";
+import { updateCheckInEventCustomQrWrapper } from "@/services/checkin/checkinEventService";
 import { deleteMedia } from "@/services/deleteMediaService";
 import RichTextEditor from "@/components/RichTextEditor";
 import CountryCodeSelector from "@/components/CountryCodeSelector";
@@ -59,6 +62,7 @@ const translations = {
     currentImage: "Current Logo:",
     preview: "Preview:",
     uploadBackground: "Upload Background",
+    publicPageBackground: "Public Page Background",
     uploadBackgroundEn: "Upload Background (EN)",
     uploadBackgroundAr: "Upload Background (AR)",
     currentBackground: "Current Background:",
@@ -114,6 +118,26 @@ const translations = {
     uploadsTab: "Uploads",
     customFieldsTab: "Custom Fields",
     customizeBadgeTab: "Customize Badge",
+    useCustomQrCode: "Use custom QR code for this event",
+    customQrCodeTab: "Custom QR Code",
+    customQrCodeDescription: "Choose which event details appear on the custom QR wrapper. Then open the editor to design the layout.",
+    customQrEventDetails: "Event details",
+    customQrEventName: "Event name",
+    customQrEventDates: "Event dates (start and end)",
+    customQrVenue: "Venue",
+    customQrDescription: "Event description",
+    customQrOrganizerName: "Organizer name",
+    customQrOrganizerEmail: "Organizer email",
+    customQrOrganizerPhone: "Organizer phone",
+    customQrMediaNote: "Logo, background image, and branding media can be added in the editor.",
+    customQrUploadsSection: "Uploads",
+    customQrOptionLogo: "Logo",
+    customQrOptionBrandingMedia: "Branding Media",
+    customQrOptionBackground: "Background",
+    openQrCodeEditor: "Open QR Code Editor",
+    saveEventFirstToEditQr: "Save the event first to design the custom QR wrapper.",
+    qrWrapperBackground: "QR code wrapper background",
+    currentQrWrapperBackground: "Current background:",
     customizeBadgeDescription: "Please choose the custom fields which are to be included in the badge.",
     customizeBadgeButton: "Customize Badge",
     next: "Next",
@@ -137,6 +161,7 @@ const translations = {
     currentImage: "الشعار الحالي:",
     preview: "معاينة:",
     uploadBackground: "رفع الخلفية",
+    publicPageBackground: "خلفية الصفحة العامة",
     uploadBackgroundEn: "رفع الخلفية (إنجليزي)",
     uploadBackgroundAr: "رفع الخلفية (عربي)",
     currentBackground: "الخلفية الحالية:",
@@ -192,6 +217,26 @@ const translations = {
     uploadsTab: "الرفع",
     customFieldsTab: "الحقول المخصصة",
     customizeBadgeTab: "تخصيص الشارة",
+    useCustomQrCode: "استخدام رمز QR مخصص لهذه الفعالية",
+    customQrCodeTab: "رمز QR المخصص",
+    customQrCodeDescription: "اختر تفاصيل الفعالية التي تظهر على غلاف QR. ثم افتح المحرر لتصميم التخطيط.",
+    customQrEventDetails: "تفاصيل الفعالية",
+    customQrEventName: "اسم الفعالية",
+    customQrEventDates: "تواريخ الفعالية (البداية والنهاية)",
+    customQrVenue: "المكان",
+    customQrDescription: "وصف الفعالية",
+    customQrOrganizerName: "اسم المنظم",
+    customQrOrganizerEmail: "بريد المنظم",
+    customQrOrganizerPhone: "هاتف المنظم",
+    customQrMediaNote: "يمكن إضافة الشعار وصورة الخلفية ووسائط العلامة في المحرر.",
+    customQrUploadsSection: "الرفع",
+    customQrOptionLogo: "الشعار",
+    customQrOptionBrandingMedia: "وسائط العلامة",
+    customQrOptionBackground: "الخلفية",
+    openQrCodeEditor: "فتح محرر رمز QR",
+    saveEventFirstToEditQr: "احفظ الفعالية أولاً لتصميم غلاف رمز QR المخصص.",
+    qrWrapperBackground: "خلفية غلاف رمز QR",
+    currentQrWrapperBackground: "الخلفية الحالية:",
     customizeBadgeDescription: "يرجى اختيار الحقول المخصصة التي سيتم تضمينها في الشارة.",
     customizeBadgeButton: "تخصيص الشارة",
     next: "التالي",
@@ -199,6 +244,21 @@ const translations = {
     defaultLanguage: "اللغة الافتراضية",
   },
 };
+
+/** Derive which event/organizer fields are selected from customQrWrapper.customFields (single source of truth after QR save). */
+function getSelectedFieldsFromWrapper(wrapper) {
+  const list = Array.isArray(wrapper?.customFields) ? wrapper.customFields : [];
+  const hasId = (id) => list.some((f) => f.id === id);
+  return {
+    eventName: hasId("eventName"),
+    eventDates: hasId("eventStartDate") || hasId("eventEndDate"),
+    venue: hasId("venue"),
+    description: hasId("description"),
+    organizerName: hasId("organizerName"),
+    organizerEmail: hasId("organizerEmail"),
+    organizerPhone: hasId("organizerPhone"),
+  };
+}
 
 const EventModal = ({
   open,
@@ -226,6 +286,7 @@ const EventModal = ({
     index: null,
   });
   const [badgeCustomizationModalOpen, setBadgeCustomizationModalOpen] = useState(false);
+  const [customQrWrapperModalOpen, setCustomQrWrapperModalOpen] = useState(false);
 
   const logoButtonRef = useRef(null);
   const backgroundEnButtonRef = useRef(null);
@@ -284,6 +345,14 @@ const EventModal = ({
     useCustomEmailTemplate: false,
     emailTemplateSubject: "",
     emailTemplateBody: "",
+    useCustomQrCode: false,
+    customQrSelectedFields: {},
+    qrWrapperBackground: null,
+    qrWrapperBackgroundPreview: "",
+    removeQrWrapperBackground: false,
+    customQrIncludeLogo: false,
+    customQrIncludeBrandingMedia: false,
+    customQrIncludeBackground: false,
   });
 
   useEffect(() => {
@@ -363,6 +432,16 @@ const EventModal = ({
         useCustomEmailTemplate: initialValues?.useCustomEmailTemplate || false,
         emailTemplateSubject: initialValues?.emailTemplate?.subject || "",
         emailTemplateBody: initialValues?.emailTemplate?.body || "",
+        useCustomQrCode: initialValues?.useCustomQrCode || false,
+        customQrSelectedFields: (initialValues?.customQrWrapper && Array.isArray(initialValues.customQrWrapper.customFields) && initialValues.customQrWrapper.customFields.length > 0)
+          ? getSelectedFieldsFromWrapper(initialValues.customQrWrapper)
+          : {},
+        qrWrapperBackground: null,
+        qrWrapperBackgroundPreview: initialValues?.customQrWrapper?.backgroundImage?.url || "",
+        removeQrWrapperBackground: false,
+        customQrIncludeLogo: !!(initialValues?.customQrWrapper?.logo?.url),
+        customQrIncludeBrandingMedia: !!(Array.isArray(initialValues?.customQrWrapper?.brandingMedia?.items) && initialValues.customQrWrapper.brandingMedia.items.length > 0),
+        customQrIncludeBackground: !!(initialValues?.customQrWrapper?.backgroundImage?.url),
       }));
 
       if (initialValues?.organizerPhone) {
@@ -441,6 +520,11 @@ const EventModal = ({
         useCustomEmailTemplate: false,
         emailTemplateSubject: "",
         emailTemplateBody: "",
+        useCustomQrCode: false,
+        customQrSelectedFields: {},
+        qrWrapperBackground: null,
+        qrWrapperBackgroundPreview: "",
+        removeQrWrapperBackground: false,
       }));
     }
   }, [initialValues, isClosed]);
@@ -588,6 +672,16 @@ const EventModal = ({
           agendaPreview: file.name,
         }));
       }
+    } else if (name === "qrWrapperBackground" && files?.[0]) {
+      const file = files[0];
+      if (file.type.startsWith("image/")) {
+        setFormData((prev) => ({
+          ...prev,
+          qrWrapperBackground: file,
+          qrWrapperBackgroundPreview: URL.createObjectURL(file),
+          removeQrWrapperBackground: false,
+        }));
+      }
     } else {
       let processedValue = value;
 
@@ -664,6 +758,13 @@ const EventModal = ({
           agenda: null,
           agendaPreview: "",
         }));
+      } else if (type === "qrWrapperBackground") {
+        setFormData((prev) => ({
+          ...prev,
+          qrWrapperBackground: null,
+          qrWrapperBackgroundPreview: "",
+          removeQrWrapperBackground: false,
+        }));
       }
       return;
     }
@@ -686,7 +787,8 @@ const EventModal = ({
       if (initialValues?._id) {
         deletePayload.eventId = initialValues._id;
         deletePayload.eventType = isClosed ? "closed" : "public";
-        deletePayload.mediaType = deleteConfirm.type;
+        deletePayload.mediaType =
+          deleteConfirm.type === "qrWrapperBackground" ? "eventQrWrapperBackground" : deleteConfirm.type;
 
         if (deleteConfirm.type === "brandingLogo") {
           const item = formData.brandingLogos[deleteConfirm.index];
@@ -743,6 +845,13 @@ const EventModal = ({
             removeBrandingLogoIds: removeIds,
           };
         });
+      } else if (deleteConfirm.type === "qrWrapperBackground") {
+        setFormData((prev) => ({
+          ...prev,
+          qrWrapperBackground: null,
+          qrWrapperBackgroundPreview: "",
+          removeQrWrapperBackground: true,
+        }));
       }
 
       // Update initialValues if event was updated
@@ -884,6 +993,7 @@ const EventModal = ({
       let logoUrl = formData.removeLogo ? null : (formData.logo ? null : (formData.logoPreview || null));
       let backgroundEn = null;
       let backgroundAr = null;
+      let qrWrapperBackgroundUrl = null;
       let agendaUrl = formData.agenda
         ? null
         : (formData.agendaPreview && formData.agendaPreview.startsWith('http')
@@ -936,6 +1046,14 @@ const EventModal = ({
           file: formData.agenda,
           type: "agenda",
           label: "Agenda",
+        });
+      }
+
+      if (formData.qrWrapperBackground && !formData.removeQrWrapperBackground) {
+        filesToUpload.push({
+          file: formData.qrWrapperBackground,
+          type: "eventQrWrapperBackground",
+          label: "QR wrapper background",
         });
       }
 
@@ -994,6 +1112,7 @@ const EventModal = ({
                 fileType: result.fileType || "image",
               };
             else if (result.type === "agenda") agendaUrl = result.url;
+            else if (result.type === "eventQrWrapperBackground") qrWrapperBackgroundUrl = result.url;
           });
 
           let brandingIndex = 0;
@@ -1114,6 +1233,9 @@ const EventModal = ({
         organizerPhone: formData.organizerPhone
           ? `${getCountryCodeByIsoCode(organizerPhoneIsoCode)?.code || DEFAULT_COUNTRY_CODE}${formData.organizerPhone}`
           : "",
+        useCustomQrCode: formData.useCustomQrCode || false,
+        ...(qrWrapperBackgroundUrl ? { customQrWrapperBackgroundUrl: qrWrapperBackgroundUrl } : {}),
+        ...(formData.removeQrWrapperBackground ? { removeQrWrapperBackground: "true" } : {}),
       };
 
       if (!initialValues) {
@@ -1162,19 +1284,23 @@ const EventModal = ({
             <Tabs
               value={activeTab}
               onChange={(e, newValue) => {
-                const customizeBadgeTabIndex = formData.useCustomFields ? 5 : 4;
+                const uploadsTabIndex = formData.useCustomQrCode ? 4 : 3;
+                const customFieldsTabIndex = formData.useCustomQrCode ? 5 : 4;
+                const customizeBadgeTabIndex = formData.useCustomFields
+                  ? (formData.useCustomQrCode ? 6 : 5)
+                  : (formData.useCustomQrCode ? 5 : 4);
 
                 if (newValue === customizeBadgeTabIndex) {
                   setActiveTab(newValue);
                   return;
                 }
 
-                if (newValue === 4 && formData.useCustomFields) {
+                if (newValue === customFieldsTabIndex && formData.useCustomFields) {
                   setActiveTab(newValue);
                   return;
                 }
 
-                if (newValue === 4 && !formData.useCustomFields) {
+                if (newValue === uploadsTabIndex) {
                   setActiveTab(newValue);
                   return;
                 }
@@ -1196,6 +1322,7 @@ const EventModal = ({
               <Tab label={t.eventDetailsTab} />
               <Tab label={t.organizerDetailsTab} />
               <Tab label={t.optionsTab} />
+              {formData.useCustomQrCode && <Tab label={t.customQrCodeTab} />}
               <Tab label={t.uploadsTab} />
               {formData.useCustomFields && <Tab label={t.customFieldsTab} />}
               <Tab label={t.customizeBadgeTab} />
@@ -1598,11 +1725,172 @@ const EventModal = ({
                   />
                 </Box>
               )}
+
+              {initialValues && (
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={formData.useCustomQrCode}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            useCustomQrCode: e.target.checked,
+                            customQrSelectedFields: prev.customQrSelectedFields && typeof prev.customQrSelectedFields === "object"
+                              ? prev.customQrSelectedFields
+                              : {},
+                          }))
+                        }
+                        color="primary"
+                      />
+                    }
+                    label={t.useCustomQrCode}
+                    sx={{ alignSelf: "start" }}
+                  />
+                </Box>
+              )}
             </Box>
           )}
 
-          {/* Tab 4: Uploads */}
-          {activeTab === 3 && (
+          {/* Tab: Custom QR Code (visible when useCustomQrCode, edit only) */}
+          {formData.useCustomQrCode && activeTab === 3 && (
+            <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 2 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                {t.customQrCodeDescription}
+              </Typography>
+              <Typography variant="subtitle2" sx={{ fontWeight: 600, mt: 1 }}>
+                {t.customQrEventDetails}
+              </Typography>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+                {[
+                  { key: "eventName", label: t.customQrEventName },
+                  { key: "eventDates", label: t.customQrEventDates },
+                  { key: "venue", label: t.customQrVenue },
+                  ...((initialValues?.description ?? formData.description) ? [{ key: "description", label: t.customQrDescription }] : []),
+                ].map(({ key, label }) => (
+                  <FormControlLabel
+                    key={key}
+                    control={
+                      <Checkbox
+                        checked={!!formData.customQrSelectedFields?.[key]}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            customQrSelectedFields: {
+                              ...(prev.customQrSelectedFields || {}),
+                              [key]: e.target.checked,
+                            },
+                          }))
+                        }
+                        color="primary"
+                      />
+                    }
+                    label={label}
+                  />
+                ))}
+              </Box>
+              {((initialValues?.organizerName ?? formData.organizerName) || (initialValues?.organizerEmail ?? formData.organizerEmail) || (initialValues?.organizerPhone ?? formData.organizerPhone)) && (
+                <>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, mt: 1 }}>
+                    {t.organizerDetails}
+                  </Typography>
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+                    {[
+                      ...((initialValues?.organizerName ?? formData.organizerName) ? [{ key: "organizerName", label: t.customQrOrganizerName }] : []),
+                      ...((initialValues?.organizerEmail ?? formData.organizerEmail) ? [{ key: "organizerEmail", label: t.customQrOrganizerEmail }] : []),
+                      ...((initialValues?.organizerPhone ?? formData.organizerPhone) ? [{ key: "organizerPhone", label: t.customQrOrganizerPhone }] : []),
+                    ].map(({ key, label }) => (
+                      <FormControlLabel
+                        key={key}
+                        control={
+                          <Checkbox
+                            checked={!!formData.customQrSelectedFields?.[key]}
+                            onChange={(e) =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                customQrSelectedFields: {
+                                  ...(prev.customQrSelectedFields || {}),
+                                  [key]: e.target.checked,
+                                },
+                              }))
+                            }
+                            color="primary"
+                          />
+                        }
+                        label={label}
+                      />
+                    ))}
+                  </Box>
+                </>
+              )}
+              {(initialValues?.logoUrl ||
+                (Array.isArray(initialValues?.brandingMedia) && initialValues.brandingMedia.length > 0) ||
+                initialValues?.customQrWrapper?.backgroundImage?.url) && (
+                <>
+                  <Typography variant="subtitle2" sx={{ fontWeight: 600, mt: 2 }}>
+                    {t.customQrUploadsSection}
+                  </Typography>
+                  <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+                    {initialValues?.logoUrl && (
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={!!formData.customQrIncludeLogo}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, customQrIncludeLogo: e.target.checked }))}
+                            size="small"
+                            color="primary"
+                          />
+                        }
+                        label={t.customQrOptionLogo}
+                      />
+                    )}
+                    {Array.isArray(initialValues?.brandingMedia) && initialValues.brandingMedia.length > 0 && (
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={!!formData.customQrIncludeBrandingMedia}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, customQrIncludeBrandingMedia: e.target.checked }))}
+                            size="small"
+                            color="primary"
+                          />
+                        }
+                        label={t.customQrOptionBrandingMedia}
+                      />
+                    )}
+                    {initialValues?.customQrWrapper?.backgroundImage?.url && (
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={!!formData.customQrIncludeBackground}
+                            onChange={(e) => setFormData((prev) => ({ ...prev, customQrIncludeBackground: e.target.checked }))}
+                            size="small"
+                            color="primary"
+                          />
+                        }
+                        label={t.customQrOptionBackground}
+                      />
+                    )}
+                  </Box>
+                </>
+              )}
+              <Tooltip title={!initialValues?._id ? t.saveEventFirstToEditQr : ""}>
+                <span style={{ display: "inline-block" }}>
+                  <Button
+                    variant="outlined"
+                    onClick={() => setCustomQrWrapperModalOpen(true)}
+                    disabled={!initialValues?._id}
+                    startIcon={<ICONS.edit />}
+                    sx={{ alignSelf: "flex-start", mt: 1 }}
+                  >
+                    {t.openQrCodeEditor}
+                  </Button>
+                </span>
+              </Tooltip>
+            </Box>
+          )}
+
+          {/* Tab: Uploads */}
+          {activeTab === (formData.useCustomQrCode ? 4 : 3) && (
             <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 2 }}>
               {/* Logo Upload */}
               <Box
@@ -1669,6 +1957,66 @@ const EventModal = ({
                 )}
               </Box>
 
+              {/* QR code wrapper background */}
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "flex-start",
+                }}
+              >
+                <Typography variant="body2" sx={{ fontWeight: 500, mb: 0.5 }}>
+                  {t.qrWrapperBackground}
+                </Typography>
+                <Button component="label" variant="outlined" size="small">
+                  {t.uploadBackground}
+                  <input
+                    hidden
+                    name="qrWrapperBackground"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleInputChange}
+                  />
+                </Button>
+                {formData.qrWrapperBackgroundPreview && !formData.removeQrWrapperBackground && (
+                  <Box sx={{ mt: 1.5 }}>
+                    <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                      {initialValues && !formData.qrWrapperBackground ? t.currentQrWrapperBackground : t.preview}
+                    </Typography>
+                    <Box sx={{ position: "relative", display: "inline-block" }}>
+                      <img
+                        src={formData.qrWrapperBackgroundPreview}
+                        alt="QR wrapper background"
+                        style={{
+                          maxWidth: 280,
+                          maxHeight: 120,
+                          height: "auto",
+                          borderRadius: 6,
+                          objectFit: "cover",
+                        }}
+                      />
+                      <IconButton
+                        size="small"
+                        onClick={() => {
+                          const fileUrl = initialValues?.customQrWrapper?.backgroundImage?.url || formData.qrWrapperBackgroundPreview;
+                          handleDeleteMedia("qrWrapperBackground", fileUrl);
+                        }}
+                        sx={{
+                          position: "absolute",
+                          top: -18,
+                          right: 6,
+                          bgcolor: "error.main",
+                          color: "#fff",
+                          "&:hover": { bgcolor: "error.dark" },
+                        }}
+                      >
+                        <ICONS.delete sx={{ fontSize: 18 }} />
+                      </IconButton>
+                    </Box>
+                  </Box>
+                )}
+              </Box>
+
               {/* Background Upload */}
               <Box
                 sx={{
@@ -1679,6 +2027,9 @@ const EventModal = ({
                   width: "100%",
                 }}
               >
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                  {t.publicPageBackground}
+                </Typography>
                 {/* English Background Upload */}
                 <Box
                   sx={{
@@ -2043,7 +2394,7 @@ const EventModal = ({
           )}
 
           {/* Tab 5: Custom Fields (conditional) */}
-          {activeTab === 4 && formData.useCustomFields && (
+          {activeTab === (formData.useCustomQrCode ? 5 : 4) && formData.useCustomFields && (
             <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 2 }}>
               {(isClosed || formData.eventType === "public") && (
                 <>
@@ -2212,7 +2563,7 @@ const EventModal = ({
           )}
 
           {/* Tab 6: Customize Badge (always visible) */}
-          {activeTab === (formData.useCustomFields ? 5 : 4) && (
+          {activeTab === (formData.useCustomFields ? (formData.useCustomQrCode ? 6 : 5) : (formData.useCustomQrCode ? 5 : 4)) && (
             <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 2 }}>
               {formData.useCustomFields && (
                 <Typography variant="body1" sx={{ mb: 2 }}>
@@ -2348,7 +2699,9 @@ const EventModal = ({
               )}
 
               {(() => {
-                const maxTab = formData.useCustomFields ? 5 : 4;
+                const maxTab = formData.useCustomFields
+                  ? (formData.useCustomQrCode ? 6 : 5)
+                  : (formData.useCustomQrCode ? 5 : 4);
                 return activeTab < maxTab;
               })() ? (
                 <Button
@@ -2441,6 +2794,45 @@ const EventModal = ({
         ]}
         showQrOnBadge={formData.showQrOnBadge}
         badgeCustomizations={formData.badgeCustomizations}
+      />
+
+      <DefaultQrWrapperModal
+        open={customQrWrapperModalOpen}
+        onClose={() => setCustomQrWrapperModalOpen(false)}
+        config={{ defaultQrWrapper: initialValues?.customQrWrapper || {} }}
+        mode="event"
+        eventId={initialValues?._id}
+        eventData={{
+          name: initialValues?.name ?? formData.name,
+          startDate: initialValues?.startDate ?? formData.startDate,
+          endDate: initialValues?.endDate ?? formData.endDate,
+          venue: initialValues?.venue ?? formData.venue,
+          description: initialValues?.description ?? formData.description,
+          organizerName: initialValues?.organizerName ?? formData.organizerName,
+          organizerEmail: initialValues?.organizerEmail ?? formData.organizerEmail,
+          organizerPhone: initialValues?.organizerPhone ?? (formData.organizerPhone ? `${getCountryCodeByIsoCode(organizerPhoneIsoCode)?.code || ""}${formData.organizerPhone}`.trim() : ""),
+          logoUrl: initialValues?.logoUrl,
+          brandingMedia: initialValues?.brandingMedia,
+        }}
+        selectedFields={formData.customQrSelectedFields || {}}
+        includeLogo={!!formData.customQrIncludeLogo}
+        includeBrandingMedia={!!formData.customQrIncludeBrandingMedia}
+        includeBackground={!!formData.customQrIncludeBackground}
+        onSaveEventQrWrapper={async (eventId, payload) => {
+          const updateFn = isClosed ? updateCheckInEventCustomQrWrapper : updatePublicEventCustomQrWrapper;
+          const updatedEvent = await updateFn(eventId, payload);
+          if (initialValues?._id && updatedEvent && !updatedEvent.error && updatedEvent._id) {
+            Object.assign(initialValues, updatedEvent);
+            setFormData((prev) => ({
+              ...prev,
+              customQrIncludeLogo: !!(updatedEvent?.customQrWrapper?.logo?.url),
+              customQrIncludeBrandingMedia: !!(Array.isArray(updatedEvent?.customQrWrapper?.brandingMedia?.items) && updatedEvent.customQrWrapper.brandingMedia.items.length > 0),
+              customQrIncludeBackground: !!(updatedEvent?.customQrWrapper?.backgroundImage?.url),
+              customQrSelectedFields: getSelectedFieldsFromWrapper(updatedEvent?.customQrWrapper),
+            }));
+          }
+          setCustomQrWrapperModalOpen(false);
+        }}
       />
     </>
   );

@@ -1,0 +1,1681 @@
+"use client";
+
+import { useState, useEffect, useRef } from "react";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  Box,
+  Typography,
+  TextField,
+  IconButton,
+  Stack,
+  Divider,
+  Paper,
+  Avatar,
+  Tooltip,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+} from "@mui/material";
+import QRCode from "qrcode";
+import useI18nLayout from "@/hooks/useI18nLayout";
+import ICONS from "@/utils/iconUtil";
+import getStartIconSpacing from "@/utils/getStartIconSpacing";
+import { updateDefaultQrWrapper } from "@/services/globalConfigService";
+import { deleteMedia } from "@/services/deleteMediaService";
+import { useMessage } from "@/contexts/MessageContext";
+import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
+import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
+import RichTextEditor from "@/components/RichTextEditor";
+
+const TEMPLATE_WIDTH = 1280;
+const TEMPLATE_HEIGHT = 960;
+const PREVIEW_SCALE = 0.25;
+const PREVIEW_WIDTH = Math.round(TEMPLATE_WIDTH * PREVIEW_SCALE);
+const PREVIEW_HEIGHT = Math.round(TEMPLATE_HEIGHT * PREVIEW_SCALE);
+const DEFAULT_QR_SIZE = 120;
+
+const translations = {
+  en: {
+    title: "Default QR Ticket Wrapper",
+    titleEvent: "Custom QR Ticket Wrapper",
+    preview: "Preview",
+    logo: "Logo",
+    logoWidth: "Width",
+    logoHeight: "Height",
+    logoX: "X (%)",
+    logoY: "Y (%)",
+    backgroundImage: "Background image",
+    brandingMedia: "Branding media",
+    brandingWidth: "Width",
+    brandingHeight: "Height",
+    brandingX: "X (%)",
+    brandingY: "Y (%)",
+    addBrandingMedia: "Add branding media",
+    clearAllBranding: "Clear all",
+    willClearAllBranding: "Will clear all (toggle off?)",
+    none: "None",
+    confirmRemoveLogo: "Remove logo?",
+    confirmRemoveLogoMsg: "Are you sure you want to remove the logo?",
+    confirmRemoveBackground: "Remove background image?",
+    confirmRemoveBackgroundMsg: "Are you sure you want to remove the background image?",
+    confirmRemoveBranding: "Remove this item?",
+    confirmRemoveBrandingMsg: "Are you sure you want to remove this branding image?",
+    confirmClearAllBranding: "Clear all branding media?",
+    confirmClearAllBrandingMsg: "Are you sure you want to remove all branding images?",
+    qrPosition: "QR code",
+    qrSize: "QR size",
+    qrX: "QR X (%)",
+    qrY: "QR Y (%)",
+    addFields: "Add field",
+    customFields: "Custom fields",
+    fieldLabel: "Label",
+    fieldKey: "Data key",
+    xAxis: "X-Axis (%)",
+    yAxis: "Y-Axis (%)",
+    font: "Font",
+    fieldFontSize: "Font size",
+    save: "Save",
+    cancel: "Cancel",
+    remove: "Remove",
+    upload: "Upload",
+    eventName: "Event Name",
+    eventStartDate: "Start Date",
+    eventEndDate: "End Date",
+    venue: "Venue",
+    description: "Description",
+    organizerName: "Organizer Name",
+    organizerEmail: "Organizer Email",
+    organizerPhone: "Organizer Phone",
+    auto: "Auto",
+  },
+  ar: {
+    title: "قالب تذكرة QR الافتراضي",
+    titleEvent: "قالب تذكرة QR المخصص",
+    preview: "معاينة",
+    logo: "الشعار",
+    logoWidth: "العرض",
+    logoHeight: "الارتفاع",
+    logoX: "X (%)",
+    logoY: "Y (%)",
+    backgroundImage: "صورة الخلفية",
+    brandingMedia: "وسائط العلامة",
+    brandingWidth: "العرض",
+    brandingHeight: "الارتفاع",
+    brandingX: "X (%)",
+    brandingY: "Y (%)",
+    addBrandingMedia: "إضافة وسائط العلامة",
+    clearAllBranding: "مسح الكل",
+    willClearAllBranding: "سيتم مسح الكل (تعطيل؟)",
+    none: "لا يوجد",
+    confirmRemoveLogo: "إزالة الشعار؟",
+    confirmRemoveLogoMsg: "هل أنت متأكد من إزالة الشعار؟",
+    confirmRemoveBackground: "إزالة صورة الخلفية؟",
+    confirmRemoveBackgroundMsg: "هل أنت متأكد من إزالة صورة الخلفية؟",
+    confirmRemoveBranding: "إزالة هذا العنصر؟",
+    confirmRemoveBrandingMsg: "هل أنت متأكد من إزالة صورة العلامة هذه؟",
+    confirmClearAllBranding: "مسح جميع وسائط العلامة؟",
+    confirmClearAllBrandingMsg: "هل أنت متأكد من إزالة جميع صور العلامة؟",
+    qrPosition: "رمز QR",
+    qrSize: "حجم QR",
+    qrX: "QR X (%)",
+    qrY: "QR Y (%)",
+    addFields: "إضافة حقل",
+    customFields: "الحقول المخصصة",
+    fieldLabel: "التسمية",
+    fieldKey: "مفتاح البيانات",
+    xAxis: "المحور X (%)",
+    yAxis: "المحور Y (%)",
+    font: "الخط",
+    fieldFontSize: "حجم الخط",
+    save: "حفظ",
+    cancel: "إلغاء",
+    remove: "إزالة",
+    upload: "تحميل",
+    eventName: "اسم الفعالية",
+    eventStartDate: "تاريخ البدء",
+    eventEndDate: "تاريخ الانتهاء",
+    venue: "المكان",
+    description: "الوصف",
+    organizerName: "اسم المنظم",
+    organizerEmail: "بريد المنظم",
+    organizerPhone: "هاتف المنظم",
+    auto: "تلقائي",
+  },
+};
+
+function getNextFieldName(existingFields) {
+  const nums = existingFields
+    .map((f) => parseInt(String(f.label || "").replace(/^field/i, ""), 10))
+    .filter((n) => !Number.isNaN(n) && n >= 1);
+  const next = nums.length ? Math.max(...nums) + 1 : 1;
+  return `field${next}`;
+}
+
+function num(v, def) {
+  if (v === undefined || v === null || v === "") return def;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : def;
+}
+
+/** For width/height: preserve 0 as "auto", otherwise same as num. */
+function numOrAuto(v, def) {
+  if (v === 0 || v === "0") return 0;
+  return num(v, def);
+}
+
+function ClampedNumberInput({ value, min, max, onChange, label, inputProps = {}, sx, ...rest }) {
+  const displayValue = value === min ? "" : value;
+  const handleChange = (e) => {
+    const v = e.target.value;
+    if (v === "") {
+      onChange(min);
+      return;
+    }
+    const n = parseFloat(v);
+    if (!Number.isNaN(n)) onChange(n);
+  };
+  const handleBlur = (e) => {
+    const v = e.target.value;
+    if (v === "") {
+      onChange(min);
+      return;
+    }
+    const n = parseFloat(v);
+    if (Number.isNaN(n)) {
+      onChange(min);
+      return;
+    }
+    const clamped = max != null ? Math.min(max, Math.max(min, n)) : Math.max(min, n);
+    onChange(clamped);
+  };
+  return (
+    <TextField
+      size="small"
+      type="number"
+      label={label}
+      value={displayValue}
+      onChange={handleChange}
+      onBlur={handleBlur}
+      inputProps={{ min, max, ...inputProps }}
+      sx={sx}
+      {...rest}
+    />
+  );
+}
+
+function WidthHeightField({ width, height, onWidthChange, onHeightChange, widthLabel, heightLabel, t, minSize = 10, sx }) {
+  const widthAuto = width === 0;
+  const heightAuto = height === 0;
+  return (
+    <Stack direction="row" spacing={1.5} flexWrap="wrap" alignItems="center" sx={{ ...sx }}>
+      <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+        <Typography variant="caption" color="text.secondary">{widthLabel}</Typography>
+        <FormControl size="small" sx={{ minWidth: 72 }}>
+          <Select
+            value={widthAuto ? "auto" : "custom"}
+            onChange={(e) => onWidthChange(e.target.value === "auto" ? 0 : Math.max(minSize, width || minSize))}
+            displayEmpty
+          >
+            <MenuItem value="auto">{t.auto}</MenuItem>
+            <MenuItem value="custom">px</MenuItem>
+          </Select>
+        </FormControl>
+        {!widthAuto && (
+          <ClampedNumberInput label="" value={width} min={minSize} onChange={onWidthChange} sx={{ width: 90, minWidth: 80 }} />
+        )}
+      </Stack>
+      <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+        <Typography variant="caption" color="text.secondary">{heightLabel}</Typography>
+        <FormControl size="small" sx={{ minWidth: 72 }}>
+          <Select
+            value={heightAuto ? "auto" : "custom"}
+            onChange={(e) => onHeightChange(e.target.value === "auto" ? 0 : Math.max(minSize, height || minSize))}
+            displayEmpty
+          >
+            <MenuItem value="auto">{t.auto}</MenuItem>
+            <MenuItem value="custom">px</MenuItem>
+          </Select>
+        </FormControl>
+        {!heightAuto && (
+          <ClampedNumberInput label="" value={height} min={minSize} onChange={onHeightChange} sx={{ width: 90, minWidth: 80 }} />
+        )}
+      </Stack>
+    </Stack>
+  );
+}
+
+function extractFormattingFromHtml(html) {
+  if (!html) {
+    return { text: "", fontSize: 14, color: "#000000", isBold: false, isItalic: false, isUnderline: false, fontFamily: "Arial", alignment: "left" };
+  }
+  const text = html.replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").trim();
+  const isBold = /<(strong|b)>/i.test(html) || /font-weight:\s*(bold|700|800|900)/i.test(html);
+  const isItalic = /<(em|i)>/i.test(html) || /font-style:\s*italic/i.test(html);
+  const isUnderline = /<u>/i.test(html) || /text-decoration:\s*underline/i.test(html);
+  const colorMatch = html.match(/color:\s*([^;'"]+)/i) || html.match(/color="([^"]+)"/i);
+  const color = colorMatch ? colorMatch[1].trim() : "#000000";
+  let fontSize = 14;
+  const fontSizeMatch = html.match(/font-size:\s*([^;'"]+)/i);
+  if (fontSizeMatch) {
+    const n = parseFloat(fontSizeMatch[1].trim());
+    if (!Number.isNaN(n) && n >= 8 && n <= 50) fontSize = Math.round(n);
+  }
+  let fontFamily = "Arial";
+  const fontFamilyQuotedMatch = html.match(/font-family:\s*["']([^"']*)["']/i);
+  const fontFamilyUnquotedMatch = html.match(/font-family:\s*([^;"']+)/i);
+  if (fontFamilyQuotedMatch) fontFamily = fontFamilyQuotedMatch[1].trim().replace(/\\"/g, '"');
+  else if (fontFamilyUnquotedMatch) fontFamily = fontFamilyUnquotedMatch[1].trim();
+  let alignment = "left";
+  const alignMatch = html.match(/text-align:\s*(center|left|right|justify)/i);
+  if (alignMatch) {
+    const a = alignMatch[1].toLowerCase();
+    if (a === "center") alignment = "center";
+    else if (a === "right") alignment = "right";
+    else if (a === "justify") alignment = "justify";
+  }
+  return { text, fontSize, color, isBold: !!isBold, isItalic: !!isItalic, isUnderline: !!isUnderline, fontFamily, alignment };
+}
+
+function buildHtmlFromFormatting(textValue, fontSizeValue, colorValue, isBoldValue, isItalicValue, isUnderlineValue, alignmentValue, fontFamilyValue) {
+  let html = String(textValue || "");
+  if (isUnderlineValue) html = `<u>${html}</u>`;
+  if (isItalicValue) html = `<em>${html}</em>`;
+  if (isBoldValue) html = `<strong>${html}</strong>`;
+  const styles = [];
+  if (fontSizeValue && fontSizeValue !== 14) styles.push(`font-size: ${fontSizeValue}px`);
+  if (colorValue && colorValue !== "#000000") styles.push(`color: ${colorValue}`);
+  if (fontFamilyValue && fontFamilyValue !== "Arial") {
+    const escaped = String(fontFamilyValue).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+    styles.push(`font-family: "${escaped}"`);
+  }
+  if (styles.length > 0) html = `<span style="${styles.join("; ")}">${html}</span>`;
+  const pStyle = alignmentValue && alignmentValue !== "left" ? ` style="text-align: ${alignmentValue}"` : "";
+  return `<p${pStyle}>${html}</p>`;
+}
+
+/** Build display HTML from a custom field's separate fields (no content field). */
+function getContentFromField(f) {
+  return buildHtmlFromFormatting(
+    f.text ?? "",
+    num(f.fontSize, 14),
+    f.color ?? "#000000",
+    f.isBold ?? false,
+    f.isItalic ?? false,
+    f.isUnderline ?? false,
+    f.alignment ?? "left",
+    f.fontFamily ?? "Arial"
+  );
+}
+
+function QrWrapperFieldEditor({
+  value,
+  onChange,
+  onFormattingChange,
+  placeholder,
+  dir,
+  minHeight,
+  maxHeight,
+  x,
+  y,
+  fontFamily: fontFamilyProp,
+  onXChange,
+  onYChange,
+  onFontFamilyChange,
+  t,
+  availableFonts = [],
+}) {
+  const editorContainerRef = useRef(null);
+  const inputsContainerRef = useRef(null);
+  const xInputRef = useRef(null);
+  const yInputRef = useRef(null);
+  const fontSelectRef = useRef(null);
+  const lastFormattingRef = useRef({});
+  const isUpdatingFromPropsRef = useRef(false);
+  const onXChangeRef = useRef(onXChange);
+  const onYChangeRef = useRef(onYChange);
+  const onFontFamilyChangeRef = useRef(onFontFamilyChange);
+  const onFormattingChangeRef = useRef(onFormattingChange);
+  onXChangeRef.current = onXChange;
+  onYChangeRef.current = onYChange;
+  onFontFamilyChangeRef.current = onFontFamilyChange;
+  onFormattingChangeRef.current = onFormattingChange;
+
+  const [formatting, setFormatting] = useState(() => extractFormattingFromHtml(value));
+  const formattingRef = useRef(formatting);
+  formattingRef.current = formatting;
+  const lastAlignmentRef = useRef(formatting.alignment);
+
+  useEffect(() => {
+    const parsed = extractFormattingFromHtml(value);
+    setFormatting((prev) => ({ ...prev, ...parsed }));
+  }, [value]);
+
+  const htmlValue = buildHtmlFromFormatting(
+    formatting.text,
+    formatting.fontSize,
+    formatting.color,
+    formatting.isBold,
+    formatting.isItalic,
+    formatting.isUnderline,
+    formatting.alignment,
+    formatting.fontFamily
+  );
+
+  const handleHTMLChange = (html) => {
+    if (isUpdatingFromPropsRef.current) return;
+    const next = extractFormattingFromHtml(html);
+    const prev = lastFormattingRef.current;
+    const changed =
+      next.text !== prev.text ||
+      next.fontSize !== prev.fontSize ||
+      next.color !== prev.color ||
+      next.isBold !== prev.isBold ||
+      next.isItalic !== prev.isItalic ||
+      next.isUnderline !== prev.isUnderline ||
+      next.fontFamily !== prev.fontFamily ||
+      next.alignment !== prev.alignment;
+    if (changed) {
+      lastFormattingRef.current = next;
+      setFormatting(next);
+      const built = buildHtmlFromFormatting(next.text, next.fontSize, next.color, next.isBold, next.isItalic, next.isUnderline, next.alignment, next.fontFamily);
+      onChange(built);
+      if (onFontFamilyChangeRef.current && next.fontFamily !== prev.fontFamily) {
+        onFontFamilyChangeRef.current(next.fontFamily);
+      }
+      if (onFormattingChangeRef.current) {
+        onFormattingChangeRef.current({ text: next.text, fontSize: next.fontSize, color: next.color, isBold: next.isBold, isItalic: next.isItalic, isUnderline: next.isUnderline, fontFamily: next.fontFamily, alignment: next.alignment });
+      }
+    }
+  };
+
+  useEffect(() => {
+    const checkAlignment = (isManualClick) => {
+      if (!editorContainerRef.current) return;
+      const editor = editorContainerRef.current.querySelector("[contenteditable=\"true\"]");
+      if (!editor) return;
+      const isLeft = document.queryCommandState("justifyLeft");
+      const isCenter = document.queryCommandState("justifyCenter");
+      const isRight = document.queryCommandState("justifyRight");
+      let current = null;
+      if (isLeft && !isCenter && !isRight) current = "left";
+      else if (isCenter && !isLeft && !isRight) current = "center";
+      else if (isRight && !isLeft && !isCenter) current = "right";
+      if (current && (isManualClick ? current !== lastAlignmentRef.current : true)) {
+        lastAlignmentRef.current = current;
+        const prev = formattingRef.current;
+        const next = { ...prev, alignment: current };
+        const built = buildHtmlFromFormatting(next.text, next.fontSize, next.color, next.isBold, next.isItalic, next.isUnderline, next.alignment, next.fontFamily);
+        onChange(built);
+        setFormatting(next);
+        if (onFormattingChangeRef.current) {
+          onFormattingChangeRef.current({ text: next.text, fontSize: next.fontSize, color: next.color, isBold: next.isBold, isItalic: next.isItalic, isUnderline: next.isUnderline, fontFamily: next.fontFamily, alignment: next.alignment });
+        }
+      }
+    };
+    const editor = editorContainerRef.current?.querySelector("[contenteditable=\"true\"]");
+    if (editor) {
+      const toolbar = editorContainerRef.current.querySelector(".MuiToolbar-root");
+      if (toolbar) {
+        const alignmentButtons = toolbar.querySelectorAll("button[title*=\"Align\"]");
+        alignmentButtons.forEach((btn) => {
+          btn.addEventListener("click", () => setTimeout(() => checkAlignment(true), 100));
+        });
+      }
+    }
+  }, [onChange]);
+
+  useEffect(() => {
+    if (editorContainerRef.current && !isUpdatingFromPropsRef.current) {
+      const editor = editorContainerRef.current.querySelector("[contenteditable=\"true\"]");
+      if (editor) {
+        const expected = buildHtmlFromFormatting(
+          formatting.text,
+          formatting.fontSize,
+          formatting.color,
+          formatting.isBold,
+          formatting.isItalic,
+          formatting.isUnderline,
+          formatting.alignment,
+          formatting.fontFamily
+        );
+        if (editor.innerHTML !== expected) {
+          isUpdatingFromPropsRef.current = true;
+          editor.innerHTML = expected;
+          lastFormattingRef.current = { ...formatting };
+          setTimeout(() => { isUpdatingFromPropsRef.current = false; }, 0);
+        }
+      }
+    }
+  }, [formatting.text, formatting.fontSize, formatting.color, formatting.isBold, formatting.isItalic, formatting.isUnderline, formatting.alignment, formatting.fontFamily]);
+
+
+  useEffect(() => {
+    const injectInputs = () => {
+      const toolbar = editorContainerRef.current?.querySelector(".MuiToolbar-root");
+      const clearFormatBox = toolbar?.querySelector("button[title=\"Clear Formatting\"]")?.parentElement;
+      if (!clearFormatBox || inputsContainerRef.current) return;
+      if (clearFormatBox.querySelector(".qr-wrapper-position-inputs")) return;
+
+      if (toolbar) {
+        toolbar.style.setProperty("padding-top", "12px", "important");
+        toolbar.style.setProperty("padding-bottom", "12px", "important");
+      }
+
+      const inputsBox = document.createElement("div");
+      inputsBox.className = "qr-wrapper-position-inputs";
+      inputsBox.style.display = "flex";
+      inputsBox.style.gap = "12px";
+      inputsBox.style.alignItems = "center";
+      inputsBox.style.paddingLeft = "8px";
+      inputsBox.style.paddingTop = "8px";
+      inputsBox.style.paddingBottom = "8px";
+      inputsBox.style.borderLeft = "1px solid";
+      inputsBox.style.borderColor = "rgba(0, 0, 0, 0.12)";
+      inputsBox.style.marginLeft = "8px";
+      inputsBox.style.marginTop = "8px";
+
+      const xContainer = document.createElement("div");
+      xContainer.style.display = "flex";
+      xContainer.style.alignItems = "center";
+      xContainer.style.gap = "6px";
+      const xLabel = document.createElement("label");
+      xLabel.textContent = t.xAxis;
+      xLabel.style.fontSize = "0.875rem";
+      xLabel.style.color = "rgba(0, 0, 0, 0.6)";
+      xLabel.style.whiteSpace = "nowrap";
+      const xInput = document.createElement("input");
+      xInput.type = "number";
+      xInput.min = 0;
+      xInput.max = 100;
+      xInput.step = 0.1;
+      xInput.style.width = "80px";
+      xInput.style.height = "32px";
+      xInput.style.padding = "4px 8px";
+      xInput.style.border = "1px solid rgba(0, 0, 0, 0.23)";
+      xInput.style.borderRadius = "4px";
+      xInput.style.fontSize = "0.875rem";
+      xInput.value = x ?? 0;
+      xInput.oninput = (e) => {
+        const val = parseFloat(e.target.value);
+        if (!Number.isNaN(val) && val >= 0 && val <= 100) onXChangeRef.current?.(val);
+      };
+      xInputRef.current = xInput;
+      xContainer.appendChild(xLabel);
+      xContainer.appendChild(xInput);
+
+      const yContainer = document.createElement("div");
+      yContainer.style.display = "flex";
+      yContainer.style.alignItems = "center";
+      yContainer.style.gap = "6px";
+      const yLabel = document.createElement("label");
+      yLabel.textContent = t.yAxis;
+      yLabel.style.fontSize = "0.875rem";
+      yLabel.style.color = "rgba(0, 0, 0, 0.6)";
+      yLabel.style.whiteSpace = "nowrap";
+      const yInput = document.createElement("input");
+      yInput.type = "number";
+      yInput.min = 0;
+      yInput.max = 100;
+      yInput.step = 0.1;
+      yInput.style.width = "80px";
+      yInput.style.height = "32px";
+      yInput.style.padding = "4px 8px";
+      yInput.style.border = "1px solid rgba(0, 0, 0, 0.23)";
+      yInput.style.borderRadius = "4px";
+      yInput.style.fontSize = "0.875rem";
+      yInput.value = y ?? 0;
+      yInput.oninput = (e) => {
+        const val = parseFloat(e.target.value);
+        if (!Number.isNaN(val) && val >= 0 && val <= 100) onYChangeRef.current?.(val);
+      };
+      yInputRef.current = yInput;
+      yContainer.appendChild(yLabel);
+      yContainer.appendChild(yInput);
+
+      const fontContainer = document.createElement("div");
+      fontContainer.style.display = "flex";
+      fontContainer.style.alignItems = "center";
+      fontContainer.style.gap = "4px";
+      const fontLabel = document.createElement("label");
+      fontLabel.textContent = t.font;
+      fontLabel.style.fontSize = "0.875rem";
+      fontLabel.style.color = "rgba(0, 0, 0, 0.6)";
+      fontLabel.style.whiteSpace = "nowrap";
+      const fontSelect = document.createElement("select");
+      fontSelect.style.width = "80px";
+      fontSelect.style.height = "32px";
+      fontSelect.style.padding = "4px";
+      fontSelect.style.border = "1px solid rgba(0, 0, 0, 0.23)";
+      fontSelect.style.borderRadius = "4px";
+      fontSelect.style.fontSize = "0.75rem";
+      fontSelect.style.backgroundColor = "white";
+      fontSelect.value = formatting.fontFamily || "Arial";
+      fontSelectRef.current = fontSelect;
+      const fontsToUse = availableFonts?.length > 0 ? availableFonts : [
+        { name: "Arial", family: "Arial" },
+        { name: "Futura", family: "Futura" },
+        { name: "IBM Plex Sans Arabic", family: "IBM Plex Sans Arabic" },
+      ];
+      fontsToUse.forEach((font) => {
+        const option = document.createElement("option");
+        option.value = font.family || font.name;
+        option.textContent = font.name || font.family;
+        option.style.fontFamily = font.family || font.name;
+        fontSelect.appendChild(option);
+      });
+      fontSelect.onchange = (e) => {
+        const val = e.target.value;
+        const prev = formattingRef.current;
+        const next = { ...prev, fontFamily: val };
+        const built = buildHtmlFromFormatting(next.text, next.fontSize, next.color, next.isBold, next.isItalic, next.isUnderline, next.alignment, next.fontFamily);
+        onChange(built);
+        setFormatting(next);
+        onFontFamilyChangeRef.current?.(val);
+        if (onFormattingChangeRef.current) {
+          onFormattingChangeRef.current({ text: next.text, fontSize: next.fontSize, color: next.color, isBold: next.isBold, isItalic: next.isItalic, isUnderline: next.isUnderline, fontFamily: next.fontFamily, alignment: next.alignment });
+        }
+      };
+      fontContainer.appendChild(fontLabel);
+      fontContainer.appendChild(fontSelect);
+
+      inputsBox.appendChild(xContainer);
+      inputsBox.appendChild(yContainer);
+      inputsBox.appendChild(fontContainer);
+      clearFormatBox.appendChild(inputsBox);
+      inputsContainerRef.current = inputsBox;
+    };
+
+    const timeoutId = setTimeout(injectInputs, 100);
+    return () => clearTimeout(timeoutId);
+  }, [t.xAxis, t.yAxis, t.font, availableFonts]);
+
+  useEffect(() => {
+    if (xInputRef.current && document.activeElement !== xInputRef.current) {
+      xInputRef.current.value = x ?? 0;
+    }
+  }, [x]);
+
+  useEffect(() => {
+    if (yInputRef.current && document.activeElement !== yInputRef.current) {
+      yInputRef.current.value = y ?? 0;
+    }
+  }, [y]);
+
+  useEffect(() => {
+    if (fontSelectRef.current && fontSelectRef.current.value !== (formatting.fontFamily || "Arial")) {
+      fontSelectRef.current.value = formatting.fontFamily || "Arial";
+    }
+  }, [formatting.fontFamily]);
+
+  return (
+    <Box ref={editorContainerRef}>
+      <RichTextEditor
+        value={htmlValue}
+        onChange={handleHTMLChange}
+        placeholder={placeholder}
+        dir={dir}
+        minHeight={minHeight}
+        maxHeight={maxHeight}
+      />
+    </Box>
+  );
+}
+
+function formatEventDate(dateVal) {
+  if (dateVal == null || dateVal === "") return "";
+  if (typeof dateVal === "string" && dateVal.length >= 10) return dateVal.slice(0, 10);
+  try {
+    const d = new Date(dateVal);
+    return Number.isFinite(d.getTime()) ? d.toISOString().slice(0, 10) : "";
+  } catch {
+    return "";
+  }
+}
+
+export default function DefaultQrWrapperModal({
+  open,
+  onClose,
+  config,
+  mode = "default",
+  eventId,
+  onSaveEventQrWrapper,
+  eventData,
+  selectedFields = {},
+  includeLogo = false,
+  includeBrandingMedia = false,
+  includeBackground = false,
+}) {
+  const { t, dir } = useI18nLayout(translations);
+  const { showMessage } = useMessage();
+  const { refetchConfig } = useGlobalConfig();
+  const isEventMode = mode === "event";
+
+  const wr = config?.defaultQrWrapper || {};
+  const { fonts: availableFonts } = useGlobalConfig();
+  const [logo, setLogo] = useState({
+    url: wr.logo?.url ?? "",
+    width: numOrAuto(wr.logo?.width, 80),
+    height: numOrAuto(wr.logo?.height, 80),
+    x: num(wr.logo?.x, 0),
+    y: num(wr.logo?.y, 0),
+  });
+  const [backgroundImage, setBackgroundImage] = useState({
+    url: wr.backgroundImage?.url ?? "",
+  });
+  const normalizeBrandingItems = (w) => {
+    if (!w?.brandingMedia) return [];
+    if (w.brandingMedia.url) {
+      return [{
+        _id: null,
+        url: w.brandingMedia.url,
+        file: null,
+        width: numOrAuto(w.brandingMedia.width, 200),
+        height: numOrAuto(w.brandingMedia.height, 60),
+        x: num(w.brandingMedia.x, 50),
+        y: num(w.brandingMedia.y, 15),
+      }];
+    }
+    return (w.brandingMedia.items || []).map((i) => ({
+      _id: i._id,
+      url: i.url || "",
+      file: null,
+      width: numOrAuto(i.width, 200),
+      height: numOrAuto(i.height, 60),
+      x: num(i.x, 50),
+      y: num(i.y, 15),
+    }));
+  };
+  const [brandingMediaItems, setBrandingMediaItems] = useState(normalizeBrandingItems(wr));
+  const [removeBrandingMediaIds, setRemoveBrandingMediaIds] = useState([]);
+  const [pendingClearAllBranding, setPendingClearAllBranding] = useState(false);
+  const [confirmRemoveLogo, setConfirmRemoveLogo] = useState(false);
+  const [confirmRemoveBackground, setConfirmRemoveBackground] = useState(false);
+  const [confirmRemoveBrandingIndex, setConfirmRemoveBrandingIndex] = useState(null);
+  const [confirmClearAllBranding, setConfirmClearAllBranding] = useState(false);
+  const [qr, setQr] = useState({
+    x: num(wr.qr?.x, 50),
+    y: num(wr.qr?.y, 55),
+    size: num(wr.qr?.size, DEFAULT_QR_SIZE),
+  });
+  const mapConfigToCustomField = (f) => ({
+    id: f.id || `f-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+    label: f.label ?? getNextFieldName([]),
+    x: num(f.x, 0),
+    y: num(f.y, 0),
+    fontSize: num(f.fontSize, 14),
+    fontFamily: f.fontFamily ?? "Arial",
+    text: f.text ?? "",
+    color: f.color ?? "#000000",
+    isBold: f.isBold ?? false,
+    isItalic: f.isItalic ?? false,
+    isUnderline: f.isUnderline ?? false,
+    alignment: f.alignment ?? "left",
+  });
+
+  const [customFields, setCustomFields] = useState(
+    Array.isArray(wr.customFields) ? wr.customFields.map(mapConfigToCustomField) : []
+  );
+
+  const EVENT_FIELD_IDS = new Set(["eventName", "eventStartDate", "eventEndDate", "venue", "description", "organizerName", "organizerEmail", "organizerPhone"]);
+
+  const getExistingEventField = (id) => {
+    const list = Array.isArray(wr.customFields) ? wr.customFields : [];
+    return list.find((f) => f.id === id);
+  };
+
+  const buildEventFieldsFromSelection = () => {
+    const ed = eventData || {};
+    const sel = selectedFields || {};
+    const out = [];
+    const push = (id, label, rawValue) => {
+      const existing = getExistingEventField(id);
+      const text =
+        (existing?.text != null && String(existing.text).trim() !== "")
+          ? String(existing.text).trim()
+          : String(rawValue ?? "").trim();
+      out.push({
+        id,
+        label,
+        x: num(existing?.x, 0),
+        y: num(existing?.y, out.length * 8),
+        fontSize: num(existing?.fontSize, 14),
+        fontFamily: existing?.fontFamily ?? "Arial",
+        text,
+        color: existing?.color ?? "#000000",
+        isBold: existing?.isBold ?? false,
+        isItalic: existing?.isItalic ?? false,
+        isUnderline: existing?.isUnderline ?? false,
+        alignment: existing?.alignment ?? "left",
+      });
+    };
+    if (sel.eventName) push("eventName", t.eventName, ed.name);
+    if (sel.eventDates) {
+      const startStr = formatEventDate(ed.startDate);
+      if (startStr) push("eventStartDate", t.eventStartDate, startStr);
+      const endStr = formatEventDate(ed.endDate);
+      if (endStr) push("eventEndDate", t.eventEndDate, endStr);
+    }
+    if (sel.venue) push("venue", t.venue, ed.venue);
+    if (sel.description) push("description", t.description, ed.description);
+    if (sel.organizerName) push("organizerName", t.organizerName, ed.organizerName);
+    if (sel.organizerEmail) push("organizerEmail", t.organizerEmail, ed.organizerEmail);
+    if (sel.organizerPhone) push("organizerPhone", t.organizerPhone, ed.organizerPhone);
+    return out;
+  };
+
+  const [eventFields, setEventFields] = useState([]);
+
+  const [logoFile, setLogoFile] = useState(null);
+  const [logoPreview, setLogoPreview] = useState(logo.url);
+  const [backgroundFile, setBackgroundFile] = useState(null);
+  const [backgroundPreview, setBackgroundPreview] = useState(backgroundImage.url);
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  const logoFileInputRef = useRef(null);
+  const backgroundFileInputRef = useRef(null);
+  const brandingFileInputRef = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const wr = config?.defaultQrWrapper || {};
+    const logoUrl = isEventMode && eventData?.logoUrl != null ? eventData.logoUrl : (wr.logo?.url ?? "");
+    setLogo({
+      url: logoUrl,
+      width: numOrAuto(wr.logo?.width, 80),
+      height: numOrAuto(wr.logo?.height, 80),
+      x: num(wr.logo?.x, 0),
+      y: num(wr.logo?.y, 0),
+    });
+    setBackgroundImage({ url: wr.backgroundImage?.url ?? "" });
+    if (isEventMode && Array.isArray(eventData?.brandingMedia) && eventData.brandingMedia.length > 0) {
+      const wrItems = wr.brandingMedia?.items || [];
+      setBrandingMediaItems(
+        eventData.brandingMedia.map((item, idx) => ({
+          _id: item._id,
+          url: item.logoUrl || item.url || "",
+          file: null,
+          width: numOrAuto(wrItems[idx]?.width, 200),
+          height: numOrAuto(wrItems[idx]?.height, 60),
+          x: num(wrItems[idx]?.x, 50),
+          y: num(wrItems[idx]?.y, 15),
+        }))
+      );
+    } else {
+      setBrandingMediaItems(normalizeBrandingItems(wr));
+    }
+    setRemoveBrandingMediaIds([]);
+    setPendingClearAllBranding(false);
+    setQr({
+      x: num(wr.qr?.x, 50),
+      y: num(wr.qr?.y, 55),
+      size: num(wr.qr?.size, DEFAULT_QR_SIZE),
+    });
+    if (isEventMode && eventData) {
+      setEventFields(buildEventFieldsFromSelection());
+      const extraCustom = (Array.isArray(wr.customFields) ? wr.customFields : []).filter((f) => !EVENT_FIELD_IDS.has(f.id)).map(mapConfigToCustomField);
+      setCustomFields(extraCustom);
+    } else {
+      setCustomFields(
+        Array.isArray(wr.customFields) ? wr.customFields.map(mapConfigToCustomField) : []
+      );
+    }
+    setLogoPreview(isEventMode && eventData?.logoUrl != null ? eventData.logoUrl : (wr.logo?.url ?? ""));
+    setBackgroundPreview(wr.backgroundImage?.url ?? "");
+    setLogoFile(null);
+    setBackgroundFile(null);
+    if (logoFileInputRef.current) logoFileInputRef.current.value = "";
+    if (backgroundFileInputRef.current) backgroundFileInputRef.current.value = "";
+    if (brandingFileInputRef.current) brandingFileInputRef.current.value = "";
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only sync when modal opens; avoid loop from config/eventData/selectedFields new refs each render
+  }, [open]);
+
+  useEffect(() => {
+    setLogoPreview(logoFile ? URL.createObjectURL(logoFile) : logo.url);
+    return () => {
+      if (logoFile) URL.revokeObjectURL(logoPreview);
+    };
+  }, [logoFile, logo.url]);
+
+  useEffect(() => {
+    setBackgroundPreview(backgroundFile ? URL.createObjectURL(backgroundFile) : backgroundImage.url);
+    return () => {
+      if (backgroundFile) URL.revokeObjectURL(backgroundPreview);
+    };
+  }, [backgroundFile, backgroundImage.url]);
+
+  useEffect(() => {
+    if (!open) return;
+    QRCode.toDataURL("SAMPLE_TOKEN", {
+      width: qr.size,
+      margin: 1,
+      color: { dark: "#000000", light: "#ffffff" },
+    })
+      .then(setQrCodeDataUrl)
+      .catch(() => setQrCodeDataUrl(""));
+  }, [open, qr.size]);
+
+  useEffect(() => {
+    if (!open || !availableFonts || availableFonts.length === 0) return;
+    const styleId = "default-qr-wrapper-fonts";
+    let styleElement = document.getElementById(styleId);
+    if (!styleElement) {
+      styleElement = document.createElement("style");
+      styleElement.id = styleId;
+      document.head.appendChild(styleElement);
+    }
+    let fontFaceCSS = "";
+    availableFonts.forEach((font) => {
+      if (font.files && font.files.length > 0) {
+        const fontVariants = new Map();
+        font.files.forEach((file) => {
+          const fontPath = file.path.startsWith("/") ? file.path : `/${file.path}`;
+          const variantKey = `${file.weight || 400}-${file.style || "normal"}`;
+          if (!fontVariants.has(variantKey)) fontVariants.set(variantKey, []);
+          fontVariants.get(variantKey).push({
+            weight: file.weight || 400,
+            style: file.style || "normal",
+            path: fontPath,
+          });
+        });
+        fontVariants.forEach((variants) => {
+          if (variants.length > 0) {
+            const first = variants[0];
+            const format = first.path.endsWith(".otf") ? "opentype" : "truetype";
+            const family = font.family || font.name;
+            fontFaceCSS += `
+@font-face {
+  font-family: "${family}";
+  src: url("${first.path}") format("${format}");
+  font-weight: ${first.weight};
+  font-style: ${first.style};
+  font-display: swap;
+}
+`;
+          }
+        });
+      }
+    });
+    styleElement.textContent = fontFaceCSS;
+  }, [open, availableFonts]);
+
+  const handleAddField = () => {
+    setCustomFields((prev) => {
+      const nextName = getNextFieldName(prev);
+      return [
+        ...prev,
+        {
+          id: `f-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          label: nextName,
+          x: 0,
+          y: 5 + prev.length * 8,
+          fontSize: 14,
+          fontFamily: "Arial",
+          text: "",
+          color: "#000000",
+          isBold: false,
+          isItalic: false,
+          isUnderline: false,
+          alignment: "left",
+        },
+      ];
+    });
+  };
+
+  const handleFieldChange = (id, key, value) => {
+    setCustomFields((prev) =>
+      prev.map((f) => (f.id === id ? { ...f, [key]: value } : f))
+    );
+  };
+
+  const handleFieldContentChange = (id, html) => {
+    const parsed = extractFormattingFromHtml(html);
+    setCustomFields((prev) =>
+      prev.map((f) =>
+        f.id === id
+          ? {
+              ...f,
+              text: parsed.text ?? f.text,
+              fontSize: num(parsed.fontSize, 14),
+              color: parsed.color ?? f.color,
+              isBold: parsed.isBold ?? f.isBold,
+              isItalic: parsed.isItalic ?? f.isItalic,
+              isUnderline: parsed.isUnderline ?? f.isUnderline,
+              alignment: parsed.alignment ?? f.alignment,
+              fontFamily: parsed.fontFamily ?? f.fontFamily,
+            }
+          : f
+      )
+    );
+  };
+
+  const handleEventFieldContentChange = (id, html) => {
+    const parsed = extractFormattingFromHtml(html);
+    setEventFields((prev) =>
+      prev.map((f) =>
+        f.id === id
+          ? {
+              ...f,
+              text: parsed.text ?? f.text,
+              fontSize: num(parsed.fontSize, 14),
+              color: parsed.color ?? f.color,
+              isBold: parsed.isBold ?? f.isBold,
+              isItalic: parsed.isItalic ?? f.isItalic,
+              isUnderline: parsed.isUnderline ?? f.isUnderline,
+              alignment: parsed.alignment ?? f.alignment,
+              fontFamily: parsed.fontFamily ?? f.fontFamily,
+            }
+          : f
+      )
+    );
+  };
+
+  const handleFormattingChange = (id, formatting) => {
+    setCustomFields((prev) =>
+      prev.map((f) => (f.id === id ? { ...f, ...formatting } : f))
+    );
+  };
+
+  const handleRemoveField = (id) => {
+    setCustomFields((prev) => prev.filter((f) => f.id !== id));
+  };
+
+  const handleEventFieldChange = (id, key, value) => {
+    setEventFields((prev) =>
+      prev.map((f) => (f.id === id ? { ...f, [key]: value } : f))
+    );
+  };
+
+  const handleEventFormattingChange = (id, formatting) => {
+    setEventFields((prev) =>
+      prev.map((f) => (f.id === id ? { ...f, ...formatting } : f))
+    );
+  };
+
+  const handleAddBrandingMedia = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
+    const newItems = files.map((file) => ({
+      _id: null,
+      url: URL.createObjectURL(file),
+      file,
+      width: 200,
+      height: 60,
+      x: 50,
+      y: 15,
+    }));
+    setBrandingMediaItems((prev) => [...prev, ...newItems]);
+    e.target.value = "";
+  };
+
+  const handleBrandingItemFieldChange = (idx, key, value) => {
+    setBrandingMediaItems((prev) =>
+      prev.map((item, i) => (i === idx ? { ...item, [key]: value } : item))
+    );
+  };
+
+  const handleConfirmRemoveBrandingItem = async () => {
+    if (confirmRemoveBrandingIndex === null) return;
+    const idx = confirmRemoveBrandingIndex;
+    const item = brandingMediaItems[idx];
+    setConfirmRemoveBrandingIndex(null);
+    if (item?._id) {
+      if (isEventMode) {
+        setRemoveBrandingMediaIds((prev) => [...prev, item._id]);
+        setBrandingMediaItems((prev) => prev.filter((_, i) => i !== idx));
+      } else {
+        try {
+          await deleteMedia({ mediaType: "defaultQrWrapperBranding", defaultQrWrapperBrandingId: item._id });
+          refetchConfig();
+          setBrandingMediaItems((prev) => prev.filter((_, i) => i !== idx));
+        } catch (err) {
+          showMessage(err?.message || "Failed to remove", "error");
+        }
+      }
+    } else {
+      setBrandingMediaItems((prev) => prev.filter((_, i) => i !== idx));
+    }
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    const formData = new FormData();
+    const payload = {
+      logo: {
+        ...logo,
+        url: logoFile ? "" : (wr.logo?.url ?? logo.url ?? ""),
+      },
+      backgroundImage: {
+        url: backgroundFile ? "" : (wr.backgroundImage?.url ?? backgroundImage.url ?? ""),
+      },
+      brandingMedia: {
+        items: brandingMediaItems
+          .filter((i) => i.url && !i.file)
+          .map((i) => ({ _id: i._id, url: i.url, width: i.width, height: i.height, x: i.x, y: i.y })),
+      },
+      qr: { ...qr },
+      customFields: (isEventMode ? [...eventFields, ...customFields] : customFields).map(({ id, label, x, y, fontSize, fontFamily, text, color, isBold, isItalic, isUnderline, alignment }) => ({
+        id,
+        label,
+        x: num(x, 0),
+        y: num(y, 0),
+        fontSize: num(fontSize, 14),
+        fontFamily: fontFamily ?? "Arial",
+        text: text ?? "",
+        color: color ?? "#000000",
+        isBold: !!isBold,
+        isItalic: !!isItalic,
+        isUnderline: !!isUnderline,
+        alignment: alignment ?? "left",
+      })),
+    };
+    const wrapperKey = isEventMode ? "customQrWrapper" : "defaultQrWrapper";
+    formData.append(wrapperKey, JSON.stringify(payload));
+    if (logoFile) formData.append("qrWrapperLogo", logoFile);
+    if (backgroundFile) formData.append("qrWrapperBackground", backgroundFile);
+    brandingMediaItems.filter((i) => i.file).forEach((i) => formData.append("qrWrapperBrandingMedia", i.file));
+    if (removeBrandingMediaIds.length) formData.append("removeBrandingMediaIds", JSON.stringify(removeBrandingMediaIds));
+    if (pendingClearAllBranding) formData.append("clearAllBrandingMedia", "true");
+    if (!logoFile && !logoPreview && (logo.url || wr.logo?.url)) {
+      formData.append("removeQrWrapperLogo", "true");
+    }
+    if (!backgroundFile && !backgroundPreview && (backgroundImage.url || wr.backgroundImage?.url)) {
+      formData.append("removeQrWrapperBackground", "true");
+    }
+
+    try {
+      if (isEventMode && eventId && onSaveEventQrWrapper) {
+        await onSaveEventQrWrapper(eventId, formData);
+        onClose();
+      } else {
+        await updateDefaultQrWrapper(formData);
+        refetchConfig();
+        onClose();
+      }
+    } catch (err) {
+      showMessage(err?.message || "Failed to save", "error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const scaleX = (v) => (v / 100) * PREVIEW_WIDTH;
+  const scaleY = (v) => (v / 100) * PREVIEW_HEIGHT;
+
+  return (
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="lg"
+      fullWidth
+      dir={dir}
+      PaperProps={{ sx: { height: "90vh", maxHeight: "90vh" } }}
+    >
+      <DialogTitle
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          fontWeight: "bold",
+          px: 3,
+          pt: 3,
+        }}
+      >
+        <Typography fontWeight="bold" fontSize="1.25rem">
+          {isEventMode ? t.titleEvent : t.title}
+        </Typography>
+        <IconButton onClick={onClose} size="small">
+          <ICONS.close />
+        </IconButton>
+      </DialogTitle>
+
+      <DialogContent sx={{ p: 0, display: "flex", flexDirection: "row", overflow: "hidden" }}>
+        <Box
+          sx={{
+            flex: 1,
+            minWidth: 0,
+            overflowY: "auto",
+            p: 2,
+            borderRight: "1px solid",
+            borderColor: "divider",
+          }}
+        >
+          <Stack spacing={2}>
+            {isEventMode ? (
+              <>
+                {eventFields.length > 0 && (
+                  <>
+                    {eventFields.map((f) => (
+                      <Paper key={f.id} variant="outlined" sx={{ p: 1.5 }}>
+                        <Stack spacing={1.5}>
+                          <Typography variant="subtitle1" fontWeight={600}>
+                            {f.label || f.id}
+                          </Typography>
+                          <QrWrapperFieldEditor
+                            value={getContentFromField(f)}
+                            onChange={(html) => handleEventFieldContentChange(f.id, html)}
+                            onFormattingChange={(fmt) => handleEventFormattingChange(f.id, fmt)}
+                            placeholder={`${f.label}...`}
+                            dir={dir}
+                            minHeight="100px"
+                            maxHeight="200px"
+                            x={f.x}
+                            y={f.y}
+                            fontFamily={f.fontFamily ?? "Arial"}
+                            onXChange={(val) => handleEventFieldChange(f.id, "x", val)}
+                            onYChange={(val) => handleEventFieldChange(f.id, "y", val)}
+                            onFontFamilyChange={(val) => handleEventFieldChange(f.id, "fontFamily", val)}
+                            t={t}
+                            availableFonts={availableFonts || []}
+                          />
+                        </Stack>
+                      </Paper>
+                    ))}
+                    <Divider />
+                  </>
+                )}
+
+                {customFields.map((f) => (
+                  <Paper key={f.id} variant="outlined" sx={{ p: 1.5 }}>
+                    <Stack spacing={1.5}>
+                      <Stack direction="row" justifyContent="space-between" alignItems="center">
+                        <Typography variant="subtitle1" fontWeight={600}>{f.label || "field1"}</Typography>
+                        <IconButton size="small" color="error" onClick={() => handleRemoveField(f.id)} aria-label={t.remove}>
+                          <ICONS.delete />
+                        </IconButton>
+                      </Stack>
+                      <QrWrapperFieldEditor
+                        value={getContentFromField(f)}
+                        onChange={(html) => handleFieldContentChange(f.id, html)}
+                        onFormattingChange={(fmt) => handleFormattingChange(f.id, fmt)}
+                        placeholder={`Enter value for ${f.label || "field"}...`}
+                        dir={dir}
+                        minHeight="100px"
+                        maxHeight="200px"
+                        x={f.x}
+                        y={f.y}
+                        fontFamily={f.fontFamily ?? "Arial"}
+                        onXChange={(val) => handleFieldChange(f.id, "x", val)}
+                        onYChange={(val) => handleFieldChange(f.id, "y", val)}
+                        onFontFamilyChange={(val) => handleFieldChange(f.id, "fontFamily", val)}
+                        t={t}
+                        availableFonts={availableFonts || []}
+                      />
+                    </Stack>
+                  </Paper>
+                ))}
+                <Button variant="outlined" fullWidth startIcon={<ICONS.add />} sx={getStartIconSpacing(dir)} onClick={handleAddField}>
+                  {t.addFields}
+                </Button>
+                {eventFields.length > 0 || customFields.length > 0 ? <Divider /> : null}
+
+                {includeLogo && (
+                  <>
+                    <Typography variant="subtitle1" fontWeight={600}>
+                      {t.logo}
+                    </Typography>
+                    {logoPreview && (
+                      <Avatar src={logoPreview} variant="square" sx={{ width: 72, height: 72 }} />
+                    )}
+                    <Stack direction="row" spacing={1.5} flexWrap="wrap" alignItems="center">
+                      <WidthHeightField width={logo.width} height={logo.height} onWidthChange={(v) => setLogo((p) => ({ ...p, width: v }))} onHeightChange={(v) => setLogo((p) => ({ ...p, height: v }))} widthLabel={t.logoWidth} heightLabel={t.logoHeight} t={t} minSize={10} />
+                      <ClampedNumberInput label={t.logoX} value={logo.x} min={0} max={100} onChange={(v) => setLogo((p) => ({ ...p, x: v }))} sx={{ width: 90, minWidth: 80 }} />
+                      <ClampedNumberInput label={t.logoY} value={logo.y} min={0} max={100} onChange={(v) => setLogo((p) => ({ ...p, y: v }))} sx={{ width: 90, minWidth: 80 }} />
+                    </Stack>
+                    <Divider />
+                  </>
+                )}
+
+                {includeBackground && (
+                  <>
+                    <Typography variant="subtitle1" fontWeight={600}>
+                      {t.backgroundImage}
+                    </Typography>
+                    {backgroundPreview && (
+                      <Avatar src={backgroundPreview} variant="square" sx={{ width: 72, height: 72 }} />
+                    )}
+                    <Divider />
+                  </>
+                )}
+
+                {includeBrandingMedia && (
+                  <>
+                    <Typography variant="subtitle1" fontWeight={600}>
+                      {t.brandingMedia}
+                    </Typography>
+                    <Stack spacing={1.5} sx={{ maxHeight: 360, overflow: "auto" }}>
+                      {brandingMediaItems.length === 0 && (
+                        <Typography color="text.secondary">{t.none}</Typography>
+                      )}
+                      {brandingMediaItems.map((item, idx) => (
+                        <Paper key={idx} variant="outlined" sx={{ p: 1.5, borderRadius: 1.5 }}>
+                          <Stack direction="row" alignItems="flex-start" spacing={2}>
+                            {item.url && <Avatar src={item.url} variant="square" sx={{ width: 56, height: 56, flexShrink: 0 }} />}
+                            <Stack direction="row" spacing={1.5} flexWrap="wrap" alignItems="center" sx={{ flex: 1, minWidth: 0 }}>
+                              <WidthHeightField width={item.width} height={item.height} onWidthChange={(v) => handleBrandingItemFieldChange(idx, "width", v)} onHeightChange={(v) => handleBrandingItemFieldChange(idx, "height", v)} widthLabel={t.brandingWidth} heightLabel={t.brandingHeight} t={t} minSize={10} />
+                              <ClampedNumberInput label={t.brandingX} value={item.x} min={0} max={100} onChange={(v) => handleBrandingItemFieldChange(idx, "x", v)} sx={{ width: 72, minWidth: 72 }} />
+                              <ClampedNumberInput label={t.brandingY} value={item.y} min={0} max={100} onChange={(v) => handleBrandingItemFieldChange(idx, "y", v)} sx={{ width: 72, minWidth: 72 }} />
+                            </Stack>
+                            <Tooltip title={t.remove}>
+                              <IconButton
+                                size="small"
+                                color="error"
+                                onClick={() => {
+                                  if (!item._id) {
+                                    if (item.url && item.url.startsWith("blob:")) URL.revokeObjectURL(item.url);
+                                    setBrandingMediaItems((prev) => prev.filter((_, i) => i !== idx));
+                                  } else {
+                                    setConfirmRemoveBrandingIndex(idx);
+                                  }
+                                }}
+                                aria-label={t.remove}
+                                sx={{ flexShrink: 0 }}
+                              >
+                                <ICONS.delete />
+                              </IconButton>
+                            </Tooltip>
+                          </Stack>
+                        </Paper>
+                      ))}
+                    </Stack>
+                    <Divider />
+                  </>
+                )}
+              </>
+            ) : null}
+
+            {!isEventMode && (
+              <>
+                <Typography variant="subtitle1" fontWeight={600}>
+                  {t.logo}
+                </Typography>
+                <Stack direction="row" alignItems="center" spacing={2}>
+                  {logoPreview && (
+                    <Avatar src={logoPreview} variant="square" sx={{ width: 72, height: 72 }} />
+                  )}
+                  <Button variant="outlined" component="label" size="small">
+                    {t.upload}
+                    <input ref={logoFileInputRef} type="file" accept="image/*" hidden onChange={(e) => { const file = e.target.files?.[0] || null; setLogoFile(file); e.target.value = ""; }} />
+                  </Button>
+                  {logoPreview && (
+                    <Button size="small" color="error" variant="text" onClick={() => { if (logoFile) { setLogoFile(null); setLogo((p) => ({ ...p, url: "" })); setLogoPreview(""); if (logoFileInputRef.current) logoFileInputRef.current.value = ""; } else { setConfirmRemoveLogo(true); } }}>
+                      {t.remove}
+                    </Button>
+                  )}
+                </Stack>
+                <Stack direction="row" spacing={1.5} flexWrap="wrap" alignItems="center">
+                  <WidthHeightField width={logo.width} height={logo.height} onWidthChange={(v) => setLogo((p) => ({ ...p, width: v }))} onHeightChange={(v) => setLogo((p) => ({ ...p, height: v }))} widthLabel={t.logoWidth} heightLabel={t.logoHeight} t={t} minSize={10} />
+                  <ClampedNumberInput label={t.logoX} value={logo.x} min={0} max={100} onChange={(v) => setLogo((p) => ({ ...p, x: v }))} sx={{ width: 90, minWidth: 80 }} />
+                  <ClampedNumberInput label={t.logoY} value={logo.y} min={0} max={100} onChange={(v) => setLogo((p) => ({ ...p, y: v }))} sx={{ width: 90, minWidth: 80 }} />
+                </Stack>
+                <Divider />
+                <Typography variant="subtitle1" fontWeight={600}>
+                  {t.backgroundImage}
+                </Typography>
+                <Stack direction="row" alignItems="center" spacing={2}>
+                  {backgroundPreview && <Avatar src={backgroundPreview} variant="square" sx={{ width: 72, height: 72 }} />}
+                  <Button variant="outlined" component="label" size="small">
+                    {t.upload}
+                    <input ref={backgroundFileInputRef} type="file" accept="image/*" hidden onChange={(e) => { const file = e.target.files?.[0] || null; setBackgroundFile(file); e.target.value = ""; }} />
+                  </Button>
+                  {backgroundPreview && (
+                    <Button size="small" color="error" variant="text" onClick={() => { if (backgroundFile) { setBackgroundFile(null); setBackgroundImage((p) => ({ ...p, url: "" })); setBackgroundPreview(""); if (backgroundFileInputRef.current) backgroundFileInputRef.current.value = ""; } else { setConfirmRemoveBackground(true); } }}>
+                      {t.remove}
+                    </Button>
+                  )}
+                </Stack>
+                <Divider />
+                <Typography variant="subtitle1" fontWeight={600}>
+                  {t.brandingMedia}
+                </Typography>
+                <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 1 }}>
+                  <Button variant="outlined" component="label" size="small">
+                    {t.addBrandingMedia}
+                    <input ref={brandingFileInputRef} type="file" accept="image/*,video/*" multiple hidden onChange={handleAddBrandingMedia} />
+                  </Button>
+                  <Button variant="outlined" color="error" size="small" onClick={() => { const hasExisting = brandingMediaItems.some((i) => i._id); if (hasExisting) setConfirmClearAllBranding(true); else { brandingMediaItems.forEach((i) => { if (i.url && i.url.startsWith("blob:")) URL.revokeObjectURL(i.url); }); setBrandingMediaItems([]); if (brandingFileInputRef.current) brandingFileInputRef.current.value = ""; } }} disabled={brandingMediaItems.length === 0}>
+                    {t.clearAllBranding}
+                  </Button>
+                </Stack>
+                <Stack spacing={1.5} sx={{ maxHeight: 360, overflow: "auto" }}>
+                  {brandingMediaItems.length === 0 && <Typography color="text.secondary">{t.none}</Typography>}
+                  {brandingMediaItems.map((item, idx) => (
+                    <Paper key={idx} variant="outlined" sx={{ p: 1.5, borderRadius: 1.5 }}>
+                      <Stack direction="row" alignItems="flex-start" spacing={2}>
+                        <Avatar src={item.url} variant="square" sx={{ width: 56, height: 56, flexShrink: 0 }} />
+                        <Stack direction="row" spacing={1.5} flexWrap="wrap" alignItems="center" sx={{ flex: 1, minWidth: 0 }}>
+                          <WidthHeightField width={item.width} height={item.height} onWidthChange={(v) => handleBrandingItemFieldChange(idx, "width", v)} onHeightChange={(v) => handleBrandingItemFieldChange(idx, "height", v)} widthLabel={t.brandingWidth} heightLabel={t.brandingHeight} t={t} minSize={10} />
+                          <ClampedNumberInput label={t.brandingX} value={item.x} min={0} max={100} onChange={(v) => handleBrandingItemFieldChange(idx, "x", v)} sx={{ width: 72, minWidth: 72 }} />
+                          <ClampedNumberInput label={t.brandingY} value={item.y} min={0} max={100} onChange={(v) => handleBrandingItemFieldChange(idx, "y", v)} sx={{ width: 72, minWidth: 72 }} />
+                        </Stack>
+                        <Tooltip title={t.remove}>
+                          <IconButton size="small" color="error" onClick={() => { if (!item._id) { if (item.url && item.url.startsWith("blob:")) URL.revokeObjectURL(item.url); setBrandingMediaItems((prev) => prev.filter((_, i) => i !== idx)); if (brandingFileInputRef.current) brandingFileInputRef.current.value = ""; } else { setConfirmRemoveBrandingIndex(idx); } }} aria-label={t.remove} sx={{ flexShrink: 0 }}>
+                            <ICONS.delete />
+                          </IconButton>
+                        </Tooltip>
+                      </Stack>
+                    </Paper>
+                  ))}
+                </Stack>
+                <Divider />
+              </>
+            )}
+
+            <Typography variant="subtitle1" fontWeight={600}>
+              {t.qrPosition}
+            </Typography>
+            <Stack direction="row" spacing={1} flexWrap="wrap">
+              <ClampedNumberInput label={t.qrX} value={qr.x} min={0} max={100} onChange={(v) => setQr((p) => ({ ...p, x: v }))} sx={{ width: 90 }} />
+              <ClampedNumberInput label={t.qrY} value={qr.y} min={0} max={100} onChange={(v) => setQr((p) => ({ ...p, y: v }))} sx={{ width: 90 }} />
+              <ClampedNumberInput label={t.qrSize} value={qr.size} min={60} onChange={(v) => setQr((p) => ({ ...p, size: v }))} sx={{ width: 100 }} />
+            </Stack>
+
+            <Divider />
+
+            {!isEventMode && (
+              <>
+                {customFields.map((f) => (
+                  <Paper key={f.id} variant="outlined" sx={{ p: 1.5 }}>
+                    <Stack spacing={1.5}>
+                      <Stack direction="row" justifyContent="space-between" alignItems="center">
+                        <Typography variant="subtitle1" fontWeight={600}>{f.label || "field1"}</Typography>
+                        <IconButton size="small" color="error" onClick={() => handleRemoveField(f.id)} aria-label={t.remove}>
+                          <ICONS.delete />
+                        </IconButton>
+                      </Stack>
+                      <QrWrapperFieldEditor
+                        value={getContentFromField(f)}
+                        onChange={(html) => handleFieldContentChange(f.id, html)}
+                        onFormattingChange={(fmt) => handleFormattingChange(f.id, fmt)}
+                        placeholder={`Enter value for ${f.label || "field"}...`}
+                        dir={dir}
+                        minHeight="100px"
+                        maxHeight="200px"
+                        x={f.x}
+                        y={f.y}
+                        fontFamily={f.fontFamily ?? "Arial"}
+                        onXChange={(val) => handleFieldChange(f.id, "x", val)}
+                        onYChange={(val) => handleFieldChange(f.id, "y", val)}
+                        onFontFamilyChange={(val) => handleFieldChange(f.id, "fontFamily", val)}
+                        t={t}
+                        availableFonts={availableFonts || []}
+                      />
+                    </Stack>
+                  </Paper>
+                ))}
+                <Button variant="outlined" fullWidth startIcon={<ICONS.add />} sx={getStartIconSpacing(dir)} onClick={handleAddField}>
+                  {t.addFields}
+                </Button>
+              </>
+            )}
+          </Stack>
+        </Box>
+
+        <Box
+          sx={{
+            width: "380px",
+            flexShrink: 0,
+            p: 2,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            bgcolor: "background.default",
+          }}
+        >
+          <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>
+            {t.preview}
+          </Typography>
+          <Box
+            sx={{
+              width: PREVIEW_WIDTH,
+              height: PREVIEW_HEIGHT,
+              position: "relative",
+              bgcolor: "#f5f5f5",
+              borderRadius: 1,
+              overflow: "hidden",
+              border: "1px solid",
+              borderColor: "divider",
+            }}
+          >
+            <Box
+              sx={{
+                position: "absolute",
+                left: 0,
+                top: 0,
+                width: TEMPLATE_WIDTH,
+                height: TEMPLATE_HEIGHT,
+                transform: `scale(${PREVIEW_SCALE})`,
+                transformOrigin: "0 0",
+                bgcolor: "#f5f5f5",
+              }}
+            >
+              {backgroundPreview && (!isEventMode || includeBackground) && (
+                <Box
+                  component="img"
+                  src={backgroundPreview}
+                  alt=""
+                  sx={{
+                    position: "absolute",
+                    inset: 0,
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                  }}
+                />
+              )}
+              {logoPreview && (!isEventMode || includeLogo) && (
+                <Box
+                  component="img"
+                  src={logoPreview}
+                  alt="Logo"
+                  sx={{
+                    position: "absolute",
+                    left: `${logo.x}%`,
+                    top: `${logo.y}%`,
+                    width: logo.width === 0 ? "auto" : logo.width,
+                    height: logo.height === 0 ? "auto" : logo.height,
+                    objectFit: "contain",
+                  }}
+                />
+              )}
+              {(!isEventMode || includeBrandingMedia) && brandingMediaItems.map((item, idx) =>
+                item?.url ? (
+                  <Box
+                    key={idx}
+                    component="img"
+                    src={item.url}
+                    alt=""
+                    sx={{
+                      position: "absolute",
+                      left: `${item.x}%`,
+                      top: `${item.y}%`,
+                      width: item.width === 0 ? "auto" : item.width,
+                      height: item.height === 0 ? "auto" : item.height,
+                      objectFit: "contain",
+                    }}
+                  />
+                ) : null
+              )}
+              {(isEventMode ? [...eventFields, ...customFields] : customFields).map((f) => {
+                const contentHtml = getContentFromField(f);
+                const alignMatch = contentHtml.match(/text-align:\s*(center|left|right|justify)/i);
+                const textAlign = alignMatch ? alignMatch[1].toLowerCase() : "left";
+                const xPct = num(f.x, 0);
+                const yPct = num(f.y, 0);
+                return (
+                  <Box
+                    key={f.id}
+                    sx={{
+                      position: "absolute",
+                      left: `${xPct}%`,
+                      top: `${yPct}%`,
+                      maxWidth: `${100 - xPct}%`,
+                      fontSize: num(f.fontSize, 14),
+                      fontFamily: (f.fontFamily && f.fontFamily !== "Arial") ? `"${f.fontFamily}", sans-serif` : undefined,
+                      color: (f.color && String(f.color).trim()) ? f.color : "#333",
+                      transform: "translateY(-50%)",
+                      textAlign,
+                      paddingRight: "2%",
+                      boxSizing: "border-box",
+                      "& p": { margin: 0, textAlign: "inherit" },
+                      "& span": { textAlign: "inherit" },
+                    }}
+                    dangerouslySetInnerHTML={{ __html: contentHtml }}
+                  />
+                );
+              })}
+              {qrCodeDataUrl && (
+                <Box
+                  component="img"
+                  src={qrCodeDataUrl}
+                  alt="QR"
+                  sx={{
+                    position: "absolute",
+                    left: `${qr.x}%`,
+                    top: `${qr.y}%`,
+                    width: qr.size,
+                    height: qr.size,
+                    transform: "translate(-50%, -50%)",
+                  }}
+                />
+              )}
+              {qrCodeDataUrl && logoPreview && (
+                <Box
+                  component="img"
+                  src={logoPreview}
+                  alt=""
+                  sx={{
+                    position: "absolute",
+                    left: `${qr.x}%`,
+                    top: `${qr.y}%`,
+                    width: qr.size * 0.22,
+                    height: qr.size * 0.22,
+                    transform: "translate(-50%, -50%)",
+                    objectFit: "contain",
+                    pointerEvents: "none",
+                  }}
+                />
+              )}
+            </Box>
+          </Box>
+        </Box>
+      </DialogContent>
+
+      <ConfirmationDialog
+        open={confirmRemoveLogo}
+        onClose={() => setConfirmRemoveLogo(false)}
+        onConfirm={async () => {
+          if (isEventMode) {
+            setLogoFile(null);
+            setLogo((p) => ({ ...p, url: "" }));
+            setLogoPreview("");
+            setConfirmRemoveLogo(false);
+            return;
+          }
+          try {
+            await deleteMedia({ mediaType: "defaultQrWrapperLogo" });
+            refetchConfig();
+            setLogoFile(null);
+            setLogo((p) => ({ ...p, url: "" }));
+            setLogoPreview("");
+            setConfirmRemoveLogo(false);
+          } catch (err) {
+            showMessage(err?.message || "Failed to remove logo", "error");
+          }
+        }}
+        title={t.confirmRemoveLogo}
+        message={t.confirmRemoveLogoMsg}
+        confirmButtonText={t.remove}
+        confirmButtonIcon={<ICONS.delete />}
+      />
+      <ConfirmationDialog
+        open={confirmRemoveBackground}
+        onClose={() => setConfirmRemoveBackground(false)}
+        onConfirm={async () => {
+          if (isEventMode) {
+            setBackgroundFile(null);
+            setBackgroundImage((p) => ({ ...p, url: "" }));
+            setBackgroundPreview("");
+            setConfirmRemoveBackground(false);
+            return;
+          }
+          try {
+            await deleteMedia({ mediaType: "defaultQrWrapperBackground" });
+            refetchConfig();
+            setBackgroundFile(null);
+            setBackgroundImage((p) => ({ ...p, url: "" }));
+            setBackgroundPreview("");
+            setConfirmRemoveBackground(false);
+          } catch (err) {
+            showMessage(err?.message || "Failed to remove background", "error");
+          }
+        }}
+        title={t.confirmRemoveBackground}
+        message={t.confirmRemoveBackgroundMsg}
+        confirmButtonText={t.remove}
+        confirmButtonIcon={<ICONS.delete />}
+      />
+      <ConfirmationDialog
+        open={confirmRemoveBrandingIndex !== null}
+        onClose={() => setConfirmRemoveBrandingIndex(null)}
+        onConfirm={handleConfirmRemoveBrandingItem}
+        title={t.confirmRemoveBranding}
+        message={t.confirmRemoveBrandingMsg}
+        confirmButtonText={t.remove}
+        confirmButtonIcon={<ICONS.delete />}
+      />
+      <ConfirmationDialog
+        open={confirmClearAllBranding}
+        onClose={() => setConfirmClearAllBranding(false)}
+        onConfirm={async () => {
+          if (brandingFileInputRef.current) brandingFileInputRef.current.value = "";
+          if (isEventMode) {
+            setPendingClearAllBranding(true);
+            setBrandingMediaItems([]);
+            setConfirmClearAllBranding(false);
+            return;
+          }
+          try {
+            await deleteMedia({ mediaType: "defaultQrWrapperBranding", defaultQrWrapperClearAllBranding: true });
+            refetchConfig();
+            setBrandingMediaItems([]);
+            setPendingClearAllBranding(false);
+            setConfirmClearAllBranding(false);
+          } catch (err) {
+            showMessage(err?.message || "Failed to clear branding media", "error");
+          }
+        }}
+        title={t.confirmClearAllBranding}
+        message={t.confirmClearAllBrandingMsg}
+        confirmButtonText={t.remove}
+        confirmButtonIcon={<ICONS.delete />}
+      />
+
+      <DialogActions sx={{ px: 3, pb: 2 }}>
+        <Button
+          onClick={onClose}
+          variant="outlined"
+          startIcon={<ICONS.cancel />}
+          sx={getStartIconSpacing(dir)}
+        >
+          {t.cancel}
+        </Button>
+        <Button
+          variant="contained"
+          onClick={handleSave}
+          disabled={saving}
+          startIcon={saving ? null : <ICONS.save />}
+          sx={getStartIconSpacing(dir)}
+        >
+          {saving ? "..." : t.save}
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+}

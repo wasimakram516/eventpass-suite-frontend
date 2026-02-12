@@ -22,8 +22,14 @@ export const deleteMedia = withApiHandler(
         spinWheelId,
         memoryImageId,
         deleteAllMemoryImages,
+        defaultQrWrapperBrandingId,
+        defaultQrWrapperClearAllBranding,
     }) => {
-        if (!fileUrl && mediaType !== "memoryImage") {
+        const isDefaultQrWrapper =
+            mediaType === "defaultQrWrapperLogo" ||
+            mediaType === "defaultQrWrapperBackground" ||
+            (mediaType === "defaultQrWrapperBranding" && (defaultQrWrapperBrandingId || defaultQrWrapperClearAllBranding));
+        if (!fileUrl && mediaType !== "memoryImage" && !isDefaultQrWrapper) {
             throw new Error("File URL is required");
         }
 
@@ -46,6 +52,8 @@ export const deleteMedia = withApiHandler(
         if (spinWheelId) payload.spinWheelId = spinWheelId;
         if (memoryImageId) payload.memoryImageId = memoryImageId;
         if (deleteAllMemoryImages) payload.deleteAllMemoryImages = deleteAllMemoryImages;
+        if (defaultQrWrapperBrandingId) payload.defaultQrWrapperBrandingId = defaultQrWrapperBrandingId;
+        if (defaultQrWrapperClearAllBranding) payload.defaultQrWrapperClearAllBranding = defaultQrWrapperClearAllBranding;
 
         const { data } = await api.post("/media/delete", payload);
         return data;
