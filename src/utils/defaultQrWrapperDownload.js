@@ -1,3 +1,5 @@
+import html2canvas from "html2canvas";
+
 const TEMPLATE_WIDTH = 1280;
 const TEMPLATE_HEIGHT = 960;
 
@@ -95,34 +97,17 @@ function ensureFontsLoaded(fonts) {
 }
 
 /** Build display HTML from a custom field's separate fields (no content field). */
-function buildHtmlFromField(f) {
-  const text = String(f.text ?? "").trim() || (f.label || "field1");
-  const fontSize = Math.round(Math.max(8, Math.min(72, Number(f.fontSize) || 14)));
-  const color = (f.color && String(f.color).trim()) ? f.color : "#000000";
-  const fontFamily = (f.fontFamily && String(f.fontFamily).trim()) ? f.fontFamily : "Arial";
-  const alignment = (f.alignment && String(f.alignment).trim()) ? f.alignment : "left";
-  let html = text;
-  if (f.isUnderline) html = `<u>${html}</u>`;
-  if (f.isItalic) html = `<em>${html}</em>`;
-  if (f.isBold) html = `<strong>${html}</strong>`;
-  const styles = [];
-  if (fontSize !== 14) styles.push(`font-size: ${fontSize}px`);
-  if (color !== "#000000") styles.push(`color: ${color}`);
-  if (fontFamily !== "Arial") styles.push(`font-family: "${String(fontFamily).replace(/"/g, '\\"')}"`);
-  styles.push(`font-weight: ${f.isBold ? "bold" : "normal"}`);
-  styles.push(`font-style: ${f.isItalic ? "italic" : "normal"}`);
-  html = `<span style="${styles.join("; ")}">${html}</span>`;
-  const pStyle = alignment !== "left" ? ` style="text-align: ${alignment}"` : "";
-  return `<p${pStyle}>${html}</p>`;
+function buildTextFromField(f) {
+  return String(f.text ?? "").trim() || (f.label || "field1");
 }
 
 /** Render custom field text in a div with full CSS (so fonts apply), capture with html2canvas, return as Image or null.
  * maxWidthPx: if provided, div width is set to this so wrapping matches preview ( (100-x)% of template ). */
-async function renderCustomFieldAsImage(f, paddingPx, fonts = [], maxWidthPx = null) {
-  const contentHtml = buildHtmlFromField(f);
-  if (!contentHtml.replace(/<[^>]+>/g, "").trim()) return null;
+async function renderCustomFieldAsImage(f, paddingPx, fonts = []) {
+  const text = buildTextFromField(f);
+  if (!text) return null;
 
-  const fontSize = Math.round(Math.max(8, Math.min(72, Number(f.fontSize) || 14)));
+  const fontSize = Math.round(Math.max(8, Math.min(100, Number(f.fontSize) || 14)));
   const rawFamily = (f.fontFamily && String(f.fontFamily).trim()) ? String(f.fontFamily).trim() : "Arial";
   const resolvedFamily = resolveFontFamily(rawFamily, fonts) || rawFamily;
   const fontFamilyCss = resolvedFamily === "Arial" || resolvedFamily === "sans-serif"
@@ -131,83 +116,49 @@ async function renderCustomFieldAsImage(f, paddingPx, fonts = [], maxWidthPx = n
   const color = (f.color && String(f.color).trim()) ? f.color : "#333333";
   const fontWeight = f.isBold ? "bold" : "normal";
   const fontStyle = f.isItalic ? "italic" : "normal";
-  const alignMatch = contentHtml.match(/text-align:\s*(center|left|right|justify)/i);
-  const textAlign = alignMatch ? alignMatch[1].toLowerCase() : (f.alignment || "left");
+  const textDecoration = f.isUnderline ? "underline" : "none";
 
-  const rawEscaped = String(rawFamily).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  let contentHtmlFixed = contentHtml.replace(
-    new RegExp(`(font-family\\s*:\\s*)(["']?)${rawEscaped}\\2`, "gi"),
-    (_, prefix) => `${prefix}"${String(resolvedFamily).replace(/"/g, "\\\"")}"`
-  );
-  contentHtmlFixed = contentHtmlFixed.replace(
-    /font-size\s*:\s*[\d.]+\s*px/gi,
-    `font-size: ${fontSize}px`
-  ); // keep inline font-size in sync with stored (px)
-
-  // Respect isBold / isItalic: strip or neutralize bold/italic in HTML when flags are false
-  if (!f.isBold) {
-    contentHtmlFixed = contentHtmlFixed.replace(/<\/?(strong|b)\b[^>]*>/gi, "");
-    contentHtmlFixed = contentHtmlFixed.replace(/font-weight\s*:\s*(bold|[789]\d{2})\s*;?/gi, "font-weight: normal;");
-  }
-  if (!f.isItalic) {
-    contentHtmlFixed = contentHtmlFixed.replace(/<\/?(em|i)\b[^>]*>/gi, "");
-    contentHtmlFixed = contentHtmlFixed.replace(/font-style\s*:\s*italic\s*;?/gi, "font-style: normal;");
-  }
-
+  const alignment = (f.alignment && String(f.alignment).trim()) ? f.alignment : "left";
   const div = document.createElement("div");
-  div.innerHTML = contentHtmlFixed;
-  const fullWidthPx = TEMPLATE_WIDTH - 2 * paddingPx;
-  const widthPx = maxWidthPx != null ? Math.max(1, Math.round(maxWidthPx)) : fullWidthPx;
-  const paddingRightPx = Math.round(0.02 * TEMPLATE_WIDTH);
+  div.textContent = text;
   Object.assign(div.style, {
     position: "fixed",
     left: "-9999px",
     top: "0",
-    width: `${widthPx}px`,
+    display: "inline-block",
     boxSizing: "border-box",
-    padding: `4px ${paddingRightPx}px 4px 0`,
+    padding: "0",
     margin: "0",
+    background: "transparent",
     fontSize: `${fontSize}px`,
     fontFamily: fontFamilyCss,
     color,
     fontWeight,
     fontStyle,
-    textAlign,
+    textDecoration,
+    textAlign: alignment,
     lineHeight: "1.2",
-    backgroundColor: "transparent",
-    whiteSpace: "pre-wrap",
-    wordWrap: "break-word",
   });
-  const style = document.createElement("style");
-  style.textContent = "div.qr-field-capture p { margin: 0 0 0.2em 0; } div.qr-field-capture p:last-child { margin-bottom: 0; }";
-  div.className = "qr-field-capture";
-  document.body.appendChild(style);
   document.body.appendChild(div);
-
-  let img = null;
   try {
-    const html2canvas = (await import("html2canvas")).default;
-    const subCanvas = await html2canvas(div, {
-      scale: 1,
+    const canvas = await html2canvas(div, {
       useCORS: true,
-      allowTaint: true,
-      backgroundColor: null,
+      scale: 1,
       logging: false,
-      width: widthPx,
-      windowWidth: widthPx,
+      backgroundColor: null,
     });
-    const dataUrl = subCanvas.toDataURL("image/png");
-    img = await new Promise((resolve) => {
-      const i = new Image();
-      i.onload = () => resolve(i);
-      i.onerror = () => resolve(null);
-      i.src = dataUrl;
-    });
-  } finally {
     document.body.removeChild(div);
-    if (style.parentNode) document.body.removeChild(style);
+    const img = await new Promise((resolve) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = () => resolve(null);
+      image.src = canvas.toDataURL("image/png");
+    });
+    return img;
+  } catch (_) {
+    if (div.parentNode) document.body.removeChild(div);
+    return null;
   }
-  return img;
 }
 
 /** Draw image on canvas with "cover" behavior (scale to cover rect, centered). */
@@ -297,10 +248,29 @@ export async function downloadDefaultQrWrapperAsImage(defaultQrWrapper, qrValue,
     const y = Number(logo.y);
     const nw = logoImage.naturalWidth || logoImage.width || 1;
     const nh = logoImage.naturalHeight || logoImage.height || 1;
-    const w = Number(logo.width) === 0 ? Math.min(nw, TEMPLATE_WIDTH) : Math.max(1, Number(logo.width) || 80);
-    const h = Number(logo.height) === 0 ? Math.min(nh, TEMPLATE_HEIGHT) : Math.max(1, Number(logo.height) || 80);
-    const leftPx = (Number.isFinite(x) ? x : 0) / 100 * TEMPLATE_WIDTH;
-    const topPx = (Number.isFinite(y) ? y : 0) / 100 * TEMPLATE_HEIGHT;
+    const logoW = Number(logo.width);
+    const logoH = Number(logo.height);
+    const autoW = !Number.isFinite(logoW) || logoW === 0;
+    const autoH = !Number.isFinite(logoH) || logoH === 0;
+    let w;
+    let h;
+    if (autoW && autoH) {
+      w = Math.min(nw, TEMPLATE_WIDTH);
+      h = Math.min(nh, TEMPLATE_HEIGHT);
+    } else if (autoW && logoH > 0) {
+      h = Math.max(1, logoH);
+      w = Math.max(1, Math.round((nw / nh) * h));
+    } else if (logoW > 0 && autoH) {
+      w = Math.max(1, logoW);
+      h = Math.max(1, Math.round((nh / nw) * w));
+    } else {
+      w = Math.max(1, logoW);
+      h = Math.max(1, logoH);
+    }
+    const centerX = (Number.isFinite(x) ? x : 0) / 100 * TEMPLATE_WIDTH;
+    const centerY = (Number.isFinite(y) ? y : 0) / 100 * TEMPLATE_HEIGHT;
+    const leftPx = centerX - w / 2;
+    const topPx = centerY - h / 2;
     drawImageContain(ctx, logoImage, leftPx, topPx, w, h);
   }
 
@@ -311,10 +281,29 @@ export async function downloadDefaultQrWrapperAsImage(defaultQrWrapper, qrValue,
     const y = Number(item.y);
     const nw = img.naturalWidth || img.width || 1;
     const nh = img.naturalHeight || img.height || 1;
-    const w = Number(item.width) === 0 ? Math.min(nw, TEMPLATE_WIDTH) : Math.max(1, Number(item.width) || 200);
-    const h = Number(item.height) === 0 ? Math.min(nh, TEMPLATE_HEIGHT) : Math.max(1, Number(item.height) || 60);
-    const leftPx = (Number.isFinite(x) ? x : 50) / 100 * TEMPLATE_WIDTH;
-    const topPx = (Number.isFinite(y) ? y : 15) / 100 * TEMPLATE_HEIGHT;
+    const itemW = Number(item.width);
+    const itemH = Number(item.height);
+    const autoW = !Number.isFinite(itemW) || itemW === 0;
+    const autoH = !Number.isFinite(itemH) || itemH === 0;
+    let w;
+    let h;
+    if (autoW && autoH) {
+      w = Math.min(nw, TEMPLATE_WIDTH);
+      h = Math.min(nh, TEMPLATE_HEIGHT);
+    } else if (autoW && itemH > 0) {
+      h = Math.max(1, itemH);
+      w = Math.max(1, Math.round((nw / nh) * h));
+    } else if (itemW > 0 && autoH) {
+      w = Math.max(1, itemW);
+      h = Math.max(1, Math.round((nh / nw) * w));
+    } else {
+      w = Math.max(1, itemW || 200);
+      h = Math.max(1, itemH || 60);
+    }
+    const centerX = (Number.isFinite(x) ? x : 50) / 100 * TEMPLATE_WIDTH;
+    const centerY = (Number.isFinite(y) ? y : 15) / 100 * TEMPLATE_HEIGHT;
+    const leftPx = centerX - w / 2;
+    const topPx = centerY - h / 2;
     drawImageContain(ctx, img, leftPx, topPx, w, h);
   });
 
@@ -328,16 +317,16 @@ export async function downloadDefaultQrWrapperAsImage(defaultQrWrapper, qrValue,
   for (const f of customFields) {
     const xPct = Number.isFinite(Number(f.x)) ? Number(f.x) : 0;
     const yPct = Number.isFinite(Number(f.y)) ? Number(f.y) : 0;
-    const maxWidthPx = ((100 - xPct) / 100) * contentWidthPx;
-    const textImg = await renderCustomFieldAsImage(f, paddingPx, configFonts, maxWidthPx);
+    const textImg = await renderCustomFieldAsImage(f, paddingPx, configFonts);
     if (!textImg || !textImg.width || !textImg.height) continue;
 
-    const leftPx = (xPct / 100) * TEMPLATE_WIDTH;
-    const blockCenterY = (yPct / 100) * TEMPLATE_HEIGHT;
+    const centerX = (xPct / 100) * TEMPLATE_WIDTH;
+    const centerY = (yPct / 100) * TEMPLATE_HEIGHT;
     const imgW = textImg.width;
     const imgH = textImg.height;
-    const blockTop = blockCenterY - imgH / 2;
-    ctx.drawImage(textImg, leftPx, Math.max(0, blockTop), imgW, imgH);
+    const leftPx = centerX - imgW / 2;
+    const topPx = centerY - imgH / 2;
+    ctx.drawImage(textImg, leftPx, topPx, imgW, imgH);
   }
 
   if (qrImage) {

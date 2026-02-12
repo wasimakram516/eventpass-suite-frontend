@@ -162,14 +162,21 @@ function num(v, def) {
   return Number.isFinite(n) ? n : def;
 }
 
-/** For width/height: preserve 0 as "auto", otherwise same as num. */
-function numOrAuto(v, def) {
-  if (v === 0 || v === "0") return 0;
-  return num(v, def);
+function capitalizeFirst(s) {
+  if (!s || typeof s !== "string") return s;
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+/** For width/height: null = auto, number = px.*/
+function widthHeightFromConfig(configVal, defaultPx, hasConfig) {
+  if (hasConfig && (configVal === 0 || configVal == null)) return null;
+  if (!hasConfig) return defaultPx;
+  return num(configVal, defaultPx);
 }
 
 function ClampedNumberInput({ value, min, max, onChange, label, inputProps = {}, sx, ...rest }) {
-  const displayValue = value === min ? "" : value;
+  const isZeroMinAndZero = min === 0 && (value === 0 || value === "0");
+  const displayValue = (value !== undefined && value !== null && !isZeroMinAndZero) ? value : "";
   const handleChange = (e) => {
     const v = e.target.value;
     if (v === "") {
@@ -208,9 +215,9 @@ function ClampedNumberInput({ value, min, max, onChange, label, inputProps = {},
   );
 }
 
-function WidthHeightField({ width, height, onWidthChange, onHeightChange, widthLabel, heightLabel, t, minSize = 10, sx }) {
-  const widthAuto = width === 0;
-  const heightAuto = height === 0;
+function WidthHeightField({ width, height, onWidthChange, onHeightChange, widthLabel, heightLabel, t, minSize = 0, sx, defaultPx = 150 }) {
+  const widthAuto = width == null;
+  const heightAuto = height == null;
   return (
     <Stack direction="row" spacing={1.5} flexWrap="wrap" alignItems="center" sx={{ ...sx }}>
       <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
@@ -218,7 +225,7 @@ function WidthHeightField({ width, height, onWidthChange, onHeightChange, widthL
         <FormControl size="small" sx={{ minWidth: 72 }}>
           <Select
             value={widthAuto ? "auto" : "custom"}
-            onChange={(e) => onWidthChange(e.target.value === "auto" ? 0 : Math.max(minSize, width || minSize))}
+            onChange={(e) => onWidthChange(e.target.value === "auto" ? null : (width != null ? Math.max(minSize, width) : defaultPx))}
             displayEmpty
           >
             <MenuItem value="auto">{t.auto}</MenuItem>
@@ -234,7 +241,7 @@ function WidthHeightField({ width, height, onWidthChange, onHeightChange, widthL
         <FormControl size="small" sx={{ minWidth: 72 }}>
           <Select
             value={heightAuto ? "auto" : "custom"}
-            onChange={(e) => onHeightChange(e.target.value === "auto" ? 0 : Math.max(minSize, height || minSize))}
+            onChange={(e) => onHeightChange(e.target.value === "auto" ? null : (height != null ? Math.max(minSize, height) : defaultPx))}
             displayEmpty
           >
             <MenuItem value="auto">{t.auto}</MenuItem>
@@ -263,7 +270,7 @@ function extractFormattingFromHtml(html) {
   const fontSizeMatch = html.match(/font-size:\s*([^;'"]+)/i);
   if (fontSizeMatch) {
     const n = parseFloat(fontSizeMatch[1].trim());
-    if (!Number.isNaN(n) && n >= 8 && n <= 50) fontSize = Math.round(n);
+    if (!Number.isNaN(n) && n >= 8 && n <= 100) fontSize = Math.round(n);
   }
   let fontFamily = "Arial";
   const fontFamilyQuotedMatch = html.match(/font-family:\s*["']([^"']*)["']/i);
@@ -368,8 +375,20 @@ function QrWrapperFieldEditor({
 
   const handleHTMLChange = (html) => {
     if (isUpdatingFromPropsRef.current) return;
-    const next = extractFormattingFromHtml(html);
+
+    let next = extractFormattingFromHtml(html);
     const prev = lastFormattingRef.current;
+
+    if ((!next.fontFamily || next.fontFamily === "Arial") && prev.fontFamily && prev.fontFamily !== "Arial") {
+      next = { ...next, fontFamily: prev.fontFamily };
+    }
+    if (next.fontSize === 14 && prev.fontSize && prev.fontSize !== 14) {
+      next = { ...next, fontSize: prev.fontSize };
+    }
+    if (next.alignment === "left" && prev.alignment && prev.alignment !== "left") {
+      next = { ...next, alignment: prev.alignment };
+    }
+
     const changed =
       next.text !== prev.text ||
       next.fontSize !== prev.fontSize ||
@@ -379,16 +398,37 @@ function QrWrapperFieldEditor({
       next.isUnderline !== prev.isUnderline ||
       next.fontFamily !== prev.fontFamily ||
       next.alignment !== prev.alignment;
+
     if (changed) {
       lastFormattingRef.current = next;
       setFormatting(next);
+
       const built = buildHtmlFromFormatting(next.text, next.fontSize, next.color, next.isBold, next.isItalic, next.isUnderline, next.alignment, next.fontFamily);
       onChange(built);
+
       if (onFontFamilyChangeRef.current && next.fontFamily !== prev.fontFamily) {
         onFontFamilyChangeRef.current(next.fontFamily);
       }
+
+      if (next.alignment !== prev.alignment && onXChangeRef.current) {
+        if (next.alignment === "center") {
+          onXChangeRef.current(50);
+        } else if (next.alignment === "right") {
+          onXChangeRef.current(90);
+        }
+      }
+
       if (onFormattingChangeRef.current) {
-        onFormattingChangeRef.current({ text: next.text, fontSize: next.fontSize, color: next.color, isBold: next.isBold, isItalic: next.isItalic, isUnderline: next.isUnderline, fontFamily: next.fontFamily, alignment: next.alignment });
+        onFormattingChangeRef.current({
+          text: next.text,
+          fontSize: next.fontSize,
+          color: next.color,
+          isBold: next.isBold,
+          isItalic: next.isItalic,
+          isUnderline: next.isUnderline,
+          fontFamily: next.fontFamily,
+          alignment: next.alignment
+        });
       }
     }
   };
@@ -430,26 +470,25 @@ function QrWrapperFieldEditor({
   }, [onChange]);
 
   useEffect(() => {
-    if (editorContainerRef.current && !isUpdatingFromPropsRef.current) {
-      const editor = editorContainerRef.current.querySelector("[contenteditable=\"true\"]");
-      if (editor) {
-        const expected = buildHtmlFromFormatting(
-          formatting.text,
-          formatting.fontSize,
-          formatting.color,
-          formatting.isBold,
-          formatting.isItalic,
-          formatting.isUnderline,
-          formatting.alignment,
-          formatting.fontFamily
-        );
-        if (editor.innerHTML !== expected) {
-          isUpdatingFromPropsRef.current = true;
-          editor.innerHTML = expected;
-          lastFormattingRef.current = { ...formatting };
-          setTimeout(() => { isUpdatingFromPropsRef.current = false; }, 0);
-        }
-      }
+    if (!editorContainerRef.current || isUpdatingFromPropsRef.current) return;
+    const editor = editorContainerRef.current.querySelector("[contenteditable=\"true\"]");
+    if (!editor) return;
+    if (document.activeElement === editor || editor.contains(document.activeElement)) return;
+    const expected = buildHtmlFromFormatting(
+      formatting.text,
+      formatting.fontSize,
+      formatting.color,
+      formatting.isBold,
+      formatting.isItalic,
+      formatting.isUnderline,
+      formatting.alignment,
+      formatting.fontFamily
+    );
+    if (editor.innerHTML !== expected) {
+      isUpdatingFromPropsRef.current = true;
+      editor.innerHTML = expected;
+      lastFormattingRef.current = { ...formatting };
+      setTimeout(() => { isUpdatingFromPropsRef.current = false; }, 0);
     }
   }, [formatting.text, formatting.fontSize, formatting.color, formatting.isBold, formatting.isItalic, formatting.isUnderline, formatting.alignment, formatting.fontFamily]);
 
@@ -492,7 +531,7 @@ function QrWrapperFieldEditor({
       xInput.type = "number";
       xInput.min = 0;
       xInput.max = 100;
-      xInput.step = 0.1;
+      xInput.step = 1;
       xInput.style.width = "80px";
       xInput.style.height = "32px";
       xInput.style.padding = "4px 8px";
@@ -521,7 +560,7 @@ function QrWrapperFieldEditor({
       yInput.type = "number";
       yInput.min = 0;
       yInput.max = 100;
-      yInput.step = 0.1;
+      yInput.step = 1;
       yInput.style.width = "80px";
       yInput.style.height = "32px";
       yInput.style.padding = "4px 8px";
@@ -563,11 +602,21 @@ function QrWrapperFieldEditor({
       ];
       fontsToUse.forEach((font) => {
         const option = document.createElement("option");
-        option.value = font.family || font.name;
-        option.textContent = font.name || font.family;
-        option.style.fontFamily = font.family || font.name;
+        const fVal = font.family || font.name;
+        option.value = fVal;
+        option.textContent = capitalizeFirst(font.name || font.family);
+        option.style.fontFamily = fVal;
         fontSelect.appendChild(option);
       });
+      const currentFont = (formattingRef.current?.fontFamily && String(formattingRef.current.fontFamily).trim()) || "Arial";
+      if (currentFont && !Array.from(fontSelect.options).some((o) => o.value === currentFont)) {
+        const opt = document.createElement("option");
+        opt.value = currentFont;
+        opt.textContent = capitalizeFirst(currentFont);
+        opt.style.fontFamily = currentFont;
+        fontSelect.appendChild(opt);
+      }
+      fontSelect.value = currentFont;
       fontSelect.onchange = (e) => {
         const val = e.target.value;
         const prev = formattingRef.current;
@@ -607,9 +656,17 @@ function QrWrapperFieldEditor({
   }, [y]);
 
   useEffect(() => {
-    if (fontSelectRef.current && fontSelectRef.current.value !== (formatting.fontFamily || "Arial")) {
-      fontSelectRef.current.value = formatting.fontFamily || "Arial";
+    const sel = fontSelectRef.current;
+    if (!sel) return;
+    const val = (formatting.fontFamily && String(formatting.fontFamily).trim()) || "Arial";
+    if (!sel.querySelector(`option[value="${CSS.escape(val)}"]`)) {
+      const opt = document.createElement("option");
+      opt.value = val;
+      opt.textContent = capitalizeFirst(val);
+      opt.style.fontFamily = val;
+      sel.appendChild(opt);
     }
+    if (sel.value !== val) sel.value = val;
   }, [formatting.fontFamily]);
 
   return (
@@ -659,8 +716,8 @@ export default function DefaultQrWrapperModal({
   const { fonts: availableFonts } = useGlobalConfig();
   const [logo, setLogo] = useState({
     url: wr.logo?.url ?? "",
-    width: numOrAuto(wr.logo?.width, 80),
-    height: numOrAuto(wr.logo?.height, 80),
+    width: widthHeightFromConfig(wr.logo?.width, 150, wr.logo != null),
+    height: widthHeightFromConfig(wr.logo?.height, 150, wr.logo != null),
     x: num(wr.logo?.x, 0),
     y: num(wr.logo?.y, 0),
   });
@@ -674,8 +731,8 @@ export default function DefaultQrWrapperModal({
         _id: null,
         url: w.brandingMedia.url,
         file: null,
-        width: numOrAuto(w.brandingMedia.width, 200),
-        height: numOrAuto(w.brandingMedia.height, 60),
+        width: widthHeightFromConfig(w.brandingMedia.width, 200, true),
+        height: widthHeightFromConfig(w.brandingMedia.height, 60, true),
         x: num(w.brandingMedia.x, 50),
         y: num(w.brandingMedia.y, 15),
       }];
@@ -684,8 +741,8 @@ export default function DefaultQrWrapperModal({
       _id: i._id,
       url: i.url || "",
       file: null,
-      width: numOrAuto(i.width, 200),
-      height: numOrAuto(i.height, 60),
+      width: widthHeightFromConfig(i.width, 200, true),
+      height: widthHeightFromConfig(i.height, 60, true),
       x: num(i.x, 50),
       y: num(i.y, 15),
     }));
@@ -787,8 +844,8 @@ export default function DefaultQrWrapperModal({
     const logoUrl = isEventMode && eventData?.logoUrl != null ? eventData.logoUrl : (wr.logo?.url ?? "");
     setLogo({
       url: logoUrl,
-      width: numOrAuto(wr.logo?.width, 80),
-      height: numOrAuto(wr.logo?.height, 80),
+      width: widthHeightFromConfig(wr.logo?.width, 150, wr.logo != null),
+      height: widthHeightFromConfig(wr.logo?.height, 150, wr.logo != null),
       x: num(wr.logo?.x, 0),
       y: num(wr.logo?.y, 0),
     });
@@ -800,8 +857,8 @@ export default function DefaultQrWrapperModal({
           _id: item._id,
           url: item.logoUrl || item.url || "",
           file: null,
-          width: numOrAuto(wrItems[idx]?.width, 200),
-          height: numOrAuto(wrItems[idx]?.height, 60),
+          width: widthHeightFromConfig(wrItems[idx]?.width, 200, true),
+          height: widthHeightFromConfig(wrItems[idx]?.height, 60, true),
           x: num(wrItems[idx]?.x, 50),
           y: num(wrItems[idx]?.y, 15),
         }))
@@ -939,16 +996,16 @@ export default function DefaultQrWrapperModal({
       prev.map((f) =>
         f.id === id
           ? {
-              ...f,
-              text: parsed.text ?? f.text,
-              fontSize: num(parsed.fontSize, 14),
-              color: parsed.color ?? f.color,
-              isBold: parsed.isBold ?? f.isBold,
-              isItalic: parsed.isItalic ?? f.isItalic,
-              isUnderline: parsed.isUnderline ?? f.isUnderline,
-              alignment: parsed.alignment ?? f.alignment,
-              fontFamily: parsed.fontFamily ?? f.fontFamily,
-            }
+            ...f,
+            text: parsed.text ?? f.text,
+            fontSize: num(parsed.fontSize, 14),
+            color: parsed.color ?? f.color,
+            isBold: parsed.isBold ?? f.isBold,
+            isItalic: parsed.isItalic ?? f.isItalic,
+            isUnderline: parsed.isUnderline ?? f.isUnderline,
+            alignment: parsed.alignment ?? f.alignment,
+            fontFamily: parsed.fontFamily ?? f.fontFamily,
+          }
           : f
       )
     );
@@ -960,16 +1017,16 @@ export default function DefaultQrWrapperModal({
       prev.map((f) =>
         f.id === id
           ? {
-              ...f,
-              text: parsed.text ?? f.text,
-              fontSize: num(parsed.fontSize, 14),
-              color: parsed.color ?? f.color,
-              isBold: parsed.isBold ?? f.isBold,
-              isItalic: parsed.isItalic ?? f.isItalic,
-              isUnderline: parsed.isUnderline ?? f.isUnderline,
-              alignment: parsed.alignment ?? f.alignment,
-              fontFamily: parsed.fontFamily ?? f.fontFamily,
-            }
+            ...f,
+            text: parsed.text ?? f.text,
+            fontSize: num(parsed.fontSize, 14),
+            color: parsed.color ?? f.color,
+            isBold: parsed.isBold ?? f.isBold,
+            isItalic: parsed.isItalic ?? f.isItalic,
+            isUnderline: parsed.isUnderline ?? f.isUnderline,
+            alignment: parsed.alignment ?? f.alignment,
+            fontFamily: parsed.fontFamily ?? f.fontFamily,
+          }
           : f
       )
     );
@@ -1048,6 +1105,8 @@ export default function DefaultQrWrapperModal({
     const payload = {
       logo: {
         ...logo,
+        width: logo.width ?? 0,
+        height: logo.height ?? 0,
         url: logoFile ? "" : (wr.logo?.url ?? logo.url ?? ""),
       },
       backgroundImage: {
@@ -1056,7 +1115,7 @@ export default function DefaultQrWrapperModal({
       brandingMedia: {
         items: brandingMediaItems
           .filter((i) => i.url && !i.file)
-          .map((i) => ({ _id: i._id, url: i.url, width: i.width, height: i.height, x: i.x, y: i.y })),
+          .map((i) => ({ _id: i._id, url: i.url, width: i.width ?? 0, height: i.height ?? 0, x: i.x, y: i.y })),
       },
       qr: { ...qr },
       customFields: (isEventMode ? [...eventFields, ...customFields] : customFields).map(({ id, label, x, y, fontSize, fontFamily, text, color, isBold, isItalic, isUnderline, alignment }) => ({
@@ -1094,7 +1153,7 @@ export default function DefaultQrWrapperModal({
         onClose();
       } else {
         await updateDefaultQrWrapper(formData);
-        refetchConfig();
+        await refetchConfig();
         onClose();
       }
     } catch (err) {
@@ -1223,7 +1282,7 @@ export default function DefaultQrWrapperModal({
                       <Avatar src={logoPreview} variant="square" sx={{ width: 72, height: 72 }} />
                     )}
                     <Stack direction="row" spacing={1.5} flexWrap="wrap" alignItems="center">
-                      <WidthHeightField width={logo.width} height={logo.height} onWidthChange={(v) => setLogo((p) => ({ ...p, width: v }))} onHeightChange={(v) => setLogo((p) => ({ ...p, height: v }))} widthLabel={t.logoWidth} heightLabel={t.logoHeight} t={t} minSize={10} />
+                      <WidthHeightField width={logo.width} height={logo.height} onWidthChange={(v) => setLogo((p) => ({ ...p, width: v }))} onHeightChange={(v) => setLogo((p) => ({ ...p, height: v }))} widthLabel={t.logoWidth} heightLabel={t.logoHeight} t={t} minSize={0} defaultPx={150} />
                       <ClampedNumberInput label={t.logoX} value={logo.x} min={0} max={100} onChange={(v) => setLogo((p) => ({ ...p, x: v }))} sx={{ width: 90, minWidth: 80 }} />
                       <ClampedNumberInput label={t.logoY} value={logo.y} min={0} max={100} onChange={(v) => setLogo((p) => ({ ...p, y: v }))} sx={{ width: 90, minWidth: 80 }} />
                     </Stack>
@@ -1257,7 +1316,7 @@ export default function DefaultQrWrapperModal({
                           <Stack direction="row" alignItems="flex-start" spacing={2}>
                             {item.url && <Avatar src={item.url} variant="square" sx={{ width: 56, height: 56, flexShrink: 0 }} />}
                             <Stack direction="row" spacing={1.5} flexWrap="wrap" alignItems="center" sx={{ flex: 1, minWidth: 0 }}>
-                              <WidthHeightField width={item.width} height={item.height} onWidthChange={(v) => handleBrandingItemFieldChange(idx, "width", v)} onHeightChange={(v) => handleBrandingItemFieldChange(idx, "height", v)} widthLabel={t.brandingWidth} heightLabel={t.brandingHeight} t={t} minSize={10} />
+                              <WidthHeightField width={item.width} height={item.height} onWidthChange={(v) => handleBrandingItemFieldChange(idx, "width", v)} onHeightChange={(v) => handleBrandingItemFieldChange(idx, "height", v)} widthLabel={t.brandingWidth} heightLabel={t.brandingHeight} t={t} minSize={0} />
                               <ClampedNumberInput label={t.brandingX} value={item.x} min={0} max={100} onChange={(v) => handleBrandingItemFieldChange(idx, "x", v)} sx={{ width: 72, minWidth: 72 }} />
                               <ClampedNumberInput label={t.brandingY} value={item.y} min={0} max={100} onChange={(v) => handleBrandingItemFieldChange(idx, "y", v)} sx={{ width: 72, minWidth: 72 }} />
                             </Stack>
@@ -1309,7 +1368,7 @@ export default function DefaultQrWrapperModal({
                   )}
                 </Stack>
                 <Stack direction="row" spacing={1.5} flexWrap="wrap" alignItems="center">
-                  <WidthHeightField width={logo.width} height={logo.height} onWidthChange={(v) => setLogo((p) => ({ ...p, width: v }))} onHeightChange={(v) => setLogo((p) => ({ ...p, height: v }))} widthLabel={t.logoWidth} heightLabel={t.logoHeight} t={t} minSize={10} />
+                  <WidthHeightField width={logo.width} height={logo.height} onWidthChange={(v) => setLogo((p) => ({ ...p, width: v }))} onHeightChange={(v) => setLogo((p) => ({ ...p, height: v }))} widthLabel={t.logoWidth} heightLabel={t.logoHeight} t={t} minSize={0} defaultPx={150} />
                   <ClampedNumberInput label={t.logoX} value={logo.x} min={0} max={100} onChange={(v) => setLogo((p) => ({ ...p, x: v }))} sx={{ width: 90, minWidth: 80 }} />
                   <ClampedNumberInput label={t.logoY} value={logo.y} min={0} max={100} onChange={(v) => setLogo((p) => ({ ...p, y: v }))} sx={{ width: 90, minWidth: 80 }} />
                 </Stack>
@@ -1349,7 +1408,7 @@ export default function DefaultQrWrapperModal({
                       <Stack direction="row" alignItems="flex-start" spacing={2}>
                         <Avatar src={item.url} variant="square" sx={{ width: 56, height: 56, flexShrink: 0 }} />
                         <Stack direction="row" spacing={1.5} flexWrap="wrap" alignItems="center" sx={{ flex: 1, minWidth: 0 }}>
-                          <WidthHeightField width={item.width} height={item.height} onWidthChange={(v) => handleBrandingItemFieldChange(idx, "width", v)} onHeightChange={(v) => handleBrandingItemFieldChange(idx, "height", v)} widthLabel={t.brandingWidth} heightLabel={t.brandingHeight} t={t} minSize={10} />
+                          <WidthHeightField width={item.width} height={item.height} onWidthChange={(v) => handleBrandingItemFieldChange(idx, "width", v)} onHeightChange={(v) => handleBrandingItemFieldChange(idx, "height", v)} widthLabel={t.brandingWidth} heightLabel={t.brandingHeight} t={t} minSize={0} />
                           <ClampedNumberInput label={t.brandingX} value={item.x} min={0} max={100} onChange={(v) => handleBrandingItemFieldChange(idx, "x", v)} sx={{ width: 72, minWidth: 72 }} />
                           <ClampedNumberInput label={t.brandingY} value={item.y} min={0} max={100} onChange={(v) => handleBrandingItemFieldChange(idx, "y", v)} sx={{ width: 72, minWidth: 72 }} />
                         </Stack>
@@ -1478,9 +1537,13 @@ export default function DefaultQrWrapperModal({
                     position: "absolute",
                     left: `${logo.x}%`,
                     top: `${logo.y}%`,
-                    width: logo.width === 0 ? "auto" : logo.width,
-                    height: logo.height === 0 ? "auto" : logo.height,
+                    width: (logo.width == null || logo.width === 0) ? "auto" : logo.width,
+                    height: (logo.height == null || logo.height === 0) ? "auto" : logo.height,
+                    ...((logo.width == null || logo.width === 0) && (logo.height == null || logo.height === 0)
+                      ? { maxWidth: TEMPLATE_WIDTH, maxHeight: TEMPLATE_HEIGHT }
+                      : {}),
                     objectFit: "contain",
+                    transform: "translate(-50%, -50%)",
                   }}
                 />
               )}
@@ -1495,9 +1558,13 @@ export default function DefaultQrWrapperModal({
                       position: "absolute",
                       left: `${item.x}%`,
                       top: `${item.y}%`,
-                      width: item.width === 0 ? "auto" : item.width,
-                      height: item.height === 0 ? "auto" : item.height,
+                      width: (item.width == null || item.width === 0) ? "auto" : item.width,
+                      height: (item.height == null || item.height === 0) ? "auto" : item.height,
+                      ...((item.width == null || item.width === 0) && (item.height == null || item.height === 0)
+                        ? { maxWidth: TEMPLATE_WIDTH, maxHeight: TEMPLATE_HEIGHT }
+                        : {}),
                       objectFit: "contain",
+                      transform: "translate(-50%, -50%)",
                     }}
                   />
                 ) : null
@@ -1508,6 +1575,7 @@ export default function DefaultQrWrapperModal({
                 const textAlign = alignMatch ? alignMatch[1].toLowerCase() : "left";
                 const xPct = num(f.x, 0);
                 const yPct = num(f.y, 0);
+
                 return (
                   <Box
                     key={f.id}
@@ -1515,18 +1583,26 @@ export default function DefaultQrWrapperModal({
                       position: "absolute",
                       left: `${xPct}%`,
                       top: `${yPct}%`,
-                      maxWidth: `${100 - xPct}%`,
-                      fontSize: num(f.fontSize, 14),
-                      fontFamily: (f.fontFamily && f.fontFamily !== "Arial") ? `"${f.fontFamily}", sans-serif` : undefined,
-                      color: (f.color && String(f.color).trim()) ? f.color : "#333",
-                      transform: "translateY(-50%)",
-                      textAlign,
-                      paddingRight: "2%",
-                      boxSizing: "border-box",
-                      "& p": { margin: 0, textAlign: "inherit" },
-                      "& span": { textAlign: "inherit" },
+                      transform: "translate(-50%, -50%)",
+                      fontSize: `${(num(f.fontSize, 14) * PREVIEW_SCALE)}px`,
+                      fontFamily: f.fontFamily || "Arial",
+                      fontWeight: f.isBold ? "bold" : "normal",
+                      fontStyle: f.isItalic ? "italic" : "normal",
+                      textDecoration: f.isUnderline ? "underline" : "none",
+                      color: f.color || "#000000",
+                      textAlign: textAlign,
+                      whiteSpace: "nowrap",
+                      wordBreak: "normal",
+                      padding: 0,
+                      margin: 0,
+                      lineHeight: 1,
                     }}
-                    dangerouslySetInnerHTML={{ __html: contentHtml }}
+                    dangerouslySetInnerHTML={{
+                      __html: contentHtml
+                        .replace(/<p[^>]*>/gi, "")
+                        .replace(/<\/p>/gi, "")
+                        .trim(),
+                    }}
                   />
                 );
               })}
