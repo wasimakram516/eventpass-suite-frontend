@@ -1284,11 +1284,15 @@ const EventModal = ({
             <Tabs
               value={activeTab}
               onChange={(e, newValue) => {
-                const uploadsTabIndex = formData.useCustomQrCode ? 4 : 3;
-                const customFieldsTabIndex = formData.useCustomQrCode ? 5 : 4;
-                const customizeBadgeTabIndex = formData.useCustomFields
-                  ? (formData.useCustomQrCode ? 6 : 5)
-                  : (formData.useCustomQrCode ? 5 : 4);
+                const uploadsTabIndex = 3;
+                const customFieldsTabIndex = 4;
+                const customizeBadgeTabIndex = formData.useCustomFields ? 5 : 4;
+                const customQrCodeTabIndex = formData.useCustomFields ? 6 : 5;
+
+                if (formData.useCustomQrCode && newValue === customQrCodeTabIndex) {
+                  setActiveTab(newValue);
+                  return;
+                }
 
                 if (newValue === customizeBadgeTabIndex) {
                   setActiveTab(newValue);
@@ -1322,10 +1326,10 @@ const EventModal = ({
               <Tab label={t.eventDetailsTab} />
               <Tab label={t.organizerDetailsTab} />
               <Tab label={t.optionsTab} />
-              {formData.useCustomQrCode && <Tab label={t.customQrCodeTab} />}
               <Tab label={t.uploadsTab} />
               {formData.useCustomFields && <Tab label={t.customFieldsTab} />}
               <Tab label={t.customizeBadgeTab} />
+              {formData.useCustomQrCode && <Tab label={t.customQrCodeTab} />}
             </Tabs>
           </Box>
 
@@ -1752,8 +1756,8 @@ const EventModal = ({
             </Box>
           )}
 
-          {/* Tab: Custom QR Code (visible when useCustomQrCode, edit only) */}
-          {formData.useCustomQrCode && activeTab === 3 && (
+          {/* Tab: Custom QR Code (visible when useCustomQrCode, last tab) */}
+          {formData.useCustomQrCode && activeTab === (formData.useCustomFields ? 6 : 5) && (
             <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 2 }}>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
                 {t.customQrCodeDescription}
@@ -1890,7 +1894,7 @@ const EventModal = ({
           )}
 
           {/* Tab: Uploads */}
-          {activeTab === (formData.useCustomQrCode ? 4 : 3) && (
+          {activeTab === 3 && (
             <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 2 }}>
               {/* Logo Upload */}
               <Box
@@ -2393,8 +2397,8 @@ const EventModal = ({
             </Box>
           )}
 
-          {/* Tab 5: Custom Fields (conditional) */}
-          {activeTab === (formData.useCustomQrCode ? 5 : 4) && formData.useCustomFields && (
+          {/* Tab: Custom Fields (conditional) */}
+          {activeTab === 4 && formData.useCustomFields && (
             <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 2 }}>
               {(isClosed || formData.eventType === "public") && (
                 <>
@@ -2562,8 +2566,8 @@ const EventModal = ({
             </Box>
           )}
 
-          {/* Tab 6: Customize Badge (always visible) */}
-          {activeTab === (formData.useCustomFields ? (formData.useCustomQrCode ? 6 : 5) : (formData.useCustomQrCode ? 5 : 4)) && (
+          {/* Tab: Customize Badge (always visible) */}
+          {activeTab === (formData.useCustomFields ? 5 : 4) && (
             <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 2 }}>
               {formData.useCustomFields && (
                 <Typography variant="body1" sx={{ mb: 2 }}>

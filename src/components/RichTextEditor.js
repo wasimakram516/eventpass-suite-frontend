@@ -55,7 +55,7 @@ const RichTextEditor = ({ value, onChange, placeholder, dir, minHeight, maxHeigh
         if (fontSizeMatch) {
             const fontSizeStr = fontSizeMatch[1].trim();
             const fontSizeNum = parseFloat(fontSizeStr);
-            if (fontSizeNum && fontSizeNum >= 8 && fontSizeNum <= 50) {
+            if (fontSizeNum && fontSizeNum >= 8 && fontSizeNum <= 100) {
                 detectedFontSize = Math.round(fontSizeNum);
             }
         }
@@ -81,8 +81,11 @@ const RichTextEditor = ({ value, onChange, placeholder, dir, minHeight, maxHeigh
     };
 
     useEffect(() => {
-        if (editorRef.current && value !== editorRef.current.innerHTML) {
-            editorRef.current.innerHTML = value || "";
+        if (!editorRef.current) return;
+        const el = editorRef.current;
+        if (document.activeElement === el || el.contains(document.activeElement)) return;
+        if (value === el.innerHTML) return;
+        el.innerHTML = value || "";
 
             const formatting = parseHTMLForFormatting(value);
 
@@ -123,7 +126,6 @@ const RichTextEditor = ({ value, onChange, placeholder, dir, minHeight, maxHeigh
             if (formatting.fontSize !== fontSize) {
                 setFontSize(formatting.fontSize);
             }
-        }
     }, [value]);
 
     const updateActiveCommands = () => {
@@ -591,7 +593,7 @@ const RichTextEditor = ({ value, onChange, placeholder, dir, minHeight, maxHeigh
                                 },
                             }}
                         >
-                            {Array.from({ length: 43 }, (_, i) => i + 8).map((size) => (
+                            {Array.from({ length: 93 }, (_, i) => i + 8).map((size) => (
                                 <MenuItem key={size} value={size}>
                                     {size}px
                                 </MenuItem>
