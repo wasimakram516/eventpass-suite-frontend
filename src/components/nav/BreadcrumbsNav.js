@@ -17,7 +17,7 @@ const segmentMap = {
   },
   logs: {
     label: "Logs",
-    icon: <ICONS.list fontSize="small" sx={{ mr: 0.5 }} />,
+    icon: <ICONS.history fontSize="small" sx={{ mr: 0.5 }} />,
   },
   inbox: {
     label: "Inbox",
