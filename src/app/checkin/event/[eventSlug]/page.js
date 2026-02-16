@@ -161,7 +161,8 @@ export default function EventDetails() {
   const qrCodeRef = useRef(null);
   const { globalConfig } = useGlobalConfig();
   const { showMessage } = useMessage();
-  const hasCustomDesign = event?.customQrWrapper && hasWrapperDesign(event.customQrWrapper);
+  const hasCustomDesign =
+    event?.useCustomQrCode && event?.customQrWrapper && hasWrapperDesign(event.customQrWrapper);
   const hasDefaultDesign = hasDefaultQrWrapperDesign(globalConfig);
 
   useEffect(() => {

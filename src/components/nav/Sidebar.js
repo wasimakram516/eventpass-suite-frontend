@@ -62,6 +62,9 @@ export default function Sidebar() {
     { label: t.settings, icon: ICONS.settings, path: "/cms/settings" },
     { label: t.files, icon: ICONS.cloud, path: "/cms/downloads" },
     { label: t.trash, icon: ICONS.delete, path: "/cms/trash" },
+    ...(user?.role === "superadmin"
+      ? [{ label: "Logs", icon: ICONS.history, path: "/cms/logs" }]
+      : []),
   ];
 
   const isActive = (path) =>
