@@ -63,7 +63,7 @@ const translations = {
     clearFilters: "Clear Filters",
     event: "Event",
     form: "Form",
-    search: "Search (name/email/company)",
+    search: "Search (name/email/organization)",
     status: "Status",
     any: "Any",
     queued: "Queued",
@@ -80,10 +80,10 @@ const translations = {
 
     confirmClearTitle: "Clear All Recipients",
     confirmClearMsg:
-      "This will remove all recipients for the selected form. Are you sure you want to proceed?",
+      "This will remove all recipients for the selected form. Don't worry, you can always sync them again from registrations. Are you sure you want to proceed?",
     confirmDeleteTitle: "Delete Recipient",
     confirmDeleteMsg:
-      "Are you sure you want to move this item to the Recycle Bin?",
+      "This will permanently remove this recipient. Don't worry, you can sync them again from registrations. Are you sure you want to proceed?",
     delete: "Delete",
 
     copied: "Link copied!",
@@ -103,7 +103,7 @@ const translations = {
     selections: "Selections",
     email: "Email",
     name: "Name",
-    company: "Company",
+    company: "Organization",
     copyLink: "Copy survey link",
     bulkEmail: "Send Bulk Notifications",
     bulkEmailConfirmTitle: "Send Bulk Survey Notifications",
@@ -131,7 +131,7 @@ const translations = {
     clearFilters: "مسح عوامل التصفية",
     event: "الفعالية",
     form: "النموذج",
-    search: "بحث (الاسم/البريد/الشركة)",
+    search: "بحث (الاسم/البريد/المؤسسة)",
     status: "الحالة",
     any: "أي",
     queued: "قيد الانتظار",
@@ -169,7 +169,7 @@ const translations = {
     selections: "الاختيارات",
     email: "البريد الإلكتروني",
     name: "الاسم",
-    company: "الشركة",
+    company: "المؤسسة",
     copyLink: "نسخ رابط الاستبيان",
     bulkEmail: "إرسال الإشعارات الجماعية",
     bulkEmailConfirmTitle: "إرسال إشعارات الاستبيان الجماعية",
@@ -601,7 +601,7 @@ export default function RecipientsManagePage() {
           {t.email}: {r.email}
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          {t.company}: {r.company || "—"}
+          {t.company}: {r.organization || r.company || "—"}
         </Typography>
       </CardContent>
 

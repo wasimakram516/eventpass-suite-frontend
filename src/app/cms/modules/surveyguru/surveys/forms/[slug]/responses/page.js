@@ -385,6 +385,8 @@ function ResponseCard({ resp, t, dir, formDetails, align }) {
     <AppCard
       sx={{
         width: "100%",
+        maxWidth: { xs: "100%", sm: 420 },
+        mx: "auto",
         height: "100%",
         display: "flex",
         flexDirection: "column",
@@ -520,38 +522,6 @@ function ResponseCard({ resp, t, dir, formDetails, align }) {
                 secondary={rec.company}
                 align={align}
               />
-              <FieldRow
-                icon={<ICONS.verified fontSize="small" />}
-                primary={t.status}
-                secondary={rec.status}
-                align={align}
-              />
-              <FieldRow
-                icon={<ICONS.vpnKey fontSize="small" />}
-                primary={t.token}
-                secondary={rec.token}
-                align={align}
-              />
-              <FieldRow
-                icon={<ICONS.timeOutline fontSize="small" />}
-                primary={t.createdAt}
-                secondary={
-                  rec.createdAt
-                    ? formatDateTimeWithLocale(rec.createdAt)
-                    : "N/A"
-                }
-                align={align}
-              />
-              <FieldRow
-                icon={<ICONS.timeOutline fontSize="small" />}
-                primary={t.respondedAt}
-                secondary={
-                  rec.respondedAt
-                    ? formatDateTimeWithLocale(rec.respondedAt)
-                    : "N/A"
-                }
-                align={align}
-              />
             </List>
           </Fragment>
         )}
@@ -642,7 +612,7 @@ export default function ViewSurveyResponses() {
       noRecords: "No responses found for this survey.",
       name: "Name",
       email: "Email",
-      company: "Company",
+      company: "Organization",
       submittedAt: "Submitted At",
       recordsPerPage: "Records per page",
       showing: "Showing",
@@ -675,7 +645,7 @@ export default function ViewSurveyResponses() {
       noRecords: "لا توجد ردود لهذا الاستبيان.",
       name: "الاسم",
       email: "البريد الإلكتروني",
-      company: "الشركة",
+      company: "المؤسسة",
       submittedAt: "تاريخ الإرسال",
       recordsPerPage: "عدد السجلات لكل صفحة",
       showing: "عرض",
