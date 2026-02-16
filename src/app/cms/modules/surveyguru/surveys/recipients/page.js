@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Box,
   Container,
@@ -17,7 +17,6 @@ import {
   Chip,
   Tooltip,
   TextField,
-  Card,
   CardContent,
   CardActions,
   Grid,
@@ -30,10 +29,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useMessage } from "@/contexts/MessageContext";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import BusinessDrawer from "@/components/drawers/BusinessDrawer";
-import NoDataAvailable from "@/components/NoDataAvailable";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import RecordMetadata from "@/components/RecordMetadata";
+import AppCard from "@/components/cards/AppCard";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import ICONS from "@/utils/iconUtil";
 
@@ -59,6 +58,7 @@ const translations = {
     subtitle: "Pick a business, then open Filters to choose event & form.",
     selectBusiness: "Select Business",
     filters: "Filters",
+    filtersActions: "Filters & Actions",
     actions: "Actions",
     clearFilters: "Clear Filters",
     event: "Event",
@@ -68,6 +68,7 @@ const translations = {
     any: "Any",
     queued: "Queued",
     responded: "Responded",
+    notified: "Notified",
     apply: "Apply",
     cancel: "Cancel",
 
@@ -87,6 +88,18 @@ const translations = {
 
     copied: "Link copied!",
     noFormSelected: "Use Filters to select a form and load recipients.",
+    workflowTitle: "Follow these steps to load and manage recipients",
+    stepBusiness: "1. Select business",
+    stepEvent: "2. Select event",
+    stepForm: "3. Select form",
+    readyToLoad:
+      "Recipients load automatically after selecting a form. If none appear, click Sync from Event.",
+    syncHint:
+      "No recipients found yet for this form. Sync from event registrations to populate recipients.",
+    syncNow: "Sync Now",
+    chooseEvent: "Choose Event",
+    chooseForm: "Choose Survey Form",
+    noRecipientsYet: "No recipients available for this form yet.",
     selections: "Selections",
     email: "Email",
     name: "Name",
@@ -113,6 +126,7 @@ const translations = {
     subtitle: "اختر الشركة، ثم افتح عوامل التصفية لاختيار الفعالية والنموذج.",
     selectBusiness: "اختر الشركة",
     filters: "عوامل التصفية",
+    filtersActions: "عوامل التصفية والإجراءات",
     actions: "إجراءات",
     clearFilters: "مسح عوامل التصفية",
     event: "الفعالية",
@@ -122,6 +136,7 @@ const translations = {
     any: "أي",
     queued: "قيد الانتظار",
     responded: "تم الرد",
+    notified: "تم الإشعار",
     apply: "تطبيق",
     cancel: "إلغاء",
 
@@ -139,6 +154,18 @@ const translations = {
 
     copied: "تم نسخ الرابط!",
     noFormSelected: "استخدم عوامل التصفية لاختيار نموذج وتحميل المستلمين.",
+    workflowTitle: "اتبع هذه الخطوات لتحميل المستلمين وإدارتهم",
+    stepBusiness: "1. اختر الشركة",
+    stepEvent: "2. اختر الفعالية",
+    stepForm: "3. اختر نموذج الاستبيان",
+    readyToLoad:
+      "سيتم تحميل المستلمين تلقائيًا بعد اختيار النموذج. إذا لم يظهروا، اضغط مزامنة من الفعالية.",
+    syncHint:
+      "لا يوجد مستلمون لهذا النموذج حتى الآن. قم بالمزامنة من تسجيلات الفعالية.",
+    syncNow: "زامن الآن",
+    chooseEvent: "اختر الفعالية",
+    chooseForm: "اختر نموذج الاستبيان",
+    noRecipientsYet: "لا يوجد مستلمون لهذا النموذج حتى الآن.",
     selections: "الاختيارات",
     email: "البريد الإلكتروني",
     name: "الاسم",
@@ -198,9 +225,6 @@ export default function RecipientsManagePage() {
   const [mQ, setMQ] = useState("");
   const [mStatus, setMStatus] = useState("");
 
-  // actions modal
-  const [actionsOpen, setActionsOpen] = useState(false);
-
   const [loading, setLoading] = useState(false);
   const [syncLoading, setSyncLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
@@ -216,6 +240,35 @@ export default function RecipientsManagePage() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [total, setTotal] = useState(0);
+  const syncTimeoutRef = useRef(null);
+
+  const refreshRecipients = async ({
+    targetFormId = formId,
+    targetPage = page,
+    targetLimit = limit,
+    targetQ = q,
+    targetStatus = status,
+  } = {}) => {
+    if (!targetFormId) {
+      setRows([]);
+      setTotal(0);
+      return;
+    }
+
+    const qTrim = (targetQ || "").trim();
+    const res = await listRecipients({
+      formId: targetFormId,
+      page: targetPage,
+      limit: targetLimit,
+      ...(qTrim ? { q: qTrim } : {}),
+      ...(targetStatus ? { status: targetStatus } : {}),
+    });
+
+    if (!res?.error) {
+      setRows(res?.recipients || []);
+      setTotal(res?.pagination?.total || 0);
+    }
+  };
 
   const { emailProgress, syncProgress } = useSurveyGuruSocket({
     formId,
@@ -234,10 +287,7 @@ export default function RecipientsManagePage() {
           "success"
         );
 
-        listRecipients({ formId, page, limit }).then((res) => {
-          setRows(res.recipients || []);
-          setTotal(res.pagination.total);
-        });
+        refreshRecipients({ targetFormId: formId, targetPage: page, targetLimit: limit });
       }
     },
     onSyncProgress: (data) => {
@@ -247,18 +297,28 @@ export default function RecipientsManagePage() {
       setSyncLoading(true);
 
       if (synced === total) {
+        if (syncTimeoutRef.current) {
+          clearTimeout(syncTimeoutRef.current);
+          syncTimeoutRef.current = null;
+        }
         setSyncLoading(false);
 
-        listRecipients({ formId, page, limit }).then((res) => {
-          setRows(res.recipients || []);
-          setTotal(res.pagination.total);
-        });
+        refreshRecipients({ targetFormId: formId, targetPage: page, targetLimit: limit });
 
         showMessage(t.synced, "success");
-        setActionsOpen(false);
+        setFiltersOpen(false);
       }
     },
   });
+
+  useEffect(() => {
+    return () => {
+      if (syncTimeoutRef.current) {
+        clearTimeout(syncTimeoutRef.current);
+        syncTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -327,9 +387,32 @@ export default function RecipientsManagePage() {
 
   const handleSync = async () => {
     if (!formId) return;
+    const fallbackEventId = selectedForm?.eventId?._id || selectedForm?.eventId || "";
+    const eventIdForSync = eventId || fallbackEventId;
 
     setSyncLoading(true);
-    await syncRecipientsForEvent(formId);
+
+    if (syncTimeoutRef.current) {
+      clearTimeout(syncTimeoutRef.current);
+    }
+
+    syncTimeoutRef.current = setTimeout(async () => {
+      setSyncLoading(false);
+      await refreshRecipients({ targetFormId: formId, targetPage: page, targetLimit: limit });
+      setFiltersOpen(false);
+    }, 15000);
+
+    const res = await syncRecipientsForEvent(formId, {
+      ...(eventIdForSync ? { eventId: eventIdForSync } : {}),
+    });
+
+    if (res?.error) {
+      if (syncTimeoutRef.current) {
+        clearTimeout(syncTimeoutRef.current);
+        syncTimeoutRef.current = null;
+      }
+      setSyncLoading(false);
+    }
   };
 
   const handleSendBulkSurveyEmails = async () => {
@@ -378,6 +461,44 @@ export default function RecipientsManagePage() {
     () => events.find((e) => String(e._id) === String(eventId)),
     [events, eventId]
   );
+
+  const filteredForms = useMemo(
+    () =>
+      forms.filter(
+        (f) => !eventId || String(f.eventId?._id || f.eventId) === String(eventId)
+      ),
+    [forms, eventId]
+  );
+
+  const canSync = Boolean(
+    formId && (eventId || selectedForm?.eventId?._id || selectedForm?.eventId)
+  );
+  const isWorkflowComplete = Boolean(selectedBusiness?._id && eventId && formId);
+
+  const onWorkflowEventChange = (nextEventId) => {
+    setEventId(nextEventId);
+    setPage(1);
+    setQ("");
+    setStatus("");
+    const stillValidForm = forms.find(
+      (f) =>
+        String(f._id) === String(formId) &&
+        (!nextEventId ||
+          String(f.eventId?._id || f.eventId) === String(nextEventId))
+    );
+    if (!stillValidForm) {
+      setFormId("");
+      setRows([]);
+      setTotal(0);
+    }
+  };
+
+  const onWorkflowFormChange = (nextFormId) => {
+    setFormId(nextFormId);
+    setPage(1);
+    setQ("");
+    setStatus("");
+  };
 
   const openFilters = () => {
     setMEventId(eventId || "");
@@ -436,8 +557,25 @@ export default function RecipientsManagePage() {
     showMessage(t.copied, "info");
   };
 
-  const RecipientCard = ({ r }) => (
-    <Card variant="outlined" sx={{ borderRadius: 2 }}>
+  const RecipientCard = ({ r }) => {
+    const isResponded = Boolean(r?.respondedAt);
+    const isNotified =
+      !isResponded &&
+      (String(r?.status || "").toLowerCase() === "responded" ||
+        String(r?.status || "").toLowerCase() === "notified" ||
+        r?.emailSent === true ||
+        r?.notificationSent === true);
+
+    const chipLabel = isResponded ? t.responded : isNotified ? t.notified : t.queued;
+    const chipColor = isResponded ? "success" : isNotified ? "info" : "default";
+    const chipIcon = isResponded
+      ? <ICONS.verified />
+      : isNotified
+        ? <ICONS.emailOutline />
+        : undefined;
+
+    return (
+    <AppCard variant="outlined" sx={{ borderRadius: 2 }}>
       <CardContent sx={{ pb: 1.5 }}>
         <Stack
           direction={dir === "rtl" ? "row-reverse" : "row"}
@@ -450,9 +588,9 @@ export default function RecipientsManagePage() {
           </Typography>
           <Chip
             size="small"
-            icon={<ICONS.verified />}
-            color={r.status === "responded" ? "success" : "default"}
-            label={r.status || "queued"}
+            icon={chipIcon}
+            color={chipColor}
+            label={chipLabel}
             sx={{
               minWidth: dir === "rtl" ? "120px" : "auto", // Wider in Arabic
               ml: 2,
@@ -497,8 +635,9 @@ export default function RecipientsManagePage() {
           </IconButton>
         </Tooltip>
       </CardActions>
-    </Card>
-  );
+    </AppCard>
+    );
+  };
 
   return (
     <Box dir={dir} sx={{ minHeight: "100vh" }}>
@@ -514,7 +653,7 @@ export default function RecipientsManagePage() {
         }}
       />
 
-      <Container maxWidth="lg">
+      <Container maxWidth="xl">
         <BreadcrumbsNav />
 
         <Box
@@ -534,107 +673,327 @@ export default function RecipientsManagePage() {
             <Typography variant="body2" color="text.secondary" mt={0.5}>
               {t.subtitle}
             </Typography>
-            {/* Selections summary (chips) */}
-            <Stack
-              direction="row"
-              spacing={dir === "rtl" ? 2 : 1.5}
-              mt={1}
-              flexWrap="wrap"
-              rowGap={1.5}
-            >
-              {selectedBusiness && (
-                <Chip
-                  size="small"
-                  icon={<ICONS.business fontSize="small" />}
-                  label={`${t.selections}: ${selectedBusiness?.name || selectedBusiness?.slug
-                    }`}
-                  sx={{ minWidth: 140, px: 1.5 }}
-                />
-              )}
-              {selectedEvent && (
-                <Box sx={{ display: "inline-flex", alignItems: "center" }}>
-                  <Chip
-                    size="small"
-                    icon={<ICONS.event fontSize="small" />}
-                    label={selectedEvent?.name}
-                    sx={{
-                      minWidth: 120,
-                      px: 1.5,
-                      ...(dir === "rtl" ? { mr: 2 } : {}),
-                    }}
-                  />
-                </Box>
-              )}
-              {selectedForm && (
-                <Chip
-                  size="small"
-                  icon={<ICONS.form fontSize="small" />}
-                  label={selectedForm?.title}
-                  sx={{ minWidth: 120, px: 1.5 }}
-                />
-              )}
-            </Stack>
           </Box>
 
-          {/* Right side: 3 buttons only */}
-          <Stack
-            direction={{ xs: "column", sm: "row" }}
-            spacing={1}
+          <Box
             sx={{
-              alignItems: "stretch",
-              width: { xs: "100%", sm: "auto" },
-              gap: dir === "rtl" ? 2 : 1,
+              width: "100%",
+              mt: 1,
+              p: { xs: 0, sm: 0.5 },
             }}
           >
-            <Button
-              variant="outlined"
-              startIcon={<ICONS.business fontSize="small" />}
-              onClick={() => setBizDrawerOpen(true)}
-              sx={getStartIconSpacing(dir)}
-            >
-              {t.selectBusiness}
-            </Button>
+            <Stack spacing={1.5}>
+              <Typography variant="subtitle1" fontWeight={700}>
+                {t.workflowTitle}
+              </Typography>
 
-            <Button
-              variant="contained"
-              startIcon={<ICONS.filter fontSize="small" />}
-              disabled={!selectedBusiness?._id}
-              onClick={openFilters}
-              sx={getStartIconSpacing(dir)}
-            >
-              {t.filters}
-            </Button>
+              <Box sx={{ display: { xs: "none", md: "block" } }}>
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  alignItems="center"
+                  sx={{ overflowX: "auto", pb: 0.5, flexWrap: "nowrap" }}
+                >
+                  <Stack direction="row" spacing={0.75} alignItems="center" sx={{ whiteSpace: "nowrap" }}>
+                    <Stack direction="row" spacing={0.5} alignItems="center">
+                      {selectedBusiness?._id ? (
+                        <ICONS.checkCircle sx={{ fontSize: 18, color: "success.main" }} />
+                      ) : (
+                        <ICONS.checkCircleOutline sx={{ fontSize: 18, color: "text.disabled" }} />
+                      )}
+                      <Typography
+                        variant="body2"
+                        fontWeight={selectedBusiness?._id ? 700 : 500}
+                        color={selectedBusiness?._id ? "success.main" : "text.secondary"}
+                      >
+                        {t.stepBusiness}
+                      </Typography>
+                    </Stack>
 
-            <Button
-              variant="outlined"
-              startIcon={<ICONS.flash fontSize="small" />}
-              disabled={!formId}
-              onClick={() => setActionsOpen(true)}
-              sx={getStartIconSpacing(dir)}
-            >
-              {t.actions}
-            </Button>
-            <Button
-              variant="contained"
-              color="secondary"
-              disabled={sendingEmails || !formId}
-              startIcon={
-                sendingEmails ? (
-                  <CircularProgress size={20} color="inherit" />
-                ) : (
-                  <ICONS.email fontSize="small" />
-                )
-              }
-              onClick={() => setConfirmEmailDialogOpen(true)}
-              sx={getStartIconSpacing(dir)}
-            >
-              {sendingEmails && emailProgress.total
-                ? `${t.sendingEmails} ${emailProgress.processed}/${emailProgress.total}`
-                : sendingEmails
-                  ? t.sendingEmails
-                  : t.bulkEmail}
-            </Button>
-          </Stack>
+                    <ICONS.next sx={{ fontSize: 16, color: "text.disabled" }} />
+
+                    <Stack direction="row" spacing={0.5} alignItems="center">
+                      {eventId ? (
+                        <ICONS.checkCircle sx={{ fontSize: 18, color: "success.main" }} />
+                      ) : (
+                        <ICONS.checkCircleOutline sx={{ fontSize: 18, color: "text.disabled" }} />
+                      )}
+                      <Typography
+                        variant="body2"
+                        fontWeight={eventId ? 700 : 500}
+                        color={eventId ? "success.main" : "text.secondary"}
+                      >
+                        {t.stepEvent}
+                      </Typography>
+                    </Stack>
+
+                    <ICONS.next sx={{ fontSize: 16, color: "text.disabled" }} />
+
+                    <Stack direction="row" spacing={0.5} alignItems="center">
+                      {formId ? (
+                        <ICONS.checkCircle sx={{ fontSize: 18, color: "success.main" }} />
+                      ) : (
+                        <ICONS.checkCircleOutline sx={{ fontSize: 18, color: "text.disabled" }} />
+                      )}
+                      <Typography
+                        variant="body2"
+                        fontWeight={formId ? 700 : 500}
+                        color={formId ? "success.main" : "text.secondary"}
+                      >
+                        {t.stepForm}
+                      </Typography>
+                    </Stack>
+                  </Stack>
+                </Stack>
+
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  alignItems="center"
+                  sx={{ overflowX: "auto", pb: 0.5, flexWrap: "nowrap", mt: 0.5 }}
+                >
+                  <Button
+                    variant="outlined"
+                    startIcon={<ICONS.business fontSize="small" />}
+                    onClick={() => setBizDrawerOpen(true)}
+                    sx={{ whiteSpace: "nowrap", ...getStartIconSpacing(dir) }}
+                  >
+                    {t.selectBusiness}
+                  </Button>
+
+                  <FormControl size="small" sx={{ minWidth: 210 }} disabled={!selectedBusiness?._id}>
+                    <InputLabel>{t.chooseEvent}</InputLabel>
+                    <Select
+                      label={t.chooseEvent}
+                      value={eventId}
+                      onChange={(e) => onWorkflowEventChange(e.target.value)}
+                    >
+                      <MenuItem value="">{t.any}</MenuItem>
+                      {events.map((ev) => (
+                        <MenuItem key={ev._id} value={ev._id}>
+                          {ev.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+
+                  <FormControl size="small" sx={{ minWidth: 240 }} disabled={!selectedBusiness?._id}>
+                    <InputLabel>{t.chooseForm}</InputLabel>
+                    <Select
+                      label={t.chooseForm}
+                      value={formId}
+                      onChange={(e) => onWorkflowFormChange(e.target.value)}
+                    >
+                      {filteredForms.map((f) => (
+                        <MenuItem key={f._id} value={f._id}>
+                          {f.title}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+
+                  <Button
+                    variant="contained"
+                    startIcon={
+                      syncLoading ? (
+                        <CircularProgress size={20} color="inherit" />
+                      ) : (
+                        <ICONS.refresh fontSize="small" />
+                      )
+                    }
+                    disabled={!canSync || syncLoading}
+                    onClick={handleSync}
+                    sx={{ whiteSpace: "nowrap", ...getStartIconSpacing(dir) }}
+                  >
+                    {syncLoading && syncProgress.total
+                      ? `${t.sync} ${syncProgress.synced}/${syncProgress.total}`
+                      : syncLoading
+                        ? `${t.sync}...`
+                        : t.sync}
+                  </Button>
+
+                  <Button
+                    variant="contained"
+                    color="secondary"
+                    disabled={sendingEmails || !formId}
+                    startIcon={
+                      sendingEmails ? (
+                        <CircularProgress size={20} color="inherit" />
+                      ) : (
+                        <ICONS.email fontSize="small" />
+                      )
+                    }
+                    onClick={() => setConfirmEmailDialogOpen(true)}
+                    sx={{ whiteSpace: "nowrap", ...getStartIconSpacing(dir) }}
+                  >
+                    {sendingEmails && emailProgress.total
+                      ? `${t.sendingEmails} ${emailProgress.processed}/${emailProgress.total}`
+                      : sendingEmails
+                        ? t.sendingEmails
+                        : t.bulkEmail}
+                  </Button>
+
+                  <Button
+                    variant="outlined"
+                    startIcon={<ICONS.filter fontSize="small" />}
+                    disabled={!isWorkflowComplete}
+                    onClick={openFilters}
+                    sx={{ whiteSpace: "nowrap", ...getStartIconSpacing(dir) }}
+                  >
+                    {t.filtersActions}
+                  </Button>
+                </Stack>
+              </Box>
+
+              <Box sx={{ display: { xs: "block", md: "none" } }}>
+                <Stack direction="row" spacing={0.75} alignItems="center" sx={{ overflowX: "auto", whiteSpace: "nowrap" }}>
+                  <Stack direction="row" spacing={0.5} alignItems="center">
+                    {selectedBusiness?._id ? (
+                      <ICONS.checkCircle sx={{ fontSize: 18, color: "success.main" }} />
+                    ) : (
+                      <ICONS.checkCircleOutline sx={{ fontSize: 18, color: "text.disabled" }} />
+                    )}
+                    <Typography
+                      variant="body2"
+                      fontWeight={selectedBusiness?._id ? 700 : 500}
+                      color={selectedBusiness?._id ? "success.main" : "text.secondary"}
+                    >
+                      {t.stepBusiness}
+                    </Typography>
+                  </Stack>
+
+                  <ICONS.next sx={{ fontSize: 16, color: "text.disabled" }} />
+
+                  <Stack direction="row" spacing={0.5} alignItems="center">
+                    {eventId ? (
+                      <ICONS.checkCircle sx={{ fontSize: 18, color: "success.main" }} />
+                    ) : (
+                      <ICONS.checkCircleOutline sx={{ fontSize: 18, color: "text.disabled" }} />
+                    )}
+                    <Typography
+                      variant="body2"
+                      fontWeight={eventId ? 700 : 500}
+                      color={eventId ? "success.main" : "text.secondary"}
+                    >
+                      {t.stepEvent}
+                    </Typography>
+                  </Stack>
+
+                  <ICONS.next sx={{ fontSize: 16, color: "text.disabled" }} />
+
+                  <Stack direction="row" spacing={0.5} alignItems="center">
+                    {formId ? (
+                      <ICONS.checkCircle sx={{ fontSize: 18, color: "success.main" }} />
+                    ) : (
+                      <ICONS.checkCircleOutline sx={{ fontSize: 18, color: "text.disabled" }} />
+                    )}
+                    <Typography
+                      variant="body2"
+                      fontWeight={formId ? 700 : 500}
+                      color={formId ? "success.main" : "text.secondary"}
+                    >
+                      {t.stepForm}
+                    </Typography>
+                  </Stack>
+                </Stack>
+
+                <Stack direction={{ xs: "column", md: "row" }} spacing={1.25} mt={1.25}>
+                  <Button
+                    variant="outlined"
+                    startIcon={<ICONS.business fontSize="small" />}
+                    onClick={() => setBizDrawerOpen(true)}
+                    sx={getStartIconSpacing(dir)}
+                  >
+                    {t.selectBusiness}
+                  </Button>
+
+                  <FormControl size="small" sx={{ minWidth: 220 }} disabled={!selectedBusiness?._id}>
+                    <InputLabel>{t.chooseEvent}</InputLabel>
+                    <Select
+                      label={t.chooseEvent}
+                      value={eventId}
+                      onChange={(e) => onWorkflowEventChange(e.target.value)}
+                    >
+                      <MenuItem value="">{t.any}</MenuItem>
+                      {events.map((ev) => (
+                        <MenuItem key={ev._id} value={ev._id}>
+                          {ev.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+
+                  <FormControl size="small" sx={{ minWidth: 260 }} disabled={!selectedBusiness?._id}>
+                    <InputLabel>{t.chooseForm}</InputLabel>
+                    <Select
+                      label={t.chooseForm}
+                      value={formId}
+                      onChange={(e) => onWorkflowFormChange(e.target.value)}
+                    >
+                      {filteredForms.map((f) => (
+                        <MenuItem key={f._id} value={f._id}>
+                          {f.title}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Stack>
+
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={1} mt={1.25}>
+                  <Button
+                    variant="contained"
+                    startIcon={
+                      syncLoading ? (
+                        <CircularProgress size={20} color="inherit" />
+                      ) : (
+                        <ICONS.refresh fontSize="small" />
+                      )
+                    }
+                    disabled={!canSync || syncLoading}
+                    onClick={handleSync}
+                    sx={getStartIconSpacing(dir)}
+                  >
+                    {syncLoading && syncProgress.total
+                      ? `${t.sync} ${syncProgress.synced}/${syncProgress.total}`
+                      : syncLoading
+                        ? `${t.sync}...`
+                        : t.sync}
+                  </Button>
+
+                  <Button
+                    variant="contained"
+                    color="secondary"
+                    disabled={sendingEmails || !formId}
+                    startIcon={
+                      sendingEmails ? (
+                        <CircularProgress size={20} color="inherit" />
+                      ) : (
+                        <ICONS.email fontSize="small" />
+                      )
+                    }
+                    onClick={() => setConfirmEmailDialogOpen(true)}
+                    sx={getStartIconSpacing(dir)}
+                  >
+                    {sendingEmails && emailProgress.total
+                      ? `${t.sendingEmails} ${emailProgress.processed}/${emailProgress.total}`
+                      : sendingEmails
+                        ? t.sendingEmails
+                        : t.bulkEmail}
+                  </Button>
+
+                  <Button
+                    variant="outlined"
+                    startIcon={<ICONS.filter fontSize="small" />}
+                    disabled={!isWorkflowComplete}
+                    onClick={openFilters}
+                    sx={getStartIconSpacing(dir)}
+                  >
+                    {t.filtersActions}
+                  </Button>
+                </Stack>
+              </Box>
+            </Stack>
+          </Box>
         </Box>
 
         <Divider sx={{ my: 2 }} />
@@ -687,7 +1046,13 @@ export default function RecipientsManagePage() {
             <CircularProgress />
           </Box>
         ) : !rows.length ? (
-          <NoDataAvailable />
+          <Stack spacing={1.25} alignItems="center" sx={{ py: 2, textAlign: "center" }}>
+            <ICONS.people sx={{ fontSize: 36, color: "text.secondary" }} />
+            <Typography variant="h6">{t.noRecipientsYet}</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 720 }}>
+              {t.syncHint}
+            </Typography>
+          </Stack>
         ) : isMobile ? (
           <Stack spacing={1.5} id="recipients-list">
             {rows.map((r) => (
@@ -764,56 +1129,9 @@ export default function RecipientsManagePage() {
       <FilterDialog
         open={filtersOpen}
         onClose={() => setFiltersOpen(false)}
-        title={t.filters}
+        title={t.filtersActions}
       >
         <Stack spacing={2}>
-          <FormControl size="small" fullWidth>
-            <InputLabel>{t.event}</InputLabel>
-            <Select
-              label={t.event}
-              value={mEventId}
-              onChange={(e) => {
-                const val = e.target.value;
-                setMEventId(val);
-                const filtered = forms.filter(
-                  (f) =>
-                    !val || String(f.eventId?._id || f.eventId) === String(val)
-                );
-                if (!filtered.find((f) => String(f._id) === String(mFormId))) {
-                  setMFormId("");
-                }
-              }}
-            >
-              <MenuItem value="">{t.any}</MenuItem>
-              {events.map((ev) => (
-                <MenuItem key={ev._id} value={ev._id}>
-                  {ev.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-
-          <FormControl size="small" fullWidth disabled={!selectedBusiness?._id}>
-            <InputLabel>{t.form}</InputLabel>
-            <Select
-              label={t.form}
-              value={mFormId}
-              onChange={(e) => setMFormId(e.target.value)}
-            >
-              {forms
-                .filter(
-                  (f) =>
-                    !mEventId ||
-                    String(f.eventId?._id || f.eventId) === String(mEventId)
-                )
-                .map((f) => (
-                  <MenuItem key={f._id} value={f._id}>
-                    {f.title}
-                  </MenuItem>
-                ))}
-            </Select>
-          </FormControl>
-
           <TextField
             size="small"
             label={t.search}
@@ -845,37 +1163,8 @@ export default function RecipientsManagePage() {
               {t.apply}
             </Button>
           </Stack>
-        </Stack>
-      </FilterDialog>
-
-      {/* Actions Modal (API call buttons) */}
-      <FilterDialog
-        open={actionsOpen}
-        onClose={() => setActionsOpen(false)}
-        title={t.actions}
-      >
-        <Stack spacing={1.5}>
-          <Button
-            fullWidth
-            variant="contained"
-            startIcon={
-              syncLoading ? (
-                <CircularProgress size={20} color="inherit" />
-              ) : (
-                <ICONS.refresh fontSize="small" />
-              )
-            }
-            disabled={!formId || !eventId || syncLoading}
-            onClick={handleSync}
-            sx={getStartIconSpacing(dir)}
-          >
-            {syncLoading && syncProgress.total
-              ? `${t.sync} ${syncProgress.synced}/${syncProgress.total}`
-              : syncLoading
-                ? `${t.sync}...`
-                : t.sync}
-          </Button>
-
+          <Divider />
+          <Stack spacing={1.5}>
           <Button
             fullWidth
             variant="outlined"
@@ -906,13 +1195,14 @@ export default function RecipientsManagePage() {
             }
             disabled={!formId || clearLoading}
             onClick={() => {
-              setActionsOpen(false);
+              setFiltersOpen(false);
               setConfirmClear(true);
             }}
             sx={getStartIconSpacing(dir)}
           >
             {t.clearAll}
           </Button>
+          </Stack>
         </Stack>
       </FilterDialog>
     </Box>

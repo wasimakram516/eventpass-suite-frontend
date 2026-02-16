@@ -5,7 +5,6 @@ import { useParams } from "next/navigation";
 import {
     Box,
     TextField,
-    Paper,
     Typography,
     Chip,
     Stack,
@@ -24,6 +23,7 @@ import { getPublicFormBySlug } from "@/services/surveyguru/surveyFormService";
 import { getPublicEventById } from "@/services/eventreg/eventService";
 import ICONS from "@/utils/iconUtil";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
+import AppCard from "@/components/cards/AppCard";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
@@ -1613,7 +1613,7 @@ export default function SurveyGuruInsightsPage() {
                 <Divider sx={{ mb: 3 }} />
             </>
 
-            <Paper
+            <AppCard
                 sx={{
                     flex: "0 0 auto",
                     p: { xs: 1, sm: 1.5, md: 2 },
@@ -1660,14 +1660,14 @@ export default function SurveyGuruInsightsPage() {
                         />
                     ))}
                 </Stack>
-            </Paper>
+            </AppCard>
 
             <Stack
                 spacing={2}
                 sx={{ flex: "1 1 0%", overflow: "auto", minHeight: 0, pb: 2, px: 0.3 }}
             >
                 {selectedQuestions.length === 0 ? (
-                    <Paper
+                    <AppCard
                         sx={{
                             flex: 1,
                             borderRadius: 2,
@@ -1683,10 +1683,10 @@ export default function SurveyGuruInsightsPage() {
                                 {t.selectQuestionPrompt}
                             </Typography>
                         </Box>
-                    </Paper>
+                    </AppCard>
                 ) : (
                     selectedQuestions.map((questionId) => (
-                        <Paper
+                        <AppCard
                             key={questionId}
                             sx={{ borderRadius: 2, boxShadow: 2, minHeight: "450px" }}
                         >
@@ -1739,7 +1739,7 @@ export default function SurveyGuruInsightsPage() {
                                 t={t}
                                 language={language}
                             />
-                        </Paper>
+                        </AppCard>
                     ))
                 )}
             </Stack>

@@ -7,8 +7,8 @@ export const listRecipients = withApiHandler(async (params = {}) => {
 });
 
 export const syncRecipientsForEvent = withApiHandler(
-  async (formId) => {
-    const { data } = await api.post(`/surveyguru/forms/${formId}/recipients/sync`);
+  async (formId, payload = {}) => {
+    const { data } = await api.post(`/surveyguru/forms/${formId}/recipients/sync`, payload);
     return data; 
   },
 );
