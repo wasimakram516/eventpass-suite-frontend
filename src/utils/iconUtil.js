@@ -32,6 +32,7 @@ import {
   Language as LanguageIcon,
   RestoreFromTrash as RestoreIcon,
   Badge as BadgeIcon,
+  ExpandLess as ExpandLessIcon,
   ExpandMore as ExpandMoreIcon,
 } from "@mui/icons-material";
 
@@ -163,12 +164,14 @@ const ICONS = {
   add: AddIcon,
   back: ArrowBackIcon,
   badge: BadgeIcon,
+  expandLess: ExpandLessIcon,
   cancel: CancelIcon,
   check: CheckIcon,
   close: CloseIcon,
   create: AddIcon,
   delete: DeleteIcon,
   down: ExpandMoreIcon,
+  expandMore: ExpandMoreIcon,
   edit: EditIcon,
   filter: FilterIcon,
   form: FormIcon,
