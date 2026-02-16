@@ -6,7 +6,6 @@ import {
   Button,
   Container,
   LinearProgress,
-  Paper,
   TextField,
   Typography,
   Stepper,
@@ -14,7 +13,8 @@ import {
   StepLabel,
   Stack,
 } from "@mui/material";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
+import AppCard from "@/components/cards/AppCard";
 import { getPublicFormBySlug } from "@/services/surveyguru/surveyFormService";
 import { submitSurveyResponseBySlug } from "@/services/surveyguru/surveyResponseService";
 import ICONS from "@/utils/iconUtil";
@@ -73,8 +73,11 @@ export const surveyTranslations = {
     fullNameRequired: "Full name is required",
     email: "Email",
     emailRequired: "Email is required",
-    companyOptional: "Company (optional)",
+    companyOptional: "Organization (optional)",
     startSurvey: "Start survey",
+    anonymousNoticeTitle: "Anonymous Survey",
+    anonymousNoticeBody:
+      "This survey is anonymous. Your personal information is not collected or stored with your answers.",
 
     // Survey footer
     previous: "Previous",
@@ -105,8 +108,11 @@ export const surveyTranslations = {
     fullNameRequired: "الاسم الكامل مطلوب",
     email: "البريد الإلكتروني",
     emailRequired: "البريد الإلكتروني مطلوب",
-    companyOptional: "الشركة (اختياري)",
+    companyOptional: "المؤسسة (اختياري)",
     startSurvey: "ابدأ الاستبيان",
+    anonymousNoticeTitle: "استبيان مجهول",
+    anonymousNoticeBody:
+      "هذا الاستبيان مجهول. لا يتم جمع أو حفظ معلوماتك الشخصية مع إجاباتك.",
 
     // Survey footer
     previous: "السابق",
@@ -124,10 +130,12 @@ export const surveyTranslations = {
 
 export default function PublicSurveyPage() {
   const { lang, formSlug: slug } = useParams();
+  const searchParams = useSearchParams();
   const urlLanguage = lang === "ar" ? "ar" : "en";
   const { t: trans, dir, language } = useI18nLayout(surveyTranslations, urlLanguage);
 
-  const tokenRef = useRef("");
+  const token = searchParams?.get("token") || "";
+  const hasToken = Boolean(token);
   const gestureAccumRef = useRef(0);
   const gestureCooldownRef = useRef(false);
   const lastDirRef = useRef(null);
@@ -183,23 +191,9 @@ export default function PublicSurveyPage() {
   const actionColor = palette.action;
   const rightGradient = palette.gradient;
 
-  // Auto-skip attendee phase if form is anonymous
-  useEffect(() => {
-    if (form?.isAnonymous) {
-      setPhase("survey");
-    }
-  }, [form?.isAnonymous]);
-
   useEffect(() => {
     progressRef.current = progressStep;
   }, [progressStep]);
-
-  useEffect(() => {
-    tokenRef.current =
-      typeof window !== "undefined"
-        ? new URLSearchParams(window.location.search).get("token") || ""
-        : "";
-  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -367,7 +361,7 @@ export default function PublicSurveyPage() {
   }, [form?.questions?.length]);
 
   const startSurvey = () => {
-    if (form?.isAnonymous) {
+    if (form?.isAnonymous || hasToken) {
       // skip attendee validation
       setPhase("survey");
       return;
@@ -383,7 +377,6 @@ export default function PublicSurveyPage() {
   };
 
   const onSubmit = async () => {
-    const token = tokenRef.current;
     const questions = form?.questions || [];
     if (document.activeElement && document.activeElement.blur) {
       document.activeElement.blur();
@@ -391,7 +384,7 @@ export default function PublicSurveyPage() {
     await new Promise((resolve) => setTimeout(resolve, 150));
 
     const payload = {
-      attendee: form?.isAnonymous
+      attendee: form?.isAnonymous || hasToken
         ? { name: null, email: null, company: null }
         : attendee,
       answers: questions.map((q) => {
@@ -534,7 +527,7 @@ export default function PublicSurveyPage() {
             }}
           />
 
-          <Paper
+          <AppCard
             elevation={0}
             sx={{
               p: { xs: 3, sm: 5 },
@@ -618,18 +611,21 @@ export default function PublicSurveyPage() {
             >
               {trans.youMayClose}
             </Typography>
-          </Paper>
+          </AppCard>
         </Container>
       </Box>
     );
   }
 
   if (phase === "attendee") {
+    const isAnonymousMode = Boolean(form?.isAnonymous);
     const canStart =
-      Boolean(attendee?.name?.trim()) &&
-      Boolean(attendee?.email?.trim()) &&
-      !attendeeErr?.name &&
-      !attendeeErr?.email;
+      hasToken ||
+      isAnonymousMode ||
+      (Boolean(attendee?.name?.trim()) &&
+        Boolean(attendee?.email?.trim()) &&
+        !attendeeErr?.name &&
+        !attendeeErr?.email);
 
     return (
       <Box
@@ -652,13 +648,20 @@ export default function PublicSurveyPage() {
         }}
       >
         <LanguageSelector top={20} right={20} />
-        <Paper
+        <AppCard
           elevation={3}
           sx={{
             width: "100%",
             maxWidth: { xs: 360, sm: 520, md: 600 },
             borderRadius: { xs: 2, sm: 3 },
             p: { xs: 2, sm: 3.5 },
+            ...(isAnonymousMode
+              ? {
+                border: "1px solid rgba(245, 158, 11, 0.35)",
+                background:
+                    "linear-gradient(180deg, rgba(255,251,235,0.92) 0%, rgba(255,255,255,0.96) 100%)",
+              }
+              : {}),
           }}
         >
           <Box
@@ -677,6 +680,28 @@ export default function PublicSurveyPage() {
               {tForm?.title}
             </Typography>
           </Box>
+          {isAnonymousMode && (
+            <Stack
+              direction={dir === "rtl" ? "row-reverse" : "row"}
+              justifyContent="center"
+              sx={{ mb: 1.5 }}
+            >
+              <Box
+                sx={{
+                  px: 1.25,
+                  py: 0.4,
+                  borderRadius: 10,
+                  bgcolor: "warning.main",
+                  color: "#fff",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  letterSpacing: 0.2,
+                }}
+              >
+                {trans.anonymousNoticeTitle}
+              </Box>
+            </Stack>
+          )}
 
           {tForm?.description && (
             <Typography
@@ -685,6 +710,39 @@ export default function PublicSurveyPage() {
             >
               {tForm?.description}
             </Typography>
+          )}
+          {isAnonymousMode && (
+            <Box
+              sx={{
+                mb: 2.5,
+                p: 1.5,
+                borderRadius: 1.5,
+                bgcolor: "rgba(245, 158, 11, 0.08)",
+                border: "1px solid rgba(245, 158, 11, 0.28)",
+                ...(dir === "rtl"
+                  ? { borderRight: "6px solid #b45309" }
+                  : { borderLeft: "6px solid #b45309" }),
+              }}
+            >
+              <Stack
+                direction={dir === "rtl" ? "row-reverse" : "row"}
+                spacing={1}
+                alignItems="flex-start"
+              >
+                <ICONS.info sx={{ color: "#92400e", fontSize: 20, mt: 0.2 }} />
+                <Box>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{ color: "#78350f", fontWeight: 800, mb: 0.25 }}
+                  >
+                    {trans.anonymousNoticeTitle}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: "#92400e" }}>
+                    {trans.anonymousNoticeBody}
+                  </Typography>
+                </Box>
+              </Stack>
+            </Box>
           )}
 
           {/* form enables Enter-to-submit */}
@@ -697,63 +755,67 @@ export default function PublicSurveyPage() {
             noValidate
           >
             <Stack dir={dir}>
-              <TextField
-                id="attendee-name"
-                label={trans.fullName}
-                value={attendee.name}
-                onChange={(e) =>
-                  setAttendee((s) => ({ ...s, name: e.target.value }))
-                }
-                error={!!attendeeErr.name}
-                helperText={attendeeErr.name || " "}
-                fullWidth
-                required
-                autoFocus
-                autoComplete="name"
-                inputProps={{ enterKeyHint: "next", "aria-label": "Full Name" }}
-                sx={{
-                  "& input": { fontSize: { xs: "0.95rem", sm: "1.05rem" } },
-                }}
-              />
+              {!hasToken && !form?.isAnonymous && (
+                <>
+                  <TextField
+                    id="attendee-name"
+                    label={trans.fullName}
+                    value={attendee.name}
+                    onChange={(e) =>
+                      setAttendee((s) => ({ ...s, name: e.target.value }))
+                    }
+                    error={!!attendeeErr.name}
+                    helperText={attendeeErr.name || " "}
+                    fullWidth
+                    required
+                    autoFocus
+                    autoComplete="name"
+                    inputProps={{ enterKeyHint: "next", "aria-label": "Full Name" }}
+                    sx={{
+                      "& input": { fontSize: { xs: "0.95rem", sm: "1.05rem" } },
+                    }}
+                  />
 
-              <TextField
-                id="attendee-email"
-                label={trans.email}
-                type="email"
-                value={attendee.email}
-                onChange={(e) =>
-                  setAttendee((s) => ({ ...s, email: e.target.value }))
-                }
-                error={!!attendeeErr.email}
-                helperText={attendeeErr.email || " "}
-                fullWidth
-                required
-                autoComplete="email"
-                inputProps={{
-                  inputMode: "email",
-                  enterKeyHint: "next",
-                  "aria-label": "Email address",
-                }}
-                sx={{
-                  "& input": { fontSize: { xs: "0.95rem", sm: "1.05rem" } },
-                }}
-              />
+                  <TextField
+                    id="attendee-email"
+                    label={trans.email}
+                    type="email"
+                    value={attendee.email}
+                    onChange={(e) =>
+                      setAttendee((s) => ({ ...s, email: e.target.value }))
+                    }
+                    error={!!attendeeErr.email}
+                    helperText={attendeeErr.email || " "}
+                    fullWidth
+                    required
+                    autoComplete="email"
+                    inputProps={{
+                      inputMode: "email",
+                      enterKeyHint: "next",
+                      "aria-label": "Email address",
+                    }}
+                    sx={{
+                      "& input": { fontSize: { xs: "0.95rem", sm: "1.05rem" } },
+                    }}
+                  />
 
-              <TextField
-                id="attendee-company"
-                label={trans.companyOptional}
-                value={attendee.company}
-                onChange={(e) =>
-                  setAttendee((s) => ({ ...s, company: e.target.value }))
-                }
-                helperText={" "}
-                fullWidth
-                autoComplete="organization"
-                inputProps={{ enterKeyHint: "done", "aria-label": "Company" }}
-                sx={{
-                  "& input": { fontSize: { xs: "0.95rem", sm: "1.05rem" } },
-                }}
-              />
+                  <TextField
+                    id="attendee-company"
+                    label={trans.companyOptional}
+                    value={attendee.company}
+                    onChange={(e) =>
+                      setAttendee((s) => ({ ...s, company: e.target.value }))
+                    }
+                    helperText={" "}
+                    fullWidth
+                    autoComplete="organization"
+                    inputProps={{ enterKeyHint: "done", "aria-label": "Organization" }}
+                    sx={{
+                      "& input": { fontSize: { xs: "0.95rem", sm: "1.05rem" } },
+                    }}
+                  />
+                </>
+              )}
 
               <Button
                 type="submit"
@@ -764,6 +826,7 @@ export default function PublicSurveyPage() {
                 sx={{
                   py: 1.25,
                   fontWeight: 800,
+                  ...(isAnonymousMode ? { mt: 0.5 } : {}),
                   ...getStartIconSpacing(dir),
                 }}
               >
@@ -771,7 +834,7 @@ export default function PublicSurveyPage() {
               </Button>
             </Stack>
           </Box>
-        </Paper>
+        </AppCard>
       </Box>
     );
   }
@@ -870,11 +933,13 @@ export default function PublicSurveyPage() {
               background: rightGradient,
               position: "fixed",
               top: 0,
+              left: 0,
+              right: 0,
               display: "flex",
-              alignItems: "stretch",
-              justifyContent: "stretch",
+              alignItems: "center",
+              justifyContent: "center",
               p: 2,
-              minHeight: "90vh",
+              minHeight: "100vh",
               overflowX: "hidden",
             }}
           >
@@ -1291,7 +1356,8 @@ export default function PublicSurveyPage() {
             boxShadow: 3,
             width: "100%",
             maxWidth: "90vw",
-            minHeight: 640,
+            height: "min(86vh, 920px)",
+            minHeight: 620,
           }}
         >
           {/* Left Sidebar */}
@@ -1303,6 +1369,7 @@ export default function PublicSurveyPage() {
               flexDirection: "column",
               justifyContent: "flex-start",
               height: "100%",
+              minHeight: 0,
             }}
           >
             <Typography variant="h4" fontWeight={800} gutterBottom>
@@ -1311,7 +1378,7 @@ export default function PublicSurveyPage() {
             <Typography color="text.secondary" sx={{ mb: 3 }}>
               {tForm?.description}
             </Typography>
-            <Box sx={{ flex: 1, overflowY: "auto" }}>
+            <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto", pr: 0.5 }}>
               {questions.map((q, idx) => (
                 <Box
                   key={q._id}
@@ -1383,11 +1450,11 @@ export default function PublicSurveyPage() {
               display: "flex",
               alignItems: "stretch",
               justifyContent: "stretch",
-              pt: 10,
-              pr: 10,
-              pb: 10,
+              pt: { md: 4, lg: 6 },
+              pr: { md: 4, lg: 6 },
+              pb: { md: 4, lg: 6 },
               pl: 0,
-              minHeight: 640,
+              minHeight: 620,
             }}
           >
             {/* overlay */}
@@ -1413,7 +1480,7 @@ export default function PublicSurveyPage() {
                 display: "grid",
                 gridTemplateRows: "auto 1fr auto", // header / content / footer
                 gap: 3,
-                minHeight: 520,
+                minHeight: 0,
                 overflow: "hidden",
               }}
             >
@@ -1438,7 +1505,17 @@ export default function PublicSurveyPage() {
               </Box>
 
               {/* Content */}
-              <Box sx={{ display: "grid", placeItems: "center", px: 1 }}>
+              <Box
+                sx={{
+                  minHeight: 0,
+                  overflowY: "auto",
+                  overflowX: "hidden",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  px: 1,
+                }}
+              >
                 {/* NPS / Rating */}
                 {isNps && (
                   <Box

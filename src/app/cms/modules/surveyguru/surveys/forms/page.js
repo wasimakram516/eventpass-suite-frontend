@@ -40,6 +40,7 @@ import NoDataAvailable from "@/components/NoDataAvailable";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import RecordMetadata from "@/components/RecordMetadata";
+import AppCard from "@/components/cards/AppCard";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import ICONS from "@/utils/iconUtil";
 
@@ -848,7 +849,7 @@ export default function SurveyFormsManagePage() {
           <Grid container spacing={3} justifyContent="center">
             {forms.map((f) => (
               <Grid item xs={12} sm={6} md={4} lg={3} key={f._id}>
-                <Card
+                <AppCard
                   sx={{
                     width: "100%",
                     maxWidth: 420,
@@ -1003,7 +1004,7 @@ export default function SurveyFormsManagePage() {
                       </IconButton>
                     </Tooltip>
                   </CardActions>
-                </Card>
+                </AppCard>
               </Grid>
             ))}
           </Grid>

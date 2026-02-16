@@ -5,7 +5,6 @@ import {
   Box,
   Typography,
   Grid,
-  Card,
   CardContent,
   CircularProgress,
   Button,
@@ -31,8 +30,10 @@ import { formatDateTimeWithLocale } from "@/utils/dateUtils";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import ICONS from "@/utils/iconUtil";
+import AppCard from "@/components/cards/AppCard";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
+import { pickFullName } from "@/utils/customFieldUtils";
 
 import { getPublicFormBySlug } from "@/services/surveyguru/surveyFormService";
 import {
@@ -340,14 +341,22 @@ function renderAnswer({ q, ans, dir, align }) {
 }
 
 function ResponseCard({ resp, t, dir, formDetails, align }) {
+  const [showAllAnswers, setShowAllAnswers] = useState(false);
   const isAnonymous = formDetails?.isAnonymous;
 
   const name = resp.attendee?.name;
   const email = resp.attendee?.email;
   const company = resp.attendee?.company;
+  const hasSubmittedName = Boolean(name?.trim?.());
+  const hasSubmittedEmail = Boolean(email?.trim?.());
+  const hasSubmittedCompany = Boolean(company?.trim?.());
+  const hasSubmittedAttendeeFields =
+    hasSubmittedName || hasSubmittedEmail || hasSubmittedCompany;
   const submittedAt = resp.submittedAt;
 
   const rec = resp.recipientId;
+  const registrationName =
+    rec?.fullName?.trim?.() || pickFullName(rec?.customFields) || "";
 
   const chipStyles = {
     minWidth: dir === "rtl" ? "140px" : "auto",
@@ -366,47 +375,59 @@ function ResponseCard({ resp, t, dir, formDetails, align }) {
   ) : null;
 
   const questions = formDetails?.questions || [];
+  const ANSWER_PREVIEW_COUNT = 4;
+  const hasMoreAnswers = questions.length > ANSWER_PREVIEW_COUNT;
+  const visibleQuestions = showAllAnswers
+    ? questions
+    : questions.slice(0, ANSWER_PREVIEW_COUNT);
 
   return (
-    <Card
+    <AppCard
       sx={{
         width: "100%",
-        minWidth: { sm: 280 },
-        maxWidth: { sm: 380 },
         height: "100%",
         display: "flex",
         flexDirection: "column",
-        borderRadius: 3,
-        boxShadow: 3,
+        borderRadius: 2.5,
+        boxShadow: 2,
         overflow: "hidden",
         bgcolor: "background.paper",
-        transition: "transform 0.2s ease, box-shadow 0.2s ease",
+        border: "1px solid",
+        borderColor: "divider",
+        transition: "box-shadow 0.2s ease",
         "&:hover": {
-          transform: "translateY(-2px)",
-          boxShadow: 6,
+          boxShadow: 4,
         },
       }}
       dir={dir}
     >
-      <Box sx={{ p: 2, pb: 0.5 }}>
+      <Box sx={{ p: 1.5, pb: 0.5 }}>
         <Box
           sx={{
             display: "flex",
             alignItems: "center",
             flexDirection: dir === "rtl" ? "row-reverse" : "row",
-            gap: 2,
+            gap: 1.25,
           }}
         >
-          <Avatar sx={{ bgcolor: "primary.main" }}>
+          <Avatar sx={{ bgcolor: "primary.main", width: 36, height: 36 }}>
             <ICONS.personOutline />
           </Avatar>
           <Box sx={{ flex: 1 }}>
             <Typography
               variant="body1"
               fontWeight={700}
-              sx={{ textAlign: align }}
+              sx={{
+                textAlign: align,
+                display: "-webkit-box",
+                WebkitLineClamp: 1,
+                WebkitBoxOrient: "vertical",
+                overflow: "hidden",
+              }}
             >
-              {isAnonymous ? t.anonymous : name || t.unknownName}
+              {isAnonymous
+                ? t.anonymous
+                : name || registrationName || t.unknownName}
             </Typography>
           </Box>
 
@@ -416,8 +437,8 @@ function ResponseCard({ resp, t, dir, formDetails, align }) {
         </Box>
       </Box>
 
-      <CardContent sx={{ pt: 1.5 }}>
-        <Box sx={{ mb: 2 }}>
+      <CardContent sx={{ pt: 1, px: 1.5, pb: 1.5 }}>
+        <Box sx={{ mb: 1 }}>
           {submittedAt ? (
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <ICONS.eventOutline fontSize="small" color="text.secondary" />
@@ -432,49 +453,48 @@ function ResponseCard({ resp, t, dir, formDetails, align }) {
           )}
         </Box>
 
-        <Typography
-          variant="overline"
-          sx={{ letterSpacing: 0.6, textAlign: align }}
-        >
-          {t.submittedDetails}
-        </Typography>
+        {hasSubmittedAttendeeFields && (
+          <Fragment>
+            <Typography
+              variant="overline"
+              sx={{ letterSpacing: 0.6, textAlign: align }}
+            >
+              {t.submittedDetails}
+            </Typography>
 
-        {/* Attendee Fields */}
-        {!isAnonymous ? (
-          <List dense sx={{ py: 0 }}>
-            <FieldRow
-              icon={<ICONS.personOutline fontSize="small" />}
-              primary={t.name}
-              secondary={name}
-              align={align}
-            />
-            <FieldRow
-              icon={<ICONS.emailOutline fontSize="small" />}
-              primary={t.email}
-              secondary={email}
-              align={align}
-            />
-            <FieldRow
-              icon={<ICONS.apartment fontSize="small" />}
-              primary={t.company}
-              secondary={company}
-              align={align}
-            />
-          </List>
-        ) : (
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{ mt: 1, textAlign: align }}
-          >
-            {t.anonymousMessage}
-          </Typography>
+            <List dense sx={{ py: 0 }}>
+              {hasSubmittedName && (
+                <FieldRow
+                  icon={<ICONS.personOutline fontSize="small" />}
+                  primary={t.name}
+                  secondary={name}
+                  align={align}
+                />
+              )}
+              {hasSubmittedEmail && (
+                <FieldRow
+                  icon={<ICONS.emailOutline fontSize="small" />}
+                  primary={t.email}
+                  secondary={email}
+                  align={align}
+                />
+              )}
+              {hasSubmittedCompany && (
+                <FieldRow
+                  icon={<ICONS.apartment fontSize="small" />}
+                  primary={t.company}
+                  secondary={company}
+                  align={align}
+                />
+              )}
+            </List>
+          </Fragment>
         )}
 
         {/* Original Participant Section */}
-        {!isAnonymous && rec && (
+        {!isAnonymous && rec && !hasSubmittedAttendeeFields && (
           <Fragment>
-            <Divider sx={{ my: 1.5 }} />
+            <Divider sx={{ my: 1 }} />
             <Typography
               variant="overline"
               sx={{ letterSpacing: 0.6, textAlign: align }}
@@ -485,7 +505,7 @@ function ResponseCard({ resp, t, dir, formDetails, align }) {
               <FieldRow
                 icon={<ICONS.personOutline fontSize="small" />}
                 primary={t.fullName}
-                secondary={rec.fullName}
+                secondary={registrationName}
                 align={align}
               />
               <FieldRow
@@ -536,7 +556,7 @@ function ResponseCard({ resp, t, dir, formDetails, align }) {
           </Fragment>
         )}
 
-        <Divider sx={{ my: 1.5 }} />
+        <Divider sx={{ my: 1 }} />
 
         {/* Answers */}
         <Typography
@@ -547,17 +567,12 @@ function ResponseCard({ resp, t, dir, formDetails, align }) {
         </Typography>
 
         <List dense sx={{ py: 0 }}>
-          {questions.map((q) => {
+          {visibleQuestions.map((q) => {
             const ans = (resp.answers || []).find(
               (a) => String(a.questionId) === String(q._id)
             );
             return (
-              <ListItem
-                key={q._id}
-                dense
-                disableGutters
-                sx={{ px: 0, py: 0.75 }}
-              >
+              <ListItem key={q._id} dense disableGutters sx={{ px: 0, py: 0.5 }}>
                 <ListItemIcon
                   sx={{
                     minWidth: 34,
@@ -588,8 +603,28 @@ function ResponseCard({ resp, t, dir, formDetails, align }) {
             );
           })}
         </List>
+        {hasMoreAnswers && (
+          <Button
+            size="small"
+            variant="text"
+            onClick={() => setShowAllAnswers((v) => !v)}
+            startIcon={showAllAnswers ? <ICONS.expandLess /> : <ICONS.expandMore />}
+            sx={{
+              mt: 0.25,
+              px: 0,
+              minWidth: 0,
+              fontWeight: 700,
+              alignSelf: align === "right" ? "flex-end" : "flex-start",
+              ...getStartIconSpacing(dir),
+            }}
+          >
+            {showAllAnswers
+              ? (t.showLessAnswers || "Show fewer answers")
+              : `${t.showMoreAnswers || "Show more answers"} (${questions.length - ANSWER_PREVIEW_COUNT})`}
+          </Button>
+        )}
       </CardContent>
-    </Card>
+    </AppCard>
   );
 }
 
@@ -625,6 +660,8 @@ export default function ViewSurveyResponses() {
       respondedAt: "Responded At",
       statusUnknown: "Unknown",
       answersTitle: "Answers",
+      showMoreAnswers: "Show more answers",
+      showLessAnswers: "Show fewer answers",
       anonymousSurvey: "Anonymous Survey",
       anonymous: "Anonymous",
       anonymousMessage: "This is an anonymous response.",
@@ -754,19 +791,26 @@ export default function ViewSurveyResponses() {
       <Divider sx={{ my: 2 }} />
 
       {/* Top bar */}
-      <Box
-        display="flex"
+      <Stack
+        direction={{ xs: "column", sm: "row" }}
         justifyContent="space-between"
-        alignItems="center"
-        mb={3}
-        px={1}
+        alignItems={{ xs: "stretch", sm: "center" }}
+        spacing={1.25}
+        mb={2.5}
+        px={0.5}
       >
         <Typography variant="body2" color="text.secondary">
           {t.showing} {(page - 1) * limit + 1}-
           {Math.min(page * limit, totalResponses)} {t.of} {totalResponses}{" "}
           {t.records}
         </Typography>
-        <FormControl size="small" sx={{ minWidth: 170, ml: 2 }}>
+        <FormControl
+          size="small"
+          sx={{
+            minWidth: { xs: "100%", sm: 170 },
+            ml: { xs: 0, sm: 2 },
+          }}
+        >
           <InputLabel>{t.recordsPerPage}</InputLabel>
           <Select
             value={limit}
@@ -781,29 +825,27 @@ export default function ViewSurveyResponses() {
             ))}
           </Select>
         </FormControl>
-      </Box>
+      </Stack>
 
       {/* Cards */}
       {!responses.length ? (
         <NoDataAvailable />
       ) : (
         <Fragment>
-          <Grid container spacing={3} justifyContent="center">
+          <Grid container spacing={2} alignItems="stretch" justifyContent="center">
             {responses.slice((page - 1) * limit, page * limit).map((resp) => (
               <Grid
                 item
                 xs={12}
                 sm={6}
-                md={4}
+                md={6}
+                lg={4}
                 key={resp._id}
-                sx={{
-                  display: { xs: "flex", sm: "block" },
-                  width: { xs: "100%", sm: "auto" },
-                }}
               >
                 <ResponseCard
                   resp={resp}
                   t={t}
+                  dir={dir}
                   formDetails={formDetails}
                   align={align}
                 />

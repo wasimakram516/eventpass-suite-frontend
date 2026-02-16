@@ -33,7 +33,7 @@ const useSurveyGuruSocket = ({
 
   // ---- Sync Progress Handler (stable, guarded) ----
   const handleSyncEvent = useCallback((data) => {
-    if (data.formId !== formId) return;
+    if (String(data?.formId) !== String(formId)) return;
 
     setSyncProgress({
       synced: data.synced,
@@ -46,7 +46,7 @@ const useSurveyGuruSocket = ({
 
   // ---- Email Progress Handler (stable, guarded) ----
   const handleEmailEvent = useCallback((data) => {
-    if (data.formId !== formId) return;
+    if (String(data?.formId) !== String(formId)) return;
 
     setEmailProgress({
       sent: data.sent,
