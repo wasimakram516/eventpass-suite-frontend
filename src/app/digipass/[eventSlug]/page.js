@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
   Box,
@@ -14,6 +14,8 @@ import {
 import { getDigipassEventBySlug } from "@/services/digipass/digipassEventService";
 import ICONS from "@/utils/iconUtil";
 import { useLanguage } from "@/contexts/LanguageContext";
+import LanguageSelector from "@/components/LanguageSelector";
+import getStartIconSpacing from "@/utils/getStartIconSpacing";
 
 export default function DigiPassEventDetails() {
   const { eventSlug } = useParams();
@@ -22,9 +24,16 @@ export default function DigiPassEventDetails() {
   const isArabic = language === "ar";
   const dir = isArabic ? "rtl" : "ltr";
 
+  const t = {
+    register: isArabic ? "التسجيل" : "Register",
+    signIn: isArabic ? "تسجيل الدخول" : "Sign in",
+  };
+
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [isMuted] = useState(true);
+  const videoRef = useRef(null);
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -39,6 +48,53 @@ export default function DigiPassEventDetails() {
     fetchEvent();
   }, [eventSlug]);
 
+  // Background selection logic (mirrors EventReg public page)
+  const background = useMemo(() => {
+    if (!event || !event.background) return null;
+
+    const langKey = language === "ar" ? "ar" : "en";
+    const bg = event.background[langKey];
+
+    const resolveFileType = (url, explicitType) => {
+      if (explicitType) return explicitType;
+      const urlLower = String(url || "").toLowerCase();
+      if (urlLower.match(/\.(mp4|webm|ogg|mov|avi)$/)) {
+        return "video";
+      }
+      return "image";
+    };
+
+    if (bg && typeof bg === "object" && bg.url && String(bg.url).trim() !== "") {
+      return {
+        url: bg.url,
+        fileType: resolveFileType(bg.url, bg.fileType),
+      };
+    }
+
+    const otherLangKey = language === "ar" ? "en" : "ar";
+    const otherBg = event.background[otherLangKey];
+    if (
+      otherBg &&
+      typeof otherBg === "object" &&
+      otherBg.url &&
+      String(otherBg.url).trim() !== ""
+    ) {
+      return {
+        url: otherBg.url,
+        fileType: resolveFileType(otherBg.url, otherBg.fileType),
+      };
+    }
+
+    if (event.backgroundUrl) {
+      return {
+        url: event.backgroundUrl,
+        fileType: "image",
+      };
+    }
+
+    return null;
+  }, [event, language]);
+
   if (loading) {
     return (
       <Box
@@ -47,13 +103,9 @@ export default function DigiPassEventDetails() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          backgroundImage: "url('/bf-digiPass.png')",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
         }}
       >
-        <CircularProgress sx={{ color: "white" }} />
+        <CircularProgress />
       </Box>
     );
   }
@@ -67,13 +119,9 @@ export default function DigiPassEventDetails() {
           alignItems: "center",
           justifyContent: "center",
           textAlign: "center",
-          backgroundImage: "url('/bf-digiPass.png')",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
         }}
       >
-        <Typography color="error" variant="h6" sx={{ color: "white" }}>
+        <Typography color="error" variant="h6">
           {error}
         </Typography>
       </Box>
@@ -95,42 +143,57 @@ export default function DigiPassEventDetails() {
         py: { xs: 4, sm: 6, md: 8 },
         overflow: "hidden",
       }}
-      dir={dir}
     >
-      {/* Background Image */}
-      <Box
-        component="img"
-        src="/bf-digiPass.png"
-        alt="Background"
-        sx={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          objectFit: "cover",
-          zIndex: -1,
-          pointerEvents: "none",
-        }}
-      />
-      {/* Orange Circle - Top Right */}
-      <Box
-        component="img"
-        src="/orangeCircle.png"
-        alt="Orange Circle"
-        sx={{
-          position: "absolute",
-          top: 0,
-          right: "-19vw",
-          width: "96%",
-          height: "57%",
-          zIndex: 0,
-          pointerEvents: "none",
-        }}
-      />
+      {/* Image Background */}
+      {background && background.fileType === "image" && background.url && (
+        <Box
+          component="img"
+          src={background.url}
+          alt="Background"
+          sx={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            zIndex: -1,
+            pointerEvents: "none",
+          }}
+        />
+      )}
 
+      {/* Video Background */}
+      {background?.fileType === "video" && background?.url && (
+        <Box
+          sx={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            zIndex: -1,
+            overflow: "hidden",
+          }}
+        >
+          <video
+            ref={videoRef}
+            src={background.url}
+            autoPlay
+            playsInline
+            loop
+            muted={isMuted}
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+            }}
+          />
+        </Box>
+      )}
       <Container
         maxWidth="sm"
+        dir={dir}
         sx={{
           display: "flex",
           flexDirection: "column",
@@ -145,12 +208,13 @@ export default function DigiPassEventDetails() {
         <Card
           sx={{
             width: "100%",
-            maxWidth: { xs: "100%", sm: 450, md: 500 },
-            minHeight: { xs: 500, sm: 600, md: 700 },
-            backgroundColor: "#0B1E3D",
-            borderRadius: { xs: 3, sm: 4 },
-            p: { xs: 4, sm: 5, md: 6 },
-            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.2)",
+            maxWidth: 600,
+            borderRadius: 3,
+            p: 4,
+            textAlign: "center",
+            backdropFilter: "blur(6px)",
+            backgroundColor: "rgba(255,255,255,0.9)",
+            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.15)",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -185,10 +249,11 @@ export default function DigiPassEventDetails() {
 
           <Stack
             direction={{ xs: "column", sm: "row" }}
-            spacing={2}
             sx={{
               width: "100%",
               mt: { xs: 2, sm: 3 },
+              columnGap: 2,
+              rowGap: 2,
             }}
           >
             <Button
@@ -201,16 +266,14 @@ export default function DigiPassEventDetails() {
               }}
               sx={{
                 flex: { sm: 1 },
-                borderColor: "white",
-                color: "white",
+                ...getStartIconSpacing(dir),
                 "&:hover": {
-                  borderWidth: 2,
-                  borderColor: "white",
-                  backgroundColor: "rgba(255, 255, 255, 0.1)",
+                  borderColor: "primary.dark",
+                  backgroundColor: "rgba(25,118,210,0.04)",
                 },
               }}
             >
-              Register
+              {t.register}
             </Button>
 
             <Button
@@ -223,20 +286,23 @@ export default function DigiPassEventDetails() {
               }}
               sx={{
                 flex: { sm: 1 },
-                borderColor: "white",
-                color: "white",
+                ...getStartIconSpacing(dir),
                 "&:hover": {
-                  borderWidth: 2,
-                  borderColor: "white",
-                  backgroundColor: "rgba(255, 255, 255, 0.1)",
+                  borderColor: "primary.dark",
+                  backgroundColor: "rgba(25,118,210,0.04)",
                 },
               }}
             >
-              Sign in
+              {t.signIn}
             </Button>
           </Stack>
         </Card>
       </Container>
+
+      {/* Force LanguageSelector subtree to LTR so EN/AR toggle behaves correctly in Arabic */}
+      <Box dir="ltr">
+        <LanguageSelector top={20} right={20} />
+      </Box>
     </Box>
   );
 }

@@ -483,7 +483,7 @@ function RealPoll({ eventSlug }) {
                           //     ? "2px solid"
                           //     : "2px dashed",
                           borderColor:
-                            highlightedOption === idx ? "#ff8200" : "grey.300",
+                            highlightedOption === idx ? "primary.main" : "grey.300",
                           cursor: "pointer",
                           minHeight: 150,
                         }}
@@ -523,7 +523,7 @@ function RealPoll({ eventSlug }) {
                             fontWeight="bold"
                             color={
                               highlightedOption === idx
-                                ? "#ff8200"
+                                ? "primary.main"
                                 : "text.secondary"
                             }
                             sx={{
@@ -591,11 +591,11 @@ function RealPoll({ eventSlug }) {
                           height: 24,
                           bgcolor: "white",
                           border: "2px solid",
-                          borderColor: "#ff8200",
+                          borderColor: "primary.main",
                         },
                         "& .MuiSlider-track": {
                           height: 8,
-                          bgcolor: "#ff8200",
+                          bgcolor: "primary.main",
                         },
                         "& .MuiSlider-rail": {
                           height: 8,
@@ -712,9 +712,8 @@ function RealPoll({ eventSlug }) {
                     submitting && <CircularProgress size={20} color="inherit" />
                   }
                   sx={{
-                    backgroundColor: "#ff8200",
                     "&:hover": {
-                      backgroundColor: "#e67500",
+                      backgroundColor: "primary.dark",
                     },
                   }}
                 >
@@ -798,7 +797,7 @@ function RealPoll({ eventSlug }) {
           sx={{
             fontSize: "2rem",
             fontWeight: "bold",
-            color: "#ff8200",
+            color: "primary.main",
             textAlign: "center",
             pb: 1,
           }}
@@ -835,13 +834,14 @@ function RealPoll({ eventSlug }) {
               width: 72,
               height: 72,
               borderRadius: "50%",
-              border: "3px solid #ff8200",
+              border: "3px solid",
+              borderColor: "primary.main",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
             }}
           >
-            <Typography variant="h4" fontWeight="bold" color="#ff8200">
+            <Typography variant="h4" fontWeight="bold" color="primary.main">
               {closeTimer}
             </Typography>
           </Box>
@@ -863,9 +863,8 @@ function RealPoll({ eventSlug }) {
             onClick={handleRestart}
             startIcon={<ICONS.check />}
             sx={{
-              backgroundColor: "#ff8200",
               "&:hover": {
-                backgroundColor: "#e67500",
+                backgroundColor: "primary.dark",
               },
             }}
           >

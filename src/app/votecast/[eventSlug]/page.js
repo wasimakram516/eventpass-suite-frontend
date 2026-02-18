@@ -426,11 +426,7 @@ export default function VoteCastEventWelcome() {
               onClick={() => router.push(`/votecast/${eventSlug}/vote`)}
               startIcon={<ICONS.next />}
               sx={{
-                backgroundColor: "#ff8200",
                 transition: "0.3s",
-                "&:hover": {
-                  backgroundColor: "#e67500",
-                },
                 ...getStartIconSpacing(dir),
               }}
             >

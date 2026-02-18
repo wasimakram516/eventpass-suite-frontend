@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useMemo, useCallback } from "react";
+import React, { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import {
   Box,
   Typography,
@@ -18,6 +18,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { pickFullName } from "@/utils/customFieldUtils";
 import { QRCodeCanvas } from "qrcode.react";
 import useDigiPassSocket from "@/hooks/modules/digipass/useDigiPassSocket";
+import LanguageSelector from "@/components/LanguageSelector";
 
 export default function DigiPassDashboard() {
   const { eventSlug } = useParams();
@@ -42,6 +43,8 @@ export default function DigiPassDashboard() {
   const [registration, setRegistration] = useState(null);
   const [tasksCompleted, setTasksCompleted] = useState(0);
   const [maxTasksPerUser, setMaxTasksPerUser] = useState(null);
+  const [isMuted] = useState(true);
+  const videoRef = useRef(null);
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -67,6 +70,53 @@ export default function DigiPassDashboard() {
       }
     }
   }, [eventSlug]);
+
+  // Dynamic background (match DigiPass public/register pages)
+  const background = useMemo(() => {
+    if (!event || !event.background) return null;
+
+    const langKey = language === "ar" ? "ar" : "en";
+    const bg = event.background[langKey];
+
+    const resolveFileType = (url, explicitType) => {
+      if (explicitType) return explicitType;
+      const urlLower = String(url || "").toLowerCase();
+      if (urlLower.match(/\.(mp4|webm|ogg|mov|avi)$/)) {
+        return "video";
+      }
+      return "image";
+    };
+
+    if (bg && typeof bg === "object" && bg.url && String(bg.url).trim() !== "") {
+      return {
+        url: bg.url,
+        fileType: resolveFileType(bg.url, bg.fileType),
+      };
+    }
+
+    const otherLangKey = language === "ar" ? "en" : "ar";
+    const otherBg = event.background[otherLangKey];
+    if (
+      otherBg &&
+      typeof otherBg === "object" &&
+      otherBg.url &&
+      String(otherBg.url).trim() !== ""
+    ) {
+      return {
+        url: otherBg.url,
+        fileType: resolveFileType(otherBg.url, otherBg.fileType),
+      };
+    }
+
+    if (event.backgroundUrl) {
+      return {
+        url: event.backgroundUrl,
+        fileType: "image",
+      };
+    }
+
+    return null;
+  }, [event, language]);
 
   const handleTaskCompletedUpdate = useCallback(
     (data) => {
@@ -108,20 +158,49 @@ export default function DigiPassDashboard() {
           position: "relative",
         }}
       >
-        <Box
-          component="img"
-          src="/bf-digiPass.png"
-          alt="Background"
-          sx={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            zIndex: -1,
-          }}
-        />
+        {background && background.fileType === "image" && background.url && (
+          <Box
+            component="img"
+            src={background.url}
+            alt="Background"
+            sx={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              zIndex: -1,
+            }}
+          />
+        )}
+        {background?.fileType === "video" && background?.url && (
+          <Box
+            sx={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "100%",
+              zIndex: -1,
+              overflow: "hidden",
+            }}
+          >
+            <video
+              ref={videoRef}
+              src={background.url}
+              autoPlay
+              playsInline
+              loop
+              muted={isMuted}
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+              }}
+            />
+          </Box>
+        )}
         <CircularProgress />
       </Box>
     );
@@ -152,20 +231,49 @@ export default function DigiPassDashboard() {
       dir={dir}
     >
       {/* Base Background */}
-      <Box
-        component="img"
-        src="/bf-digiPass.png"
-        alt="Background"
-        sx={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          objectFit: "cover",
-          zIndex: 0,
-        }}
-      />
+      {background && background.fileType === "image" && background.url && (
+        <Box
+          component="img"
+          src={background.url}
+          alt="Background"
+          sx={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            zIndex: 0,
+          }}
+        />
+      )}
+      {background?.fileType === "video" && background?.url && (
+        <Box
+          sx={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            zIndex: 0,
+            overflow: "hidden",
+          }}
+        >
+          <video
+            ref={videoRef}
+            src={background.url}
+            autoPlay
+            playsInline
+            loop
+            muted={isMuted}
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+            }}
+          />
+        </Box>
+      )}
 
       {/* Top 60% Section */}
       <Box
@@ -182,28 +290,17 @@ export default function DigiPassDashboard() {
         <IconButton
           onClick={() => router.push(`/digipass/${eventSlug}`)}
           sx={{
-            position: "absolute",
-            top: { xs: "1.5vw", sm: "1.2vw", md: "1vw" },
-            left: { xs: "1.5vw", sm: "1.2vw", md: "1vw" },
-            bgcolor: "rgba(255, 255, 255, 0.7)",
-            color: "#591c17",
-            width: { xs: "10vw", sm: "8vw", md: "6vw" },
-            height: { xs: "10vw", sm: "8vw", md: "6vw" },
-            minWidth: "40px",
-            minHeight: "40px",
-            maxWidth: "60px",
-            maxHeight: "60px",
-            zIndex: 1000,
-            "&:hover": {
-              bgcolor: "rgba(255, 255, 255, 0.9)",
-            },
-            boxShadow: 2,
+            position: "fixed",
+            top: { xs: 10, sm: 20 },
+            left: { xs: 10, sm: 20 },
+            backgroundColor: "primary.main",
+            color: "white",
+            zIndex: 9999,
           }}
         >
           <ICONS.back
             sx={{
-              fontSize: { xs: "5vw", sm: "4vw", md: "3vw" },
-              maxFontSize: "24px",
+              fontSize: { xs: 24, md: 32 },
             }}
           />
         </IconButton>
@@ -215,7 +312,7 @@ export default function DigiPassDashboard() {
             top: { xs: "3vh", sm: "2.5vh", md: "2vh" },
             left: "50%",
             transform: "translateX(-50%)",
-            color: "white",
+            color: "primary.main",
             fontSize: { xs: "6vw", sm: "5vw", md: "4.5vw" },
             fontWeight: "bold",
             zIndex: 100,
@@ -225,23 +322,6 @@ export default function DigiPassDashboard() {
         >
           {welcomeMessage}
         </Typography>
-
-        {/* Purple Circle Overlay */}
-        <Box
-          component="img"
-          src="/purpleCircle.png"
-          alt="Purple Circle"
-          sx={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "62vh",
-            zIndex: 2,
-            objectFit: "cover",
-            objectPosition: "center",
-          }}
-        />
 
         {/* Brain Image with Progress Reveal */}
         <Box
@@ -340,7 +420,7 @@ export default function DigiPassDashboard() {
             sx={{
               fontSize: { xs: "4.5vw", sm: "3.8vw", md: "3vw" },
               fontWeight: "bold",
-              color: "#333",
+              color: "primary.main",
               mb: { xs: "1.2vh", sm: "1vh", md: "0.8vh" },
               lineHeight: 1.2,
               textAlign: "center",
@@ -349,12 +429,17 @@ export default function DigiPassDashboard() {
             {t.activities}
           </Typography>
 
-          {/* Fire Icon and Progress Section Row */}
-          <Stack
-            direction="row"
-            alignItems="center"
-            spacing={{ xs: "2.5vw", sm: "2vw", md: "1.5vw" }}
-            sx={{ mb: "2vh" }}
+          {/* Fire Icon and Progress Section Row — use flex gap so Arabic gets extra space */}
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "row",
+              alignItems: "center",
+              gap: isArabic
+                ? { xs: "2.5vw", sm: "2vw", md: "1.5vw" }
+                : { xs: "2.5vw", sm: "2vw", md: "1.5vw" },
+              mb: "2vh",
+            }}
           >
             {/* Fire Icon Card */}
             <Card
@@ -362,7 +447,8 @@ export default function DigiPassDashboard() {
                 width: "25vw",
                 height: "21vw",
                 borderRadius: { xs: "10px", sm: "12px", md: "14px" },
-                border: "2px solid #FFA726",
+                border: "2px solid",
+                borderColor: "primary.main",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -383,13 +469,13 @@ export default function DigiPassDashboard() {
               />
             </Card>
 
-            {/* Right Side: Tasks Text, Progress Bar, and So Far Text */}
+            {/* Tasks Text, Progress Bar, and So Far Text */}
             <Box
               sx={{
                 flex: 1,
+                minWidth: 0,
                 display: "flex",
                 flexDirection: "column",
-                minWidth: 0,
               }}
             >
               {/* Tasks Left Text */}
@@ -425,7 +511,7 @@ export default function DigiPassDashboard() {
                     sx={{
                       fontSize: { xs: "4vw", sm: "3.2vw", md: "2.4vw" },
                       fontWeight: "600",
-                      color: "#FF6B35",
+                      color: "primary.main",
                       mb: { xs: "0.6vh", sm: "0.5vh", md: "0.4vh" },
                       lineHeight: 1.2,
                     }}
@@ -451,7 +537,7 @@ export default function DigiPassDashboard() {
                       bgcolor: "#E0E0E0",
                       "& .MuiLinearProgress-bar": {
                         borderRadius: { xs: "8px", sm: "10px", md: "12px" },
-                        bgcolor: "#FF6B35",
+                        bgcolor: "primary.main",
                         transition: "transform 0.4s linear",
                       },
                     }}
@@ -470,7 +556,7 @@ export default function DigiPassDashboard() {
                 {t.soFar}
               </Typography>
             </Box>
-          </Stack>
+          </Box>
 
           {/* QR Code Section */}
           {token && (
@@ -506,6 +592,10 @@ export default function DigiPassDashboard() {
             </Box>
           )}
         </Paper>
+      </Box>
+      {/* Force LanguageSelector subtree to LTR so EN/AR toggle behaves correctly in Arabic */}
+      <Box dir="ltr">
+        <LanguageSelector top={20} right={20} />
       </Box>
     </Box>
   );

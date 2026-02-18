@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import {
   Box,
   Typography,
@@ -36,6 +36,7 @@ import {
 import { validatePhoneNumber } from "@/utils/phoneValidation";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useMessage } from "@/contexts/MessageContext";
+import LanguageSelector from "@/components/LanguageSelector";
 
 export default function DigiPassRegistration() {
   const { eventSlug } = useParams();
@@ -49,7 +50,7 @@ export default function DigiPassRegistration() {
     registerForEvent: isArabic
       ? "التسجيل في الفعالية"
       : "Register for the Event",
-    submit: isArabic ? "إرسال" : "Submit",
+    register: isArabic ? "التسجيل" : "Register",
     registrationSuccess: isArabic
       ? "تم التسجيل بنجاح!"
       : "Registration Successful!",
@@ -77,6 +78,8 @@ export default function DigiPassRegistration() {
   const [translationsReady, setTranslationsReady] = useState(false);
   const [translatedEvent, setTranslatedEvent] = useState(null);
   const [countryIsoCodes, setCountryIsoCodes] = useState({});
+  const [isMuted] = useState(true);
+  const videoRef = useRef(null);
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -88,6 +91,53 @@ export default function DigiPassRegistration() {
     };
     fetchEvent();
   }, [eventSlug, language]);
+
+  // Background selection logic (match DigiPass landing)
+  const background = useMemo(() => {
+    if (!event || !event.background) return null;
+
+    const langKey = language === "ar" ? "ar" : "en";
+    const bg = event.background[langKey];
+
+    const resolveFileType = (url, explicitType) => {
+      if (explicitType) return explicitType;
+      const urlLower = String(url || "").toLowerCase();
+      if (urlLower.match(/\.(mp4|webm|ogg|mov|avi)$/)) {
+        return "video";
+      }
+      return "image";
+    };
+
+    if (bg && typeof bg === "object" && bg.url && String(bg.url).trim() !== "") {
+      return {
+        url: bg.url,
+        fileType: resolveFileType(bg.url, bg.fileType),
+      };
+    }
+
+    const otherLangKey = language === "ar" ? "en" : "ar";
+    const otherBg = event.background[otherLangKey];
+    if (
+      otherBg &&
+      typeof otherBg === "object" &&
+      otherBg.url &&
+      String(otherBg.url).trim() !== ""
+    ) {
+      return {
+        url: otherBg.url,
+        fileType: resolveFileType(otherBg.url, otherBg.fileType),
+      };
+    }
+
+    if (event.backgroundUrl) {
+      return {
+        url: event.backgroundUrl,
+        fileType: "image",
+      };
+    }
+
+    return null;
+  }, [event, language]);
 
   useEffect(() => {
     if (!event) return;
@@ -279,7 +329,7 @@ export default function DigiPassRegistration() {
     }
   };
 
-  if (loading || !event || !translatedEvent || !translationsReady) {
+  if (loading || !event) {
     return (
       <Box
         sx={{
@@ -287,13 +337,9 @@ export default function DigiPassRegistration() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          backgroundImage: "url('/bf-digiPass.png')",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
         }}
       >
-        <CircularProgress sx={{ color: "white" }} />
+        <CircularProgress />
       </Box>
     );
   }
@@ -312,39 +358,17 @@ export default function DigiPassRegistration() {
       helperText: errorMsg || "",
       required: field.required,
       sx: {
-        mb: 2,
-        "& .MuiInputLabel-root": {
-          color: "white",
-          "&.Mui-focused": {
-            color: "white",
-          },
-        },
         "& .MuiOutlinedInput-root": {
-          color: "white",
-          backgroundColor: "#0B1E3D",
-          "& fieldset": {
-            borderColor: "white",
-          },
-          "&:hover fieldset": {
-            borderColor: "white",
-          },
-          "&.Mui-focused fieldset": {
-            borderColor: "white",
-          },
-        },
-        "& .MuiInputBase-input": {
-          color: "white",
-        },
-        "& .MuiFormHelperText-root": {
-          color: "rgba(255, 255, 255, 0.7)",
+          borderRadius: 999,
+          backgroundColor: "rgba(255,255,255,0.9)",
         },
       },
     };
 
     if (field.type === "radio")
       return (
-        <Box key={field.name} sx={{ mb: 2, textAlign: "center" }}>
-          <Typography sx={{ mb: 1, color: "white" }}>
+        <Box key={field.name} sx={{ textAlign: "center" }}>
+          <Typography sx={{ mb: 1 }}>
             {fieldLabel}
             {field.required && (
               <span style={{ color: "rgba(255, 255, 255, 0.8)" }}> *</span>
@@ -361,30 +385,13 @@ export default function DigiPassRegistration() {
               <FormControlLabel
                 key={`${field.name}-${opt}`}
                 value={opt}
-                control={
-                  <Radio
-                    sx={{
-                      p: 0.5,
-                      color: "white",
-                      "&.Mui-checked": {
-                        color: "white",
-                      },
-                    }}
-                  />
-                }
-                label={
-                  <Typography sx={{ color: "white" }}>
-                    {translations[opt] || opt}
-                  </Typography>
-                }
+                control={<Radio sx={{ p: 0.5 }} />}
+                label={translations[opt] || opt}
               />
             ))}
           </RadioGroup>
           {errorMsg && (
-            <Typography
-              variant="caption"
-              sx={{ color: "rgba(255, 255, 255, 0.7)" }}
-            >
+            <Typography variant="caption" color="error">
               {errorMsg}
             </Typography>
           )}
@@ -397,28 +404,9 @@ export default function DigiPassRegistration() {
           fullWidth
           key={field.name}
           sx={{
-            mb: 2,
-            "& .MuiInputLabel-root": {
-              color: "white",
-              "&.Mui-focused": {
-                color: "white",
-              },
-            },
             "& .MuiOutlinedInput-root": {
-              color: "white",
-              backgroundColor: "#0B1E3D",
-              "& fieldset": {
-                borderColor: "white",
-              },
-              "&:hover fieldset": {
-                borderColor: "white",
-              },
-              "&.Mui-focused fieldset": {
-                borderColor: "white",
-              },
-            },
-            "& .MuiSvgIcon-root": {
-              color: "white",
+              borderRadius: 999,
+              backgroundColor: "rgba(255,255,255,0.9)",
             },
           }}
           required={field.required}
@@ -450,10 +438,7 @@ export default function DigiPassRegistration() {
             ))}
           </Select>
           {errorMsg && (
-            <Typography
-              variant="caption"
-              sx={{ color: "rgba(255, 255, 255, 0.7)" }}
-            >
+            <Typography variant="caption" color="error">
               {errorMsg}
             </Typography>
           )}
@@ -468,7 +453,7 @@ export default function DigiPassRegistration() {
       const isoCode = countryIsoCodes[field.name] || DEFAULT_ISO_CODE;
       const phoneValue = formData[field.name] || "";
 
-      return (
+          return (
         <TextField
           key={field.name}
           {...commonProps}
@@ -476,14 +461,12 @@ export default function DigiPassRegistration() {
           onChange={(e) => handlePhoneChange(field.name, e.target.value)}
           InputProps={{
             startAdornment: (
-              <Box sx={{ color: "white" }}>
-                <CountryCodeSelector
-                  value={isoCode}
-                  onChange={(iso) => handleCountryCodeChange(field.name, iso)}
-                  disabled={false}
-                  dir={dir}
-                />
-              </Box>
+              <CountryCodeSelector
+                value={isoCode}
+                onChange={(iso) => handleCountryCodeChange(field.name, iso)}
+                disabled={false}
+                dir={dir}
+              />
             ),
           }}
         />
@@ -522,68 +505,68 @@ export default function DigiPassRegistration() {
       }}
       dir={dir}
     >
-      {/* Background Image */}
-      <Box
-        component="img"
-        src="/bf-digiPass.png"
-        alt="Background"
-        sx={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          objectFit: "cover",
-          zIndex: -1,
-          pointerEvents: "none",
-        }}
-      />
+      {/* Image Background */}
+      {background && background.fileType === "image" && background.url && (
+        <Box
+          component="img"
+          src={background.url}
+          alt="Background"
+          sx={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            zIndex: -1,
+            pointerEvents: "none",
+          }}
+        />
+      )}
+
+      {/* Video Background */}
+      {background?.fileType === "video" && background?.url && (
+        <Box
+          sx={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            zIndex: -1,
+            overflow: "hidden",
+          }}
+        >
+          <video
+            ref={videoRef}
+            src={background.url}
+            autoPlay
+            playsInline
+            loop
+            muted={isMuted}
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+            }}
+          />
+        </Box>
+      )}
 
       {/* Back Button */}
       <IconButton
         onClick={() => router.push(`/digipass/${eventSlug}`)}
         sx={{
-          position: "absolute",
-          top: { xs: "1.5vw", sm: "1.2vw", md: "1vw" },
-          left: { xs: "1.5vw", sm: "1.2vw", md: "1vw" },
-          bgcolor: "rgba(255, 255, 255, 0.7)",
-          color: "#0B1E3D",
-          width: { xs: "10vw", sm: "8vw", md: "6vw" },
-          height: { xs: "10vw", sm: "8vw", md: "6vw" },
-          minWidth: "40px",
-          minHeight: "40px",
-          maxWidth: "60px",
-          maxHeight: "60px",
-          zIndex: 1000,
-          "&:hover": {
-            bgcolor: "rgba(255, 255, 255, 0.9)",
-          },
-          boxShadow: 2,
+          position: "fixed",
+          top: { xs: 10, sm: 20 },
+          left: { xs: 10, sm: 20 },
+          backgroundColor: "primary.main",
+          color: "white",
+          zIndex: 9999,
         }}
       >
-        <ICONS.back
-          sx={{
-            fontSize: { xs: "5vw", sm: "4vw", md: "3vw" },
-            maxFontSize: "24px",
-          }}
-        />
+        <ICONS.back sx={{ fontSize: { xs: 24, md: 32 } }} />
       </IconButton>
-
-      {/* Orange Circle Background */}
-      <Box
-        component="img"
-        src="/orangeCircle.png"
-        alt="Orange Circle"
-        sx={{
-          position: "absolute",
-          top: 0,
-          right: "-19vw",
-          width: "96%",
-          height: "57%",
-          zIndex: 0,
-          pointerEvents: "none",
-        }}
-      />
 
       <Container
         maxWidth="sm"
@@ -601,16 +584,17 @@ export default function DigiPassRegistration() {
         <Card
           sx={{
             width: "100%",
-            maxWidth: { xs: "100%", sm: 450, md: 500 },
-            backgroundColor: "#0B1E3D",
-            borderRadius: { xs: 3, sm: 4 },
-            p: { xs: 4, sm: 5, md: 6 },
-            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.2)",
+            maxWidth: 600,
+            borderRadius: 3,
+            p: 4,
+            textAlign: "center",
+            backdropFilter: "blur(6px)",
+            backgroundColor: "rgba(255,255,255,0.95)",
+            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.15)",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             gap: { xs: 3, sm: 4 },
-            minHeight: { xs: 500, sm: 600, md: 700 },
           }}
         >
           {/* Event Logo */}
@@ -645,59 +629,52 @@ export default function DigiPassRegistration() {
               sx={{
                 width: "100%",
                 mb: 2,
-                "& .MuiAlert-message": {
-                  color: "white",
-                },
-                backgroundColor: "rgba(211, 47, 47, 0.2)",
               }}
             >
               {fieldErrors._global}
             </Alert>
           )}
 
-          {/* Form Fields */}
-          <Box
-            sx={{
-              width: "100%",
-              display: "flex",
-              flexDirection: "column",
-              gap: 2,
-            }}
-          >
-            {dynamicFields.map((f) => renderField(f))}
-          </Box>
+      {/* Form Fields + Register Button with consistent gap */}
+      <Box
+        sx={{
+          width: "100%",
+          display: "flex",
+          flexDirection: "column",
+          gap: 2,
+        }}
+      >
+        {dynamicFields.map((f) => renderField(f))}
 
-          {/* Register Button */}
-          <Button
-            variant="outlined"
-            size="large"
-            fullWidth
-            disabled={submitting}
-            onClick={handleSubmit}
-            startIcon={
-              submitting ? (
-                <CircularProgress size={20} sx={{ color: "white" }} />
-              ) : (
-                <ICONS.register />
-              )
-            }
-            sx={{
-              borderColor: "white",
-              color: "white",
-              "&:hover": {
-                borderColor: "white",
-                backgroundColor: "rgba(255, 255, 255, 0.1)",
-              },
-              "&:disabled": {
-                borderColor: "rgba(255, 255, 255, 0.3)",
-                color: "rgba(255, 255, 255, 0.5)",
-              },
-            }}
-          >
-            {submitting ? "Registering..." : "Register"}
-          </Button>
+        <Button
+          variant="contained"
+          size="large"
+          fullWidth
+          disabled={submitting}
+          onClick={handleSubmit}
+          startIcon={
+            submitting ? (
+              <CircularProgress size={20} color="inherit" />
+            ) : (
+              <ICONS.register />
+            )
+          }
+          sx={{
+            borderRadius: 999,
+            textTransform: "none",
+            fontWeight: 600,
+            ...getStartIconSpacing(dir),
+          }}
+        >
+          {t.register}
+        </Button>
+      </Box>
         </Card>
       </Container>
+      {/* Force LanguageSelector subtree to LTR so EN/AR toggle behaves correctly in Arabic */}
+      <Box dir="ltr">
+        <LanguageSelector top={20} right={20} />
+      </Box>
     </Box>
   );
 }
