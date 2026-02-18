@@ -20,8 +20,18 @@ export const listFormResponses = withApiHandler(async (formId) => {
 // (Optional) EXPORT RESPONSES CSV FOR A FORM
 export const exportFormResponsesCsv = async (formId) => {
   try {
+    let timezoneQuery = "";
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if (tz) {
+        timezoneQuery = `?timezone=${encodeURIComponent(tz)}`;
+      }
+    } catch {
+      // If timezone detection fails, fall back to server default
+    }
+
     const { data, headers } = await api.get(
-      `/surveyguru/forms/${formId}/responses/export`,
+      `/surveyguru/forms/${formId}/responses/export${timezoneQuery}`,
       {
         responseType: "blob", // Important for file download
       }

@@ -3,13 +3,13 @@ import withApiHandler from "@/utils/withApiHandler";
 
 export const listRecipients = withApiHandler(async (params = {}) => {
   const { data } = await api.get("/surveyguru/recipients", { params });
-  return data; 
+  return data;
 });
 
 export const syncRecipientsForEvent = withApiHandler(
   async (formId, payload = {}) => {
     const { data } = await api.post(`/surveyguru/forms/${formId}/recipients/sync`, payload);
-    return data; 
+    return data;
   },
 );
 
@@ -32,20 +32,31 @@ export const deleteRecipient = withApiHandler(
 export const clearRecipientsForForm = withApiHandler(
   async (formId) => {
     const { data } = await api.delete(`/surveyguru/forms/${formId}/recipients`);
-    return data; 
+    return data;
   },
   { showSuccess: true }
 );
 
 export const exportRecipientsCsv = async (params = {}) => {
-  const query = new URLSearchParams(params).toString();
+  const payload = { ...params };
+
+  try {
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (tz) {
+      payload.timezone = tz;
+    }
+  } catch {
+    // Ignore timezone errors and fall back to server default
+  }
+
+  const query = new URLSearchParams(payload).toString();
 
   try {
     const { data, headers } = await api.get(
       `/surveyguru/recipients/export${query ? `?${query}` : ""}`,
       {
-        responseType: "blob", 
-      }
+        responseType: "blob",
+      },
     );
 
     let filename = "recipients.xlsx";
@@ -73,8 +84,8 @@ export const exportRecipientsCsv = async (params = {}) => {
   } catch (err) {
     console.error(
       err?.response?.data?.message ||
-        err?.message ||
-        "Failed to export recipients"
+      err?.message ||
+      "Failed to export recipients"
     );
   }
 };
