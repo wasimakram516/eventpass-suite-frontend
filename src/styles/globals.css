@@ -1,14 +1,8 @@
-/* Aktiv Grotesk Font */
-@font-face {
-  font-family: "Aktiv Grotesk";
-  src: url("/fonts/Aktiv Grotesk Regular.woff") format("woff");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
+/* Import Comfortaa from Google Fonts */
+@import url("https://fonts.googleapis.com/css2?family=Comfortaa:wght@300;400;700&display=swap");
 
 :root {
-  --font-primary: "Aktiv Grotesk", sans-serif;
+  --font-primary: "Comfortaa", sans-serif;
 }
 
 html,
@@ -88,7 +82,9 @@ body {
   border-color: #128199 !important;
 }
 
-[dir="rtl"] .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+[dir="rtl"]
+  .MuiOutlinedInput-root.Mui-focused
+  .MuiOutlinedInput-notchedOutline {
   border-color: #0077b6 !important;
 }
 
@@ -102,8 +98,10 @@ body {
 }
 
 /* --- Remove notch gap in RTL when label is empty --- */
-[dir="rtl"] .MuiOutlinedInput-root:not(.Mui-focused):not(.MuiInputLabel-shrink)
-  .MuiOutlinedInput-notchedOutline legend {
+[dir="rtl"]
+  .MuiOutlinedInput-root:not(.Mui-focused):not(.MuiInputLabel-shrink)
+  .MuiOutlinedInput-notchedOutline
+  legend {
   max-width: 0 !important;
   padding: 0 !important;
 }
@@ -121,7 +119,6 @@ body {
 }
 
 @keyframes float {
-
   0%,
   100% {
     transform: translate3d(0, 0, 0);

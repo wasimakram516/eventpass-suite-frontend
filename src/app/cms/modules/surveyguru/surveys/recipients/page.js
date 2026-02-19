@@ -610,8 +610,6 @@ export default function RecipientsManagePage() {
         updatedByName={r.updatedBy}
         createdAt={r.createdAt}
         updatedAt={r.updatedAt}
-        createdByDisplayName={r.fullName}
-        updatedByDisplayName={r.fullName}
         locale={language === "ar" ? "ar-SA" : "en-GB"}
       />
 

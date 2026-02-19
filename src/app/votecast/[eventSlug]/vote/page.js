@@ -269,7 +269,7 @@ function RealPoll({ eventSlug }) {
         ) : (
           <Background key={`bg-default-${currentLang}`} />
         )}
-        {/* <LanguageSelector top={20} right={20} /> */}
+        <LanguageSelector top={20} right={20} />
         <Container
           maxWidth="sm"
           sx={{
@@ -298,7 +298,9 @@ function RealPoll({ eventSlug }) {
 
   return (
     <>
-      {/* <LanguageSelector top={20} right={20} /> */}
+      <Box dir="ltr">
+        <LanguageSelector top={20} right={20} />
+      </Box>
 
       <Box
         dir={dir}

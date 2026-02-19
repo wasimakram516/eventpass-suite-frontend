@@ -436,8 +436,7 @@ export default function VoteCastEventWelcome() {
         </AppCard>
       </Box>
 
-      {/* LanguageSelector commented out - may use it sometimes after */}
-      {/* <LanguageSelector top={20} right={20} /> */}
+      <LanguageSelector top={20} right={20} />
     </Box>
   );
 }

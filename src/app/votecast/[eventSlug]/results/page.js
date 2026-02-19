@@ -106,7 +106,7 @@ export default function FullScreenResultsPage() {
 
   return (
     <>
-      {/* <LanguageSelector top={20} right={20} /> */}
+      <LanguageSelector top={20} right={20} />
       <Box
         dir={dir}
         sx={{
