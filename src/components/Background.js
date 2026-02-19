@@ -1,8 +1,15 @@
 "use client";
 
 import { Box } from "@mui/material";
+import { Shift } from "ambient-cbg";
 
-export default function Background() {
+export default function Background({ type = "static" }) {
+  if (type === "dynamic") {
+    return (
+       <Shift />
+    );
+  }
+
   return (
     <Box
       aria-hidden

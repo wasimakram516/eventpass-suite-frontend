@@ -118,49 +118,68 @@ export default function ResultsChart({ poll }) {
       <Stack spacing={1.5} sx={{ width: "100%" }}>
         {poll.options.map((option, idx) => (
           <Stack
-            key={idx}
-            direction="row"
-            alignItems="center"
-            justifyContent="space-between"
-            sx={{
-              p: 1.5,
-              borderRadius: 2,
-              bgcolor: "grey.100",
-              transition: "all 0.3s",
-              "&:hover": { bgcolor: "grey.200" },
-              gap: dir === "rtl" ? 2 : 1,
-            }}
-          >
-            {/* Option text */}
-            <Box sx={{ 
-              flexGrow: 1, 
-              textAlign: dir === "rtl" ? "right" : "left",
-              minWidth: 0,
-            }}>
-              <Typography
-                variant="body2"
-                fontWeight="bold"
-                sx={{
-                  color: COLORS[idx % COLORS.length],
-                  wordBreak: "break-word",
-                }}
-              >
-                {option.text}
-              </Typography>
-            </Box>
+  key={idx}
+  direction="row"
+  alignItems="center"
+  justifyContent="space-between"
+  sx={{
+    p: 1.5,
+    borderRadius: 2,
+    bgcolor: "grey.100",
+    transition: "all 0.3s",
+    "&:hover": { bgcolor: "grey.200" },
+    gap: 1.5,
+  }}
+>
+  {/* Image + Text */}
+  <Stack
+    direction="row"
+    alignItems="center"
+    spacing={1.5}
+    sx={{ minWidth: 0 }}
+  >
+    {option.imageUrl && (
+      <Box
+        component="img"
+        src={option.imageUrl}
+        alt={option.text}
+        sx={{
+          width: 36,
+          height: 36,
+          borderRadius: 1.5,
+          objectFit: "cover",
+          flexShrink: 0,
+        }}
+      />
+    )}
 
-            {/* Percentage */}
-            <Chip
-              label={`${option.percentage}%`}
-              size="small"
-              sx={{
-                bgcolor: COLORS[idx % COLORS.length],
-                color: "white",
-                fontWeight: "bold",
-                flexShrink: 0,
-              }}
-            />
-          </Stack>
+    {option.text && (
+      <Typography
+        variant="body2"
+        fontWeight="bold"
+        sx={{
+          color: COLORS[idx % COLORS.length],
+          wordBreak: "break-word",
+        }}
+      >
+        {option.text}
+      </Typography>
+    )}
+  </Stack>
+
+  {/* Percentage */}
+  <Chip
+    label={`${option.percentage}%`}
+    size="small"
+    sx={{
+      bgcolor: COLORS[idx % COLORS.length],
+      color: "white",
+      fontWeight: "bold",
+      flexShrink: 0,
+    }}
+  />
+</Stack>
+
         ))}
       </Stack>
 

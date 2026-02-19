@@ -3,10 +3,9 @@ import withApiHandler from "@/utils/withApiHandler";
 
 // Get all polls (for admin or business user)
 export const getPolls = withApiHandler(
-  async (businessSlug = "", status = "") => {
+  async (eventId = "") => {
     const params = new URLSearchParams();
-    if (businessSlug) params.append("businessSlug", businessSlug);
-    if (status) params.append("status", status);
+    if (eventId) params.append("eventId", eventId);
 
     const { data } = await api.get(
       `/votecast/polls${params.toString() ? `?${params.toString()}` : ""}`
@@ -14,10 +13,10 @@ export const getPolls = withApiHandler(
     return data.data || data; // Handle both response formats
   }
 );
-// Get active polls for voting (public route)
-export const getActivePollsByBusiness = withApiHandler(async (businessSlug) => {
-  const { data } = await api.get(`/votecast/polls/public/${businessSlug}`);
-  return data;
+// Get active polls for voting (public route) - by event slug
+export const getActivePollsByEvent = withApiHandler(async (eventSlug) => {
+  const { data } = await api.get(`/votecast/polls/public/${eventSlug}`);
+  return data.data || data;
 });
 
 // Create Poll with images
@@ -67,12 +66,11 @@ export const voteOnPoll = withApiHandler(
   { showSuccess: true }
 );
 
-// Reset votes for a business and optional status
+// Reset votes for an event
 export const resetVotes = withApiHandler(
-  async (businessSlug, status = "") => {
+  async (eventId) => {
     const { data } = await api.post(`/votecast/polls/reset`, {
-      businessSlug,
-      status,
+      eventId,
     });
     return data;
   },
@@ -81,11 +79,11 @@ export const resetVotes = withApiHandler(
 
 // Export polls to Excel
 export const exportPollsToExcel = 
-  async (businessSlug, status = "") => {
+  async (eventId) => {
     try {
       const response = await api.post(
         "/votecast/polls/export",
-        { businessSlug, status },
+        { eventId },
         {
           responseType: "blob",
           headers: {
@@ -104,7 +102,7 @@ export const exportPollsToExcel =
       link.href = url;
       link.setAttribute(
         "download",
-        `${businessSlug}-polls-${status || "all"}.xlsx`
+        `polls-${Date.now()}.xlsx`
       );
       document.body.appendChild(link);
       link.click();

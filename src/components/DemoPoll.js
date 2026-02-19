@@ -180,7 +180,7 @@ export default function DemoPoll() {
     return (
       <Box sx={{ minHeight: "calc(100vh - 80px)", p: 4, mt: 2 }}>
         <Stack
-          direction= "row" 
+          direction="row"
           justifyContent="space-between"
           alignItems="center"
           spacing={2}
@@ -297,7 +297,9 @@ export default function DemoPoll() {
                           sx={{ width: 48, height: 48 }}
                         />
                       )}
-                      <Typography fontWeight="bold">{option.text}</Typography>
+                      {option.text && (
+                        <Typography fontWeight="bold">{option.text}</Typography>
+                      )}
                     </Stack>
                     {highlightedOption === idx && (
                       <CheckCircleIcon color="primary" />
@@ -369,19 +371,21 @@ export default function DemoPoll() {
                       )}
 
                       {/* Text */}
-                      <Typography
-                        variant="caption"
-                        textAlign="center"
-                        fontWeight="bold"
-                        color={
-                          highlightedOption === idx
-                            ? "primary.main"
-                            : "text.secondary"
-                        }
-                        sx={{ wordBreak: "break-word" }}
-                      >
-                        {option.text}
-                      </Typography>
+                      {option.text && (
+                        <Typography
+                          variant="caption"
+                          textAlign="center"
+                          fontWeight="bold"
+                          color={
+                            highlightedOption === idx
+                              ? "primary.main"
+                              : "text.secondary"
+                          }
+                          sx={{ wordBreak: "break-word" }}
+                        >
+                          {option.text}
+                        </Typography>
+                      )}
                     </Box>
                   ))}
                 </Stack>

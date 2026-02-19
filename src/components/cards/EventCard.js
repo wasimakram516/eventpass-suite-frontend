@@ -31,6 +31,7 @@ export default function EventCardBase({
   onDelete,
   onShare,
   onInsights,
+  onViewResults,
 }) {
   return (
     <AppCard sx={{ width: { xs: "100%", sm: 360 }, height: "100%" }}>
@@ -114,19 +115,21 @@ export default function EventCardBase({
       {/* Info Section */}
       <CardContent sx={{ px: 2, py: 2, flexGrow: 1 }}>
         {/* Venue */}
-        <Typography
-          variant="body2"
-          sx={{
-            mb: 0.7,
-            color: "text.secondary",
-            display: "flex",
-            alignItems: "center",
-            gap: 0.8,
-          }}
-        >
-          <ICONS.location fontSize="small" sx={{ opacity: 0.7 }} />
-          {event.venue || "N/A"}
-        </Typography>
+        {!hideVenue && (
+          <Typography
+            variant="body2"
+            sx={{
+              mb: 0.7,
+              color: "text.secondary",
+              display: "flex",
+              alignItems: "center",
+              gap: 0.8,
+            }}
+          >
+            <ICONS.location fontSize="small" sx={{ opacity: 0.7 }} />
+            {event.venue || "N/A"}
+          </Typography>
+        )}
 
         {/* Slug */}
         <Typography
@@ -144,21 +147,22 @@ export default function EventCardBase({
         </Typography>
 
         {/* Dates */}
-        <Typography
-          variant="body2"
-          sx={{
-            mb: 0.7,
-            color: "text.secondary",
-            display: "flex",
-            alignItems: "center",
-            gap: 0.8,
-            flexWrap: "wrap",
-          }}
-        >
-          <ICONS.event fontSize="small" sx={{ opacity: 0.7 }} />
-          <strong>{t.dateRange}:</strong>&nbsp;
-          {event?.startDate
-            ? (() => {
+        {!hideDates && (
+          <Typography
+            variant="body2"
+            sx={{
+              mb: 0.7,
+              color: "text.secondary",
+              display: "flex",
+              alignItems: "center",
+              gap: 0.8,
+              flexWrap: "wrap",
+            }}
+          >
+            <ICONS.event fontSize="small" sx={{ opacity: 0.7 }} />
+            <strong>{t.dateRange}:</strong>&nbsp;
+            {event?.startDate
+              ? (() => {
                 const eventTimezone = event.timezone || null;
                 if (event?.endDate && event.endDate !== event.startDate) {
                   const startFormatted = event.startTime
@@ -178,11 +182,12 @@ export default function EventCardBase({
                   return dateFormatted;
                 }
               })()
-            : "N/A"}
-        </Typography>
+              : "N/A"}
+          </Typography>
+        )}
 
         {/* Registrations (public only) */}
-        {showRegistrations && (
+        {showRegistrations && !showPollCount && (
           <Typography
             variant="body2"
             sx={{
@@ -195,6 +200,22 @@ export default function EventCardBase({
             <ICONS.people fontSize="small" sx={{ opacity: 0.7 }} />
             <strong>{t.registrations}:</strong>&nbsp;
             {event.registrations}
+          </Typography>
+        )}
+        {/* Poll Count (votecast only) */}
+        {showPollCount && (
+          <Typography
+            variant="body2"
+            sx={{
+              color: "text.secondary",
+              display: "flex",
+              alignItems: "center",
+              gap: 0.8,
+            }}
+          >
+            <ICONS.poll fontSize="small" sx={{ opacity: 0.7 }} />
+            <strong>{t.polls || "Polls"}:</strong>&nbsp;
+            {event.pollCount || 0}
           </Typography>
         )}
       </CardContent>
@@ -219,7 +240,7 @@ export default function EventCardBase({
         }}
       >
         {onView && (
-          <Tooltip title={t.viewRegs}>
+          <Tooltip title={t.viewPolls || t.viewRegs || "View Polls"}>
             <IconButton
               color="primary"
               onClick={onView}
@@ -232,23 +253,37 @@ export default function EventCardBase({
             </IconButton>
           </Tooltip>
         )}
+        {onViewResults && (
+          <Tooltip title={t.viewResults || "View Results"}>
+            <IconButton
+              color="secondary"
+              onClick={onViewResults}
+              sx={{
+                "&:hover": { transform: "scale(1.1)" },
+                transition: "0.2s",
+              }}
+            >
+              <ICONS.results />
+            </IconButton>
+          </Tooltip>
+        )}
         {onViewWhatsAppLogs && (
-        <Tooltip title={t.viewWhatsAppLogs || "View WhatsApp Logs"}>
-          <IconButton
-            onClick={onViewWhatsAppLogs}
-            sx={{
-              color: "#25D366", // WhatsApp green
-              "&:hover": {
-                transform: "scale(1.1)",
-                backgroundColor: "rgba(37, 211, 102, 0.12)",
-              },
-              transition: "0.2s",
-            }}
-          >
-            <ICONS.whatsapp />
-          </IconButton>
-        </Tooltip>
-      )}
+          <Tooltip title={t.viewWhatsAppLogs || "View WhatsApp Logs"}>
+            <IconButton
+              onClick={onViewWhatsAppLogs}
+              sx={{
+                color: "#25D366", // WhatsApp green
+                "&:hover": {
+                  transform: "scale(1.1)",
+                  backgroundColor: "rgba(37, 211, 102, 0.12)",
+                },
+                transition: "0.2s",
+              }}
+            >
+              <ICONS.whatsapp />
+            </IconButton>
+          </Tooltip>
+        )}
         {onInsights && (
           <Tooltip title={t.insights || "Insights"}>
             <IconButton

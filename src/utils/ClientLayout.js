@@ -26,6 +26,7 @@ export default function ClientLayout({ children }) {
     "/checkin",
     "/eventwheel",
     "/surveyguru",
+    "/digipass",
     "/event",
     "/en/event",
     "/ar/event",

@@ -82,7 +82,9 @@ body {
   border-color: #128199 !important;
 }
 
-[dir="rtl"] .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline {
+[dir="rtl"]
+  .MuiOutlinedInput-root.Mui-focused
+  .MuiOutlinedInput-notchedOutline {
   border-color: #0077b6 !important;
 }
 
@@ -96,8 +98,10 @@ body {
 }
 
 /* --- Remove notch gap in RTL when label is empty --- */
-[dir="rtl"] .MuiOutlinedInput-root:not(.Mui-focused):not(.MuiInputLabel-shrink)
-  .MuiOutlinedInput-notchedOutline legend {
+[dir="rtl"]
+  .MuiOutlinedInput-root:not(.Mui-focused):not(.MuiInputLabel-shrink)
+  .MuiOutlinedInput-notchedOutline
+  legend {
   max-width: 0 !important;
   padding: 0 !important;
 }
@@ -115,7 +119,6 @@ body {
 }
 
 @keyframes float {
-
   0%,
   100% {
     transform: translate3d(0, 0, 0);

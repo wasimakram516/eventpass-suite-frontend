@@ -1,14 +1,12 @@
 import api from "@/services/api";
 import withApiHandler from "@/utils/withApiHandler";
 
-// Get results of all active polls for a business
+// Get results of all polls for an event
 export const getResults = withApiHandler(
-  async (businessSlug, status = "active") => {
+  async (eventId) => {
     const { data } = await api.get(
-      `/votecast/polls/results?businessSlug=${businessSlug}${
-        status ? `&status=${status}` : ""
-      }`
+      `/votecast/polls/results?eventId=${eventId}`
     );
-    return data;
+    return data.data || data;
   }
 );

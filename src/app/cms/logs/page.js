@@ -261,6 +261,7 @@ export default function LogsPage() {
 
   const getDisplayItemName = (log) => {
     if (log?.itemName) return log.itemName;
+    if (log?.itemType === "SurveyRecipient" && log?.itemNameSnapshot) return log.itemNameSnapshot;
     if (log?.itemType === "User") {
       return language === "ar" ? "مستخدم محذوف" : "Deleted user";
     }
@@ -269,8 +270,10 @@ export default function LogsPage() {
     return rawId || "-";
   };
 
+  const getUserDisplay = (log) => log.userId?.name ?? "—";
+
   const renderRowDesktop = (log) => {
-    const userName = log.userId?.name || "-";
+    const userName = getUserDisplay(log);
     const businessName = log.businessId?.name || "-";
     const itemName = getDisplayItemName(log);
 
@@ -297,7 +300,7 @@ export default function LogsPage() {
   };
 
   const renderRowMobile = (log) => {
-    const userName = log.userId?.name || "-";
+    const userName = getUserDisplay(log);
     const businessName = log.businessId?.name || "-";
     const itemName = getDisplayItemName(log);
     const itemType = log.itemType || "-";

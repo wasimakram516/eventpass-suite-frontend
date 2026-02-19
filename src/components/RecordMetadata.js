@@ -21,6 +21,8 @@ function RecordMetadata({
   updatedAt,
   locale = "en-GB",
   updatedAtFallback,
+  createdByDisplayName,
+  updatedByDisplayName,
   sx = {},
 }) {
   const normalizeName = (val) => {
@@ -28,8 +30,10 @@ function RecordMetadata({
     if (typeof val === "object") return val.name || val.fullName || val.email || null;
     return val;
   };
-  const resolvedCreatedByName = normalizeName(createdByName) || "N/A";
-  const rawUpdatedByName = normalizeName(updatedByName) || "N/A";
+  const resolvedCreatedByName =
+    normalizeName(createdByName) || (createdByDisplayName && String(createdByDisplayName).trim()) || "N/A";
+  const rawUpdatedByName =
+    normalizeName(updatedByName) || (updatedByDisplayName && String(updatedByDisplayName).trim()) || "N/A";
   const dateStr = (d) => (d ? formatDateTimeWithLocale(d, locale) : "N/A");
   const updatedAtDisplay = updatedAt ?? updatedAtFallback;
   const eitherUpdatedNA = !updatedAtDisplay || rawUpdatedByName === "N/A";
