@@ -40,6 +40,9 @@ const translations = {
         uploadBackgroundEn: "Upload Background (EN)",
         uploadBackgroundAr: "Upload Background (AR)",
         currentBackground: "Current Background:",
+        uploadProgressImage: "Dashboard Progress Image",
+        uploadProgressImageButton: "Upload Progress Image",
+        currentProgressImage: "Current:",
         cancel: "Cancel",
         create: "Create Event",
         update: "Save Changes",
@@ -87,6 +90,9 @@ const translations = {
         uploadBackgroundEn: "رفع الخلفية (إنجليزي)",
         uploadBackgroundAr: "رفع الخلفية (عربي)",
         currentBackground: "الخلفية الحالية:",
+        uploadProgressImage: "صورة تقدم لوحة التحكم",
+        uploadProgressImageButton: "رفع صورة التقدم",
+        currentProgressImage: "الحالي:",
         cancel: "إلغاء",
         create: "إنشاء فعالية",
         update: "حفظ التغييرات",
@@ -146,11 +152,13 @@ const DigiPassEventModal = ({
     const logoButtonRef = useRef(null);
     const backgroundEnButtonRef = useRef(null);
     const backgroundArButtonRef = useRef(null);
+    const progressImageButtonRef = useRef(null);
 
     const [buttonWidths, setButtonWidths] = useState({
         logo: null,
         backgroundEn: null,
         backgroundAr: null,
+        progressImage: null,
     });
 
     const [formData, setFormData] = useState({
@@ -170,6 +178,9 @@ const DigiPassEventModal = ({
         removeLogo: false,
         removeBackgroundEn: false,
         removeBackgroundAr: false,
+        progressImage: null,
+        progressImagePreview: "",
+        removeProgressImage: false,
         maxTasksPerUser: "",
         minTasksPerUser: "",
     });
@@ -197,6 +208,9 @@ const DigiPassEventModal = ({
                 removeLogo: false,
                 removeBackgroundEn: false,
                 removeBackgroundAr: false,
+                progressImage: null,
+                progressImagePreview: initialValues.progressImageUrl || "",
+                removeProgressImage: false,
                 maxTasksPerUser: initialValues.maxTasksPerUser?.toString() || "",
                 minTasksPerUser: initialValues.minTasksPerUser?.toString() || "",
             }));
@@ -219,6 +233,9 @@ const DigiPassEventModal = ({
                 removeLogo: false,
                 removeBackgroundEn: false,
                 removeBackgroundAr: false,
+                progressImage: null,
+                progressImagePreview: "",
+                removeProgressImage: false,
                 maxTasksPerUser: "",
                 minTasksPerUser: "",
             }));
@@ -231,6 +248,7 @@ const DigiPassEventModal = ({
                 logo: logoButtonRef.current?.offsetWidth || null,
                 backgroundEn: backgroundEnButtonRef.current?.offsetWidth || null,
                 backgroundAr: backgroundArButtonRef.current?.offsetWidth || null,
+                progressImage: progressImageButtonRef.current?.offsetWidth || null,
             };
             setButtonWidths(widths);
         };
@@ -243,7 +261,7 @@ const DigiPassEventModal = ({
             clearTimeout(timeoutId);
             window.removeEventListener("resize", measureWidths);
         };
-    }, [formData.logoPreview, formData.backgroundEnPreview, formData.backgroundArPreview]);
+    }, [formData.logoPreview, formData.backgroundEnPreview, formData.backgroundArPreview, formData.progressImagePreview]);
 
     const handleInputChange = (e) => {
         const { name, value, files } = e.target;
@@ -279,6 +297,16 @@ const DigiPassEventModal = ({
                     removeBackgroundAr: false,
                 }));
             }
+        } else if (name === "progressImage" && files?.[0]) {
+            const file = files[0];
+            if (file.type.startsWith("image/")) {
+                setFormData((prev) => ({
+                    ...prev,
+                    progressImage: file,
+                    progressImagePreview: URL.createObjectURL(file),
+                    removeProgressImage: false,
+                }));
+            }
         } else {
             setFormData((prev) => ({ ...prev, [name]: value }));
         }
@@ -308,6 +336,13 @@ const DigiPassEventModal = ({
                     backgroundArPreview: "",
                     backgroundArFileType: null,
                     removeBackgroundAr: false,
+                }));
+            } else if (type === "progressImage") {
+                setFormData((prev) => ({
+                    ...prev,
+                    progressImage: null,
+                    progressImagePreview: "",
+                    removeProgressImage: false,
                 }));
             }
             return;
@@ -358,6 +393,13 @@ const DigiPassEventModal = ({
                     backgroundArPreview: "",
                     backgroundArFileType: null,
                     removeBackgroundAr: true,
+                }));
+            } else if (deleteConfirm.type === "progressImage") {
+                setFormData((prev) => ({
+                    ...prev,
+                    progressImage: null,
+                    progressImagePreview: "",
+                    removeProgressImage: true,
                 }));
             }
 
@@ -469,6 +511,7 @@ const DigiPassEventModal = ({
             let logoUrl = formData.removeLogo ? null : (formData.logo ? null : (formData.logoPreview || null));
             let backgroundEn = null;
             let backgroundAr = null;
+            let progressImageUrl = formData.removeProgressImage ? null : (formData.progressImage ? null : (formData.progressImagePreview || null));
 
             if (formData.logo && !formData.removeLogo) {
                 filesToUpload.push({
@@ -493,6 +536,14 @@ const DigiPassEventModal = ({
                     type: "backgroundAr",
                     label: "Background (AR)",
                     fileType: formData.backgroundArFileType || "image",
+                });
+            }
+
+            if (formData.progressImage && !formData.removeProgressImage) {
+                filesToUpload.push({
+                    file: formData.progressImage,
+                    type: "progressImage",
+                    label: "Dashboard Progress Image",
                 });
             }
 
@@ -549,6 +600,8 @@ const DigiPassEventModal = ({
                                 url: result.url,
                                 fileType: result.fileType || "image",
                             };
+                        else if (result.type === "progressImage")
+                            progressImageUrl = result.url;
                     });
                 } catch (uploadError) {
                     setShowUploadProgress(false);
@@ -581,9 +634,11 @@ const DigiPassEventModal = ({
                 description: formData.description || "",
                 defaultLanguage: formData.defaultLanguage,
                 logoUrl: formData.removeLogo ? null : logoUrl,
+                progressImageUrl: formData.removeProgressImage ? null : progressImageUrl,
                 ...(Object.keys(background).length > 0 ? { background } : {}),
                 formFields: formData.formFields,
                 ...(formData.removeLogo ? { removeLogo: "true" } : {}),
+                ...(formData.removeProgressImage ? { removeProgressImage: "true" } : {}),
                 ...(formData.removeBackgroundEn ? { removeBackgroundEn: "true" } : {}),
                 ...(formData.removeBackgroundAr ? { removeBackgroundAr: "true" } : {}),
                 maxTasksPerUser: maxTasks !== null && maxTasks !== "" ? maxTasks : null,
@@ -1007,6 +1062,75 @@ const DigiPassEventModal = ({
                                     </Box>
                                 )}
                             </Box>
+                        </Box>
+
+                        {/* Dashboard Progress Image (replaces default brain graphic on participant dashboard) */}
+                        <Box
+                            sx={{
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "flex-start",
+                                gap: 2,
+                                width: "100%",
+                            }}
+                        >
+                            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                                {t.uploadProgressImage}
+                            </Typography>
+                            <Button
+                                ref={progressImageButtonRef}
+                                component="label"
+                                variant="outlined"
+                                size="small"
+                            >
+                                {t.uploadProgressImageButton}
+                                <input
+                                    hidden
+                                    name="progressImage"
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleInputChange}
+                                />
+                            </Button>
+                            {formData.progressImagePreview && !formData.removeProgressImage && (
+                                <Box sx={{ mt: 1.5 }}>
+                                    <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                                        {initialValues && !formData.progressImage
+                                            ? t.currentProgressImage
+                                            : t.preview}
+                                    </Typography>
+                                    <Box sx={{ position: "relative", display: "inline-block", width: buttonWidths.progressImage || "auto" }}>
+                                        <img
+                                            src={formData.progressImagePreview}
+                                            alt="Progress image preview"
+                                            style={{
+                                                width: buttonWidths.progressImage ? `${buttonWidths.progressImage}px` : "auto",
+                                                maxHeight: 120,
+                                                height: "auto",
+                                                borderRadius: 6,
+                                                objectFit: "cover",
+                                            }}
+                                        />
+                                        <IconButton
+                                            size="small"
+                                            onClick={() => {
+                                                const fileUrl = initialValues?.progressImageUrl || formData.progressImagePreview;
+                                                handleDeleteMedia("progressImage", fileUrl);
+                                            }}
+                                            sx={{
+                                                position: "absolute",
+                                                top: -18,
+                                                right: 6,
+                                                bgcolor: "error.main",
+                                                color: "#fff",
+                                                "&:hover": { bgcolor: "error.dark" },
+                                            }}
+                                        >
+                                            <ICONS.delete sx={{ fontSize: 18 }} />
+                                        </IconButton>
+                                    </Box>
+                                </Box>
+                            )}
                         </Box>
 
                         {/* Custom Form Fields */}
