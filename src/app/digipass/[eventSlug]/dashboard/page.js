@@ -36,6 +36,7 @@ export default function DigiPassDashboard() {
     allCompleted: isArabic
       ? "تم إكمال جميع الأنشطة"
       : "All activities completed",
+    completed: isArabic ? "تم" : "Completed",
   };
 
   const [event, setEvent] = useState(null);
@@ -323,15 +324,15 @@ export default function DigiPassDashboard() {
           {welcomeMessage}
         </Typography>
 
-        {/* Brain Image with Progress Reveal */}
+        {/* Progress image (CMS-uploaded or default) with progress reveal*/}
         <Box
           sx={{
             position: "absolute",
             top: "50%",
-            left: "45%",
+            left: "50%",
             transform: "translate(-50%, -50%)",
-            width: { xs: "95vw", sm: "85vw", md: "75vw" },
-            maxWidth: "850px",
+            width: "90vw",
+            maxHeight: "45vh",
             zIndex: 3,
             overflow: "hidden",
             display: "flex",
@@ -343,39 +344,41 @@ export default function DigiPassDashboard() {
             sx={{
               position: "relative",
               width: "100%",
+              maxHeight: "45vh",
             }}
           >
-            {/* Grayscale Base Layer (Always Visible) */}
+            {/* Grayscale Base Layer (Always Visible) — behind colored reveal */}
             <Box
               component="img"
-              src="/Brain.png"
-              alt="Brain"
+              src={event?.progressImageUrl || "/Brain.png"}
+              alt="Progress"
               sx={{
                 width: "100%",
                 height: "auto",
+                maxHeight: "45vh",
                 display: "block",
                 objectFit: "contain",
                 filter: "grayscale(100%)",
                 position: "relative",
-                zIndex: 1000,
+                zIndex: 1,
               }}
             />
-            {/* Colored Reveal Layer (Revealed from Bottom) */}
+            {/* Colored Reveal Layer (Revealed from Bottom) — on top so full color shows when completed */}
             {maxTasksPerUser !== null && maxTasksPerUser !== undefined ? (
               <Box
                 component="img"
-                src="/Brain.png"
-                alt="Brain"
+                src={event?.progressImageUrl || "/Brain.png"}
+                alt="Progress"
                 sx={{
                   position: "absolute",
                   top: 0,
                   left: 0,
                   width: "100%",
                   height: "auto",
+                  maxHeight: "45vh",
                   display: "block",
                   objectFit: "contain",
-                  filter:
-                    "grayscale(0%) drop-shadow(0 0 8px rgba(100, 181, 246, 0.9)) drop-shadow(0 0 15px rgba(100, 181, 246, 0.7))",
+                  filter: "grayscale(0%)",
                   clipPath: `inset(${100 - (tasksCompleted / maxTasksPerUser) * 100}% 0 0 0)`,
                   transition: "clip-path 0.5s ease-in-out",
                   zIndex: 2,
@@ -503,7 +506,7 @@ export default function DigiPassDashboard() {
                         color: "#FF6B35",
                       }}
                     >
-                      Completed ({tasksCompleted}/{maxTasksPerUser})
+                      {t.completed} ({tasksCompleted}/{maxTasksPerUser})
                     </Typography>
                   </Stack>
                 ) : (
