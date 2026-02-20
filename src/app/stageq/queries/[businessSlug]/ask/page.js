@@ -25,6 +25,7 @@ import {
   voteQuestion,
   submitQuestion,
 } from "@/services/stageq/questionService";
+import { translateTexts } from "@/services/translationService";
 import LanguageSelector from "@/components/LanguageSelector";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import LoadingState from "@/components/LoadingState";
@@ -72,8 +73,9 @@ const translations = {
 };
 export default function AskQuestionsPage() {
   const { businessSlug } = useParams();
-  const { t, dir, align } = useI18nLayout(translations);
+  const { t, dir, align, language } = useI18nLayout(translations);
   const [questions, setQuestions] = useState([]);
+  const [translatedQuestionTexts, setTranslatedQuestionTexts] = useState({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [openForm, setOpenForm] = useState(false);
@@ -84,10 +86,38 @@ export default function AskQuestionsPage() {
     text: "",
   });
 
+  useEffect(() => {
+    const list = Array.isArray(questions) ? questions : [];
+    if (!list.length) {
+      setTranslatedQuestionTexts({});
+      return;
+    }
+    let cancelled = false;
+    // Fixed-length array: one entry per question, empty string for blank texts
+    const entries = list.map((q) => ({
+      id: q._id,
+      text: q && typeof q.text === "string" && q.text.trim() ? q.text : "",
+    }));
+    translateTexts(entries.map((e) => e.text), language)
+      .then((results) => {
+        if (cancelled) return;
+        const map = {};
+        entries.forEach((e, i) => {
+          map[e.id] = results[i] || e.text;
+        });
+        setTranslatedQuestionTexts(map);
+      })
+      .catch(() => {
+        if (!cancelled) setTranslatedQuestionTexts({});
+      });
+    return () => { cancelled = true; };
+  }, [questions, language]);
+
   const fetchQuestions = async () => {
     const data = await getQuestionsByBusiness(businessSlug);
-    if (!data.error) {
-      setQuestions(data);
+    if (!data?.error) {
+      const list = Array.isArray(data) ? data : (data?.data ?? []);
+      setQuestions(list);
     }
     setLoading(false);
   };
@@ -95,15 +125,12 @@ export default function AskQuestionsPage() {
   const handleVote = async (questionId) => {
     const voted = JSON.parse(localStorage.getItem("votedQuestions") || "[]");
     const hasVoted = voted.includes(questionId);
-
     const action = hasVoted ? "remove" : "add";
     await voteQuestion(questionId, action);
-
-    const updated = hasVoted
-      ? voted.filter((id) => id !== questionId)
-      : [...voted, questionId];
-
-    localStorage.setItem("votedQuestions", JSON.stringify(updated));
+    localStorage.setItem(
+      "votedQuestions",
+      JSON.stringify(hasVoted ? voted.filter((id) => id !== questionId) : [...voted, questionId])
+    );
     fetchQuestions();
   };
 
@@ -172,10 +199,10 @@ export default function AskQuestionsPage() {
           <LoadingState />
         ) : (
           <Stack spacing={2}>
-            {questions.length === 0 ? (
+            {(Array.isArray(questions) ? questions : []).length === 0 ? (
               <NoDataAvailable />
             ) : (
-              questions.map((q) => {
+              (Array.isArray(questions) ? questions : []).map((q) => {
                 const votedQuestions = JSON.parse(
                   localStorage.getItem("votedQuestions") || "[]"
                 );
@@ -186,7 +213,7 @@ export default function AskQuestionsPage() {
                     <CardContent>
                       {/* Question text */}
                       <Typography fontWeight="bold" gutterBottom>
-                        {q.text}
+                        {translatedQuestionTexts[q._id] ?? q.text}
                       </Typography>
 
                       {/* Visitor Info with Icons */}

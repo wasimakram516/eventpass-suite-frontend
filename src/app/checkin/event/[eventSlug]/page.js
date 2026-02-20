@@ -26,6 +26,7 @@ import {
   confirmCheckInPresence,
   updateCheckInAttendanceStatus,
 } from "@/services/checkin/checkinRegistrationService";
+import { translateTexts } from "@/services/translationService";
 import LanguageSelector from "@/components/LanguageSelector";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import Background from "@/components/Background";
@@ -143,6 +144,7 @@ export default function EventDetails() {
   };
 
   const [event, setEvent] = useState(null);
+  const [translatedEvent, setTranslatedEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [registration, setRegistration] = useState(null);
@@ -213,6 +215,29 @@ export default function EventDetails() {
     };
     fetchRegistration();
   }, [token, event?._id]);
+
+  useEffect(() => {
+    if (!event) return;
+    const translatableFields = ["name", "description", "venue", "organizerName"];
+    const texts = translatableFields.map((k) => event[k] || "");
+    const hasContent = texts.some((v) => v.trim() !== "");
+    if (!hasContent) {
+      setTranslatedEvent(event);
+      return;
+    }
+    translateTexts(texts, language)
+      .then((results) => {
+        const translated = { ...event };
+        translatableFields.forEach((k, i) => {
+          translated[k] = results[i] || event[k];
+        });
+        setTranslatedEvent(translated);
+      })
+      .catch((err) => {
+        console.error("Translation error:", err);
+        setTranslatedEvent(event);
+      });
+  }, [event, language]);
 
   // Get background based on language
   const getBackground = useMemo(() => {
@@ -310,7 +335,8 @@ export default function EventDetails() {
     );
   }
 
-  const { name, venue, startDate, endDate, startTime, endTime, timezone, logoUrl, description } = event;
+  const displayEvent = translatedEvent || event;
+  const { name, venue, startDate, endDate, startTime, endTime, timezone, logoUrl, description, organizerName, organizerEmail, organizerPhone } = displayEvent;
   const isArabic = dir === "rtl";
   const background = getBackground;
 
@@ -609,7 +635,7 @@ export default function EventDetails() {
                       {t.contactOrganizer}
                     </Typography>
                     <Stack spacing={1.5} alignItems="center">
-                      {event.organizerName && (
+                      {organizerName && (
                         <Stack
                           direction="row"
                           spacing={1}
@@ -629,11 +655,11 @@ export default function EventDetails() {
                               color: "primary.main",
                             }}
                           >
-                            {event.organizerName}
+                            {organizerName}
                           </Typography>
                         </Stack>
                       )}
-                      {event.organizerEmail && (
+                      {organizerEmail && (
                         <Stack
                           direction="row"
                           spacing={1}
@@ -649,11 +675,11 @@ export default function EventDetails() {
                               color: "primary.main",
                             }}
                           >
-                            {event.organizerEmail}
+                            {organizerEmail}
                           </Typography>
                         </Stack>
                       )}
-                      {event.organizerPhone && (
+                      {organizerPhone && (
                         <Stack
                           direction="row"
                           spacing={1}
@@ -669,7 +695,7 @@ export default function EventDetails() {
                               color: "primary.main",
                             }}
                           >
-                            {event.organizerPhone}
+                            {organizerPhone}
                           </Typography>
                         </Stack>
                       )}
@@ -712,14 +738,15 @@ export default function EventDetails() {
                         size="large"
                         onClick={handleConfirmPresenceClick}
                         disabled={confirming}
-                        startIcon={<ICONS.checkCircle />}
+                        {...(dir === "rtl"
+                          ? { endIcon: <ICONS.checkCircle /> }
+                          : { startIcon: <ICONS.checkCircle /> })}
                         sx={{
                           fontSize: { xs: 16, md: 18 },
                           p: "12px 32px",
                           fontWeight: "bold",
                           borderRadius: 2,
                           textTransform: "none",
-                          ...getStartIconSpacing(dir),
                         }}
                       >
                         {t.confirmPresence}
@@ -727,12 +754,14 @@ export default function EventDetails() {
                     </>
                   )}
 
-                  {/* Download QR button  */}
+                  {/* Download QR button */}
                   {registration?.token && (
                     <Button
                       variant="contained"
                       size="large"
-                      startIcon={<ICONS.download />}
+                      {...(dir === "rtl"
+                        ? { endIcon: <ICONS.download /> }
+                        : { startIcon: <ICONS.download /> })}
                       onClick={async () => {
                         const downloadName = `qr-${registration.token}.png`;
                         const qrValue = registration.token;
@@ -773,7 +802,6 @@ export default function EventDetails() {
                         fontWeight: "bold",
                         borderRadius: 2,
                         textTransform: "none",
-                        ...getStartIconSpacing(dir),
                       }}
                     >
                       {t.downloadQr}
@@ -802,9 +830,9 @@ export default function EventDetails() {
             actionRoute={`/checkin/event/${eventSlug}`}
             hideActionButton={true}
             isArabic={isArabic}
-            organizerName={event?.organizerName}
-            organizerEmail={event?.organizerEmail}
-            organizerPhone={event?.organizerPhone}
+            organizerName={organizerName}
+            organizerEmail={organizerEmail}
+            organizerPhone={organizerPhone}
             contactOrganizer={t.contactOrganizer}
           />
         )}

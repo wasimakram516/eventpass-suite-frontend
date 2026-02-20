@@ -24,7 +24,13 @@ import {
   ListItemText,
   TextField,
 } from "@mui/material";
-import { Shuffle as ShuffleIcon, Sort as SortIcon, ChevronRight as ChevronRightIcon } from "@mui/icons-material";
+import {
+  Shuffle as ShuffleIcon,
+  Sort as SortIcon,
+  ChevronRight as ChevronRightIcon,
+  Autorenew as AutorenewIcon,
+  CheckCircle as CheckCircleIcon
+} from "@mui/icons-material";
 import Confetti from "react-confetti";
 
 import {
@@ -38,9 +44,9 @@ import { getSpinWheelBySlug } from "@/services/eventwheel/spinWheelService";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import LanguageSelector from "@/components/LanguageSelector";
-
-const btnSpin = "/freespin1.png";
-const btnSpinClicked = "/freespin2.png";
+import getStartIconSpacing from "@/utils/getStartIconSpacing";
+import { formatDateTimeWithLocale } from "@/utils/dateUtils";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const translations = {
   en: {
@@ -105,6 +111,7 @@ const SpinningPage = () => {
   const rotationRef = useRef(0); // stores accumulated rotation in degrees
 
   const { t, dir, align } = useI18nLayout(translations);
+  const { language } = useLanguage();
 
   const fetchParticipants = useCallback(async () => {
     const data = await getParticipantsBySlug(shortName);
@@ -502,6 +509,13 @@ const SpinningPage = () => {
       }}
       dir={dir}
     >
+      {/* Language Selector - positioned above arrow button on top right */}
+      {!drawerOpen && (
+        <Box dir="ltr" sx={{ position: "fixed", top: { xs: 10, sm: 20 }, right: { xs: 10, sm: 20 }, zIndex: 10000 }}>
+          <LanguageSelector />
+        </Box>
+      )}
+
       {eventData?.type === "enter_names" && (
         <IconButton
           sx={{
@@ -523,7 +537,7 @@ const SpinningPage = () => {
         <IconButton
           sx={{
             position: "fixed",
-            top: { xs: 10, sm: 20 },
+            top: { xs: 60, sm: 70 },
             right: { xs: 10, sm: 20 },
             backgroundColor: "primary.main",
             color: "white",
@@ -654,6 +668,7 @@ const SpinningPage = () => {
               >
                 <Typography
                   variant="body2"
+                  dir="ltr"
                   sx={{
                     width: "auto",
                     maxWidth: `${labelChord * 2}px`,
@@ -695,17 +710,27 @@ const SpinningPage = () => {
       </Box>
 
       <Button
+        variant="contained"
         onClick={handleSpinWheel}
         disabled={spinning || participants.length === 0}
+        startIcon={
+          spinning ? (
+            <AutorenewIcon sx={{ animation: "spin 1s linear infinite" }} />
+          ) : (
+            <AutorenewIcon />
+          )
+        }
         sx={{
-          width: spinBtnWidth,
+          ...getStartIconSpacing(dir),
+          minWidth: spinBtnWidth,
           height: spinBtnHeight,
           mt: size * 0.01,
-          backgroundImage: `url(${spinning ? btnSpinClicked : btnSpin})`,
-          backgroundSize: "contain",
-          backgroundRepeat: "no-repeat",
-          backgroundPosition: "center",
+          py: 1.5,
+          px: 3,
           borderRadius: spinBtnHeight / 2,
+          fontSize: { xs: "0.9rem", sm: "1rem" },
+          fontWeight: 600,
+          textTransform: "none",
           transition: "transform 0.15s ease, opacity 0.15s ease",
           "&:hover": {
             opacity: 0.9,
@@ -717,8 +742,14 @@ const SpinningPage = () => {
           "&.Mui-disabled": {
             opacity: 0.5,
           },
+          "@keyframes spin": {
+            "0%": { transform: "rotate(0deg)" },
+            "100%": { transform: "rotate(360deg)" },
+          },
         }}
-      />
+      >
+        {spinning ? t.spinning : t.spinTheWheel}
+      </Button>
 
       {/* Winner Popup Dialog */}
       <Dialog
@@ -772,6 +803,7 @@ const SpinningPage = () => {
           </Box>
           <Typography
             variant="h4"
+            dir="ltr"
             sx={{
               fontWeight: 700,
               mb: 2,
@@ -817,10 +849,11 @@ const SpinningPage = () => {
               width: { xs: "90%", sm: 400 },
               backgroundColor: "white",
               color: "text.primary",
+              zIndex: 10001,
             },
           }}
         >
-          <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
+          <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }} dir={dir}>
             {/* Tabs */}
             <Box sx={{ borderBottom: 1, borderColor: "divider", position: "relative" }}>
               {/* Close button on left side of tabs */}
@@ -877,7 +910,9 @@ const SpinningPage = () => {
                       variant="outlined"
                       onClick={handleShuffle}
                       startIcon={<ShuffleIcon />}
+                      dir={dir}
                       sx={{
+                        ...getStartIconSpacing(dir),
                         flex: 1,
                       }}
                     >
@@ -887,7 +922,9 @@ const SpinningPage = () => {
                       variant="outlined"
                       onClick={handleSort}
                       startIcon={<SortIcon />}
+                      dir={dir}
                       sx={{
+                        ...getStartIconSpacing(dir),
                         flex: 1,
                       }}
                     >
@@ -912,7 +949,10 @@ const SpinningPage = () => {
                     fullWidth
                     onClick={handleReady}
                     disabled={entriesCount === 0}
+                    startIcon={<CheckCircleIcon />}
+                    dir={dir}
                     sx={{
+                      ...getStartIconSpacing(dir),
                       mt: 2,
                       py: 1.5,
                     }}
@@ -950,10 +990,14 @@ const SpinningPage = () => {
                           }}
                         >
                           <ListItemText
-                            primary={winner.name}
+                            primary={
+                              <Box component="span" dir="ltr" display="inline-block">
+                                {winner.name}
+                              </Box>
+                            }
                             secondary={
                               winner.createdAt
-                                ? new Date(winner.createdAt).toLocaleString()
+                                ? formatDateTimeWithLocale(winner.createdAt, language === "ar" ? "ar-SA" : "en-GB")
                                 : undefined
                             }
                             primaryTypographyProps={{

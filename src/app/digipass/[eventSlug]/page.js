@@ -12,6 +12,7 @@ import {
   Card,
 } from "@mui/material";
 import { getDigipassEventBySlug } from "@/services/digipass/digipassEventService";
+import { translateTexts } from "@/services/translationService";
 import ICONS from "@/utils/iconUtil";
 import { useLanguage } from "@/contexts/LanguageContext";
 import LanguageSelector from "@/components/LanguageSelector";
@@ -30,6 +31,7 @@ export default function DigiPassEventDetails() {
   };
 
   const [event, setEvent] = useState(null);
+  const [translatedEvent, setTranslatedEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isMuted] = useState(true);
@@ -47,6 +49,33 @@ export default function DigiPassEventDetails() {
     };
     fetchEvent();
   }, [eventSlug]);
+
+  useEffect(() => {
+    if (!event) return;
+    const textsToTranslate = [event.name, event.description].filter(
+      (v) => typeof v === "string" && String(v).trim() !== ""
+    );
+    if (!textsToTranslate.length) {
+      setTranslatedEvent(event);
+      return;
+    }
+    const run = async () => {
+      try {
+        const results = await translateTexts(textsToTranslate, language);
+        const map = {};
+        textsToTranslate.forEach((txt, i) => (map[txt] = results[i] ?? txt));
+        setTranslatedEvent({
+          ...event,
+          name: map[event.name] ?? event.name,
+          description: map[event.description] ?? event.description,
+        });
+      } catch (err) {
+        console.error("Translation error:", err);
+        setTranslatedEvent(event);
+      }
+    };
+    run();
+  }, [event, language]);
 
   // Background selection logic (mirrors EventReg public page)
   const background = useMemo(() => {
@@ -128,7 +157,8 @@ export default function DigiPassEventDetails() {
     );
   }
 
-  const { logoUrl } = event;
+  const displayEvent = translatedEvent || event;
+  const { name, description, logoUrl } = displayEvent;
 
   return (
     <Box
@@ -222,6 +252,11 @@ export default function DigiPassEventDetails() {
             gap: { xs: 3, sm: 4, md: 5 },
           }}
         >
+          {name && (
+            <Typography variant="h5" fontWeight="bold" sx={{ width: "100%" }}>
+              {name}
+            </Typography>
+          )}
           {/* Event Logo */}
           {logoUrl && (
             <Box

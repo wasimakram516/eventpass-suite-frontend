@@ -1,19 +1,20 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { Box, Button, TextField, Typography } from "@mui/material";
+import { CheckCircle as CheckCircleIcon } from "@mui/icons-material";
 import { useParams, useRouter } from "next/navigation";
 import {
   addParticipantsOnSpot,
   getParticipantsBySlug,
 } from "@/services/eventwheel/spinWheelParticipantService";
-const btnReady = "/ready1.png";
-const btnReadyClicked = "/ready2.png";
 const background = "/prize-1080x1920.jpg";
 const imgDivider = "/divider.png";
 const imgShuffle = "/shuffle.png";
 import { getSpinWheelBySlug } from "@/services/eventwheel/spinWheelService";
+import { translateTexts } from "@/services/translationService";
 import Image from "next/image";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { useLanguage } from "@/contexts/LanguageContext";
 import LanguageSelector from "@/components/LanguageSelector";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import LoadingState from "@/components/LoadingState";
@@ -25,6 +26,7 @@ const translations = {
     goodLuck: "good luck to everyone",
     placeholder: "Enter names, one per line",
     shuffle: "Shuffle",
+    ready: "Ready",
     alertMessage: "Please enter at least one participant name!",
   },
   ar: {
@@ -33,6 +35,7 @@ const translations = {
     goodLuck: "حظ سعيد للجميع",
     placeholder: "أدخل الأسماء، اسم واحد في كل سطر",
     shuffle: "خلط",
+    ready: "جاهز",
     alertMessage: "يرجى إدخال اسم مشارك واحد على الأقل!",
   },
 };
@@ -42,10 +45,11 @@ const ParticipantsUserPage = () => {
   const shortName = params.wheelSlug;
   const router = useRouter();
   const [event, setEvent] = useState(null);
+  const [translatedTitle, setTranslatedTitle] = useState(null);
   const [bulkNames, setBulkNames] = useState("");
   const [loading, setLoading] = useState(false);
-  const [btnClicked, setBtnClicked] = useState(false);
   const { t, dir, align } = useI18nLayout(translations);
+  const { language } = useLanguage();
 
   useEffect(() => {
     const fetchEventAndParticipants = async () => {
@@ -60,6 +64,16 @@ const ParticipantsUserPage = () => {
     fetchEventAndParticipants();
   }, [shortName]);
 
+  useEffect(() => {
+    if (!event?.title || typeof event.title !== "string" || !event.title.trim()) {
+      setTranslatedTitle(null);
+      return;
+    }
+    translateTexts([event.title], language)
+      .then(([result]) => setTranslatedTitle(result ?? event.title))
+      .catch(() => setTranslatedTitle(null));
+  }, [event?.title, language]);
+
   const handleShuffleNames = () => {
     const namesArray = bulkNames
       .split("\n")
@@ -73,8 +87,6 @@ const ParticipantsUserPage = () => {
       return;
     }
 
-    setBtnClicked(true);
-
     const formattedNames = bulkNames.split("\n").map((name) => name.trim());
 
     setLoading(true);
@@ -84,7 +96,6 @@ const ParticipantsUserPage = () => {
     });
     router.push(`/eventwheel/spin/${shortName}`);
     setLoading(false);
-    setTimeout(() => setBtnClicked(false), 2000);
   };
   if (!event) return <LoadingState />;
   return (
@@ -103,7 +114,7 @@ const ParticipantsUserPage = () => {
       dir={dir}
     >
       <Typography variant="h4" fontWeight="bold" textAlign={align}>
-        {`${t.welcomeTo} ${event.slug}`}
+        {`${t.welcomeTo} ${translatedTitle || event.title || event.slug}`}
       </Typography>
 
       <Image
@@ -173,27 +184,25 @@ const ParticipantsUserPage = () => {
           {t.shuffle}
         </Button>
 
-        {/* Ready Button with Dynamic Background */}
-        <Box
-          component="button"
+        <Button
+          variant="contained"
           onClick={handleReady}
           disabled={loading}
+          startIcon={<CheckCircleIcon />}
           sx={{
-            width: 150,
-            height: 50,
-            backgroundImage: `url(${btnClicked ? btnReadyClicked : btnReady})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            backgroundRepeat: "no-repeat",
-            border: "none",
-            borderRadius: 2,
-            cursor: loading ? "not-allowed" : "pointer",
-            outline: "none",
-            "&:hover": { opacity: 0.8 },
+            ...getStartIconSpacing(dir),
+            minWidth: 150,
+            py: 1.5,
+            px: 3,
           }}
-        />
+        >
+          {t.ready}
+        </Button>
       </Box>
-      <LanguageSelector top={20} right={20} />
+      {/* Force LanguageSelector subtree to LTR so EN/AR toggle behaves correctly in Arabic */}
+      <Box dir="ltr">
+        <LanguageSelector top={20} right={20} />
+      </Box>
     </Box>
   );
 };

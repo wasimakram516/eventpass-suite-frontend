@@ -13,6 +13,7 @@ import {
 import VolumeUpIcon from "@mui/icons-material/VolumeUp";
 import VolumeOffIcon from "@mui/icons-material/VolumeOff";
 import { getVoteCastEventBySlug } from "@/services/votecast/eventService";
+import { translateTexts } from "@/services/translationService";
 import Background from "@/components/Background";
 import LanguageSelector from "@/components/LanguageSelector";
 import ICONS from "@/utils/iconUtil";
@@ -40,10 +41,39 @@ export default function VoteCastEventWelcome() {
   };
 
   const [event, setEvent] = useState(null);
+  const [translatedEvent, setTranslatedEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isMuted, setIsMuted] = useState(true);
   const videoRef = useRef(null);
+
+  useEffect(() => {
+    if (!event) return;
+    const texts = [event.name, event.description, event.venue].filter(
+      (v) => typeof v === "string" && String(v).trim() !== ""
+    );
+    if (!texts.length) {
+      setTranslatedEvent(event);
+      return;
+    }
+    const run = async () => {
+      try {
+        const results = await translateTexts(texts, currentLang);
+        const map = {};
+        texts.forEach((txt, i) => (map[txt] = results[i] ?? txt));
+        setTranslatedEvent({
+          ...event,
+          name: map[event.name] ?? event.name,
+          description: map[event.description] ?? event.description,
+          venue: map[event.venue] ?? event.venue,
+        });
+      } catch (err) {
+        console.error("Translation error:", err);
+        setTranslatedEvent(event);
+      }
+    };
+    run();
+  }, [event, currentLang]);
 
   useEffect(() => {
     const fetchEvent = async () => {
@@ -114,6 +144,7 @@ export default function VoteCastEventWelcome() {
     );
   }
 
+  const displayEvent = translatedEvent || event;
   const {
     name,
     description,
@@ -124,7 +155,7 @@ export default function VoteCastEventWelcome() {
     startTime,
     endTime,
     timezone,
-  } = event;
+  } = displayEvent;
   const background = getBackground;
 
   return (

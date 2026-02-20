@@ -19,6 +19,7 @@ import { pickFullName } from "@/utils/customFieldUtils";
 import { QRCodeCanvas } from "qrcode.react";
 import useDigiPassSocket from "@/hooks/modules/digipass/useDigiPassSocket";
 import LanguageSelector from "@/components/LanguageSelector";
+import { toArabicDigits } from "@/utils/arabicDigits";
 
 export default function DigiPassDashboard() {
   const { eventSlug } = useParams();
@@ -218,6 +219,10 @@ export default function DigiPassDashboard() {
     maxTasksPerUser !== null && maxTasksPerUser !== undefined
       ? maxTasksPerUser - tasksCompleted
       : 0;
+  const completedCounterRaw = `${tasksCompleted}/${maxTasksPerUser ?? 0}`;
+  const completedCounter = isArabic
+    ? toArabicDigits(completedCounterRaw, language)
+    : completedCounterRaw;
 
   return (
     <Box
@@ -484,11 +489,11 @@ export default function DigiPassDashboard() {
               {/* Tasks Left Text */}
               {maxTasksPerUser !== null &&
                 (tasksCompleted >= maxTasksPerUser ? (
-                  <Stack
-                    direction="row"
-                    alignItems="center"
-                    spacing={1}
+                  <Box
                     sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      columnGap: isArabic ? "0.75em" : "0.5em",
                       mb: { xs: "0.6vh", sm: "0.5vh", md: "0.4vh" },
                     }}
                   >
@@ -506,9 +511,27 @@ export default function DigiPassDashboard() {
                         color: "#FF6B35",
                       }}
                     >
-                      {t.completed} ({tasksCompleted}/{maxTasksPerUser})
+                      <Box
+                        component="span"
+                        sx={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          columnGap: isArabic ? "0.5em" : "0.35em",
+                        }}
+                      >
+                        <Box component="span" sx={{ unicodeBidi: "isolate" }}>
+                          {t.completed}
+                        </Box>
+                        <Box
+                          component="span"
+                          dir={isArabic ? "rtl" : "ltr"}
+                          sx={{ unicodeBidi: "isolate" }}
+                        >
+                          ({completedCounter})
+                        </Box>
+                      </Box>
                     </Typography>
-                  </Stack>
+                  </Box>
                 ) : (
                   <Typography
                     sx={{
