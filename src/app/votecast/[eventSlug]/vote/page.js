@@ -28,6 +28,7 @@ import {
   voteOnPoll,
 } from "@/services/votecast/pollService";
 import { getVoteCastEventBySlug } from "@/services/votecast/eventService";
+import { translateTexts } from "@/services/translationService";
 import LanguageSelector from "@/components/LanguageSelector";
 import Background from "@/components/Background";
 import { getEventBackground } from "@/utils/eventBackground";
@@ -54,6 +55,7 @@ const translations = {
     voteFailed: "Vote failed",
     failedToLoad: "Failed to load polls",
     eventNotFound: "Event not found",
+    closingAutomatically: "Closing automatically…",
   },
   ar: {
     noActivePolls: "لا توجد استطلاعات نشطة",
@@ -70,6 +72,7 @@ const translations = {
     voteFailed: "فشل في التصويت",
     failedToLoad: "فشل في تحميل الاستطلاعات",
     eventNotFound: "الفعالية غير موجودة",
+    closingAutomatically: "سيُغلق تلقائيًا…",
   },
 };
 
@@ -78,7 +81,9 @@ function RealPoll({ eventSlug }) {
   const { language: contextLanguage } = useLanguage();
   const currentLang = lang || language || contextLanguage || "en";
   const [polls, setPolls] = useState([]);
+  const [translatedPolls, setTranslatedPolls] = useState([]);
   const [event, setEvent] = useState(null);
+  const [translatedEvent, setTranslatedEvent] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [sliderValue, setSliderValue] = useState(0);
   const [highlightedOption, setHighlightedOption] = useState(null);
@@ -127,6 +132,69 @@ function RealPoll({ eventSlug }) {
 
     fetchEventAndPolls();
   }, [eventSlug]);
+
+  useEffect(() => {
+    if (!event) return;
+    const eventTexts = [event.name, event.description].filter(
+      (v) => typeof v === "string" && String(v).trim() !== ""
+    );
+    if (!eventTexts.length) {
+      setTranslatedEvent(event);
+      return;
+    }
+    translateTexts(eventTexts, currentLang)
+      .then((eventResults) => {
+        const eventMap = {};
+        eventTexts.forEach((txt, i) => (eventMap[txt] = eventResults[i] ?? txt));
+        setTranslatedEvent({
+          ...event,
+          name: eventMap[event.name] ?? event.name,
+          description: eventMap[event.description] ?? event.description,
+        });
+      })
+      .catch((err) => {
+        console.error("Translation error:", err);
+        setTranslatedEvent(event);
+      });
+  }, [event, currentLang]);
+
+  useEffect(() => {
+    if (!polls?.length) {
+      setTranslatedPolls(polls || []);
+      return;
+    }
+    const allTexts = [];
+    polls.forEach((poll) => {
+      if (typeof poll.question === "string" && poll.question.trim()) allTexts.push(poll.question);
+      (poll.options || []).forEach((o) => {
+        if (typeof o?.text === "string" && o.text.trim()) allTexts.push(o.text);
+      });
+    });
+    if (!allTexts.length) {
+      setTranslatedPolls(polls);
+      return;
+    }
+    translateTexts(allTexts, currentLang)
+      .then((results) => {
+        let idx = 0;
+        const translated = polls.map((poll) => {
+          const question =
+            typeof poll.question === "string" && poll.question.trim()
+              ? (results[idx++] ?? poll.question)
+              : poll.question;
+          const options = (poll.options || []).map((o) => {
+            if (typeof o?.text !== "string" || !o.text.trim()) return o;
+            return { ...o, text: results[idx++] ?? o.text };
+          });
+          return { ...poll, question, options };
+        });
+        setTranslatedPolls(translated);
+      })
+      .catch((err) => {
+        console.error("Translation error:", err);
+        setTranslatedPolls(polls);
+      });
+  }, [polls, currentLang]);
 
   const getProgressColor = () => {
     const percent = ((currentIndex + 1) / polls.length) * 100;
@@ -293,8 +361,10 @@ function RealPoll({ eventSlug }) {
   }
 
   const currentPoll = polls[currentIndex];
+  const translatedCurrentPoll = translatedPolls[currentIndex] || currentPoll;
   const optionCount = currentPoll.options.length;
   const pollType = currentPoll.type || "options";
+  const displayEvent = translatedEvent || event;
 
   return (
     <>
@@ -330,7 +400,7 @@ function RealPoll({ eventSlug }) {
             <Box
               component="img"
               src={event.logoUrl}
-              alt={`${event.name} Logo`}
+              alt={`${displayEvent?.name || event?.name} Logo`}
               sx={{
                 maxHeight: "100%",
                 width: "100%",
@@ -445,7 +515,7 @@ function RealPoll({ eventSlug }) {
                   mb: 2,
                 }}
               >
-                {currentPoll.question}
+                {translatedCurrentPoll.question}
               </Typography>
               {/* Dynamic Options */}
               {pollType === "slider" ? (
@@ -461,7 +531,7 @@ function RealPoll({ eventSlug }) {
                       mb: 1,
                     }}
                   >
-                    {currentPoll.options.map((option, idx) => (
+                    {translatedCurrentPoll.options.map((option, idx) => (
                       <Box
                         key={idx}
                         display="flex"
@@ -609,7 +679,7 @@ function RealPoll({ eventSlug }) {
                 </>
               ) : (
                 <Stack spacing={2} width="100%">
-                  {currentPoll.options.map((option, idx) => {
+                  {translatedCurrentPoll.options.map((option, idx) => {
                     const isSelected = highlightedOption === idx;
                     const canSelect = highlightedOption === null;
 
@@ -849,7 +919,7 @@ function RealPoll({ eventSlug }) {
           </Box>
 
           <Typography variant="caption" color="text.secondary">
-            Closing automatically…
+            {t.closingAutomatically}
           </Typography>
         </DialogContent>
 

@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation";
 import { submitResult } from "@/services/tapmatch/playerService";
 import LanguageSelector from "@/components/LanguageSelector";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import Confetti from "react-confetti";
 import { motion } from "framer-motion";
 import {
@@ -445,6 +446,7 @@ export default function TapMatchPlayPage() {
                     textTransform: "none",
                     fontWeight: 600,
                     boxShadow: "none",
+                    ...getStartIconSpacing(dir),
                   }}
                 >
                   {t.playAgain}

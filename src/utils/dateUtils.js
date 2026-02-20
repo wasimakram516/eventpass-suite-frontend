@@ -169,7 +169,9 @@ export const formatTime = (timeString, locale = "en-GB", eventTimezone = null, d
     }).format(eventDate);
 
     if (locale === "ar-SA") {
-      return formatted.replace(/\bAM\b/gi, "ص").replace(/\bPM\b/gi, "م");
+      return formatted
+        .replace(/\bAM\b/gi, "ص").replace(/\bPM\b/gi, "م")
+        .replace(/\d/g, (d) => String.fromCharCode(d.charCodeAt(0) + 0x0630));
     }
     return formatted;
   }
@@ -184,9 +186,10 @@ export const formatTime = (timeString, locale = "en-GB", eventTimezone = null, d
   });
 
   if (locale === "ar-SA") {
-    return formatted.replace(/\bAM\b/gi, "ص").replace(/\bPM\b/gi, "م");
+    return formatted
+      .replace(/\bAM\b/gi, "ص").replace(/\bPM\b/gi, "م")
+      .replace(/\d/g, (d) => String.fromCharCode(d.charCodeAt(0) + 0x0630));
   }
-
   return formatted;
 };
 
@@ -223,7 +226,9 @@ export const formatDateWithTime = (dateString, timeString, locale = "en-GB", eve
       ).replace(/\d/g, (digit) =>
         String.fromCharCode(digit.charCodeAt(0) + 0x0630)
       );
-      finalTime = timeFormatted.replace(/\bAM\b/gi, "ص").replace(/\bPM\b/gi, "م");
+      finalTime = timeFormatted
+        .replace(/\bAM\b/gi, "ص").replace(/\bPM\b/gi, "م")
+        .replace(/\d/g, (d) => String.fromCharCode(d.charCodeAt(0) + 0x0630));
     }
 
     return `${finalDate} ${finalTime}`;

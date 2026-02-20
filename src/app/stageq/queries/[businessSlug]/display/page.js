@@ -9,13 +9,56 @@ import { getBusinessBySlug } from "@/services/businessService";
 import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
 import Background from "@/components/Background";
 import { Shift } from "ambient-cbg";
+import useI18nLayout from "@/hooks/useI18nLayout";
+import { translateTexts } from "@/services/translationService";
+import LanguageSelector from "@/components/LanguageSelector";
+import { toArabicDigits } from "@/utils/arabicDigits";
+
+const translations = {
+  en: {
+    noQuestionsYet: "No questions yet.",
+  },
+  ar: {
+    noQuestionsYet: "لا توجد أسئلة بعد.",
+  },
+};
 
 export default function LiveQuestionDisplay() {
   const { businessSlug } = useParams();
   const { globalConfig } = useGlobalConfig();
+  const { t, dir, align, language } = useI18nLayout(translations);
   const [questions, setQuestions] = useState([]);
+  const [translatedQuestionTexts, setTranslatedQuestionTexts] = useState({});
   const [loading, setLoading] = useState(false);
   const [business, setBusiness] = useState(null);
+
+  useEffect(() => {
+    const list = Array.isArray(questions) ? questions : [];
+    if (!list.length) {
+      setTranslatedQuestionTexts({});
+      return;
+    }
+    let cancelled = false;
+    const entries = list.map((q) => ({
+      id: q._id,
+      text: q && typeof q.text === "string" && q.text.trim() ? q.text : "",
+    }));
+    translateTexts(entries.map((e) => e.text), language)
+      .then((results) => {
+        if (cancelled) return;
+        const map = {};
+        entries.forEach((e, i) => {
+          map[e.id] = results[i] || e.text;
+        });
+        setTranslatedQuestionTexts(map);
+      })
+      .catch(() => {
+        if (!cancelled) setTranslatedQuestionTexts({});
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [questions, language]);
 
   const fetchQuestions = async () => {
     setLoading(true);
@@ -55,19 +98,23 @@ export default function LiveQuestionDisplay() {
 
   if (loading && questions.length === 0) {
     return (
-      <Box
-        minHeight="100vh"
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-      >
-        <Shift />
-        <CircularProgress />
+      <Box sx={{ position: "relative", minHeight: "100vh" }}>
+        <Box
+          minHeight="100vh"
+          display="flex"
+          justifyContent="center"
+          alignItems="center"
+        >
+          <Shift />
+          <CircularProgress />
+        </Box>
+        <LanguageSelector top={20} right={20} />
       </Box>
     );
   }
 
   return (
+    <Box sx={{ position: "relative", minHeight: "100vh" }}>
     <Box
       sx={{
         minHeight: "100vh",
@@ -79,7 +126,9 @@ export default function LiveQuestionDisplay() {
         pt: 2,
         pb: 10,
         overflowX: "hidden",
+        textAlign: align,
       }}
+      dir={dir}
     >
       <Shift />
       {business?.logoUrl && (
@@ -118,7 +167,7 @@ export default function LiveQuestionDisplay() {
           textAlign="center"
           mt={6}
         >
-          No questions yet.
+          {t.noQuestionsYet}
         </Typography>
       ) : (
         <div className="question-container">
@@ -152,11 +201,11 @@ export default function LiveQuestionDisplay() {
                       fontSize: "1rem",
                     }}
                   >
-                    {q.votes}
+                    {toArabicDigits(String(q.votes), language)}
                   </span>
                 )}
 
-                {q.text}
+                {translatedQuestionTexts[q._id] ?? q.text}
               </div>
             );
           })}
@@ -165,6 +214,8 @@ export default function LiveQuestionDisplay() {
 
       {/* Footer */}
       <Footer />
+    </Box>
+    <LanguageSelector top={20} right={20} />
     </Box>
   );
 }
