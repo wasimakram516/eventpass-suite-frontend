@@ -9,14 +9,17 @@ const useSurveyGuruSocket = ({
   formId,
   onSyncProgress,
   onEmailProgress,
+  onRecipientStatus,
 } = {}) => {
 
   // ---- callback refs (prevent re-renders and loops) ----
   const syncCbRef = useRef(onSyncProgress);
   const emailCbRef = useRef(onEmailProgress);
+  const recipientStatusCbRef = useRef(onRecipientStatus);
 
   useEffect(() => { syncCbRef.current = onSyncProgress }, [onSyncProgress]);
   useEffect(() => { emailCbRef.current = onEmailProgress }, [onEmailProgress]);
+  useEffect(() => { recipientStatusCbRef.current = onRecipientStatus }, [onRecipientStatus]);
 
   // ---- socket progress states ----
   const [syncProgress, setSyncProgress] = useState({
@@ -59,13 +62,20 @@ const useSurveyGuruSocket = ({
 
   }, [formId]);
 
+  // ---- Recipient Status Handler (stable, guarded) ----
+  const handleRecipientStatusEvent = useCallback((data) => {
+    if (String(data?.formId) !== String(formId)) return;
+    if (recipientStatusCbRef.current) recipientStatusCbRef.current(data);
+  }, [formId]);
+
   // ---- Stable event map ----
   const events = useMemo(
     () => ({
       surveySyncProgress: handleSyncEvent,
       surveyEmailProgress: handleEmailEvent,
+      surveyRecipientStatus: handleRecipientStatusEvent,
     }),
-    [handleSyncEvent, handleEmailEvent]
+    [handleSyncEvent, handleEmailEvent, handleRecipientStatusEvent]
   );
 
   const { socket, connected, connectionError } = useSocket(events);

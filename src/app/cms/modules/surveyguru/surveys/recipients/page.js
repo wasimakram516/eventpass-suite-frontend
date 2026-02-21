@@ -30,6 +30,7 @@ import { useMessage } from "@/contexts/MessageContext";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import BusinessDrawer from "@/components/drawers/BusinessDrawer";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
+import SurveyBulkNotificationModal from "@/components/modals/SurveyBulkNotificationModal";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import RecordMetadata from "@/components/RecordMetadata";
 import AppCard from "@/components/cards/AppCard";
@@ -235,12 +236,13 @@ export default function RecipientsManagePage() {
   const [confirmClear, setConfirmClear] = useState(false);
 
   const [sendingEmails, setSendingEmails] = useState(false);
-  const [confirmEmailDialogOpen, setConfirmEmailDialogOpen] = useState(false);
+  const [bulkEmailModalOpen, setBulkEmailModalOpen] = useState(false);
 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [total, setTotal] = useState(0);
   const syncTimeoutRef = useRef(null);
+  const recipientStatusTimeoutRef = useRef(null);
 
   const refreshRecipients = async ({
     targetFormId = formId,
@@ -309,6 +311,38 @@ export default function RecipientsManagePage() {
         setFiltersOpen(false);
       }
     },
+    onRecipientStatus: (data) => {
+      const incomingRecipientId = String(data?.recipientId || "");
+      const incomingStatus = String(data?.status || "").toLowerCase();
+
+      if (incomingRecipientId && incomingStatus) {
+        setRows((prev) =>
+          prev.map((row) =>
+            String(row?._id) === incomingRecipientId
+              ? {
+                ...row,
+                status: incomingStatus,
+                respondedAt: data?.respondedAt || row.respondedAt,
+              }
+              : row
+          )
+        );
+      }
+
+      // Debounced refresh keeps pagination/filter totals accurate in real time.
+      if (recipientStatusTimeoutRef.current) {
+        clearTimeout(recipientStatusTimeoutRef.current);
+      }
+      recipientStatusTimeoutRef.current = setTimeout(() => {
+        refreshRecipients({
+          targetFormId: formId,
+          targetPage: page,
+          targetLimit: limit,
+          targetQ: q,
+          targetStatus: status,
+        });
+      }, 500);
+    },
   });
 
   useEffect(() => {
@@ -316,6 +350,10 @@ export default function RecipientsManagePage() {
       if (syncTimeoutRef.current) {
         clearTimeout(syncTimeoutRef.current);
         syncTimeoutRef.current = null;
+      }
+      if (recipientStatusTimeoutRef.current) {
+        clearTimeout(recipientStatusTimeoutRef.current);
+        recipientStatusTimeoutRef.current = null;
       }
     };
   }, []);
@@ -415,14 +453,24 @@ export default function RecipientsManagePage() {
     }
   };
 
-  const handleSendBulkSurveyEmails = async () => {
-    setConfirmEmailDialogOpen(false);
+  const handleSendBulkSurveyEmails = async (payload = {}) => {
+    if (!formId) return;
+    setBulkEmailModalOpen(false);
     setSendingEmails(true);
 
     try {
-      await sendBulkSurveyEmails(formId);
+      const result = await sendBulkSurveyEmails(formId, {
+        recipientScope: payload.recipientScope || "not_responded",
+        subject: payload.subject ?? "",
+        body: payload.body ?? "",
+      });
+
+      if (result?.error) {
+        setSendingEmails(false);
+      }
     } catch (err) {
       console.error("Bulk survey email send failed:", err);
+      setSendingEmails(false);
     }
   };
 
@@ -558,11 +606,12 @@ export default function RecipientsManagePage() {
   };
 
   const RecipientCard = ({ r }) => {
-    const isResponded = Boolean(r?.respondedAt);
+    const normalizedStatus = String(r?.status || "").toLowerCase();
+    const isResponded =
+      normalizedStatus === "responded" || Boolean(r?.respondedAt);
     const isNotified =
       !isResponded &&
-      (String(r?.status || "").toLowerCase() === "responded" ||
-        String(r?.status || "").toLowerCase() === "notified" ||
+      (normalizedStatus === "notified" ||
         r?.emailSent === true ||
         r?.notificationSent === true);
 
@@ -821,7 +870,7 @@ export default function RecipientsManagePage() {
                         <ICONS.email fontSize="small" />
                       )
                     }
-                    onClick={() => setConfirmEmailDialogOpen(true)}
+                    onClick={() => setBulkEmailModalOpen(true)}
                     sx={{ whiteSpace: "nowrap", ...getStartIconSpacing(dir) }}
                   >
                     {sendingEmails && emailProgress.total
@@ -969,7 +1018,7 @@ export default function RecipientsManagePage() {
                         <ICONS.email fontSize="small" />
                       )
                     }
-                    onClick={() => setConfirmEmailDialogOpen(true)}
+                    onClick={() => setBulkEmailModalOpen(true)}
                     sx={getStartIconSpacing(dir)}
                   >
                     {sendingEmails && emailProgress.total
@@ -1111,15 +1160,11 @@ export default function RecipientsManagePage() {
           confirmButtonIcon={<ICONS.delete fontSize="small" />}
         />
 
-        <ConfirmationDialog
-          open={confirmEmailDialogOpen}
-          onClose={() => setConfirmEmailDialogOpen(false)}
-          onConfirm={handleSendBulkSurveyEmails}
-          title={t.bulkEmailConfirmTitle}
-          message={t.bulkEmailConfirmMsg}
-          confirmButtonText={t.bulkEmail}
-          confirmButtonIcon={<ICONS.email fontSize="small" />}
-          confirmButtonColor="secondary"
+        <SurveyBulkNotificationModal
+          open={bulkEmailModalOpen}
+          onClose={() => setBulkEmailModalOpen(false)}
+          onSend={handleSendBulkSurveyEmails}
+          sendingEmails={sendingEmails}
         />
       </Container>
 
@@ -1147,6 +1192,7 @@ export default function RecipientsManagePage() {
             >
               <MenuItem value="">{t.any}</MenuItem>
               <MenuItem value="queued">{t.queued}</MenuItem>
+              <MenuItem value="notified">{t.notified}</MenuItem>
               <MenuItem value="responded">{t.responded}</MenuItem>
             </Select>
           </FormControl>
