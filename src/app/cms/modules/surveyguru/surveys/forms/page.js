@@ -61,7 +61,6 @@ import { deleteMedia } from "@/services/deleteMediaService";
 import { useTheme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
 import ShareLinkModal from "@/components/modals/ShareLinkModal";
-import RichTextEditor from "@/components/RichTextEditor";
 
 const translations = {
   en: {
@@ -127,8 +126,6 @@ const translations = {
     createdAt: "Created At:",
     updatedBy: "Updated:",
     updatedAt: "Updated At:",
-    fEmailSubject: "Email Subject",
-    fGreetingMessage: "Greeting Message (Email Body)",
   },
   ar: {
     title: "إدارة نماذج الاستبيان",
@@ -192,8 +189,6 @@ const translations = {
     createdAt: "تاريخ الإنشاء:",
     updatedBy: "حدث:",
     updatedAt: "تاريخ التحديث:",
-    fEmailSubject: "موضوع البريد",
-    fGreetingMessage: "رسالة الترحيب (نص البريد)",
   },
 };
 
@@ -241,8 +236,6 @@ export default function SurveyFormsManagePage() {
   const [defaultLanguage, setDefaultLanguage] = useState("en");
   const [questions, setQuestions] = useState([]);
   const [selectedEventId, setSelectedEventId] = useState("");
-  const [emailSubject, setEmailSubject] = useState("");
-  const [greetingMessage, setGreetingMessage] = useState("");
 
   const [optionFiles, setOptionFiles] = useState({});
   const [optionPreviews, setOptionPreviews] = useState({});
@@ -295,8 +288,6 @@ export default function SurveyFormsManagePage() {
     setDefaultLanguage("en");
     setQuestions([]);
     setSelectedEventId("");
-    setEmailSubject("");
-    setGreetingMessage("");
     setErrors({});
     setOptionFiles({});
     setOptionPreviews({});
@@ -423,8 +414,6 @@ export default function SurveyFormsManagePage() {
             : { min: 1, max: 5, step: 1 },
     }));
     setQuestions(qs);
-    setEmailSubject(latestForm.emailSubject ?? "");
-    setGreetingMessage(latestForm.greetingMessage ?? "");
 
     // create preview map from existing imageUrl
     const previews = {};
@@ -706,8 +695,6 @@ export default function SurveyFormsManagePage() {
         isAnonymous: !!isAnonymous,
         defaultLanguage,
         questions: qs,
-        emailSubject: emailSubject?.trim() ?? "",
-        greetingMessage: greetingMessage ?? "",
       };
 
       let result;
@@ -1182,26 +1169,7 @@ export default function SurveyFormsManagePage() {
               }
               label={t.fAnonymous}
             />
-
             <Divider sx={{ my: 1 }} />
-            <TextField
-              label={t.fEmailSubject}
-              value={emailSubject}
-              onChange={(e) => setEmailSubject(e.target.value)}
-              fullWidth
-              placeholder="e.g. We value your feedback!"
-            />
-            <Typography variant="subtitle1" fontWeight={600} sx={{ mt: 2 }} gutterBottom>
-              {t.fGreetingMessage}
-            </Typography>
-            <Box sx={{ border: "1px solid", borderColor: "divider", borderRadius: 1 }}>
-              <RichTextEditor
-                value={greetingMessage}
-                onChange={(html) => setGreetingMessage(html)}
-                placeholder="e.g. Hello! We appreciate your participation..."
-                dir={dir}
-              />
-            </Box>
 
             <Stack
               direction="row"
