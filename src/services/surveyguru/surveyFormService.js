@@ -40,6 +40,15 @@ export const deleteSurveyForm = withApiHandler(
   { showSuccess: true }
 );
 
+// CMS: CLONE FORM
+export const cloneSurveyForm = withApiHandler(
+  async (id) => {
+    const { data } = await api.post(`/surveyguru/forms/${id}/clone`);
+    return data;
+  },
+  { showSuccess: true }
+);
+
 // PUBLIC: GET FORM BY SLUG
 export const getPublicFormBySlug = withApiHandler(async (slug) => {
   const { data } = await api.get(`/surveyguru/forms/public/slug/${slug}`);

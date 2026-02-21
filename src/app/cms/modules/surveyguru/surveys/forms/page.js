@@ -52,6 +52,7 @@ import {
   createSurveyForm,
   updateSurveyForm,
   deleteSurveyForm,
+  cloneSurveyForm,
 } from "@/services/surveyguru/surveyFormService";
 import slugify from "@/utils/slugify";
 import { uploadMediaFiles } from "@/utils/mediaUpload";
@@ -72,9 +73,14 @@ const translations = {
     newForm: "Create Form",
     editForm: "Edit Survey Form",
     createForm: "Create Survey Form",
+    cloneForm: "Clone Survey Form",
     copyLink: "Share Public Link",
     linkCopied: "Link copied!",
     delete: "Delete",
+    confirmCloneTitle: "Clone Form",
+    confirmCloneMsg:
+      "Are you sure you want to clone this survey form with all its questions?",
+    confirmCloneBtn: "Clone",
     confirmDeleteTitle: "Delete Form",
     confirmDeleteMsg:
       "Are you sure you want to move this item to the Recycle Bin?",
@@ -136,9 +142,14 @@ const translations = {
     newForm: "إنشاء نموذج",
     editForm: "تحرير نموذج الاستبيان",
     createForm: "إنشاء نموذج الاستبيان",
+    cloneForm: "استنساخ نموذج الاستبيان",
     copyLink: "مشاركة الرابط العام",
     linkCopied: "تم نسخ الرابط!",
     delete: "حذف",
+    confirmCloneTitle: "استنساخ النموذج",
+    confirmCloneMsg:
+      "هل أنت متأكد أنك تريد استنساخ نموذج الاستبيان هذا مع جميع الأسئلة؟",
+    confirmCloneBtn: "استنساخ",
     confirmDeleteTitle: "حذف النموذج",
     confirmDeleteMsg: "هل أنت متأكد أنك تريد نقل هذا العنصر إلى سلة المحذوفات؟",
     confirmDeleteBtn: "حذف",
@@ -227,6 +238,7 @@ export default function SurveyFormsManagePage() {
   const [saving, setSaving] = useState(false);
 
   const [confirmDelete, setConfirmDelete] = useState({ open: false, id: null });
+  const [confirmClone, setConfirmClone] = useState({ open: false, id: null });
 
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
@@ -727,6 +739,16 @@ export default function SurveyFormsManagePage() {
     setConfirmDelete({ open: false, id: null });
   };
 
+  const handleClone = async () => {
+    const id = confirmClone.id;
+    if (!id) return setConfirmClone({ open: false, id: null });
+    const res = await cloneSurveyForm(id);
+    if (!res?.error) {
+      fetchForms();
+    }
+    setConfirmClone({ open: false, id: null });
+  };
+
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.only("xs"));
 
@@ -965,21 +987,6 @@ export default function SurveyFormsManagePage() {
                       </IconButton>
                     </Tooltip>
 
-                    <Tooltip title={t.editForm}>
-                      <IconButton color="primary" onClick={() => openEdit(f)}>
-                        <ICONS.edit fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title={t.delete}>
-                      <IconButton
-                        color="error"
-                        onClick={() =>
-                          setConfirmDelete({ open: true, id: f._id })
-                        }
-                      >
-                        <ICONS.delete fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
                     <Tooltip title="View responses">
                       <IconButton
                         onClick={() =>
@@ -1003,6 +1010,31 @@ export default function SurveyFormsManagePage() {
                         <ICONS.insights fontSize="small" />
                       </IconButton>
                     </Tooltip>
+                    <Tooltip title={t.editForm}>
+                      <IconButton color="primary" onClick={() => openEdit(f)}>
+                        <ICONS.edit fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title={t.cloneForm}>
+                      <IconButton
+                        color="secondary"
+                        onClick={() =>
+                          setConfirmClone({ open: true, id: f._id })
+                        }
+                      >
+                        <ICONS.copy fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title={t.delete}>
+                      <IconButton
+                        color="error"
+                        onClick={() =>
+                          setConfirmDelete({ open: true, id: f._id })
+                        }
+                      >
+                        <ICONS.delete fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
                   </CardActions>
                 </AppCard>
               </Grid>
@@ -1019,6 +1051,17 @@ export default function SurveyFormsManagePage() {
           message={t.confirmDeleteMsg}
           confirmButtonText={t.confirmDeleteBtn}
           confirmButtonIcon={<ICONS.delete fontSize="small" />}
+        />
+
+        <ConfirmationDialog
+          open={confirmClone.open}
+          onClose={() => setConfirmClone({ open: false, id: null })}
+          onConfirm={handleClone}
+          title={t.confirmCloneTitle}
+          message={t.confirmCloneMsg}
+          confirmButtonText={t.confirmCloneBtn}
+          confirmButtonIcon={<ICONS.copy fontSize="small" />}
+          confirmButtonColor="secondary"
         />
       </Container>
 
