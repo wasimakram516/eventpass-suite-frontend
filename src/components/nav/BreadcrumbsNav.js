@@ -27,6 +27,10 @@ const segmentMap = {
     label: "Manage Files",
     icon: <ICONS.cloud fontSize="small" sx={{ mr: 0.5 }} />,
   },
+  "global-search": {
+    label: "Global Search",
+    icon: <ICONS.search fontSize="small" sx={{ mr: 0.5 }} />,
+  },
   businesses: {
     label: "Businesses",
     icon: <ICONS.business fontSize="small" sx={{ mr: 0.5 }} />,
