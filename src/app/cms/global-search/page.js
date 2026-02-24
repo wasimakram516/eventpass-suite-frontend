@@ -77,6 +77,7 @@ export default function GlobalSearchPage() {
           company: "الشركة",
           phone: "الهاتف",
           email: "البريد الإلكتروني",
+          itemType: "نوع العنصر",
           module: "الوحدة",
           eventName: "اسم الفعالية",
           time: "الوقت",
@@ -86,6 +87,7 @@ export default function GlobalSearchPage() {
           company: "Company",
           phone: "Phone",
           email: "Email",
+          itemType: "Item Type",
           module: "Module",
           eventName: "Event Name",
           time: "Time",
@@ -158,6 +160,7 @@ export default function GlobalSearchPage() {
       <TableCell sx={{ py: 1.5, textAlign: align }}>{row.phone}</TableCell>
       <TableCell sx={{ py: 1.5, textAlign: align }}>{row.email}</TableCell>
       <TableCell sx={{ py: 1.5, textAlign: align }}>{row.module}</TableCell>
+      <TableCell sx={{ py: 1.5, textAlign: align }}>{row.itemType || "-"}</TableCell>
       <TableCell sx={{ py: 1.5, textAlign: align }}>{row.eventName}</TableCell>
       <TableCell sx={{ py: 1.5, textAlign: align }}>{renderTime(row.time)}</TableCell>
     </TableRow>
@@ -208,6 +211,12 @@ export default function GlobalSearchPage() {
               {labels.module}:
             </Box>
             {row.module}
+          </Typography>
+          <Typography variant="body2" color="text.secondary" textAlign={align}>
+            <Box component="span" sx={{ fontWeight: 600, color: "text.primary", marginInlineEnd: 0.5 }}>
+              {labels.itemType}:
+            </Box>
+            {row.itemType || "-"}
           </Typography>
           <Typography variant="body2" color="text.secondary" textAlign={align}>
             <Box component="span" sx={{ fontWeight: 600, color: "text.primary", marginInlineEnd: 0.5 }}>
@@ -388,6 +397,9 @@ export default function GlobalSearchPage() {
                       </TableCell>
                       <TableCell sx={{ fontWeight: 700, bgcolor: "background.default", py: 1.5, textAlign: align }}>
                         {labels.module}
+                      </TableCell>
+                      <TableCell sx={{ fontWeight: 700, bgcolor: "background.default", py: 1.5, textAlign: align }}>
+                        {labels.itemType}
                       </TableCell>
                       <TableCell sx={{ fontWeight: 700, bgcolor: "background.default", py: 1.5, textAlign: align }}>
                         {labels.eventName}
