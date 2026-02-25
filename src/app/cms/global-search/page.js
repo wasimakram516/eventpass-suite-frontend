@@ -146,6 +146,93 @@ export default function GlobalSearchPage() {
   const renderTime = (date) =>
     date ? formatDateTimeWithLocale(date, language === "ar" ? "ar-SA" : "en-GB") : "—";
 
+  const formatItemType = (value) => {
+    if (!value) return "-";
+    const map = {
+      SurveyResponse: "Survey Response",
+      SurveyRecipient: "Survey Recipient",
+      SpinWheelParticipant: "Spin Wheel Participant",
+    };
+    const base = map[value] || value;
+    return base.replace(/([a-z])([A-Z])/g, "$1 $2");
+  };
+
+  const handleRowClick = (row) => {
+    // Registrations (Event Reg / Check-in / DigiPass)
+    if (row.itemType === "Registration") {
+      if (row.eventSlug) {
+        router.push(`/cms/modules/eventreg/events/${row.eventSlug}/registrations`);
+      } else {
+        router.push("/cms/modules/eventreg/events");
+      }
+      return;
+    }
+
+    // SurveyGuru – recipients & responses
+    if (row.module === "SurveyGuru") {
+      if (row.itemType === "SurveyResponse" && row.formSlug) {
+        router.push(`/cms/modules/surveyguru/surveys/forms/${row.formSlug}/responses`);
+        return;
+      }
+      router.push("/cms/modules/surveyguru/surveys/recipients");
+      return;
+    }
+
+    // Event Wheel participants
+    if (row.itemType === "SpinWheelParticipant") {
+      if (row.spinWheelSlug) {
+        router.push(`/cms/modules/eventwheel/wheels/${row.spinWheelSlug}/participants`);
+      } else {
+        router.push("/cms/modules/eventwheel/wheels");
+      }
+      return;
+    }
+
+    // StageQ visitors
+    if (row.itemType === "Visitor" || row.module === "StageQ") {
+      router.push("/cms/modules/stageq/queries/visitors");
+      return;
+    }
+
+    // Game players (TapMatch, QuizNest, EventDuel)
+    if (row.itemType === "Player" && row.gameSlug) {
+      if (row.module === "TapMatch") {
+        router.push(`/cms/modules/tapmatch/games/${row.gameSlug}/results`);
+        return;
+      }
+      if (row.module === "QuizNest") {
+        router.push(`/cms/modules/quiznest/games/${row.gameSlug}/results`);
+        return;
+      }
+      if (row.module === "EventDuel") {
+        router.push(`/cms/modules/eventduel/games/${row.gameSlug}`);
+        return;
+      }
+    }
+
+    // Fallback: go to module root if we know it
+    if (row.module === "Event Reg" || row.module === "Check-in" || row.module === "DigiPass") {
+      router.push("/cms/modules/eventreg/events");
+      return;
+    }
+    if (row.module === "Event Wheel") {
+      router.push("/cms/modules/eventwheel/wheels");
+      return;
+    }
+    if (row.module === "TapMatch") {
+      router.push("/cms/modules/tapmatch/games");
+      return;
+    }
+    if (row.module === "QuizNest") {
+      router.push("/cms/modules/quiznest/games");
+      return;
+    }
+    if (row.module === "EventDuel") {
+      router.push("/cms/modules/eventduel/games");
+      return;
+    }
+  };
+
   const renderRowDesktop = (row, index) => (
     <TableRow
       key={`${row.fullName}-${row.email}-${row.time}-${index}`}
@@ -153,21 +240,27 @@ export default function GlobalSearchPage() {
         "&:hover": { bgcolor: "action.hover" },
         "&:nth-of-type(odd)": { bgcolor: "action.selected" },
         "&:last-child td": { border: 0 },
+        cursor: "pointer",
       }}
+      onClick={() => handleRowClick(row)}
     >
       <TableCell sx={{ py: 1.5, textAlign: align }}>{row.fullName}</TableCell>
       <TableCell sx={{ py: 1.5, textAlign: align }}>{row.company}</TableCell>
       <TableCell sx={{ py: 1.5, textAlign: align }}>{row.phone}</TableCell>
       <TableCell sx={{ py: 1.5, textAlign: align }}>{row.email}</TableCell>
       <TableCell sx={{ py: 1.5, textAlign: align }}>{row.module}</TableCell>
-      <TableCell sx={{ py: 1.5, textAlign: align }}>{row.itemType || "-"}</TableCell>
       <TableCell sx={{ py: 1.5, textAlign: align }}>{row.eventName}</TableCell>
+      <TableCell sx={{ py: 1.5, textAlign: align }}>{formatItemType(row.itemType)}</TableCell>
       <TableCell sx={{ py: 1.5, textAlign: align }}>{renderTime(row.time)}</TableCell>
     </TableRow>
   );
 
   const renderRowMobile = (row, index) => (
-    <ListItem key={`${row.fullName}-${row.email}-${row.time}-${index}`} sx={{ px: 0, py: 1.5 }}>
+    <ListItem
+      key={`${row.fullName}-${row.email}-${row.time}-${index}`}
+      sx={{ px: 0, py: 1.5 }}
+      onClick={() => handleRowClick(row)}
+    >
       <Paper
         elevation={0}
         sx={{
@@ -185,7 +278,10 @@ export default function GlobalSearchPage() {
         }}
       >
         <Stack sx={{ py: 1.5, px: 2 }} spacing={0.75}>
-          <Typography variant="subtitle2" fontWeight="600" textAlign={align}>
+          <Typography variant="body2" color="text.secondary" textAlign={align}>
+            <Box component="span" sx={{ fontWeight: 600, color: "text.primary", marginInlineEnd: 0.5 }}>
+              {labels.fullName}:
+            </Box>
             {row.fullName}
           </Typography>
           <Typography variant="body2" color="text.secondary" textAlign={align}>
@@ -214,15 +310,15 @@ export default function GlobalSearchPage() {
           </Typography>
           <Typography variant="body2" color="text.secondary" textAlign={align}>
             <Box component="span" sx={{ fontWeight: 600, color: "text.primary", marginInlineEnd: 0.5 }}>
-              {labels.itemType}:
-            </Box>
-            {row.itemType || "-"}
-          </Typography>
-          <Typography variant="body2" color="text.secondary" textAlign={align}>
-            <Box component="span" sx={{ fontWeight: 600, color: "text.primary", marginInlineEnd: 0.5 }}>
               {labels.eventName}:
             </Box>
             {row.eventName}
+          </Typography>
+          <Typography variant="body2" color="text.secondary" textAlign={align}>
+            <Box component="span" sx={{ fontWeight: 600, color: "text.primary", marginInlineEnd: 0.5 }}>
+              {labels.itemType}:
+            </Box>
+            {formatItemType(row.itemType)}
           </Typography>
           <Typography variant="body2" color="text.secondary" textAlign={align}>
             <Box component="span" sx={{ fontWeight: 600, color: "text.primary", marginInlineEnd: 0.5 }}>
@@ -399,10 +495,10 @@ export default function GlobalSearchPage() {
                         {labels.module}
                       </TableCell>
                       <TableCell sx={{ fontWeight: 700, bgcolor: "background.default", py: 1.5, textAlign: align }}>
-                        {labels.itemType}
+                        {labels.eventName}
                       </TableCell>
                       <TableCell sx={{ fontWeight: 700, bgcolor: "background.default", py: 1.5, textAlign: align }}>
-                        {labels.eventName}
+                        {labels.itemType}
                       </TableCell>
                       <TableCell sx={{ fontWeight: 700, bgcolor: "background.default", py: 1.5, textAlign: align }}>
                         {labels.time}
