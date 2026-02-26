@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState, useMemo } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import {
   Box,
   Container,
@@ -103,6 +103,7 @@ const translations = {
 export default function ManagePollsPage() {
   const { eventSlug } = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useAuth();
   const { showMessage } = useMessage();
   const { t, dir, language } = useI18nLayout(translations);
@@ -114,6 +115,14 @@ export default function ManagePollsPage() {
   const [openDrawer, setOpenDrawer] = useState(false);
   const [editPoll, setEditPoll] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState({ open: false, id: null });
+  const [searchTerm, setSearchTerm] = useState("");
+
+  useEffect(() => {
+    const initialSearch = searchParams.get("search");
+    if (initialSearch) {
+      setSearchTerm(initialSearch.trim());
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const fetchEventAndPolls = async () => {
@@ -205,6 +214,15 @@ export default function ManagePollsPage() {
     setExportLoading(false);
   };
 
+  const filteredPolls = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return polls;
+    return polls.filter((poll) => {
+      const question = (poll.question || "").toLowerCase();
+      return question.includes(term);
+    });
+  }, [polls, searchTerm]);
+
   if (!event && !loading) {
     return (
       <Container maxWidth="lg">
@@ -290,12 +308,12 @@ export default function ManagePollsPage() {
           <Box sx={{ textAlign: "center", mt: 8 }}>
             <CircularProgress />
           </Box>
-        ) : !polls || polls.length === 0 ? (
+        ) : !filteredPolls || filteredPolls.length === 0 ? (
           <NoDataAvailable />
         ) : (
           event && (
             <Grid container spacing={3} justifyContent={"center"}>
-              {polls.map((poll) => (
+              {filteredPolls.map((poll) => (
                 <Grid
                   item
                   xs={12}

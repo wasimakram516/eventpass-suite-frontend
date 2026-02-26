@@ -26,19 +26,34 @@ import {
   Divider,
   Card,
   CardContent,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
   CircularProgress,
 } from "@mui/material";
+import { DateTimePicker } from "@mui/x-date-pickers";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
 import ICONS from "@/utils/iconUtil";
 import { useAuth } from "@/contexts/AuthContext";
-import { getLogs } from "@/services/logService";
+import { getLogs, exportLogs } from "@/services/logService";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { formatDateTimeWithLocale } from "@/utils/dateUtils";
 import useLogsSocket from "@/hooks/useLogsSocket";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
+import { getRegistrationMeta } from "@/services/eventreg/registrationService";
+import { getPollMeta } from "@/services/votecast/pollService";
+import { getQuestionMeta as getQuiznestQuestionMeta } from "@/services/quiznest/questionService";
+import { getQuestionMeta as getEventduelQuestionMeta } from "@/services/eventduel/questionService";
+import { globalSearch as fetchGlobalSearch } from "@/services/globalSearchService";
+
+dayjs.extend(utc);
 
 const translations = {
   en: {
@@ -46,31 +61,47 @@ const translations = {
     subtitle: "View recent create, update, delete and login activity across modules.",
     searchHint: "Tip: Search by user, business, item name or module to narrow results.",
     searchPlaceholder: "Search…",
-    noLogs: "No logs found for the last 7 days.",
+    noLogs: "No logs found for the selected period.",
     searchNoResults: "No logs match your search.",
     loadError: "Unable to load logs right now. Please check backend database connection.",
     recordsPerPage: "Records per page",
     showing: "Showing",
     of: "of",
     records: "records",
+    filters: "Filters",
+    exportAll: "Export All",
+    exportFiltered: "Export filtered",
+    exporting: "Exporting...",
+    from: "From",
+    to: "To",
+    apply: "Apply",
+    clear: "Clear",
   },
   ar: {
     title: "سجل الأنشطة",
     subtitle: "عرض أنشطة الإنشاء والتحديث والحذف وتسجيل الدخول عبر الوحدات.",
     searchHint: "تلميح: ابحث حسب المستخدم أو المؤسسة أو اسم العنصر أو الوحدة لتضييق النتائج.",
     searchPlaceholder: "بحث…",
-    noLogs: "لا توجد سجلات لآخر 7 أيام.",
+    noLogs: "لا توجد سجلات للفترة المحددة.",
     searchNoResults: "لا توجد سجلات تطابق البحث.",
     loadError: "تعذر تحميل السجلات الآن. يرجى التحقق من اتصال قاعدة البيانات في الخلفية.",
     recordsPerPage: "عدد السجلات لكل صفحة",
     showing: "عرض",
     of: "من",
     records: "سجلات",
+    filters: "عوامل التصفية",
+    exportAll: "تصدير الكل",
+    exportFiltered: "تصدير المصفى",
+    exporting: "جاري التصدير...",
+    from: "من",
+    to: "إلى",
+    apply: "تطبيق",
+    clear: "مسح",
   },
 };
 
 export default function LogsPage() {
-  const { user } = useAuth();
+  const { user, selectedBusiness, setSelectedBusiness } = useAuth();
   const router = useRouter();
   const { dir, align, language, t } = useI18nLayout(translations);
   const labels =
@@ -108,6 +139,10 @@ export default function LogsPage() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
+  const [fromMs, setFromMs] = useState(null);
+  const [toMs, setToMs] = useState(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
 
   const { latestLogs, clearLatestLogs } = useLogsSocket();
 
@@ -134,11 +169,16 @@ export default function LogsPage() {
         let hasMore = true;
 
         while (hasMore && mounted) {
-          const res = await getLogs({
+          const params = {
             page: pageNum,
             limit: fetchPageSize,
-            from: sevenDaysAgoIso,
-          });
+          };
+          const fromIso = fromMs ? new Date(fromMs).toISOString() : sevenDaysAgoIso;
+          const toIso = toMs ? new Date(toMs).toISOString() : null;
+          params.from = fromIso;
+          if (toIso) params.to = toIso;
+
+          const res = await getLogs(params);
 
           if (!mounted) break;
           if (res?.error) {
@@ -171,7 +211,7 @@ export default function LogsPage() {
     return () => {
       mounted = false;
     };
-  }, [sevenDaysAgoIso, user, t]);
+  }, [sevenDaysAgoIso, fromMs, toMs, user, t]);
 
   useEffect(() => {
     if (!latestLogs?.length) return;
@@ -220,6 +260,281 @@ export default function LogsPage() {
   const handleLimitChange = (e) => {
     setLimit(Number(e.target.value));
     setPage(1);
+  };
+
+  const hasDateFilter = !!fromMs || !!toMs;
+
+  const getTrashModuleKey = (moduleName, itemType) => {
+    const m = moduleName || "";
+    const t = itemType || "";
+    if (m === "EventReg" && t === "Event") return "event-eventreg";
+    if (m === "EventReg" && t === "Registration") return "registration-eventreg";
+    if (m === "CheckIn" && t === "Event") return "event-checkin";
+    if (m === "CheckIn" && t === "Registration") return "registration-checkin";
+    if (m === "DigiPass" && t === "Event") return "event-digipass";
+    if (m === "DigiPass" && t === "Registration") return "registration-digipass";
+    if (m === "SurveyGuru" && (t === "Event" || t === "SurveyRecipient")) return "surveyform";
+    if (m === "EventWheel" && (t === "SpinWheel" || t === "WheelSpin")) return "spinwheel";
+    if (t === "WheelSpin") return "spinwheelparticipant";
+    if (m === "TapMatch" && t === "Game") return "game-tapmatch";
+    if (m === "QuizNest" && t === "Game") return "game-quiznest";
+    if (m === "QuizNest" && t === "Question") return "qnquestion";
+    if (m === "EventDuel" && t === "Game") return "game-eventduel";
+    if (m === "EventDuel" && t === "Question") return "pvpquestion";
+    if (m === "StageQ" && t === "Question") return "question";
+    if (m === "MosaicWall" || t === "MosaicWall") return "wallconfig";
+    if (m === "VoteCast" && t === "Poll") return "poll";
+    if ((m === "User" || m === "Auth") && t === "User") return "user";
+    if (t === "User") return "user";
+    if (m === "User" && t === "Event") return "business";
+    return null;
+  };
+
+  const handleLogClick = async (log) => {
+    const logType = (log.logType || "").toLowerCase();
+    const module = log.module;
+    const itemType = log.itemType;
+    const itemName = getDisplayItemName(log);
+    const searchValue = itemName && itemName !== "-" ? itemName : "";
+    const businessSlug = log.businessId?.slug;
+
+    if (businessSlug && selectedBusiness !== businessSlug) {
+      setSelectedBusiness(businessSlug);
+    }
+
+    if (logType === "login") {
+      return;
+    }
+
+    if (logType === "delete") {
+      const trashKey = getTrashModuleKey(module, itemType);
+      const params = new URLSearchParams();
+      if (searchValue) params.set("search", searchValue);
+      if (trashKey) params.set("module", trashKey);
+      router.push(`/cms/trash${params.toString() ? `?${params.toString()}` : ""}`);
+      return;
+    }
+
+    const searchQuery = searchValue ? `?search=${encodeURIComponent(searchValue)}` : "";
+
+    if (itemType === "Registration") {
+      try {
+        if (log.itemId) {
+          const meta = await getRegistrationMeta(log.itemId);
+          if (meta && !meta.error && meta.eventSlug) {
+            const { eventSlug, eventType, token } = meta;
+            const tokenSearch = token
+              ? `?search=${encodeURIComponent(String(token))}`
+              : searchQuery;
+            const basePath =
+              eventType === "closed"
+                ? "checkin"
+                : eventType === "digipass"
+                ? "digipass"
+                : "eventreg";
+            router.push(
+              `/cms/modules/${basePath}/events/${eventSlug}/registrations${tokenSearch}`,
+            );
+            return;
+          }
+        } else if (searchValue) {
+          const res = await fetchGlobalSearch(searchValue);
+          const list = Array.isArray(res?.results)
+            ? res.results
+            : res?.data?.results ?? [];
+          const registrationRow = list.find(
+            (row) =>
+              row.itemType === "Registration" &&
+              row.eventSlug &&
+              (row.fullName === searchValue ||
+                row.email === searchValue ||
+                row.phone === searchValue ||
+                row.company === searchValue),
+          );
+          if (registrationRow?.eventSlug) {
+            const moduleName = registrationRow.module;
+            const tokenSearch = registrationRow.token
+              ? `?search=${encodeURIComponent(String(registrationRow.token))}`
+              : searchQuery;
+            const basePath =
+              moduleName === "Check-in"
+                ? "checkin"
+                : moduleName === "DigiPass"
+                ? "digipass"
+                : "eventreg";
+            router.push(
+              `/cms/modules/${basePath}/events/${registrationRow.eventSlug}/registrations${tokenSearch}`,
+            );
+            return;
+          }
+        }
+      } catch {
+      }
+
+      if (module === "CheckIn") {
+        router.push(`/cms/modules/checkin/events${searchQuery}`);
+      } else if (module === "DigiPass") {
+        router.push(`/cms/modules/digipass/events${searchQuery}`);
+      } else {
+        router.push(`/cms/modules/eventreg/events${searchQuery}`);
+      }
+      return;
+    }
+
+    if (module === "EventReg" || module === "CheckIn" || module === "DigiPass") {
+      const basePath =
+        module === "CheckIn"
+          ? "checkin"
+          : module === "DigiPass"
+          ? "digipass"
+          : "eventreg";
+      router.push(`/cms/modules/${basePath}/events${searchQuery}`);
+      return;
+    }
+
+    if (module === "VoteCast" && itemType === "Event") {
+      router.push(`/cms/modules/votecast/events${searchQuery}`);
+      return;
+    }
+
+    if (module === "VoteCast" && itemType === "Poll") {
+      try {
+        if (log.itemId) {
+          const meta = await getPollMeta(log.itemId);
+          if (meta && !meta.error && meta.eventSlug) {
+            router.push(
+              `/cms/modules/votecast/events/${meta.eventSlug}/polls${searchQuery}`,
+            );
+            return;
+          }
+        }
+      } catch {
+      }
+      router.push(`/cms/modules/votecast/events${searchQuery}`);
+      return;
+    }
+    if (module === "SurveyGuru") {
+      if (itemType === "SurveyRecipient") {
+        const p = new URLSearchParams();
+        if (log.businessId?._id) p.set("businessId", log.businessId._id);
+        if (searchValue) p.set("search", searchValue);
+        router.push(`/cms/modules/surveyguru/surveys/recipients${p.toString() ? `?${p.toString()}` : ""}`);
+      } else {
+        router.push(`/cms/modules/surveyguru/surveys/forms${searchQuery}`);
+      }
+      return;
+    }
+
+    if (module === "EventWheel" || itemType === "SpinWheel" || itemType === "WheelSpin") {
+      router.push(`/cms/modules/eventwheel/wheels${searchQuery}`);
+      return;
+    }
+
+    if (module === "MosaicWall" || itemType === "MosaicWall") {
+      router.push(`/cms/modules/mosaicwall/walls${searchQuery}`);
+      return;
+    }
+
+    if (module === "TapMatch" || module === "QuizNest" || module === "EventDuel" || itemType === "Game") {
+      if (module === "TapMatch") {
+        router.push(`/cms/modules/tapmatch/games${searchQuery}`);
+        return;
+      }
+
+      if (module === "QuizNest") {
+        // For QuizNest Questions, prefer navigating to the game's questions page
+        if (itemType === "Question" && log.itemId) {
+          try {
+            const meta = await getQuiznestQuestionMeta(log.itemId);
+            if (meta && !meta.error && meta.gameSlug) {
+              router.push(
+                `/cms/modules/quiznest/games/${meta.gameSlug}/questions${searchQuery}`,
+              );
+              return;
+            }
+          } catch {
+            // fall through to legacy navigation below
+          }
+        }
+
+        router.push(`/cms/modules/quiznest/games${searchQuery}`);
+        return;
+      }
+
+      if (module === "EventDuel") {
+        // For EventDuel Questions, prefer navigating to the game's questions page
+        if (itemType === "Question" && log.itemId) {
+          try {
+            const meta = await getEventduelQuestionMeta(log.itemId);
+            if (meta && !meta.error && meta.gameSlug) {
+              router.push(
+                `/cms/modules/eventduel/games/${meta.gameSlug}/host/questions${searchQuery}`,
+              );
+              return;
+            }
+          } catch {
+            // fall through to legacy navigation below
+          }
+        }
+
+        router.push(`/cms/modules/eventduel/games${searchQuery}`);
+        return;
+      }
+
+      router.push("/cms");
+      return;
+    }
+
+    if (module === "StageQ") {
+      router.push(`/cms/modules/stageq/queries/questions${searchQuery}`);
+      return;
+    }
+
+    if ((module === "User" || module === "Auth") && itemType === "User") {
+      router.push(`/cms/users${searchQuery}`);
+      return;
+    }
+
+    router.push("/cms");
+  };
+
+  const handleApplyFilters = () => {
+    setFiltersOpen(false);
+  };
+
+  const handleClearFilters = () => {
+    setFromMs(null);
+    setToMs(null);
+  };
+
+  const handleExportLogs = async () => {
+    try {
+      setExportLoading(true);
+      const params = {};
+      // Match the same default range as the UI (last 7 days)
+      const fromIso = fromMs
+        ? new Date(fromMs).toISOString()
+        : sevenDaysAgoIso;
+      const toIso = toMs ? new Date(toMs).toISOString() : null;
+      if (fromIso) params.from = fromIso;
+      if (toIso) params.to = toIso;
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      if (timezone) params.timezone = timezone;
+
+      const blob = await exportLogs(params);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const suffix = hasDateFilter ? "filtered" : "all";
+      a.download = `audit_logs_${suffix}.csv`;
+      a.href = url;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error("Failed to export logs:", err);
+    } finally {
+      setExportLoading(false);
+    }
   };
 
   // Reset to page 1 when search changes
@@ -276,15 +591,18 @@ export default function LogsPage() {
     const userName = getUserDisplay(log);
     const businessName = log.businessId?.name || "-";
     const itemName = getDisplayItemName(log);
+    const isLogin = (log.logType || "").toLowerCase() === "login";
 
     return (
       <TableRow
         key={log._id}
         sx={{
-          "&:hover": { bgcolor: "action.hover" },
+          "&:hover": { bgcolor: isLogin ? undefined : "action.hover" },
           "&:nth-of-type(odd)": { bgcolor: "action.selected" },
           "&:last-child td": { border: 0 },
+          cursor: isLogin ? "default" : "pointer",
         }}
+        onClick={() => !isLogin && handleLogClick(log)}
       >
         <TableCell sx={{ py: 1.5, textAlign: align }}>{userName}</TableCell>
         <TableCell sx={{ py: 1.5 }}>
@@ -305,9 +623,18 @@ export default function LogsPage() {
     const itemName = getDisplayItemName(log);
     const itemType = log.itemType || "-";
     const moduleName = log.module || "-";
+    const isLogin = (log.logType || "").toLowerCase() === "login";
 
     return (
-      <ListItem key={log._id} sx={{ px: 0, py: 1.5 }}>
+      <ListItem
+        key={log._id}
+        sx={{
+          px: 0,
+          py: 1.5,
+          cursor: isLogin ? "default" : "pointer",
+        }}
+        onClick={() => !isLogin && handleLogClick(log)}
+      >
         <Card
           elevation={0}
           sx={{
@@ -382,10 +709,51 @@ export default function LogsPage() {
       >
         <BreadcrumbsNav />
 
+        <Dialog open={filtersOpen} onClose={() => setFiltersOpen(false)} fullWidth maxWidth="sm" dir={dir}>
+          <DialogTitle>{t.filters}</DialogTitle>
+          <DialogContent dividers>
+            <Stack spacing={2} sx={{ mt: 1 }}>
+              <Stack direction="row" spacing={2}>
+                <DateTimePicker
+                  label={t.from}
+                  value={fromMs ? dayjs(fromMs) : null}
+                  onChange={(val) =>
+                    setFromMs(val ? dayjs(val).utc().valueOf() : null)
+                  }
+                  slotProps={{ textField: { size: "small", fullWidth: true } }}
+                />
+                <DateTimePicker
+                  label={t.to}
+                  value={toMs ? dayjs(toMs) : null}
+                  onChange={(val) =>
+                    setToMs(val ? dayjs(val).utc().valueOf() : null)
+                  }
+                  slotProps={{ textField: { size: "small", fullWidth: true } }}
+                />
+              </Stack>
+            </Stack>
+          </DialogContent>
+          <DialogActions>
+            <Button
+              startIcon={<ICONS.clear />}
+              onClick={handleClearFilters}
+            >
+              {t.clear}
+            </Button>
+            <Button
+              variant="contained"
+              startIcon={<ICONS.check />}
+              onClick={handleApplyFilters}
+            >
+              {t.apply}
+            </Button>
+          </DialogActions>
+        </Dialog>
+
         <Stack
-          direction="column"
-          justifyContent="flex-start"
-          alignItems="stretch"
+          direction={{ xs: "column", md: "row" }}
+          justifyContent="space-between"
+          alignItems={{ xs: "flex-start", md: "center" }}
           gap={2}
           sx={{ mb: 2 }}
         >
@@ -400,6 +768,97 @@ export default function LogsPage() {
               {t.searchHint}
             </Typography>
           </Box>
+
+          <Stack
+            direction="column"
+            spacing={1}
+            alignItems={{ xs: "stretch", md: "flex-end" }}
+            sx={{
+              width: { xs: "100%", md: "auto" },
+            }}
+          >
+            <Stack
+              direction={{ xs: "column", sm: "row" }}
+              spacing={1.5}
+              alignItems={{ xs: "stretch", sm: "center" }}
+              sx={{
+                justifyContent: { xs: "flex-start", md: "flex-end" },
+                width: "100%",
+              }}
+            >
+              <Button
+                variant="outlined"
+                startIcon={<ICONS.filter />}
+                onClick={() => setFiltersOpen(true)}
+                sx={{
+                  borderRadius: 999,
+                  px: 2.5,
+                  py: 0.75,
+                  textTransform: "none",
+                  fontWeight: 600,
+                  borderColor: "primary.main",
+                  color: "primary.main",
+                  width: { xs: "100%", sm: "auto" },
+                }}
+              >
+                {t.filters}
+              </Button>
+
+              <Button
+                variant="outlined"
+                color="success"
+                startIcon={<ICONS.description />}
+                onClick={handleExportLogs}
+                disabled={exportLoading}
+                sx={{
+                  borderRadius: 999,
+                  px: 2.5,
+                  py: 0.75,
+                  textTransform: "none",
+                  fontWeight: 600,
+                  borderColor: "success.main",
+                  color: "success.main",
+                  width: { xs: "100%", sm: "auto" },
+                }}
+              >
+                {exportLoading
+                  ? t.exporting
+                  : hasDateFilter
+                    ? t.exportFiltered
+                    : t.exportAll}
+              </Button>
+            </Stack>
+
+            <Stack
+              direction="row"
+              spacing={1}
+              flexWrap="wrap"
+              alignItems="center"
+            >
+              <Chip
+                label="Last 7 days"
+                color={!fromMs && !toMs ? "primary" : "default"}
+                variant={!fromMs && !toMs ? "filled" : "outlined"}
+                onClick={() => {
+                  setFromMs(null);
+                  setToMs(null);
+                }}
+                sx={{ fontWeight: 500 }}
+              />
+              <Chip
+                label="Last 30 days"
+                color={fromMs && !toMs ? "primary" : "default"}
+                variant={fromMs && !toMs ? "filled" : "outlined"}
+                onClick={() => {
+                  const d = new Date();
+                  d.setDate(d.getDate() - 30);
+                  setFromMs(d.getTime());
+                  setToMs(null);
+                }}
+                sx={{ fontWeight: 500 }}
+              />
+            </Stack>
+          </Stack>
         </Stack>
 
         <Divider sx={{ mb: 3 }} />

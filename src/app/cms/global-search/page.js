@@ -67,7 +67,7 @@ const translations = {
 };
 
 export default function GlobalSearchPage() {
-  const { user } = useAuth();
+  const { user, selectedBusiness, setSelectedBusiness } = useAuth();
   const router = useRouter();
   const { dir, align, language, t } = useI18nLayout(translations);
   const labels =
@@ -158,12 +158,56 @@ export default function GlobalSearchPage() {
   };
 
   const handleRowClick = (row) => {
+    const businessSlug = row.businessSlug;
+    if (businessSlug && selectedBusiness !== businessSlug) {
+      setSelectedBusiness(businessSlug);
+    }
+
+    const buildSearchQuery = () => {
+      const candidates = [
+        row.email,
+        row.phone,
+        row.fullName,
+        row.company,
+      ];
+      const value =
+        candidates.find((v) => v && v !== "-") || "";
+      return value
+        ? `?search=${encodeURIComponent(String(value))}`
+        : "";
+    };
+
+    const searchQuery = buildSearchQuery();
+
     // Registrations (Event Reg / Check-in / DigiPass)
     if (row.itemType === "Registration") {
+      const moduleName = row.module;
+      const tokenSearch = row.token
+        ? `?search=${encodeURIComponent(String(row.token))}`
+        : searchQuery;
+
       if (row.eventSlug) {
-        router.push(`/cms/modules/eventreg/events/${row.eventSlug}/registrations`);
+        if (moduleName === "Check-in") {
+          router.push(
+            `/cms/modules/checkin/events/${row.eventSlug}/registrations${tokenSearch}`,
+          );
+        } else if (moduleName === "DigiPass") {
+          router.push(
+            `/cms/modules/digipass/events/${row.eventSlug}/registrations${tokenSearch}`,
+          );
+        } else {
+          router.push(
+            `/cms/modules/eventreg/events/${row.eventSlug}/registrations${tokenSearch}`,
+          );
+        }
       } else {
-        router.push("/cms/modules/eventreg/events");
+        if (moduleName === "Check-in") {
+          router.push("/cms/modules/checkin/events");
+        } else if (moduleName === "DigiPass") {
+          router.push("/cms/modules/digipass/events");
+        } else {
+          router.push("/cms/modules/eventreg/events");
+        }
       }
       return;
     }
@@ -171,9 +215,34 @@ export default function GlobalSearchPage() {
     // SurveyGuru – recipients & responses
     if (row.module === "SurveyGuru") {
       if (row.itemType === "SurveyResponse" && row.formSlug) {
-        router.push(`/cms/modules/surveyguru/surveys/forms/${row.formSlug}/responses`);
+        const responseSearch =
+          [row.fullName, row.email, row.company].find((v) => v && v !== "-") || "";
+        const responseQuery = responseSearch
+          ? `?search=${encodeURIComponent(String(responseSearch))}`
+          : "";
+        router.push(
+          `/cms/modules/surveyguru/surveys/forms/${row.formSlug}/responses${responseQuery}`,
+        );
         return;
       }
+
+      if (row.itemType === "SurveyRecipient") {
+        const params = new URLSearchParams();
+        if (row.businessId) params.set("businessId", String(row.businessId));
+        if (row.eventId) params.set("eventId", String(row.eventId));
+        if (row.formId) params.set("formId", String(row.formId));
+        const recipientSearch =
+          row.email || row.fullName || row.company || "";
+        if (recipientSearch) {
+          params.set("search", String(recipientSearch));
+        }
+        const qs = params.toString();
+        router.push(
+          `/cms/modules/surveyguru/surveys/recipients${qs ? `?${qs}` : ""}`,
+        );
+        return;
+      }
+
       router.push("/cms/modules/surveyguru/surveys/recipients");
       return;
     }
@@ -181,7 +250,9 @@ export default function GlobalSearchPage() {
     // Event Wheel participants
     if (row.itemType === "SpinWheelParticipant") {
       if (row.spinWheelSlug) {
-        router.push(`/cms/modules/eventwheel/wheels/${row.spinWheelSlug}/participants`);
+        router.push(
+          `/cms/modules/eventwheel/wheels/${row.spinWheelSlug}/participants${searchQuery}`,
+        );
       } else {
         router.push("/cms/modules/eventwheel/wheels");
       }
@@ -190,29 +261,51 @@ export default function GlobalSearchPage() {
 
     // StageQ visitors
     if (row.itemType === "Visitor" || row.module === "StageQ") {
-      router.push("/cms/modules/stageq/queries/visitors");
+      const visitorSearch =
+        [row.fullName, row.phone, row.company].find((v) => v && v !== "-") || "";
+      const visitorQuery = visitorSearch
+        ? `?search=${encodeURIComponent(String(visitorSearch))}`
+        : "";
+      router.push(`/cms/modules/stageq/queries/visitors${visitorQuery}`);
       return;
     }
 
     // Game players (TapMatch, QuizNest, EventDuel)
     if (row.itemType === "Player" && row.gameSlug) {
+      const playerSearch =
+        [row.fullName, row.phone, row.company].find((v) => v && v !== "-") || "";
+      const playerQuery = playerSearch
+        ? `?search=${encodeURIComponent(String(playerSearch))}`
+        : "";
       if (row.module === "TapMatch") {
-        router.push(`/cms/modules/tapmatch/games/${row.gameSlug}/results`);
+        router.push(
+          `/cms/modules/tapmatch/games/${row.gameSlug}/results${playerQuery}`,
+        );
         return;
       }
       if (row.module === "QuizNest") {
-        router.push(`/cms/modules/quiznest/games/${row.gameSlug}/results`);
+        router.push(
+          `/cms/modules/quiznest/games/${row.gameSlug}/results${playerQuery}`,
+        );
         return;
       }
       if (row.module === "EventDuel") {
-        router.push(`/cms/modules/eventduel/games/${row.gameSlug}`);
+        router.push(
+          `/cms/modules/eventduel/games/${row.gameSlug}/host/sessions${playerQuery}`,
+        );
         return;
       }
     }
 
     // Fallback: go to module root if we know it
     if (row.module === "Event Reg" || row.module === "Check-in" || row.module === "DigiPass") {
-      router.push("/cms/modules/eventreg/events");
+      if (row.module === "Check-in") {
+        router.push("/cms/modules/checkin/events");
+      } else if (row.module === "DigiPass") {
+        router.push("/cms/modules/digipass/events");
+      } else {
+        router.push("/cms/modules/eventreg/events");
+      }
       return;
     }
     if (row.module === "Event Wheel") {
@@ -402,7 +495,6 @@ export default function GlobalSearchPage() {
               startIcon={
                 searching ? <CircularProgress size={18} color="inherit" /> : <ICONS.search />
               }
-              sx={{ borderRadius: 2.5, minWidth: 120 }}
             >
               {t.searchButton}
             </Button>

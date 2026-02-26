@@ -19,7 +19,7 @@ import {
 } from "@mui/material";
 
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMessage } from "@/contexts/MessageContext";
 import { getAllBusinesses } from "@/services/businessService";
 import {
@@ -37,6 +37,7 @@ import LoadingState from "@/components/LoadingState";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import RecordMetadata from "@/components/RecordMetadata";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
+import { useSearchParams } from "next/navigation";
 
 const translations = {
   en: {
@@ -106,6 +107,15 @@ export default function ManageQuestionsPage() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editData, setEditData] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState({ open: false, id: null });
+  const [searchTerm, setSearchTerm] = useState("");
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const initialSearch = searchParams.get("search");
+    if (initialSearch) {
+      setSearchTerm(initialSearch.trim());
+    }
+  }, [searchParams]);
 
   const fetchBusinesses = async () => {
     const data = await getAllBusinesses();
@@ -148,6 +158,15 @@ export default function ManageQuestionsPage() {
     fetchQuestions(selectedBusiness);
     setEditDialogOpen(false);
   };
+
+  const filteredQuestions = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return questions;
+    return questions.filter((q) => {
+      const text = (q.text || "").toLowerCase();
+      return text.includes(term);
+    });
+  }, [questions, searchTerm]);
 
   useEffect(() => {
     fetchBusinesses();
@@ -233,11 +252,11 @@ export default function ManageQuestionsPage() {
 
         {!selectedBusiness ? (
           <EmptyBusinessState />
-        ) : questions.length === 0 ? (
+        ) : filteredQuestions.length === 0 ? (
           <NoDataAvailable />
         ) : (
           <Grid container spacing={3} justifyContent="center">
-            {questions.map((q) => (
+            {filteredQuestions.map((q) => (
               <Grid
                 item
                 xs={12}

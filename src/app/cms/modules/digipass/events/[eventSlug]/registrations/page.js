@@ -45,7 +45,7 @@ import { getDigipassEventBySlug } from "@/services/digipass/digipassEventService
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import { formatDateTimeWithLocale } from "@/utils/dateUtils";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import ICONS from "@/utils/iconUtil";
 import WalkInModal from "@/components/modals/WalkInModal";
 import useI18nLayout from "@/hooks/useI18nLayout";
@@ -201,6 +201,7 @@ const buildHaystack = (reg, fieldsLocal) => {
 
 export default function ViewRegistrations() {
     const { eventSlug } = useParams();
+    const searchParams = useSearchParams();
     const { dir, t, language } = useI18nLayout(translations);
     const { showMessage } = useMessage();
 
@@ -239,6 +240,14 @@ export default function ViewRegistrations() {
     useEffect(() => {
         if (eventSlug) fetchData();
     }, [eventSlug]);
+
+    useEffect(() => {
+        const initialSearch = searchParams.get("search");
+        if (initialSearch) {
+            setRawSearch(initialSearch);
+            setPage(1);
+        }
+    }, [searchParams]);
 
     useEffect(() => {
         const id = setTimeout(() => {

@@ -46,7 +46,7 @@ import { getCheckInEventBySlug } from "@/services/checkin/checkinEventService";
 
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import RecordMetadata from "@/components/RecordMetadata";
@@ -251,6 +251,7 @@ const buildHaystack = (reg, fieldsLocal) => {
 
 export default function ViewRegistrations() {
   const { eventSlug } = useParams();
+  const searchParams = useSearchParams();
   const { t, dir, language } = useI18nLayout(translations);
   const { showMessage } = useMessage();
 
@@ -345,6 +346,14 @@ export default function ViewRegistrations() {
   useEffect(() => {
     if (eventSlug) fetchData();
   }, [eventSlug]);
+
+  useEffect(() => {
+    const initialSearch = searchParams.get("search");
+    if (initialSearch) {
+      setRawSearch(initialSearch);
+      setPage(1);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const id = setTimeout(() => {

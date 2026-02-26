@@ -52,6 +52,7 @@ import {
 import useSurveyGuruSocket from "@/hooks/modules/surveyguru/useSurveyGuruSocket";
 
 import FilterDialog from "@/components/modals/FilterModal";
+import { useSearchParams } from "next/navigation";
 
 const translations = {
   en: {
@@ -199,6 +200,8 @@ export default function RecipientsManagePage() {
   const { showMessage } = useMessage();
   const { t, dir, language } = useI18nLayout(translations);
 
+  const searchParams = useSearchParams();
+
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
@@ -243,6 +246,8 @@ export default function RecipientsManagePage() {
   const [total, setTotal] = useState(0);
   const syncTimeoutRef = useRef(null);
   const recipientStatusTimeoutRef = useRef(null);
+  const [urlInitialized, setUrlInitialized] = useState(false);
+  const [pendingUrlInit, setPendingUrlInit] = useState(null);
 
   const refreshRecipients = async ({
     targetFormId = formId,
@@ -362,7 +367,23 @@ export default function RecipientsManagePage() {
     (async () => {
       const list = await getAllBusinesses();
       setBusinesses(list || []);
-      if (contextBusinessSlug) {
+      const businessIdFromUrl = searchParams.get("businessId");
+
+      if (businessIdFromUrl) {
+        const biz = (list || []).find(
+          (b) => String(b._id) === String(businessIdFromUrl),
+        );
+        if (biz) {
+          setSelectedBizSlug(biz.slug);
+          setSelectedBusiness(biz.slug);
+          setPendingUrlInit({
+            businessId: businessIdFromUrl,
+            eventId: searchParams.get("eventId"),
+            formId: searchParams.get("formId"),
+            search: searchParams.get("search") || "",
+          });
+        }
+      } else if (contextBusinessSlug) {
         setSelectedBizSlug(contextBusinessSlug);
       } else if (user?.role === "business" && user.business?.slug) {
         const slug = user.business.slug;
@@ -370,7 +391,7 @@ export default function RecipientsManagePage() {
         setSelectedBusiness(slug);
       }
     })();
-  }, [user, contextBusinessSlug, setSelectedBusiness]);
+  }, [user, contextBusinessSlug, setSelectedBusiness, searchParams]);
 
   useEffect(() => {
     (async () => {
@@ -399,6 +420,42 @@ export default function RecipientsManagePage() {
       setMStatus("");
     })();
   }, [selectedBizSlug]);
+
+  useEffect(() => {
+    if (urlInitialized || !pendingUrlInit) return;
+    if (!forms.length) return;
+
+    const { eventId: urlEventId, formId: urlFormId, search: urlSearch } =
+      pendingUrlInit;
+
+    const hasForm = urlFormId
+      ? forms.some((f) => String(f._id) === String(urlFormId))
+      : false;
+
+    if (!hasForm) {
+      setUrlInitialized(true);
+      setPendingUrlInit(null);
+      return;
+    }
+
+    if (urlEventId) {
+      const hasEvent = events.some(
+        (e) => String(e._id) === String(urlEventId),
+      );
+      if (hasEvent) {
+        setEventId(urlEventId);
+      }
+    }
+
+    setFormId(urlFormId);
+    if (urlSearch) {
+      setQ(urlSearch);
+    }
+    setPage(1);
+
+    setUrlInitialized(true);
+    setPendingUrlInit(null);
+  }, [pendingUrlInit, urlInitialized, forms, events]);
 
   useEffect(() => {
     (async () => {

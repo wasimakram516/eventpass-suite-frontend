@@ -22,7 +22,7 @@ import {
   CardActions,
 } from "@mui/material";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   getAllSpinWheels,
   createSpinWheel,
@@ -145,6 +145,7 @@ const translations = {
 
 const Dashboard = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, selectedBusiness, setSelectedBusiness } = useAuth();
   const { t, dir, language } = useI18nLayout(translations);
   const { showMessage } = useMessage();
@@ -219,6 +220,7 @@ const Dashboard = () => {
 
   const [events, setEvents] = useState([]);
   const [selectedEventId, setSelectedEventId] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
 
   const wheelType = form.type;
   const selectedBusinessObject = businesses.find(
@@ -226,6 +228,13 @@ const Dashboard = () => {
   );
 
   const selectedBusinessId = selectedBusinessObject?._id || "";
+
+  useEffect(() => {
+    const initialSearch = searchParams.get("search");
+    if (initialSearch) {
+      setSearchTerm(initialSearch.trim());
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (wheelType !== "synced" || !selectedBusinessId) {
@@ -242,6 +251,16 @@ const Dashboard = () => {
         setEvents([]);
       });
   }, [wheelType, selectedBusinessId]);
+
+  const filteredSpinWheels = React.useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return spinWheels;
+    return spinWheels.filter((wheel) => {
+      const titleVal = (wheel.title || "").toLowerCase();
+      const slugVal = (wheel.slug || "").toLowerCase();
+      return titleVal.includes(term) || slugVal.includes(term);
+    });
+  }, [spinWheels, searchTerm]);
 
   useEffect(() => {
     const initializeBusinesses = async () => {
@@ -747,7 +766,7 @@ const Dashboard = () => {
           <NoDataAvailable />
         ) : (
           <Grid container spacing={3} justifyContent={"center"}>
-            {spinWheels.map((wheel) => {
+            {filteredSpinWheels.map((wheel) => {
               const typeConfig = typeMap[wheel.type] || {};
               return (
                 <Grid item xs={12} sm={6} md={4} lg={3} key={wheel._id}>

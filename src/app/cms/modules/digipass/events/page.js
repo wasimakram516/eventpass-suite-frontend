@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, useMemo } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Box,
   Container,
@@ -91,6 +91,7 @@ const translations = {
 
 export default function EventsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, selectedBusiness, setSelectedBusiness } = useAuth();
   const { t, dir, align, language } = useI18nLayout(translations);
 
@@ -105,6 +106,14 @@ export default function EventsPage() {
   const [eventToDelete, setEventToDelete] = useState(null);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [eventToShare, setEventToShare] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  useEffect(() => {
+    const initialSearch = searchParams.get("search");
+    if (initialSearch) {
+      setSearchTerm(initialSearch.trim());
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     getAllBusinesses()
@@ -135,6 +144,16 @@ export default function EventsPage() {
 
     fetchEvents();
   }, [selectedBusiness]);
+
+  const filteredEvents = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return events;
+    return events.filter((ev) => {
+      const name = (ev.name || "").toLowerCase();
+      const slug = (ev.slug || "").toLowerCase();
+      return name.includes(term) || slug.includes(term);
+    });
+  }, [events, searchTerm]);
 
   const handleBusinessSelect = (slug) => {
     setSelectedBusiness(slug);
@@ -258,11 +277,11 @@ export default function EventsPage() {
           <Box sx={{ textAlign: "center", mt: 8 }}>
             <CircularProgress />
           </Box>
-        ) : events.length === 0 ? (
+        ) : filteredEvents.length === 0 ? (
           <NoDataAvailable />
         ) : (
           <Grid container spacing={3} justifyContent="center">
-            {events.map((ev) => {
+            {filteredEvents.map((ev) => {
               return (
                 <Grid item xs={12} sm={6} md={4} key={ev._id}>
                   <EventCardBase

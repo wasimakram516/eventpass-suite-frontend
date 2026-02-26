@@ -9,9 +9,12 @@ import {
   Card,
   CardContent,
   Grid,
+  TextField,
+  InputAdornment,
 } from "@mui/material";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { getAllVisitors } from "@/services/stageq/visitorService";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@mui/material";
@@ -37,6 +40,8 @@ const translations = {
     unknownBusiness: "Unknown Business",
     visits: "Visits",
     lastVisit: "Last",
+    searchPlaceholder: "Filter by name, phone, or organization",
+    clearFilter: "Clear filter",
   },
   ar: {
     title: "تتبع الزوار",
@@ -49,16 +54,44 @@ const translations = {
     unknownBusiness: "عمل غير معروف",
     visits: "الزيارات",
     lastVisit: "آخر زيارة",
+    searchPlaceholder: "تصفية حسب الاسم أو الهاتف أو المؤسسة",
+    clearFilter: "إزالة التصفية",
   },
 };
 
+function visitorMatchesSearch(visitor, term) {
+  const t = term.toLowerCase();
+  const haystack = [visitor.name, visitor.phone, visitor.company]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  return haystack.includes(t);
+}
+
 export default function VisitorsPage() {
   const { t, dir } = useI18nLayout(translations);
+  const searchParams = useSearchParams();
   const [visitors, setVisitors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [businesses, setBusinesses] = useState([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchInitialized, setSearchInitialized] = useState(false);
   const { user, selectedBusiness, setSelectedBusiness } = useAuth();
+
+  useEffect(() => {
+    if (!searchInitialized) {
+      const param = searchParams.get("search");
+      if (param) setSearchTerm(param.trim());
+      setSearchInitialized(true);
+    }
+  }, [searchInitialized, searchParams]);
+
+  const filteredVisitors = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return visitors;
+    return visitors.filter((v) => visitorMatchesSearch(v, term));
+  }, [visitors, searchTerm]);
   const fetchVisitorsWithBusinessList = async (businessSlug, businessList) => {
     const data = await getAllVisitors();
     if (businessSlug) {
@@ -173,15 +206,39 @@ export default function VisitorsPage() {
 
         <Divider sx={{ width: "100%", mb: 4 }} />
 
+        {selectedBusiness && !loading && visitors.length > 0 && (
+          <Stack direction="row" spacing={1} mb={2} alignItems="center">
+            <TextField
+              size="small"
+              placeholder={t.searchPlaceholder}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              sx={{ minWidth: 280 }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <ICONS.search fontSize="small" sx={{ opacity: 0.7 }} />
+                  </InputAdornment>
+                ),
+              }}
+            />
+            {searchTerm && (
+              <Button size="small" onClick={() => setSearchTerm("")}>
+                {t.clearFilter}
+              </Button>
+            )}
+          </Stack>
+        )}
+
         {!selectedBusiness ? (
           <EmptyBusinessState />
         ) : loading ? (
           <LoadingState />
-        ) : visitors.length === 0 ? (
+        ) : filteredVisitors.length === 0 ? (
           <NoDataAvailable />
         ) : (
           <Grid container spacing={3} justifyContent={"center"}>
-            {visitors.map((v) => (
+            {filteredVisitors.map((v) => (
               <Grid item xs={12} sm={6} md={4} key={v._id} sx={{ width: { xs: "100%", sm: "auto" } }}>
                 <Card variant="outlined">
                   <CardContent>

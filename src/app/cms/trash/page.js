@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Box,
   Typography,
@@ -160,8 +161,10 @@ const translations = {
 
 export default function TrashPage() {
   const { dir, align, t } = useI18nLayout(translations);
+  const searchParams = useSearchParams();
   const { user: currentUser } = useAuth();
   const theme = useTheme();
+  const urlParamsApplied = useRef(false);
 
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
@@ -193,6 +196,20 @@ export default function TrashPage() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
+
+  useEffect(() => {
+    if (urlParamsApplied.current) return;
+    const searchParam = searchParams.get("search");
+    const moduleParam = searchParams.get("module");
+    if (searchParam != null) setSearch(searchParam.trim());
+    if (moduleParam && moduleParam.trim()) {
+      const key = moduleParam.trim().toLowerCase();
+      setModuleFilter(key);
+      setSelectedModule(key);
+    }
+    urlParamsApplied.current = true;
+  }, [searchParams]);
+
   const activeFilterCount = useMemo(() => {
     let count = 0;
     if (
@@ -1071,6 +1088,7 @@ export default function TrashPage() {
                   item.phone ||
                   item.phoneNumber ||
                   item.mobile ||
+                  item.token ||
                   ""
                 ).toLowerCase();
 

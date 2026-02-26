@@ -11,3 +11,11 @@ export const getLogStats = withApiHandler(async (params = {}) => {
   return data;
 });
 
+// Export logs (all or filtered by query params) as CSV
+export const exportLogs = async (params = {}) => {
+  const qs = new URLSearchParams(params).toString();
+  const url = `/logs/export${qs ? `?${qs}` : ""}`;
+  const response = await api.get(url, { responseType: "blob" });
+  return response.data;
+};
+

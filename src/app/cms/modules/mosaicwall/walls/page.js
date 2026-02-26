@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   createWallConfig,
   updateWallConfig,
@@ -46,7 +46,7 @@ import useI18nLayout from "@/hooks/useI18nLayout";
 import RecordMetadata from "@/components/RecordMetadata";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const translations = {
   en: {
@@ -123,6 +123,7 @@ const translations = {
 };
 export default function WallConfigsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [wallConfigs, setWallConfigs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -142,6 +143,14 @@ export default function WallConfigsPage() {
     mode: "mosaic",
     businessId: "",
   });
+  const [searchTerm, setSearchTerm] = useState("");
+
+  useEffect(() => {
+    const initialSearch = searchParams.get("search");
+    if (initialSearch) {
+      setSearchTerm(initialSearch.trim());
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const fetchBusinesses = async () => {
@@ -181,6 +190,16 @@ export default function WallConfigsPage() {
     setWallConfigs(configs);
     setIsLoading(false);
   };
+
+  const filteredWallConfigs = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return wallConfigs;
+    return wallConfigs.filter((config) => {
+      const name = (config.name || "").toLowerCase();
+      const slugVal = (config.slug || "").toLowerCase();
+      return name.includes(term) || slugVal.includes(term);
+    });
+  }, [wallConfigs, searchTerm]);
 
   const handleBusinessSelect = (businessSlug) => {
     setSelectedBusiness(businessSlug);
@@ -326,11 +345,11 @@ export default function WallConfigsPage() {
         <Box sx={{ textAlign: align, mt: 8 }}>
           <LoadingState />
         </Box>
-      ) : wallConfigs.length === 0 ? (
+      ) : filteredWallConfigs.length === 0 ? (
         <NoDataAvailable />
       ) : (
         <Grid container spacing={3} justifyContent={"center"}>
-          {wallConfigs.map((config) => (
+          {filteredWallConfigs.map((config) => (
             <Grid item xs={12} sm={6} md={4} key={config._id} sx={{ width: { xs: '100%', sm: 'auto' } }}>
               <Card
                 elevation={3}

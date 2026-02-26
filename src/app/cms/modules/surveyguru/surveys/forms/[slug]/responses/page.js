@@ -13,7 +13,7 @@ import {
   Select,
   InputLabel,
   FormControl,
-  Divider,
+  Divider,  
   Container,
   Stack,
   Chip,
@@ -23,9 +23,11 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
+  TextField,
+  InputAdornment,
 } from "@mui/material";
 
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { formatDateTimeWithLocale } from "@/utils/dateUtils";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import NoDataAvailable from "@/components/NoDataAvailable";
@@ -599,8 +601,29 @@ function ResponseCard({ resp, t, dir, formDetails, align }) {
 }
 
 /* ------------ Page ------------ */
+function responseMatchesSearch(resp, term) {
+  const t = term.toLowerCase();
+  const attendee = resp.attendee || {};
+  const rec = resp.recipientId;
+  const registrationName =
+    rec?.fullName?.trim?.() || pickFullName(rec?.customFields) || "";
+  const haystack = [
+    attendee.name,
+    attendee.email,
+    attendee.company,
+    registrationName,
+    rec?.email,
+    rec?.company,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  return haystack.includes(t);
+}
+
 export default function ViewSurveyResponses() {
   const { slug } = useParams();
+  const searchParams = useSearchParams();
 
   const { dir, t, align } = useI18nLayout({
     en: {
@@ -635,6 +658,8 @@ export default function ViewSurveyResponses() {
       anonymousSurvey: "Anonymous Survey",
       anonymous: "Anonymous",
       anonymousMessage: "This is an anonymous response.",
+      searchPlaceholder: "Filter by name, email, or organization",
+      clearFilter: "Clear filter",
     },
     ar: {
       title: "ردود الاستبيان",
@@ -666,6 +691,8 @@ export default function ViewSurveyResponses() {
       anonymousSurvey: "استبيان مجهول الهوية",
       anonymous: "مجهول",
       anonymousMessage: "هذا رد مجهول الهوية.",
+      searchPlaceholder: "تصفية حسب الاسم أو البريد أو المؤسسة",
+      clearFilter: "إزالة التصفية",
     },
   });
 
@@ -676,6 +703,25 @@ export default function ViewSurveyResponses() {
   const [limit, setLimit] = useState(12);
   const [loading, setLoading] = useState(true);
   const [exportLoading, setExportLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchInitialized, setSearchInitialized] = useState(false);
+
+  useEffect(() => {
+    if (!searchInitialized) {
+      const param = searchParams.get("search");
+      if (param) setSearchTerm(param.trim().toLowerCase());
+      setSearchInitialized(true);
+    }
+  }, [searchInitialized, searchParams]);
+
+  const filteredResponses = React.useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return responses;
+    return responses.filter((r) => responseMatchesSearch(r, term));
+  }, [responses, searchTerm]);
+
+  const displayTotal = searchTerm ? filteredResponses.length : totalResponses;
+  const displayResponses = searchTerm ? filteredResponses : responses;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -699,6 +745,14 @@ export default function ViewSurveyResponses() {
   }, [slug]);
 
   const handlePageChange = (_, value) => setPage(value);
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    setPage(1);
+  };
+  const handleClearSearch = () => {
+    setSearchTerm("");
+    setPage(1);
+  };
   const handleLimitChange = (e) => {
     setLimit(Number(e.target.value));
     setPage(1);
@@ -739,7 +793,7 @@ export default function ViewSurveyResponses() {
           )}
         </Box>
 
-        {totalResponses > 0 && (
+        {displayTotal > 0 && (
           <Button
             variant="contained"
             onClick={exportToCSV}
@@ -760,6 +814,29 @@ export default function ViewSurveyResponses() {
 
       <Divider sx={{ my: 2 }} />
 
+      {/* Search */}
+      <Stack direction="row" spacing={1} mb={2} alignItems="center">
+        <TextField
+          size="small"
+          placeholder={t.searchPlaceholder}
+          value={searchTerm}
+          onChange={handleSearchChange}
+          sx={{ minWidth: 280 }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <ICONS.search fontSize="small" sx={{ opacity: 0.7 }} />
+              </InputAdornment>
+            ),
+          }}
+        />
+        {searchTerm && (
+          <Button size="small" onClick={handleClearSearch}>
+            {t.clearFilter}
+          </Button>
+        )}
+      </Stack>
+
       {/* Top bar */}
       <Stack
         direction={{ xs: "column", sm: "row" }}
@@ -771,7 +848,7 @@ export default function ViewSurveyResponses() {
       >
         <Typography variant="body2" color="text.secondary">
           {t.showing} {(page - 1) * limit + 1}-
-          {Math.min(page * limit, totalResponses)} {t.of} {totalResponses}{" "}
+          {Math.min(page * limit, displayTotal)} {t.of} {displayTotal}{" "}
           {t.records}
         </Typography>
         <FormControl
@@ -798,12 +875,12 @@ export default function ViewSurveyResponses() {
       </Stack>
 
       {/* Cards */}
-      {!responses.length ? (
+      {!displayResponses.length ? (
         <NoDataAvailable />
       ) : (
         <Fragment>
           <Grid container spacing={2} alignItems="stretch" justifyContent="center">
-            {responses.slice((page - 1) * limit, page * limit).map((resp) => (
+            {displayResponses.slice((page - 1) * limit, page * limit).map((resp) => (
               <Grid
                 item
                 xs={12}
@@ -826,8 +903,8 @@ export default function ViewSurveyResponses() {
           <Box display="flex" justifyContent="center" mt={4}>
             <Pagination
               dir="ltr"
-              count={Math.ceil(totalResponses / limit)}
-              page={page}
+              count={Math.ceil(displayTotal / limit)}
+              page={Math.min(page, Math.ceil(displayTotal / limit) || 1)}
               onChange={handlePageChange}
             />
           </Box>
