@@ -67,7 +67,7 @@ const translations = {
 };
 
 export default function GlobalSearchPage() {
-  const { user } = useAuth();
+  const { user, selectedBusiness, setSelectedBusiness } = useAuth();
   const router = useRouter();
   const { dir, align, language, t } = useI18nLayout(translations);
   const labels =
@@ -77,6 +77,7 @@ export default function GlobalSearchPage() {
           company: "الشركة",
           phone: "الهاتف",
           email: "البريد الإلكتروني",
+          itemType: "نوع العنصر",
           module: "الوحدة",
           eventName: "اسم الفعالية",
           time: "الوقت",
@@ -86,6 +87,7 @@ export default function GlobalSearchPage() {
           company: "Company",
           phone: "Phone",
           email: "Email",
+          itemType: "Item Type",
           module: "Module",
           eventName: "Event Name",
           time: "Time",
@@ -144,6 +146,186 @@ export default function GlobalSearchPage() {
   const renderTime = (date) =>
     date ? formatDateTimeWithLocale(date, language === "ar" ? "ar-SA" : "en-GB") : "—";
 
+  const formatItemType = (value) => {
+    if (!value) return "-";
+    const map = {
+      SurveyResponse: "Survey Response",
+      SurveyRecipient: "Survey Recipient",
+      SpinWheelParticipant: "Spin Wheel Participant",
+    };
+    const base = map[value] || value;
+    return base.replace(/([a-z])([A-Z])/g, "$1 $2");
+  };
+
+  const handleRowClick = (row) => {
+    const businessSlug = row.businessSlug;
+    if (businessSlug && selectedBusiness !== businessSlug) {
+      setSelectedBusiness(businessSlug);
+    }
+
+    const buildSearchQuery = () => {
+      const candidates = [
+        row.email,
+        row.phone,
+        row.fullName,
+        row.company,
+      ];
+      const value =
+        candidates.find((v) => v && v !== "-") || "";
+      return value
+        ? `?search=${encodeURIComponent(String(value))}`
+        : "";
+    };
+
+    const searchQuery = buildSearchQuery();
+
+    // Registrations (Event Reg / Check-in / DigiPass)
+    if (row.itemType === "Registration") {
+      const moduleName = row.module;
+      const tokenSearch = row.token
+        ? `?search=${encodeURIComponent(String(row.token))}`
+        : searchQuery;
+
+      if (row.eventSlug) {
+        if (moduleName === "Check-in") {
+          router.push(
+            `/cms/modules/checkin/events/${row.eventSlug}/registrations${tokenSearch}`,
+          );
+        } else if (moduleName === "DigiPass") {
+          router.push(
+            `/cms/modules/digipass/events/${row.eventSlug}/registrations${tokenSearch}`,
+          );
+        } else {
+          router.push(
+            `/cms/modules/eventreg/events/${row.eventSlug}/registrations${tokenSearch}`,
+          );
+        }
+      } else {
+        if (moduleName === "Check-in") {
+          router.push("/cms/modules/checkin/events");
+        } else if (moduleName === "DigiPass") {
+          router.push("/cms/modules/digipass/events");
+        } else {
+          router.push("/cms/modules/eventreg/events");
+        }
+      }
+      return;
+    }
+
+    // SurveyGuru – recipients & responses
+    if (row.module === "SurveyGuru") {
+      if (row.itemType === "SurveyResponse" && row.formSlug) {
+        const responseSearch =
+          [row.fullName, row.email, row.company].find((v) => v && v !== "-") || "";
+        const responseQuery = responseSearch
+          ? `?search=${encodeURIComponent(String(responseSearch))}`
+          : "";
+        router.push(
+          `/cms/modules/surveyguru/surveys/forms/${row.formSlug}/responses${responseQuery}`,
+        );
+        return;
+      }
+
+      if (row.itemType === "SurveyRecipient") {
+        const params = new URLSearchParams();
+        if (row.businessId) params.set("businessId", String(row.businessId));
+        if (row.eventId) params.set("eventId", String(row.eventId));
+        if (row.formId) params.set("formId", String(row.formId));
+        const recipientSearch =
+          row.email || row.fullName || row.company || "";
+        if (recipientSearch) {
+          params.set("search", String(recipientSearch));
+        }
+        const qs = params.toString();
+        router.push(
+          `/cms/modules/surveyguru/surveys/recipients${qs ? `?${qs}` : ""}`,
+        );
+        return;
+      }
+
+      router.push("/cms/modules/surveyguru/surveys/recipients");
+      return;
+    }
+
+    // Event Wheel participants
+    if (row.itemType === "SpinWheelParticipant") {
+      if (row.spinWheelSlug) {
+        router.push(
+          `/cms/modules/eventwheel/wheels/${row.spinWheelSlug}/participants${searchQuery}`,
+        );
+      } else {
+        router.push("/cms/modules/eventwheel/wheels");
+      }
+      return;
+    }
+
+    // StageQ visitors
+    if (row.itemType === "Visitor" || row.module === "StageQ") {
+      const visitorSearch =
+        [row.fullName, row.phone, row.company].find((v) => v && v !== "-") || "";
+      const visitorQuery = visitorSearch
+        ? `?search=${encodeURIComponent(String(visitorSearch))}`
+        : "";
+      router.push(`/cms/modules/stageq/queries/visitors${visitorQuery}`);
+      return;
+    }
+
+    // Game players (TapMatch, QuizNest, EventDuel)
+    if (row.itemType === "Player" && row.gameSlug) {
+      const playerSearch =
+        [row.fullName, row.phone, row.company].find((v) => v && v !== "-") || "";
+      const playerQuery = playerSearch
+        ? `?search=${encodeURIComponent(String(playerSearch))}`
+        : "";
+      if (row.module === "TapMatch") {
+        router.push(
+          `/cms/modules/tapmatch/games/${row.gameSlug}/results${playerQuery}`,
+        );
+        return;
+      }
+      if (row.module === "QuizNest") {
+        router.push(
+          `/cms/modules/quiznest/games/${row.gameSlug}/results${playerQuery}`,
+        );
+        return;
+      }
+      if (row.module === "EventDuel") {
+        router.push(
+          `/cms/modules/eventduel/games/${row.gameSlug}/host/sessions${playerQuery}`,
+        );
+        return;
+      }
+    }
+
+    // Fallback: go to module root if we know it
+    if (row.module === "Event Reg" || row.module === "Check-in" || row.module === "DigiPass") {
+      if (row.module === "Check-in") {
+        router.push("/cms/modules/checkin/events");
+      } else if (row.module === "DigiPass") {
+        router.push("/cms/modules/digipass/events");
+      } else {
+        router.push("/cms/modules/eventreg/events");
+      }
+      return;
+    }
+    if (row.module === "Event Wheel") {
+      router.push("/cms/modules/eventwheel/wheels");
+      return;
+    }
+    if (row.module === "TapMatch") {
+      router.push("/cms/modules/tapmatch/games");
+      return;
+    }
+    if (row.module === "QuizNest") {
+      router.push("/cms/modules/quiznest/games");
+      return;
+    }
+    if (row.module === "EventDuel") {
+      router.push("/cms/modules/eventduel/games");
+      return;
+    }
+  };
+
   const renderRowDesktop = (row, index) => (
     <TableRow
       key={`${row.fullName}-${row.email}-${row.time}-${index}`}
@@ -151,7 +333,9 @@ export default function GlobalSearchPage() {
         "&:hover": { bgcolor: "action.hover" },
         "&:nth-of-type(odd)": { bgcolor: "action.selected" },
         "&:last-child td": { border: 0 },
+        cursor: "pointer",
       }}
+      onClick={() => handleRowClick(row)}
     >
       <TableCell sx={{ py: 1.5, textAlign: align }}>{row.fullName}</TableCell>
       <TableCell sx={{ py: 1.5, textAlign: align }}>{row.company}</TableCell>
@@ -159,12 +343,17 @@ export default function GlobalSearchPage() {
       <TableCell sx={{ py: 1.5, textAlign: align }}>{row.email}</TableCell>
       <TableCell sx={{ py: 1.5, textAlign: align }}>{row.module}</TableCell>
       <TableCell sx={{ py: 1.5, textAlign: align }}>{row.eventName}</TableCell>
+      <TableCell sx={{ py: 1.5, textAlign: align }}>{formatItemType(row.itemType)}</TableCell>
       <TableCell sx={{ py: 1.5, textAlign: align }}>{renderTime(row.time)}</TableCell>
     </TableRow>
   );
 
   const renderRowMobile = (row, index) => (
-    <ListItem key={`${row.fullName}-${row.email}-${row.time}-${index}`} sx={{ px: 0, py: 1.5 }}>
+    <ListItem
+      key={`${row.fullName}-${row.email}-${row.time}-${index}`}
+      sx={{ px: 0, py: 1.5 }}
+      onClick={() => handleRowClick(row)}
+    >
       <Paper
         elevation={0}
         sx={{
@@ -182,7 +371,10 @@ export default function GlobalSearchPage() {
         }}
       >
         <Stack sx={{ py: 1.5, px: 2 }} spacing={0.75}>
-          <Typography variant="subtitle2" fontWeight="600" textAlign={align}>
+          <Typography variant="body2" color="text.secondary" textAlign={align}>
+            <Box component="span" sx={{ fontWeight: 600, color: "text.primary", marginInlineEnd: 0.5 }}>
+              {labels.fullName}:
+            </Box>
             {row.fullName}
           </Typography>
           <Typography variant="body2" color="text.secondary" textAlign={align}>
@@ -214,6 +406,12 @@ export default function GlobalSearchPage() {
               {labels.eventName}:
             </Box>
             {row.eventName}
+          </Typography>
+          <Typography variant="body2" color="text.secondary" textAlign={align}>
+            <Box component="span" sx={{ fontWeight: 600, color: "text.primary", marginInlineEnd: 0.5 }}>
+              {labels.itemType}:
+            </Box>
+            {formatItemType(row.itemType)}
           </Typography>
           <Typography variant="body2" color="text.secondary" textAlign={align}>
             <Box component="span" sx={{ fontWeight: 600, color: "text.primary", marginInlineEnd: 0.5 }}>
@@ -297,7 +495,6 @@ export default function GlobalSearchPage() {
               startIcon={
                 searching ? <CircularProgress size={18} color="inherit" /> : <ICONS.search />
               }
-              sx={{ borderRadius: 2.5, minWidth: 120 }}
             >
               {t.searchButton}
             </Button>
@@ -391,6 +588,9 @@ export default function GlobalSearchPage() {
                       </TableCell>
                       <TableCell sx={{ fontWeight: 700, bgcolor: "background.default", py: 1.5, textAlign: align }}>
                         {labels.eventName}
+                      </TableCell>
+                      <TableCell sx={{ fontWeight: 700, bgcolor: "background.default", py: 1.5, textAlign: align }}>
+                        {labels.itemType}
                       </TableCell>
                       <TableCell sx={{ fontWeight: 700, bgcolor: "background.default", py: 1.5, textAlign: align }}>
                         {labels.time}

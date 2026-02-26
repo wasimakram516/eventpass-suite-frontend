@@ -1,6 +1,6 @@
 "use client";
-import React, { useState, useEffect, useCallback } from "react";
-import { useRouter, useParams } from "next/navigation";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import {
   Box,
   Button,
@@ -118,6 +118,7 @@ const ParticipantsAdminPage = () => {
   const { t, dir, language } = useI18nLayout(translations);
   const params = useParams();
   const slug = params?.wheelSlug;
+  const searchParams = useSearchParams();
   const [participants, setParticipants] = useState([]);
   const [event, setEvent] = useState(null);
   const [openModal, setOpenModal] = useState(false);
@@ -138,6 +139,8 @@ const ParticipantsAdminPage = () => {
     perPage: 10,
   });
   const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchInitialized, setSearchInitialized] = useState(false);
 
   const fetchData = useCallback(async () => {
     if (!slug) return;
@@ -145,21 +148,29 @@ const ParticipantsAdminPage = () => {
     setEvent(eventData);
   }, [slug]);
 
-  const fetchParticipants = useCallback(async (page = 1, limit = 10) => {
-    if (!event?._id) return;
-    setLoading(true);
-    try {
-      const response = await getParticipantsForCMS(event._id, page, limit);
-      if (response?.data && response?.pagination) {
-        setParticipants(response.data);
-        setPagination(response.pagination);
+  const fetchParticipants = useCallback(
+    async (page = 1, limit = 10) => {
+      if (!event?._id) return;
+      setLoading(true);
+      try {
+        const effectiveLimit = searchTerm ? 1000 : limit;
+        const response = await getParticipantsForCMS(
+          event._id,
+          searchTerm ? 1 : page,
+          effectiveLimit,
+        );
+        if (response?.data && response?.pagination) {
+          setParticipants(response.data);
+          setPagination(response.pagination);
+        }
+      } catch (err) {
+        console.error("Failed to fetch participants:", err);
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error("Failed to fetch participants:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [event?._id]);
+    },
+    [event?._id, searchTerm],
+  );
 
   const handleUploadProgress = useCallback(
     (data) => {
@@ -186,6 +197,16 @@ const ParticipantsAdminPage = () => {
       fetchData();
     }
   }, [slug, fetchData]);
+
+  useEffect(() => {
+    if (!searchInitialized) {
+      const param = searchParams.get("search");
+      if (param) {
+        setSearchTerm(param.toLowerCase());
+      }
+      setSearchInitialized(true);
+    }
+  }, [searchInitialized, searchParams]);
 
   useEffect(() => {
     if (event?._id) {
@@ -333,6 +354,37 @@ const ParticipantsAdminPage = () => {
     setPagination((prev) => ({ ...prev, perPage: newPerPage, currentPage: 1 }));
   };
 
+  const filteredParticipants = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return participants;
+    return participants.filter((p) => {
+      const formattedPhone = p.phone
+        ? formatPhoneNumberForDisplay(p.phone, p.isoCode)
+        : "";
+      const haystack = [p.name, p.company, p.phone, formattedPhone]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(term);
+    });
+  }, [participants, searchTerm]);
+
+  const effectiveTotal = searchTerm
+    ? filteredParticipants.length
+    : pagination.totalParticipants;
+  const perPage = pagination.perPage;
+  const effectiveTotalPages = Math.max(
+    1,
+    Math.ceil(effectiveTotal / perPage || 1),
+  );
+  const currentPage = Math.min(pagination.currentPage, effectiveTotalPages);
+
+  const visibleParticipants = useMemo(() => {
+    if (!searchTerm) return participants;
+    const start = (currentPage - 1) * perPage;
+    return filteredParticipants.slice(start, start + perPage);
+  }, [participants, filteredParticipants, searchTerm, currentPage, perPage]);
+
   if (!slug || !event) return <LoadingState />;
 
   return (
@@ -441,15 +493,15 @@ const ParticipantsAdminPage = () => {
           <Box width="100%" maxWidth={{ xs: "100%", md: "50%" }}>
             <Typography variant="body2" color="text.secondary">
               {t.showing}{" "}
-              {pagination.totalParticipants === 0
+              {effectiveTotal === 0
                 ? 0
-                : (pagination.currentPage - 1) * pagination.perPage + 1}
+                : (currentPage - 1) * perPage + 1}
               -
               {Math.min(
-                pagination.currentPage * pagination.perPage,
-                pagination.totalParticipants
+                currentPage * perPage,
+                effectiveTotal,
               )}{" "}
-              {t.of} {pagination.totalParticipants}
+              {t.of} {effectiveTotal}
             </Typography>
           </Box>
 
@@ -488,11 +540,11 @@ const ParticipantsAdminPage = () => {
             <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
               <CircularProgress />
             </Box>
-          ) : participants.length === 0 ? (
+          ) : effectiveTotal === 0 ? (
             <NoDataAvailable />
           ) : (
             <Grid container spacing={3} justifyContent="center">
-              {participants.map((participant) => (
+              {visibleParticipants.map((participant) => (
                 <Grid item xs={12} sm={6} md={4} key={participant._id}>
                   <Card
                     elevation={3}
@@ -571,12 +623,12 @@ const ParticipantsAdminPage = () => {
           )}
 
           {/* Pagination */}
-          {pagination.totalParticipants > pagination.perPage && (
+          {effectiveTotal > perPage && (
             <Box display="flex" justifyContent="center" mt={4}>
               <Pagination
                 dir="ltr"
-                count={pagination.totalPages}
-                page={pagination.currentPage}
+                count={effectiveTotalPages}
+                page={currentPage}
                 onChange={handlePageChange}
               />
             </Box>

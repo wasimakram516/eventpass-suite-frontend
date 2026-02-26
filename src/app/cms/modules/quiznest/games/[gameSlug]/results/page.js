@@ -14,8 +14,8 @@ import DownloadIcon from "@mui/icons-material/Download";
 import ScoreIcon from "@mui/icons-material/Score";
 import AccessTimeIcon from "@mui/icons-material/AccessTime";
 import EditNoteIcon from "@mui/icons-material/EditNote";
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useEffect, useState, useMemo } from "react";
+import { useParams, useSearchParams } from "next/navigation";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 
 import { useMessage } from "@/contexts/MessageContext";
@@ -57,14 +57,43 @@ const translations = {
   },
 };
 
+function playerMatchesSearch(player, term) {
+  const t = term.toLowerCase();
+  const haystack = [player.name, player.company, player.phone]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  return haystack.includes(t);
+}
+
 export default function ResultsPage() {
   const { gameSlug } = useParams();
+  const searchParams = useSearchParams();
   const { showMessage } = useMessage();
   const [game, setGame] = useState(null);
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchInitialized, setSearchInitialized] = useState(false);
   const { user } = useAuth();
   const { t, dir } = useI18nLayout(translations);
+
+  useEffect(() => {
+    if (!searchInitialized) {
+      const param = searchParams.get("search");
+      if (param) setSearchTerm(param.trim());
+      setSearchInitialized(true);
+    }
+  }, [searchInitialized, searchParams]);
+
+  const filteredPlayers = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return players;
+    return players.filter((p) => playerMatchesSearch(p, term));
+  }, [players, searchTerm]);
+
+  const displayPlayers = searchTerm.trim() ? filteredPlayers : players;
+  const displayTotal = displayPlayers.length;
 
   // Fetch game and leaderboard from backend
   useEffect(() => {
@@ -129,7 +158,7 @@ export default function ResultsPage() {
                 color="text.secondary"
                 sx={{ fontSize: { xs: "0.8rem", sm: "0.875rem" } }}
               >
-                {t.totalPlayers} <strong>{players?.length}</strong>
+                {t.totalPlayers} <strong>{displayTotal}</strong>
               </Typography>
             </Box>
 
@@ -162,7 +191,7 @@ export default function ResultsPage() {
           <Box sx={{ textAlign: "center", mt: 8 }}>
             <CircularProgress />
           </Box>
-        ) : players.length === 0 ? (
+        ) : displayPlayers.length === 0 ? (
           <NoDataAvailable />
         ) : (
           <Grid
@@ -171,7 +200,7 @@ export default function ResultsPage() {
             justifyContent="center"
             sx={{ width: "100%", maxWidth: "100%" }}
           >
-            {players?.map((p, i) => (
+            {displayPlayers?.map((p, i) => (
               <Grid
                 item
                 xs={12}

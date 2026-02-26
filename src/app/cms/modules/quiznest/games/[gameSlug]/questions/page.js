@@ -32,8 +32,8 @@ import DownloadIcon from "@mui/icons-material/Download";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import ICONS from "@/utils/iconUtil";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
-import { useParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useParams, useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState, useMemo } from "react";
 import QuestionFormModal from "@/components/modals/QuestionFormModal";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import { useMessage } from "@/contexts/MessageContext";
@@ -129,6 +129,7 @@ const translations = {
 export default function QuestionsPage() {
   const { t, dir, language } = useI18nLayout(translations);
   const { gameSlug } = useParams();
+  const searchParams = useSearchParams();
   const { showMessage } = useMessage();
   const [game, setGame] = useState(null);
   const [questions, setQuestions] = useState([]);
@@ -145,6 +146,14 @@ export default function QuestionsPage() {
   const handleMenuOpen = (event) => setAnchorEl(event.currentTarget);
   const handleMenuClose = () => setAnchorEl(null);
   const hasFetched = useRef(false);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  useEffect(() => {
+    const initialSearch = searchParams.get("search");
+    if (initialSearch) {
+      setSearchTerm(initialSearch.trim());
+    }
+  }, [searchParams]);
 
   // Fetch game and questions from backend
   useEffect(() => {
@@ -165,6 +174,15 @@ export default function QuestionsPage() {
     };
     if (gameSlug) fetchGameAndQuestions();
   }, [gameSlug]);
+
+  const filteredQuestions = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return questions;
+    return questions.filter((q) => {
+      const text = (q.question || "").toLowerCase();
+      return text.includes(term);
+    });
+  }, [questions, searchTerm]);
 
   const handleAddEdit = async (values, isEdit) => {
     let response;
@@ -335,11 +353,11 @@ export default function QuestionsPage() {
           <Box sx={{ textAlign: "center", mt: 8 }}>
             <CircularProgress />
           </Box>
-        ) : questions.length === 0 ? (
+        ) : filteredQuestions.length === 0 ? (
           <NoDataAvailable />
         ) : (
           <Grid container spacing={3} justifyContent="center">
-            {questions?.map((q, idx) => (
+            {filteredQuestions?.map((q, idx) => (
               <Grid
                 item
                 xs={12}

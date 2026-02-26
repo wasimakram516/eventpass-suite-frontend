@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, useMemo } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Box,
   Container,
@@ -96,6 +96,7 @@ const translations = {
 
 export default function TapMatchGamesPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, selectedBusiness, setSelectedBusiness } = useAuth();
   const { t, dir, language } = useI18nLayout(translations);
 
@@ -110,6 +111,14 @@ export default function TapMatchGamesPage() {
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [gameToShare, setGameToShare] = useState(null);
   const [allBusinesses, setAllBusinesses] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  useEffect(() => {
+    const initialSearch = searchParams.get("search");
+    if (initialSearch) {
+      setSearchTerm(initialSearch.trim());
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     const fetchBusinesses = async () => {
@@ -135,6 +144,16 @@ export default function TapMatchGamesPage() {
       setLoading(false);
     });
   }, [selectedBusiness]);
+
+  const filteredGames = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return games;
+    return games.filter((g) => {
+      const title = (g.title || "").toLowerCase();
+      const slug = (g.slug || "").toLowerCase();
+      return title.includes(term) || slug.includes(term);
+    });
+  }, [games, searchTerm]);
 
   const handleBusinessSelect = (slug) => {
     setSelectedBusiness(slug);
@@ -285,11 +304,11 @@ export default function TapMatchGamesPage() {
           <Box sx={{ display: "flex", justifyContent: "center", mt: 8 }}>
             <CircularProgress />
           </Box>
-        ) : games.length === 0 ? (
+        ) : filteredGames.length === 0 ? (
           <NoDataAvailable />
         ) : (
           <Grid container spacing={3} justifyContent="center">
-            {games.map((g) => (
+            {filteredGames.map((g) => (
               <Grid item xs={12} sm={6} md={4} lg={3} key={g._id}>
                 <AppCard
                   sx={{

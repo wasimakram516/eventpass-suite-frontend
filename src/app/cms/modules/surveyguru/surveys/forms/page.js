@@ -30,7 +30,7 @@ import {
   Select,
 } from "@mui/material";
 
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMessage } from "@/contexts/MessageContext";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
@@ -215,6 +215,7 @@ const emptyQuestion = () => ({
 
 export default function SurveyFormsManagePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const {
     user,
     selectedBusiness: contextBusinessSlug,
@@ -263,7 +264,15 @@ export default function SurveyFormsManagePage() {
     fileUrl: null,
   });
 
+  const [searchTerm, setSearchTerm] = useState("");
   const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    const initialSearch = searchParams.get("search");
+    if (initialSearch) {
+      setSearchTerm(initialSearch.trim());
+    }
+  }, [searchParams]);
 
   const selectedBusiness = useMemo(
     () => businesses.find((b) => b.slug === selectedBizSlug),
@@ -869,7 +878,15 @@ export default function SurveyFormsManagePage() {
           <NoDataAvailable />
         ) : (
           <Grid container spacing={3} justifyContent="center">
-            {forms.map((f) => (
+            {forms
+              .filter((f) => {
+                const term = searchTerm.trim().toLowerCase();
+                if (!term) return true;
+                const titleVal = (f.title || "").toLowerCase();
+                const slugVal = (f.slug || "").toLowerCase();
+                return titleVal.includes(term) || slugVal.includes(term);
+              })
+              .map((f) => (
               <Grid item xs={12} sm={6} md={4} lg={3} key={f._id}>
                 <AppCard
                   sx={{

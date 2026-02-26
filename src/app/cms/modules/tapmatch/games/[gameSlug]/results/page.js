@@ -23,8 +23,8 @@ import {
   CheckCircle,
   Download,
 } from "@mui/icons-material";
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useEffect, useState, useMemo } from "react";
+import { useParams, useSearchParams } from "next/navigation";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import { useMessage } from "@/contexts/MessageContext";
 import useI18nLayout from "@/hooks/useI18nLayout";
@@ -76,19 +76,55 @@ const translations = {
   },
 };
 
+function playerMatchesSearch(player, term) {
+  const t = term.toLowerCase();
+  const haystack = [player.name, player.company, player.phone]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  return haystack.includes(t);
+}
+
 export default function TapMatchResultsPage() {
   const { gameSlug } = useParams();
+  const searchParams = useSearchParams();
   const { showMessage } = useMessage();
   const { t, dir } = useI18nLayout(translations);
   const [game, setGame] = useState(null);
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchInitialized, setSearchInitialized] = useState(false);
 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
   const [totalRecords, setTotalRecords] = useState(0);
+
+  useEffect(() => {
+    if (!searchInitialized) {
+      const param = searchParams.get("search");
+      if (param) {
+        setSearchTerm(param.trim());
+        setPage(1);
+      }
+      setSearchInitialized(true);
+    }
+  }, [searchInitialized, searchParams]);
+
+  const filteredPlayers = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return players;
+    return players.filter((p) => playerMatchesSearch(p, term));
+  }, [players, searchTerm]);
+
+  const useSearchMode = Boolean(searchTerm.trim());
+  const displayPlayers = useSearchMode ? filteredPlayers : players;
+  const displayTotal = useSearchMode ? filteredPlayers.length : totalRecords;
+  const displayTotalPages = useSearchMode
+    ? Math.ceil(filteredPlayers.length / limit) || 1
+    : totalPages;
 
   useEffect(() => {
     const fetchGameAndResults = async () => {
@@ -97,10 +133,17 @@ export default function TapMatchResultsPage() {
         const gameData = await getGameBySlug(gameSlug);
         if (gameData) {
           setGame(gameData);
-          const leaderboard = await getLeaderboard(gameData._id, page, limit);
-          setPlayers(leaderboard.results || []);
-          setTotalPages(leaderboard.totalPages || 0);
-          setTotalRecords(leaderboard.total || 0);
+          if (searchTerm.trim()) {
+            const leaderboard = await getLeaderboard(gameData._id, 1, 1000);
+            setPlayers(leaderboard.results || []);
+            setTotalPages(1);
+            setTotalRecords((leaderboard.results || []).length);
+          } else {
+            const leaderboard = await getLeaderboard(gameData._id, page, limit);
+            setPlayers(leaderboard.results || []);
+            setTotalPages(leaderboard.totalPages || 0);
+            setTotalRecords(leaderboard.total || 0);
+          }
         }
       } catch (err) {
         showMessage(t.errorLoading, "error");
@@ -109,7 +152,7 @@ export default function TapMatchResultsPage() {
       }
     };
     if (gameSlug) fetchGameAndResults();
-  }, [gameSlug, page, limit]);
+  }, [gameSlug, page, limit, searchTerm]);
 
   const handleExport = async () => {
     if (!game) return;
@@ -119,8 +162,12 @@ export default function TapMatchResultsPage() {
     setExporting(false);
   };
 
+  const paginatedDisplay =
+    useSearchMode
+      ? filteredPlayers.slice((page - 1) * limit, page * limit)
+      : players;
   const fromRecord = (page - 1) * limit + 1;
-  const toRecord = Math.min(page * limit, totalRecords);
+  const toRecord = Math.min(page * limit, displayTotal);
 
   return (
     <Box
@@ -153,7 +200,7 @@ export default function TapMatchResultsPage() {
                 {t.resultsTitle} "{game?.title}"
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {t.totalPlayers} <strong>{totalRecords}</strong>
+                {t.totalPlayers} <strong>{displayTotal}</strong>
               </Typography>
             </Box>
 
@@ -199,7 +246,7 @@ export default function TapMatchResultsPage() {
             {/* Record range info */}
             <Typography variant="body2" color="text.secondary">
               {t.showing} <strong>{fromRecord}</strong>–
-              <strong>{toRecord}</strong> {t.of} <strong>{totalRecords}</strong>{" "}
+              <strong>{toRecord}</strong> {t.of} <strong>{displayTotal}</strong>{" "}
               {t.records}
             </Typography>
             {/* Per page selector */}
@@ -228,7 +275,7 @@ export default function TapMatchResultsPage() {
           <Box sx={{ textAlign: "center", mt: 8 }}>
             <CircularProgress />
           </Box>
-        ) : players.length === 0 ? (
+        ) : paginatedDisplay.length === 0 ? (
           <NoDataAvailable />
         ) : (
           <>
@@ -238,7 +285,7 @@ export default function TapMatchResultsPage() {
               justifyContent="center"
               sx={{ width: "100%", maxWidth: "100%" }}
             >
-              {players.map((p, i) => (
+              {paginatedDisplay.map((p, i) => (
                 <Grid item xs={12} sm={6} md={4} key={p.sessionId || i}>
                   <Box
                     sx={{
@@ -344,7 +391,7 @@ export default function TapMatchResultsPage() {
               {/* Pagination controls */}
               <Pagination
                 dir="ltr"
-                count={totalPages}
+                count={displayTotalPages}
                 page={page}
                 onChange={(e, val) => setPage(val)}
               />

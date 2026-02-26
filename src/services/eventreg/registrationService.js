@@ -191,3 +191,8 @@ export const createWalkIn = withApiHandler(
   },
   { showSuccess: true },
 );
+
+export const getRegistrationMeta = withApiHandler(async (id) => {
+  const { data } = await api.get(`/eventreg/registrations/${id}/meta`);
+  return data;
+});

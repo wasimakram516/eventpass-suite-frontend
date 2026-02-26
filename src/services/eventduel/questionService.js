@@ -81,3 +81,9 @@ export const downloadTemplate = async (choicesCount, includeHint = false) => {
     );
   }
 };
+
+// Meta lookup for a question by its id
+export const getQuestionMeta = withApiHandler(async (id) => {
+  const { data } = await api.get(`/eventduel/questions/meta/${id}`);
+  return data;
+});

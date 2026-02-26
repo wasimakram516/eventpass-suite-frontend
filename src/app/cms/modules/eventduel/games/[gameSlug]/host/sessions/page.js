@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useEffect, useState, useMemo } from "react";
+import { useParams, useSearchParams } from "next/navigation";
 import {
   Box,
   Button,
@@ -104,8 +104,24 @@ const translations = {
   },
 };
 
+function sessionMatchesSearch(session, term) {
+  const t = term.toLowerCase();
+  const parts = [];
+  session.players?.forEach((p) => {
+    if (p?.playerId?.name) parts.push(p.playerId.name);
+    if (p?.playerId?.company) parts.push(p.playerId.company);
+    if (p?.playerId?.phone) parts.push(p.playerId.phone);
+  });
+  session.teams?.forEach((team) => {
+    if (team?.teamId?.name) parts.push(team.teamId.name);
+  });
+  const haystack = parts.join(" ").toLowerCase();
+  return haystack.includes(t);
+}
+
 export default function PvPSessions() {
   const { gameSlug } = useParams();
+  const searchParams = useSearchParams();
   const { t, dir, align } = useI18nLayout(translations);
   const [sessions, setSessions] = useState([]);
   const [totalSessions, setTotalSessions] = useState(0);
@@ -114,19 +130,47 @@ export default function PvPSessions() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchInitialized, setSearchInitialized] = useState(false);
+
+  useEffect(() => {
+    if (!searchInitialized) {
+      const param = searchParams.get("search");
+      if (param) {
+        setSearchTerm(param.trim());
+        setPage(1);
+      }
+      setSearchInitialized(true);
+    }
+  }, [searchInitialized, searchParams]);
+
+  const filteredSessions = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase();
+    if (!term) return sessions;
+    return sessions.filter((s) => sessionMatchesSearch(s, term));
+  }, [sessions, searchTerm]);
+
+  const useSearchMode = Boolean(searchTerm.trim());
+  const displaySessions = useSearchMode ? filteredSessions : sessions;
+  const displayTotal = useSearchMode ? filteredSessions.length : totalSessions;
+  const paginatedSessions = useSearchMode
+    ? filteredSessions.slice((page - 1) * limit, page * limit)
+    : sessions;
 
   useEffect(() => {
     const fetchSessions = async () => {
       setLoading(true);
-      const res = await getAllSessions(gameSlug, page, limit);
+      const fetchLimit = searchTerm.trim() ? 200 : limit;
+      const fetchPage = searchTerm.trim() ? 1 : page;
+      const res = await getAllSessions(gameSlug, fetchPage, fetchLimit);
       if (!res.error) {
-        setSessions(res.sessions);
-        setTotalSessions(res.totalCount);
+        setSessions(res.sessions || []);
+        setTotalSessions(res.totalCount ?? 0);
       }
       setLoading(false);
     };
     if (gameSlug) fetchSessions();
-  }, [gameSlug, page, limit]);
+  }, [gameSlug, page, limit, searchTerm]);
 
   const handleResetSessions = async () => {
     if (sessions.length === 0) return setShowConfirm(false);
@@ -188,7 +232,7 @@ export default function PvPSessions() {
             >
               {t.allSessions}
             </Button>
-            {sessions.length > 0 && (
+            {displaySessions.length > 0 && (
               <Button
                 variant="contained"
                 color="primary"
@@ -223,7 +267,7 @@ export default function PvPSessions() {
       >
         <Typography>
           {t.showing} {(page - 1) * limit + 1}-
-          {Math.min(page * limit, totalSessions)} {t.of} {totalSessions}{" "}
+          {Math.min(page * limit, displayTotal)} {t.of} {displayTotal}{" "}
           {t.records}
         </Typography>
         <FormControl size="small" sx={{ minWidth: 150, ml: 2 }}>
@@ -251,9 +295,9 @@ export default function PvPSessions() {
       ) : (
         <Stack spacing={3} alignItems="center">
           <Box sx={{ mt: 2, width: "100%", maxWidth: 600 }}>
-            {sessions && sessions.length > 0 ? (
+            {paginatedSessions && paginatedSessions.length > 0 ? (
               <>
-                {sessions.map((session) => {
+                {paginatedSessions.map((session) => {
                   const isTeamMode = session?.gameId?.isTeamMode;
 
                   if (!isTeamMode) {
@@ -821,7 +865,7 @@ export default function PvPSessions() {
                 <Box display="flex" justifyContent="center" mt={4}>
                   <Pagination
                     dir="ltr"
-                    count={Math.ceil(totalSessions / limit)}
+                    count={Math.ceil(displayTotal / limit) || 1}
                     page={page}
                     onChange={(_, value) => setPage(value)}
                   />

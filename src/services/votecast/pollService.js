@@ -110,5 +110,9 @@ export const exportPollsToExcel =
     } catch (err) {
       console.error("Failed to export polls to Excel:", err);
     }
-  }
-;
+  };
+
+export const getPollMeta = withApiHandler(async (id) => {
+  const { data } = await api.get(`/votecast/polls/${id}/meta`);
+  return data;
+});
