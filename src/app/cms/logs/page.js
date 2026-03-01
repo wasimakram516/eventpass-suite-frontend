@@ -43,6 +43,8 @@ import utc from "dayjs/plugin/utc";
 import ICONS from "@/utils/iconUtil";
 import { useAuth } from "@/contexts/AuthContext";
 import { getLogs, exportLogs } from "@/services/logService";
+import { getAllBusinesses } from "@/services/businessService";
+import { getAllUsers } from "@/services/userService";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { formatDateTimeWithLocale } from "@/utils/dateUtils";
 import useLogsSocket from "@/hooks/useLogsSocket";
@@ -76,6 +78,10 @@ const translations = {
     to: "To",
     apply: "Apply",
     clear: "Clear",
+    business: "Business",
+    user: "User",
+    allBusinesses: "All businesses",
+    allUsers: "All users",
   },
   ar: {
     title: "سجل الأنشطة",
@@ -97,6 +103,10 @@ const translations = {
     to: "إلى",
     apply: "تطبيق",
     clear: "مسح",
+    business: "الشركة",
+    user: "المستخدم",
+    allBusinesses: "جميع الشركات",
+    allUsers: "جميع المستخدمين",
   },
 };
 
@@ -141,8 +151,15 @@ export default function LogsPage() {
   const [loadError, setLoadError] = useState("");
   const [fromMs, setFromMs] = useState(null);
   const [toMs, setToMs] = useState(null);
+  /** '7' = last 7 days (default), '30' = last 30 days, 'all' = all time */
+  const [dateRangePreset, setDateRangePreset] = useState("7");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
+  const [clickLoading, setClickLoading] = useState(false);
+  const [filterBusinessId, setFilterBusinessId] = useState("");
+  const [filterUserId, setFilterUserId] = useState("");
+  const [businessesList, setBusinessesList] = useState([]);
+  const [allUsersList, setAllUsersList] = useState([]);
 
   const { latestLogs, clearLatestLogs } = useLogsSocket();
 
@@ -153,6 +170,52 @@ export default function LogsPage() {
     d.setDate(d.getDate() - 7);
     return d.toISOString();
   }, []);
+
+  // Load businesses and users for filter dropdowns (superadmin only)
+  useEffect(() => {
+    if (!user || user.role !== "superadmin") return;
+    let mounted = true;
+    Promise.all([getAllBusinesses(), getAllUsers()])
+      .then(([bizRes, usersRes]) => {
+        if (!mounted) return;
+        const bizList = Array.isArray(bizRes) ? bizRes : bizRes?.data ?? bizRes?.businesses ?? [];
+        setBusinessesList(Array.isArray(bizList) ? bizList : []);
+        const usrList = Array.isArray(usersRes) ? usersRes : usersRes?.data ?? usersRes?.users ?? [];
+        setAllUsersList(Array.isArray(usrList) ? usrList : []);
+      })
+      .catch(() => {
+        if (mounted) {
+          setBusinessesList([]);
+          setAllUsersList([]);
+        }
+      });
+    return () => { mounted = false; };
+  }, [user]);
+
+  // Users belonging to the selected business (for User dropdown)
+  const usersForDropdown = useMemo(() => {
+    const idSet = new Set();
+    const list = [];
+    const add = (u) => {
+      const id = u._id || u.id;
+      if (id && !idSet.has(id)) {
+        idSet.add(id);
+        list.push(u);
+      }
+    };
+    allUsersList.forEach((u) => {
+      if (u.role === "superadmin" || u.role === "admin") {
+        add(u);
+      } else if (filterBusinessId) {
+        const b = u.business;
+        const businessId = b?._id ?? b?.id ?? b;
+        if (businessId != null && String(businessId) === String(filterBusinessId).trim()) {
+          add(u);
+        }
+      }
+    });
+    return list;
+  }, [filterBusinessId, allUsersList]);
 
   // Load all logs (paginated fetches) so search can filter across everything
   useEffect(() => {
@@ -173,10 +236,14 @@ export default function LogsPage() {
             page: pageNum,
             limit: fetchPageSize,
           };
-          const fromIso = fromMs ? new Date(fromMs).toISOString() : sevenDaysAgoIso;
-          const toIso = toMs ? new Date(toMs).toISOString() : null;
-          params.from = fromIso;
-          if (toIso) params.to = toIso;
+          if (dateRangePreset !== "all") {
+            const fromIso = fromMs ? new Date(fromMs).toISOString() : sevenDaysAgoIso;
+            const toIso = toMs ? new Date(toMs).toISOString() : null;
+            params.from = fromIso;
+            if (toIso) params.to = toIso;
+          }
+          if (filterBusinessId) params.businessId = filterBusinessId;
+          if (filterUserId) params.userId = filterUserId;
 
           const res = await getLogs(params);
 
@@ -211,7 +278,7 @@ export default function LogsPage() {
     return () => {
       mounted = false;
     };
-  }, [sevenDaysAgoIso, fromMs, toMs, user, t]);
+  }, [sevenDaysAgoIso, fromMs, toMs, dateRangePreset, filterBusinessId, filterUserId, user, t]);
 
   useEffect(() => {
     if (!latestLogs?.length) return;
@@ -291,6 +358,7 @@ export default function LogsPage() {
   };
 
   const handleLogClick = async (log) => {
+    setClickLoading(true);
     const logType = (log.logType || "").toLowerCase();
     const module = log.module;
     const itemType = log.itemType;
@@ -503,28 +571,44 @@ export default function LogsPage() {
   };
 
   const handleClearFilters = () => {
+    setDateRangePreset("7");
     setFromMs(null);
     setToMs(null);
+    setFilterBusinessId("");
+    setFilterUserId("");
   };
 
   const handleExportLogs = async () => {
     try {
       setExportLoading(true);
       const params = {};
-      // Match the same default range as the UI (last 7 days)
-      const fromIso = fromMs
-        ? new Date(fromMs).toISOString()
-        : sevenDaysAgoIso;
-      const toIso = toMs ? new Date(toMs).toISOString() : null;
-      if (fromIso) params.from = fromIso;
-      if (toIso) params.to = toIso;
+      if (dateRangePreset === "all") {
+        // Export all time: do not send from/to
+      } else {
+        
+        const fromIso = fromMs
+          ? new Date(fromMs).toISOString()
+          : sevenDaysAgoIso;
+        const toIso = toMs
+          ? new Date(toMs).toISOString()
+          : new Date().toISOString();
+        params.from = fromIso;
+        params.to = toIso;
+      }
       const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
       if (timezone) params.timezone = timezone;
+      if (filterBusinessId) params.businessId = filterBusinessId;
+      if (filterUserId) params.userId = filterUserId;
 
       const blob = await exportLogs(params);
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      const suffix = hasDateFilter ? "filtered" : "all";
+      const suffix =
+        dateRangePreset === "all" && !filterBusinessId && !filterUserId
+          ? "all"
+          : hasDateFilter || filterBusinessId || filterUserId
+            ? "filtered"
+            : "last_7_days";
       a.download = `audit_logs_${suffix}.csv`;
       a.href = url;
       a.click();
@@ -578,7 +662,9 @@ export default function LogsPage() {
     if (log?.itemName) return log.itemName;
     if (log?.itemType === "SurveyRecipient" && log?.itemNameSnapshot) return log.itemNameSnapshot;
     if (log?.itemType === "User") {
-      return language === "ar" ? "مستخدم محذوف" : "Deleted user";
+      const isDelete = (log.logType || "").toLowerCase() === "delete";
+      if (isDelete) return language === "ar" ? "مستخدم محذوف" : "Deleted user";
+      return "-";
     }
     const rawId = String(log?.itemId || "");
     if (/^[a-fA-F0-9]{24}$/.test(rawId)) return "-";
@@ -702,6 +788,21 @@ export default function LogsPage() {
 
   return (
     <Box sx={{ bgcolor: "background.default", minHeight: "100vh" }}>
+      {clickLoading && (
+        <Box
+          sx={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 1300,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            bgcolor: "rgba(255,255,255,0.7)",
+          }}
+        >
+          <CircularProgress size={48} />
+        </Box>
+      )}
       <Container
         dir={dir}
         maxWidth={false}
@@ -713,21 +814,60 @@ export default function LogsPage() {
           <DialogTitle>{t.filters}</DialogTitle>
           <DialogContent dividers>
             <Stack spacing={2} sx={{ mt: 1 }}>
+              <FormControl size="small" fullWidth>
+                <InputLabel id="logs-filter-business">{t.business}</InputLabel>
+                <Select
+                  labelId="logs-filter-business"
+                  value={filterBusinessId || ""}
+                  label={t.business}
+                  onChange={(e) => {
+                    setFilterBusinessId(e.target.value || "");
+                    setFilterUserId("");
+                  }}
+                >
+                  <MenuItem value="">{t.allBusinesses}</MenuItem>
+                  {businessesList.map((b) => (
+                    <MenuItem key={b._id || b.id} value={b._id || b.id}>
+                      {b.name || b.slug || b._id || b.id}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+              {filterBusinessId && (
+                <FormControl size="small" fullWidth>
+                  <InputLabel id="logs-filter-user">{t.user}</InputLabel>
+                  <Select
+                    labelId="logs-filter-user"
+                    value={filterUserId || ""}
+                    label={t.user}
+                    onChange={(e) => setFilterUserId(e.target.value || "")}
+                  >
+                    <MenuItem value="">{t.allUsers}</MenuItem>
+                    {usersForDropdown.map((u) => (
+                      <MenuItem key={u._id || u.id} value={u._id || u.id}>
+                        {u.name || u.email || u._id || u.id}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              )}
               <Stack direction="row" spacing={2}>
                 <DateTimePicker
                   label={t.from}
                   value={fromMs ? dayjs(fromMs) : null}
-                  onChange={(val) =>
-                    setFromMs(val ? dayjs(val).utc().valueOf() : null)
-                  }
+                  onChange={(val) => {
+                    setDateRangePreset("custom");
+                    setFromMs(val ? dayjs(val).utc().valueOf() : null);
+                  }}
                   slotProps={{ textField: { size: "small", fullWidth: true } }}
                 />
                 <DateTimePicker
                   label={t.to}
                   value={toMs ? dayjs(toMs) : null}
-                  onChange={(val) =>
-                    setToMs(val ? dayjs(val).utc().valueOf() : null)
-                  }
+                  onChange={(val) => {
+                    setDateRangePreset("custom");
+                    setToMs(val ? dayjs(val).utc().valueOf() : null);
+                  }}
                   slotProps={{ textField: { size: "small", fullWidth: true } }}
                 />
               </Stack>
@@ -823,9 +963,9 @@ export default function LogsPage() {
               >
                 {exportLoading
                   ? t.exporting
-                  : hasDateFilter
-                    ? t.exportFiltered
-                    : t.exportAll}
+                  : dateRangePreset === "all" && !filterBusinessId && !filterUserId
+                    ? t.exportAll
+                    : t.exportFiltered}
               </Button>
             </Stack>
 
@@ -836,10 +976,11 @@ export default function LogsPage() {
               alignItems="center"
             >
               <Chip
-                label="Last 7 days"
-                color={!fromMs && !toMs ? "primary" : "default"}
-                variant={!fromMs && !toMs ? "filled" : "outlined"}
+                label="All"
+                color={dateRangePreset === "all" ? "primary" : "default"}
+                variant={dateRangePreset === "all" ? "filled" : "outlined"}
                 onClick={() => {
+                  setDateRangePreset("all");
                   setFromMs(null);
                   setToMs(null);
                 }}
@@ -847,12 +988,24 @@ export default function LogsPage() {
               />
               <Chip
                 label="Last 30 days"
-                color={fromMs && !toMs ? "primary" : "default"}
-                variant={fromMs && !toMs ? "filled" : "outlined"}
+                color={dateRangePreset === "30" ? "primary" : "default"}
+                variant={dateRangePreset === "30" ? "filled" : "outlined"}
                 onClick={() => {
+                  setDateRangePreset("30");
                   const d = new Date();
                   d.setDate(d.getDate() - 30);
                   setFromMs(d.getTime());
+                  setToMs(null);
+                }}
+                sx={{ fontWeight: 500 }}
+              />
+              <Chip
+                label="Last 7 days"
+                color={dateRangePreset === "7" ? "primary" : "default"}
+                variant={dateRangePreset === "7" ? "filled" : "outlined"}
+                onClick={() => {
+                  setDateRangePreset("7");
+                  setFromMs(null);
                   setToMs(null);
                 }}
                 sx={{ fontWeight: 500 }}

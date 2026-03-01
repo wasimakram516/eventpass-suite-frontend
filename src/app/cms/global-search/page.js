@@ -103,6 +103,7 @@ export default function GlobalSearchPage() {
   const [hasSearched, setHasSearched] = useState(false);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
+  const [clickLoading, setClickLoading] = useState(false);
 
   useEffect(() => {
     if (user && user.role !== "superadmin") {
@@ -125,7 +126,7 @@ export default function GlobalSearchPage() {
         setResults([]);
       } else {
         const list = Array.isArray(res?.results) ? res.results : (res?.data?.results ?? []);
-        setResults(list);
+        setResults(Array.isArray(list) ? list.filter(Boolean) : []);
       }
     } catch (_err) {
       setLoadError(t.loadError);
@@ -158,6 +159,8 @@ export default function GlobalSearchPage() {
   };
 
   const handleRowClick = (row) => {
+    if (!row) return;
+    setClickLoading(true);
     const businessSlug = row.businessSlug;
     if (businessSlug && selectedBusiness !== businessSlug) {
       setSelectedBusiness(businessSlug);
@@ -228,7 +231,7 @@ export default function GlobalSearchPage() {
 
       if (row.itemType === "SurveyRecipient") {
         const params = new URLSearchParams();
-        if (row.businessId) params.set("businessId", String(row.businessId));
+        if (row?.businessId) params.set("businessId", String(row.businessId));
         if (row.eventId) params.set("eventId", String(row.eventId));
         if (row.formId) params.set("formId", String(row.formId));
         const recipientSearch =
@@ -430,6 +433,21 @@ export default function GlobalSearchPage() {
 
   return (
     <Box sx={{ bgcolor: "background.default", minHeight: "100vh" }}>
+      {clickLoading && (
+        <Box
+          sx={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 1300,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            bgcolor: "rgba(255,255,255,0.7)",
+          }}
+        >
+          <CircularProgress size={48} />
+        </Box>
+      )}
       <Container
         dir={dir}
         maxWidth={false}
