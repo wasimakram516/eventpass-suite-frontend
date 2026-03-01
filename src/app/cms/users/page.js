@@ -34,7 +34,8 @@ import {
   InputAdornment,
 } from "@mui/material";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import {
@@ -211,6 +212,8 @@ const translations = {
 
 export default function UsersPage() {
   const { user: currentUser } = useAuth();
+  const searchParams = useSearchParams();
+  const urlSearchApplied = useRef(false);
   const isBusinessUser = currentUser?.role === "business";
   const isSuperAdmin = currentUser?.role === "superadmin";
   const isAdminOrSuperAdmin = ["admin", "superadmin"].includes(
@@ -250,6 +253,14 @@ export default function UsersPage() {
   const [errors, setErrors] = useState({});
   const [activeTab, setActiveTab] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
+  useEffect(() => {
+    if (urlSearchApplied.current) return;
+    const q = searchParams.get("search");
+    if (q != null && String(q).trim() !== "") {
+      setSearchQuery(String(q).trim());
+    }
+    urlSearchApplied.current = true;
+  }, [searchParams]);
   const isEditingSuperAdmin =
     isEditMode && selectedUser?.role === "superadmin";
   const maxTabIndex = useMemo(() => {
