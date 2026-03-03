@@ -82,6 +82,9 @@ const translations = {
     user: "User",
     allBusinesses: "All businesses",
     allUsers: "All users",
+    activeFilters: "Active Filters",
+    clearAll: "Clear All",
+    dateRange: "Date Range",
   },
   ar: {
     title: "سجل الأنشطة",
@@ -107,6 +110,9 @@ const translations = {
     user: "المستخدم",
     allBusinesses: "جميع الشركات",
     allUsers: "جميع المستخدمين",
+    activeFilters: "الفلاتر النشطة",
+    clearAll: "مسح الكل",
+    dateRange: "نطاق التاريخ",
   },
 };
 
@@ -170,6 +176,16 @@ export default function LogsPage() {
     d.setDate(d.getDate() - 7);
     return d.toISOString();
   }, []);
+
+  useEffect(() => {
+    if (dateRangePreset === "7" && !fromMs && !toMs) {
+      const now = new Date();
+      const from = new Date(now.getTime());
+      from.setDate(from.getDate() - 7);
+      setFromMs(from.getTime());
+      setToMs(now.getTime());
+    }
+  }, [dateRangePreset, fromMs, toMs]);
 
   // Load businesses and users for filter dropdowns (superadmin only)
   useEffect(() => {
@@ -571,7 +587,7 @@ export default function LogsPage() {
   };
 
   const handleClearFilters = () => {
-    setDateRangePreset("7");
+    setDateRangePreset("all");
     setFromMs(null);
     setToMs(null);
     setFilterBusinessId("");
@@ -811,7 +827,27 @@ export default function LogsPage() {
         <BreadcrumbsNav />
 
         <Dialog open={filtersOpen} onClose={() => setFiltersOpen(false)} fullWidth maxWidth="sm" dir={dir}>
-          <DialogTitle>{t.filters}</DialogTitle>
+          <DialogTitle
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              pr: 4,
+            }}
+          >
+            {t.filters}
+            <IconButton
+              size="small"
+              onClick={() => setFiltersOpen(false)}
+              aria-label="Close filters"
+              sx={{
+                ml: dir === "rtl" ? 0 : 1,
+                mr: dir === "rtl" ? 1 : 0,
+              }}
+            >
+              <ICONS.close fontSize="small" />
+            </IconButton>
+          </DialogTitle>
           <DialogContent dividers>
             <Stack spacing={2} sx={{ mt: 1 }}>
               <FormControl size="small" fullWidth>
@@ -992,10 +1028,11 @@ export default function LogsPage() {
                 variant={dateRangePreset === "30" ? "filled" : "outlined"}
                 onClick={() => {
                   setDateRangePreset("30");
-                  const d = new Date();
-                  d.setDate(d.getDate() - 30);
-                  setFromMs(d.getTime());
-                  setToMs(null);
+                  const now = new Date();
+                  const from = new Date(now.getTime());
+                  from.setDate(from.getDate() - 30);
+                  setFromMs(from.getTime());
+                  setToMs(now.getTime());
                 }}
                 sx={{ fontWeight: 500 }}
               />
@@ -1005,8 +1042,11 @@ export default function LogsPage() {
                 variant={dateRangePreset === "7" ? "filled" : "outlined"}
                 onClick={() => {
                   setDateRangePreset("7");
-                  setFromMs(null);
-                  setToMs(null);
+                  const now = new Date();
+                  const from = new Date(now.getTime());
+                  from.setDate(from.getDate() - 7);
+                  setFromMs(from.getTime());
+                  setToMs(now.getTime());
                 }}
                 sx={{ fontWeight: 500 }}
               />
@@ -1087,6 +1127,102 @@ export default function LogsPage() {
             </Stack>
           </Box>
         </Box>
+
+        {(() => {
+          const activeFilterEntries = [];
+
+          if (filterBusinessId) {
+            const biz = businessesList.find((b) => String(b._id || b.id) === String(filterBusinessId));
+            const name = biz?.name || biz?.slug || filterBusinessId;
+            activeFilterEntries.push({
+              key: "business",
+              label: t.business,
+              value: name,
+            });
+          }
+
+          if (filterUserId) {
+            const userObj = usersForDropdown.find((u) => String(u._id || u.id) === String(filterUserId));
+            const name = userObj?.name || userObj?.email || filterUserId;
+            activeFilterEntries.push({
+              key: "user",
+              label: t.user,
+              value: name,
+            });
+          }
+
+          if (hasDateFilter) {
+            const fromLabel = fromMs
+              ? formatDateTimeWithLocale(fromMs, language === "ar" ? "ar-SA" : "en-GB")
+              : "—";
+            const toLabel = toMs
+              ? formatDateTimeWithLocale(toMs, language === "ar" ? "ar-SA" : "en-GB")
+              : "—";
+            const valueLabel = `${fromLabel} → ${toLabel}`;
+
+            activeFilterEntries.push({
+              key: "dateRange",
+              label: t.dateRange,
+              value: valueLabel,
+            });
+          }
+
+          if (activeFilterEntries.length === 0) return null;
+
+          return (
+            <Box
+              sx={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 1,
+                alignItems: "center",
+                mb: 3,
+              }}
+            >
+              <Typography variant="body2" fontWeight={500} color="text.secondary">
+                {t.activeFilters}:
+              </Typography>
+
+              {activeFilterEntries.map(({ key, label, value }) => (
+                <Chip
+                  key={key}
+                  label={`${label}: ${value}`}
+                  onDelete={() => {
+                    if (key === "business") {
+                      setFilterBusinessId("");
+                      setFilterUserId("");
+                    } else if (key === "user") {
+                      setFilterUserId("");
+                    } else if (key === "dateRange") {
+                      setDateRangePreset("all");
+                      setFromMs(null);
+                      setToMs(null);
+                    }
+                  }}
+                  color="primary"
+                  variant="outlined"
+                  size="small"
+                  sx={{
+                    fontWeight: 500,
+                  }}
+                />
+              ))}
+
+              <Button
+                size="small"
+                color="secondary"
+                startIcon={<ICONS.close />}
+                onClick={handleClearFilters}
+                sx={{
+                  textTransform: "none",
+                  fontWeight: 600,
+                }}
+              >
+                {t.clearAll}
+              </Button>
+            </Box>
+          );
+        })()}
 
         {loading ? (
           <Box sx={{ mt: 6, textAlign: "center" }}>
