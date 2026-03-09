@@ -1,36 +1,94 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## EventPass Suite – Frontend
 
-## Getting Started
+EventPass Suite is a unified event engagement platform by **WhiteWall Digital Solutions**, providing tools for live quizzes, polls, Q&A, photo walls, registration, and check‑in experiences. This project contains the **Next.js frontend** that powers the CMS and attendee-facing views.
 
-First, run the development server:
+## Features
+
+- **Modern CMS UI** for managing events, content, and engagement tools
+- **Real-time experiences** powered by WebSockets (e.g., live quizzes, polls, audience interactions)
+- **Event registration and check‑in** flows integrated with the backend APIs
+- **Media & asset handling** using S3 / CloudFront
+- **Analytics & reporting** for event performance (charts, exports, etc.)
+
+## Tech Stack
+
+- **Framework**: Next.js 15 (App Router)
+- **Language**: React 19 with modern hooks and components
+- **UI Library**: MUI (Material UI) and Emotion
+- **Real-time**: `socket.io-client`
+
+## Project Structure (High-level)
+
+- `src/app` – Next.js app routes (CMS, public interfaces, pages)
+- `src/styles` – Global styles
+
+## Environment Variables
+
+Environment values are **not committed** directly. Use `.env.example` as a reference.
+
+1. Copy the example file:
+
+   ```bash
+   cp .env.example .env.local
+   ```
+
+2. Fill in the variables in `.env.local`:
+
+
+> **Do not** commit your real `.env.local` or secrets to version control.
+
+## Setup & Installation
+
+1. **Clone the repository**
+
+   ```bash
+   git clone https://github.com/Whitewall-Digital-Solutions/eventpass-suite-frontend.git
+   cd EventPass/eventpass-suite-frontend
+   ```
+
+2. **Install dependencies**
+
+   ```bash
+   npm install
+   # or
+   pnpm install
+   ```
+
+3. **Configure environment**
+
+   - Create `.env.local` from `.env.example` as described above.
+   - Make sure the backend is running and its URL matches `NEXT_PUBLIC_API_URL`.
+
+## Running the Project
+
+### Development
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The app will be available at your configured host and `PORT`, for example:
+- `http://<YOUR_FRONTEND_HOST>:<PORT>`
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Production Build
 
-## Learn More
+```bash
+npm run build
+npm start
+```
 
-To learn more about Next.js, take a look at the following resources:
+This builds the optimized Next.js app and starts it in production mode. It will serve from your configured host and `PORT`, for example:
+- `http://<YOUR_FRONTEND_HOST>:<PORT>`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Related Services
 
-## Deploy on Vercel
+This frontend is designed to work with the **EventPass Suite Backend** (Node.js / Express, MongoDB, Socket.IO). Ensure the backend is:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Running on the port configured in its `.env` (default `4000`)
+- Exposing the API under `/api` that matches `NEXT_PUBLIC_API_URL`
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## License
+
+© WhiteWall Digital Solutions. All rights reserved.
