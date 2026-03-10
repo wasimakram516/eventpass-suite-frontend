@@ -287,8 +287,8 @@ export default function DigiPassVerifyPage() {
             <QrScanner
               onScanSuccess={handleScanSuccess}
               onError={(err) => {
-                console.error("QR Error", err);
-                setError(err?.toString() || "Camera error. Try again.");
+                showMessage(err?.toString() || "Camera error. Try again.", "error");
+                setError(null);
                 setShowScanner(false);
               }}
               onCancel={() => setShowScanner(false)}
