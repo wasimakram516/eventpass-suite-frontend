@@ -8,9 +8,7 @@ import {
   CircularProgress,
   IconButton,
   Tooltip,
-  FormControl,
-  Select,
-  MenuItem,
+  Button,
 } from "@mui/material";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
@@ -18,7 +16,7 @@ import useI18nLayout from "@/hooks/useI18nLayout";
 const translations = {
   en: {
     initializing: "Initializing camera...",
-    cameraSelector: "Select camera",
+    cameraSelector: "Choose camera",
     cameraDefault: "System default",
     cameraRear: "Rear camera",
     cameraFront: "Front camera",
@@ -407,8 +405,7 @@ export default function QRScanner({ onScanSuccess, onError, onCancel }) {
     };
   }, [ready]);
 
-  const handleCameraChange = async (event) => {
-    const nextCameraId = event.target.value;
+  const handleCameraChange = async (nextCameraId) => {
     const previousSelection =
       selectedCameraIdRef.current || CAMERA_SELECTIONS.AUTO_DEFAULT;
     setSelectedCameraId(nextCameraId);
@@ -594,58 +591,56 @@ export default function QRScanner({ onScanSuccess, onError, onCancel }) {
               </Typography>
             )}
 
-            <FormControl fullWidth size="small">
-              <Select
-                value={selectedCameraId || CAMERA_SELECTIONS.AUTO_DEFAULT}
-                onChange={handleCameraChange}
-                displayEmpty
-                disabled={loading}
-                inputProps={{ "aria-label": t.cameraSelector }}
-                renderValue={(value) => {
-                  if (!value) {
-                    return t.cameraSelector;
-                  }
+            <Typography
+              variant="caption"
+              sx={{
+                display: "block",
+                mb: 1,
+                color: "rgba(255,255,255,0.85)",
+                textAlign: "center",
+              }}
+            >
+              {t.cameraSelector}
+            </Typography>
 
-                  return (
-                    selectableCameraOptions.find((camera) => camera.id === value)?.label ||
-                    t.cameraSelector
-                  );
-                }}
-                sx={{
-                  color: "#fff",
-                  backgroundColor: "rgba(0,0,0,0.65)",
-                  borderRadius: 1,
-                  "& .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "rgba(255,255,255,0.2)",
-                  },
-                  "&:hover .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "rgba(255,255,255,0.35)",
-                  },
-                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-                    borderColor: "rgba(255,255,255,0.45)",
-                  },
-                  "& .MuiSvgIcon-root": {
-                    color: "#fff",
-                  },
-                }}
-                MenuProps={{
-                  PaperProps: {
-                    sx: {
-                      maxHeight: 320,
-                    },
-                  },
-                }}
-              >
-                {selectableCameraOptions.map((camera, index) => (
-                  <MenuItem
+            <Box
+              sx={{
+                display: "flex",
+                gap: 1,
+                overflowX: "auto",
+                pb: 0.5,
+                scrollbarWidth: "thin",
+              }}
+            >
+              {selectableCameraOptions.map((camera, index) => {
+                const isSelected =
+                  (selectedCameraId || CAMERA_SELECTIONS.AUTO_DEFAULT) === camera.id;
+
+                return (
+                  <Button
                     key={camera.id || `camera-${index}`}
-                    value={camera.id}
+                    type="button"
+                    size="small"
+                    variant={isSelected ? "contained" : "outlined"}
+                    disabled={loading}
+                    onClick={() => handleCameraChange(camera.id)}
+                    sx={{
+                      flexShrink: 0,
+                      minWidth: 140,
+                      color: isSelected ? "#000" : "#fff",
+                      backgroundColor: isSelected ? "#fff" : "rgba(0,0,0,0.65)",
+                      borderColor: "rgba(255,255,255,0.35)",
+                      "&:hover": {
+                        borderColor: "#fff",
+                        backgroundColor: isSelected ? "#f2f2f2" : "rgba(255,255,255,0.12)",
+                      },
+                    }}
                   >
                     {camera.label || `${t.cameraSelector} ${index + 1}`}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+                  </Button>
+                );
+              })}
+            </Box>
           </Box>
         )}
       </Box>
