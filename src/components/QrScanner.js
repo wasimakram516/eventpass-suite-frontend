@@ -19,6 +19,9 @@ const translations = {
   en: {
     initializing: "Initializing camera...",
     cameraSelector: "Select camera",
+    cameraDefault: "System default",
+    cameraRear: "Rear camera",
+    cameraFront: "Front camera",
     tooltip: {
       cancel: "Cancel scanning",
     },
@@ -32,6 +35,9 @@ const translations = {
   ar: {
     initializing: "جاري تهيئة الكاميرا...",
     cameraSelector: "اختر الكاميرا",
+    cameraDefault: "الكاميرا الافتراضية",
+    cameraRear: "الكاميرا الخلفية",
+    cameraFront: "الكاميرا الأمامية",
     tooltip: {
       cancel: "إلغاء المسح",
     },
@@ -42,6 +48,12 @@ const translations = {
       switchFailed: "تعذر تبديل الكاميرا.",
     },
   },
+};
+
+const CAMERA_SELECTIONS = {
+  AUTO_DEFAULT: "__auto_default__",
+  AUTO_ENVIRONMENT: "__auto_environment__",
+  AUTO_USER: "__auto_user__",
 };
 
 const EXTERNAL_CAMERA_PATTERN = /\b(usb|external|webcam)\b/i;
@@ -57,28 +69,6 @@ const getCameraScore = (camera) => {
   if (FRONT_CAMERA_PATTERN.test(label)) score -= 20;
 
   return score;
-};
-
-const buildCameraCandidates = (cameras = [], selectedCameraId = "") => {
-  const orderedCandidates = [];
-  const seen = new Set();
-
-  const addCandidate = (candidate) => {
-    if (!candidate || seen.has(candidate)) return;
-    seen.add(candidate);
-    orderedCandidates.push(candidate);
-  };
-
-  addCandidate(selectedCameraId);
-  addCandidate("environment");
-
-  [...cameras]
-    .sort((left, right) => getCameraScore(right) - getCameraScore(left))
-    .forEach((camera) => addCandidate(camera.id));
-
-  addCandidate("user");
-
-  return orderedCandidates;
 };
 
 const getActiveTrackDeviceId = (videoElement) => {
@@ -144,7 +134,27 @@ const listAvailableCameras = async () => {
   }
 };
 
-const buildVideoConstraints = (cameras = [], preferredCameraId = "") => {
+const buildSelectableCameraOptions = (cameras = [], t) => {
+  const options = [
+    { id: CAMERA_SELECTIONS.AUTO_DEFAULT, label: t.cameraDefault },
+    { id: CAMERA_SELECTIONS.AUTO_ENVIRONMENT, label: t.cameraRear },
+    { id: CAMERA_SELECTIONS.AUTO_USER, label: t.cameraFront },
+  ];
+  const seen = new Set(options.map((option) => option.id));
+
+  cameras.forEach((camera, index) => {
+    if (!camera?.id || seen.has(camera.id)) return;
+    seen.add(camera.id);
+    options.push({
+      id: camera.id,
+      label: camera.label || `${t.cameraSelector} ${index + 1}`,
+    });
+  });
+
+  return options;
+};
+
+const buildVideoConstraints = (cameras = [], preferredCameraId = CAMERA_SELECTIONS.AUTO_DEFAULT) => {
   const constraints = [];
   const seen = new Set();
 
@@ -158,30 +168,50 @@ const buildVideoConstraints = (cameras = [], preferredCameraId = "") => {
     (left, right) => getCameraScore(right) - getCameraScore(left)
   );
 
-  addConstraint(
-    `device:${preferredCameraId}`,
-    preferredCameraId ? { deviceId: { exact: preferredCameraId } } : null
-  );
+  if (
+    preferredCameraId &&
+    !Object.values(CAMERA_SELECTIONS).includes(preferredCameraId)
+  ) {
+    addConstraint(`device:${preferredCameraId}`, {
+      deviceId: { exact: preferredCameraId },
+    });
+  }
 
-  rankedCameras
-    .filter((camera) => getCameraScore(camera) > 0)
-    .forEach((camera) =>
-      addConstraint(`device:${camera.id}`, { deviceId: { exact: camera.id } })
-    );
-
-  addConstraint("environment-ideal", { facingMode: { ideal: "environment" } });
+  if (preferredCameraId === CAMERA_SELECTIONS.AUTO_USER) {
+    addConstraint("user-ideal", { facingMode: { ideal: "user" } });
+    addConstraint("generic", true);
+    addConstraint("environment-ideal", { facingMode: { ideal: "environment" } });
+  } else if (preferredCameraId === CAMERA_SELECTIONS.AUTO_ENVIRONMENT) {
+    addConstraint("environment-ideal", { facingMode: { ideal: "environment" } });
+    rankedCameras
+      .filter((camera) => getCameraScore(camera) > 0)
+      .forEach((camera) =>
+        addConstraint(`device:${camera.id}`, { deviceId: { exact: camera.id } })
+      );
+    addConstraint("generic", true);
+    addConstraint("user-ideal", { facingMode: { ideal: "user" } });
+  } else {
+    addConstraint("generic", true);
+    addConstraint("environment-ideal", { facingMode: { ideal: "environment" } });
+    rankedCameras
+      .filter((camera) => getCameraScore(camera) > 0)
+      .forEach((camera) =>
+        addConstraint(`device:${camera.id}`, { deviceId: { exact: camera.id } })
+      );
+    addConstraint("user-ideal", { facingMode: { ideal: "user" } });
+  }
 
   rankedCameras.forEach((camera) =>
     addConstraint(`device:${camera.id}`, { deviceId: { exact: camera.id } })
   );
 
-  addConstraint("generic", true);
-  addConstraint("user-ideal", { facingMode: { ideal: "user" } });
-
   return constraints;
 };
 
-const openCameraStream = async (cameras = [], preferredCameraId = "") => {
+const openCameraStream = async (
+  cameras = [],
+  preferredCameraId = CAMERA_SELECTIONS.AUTO_DEFAULT
+) => {
   if (!isMediaDevicesSupported()) {
     throw new Error("Camera API unavailable");
   }
@@ -215,14 +245,18 @@ export default function QRScanner({ onScanSuccess, onError, onCancel }) {
   const onScanSuccessRef = useRef(onScanSuccess);
   const onErrorRef = useRef(onError);
   const translationsRef = useRef(t);
-  const selectedCameraIdRef = useRef("");
+  const selectedCameraIdRef = useRef(CAMERA_SELECTIONS.AUTO_DEFAULT);
 
   const [loading, setLoading] = useState(true);
   const [ready, setReady] = useState(false);
   const [cameraOptions, setCameraOptions] = useState([]);
   const [activeCameraId, setActiveCameraId] = useState("");
-  const [selectedCameraId, setSelectedCameraId] = useState("");
+  const [selectedCameraId, setSelectedCameraId] = useState(
+    CAMERA_SELECTIONS.AUTO_DEFAULT
+  );
   const [switchError, setSwitchError] = useState("");
+
+  const selectableCameraOptions = buildSelectableCameraOptions(cameraOptions, t);
 
   useEffect(() => {
     onScanSuccessRef.current = onScanSuccess;
@@ -241,32 +275,58 @@ export default function QRScanner({ onScanSuccess, onError, onCancel }) {
   }, [selectedCameraId]);
 
   useEffect(() => {
-    if (!ready) return;
+    if (!isMediaDevicesSupported()) return undefined;
 
     let isMounted = true;
 
-    const ensureScanner = (videoElement) => {
-      if (scannerRef.current) {
-        return scannerRef.current;
+    const refreshCameraOptions = async () => {
+      const cameras = await listAvailableCameras();
+      if (isMounted) {
+        setCameraOptions(cameras);
       }
-
-      const scanner = new QrScanner(
-        videoElement,
-        (result) => {
-          if (!isMounted) return;
-          scannerRef.current?.stop();
-          onScanSuccessRef.current?.(result?.data ?? result);
-        },
-        {
-          highlightScanRegion: true,
-          highlightCodeOutline: true,
-          returnDetailedScanResult: true,
-        }
-      );
-
-      scannerRef.current = scanner;
-      return scanner;
     };
+
+    refreshCameraOptions();
+
+    const handleDeviceChange = () => {
+      refreshCameraOptions();
+    };
+
+    navigator.mediaDevices.addEventListener?.("devicechange", handleDeviceChange);
+
+    return () => {
+      isMounted = false;
+      navigator.mediaDevices.removeEventListener?.("devicechange", handleDeviceChange);
+    };
+  }, []);
+
+  const ensureScanner = (videoElement, isMountedRef) => {
+    if (scannerRef.current) {
+      return scannerRef.current;
+    }
+
+    const scanner = new QrScanner(
+      videoElement,
+      (result) => {
+        if (!isMountedRef.current) return;
+        scannerRef.current?.stop();
+        onScanSuccessRef.current?.(result?.data ?? result);
+      },
+      {
+        highlightScanRegion: true,
+        highlightCodeOutline: true,
+        returnDetailedScanResult: true,
+      }
+    );
+
+    scannerRef.current = scanner;
+    return scanner;
+  };
+
+  useEffect(() => {
+    if (!ready) return;
+
+    const isMountedRef = { current: true };
 
     const startScanner = async () => {
       try {
@@ -277,26 +337,25 @@ export default function QRScanner({ onScanSuccess, onError, onCancel }) {
         if (!videoElement) throw new Error("Video element not found");
 
         const discoveredCameras = await listAvailableCameras();
-        if (isMounted && discoveredCameras.length) {
+        if (isMountedRef.current && discoveredCameras.length) {
           setCameraOptions(discoveredCameras);
         }
 
+        const scanner = ensureScanner(videoElement, isMountedRef);
         const { stream, deviceId } = await openCameraStream(
           discoveredCameras,
           selectedCameraIdRef.current
         );
 
-        if (!isMounted) {
+        if (!isMountedRef.current) {
           stopStream(stream);
           return;
         }
 
         videoElement.srcObject = stream;
-
-        const scanner = ensureScanner(videoElement);
         await scanner.start();
 
-        if (!isMounted) {
+        if (!isMountedRef.current) {
           scanner.stop();
           stopStream(stream);
           return;
@@ -306,19 +365,31 @@ export default function QRScanner({ onScanSuccess, onError, onCancel }) {
           getStreamDeviceId(stream) || getActiveTrackDeviceId(videoElement) || deviceId;
 
         setActiveCameraId(resolvedDeviceId);
-        setSelectedCameraId((current) => current || resolvedDeviceId);
         setLoading(false);
 
         const labeledCameras = await listAvailableCameras();
-        if (isMounted && labeledCameras.length) {
+        if (isMountedRef.current && labeledCameras.length) {
           setCameraOptions(labeledCameras);
         }
       } catch (error) {
-        if (isMounted) {
+        const refreshedCameras = await listAvailableCameras();
+        if (isMountedRef.current && refreshedCameras.length) {
+          setCameraOptions(refreshedCameras);
+        }
+
+        if (
+          isMountedRef.current &&
+          isNoCameraError(error) &&
+          refreshedCameras.length > 0
+        ) {
           setLoading(false);
-          onErrorRef.current?.(
-            getCameraErrorMessage(error, translationsRef.current)
-          );
+          setSwitchError(getCameraErrorMessage(error, translationsRef.current));
+          return;
+        }
+
+        if (isMountedRef.current) {
+          setLoading(false);
+          onErrorRef.current?.(getCameraErrorMessage(error, translationsRef.current));
         }
       }
     };
@@ -326,7 +397,7 @@ export default function QRScanner({ onScanSuccess, onError, onCancel }) {
     startScanner();
 
     return () => {
-      isMounted = false;
+      isMountedRef.current = false;
       stopStream(videoRef.current?.srcObject);
       if (videoRef.current) {
         videoRef.current.srcObject = null;
@@ -338,9 +409,15 @@ export default function QRScanner({ onScanSuccess, onError, onCancel }) {
 
   const handleCameraChange = async (event) => {
     const nextCameraId = event.target.value;
+    const previousSelection =
+      selectedCameraIdRef.current || CAMERA_SELECTIONS.AUTO_DEFAULT;
     setSelectedCameraId(nextCameraId);
 
-    if (!scannerRef.current || !nextCameraId || nextCameraId === activeCameraId) {
+    if (
+      !nextCameraId ||
+      (nextCameraId === activeCameraId &&
+        !Object.values(CAMERA_SELECTIONS).includes(nextCameraId))
+    ) {
       return;
     }
 
@@ -351,37 +428,37 @@ export default function QRScanner({ onScanSuccess, onError, onCancel }) {
       setSwitchError("");
 
       const videoElement = videoRef.current;
-      if (!videoElement || !scannerRef.current) {
+      if (!videoElement) {
         throw new Error("Video element not found");
       }
 
-      await scannerRef.current.pause(true);
+      const scanner = ensureScanner(videoElement, { current: true });
+      await scanner.pause(true);
+      stopStream(videoElement.srcObject);
 
       const cameras = await listAvailableCameras();
-      if (cameras.length) {
-        setCameraOptions(cameras);
-      }
+      setCameraOptions(cameras);
 
       const { stream, deviceId } = await openCameraStream(cameras, nextCameraId);
       videoElement.srcObject = stream;
 
-      await scannerRef.current.start();
+      await scanner.start();
 
       const currentDeviceId =
         getStreamDeviceId(stream) || getActiveTrackDeviceId(videoElement) || deviceId || nextCameraId;
       setActiveCameraId(currentDeviceId);
-      setSelectedCameraId(currentDeviceId);
+      setSelectedCameraId(nextCameraId);
+      setSwitchError("");
 
       const labeledCameras = await listAvailableCameras();
-      if (labeledCameras.length) {
-        setCameraOptions(labeledCameras);
-      }
+      setCameraOptions(labeledCameras);
     } catch (error) {
       if (previousCameraId && previousCameraId !== nextCameraId) {
         try {
           const videoElement = videoRef.current;
           if (videoElement && scannerRef.current) {
             await scannerRef.current.pause(true);
+            stopStream(videoElement.srcObject);
             const cameras = await listAvailableCameras();
             const { stream, deviceId } = await openCameraStream(cameras, previousCameraId);
             videoElement.srcObject = stream;
@@ -394,7 +471,7 @@ export default function QRScanner({ onScanSuccess, onError, onCancel }) {
               previousCameraId;
 
             setActiveCameraId(restoredDeviceId);
-            setSelectedCameraId(restoredDeviceId);
+            setSelectedCameraId(previousSelection);
           }
         } catch {}
       }
@@ -493,7 +570,7 @@ export default function QRScanner({ onScanSuccess, onError, onCancel }) {
           />
         )}
 
-        {cameraOptions.length > 1 && (
+        {selectableCameraOptions.length > 0 && (
           <Box
             sx={{
               position: "absolute",
@@ -519,7 +596,7 @@ export default function QRScanner({ onScanSuccess, onError, onCancel }) {
 
             <FormControl fullWidth size="small">
               <Select
-                value={selectedCameraId || activeCameraId || ""}
+                value={selectedCameraId || CAMERA_SELECTIONS.AUTO_DEFAULT}
                 onChange={handleCameraChange}
                 displayEmpty
                 disabled={loading}
@@ -530,7 +607,7 @@ export default function QRScanner({ onScanSuccess, onError, onCancel }) {
                   }
 
                   return (
-                    cameraOptions.find((camera) => camera.id === value)?.label ||
+                    selectableCameraOptions.find((camera) => camera.id === value)?.label ||
                     t.cameraSelector
                   );
                 }}
@@ -559,7 +636,7 @@ export default function QRScanner({ onScanSuccess, onError, onCancel }) {
                   },
                 }}
               >
-                {cameraOptions.map((camera, index) => (
+                {selectableCameraOptions.map((camera, index) => (
                   <MenuItem
                     key={camera.id || `camera-${index}`}
                     value={camera.id}
