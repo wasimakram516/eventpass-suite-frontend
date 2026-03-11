@@ -85,42 +85,30 @@ select,
   direction: rtl !important;
 }
 
-html.android-webview [dir="rtl"] .MuiOutlinedInput-root {
+html.android-webview .MuiInputBase-input[data-android-webview-dir-mode],
+html.android-webview textarea[data-android-webview-dir-mode],
+html.android-webview [contenteditable="true"][data-android-webview-dir-mode] {
+  text-align: start !important;
+  unicode-bidi: plaintext !important;
+}
+
+html.android-webview .MuiInputBase-input[data-android-webview-dir-mode="ltr"],
+html.android-webview textarea[data-android-webview-dir-mode="ltr"] {
+  direction: ltr !important;
+  text-align: left !important;
+  unicode-bidi: plaintext !important;
+}
+
+html.android-webview .MuiOutlinedInput-root[data-android-webview-dir-mode="ltr"],
+html.android-webview .MuiFilledInput-root[data-android-webview-dir-mode="ltr"],
+html.android-webview .MuiInput-root[data-android-webview-dir-mode="ltr"] {
+  direction: ltr !important;
+}
+
+html.android-webview .MuiOutlinedInput-root[data-android-webview-dir-mode="auto"],
+html.android-webview .MuiFilledInput-root[data-android-webview-dir-mode="auto"],
+html.android-webview .MuiInput-root[data-android-webview-dir-mode="auto"] {
   direction: inherit !important;
-}
-
-html.android-webview [dir="rtl"] .MuiInputBase-input,
-html.android-webview [dir="rtl"] textarea,
-html.android-webview [dir="rtl"] [contenteditable="true"] {
-  direction: rtl !important;
-  text-align: right !important;
-  unicode-bidi: plaintext !important;
-}
-
-html.android-webview [dir="ltr"] .MuiInputBase-input,
-html.android-webview [dir="ltr"] textarea,
-html.android-webview [dir="ltr"] [contenteditable="true"] {
-  direction: ltr !important;
-  text-align: left !important;
-  unicode-bidi: plaintext !important;
-}
-
-html.android-webview [dir="rtl"] input[type="email"],
-html.android-webview [dir="rtl"] input[type="url"],
-html.android-webview [dir="rtl"] input[type="tel"],
-html.android-webview [dir="rtl"] input[type="number"],
-html.android-webview [dir="rtl"] input[type="password"],
-html.android-webview [dir="rtl"] input[inputmode="email"],
-html.android-webview [dir="rtl"] input[inputmode="numeric"],
-html.android-webview [dir="rtl"] input[inputmode="decimal"],
-html.android-webview [dir="rtl"] input[inputmode="tel"],
-html.android-webview [dir="rtl"] input[autocomplete="username"],
-html.android-webview [dir="rtl"] input[autocomplete="current-password"],
-html.android-webview [dir="rtl"] input[autocomplete="new-password"],
-html.android-webview [dir="rtl"] input[autocomplete="one-time-code"] {
-  direction: ltr !important;
-  text-align: left !important;
-  unicode-bidi: plaintext !important;
 }
 
 [dir="rtl"] .MuiOutlinedInput-notchedOutline {

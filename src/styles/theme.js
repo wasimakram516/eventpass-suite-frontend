@@ -164,15 +164,17 @@ const theme = createTheme({
         input: {
           userSelect: "text",
           WebkitUserSelect: "text",
-          "&[dir='rtl'], [dir='rtl'] &": {
+          unicodeBidi: "plaintext",
+          "&[dir='rtl']": {
             direction: "rtl !important",
             textAlign: "right !important",
-            unicodeBidi: "plaintext",
           },
-          "&[dir='ltr'], [dir='ltr'] &": {
+          "&[dir='ltr']": {
             direction: "ltr !important",
             textAlign: "left !important",
-            unicodeBidi: "plaintext",
+          },
+          "&[dir='auto']": {
+            textAlign: "start !important",
           },
         },
       },
