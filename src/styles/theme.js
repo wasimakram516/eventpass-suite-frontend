@@ -162,11 +162,17 @@ const theme = createTheme({
     MuiInputBase: {
       styleOverrides: {
         input: {
+          userSelect: "text",
+          WebkitUserSelect: "text",
           "&[dir='rtl'], [dir='rtl'] &": {
+            direction: "rtl !important",
             textAlign: "right !important",
+            unicodeBidi: "plaintext",
           },
           "&[dir='ltr'], [dir='ltr'] &": {
+            direction: "ltr !important",
             textAlign: "left !important",
+            unicodeBidi: "plaintext",
           },
         },
       },
