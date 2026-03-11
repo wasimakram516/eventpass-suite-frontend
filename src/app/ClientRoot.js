@@ -9,8 +9,27 @@ import { GlobalConfigProvider } from "@/contexts/GlobalConfigContext";
 import Script from "next/script";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { useEffect } from "react";
 
 export default function ClientRoot({ children }) {
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return undefined;
+    }
+
+    const userAgent = window.navigator.userAgent || "";
+    const isAndroidWebView =
+      /Android/i.test(userAgent) &&
+      (/\bwv\b/i.test(userAgent) || /; wv\)/i.test(userAgent));
+
+    const root = document.documentElement;
+    root.classList.toggle("android-webview", isAndroidWebView);
+
+    return () => {
+      root.classList.remove("android-webview");
+    };
+  }, []);
+
   return (
     <>
       <LanguageProvider>

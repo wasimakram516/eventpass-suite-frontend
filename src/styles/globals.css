@@ -18,6 +18,15 @@ body {
   flex-direction: column;
 }
 
+input,
+textarea,
+select,
+[contenteditable="true"],
+.MuiInputBase-input {
+  user-select: text;
+  -webkit-user-select: text;
+}
+
 #__next {
   height: 100%;
   width: 100%;
@@ -74,6 +83,44 @@ body {
 /* --- RTL FIX FOR MUI OUTLINED INPUT --- */
 [dir="rtl"] .MuiOutlinedInput-root {
   direction: rtl !important;
+}
+
+html.android-webview [dir="rtl"] .MuiOutlinedInput-root {
+  direction: inherit !important;
+}
+
+html.android-webview [dir="rtl"] .MuiInputBase-input,
+html.android-webview [dir="rtl"] textarea,
+html.android-webview [dir="rtl"] [contenteditable="true"] {
+  direction: rtl !important;
+  text-align: right !important;
+  unicode-bidi: plaintext !important;
+}
+
+html.android-webview [dir="ltr"] .MuiInputBase-input,
+html.android-webview [dir="ltr"] textarea,
+html.android-webview [dir="ltr"] [contenteditable="true"] {
+  direction: ltr !important;
+  text-align: left !important;
+  unicode-bidi: plaintext !important;
+}
+
+html.android-webview [dir="rtl"] input[type="email"],
+html.android-webview [dir="rtl"] input[type="url"],
+html.android-webview [dir="rtl"] input[type="tel"],
+html.android-webview [dir="rtl"] input[type="number"],
+html.android-webview [dir="rtl"] input[type="password"],
+html.android-webview [dir="rtl"] input[inputmode="email"],
+html.android-webview [dir="rtl"] input[inputmode="numeric"],
+html.android-webview [dir="rtl"] input[inputmode="decimal"],
+html.android-webview [dir="rtl"] input[inputmode="tel"],
+html.android-webview [dir="rtl"] input[autocomplete="username"],
+html.android-webview [dir="rtl"] input[autocomplete="current-password"],
+html.android-webview [dir="rtl"] input[autocomplete="new-password"],
+html.android-webview [dir="rtl"] input[autocomplete="one-time-code"] {
+  direction: ltr !important;
+  text-align: left !important;
+  unicode-bidi: plaintext !important;
 }
 
 [dir="rtl"] .MuiOutlinedInput-notchedOutline {
