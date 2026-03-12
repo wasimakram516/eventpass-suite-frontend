@@ -201,6 +201,7 @@ export default function UploadPage() {
         files: [file],
         businessSlug: wallConfig.business.slug,
         moduleName: "MosaicWall",
+        wallSlug: slug,
         onProgress: (progressUploads) => {
           progressUploads.forEach((progressUpload, index) => {
             if (uploads[index]) {

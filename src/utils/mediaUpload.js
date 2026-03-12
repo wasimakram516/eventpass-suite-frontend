@@ -1,209 +1,186 @@
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import env from "@/config/env";
+import { requestUploadAuthorization } from "@/services/uploadService";
 
-// Validate AWS configuration
-const validateAWSConfig = () => {
-    if (!env.aws.region || !env.aws.accessKeyId || !env.aws.secretAccessKey || !env.aws.s3Bucket) {
-        throw new Error(
-            "AWS configuration is missing. Please set NEXT_PUBLIC_AWS_REGION, NEXT_PUBLIC_AWS_ACCESS_KEY_ID, NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY, and NEXT_PUBLIC_S3_BUCKET environment variables."
-        );
+const parseS3ErrorResponse = (responseText) => {
+  if (!responseText) {
+    return "";
+  }
+
+  try {
+    if (responseText.includes("<Error>")) {
+      const parser = new DOMParser();
+      const xmlDoc = parser.parseFromString(responseText, "text/xml");
+      const code = xmlDoc.querySelector("Code")?.textContent || "";
+      const message = xmlDoc.querySelector("Message")?.textContent || "";
+
+      if (code || message) {
+        return `${code}: ${message}`.trim();
+      }
     }
+  } catch (error) {
+    console.error("Error parsing upload response:", error);
+  }
+
+  return responseText;
 };
 
-// Initialize S3 client
-let s3Client = null;
+const getRequestErrorMessage = (error) =>
+  error?.response?.data?.error ||
+  error?.response?.data?.message ||
+  error?.message ||
+  "Failed to authorize upload.";
 
-const getS3Client = () => {
-    if (!s3Client) {
-        validateAWSConfig();
-        s3Client = new S3Client({
-            region: env.aws.region,
-            credentials: {
-                accessKeyId: env.aws.accessKeyId,
-                secretAccessKey: env.aws.secretAccessKey,
-            },
-        });
-    }
-    return s3Client;
+const getUploadErrorMessage = (status, responseText) => {
+  if (status === 403) {
+    return `Access denied (403). ${
+      responseText ||
+      "The temporary upload authorization was rejected. Check S3 CORS and signed URL expiry."
+    }`;
+  }
+
+  if (status === 400) {
+    return `Bad request (400). ${responseText || "Please check file format and size."}`;
+  }
+
+  return `Upload failed (${status})${responseText ? `: ${responseText}` : ""}`;
 };
 
-/**
- * Generate folder path for S3 storage
- */
-const getFolderPath = (businessSlug, moduleName, mimetype, originalname) => {
-    let folder = "others";
-    if (mimetype.startsWith("image/")) folder = "images";
-    else if (mimetype.startsWith("video/")) folder = "videos";
-    else if (mimetype === "application/pdf") folder = "pdfs";
+export const uploadMediaFiles = async ({
+  files,
+  businessSlug,
+  moduleName,
+  onProgress,
+  wallSlug,
+}) => {
+  if (!files || files.length === 0) return [];
 
-    const timestamp = Date.now();
-    const fileName = originalname.replace(/[^a-zA-Z0-9.-]/g, "_"); // Sanitize filename
-    return `${businessSlug}/${moduleName}/${folder}/${timestamp}_${fileName}`;
-};
+  const uploads = files.map((file) => ({
+    file,
+    label: file.name,
+    percent: 0,
+    loaded: 0,
+    total: file.size,
+    error: null,
+    url: null,
+  }));
 
-/**
- * Generate presigned URL for S3 upload
- */
-const getPresignedUrl = async (businessSlug, moduleName, fileName, fileType) => {
-    validateAWSConfig();
+  if (onProgress) {
+    onProgress([...uploads]);
+  }
 
-    const key = getFolderPath(businessSlug, moduleName, fileType, fileName);
-    const dispositionType = "inline";
-
-    const command = new PutObjectCommand({
-        Bucket: env.aws.s3Bucket,
-        Key: key,
-        ContentType: fileType,
-        ContentDisposition: `${dispositionType}; filename="${fileName}"`,
-    });
-
+  const uploadPromises = uploads.map(async (upload) => {
     try {
-        const client = getS3Client();
-        const uploadURL = await getSignedUrl(client, command, { expiresIn: 3600 });
-        const fileUrl = `${env.aws.cloudfrontUrl || ''}/${key}`;
-
-        return { uploadURL, key, fileUrl };
-    } catch (error) {
-        console.error("Error generating presigned URL:", error);
-        throw new Error(`Failed to generate presigned URL: ${error.message}`);
-    }
-};
-
-/**
- * Generic media upload utility for uploading files to S3 via presigned URLs
- */
-export const uploadMediaFiles = async ({ files, businessSlug, moduleName, onProgress }) => {
-    if (!files || files.length === 0) return [];
-
-    const uploads = files.map((file) => ({
-        file,
-        label: file.name,
-        percent: 0,
-        loaded: 0,
-        total: file.size,
-        error: null,
-        url: null,
-    }));
-
-
-    if (onProgress) {
-        onProgress([...uploads]);
-    }
-
-    const uploadPromises = uploads.map(async (upload) => {
-        try {
-
-            const { uploadURL, fileUrl } = await getPresignedUrl(
-                businessSlug,
-                moduleName,
-                upload.file.name,
-                upload.file.type
-            );
-
-            await new Promise((resolve, reject) => {
-                const xhr = new XMLHttpRequest();
-                xhr.open("PUT", uploadURL, true);
-
-                xhr.upload.onprogress = (event) => {
-                    if (event.lengthComputable) {
-                        upload.percent = Math.round((event.loaded / event.total) * 100);
-                        upload.loaded = event.loaded;
-                        upload.total = event.total;
-                        if (onProgress) {
-                            onProgress([...uploads]);
-                        }
-                    }
-                };
-
-                xhr.onload = () => {
-                    if (xhr.status === 200 || xhr.status === 204) {
-                        upload.percent = 100;
-                        upload.url = fileUrl;
-                        if (onProgress) {
-                            onProgress([...uploads]);
-                        }
-                        resolve();
-                    } else {
-                        let errorMessage = `Upload failed (${xhr.status})`;
-                        let responseText = "";
-                        try {
-                            responseText = xhr.responseText || "";
-
-                            if (responseText.includes("<Error>")) {
-                                const parser = new DOMParser();
-                                const xmlDoc = parser.parseFromString(responseText, "text/xml");
-                                const code = xmlDoc.querySelector("Code")?.textContent || "";
-                                const message = xmlDoc.querySelector("Message")?.textContent || "";
-                                if (code || message) {
-                                    responseText = `${code}: ${message}`;
-                                }
-                            }
-                        } catch (e) {
-                            console.error("Error parsing response:", e);
-                        }
-
-                        console.error("Upload error details:", {
-                            status: xhr.status,
-                            statusText: xhr.statusText,
-                            responseText: responseText,
-                            uploadURL: uploadURL.substring(0, 100) + "...",
-                        });
-
-                        if (xhr.status === 403) {
-                            errorMessage = `Access denied (403). ${responseText || "Please check:\n1. AWS credentials are set correctly\n2. IAM user has s3:PutObject permission\n3. S3 bucket CORS allows PUT from your origin\n4. Bucket policy allows uploads"}`;
-                        } else if (xhr.status === 400) {
-                            errorMessage = `Bad request (400). ${responseText || "Please check file format and size."}`;
-                        }
-                        upload.error = errorMessage;
-                        if (onProgress) {
-                            onProgress([...uploads]);
-                        }
-                        reject(new Error(errorMessage));
-                    }
-                };
-
-                xhr.onerror = () => {
-                    upload.error = "Network error during upload";
-                    if (onProgress) {
-                        onProgress([...uploads]);
-                    }
-                    reject(new Error("Network error during upload"));
-                };
-
-
-                xhr.setRequestHeader("Content-Type", upload.file.type);
-                xhr.setRequestHeader("Content-Disposition", `inline; filename="${upload.file.name}"`);
-                xhr.send(upload.file);
-            });
-
-            return fileUrl;
-        } catch (error) {
-            upload.error = error.message || "Upload failed";
-            if (onProgress) {
-                onProgress([...uploads]);
-            }
-            throw error;
-        }
-    });
-
-    const urls = await Promise.all(uploadPromises);
-    return urls;
-};
-
-/**
- * Upload a single file
- */
-export const uploadSingleFile = async ({ file, businessSlug, moduleName, onProgress }) => {
-    const [url] = await uploadMediaFiles({
-        files: [file],
+      const uploadAuthorization = await requestUploadAuthorization({
         businessSlug,
+        fileName: upload.file.name,
+        fileType: upload.file.type || "application/octet-stream",
         moduleName,
-        onProgress: (uploads) => {
-            if (uploads[0] && onProgress) {
-                onProgress(uploads[0].percent, uploads[0].loaded, uploads[0].total);
+        wallSlug,
+      });
+
+      const uploadUrl =
+        uploadAuthorization?.uploadUrl || uploadAuthorization?.uploadURL;
+
+      if (!uploadUrl || !uploadAuthorization?.fileUrl) {
+        throw new Error("Upload authorization response is incomplete.");
+      }
+
+      await new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("PUT", uploadUrl, true);
+
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            upload.percent = Math.round((event.loaded / event.total) * 100);
+            upload.loaded = event.loaded;
+            upload.total = event.total;
+
+            if (onProgress) {
+              onProgress([...uploads]);
             }
-        },
-    });
-    return url;
+          }
+        };
+
+        xhr.onload = () => {
+          if (xhr.status === 200 || xhr.status === 204) {
+            upload.percent = 100;
+            upload.url = uploadAuthorization.fileUrl;
+
+            if (onProgress) {
+              onProgress([...uploads]);
+            }
+
+            resolve();
+            return;
+          }
+
+          const responseText = parseS3ErrorResponse(xhr.responseText || "");
+          const errorMessage = getUploadErrorMessage(xhr.status, responseText);
+
+          console.error("Upload error details:", {
+            status: xhr.status,
+            statusText: xhr.statusText,
+            responseText,
+            uploadUrl: `${uploadUrl.substring(0, 100)}...`,
+          });
+
+          upload.error = errorMessage;
+          if (onProgress) {
+            onProgress([...uploads]);
+          }
+
+          reject(new Error(errorMessage));
+        };
+
+        xhr.onerror = () => {
+          upload.error = "Network error during upload";
+          if (onProgress) {
+            onProgress([...uploads]);
+          }
+          reject(new Error("Network error during upload"));
+        };
+
+        Object.entries(uploadAuthorization.headers || {}).forEach(
+          ([headerName, headerValue]) => {
+            if (headerValue) {
+              xhr.setRequestHeader(headerName, headerValue);
+            }
+          }
+        );
+
+        xhr.send(upload.file);
+      });
+
+      return uploadAuthorization.fileUrl;
+    } catch (error) {
+      upload.error = getRequestErrorMessage(error);
+      if (onProgress) {
+        onProgress([...uploads]);
+      }
+      throw new Error(upload.error);
+    }
+  });
+
+  return Promise.all(uploadPromises);
+};
+
+export const uploadSingleFile = async ({
+  file,
+  businessSlug,
+  moduleName,
+  onProgress,
+  wallSlug,
+}) => {
+  const [url] = await uploadMediaFiles({
+    files: [file],
+    businessSlug,
+    moduleName,
+    onProgress: (uploads) => {
+      if (uploads[0] && onProgress) {
+        onProgress(uploads[0].percent, uploads[0].loaded, uploads[0].total);
+      }
+    },
+    wallSlug,
+  });
+
+  return url;
 };
