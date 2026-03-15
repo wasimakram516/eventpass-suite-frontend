@@ -102,8 +102,8 @@ const segmentMap = {
     label: "StageQ",
     icon: <ICONS.forum fontSize="small" sx={{ mr: 0.5 }} />,
   },
-  mosaicwall: {
-    label: "MosaicWall",
+  memorywall: {
+    label: "MemoryWall",
     icon: <ICONS.image fontSize="small" sx={{ mr: 0.5 }} />,
   },
   eventreg: {

@@ -20,7 +20,7 @@ import {
 import {
   getDisplayMedia,
   deleteDisplayMedia,
-} from "@/services/mosaicwall/displayMediaService";
+} from "@/services/memorywall/displayMediaService";
 import { useAuth } from "@/contexts/AuthContext";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
@@ -28,7 +28,7 @@ import { formatDateTimeWithLocale } from "@/utils/dateUtils";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import NoDataAvailable from "@/components/NoDataAvailable";
-import useMediaSocket from "@/hooks/modules/mosaicwall/useMosaicWallMediaSocket";
+import useMediaSocket from "@/hooks/modules/memorywall/useMemoryWallMediaSocket";
 
 const translations = {
   en: {
@@ -40,7 +40,7 @@ const translations = {
     noMediaAvailable: "No media available to display.",
     uploadedVia: "Uploaded via",
     cardWall: "Card Wall",
-    mosaicWall: "Mosaic Wall",
+    memoryWall: "Memory Wall",
     mediaCount: "{total} media uploads",
     noMessage: "No message provided",
     viewDetails: "View Details",
@@ -57,7 +57,7 @@ const translations = {
     noMediaAvailable: "لا توجد وسائط متاحة للعرض.",
     uploadedVia: "تم التحميل عبر",
     cardWall: "جدار البطاقات",
-    mosaicWall: "جدار الفسيفساء",
+    memoryWall: "جدار الذاكرة",
     noMessage: "لم يتم تقديم رسالة",
     mediaCount: "{total} من الوسائط المرفوعة",
     viewDetails: "عرض التفاصيل",
@@ -210,7 +210,7 @@ const CMSUploadsPage = () => {
           >
             <Typography variant="subtitle2" color="grey.400" gutterBottom>
               {t.uploadedVia}{" "}
-              {media.wall.mode === "card" ? t.cardWall : t.mosaicWall}
+              {media.wall.mode === "card" ? t.cardWall : t.memoryWall}
             </Typography>
             <Typography variant="h5" fontWeight="bold" gutterBottom>
               {media.wall.name}

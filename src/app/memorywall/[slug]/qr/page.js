@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { Box, Container, Typography } from "@mui/material";
 import { QRCodeCanvas } from "qrcode.react";
-import { getWallConfigBySlug } from "@/services/mosaicwall/wallConfigService";
+import { getWallConfigBySlug } from "@/services/memorywall/wallConfigService";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import LanguageSelector from "@/components/LanguageSelector";
 import LoadingState from "@/components/LoadingState";
@@ -35,7 +35,7 @@ export default function PublicQrPage() {
         if (response && !response.erro) {
           if (typeof window !== "undefined") {
             setCapturePageUrl(
-              `${window.location.origin}/mosaicwall/${slug}/capture`
+              `${window.location.origin}/memorywall/${slug}/capture`
             );
           }
         }

@@ -6,7 +6,7 @@ import { getModuleIcon } from "@/utils/iconMapper";
 
 const translations = {
   en: {
-    title: "Welcome to Mosaic Wall",
+    title: "Welcome to Memory Wall",
     subtitle:
       "Create interactive photo walls for events and gatherings.",
     description:
@@ -14,7 +14,7 @@ const translations = {
     adminLogin: "Admin Login",
   },
   ar: {
-    title: "مرحبًا بكم في Mosaic Wall",
+    title: "مرحبًا بكم في Memory Wall",
     subtitle: "أنشئ جدران صور تفاعلية للفعاليات والتجمعات.",
     description:
       "تتيح هذه المنصة إنشاء تكوينات جدران تفاعلية بوضع الفسيفساء أو البطاقات. أنشئ وامسح رموز QR بسهولة للوصول إلى صفحة التقاط الصور، حيث يمكن للمستخدمين النقر وإرسال صور من أجهزتهم الخاصة. تظهر جميع الصور المرسلة مباشرةً على فسيفساء الشاشة الكبيرة.",
@@ -22,7 +22,7 @@ const translations = {
   },
 };
 
-export default function MosaicWallPage() {
+export default function MemoryWallPage() {
   const { t } = useI18nLayout(translations);
 
   return (

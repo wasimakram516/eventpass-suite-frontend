@@ -365,7 +365,7 @@ export default function LogsPage() {
     if (m === "EventDuel" && t === "Game") return "game-eventduel";
     if (m === "EventDuel" && t === "Question") return "pvpquestion";
     if (m === "StageQ" && t === "Question") return "question";
-    if (m === "MosaicWall" || t === "MosaicWall") return "wallconfig";
+    if (m === "MemoryWall" || t === "MemoryWall") return "wallconfig";
     if (m === "VoteCast" && t === "Poll") return "poll";
     if ((m === "User" || m === "Auth") && t === "User") return "user";
     if (t === "User") return "user";
@@ -514,8 +514,8 @@ export default function LogsPage() {
       return;
     }
 
-    if (module === "MosaicWall" || itemType === "MosaicWall") {
-      router.push(`/cms/modules/mosaicwall/walls${searchQuery}`);
+    if (module === "MemoryWall" || itemType === "MemoryWall") {
+      router.push(`/cms/modules/memorywall/walls${searchQuery}`);
       return;
     }
 

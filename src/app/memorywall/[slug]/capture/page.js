@@ -12,8 +12,8 @@ import {
   Chip,
   IconButton,
 } from "@mui/material";
-import { createDisplayMedia } from "@/services/mosaicwall/displayMediaService";
-import { getWallConfigBySlug } from "@/services/mosaicwall/wallConfigService";
+import { createDisplayMedia } from "@/services/memorywall/displayMediaService";
+import { getWallConfigBySlug } from "@/services/memorywall/wallConfigService";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import LoadingState from "@/components/LoadingState";
@@ -136,12 +136,23 @@ export default function UploadPage() {
       const canvas = canvasRef.current;
       const context = canvas.getContext("2d");
       const isLandscape = window.innerWidth > window.innerHeight;
+      const isFrontCamera = true; // Since facingMode is hardcoded to "user"
 
       if (isLandscape) {
         // Normal landscape capture
         canvas.width = video.videoWidth;
         canvas.height = video.videoHeight;
-        context.drawImage(video, 0, 0);
+        
+        if (isFrontCamera) {
+          // Flip horizontally for front camera to match what user expects
+          context.save();
+          context.scale(-1, 1);
+          context.drawImage(video, -video.videoWidth, 0);
+          context.restore();
+        } else {
+          // Back camera - no flip needed
+          context.drawImage(video, 0, 0);
+        }
       } else {
         // Portrait mode: rotate canvas
         canvas.width = video.videoHeight;
@@ -149,7 +160,15 @@ export default function UploadPage() {
         context.save();
         context.translate(canvas.width / 2, canvas.height / 2);
         context.rotate((90 * Math.PI) / 180);
-        context.drawImage(video, -video.videoWidth / 2, -video.videoHeight / 2);
+        
+        if (isFrontCamera) {
+          // Flip horizontally for front camera
+          context.scale(-1, 1);
+          context.drawImage(video, -video.videoWidth / 2, -video.videoHeight / 2);
+        } else {
+          // Back camera - no flip needed
+          context.drawImage(video, -video.videoWidth / 2, -video.videoHeight / 2);
+        }
         context.restore();
       }
 
@@ -200,7 +219,7 @@ export default function UploadPage() {
       const urls = await uploadMediaFiles({
         files: [file],
         businessSlug: wallConfig.business.slug,
-        moduleName: "MosaicWall",
+        moduleName: "MemoryWall",
         wallSlug: slug,
         onProgress: (progressUploads) => {
           progressUploads.forEach((progressUpload, index) => {
@@ -340,6 +359,7 @@ export default function UploadPage() {
                 width: "100%",
                 height: "100%",
                 objectFit: "cover",
+                transform: "scaleX(-1)", // Mirror front camera for natural preview
               }}
             />
 

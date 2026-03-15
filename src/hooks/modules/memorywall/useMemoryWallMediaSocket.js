@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import useSocket from "@/utils/useSocket";
 
-const useMosaicWallMediaSocket = ({ wallSlug, onMediaUpdate }) => {
+const useMemoryWallMediaSocket = ({ wallSlug, onMediaUpdate }) => {
   const [registeredSlug, setRegisteredSlug] = useState(null);
 
   const { socket, connected, connectionError } = useSocket({
@@ -25,4 +25,4 @@ const useMosaicWallMediaSocket = ({ wallSlug, onMediaUpdate }) => {
   };
 };
 
-export default useMosaicWallMediaSocket;
+export default useMemoryWallMediaSocket;

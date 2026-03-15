@@ -7,22 +7,13 @@ import {
   deleteWallConfig,
   getWallConfigBySlug,
   getWallConfigs,
-} from "@/services/mosaicwall/wallConfigService";
+} from "@/services/memorywall/wallConfigService";
 import LoadingState from "@/components/LoadingState";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import {
   Box,
   Button,
   Container,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
-  FormControl,
-  InputLabel,
-  MenuItem,
-  Select,
-  TextField,
   Typography,
   IconButton,
   Grid,
@@ -33,9 +24,12 @@ import {
   Divider,
   Stack,
   Tooltip,
+  FormControlLabel,
+  Switch,
 } from "@mui/material";
 import ShareLinkModal from "@/components/modals/ShareLinkModal";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
+import WallConfigModal from "@/components/modals/WallConfigModal";
 import { formatDate } from "@/utils/dateUtils";
 import { getAllBusinesses } from "@/services/businessService";
 import { useAuth } from "@/contexts/AuthContext";
@@ -62,7 +56,13 @@ const translations = {
     slug: "Slug",
     mode: "Mode",
     mosaic: "mosaic",
-    card: "card",
+    card: "cards",
+    bubble: "bubble",
+    uploadBackground: "Upload Background",
+    uploadLogo: "Upload Logo",
+    enableRandomSizes: "Enable Random Sizes",
+    minSize: "Min Size (px)",
+    maxSize: "Max Size (px)",
     cancel: "Cancel",
     update: "Update",
     create: "Create",
@@ -98,6 +98,12 @@ const translations = {
     mode: "النمط",
     mosaic: "mosaic",
     card: "card",
+    bubble: "bubble",
+    uploadBackground: "رفع خلفية",
+    uploadLogo: "رفع شعار",
+    enableRandomSizes: "تفعيل الأحجام العشوائية",
+    minSize: "الحد الأدنى (بكسل)",
+    maxSize: "الحد الأقصى (بكسل)",
     cancel: "إلغاء",
     update: "تحديث",
     create: "إنشاء",
@@ -137,12 +143,6 @@ export default function WallConfigsPage() {
   const [businesses, setBusinesses] = useState([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { t, dir, align, language } = useI18nLayout(translations);
-  const [formData, setFormData] = useState({
-    name: "",
-    slug: "",
-    mode: "mosaic",
-    businessId: "",
-  });
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
@@ -207,53 +207,43 @@ export default function WallConfigsPage() {
     setDrawerOpen(false);
   };
 
-  const selectedBusinessObject = businesses.find(
+  const selectedBusinessObject = businesses?.find?.(
     (business) => business.slug === selectedBusiness
   );
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-
-    if (name === "name" && !currentConfig) {
-      const slug = value
-        .toLowerCase()
-        .replace(/\s+/g, "-")
-        .replace(/[^\w-]+/g, "");
-      setFormData((prev) => ({
-        ...prev,
-        slug,
-      }));
-    }
-  };
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const payload = {
-      ...formData,
-      businessId: selectedBusinessObject?._id || null,
-    };
-    if (currentConfig) {
-      await updateWallConfig(currentConfig._id, payload);
-    } else {
-      console.log("In walls component:", payload);
-      await createWallConfig(payload);
-    }
-    setIsModalOpen(false);
-    fetchWallConfigs(selectedBusiness);
+  const handleOpenCreate = () => {
+    setCurrentConfig(null);
+    setIsModalOpen(true);
   };
 
   const handleEdit = (config) => {
     setCurrentConfig(config);
-    setFormData({
-      name: config.name,
-      slug: config.slug,
-      mode: config.mode,
-      businessId: config.business?._id || "",
-    });
     setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setCurrentConfig(null);
+  };
+
+  const handleSubmitWall = async (formData, isEdit) => {
+    const payload = {
+      ...formData,
+      businessId: selectedBusinessObject?._id || null,
+    };
+
+    try {
+      const response = isEdit
+        ? await updateWallConfig(currentConfig._id, payload)
+        : await createWallConfig(payload);
+
+      if (!response.error) {
+        fetchWallConfigs(selectedBusiness);
+        handleCloseModal();
+      }
+    } catch (error) {
+      console.error('Submit error:', error);
+    }
   };
 
   const confirmDelete = async () => {
@@ -273,8 +263,8 @@ export default function WallConfigsPage() {
   let uploadUrl = "";
   let qrCodeUrl = "";
   if (typeof window !== "undefined" && currentWallConfig) {
-    uploadUrl = `${window.location.origin}/mosaicwall/${currentSlug}/qr`;
-    qrCodeUrl = `${window.location.origin}/mosaicwall/${currentSlug}/upload`;
+    uploadUrl = `${window.location.origin}/memorywall/${currentSlug}/qr`;
+    qrCodeUrl = `${window.location.origin}/memorywall/${currentSlug}/upload`;
   }
   return (
     <Container dir={dir} maxWidth="lg">
@@ -319,15 +309,7 @@ export default function WallConfigsPage() {
             <Button
               variant="contained"
               startIcon={<ICONS.add />}
-              onClick={() => {
-                setCurrentConfig(null);
-                setFormData({
-                  name: "",
-                  slug: "",
-                  mode: "mosaic",
-                });
-                setIsModalOpen(true);
-              }}
+              onClick={handleOpenCreate}
               sx={getStartIconSpacing(dir)}
             >
               {t.newWallConfig}
@@ -438,7 +420,7 @@ export default function WallConfigsPage() {
                         size="small"
                         onClick={() =>
                           window.open(
-                            `/mosaicwall/${config.slug}/big-screen`,
+                            `/memorywall/${config.slug}/big-screen`,
                             "_blank"
                           )
                         }
@@ -454,7 +436,7 @@ export default function WallConfigsPage() {
                         size="small"
                         onClick={() =>
                           router.replace(
-                            `/cms/modules/mosaicwall/walls/${config.slug}/uploads`)
+                            `/cms/modules/memorywall/walls/${config.slug}/uploads`)
                         }
                         aria-label="View Uploads"
                       >
@@ -498,76 +480,17 @@ export default function WallConfigsPage() {
           onSelect={handleBusinessSelect}
         />
       )}
-      {/* Create/Edit Modal */}
-      <Dialog
+      {/* Wall Config Modal */}
+      <WallConfigModal
         open={isModalOpen}
-        maxWidth="sm"
-        fullWidth
-        onClose={() => setIsModalOpen(false)}
-      >
-        <DialogTitle>
-          {currentConfig ? t.editWallConfig : t.createNewWallConfig}
-        </DialogTitle>
-        <form onSubmit={handleSubmit}>
-          <DialogContent>
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 2,
-                width: "100%",
-              }}
-            >
-              <TextField
-                label={t.name}
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                fullWidth
-                required
-              />
-              <TextField
-                label={t.slug}
-                name="slug"
-                value={formData.slug}
-                onChange={handleInputChange}
-                fullWidth
-                required
-              />
-              <FormControl fullWidth>
-                <InputLabel>{t.mode}</InputLabel>
-                <Select
-                  name="mode"
-                  value={formData.mode}
-                  label={t.mode}
-                  onChange={handleInputChange}
-                  required
-                >
-                  <MenuItem value="mosaic">{t.mosaic}</MenuItem>
-                  <MenuItem value="card">{t.card}</MenuItem>
-                </Select>
-              </FormControl>
-            </Box>
-          </DialogContent>
-          <DialogActions>
-            <Button
-              onClick={() => setIsModalOpen(false)}
-              startIcon={<ICONS.close fontSize="small" />}
-              sx={getStartIconSpacing(dir)}
-            >
-              {t.cancel}
-            </Button>
-            <Button
-              type="submit"
-              variant="contained"
-              startIcon={<ICONS.save fontSize="small" />}
-              sx={getStartIconSpacing(dir)}
-            >
-              {currentConfig ? t.update : t.create}
-            </Button>
-          </DialogActions>
-        </form>
-      </Dialog>
+        onClose={handleCloseModal}
+        editMode={!!currentConfig}
+        initialValues={currentConfig || {}}
+        selectedWallConfig={currentConfig}
+        onSubmit={handleSubmitWall}
+        selectedBusiness={selectedBusiness}
+        wallConfigId={currentConfig?._id}
+      />
 
       {/* QR Modal */}
       <ShareLinkModal
