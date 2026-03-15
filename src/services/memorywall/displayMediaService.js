@@ -3,13 +3,13 @@ import withApiHandler from "@/utils/withApiHandler";
 
 // Get all display media
 export const getDisplayMedia = withApiHandler(async () => {
-  const response = await api.get("/mosaicwall/display-media");
+  const response = await api.get("/memorywall/display-media");
   return response.data;
 });
 
 // Get media item by ID
 export const getMediaById = withApiHandler(async (id) => {
-  const response = await api.get(`/mosaicwall/display-media/${id}`);
+  const response = await api.get(`/memorywall/display-media/${id}`);
   return response.data;
 });
 
@@ -22,7 +22,7 @@ export const createDisplayMedia = withApiHandler(
     };
 
     const response = await api.post(
-      `/mosaicwall/display-media/upload/${slug}`,
+      `/memorywall/display-media/upload/${slug}`,
       payload
     );
 
@@ -38,7 +38,7 @@ export const updateDisplayMedia = withApiHandler(
     if (imageUrl) payload.imageUrl = imageUrl;
     if (text !== undefined) payload.text = text;
 
-    const response = await api.put(`/mosaicwall/display-media/${id}`, payload);
+    const response = await api.put(`/memorywall/display-media/${id}`, payload);
 
     return response.data;
   },
@@ -48,7 +48,7 @@ export const updateDisplayMedia = withApiHandler(
 // Delete media by ID
 export const deleteDisplayMedia = withApiHandler(
   async (id) => {
-    const response = await api.delete(`/mosaicwall/display-media/${id}`);
+    const response = await api.delete(`/memorywall/display-media/${id}`);
     return response.data;
   },
   { showSuccess: true }
