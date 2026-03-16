@@ -321,7 +321,7 @@ export default function LoginPage() {
                   onChange={handleChange}
                   error={!!errors.email}
                   helperText={errors.email}
-                  inputProps={{ dir }}
+                  inputProps={{ dir: "ltr" }}
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
@@ -339,7 +339,7 @@ export default function LoginPage() {
                   onChange={handleChange}
                   error={!!errors.password}
                   helperText={errors.password}
-                  inputProps={{ dir }}
+                  inputProps={{ dir: "ltr" }}
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
