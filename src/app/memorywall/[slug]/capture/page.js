@@ -30,6 +30,8 @@ const translations = {
     startCamera: "Start Camera",
     accessingCamera: "Accessing Camera...",
     stopCamera: "Stop Camera",
+    switchCamera: "Switch Camera",
+    singleCameraOnly: "Only one camera is available on this device.",
     preview: "Preview",
     addMessage: "Add a Message",
     messagePlaceholder: "Type your message (shown on the big screen)...",
@@ -50,6 +52,8 @@ const translations = {
     startCamera: "تشغيل الكاميرا",
     accessingCamera: "الوصول إلى الكاميرا...",
     stopCamera: "إيقاف الكاميرا",
+    switchCamera: "تبديل الكاميرا",
+    singleCameraOnly: "تتوفر كاميرا واحدة فقط على هذا الجهاز.",
     preview: "معاينة",
     addMessage: "أضف رسالة",
     messagePlaceholder: "اكتب رسالتك (ستظهر على الشاشة الكبيرة)...",
@@ -79,6 +83,7 @@ export default function UploadPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [cameraOn, setCameraOn] = useState(false);
+  const [cameraFacingMode, setCameraFacingMode] = useState("user");
   const [mode, setMode] = useState(null);
   const [wallConfig, setWallConfig] = useState(null);
   const [showUploadProgress, setShowUploadProgress] = useState(false);
@@ -103,23 +108,53 @@ export default function UploadPage() {
     };
   }, [stream]);
 
-  const startCamera = async () => {
+  const startCamera = async (facingMode = cameraFacingMode) => {
     setIsLoading(true);
-    const mediaStream = await navigator.mediaDevices.getUserMedia({
-      video: {
-        facingMode: "user",
-        width: { ideal: 1280 },
-        height: { ideal: 720 },
-      },
-    });
-    setStream(mediaStream);
-    setCameraOn(true);
-    setTimeout(() => {
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
+    try {
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop());
       }
-    }, 100);
-    setIsLoading(false);
+
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode,
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
+      });
+
+      const [videoTrack] = mediaStream.getVideoTracks();
+      const detectedFacingMode =
+        videoTrack?.getSettings?.().facingMode || facingMode;
+
+      setStream(mediaStream);
+      setCameraFacingMode(detectedFacingMode);
+      setCameraOn(true);
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = mediaStream;
+        }
+      }, 100);
+
+      return detectedFacingMode;
+    } catch (error) {
+      console.error("Failed to access camera:", error);
+      showMessage("Unable to access camera", "error");
+      setCameraOn(false);
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const toggleCamera = async () => {
+    const currentFacingMode = cameraFacingMode;
+    const nextFacingMode = currentFacingMode === "user" ? "environment" : "user";
+    const activeFacingMode = await startCamera(nextFacingMode);
+
+    if (activeFacingMode && activeFacingMode === currentFacingMode) {
+      showMessage(t.singleCameraOnly, "info");
+    }
   };
 
   const stopCamera = () => {
@@ -135,41 +170,21 @@ export default function UploadPage() {
       const video = videoRef.current;
       const canvas = canvasRef.current;
       const context = canvas.getContext("2d");
-      const isLandscape = window.innerWidth > window.innerHeight;
-      const isFrontCamera = true; // Since facingMode is hardcoded to "user"
+      if (!context) return;
 
-      if (isLandscape) {
-        // Normal landscape capture
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        
-        if (isFrontCamera) {
-          // Flip horizontally for front camera to match what user expects
-          context.save();
-          context.scale(-1, 1);
-          context.drawImage(video, -video.videoWidth, 0);
-          context.restore();
-        } else {
-          // Back camera - no flip needed
-          context.drawImage(video, 0, 0);
-        }
-      } else {
-        // Portrait mode: rotate canvas
-        canvas.width = video.videoHeight;
-        canvas.height = video.videoWidth;
+      const isFrontCamera = cameraFacingMode === "user";
+
+      // Preserve native orientation from the video stream.
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      if (isFrontCamera) {
         context.save();
-        context.translate(canvas.width / 2, canvas.height / 2);
-        context.rotate((90 * Math.PI) / 180);
-        
-        if (isFrontCamera) {
-          // Flip horizontally for front camera
-          context.scale(-1, 1);
-          context.drawImage(video, -video.videoWidth / 2, -video.videoHeight / 2);
-        } else {
-          // Back camera - no flip needed
-          context.drawImage(video, -video.videoWidth / 2, -video.videoHeight / 2);
-        }
+        context.scale(-1, 1);
+        context.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
         context.restore();
+      } else {
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
       }
 
       canvas.toBlob(
@@ -349,6 +364,26 @@ export default function UploadPage() {
               <ICONS.close fontSize="large" />
             </IconButton>
 
+            {/* Camera Flip Button */}
+            <Button
+              variant="contained"
+              size="small"
+              onClick={toggleCamera}
+              disabled={isLoading}
+              startIcon={<ICONS.cameraSwitch />}
+              sx={{
+                position: "absolute",
+                top: 16,
+                left: 16,
+                zIndex: 10,
+                bgcolor: "rgba(0,0,0,0.6)",
+                color: "white",
+                "&:hover": { bgcolor: "rgba(0,0,0,0.8)" },
+              }}
+            >
+              {t.switchCamera}
+            </Button>
+
             {/* Video Feed */}
             <video
               ref={videoRef}
@@ -359,7 +394,7 @@ export default function UploadPage() {
                 width: "100%",
                 height: "100%",
                 objectFit: "cover",
-                transform: "scaleX(-1)", // Mirror front camera for natural preview
+                transform: cameraFacingMode === "user" ? "scaleX(-1)" : "none",
               }}
             />
 

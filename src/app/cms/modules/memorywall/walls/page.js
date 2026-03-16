@@ -264,7 +264,7 @@ export default function WallConfigsPage() {
   let qrCodeUrl = "";
   if (typeof window !== "undefined" && currentWallConfig) {
     uploadUrl = `${window.location.origin}/memorywall/${currentSlug}/qr`;
-    qrCodeUrl = `${window.location.origin}/memorywall/${currentSlug}/upload`;
+    qrCodeUrl = `${window.location.origin}/memorywall/${currentSlug}/capture`;
   }
   return (
     <Container dir={dir} maxWidth="lg">

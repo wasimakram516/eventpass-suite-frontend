@@ -35,9 +35,19 @@ function FloatingBubble({ item, isNew, version, position, size }) {
         isNew
           ? {
               scale: { type: "spring", stiffness: 200, damping: 15 },
-              opacity: { duration: 0.8 },
-              x: { duration: 0 },
-              y: { duration: 0 },
+              opacity: { duration: 0.35 },
+              x: {
+                duration: 8,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: 0.15 + floatDelay,
+              },
+              y: {
+                duration: 6,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: 0.15 + floatDelay,
+              },
             }
           : {
               x: { duration: 8, repeat: Infinity, ease: "easeInOut", delay: floatDelay },
@@ -103,6 +113,7 @@ export default function BubbleGrid({
   const [animatingId, setAnimatingId] = useState(null);
   const prevRef = useRef([]);
   const initRef = useRef(false);
+  const animTimerRef = useRef(null);
 
   const getRandomSize = useCallback(() => {
     if (randomSizes && minSize != null && maxSize != null) {
@@ -166,7 +177,14 @@ export default function BubbleGrid({
       });
 
       prevRef.current = media;
-      setTimeout(() => setAnimatingId(null), 1000);
+
+      if (animTimerRef.current) {
+        clearTimeout(animTimerRef.current);
+      }
+
+      animTimerRef.current = setTimeout(() => {
+        setAnimatingId(null);
+      }, 350);
     }
 
     // Deletion
@@ -182,6 +200,14 @@ export default function BubbleGrid({
       prevRef.current = media;
     }
   }, [media, getRandomSize, generateRandomPosition]);
+
+  useEffect(() => {
+    return () => {
+      if (animTimerRef.current) {
+        clearTimeout(animTimerRef.current);
+      }
+    };
+  }, []);
 
   const renderBackground = () => {
     if (background?.type === "video" && background.value) {
