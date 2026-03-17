@@ -43,6 +43,7 @@ const translations = {
     memoryWall: "Memory Wall",
     mediaCount: "{total} media uploads",
     noMessage: "No message provided",
+    noSignature: "No signature provided",
     viewDetails: "View Details",
     delete: "Delete",
     deleteTitle: "Delete Media?",
@@ -59,6 +60,7 @@ const translations = {
     cardWall: "جدار البطاقات",
     memoryWall: "جدار الذاكرة",
     noMessage: "لم يتم تقديم رسالة",
+    noSignature: "لم يتم تقديم توقيع",
     mediaCount: "{total} من الوسائط المرفوعة",
     viewDetails: "عرض التفاصيل",
     delete: "حذف",
@@ -215,15 +217,41 @@ const CMSUploadsPage = () => {
             <Typography variant="h5" fontWeight="bold" gutterBottom>
               {media.wall.name}
             </Typography>
-            {media.wall.mode === "card" && media.text && (
-              <Typography
-                variant="body1"
-                color="grey.200"
-                sx={{ mt: 1, whiteSpace: "pre-wrap", maxWidth: "250px" }}
-              >
-                {media.text}
-              </Typography>
-            )}
+            {media.wall.mode === "card" &&
+              (media.wall?.cardSettings?.inputType === "signature" ? (
+                media.signatureUrl ? (
+                  <Box
+                    component="img"
+                    src={media.signatureUrl}
+                    alt="Signature"
+                    sx={{ mt: 1, width: 120, height: 120, objectFit: "contain", bgcolor: "#fff", borderRadius: 1, p: 0.5 }}
+                  />
+                ) : (
+                  <Typography
+                    variant="body2"
+                    color="grey.300"
+                    sx={{ mt: 1, fontStyle: "italic" }}
+                  >
+                    {t.noSignature}
+                  </Typography>
+                )
+              ) : media.text ? (
+                <Typography
+                  variant="body1"
+                  color="grey.200"
+                  sx={{ mt: 1, whiteSpace: "pre-wrap", maxWidth: "250px" }}
+                >
+                  {media.text}
+                </Typography>
+              ) : (
+                <Typography
+                  variant="body2"
+                  color="grey.300"
+                  sx={{ mt: 1, fontStyle: "italic" }}
+                >
+                  {t.noMessage}
+                </Typography>
+              ))}
             <Box display="flex" alignItems="center" gap={1} mb={1}>
               <ICONS.time fontSize="small" color="action" />
               <Typography variant="caption" color="text.secondary">
@@ -295,15 +323,33 @@ const CMSUploadsPage = () => {
                   <Typography variant="h6" fontWeight="bold">
                     {item.wall.name}
                   </Typography>
-                  {item.wall.mode === "card" && (
-                    <Typography
-                      variant="body2"
-                      color="text.secondary"
-                      sx={{ mt: 1 }}
-                    >
-                      {item.text || <em>{t.noMessage}</em>}
-                    </Typography>
-                  )}
+                  {item.wall.mode === "card" &&
+                    (item.wall?.cardSettings?.inputType === "signature" ? (
+                      item.signatureUrl ? (
+                        <Box
+                          component="img"
+                          src={item.signatureUrl}
+                          alt="Signature"
+                          sx={{ mt: 1, width: 96, height: 96, objectFit: "contain", bgcolor: "#fafafa", borderRadius: 1, border: "1px solid #eee", p: 0.5 }}
+                        />
+                      ) : (
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{ mt: 1 }}
+                        >
+                          <em>{t.noSignature}</em>
+                        </Typography>
+                      )
+                    ) : (
+                      <Typography
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{ mt: 1 }}
+                      >
+                        {item.text || <em>{t.noMessage}</em>}
+                      </Typography>
+                    ))}
                   <Box display="flex" alignItems="center" gap={1} mb={1}>
                     <ICONS.time fontSize="small" color="action" />
                     <Typography variant="caption" color="text.secondary">

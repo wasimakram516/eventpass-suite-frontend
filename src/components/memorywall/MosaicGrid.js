@@ -1,16 +1,10 @@
 "use client";
 
-import React, { useEffect, useRef, useState, useMemo } from "react";
+import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
 import { Box } from "@mui/material";
 import { motion } from "framer-motion";
 import { Shift } from "ambient-cbg";
 
-const COLS = 15;
-const ROWS_PER_BATCH = 10;
-
-function randomFr(min = 0.5, max = 2.0) {
-  return (min + Math.random() * (max - min)).toFixed(2);
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // A single cell in the mosaic grid
@@ -35,9 +29,9 @@ function MosaicCell({ item, isNew, version }) {
           initial={
             isNew
               ? { scale: 8, opacity: 0 }
-              : { scale: 1, opacity: 0.85 }
+              : { scale: 1, opacity: 1 }
           }
-          animate={{ scale: 1, opacity: 0.85 }}
+          animate={{ scale: 1, opacity: 1 }}
           transition={
             isNew
               ? { type: "spring", stiffness: 180, damping: 20 }
@@ -50,6 +44,7 @@ function MosaicCell({ item, isNew, version }) {
             position: "absolute",
             top: 0,
             left: 0,
+            zIndex: 1,
             willChange: "transform, opacity",
           }}
         />
@@ -61,27 +56,40 @@ function MosaicCell({ item, isNew, version }) {
 // ─────────────────────────────────────────────────────────────────────────────
 // The MosaicGrid itself
 // ─────────────────────────────────────────────────────────────────────────────
-export default function MosaicGrid({ media, background, backgroundLogo, randomSizes }) {
+export default function MosaicGrid({ media, background, backgroundLogo, rows = 10, cols = 15 }) {
+  const safeRows = useMemo(() => Math.max(1, Math.trunc(Number(rows) || 10)), [rows]);
+  const safeCols = useMemo(() => Math.max(1, Math.trunc(Number(cols) || 15)), [cols]);
+  const totalBoxes = safeRows * safeCols;
+
   const [gridState, setGridState] = useState([]);
   const [boxVersions, setBoxVersions] = useState([]);
   const [animatingIndex, setAnimatingIndex] = useState(null);
-  const prevRef = useRef([]);
-  const initRef = useRef(false);
+  const prevIdsRef = useRef([]);
+  const insertionOrderRef = useRef([]);
+  const timerRef = useRef(null);
 
-  const totalBoxes = Math.max(COLS * ROWS_PER_BATCH, media.length + COLS * 2);
-  const currentRows = Math.ceil(totalBoxes / COLS);
+  const rebuildGridFromMedia = useCallback((sourceMedia) => {
+    const latest = sourceMedia.slice(0, totalBoxes);
+    const nextGrid = Array(totalBoxes).fill(null);
+    const nextVersions = Array(totalBoxes).fill(0);
+    const used = new Set();
+    const insertionOrder = [];
 
-  const colTemplate = useMemo(() => {
-    if (!randomSizes?.enabled) return `repeat(${COLS}, 1fr)`;
-    const frValues = Array.from({ length: COLS }, () => `${randomFr(0.4, 2.2)}fr`);
-    return frValues.join(" ");
-  }, [randomSizes?.enabled, COLS]);
+    latest.forEach((item) => {
+      let idx = Math.floor(Math.random() * totalBoxes);
+      while (used.has(idx) && used.size < totalBoxes) {
+        idx = Math.floor(Math.random() * totalBoxes);
+      }
+      used.add(idx);
+      nextGrid[idx] = item;
+      nextVersions[idx] = 1;
+      insertionOrder.push(idx);
+    });
 
-  const rowTemplate = useMemo(() => {
-    if (!randomSizes?.enabled) return `repeat(${currentRows}, 1fr)`;
-    const frValues = Array.from({ length: currentRows }, () => `${randomFr(0.4, 2.2)}fr`);
-    return frValues.join(" ");
-  }, [randomSizes?.enabled, currentRows]);
+    setGridState(nextGrid);
+    setBoxVersions(nextVersions);
+    insertionOrderRef.current = insertionOrder;
+  }, [totalBoxes]);
 
   const renderBackground = () => {
     if (background?.type === "video" && background.value) {
@@ -110,22 +118,15 @@ export default function MosaicGrid({ media, background, backgroundLogo, randomSi
 
   const renderBackgroundLogo = () => {
     if (!backgroundLogo?.enabled || !backgroundLogo?.imageUrl) return null;
-    const positionStyles = {
-      center:         { top: "50%", left: "50%", transform: "translate(-50%, -50%)" },
-      "top-left":     { top: "5%", left: "5%" },
-      "top-right":    { top: "5%", right: "5%" },
-      "bottom-left":  { bottom: "5%", left: "5%" },
-      "bottom-right": { bottom: "5%", right: "5%" },
-    };
     const isVideo = /\.(mp4|webm|ogg|mov|avi)(\?|$)/i.test(backgroundLogo.imageUrl);
     return (
       <Box
         sx={{
   position: "absolute",
   inset: 0,
-  zIndex: 5,
+  zIndex: 1,
   pointerEvents: "none",
-  opacity: 0.2,
+  opacity: 0.5,
 }}
       >
         {isVideo ? (
@@ -140,54 +141,74 @@ export default function MosaicGrid({ media, background, backgroundLogo, randomSi
   };
 
   useEffect(() => {
-    const newItems = media.filter((m) => !prevRef.current.find((old) => old._id === m._id));
-
-    
-    if (!initRef.current && media.length) {
-      const newGrid = Array(totalBoxes).fill(null);
-      const newVersions = Array(totalBoxes).fill(0);
-      const order = Array.from({ length: totalBoxes }, (_, i) => i).sort(() => Math.random() - 0.5);
-      media.forEach((m, i) => {
-        const idx = order[i % totalBoxes];
-        newGrid[idx] = m;
-        newVersions[idx]++;
-      });
-      setGridState(newGrid);
-      setBoxVersions(newVersions);
-      prevRef.current = media;
-      initRef.current = true;
+    if (gridState.length !== totalBoxes) {
+      rebuildGridFromMedia(media);
+      prevIdsRef.current = media.map((m) => m._id);
       return;
     }
 
-    // Grow grid if needed
-    if (gridState.length < totalBoxes) {
-      setGridState((prev) => [...prev, ...Array(totalBoxes - prev.length).fill(null)]);
-      setBoxVersions((prev) => [...prev, ...Array(totalBoxes - prev.length).fill(0)]);
+    const prevIds = new Set(prevIdsRef.current);
+    const newItems = media.filter((m) => !prevIds.has(m._id));
+
+    if (!newItems.length) {
+      if (media.length !== prevIdsRef.current.length) {
+        rebuildGridFromMedia(media);
+      }
+      prevIdsRef.current = media.map((m) => m._id);
       return;
     }
 
-    // New image arrived
-    if (newItems.length && gridState.length >= totalBoxes) {
-      const m = newItems[newItems.length - 1];
-      const idx = Math.floor(Math.random() * totalBoxes);
-      setAnimatingIndex(idx);
-      setGridState((prev) => { const g = [...prev]; g[idx] = m; return g; });
-      setBoxVersions((prev) => { const v = [...prev]; v[idx]++; return v; });
-      prevRef.current = media;
-      setTimeout(() => setAnimatingIndex(null), 800);
-    }
+    let nextGrid = [...gridState];
+    let nextVersions = [...boxVersions];
+    let lastAnimated = null;
 
-    // Deletion
-    if (media.length < prevRef.current.length) {
-      const currentIds = new Set(media.map((m) => m._id));
-      setGridState((prev) => prev.map((item) => (item && !currentIds.has(item._id) ? null : item)));
-      setBoxVersions((prev) => prev.map((v, i) => {
-        const item = gridState[i];
-        return item && !currentIds.has(item._id) ? v + 1 : v;
-      }));
-      prevRef.current = media;
-    }
-  }, [media, totalBoxes]);
+    const usedInBatch = new Set();
+    newItems.forEach((item) => {
+      const emptyIndices = [];
+      for (let i = 0; i < totalBoxes; i++) {
+        if (!nextGrid[i] && !usedInBatch.has(i)) {
+          emptyIndices.push(i);
+        }
+      }
+
+      let idx;
+      if (emptyIndices.length > 0) {
+        idx = emptyIndices[Math.floor(Math.random() * emptyIndices.length)];
+      } else {
+        const queue = insertionOrderRef.current;
+        idx = queue.length ? queue.shift() : 0;
+        while (usedInBatch.has(idx) && queue.length) {
+          idx = queue.shift();
+        }
+        if (usedInBatch.has(idx)) {
+          idx = Math.floor(Math.random() * totalBoxes);
+          while (usedInBatch.has(idx) && usedInBatch.size < totalBoxes) {
+            idx = Math.floor(Math.random() * totalBoxes);
+          }
+        }
+      }
+
+      usedInBatch.add(idx);
+      nextGrid[idx] = item;
+      nextVersions[idx] = (nextVersions[idx] || 0) + 1;
+      insertionOrderRef.current.push(idx);
+      lastAnimated = idx;
+    });
+
+    setGridState(nextGrid);
+    setBoxVersions(nextVersions);
+    setAnimatingIndex(lastAnimated);
+
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => setAnimatingIndex(null), 700);
+    prevIdsRef.current = media.map((m) => m._id);
+  }, [media, totalBoxes, gridState, boxVersions, rebuildGridFromMedia]);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
 
   return (
     <Box sx={{ position: "relative", width: "100vw", height: "100vh", overflow: "hidden" }}>
@@ -197,12 +218,11 @@ export default function MosaicGrid({ media, background, backgroundLogo, randomSi
       <Box
         sx={{
           display: "grid",
-          // ↓ These now use the memoized random fr templates when enabled
-          gridTemplateColumns: colTemplate,
-          gridTemplateRows: rowTemplate,
+          gridTemplateColumns: `repeat(${safeCols}, 1fr)`,
+          gridTemplateRows: `repeat(${safeRows}, 1fr)`,
           gap: "1px",
           position: "relative",
-          zIndex: 1,
+          zIndex: 10,
           width: "100%",
           height: "100%",
           minHeight: "100vh",
