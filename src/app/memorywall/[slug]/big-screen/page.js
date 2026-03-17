@@ -113,6 +113,8 @@ const BigScreenPage = () => {
     return (
       <MosaicGrid 
         media={media} 
+        rows={wallConfig.mosaicGrid?.rows || 10}
+        cols={wallConfig.mosaicGrid?.cols || 15}
         background={wallConfig.background?.url ? {
           type: getMediaType(wallConfig.background.url),
           value: wallConfig.background.url
@@ -124,20 +126,18 @@ const BigScreenPage = () => {
           position: 'center',
           opacity: 0.1
         } : null}
-        randomSizes={{
-          enabled: wallConfig.randomSizes?.enabled || false,
-          min: wallConfig.randomSizes?.min || 100,
-          max: wallConfig.randomSizes?.max || 300
-        }}
       />
     );
   }
 
   // 🔷 C A R D   M O D E
   if (wallConfig?.mode === "card") {
+    const normalizedCardOrder = String(wallConfig.cardSettings?.order || "sequential").toLowerCase();
     return (
       <CardsGrid 
         media={media} 
+        cardOrder={normalizedCardOrder === "random" ? "random" : "sequential"}
+        inputType={wallConfig.cardSettings?.inputType || "text"}
         background={wallConfig.background?.url ? {
           type: getMediaType(wallConfig.background.url),
           value: wallConfig.background.url

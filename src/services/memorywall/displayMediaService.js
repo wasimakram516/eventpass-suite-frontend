@@ -15,10 +15,11 @@ export const getMediaById = withApiHandler(async (id) => {
 
 // Create display media (image + optional text) linked to wallSlug
 export const createDisplayMedia = withApiHandler(
-  async ({ imageUrl, text = "", slug }) => {
+  async ({ imageUrl, text = "", signatureUrl = "", slug }) => {
     const payload = {
       imageUrl,
       text,
+      signatureUrl,
     };
 
     const response = await api.post(
@@ -33,10 +34,11 @@ export const createDisplayMedia = withApiHandler(
 
 // Update media (text and/or new image)
 export const updateDisplayMedia = withApiHandler(
-  async (id, { imageUrl, text }) => {
+  async (id, { imageUrl, text, signatureUrl }) => {
     const payload = {};
     if (imageUrl) payload.imageUrl = imageUrl;
     if (text !== undefined) payload.text = text;
+    if (signatureUrl !== undefined) payload.signatureUrl = signatureUrl;
 
     const response = await api.put(`/memorywall/display-media/${id}`, payload);
 

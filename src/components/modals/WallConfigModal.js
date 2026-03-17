@@ -38,9 +38,17 @@ const translations = {
     mosaic: "mosaic",
     card: "card",
     bubble: "bubble",
+    sequentialOrder: "Sequential Order",
+    randomOrder: "Random Placement",
+    cardOrder: "Card Order",
+    inputType: "Input Type",
+    textInput: "Text",
+    signatureInput: "Signature",
     uploadBackground: "Upload Background",
     uploadLogo: "Upload Logo",
     enableRandomSizes: "Enable Random Sizes",
+    mosaicRows: "Mosaic Rows",
+    mosaicCols: "Mosaic Columns",
     minSize: "Min Size (px)",
     maxSize: "Max Size (px)",
     currentImage: "Current Image:",
@@ -59,6 +67,10 @@ const translations = {
       maxSizeRequired: "Max size is required when random sizes enabled",
       minSizeInvalid: "Min size must be greater than 0",
       maxSizeInvalid: "Max size must be greater than min size",
+      mosaicRowsRequired: "Mosaic rows is required",
+      mosaicColsRequired: "Mosaic columns is required",
+      mosaicRowsInvalid: "Mosaic rows must be a positive integer",
+      mosaicColsInvalid: "Mosaic columns must be a positive integer",
     },
     deleteBackgroundTitle: "Delete Background",
     deleteBackgroundMessage: "Are you sure you want to delete this background? This action cannot be undone.",
@@ -75,9 +87,17 @@ const translations = {
     mosaic: "فسيفساء",
     card: "بطاقة",
     bubble: "فقاعة",
+    sequentialOrder: "ترتيب تسلسلي",
+    randomOrder: "مواضع عشوائية",
+    cardOrder: "ترتيب البطاقات",
+    inputType: "نوع الإدخال",
+    textInput: "نص",
+    signatureInput: "توقيع",
     uploadBackground: "رفع خلفية",
     uploadLogo: "رفع شعار",
     enableRandomSizes: "تفعيل الأحجام العشوائية",
+    mosaicRows: "عدد صفوف الفسيفساء",
+    mosaicCols: "عدد أعمدة الفسيفساء",
     minSize: "الحد الأدنى (بكسل)",
     maxSize: "الحد الأقصى (بكسل)",
     currentImage: ":الصورة الحالية",
@@ -96,6 +116,10 @@ const translations = {
       maxSizeRequired: "الحد الأقصى مطلوب عند تفعيل الأحجام العشوائية",
       minSizeInvalid: "الحد الأدنى يجب أن يكون أكبر من 0",
       maxSizeInvalid: "الحد الأقصى يجب أن يكون أكبر من الحد الأدنى",
+      mosaicRowsRequired: "عدد الصفوف مطلوب",
+      mosaicColsRequired: "عدد الأعمدة مطلوب",
+      mosaicRowsInvalid: "عدد الصفوف يجب أن يكون رقمًا صحيحًا موجبًا",
+      mosaicColsInvalid: "عدد الأعمدة يجب أن يكون رقمًا صحيحًا موجبًا",
     },
     deleteBackgroundTitle: "حذف الخلفية",
     deleteBackgroundMessage: "هل أنت متأكد من حذف هذه الخلفية؟ لا يمكن التراجع عن هذا الإجراء.",
@@ -126,6 +150,10 @@ const WallConfigModal = ({
     randomSizes: false,
     minSize: 100,
     maxSize: 300,
+    mosaicRows: 10,
+    mosaicCols: 15,
+    cardOrder: "sequential",
+    cardInputType: "text",
   });
 
   const [errors, setErrors] = useState({});
@@ -171,6 +199,10 @@ const WallConfigModal = ({
         randomSizes: false,
         minSize: 100,
         maxSize: 300,
+        mosaicRows: 10,
+        mosaicCols: 15,
+        cardOrder: "sequential",
+        cardInputType: "text",
       });
     } else {
       const values = selectedWallConfig || initialValues;
@@ -185,6 +217,10 @@ const WallConfigModal = ({
         randomSizes: values.randomSizes?.enabled || false,
         minSize: values.randomSizes?.min || 100,
         maxSize: values.randomSizes?.max || 300,
+        mosaicRows: values.mosaicGrid?.rows || 10,
+        mosaicCols: values.mosaicGrid?.cols || 15,
+        cardOrder: values.cardSettings?.order || "sequential",
+        cardInputType: values.cardSettings?.inputType || "text",
       });
     }
     setErrors({});
@@ -226,6 +262,13 @@ const WallConfigModal = ({
       setForm((prev) => ({
         ...prev,
         slug: newSlug,
+      }));
+    }
+
+    if (name === "mode" && value === "mosaic") {
+      setForm((prev) => ({
+        ...prev,
+        randomSizes: false,
       }));
     }
 
@@ -364,11 +407,32 @@ const WallConfigModal = ({
     if (!form.slug.trim()) newErrors.slug = te.slugRequired;
     if (!form.mode) newErrors.mode = te.modeRequired;
 
-    if (form.randomSizes) {
-      if (!form.minSize || form.minSize <= 0) newErrors.minSize = te.minSizeInvalid;
-      if (!form.maxSize) newErrors.maxSize = te.maxSizeRequired;
-      if (form.minSize && form.maxSize && form.maxSize <= form.minSize) {
+    if (form.mode !== "mosaic" && form.randomSizes) {
+      const minSizeValue = Number(form.minSize);
+      const maxSizeValue = Number(form.maxSize);
+
+      if (form.minSize === "" || !Number.isFinite(minSizeValue) || minSizeValue <= 0) {
+        newErrors.minSize = te.minSizeInvalid;
+      }
+
+      if (form.maxSize === "" || !Number.isFinite(maxSizeValue)) {
+        newErrors.maxSize = te.maxSizeRequired;
+      } else if (maxSizeValue <= minSizeValue) {
         newErrors.maxSize = te.maxSizeInvalid;
+      }
+    }
+
+    if (form.mode === "mosaic") {
+      if (form.mosaicRows === "" || form.mosaicRows == null) {
+        newErrors.mosaicRows = te.mosaicRowsRequired;
+      } else if (!Number.isInteger(Number(form.mosaicRows)) || Number(form.mosaicRows) <= 0) {
+        newErrors.mosaicRows = te.mosaicRowsInvalid;
+      }
+
+      if (form.mosaicCols === "" || form.mosaicCols == null) {
+        newErrors.mosaicCols = te.mosaicColsRequired;
+      } else if (!Number.isInteger(Number(form.mosaicCols)) || Number(form.mosaicCols) <= 0) {
+        newErrors.mosaicCols = te.mosaicColsInvalid;
       }
     }
 
@@ -392,9 +456,17 @@ const WallConfigModal = ({
         slug: form.slug,
         mode: form.mode,
         randomSizes: {
-          enabled: form.randomSizes,
+          enabled: form.mode !== "mosaic" ? form.randomSizes : false,
           min: form.randomSizes ? Number(form.minSize) : 150,
           max: form.randomSizes ? Number(form.maxSize) : 300,
+        },
+        mosaicGrid: {
+          rows: form.mode === "mosaic" ? Number(form.mosaicRows) : 10,
+          cols: form.mode === "mosaic" ? Number(form.mosaicCols) : 15,
+        },
+        cardSettings: {
+          order: form.mode === "card" ? form.cardOrder : "sequential",
+          inputType: form.mode === "card" ? form.cardInputType : "text",
         },
       };
 
@@ -623,43 +695,103 @@ const WallConfigModal = ({
                 {renderMediaPreview('backgroundLogo')}
               </Box>
 
-              {/* Random Sizes */}
-              <FormControlLabel
-                control={
-                  <Switch
-                    checked={form.randomSizes}
+              {form.mode === "mosaic" ? (
+                <Box sx={{ display: "flex", gap: 2 }}>
+                  <TextField
+                    label={t.mosaicRows}
+                    name="mosaicRows"
+                    type="number"
+                    value={form.mosaicRows}
                     onChange={handleInputChange}
-                    name="randomSizes"
+                    error={!!errors.mosaicRows}
+                    helperText={errors.mosaicRows}
                     disabled={loading}
+                    InputProps={{ inputProps: { min: 1 } }}
                   />
-                }
-                label={t.enableRandomSizes}
-              />
+                  <TextField
+                    label={t.mosaicCols}
+                    name="mosaicCols"
+                    type="number"
+                    value={form.mosaicCols}
+                    onChange={handleInputChange}
+                    error={!!errors.mosaicCols}
+                    helperText={errors.mosaicCols}
+                    disabled={loading}
+                    InputProps={{ inputProps: { min: 1 } }}
+                  />
+                </Box>
+              ) : (
+                <>
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={form.randomSizes}
+                        onChange={handleInputChange}
+                        name="randomSizes"
+                        disabled={loading}
+                      />
+                    }
+                    label={t.enableRandomSizes}
+                  />
 
-              {form.randomSizes && (
-                <Box sx={{ display: 'flex', gap: 2 }}>
-                  <TextField
-                    label={t.minSize}
-                    name="minSize"
-                    type="number"
-                    value={form.minSize}
-                    onChange={handleInputChange}
-                    error={!!errors.minSize}
-                    helperText={errors.minSize}
-                    disabled={loading}
-                    InputProps={{ inputProps: { min: 1 } }}
-                  />
-                  <TextField
-                    label={t.maxSize}
-                    name="maxSize"
-                    type="number"
-                    value={form.maxSize}
-                    onChange={handleInputChange}
-                    error={!!errors.maxSize}
-                    helperText={errors.maxSize}
-                    disabled={loading}
-                    InputProps={{ inputProps: { min: 1 } }}
-                  />
+                  {form.randomSizes && (
+                    <Box sx={{ display: 'flex', gap: 2 }}>
+                      <TextField
+                        label={t.minSize}
+                        name="minSize"
+                        type="number"
+                        value={form.minSize}
+                        onChange={handleInputChange}
+                        error={!!errors.minSize}
+                        helperText={errors.minSize}
+                        disabled={loading}
+                        InputProps={{ inputProps: { min: 1 } }}
+                      />
+                      <TextField
+                        label={t.maxSize}
+                        name="maxSize"
+                        type="number"
+                        value={form.maxSize}
+                        onChange={handleInputChange}
+                        error={!!errors.maxSize}
+                        helperText={errors.maxSize}
+                        disabled={loading}
+                        InputProps={{ inputProps: { min: 1 } }}
+                      />
+                    </Box>
+                  )}
+                </>
+              )}
+
+              {form.mode === "card" && (
+                <Box sx={{ display: "flex", gap: 2 }}>
+                  <FormControl fullWidth>
+                    <InputLabel>{t.cardOrder}</InputLabel>
+                    <Select
+                      name="cardOrder"
+                      value={form.cardOrder}
+                      label={t.cardOrder}
+                      onChange={handleInputChange}
+                      disabled={loading}
+                    >
+                      <MenuItem value="sequential">{t.sequentialOrder}</MenuItem>
+                      <MenuItem value="random">{t.randomOrder}</MenuItem>
+                    </Select>
+                  </FormControl>
+
+                  <FormControl fullWidth>
+                    <InputLabel>{t.inputType}</InputLabel>
+                    <Select
+                      name="cardInputType"
+                      value={form.cardInputType}
+                      label={t.inputType}
+                      onChange={handleInputChange}
+                      disabled={loading}
+                    >
+                      <MenuItem value="text">{t.textInput}</MenuItem>
+                      <MenuItem value="signature">{t.signatureInput}</MenuItem>
+                    </Select>
+                  </FormControl>
                 </Box>
               )}
             </Box>

@@ -23,6 +23,7 @@ import Footer from "@/components/nav/Footer";
 import { uploadMediaFiles } from "@/utils/mediaUpload";
 import MediaUploadProgress from "@/components/MediaUploadProgress";
 import { useMessage } from "@/contexts/MessageContext";
+import SignatureCanvas from "react-signature-canvas";
 
 const translations = {
   en: {
@@ -34,6 +35,9 @@ const translations = {
     singleCameraOnly: "Only one camera is available on this device.",
     preview: "Preview",
     addMessage: "Add a Message",
+    addSignature: "Add a Signature",
+    clearSignature: "Clear Signature",
+    signatureRequired: "Signature is required",
     messagePlaceholder: "Type your message (shown on the big screen)...",
     charactersCount: "characters",
     capturePhotoBtn: "Capture Photo",
@@ -56,6 +60,9 @@ const translations = {
     singleCameraOnly: "تتوفر كاميرا واحدة فقط على هذا الجهاز.",
     preview: "معاينة",
     addMessage: "أضف رسالة",
+    addSignature: "أضف توقيعًا",
+    clearSignature: "مسح التوقيع",
+    signatureRequired: "التوقيع مطلوب",
     messagePlaceholder: "اكتب رسالتك (ستظهر على الشاشة الكبيرة)...",
     charactersCount: "حرف",
     capturePhotoBtn: "التقاط صورة",
@@ -77,8 +84,13 @@ export default function UploadPage() {
   const { showMessage } = useMessage();
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
+  const signaturePadRef = useRef(null);
   const [stream, setStream] = useState(null);
   const [capturedImage, setCapturedImage] = useState(null);
+  const [capturedImageUrl, setCapturedImageUrl] = useState(null);
+  const [deviceRotation, setDeviceRotation] = useState(0);
+  const [lastRotation, setLastRotation] = useState(0);
+  const [orientationValues, setOrientationValues] = useState({ beta: 0, gamma: 0 });
   const [text, setText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -88,6 +100,8 @@ export default function UploadPage() {
   const [wallConfig, setWallConfig] = useState(null);
   const [showUploadProgress, setShowUploadProgress] = useState(false);
   const [uploadProgress, setUploadProgress] = useState([]);
+  const [signatureDataUrl, setSignatureDataUrl] = useState("");
+  const SIGNATURE_EXPORT_SIZE = 256;
 
   useEffect(() => {
     const loadWallConfigs = async () => {
@@ -101,12 +115,73 @@ export default function UploadPage() {
   }, [slug]);
 
   useEffect(() => {
+    const handleDeviceOrientation = (event) => {
+      const { beta, gamma } = event;
+
+      const absBeta = Math.abs(beta);
+      const absGamma = Math.abs(gamma);
+      const margin = 20;
+
+      const currentlyVertical = lastRotation === 0;
+      let targetVertical = currentlyVertical;
+
+      if (currentlyVertical) {
+        if (absGamma > absBeta + margin) targetVertical = false;
+      } else {
+        if (absBeta > 45 && absGamma < 25) targetVertical = true;
+      }
+
+      let rotation = 0;
+      if (targetVertical) {
+        rotation = 0;
+      } else {
+        if (lastRotation === 90 || lastRotation === -90) {
+          rotation = lastRotation;
+        } else {
+          rotation = gamma > 0 ? -90 : 90;
+        }
+      }
+
+      if (rotation !== lastRotation) {
+        setLastRotation(rotation);
+        setDeviceRotation(rotation);
+      }
+    };
+
+    const requestPermission = async () => {
+      if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        try {
+          const permission = await DeviceOrientationEvent.requestPermission();
+          if (permission === 'granted') {
+            window.addEventListener('deviceorientation', handleDeviceOrientation);
+          }
+        } catch (error) {
+          console.log('DeviceOrientation permission denied');
+        }
+      } else {
+        if (window.DeviceOrientationEvent && typeof window.DeviceOrientationEvent.requestPermission !== 'function') {
+          window.addEventListener('deviceorientation', handleDeviceOrientation);
+        }
+      }
+    };
+
+    requestPermission();
+
+    return () => {
+      window.removeEventListener('deviceorientation', handleDeviceOrientation);
+    };
+  }, [lastRotation]);
+
+  useEffect(() => {
     return () => {
       if (stream) {
         stream.getTracks().forEach((track) => track.stop());
       }
+      if (capturedImageUrl) {
+        URL.revokeObjectURL(capturedImageUrl);
+      }
     };
-  }, [stream]);
+  }, [stream, capturedImageUrl]);
 
   const startCamera = async (facingMode = cameraFacingMode) => {
     setIsLoading(true);
@@ -118,8 +193,9 @@ export default function UploadPage() {
       const mediaStream = await navigator.mediaDevices.getUserMedia({
         video: {
           facingMode,
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
+          width: { ideal: 1920, min: 1280 },
+          height: { ideal: 1080, min: 720 },
+          aspectRatio: { ideal: 16/9 }
         },
       });
 
@@ -166,41 +242,196 @@ export default function UploadPage() {
   };
 
   const capturePhoto = () => {
-    if (videoRef.current && canvasRef.current) {
-      const video = videoRef.current;
-      const canvas = canvasRef.current;
-      const context = canvas.getContext("2d");
-      if (!context) return;
+    if (!videoRef.current || !canvasRef.current) return;
 
-      const isFrontCamera = cameraFacingMode === "user";
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
-      // Preserve native orientation from the video stream.
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+    const isFrontCamera = cameraFacingMode === "user";
+    const vw = video.videoWidth;
+    const vh = video.videoHeight;
+    const absBeta = Math.abs(orientationValues.beta);
 
-      if (isFrontCamera) {
-        context.save();
-        context.scale(-1, 1);
-        context.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
-        context.restore();
+    const rotation = deviceRotation;
+    const isLandscape = rotation === 90 || rotation === -90;
+    const streamIsLandscape = vw > vh;
+
+    // Detect if we are on a laptop/stationary device vs a rotated mobile device.
+    // Laptops have absBeta near 0 (flat/vertical-ish but not 'sensor-rotated').
+    // Mobiles held vertical for portrait have absBeta > 45.
+    const isMobilePortrait = rotation === 0 && absBeta > 45;
+
+    if (isLandscape) {
+      canvas.width = streamIsLandscape ? vw : vh;
+      canvas.height = streamIsLandscape ? vh : vw;
+    } else {
+      // Portrait Output
+      if (streamIsLandscape) {
+        if (isMobilePortrait) {
+          canvas.width = vh; // Rotated
+          canvas.height = vw;
+        } else {
+          canvas.width = vh * 0.75; // Cropped Portrait (e.g. 3:4)
+          canvas.height = vh;
+        }
       } else {
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        canvas.width = vw;
+        canvas.height = vh;
       }
-
-      canvas.toBlob(
-        (blob) => {
-          setCapturedImage(blob);
-          stopCamera();
-        },
-        "image/jpeg",
-        0.8
-      );
     }
+
+    ctx.save();
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    if (isFrontCamera) ctx.scale(-1, 1);
+
+    let angleDeg = 0;
+    if (streamIsLandscape) {
+      if (rotation === 90) angleDeg = 180;
+      else if (rotation === -90) angleDeg = 0;
+      else if (isMobilePortrait) angleDeg = -90;
+      else angleDeg = 0; // Laptop upright crop
+    } else {
+      if (rotation === 90) angleDeg = -90;
+      else if (rotation === -90) angleDeg = 90;
+      else angleDeg = 0;
+    }
+
+    ctx.rotate((angleDeg * Math.PI) / 180);
+    ctx.drawImage(video, -vw / 2, -vh / 2, vw, vh);
+    ctx.restore();
+
+    canvas.toBlob(
+      (blob) => {
+        if (blob) {
+          if (capturedImageUrl) URL.revokeObjectURL(capturedImageUrl);
+          setCapturedImage(blob);
+          setCapturedImageUrl(URL.createObjectURL(blob));
+          stopCamera();
+        }
+      },
+      "image/jpeg",
+      0.9
+    );
   };
 
   const retakePhoto = () => {
+    if (capturedImageUrl) {
+      URL.revokeObjectURL(capturedImageUrl);
+      setCapturedImageUrl(null);
+    }
     setCapturedImage(null);
     setText("");
+    setSignatureDataUrl("");
+    if (signaturePadRef.current) {
+      signaturePadRef.current.clear();
+    }
+  };
+
+  const handleSignatureEnd = () => {
+    if (!signaturePadRef.current || signaturePadRef.current.isEmpty()) {
+      setSignatureDataUrl("");
+      return;
+    }
+
+    const sourceCanvas = signaturePadRef.current.getCanvas();
+    const sourceCtx = sourceCanvas.getContext("2d");
+    if (!sourceCtx) {
+      setSignatureDataUrl(signaturePadRef.current.toDataURL("image/png"));
+      return;
+    }
+
+    const { width: sourceWidth, height: sourceHeight } = sourceCanvas;
+    const imageData = sourceCtx.getImageData(0, 0, sourceWidth, sourceHeight).data;
+
+    let minX = sourceWidth;
+    let minY = sourceHeight;
+    let maxX = -1;
+    let maxY = -1;
+
+    for (let y = 0; y < sourceHeight; y += 1) {
+      for (let x = 0; x < sourceWidth; x += 1) {
+        const idx = (y * sourceWidth + x) * 4;
+        const alpha = imageData[idx + 3];
+        if (alpha > 0) {
+          if (x < minX) minX = x;
+          if (y < minY) minY = y;
+          if (x > maxX) maxX = x;
+          if (y > maxY) maxY = y;
+        }
+      }
+    }
+
+    if (maxX < minX || maxY < minY) {
+      setSignatureDataUrl("");
+      return;
+    }
+
+    const padding = 10;
+    minX = Math.max(0, minX - padding);
+    minY = Math.max(0, minY - padding);
+    maxX = Math.min(sourceWidth - 1, maxX + padding);
+    maxY = Math.min(sourceHeight - 1, maxY + padding);
+
+    const trimWidth = Math.max(1, maxX - minX + 1);
+    const trimHeight = Math.max(1, maxY - minY + 1);
+
+    const trimmedCanvas = document.createElement("canvas");
+    trimmedCanvas.width = trimWidth;
+    trimmedCanvas.height = trimHeight;
+    const trimmedCtx = trimmedCanvas.getContext("2d");
+
+    if (!trimmedCtx) {
+      setSignatureDataUrl(signaturePadRef.current.toDataURL("image/png"));
+      return;
+    }
+
+    trimmedCtx.drawImage(
+      sourceCanvas,
+      minX,
+      minY,
+      trimWidth,
+      trimHeight,
+      0,
+      0,
+      trimWidth,
+      trimHeight
+    );
+
+    const exportCanvas = document.createElement("canvas");
+    exportCanvas.width = SIGNATURE_EXPORT_SIZE;
+    exportCanvas.height = SIGNATURE_EXPORT_SIZE;
+
+    const exportCtx = exportCanvas.getContext("2d");
+    if (!exportCtx) {
+      setSignatureDataUrl(signaturePadRef.current.toDataURL("image/png"));
+      return;
+    }
+
+    const boundedWidth = Math.max(trimmedCanvas.width, 1);
+    const boundedHeight = Math.max(trimmedCanvas.height, 1);
+    const scale = Math.min(
+      SIGNATURE_EXPORT_SIZE / boundedWidth,
+      SIGNATURE_EXPORT_SIZE / boundedHeight
+    );
+
+    const drawWidth = boundedWidth * scale;
+    const drawHeight = boundedHeight * scale;
+    const offsetX = (SIGNATURE_EXPORT_SIZE - drawWidth) / 2;
+    const offsetY = (SIGNATURE_EXPORT_SIZE - drawHeight) / 2;
+
+    exportCtx.clearRect(0, 0, SIGNATURE_EXPORT_SIZE, SIGNATURE_EXPORT_SIZE);
+    exportCtx.drawImage(trimmedCanvas, offsetX, offsetY, drawWidth, drawHeight);
+
+    setSignatureDataUrl(exportCanvas.toDataURL("image/png"));
+  };
+
+  const clearSignature = () => {
+    if (signaturePadRef.current) {
+      signaturePadRef.current.clear();
+    }
+    setSignatureDataUrl("");
   };
 
   const submitPhoto = async () => {
@@ -211,28 +442,41 @@ export default function UploadPage() {
       return;
     }
 
+    const useSignatureInput =
+      mode === "card" && wallConfig?.cardSettings?.inputType === "signature";
+
+    if (useSignatureInput && !signatureDataUrl) {
+      showMessage(t.signatureRequired, "error");
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
-      const file = capturedImage instanceof File
+      const photoFile = capturedImage instanceof File
         ? capturedImage
         : new File([capturedImage], "captured-image.jpg", { type: "image/jpeg" });
 
+      let signatureFile = null;
+      if (useSignatureInput && signatureDataUrl) {
+        const signatureBlob = await (await fetch(signatureDataUrl)).blob();
+        signatureFile = new File([signatureBlob], "signature.png", { type: "image/png" });
+      }
+
       setShowUploadProgress(true);
-      const uploads = [{
-        file,
-        label: "Image",
+      const files = signatureFile ? [photoFile, signatureFile] : [photoFile];
+      const uploads = files.map((f, index) => ({
+        file: f,
+        label: index === 0 ? "Image" : "Signature",
         percent: 0,
         loaded: 0,
-        total: file.size,
+        total: f.size,
         error: null,
         url: null,
-      }];
-
-      setUploadProgress(uploads);
+      }));
 
       const urls = await uploadMediaFiles({
-        files: [file],
+        files,
         businessSlug: wallConfig.business.slug,
         moduleName: "MemoryWall",
         wallSlug: slug,
@@ -253,15 +497,29 @@ export default function UploadPage() {
       setShowUploadProgress(false);
 
       if (urls && urls.length > 0) {
+        if (useSignatureInput && !urls[1]) {
+          showMessage("Signature upload failed. Please try again.", "error");
+          return;
+        }
+
         await createDisplayMedia({
           imageUrl: urls[0],
-          text: mode === "card" ? text.trim() : "",
+          text: mode === "card" && !useSignatureInput ? text.trim() : "",
+          signatureUrl: useSignatureInput ? urls[1] || "" : "",
           slug: slug,
         });
 
         setTimeout(() => {
+          if (capturedImageUrl) {
+            URL.revokeObjectURL(capturedImageUrl);
+            setCapturedImageUrl(null);
+          }
           setCapturedImage(null);
           setText("");
+          setSignatureDataUrl("");
+          if (signaturePadRef.current) {
+            signaturePadRef.current.clear();
+          }
         }, 3000);
       }
     } catch (error) {
@@ -348,7 +606,6 @@ export default function UploadPage() {
               flexDirection: "column",
             }}
           >
-            {/* Close Button */}
             <IconButton
               onClick={stopCamera}
               sx={{
@@ -364,7 +621,6 @@ export default function UploadPage() {
               <ICONS.close fontSize="large" />
             </IconButton>
 
-            {/* Camera Flip Button */}
             <Button
               variant="contained"
               size="small"
@@ -384,7 +640,6 @@ export default function UploadPage() {
               {t.switchCamera}
             </Button>
 
-            {/* Video Feed */}
             <video
               ref={videoRef}
               autoPlay
@@ -400,7 +655,6 @@ export default function UploadPage() {
 
             <canvas ref={canvasRef} style={{ display: "none" }} />
 
-            {/* Capture Button */}
             <Box
               sx={{
                 position: "absolute",
@@ -446,20 +700,33 @@ export default function UploadPage() {
             <Typography variant="h6" fontWeight="bold" gutterBottom>
               {t.preview}
             </Typography>
-            <img
-              src={URL.createObjectURL(capturedImage)}
-              alt="Captured"
-              style={{
+            <Box
+              sx={{
                 width: "100%",
                 height: "80vh",
-                objectFit: "cover",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
                 borderRadius: "12px",
+                overflow: "hidden",
+                bgcolor: "#f5f5f5",
               }}
-            />
+            >
+              <img
+                src={capturedImageUrl}
+                alt="Captured"
+                style={{
+                  maxWidth: "100%",
+                  maxHeight: "100%",
+                  objectFit: "contain",
+                  borderRadius: "12px",
+                }}
+              />
+            </Box>
           </Paper>
         )}
 
-        {/* Optional Text */}
+        {/* Optional Card Input */}
         {mode === "card" && capturedImage && (
           <Paper
             elevation={3}
@@ -472,26 +739,69 @@ export default function UploadPage() {
               alignSelf: "center",
             }}
           >
-            <Typography variant="h6" fontWeight="bold" gutterBottom>
-              {t.addMessage}
-            </Typography>
-            <TextField
-              fullWidth
-              multiline
-              rows={3}
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              placeholder={t.messagePlaceholder}
-              variant="outlined"
-              inputProps={{ maxLength: 200 }}
-            />
-            <Typography
-              variant="caption"
-              color="text.secondary"
-              sx={{ mt: 1, display: "block", textAlign: align }}
-            >
-              {text.length}/200 {t.charactersCount}
-            </Typography>
+            {wallConfig?.cardSettings?.inputType === "signature" ? (
+              <>
+                <Typography variant="h6" fontWeight="bold" gutterBottom>
+                  {t.addSignature}
+                </Typography>
+                <Box
+                  sx={{
+                    width: "100%",
+                    maxWidth: 260,
+                    aspectRatio: "1 / 1",
+                    mx: "auto",
+                    border: "1px solid #ccc",
+                    borderRadius: 2,
+                    overflow: "hidden",
+                    bgcolor: "#fff",
+                    mb: 1,
+                  }}
+                >
+                  <SignatureCanvas
+                    ref={signaturePadRef}
+                    penColor="#111"
+                    canvasProps={{
+                      width: 260,
+                      height: 260,
+                      style: { width: "100%", height: "100%", display: "block" },
+                    }}
+                    onEnd={handleSignatureEnd}
+                  />
+                </Box>
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={clearSignature}
+                  startIcon={<ICONS.clear />}
+                  sx={{ ...getStartIconSpacing(dir), display: "inline-flex", mx: "auto", mt: 1 }}
+                >
+                  {t.clearSignature}
+                </Button>
+              </>
+            ) : (
+              <>
+                <Typography variant="h6" fontWeight="bold" gutterBottom>
+                  {t.addMessage}
+                </Typography>
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={3}
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  placeholder={t.messagePlaceholder}
+                  variant="outlined"
+                  inputProps={{ maxLength: 200 }}
+                />
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ mt: 1, display: "block", textAlign: align }}
+                >
+                  {text.length}/200 {t.charactersCount}
+                </Typography>
+              </>
+            )}
           </Paper>
         )}
 
@@ -527,14 +837,19 @@ export default function UploadPage() {
                 size="large"
                 color="success"
                 onClick={submitPhoto}
-                disabled={isSubmitting || (mode === "card" && !text.trim())}
+                disabled={
+                  isSubmitting ||
+                  (mode === "card" &&
+                    (wallConfig?.cardSettings?.inputType === "signature"
+                      ? !signatureDataUrl
+                      : !text.trim()))
+                }
                 startIcon={
                   isSubmitting ? <LoadingState size={20} /> : <ICONS.send />
                 }
                 sx={{
                   ...getStartIconSpacing(dir),
                   width: { xs: "100%", sm: "auto" },
-
                 }}
               >
                 {isSubmitting
@@ -564,7 +879,6 @@ export default function UploadPage() {
 
         {/* Instructions */}
         <Paper
-
           elevation={1}
           sx={{
             p: 2,

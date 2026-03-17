@@ -23,11 +23,11 @@ function FloatingBubble({ item, isNew, version, position, size }) {
       initial={
         isNew
           ? { scale: 0, opacity: 0, x: position.x, y: position.y }
-          : { scale: 1, opacity: 0.9, x: position.x, y: position.y }
+          : { scale: 1, opacity: 1, x: position.x, y: position.y }
       }
       animate={{
         scale: 1,
-        opacity: 0.9,
+        opacity: 1,
         x: [position.x, position.x + offsetX, position.x, position.x - offsetX, position.x],
         y: [position.y, position.y + offsetY, position.y, position.y - offsetY, position.y],
       }}
@@ -250,9 +250,9 @@ export default function BubbleGrid({
         sx={{
             position: "absolute",
             inset: 0,
-            zIndex: 5,
+            zIndex: 1,
             pointerEvents: "none",
-            opacity: 0.2,
+            opacity: 0.5,
         }}
       >
         {isVideo ? (
@@ -271,7 +271,7 @@ export default function BubbleGrid({
       {renderBackground()}
       {renderBackgroundLogo()}
 
-      <Box sx={{ position: "relative", width: "100%", height: "100%", zIndex: 1 }}>
+      <Box sx={{ position: "relative", width: "100%", height: "100%", zIndex: 10 }}>
         {bubbles.map(({ item, position, size, version }) => (
           <FloatingBubble
             key={item._id}
@@ -287,7 +287,7 @@ export default function BubbleGrid({
       <Box sx={{
         position: "absolute", inset: 0,
         background: "radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.05) 100%)",
-        pointerEvents: "none", zIndex: 15,
+        pointerEvents: "none", zIndex: 2,
       }} />
     </Box>
   );
