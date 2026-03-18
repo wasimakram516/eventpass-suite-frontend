@@ -478,6 +478,7 @@ export default function TrashPage() {
   };
 
   const getRecordDisplayInfo = (item, module) => {
+    const isDisplayMedia = String(module || "").toLowerCase() === "displaymedia";
     let name =
       item.name ||
       item.title ||
@@ -486,6 +487,9 @@ export default function TrashPage() {
       item.text ||
       item.question ||
       null;
+    if (!name && isDisplayMedia && (item.imageUrl || item.signatureUrl)) {
+      name = "Image";
+    }
     let email = item.email || null;
 
     if (
@@ -1088,6 +1092,8 @@ export default function TrashPage() {
                   item.phone ||
                   item.phoneNumber ||
                   item.mobile ||
+                  item.imageUrl ||
+                  item.signatureUrl ||
                   item.token ||
                   ""
                 ).toLowerCase();
