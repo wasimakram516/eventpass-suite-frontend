@@ -411,16 +411,33 @@ export default function CardsGrid({ media, background, backgroundLogo, randomSiz
                 }}
               >
                 <motion.div
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ duration: 0.45, ease: "easeOut" }}
+                  initial={{ scale: 0, opacity: 0, y: 20 }}
+                  animate={{ scale: 1, opacity: 1, y: 0 }}
+                  transition={{
+                    duration: 0.6,
+                    type: "spring",
+                    stiffness: 100,
+                    damping: 12,
+                    mass: 1,
+                  }}
                 >
-                  <MediaCard
-                    item={item}
-                    isSignatureMode={isSignatureMode}
-                    imageSize={imageSize}
-                    randomSizes={randomSizes}
-                  />
+                  <motion.div
+                    animate={{
+                      y: [0, -8, 0],
+                    }}
+                    transition={{
+                      duration: 3 + (idx % 2) * 0.5,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                    }}
+                  >
+                    <MediaCard
+                      item={item}
+                      isSignatureMode={isSignatureMode}
+                      imageSize={imageSize}
+                      randomSizes={randomSizes}
+                    />
+                  </motion.div>
                 </motion.div>
               </Box>
             );

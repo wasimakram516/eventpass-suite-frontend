@@ -45,6 +45,7 @@ const translations = {
     submitPhotoMessage: "Submit Photo & Message",
     uploading: "Uploading...",
     retakePhoto: "Retake Photo",
+    rotatePhoto: "Rotate Photo",
     instructions: "Instructions:",
     mosaicInstructions:
       "Take a photo and submit it. Your photo will appear on the big screen in the live mosaic.",
@@ -70,6 +71,7 @@ const translations = {
     submitPhotoMessage: "إرسال الصورة والرسالة",
     uploading: "جاري الرفع...",
     retakePhoto: "إعادة التقاط الصورة",
+    rotatePhoto: "تدوير الصورة",
     instructions: "التعليمات:",
     mosaicInstructions:
       "التقط صورة وأرسلها. ستظهر صورتك على الشاشة الكبيرة في الفسيفساء المباشرة.",
@@ -94,6 +96,7 @@ export default function UploadPage() {
   const [text, setText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRotating, setIsRotating] = useState(false);
   const [cameraOn, setCameraOn] = useState(false);
   const [cameraFacingMode, setCameraFacingMode] = useState("user");
   const [mode, setMode] = useState(null);
@@ -117,6 +120,7 @@ export default function UploadPage() {
   useEffect(() => {
     const handleDeviceOrientation = (event) => {
       const { beta, gamma } = event;
+      setOrientationValues({ beta: beta || 0, gamma: gamma || 0 });
 
       const absBeta = Math.abs(beta);
       const absGamma = Math.abs(gamma);
@@ -155,9 +159,7 @@ export default function UploadPage() {
           if (permission === 'granted') {
             window.addEventListener('deviceorientation', handleDeviceOrientation);
           }
-        } catch (error) {
-          console.log('DeviceOrientation permission denied');
-        }
+        } catch (error) {}
       } else {
         if (window.DeviceOrientationEvent && typeof window.DeviceOrientationEvent.requestPermission !== 'function') {
           window.addEventListener('deviceorientation', handleDeviceOrientation);
@@ -252,28 +254,32 @@ export default function UploadPage() {
     const isFrontCamera = cameraFacingMode === "user";
     const vw = video.videoWidth;
     const vh = video.videoHeight;
-    const absBeta = Math.abs(orientationValues.beta);
 
-    const rotation = deviceRotation;
+    const currentRotation = deviceRotation;
+    const currentOrientationValues = orientationValues;
+    const absBeta = Math.abs(currentOrientationValues.beta);
+
+    if (vw === 0 || vh === 0) {
+      showMessage('Camera not ready, please try again', 'error');
+      return;
+    }
+
+    const rotation = currentRotation;
     const isLandscape = rotation === 90 || rotation === -90;
     const streamIsLandscape = vw > vh;
 
-    // Detect if we are on a laptop/stationary device vs a rotated mobile device.
-    // Laptops have absBeta near 0 (flat/vertical-ish but not 'sensor-rotated').
-    // Mobiles held vertical for portrait have absBeta > 45.
     const isMobilePortrait = rotation === 0 && absBeta > 45;
 
     if (isLandscape) {
       canvas.width = streamIsLandscape ? vw : vh;
       canvas.height = streamIsLandscape ? vh : vw;
     } else {
-      // Portrait Output
       if (streamIsLandscape) {
         if (isMobilePortrait) {
-          canvas.width = vh; // Rotated
+          canvas.width = vh;
           canvas.height = vw;
         } else {
-          canvas.width = vh * 0.75; // Cropped Portrait (e.g. 3:4)
+          canvas.width = vh * 0.75;
           canvas.height = vh;
         }
       } else {
@@ -283,15 +289,20 @@ export default function UploadPage() {
     }
 
     ctx.save();
+
     ctx.translate(canvas.width / 2, canvas.height / 2);
-    if (isFrontCamera) ctx.scale(-1, 1);
 
     let angleDeg = 0;
     if (streamIsLandscape) {
-      if (rotation === 90) angleDeg = 180;
-      else if (rotation === -90) angleDeg = 0;
-      else if (isMobilePortrait) angleDeg = -90;
-      else angleDeg = 0; // Laptop upright crop
+      if (rotation === 90) {
+        angleDeg = isFrontCamera ? 0 : 0;
+      } else if (rotation === -90) {
+        angleDeg = isFrontCamera ? 180 : 180;
+      } else if (isMobilePortrait) {
+        angleDeg = -90;
+      } else {
+        angleDeg = 0;
+      }
     } else {
       if (rotation === 90) angleDeg = -90;
       else if (rotation === -90) angleDeg = 90;
@@ -299,6 +310,11 @@ export default function UploadPage() {
     }
 
     ctx.rotate((angleDeg * Math.PI) / 180);
+
+    if (isFrontCamera) {
+      ctx.scale(-1, 1);
+    }
+
     ctx.drawImage(video, -vw / 2, -vh / 2, vw, vh);
     ctx.restore();
 
@@ -434,8 +450,74 @@ export default function UploadPage() {
     setSignatureDataUrl("");
   };
 
-  const submitPhoto = async () => {
+  const rotateImageBlob = async (blob, rotationDeg) => {
+    if (!blob || !rotationDeg) return blob;
+
+    return new Promise((resolve) => {
+      const img = new Image();
+      const src = URL.createObjectURL(blob);
+
+      img.onload = () => {
+        const normalized = ((rotationDeg % 360) + 360) % 360;
+        const canvas = document.createElement("canvas");
+        const shouldSwap = normalized === 90 || normalized === 270;
+
+        canvas.width = shouldSwap ? img.height : img.width;
+        canvas.height = shouldSwap ? img.width : img.height;
+
+        const ctx = canvas.getContext("2d");
+        if (!ctx) {
+          URL.revokeObjectURL(src);
+          resolve(blob);
+          return;
+        }
+
+        ctx.translate(canvas.width / 2, canvas.height / 2);
+        ctx.rotate((normalized * Math.PI) / 180);
+        ctx.drawImage(img, -img.width / 2, -img.height / 2);
+
+        canvas.toBlob(
+          (rotatedBlob) => {
+            URL.revokeObjectURL(src);
+            resolve(rotatedBlob || blob);
+          },
+          "image/jpeg",
+          0.9
+        );
+      };
+
+      img.onerror = () => {
+        URL.revokeObjectURL(src);
+        resolve(blob);
+      };
+
+      img.src = src;
+    });
+  };
+
+  const rotateCapturedImage = async () => {
     if (!capturedImage) return;
+    if (isRotating || isSubmitting) return;
+
+    setIsRotating(true);
+
+    try {
+      const rotatedBlob = await rotateImageBlob(capturedImage, 90);
+      if (!rotatedBlob) return;
+
+      if (capturedImageUrl) {
+        URL.revokeObjectURL(capturedImageUrl);
+      }
+
+      setCapturedImage(rotatedBlob);
+      setCapturedImageUrl(URL.createObjectURL(rotatedBlob));
+    } finally {
+      setIsRotating(false);
+    }
+  };
+
+  const submitPhoto = async () => {
+    if (!capturedImage || isRotating) return;
 
     if (!wallConfig?.business?.slug) {
       showMessage("Business information is missing", "error");
@@ -542,7 +624,6 @@ export default function UploadPage() {
         }}
         dir={dir}
       >
-        {/* Title and Mode */}
         <Box
           sx={{
             display: "flex",
@@ -568,7 +649,6 @@ export default function UploadPage() {
           )}
         </Box>
 
-        {/* Camera Controls */}
         <Box sx={{ display: "flex", justifyContent: "center", gap: 2, mb: 3 }}>
           {!cameraOn ? (
             <Button
@@ -594,7 +674,6 @@ export default function UploadPage() {
           )}
         </Box>
 
-        {/* Live Camera Feed */}
         {cameraOn && (
           <Box
             sx={{
@@ -684,7 +763,6 @@ export default function UploadPage() {
           </Box>
         )}
 
-        {/* Preview */}
         {capturedImage && (
           <Paper
             elevation={3}
@@ -700,6 +778,18 @@ export default function UploadPage() {
             <Typography variant="h6" fontWeight="bold" gutterBottom>
               {t.preview}
             </Typography>
+            <Box sx={{ mb: 2, display: "flex", justifyContent: "center" }}>
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={rotateCapturedImage}
+                disabled={isRotating || isSubmitting}
+                startIcon={<ICONS.refresh />}
+                sx={getStartIconSpacing(dir)}
+              >
+                {t.rotatePhoto}
+              </Button>
+            </Box>
             <Box
               sx={{
                 width: "100%",
@@ -726,7 +816,6 @@ export default function UploadPage() {
           </Paper>
         )}
 
-        {/* Optional Card Input */}
         {mode === "card" && capturedImage && (
           <Paper
             elevation={3}
@@ -805,7 +894,6 @@ export default function UploadPage() {
           </Paper>
         )}
 
-        {/* Action Buttons */}
         <Box
           sx={{
             display: { xs: "flex", sm: "flex" },
@@ -839,6 +927,7 @@ export default function UploadPage() {
                 onClick={submitPhoto}
                 disabled={
                   isSubmitting ||
+                  isRotating ||
                   (mode === "card" &&
                     (wallConfig?.cardSettings?.inputType === "signature"
                       ? !signatureDataUrl
@@ -877,7 +966,6 @@ export default function UploadPage() {
           )}
         </Box>
 
-        {/* Instructions */}
         <Paper
           elevation={1}
           sx={{
