@@ -29,7 +29,7 @@ export default function VoteCastHome() {
     <ModuleLandingPage
       moduleIcon={ICONS.poll}
       ctaLabel={translations.en.ctaLabel}
-      ctaHref="/cms/modules/votecast/events"
+      ctaHref="/cms/modules/votecast/polls"
       translations={translations}
     />
   );

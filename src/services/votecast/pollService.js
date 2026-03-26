@@ -1,52 +1,49 @@
 import api from "@/services/api";
 import withApiHandler from "@/utils/withApiHandler";
 
-// Get all polls (for admin or business user)
-export const getPolls = withApiHandler(
-  async (eventId = "") => {
-    const params = new URLSearchParams();
-    if (eventId) params.append("eventId", eventId);
-
-    const { data } = await api.get(
-      `/votecast/polls${params.toString() ? `?${params.toString()}` : ""}`
-    );
-    return data.data || data; // Handle both response formats
-  }
-);
-// Get active polls for voting (public route) - by event slug
-export const getActivePollsByEvent = withApiHandler(async (eventSlug) => {
-  const { data } = await api.get(`/votecast/polls/public/${eventSlug}`);
+// Get all polls by businessSlug (CMS)
+export const getPolls = withApiHandler(async (businessSlug) => {
+  const { data } = await api.get(`/votecast/polls?businessSlug=${businessSlug}`);
   return data.data || data;
 });
 
-// Create Poll with images
+// Get questions for a poll (CMS)
+export const getPollQuestions = withApiHandler(async (pollId) => {
+  const { data } = await api.get(`/votecast/polls/${pollId}/questions`);
+  return data.data || data;
+});
+
+// Get poll by slug (public)
+export const getPublicPollBySlug = withApiHandler(async (slug) => {
+  const { data } = await api.get(`/votecast/polls/slug/${slug}`);
+  return data.data || data;
+});
+
+// Get single poll by ID (public)
+export const getPublicPollById = withApiHandler(async (pollId) => {
+  const { data } = await api.get(`/votecast/polls/public/poll/${pollId}`);
+  return data.data || data;
+});
+
+// Create poll
 export const createPoll = withApiHandler(
   async (payload) => {
     const { data } = await api.post("/votecast/polls", payload);
-    return data.data; 
+    return data.data;
   },
   { showSuccess: true }
 );
 
-// Update Poll with optional new images
+// Update poll metadata
 export const updatePoll = withApiHandler(
   async (id, payload) => {
     const { data } = await api.put(`/votecast/polls/${id}`, payload);
-    return data.data; 
+    return data.data;
   },
   { showSuccess: true }
 );
 
-// Clone a poll
-export const clonePoll = withApiHandler(
-  async (pollId) => {
-    const { data } = await api.post(`/votecast/polls/${pollId}/clone`);
-    return data.data || data; 
-  },
-  { showSuccess: true }
-);
-
-// Delete a poll
+// Delete poll
 export const deletePoll = withApiHandler(
   async (id) => {
     const { data } = await api.delete(`/votecast/polls/${id}`);
@@ -55,62 +52,112 @@ export const deletePoll = withApiHandler(
   { showSuccess: true }
 );
 
-// Vote on a poll (public)
+// Clone a poll
+export const clonePoll = withApiHandler(
+  async (pollId) => {
+    const { data } = await api.post(`/votecast/polls/${pollId}/clone`);
+    return data.data || data;
+  },
+  { showSuccess: true }
+);
+
+// Add question to poll
+export const addQuestion = withApiHandler(
+  async (pollId, payload) => {
+    const { data } = await api.post(`/votecast/polls/${pollId}/questions`, payload);
+    return data.data || data;
+  },
+  { showSuccess: true }
+);
+
+// Update question in poll
+export const updateQuestion = withApiHandler(
+  async (pollId, questionId, payload) => {
+    const { data } = await api.put(`/votecast/polls/${pollId}/questions/${questionId}`, payload);
+    return data.data || data;
+  },
+  { showSuccess: true }
+);
+
+// Delete question from poll
+export const deleteQuestion = withApiHandler(
+  async (pollId, questionId) => {
+    const { data } = await api.delete(`/votecast/polls/${pollId}/questions/${questionId}`);
+    return data;
+  },
+  { showSuccess: true }
+);
+
+// Get results for a single poll by ID (CMS)
+export const getPollResults = withApiHandler(async (pollId) => {
+  const { data } = await api.get(`/votecast/polls/${pollId}/results`);
+  return data.data || data;
+});
+
+// Export questions for a poll as XLSX
+export const exportQuestionsToExcel = async (pollId, pollSlug) => {
+  const { data, headers } = await api.get(`/votecast/polls/${pollId}/questions/export`, {
+    responseType: "blob",
+  });
+  const blob = new Blob([data], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  let filename = `${pollSlug || pollId}_questions.xlsx`;
+  const disposition = headers?.["content-disposition"];
+  if (disposition) {
+    const match = disposition.match(/filename="?([^"]+)"?/);
+    if (match?.[1]) filename = match[1];
+  }
+  link.setAttribute("download", filename);
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+};
+
+// Clone question in poll
+export const cloneQuestion = withApiHandler(
+  async (pollId, questionId) => {
+    const { data } = await api.post(`/votecast/polls/${pollId}/questions/${questionId}/clone`);
+    return data.data || data;
+  },
+  { showSuccess: true }
+);
+
+// Verify attendee by poll ID (public)
+export const verifyAttendeeByPoll = withApiHandler(async (pollId, fieldValue) => {
+  const { data } = await api.post("/votecast/polls/verify-by-poll", { pollId, fieldValue });
+  return data;
+});
+
+// Verify attendee via VoteCast event slug (legacy public)
+export const verifyAttendee = withApiHandler(async (eventSlug, fieldValue) => {
+  const { data } = await api.post("/votecast/polls/verify", { eventSlug, fieldValue });
+  return data;
+});
+
+// Vote on a question within a poll (public)
 export const voteOnPoll = withApiHandler(
-  async (pollId, optionIndex) => {
-    const { data } = await api.post(`/votecast/polls/${pollId}/vote`, {
-      optionIndex,
-    });
+  async (pollId, questionId, optionIndex, registrationId = null) => {
+    const payload = { questionId, optionIndex };
+    if (registrationId) payload.registrationId = registrationId;
+    const { data } = await api.post(`/votecast/polls/${pollId}/vote`, payload);
     return data;
   },
   { showSuccess: true }
 );
 
-// Reset votes for an event
+// Reset votes for a poll
 export const resetVotes = withApiHandler(
-  async (eventId) => {
-    const { data } = await api.post(`/votecast/polls/reset`, {
-      eventId,
-    });
+  async (pollId) => {
+    const { data } = await api.post(`/votecast/polls/reset`, { pollId });
     return data;
   },
   { showSuccess: true }
 );
-
-// Export polls to Excel
-export const exportPollsToExcel = 
-  async (eventId) => {
-    try {
-      const response = await api.post(
-        "/votecast/polls/export",
-        { eventId },
-        {
-          responseType: "blob",
-          headers: {
-            Accept:
-              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-          },
-        }
-      );
-
-      const blob = new Blob([response.data], {
-        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      });
-
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute(
-        "download",
-        `polls-${Date.now()}.xlsx`
-      );
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-    } catch (err) {
-      console.error("Failed to export polls to Excel:", err);
-    }
-  };
 
 export const getPollMeta = withApiHandler(async (id) => {
   const { data } = await api.get(`/votecast/polls/${id}/meta`);

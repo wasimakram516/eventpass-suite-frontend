@@ -211,6 +211,13 @@ export default function BreadcrumbsNav() {
         href: basePath,
       };
     }
+    // Dynamic slugs (not in segmentMap) should link to their parent path
+    if (!segmentMap[seg]) {
+      return {
+        segment: seg,
+        href: basePath + "/" + segments.slice(0, i).join("/"),
+      };
+    }
     return {
       segment: seg,
       href: basePath + "/" + segments.slice(0, i + 1).join("/"),

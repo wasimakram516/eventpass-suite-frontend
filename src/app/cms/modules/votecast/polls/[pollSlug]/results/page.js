@@ -15,101 +15,90 @@ import ResultsChart from "@/components/cards/ResultsChart";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import { useMessage } from "@/contexts/MessageContext";
-import { getResults } from "@/services/votecast/pollsResultService";
-import { resetVotes } from "@/services/votecast/pollService";
-import { getVoteCastEventBySlug } from "@/services/votecast/eventService";
+import { getPublicPollBySlug, getPollResults, resetVotes } from "@/services/votecast/pollService";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import ICONS from "@/utils/iconUtil";
-import EmptyBusinessState from "@/components/EmptyBusinessState";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 
 const translations = {
   en: {
     title: "Poll Results Viewer",
-    subtitle: "View poll results and analytics for this event.",
+    subtitle: "View results and analytics for this poll.",
     resetVotes: "Reset Votes",
     viewFullScreen: "View Full Screen",
     confirmVoteReset: "Confirm Vote Reset",
-    resetConfirmation:
-      "Are you sure you want to reset all votes for this event's polls? This action cannot be undone.",
+    resetConfirmation: "Are you sure you want to reset all votes for this poll? This action cannot be undone.",
     resetButton: "Reset",
     votesResetSuccess: "Votes reset successfully",
     failedToFetchResults: "Failed to fetch poll results.",
     failedToResetVotes: "Failed to reset votes.",
-    eventNotFound: "Event not found",
+    pollNotFound: "Poll not found",
   },
   ar: {
     title: "عارض نتائج الاستطلاع",
-    subtitle: "عرض نتائج الاستطلاع والتحليلات لهذه الفعالية.",
+    subtitle: "عرض النتائج والتحليلات لهذا الاستطلاع.",
     resetVotes: "إعادة تعيين الأصوات",
     viewFullScreen: "عرض بملء الشاشة",
     confirmVoteReset: "تأكيد إعادة تعيين الأصوات",
-    resetConfirmation:
-      "هل أنت متأكد من أنك تريد إعادة تعيين جميع الأصوات لاستطلاعات هذه الفعالية؟ لا يمكن التراجع عن هذا الإجراء.",
+    resetConfirmation: "هل أنت متأكد من أنك تريد إعادة تعيين جميع الأصوات لهذا الاستطلاع؟ لا يمكن التراجع عن هذا الإجراء.",
     resetButton: "إعادة تعيين",
     votesResetSuccess: "تم إعادة تعيين الأصوات بنجاح",
     failedToFetchResults: "فشل في جلب نتائج الاستطلاع.",
     failedToResetVotes: "فشل في إعادة تعيين الأصوات.",
-    eventNotFound: "الفعالية غير موجودة",
+    pollNotFound: "الاستطلاع غير موجود",
   },
 };
 
-export default function ResultsPage() {
-  const { eventSlug } = useParams();
+export default function PollResultsPage() {
+  const { pollSlug } = useParams();
   const { showMessage } = useMessage();
   const { t, dir } = useI18nLayout(translations);
-  const [event, setEvent] = useState(null);
+
+  const [poll, setPoll] = useState(null);
   const [results, setResults] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [confirmReset, setConfirmReset] = useState(false);
 
+  const fetchResults = async (pollId) => {
+    const data = await getPollResults(pollId);
+    setResults(Array.isArray(data) ? data : []);
+  };
+
   useEffect(() => {
-    const fetchEventAndResults = async () => {
-      if (!eventSlug) return;
-
+    if (!pollSlug) return;
+    const init = async () => {
       setLoading(true);
-      try {
-        const eventData = await getVoteCastEventBySlug(eventSlug);
-        if (eventData?.error || !eventData) {
-          showMessage(t.eventNotFound, "error");
-          setLoading(false);
-          return;
-        }
-        setEvent(eventData);
-
-        const resultsData = await getResults(eventData._id);
-        setResults(resultsData || []);
-      } catch (error) {
-        showMessage(t.failedToFetchResults, "error");
+      const pollData = await getPublicPollBySlug(pollSlug);
+      if (!pollData || pollData.error) {
+        showMessage(t.pollNotFound, "error");
+        setLoading(false);
+        return;
       }
+      setPoll(pollData);
+      await fetchResults(pollData._id);
       setLoading(false);
     };
-
-    fetchEventAndResults();
-  }, [eventSlug]);
+    init();
+  }, [pollSlug]);
 
   const handleResetVotes = async () => {
-    if (!event?._id) return;
-
+    if (!poll?._id) return;
     setLoading(true);
-
     try {
-      await resetVotes(event._id);
-      const resultsData = await getResults(event._id);
-      setResults(resultsData || []);
+      await resetVotes(poll._id);
+      await fetchResults(poll._id);
       showMessage(t.votesResetSuccess, "success");
-    } catch (error) {
+    } catch {
       showMessage(t.failedToResetVotes, "error");
     }
-
     setLoading(false);
     setConfirmReset(false);
   };
 
   const handleViewFullScreen = () => {
-    if (!event?.slug) return;
-    window.open(`/votecast/${event.slug}/results`, "_blank");
+    if (!poll?.slug) return;
+    window.open(`/votecast/${poll.slug}/results`, "_blank");
   };
 
   return (
@@ -125,23 +114,14 @@ export default function ResultsPage() {
             mb={2}
           >
             <Box>
-              <Typography variant="h4" fontWeight="bold">
-                {t.title}
-              </Typography>
+              <Typography variant="h4" fontWeight="bold">{t.title}</Typography>
               <Typography variant="body2" color="text.secondary" mt={0.5}>
                 {t.subtitle}
               </Typography>
             </Box>
 
-            {event && results.length > 0 && (
-              <Stack
-                direction={{ xs: "column", md: "row" }}
-                spacing={1}
-                alignItems="flex-start"
-                sx={{
-                  gap: dir === "rtl" ? 1 : 0,
-                }}
-              >
+            {poll && results.length > 0 && (
+              <Stack direction={{ xs: "column", md: "row" }} spacing={1}>
                 <Button
                   variant="contained"
                   color="error"
@@ -151,7 +131,6 @@ export default function ResultsPage() {
                 >
                   {t.resetVotes}
                 </Button>
-
                 <Button
                   variant="contained"
                   color="primary"
@@ -167,30 +146,26 @@ export default function ResultsPage() {
 
           <Divider sx={{ mb: 4 }} />
 
-          {!event ? (
-            <EmptyBusinessState />
-          ) : loading && results.length === 0 ? (
+          {loading ? (
             <Box sx={{ textAlign: "center", mt: 8 }}>
               <CircularProgress />
             </Box>
           ) : results.length === 0 ? (
             <NoDataAvailable />
           ) : (
-            results.length > 0 && (
-              <Box
-                sx={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  justifyContent: "center",
-                  gap: 4,
-                  py: 4,
-                }}
-              >
-                {results.map((poll) => (
-                  <ResultsChart key={poll._id} poll={poll} />
-                ))}
-              </Box>
-            )
+            <Box
+              sx={{
+                display: "flex",
+                flexWrap: "wrap",
+                justifyContent: "center",
+                gap: 4,
+                py: 4,
+              }}
+            >
+              {results.map((question) => (
+                <ResultsChart key={question._id} poll={question} />
+              ))}
+            </Box>
           )}
         </Container>
       </Box>
@@ -207,4 +182,3 @@ export default function ResultsPage() {
     </>
   );
 }
-

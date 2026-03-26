@@ -28,7 +28,7 @@ export const getEventsByBusinessId = withApiHandler(async (businessId) => {
 
 export const getEventsByBusinessSlug = withApiHandler(async (slug) => {
   const { data } = await api.get(`/eventreg/events/business/slug/${slug}`);
-  return data.events;
+  return data.data?.events;
 });
 
 // Create a new event (JSON with media URLs)

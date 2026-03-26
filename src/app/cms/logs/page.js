@@ -482,25 +482,20 @@ export default function LogsPage() {
       return;
     }
 
-    if (moduleName === "VoteCast" && itemType === "Event") {
-      router.push(`/cms/modules/votecast/events${searchQuery}`);
-      return;
-    }
-
-    if (moduleName === "VoteCast" && itemType === "Poll") {
+    if (module === "VoteCast" && (itemType === "Event" || itemType === "Poll")) {
       try {
         if (log.itemId) {
           const meta = await getPollMeta(log.itemId);
-          if (meta && !meta.error && meta.eventSlug) {
+          if (meta && !meta.error && meta.slug) {
             router.push(
-              `/cms/modules/votecast/events/${meta.eventSlug}/polls${searchQuery}`,
+              `/cms/modules/votecast/polls/${meta.slug}/questions${searchQuery}`,
             );
             return;
           }
         }
       } catch {
       }
-      router.push(`/cms/modules/votecast/events${searchQuery}`);
+      router.push(`/cms/modules/votecast/polls${searchQuery}`);
       return;
     }
     if (moduleName === "SurveyGuru") {

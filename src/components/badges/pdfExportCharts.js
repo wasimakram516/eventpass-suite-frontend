@@ -162,6 +162,12 @@ const addEventHeader = async (
   });
   currentY -= 14.17;
 
+  // Optional subtitle (e.g. "Event Name: xyz" for poll insights)
+  if (eventInfo.subtitle) {
+    renderLabelValue(page, eventInfo.subtitleLabel || "Event Name", String(eventInfo.subtitle), margin, currentY, pageWidth, margin, isRTL, font, boldFont, FONT_LABEL);
+    currentY -= LINE_HEIGHT;
+  }
+
   // Event details
   const fromDate = eventInfo.startDateFormatted || formatDate(eventInfo.startDate);
   const toDate = eventInfo.endDateFormatted || formatDate(eventInfo.endDate);
@@ -177,11 +183,13 @@ const addEventHeader = async (
   currentY -= LINE_HEIGHT;
   renderLabelValue(page, venueLabel, String(eventInfo.venue || ""), margin, currentY, pageWidth, margin, isRTL, font, boldFont, FONT_LABEL);
   currentY -= LINE_HEIGHT;
-  const registrationsValue = eventInfo.registrationsFormatted !== undefined
-    ? eventInfo.registrationsFormatted
-    : String(eventInfo.registrations || 0);
-  renderLabelValue(page, registrationsLabel, registrationsValue, margin, currentY, pageWidth, margin, isRTL, font, boldFont, FONT_LABEL);
-  currentY -= LINE_HEIGHT;
+  if (eventInfo.registrations !== undefined && eventInfo.registrations !== null) {
+    const registrationsValue = eventInfo.registrationsFormatted !== undefined
+      ? eventInfo.registrationsFormatted
+      : String(eventInfo.registrations);
+    renderLabelValue(page, registrationsLabel, registrationsValue, margin, currentY, pageWidth, margin, isRTL, font, boldFont, FONT_LABEL);
+    currentY -= LINE_HEIGHT;
+  }
 
   // Survey-specific fields only if surveyInfo is provided
   if (surveyInfo) {
@@ -372,19 +380,25 @@ export const exportChartsToPDF = async (
   }
 
   let page = pdf.addPage([pageWidth, pageHeight]);
-  let yPosition = await addEventHeader(
-    pdf,
-    page,
-    eventInfo,
-    pageWidth,
-    margin,
-    surveyInfo,
-    language,
-    isRTL,
-    translations,
-    font,
-    boldFont
-  );
+  let yPosition;
+  try {
+    yPosition = await addEventHeader(
+      pdf,
+      page,
+      eventInfo,
+      pageWidth,
+      margin,
+      surveyInfo,
+      language,
+      isRTL,
+      translations,
+      font,
+      boldFont
+    );
+  } catch (err) {
+    console.error("Error rendering PDF header:", err);
+    yPosition = PAGE_HEIGHT - margin;
+  }
   yPosition -= spacing;
   let isFirstChart = true;
 
@@ -471,6 +485,7 @@ export const exportChartsToPDF = async (
         chartData.chartType === "pie" &&
         (chartData.type === "text" ||
           chartData.type === "number" ||
+          chartData.type === "categorical" ||
           chartData.type === "multi" ||
           chartData.questionType === "multi") &&
         !surveyInfo
