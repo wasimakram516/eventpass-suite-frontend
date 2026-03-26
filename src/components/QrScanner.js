@@ -315,7 +315,7 @@ export default function QRScanner({ onScanSuccess, onError, onCancel }) {
       scanner.clear();
     } catch {}
 
-    if (scannerHostRef.current && scannerHostRef.current.childElementCount === 0) {
+    if (scannerHostRef.current && scannerHostRef.current.childElementCount > 0) {
       scannerHostRef.current.innerHTML = "";
     }
   };
@@ -395,14 +395,19 @@ export default function QRScanner({ onScanSuccess, onError, onCancel }) {
           setLoading(false);
           setSwitchError("");
 
-          const labeledCameras = await listAvailableCameras(scannerModule).catch(
-            () => discoveredCameras
-          );
+          // Re-enumerate using enumerateDevices directly (permission already granted)
+          // to get labelled camera names without triggering a second getUserMedia call,
+          // which would interrupt the active stream on Android staff scanner devices.
+          const relabeledCameras = await navigator.mediaDevices
+            .enumerateDevices()
+            .then((devices) => {
+              const inputs = dedupeCameras(toVideoInputs(devices));
+              return inputs.length > 0 ? inputs : discoveredCameras;
+            })
+            .catch(() => discoveredCameras);
 
           if (requestId === requestIdRef.current) {
-            setCameraOptions(
-              labeledCameras.length > 0 ? labeledCameras : discoveredCameras
-            );
+            setCameraOptions(relabeledCameras);
           }
 
           return;
@@ -429,9 +434,9 @@ export default function QRScanner({ onScanSuccess, onError, onCancel }) {
   startScannerForSelectionRef.current = startScannerForSelection;
   refreshCameraOptionsRef.current = async () => {
     try {
-      const scannerModule = await loadScannerModule();
-      const cameras = await listAvailableCameras(scannerModule);
-      setCameraOptions(cameras);
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const cameras = dedupeCameras(toVideoInputs(devices));
+      if (cameras.length > 0) setCameraOptions(cameras);
     } catch {}
   };
 
@@ -568,7 +573,7 @@ export default function QRScanner({ onScanSuccess, onError, onCancel }) {
           />
         )}
 
-        {selectableCameraOptions.length > 0 && (
+        {cameraOptions.length > 0 && (
           <Box
             sx={{
               position: "absolute",
