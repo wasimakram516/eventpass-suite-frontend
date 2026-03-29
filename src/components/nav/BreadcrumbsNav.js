@@ -155,7 +155,7 @@ const segmentMap = {
     icon: <ICONS.adminPanel fontSize="small" sx={{ mr: 0.5 }} />,
   },
   sessions: {
-    label: "Game Sessions",
+    label: "Sessions",
     icon: <ICONS.leaderboard fontSize="small" sx={{ mr: 0.5 }} />,
   },
   surveys: {

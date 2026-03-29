@@ -32,6 +32,7 @@ export default function EventCardBase({
   onShare,
   onInsights,
   onViewResults,
+  onViewFullScreen,
 }) {
   return (
     <AppCard sx={{ width: { xs: "100%", sm: 360 }, height: "100%" }}>
@@ -295,6 +296,20 @@ export default function EventCardBase({
               }}
             >
               <ICONS.insights />
+            </IconButton>
+          </Tooltip>
+        )}
+        {onViewFullScreen && (
+          <Tooltip title={t.viewFullScreen || "Full Screen"}>
+            <IconButton
+              color="success"
+              onClick={onViewFullScreen}
+              sx={{
+                "&:hover": { transform: "scale(1.1)" },
+                transition: "0.2s",
+              }}
+            >
+              <ICONS.fullscreen />
             </IconButton>
           </Tooltip>
         )}

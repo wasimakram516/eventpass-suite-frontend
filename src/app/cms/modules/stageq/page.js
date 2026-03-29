@@ -30,7 +30,7 @@ export default function VoteCastHome() {
     <ModuleLandingPage
       moduleIcon={ICONS.forum}
       ctaLabel={translations.en.ctaLabel}
-      ctaHref="/cms/modules/stageq/queries"
+      ctaHref="/cms/modules/stageq/sessions"
       translations={translations}
     />
   );
