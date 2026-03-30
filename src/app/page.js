@@ -26,6 +26,7 @@ const translations = {
     subtitle:
       "Run interactive quizzes, real-time polls, photo walls, audience Q&A, registration and check-in — all in one place.",
     button: "Go to CMS",
+    badgeButton: "View Your Badge",
     features: {
       quiz: "QuizNest",
       games: "Event Duel",
@@ -44,6 +45,7 @@ const translations = {
     subtitle:
       "شغّل الاختبارات التفاعلية، التصويت، جدار الصور، أسئلة الجمهور، التسجيل والدخول — كل ذلك في مكان واحد.",
     button: "اذهب إلى لوحة التحكم",
+    badgeButton: "عرض بطاقتك",
     features: {
       quiz: "QuizNest",
       games: "Event Duel",
@@ -168,26 +170,44 @@ export default function HomePage() {
                 {t.subtitle}
               </Typography>
 
-              <Button
-                variant="contained"
-                size="large"
-                startIcon={<ICONS.module />}
-                onClick={() => router.push("/cms")}
-                sx={(th) => ({
-                  mt: 1,
-                  px: 4,
-                  py: 1.4,
-                  borderRadius: 3,
-                  textTransform: "none",
-                  fontWeight: 700,
-                  boxShadow: `0 12px 30px ${alpha(
-                    th.palette.primary.main,
-                    0.25
-                  )}`,
-                })}
-              >
-                {t.button}
-              </Button>
+              <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                <Button
+                  variant="contained"
+                  size="large"
+                  startIcon={<ICONS.module />}
+                  onClick={() => router.push("/cms")}
+                  sx={(th) => ({
+                    mt: 1,
+                    px: 4,
+                    py: 1.4,
+                    borderRadius: 3,
+                    textTransform: "none",
+                    fontWeight: 700,
+                    boxShadow: `0 12px 30px ${alpha(
+                      th.palette.primary.main,
+                      0.25
+                    )}`,
+                  })}
+                >
+                  {t.button}
+                </Button>
+                <Button
+                  variant="outlined"
+                  size="large"
+                  startIcon={<ICONS.badge />}
+                  onClick={() => router.push("/my-badge")}
+                  sx={{
+                    mt: 1,
+                    px: 4,
+                    py: 1.4,
+                    borderRadius: 3,
+                    textTransform: "none",
+                    fontWeight: 700,
+                  }}
+                >
+                  {t.badgeButton}
+                </Button>
+              </Stack>
             </Stack>
           </Container>
         </Box>
