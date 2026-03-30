@@ -19,7 +19,7 @@ import { getModuleIcon } from "@/utils/iconMapper";
 import ICONS from "@/utils/iconUtil";
 import Background from "@/components/Background";
 import HorizontalCarousel from "@/components/HorizontalCarousel";
-
+ 
 const translations = {
   en: {
     heading: "Unified Event Engagement Suite",
