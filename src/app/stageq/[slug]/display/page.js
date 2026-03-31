@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { Box, CircularProgress, Typography } from "@mui/material";
 import { getQuestionsBySession, getPublicSessionBySlug } from "@/services/stageq/stageqSessionService";
+import useStageQSocket from "@/hooks/modules/stageq/useStageQSocket";
 import Footer from "@/components/nav/Footer";
 import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
 import Background from "@/components/Background";
@@ -78,9 +79,31 @@ export default function SessionLiveDisplay() {
   useEffect(() => {
     if (!slug) return;
     fetchQuestions();
-    const interval = setInterval(fetchQuestions, 10000);
-    return () => clearInterval(interval);
   }, [slug]);
+
+  const handleVoteUpdated = useCallback(({ questionId, votes }) => {
+    setQuestions(prev => prev.map(q => q._id === questionId ? { ...q, votes } : q));
+  }, []);
+
+  const handleAnsweredUpdated = useCallback(({ questionId, answered, question }) => {
+    if (answered) {
+      setQuestions(prev => prev.filter(q => q._id !== questionId));
+    } else if (question) {
+      setQuestions(prev => prev.some(q => q._id === questionId) ? prev : [...prev, question]);
+    }
+  }, []);
+
+  const handleNewQuestion = useCallback((question) => {
+    if (question.answered) return;
+    setQuestions(prev => prev.some(q => q._id === question._id) ? prev : [...prev, question]);
+  }, []);
+
+  useStageQSocket({
+    sessionSlug: slug,
+    onVoteUpdated: handleVoteUpdated,
+    onAnsweredUpdated: handleAnsweredUpdated,
+    onNewQuestion: handleNewQuestion,
+  });
 
   const bubbles = useMemo(() => {
     const sorted = [...questions].sort((a, b) => b.votes - a.votes);

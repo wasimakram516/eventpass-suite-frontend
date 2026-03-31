@@ -5,20 +5,20 @@ const translations = {
   en: {
     title: "VoteCast – Audience Polling",
     features: [
-      "Create and share polls with the public effortlessly.",
-      "Users can cast their votes anonymously – no login required.",
-      "View and analyze poll results instantly.",
-      "Ideal for events, booths, or real-time feedback collection.",
+      "Create polls and link them to your event for registration-based access.",
+      "Attendees verify their registration before voting to ensure one vote per person.",
+      "View and analyze poll results instantly in real time.",
+      "Share via QR code or link — works seamlessly at events and booths.",
     ],
     ctaLabel: "Manage Polls",
   },
   ar: {
     title: "VoteCast – استطلاعات الجمهور",
     features: [
-      "أنشئ وشارك استطلاعات مع الجمهور بسهولة.",
-      "يمكن للمستخدمين التصويت بشكل مجهول دون تسجيل الدخول.",
-      "اعرض نتائج الاستطلاع فورًا وحللها.",
-      "مثالية للفعاليات أو الأجنحة أو جمع التعليقات الفورية.",
+      "أنشئ استطلاعات واربطها بفعاليتك للوصول المبني على التسجيل.",
+      "يتحقق الحضور من تسجيلهم قبل التصويت لضمان صوت واحد لكل شخص.",
+      "اعرض نتائج الاستطلاع وحللها فورًا في الوقت الفعلي.",
+      "شارك عبر رمز QR أو رابط — يعمل بسلاسة في الفعاليات والأجنحة.",
     ],
     ctaLabel: "إدارة الاستطلاعات",
   },

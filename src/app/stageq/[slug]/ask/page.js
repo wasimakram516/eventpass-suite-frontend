@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useEffect, useState, useRef, useMemo, useCallback } from "react";
 import {
   Box,
   Container,
@@ -27,6 +27,7 @@ import {
 } from "@/services/stageq/stageqSessionService";
 import { voteQuestion } from "@/services/stageq/questionService";
 import { translateTexts } from "@/services/translationService";
+import useStageQSocket from "@/hooks/modules/stageq/useStageQSocket";
 import LanguageSelector from "@/components/LanguageSelector";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import LoadingState from "@/components/LoadingState";
@@ -83,6 +84,20 @@ export default function AskQuestionsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [openForm, setOpenForm] = useState(false);
   const [questionText, setQuestionText] = useState("");
+
+  const handleVoteUpdated = useCallback(({ questionId, votes }) => {
+    setQuestions(prev => prev.map(q => q._id === questionId ? { ...q, votes } : q));
+  }, []);
+
+  const handleNewQuestion = useCallback((question) => {
+    setQuestions(prev => prev.some(q => q._id === question._id) ? prev : [question, ...prev]);
+  }, []);
+
+  useStageQSocket({
+    sessionSlug: slug,
+    onVoteUpdated: handleVoteUpdated,
+    onNewQuestion: handleNewQuestion,
+  });
 
   // Translate question texts on language change
   useEffect(() => {
@@ -145,12 +160,17 @@ export default function AskQuestionsPage() {
     const voted = JSON.parse(localStorage.getItem(voteStorageKey) || "[]");
     const hasVoted = voted.includes(questionId);
     const action = hasVoted ? "remove" : "add";
-    await voteQuestion(questionId, action);
+
+    // Optimistic update
+    setQuestions(prev => prev.map(q =>
+      q._id === questionId ? { ...q, votes: Math.max(0, q.votes + (action === "add" ? 1 : -1)) } : q
+    ));
     localStorage.setItem(
       voteStorageKey,
       JSON.stringify(hasVoted ? voted.filter(id => id !== questionId) : [...voted, questionId])
     );
-    fetchQuestions();
+
+    await voteQuestion(questionId, action);
   };
 
   const handleSubmit = async () => {
@@ -163,7 +183,6 @@ export default function AskQuestionsPage() {
       });
       setQuestionText("");
       setOpenForm(false);
-      fetchQuestions();
     } finally {
       setSubmitting(false);
     }

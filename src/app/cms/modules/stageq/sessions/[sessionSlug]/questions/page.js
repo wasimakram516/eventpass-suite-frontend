@@ -22,7 +22,7 @@ import {
   MenuItem,
 } from "@mui/material";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useMessage } from "@/contexts/MessageContext";
 import {
   getQuestionsBySession,
@@ -40,6 +40,7 @@ import NoDataAvailable from "@/components/NoDataAvailable";
 import RecordMetadata from "@/components/RecordMetadata";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import { useParams } from "next/navigation";
+import useStageQSocket from "@/hooks/modules/stageq/useStageQSocket";
 import AppCard from "@/components/cards/AppCard";
 import { COUNTRY_CODES } from "@/utils/countryCodes";
 
@@ -117,9 +118,26 @@ export default function SessionQuestionsPage() {
   useEffect(() => {
     if (!sessionSlug) return;
     fetchQuestions(true);
-    const interval = setInterval(() => fetchQuestions(false), 10000);
-    return () => clearInterval(interval);
   }, [sessionSlug]);
+
+  const handleVoteUpdated = useCallback(({ questionId, votes }) => {
+    setQuestions(prev => prev.map(q => q._id === questionId ? { ...q, votes } : q));
+  }, []);
+
+  const handleAnsweredUpdated = useCallback(({ questionId, answered }) => {
+    setQuestions(prev => prev.map(q => q._id === questionId ? { ...q, answered } : q));
+  }, []);
+
+  const handleNewQuestion = useCallback((question) => {
+    setQuestions(prev => prev.some(q => q._id === question._id) ? prev : [question, ...prev]);
+  }, []);
+
+  useStageQSocket({
+    sessionSlug,
+    onVoteUpdated: handleVoteUpdated,
+    onAnsweredUpdated: handleAnsweredUpdated,
+    onNewQuestion: handleNewQuestion,
+  });
 
   const handleDelete = async () => {
     await deleteQuestion(confirmDelete.id);
@@ -257,7 +275,6 @@ export default function SessionQuestionsPage() {
                         onChange={async (e) => {
                           try {
                             await updateQuestion(q._id, { answered: e.target.value === "answered" });
-                            fetchQuestions(false);
                           } catch {
                             showMessage(t.failedToUpdateAnsweredStatus, "error");
                           }
