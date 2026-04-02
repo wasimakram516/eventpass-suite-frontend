@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
-import { Box } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import { motion } from "framer-motion";
 import { Shift } from "ambient-cbg";
 
@@ -207,7 +207,7 @@ export default function MosaicGrid({ media, background, backgroundLogo, rows = 1
           transform: "translate(-50%, -50%)",
           width: "40vw",
           height: "40vh",
-          zIndex: backgroundLogo.overlayEnabled ? 100 : 1,
+          zIndex: 1,
           pointerEvents: "none",
           opacity: backgroundLogo.opacity ?? 1,
         }}

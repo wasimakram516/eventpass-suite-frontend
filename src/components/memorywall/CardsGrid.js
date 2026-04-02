@@ -622,7 +622,7 @@ export default function CardsGrid({
           transform: "translate(-50%, -50%)",
           width: "40vw",
           height: "40vh",
-          zIndex: backgroundLogo.overlayEnabled ? 100 : 1,
+          zIndex: 1,
           pointerEvents: "none",
           opacity: backgroundLogo.opacity ?? 1,
         }}
