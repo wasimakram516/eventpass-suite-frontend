@@ -15,9 +15,10 @@ import {
   ListItemIcon,
   Container,
 } from "@mui/material";
+import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 
 import QrScanner from "@/components/QrScanner";
-import { verifyRegistrationByToken } from "@/services/eventreg/registrationService";
+import { verifyRegistrationByToken, trackBadgePrint } from "@/services/eventreg/registrationService";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
@@ -60,6 +61,9 @@ const translations = {
     registrationNotApproved: "This registration is not approved",
     registrationPending: "This registration is pending approval from the admin",
     registrationRejected: "This registration has been rejected by the admin",
+    alreadyPrintedWarning: "Badge already printed {count} time(s). Do you want to proceed?",
+    proceedPrint: "Proceed",
+    cancelPrint: "Cancel",
     tooltip: {
       openScanner: "Open QR Scanner",
       cancel: "Cancel scanning",
@@ -97,6 +101,9 @@ const translations = {
     registrationNotApproved: "لم يتم الموافقة على هذا التسجيل",
     registrationPending: "هذا التسجيل في انتظار الموافقة من قبل المسؤول",
     registrationRejected: "تم رفض هذا التسجيل من قبل المسؤول",
+    alreadyPrintedWarning: "تمت طباعة الشارة {count} مرة. هل تريد المتابعة؟",
+    proceedPrint: "متابعة",
+    cancelPrint: "إلغاء",
     tooltip: {
       openScanner: "افتح الماسح الضوئي",
       cancel: "إلغاء المسح",
@@ -121,6 +128,8 @@ export default function VerifyPage() {
   const [approvalErrorStatus, setApprovalErrorStatus] = useState(null);
   const [printing, setPrinting] = useState(false);
   const [showPdfModal, setShowPdfModal] = useState(false);
+  const [printWarningOpen, setPrintWarningOpen] = useState(false);
+  const [pendingPrintType, setPendingPrintType] = useState(null); // "pdf" | "zebra"
 
   const successAudioRef = useRef(null);
   const errorAudioRef = useRef(null);
@@ -214,12 +223,30 @@ export default function VerifyPage() {
     setManualMode(false);
     setPrinting(false);
     setShowPdfModal(false);
+    setPrintWarningOpen(false);
+    setPendingPrintType(null);
   };
 
-  const handlePrintZebra = async () => {
+  const checkPrintWarning = (type) => {
+    const allowMultiple = result?.eventDetails?.allowMultipleBadgePrinting ?? true;
+    if (!allowMultiple && (result?.printCount || 0) > 0) {
+      setPendingPrintType(type);
+      setPrintWarningOpen(true);
+      return true;
+    }
+    return false;
+  };
+
+  const handlePrintZebra = () => {
+    if (checkPrintWarning("zebra")) return;
+    doPrintZebra();
+  };
+
+  const doPrintZebra = async () => {
     try {
       if (!result?.zpl) throw new Error("No ZPL received from server");
       setPrinting(true);
+      await trackBadgePrint(result.registrationId || result._id);
       await printZpl(result.zpl);
       showMessage("Badge sent to printer successfully", "success");
     } catch (e) {
@@ -229,11 +256,18 @@ export default function VerifyPage() {
     }
   };
 
-  const handlePrint = async () => {
+  const handlePrint = () => {
+    if (checkPrintWarning("pdf")) return;
+    doPrint();
+  };
+
+  const doPrint = async () => {
     if (!result?.token) return;
 
     setPrinting(true);
     try {
+      await trackBadgePrint(result.registrationId || result._id);
+
       let qrCodeDataUrl = "";
       try {
         qrCodeDataUrl = await QRCode.toDataURL(result.token, {
@@ -623,6 +657,22 @@ export default function VerifyPage() {
         <audio ref={successAudioRef} src="/correct.wav" preload="auto" />
         <audio ref={errorAudioRef} src="/wrong.wav" preload="auto" />
       </Box>
+
+      <ConfirmationDialog
+        open={printWarningOpen}
+        onClose={() => setPrintWarningOpen(false)}
+        onConfirm={async () => {
+          setPrintWarningOpen(false);
+          if (pendingPrintType === "zebra") await doPrintZebra();
+          else await doPrint();
+          setPendingPrintType(null);
+        }}
+        title={t.printBadge}
+        message={t.alreadyPrintedWarning.replace("{count}", result?.printCount || 0)}
+        confirmButtonText={t.proceedPrint}
+        confirmButtonIcon={<ICONS.print />}
+        confirmButtonColor="primary"
+      />
     </Container>
   );
 }

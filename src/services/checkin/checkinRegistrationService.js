@@ -120,6 +120,12 @@ export const createCheckInWalkIn = withApiHandler(
   { showSuccess: true }
 );
 
+// Track badge print — increments printCount and updates printTimestamp
+export const trackCheckInBadgePrint = withApiHandler(async (id) => {
+  const { data } = await api.patch(`/checkin/registrations/${id}/track-print`);
+  return data;
+});
+
 // Get registration by token (public endpoint for confirmation page)
 export const getCheckInRegistrationByToken = withApiHandler(async (token) => {
   const { data } = await api.get(`/checkin/registrations/by-token?token=${token}`);

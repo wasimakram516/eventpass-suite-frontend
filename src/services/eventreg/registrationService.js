@@ -196,3 +196,8 @@ export const getRegistrationMeta = withApiHandler(async (id) => {
   const { data } = await api.get(`/eventreg/registrations/${id}/meta`);
   return data;
 });
+
+export const trackBadgePrint = withApiHandler(async (id) => {
+  const { data } = await api.patch(`/eventreg/registrations/${id}/track-print`);
+  return data;
+});
