@@ -253,27 +253,67 @@ function MediaCard({
         </Box>
       )}
 
+      {isFull && (isSignatureMode ? (item.imageUrl || item.signatureUrl) : (item.imageUrl && item.text)) && (
+        <Box
+          sx={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: '30%',
+            background: `linear-gradient(to top,
+              rgba(0,0,0,0.76) 0%,
+              rgba(0,0,0,0.71) 8%,
+              rgba(0,0,0,0.63) 17%,
+              rgba(0,0,0,0.52) 27%,
+              rgba(0,0,0,0.40) 38%,
+              rgba(0,0,0,0.28) 50%,
+              rgba(0,0,0,0.17) 63%,
+              rgba(0,0,0,0.08) 76%,
+              rgba(0,0,0,0.02) 88%,
+              transparent 100%
+            )`,
+            zIndex: 2,
+            pointerEvents: 'none',
+          }}
+        />
+      )}
+
       <Box sx={{ 
         width: '100%', 
-        zIndex: 2, 
-        mt: (!item.imageUrl && !item.signatureUrl) ? 0 : (isTop70 ? 1 : (isFull ? 'auto' : 0)),
-        p: 0,
-        pb: (isCircle && (item.imageUrl || item.signatureUrl)) ? 1.5 : 0,
-        background: (isFull && (item.imageUrl || item.signatureUrl)) ? 'linear-gradient(transparent, rgba(0,0,0,0.8))' : 'transparent',
-        color: (isFull && (item.imageUrl || item.signatureUrl)) ? '#fff' : 'inherit',
+        zIndex: 3, 
+        ...(isFull && (isSignatureMode ? (item.imageUrl || item.signatureUrl) : (item.imageUrl && item.text)) ? {
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          maxHeight: '30%',
+          minHeight: '18%',
+          pb: 1,
+          pt: 1,
+          px: 1,
+          background: 'transparent',
+        } : {
+          mt: (!item.imageUrl && !item.signatureUrl) ? 0 : (isTop70 ? 1 : 0),
+          p: 0,
+          pb: (isCircle && (item.imageUrl || item.signatureUrl)) ? 1.5 : 0,
+          flex: 1,
+          background: 'transparent',
+        }),
+        color: (isFull && (isSignatureMode ? (item.imageUrl || item.signatureUrl) : (item.imageUrl && item.text))) ? '#fff' : 'inherit',
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'center',
+        justifyContent: (isFull && (isSignatureMode ? (item.imageUrl || item.signatureUrl) : (item.imageUrl && item.text))) ? 'flex-end' : 'center',
         alignItems: 'center',
-        flex: 1,
         textAlign: 'center',
+        overflow: 'hidden',
       }}>
         {(item.signatureUrl && item.imageUrl) && (
           <Box sx={{ 
             width: "100%", 
             display: 'flex', 
             justifyContent: 'center', 
-            mb: item.text ? 2 : 0,
+            mb: item.text ? (isFull ? 0.5 : 2) : 0,
             filter: 'none'
           }}>
             {isSignatureMode ? (
@@ -282,7 +322,7 @@ function MediaCard({
                   width: "82%",
                   maxWidth: 140,
                   height: 30,
-                  backgroundColor: mediaType2SignatureColor || '#000000',
+                  backgroundColor: isFull ? '#ffffff' : (mediaType2SignatureColor || '#000000'),
                   maskImage: `url(${item.signatureUrl})`,
                   maskSize: "contain",
                   maskRepeat: "no-repeat",
@@ -315,7 +355,7 @@ function MediaCard({
             textAlign={item.text.length < 50 ? "center" : "start"}
             sx={{ 
               fontWeight: (!item.imageUrl && !item.signatureUrl) ? 700 : ((isFull && (item.imageUrl || item.signatureUrl)) ? 600 : 400),
-              textShadow: (isFull && (item.imageUrl || item.signatureUrl)) ? '0 1px 4px rgba(0,0,0,0.5)' : 'none',
+              textShadow: 'none',
               fontSize: (() => {
                 const len = item.text.length;
                 const hasMedia = item.imageUrl || item.signatureUrl;
@@ -337,19 +377,21 @@ function MediaCard({
                 if (len > 40) return '0.75rem';
                 return '0.85rem';
               })(),
-              px: (isCircle && (item.imageUrl || item.signatureUrl)) ? 1.5 : 2,
+              px: isFull ? 0 : ((isCircle && (item.imageUrl || item.signatureUrl)) ? 1.5 : 2),
               py: 0,
               width: "100%",
-              lineHeight: 1.2,
+              lineHeight: 1.3,
               wordBreak: 'break-word',
               overflowWrap: 'anywhere',
               display: (item.imageUrl || item.signatureUrl) ? '-webkit-box' : 'block',
               WebkitBoxOrient: (item.imageUrl || item.signatureUrl) ? 'vertical' : 'unset',
               WebkitLineClamp: (item.imageUrl || item.signatureUrl) ? (isFull ? 3 : (isCircle ? 2 : 3)) : 'unset',
               overflow: 'hidden',
-              color: isSignatureMode 
-                 ? (mediaType2TextColor || '#000000') 
-                 : ((!item.imageUrl && !isFull) ? 'rgba(0,0,0,0.85)' : 'inherit'),
+              color: (isFull && (item.imageUrl || item.signatureUrl))
+                ? (isSignatureMode ? (mediaType2TextColor || '#ffffff') : '#ffffff')
+                : (isSignatureMode
+                   ? (mediaType2TextColor || '#000000')
+                   : ((!item.imageUrl && !isFull) ? 'rgba(0,0,0,0.85)' : 'inherit')),
               letterSpacing: !item.imageUrl ? '0.01em' : 'normal',
             }}
           >
