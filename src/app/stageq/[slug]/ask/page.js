@@ -93,10 +93,20 @@ export default function AskQuestionsPage() {
     setQuestions(prev => prev.some(q => q._id === question._id) ? prev : [question, ...prev]);
   }, []);
 
+  const handleTextUpdated = useCallback(({ questionId, text }) => {
+    setQuestions(prev => prev.map(q => q._id === questionId ? { ...q, text } : q));
+  }, []);
+
+  const handleQuestionDeleted = useCallback(({ questionId }) => {
+    setQuestions(prev => prev.filter(q => q._id !== questionId));
+  }, []);
+
   useStageQSocket({
     sessionSlug: slug,
     onVoteUpdated: handleVoteUpdated,
     onNewQuestion: handleNewQuestion,
+    onTextUpdated: handleTextUpdated,
+    onQuestionDeleted: handleQuestionDeleted,
   });
 
   // Translate question texts on language change
