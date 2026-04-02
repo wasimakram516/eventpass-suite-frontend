@@ -152,6 +152,8 @@ const translations = {
     printBadge: "Print Badge",
     alreadyPrintedWarning: "Badge already printed {count} time(s). Do you want to proceed?",
     proceedPrint: "Proceed",
+    exportBadgesWarning: "Some registrations in the current view have already had their badges exported. Do you still want to proceed?",
+    exportBadgesProceed: "Proceed",
   },
   ar: {
     title: "إدارة التسجيلات",
@@ -229,6 +231,8 @@ const translations = {
     printBadge: "طباعة الشارة",
     alreadyPrintedWarning: "تمت طباعة الشارة {count} مرة. هل تريد المتابعة؟",
     proceedPrint: "متابعة",
+    exportBadgesWarning: "تمت طباعة شارات بعض التسجيلات في العرض الحالي مسبقاً. هل تريد المتابعة؟",
+    exportBadgesProceed: "متابعة",
   },
 };
 
@@ -297,6 +301,7 @@ export default function ViewRegistrations() {
   const [exportingBadges, setExportingBadges] = useState(false);
   const [printWarningOpen, setPrintWarningOpen] = useState(false);
   const [pendingPrintReg, setPendingPrintReg] = useState(null);
+  const [exportBadgesWarningOpen, setExportBadgesWarningOpen] = useState(false);
 
   const [rawSearch, setRawSearch] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -816,7 +821,17 @@ export default function ViewRegistrations() {
     }
   };
 
-  const handleExportBadges = async () => {
+  const handleExportBadges = () => {
+    const allowMultiple = eventDetails?.allowMultipleBadgePrinting ?? true;
+    const hasBeenPrinted = paginated.some((r) => (r.printCount || 0) > 0);
+    if (!allowMultiple && hasBeenPrinted) {
+      setExportBadgesWarningOpen(true);
+      return;
+    }
+    doExportBadges();
+  };
+
+  const doExportBadges = async () => {
     try {
       setExportingBadges(true);
       const trackResults = await Promise.allSettled(
@@ -2268,6 +2283,20 @@ export default function ViewRegistrations() {
         confirmButtonText={t.proceedPrint}
         confirmButtonColor="primary"
         confirmButtonIcon={<ICONS.print />}
+      />
+
+      <ConfirmationDialog
+        open={exportBadgesWarningOpen}
+        onClose={() => setExportBadgesWarningOpen(false)}
+        onConfirm={() => {
+          setExportBadgesWarningOpen(false);
+          doExportBadges();
+        }}
+        title={t.exportBadges}
+        message={t.exportBadgesWarning}
+        confirmButtonText={t.exportBadgesProceed}
+        confirmButtonColor="primary"
+        confirmButtonIcon={<ICONS.pdf />}
       />
 
       <WalkInModal

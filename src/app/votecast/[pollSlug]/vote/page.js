@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo, useRef } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
   Container,
   Card,
@@ -59,6 +59,7 @@ const translations = {
 
 export default function PollVotingPage() {
   const { pollSlug } = useParams();
+  const router = useRouter();
   const { t, dir, align } = useI18nLayout(translations);
   const { language: contextLanguage } = useLanguage();
   const currentLang = contextLanguage || "en";
@@ -139,12 +140,19 @@ export default function PollVotingPage() {
     setCloseTimer(5);
     const interval = setInterval(() => {
       setCloseTimer((prev) => {
-        if (prev <= 1) { clearInterval(interval); handleRestart(); return 0; }
+        if (prev <= 1) { clearInterval(interval); return 0; }
         return prev - 1;
       });
     }, 1000);
     return () => clearInterval(interval);
   }, [finished]);
+
+  // Navigate away once countdown reaches 0
+  useEffect(() => {
+    if (finished && closeTimer === 0) {
+      handleRestart();
+    }
+  }, [finished, closeTimer]);
 
   // Background from linked event, updates on language switch
   const background = useMemo(() => getEventBackground(event, currentLang), [event, currentLang]);
@@ -180,11 +188,7 @@ export default function PollVotingPage() {
 
   const handleRestart = () => {
     clearTimeout(autoSubmitRef.current);
-    setFinished(false);
-    setCurrentIndex(0);
-    setSliderValue(0);
-    setHighlightedOption(null);
-    setSubmitting(false);
+    router.push(`/votecast/${pollSlug}`);
   };
 
   // Background renderer

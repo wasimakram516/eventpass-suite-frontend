@@ -167,6 +167,8 @@ const translations = {
     alreadyPrintedWarning: "Badge already printed {count} time(s). Do you want to proceed?",
     proceedPrint: "Proceed",
     cancelPrint: "Cancel",
+    exportBadgesWarning: "Some registrations in the current view have already had their badges exported. Do you still want to proceed?",
+    exportBadgesProceed: "Proceed",
   },
   ar: {
     title: "تفاصيل الحدث",
@@ -260,6 +262,8 @@ const translations = {
     alreadyPrintedWarning: "تمت طباعة الشارة {count} مرة. هل تريد المتابعة؟",
     proceedPrint: "متابعة",
     cancelPrint: "إلغاء",
+    exportBadgesWarning: "تمت طباعة شارات بعض التسجيلات في العرض الحالي مسبقاً. هل تريد المتابعة؟",
+    exportBadgesProceed: "متابعة",
   },
 };
 
@@ -328,6 +332,7 @@ export default function ViewRegistrations() {
 
   const [printWarningOpen, setPrintWarningOpen] = useState(false);
   const [pendingPrintReg, setPendingPrintReg] = useState(null);
+  const [exportBadgesWarningOpen, setExportBadgesWarningOpen] = useState(false);
 
   useEffect(() => {
     if (eventSlug) fetchData();
@@ -996,7 +1001,17 @@ export default function ViewRegistrations() {
     setExportLoading(false);
   };
 
-  const handleExportBadges = async () => {
+  const handleExportBadges = () => {
+    const allowMultiple = eventDetails?.allowMultipleBadgePrinting ?? true;
+    const hasBeenPrinted = paginatedRegistrations.some((r) => (r.printCount || 0) > 0);
+    if (!allowMultiple && hasBeenPrinted) {
+      setExportBadgesWarningOpen(true);
+      return;
+    }
+    doExportBadges();
+  };
+
+  const doExportBadges = async () => {
     try {
       setExportingBadges(true);
       // Track print for all registrations in view before export
@@ -2129,6 +2144,20 @@ export default function ViewRegistrations() {
         confirmButtonText={t.proceedPrint}
         confirmButtonColor="primary"
         confirmButtonIcon={<ICONS.print />}
+      />
+
+      <ConfirmationDialog
+        open={exportBadgesWarningOpen}
+        onClose={() => setExportBadgesWarningOpen(false)}
+        onConfirm={() => {
+          setExportBadgesWarningOpen(false);
+          doExportBadges();
+        }}
+        title={t.exportBadges}
+        message={t.exportBadgesWarning}
+        confirmButtonText={t.exportBadgesProceed}
+        confirmButtonColor="primary"
+        confirmButtonIcon={<ICONS.pdf />}
       />
 
       <BulkEmailModal
