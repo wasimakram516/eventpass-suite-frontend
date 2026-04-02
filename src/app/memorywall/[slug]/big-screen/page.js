@@ -52,6 +52,19 @@ const BigScreenPage = () => {
     setLoading(true);
   }, [slug]);
 
+  const filteredMedia = React.useMemo(() => {
+    if (!wallConfig) return media;
+    const mediaType = wallConfig.cardSettings?.mediaType || "type1";
+    
+    if (mediaType === "type2") {
+      // Type 2: Text/Signature focus. Hide any posts with images.
+      return media.filter(item => !item.imageUrl);
+    } else {
+      // Type 1: Standard/Photo focus. Hide ANY post that has a signature AND hide posts without images.
+      return media.filter(item => !!item.imageUrl && !item.signatureUrl);
+    }
+  }, [media, wallConfig]);
+
   if (loading) {
     return (
       <Box
@@ -110,9 +123,11 @@ const BigScreenPage = () => {
 
   // 🔷 M O S A I C   M O D E
   if (wallConfig?.mode === "mosaic") {
+    // Mosaic should ONLY show media with images.
+    const imageOnlyMedia = filteredMedia.filter(item => !!item.imageUrl);
     return (
       <MosaicGrid 
-        media={media} 
+        media={imageOnlyMedia} 
         rows={wallConfig.mosaicGrid?.rows || 10}
         cols={wallConfig.mosaicGrid?.cols || 15}
         background={wallConfig.background?.url ? {
@@ -124,7 +139,10 @@ const BigScreenPage = () => {
           imageUrl: wallConfig.backgroundLogo.url,
           type: getMediaType(wallConfig.backgroundLogo.url),
           position: 'center',
-          opacity: 0.1
+          overlayEnabled: wallConfig.backgroundLogo.overlayEnabled || false,
+          opacity: wallConfig.backgroundLogo.opacity !== undefined ? wallConfig.backgroundLogo.opacity / 100 : 1,
+          stampOnImages: wallConfig.backgroundLogo.stampOnImages || false,
+          stampPosition: wallConfig.backgroundLogo.stampPosition || 'bottom-right',
         } : null}
       />
     );
@@ -133,11 +151,13 @@ const BigScreenPage = () => {
   // 🔷 C A R D   M O D E
   if (wallConfig?.mode === "card") {
     const normalizedCardOrder = String(wallConfig.cardSettings?.order || "sequential").toLowerCase();
+    const mediaType = wallConfig.cardSettings?.mediaType || "type1";
+
     return (
       <CardsGrid 
-        media={media} 
+        media={filteredMedia} 
         cardOrder={normalizedCardOrder === "random" ? "random" : "sequential"}
-        inputType={wallConfig.cardSettings?.inputType || "text"}
+        mediaType={mediaType}
         background={wallConfig.background?.url ? {
           type: getMediaType(wallConfig.background.url),
           value: wallConfig.background.url
@@ -147,22 +167,32 @@ const BigScreenPage = () => {
           imageUrl: wallConfig.backgroundLogo.url,
           type: getMediaType(wallConfig.backgroundLogo.url),
           position: 'center',
-          opacity: 0.1
+          overlayEnabled: wallConfig.backgroundLogo.overlayEnabled || false,
+          opacity: wallConfig.backgroundLogo.opacity !== undefined ? wallConfig.backgroundLogo.opacity / 100 : 1,
+          stampOnImages: wallConfig.backgroundLogo.stampOnImages || false,
+          stampPosition: wallConfig.backgroundLogo.stampPosition || 'bottom-right',
         } : null}
         randomSizes={{
           enabled: wallConfig.randomSizes?.enabled || false,
           min: wallConfig.randomSizes?.min || 150,
           max: wallConfig.randomSizes?.max || 300
         }}
+        backgroundColor={wallConfig.cardSettings?.backgroundColor || "#ffffff"}
+        randomColors={wallConfig.cardSettings?.randomColors || false}
+        imageShape={wallConfig.cardSettings?.imageShape || "circle"}
+        mediaType2TextColor={wallConfig.cardSettings?.mediaType2TextColor || "#000000"}
+        mediaType2SignatureColor={wallConfig.cardSettings?.mediaType2SignatureColor || "#000000"}
       />
     );
   }
 
-    // 🔷 B U B B L E   M O D E
+  // 🔷 B U B B L E   M O D E
   if (wallConfig?.mode === "bubble") {
+    // Bubble should ONLY show media with images.
+    const imageOnlyMedia = filteredMedia.filter(item => !!item.imageUrl);
     return (
       <BubbleGrid 
-        media={media} 
+        media={imageOnlyMedia} 
         background={wallConfig.background?.url ? {
           type: getMediaType(wallConfig.background.url),
           value: wallConfig.background.url
@@ -172,7 +202,10 @@ const BigScreenPage = () => {
           imageUrl: wallConfig.backgroundLogo.url,
           type: getMediaType(wallConfig.backgroundLogo.url),
           position: 'center',
-          opacity: 0.1
+          overlayEnabled: wallConfig.backgroundLogo.overlayEnabled || false,
+          opacity: wallConfig.backgroundLogo.opacity !== undefined ? wallConfig.backgroundLogo.opacity / 100 : 1,
+          stampOnImages: wallConfig.backgroundLogo.stampOnImages || false,
+          stampPosition: wallConfig.backgroundLogo.stampPosition || 'bottom-right',
         } : null}
         randomSizes={wallConfig.randomSizes?.enabled}
         minSize={wallConfig.randomSizes?.min || 100}

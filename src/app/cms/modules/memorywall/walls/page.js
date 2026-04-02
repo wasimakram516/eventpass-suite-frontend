@@ -246,6 +246,10 @@ export default function WallConfigsPage() {
     }
   };
 
+  const handleMediaDeleted = () => {
+    fetchWallConfigs(selectedBusiness);
+  };
+
   const confirmDelete = async () => {
     if (!wallToDelete) return;
     await deleteWallConfig(wallToDelete._id);
@@ -488,6 +492,7 @@ export default function WallConfigsPage() {
         initialValues={currentConfig || {}}
         selectedWallConfig={currentConfig}
         onSubmit={handleSubmitWall}
+        onMediaDeleted={handleMediaDeleted}
         selectedBusiness={selectedBusiness}
         wallConfigId={currentConfig?._id}
       />

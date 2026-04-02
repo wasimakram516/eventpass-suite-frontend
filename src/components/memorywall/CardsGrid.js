@@ -5,6 +5,11 @@ import { Box, Card, CardContent, Typography } from "@mui/material";
 import { motion } from "framer-motion";
 import { Shift } from "ambient-cbg";
 
+const COLOR_PALETTE = [
+  "#f44336", "#e91e63", "#9c27b0", "#673ab7", "#3f51b5", 
+  "#2196f3", "#03a9f4", "#00bcd4", "#009688", "#4caf50"
+];
+
 function hashString(value) {
   const text = String(value || "");
   let hash = 0;
@@ -96,70 +101,285 @@ function getOldestSlotIndex(slotMedia, usedInBatch) {
   return oldestIdx >= 0 ? oldestIdx : 0;
 }
 
-function MediaCard({ item, isSignatureMode, imageSize, randomSizes }) {
+function MediaCard({ 
+  item, 
+  isSignatureMode, 
+  imageSize, 
+  randomSizes, 
+  backgroundLogo, 
+  backgroundColor, 
+  randomColors, 
+  imageShape = "circle",
+  mediaType2TextColor,
+  mediaType2SignatureColor
+}) {
+  const cardBgColor = useMemo(() => {
+    if (randomColors) {
+      const hue = hashString(item._id) % 360;
+      return `hsl(${hue}, 80%, 75%)`;
+    }
+    return backgroundColor || "#ffffff";
+  }, [item._id, randomColors, backgroundColor]);
+
+  const isFull = imageShape === "full";
+  const isTop70 = imageShape === "top-70";
+  const isCircle = imageShape === "circle";
+
+  const getStampStyles = () => {
+    const offset = (isFull || isTop70) ? '5%' : '15%';
+    switch (backgroundLogo?.stampPosition) {
+      case 'top-left': return { top: offset, left: offset };
+      case 'top-right': return { top: offset, right: offset };
+      case 'bottom-left': return { bottom: offset, left: offset };
+      case 'bottom-right':
+      default: return { bottom: offset, right: offset };
+    }
+  };
+
   return (
     <Card
       sx={{
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        p: 1.25,
-        boxShadow: randomSizes?.enabled ? 6 : 4,
-        borderRadius: randomSizes?.enabled ? 4 : 3,
-        backgroundColor: "#fff",
-        transition: "all 0.3s ease",
+        p: isCircle ? 1.0 : 0,
+        backgroundColor: cardBgColor,
+        background: !item.imageUrl 
+          ? `linear-gradient(135deg, ${cardBgColor} 0%, rgba(255,255,255,0.95) 100%)` 
+          : cardBgColor,
+        boxShadow: !item.imageUrl ? "0 10px 30px rgba(0,0,0,0.15)" : (randomSizes?.enabled ? 6 : 4),
+        border: !item.imageUrl ? "2px solid rgba(255,255,255,0.5)" : "1px solid rgba(0,0,0,0.15)",
+        transition: "all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
+        position: 'relative',
+        overflow: 'hidden',
+        width: imageSize * 1.25,
+        maxWidth: imageSize * 1.25,
+        height: (isTop70 ? imageSize * 1.6 : (isCircle ? imageSize * 1.55 : imageSize * 1.4)),
+        maxHeight: (isTop70 ? imageSize * 1.6 : (isCircle ? imageSize * 1.55 : imageSize * 1.4)),
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: (!item.imageUrl && !item.signatureUrl) ? "center" : "flex-start",
       }}
     >
-      <Box
-        component="img"
-        src={item.imageUrl}
-        alt="Media"
-        sx={{
-          width: imageSize,
-          height: imageSize,
-          borderRadius: "50%",
-          objectFit: "cover",
-          mb: 2,
-          border: randomSizes?.enabled ? "6px solid #ddd" : "4px solid #ccc",
-          transition: "transform 0.3s ease",
-          "&:hover": { transform: "scale(1.05)" },
-        }}
-      />
-      {isSignatureMode ? (
-        <CardContent sx={{ pt: 0.5, width: "100%", pb: 0.5 }}>
-          {item.signatureUrl ? (
-            <Box
-              component="img"
-              src={item.signatureUrl}
-              alt="Signature"
-              sx={{
-                width: "82%",
-                maxWidth: 140,
-                maxHeight: 58,
-                mx: "auto",
-                objectFit: "contain",
-              }}
-            />
-          ) : null}
-        </CardContent>
-      ) : item.text ? (
-        <CardContent>
-          <Typography variant="body1" textAlign="center">
+      {(item.imageUrl || item.signatureUrl) && (
+        <Box 
+          sx={{ 
+            position: isFull ? 'absolute' : 'relative', 
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            width: isCircle ? imageSize * 0.9 : '100%', 
+            height: isCircle ? imageSize * 0.9 : (isTop70 ? imageSize : (isFull ? '100%' : '100%')), 
+            flexShrink: 0,
+            mt: isCircle ? 0.5 : 0,
+            mb: isCircle ? 0.8 : (isTop70 ? 0.5 : 0),
+            borderRadius: isCircle ? "50%" : 0,
+            overflow: "hidden",
+            border: isCircle ? (randomSizes?.enabled ? "6px solid #ddd" : "4px solid #ccc") : "none",
+            boxShadow: isCircle ? "0 4px 12px rgba(0,0,0,0.1)" : "none",
+            zIndex: 1,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: !item.imageUrl ? "rgba(255,255,255,0.95)" : "transparent",
+          }}
+        >
+          {item.imageUrl ? (
+            <>
+              <Box
+                component="img"
+                src={item.imageUrl}
+                alt="Media"
+                sx={{
+                  width: '100%',
+                  height: '100%',
+                  objectFit: "cover",
+                  transition: "transform 0.3s ease",
+                  "&:hover": { transform: "scale(1.05)" },
+                }}
+              />
+              
+              {backgroundLogo?.stampOnImages && backgroundLogo.imageUrl && (
+                <Box
+                  component="img"
+                  src={backgroundLogo.imageUrl}
+                  sx={{
+                    position: 'absolute',
+                    width: '25%',
+                    maxWidth: '40px',
+                    height: 'auto',
+                    zIndex: 5,
+                    opacity: 0.9,
+                    filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.4))',
+                    pointerEvents: 'none',
+                    ...getStampStyles()
+                  }}
+                />
+              )}
+            </>
+          ) : (
+            isSignatureMode ? (
+              <Box
+                sx={{
+                  width: "85%",
+                  height: "80%",
+                  backgroundColor: mediaType2SignatureColor || '#000000',
+                  maskImage: `url(${item.signatureUrl})`,
+                  maskSize: "contain",
+                  maskRepeat: "no-repeat",
+                  maskPosition: "center",
+                  WebkitMaskImage: `url(${item.signatureUrl})`,
+                  WebkitMaskSize: "contain",
+                  WebkitMaskRepeat: "no-repeat",
+                  WebkitMaskPosition: "center",
+                  filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))',
+                }}
+              />
+            ) : (
+              <Box
+                component="img"
+                src={item.signatureUrl}
+                alt="Signature"
+                sx={{
+                  width: "85%",
+                  maxHeight: "80%",
+                  objectFit: "contain",
+                  filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))',
+                }}
+              />
+            )
+          )}
+        </Box>
+      )}
+
+      <Box sx={{ 
+        width: '100%', 
+        zIndex: 2, 
+        mt: (!item.imageUrl && !item.signatureUrl) ? 0 : (isTop70 ? 1 : (isFull ? 'auto' : 0)),
+        p: 0,
+        pb: (isCircle && (item.imageUrl || item.signatureUrl)) ? 1.5 : 0,
+        background: (isFull && (item.imageUrl || item.signatureUrl)) ? 'linear-gradient(transparent, rgba(0,0,0,0.8))' : 'transparent',
+        color: (isFull && (item.imageUrl || item.signatureUrl)) ? '#fff' : 'inherit',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        flex: 1,
+        textAlign: 'center',
+      }}>
+        {(item.signatureUrl && item.imageUrl) && (
+          <Box sx={{ 
+            width: "100%", 
+            display: 'flex', 
+            justifyContent: 'center', 
+            mb: item.text ? 2 : 0,
+            filter: 'none'
+          }}>
+            {isSignatureMode ? (
+              <Box
+                sx={{
+                  width: "82%",
+                  maxWidth: 140,
+                  height: 30,
+                  backgroundColor: mediaType2SignatureColor || '#000000',
+                  maskImage: `url(${item.signatureUrl})`,
+                  maskSize: "contain",
+                  maskRepeat: "no-repeat",
+                  maskPosition: "center",
+                  WebkitMaskImage: `url(${item.signatureUrl})`,
+                  WebkitMaskSize: "contain",
+                  WebkitMaskRepeat: "no-repeat",
+                  WebkitMaskPosition: "center",
+                }}
+              />
+            ) : (
+              <Box
+                component="img"
+                src={item.signatureUrl}
+                alt="Signature"
+                sx={{
+                  width: "82%",
+                  maxWidth: 140,
+                  maxHeight: 58,
+                  objectFit: "contain",
+                  filter: (isFull && item.imageUrl) ? 'brightness(0) invert(1)' : 'none',
+                }}
+              />
+            )}
+          </Box>
+        )}
+        {item.text && (
+          <Typography 
+            variant="body1" 
+            textAlign={item.text.length < 50 ? "center" : "start"}
+            sx={{ 
+              fontWeight: (!item.imageUrl && !item.signatureUrl) ? 700 : ((isFull && (item.imageUrl || item.signatureUrl)) ? 600 : 400),
+              textShadow: (isFull && (item.imageUrl || item.signatureUrl)) ? '0 1px 4px rgba(0,0,0,0.5)' : 'none',
+              fontSize: (() => {
+                const len = item.text.length;
+                const hasMedia = item.imageUrl || item.signatureUrl;
+
+                if (isFull && hasMedia) {
+                  if (len > 125) return '0.45rem';
+                  if (len > 80) return '0.55rem';
+                  if (len > 40) return '0.70rem';
+                  return '0.85rem';
+                }
+                if (!hasMedia) {
+                  if (len > 125) return '0.65rem';
+                  if (len > 80) return '0.75rem';
+                  if (len > 40) return '0.85rem';
+                  return '1.0rem';
+                }
+                if (len > 125) return '0.50rem';
+                if (len > 80) return '0.65rem';
+                if (len > 40) return '0.75rem';
+                return '0.85rem';
+              })(),
+              px: (isCircle && (item.imageUrl || item.signatureUrl)) ? 1.5 : 2,
+              py: 0,
+              width: "100%",
+              lineHeight: 1.2,
+              wordBreak: 'break-word',
+              overflowWrap: 'anywhere',
+              display: (item.imageUrl || item.signatureUrl) ? '-webkit-box' : 'block',
+              WebkitBoxOrient: (item.imageUrl || item.signatureUrl) ? 'vertical' : 'unset',
+              WebkitLineClamp: (item.imageUrl || item.signatureUrl) ? (isFull ? 3 : (isCircle ? 2 : 3)) : 'unset',
+              overflow: 'hidden',
+              color: isSignatureMode 
+                 ? (mediaType2TextColor || '#000000') 
+                 : ((!item.imageUrl && !isFull) ? 'rgba(0,0,0,0.85)' : 'inherit'),
+              letterSpacing: !item.imageUrl ? '0.01em' : 'normal',
+            }}
+          >
             {item.text}
           </Typography>
-        </CardContent>
-      ) : null}
+        )}
+      </Box>
     </Card>
   );
 }
 
-export default function CardsGrid({ media, background, backgroundLogo, randomSizes, cardOrder = "sequential", inputType = "text" }) {
+export default function CardsGrid({
+  media,
+  cardOrder = "sequential",
+  mediaType = "type1",
+  background,
+  backgroundLogo,
+  randomSizes,
+  backgroundColor = "#ffffff",
+  randomColors = false,
+  imageShape = "circle",
+  mediaType2TextColor,
+  mediaType2SignatureColor,
+}) {
   const containerRef = useRef(null);
   const prevMediaIdsRef = useRef([]);
 
   const normalizedCardOrder = String(cardOrder || "sequential").toLowerCase();
   const isRandomLayout = normalizedCardOrder === "random";
-  const isSignatureMode = inputType === "signature";
+  const isSignatureMode = mediaType === "type2";
 
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
   const [slots, setSlots] = useState([]);
@@ -350,23 +570,37 @@ export default function CardsGrid({ media, background, backgroundLogo, randomSiz
 
   const renderBackgroundLogo = () => {
     if (!backgroundLogo?.enabled || !backgroundLogo?.imageUrl) return null;
-    const isVideo = backgroundLogo.imageUrl.match(/\.(mp4|webm|ogg|mov|avi)(\?|$)/i);
+
     return (
       <Box
         sx={{
           position: "absolute",
-          inset: 0,
-          zIndex: 1,
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          width: "40vw",
+          height: "40vh",
+          zIndex: backgroundLogo.overlayEnabled ? 100 : 1,
           pointerEvents: "none",
-          opacity: 0.5,
+          opacity: backgroundLogo.opacity ?? 1,
         }}
       >
-        {isVideo ? (
-          <video autoPlay muted loop playsInline style={{ width: "100%", height: "100%", objectFit: "cover" }}>
+        {backgroundLogo.type === "video" ? (
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            style={{ width: "100%", height: "100%", objectFit: "contain" }}
+          >
             <source src={backgroundLogo.imageUrl} />
           </video>
         ) : (
-          <img src={backgroundLogo.imageUrl} alt="Background Logo" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          <img
+            src={backgroundLogo.imageUrl}
+            alt="Background Logo"
+            style={{ width: "100%", height: "100%", objectFit: "contain" }}
+          />
         )}
       </Box>
     );
@@ -436,6 +670,12 @@ export default function CardsGrid({ media, background, backgroundLogo, randomSiz
                       isSignatureMode={isSignatureMode}
                       imageSize={imageSize}
                       randomSizes={randomSizes}
+                      backgroundLogo={backgroundLogo}
+                      backgroundColor={backgroundColor}
+                      randomColors={randomColors}
+                      imageShape={imageShape}
+                      mediaType2TextColor={mediaType2TextColor}
+                      mediaType2SignatureColor={mediaType2SignatureColor}
                     />
                   </motion.div>
                 </motion.div>

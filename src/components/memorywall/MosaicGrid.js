@@ -9,43 +9,122 @@ import { Shift } from "ambient-cbg";
 // ─────────────────────────────────────────────────────────────────────────────
 // A single cell in the mosaic grid
 // ─────────────────────────────────────────────────────────────────────────────
-function MosaicCell({ item, isNew, version }) {
-  const key = item ? `${item._id}-${version}` : null;
+function MosaicCell({ 
+  item, 
+  isNew, 
+  version, 
+  backgroundLogo 
+}) {
+  if (!item) return (
+    <Box 
+      sx={{ 
+        width: "100%", 
+        height: "100%", 
+        border: "1px solid #222",
+        backgroundColor: "transparent"
+      }} 
+    />
+  );
+
+  const key = `${item._id}-${version}`;
+  const isVideo = item.imageUrl.match(/\.(mp4|webm|ogg|mov|avi)(\?|$)/i);
+
+  const getStampStyles = () => {
+    switch (backgroundLogo?.stampPosition) {
+      case 'top-left': return { top: 8, left: 8 };
+      case 'top-right': return { top: 8, right: 8 };
+      case 'bottom-left': return { bottom: 8, left: 8 };
+      case 'bottom-right':
+      default: return { bottom: 8, right: 8 };
+    }
+  };
 
   return (
     <Box
       sx={{
-        border: "1px solid #222",
+        width: "100%",
+        height: "100%",
         position: "relative",
         overflow: "hidden",
+        border: "1px solid #222",
         backgroundColor: "transparent",
       }}
     >
-      {item && (
-        <motion.img
-          key={key}
-          src={item.imageUrl}
-          alt=""
-          initial={
-            isNew
-              ? { scale: 8, opacity: 0 }
-              : { scale: 1, opacity: 1 }
-          }
-          animate={{ scale: 1, opacity: 1 }}
-          transition={
-            isNew
-              ? { type: "spring", stiffness: 180, damping: 20 }
-              : { duration: 0 }
-          }
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            position: "absolute",
-            top: 0,
-            left: 0,
-            zIndex: 1,
-            willChange: "transform, opacity",
+      <motion.div
+        key={key}
+        initial={isNew ? { scale: 8, opacity: 0 } : { scale: 1, opacity: 1 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={isNew ? { type: "spring", stiffness: 180, damping: 20 } : { duration: 0 }}
+        style={{ width: "100%", height: "100%", position: 'absolute', top: 0, left: 0 }}
+      >
+        {item.imageUrl ? (
+          isVideo ? (
+            <video
+              src={item.imageUrl}
+              autoPlay
+              loop
+              muted
+              playsInline
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
+          ) : (
+            <img
+              src={item.imageUrl}
+              alt=""
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
+          )
+        ) : item.signatureUrl ? (
+          <Box sx={{ width: "100%", height: "100%", display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'rgba(255,255,255,0.9)' }}>
+            <img
+              src={item.signatureUrl}
+              alt="Signature"
+              style={{ width: "90%", height: "90%", objectFit: "contain" }}
+            />
+          </Box>
+        ) : (
+          <Box sx={{ 
+            width: "100%", 
+            height: "100%", 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            bgcolor: 'primary.main',
+            color: 'white',
+            p: 0.5
+          }}>
+            <Typography 
+              variant="caption" 
+              sx={{ 
+                fontSize: '0.6rem', 
+                lineHeight: 1, 
+                textAlign: 'center',
+                overflow: 'hidden',
+                display: '-webkit-box',
+                WebkitLineClamp: 3,
+                WebkitBoxOrient: 'vertical',
+              }}
+            >
+              {item.text}
+            </Typography>
+          </Box>
+        )}
+      </motion.div>
+
+      {backgroundLogo?.stampOnImages && backgroundLogo.imageUrl && (
+        <Box
+          component="img"
+          src={backgroundLogo.imageUrl}
+          sx={{
+            position: 'absolute',
+            width: '20%',
+            maxWidth: '40px',
+            height: 'auto',
+            zIndex: 5,
+            opacity: 0.8,
+            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
+            pointerEvents: 'none',
+            ...getStampStyles()
           }}
         />
       )}
@@ -118,23 +197,37 @@ export default function MosaicGrid({ media, background, backgroundLogo, rows = 1
 
   const renderBackgroundLogo = () => {
     if (!backgroundLogo?.enabled || !backgroundLogo?.imageUrl) return null;
-    const isVideo = /\.(mp4|webm|ogg|mov|avi)(\?|$)/i.test(backgroundLogo.imageUrl);
+
     return (
       <Box
         sx={{
-  position: "absolute",
-  inset: 0,
-  zIndex: 1,
-  pointerEvents: "none",
-  opacity: 0.5,
-}}
+          position: "absolute",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          width: "40vw",
+          height: "40vh",
+          zIndex: backgroundLogo.overlayEnabled ? 100 : 1,
+          pointerEvents: "none",
+          opacity: backgroundLogo.opacity ?? 1,
+        }}
       >
-        {isVideo ? (
-          <video autoPlay muted loop playsInline style={{ width: "100%", height: "100%", objectFit: "cover" }}>
+        {backgroundLogo.type === "video" ? (
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            style={{ width: "100%", height: "100%", objectFit: "contain" }}
+          >
             <source src={backgroundLogo.imageUrl} />
           </video>
         ) : (
-          <img src={backgroundLogo.imageUrl} alt="Background Logo" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          <img
+            src={backgroundLogo.imageUrl}
+            alt="Background Logo"
+            style={{ width: "100%", height: "100%", objectFit: "contain" }}
+          />
         )}
       </Box>
     );
@@ -234,6 +327,7 @@ export default function MosaicGrid({ media, background, backgroundLogo, rows = 1
             item={item}
             version={boxVersions[i] || 0}
             isNew={i === animatingIndex}
+            backgroundLogo={backgroundLogo}
           />
         ))}
       </Box>

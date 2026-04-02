@@ -17,8 +17,11 @@ import {
   Switch,
   CircularProgress,
   IconButton,
+  Slider,
+  Popover,
 } from "@mui/material";
 import { useState, useEffect, useRef } from "react";
+import { HexColorPicker } from "react-colorful";
 import { useMessage } from "@/contexts/MessageContext";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import slugify from "@/utils/slugify";
@@ -58,6 +61,16 @@ const translations = {
     create: "Create",
     updating: "Updating...",
     creating: "Creating...",
+    logoOverlayEnabled: "Enable Logo Overlay",
+    logoOpacity: "Logo Opacity (%)",
+    stampOnImages: "Stamp logo on every image",
+    logoStampPosition: "Logo Stamp Position",
+    positions: {
+      topLeft: "Top Left",
+      topRight: "Top Right",
+      bottomLeft: "Bottom Left",
+      bottomRight: "Bottom Right",
+    },
     errors: {
       nameRequired: "Name is required",
       slugRequired: "Slug is required",
@@ -77,6 +90,19 @@ const translations = {
     deleteLogoTitle: "Delete Logo",
     deleteLogoMessage: "Are you sure you want delete this logo? This action cannot be undone.",
     deleteConfirm: "Delete",
+    cardRandomColors: "Random Card Colors",
+    cardBackgroundColor: "Card Background Color",
+    imageShape: "Image Shape",
+    circle: "Circle",
+    top70: "Top 70%",
+    fullCard: "Full Card",
+    mediaType: "Media Type",
+    type1: "Media Type 1",
+    type2: "Media Type 2",
+    type1Desc: "Image with optional text",
+    type2Desc: "Text with optional signature",
+    mediaType2TextColor: "Text Color",
+    mediaType2SignatureColor: "Signature Color",
   },
   ar: {
     dialogTitleUpdate: "تحديث تكوين الجدار",
@@ -107,6 +133,16 @@ const translations = {
     create: "إنشاء",
     updating: "جارٍ التحديث...",
     creating: "جارٍ الإنشاء...",
+    logoOverlayEnabled: "تفعيل تراكب الشعار",
+    logoOpacity: "شفافية الشعار (%)",
+    stampOnImages: "وضع الشعار على كل صورة",
+    logoStampPosition: "موضع الشعار على الصورة",
+    positions: {
+      topLeft: "أعلى اليسار",
+      topRight: "أعلى اليمين",
+      bottomLeft: "أسفل اليسار",
+      bottomRight: "أسفل اليمين",
+    },
     errors: {
       nameRequired: "الاسم مطلوب",
       slugRequired: "الرمز مطلوب",
@@ -126,6 +162,13 @@ const translations = {
     deleteLogoTitle: "حذف الشعار",
     deleteLogoMessage: "هل أنت متأكد من حذف هذا الشعار؟ لا يمكن التراجع عن هذا الإجراء.",
     deleteConfirm: "حذف",
+    mediaType: "نوع الوسائط",
+    type1: "نوع الوسائط 1",
+    type2: "نوع الوسائط 2",
+    type1Desc: "صورة مع نص اختياري",
+    type2Desc: "نص مع توقيع اختياري",
+    mediaType2TextColor: "لون النص",
+    mediaType2SignatureColor: "لون التوقيع",
   },
 };
 
@@ -136,6 +179,7 @@ const WallConfigModal = ({
   initialValues = {},
   selectedWallConfig = null,
   onSubmit,
+  onMediaDeleted,
   selectedBusiness,
   wallConfigId,
 }) => {
@@ -154,7 +198,20 @@ const WallConfigModal = ({
     mosaicCols: 15,
     cardOrder: "sequential",
     cardInputType: "text",
+    logoOverlayEnabled: false,
+    logoOpacity: 100,
+    stampOnImages: false,
+    logoStampPosition: "bottom-right",
+    cardBackgroundColor: "#ffffff",
+    cardRandomColors: false,
+    cardImageShape: "circle",
+    cardMediaType: "type1",
+    mediaType2TextColor: "#000000",
+    mediaType2SignatureColor: "#000000",
   });
+  const [colorAnchorEl, setColorAnchorEl] = useState(null);
+  const [textColorAnchorEl, setTextColorAnchorEl] = useState(null);
+  const [signatureColorAnchorEl, setSignatureColorAnchorEl] = useState(null);
 
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -203,6 +260,16 @@ const WallConfigModal = ({
         mosaicCols: 15,
         cardOrder: "sequential",
         cardInputType: "text",
+        logoOverlayEnabled: false,
+        logoOpacity: 100,
+        stampOnImages: false,
+        logoStampPosition: "bottom-right",
+        cardBackgroundColor: "#ffffff",
+        cardRandomColors: false,
+        cardImageShape: "circle",
+        cardMediaType: "type1",
+        mediaType2TextColor: "#000000",
+        mediaType2SignatureColor: "#000000",
       });
     } else {
       const values = selectedWallConfig || initialValues;
@@ -221,6 +288,16 @@ const WallConfigModal = ({
         mosaicCols: values.mosaicGrid?.cols || 15,
         cardOrder: values.cardSettings?.order || "sequential",
         cardInputType: values.cardSettings?.inputType || "text",
+        logoOverlayEnabled: values.backgroundLogo?.overlayEnabled || false,
+        logoOpacity: values.backgroundLogo?.opacity ?? 100,
+        stampOnImages: values.backgroundLogo?.stampOnImages || false,
+        logoStampPosition: values.backgroundLogo?.stampPosition || "bottom-right",
+        cardBackgroundColor: values.cardSettings?.backgroundColor || "#ffffff",
+        cardRandomColors: values.cardSettings?.randomColors || false,
+        cardImageShape: values.cardSettings?.imageShape || "circle",
+        cardMediaType: values.cardSettings?.mediaType || "type1",
+        mediaType2TextColor: values.cardSettings?.mediaType2TextColor || "#000000",
+        mediaType2SignatureColor: values.cardSettings?.mediaType2SignatureColor || "#000000",
       });
     }
     setErrors({});
@@ -348,12 +425,16 @@ const WallConfigModal = ({
 
     if (editMode && currentWallConfigId && mediaUrl && !mediaUrl.startsWith('blob:')) {
       try {
-        await deleteMedia({
+        const responseData = await deleteMedia({
           fileUrl: mediaUrl,
           wallConfigId: currentWallConfigId,
           mediaType,
           storageType: "s3",
         });
+
+        if (onMediaDeleted && responseData?.data) {
+          onMediaDeleted(responseData.data);
+        }
 
         const previewKey = mediaType === 'background' ? 'backgroundPreview' : 'backgroundLogoPreview';
 
@@ -467,6 +548,12 @@ const WallConfigModal = ({
         cardSettings: {
           order: form.mode === "card" ? form.cardOrder : "sequential",
           inputType: form.mode === "card" ? form.cardInputType : "text",
+          backgroundColor: form.cardBackgroundColor || "#ffffff",
+          randomColors: form.cardRandomColors || false,
+          imageShape: form.cardImageShape || "circle",
+          mediaType: form.cardMediaType || "type1",
+          mediaType2TextColor: form.mediaType2TextColor || "#000000",
+          mediaType2SignatureColor: form.mediaType2SignatureColor || "#000000",
         },
       };
 
@@ -500,6 +587,10 @@ const WallConfigModal = ({
               formDataToSend.backgroundLogo = {
                 key: key,
                 url: url,
+                overlayEnabled: form.logoOverlayEnabled,
+                opacity: form.logoOpacity,
+                stampOnImages: form.stampOnImages,
+                stampPosition: form.logoStampPosition,
               };
             }
           } 
@@ -519,6 +610,10 @@ const WallConfigModal = ({
         formDataToSend.backgroundLogo = {
           key: values.backgroundLogo?.key || "",
           url: form.backgroundLogoPreview,
+          overlayEnabled: form.logoOverlayEnabled,
+          opacity: form.logoOpacity,
+          stampOnImages: form.stampOnImages,
+          stampPosition: form.logoStampPosition,
         };
       }
 
@@ -695,6 +790,72 @@ const WallConfigModal = ({
                 {renderMediaPreview('backgroundLogo')}
               </Box>
 
+              {form.backgroundLogoPreview && (
+                <Box sx={{ border: '1px solid #eee', p: 1.5, borderRadius: 1, backgroundColor: '#fafafa' }}>
+                  <Typography variant="subtitle2" gutterBottom fontWeight="bold">
+                    Logo Settings
+                  </Typography>
+
+                  <Box sx={{ px: 1, mb: 1, mt: 1 }}>
+                    <Typography variant="caption" color="text.secondary">
+                      {t.logoOpacity}: {form.logoOpacity}%
+                    </Typography>
+                    <Slider
+                      value={form.logoOpacity}
+                      onChange={(e, val) => handleInputChange({ target: { name: 'logoOpacity', value: val } })}
+                      min={0}
+                      max={100}
+                      size="small"
+                      disabled={loading}
+                    />
+                  </Box>
+
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={form.logoOverlayEnabled}
+                        onChange={handleInputChange}
+                        name="logoOverlayEnabled"
+                        disabled={loading}
+                        size="small"
+                      />
+                    }
+                    label={<Typography variant="body2">{t.logoOverlayEnabled}</Typography>}
+                  />
+
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={form.stampOnImages}
+                        onChange={handleInputChange}
+                        name="stampOnImages"
+                        disabled={loading}
+                        size="small"
+                      />
+                    }
+                    label={<Typography variant="body2">{t.stampOnImages}</Typography>}
+                  />
+
+                  {form.stampOnImages && (
+                    <FormControl fullWidth size="small" disabled={loading} sx={{ mt: 1 }}>
+                      <InputLabel id="stamp-position-label">{t.logoStampPosition}</InputLabel>
+                      <Select
+                        labelId="stamp-position-label"
+                        name="logoStampPosition"
+                        value={form.logoStampPosition}
+                        label={t.logoStampPosition}
+                        onChange={handleInputChange}
+                      >
+                        <MenuItem value="top-left">{t.positions.topLeft}</MenuItem>
+                        <MenuItem value="top-right">{t.positions.topRight}</MenuItem>
+                        <MenuItem value="bottom-left">{t.positions.bottomLeft}</MenuItem>
+                        <MenuItem value="bottom-right">{t.positions.bottomRight}</MenuItem>
+                      </Select>
+                    </FormControl>
+                  )}
+                </Box>
+              )}
+
               {form.mode === "mosaic" ? (
                 <Box sx={{ display: "flex", gap: 2 }}>
                   <TextField
@@ -735,7 +896,7 @@ const WallConfigModal = ({
                   />
 
                   {form.randomSizes && (
-                    <Box sx={{ display: 'flex', gap: 2 }}>
+                    <Box sx={{ display: 'flex', gap: 2, mb: 1 }}>
                       <TextField
                         label={t.minSize}
                         name="minSize"
@@ -745,6 +906,7 @@ const WallConfigModal = ({
                         error={!!errors.minSize}
                         helperText={errors.minSize}
                         disabled={loading}
+                        size="small"
                         InputProps={{ inputProps: { min: 1 } }}
                       />
                       <TextField
@@ -756,8 +918,93 @@ const WallConfigModal = ({
                         error={!!errors.maxSize}
                         helperText={errors.maxSize}
                         disabled={loading}
+                        size="small"
                         InputProps={{ inputProps: { min: 1 } }}
                       />
+                    </Box>
+                  )}
+
+                  {form.mode === "card" && (
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1, flexWrap: 'wrap' }}>
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={form.cardRandomColors}
+                            onChange={handleInputChange}
+                            name="cardRandomColors"
+                            disabled={loading}
+                          />
+                        }
+                        label={t.cardRandomColors}
+                      />
+                      {!form.cardRandomColors && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Box
+                            onClick={(e) => !loading && setColorAnchorEl(e.currentTarget)}
+                            sx={{
+                              width: 32,
+                              height: 32,
+                              borderRadius: '6px',
+                              backgroundColor: form.cardBackgroundColor,
+                              border: '2px solid #ddd',
+                              cursor: loading ? 'default' : 'pointer',
+                              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                              '&:hover': {
+                                transform: loading ? 'none' : 'scale(1.05)',
+                                borderColor: '#2196f3',
+                              },
+                              transition: 'all 0.2s',
+                              flexShrink: 0
+                            }}
+                          />
+                          <TextField
+                            size="small"
+                            value={form.cardBackgroundColor}
+                            onChange={(e) => handleInputChange({ target: { name: 'cardBackgroundColor', value: e.target.value } })}
+                            disabled={loading}
+                            sx={{ width: 90 }}
+                            inputProps={{ 
+                              style: { 
+                                fontFamily: 'monospace', 
+                                textTransform: 'uppercase',
+                                fontSize: '0.75rem',
+                                padding: '4px 8px'
+                              } 
+                            }}
+                          />
+                          <Popover
+                            open={Boolean(colorAnchorEl)}
+                            anchorEl={colorAnchorEl}
+                            onClose={() => setColorAnchorEl(null)}
+                            anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                            PaperProps={{ sx: { p: 2, borderRadius: 2, boxShadow: 6 } }}
+                          >
+                            <Box sx={{ "& .react-colorful": { width: '200px', height: '200px' } }}>
+                              <HexColorPicker 
+                                color={form.cardBackgroundColor} 
+                                onChange={(color) => handleInputChange({ target: { name: 'cardBackgroundColor', value: color } })} 
+                              />
+                              <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 0.5, maxWidth: 200 }}>
+                                {["#f44336", "#e91e63", "#9c27b0", "#673ab7", "#3f51b5", "#2196f3", "#03a9f4", "#00bcd4", "#009688", "#4caf50"].map((pColor) => (
+                                  <Box
+                                    key={pColor}
+                                    onClick={() => handleInputChange({ target: { name: 'cardBackgroundColor', value: pColor } })}
+                                    sx={{
+                                      width: 20,
+                                      height: 20,
+                                      borderRadius: '4px',
+                                      backgroundColor: pColor,
+                                      cursor: 'pointer',
+                                      border: '1px solid #ddd',
+                                      '&:hover': { transform: 'scale(1.2)' }
+                                    }}
+                                  />
+                                ))}
+                              </Box>
+                            </Box>
+                          </Popover>
+                        </Box>
+                      )}
                     </Box>
                   )}
                 </>
@@ -779,19 +1026,193 @@ const WallConfigModal = ({
                     </Select>
                   </FormControl>
 
+
                   <FormControl fullWidth>
-                    <InputLabel>{t.inputType}</InputLabel>
+                    <InputLabel>{t.imageShape}</InputLabel>
                     <Select
-                      name="cardInputType"
-                      value={form.cardInputType}
-                      label={t.inputType}
+                      name="cardImageShape"
+                      value={form.cardImageShape}
+                      label={t.imageShape}
                       onChange={handleInputChange}
                       disabled={loading}
                     >
-                      <MenuItem value="text">{t.textInput}</MenuItem>
-                      <MenuItem value="signature">{t.signatureInput}</MenuItem>
+                      <MenuItem value="circle">{t.circle}</MenuItem>
+                      <MenuItem value="top-70">{t.top70}</MenuItem>
+                      <MenuItem value="full">{t.fullCard}</MenuItem>
                     </Select>
                   </FormControl>
+                </Box>
+              )}
+
+              {form.mode === "card" && (
+                <Box sx={{ mt: 1 }}>
+                  <FormControl fullWidth>
+                    <InputLabel>{t.mediaType}</InputLabel>
+                    <Select
+                      name="cardMediaType"
+                      value={form.cardMediaType}
+                      label={t.mediaType}
+                      onChange={handleInputChange}
+                      disabled={loading}
+                    >
+                      <MenuItem value="type1">
+                        <Box>
+                          <Typography variant="body2">{t.type1}</Typography>
+                          <Typography variant="caption" color="text.secondary">{t.type1Desc}</Typography>
+                        </Box>
+                      </MenuItem>
+                      <MenuItem value="type2">
+                        <Box>
+                          <Typography variant="body2">{t.type2}</Typography>
+                          <Typography variant="caption" color="text.secondary">{t.type2Desc}</Typography>
+                        </Box>
+                      </MenuItem>
+                    </Select>
+                  </FormControl>
+                </Box>
+              )}
+
+              {form.mode === "card" && form.cardMediaType === "type2" && (
+                <Box sx={{ mt: 2, display: 'flex', gap: 3, flexWrap: 'wrap' }}>
+                  <Box>
+                    <Typography variant="body2" gutterBottom>{t.mediaType2TextColor}</Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box
+                        onClick={(e) => !loading && setTextColorAnchorEl(e.currentTarget)}
+                        sx={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: '6px',
+                          backgroundColor: form.mediaType2TextColor,
+                          border: '2px solid #ddd',
+                          cursor: loading ? 'default' : 'pointer',
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                          '&:hover': {
+                            transform: loading ? 'none' : 'scale(1.05)',
+                            borderColor: '#2196f3',
+                          },
+                          transition: 'all 0.2s',
+                          flexShrink: 0
+                        }}
+                      />
+                      <TextField
+                        size="small"
+                        value={form.mediaType2TextColor}
+                        onChange={(e) => handleInputChange({ target: { name: 'mediaType2TextColor', value: e.target.value } })}
+                        disabled={loading}
+                        sx={{ width: 90 }}
+                        inputProps={{ 
+                          style: { 
+                            fontFamily: 'monospace', 
+                            textTransform: 'uppercase',
+                            fontSize: '0.75rem',
+                            padding: '4px 8px'
+                          } 
+                        }}
+                      />
+                      <Popover
+                        open={Boolean(textColorAnchorEl)}
+                        anchorEl={textColorAnchorEl}
+                        onClose={() => setTextColorAnchorEl(null)}
+                        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                        PaperProps={{ sx: { p: 2, borderRadius: 2, boxShadow: 6 } }}
+                      >
+                        <Box sx={{ "& .react-colorful": { width: '200px', height: '200px' } }}>
+                          <HexColorPicker 
+                            color={form.mediaType2TextColor} 
+                            onChange={(color) => handleInputChange({ target: { name: 'mediaType2TextColor', value: color } })} 
+                          />
+                          <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 0.5, maxWidth: 200 }}>
+                            {["#000000", "#ffffff", "#f44336", "#e91e63", "#9c27b0", "#673ab7", "#3f51b5", "#2196f3", "#03a9f4", "#00bcd4", "#009688", "#4caf50", "#ffeb3b", "#ff9800"].map((pColor) => (
+                              <Box
+                                key={pColor}
+                                onClick={() => handleInputChange({ target: { name: 'mediaType2TextColor', value: pColor } })}
+                                sx={{
+                                  width: 20,
+                                  height: 20,
+                                  borderRadius: '4px',
+                                  backgroundColor: pColor,
+                                  cursor: 'pointer',
+                                  border: '1px solid #ddd',
+                                  '&:hover': { transform: 'scale(1.2)' }
+                                }}
+                              />
+                            ))}
+                          </Box>
+                        </Box>
+                      </Popover>
+                    </Box>
+                  </Box>
+
+                  <Box>
+                    <Typography variant="body2" gutterBottom>{t.mediaType2SignatureColor}</Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Box
+                        onClick={(e) => !loading && setSignatureColorAnchorEl(e.currentTarget)}
+                        sx={{
+                          width: 32,
+                          height: 32,
+                          borderRadius: '6px',
+                          backgroundColor: form.mediaType2SignatureColor,
+                          border: '2px solid #ddd',
+                          cursor: loading ? 'default' : 'pointer',
+                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                          '&:hover': {
+                            transform: loading ? 'none' : 'scale(1.05)',
+                            borderColor: '#2196f3',
+                          },
+                          transition: 'all 0.2s',
+                          flexShrink: 0
+                        }}
+                      />
+                      <TextField
+                        size="small"
+                        value={form.mediaType2SignatureColor}
+                        onChange={(e) => handleInputChange({ target: { name: 'mediaType2SignatureColor', value: e.target.value } })}
+                        disabled={loading}
+                        sx={{ width: 90 }}
+                        inputProps={{ 
+                          style: { 
+                            fontFamily: 'monospace', 
+                            textTransform: 'uppercase',
+                            fontSize: '0.75rem',
+                            padding: '4px 8px'
+                          } 
+                        }}
+                      />
+                      <Popover
+                        open={Boolean(signatureColorAnchorEl)}
+                        anchorEl={signatureColorAnchorEl}
+                        onClose={() => setSignatureColorAnchorEl(null)}
+                        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+                        PaperProps={{ sx: { p: 2, borderRadius: 2, boxShadow: 6 } }}
+                      >
+                        <Box sx={{ "& .react-colorful": { width: '200px', height: '200px' } }}>
+                          <HexColorPicker 
+                            color={form.mediaType2SignatureColor} 
+                            onChange={(color) => handleInputChange({ target: { name: 'mediaType2SignatureColor', value: color } })} 
+                          />
+                          <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 0.5, maxWidth: 200 }}>
+                            {["#000000", "#ffffff", "#f44336", "#e91e63", "#9c27b0", "#673ab7", "#3f51b5", "#2196f3", "#03a9f4", "#00bcd4", "#009688", "#4caf50", "#ffeb3b", "#ff9800"].map((pColor) => (
+                              <Box
+                                key={pColor}
+                                onClick={() => handleInputChange({ target: { name: 'mediaType2SignatureColor', value: pColor } })}
+                                sx={{
+                                  width: 20,
+                                  height: 20,
+                                  borderRadius: '4px',
+                                  backgroundColor: pColor,
+                                  cursor: 'pointer',
+                                  border: '1px solid #ddd',
+                                  '&:hover': { transform: 'scale(1.2)' }
+                                }}
+                              />
+                            ))}
+                          </Box>
+                        </Box>
+                      </Popover>
+                    </Box>
+                  </Box>
                 </Box>
               )}
             </Box>

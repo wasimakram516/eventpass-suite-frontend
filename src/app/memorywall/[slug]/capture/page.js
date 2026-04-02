@@ -101,6 +101,7 @@ export default function UploadPage() {
   const [cameraFacingMode, setCameraFacingMode] = useState("user");
   const [mode, setMode] = useState(null);
   const [wallConfig, setWallConfig] = useState(null);
+  const [mediaType, setMediaType] = useState("type1");
   const [showUploadProgress, setShowUploadProgress] = useState(false);
   const [uploadProgress, setUploadProgress] = useState([]);
   const [signatureDataUrl, setSignatureDataUrl] = useState("");
@@ -112,6 +113,7 @@ export default function UploadPage() {
       const config = response;
       setWallConfig(config);
       setMode(config.mode);
+      setMediaType(config.cardSettings?.mediaType || "type1");
     };
 
     loadWallConfigs();
@@ -517,27 +519,27 @@ export default function UploadPage() {
   };
 
   const submitPhoto = async () => {
-    if (!capturedImage || isRotating) return;
+    const isType2 = mode === "card" && mediaType === "type2";
+    if (!isType2 && (!capturedImage || isRotating)) return;
+    if (isType2 && isSubmitting) return;
 
     if (!wallConfig?.business?.slug) {
       showMessage("Business information is missing", "error");
       return;
     }
 
-    const useSignatureInput =
-      mode === "card" && wallConfig?.cardSettings?.inputType === "signature";
+    const useSignatureInput = mode === "card" && mediaType === "type2";
 
-    if (useSignatureInput && !signatureDataUrl) {
-      showMessage(t.signatureRequired, "error");
-      return;
-    }
 
     setIsSubmitting(true);
 
     try {
-      const photoFile = capturedImage instanceof File
-        ? capturedImage
-        : new File([capturedImage], "captured-image.jpg", { type: "image/jpeg" });
+      let photoFile = null;
+      if (capturedImage) {
+        photoFile = capturedImage instanceof File
+          ? capturedImage
+          : new File([capturedImage], "captured-image.jpg", { type: "image/jpeg" });
+      }
 
       let signatureFile = null;
       if (useSignatureInput && signatureDataUrl) {
@@ -545,11 +547,13 @@ export default function UploadPage() {
         signatureFile = new File([signatureBlob], "signature.png", { type: "image/png" });
       }
 
-      setShowUploadProgress(true);
-      const files = signatureFile ? [photoFile, signatureFile] : [photoFile];
+      const files = [];
+      if (photoFile) files.push(photoFile);
+      if (signatureFile) files.push(signatureFile);
+
       const uploads = files.map((f, index) => ({
         file: f,
-        label: index === 0 ? "Image" : "Signature",
+        label: f.name.includes("signature") ? "Signature" : "Image",
         percent: 0,
         loaded: 0,
         total: f.size,
@@ -557,53 +561,61 @@ export default function UploadPage() {
         url: null,
       }));
 
-      const urls = await uploadMediaFiles({
-        files,
-        businessSlug: wallConfig.business.slug,
-        moduleName: "MemoryWall",
-        wallSlug: slug,
-        onProgress: (progressUploads) => {
-          progressUploads.forEach((progressUpload, index) => {
-            if (uploads[index]) {
-              uploads[index].percent = progressUpload.percent;
-              uploads[index].loaded = progressUpload.loaded;
-              uploads[index].total = progressUpload.total;
-              uploads[index].error = progressUpload.error;
-              uploads[index].url = progressUpload.url;
-            }
-          });
-          setUploadProgress([...uploads]);
-        },
+      let photoUrl = "";
+      let signatureUrl = "";
+
+      if (files.length > 0) {
+        setShowUploadProgress(true);
+        const urls = await uploadMediaFiles({
+          files,
+          businessSlug: wallConfig.business.slug,
+          moduleName: "MemoryWall",
+          wallSlug: slug,
+          onProgress: (progressUploads) => {
+            progressUploads.forEach((progressUpload, index) => {
+              if (uploads[index]) {
+                uploads[index].percent = progressUpload.percent;
+                uploads[index].loaded = progressUpload.loaded;
+                uploads[index].total = progressUpload.total;
+                uploads[index].error = progressUpload.error;
+                uploads[index].url = progressUpload.url;
+              }
+            });
+            setUploadProgress([...uploads]);
+          },
+        });
+        setShowUploadProgress(false);
+
+        if (urls && urls.length > 0) {
+          photoUrl = photoFile ? urls[0] : "";
+          signatureUrl = signatureFile ? (photoFile ? urls[1] : urls[0]) : "";
+
+          if (signatureFile && !signatureUrl) {
+            showMessage("Signature upload failed. Please try again.", "error");
+            return;
+          }
+        }
+      }
+
+      await createDisplayMedia({
+        imageUrl: photoUrl,
+        text: text.trim(),
+        signatureUrl: signatureUrl,
+        slug: slug,
       });
 
-      setShowUploadProgress(false);
-
-      if (urls && urls.length > 0) {
-        if (useSignatureInput && !urls[1]) {
-          showMessage("Signature upload failed. Please try again.", "error");
-          return;
+      setTimeout(() => {
+        if (capturedImageUrl) {
+          URL.revokeObjectURL(capturedImageUrl);
+          setCapturedImageUrl(null);
         }
-
-        await createDisplayMedia({
-          imageUrl: urls[0],
-          text: mode === "card" && !useSignatureInput ? text.trim() : "",
-          signatureUrl: useSignatureInput ? urls[1] || "" : "",
-          slug: slug,
-        });
-
-        setTimeout(() => {
-          if (capturedImageUrl) {
-            URL.revokeObjectURL(capturedImageUrl);
-            setCapturedImageUrl(null);
-          }
-          setCapturedImage(null);
-          setText("");
-          setSignatureDataUrl("");
-          if (signaturePadRef.current) {
-            signaturePadRef.current.clear();
-          }
-        }, 3000);
-      }
+        setCapturedImage(null);
+        setText("");
+        setSignatureDataUrl("");
+        if (signaturePadRef.current) {
+          signaturePadRef.current.clear();
+        }
+      }, 3000);
     } catch (error) {
       console.error("Upload failed:", error);
       showMessage(error.message || "Failed to upload image", "error");
@@ -649,30 +661,32 @@ export default function UploadPage() {
           )}
         </Box>
 
-        <Box sx={{ display: "flex", justifyContent: "center", gap: 2, mb: 3 }}>
-          {!cameraOn ? (
-            <Button
-              variant="contained"
-              color="primary"
-              size="large"
-              onClick={startCamera}
-              startIcon={<ICONS.camera />}
-              sx={getStartIconSpacing(dir)}
-              disabled={isLoading}
-            >
-              {isLoading ? t.accessingCamera : t.startCamera}
-            </Button>
-          ) : (
-            <Button
-              variant="outlined"
-              color="error"
-              size="large"
-              onClick={stopCamera}
-            >
-              {t.stopCamera}
-            </Button>
-          )}
-        </Box>
+        {((mode === "mosaic" || mediaType === "type1") && !capturedImage) && (
+          <Box sx={{ display: "flex", justifyContent: "center", gap: 2, mb: 3 }}>
+            {!cameraOn ? (
+              <Button
+                variant="contained"
+                color="primary"
+                size="large"
+                onClick={startCamera}
+                startIcon={<ICONS.camera />}
+                sx={getStartIconSpacing(dir)}
+                disabled={isLoading}
+              >
+                {isLoading ? t.accessingCamera : t.startCamera}
+              </Button>
+            ) : (
+              <Button
+                variant="outlined"
+                color="error"
+                size="large"
+                onClick={stopCamera}
+              >
+                {t.stopCamera}
+              </Button>
+            )}
+          </Box>
+        )}
 
         {cameraOn && (
           <Box
@@ -816,7 +830,7 @@ export default function UploadPage() {
           </Paper>
         )}
 
-        {mode === "card" && capturedImage && (
+        {(mode === "card" && (mediaType === "type2" || capturedImage)) && (
           <Paper
             elevation={3}
             sx={{
@@ -828,143 +842,139 @@ export default function UploadPage() {
               alignSelf: "center",
             }}
           >
-            {wallConfig?.cardSettings?.inputType === "signature" ? (
+            {mediaType === "type2" ? (
               <>
+                <Box sx={{ mb: 3 }}>
+                  <Typography variant="h6" fontWeight="bold" gutterBottom>
+                    {t.addMessage}
+                  </Typography>
+                  <TextField
+                    fullWidth
+                    variant="outlined"
+                    multiline
+                    rows={3}
+                    placeholder={t.messagePlaceholder}
+                    value={text}
+                    onChange={(e) => setText(e.target.value.slice(0, 150))}
+                    disabled={isSubmitting}
+                  />
+                  <Typography
+                    variant="caption"
+                    color="textSecondary"
+                    sx={{ display: "block", textAlign: align, mt: 0.5 }}
+                  >
+                    {text.length}/150 {t.charactersCount}
+                  </Typography>
+                </Box>
+
                 <Typography variant="h6" fontWeight="bold" gutterBottom>
                   {t.addSignature}
                 </Typography>
                 <Box
                   sx={{
                     width: "100%",
-                    maxWidth: 260,
-                    aspectRatio: "1 / 1",
+                    maxWidth: 280,
+                    aspectRatio: "1.5 / 1",
                     mx: "auto",
                     border: "1px solid #ccc",
                     borderRadius: 2,
                     overflow: "hidden",
                     bgcolor: "#fff",
-                    mb: 1,
+                    mb: 1.5,
                   }}
                 >
                   <SignatureCanvas
                     ref={signaturePadRef}
                     penColor="#111"
                     canvasProps={{
-                      width: 260,
-                      height: 260,
-                      style: { width: "100%", height: "100%", display: "block" },
+                      width: 280,
+                      height: 180,
+                      className: "signature-canvas",
+                      style: { width: "100%", height: "100%" },
                     }}
                     onEnd={handleSignatureEnd}
                   />
                 </Box>
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={clearSignature}
-                  startIcon={<ICONS.clear />}
-                  sx={{ ...getStartIconSpacing(dir), display: "inline-flex", mx: "auto", mt: 1 }}
-                >
-                  {t.clearSignature}
-                </Button>
+                <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={clearSignature}
+                    startIcon={<ICONS.clear />}
+                    sx={getStartIconSpacing(dir)}
+                  >
+                    {t.clearSignature}
+                  </Button>
+                </Box>
               </>
             ) : (
-              <>
+              <Box sx={{ mb: 3 }}>
                 <Typography variant="h6" fontWeight="bold" gutterBottom>
                   {t.addMessage}
                 </Typography>
                 <TextField
                   fullWidth
-                  multiline
-                  rows={3}
-                  value={text}
-                  onChange={(e) => setText(e.target.value)}
-                  placeholder={t.messagePlaceholder}
                   variant="outlined"
-                  inputProps={{ maxLength: 200 }}
+                  multiline
+                  rows={4}
+                  placeholder={t.messagePlaceholder}
+                  value={text}
+                  onChange={(e) => setText(e.target.value.slice(0, 150))}
+                  disabled={isSubmitting}
                 />
                 <Typography
                   variant="caption"
-                  color="text.secondary"
-                  sx={{ mt: 1, display: "block", textAlign: align }}
+                  color="textSecondary"
+                  sx={{ display: "block", textAlign: align, mt: 0.5 }}
                 >
-                  {text.length}/200 {t.charactersCount}
+                  {text.length}/150 {t.charactersCount}
                 </Typography>
-              </>
+              </Box>
             )}
-          </Paper>
-        )}
 
-        <Box
-          sx={{
-            display: { xs: "flex", sm: "flex" },
-            flexDirection: { xs: "column", sm: "row" },
-            justifyContent: "center",
-            gap: 2,
-            mb: 3,
-          }}
-        >
-          {!capturedImage ? (
             <Button
               variant="contained"
-              size="large"
               color="primary"
-              onClick={capturePhoto}
-              disabled={isLoading || !cameraOn}
-              startIcon={<ICONS.camera />}
+              fullWidth
+              size="large"
+              onClick={submitPhoto}
+              disabled={isSubmitting || isRotating || (mediaType === 'type2' && !text.trim() && !signatureDataUrl)}
+              startIcon={
+                isSubmitting ? (
+                  <ICONS.refresh sx={{ animation: "spin 1s linear infinite" }} />
+                ) : (
+                  <ICONS.send />
+                )
+              }
               sx={{
+                py: 1.5,
+                borderRadius: 2,
+                fontWeight: "bold",
                 ...getStartIconSpacing(dir),
-                width: { xs: "100%", sm: "auto" },
               }}
             >
-              {t.capturePhotoBtn}
+              {isSubmitting
+                ? t.uploading
+                : mediaType === "type2" 
+                  ? "Submit Message & Signature"
+                  : t.submitPhotoMessage}
             </Button>
-          ) : (
-            <>
-              <Button
-                variant="contained"
-                size="large"
-                color="success"
-                onClick={submitPhoto}
-                disabled={
-                  isSubmitting ||
-                  isRotating ||
-                  (mode === "card" &&
-                    (wallConfig?.cardSettings?.inputType === "signature"
-                      ? !signatureDataUrl
-                      : !text.trim()))
-                }
-                startIcon={
-                  isSubmitting ? <LoadingState size={20} /> : <ICONS.send />
-                }
-                sx={{
-                  ...getStartIconSpacing(dir),
-                  width: { xs: "100%", sm: "auto" },
-                }}
-              >
-                {isSubmitting
-                  ? t.uploading
-                  : mode === "card"
-                    ? t.submitPhotoMessage
-                    : t.submitPhoto}
-              </Button>
 
+            {capturedImage && (
               <Button
-                variant="outlined"
-                size="large"
-                color="warning"
+                variant="text"
+                color="secondary"
+                fullWidth
+                size="medium"
                 onClick={retakePhoto}
-                disabled={isSubmitting}
-                startIcon={<ICONS.refresh />}
-                sx={{
-                  ...getStartIconSpacing(dir),
-                  width: { xs: "100%", sm: "auto" },
-                }}
+                disabled={isSubmitting || isRotating}
+                sx={{ mt: 1 }}
               >
                 {t.retakePhoto}
               </Button>
-            </>
-          )}
-        </Box>
+            )}
+          </Paper>
+        )}
 
         <Paper
           elevation={1}
@@ -973,6 +983,9 @@ export default function UploadPage() {
             mt: 3,
             bgcolor: "grey.50",
             mb: { xs: 8, sm: 8 },
+            width: "100%",
+            maxWidth: "800px",
+            alignSelf: "center",
           }}
         >
           <Typography variant="body2" color="text.secondary">
