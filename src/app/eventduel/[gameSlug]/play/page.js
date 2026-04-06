@@ -151,12 +151,16 @@ export default function PlayPage() {
   );
 
   // ─── 4. AUDIO INSTANCES ─────────────────────────────────────────────────
-  const correctSound =
-    typeof Audio !== "undefined" ? new Audio("/correct.wav") : null;
-  const wrongSound =
-    typeof Audio !== "undefined" ? new Audio("/wrong.wav") : null;
-  const celebrateSound =
-    typeof Audio !== "undefined" ? new Audio("/celebrate.mp3") : null;
+  const correctSoundRef = useRef(
+    typeof Audio !== "undefined" ? new Audio("/correct.wav") : null
+  );
+  const wrongSoundRef = useRef(
+    typeof Audio !== "undefined" ? new Audio("/wrong.wav") : null
+  );
+  const celebrateSoundRef = useRef(
+    typeof Audio !== "undefined" ? new Audio("/celebrate.mp3") : null
+  );
+  const celebrationPlayedRef = useRef(false);
 
   // ─── 5. STATE & REFS ────────────────────────────────────────────────────
   const [questionIndex, setQuestionIndex] = useState(0);
@@ -414,6 +418,33 @@ export default function PlayPage() {
     }
   }, [activeSession?._id]);
 
+  // 8.x Play celebration sound when winner result screen appears
+  useEffect(() => {
+    if (!recentlyCompleted || celebrationPlayedRef.current) return;
+
+    let isWinner = false;
+    if (game?.isTeamMode) {
+      const { teamId } = getPlayerSessionData() || {};
+      isWinner = !!(
+        recentlyCompleted.winnerTeamId &&
+        recentlyCompleted.winnerTeamId?._id === teamId
+      );
+    } else {
+      const playerObj = recentlyCompleted.players?.find(
+        (p) => p.playerType === selectedPlayer
+      );
+      isWinner = !!(
+        recentlyCompleted.winner &&
+        recentlyCompleted.winner?._id === playerObj?.playerId?._id
+      );
+    }
+
+    if (isWinner) {
+      celebrationPlayedRef.current = true;
+      celebrateSoundRef.current?.play().catch(() => {});
+    }
+  }, [recentlyCompleted]);
+
   // ─── 9. PROGRESS & FINAL SUBMISSION ────────────────────────────────────
   // --- SUBMIT PROGRESS (Team + PvP compatible) ---
   const submitProgress = async (timeOverride = null) => {
@@ -496,9 +527,9 @@ export default function PlayPage() {
 
     if (isCorrect) {
       scoreRef.current++;
-      correctSound?.play().catch(() => {});
+      correctSoundRef.current?.play().catch(() => {});
     } else {
-      wrongSound?.play().catch(() => {});
+      wrongSoundRef.current?.play().catch(() => {});
       if (currentQuestion.hint) setShowHint(true);
     }
 
@@ -511,7 +542,8 @@ export default function PlayPage() {
       if (isLast) {
         if (localTime > 0) {
           setHasFinishedEarly(true);
-          celebrateSound?.play().catch(() => {});
+          celebrateSoundRef.current?.play().catch(() => {});
+          celebrationPlayedRef.current = true;
         }
         submitFinalResult();
       } else {
@@ -866,7 +898,7 @@ export default function PlayPage() {
               recycle={false}
               numberOfPieces={300}
               gravity={0.2}
-              style={{ position: "absolute", top: 0, left: 0 }}
+              style={{ position: "fixed", top: 0, left: 0, zIndex: 9999 }}
             />
 
             <Container maxWidth="sm" sx={{ position: "relative", zIndex: 1 }}>
@@ -1364,7 +1396,7 @@ export default function PlayPage() {
               recycle={false}
               numberOfPieces={300}
               gravity={0.2}
-              style={{ position: "absolute", top: 0, left: 0 }}
+              style={{ position: "fixed", top: 0, left: 0, zIndex: 9999 }}
             />
           )}
           <LanguageSelector top={20} right={20} />
