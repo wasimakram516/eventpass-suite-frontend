@@ -207,7 +207,7 @@ export default function MosaicGrid({ media, background, backgroundLogo, rows = 1
           transform: "translate(-50%, -50%)",
           width: "40vw",
           height: "40vh",
-          zIndex: 1,
+          zIndex: 20,
           pointerEvents: "none",
           opacity: backgroundLogo.opacity ?? 1,
         }}

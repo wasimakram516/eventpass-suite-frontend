@@ -807,7 +807,7 @@ export default function UploadPage() {
             <Box
               sx={{
                 width: "100%",
-                height: "80vh",
+                height: "50vh",
                 display: "flex",
                 justifyContent: "center",
                 alignItems: "center",
@@ -828,6 +828,60 @@ export default function UploadPage() {
               />
             </Box>
           </Paper>
+        )}
+
+        {mode === "mosaic" && capturedImage && (
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: { xs: "column", sm: "row" },
+              justifyContent: "center",
+              gap: 2,
+              mb: 3,
+              width: "100%",
+              maxWidth: "800px",
+              alignSelf: "center",
+            }}
+          >
+            <Button
+              variant="contained"
+              size="large"
+              color="success"
+              onClick={submitPhoto}
+              disabled={isSubmitting || isRotating}
+              startIcon={
+                isSubmitting ? (
+                  <ICONS.refresh sx={{ animation: "spin 1s linear infinite" }} />
+                ) : (
+                  <ICONS.send />
+                )
+              }
+              sx={{
+                py: 1.5,
+                borderRadius: 2,
+                fontWeight: "bold",
+                width: { xs: "100%", sm: "auto" },
+                ...getStartIconSpacing(dir),
+              }}
+            >
+              {isSubmitting ? t.uploading : t.submitPhoto}
+            </Button>
+
+            <Button
+              variant="outlined"
+              size="large"
+              color="warning"
+              onClick={retakePhoto}
+              disabled={isSubmitting || isRotating}
+              startIcon={<ICONS.refresh />}
+              sx={{
+                width: { xs: "100%", sm: "auto" },
+                ...getStartIconSpacing(dir),
+              }}
+            >
+              {t.retakePhoto}
+            </Button>
+          </Box>
         )}
 
         {(mode === "card" && (mediaType === "type2" || capturedImage)) && (
