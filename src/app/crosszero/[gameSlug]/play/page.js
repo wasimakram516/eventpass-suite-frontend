@@ -7,7 +7,7 @@ import Confetti from "react-confetti";
 import { useGame } from "@/contexts/GameContext";
 import useCrossZeroWebSocketData from "@/hooks/modules/crosszero/useCrossZeroWebSocketData";
 import CrossZeroMarkVisual from "@/components/crosszero/CrossZeroMarkVisual";
-import { submitResult } from "@/services/crosszero/playerService";
+import { joinGame, submitResult } from "@/services/crosszero/playerService";
 import {
   abandonGameSession,
   activateGameSession,
@@ -260,6 +260,7 @@ export default function CrossZeroPlayPage() {
   const [difficulty, setDifficulty] = useState(null);
   const [countdown, setCountdown] = useState(3);
   const [starting, setStarting] = useState(false);
+  const [replaying, setReplaying] = useState(false);
   const [abandonRemaining, setAbandonRemaining] = useState(60);
 
   // AI mode local state
@@ -664,7 +665,7 @@ export default function CrossZeroPlayPage() {
     }
   }, [bothPlayersJoined, pendingSession?._id, requestAllSessions, starting]);
 
-  const handlePlayAgain = () => {
+  const resetLocalSoloState = () => {
     setBoard(Array(9).fill(null));
     setCurrentTurn("X");
     setWinResult(null);
@@ -675,8 +676,45 @@ export default function CrossZeroPlayPage() {
     clearTimeout(aiMoveTimeoutRef.current);
     clearInterval(countdownRef.current);
     if (game?.moveTimer > 0) setMoveTimeLeft(game.moveTimer);
+  };
+
+  const handlePlayAgain = async () => {
+    resetLocalSoloState();
+
     if (isAIMode) {
-      router.replace(`/crosszero/${game.slug}`);
+      const name = playerInfo?.name?.trim();
+      const company = playerInfo?.company?.trim() || "";
+
+      if (!name || replaying) {
+        router.replace(`/crosszero/${game.slug}/name`);
+        return;
+      }
+
+      try {
+        setReplaying(true);
+        const res = await joinGame(game._id, { name, company });
+
+        if (res?.error || !res?.playerId || !res?.sessionId) {
+          router.replace(`/crosszero/${game.slug}/name`);
+          return;
+        }
+
+        sessionStorage.setItem(
+          "playerInfo",
+          JSON.stringify({ name, company, mode: "solo" })
+        );
+        sessionStorage.setItem("playerId", res.playerId);
+        sessionStorage.setItem("sessionId", res.sessionId);
+        sessionStorage.setItem("playerMark", "X");
+
+        setPlayerId(res.playerId);
+        setSessionId(res.sessionId);
+        setPlayerMark("X");
+        setDifficulty(null);
+        setPhase("difficulty");
+      } finally {
+        setReplaying(false);
+      }
     } else {
       router.replace(`/crosszero/${game.slug}`);
     }
@@ -1239,11 +1277,35 @@ export default function CrossZeroPlayPage() {
                 color="secondary"
                 fullWidth
                 onClick={handlePlayAgain}
-                startIcon={<ICONS.replay />}
+                disabled={replaying}
+                startIcon={replaying ? null : <ICONS.replay />}
                 sx={getStartIconSpacing(dir)}
               >
-                {t.playAgain}
+                {replaying ? (
+                  <CircularProgress size={20} sx={{ color: "#fff" }} />
+                ) : (
+                  t.playAgain
+                )}
               </Button>
+              {isAIMode && (
+                <Button
+                  variant="outlined"
+                  fullWidth
+                  onClick={() => router.replace(`/crosszero/${game.slug}`)}
+                  startIcon={<ICONS.back />}
+                  sx={{
+                    ...getStartIconSpacing(dir),
+                    borderColor: "rgba(255,255,255,0.4)",
+                    color: "#fff",
+                    "&:hover": {
+                      borderColor: "rgba(255,255,255,0.7)",
+                      bgcolor: "rgba(255,255,255,0.08)",
+                    },
+                  }}
+                >
+                  {t.backToLobby}
+                </Button>
+              )}
             </Stack>
           </Paper>
         </Fade>
