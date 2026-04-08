@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import { getGameBySlug as getQuiznestGame } from "@/services/quiznest/gameService";
 import { getGameBySlug as getEventduelGame } from "@/services/eventduel/gameService";
 import { getGameBySlug as getTapmatchGame } from "@/services/tapmatch/gameService";
+import { getGameBySlug as getCrosszeroGame } from "@/services/crosszero/gameService";
 
 const GameContext = createContext();
 
@@ -21,6 +22,8 @@ export const GameProvider = ({ children, module = "quiznest" }) => {
       ? getEventduelGame
       : module === "tapmatch"
       ? getTapmatchGame
+      : module === "crosszero"
+      ? getCrosszeroGame
       : getQuiznestGame;
 
   useEffect(() => {
