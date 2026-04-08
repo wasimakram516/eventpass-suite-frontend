@@ -21,6 +21,7 @@ export default function ClientLayout({ children }) {
     "/stageq",
     "/eventduel",
     "/tapmatch",
+    "/crosszero",
     "/memorywall",
     "/eventreg",
     "/checkin",

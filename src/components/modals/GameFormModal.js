@@ -151,6 +151,12 @@ const GameFormModal = ({
     maxTeams: 2,
     playersPerTeam: 2,
     teamNames: ["", ""],
+    mode: "solo",
+    moveTimer: "0",
+    xImage: null,
+    xImagePreview: "",
+    oImage: null,
+    oImagePreview: "",
   });
 
   const [errors, setErrors] = useState({});
@@ -178,6 +184,7 @@ const GameFormModal = ({
   const { showMessage } = useMessage();
 
   const isTapMatch = module === "tapmatch";
+  const isCrossZero = module === "crosszero";
   const currentGameId = gameId || selectedGame?._id || initialValues?._id;
 
   useEffect(() => {
@@ -205,6 +212,12 @@ const GameFormModal = ({
         maxTeams: 2,
         playersPerTeam: 2,
         teamNames: ["", ""],
+        mode: "solo",
+        moveTimer: "0",
+        xImage: null,
+        xImagePreview: "",
+        oImage: null,
+        oImagePreview: "",
       });
       setErrors({});
       return;
@@ -234,6 +247,10 @@ const GameFormModal = ({
         maxTeams: initialValues.maxTeams || teamNames.length || 2,
         playersPerTeam: initialValues.playersPerTeam || 2,
         teamNames,
+        mode: initialValues.mode || "solo",
+        moveTimer: initialValues.moveTimer?.toString() || "0",
+        xImagePreview: initialValues.xImage || "",
+        oImagePreview: initialValues.oImage || "",
       }));
 
       setErrors({});
@@ -305,6 +322,8 @@ const GameFormModal = ({
         coverImage: "coverPreview",
         nameImage: "namePreview",
         backgroundImage: "backgroundPreview",
+        xImage: "xImagePreview",
+        oImage: "oImagePreview",
       };
 
       setForm((prev) => ({
@@ -533,7 +552,7 @@ const GameFormModal = ({
       newErrors.backgroundImage = te.backgroundRequired;
     }
 
-    if (!isTapMatch && !form.choicesCount)
+    if (!isTapMatch && !isCrossZero && !form.choicesCount)
       newErrors.choicesCount = te.optionsRequired;
 
 
@@ -576,6 +595,8 @@ const GameFormModal = ({
       let coverImageUrl = form.coverImage ? null : (form.coverPreview || null);
       let nameImageUrl = form.nameImage ? null : (form.namePreview || null);
       let backgroundImageUrl = form.backgroundImage ? null : (form.backgroundPreview || null);
+      let xImageUrl = form.xImage ? null : (form.xImagePreview || null);
+      let oImageUrl = form.oImage ? null : (form.oImagePreview || null);
       const memoryImageUrls = [];
 
       if (form.coverImage) {
@@ -600,6 +621,13 @@ const GameFormModal = ({
           type: "background",
           label: "Background Image",
         });
+      }
+
+      if (isCrossZero && form.xImage) {
+        filesToUpload.push({ file: form.xImage, type: "xImage", label: "Player X Image" });
+      }
+      if (isCrossZero && form.oImage) {
+        filesToUpload.push({ file: form.oImage, type: "oImage", label: "Player O Image" });
       }
 
       if (isTapMatch) {
@@ -643,7 +671,7 @@ const GameFormModal = ({
           const urls = await uploadMediaFiles({
             files: filesToUpload.map((item) => item.file),
             businessSlug: selectedBusiness,
-            moduleName: module === "eventduel" ? "EventDuel" : module === "tapmatch" ? "TapMatch" : "QuizNest",
+            moduleName: module === "eventduel" ? "EventDuel" : module === "tapmatch" ? "TapMatch" : module === "crosszero" ? "CrossZero" : "QuizNest",
             onProgress: (progressUploads) => {
               progressUploads.forEach((progressUpload, index) => {
                 if (uploads[index]) {
@@ -668,6 +696,8 @@ const GameFormModal = ({
             else if (result.type === "name") nameImageUrl = result.url;
             else if (result.type === "background") backgroundImageUrl = result.url;
             else if (result.type === "memory") memoryImageUrls.push(result.url);
+            else if (result.type === "xImage") xImageUrl = result.url;
+            else if (result.type === "oImage") oImageUrl = result.url;
           });
         } catch (uploadError) {
           setShowUploadProgress(false);
@@ -697,7 +727,13 @@ const GameFormModal = ({
         backgroundImage: backgroundImageUrl,
       };
 
-      if (!isTapMatch) payload.choicesCount = form.choicesCount;
+      if (!isTapMatch && !isCrossZero) payload.choicesCount = form.choicesCount;
+      if (isCrossZero) {
+        payload.mode = form.mode;
+        payload.moveTimer = Number(form.moveTimer) || 0;
+        payload.xImage = xImageUrl || null;
+        payload.oImage = oImageUrl || null;
+      }
       if (isTapMatch) {
         if (form.clearAllMemoryImages) {
           payload.clearAllMemoryImages = "true";
@@ -764,7 +800,7 @@ const GameFormModal = ({
             fullWidth
             required
           />
-          {!isTapMatch && (
+          {!isTapMatch && !isCrossZero && (
             <TextField
               label={t.numberOfOptions}
               name="choicesCount"
@@ -779,6 +815,71 @@ const GameFormModal = ({
                 </MenuItem>
               ))}
             </TextField>
+          )}
+          {isCrossZero && (
+            <>
+              <TextField
+                label="Game Mode"
+                name="mode"
+                value={form.mode}
+                onChange={handleChange}
+                select
+                fullWidth
+              >
+                <MenuItem value="solo">Solo (vs AI)</MenuItem>
+                <MenuItem value="pvp">Multiplayer (PvP)</MenuItem>
+              </TextField>
+              <TextField
+                label="Per-Move Timer (seconds, 0 = disabled)"
+                name="moveTimer"
+                type="number"
+                value={form.moveTimer}
+                onChange={handleChange}
+                fullWidth
+                inputProps={{ min: 0 }}
+              />
+
+              {/* Player X / O custom images (optional) */}
+              <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+                {/* X Image */}
+                <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", flex: 1, minWidth: 140 }}>
+                  <Button component="label" variant="outlined" size="small"
+                    sx={{ borderColor: "#00e5ff", color: "#00e5ff", "&:hover": { borderColor: "#00b8d4", bgcolor: "rgba(0,229,255,0.06)" } }}>
+                    Player ✕ Image <Typography component="span" variant="caption" sx={{ ml: 0.5, opacity: 0.6 }}>(optional)</Typography>
+                    <input hidden type="file" accept="image/*" onChange={(e) => handleFileChange(e, "xImage")} />
+                  </Button>
+                  {form.xImagePreview && (
+                    <Box sx={{ mt: 1, position: "relative", display: "inline-block" }}>
+                      <img src={form.xImagePreview} alt="X preview"
+                        style={{ width: 64, height: 64, borderRadius: 8, objectFit: "cover", border: "2px solid #00e5ff" }} />
+                      <IconButton size="small" onClick={() => setForm((p) => ({ ...p, xImage: null, xImagePreview: "" }))}
+                        sx={{ position: "absolute", top: -8, right: -8, bgcolor: "background.paper", border: "1px solid #ccc", p: 0.3 }}>
+                        <ICONS.close sx={{ fontSize: 14 }} />
+                      </IconButton>
+                    </Box>
+                  )}
+                </Box>
+
+                {/* O Image */}
+                <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", flex: 1, minWidth: 140 }}>
+                  <Button component="label" variant="outlined" size="small"
+                    sx={{ borderColor: "#ff6b6b", color: "#ff6b6b", "&:hover": { borderColor: "#e53935", bgcolor: "rgba(255,107,107,0.06)" } }}>
+                    Player ○ Image <Typography component="span" variant="caption" sx={{ ml: 0.5, opacity: 0.6 }}>(optional)</Typography>
+                    <input hidden type="file" accept="image/*" onChange={(e) => handleFileChange(e, "oImage")} />
+                  </Button>
+                  {form.oImagePreview && (
+                    <Box sx={{ mt: 1, position: "relative", display: "inline-block" }}>
+                      <img src={form.oImagePreview} alt="O preview"
+                        style={{ width: 64, height: 64, borderRadius: 8, objectFit: "cover", border: "2px solid #ff6b6b" }} />
+                      <IconButton size="small" onClick={() => setForm((p) => ({ ...p, oImage: null, oImagePreview: "" }))}
+                        sx={{ position: "absolute", top: -8, right: -8, bgcolor: "background.paper", border: "1px solid #ccc", p: 0.3 }}>
+                        <ICONS.close sx={{ fontSize: 14 }} />
+                      </IconButton>
+                    </Box>
+                  )}
+                </Box>
+              </Box>
+            </>
           )}
           <TextField
             label={t.countdownTime}
