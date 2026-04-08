@@ -25,6 +25,7 @@ const translations = {
     youPlayAs: "You play as",
     nameLabel: "Your Name",
     companyLabel: "Company (optional)",
+    departmentLabel: "Department (optional)",
     startButton: "Continue",
   },
   ar: {
@@ -32,6 +33,7 @@ const translations = {
     youPlayAs: "تلعب بدور",
     nameLabel: "اسمك",
     companyLabel: "الشركة (اختياري)",
+    departmentLabel: "القسم (اختياري)",
     startButton: "متابعة",
   },
 };
@@ -40,7 +42,7 @@ export default function CrossZeroNamePage() {
   const { game, loading } = useGame();
   const router = useRouter();
   const { t, dir } = useI18nLayout(translations);
-  const [form, setForm] = useState({ name: "", company: "" });
+  const [form, setForm] = useState({ name: "", company: "", department: "" });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -52,7 +54,7 @@ export default function CrossZeroNamePage() {
     if (!res?.error) {
       sessionStorage.setItem(
         "playerInfo",
-        JSON.stringify({ name: form.name.trim(), company: form.company.trim(), mode: "solo" })
+        JSON.stringify({ name: form.name.trim(), company: form.company.trim(), department: form.department.trim(), mode: "solo" })
       );
       sessionStorage.setItem("playerId", res.playerId);
       sessionStorage.setItem("sessionId", res.sessionId);
@@ -182,9 +184,17 @@ export default function CrossZeroNamePage() {
           <TextField
             label={t.companyLabel}
             fullWidth
-            sx={{ mb: 3 }}
+            sx={{ mb: 2.5 }}
             value={form.company}
             onChange={(e) => setForm({ ...form, company: e.target.value })}
+            InputProps={{ sx: { backgroundColor: "rgba(255,255,255,0.75)" } }}
+          />
+          <TextField
+            label={t.departmentLabel}
+            fullWidth
+            sx={{ mb: 3 }}
+            value={form.department}
+            onChange={(e) => setForm({ ...form, department: e.target.value })}
             InputProps={{ sx: { backgroundColor: "rgba(255,255,255,0.75)" } }}
           />
 

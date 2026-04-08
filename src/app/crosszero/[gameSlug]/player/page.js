@@ -27,6 +27,7 @@ const translations = {
     chooseSide: "Choose Your Side",
     nameLabel: "Your Name",
     companyLabel: "Company (optional)",
+    departmentLabel: "Department (optional)",
     proceed: "Join Game",
     noSession: "No session is available right now. Please wait for a new session.",
     selectSide: "Please select X or O to continue.",
@@ -41,6 +42,7 @@ const translations = {
     chooseSide: "اختر جانبك",
     nameLabel: "اسمك",
     companyLabel: "الشركة (اختياري)",
+    departmentLabel: "القسم (اختياري)",
     proceed: "انضم للعبة",
     noSession: "لا توجد جلسة متاحة حالياً. يرجى انتظار جلسة جديدة.",
     selectSide: "يرجى اختيار ✕ أو ○ للمتابعة.",
@@ -84,7 +86,7 @@ export default function CrossZeroPlayerPage() {
   const { t, dir } = useI18nLayout(translations);
 
   const [selected, setSelected] = useState("");
-  const [form, setForm] = useState({ name: "", company: "" });
+  const [form, setForm] = useState({ name: "", company: "", department: "" });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -122,6 +124,7 @@ export default function CrossZeroPlayerPage() {
       sessionId: pendingSession._id,
       name: form.name.trim(),
       company: form.company.trim(),
+      department: form.department.trim(),
       playerType: selected,
     });
 
@@ -129,6 +132,7 @@ export default function CrossZeroPlayerPage() {
       const playerInfo = {
         name: form.name.trim(),
         company: form.company.trim(),
+        department: form.department.trim(),
         playerType: selected,
         mark: response.mark || MARK_MAP[selected] || "X",
         mode: "pvp",
@@ -309,9 +313,17 @@ export default function CrossZeroPlayerPage() {
           <TextField
             label={t.companyLabel}
             fullWidth
-            sx={{ mb: 3 }}
+            sx={{ mb: 2.5 }}
             value={form.company}
             onChange={(e) => setForm({ ...form, company: e.target.value })}
+            InputProps={{ sx: { backgroundColor: "rgba(255,255,255,0.75)" } }}
+          />
+          <TextField
+            label={t.departmentLabel}
+            fullWidth
+            sx={{ mb: 3 }}
+            value={form.department}
+            onChange={(e) => setForm({ ...form, department: e.target.value })}
             InputProps={{ sx: { backgroundColor: "rgba(255,255,255,0.75)" } }}
           />
 
