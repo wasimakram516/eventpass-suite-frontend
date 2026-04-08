@@ -676,8 +676,7 @@ export default function CrossZeroPlayPage() {
     clearInterval(countdownRef.current);
     if (game?.moveTimer > 0) setMoveTimeLeft(game.moveTimer);
     if (isAIMode) {
-      setPhase("difficulty");
-      setDifficulty(null);
+      router.replace(`/crosszero/${game.slug}`);
     } else {
       router.replace(`/crosszero/${game.slug}`);
     }
@@ -1245,22 +1244,6 @@ export default function CrossZeroPlayPage() {
               >
                 {t.playAgain}
               </Button>
-              {isAIMode && (
-                <Button
-                  variant="outlined"
-                  fullWidth
-                  onClick={() => router.replace(`/crosszero/${game.slug}`)}
-                  startIcon={<ICONS.back />}
-                  sx={{
-                    ...getStartIconSpacing(dir),
-                    borderColor: "rgba(255,255,255,0.4)",
-                    color: "#fff",
-                    "&:hover": { borderColor: "rgba(255,255,255,0.7)", bgcolor: "rgba(255,255,255,0.08)" },
-                  }}
-                >
-                  {t.backToLobby}
-                </Button>
-              )}
             </Stack>
           </Paper>
         </Fade>
