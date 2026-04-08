@@ -20,7 +20,7 @@ import getStartIconSpacing from "@/utils/getStartIconSpacing";
 
 const translations = {
   en: {
-    aiMode: "Solo · vs AI",
+    aiMode: "Solo vs AI",
     pvpMode: "Multiplayer · 1v1",
     howToPlay: "How to Play",
     playingAs: "Playing as",
