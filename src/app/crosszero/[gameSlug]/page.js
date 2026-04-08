@@ -15,7 +15,7 @@ const translations = {
   en: {
     playAI: "Play vs AI",
     startPvP: "Start Game",
-    aiMode: "Solo · vs AI",
+    aiMode: "Solo vs AI",
     pvpMode: "Multiplayer · 1v1",
     loading: "Loading...",
   },

@@ -50,7 +50,7 @@ const translations = {
     deleteTooltip: "Delete Game",
     shareTooltip: "Share Game Link",
     delete: "Delete",
-    solo: "Solo · vs AI",
+    solo: "Solo vs AI",
     pvp: "Multiplayer · PvP",
     disabled: "disabled",
     seconds: "s",
