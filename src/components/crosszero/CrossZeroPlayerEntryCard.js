@@ -19,6 +19,7 @@ export default function CrossZeroPlayerEntryCard({
   badge,
   nameLabel,
   companyLabel,
+  departmentLabel,
   buttonLabel,
   form,
   submitting,
@@ -79,6 +80,15 @@ export default function CrossZeroPlayerEntryCard({
         sx={{ mb: 3 }}
         value={form.company}
         onChange={(event) => onChange({ ...form, company: event.target.value })}
+        InputProps={{ sx: { backgroundColor: "rgba(255,255,255,0.75)" } }}
+      />
+
+      <TextField
+        label={departmentLabel}
+        fullWidth
+        sx={{ mb: 3 }}
+        value={form.department}
+        onChange={(event) => onChange({ ...form, department: event.target.value })}
         InputProps={{ sx: { backgroundColor: "rgba(255,255,255,0.75)" } }}
       />
 
