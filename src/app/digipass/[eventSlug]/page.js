@@ -291,25 +291,27 @@ export default function DigiPassEventDetails() {
               rowGap: 2,
             }}
           >
-            <Button
-              fullWidth
-              variant="outlined"
-              size="large"
-              startIcon={<ICONS.register />}
-              onClick={() => {
-                router.push(`/digipass/${eventSlug}/register`);
-              }}
-              sx={{
-                flex: { sm: 1 },
-                ...getStartIconSpacing(dir),
-                "&:hover": {
-                  borderColor: "primary.dark",
-                  backgroundColor: "rgba(25,118,210,0.04)",
-                },
-              }}
-            >
-              {t.register}
-            </Button>
+            {!event?.linkedEventRegId && (
+              <Button
+                fullWidth
+                variant="outlined"
+                size="large"
+                startIcon={<ICONS.register />}
+                onClick={() => {
+                  router.push(`/digipass/${eventSlug}/register`);
+                }}
+                sx={{
+                  flex: { sm: 1 },
+                  ...getStartIconSpacing(dir),
+                  "&:hover": {
+                    borderColor: "primary.dark",
+                    backgroundColor: "rgba(25,118,210,0.04)",
+                  },
+                }}
+              >
+                {t.register}
+              </Button>
+            )}
 
             <Button
               fullWidth

@@ -131,21 +131,37 @@ export default function DigiPassSignIn() {
   useEffect(() => {
     if (!event) return;
 
+    let identityFieldsList = [];
     const allFields = event.formFields || [];
-    const identityFieldsList = allFields
-      .filter((f) => f.identity === true && f.visible !== false)
-      .map((f) => ({
-        name: f.inputName,
-        label: f.inputName,
-        type: f.inputType,
-        options: f.values || [],
-        required: true,
-        placeholder: f.placeholder || "",
-      }));
+
+    if (event.linkedEventRegId) {
+      const primaryFieldNames = Array.isArray(event.primaryField) ? event.primaryField : (event.primaryField ? [event.primaryField] : []);
+      identityFieldsList = allFields
+        .filter((f) => primaryFieldNames.includes(f.inputName))
+        .map((f) => ({
+          name: f.inputName,
+          label: f.inputName,
+          type: f.inputType,
+          options: f.values || [],
+          required: true,
+          placeholder: f.placeholder || "",
+        }));
+    } else {
+      identityFieldsList = allFields
+        .filter((f) => f.identity === true && f.visible !== false)
+        .map((f) => ({
+          name: f.inputName,
+          label: f.inputName,
+          type: f.inputType,
+          options: f.values || [],
+          required: true,
+          placeholder: f.placeholder || "",
+        }));
+    }
 
     if (identityFieldsList.length === 0) {
       setFieldErrors({
-        _global: "No identity fields configured for this event",
+        _global: event.linkedEventRegId ? "No primary fields configured for this linked event" : "No identity fields configured for this event",
       });
       setTranslationsReady(true);
       return;

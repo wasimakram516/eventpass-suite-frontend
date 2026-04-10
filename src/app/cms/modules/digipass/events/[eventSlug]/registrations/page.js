@@ -809,46 +809,50 @@ export default function ViewRegistrations() {
                     gap: dir === "rtl" ? 1 : 0,
                 }}
             >
-                <Button
-                    variant="contained"
-                    color="primary"
-                    startIcon={<ICONS.add />}
-                    onClick={() => setCreateModalOpen(true)}
-                    sx={getStartIconSpacing(dir)}
-                >
-                    {t.createRegistration}
-                </Button>
+                {!eventDetails?.linkedEventRegId && (
+                    <>
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            startIcon={<ICONS.add />}
+                            onClick={() => setCreateModalOpen(true)}
+                            sx={getStartIconSpacing(dir)}
+                        >
+                            {t.createRegistration}
+                        </Button>
 
-                <Button
-                    variant="outlined"
-                    startIcon={<ICONS.download />}
-                    onClick={handleDownloadSample}
-                    sx={getStartIconSpacing(dir)}
-                >
-                    {t.downloadSample}
-                </Button>
+                        <Button
+                            variant="outlined"
+                            startIcon={<ICONS.download />}
+                            onClick={handleDownloadSample}
+                            sx={getStartIconSpacing(dir)}
+                        >
+                            {t.downloadSample}
+                        </Button>
 
-                <Button
-                    variant="outlined"
-                    component="label"
-                    startIcon={
-                        uploading ? <CircularProgress size={20} /> : <ICONS.upload />
-                    }
-                    disabled={uploading}
-                    sx={getStartIconSpacing(dir)}
-                >
-                    {uploading && uploadProgress?.total
-                        ? `${t.uploading} ${uploadProgress.uploaded}/${uploadProgress.total}`
-                        : uploading
-                            ? t.uploading
-                            : t.uploadFile}
-                    <input
-                        type="file"
-                        hidden
-                        accept=".xlsx,.xls"
-                        onChange={handleUpload}
-                    />
-                </Button>
+                        <Button
+                            variant="outlined"
+                            component="label"
+                            startIcon={
+                                uploading ? <CircularProgress size={20} /> : <ICONS.upload />
+                            }
+                            disabled={uploading}
+                            sx={getStartIconSpacing(dir)}
+                        >
+                            {uploading && uploadProgress?.total
+                                ? `${t.uploading} ${uploadProgress.uploaded}/${uploadProgress.total}`
+                                : uploading
+                                    ? t.uploading
+                                    : t.uploadFile}
+                            <input
+                                type="file"
+                                hidden
+                                accept=".xlsx,.xls"
+                                onChange={handleUpload}
+                            />
+                        </Button>
+                    </>
+                )}
 
                 <Button
                     variant="outlined"
@@ -1444,33 +1448,37 @@ export default function ViewRegistrations() {
                                                         </IconButton>
                                                     </Tooltip>
 
-                                                    <Tooltip title={t.editRegistration}>
-                                                        <IconButton
-                                                            color="primary"
-                                                            onClick={() => {
-                                                                setEditingReg(reg);
-                                                                setEditModalOpen(true);
-                                                            }}
-                                                        >
-                                                            <ICONS.edit fontSize="small" />
-                                                        </IconButton>
-                                                    </Tooltip>
+                                                    {!eventDetails?.linkedEventRegId && (
+                                                        <>
+                                                            <Tooltip title={t.editRegistration}>
+                                                                <IconButton
+                                                                    color="primary"
+                                                                    onClick={() => {
+                                                                        setEditingReg(reg);
+                                                                        setEditModalOpen(true);
+                                                                    }}
+                                                                >
+                                                                    <ICONS.edit fontSize="small" />
+                                                                </IconButton>
+                                                            </Tooltip>
 
-                                                    <Tooltip title={t.deleteRecord}>
-                                                        <IconButton
-                                                            color="error"
-                                                            onClick={() => {
-                                                                setRegistrationToDelete(reg._id);
-                                                                setDeleteDialogOpen(true);
-                                                            }}
-                                                            sx={{
-                                                                "&:hover": { transform: "scale(1.1)" },
-                                                                transition: "0.2s",
-                                                            }}
-                                                        >
-                                                            <ICONS.delete />
-                                                        </IconButton>
-                                                    </Tooltip>
+                                                            <Tooltip title={t.deleteRecord}>
+                                                                <IconButton
+                                                                    color="error"
+                                                                    onClick={() => {
+                                                                        setRegistrationToDelete(reg._id);
+                                                                        setDeleteDialogOpen(true);
+                                                                    }}
+                                                                    sx={{
+                                                                        "&:hover": { transform: "scale(1.1)" },
+                                                                        transition: "0.2s",
+                                                                    }}
+                                                                >
+                                                                    <ICONS.delete />
+                                                                </IconButton>
+                                                            </Tooltip>
+                                                        </>
+                                                    )}
                                                 </Box>
                                             </Box>
                                         </CardActions>
@@ -1523,17 +1531,12 @@ export default function ViewRegistrations() {
                 confirmButtonIcon={<ICONS.delete />}
             />
 
-            <WalkInModal
-                open={walkInModalOpen}
-                onClose={() => setWalkInModalOpen(false)}
-                registration={selectedRegistration}
-                isDigiPass={true}
-                onCheckInSuccess={async () => {
-                    if (selectedRegistration?._id) {
-                        await refreshRegistrationWalkIns(selectedRegistration._id);
-                    }
-                }}
-            />
+             <WalkInModal
+                 open={walkInModalOpen}
+                 onClose={() => setWalkInModalOpen(false)}
+                 registration={selectedRegistration}
+                 isDigiPass={true}
+             />
 
             <FilterDialog
                 open={filterModalOpen}
