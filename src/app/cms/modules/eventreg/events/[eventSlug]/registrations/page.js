@@ -1070,6 +1070,9 @@ export default function ViewRegistrations() {
               : r
           )
         );
+        if (printed.checkinCreated) {
+          refreshRegistrationWalkIns(registration._id);
+        }
       }
 
       let qrCodeDataUrl = "";

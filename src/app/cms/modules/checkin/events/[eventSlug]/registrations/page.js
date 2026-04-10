@@ -874,6 +874,28 @@ export default function ViewRegistrations() {
     doPrintBadge(registration);
   };
 
+  const refreshRegistrationWalkIns = async (registrationId) => {
+    if (!registrationId) return;
+    try {
+      const regsRes = await getCheckInInitialRegistrations(eventSlug);
+      if (!regsRes?.error) {
+        const initialData = regsRes.data || [];
+        const prepped = initialData.map((r) => ({
+          ...r,
+          approvalStatus: r.approvalStatus || "pending",
+          _haystack: buildHaystack(r, dynamicFieldsRef.current),
+        }));
+        setAllRegistrations(prepped);
+        const updatedReg = prepped.find((r) => r._id === registrationId);
+        if (updatedReg && selectedRegistration?._id === registrationId) {
+          setSelectedRegistration(updatedReg);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to refresh registration walk-ins:", err);
+    }
+  };
+
   const doPrintBadge = async (registration) => {
     if (!registration?.token) return;
 
@@ -887,6 +909,9 @@ export default function ViewRegistrations() {
               : r
           )
         );
+        if (printed.checkinCreated) {
+          refreshRegistrationWalkIns(registration._id);
+        }
       }
 
       let qrCodeDataUrl = "";
