@@ -314,22 +314,47 @@ export default function DigiPassDashboard() {
         </IconButton>
 
         {/* Welcome Text */}
-        <Typography
+        <Box
           sx={{
             position: "absolute",
             top: { xs: "3vh", sm: "2.5vh", md: "2vh" },
             left: "50%",
             transform: "translateX(-50%)",
-            color: "primary.main",
-            fontSize: { xs: "6vw", sm: "5vw", md: "4.5vw" },
-            fontWeight: "bold",
             zIndex: 100,
             textAlign: "center",
             whiteSpace: "nowrap",
+            backgroundColor: "rgba(0,0,0,0.35)",
+            borderRadius: "12px",
+            px: { xs: "3vw", sm: "2vw", md: "1.5vw" },
+            py: { xs: "0.8vh", sm: "0.6vh", md: "0.5vh" },
+            backdropFilter: "blur(4px)",
           }}
         >
-          {welcomeMessage}
-        </Typography>
+          <Typography
+            sx={{
+              color: "white",
+              fontSize: { xs: "4.5vw", sm: "3.8vw", md: "3.2vw" },
+              fontWeight: "500",
+              lineHeight: 1.2,
+              textShadow: "0 1px 6px rgba(0,0,0,0.7)",
+            }}
+          >
+            {t.welcome}
+          </Typography>
+          {userName && (
+            <Typography
+              sx={{
+                color: "white",
+                fontSize: { xs: "6vw", sm: "5vw", md: "4.5vw" },
+                fontWeight: "bold",
+                lineHeight: 1.2,
+                textShadow: "0 1px 6px rgba(0,0,0,0.7)",
+              }}
+            >
+              {userName}
+            </Typography>
+          )}
+        </Box>
 
         {/* Progress image (CMS-uploaded or default) with progress reveal*/}
         <Box
@@ -425,13 +450,47 @@ export default function DigiPassDashboard() {
             boxSizing: "border-box",
           }}
         >
+          {/* QR Code Section */}
+          {token && (
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                mb: { xs: "0.8vh", sm: "0.6vh", md: "0.5vh" },
+              }}
+            >
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  "& canvas": {
+                    width: { xs: "30vw", sm: "24vw", md: "19vw" },
+                    height: "auto",
+                    maxWidth: "185px",
+                    maxHeight: "185px",
+                  },
+                }}
+              >
+                <QRCodeCanvas
+                  value={token}
+                  size={220}
+                  bgColor="#ffffff"
+                  fgColor="#000000"
+                  includeMargin
+                />
+              </Box>
+            </Box>
+          )}
+
           {/* Activities Title */}
           <Typography
             sx={{
               fontSize: { xs: "4.5vw", sm: "3.8vw", md: "3vw" },
               fontWeight: "bold",
               color: "primary.main",
-              mb: { xs: "1.2vh", sm: "1vh", md: "0.8vh" },
+              mb: { xs: "0.8vh", sm: "0.6vh", md: "0.5vh" },
               lineHeight: 1.2,
               textAlign: "center",
             }}
@@ -448,14 +507,13 @@ export default function DigiPassDashboard() {
               gap: isArabic
                 ? { xs: "2.5vw", sm: "2vw", md: "1.5vw" }
                 : { xs: "2.5vw", sm: "2vw", md: "1.5vw" },
-              mb: "2vh",
             }}
           >
             {/* Fire Icon Card */}
             <Card
               sx={{
-                width: "25vw",
-                height: "21vw",
+                width: "20vw",
+                height: "17vw",
                 borderRadius: { xs: "10px", sm: "12px", md: "14px" },
                 border: "2px solid",
                 borderColor: "primary.main",
@@ -585,40 +643,6 @@ export default function DigiPassDashboard() {
               </Typography>
             </Box>
           </Box>
-
-          {/* QR Code Section */}
-          {token && (
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                mt: "2vh",
-              }}
-            >
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  "& canvas": {
-                    width: { xs: "18vw", sm: "15vw", md: "12vw" },
-                    height: "auto",
-                    maxWidth: "116px",
-                    maxHeight: "117px",
-                  },
-                }}
-              >
-                <QRCodeCanvas
-                  value={token}
-                  size={150}
-                  bgColor="#ffffff"
-                  fgColor="#000000"
-                  includeMargin
-                />
-              </Box>
-            </Box>
-          )}
         </Paper>
       </Box>
       {/* Force LanguageSelector subtree to LTR so EN/AR toggle behaves correctly in Arabic */}

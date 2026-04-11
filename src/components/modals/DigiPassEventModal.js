@@ -603,38 +603,36 @@ const DigiPassEventModal = ({
             let defaultLanguage = formData.defaultLanguage;
 
             if (formData.linkedEventRegId && formData.linkedEventData) {
-                // Internally map data from linked EventReg event
-                logoUrl = formData.linkedEventData.logoUrl || null;
-                backgroundEn = formData.linkedEventData.background?.en || null;
-                backgroundAr = formData.linkedEventData.background?.ar || null;
+                // Only inherit form fields and language from linked event.
+                // Logo and background can be overridden by the user's own uploads.
                 formFields = formData.linkedEventData.formFields || [];
                 defaultLanguage = formData.linkedEventData.defaultLanguage || "en";
-            } else {
-                if (formData.logo && !formData.removeLogo) {
-                    filesToUpload.push({
-                        file: formData.logo,
-                        type: "logo",
-                        label: "Logo",
-                    });
-                }
+            }
 
-                if (formData.backgroundEn && !formData.removeBackgroundEn) {
-                    filesToUpload.push({
-                        file: formData.backgroundEn,
-                        type: "backgroundEn",
-                        label: "Background (EN)",
-                        fileType: formData.backgroundEnFileType || "image",
-                    });
-                }
+            if (formData.logo && !formData.removeLogo) {
+                filesToUpload.push({
+                    file: formData.logo,
+                    type: "logo",
+                    label: "Logo",
+                });
+            }
 
-                if (formData.backgroundAr && !formData.removeBackgroundAr) {
-                    filesToUpload.push({
-                        file: formData.backgroundAr,
-                        type: "backgroundAr",
-                        label: "Background (AR)",
-                        fileType: formData.backgroundArFileType || "image",
-                    });
-                }
+            if (formData.backgroundEn && !formData.removeBackgroundEn) {
+                filesToUpload.push({
+                    file: formData.backgroundEn,
+                    type: "backgroundEn",
+                    label: "Background (EN)",
+                    fileType: formData.backgroundEnFileType || "image",
+                });
+            }
+
+            if (formData.backgroundAr && !formData.removeBackgroundAr) {
+                filesToUpload.push({
+                    file: formData.backgroundAr,
+                    type: "backgroundAr",
+                    label: "Background (AR)",
+                    fileType: formData.backgroundArFileType || "image",
+                });
             }
 
             if (formData.progressImage && !formData.removeProgressImage) {
@@ -980,9 +978,8 @@ const DigiPassEventModal = ({
                         </Box>
                         )}
 
-                        {/* Logo Upload - Hidden if Linked */}
-                        {!formData.linkedEventRegId && (
-                            <Box
+                        {/* Logo Upload */}
+                        <Box
                                 sx={{
                                     display: "flex",
                                     flexDirection: "column",
@@ -1044,11 +1041,9 @@ const DigiPassEventModal = ({
                                     </Box>
                                 )}
                             </Box>
-                        )}
 
-                        {/* Background Upload - Hidden if Linked */}
-                        {!formData.linkedEventRegId && (
-                            <Box
+                        {/* Background Upload */}
+                        <Box
                                 sx={{
                                     display: "flex",
                                     flexDirection: "column",
@@ -1235,7 +1230,6 @@ const DigiPassEventModal = ({
                                     )}
                                 </Box>
                             </Box>
-                        )}
 
                         {/* Dashboard Progress Image */}
                         <Box
