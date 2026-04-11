@@ -180,13 +180,13 @@ function buildFilterState(fieldsLocal, prev = {}) {
 }
 
 const buildHaystack = (reg, fieldsLocal) => {
-    const dyn = fieldsLocal.map((f) => reg.customFields?.[f.name] ?? "");
+    const dyn = fieldsLocal.map((f) => reg[f.name] ?? reg.customFields?.[f.name] ?? "");
     const walk = (reg.walkIns || []).flatMap((w) => [
         w.scannedBy?.name,
         w.scannedBy?.email,
     ]);
-    const name = pickFullName(reg.customFields) || "";
-    const email = pickEmail(reg.customFields) || "";
+    const name = reg.fullName || pickFullName(reg.customFields) || "";
+    const email = reg.email || pickEmail(reg.customFields) || "";
     return [
         name,
         email,
@@ -264,14 +264,23 @@ export default function ViewRegistrations() {
 
         const evRes = await getDigipassEventBySlug(eventSlug);
 
-        const fieldsLocal =
-            !evRes?.error && evRes.formFields?.length
-                ? evRes.formFields.map((f) => ({
+        let fieldsLocal = [];
+        if (!evRes?.error) {
+            if (evRes.formFields?.length) {
+                fieldsLocal = evRes.formFields.map((f) => ({
                     name: f.inputName,
                     type: (f.inputType || "text").toLowerCase(),
                     values: Array.isArray(f.values) ? f.values : [],
-                }))
-                : [];
+                }));
+            } else if (evRes.linkedEventRegId) {
+                fieldsLocal = [
+                    { name: "fullName", type: "text", values: [] },
+                    { name: "email", type: "email", values: [] },
+                    { name: "phone", type: "phone", values: [] },
+                    { name: "company", type: "text", values: [] },
+                ];
+            }
+        }
 
         if (!evRes?.error) {
             setEventDetails(evRes);
@@ -440,6 +449,7 @@ export default function ViewRegistrations() {
 
                 const meta = fieldMetaMap[key];
                 const regValue =
+                    reg[key] ??
                     reg.customFields?.[key] ??
                     (key === "token"
                         ? reg.token
@@ -1137,8 +1147,8 @@ export default function ViewRegistrations() {
                 <>
                     <Grid container spacing={4} justifyContent="center">
                         {paginatedRegistrations.map((reg) => {
-                            const name = pickFullName(reg.customFields) || "—";
-                            const email = pickEmail(reg.customFields) || "—";
+                            const name = reg.fullName || pickFullName(reg.customFields) || "—";
+                            const email = reg.email || pickEmail(reg.customFields) || "—";
 
                             return (
                                 <Grid
@@ -1303,7 +1313,7 @@ export default function ViewRegistrations() {
                                                             }}
                                                         >
                                                             {(() => {
-                                                                const fieldValue = reg.customFields?.[f.name] ?? "";
+                                                                const fieldValue = reg[f.name] ?? reg.customFields?.[f.name] ?? "";
                                                                 if (!fieldValue) return "—";
 
                                                                 if (f.type === "phone" || (!eventDetails?.formFields?.length && f.name === "phone")) {

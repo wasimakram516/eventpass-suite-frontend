@@ -136,11 +136,19 @@ export default function DigiPassSignIn() {
 
     if (event.linkedEventRegId) {
       const primaryFieldNames = Array.isArray(event.primaryField) ? event.primaryField : (event.primaryField ? [event.primaryField] : []);
-      identityFieldsList = allFields
+      
+      const fieldsSource = allFields.length > 0 ? allFields : [
+        { inputName: 'fullName', inputType: 'text' },
+        { inputName: 'email', inputType: 'email' },
+        { inputName: 'phone', inputType: 'phone' },
+        { inputName: 'company', inputType: 'text' }
+      ];
+
+      identityFieldsList = fieldsSource
         .filter((f) => primaryFieldNames.includes(f.inputName))
         .map((f) => ({
           name: f.inputName,
-          label: f.inputName,
+          label: f.inputName === "fullName" ? "Full Name" : f.inputName.charAt(0).toUpperCase() + f.inputName.slice(1),
           type: f.inputType,
           options: f.values || [],
           required: true,

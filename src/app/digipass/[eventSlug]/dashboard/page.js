@@ -208,7 +208,9 @@ export default function DigiPassDashboard() {
     );
   }
 
-  const userName = registration?.customFields
+  const userName = registration?.fullName
+    ? registration.fullName
+    : registration?.customFields
     ? pickFullName(registration.customFields)
     : null;
   const welcomeMessage = userName

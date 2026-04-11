@@ -298,6 +298,13 @@ const DigiPassEventModal = ({
             const formFields = Array.isArray(freshEvent?.formFields) ? freshEvent.formFields : [];
             if (formFields.length > 0) {
                 setLoadedFields(formFields.map(f => ({ name: f.inputName, label: f.inputName, required: f.required })));
+            } else {
+                setLoadedFields([
+                    { name: 'fullName', label: 'Full Name', required: true },
+                    { name: 'email', label: 'Email', required: true },
+                    { name: 'phone', label: 'Phone', required: false },
+                    { name: 'company', label: 'Company', required: false }
+                ]);
             }
         } catch (err) {
             console.error("Failed to fetch fields:", err);
