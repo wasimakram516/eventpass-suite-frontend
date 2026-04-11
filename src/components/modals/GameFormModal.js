@@ -539,7 +539,7 @@ const GameFormModal = ({
     if (!form.title.trim()) newErrors.title = te.titleRequired;
     if (!form.slug.trim()) newErrors.slug = te.slugRequired;
     if (!form.countdownTimer) newErrors.countdownTimer = te.countdownRequired;
-    if (!form.gameSessionTimer)
+    if (!isCrossZero && !form.gameSessionTimer)
       newErrors.gameSessionTimer = te.quizTimeRequired;
 
     if (!form.coverImage && !form.coverPreview) {
@@ -721,7 +721,7 @@ const GameFormModal = ({
         title: form.title,
         slug: form.slug,
         countdownTimer: form.countdownTimer,
-        gameSessionTimer: form.gameSessionTimer,
+        ...(!isCrossZero && { gameSessionTimer: form.gameSessionTimer }),
         coverImage: coverImageUrl,
         nameImage: nameImageUrl,
         backgroundImage: backgroundImageUrl,
@@ -889,14 +889,16 @@ const GameFormModal = ({
             onChange={handleChange}
             fullWidth
           />
-          <TextField
-            label={t.quizTime}
-            name="gameSessionTimer"
-            type="number"
-            value={form.gameSessionTimer}
-            onChange={handleChange}
-            fullWidth
-          />
+          {!isCrossZero && (
+            <TextField
+              label={t.quizTime}
+              name="gameSessionTimer"
+              type="number"
+              value={form.gameSessionTimer}
+              onChange={handleChange}
+              fullWidth
+            />
+          )}
 
           {/* 🧩 Team Mode Section (unchanged) */}
           {module === "eventduel" && (
