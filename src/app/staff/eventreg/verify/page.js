@@ -157,15 +157,23 @@ export default function VerifyPage() {
     if (!raw) return "";
     const s = String(raw).trim();
 
+    // Format: #BARCODE<token>
     const marker = "#BARCODE";
     const idx = s.indexOf(marker);
     if (idx >= 0) {
       return s.slice(idx + marker.length).trim();
     }
 
+    // Format: .../.../B/<token>
     const bIndex = s.toUpperCase().lastIndexOf("/B/");
     if (bIndex >= 0) {
       return s.slice(bIndex + 3).trim();
+    }
+
+    // vFairs format: app_id:XXXXXXX:vFairs_id=<token>
+    const vfairsMatch = s.match(/vFairs_id[=:]([^\s:]+)/i);
+    if (vfairsMatch) {
+      return vfairsMatch[1].trim();
     }
 
     return s;
