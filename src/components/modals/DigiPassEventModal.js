@@ -609,7 +609,6 @@ const DigiPassEventModal = ({
                 backgroundAr = formData.linkedEventData.background?.ar || null;
                 formFields = formData.linkedEventData.formFields || [];
                 defaultLanguage = formData.linkedEventData.defaultLanguage || "en";
-                progressImageUrl = null; // Linked mode doesn't use custom progress image by default unless we want to copy it?
             } else {
                 if (formData.logo && !formData.removeLogo) {
                     filesToUpload.push({
@@ -636,14 +635,14 @@ const DigiPassEventModal = ({
                         fileType: formData.backgroundArFileType || "image",
                     });
                 }
+            }
 
-                if (formData.progressImage && !formData.removeProgressImage) {
-                    filesToUpload.push({
-                        file: formData.progressImage,
-                        type: "progressImage",
-                        label: "Dashboard Progress Image",
-                    });
-                }
+            if (formData.progressImage && !formData.removeProgressImage) {
+                filesToUpload.push({
+                    file: formData.progressImage,
+                    type: "progressImage",
+                    label: "Dashboard Progress Image",
+                });
             }
 
             if (filesToUpload.length > 0) {
@@ -1238,76 +1237,74 @@ const DigiPassEventModal = ({
                             </Box>
                         )}
 
-                        {/* Dashboard Progress Image - Hidden if Linked */}
-                        {!formData.linkedEventRegId && (
-                            <Box
-                                sx={{
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    alignItems: "flex-start",
-                                    gap: 2,
-                                    width: "100%",
-                                }}
+                        {/* Dashboard Progress Image */}
+                        <Box
+                            sx={{
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "flex-start",
+                                gap: 2,
+                                width: "100%",
+                            }}
+                        >
+                            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                                {t.uploadProgressImage}
+                            </Typography>
+                            <Button
+                                ref={progressImageButtonRef}
+                                component="label"
+                                variant="outlined"
+                                size="small"
                             >
-                                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                                    {t.uploadProgressImage}
-                                </Typography>
-                                <Button
-                                    ref={progressImageButtonRef}
-                                    component="label"
-                                    variant="outlined"
-                                    size="small"
-                                >
-                                    {t.uploadProgressImageButton}
-                                    <input
-                                        hidden
-                                        name="progressImage"
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={handleInputChange}
-                                    />
-                                </Button>
-                                {formData.progressImagePreview && !formData.removeProgressImage && (
-                                    <Box sx={{ mt: 1.5 }}>
-                                        <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
-                                            {initialValues && !formData.progressImage
-                                                ? t.currentProgressImage
-                                                : t.preview}
-                                        </Typography>
-                                        <Box sx={{ position: "relative", display: "inline-block", width: buttonWidths.progressImage || "auto" }}>
-                                            <img
-                                                src={formData.progressImagePreview}
-                                                alt="Progress image preview"
-                                                style={{
-                                                    width: buttonWidths.progressImage ? `${buttonWidths.progressImage}px` : "auto",
-                                                    maxHeight: 120,
-                                                    height: "auto",
-                                                    borderRadius: 6,
-                                                    objectFit: "cover",
-                                                }}
-                                            />
-                                            <IconButton
-                                                size="small"
-                                                onClick={() => {
-                                                    const fileUrl = initialValues?.progressImageUrl || formData.progressImagePreview;
-                                                    handleDeleteMedia("progressImage", fileUrl);
-                                                }}
-                                                sx={{
-                                                    position: "absolute",
-                                                    top: -18,
-                                                    right: 6,
-                                                    bgcolor: "error.main",
-                                                    color: "#fff",
-                                                    "&:hover": { bgcolor: "error.dark" },
-                                                }}
-                                            >
-                                                <ICONS.delete sx={{ fontSize: 18 }} />
-                                            </IconButton>
-                                        </Box>
+                                {t.uploadProgressImageButton}
+                                <input
+                                    hidden
+                                    name="progressImage"
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleInputChange}
+                                />
+                            </Button>
+                            {formData.progressImagePreview && !formData.removeProgressImage && (
+                                <Box sx={{ mt: 1.5 }}>
+                                    <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                                        {initialValues && !formData.progressImage
+                                            ? t.currentProgressImage
+                                            : t.preview}
+                                    </Typography>
+                                    <Box sx={{ position: "relative", display: "inline-block", width: buttonWidths.progressImage || "auto" }}>
+                                        <img
+                                            src={formData.progressImagePreview}
+                                            alt="Progress image preview"
+                                            style={{
+                                                width: buttonWidths.progressImage ? `${buttonWidths.progressImage}px` : "auto",
+                                                maxHeight: 120,
+                                                height: "auto",
+                                                borderRadius: 6,
+                                                objectFit: "cover",
+                                            }}
+                                        />
+                                        <IconButton
+                                            size="small"
+                                            onClick={() => {
+                                                const fileUrl = initialValues?.progressImageUrl || formData.progressImagePreview;
+                                                handleDeleteMedia("progressImage", fileUrl);
+                                            }}
+                                            sx={{
+                                                position: "absolute",
+                                                top: -18,
+                                                right: 6,
+                                                bgcolor: "error.main",
+                                                color: "#fff",
+                                                "&:hover": { bgcolor: "error.dark" },
+                                            }}
+                                        >
+                                            <ICONS.delete sx={{ fontSize: 18 }} />
+                                        </IconButton>
                                     </Box>
-                                )}
-                            </Box>
-                        )}
+                                </Box>
+                            )}
+                        </Box>
 
                         {/* Custom Form Fields - Hidden if Linked */}
                         {!formData.linkedEventRegId && (
