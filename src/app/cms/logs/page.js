@@ -314,7 +314,7 @@ export default function LogsPage() {
       const userName = log.userId?.name || "";
       const businessName = log.businessId?.name || "";
       const itemType = log.itemType || "";
-      const module = log.module || "";
+      const moduleName = log.module || "";
       const itemId = log.itemId || "";
       const itemName = log.itemName || "";
 
@@ -322,7 +322,7 @@ export default function LogsPage() {
         userName.toLowerCase().includes(term) ||
         businessName.toLowerCase().includes(term) ||
         itemType.toLowerCase().includes(term) ||
-        module.toLowerCase().includes(term) ||
+        moduleName.toLowerCase().includes(term) ||
         String(itemId).toLowerCase().includes(term) ||
         String(itemName).toLowerCase().includes(term)
       );
@@ -348,8 +348,10 @@ export default function LogsPage() {
   const hasDateFilter = !!fromMs || !!toMs;
 
   const getTrashModuleKey = (moduleName, itemType) => {
-    const m = moduleName || "";
-    const t = itemType || "";
+    const m = String(moduleName || "");
+    const t = String(itemType || "");
+    const ml = m.toLowerCase();
+    const tl = t.toLowerCase();
     if (m === "EventReg" && t === "Event") return "event-eventreg";
     if (m === "EventReg" && t === "Registration") return "registration-eventreg";
     if (m === "CheckIn" && t === "Event") return "event-checkin";
@@ -365,7 +367,8 @@ export default function LogsPage() {
     if (m === "EventDuel" && t === "Game") return "game-eventduel";
     if (m === "EventDuel" && t === "Question") return "pvpquestion";
     if (m === "StageQ" && t === "Question") return "question";
-    if (m === "MosaicWall" || t === "MosaicWall") return "wallconfig";
+    if (ml === "memorywall" && tl === "displaymedia") return "displaymedia";
+    if (m === "MemoryWall" || t === "MemoryWall") return "wallconfig";
     if (m === "VoteCast" && t === "Poll") return "poll";
     if ((m === "User" || m === "Auth") && t === "User") return "user";
     if (t === "User") return "user";
@@ -376,7 +379,7 @@ export default function LogsPage() {
   const handleLogClick = async (log) => {
     setClickLoading(true);
     const logType = (log.logType || "").toLowerCase();
-    const module = log.module;
+    const moduleName = log.module;
     const itemType = log.itemType;
     const itemName = getDisplayItemName(log);
     const searchValue = itemName && itemName !== "-" ? itemName : "";
@@ -391,9 +394,12 @@ export default function LogsPage() {
     }
 
     if (logType === "delete") {
-      const trashKey = getTrashModuleKey(module, itemType);
+      const trashKey = getTrashModuleKey(moduleName, itemType);
       const params = new URLSearchParams();
-      if (searchValue) params.set("search", searchValue);
+      const genericDisplayMediaLabel =
+        String(itemType || "").toLowerCase() === "displaymedia" &&
+        ["image", "صورة"].includes(String(searchValue || "").trim().toLowerCase());
+      if (searchValue && !genericDisplayMediaLabel) params.set("search", searchValue);
       if (trashKey) params.set("module", trashKey);
       router.push(`/cms/trash${params.toString() ? `?${params.toString()}` : ""}`);
       return;
@@ -455,9 +461,9 @@ export default function LogsPage() {
       } catch {
       }
 
-      if (module === "CheckIn") {
+      if (moduleName === "CheckIn") {
         router.push(`/cms/modules/checkin/events${searchQuery}`);
-      } else if (module === "DigiPass") {
+      } else if (moduleName === "DigiPass") {
         router.push(`/cms/modules/digipass/events${searchQuery}`);
       } else {
         router.push(`/cms/modules/eventreg/events${searchQuery}`);
@@ -465,39 +471,34 @@ export default function LogsPage() {
       return;
     }
 
-    if (module === "EventReg" || module === "CheckIn" || module === "DigiPass") {
+    if (moduleName === "EventReg" || moduleName === "CheckIn" || moduleName === "DigiPass") {
       const basePath =
-        module === "CheckIn"
+        moduleName === "CheckIn"
           ? "checkin"
-          : module === "DigiPass"
+          : moduleName === "DigiPass"
           ? "digipass"
           : "eventreg";
       router.push(`/cms/modules/${basePath}/events${searchQuery}`);
       return;
     }
 
-    if (module === "VoteCast" && itemType === "Event") {
-      router.push(`/cms/modules/votecast/events${searchQuery}`);
-      return;
-    }
-
-    if (module === "VoteCast" && itemType === "Poll") {
+    if (module === "VoteCast" && (itemType === "Event" || itemType === "Poll")) {
       try {
         if (log.itemId) {
           const meta = await getPollMeta(log.itemId);
-          if (meta && !meta.error && meta.eventSlug) {
+          if (meta && !meta.error && meta.slug) {
             router.push(
-              `/cms/modules/votecast/events/${meta.eventSlug}/polls${searchQuery}`,
+              `/cms/modules/votecast/polls/${meta.slug}/questions${searchQuery}`,
             );
             return;
           }
         }
       } catch {
       }
-      router.push(`/cms/modules/votecast/events${searchQuery}`);
+      router.push(`/cms/modules/votecast/polls${searchQuery}`);
       return;
     }
-    if (module === "SurveyGuru") {
+    if (moduleName === "SurveyGuru") {
       if (itemType === "SurveyRecipient") {
         const p = new URLSearchParams();
         if (log.businessId?._id) p.set("businessId", log.businessId._id);
@@ -509,23 +510,23 @@ export default function LogsPage() {
       return;
     }
 
-    if (module === "EventWheel" || itemType === "SpinWheel" || itemType === "WheelSpin") {
+    if (moduleName === "EventWheel" || itemType === "SpinWheel" || itemType === "WheelSpin") {
       router.push(`/cms/modules/eventwheel/wheels${searchQuery}`);
       return;
     }
 
-    if (module === "MosaicWall" || itemType === "MosaicWall") {
-      router.push(`/cms/modules/mosaicwall/walls${searchQuery}`);
+    if (moduleName === "MemoryWall" || itemType === "MemoryWall") {
+      router.push(`/cms/modules/memorywall/walls${searchQuery}`);
       return;
     }
 
-    if (module === "TapMatch" || module === "QuizNest" || module === "EventDuel" || itemType === "Game") {
-      if (module === "TapMatch") {
+    if (moduleName === "TapMatch" || moduleName === "QuizNest" || moduleName === "EventDuel" || itemType === "Game") {
+      if (moduleName === "TapMatch") {
         router.push(`/cms/modules/tapmatch/games${searchQuery}`);
         return;
       }
 
-      if (module === "QuizNest") {
+      if (moduleName === "QuizNest") {
         // For QuizNest Questions, prefer navigating to the game's questions page
         if (itemType === "Question" && log.itemId) {
           try {
@@ -545,7 +546,7 @@ export default function LogsPage() {
         return;
       }
 
-      if (module === "EventDuel") {
+      if (moduleName === "EventDuel") {
         // For EventDuel Questions, prefer navigating to the game's questions page
         if (itemType === "Question" && log.itemId) {
           try {
@@ -569,12 +570,12 @@ export default function LogsPage() {
       return;
     }
 
-    if (module === "StageQ") {
+    if (moduleName === "StageQ") {
       router.push(`/cms/modules/stageq/queries/questions${searchQuery}`);
       return;
     }
 
-    if ((module === "User" || module === "Auth") && itemType === "User") {
+    if ((moduleName === "User" || moduleName === "Auth") && itemType === "User") {
       router.push(`/cms/users${searchQuery}`);
       return;
     }
@@ -630,7 +631,6 @@ export default function LogsPage() {
       a.click();
       URL.revokeObjectURL(url);
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.error("Failed to export logs:", err);
     } finally {
       setExportLoading(false);

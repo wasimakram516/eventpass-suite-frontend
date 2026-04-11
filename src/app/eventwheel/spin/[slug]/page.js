@@ -517,36 +517,40 @@ const SpinningPage = () => {
       )}
 
       {eventData?.type === "enter_names" && (
-        <IconButton
+        <Button
+          variant="contained"
+          startIcon={<ICONS.menu />}
           sx={{
             position: "fixed",
             top: { xs: 10, sm: 20 },
             left: { xs: 10, sm: 20 },
-            backgroundColor: "primary.main",
-            color: "white",
             zIndex: 9999,
+            textTransform: "none",
+            borderRadius: 2,
           }}
           onClick={() => router.push(`/eventwheel/wheels/${shortName}`)}
         >
-          <ICONS.back sx={{ fontSize: { xs: 24, md: 40 } }} />
-        </IconButton>
+          Menu
+        </Button>
       )}
 
       {/* Drawer button (for onspot, admin, and sync types) */}
       {["onspot", "admin", "synced"].includes(eventData?.type) && !drawerOpen && (
-        <IconButton
+        <Button
+          variant="contained"
+          startIcon={<ICONS.menu />}
           sx={{
             position: "fixed",
             top: { xs: 60, sm: 70 },
             right: { xs: 10, sm: 20 },
-            backgroundColor: "primary.main",
-            color: "white",
             zIndex: 9999,
+            textTransform: "none",
+            borderRadius: 2,
           }}
           onClick={handleDrawerOpen}
         >
-          <ICONS.back sx={{ fontSize: { xs: 24, md: 40 } }} />
-        </IconButton>
+          Menu
+        </Button>
       )}
 
       {selectedWinner && <Confetti numberOfPieces={500} recycle={false} />}
@@ -874,7 +878,7 @@ const SpinningPage = () => {
                   },
                 }}
               >
-                <ChevronRightIcon sx={{ fontSize: 20 }} />
+                <ICONS.menu sx={{ fontSize: 20 }} />
               </IconButton>
               <Tabs
                 value={drawerTab}

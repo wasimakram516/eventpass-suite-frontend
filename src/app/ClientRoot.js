@@ -110,13 +110,21 @@ export default function ClientRoot({ children }) {
 
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
-        mutation.addedNodes.forEach(applyToNode);
+        if (mutation.type === "attributes" && mutation.attributeName === "dir") {
+          // Re-apply when React or any framework re-sets dir on an input after
+          // our focusin/input listeners have already corrected it.
+          applyDirection(mutation.target);
+        } else {
+          mutation.addedNodes.forEach(applyToNode);
+        }
       });
     });
 
     observer.observe(document.documentElement, {
       childList: true,
       subtree: true,
+      attributes: true,
+      attributeFilter: ["dir"],
     });
 
     return () => {

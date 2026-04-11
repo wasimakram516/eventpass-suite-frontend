@@ -15,9 +15,10 @@ import {
   ListItemIcon,
   Container,
 } from "@mui/material";
+import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 
 import QrScanner from "@/components/QrScanner";
-import { verifyRegistrationByToken } from "@/services/checkin/checkinRegistrationService";
+import { verifyRegistrationByToken, trackCheckInBadgePrint } from "@/services/checkin/checkinRegistrationService";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
@@ -47,6 +48,9 @@ const translations = {
     tryAgain: "Try Again",
     printBadge: "Print Badge",
     printing: "Printing...",
+    alreadyPrintedWarning: "Badge already printed {count} time(s). Do you want to proceed?",
+    proceedPrint: "Proceed",
+    cancelPrint: "Cancel",
     tooltip: {
       openScanner: "Open QR Scanner",
       cancel: "Cancel scanning",
@@ -75,6 +79,9 @@ const translations = {
     tryAgain: "حاول مرة أخرى",
     printBadge: "طباعة الشارة",
     printing: "جارٍ الطباعة...",
+    alreadyPrintedWarning: "تمت طباعة الشارة {count} مرة. هل تريد المتابعة؟",
+    proceedPrint: "متابعة",
+    cancelPrint: "إلغاء",
     tooltip: {
       openScanner: "افتح الماسح الضوئي",
       cancel: "إلغاء المسح",
@@ -96,6 +103,7 @@ export default function VerifyPage() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const [printing, setPrinting] = useState(false);
+  const [printWarningOpen, setPrintWarningOpen] = useState(false);
 
   const successAudioRef = useRef(null);
   const errorAudioRef = useRef(null);
@@ -152,12 +160,23 @@ export default function VerifyPage() {
     setShowScanner(false);
     setManualMode(false);
     setPrinting(false);
+    setPrintWarningOpen(false);
   };
 
-  const handlePrint = async () => {
+  const handlePrint = () => {
+    const allowMultiple = result?.eventDetails?.allowMultipleBadgePrinting ?? true;
+    if (!allowMultiple && (result?.printCount || 0) > 0) {
+      setPrintWarningOpen(true);
+      return;
+    }
+    doPrint();
+  };
+
+  const doPrint = async () => {
     try {
       if (!result?.zpl) throw new Error("No ZPL received from server");
       setPrinting(true);
+      await trackCheckInBadgePrint(result.registrationId);
       await printZpl(result.zpl);
       showMessage("Badge sent to printer successfully", "success");
     } catch (e) {
@@ -386,6 +405,20 @@ export default function VerifyPage() {
         <audio ref={successAudioRef} src="/correct.wav" preload="auto" />
         <audio ref={errorAudioRef} src="/wrong.wav" preload="auto" />
       </Box>
+
+      <ConfirmationDialog
+        open={printWarningOpen}
+        onClose={() => setPrintWarningOpen(false)}
+        onConfirm={async () => {
+          setPrintWarningOpen(false);
+          await doPrint();
+        }}
+        title={t.printBadge}
+        message={t.alreadyPrintedWarning.replace("{count}", result?.printCount || 0)}
+        confirmButtonText={t.proceedPrint}
+        confirmButtonIcon={<ICONS.print />}
+        confirmButtonColor="primary"
+      />
     </Container>
   );
 }

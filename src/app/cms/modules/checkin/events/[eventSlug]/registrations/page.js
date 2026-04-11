@@ -65,7 +65,12 @@ import {
   createCheckInWalkIn,
   sendCheckInBulkEmails,
   sendCheckInBulkWhatsApp,
+  trackCheckInBadgePrint,
 } from "@/services/checkin/checkinRegistrationService";
+import { exportAllBadges } from "@/utils/exportBadges";
+import { pdf } from "@react-pdf/renderer";
+import QRCode from "qrcode";
+import BadgePDF from "@/components/badges/BadgePDF";
 
 const translations = {
   en: {
@@ -140,6 +145,15 @@ const translations = {
     createdAt: "Created At:",
     updatedBy: "Updated:",
     updatedAt: "Updated At:",
+    neverPrinted: "Never printed",
+    printedTimes: "{count} time(s)",
+    lastPrintedAt: "Last printed:",
+    exportBadges: "Export Badges",
+    printBadge: "Print Badge",
+    alreadyPrintedWarning: "Badge already printed {count} time(s). Do you want to proceed?",
+    proceedPrint: "Proceed",
+    exportBadgesWarning: "Some registrations in the current view have already had their badges exported. Do you still want to proceed?",
+    exportBadgesProceed: "Proceed",
   },
   ar: {
     title: "إدارة التسجيلات",
@@ -210,6 +224,15 @@ const translations = {
     createdAt: "تاريخ الإنشاء:",
     updatedBy: "حدث:",
     updatedAt: "تاريخ التحديث:",
+    neverPrinted: "لم تُطبع بعد",
+    printedTimes: "{count} مرة",
+    lastPrintedAt: "آخر طباعة:",
+    exportBadges: "تصدير الشارات",
+    printBadge: "طباعة الشارة",
+    alreadyPrintedWarning: "تمت طباعة الشارة {count} مرة. هل تريد المتابعة؟",
+    proceedPrint: "متابعة",
+    exportBadgesWarning: "تمت طباعة شارات بعض التسجيلات في العرض الحالي مسبقاً. هل تريد المتابعة؟",
+    exportBadgesProceed: "متابعة",
   },
 };
 
@@ -275,6 +298,10 @@ export default function ViewRegistrations() {
   const [selectedRegistration, setSelectedRegistration] = useState(null);
   const [exportLoading, setExportLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [exportingBadges, setExportingBadges] = useState(false);
+  const [printWarningOpen, setPrintWarningOpen] = useState(false);
+  const [pendingPrintReg, setPendingPrintReg] = useState(null);
+  const [exportBadgesWarningOpen, setExportBadgesWarningOpen] = useState(false);
 
   const [rawSearch, setRawSearch] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -471,6 +498,17 @@ export default function ViewRegistrations() {
     [showMessage]
   );
 
+  const handleBadgePrinted = useCallback((data) => {
+    if (!data?.registrationId) return;
+    setAllRegistrations((prev) =>
+      prev.map((r) =>
+        r._id?.toString() === data.registrationId?.toString()
+          ? { ...r, printCount: data.printCount, printTimestamp: data.printTimestamp }
+          : r
+      )
+    );
+  }, []);
+
   const { emailProgress } = useCheckInSocket({
     eventId: eventDetails?._id,
     onLoadingProgress: handleLoadingProgress,
@@ -479,6 +517,7 @@ export default function ViewRegistrations() {
     onNewRegistration: handleNewRegistration,
     onPresenceConfirmed: handlePresenceConfirmed,
     onUploadComplete: handleUploadComplete,
+    onBadgePrinted: handleBadgePrinted,
   });
 
   const filteredRegistrations = React.useMemo(() => {
@@ -782,6 +821,202 @@ export default function ViewRegistrations() {
     }
   };
 
+  const handleExportBadges = () => {
+    const allowMultiple = eventDetails?.allowMultipleBadgePrinting ?? true;
+    const hasBeenPrinted = paginated.some((r) => (r.printCount || 0) > 0);
+    if (!allowMultiple && hasBeenPrinted) {
+      setExportBadgesWarningOpen(true);
+      return;
+    }
+    doExportBadges();
+  };
+
+  const doExportBadges = async () => {
+    try {
+      setExportingBadges(true);
+      const trackResults = await Promise.allSettled(
+        paginated.map((r) => trackCheckInBadgePrint(r._id))
+      );
+      const now = new Date().toISOString();
+      const updatedIds = new Map();
+      trackResults.forEach((res, i) => {
+        if (res.status === "fulfilled" && res.value && !res.value.error) {
+          updatedIds.set(paginated[i]._id, {
+            printCount: res.value.printCount,
+            printTimestamp: res.value.printTimestamp || now,
+          });
+        }
+      });
+      if (updatedIds.size > 0) {
+        setAllRegistrations((prev) =>
+          prev.map((r) => {
+            const upd = updatedIds.get(r._id);
+            return upd ? { ...r, ...upd } : r;
+          })
+        );
+      }
+      await exportAllBadges(paginated, eventDetails);
+    } catch (err) {
+      console.error("Badge export failed:", err);
+    } finally {
+      setExportingBadges(false);
+    }
+  };
+
+  const handlePrintBadge = (registration) => {
+    if (!registration?.token) return;
+    const allowMultiple = eventDetails?.allowMultipleBadgePrinting ?? true;
+    if (!allowMultiple && (registration.printCount || 0) > 0) {
+      setPendingPrintReg(registration);
+      setPrintWarningOpen(true);
+      return;
+    }
+    doPrintBadge(registration);
+  };
+
+  const refreshRegistrationWalkIns = async (registrationId) => {
+    if (!registrationId) return;
+    try {
+      const regsRes = await getCheckInInitialRegistrations(eventSlug);
+      if (!regsRes?.error) {
+        const initialData = regsRes.data || [];
+        const prepped = initialData.map((r) => ({
+          ...r,
+          approvalStatus: r.approvalStatus || "pending",
+          _haystack: buildHaystack(r, dynamicFieldsRef.current),
+        }));
+        setAllRegistrations(prepped);
+        const updatedReg = prepped.find((r) => r._id === registrationId);
+        if (updatedReg && selectedRegistration?._id === registrationId) {
+          setSelectedRegistration(updatedReg);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to refresh registration walk-ins:", err);
+    }
+  };
+
+  const doPrintBadge = async (registration) => {
+    if (!registration?.token) return;
+
+    try {
+      const printed = await trackCheckInBadgePrint(registration._id);
+      if (printed && !printed.error) {
+        setAllRegistrations((prev) =>
+          prev.map((r) =>
+            r._id === registration._id
+              ? { ...r, printCount: printed.printCount, printTimestamp: printed.printTimestamp }
+              : r
+          )
+        );
+        if (printed.checkinCreated) {
+          refreshRegistrationWalkIns(registration._id);
+        }
+      }
+
+      let qrCodeDataUrl = "";
+      try {
+        qrCodeDataUrl = await QRCode.toDataURL(registration.token, {
+          width: 300,
+          margin: 1,
+          color: { dark: "#000000", light: "#ffffff" },
+        });
+      } catch {
+        // ignore minor QR errors
+      }
+
+      const fullName =
+        registration.customFields?.["Full Name"] ||
+        registration.customFields?.["fullName"] ||
+        registration.customFields?.["Name"] ||
+        registration.customFields?.["name"] ||
+        (
+          (registration.customFields?.["First Name"] ||
+            registration.customFields?.["firstName"] ||
+            registration.customFields?.["FirstName"] ||
+            "") +
+          " " +
+          (registration.customFields?.["Last Name"] ||
+            registration.customFields?.["lastName"] ||
+            registration.customFields?.["LastName"] ||
+            "")
+        ).trim() ||
+        registration.fullName ||
+        "Unnamed Visitor";
+
+      const company =
+        registration.customFields?.["Company"] ||
+        registration.customFields?.["Institution"] ||
+        registration.customFields?.["Organization"] ||
+        registration.customFields?.["organization"] ||
+        registration.customFields?.["institution"] ||
+        registration.company ||
+        "";
+
+      const badgeData = {
+        fullName,
+        company,
+        badgeIdentifier: registration.badgeIdentifier || "",
+        token: registration.token,
+        showQrOnBadge: eventDetails?.showQrOnBadge ?? true,
+        customFields: registration.customFields || {},
+      };
+
+      const doc = <BadgePDF data={badgeData} qrCodeDataUrl={qrCodeDataUrl} customizations={eventDetails?.customizations} />;
+      const blob = await pdf(doc).toBlob();
+      const blobUrl = URL.createObjectURL(blob);
+      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+      if (isMobile) {
+        const printWindow = window.open(blobUrl, "_blank");
+        if (!printWindow) {
+          showMessage("Please allow pop-ups to print the badge.", "warning");
+          return;
+        }
+        printWindow.onload = () => {
+          printWindow.focus();
+          printWindow.print();
+        };
+        return;
+      }
+
+      const width = Math.floor(window.outerWidth * 0.9);
+      const height = Math.floor(window.outerHeight * 0.9);
+      const left = window.screenX + (window.outerWidth - width) / 2;
+      const top = window.screenY + (window.outerHeight - height) / 2;
+
+      const printWindow = window.open(
+        "",
+        "_blank",
+        `width=${width},height=${height},left=${left},top=${top},resizable=no,scrollbars=no,status=no`,
+      );
+
+      if (!printWindow) {
+        showMessage("Please allow pop-ups to print the badge.", "warning");
+        return;
+      }
+
+      printWindow.document.write(`
+      <html>
+        <head>
+          <title>Print Badge</title>
+          <style>
+            html, body { margin: 0; padding: 0; height: 100%; overflow: hidden; background: #fff; }
+            iframe { width: 100%; height: 100%; border: none; }
+          </style>
+        </head>
+        <body>
+          <iframe src="${blobUrl}" onload="this.contentWindow.focus(); this.contentWindow.print();"></iframe>
+        </body>
+      </html>
+    `);
+      printWindow.document.close();
+    } catch (err) {
+      showMessage("Badge could not be generated. Please try again.", "warning");
+      console.error("Print badge error:", err);
+    }
+  };
+
   const renderInvitationStatus = (reg) => (
     <Stack spacing={0.5} sx={{ width: "100%" }}>
       <Typography
@@ -994,6 +1229,25 @@ export default function ViewRegistrations() {
               : searchTerm || Object.keys(filters).some((k) => filters[k])
                 ? t.exportFiltered
                 : t.exportAll}
+          </Button>
+        )}
+
+        {totalRegistrations > 0 && (
+          <Button
+            variant="outlined"
+            color="primary"
+            disabled={exportingBadges}
+            startIcon={
+              exportingBadges ? (
+                <CircularProgress size={18} color="inherit" />
+              ) : (
+                <ICONS.pdf />
+              )
+            }
+            onClick={handleExportBadges}
+            sx={getStartIconSpacing(dir)}
+          >
+            {exportingBadges ? t.exporting : t.exportBadges}
           </Button>
         )}
       </Stack>
@@ -1279,8 +1533,8 @@ export default function ViewRegistrations() {
                 >
                   <Card
                     sx={{
-                      width: { xs: "100%", sm: 360 },
-                      maxWidth: 360,
+                      width: { xs: "100%", sm: 420 },
+                      maxWidth: 420,
                       height: "100%",
                       borderRadius: 4,
                       overflow: "hidden",
@@ -1396,6 +1650,23 @@ export default function ViewRegistrations() {
                         <Stack direction="row" alignItems="center" spacing={0.6}>
                           {renderConfirmation(reg)}
                         </Stack>
+
+                        {/* Print History - Always show */}
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 0.5,
+                            mt: 0.3,
+                            color: reg.printCount > 0 ? "warning.dark" : "text.disabled",
+                          }}
+                        >
+                          <ICONS.print fontSize="small" sx={{ opacity: 0.7 }} />
+                          {reg.printCount > 0
+                            ? `${t.printedTimes.replace("{count}", reg.printCount)}${reg.printTimestamp ? ` · ${t.lastPrintedAt} ${formatDateTimeWithLocale(reg.printTimestamp)}` : ""}`
+                            : t.neverPrinted}
+                        </Typography>
                       </Stack>
                     </Box>
 
@@ -1515,6 +1786,19 @@ export default function ViewRegistrations() {
                         </FormControl>
 
                         <Box sx={{ display: "flex", gap: 0.5, justifyContent: { xs: "center", sm: "flex-end" }, width: { xs: "100%", sm: "auto" } }}>
+                          <Tooltip title={t.printBadge}>
+                            <IconButton
+                              color="warning"
+                              onClick={() => handlePrintBadge(reg)}
+                              sx={{
+                                "&:hover": { transform: "scale(1.1)" },
+                                transition: "0.2s",
+                              }}
+                            >
+                              <ICONS.print />
+                            </IconButton>
+                          </Tooltip>
+
                           <Tooltip title={t.viewWalkIns}>
                             <IconButton
                               color="info"
@@ -2005,6 +2289,39 @@ export default function ViewRegistrations() {
         onConfirm={handleDelete}
         confirmButtonText={t.delete}
         confirmButtonIcon={<ICONS.delete />}
+      />
+
+      <ConfirmationDialog
+        open={printWarningOpen}
+        onClose={() => {
+          setPrintWarningOpen(false);
+          setPendingPrintReg(null);
+        }}
+        onConfirm={() => {
+          setPrintWarningOpen(false);
+          const reg = pendingPrintReg;
+          setPendingPrintReg(null);
+          doPrintBadge(reg);
+        }}
+        title={t.printBadge}
+        message={t.alreadyPrintedWarning.replace("{count}", pendingPrintReg?.printCount || 0)}
+        confirmButtonText={t.proceedPrint}
+        confirmButtonColor="primary"
+        confirmButtonIcon={<ICONS.print />}
+      />
+
+      <ConfirmationDialog
+        open={exportBadgesWarningOpen}
+        onClose={() => setExportBadgesWarningOpen(false)}
+        onConfirm={() => {
+          setExportBadgesWarningOpen(false);
+          doExportBadges();
+        }}
+        title={t.exportBadges}
+        message={t.exportBadgesWarning}
+        confirmButtonText={t.exportBadgesProceed}
+        confirmButtonColor="primary"
+        confirmButtonIcon={<ICONS.pdf />}
       />
 
       <WalkInModal

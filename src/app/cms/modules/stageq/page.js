@@ -7,22 +7,22 @@ const translations = {
   en: {
     title: "StageQ",
     features: [
-      "Share your business link or QR code with your audience for instant engagement",
-      "Audience members scan the QR to submit new questions or vote on existing ones",
-      "All questions are displayed live on the big screen during your presentation",
-      "Create interactive sessions where your audience drives the conversation",
+      "Create Q&A sessions and link them to your event for registration-based access.",
+      "Attendees verify their registration before submitting or upvoting questions.",
+      "All questions are displayed live on the big screen during your presentation.",
+      "Manage submitted questions in real time — mark as answered or remove as needed.",
     ],
     ctaLabel: "Manage Event Queries",
   },
   ar: {
     title: "StageQ",
     features: [
-      "شارك رابط عملك أو رمز الاستجابة السريعة مع الجمهور للتفاعل الفوري",
-      "يقوم أفراد الجمهور بمسح الرمز لإرسال أسئلة جديدة أو التصويت على الأسئلة الموجودة",
-      "يتم عرض جميع الأسئلة مباشرة على الشاشة الكبيرة أثناء عرضك التقديمي",
-      "أنشئ جلسات تفاعلية حيث يقود الجمهور المحادثة",
+      "أنشئ جلسات أسئلة وأجوبة واربطها بفعاليتك للوصول المبني على التسجيل.",
+      "يتحقق الحضور من تسجيلهم قبل إرسال الأسئلة أو التصويت عليها.",
+      "تُعرض جميع الأسئلة مباشرة على الشاشة الكبيرة أثناء عرضك التقديمي.",
+      "أدِر الأسئلة المقدَّمة في الوقت الفعلي — ضعها علامة مجاب عليها أو احذفها حسب الحاجة.",
     ],
-    ctaLabel: " إدارة استفسارات الفعاليات",
+    ctaLabel: "إدارة استفسارات الفعاليات",
   },
 };
 export default function VoteCastHome() {
@@ -30,7 +30,7 @@ export default function VoteCastHome() {
     <ModuleLandingPage
       moduleIcon={ICONS.forum}
       ctaLabel={translations.en.ctaLabel}
-      ctaHref="/cms/modules/stageq/queries"
+      ctaHref="/cms/modules/stageq/sessions"
       translations={translations}
     />
   );

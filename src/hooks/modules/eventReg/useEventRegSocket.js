@@ -7,12 +7,14 @@ export default function useEventRegSocket({
   onUploadProgress,
   onEmailProgress,
   onNewRegistration,
+  onBadgePrinted,
 }) {
   const handlersRef = useRef({
     onLoadingProgress,
     onUploadProgress,
     onEmailProgress,
     onNewRegistration,
+    onBadgePrinted,
   });
 
   const [uploadProgress, setUploadProgress] = useState(null);
@@ -26,8 +28,9 @@ export default function useEventRegSocket({
       onUploadProgress,
       onEmailProgress,
       onNewRegistration,
+      onBadgePrinted,
     };
-  }, [onLoadingProgress, onUploadProgress, onEmailProgress, onNewRegistration]);
+  }, [onLoadingProgress, onUploadProgress, onEmailProgress, onNewRegistration, onBadgePrinted]);
 
   // STABLE events (critical)
   const events = useMemo(
@@ -60,6 +63,12 @@ export default function useEventRegSocket({
           if (data.eventId?.toString() !== eventIdStr) return;
 
           handlersRef.current.onNewRegistration?.(data);
+        },
+
+        registrationBadgePrinted: (data) => {
+          if (data.eventId?.toString() !== eventIdStr) return;
+
+          handlersRef.current.onBadgePrinted?.(data);
         },
       };
     },

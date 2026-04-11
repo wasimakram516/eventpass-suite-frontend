@@ -83,6 +83,7 @@ import {
   InsertDriveFile as FileIcon,
   PhotoLibrary as PhotoLibraryIcon,
   CameraAlt as CameraIcon,
+  Cameraswitch as CameraSwitchIcon,
   Wallpaper as WallpaperIcon,
 } from "@mui/icons-material";
 
@@ -216,6 +217,7 @@ const ICONS = {
 
   // File & Media
   camera: CameraIcon,
+  cameraSwitch: CameraSwitchIcon,
   download: FileDownloadIcon,
   files: FileIcon,
   image: ImageIcon,

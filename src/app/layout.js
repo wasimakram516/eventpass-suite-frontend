@@ -6,7 +6,7 @@ export const metadata = {
   description:
     "EventPass by WhiteWall is a unified platform for live event engagement, including interactive quizzes, polls, audience questions, photo walls, registration, and check-in tools.",
   keywords:
-    "EventPass, Quiznest, VoteCast, EventDuel, StageQ, MosaicWall, EventReg, Check-In, Event Wheel, Live Engagement, WhiteWall Digital Solutions",
+    "EventPass, Quiznest, VoteCast, EventDuel, StageQ, MemoryWall, EventReg, Check-In, Event Wheel, Live Engagement, WhiteWall Digital Solutions",
   openGraph: {
     title: "EventPass – WhiteWall",
     description:

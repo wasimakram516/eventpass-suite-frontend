@@ -24,6 +24,7 @@ export const deleteMedia = withApiHandler(
         deleteAllMemoryImages,
         defaultQrWrapperBrandingId,
         defaultQrWrapperClearAllBranding,
+        wallConfigId,
     }) => {
         const isDefaultQrWrapper =
             mediaType === "defaultQrWrapperLogo" ||
@@ -54,6 +55,7 @@ export const deleteMedia = withApiHandler(
         if (deleteAllMemoryImages) payload.deleteAllMemoryImages = deleteAllMemoryImages;
         if (defaultQrWrapperBrandingId) payload.defaultQrWrapperBrandingId = defaultQrWrapperBrandingId;
         if (defaultQrWrapperClearAllBranding) payload.defaultQrWrapperClearAllBranding = defaultQrWrapperClearAllBranding;
+        if (wallConfigId) payload.wallConfigId = wallConfigId;
 
         const { data } = await api.post("/media/delete", payload);
         return data;

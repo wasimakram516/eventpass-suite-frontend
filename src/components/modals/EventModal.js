@@ -98,6 +98,8 @@ const translations = {
     showQrToggle: "Show QR code after registration?",
     showQrOnBadgeToggle: "Show QR Code on Printed Badge?",
     requiresApprovalToggle: "Require admin approval for registrations?",
+    allowMultipleBadgePrintingToggle: "Allow Multiple Badge Printing",
+    createCheckinOnFirstPrintToggle: "Create Check-in Record on First Badge Print",
     organizerDetails: "Organizer Details",
     organizerName: "Organizer Name",
     organizerEmail: "Organizer Email",
@@ -197,6 +199,8 @@ const translations = {
     showQrToggle: "عرض رمز الاستجابة السريعة بعد التسجيل؟",
     showQrOnBadgeToggle: "عرض رمز QR على بطاقة الطباعة؟",
     requiresApprovalToggle: "يتطلب موافقة المسؤول على التسجيلات؟",
+    allowMultipleBadgePrintingToggle: "السماح بطباعة الشارة أكثر من مرة",
+    createCheckinOnFirstPrintToggle: "إنشاء سجل تسجيل دخول عند أول طباعة للشارة",
     organizerDetails: "تفاصيل المنظم",
     organizerName: "اسم المنظم",
     organizerEmail: "بريد المنظم الإلكتروني",
@@ -335,6 +339,8 @@ const EventModal = ({
     showQrAfterRegistration: false,
     showQrOnBadge: true,
     requiresApproval: false,
+    allowMultipleBadgePrinting: true,
+    createCheckinOnFirstPrint: false,
     defaultLanguage: "en",
     removeLogo: false,
     removeBackgroundEn: false,
@@ -422,6 +428,8 @@ const EventModal = ({
           initialValues?.showQrAfterRegistration || false,
         showQrOnBadge: initialValues?.showQrOnBadge ?? true,
         requiresApproval: initialValues?.requiresApproval || false,
+        allowMultipleBadgePrinting: initialValues?.allowMultipleBadgePrinting ?? true,
+        createCheckinOnFirstPrint: initialValues?.createCheckinOnFirstPrint ?? false,
         defaultLanguage: initialValues?.defaultLanguage || "en",
         removeLogo: false,
         removeBackgroundEn: false,
@@ -513,6 +521,8 @@ const EventModal = ({
         showQrAfterRegistration: false,
         showQrOnBadge: true,
         requiresApproval: false,
+        allowMultipleBadgePrinting: true,
+        createCheckinOnFirstPrint: false,
         defaultLanguage: "en",
         removeLogo: false,
         removeBackgroundEn: false,
@@ -1199,6 +1209,8 @@ const EventModal = ({
         showQrAfterRegistration: formData.showQrAfterRegistration,
         showQrOnBadge: formData.showQrOnBadge,
         requiresApproval: formData.requiresApproval,
+        allowMultipleBadgePrinting: formData.allowMultipleBadgePrinting,
+        createCheckinOnFirstPrint: formData.createCheckinOnFirstPrint,
         defaultLanguage: formData.defaultLanguage,
         useInternationalNumbers: formData.useInternationalNumbers,
         useCustomEmailTemplate: formData.useCustomEmailTemplate,
@@ -1607,8 +1619,47 @@ const EventModal = ({
                       sx={{ alignSelf: "start" }}
                     />
                   </Box>
+
                 </>
               )}
+
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={formData.allowMultipleBadgePrinting}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          allowMultipleBadgePrinting: e.target.checked,
+                        }))
+                      }
+                      color="primary"
+                    />
+                  }
+                  label={t.allowMultipleBadgePrintingToggle}
+                  sx={{ alignSelf: "start" }}
+                />
+              </Box>
+
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={formData.createCheckinOnFirstPrint}
+                      onChange={(e) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          createCheckinOnFirstPrint: e.target.checked,
+                        }))
+                      }
+                      color="primary"
+                    />
+                  }
+                  label={t.createCheckinOnFirstPrintToggle}
+                  sx={{ alignSelf: "start" }}
+                />
+              </Box>
 
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <FormControlLabel

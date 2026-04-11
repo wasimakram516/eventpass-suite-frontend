@@ -102,8 +102,8 @@ const segmentMap = {
     label: "StageQ",
     icon: <ICONS.forum fontSize="small" sx={{ mr: 0.5 }} />,
   },
-  mosaicwall: {
-    label: "MosaicWall",
+  memorywall: {
+    label: "MemoryWall",
     icon: <ICONS.image fontSize="small" sx={{ mr: 0.5 }} />,
   },
   eventreg: {
@@ -155,7 +155,7 @@ const segmentMap = {
     icon: <ICONS.adminPanel fontSize="small" sx={{ mr: 0.5 }} />,
   },
   sessions: {
-    label: "Game Sessions",
+    label: "Sessions",
     icon: <ICONS.leaderboard fontSize="small" sx={{ mr: 0.5 }} />,
   },
   surveys: {
@@ -209,6 +209,13 @@ export default function BreadcrumbsNav() {
       return {
         segment: seg,
         href: basePath,
+      };
+    }
+    // Dynamic slugs (not in segmentMap) should link to their parent path
+    if (!segmentMap[seg]) {
+      return {
+        segment: seg,
+        href: basePath + "/" + segments.slice(0, i).join("/"),
       };
     }
     return {

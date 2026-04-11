@@ -208,7 +208,7 @@ const WalkInModal = ({ open, onClose, registration, onCheckInSuccess, createWalk
         )}
       </DialogContent>
 
-      {!isDigiPass && onCheckInSuccess && canCheckIn && (
+      {(onCheckInSuccess && canCheckIn) && (
         <DialogActions sx={{ justifyContent: "center" }}>
           <Button
             onClick={handleCheckIn}

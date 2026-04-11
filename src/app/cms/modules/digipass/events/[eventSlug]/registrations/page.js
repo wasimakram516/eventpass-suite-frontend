@@ -180,13 +180,13 @@ function buildFilterState(fieldsLocal, prev = {}) {
 }
 
 const buildHaystack = (reg, fieldsLocal) => {
-    const dyn = fieldsLocal.map((f) => reg.customFields?.[f.name] ?? "");
+    const dyn = fieldsLocal.map((f) => reg[f.name] ?? reg.customFields?.[f.name] ?? "");
     const walk = (reg.walkIns || []).flatMap((w) => [
         w.scannedBy?.name,
         w.scannedBy?.email,
     ]);
-    const name = pickFullName(reg.customFields) || "";
-    const email = pickEmail(reg.customFields) || "";
+    const name = reg.fullName || pickFullName(reg.customFields) || "";
+    const email = reg.email || pickEmail(reg.customFields) || "";
     return [
         name,
         email,
@@ -264,14 +264,23 @@ export default function ViewRegistrations() {
 
         const evRes = await getDigipassEventBySlug(eventSlug);
 
-        const fieldsLocal =
-            !evRes?.error && evRes.formFields?.length
-                ? evRes.formFields.map((f) => ({
+        let fieldsLocal = [];
+        if (!evRes?.error) {
+            if (evRes.formFields?.length) {
+                fieldsLocal = evRes.formFields.map((f) => ({
                     name: f.inputName,
                     type: (f.inputType || "text").toLowerCase(),
                     values: Array.isArray(f.values) ? f.values : [],
-                }))
-                : [];
+                }));
+            } else if (evRes.linkedEventRegId) {
+                fieldsLocal = [
+                    { name: "fullName", type: "text", values: [] },
+                    { name: "email", type: "email", values: [] },
+                    { name: "phone", type: "phone", values: [] },
+                    { name: "company", type: "text", values: [] },
+                ];
+            }
+        }
 
         if (!evRes?.error) {
             setEventDetails(evRes);
@@ -440,6 +449,7 @@ export default function ViewRegistrations() {
 
                 const meta = fieldMetaMap[key];
                 const regValue =
+                    reg[key] ??
                     reg.customFields?.[key] ??
                     (key === "token"
                         ? reg.token
@@ -809,46 +819,50 @@ export default function ViewRegistrations() {
                     gap: dir === "rtl" ? 1 : 0,
                 }}
             >
-                <Button
-                    variant="contained"
-                    color="primary"
-                    startIcon={<ICONS.add />}
-                    onClick={() => setCreateModalOpen(true)}
-                    sx={getStartIconSpacing(dir)}
-                >
-                    {t.createRegistration}
-                </Button>
+                {!eventDetails?.linkedEventRegId && (
+                    <>
+                        <Button
+                            variant="contained"
+                            color="primary"
+                            startIcon={<ICONS.add />}
+                            onClick={() => setCreateModalOpen(true)}
+                            sx={getStartIconSpacing(dir)}
+                        >
+                            {t.createRegistration}
+                        </Button>
 
-                <Button
-                    variant="outlined"
-                    startIcon={<ICONS.download />}
-                    onClick={handleDownloadSample}
-                    sx={getStartIconSpacing(dir)}
-                >
-                    {t.downloadSample}
-                </Button>
+                        <Button
+                            variant="outlined"
+                            startIcon={<ICONS.download />}
+                            onClick={handleDownloadSample}
+                            sx={getStartIconSpacing(dir)}
+                        >
+                            {t.downloadSample}
+                        </Button>
 
-                <Button
-                    variant="outlined"
-                    component="label"
-                    startIcon={
-                        uploading ? <CircularProgress size={20} /> : <ICONS.upload />
-                    }
-                    disabled={uploading}
-                    sx={getStartIconSpacing(dir)}
-                >
-                    {uploading && uploadProgress?.total
-                        ? `${t.uploading} ${uploadProgress.uploaded}/${uploadProgress.total}`
-                        : uploading
-                            ? t.uploading
-                            : t.uploadFile}
-                    <input
-                        type="file"
-                        hidden
-                        accept=".xlsx,.xls"
-                        onChange={handleUpload}
-                    />
-                </Button>
+                        <Button
+                            variant="outlined"
+                            component="label"
+                            startIcon={
+                                uploading ? <CircularProgress size={20} /> : <ICONS.upload />
+                            }
+                            disabled={uploading}
+                            sx={getStartIconSpacing(dir)}
+                        >
+                            {uploading && uploadProgress?.total
+                                ? `${t.uploading} ${uploadProgress.uploaded}/${uploadProgress.total}`
+                                : uploading
+                                    ? t.uploading
+                                    : t.uploadFile}
+                            <input
+                                type="file"
+                                hidden
+                                accept=".xlsx,.xls"
+                                onChange={handleUpload}
+                            />
+                        </Button>
+                    </>
+                )}
 
                 <Button
                     variant="outlined"
@@ -1133,8 +1147,8 @@ export default function ViewRegistrations() {
                 <>
                     <Grid container spacing={4} justifyContent="center">
                         {paginatedRegistrations.map((reg) => {
-                            const name = pickFullName(reg.customFields) || "—";
-                            const email = pickEmail(reg.customFields) || "—";
+                            const name = reg.fullName || pickFullName(reg.customFields) || "—";
+                            const email = reg.email || pickEmail(reg.customFields) || "—";
 
                             return (
                                 <Grid
@@ -1299,7 +1313,7 @@ export default function ViewRegistrations() {
                                                             }}
                                                         >
                                                             {(() => {
-                                                                const fieldValue = reg.customFields?.[f.name] ?? "";
+                                                                const fieldValue = reg[f.name] ?? reg.customFields?.[f.name] ?? "";
                                                                 if (!fieldValue) return "—";
 
                                                                 if (f.type === "phone" || (!eventDetails?.formFields?.length && f.name === "phone")) {
@@ -1444,33 +1458,37 @@ export default function ViewRegistrations() {
                                                         </IconButton>
                                                     </Tooltip>
 
-                                                    <Tooltip title={t.editRegistration}>
-                                                        <IconButton
-                                                            color="primary"
-                                                            onClick={() => {
-                                                                setEditingReg(reg);
-                                                                setEditModalOpen(true);
-                                                            }}
-                                                        >
-                                                            <ICONS.edit fontSize="small" />
-                                                        </IconButton>
-                                                    </Tooltip>
+                                                    {!eventDetails?.linkedEventRegId && (
+                                                        <>
+                                                            <Tooltip title={t.editRegistration}>
+                                                                <IconButton
+                                                                    color="primary"
+                                                                    onClick={() => {
+                                                                        setEditingReg(reg);
+                                                                        setEditModalOpen(true);
+                                                                    }}
+                                                                >
+                                                                    <ICONS.edit fontSize="small" />
+                                                                </IconButton>
+                                                            </Tooltip>
 
-                                                    <Tooltip title={t.deleteRecord}>
-                                                        <IconButton
-                                                            color="error"
-                                                            onClick={() => {
-                                                                setRegistrationToDelete(reg._id);
-                                                                setDeleteDialogOpen(true);
-                                                            }}
-                                                            sx={{
-                                                                "&:hover": { transform: "scale(1.1)" },
-                                                                transition: "0.2s",
-                                                            }}
-                                                        >
-                                                            <ICONS.delete />
-                                                        </IconButton>
-                                                    </Tooltip>
+                                                            <Tooltip title={t.deleteRecord}>
+                                                                <IconButton
+                                                                    color="error"
+                                                                    onClick={() => {
+                                                                        setRegistrationToDelete(reg._id);
+                                                                        setDeleteDialogOpen(true);
+                                                                    }}
+                                                                    sx={{
+                                                                        "&:hover": { transform: "scale(1.1)" },
+                                                                        transition: "0.2s",
+                                                                    }}
+                                                                >
+                                                                    <ICONS.delete />
+                                                                </IconButton>
+                                                            </Tooltip>
+                                                        </>
+                                                    )}
                                                 </Box>
                                             </Box>
                                         </CardActions>
@@ -1523,17 +1541,12 @@ export default function ViewRegistrations() {
                 confirmButtonIcon={<ICONS.delete />}
             />
 
-            <WalkInModal
-                open={walkInModalOpen}
-                onClose={() => setWalkInModalOpen(false)}
-                registration={selectedRegistration}
-                isDigiPass={true}
-                onCheckInSuccess={async () => {
-                    if (selectedRegistration?._id) {
-                        await refreshRegistrationWalkIns(selectedRegistration._id);
-                    }
-                }}
-            />
+             <WalkInModal
+                 open={walkInModalOpen}
+                 onClose={() => setWalkInModalOpen(false)}
+                 registration={selectedRegistration}
+                 isDigiPass={true}
+             />
 
             <FilterDialog
                 open={filterModalOpen}
