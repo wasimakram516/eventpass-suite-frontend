@@ -170,7 +170,7 @@ export default function ManageSessionsPage() {
             ...session,
             name: session.title,
             pollCount: session.questionCount || 0,
-            logoUrl: linkedEvent?.logoUrl || session.linkedEventRegId?.logoUrl || null,
+            logoUrl: session.logoUrl || null,
         };
     };
 

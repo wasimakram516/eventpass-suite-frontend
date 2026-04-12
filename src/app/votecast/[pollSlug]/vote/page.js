@@ -67,7 +67,6 @@ export default function PollVotingPage() {
   const autoSubmitRef = useRef(null);
 
   const [poll, setPoll] = useState(null);
-  const [event, setEvent] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [translatedQuestions, setTranslatedQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -92,18 +91,10 @@ export default function PollVotingPage() {
   // Fetch poll + linked event
   useEffect(() => {
     if (!pollSlug) return;
-    getPublicPollBySlug(pollSlug).then(async (data) => {
+    getPublicPollBySlug(pollSlug).then((data) => {
       if (data && !data.error) {
         setPoll(data);
         setQuestions(data.questions || []);
-        const eventId = data.linkedEventRegId?._id || data.linkedEventRegId;
-        if (eventId) {
-          try {
-            const { getPublicEventById } = await import("@/services/eventreg/eventService");
-            const eventData = await getPublicEventById(eventId);
-            if (eventData && !eventData.error) setEvent(eventData);
-          } catch { /* ignore */ }
-        }
       }
       setLoading(false);
     });
@@ -155,7 +146,7 @@ export default function PollVotingPage() {
   }, [finished, closeTimer]);
 
   // Background from linked event, updates on language switch
-  const background = useMemo(() => getEventBackground(event, currentLang), [event, currentLang]);
+  const background = useMemo(() => getEventBackground(poll, currentLang), [poll, currentLang]);
 
   // Reload video src when background changes due to language switch
   useEffect(() => {
@@ -255,7 +246,7 @@ export default function PollVotingPage() {
   const currentQuestion = translatedQuestions[currentIndex] || questions[currentIndex];
   const optionCount = currentQuestion?.options?.length || 0;
   const pollType = poll.type || "options";
-  const logoUrl = event?.logoUrl;
+  const logoUrl = poll?.logoUrl;
 
   return (
     <>

@@ -33,7 +33,6 @@ export default function SessionLiveDisplay() {
   const [translatedQuestionTexts, setTranslatedQuestionTexts] = useState({});
   const [loading, setLoading] = useState(false);
   const [session, setSession] = useState(null);
-  const [event, setEvent] = useState(null);
 
   useEffect(() => {
     const list = Array.isArray(questions) ? questions : [];
@@ -59,14 +58,6 @@ export default function SessionLiveDisplay() {
     ]);
     if (sessionData && !sessionData.error) {
       setSession(sessionData);
-      const eventId = sessionData.linkedEventRegId?._id || sessionData.linkedEventRegId;
-      if (eventId && !event) {
-        try {
-          const { getPublicEventById } = await import("@/services/eventreg/eventService");
-          const eventData = await getPublicEventById(eventId);
-          if (eventData && !eventData.error) setEvent(eventData);
-        } catch { /* ignore */ }
-      }
     }
     if (!questionData?.error) {
       const list = Array.isArray(questionData) ? questionData : [];
@@ -133,7 +124,7 @@ export default function SessionLiveDisplay() {
     });
   }, [questions]);
 
-  const logoUrl = event?.logoUrl;
+  const logoUrl = session?.logoUrl;
 
   if (loading && questions.length === 0) {
     return (

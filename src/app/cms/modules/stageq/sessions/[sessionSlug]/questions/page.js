@@ -20,9 +20,11 @@ import {
   FormControl,
   Select,
   MenuItem,
+  Chip,
+  LinearProgress,
 } from "@mui/material";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMessage } from "@/contexts/MessageContext";
 import {
   getQuestionsBySession,
@@ -107,11 +109,22 @@ export default function SessionQuestionsPage() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editData, setEditData] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState({ open: false, id: null });
+  const [countdowns, setCountdowns] = useState({});
+  const countdownRef = useRef({});
 
   const fetchQuestions = async (showLoader = false) => {
     if (showLoader) setLoading(true);
     const data = await getQuestionsBySession(sessionSlug);
-    if (!data?.error) setQuestions(Array.isArray(data) ? data : []);
+    if (!data?.error) {
+      const list = Array.isArray(data) ? data : [];
+      setQuestions(list);
+      const now = Date.now();
+      list.forEach(q => {
+        if (q.visibleAt && new Date(q.visibleAt).getTime() > now) {
+          startCountdown(q._id, q.visibleAt);
+        }
+      });
+    }
     if (showLoader) setLoading(false);
   };
 
@@ -128,15 +141,38 @@ export default function SessionQuestionsPage() {
     setQuestions(prev => prev.map(q => q._id === questionId ? { ...q, answered } : q));
   }, []);
 
-  const handleNewQuestion = useCallback((question) => {
+  const startCountdown = useCallback((questionId, visibleAt) => {
+    if (!visibleAt) return;
+    const target = new Date(visibleAt).getTime();
+    const tick = () => {
+      const remaining = Math.max(0, Math.ceil((target - Date.now()) / 1000));
+      setCountdowns(prev => ({ ...prev, [questionId]: remaining }));
+      if (remaining > 0) {
+        countdownRef.current[questionId] = setTimeout(tick, 1000);
+      } else {
+        delete countdownRef.current[questionId];
+        setCountdowns(prev => { const next = { ...prev }; delete next[questionId]; return next; });
+      }
+    };
+    tick();
+  }, []);
+
+  const handleNewQuestionAdmin = useCallback((question) => {
     setQuestions(prev => prev.some(q => q._id === question._id) ? prev : [question, ...prev]);
+    if (question.visibleAt) startCountdown(question._id, question.visibleAt);
+  }, [startCountdown]);
+
+  useEffect(() => {
+    return () => {
+      Object.values(countdownRef.current).forEach(clearTimeout);
+    };
   }, []);
 
   useStageQSocket({
     sessionSlug,
     onVoteUpdated: handleVoteUpdated,
     onAnsweredUpdated: handleAnsweredUpdated,
-    onNewQuestion: handleNewQuestion,
+    onNewQuestionAdmin: handleNewQuestionAdmin,
   });
 
   const handleDelete = async () => {
@@ -203,6 +239,24 @@ export default function SessionQuestionsPage() {
                     width: { xs: "100%", sm: "360px" },
                   }}
                 >
+                  {countdowns[q._id] > 0 && (
+                    <Box sx={{ px: 2, pt: 1.5 }}>
+                      <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>
+                        <Chip
+                          label={`On screen in ${countdowns[q._id]}s`}
+                          size="small"
+                          color="warning"
+                          variant="outlined"
+                        />
+                      </Stack>
+                      <LinearProgress
+                        variant="determinate"
+                        value={100 - (countdowns[q._id] / (q.visibleAt ? Math.ceil((new Date(q.visibleAt).getTime() - new Date(q.createdAt).getTime()) / 1000) : 30)) * 100}
+                        color="warning"
+                        sx={{ borderRadius: 1, height: 4 }}
+                      />
+                    </Box>
+                  )}
                   <Box sx={{ px: 2, pt: 2 }}>
                     <Typography fontWeight="bold" fontSize="1.05rem" color="text.primary" sx={{ lineHeight: 1.4 }}>
                       {q.text}

@@ -19,6 +19,7 @@ export const deleteMedia = withApiHandler(
         questionIndex,
         optionIndex,
         pollId,
+        sessionId,
         spinWheelId,
         memoryImageId,
         deleteAllMemoryImages,
@@ -50,6 +51,7 @@ export const deleteMedia = withApiHandler(
         if (questionIndex !== undefined) payload.questionIndex = questionIndex;
         if (optionIndex !== undefined) payload.optionIndex = optionIndex;
         if (pollId) payload.pollId = pollId;
+        if (sessionId) payload.sessionId = sessionId;
         if (spinWheelId) payload.spinWheelId = spinWheelId;
         if (memoryImageId) payload.memoryImageId = memoryImageId;
         if (deleteAllMemoryImages) payload.deleteAllMemoryImages = deleteAllMemoryImages;
