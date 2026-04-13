@@ -14,6 +14,7 @@ import {
   ListItemText,
   ListItemIcon,
   Container,
+  LinearProgress,
 } from "@mui/material";
 
 import QrScanner from "@/components/QrScanner";
@@ -104,15 +105,23 @@ export default function DigiPassVerifyPage() {
     if (!raw) return "";
     const s = String(raw).trim();
 
+    // Format: #BARCODE<token>
     const marker = "#BARCODE";
     const idx = s.indexOf(marker);
     if (idx >= 0) {
       return s.slice(idx + marker.length).trim();
     }
 
+    // Format: .../.../B/<token>
     const bIndex = s.toUpperCase().lastIndexOf("/B/");
     if (bIndex >= 0) {
       return s.slice(bIndex + 3).trim();
+    }
+
+    // vFairs format: app_id:XXXXXXX:vFairs_id=<token>
+    const vfairsMatch = s.match(/vFairs_id[=:]([^\s:]+)/i);
+    if (vfairsMatch) {
+      return vfairsMatch[1].trim();
     }
 
     return s;
@@ -325,6 +334,40 @@ export default function DigiPassVerifyPage() {
               {t.verified}
             </Typography>
 
+            {/* Tasks Completed — prominent highlight */}
+            <Box
+              sx={{
+                width: "100%",
+                maxWidth: 400,
+                bgcolor: "success.light",
+                border: "2px solid",
+                borderColor: "success.main",
+                borderRadius: 2,
+                px: 4,
+                py: 2,
+                textAlign: "center",
+              }}
+            >
+              <Typography variant="h3" fontWeight={700} color="success.dark">
+                {result.tasksCompleted ?? 0}
+                {result.maxTasksPerUser != null && ` / ${result.maxTasksPerUser}`}
+              </Typography>
+              <Typography variant="body2" fontWeight={600} color="success.dark">
+                {t.tasksCompleted}
+              </Typography>
+              {result.maxTasksPerUser != null && (
+                <LinearProgress
+                  variant="determinate"
+                  value={Math.min(
+                    ((result.tasksCompleted ?? 0) / result.maxTasksPerUser) * 100,
+                    100
+                  )}
+                  color="success"
+                  sx={{ mt: 1.5, borderRadius: 1, height: 8 }}
+                />
+              )}
+            </Box>
+
             <List sx={{ width: "100%", maxWidth: 400 }}>
               <ListItem>
                 <ListItemIcon>
@@ -333,16 +376,6 @@ export default function DigiPassVerifyPage() {
                 <ListItemText
                   primary={t.token}
                   secondary={result.token}
-                  primaryTypographyProps={{ fontWeight: 500 }}
-                />
-              </ListItem>
-              <ListItem>
-                <ListItemIcon>
-                  <ICONS.checkCircle sx={{ color: "text.secondary" }} />
-                </ListItemIcon>
-                <ListItemText
-                  primary={t.tasksCompleted}
-                  secondary={result.tasksCompleted || 0}
                   primaryTypographyProps={{ fontWeight: 500 }}
                 />
               </ListItem>
@@ -398,6 +431,40 @@ export default function DigiPassVerifyPage() {
               {t.duplicateMessage}
             </Typography>
 
+            {/* Tasks Completed — prominent highlight */}
+            <Box
+              sx={{
+                width: "100%",
+                maxWidth: 400,
+                bgcolor: "warning.light",
+                border: "2px solid",
+                borderColor: "warning.main",
+                borderRadius: 2,
+                px: 4,
+                py: 2,
+                textAlign: "center",
+              }}
+            >
+              <Typography variant="h3" fontWeight={700} color="warning.dark">
+                {result.tasksCompleted ?? 0}
+                {result.maxTasksPerUser != null && ` / ${result.maxTasksPerUser}`}
+              </Typography>
+              <Typography variant="body2" fontWeight={600} color="warning.dark">
+                {t.tasksCompleted}
+              </Typography>
+              {result.maxTasksPerUser != null && (
+                <LinearProgress
+                  variant="determinate"
+                  value={Math.min(
+                    ((result.tasksCompleted ?? 0) / result.maxTasksPerUser) * 100,
+                    100
+                  )}
+                  color="warning"
+                  sx={{ mt: 1.5, borderRadius: 1, height: 8 }}
+                />
+              )}
+            </Box>
+
             <List sx={{ width: "100%", maxWidth: 400 }}>
               <ListItem>
                 <ListItemIcon>
@@ -406,16 +473,6 @@ export default function DigiPassVerifyPage() {
                 <ListItemText
                   primary={t.token}
                   secondary={result.token}
-                  primaryTypographyProps={{ fontWeight: 500 }}
-                />
-              </ListItem>
-              <ListItem>
-                <ListItemIcon>
-                  <ICONS.checkCircle sx={{ color: "text.secondary" }} />
-                </ListItemIcon>
-                <ListItemText
-                  primary={t.tasksCompleted}
-                  secondary={result.tasksCompleted || 0}
                   primaryTypographyProps={{ fontWeight: 500 }}
                 />
               </ListItem>
