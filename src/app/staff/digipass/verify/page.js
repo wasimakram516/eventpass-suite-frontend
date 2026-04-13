@@ -24,6 +24,7 @@ import useI18nLayout from "@/hooks/useI18nLayout";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import { useMessage } from "@/contexts/MessageContext";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
+import { formatDateTimeWithLocale } from "@/utils/dateUtils";
 
 const translations = {
   en: {
@@ -45,6 +46,7 @@ const translations = {
     tasksCompleted: "Completed Activities",
     scannedAt: "Scanned At",
     scannedBy: "Scanned By",
+    participant: "Participant",
     scanAnother: "Scan Another",
     tryAgain: "Try Again",
     duplicateMessage: "This registration has already been scanned by you.",
@@ -73,6 +75,7 @@ const translations = {
     tasksCompleted: "الأنشطة المكتملة",
     scannedAt: "تم المسح في",
     scannedBy: "تم المسح بواسطة",
+    participant: "المشارك",
     scanAnother: "مسح رمز آخر",
     tryAgain: "حاول مرة أخرى",
     duplicateMessage: "تم مسح هذا التسجيل مسبقًا بواسطتك.",
@@ -87,6 +90,7 @@ const translations = {
 
 export default function DigiPassVerifyPage() {
   const { t, dir } = useI18nLayout(translations);
+  const locale = dir === "rtl" ? "ar-SA" : "en-GB";
   const { showMessage } = useMessage();
 
   const [showScanner, setShowScanner] = useState(false);
@@ -144,8 +148,10 @@ export default function DigiPassVerifyPage() {
       setResult({
         token: cleaned,
         tasksCompleted: res.tasksCompleted,
+        maxTasksPerUser: res.maxTasksPerUser,
         scannedAt: res.scannedAt,
         walkinId: res.walkinId,
+        participantInfo: res.participantInfo || {},
       });
       setError(null);
     } else if (res?.error || res?.success === false) {
@@ -184,16 +190,6 @@ export default function DigiPassVerifyPage() {
     setAlreadyScanned(false);
     setShowScanner(false);
     setManualMode(false);
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return "—";
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleString();
-    } catch {
-      return dateString;
-    }
   };
 
   return (
@@ -339,20 +335,20 @@ export default function DigiPassVerifyPage() {
               sx={{
                 width: "100%",
                 maxWidth: 400,
-                bgcolor: "success.light",
-                border: "2px solid",
-                borderColor: "success.main",
+                bgcolor: "grey.100",
+                border: "1px solid",
+                borderColor: "divider",
                 borderRadius: 2,
                 px: 4,
                 py: 2,
                 textAlign: "center",
               }}
             >
-              <Typography variant="h3" fontWeight={700} color="success.dark">
+              <Typography variant="h3" fontWeight={700} color="text.primary">
                 {result.tasksCompleted ?? 0}
                 {result.maxTasksPerUser != null && ` / ${result.maxTasksPerUser}`}
               </Typography>
-              <Typography variant="body2" fontWeight={600} color="success.dark">
+              <Typography variant="body2" fontWeight={600} color="text.secondary">
                 {t.tasksCompleted}
               </Typography>
               {result.maxTasksPerUser != null && (
@@ -369,6 +365,23 @@ export default function DigiPassVerifyPage() {
             </Box>
 
             <List sx={{ width: "100%", maxWidth: 400 }}>
+              {result.participantInfo && Object.entries(result.participantInfo).some(([, v]) => v) && (
+                <ListItem>
+                  <ListItemIcon>
+                    <ICONS.person sx={{ color: "text.secondary" }} />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={t.participant}
+                    secondary={
+                      Object.entries(result.participantInfo)
+                        .filter(([, v]) => v)
+                        .map(([, v]) => v)
+                        .join(" · ")
+                    }
+                    primaryTypographyProps={{ fontWeight: 500 }}
+                  />
+                </ListItem>
+              )}
               <ListItem>
                 <ListItemIcon>
                   <ICONS.key sx={{ color: "text.secondary" }} />
@@ -386,7 +399,7 @@ export default function DigiPassVerifyPage() {
                   </ListItemIcon>
                   <ListItemText
                     primary={t.scannedAt}
-                    secondary={formatDate(result.scannedAt)}
+                    secondary={formatDateTimeWithLocale(result.scannedAt, locale)}
                     primaryTypographyProps={{ fontWeight: 500 }}
                   />
                 </ListItem>
@@ -436,20 +449,20 @@ export default function DigiPassVerifyPage() {
               sx={{
                 width: "100%",
                 maxWidth: 400,
-                bgcolor: "warning.light",
-                border: "2px solid",
-                borderColor: "warning.main",
+                bgcolor: "grey.100",
+                border: "1px solid",
+                borderColor: "divider",
                 borderRadius: 2,
                 px: 4,
                 py: 2,
                 textAlign: "center",
               }}
             >
-              <Typography variant="h3" fontWeight={700} color="warning.dark">
+              <Typography variant="h3" fontWeight={700} color="text.primary">
                 {result.tasksCompleted ?? 0}
                 {result.maxTasksPerUser != null && ` / ${result.maxTasksPerUser}`}
               </Typography>
-              <Typography variant="body2" fontWeight={600} color="warning.dark">
+              <Typography variant="body2" fontWeight={600} color="text.secondary">
                 {t.tasksCompleted}
               </Typography>
               {result.maxTasksPerUser != null && (
@@ -466,6 +479,23 @@ export default function DigiPassVerifyPage() {
             </Box>
 
             <List sx={{ width: "100%", maxWidth: 400 }}>
+              {result.participantInfo && Object.entries(result.participantInfo).some(([, v]) => v) && (
+                <ListItem>
+                  <ListItemIcon>
+                    <ICONS.person sx={{ color: "text.secondary" }} />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={t.participant}
+                    secondary={
+                      Object.entries(result.participantInfo)
+                        .filter(([, v]) => v)
+                        .map(([, v]) => v)
+                        .join(" · ")
+                    }
+                    primaryTypographyProps={{ fontWeight: 500 }}
+                  />
+                </ListItem>
+              )}
               <ListItem>
                 <ListItemIcon>
                   <ICONS.key sx={{ color: "text.secondary" }} />
@@ -483,7 +513,7 @@ export default function DigiPassVerifyPage() {
                   </ListItemIcon>
                   <ListItemText
                     primary={t.scannedAt}
-                    secondary={formatDate(result.scannedAt)}
+                    secondary={formatDateTimeWithLocale(result.scannedAt, locale)}
                     primaryTypographyProps={{ fontWeight: 500 }}
                   />
                 </ListItem>
