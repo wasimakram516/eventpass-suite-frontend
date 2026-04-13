@@ -621,8 +621,8 @@ export default function CrossZeroHostPage() {
               const p1 = session.players?.find((p) => p.playerType === "p1");
               const p2 = session.players?.find((p) => p.playerType === "p2");
               const result = session?.xoStats?.result;
-              const isP1Winner = result === "X_wins";
-              const isP2Winner = result === "O_wins";
+              const isP1Winner = result === "O_wins";
+              const isP2Winner = result === "X_wins";
               const isDraw = result === "draw";
               const winnerName = isP1Winner
                 ? p1?.playerId?.name

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Box, Typography, Button, CircularProgress, Paper, Stack, IconButton, LinearProgress, Fade } from "@mui/material";
+import { Box, Typography, Button, CircularProgress, Paper, Stack, IconButton, LinearProgress, Fade, TextField } from "@mui/material";
 import Confetti from "react-confetti";
 import { useGame } from "@/contexts/GameContext";
 import useCrossZeroWebSocketData from "@/hooks/modules/crosszero/useCrossZeroWebSocketData";
@@ -11,6 +11,8 @@ import { joinGame, submitResult } from "@/services/crosszero/playerService";
 import {
   abandonGameSession,
   activateGameSession,
+  startGameSession,
+  joinGameSession,
 } from "@/services/crosszero/gameSessionService";
 import LanguageSelector from "@/components/LanguageSelector";
 import useI18nLayout from "@/hooks/useI18nLayout";
@@ -57,6 +59,18 @@ const translations = {
     moveTimer: "Move timer",
     timeTaken: "Time Taken",
     seconds: "s",
+    nameLabel: "Your Name",
+    companyLabel: "Company (optional)",
+    departmentLabel: "Department (optional)",
+    nextPlayer: "Next: Player 2",
+    wins: "Wins!",
+    howToPlay: "How to Play",
+    pvpMode: "Multiplayer · 1v1",
+    rule1: "The board has 9 cells in a 3×3 grid.",
+    rule2: "Players take turns placing their mark in an empty cell.",
+    rule3: "Match 3 marks in a row to win. If the board fills first, it's a draw.",
+    rule4Pvp: "Player 1 plays as ○ (goes first) and Player 2 plays as ✕.",
+    goodLuck: "Good Luck!",
   },
   ar: {
     chooseDifficulty: "اختر مستوى الصعوبة",
@@ -95,13 +109,25 @@ const translations = {
     moveTimer: "مؤقت الحركة",
     timeTaken: "الوقت المستغرق",
     seconds: "ث",
+    nameLabel: "اسمك",
+    companyLabel: "الشركة (اختياري)",
+    departmentLabel: "القسم (اختياري)",
+    nextPlayer: "التالي: اللاعب الثاني",
+    wins: "فاز!",
+    howToPlay: "طريقة اللعب",
+    pvpMode: "متعدد اللاعبين · 1 ضد 1",
+    rule1: "تتكون اللوحة من 9 خانات ضمن شبكة 3×3.",
+    rule2: "يتناوب اللاعبون على وضع علامتهم داخل خانة فارغة.",
+    rule3: "كوّن 3 علامات في صف واحد للفوز. وإذا امتلأت اللوحة أولًا تنتهي المباراة بالتعادل.",
+    rule4Pvp: "اللاعب الأول يلعب بعلامة ○ (يبدأ أولاً) واللاعب الثاني يلعب بعلامة ✕.",
+    goodLuck: "حظًا موفقًا!",
   },
 };
 
 // â”€â”€â”€ Game Logic â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const WINNING_LINES = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
-const PLAYER_TYPE_MARK = { p1: "X", p2: "O" };
-const MARK_PLAYER_TYPE = { X: "p1", O: "p2" };
+const PLAYER_TYPE_MARK = { p1: "O", p2: "X" };
+const MARK_PLAYER_TYPE = { O: "p1", X: "p2" };
 
 function checkWinner(board) {
   for (const [a, b, c] of WINNING_LINES) {
@@ -118,15 +144,15 @@ function getWinningLine(board) {
 
 function minimax(board, isMaximizing) {
   const result = checkWinner(board);
-  if (result?.winner === "O") return 10;
-  if (result?.winner === "X") return -10;
+  if (result?.winner === "X") return 10;
+  if (result?.winner === "O") return -10;
   if (board.every(Boolean)) return 0;
 
   if (isMaximizing) {
     let best = -Infinity;
     for (let i = 0; i < 9; i++) {
       if (!board[i]) {
-        board[i] = "O";
+        board[i] = "X";
         best = Math.max(best, minimax(board, false));
         board[i] = null;
       }
@@ -136,7 +162,7 @@ function minimax(board, isMaximizing) {
     let best = Infinity;
     for (let i = 0; i < 9; i++) {
       if (!board[i]) {
-        board[i] = "X";
+        board[i] = "O";
         best = Math.min(best, minimax(board, true));
         board[i] = null;
       }
@@ -149,7 +175,7 @@ function getBestMove(board) {
   let best = -Infinity, move = -1;
   for (let i = 0; i < 9; i++) {
     if (!board[i]) {
-      board[i] = "O";
+      board[i] = "X";
       const score = minimax(board, false);
       board[i] = null;
       if (score > best) { best = score; move = i; }
@@ -234,6 +260,81 @@ function MoveTimerBar({ seconds, maxSeconds, isMyTurn }) {
   );
 }
 
+// ─── Single-Screen Onboarding Form (isolated to prevent re-render focus loss) ──
+function SingleOnboardingForm({ game, singleStep, singleP1, singleSubmitting, onSubmit, t, dir }) {
+  const [form, setForm] = useState({ name: "", company: "", department: "" });
+
+  const isStep1 = singleStep === 1;
+  const stepLabel = isStep1 ? (t.player1 || "Player 1") : (t.player2 || "Player 2");
+  const stepMark = isStep1 ? "O" : "X";
+  const stepColor = isStep1 ? "#ff6b6b" : "#00e5ff";
+
+  const handleSubmit = () => {
+    if (!form.name.trim() || singleSubmitting) return;
+    onSubmit({ ...form });
+  };
+
+  return (
+    <Paper elevation={8} sx={{ p: { xs: 2.5, sm: 3.5 }, borderRadius: 6, bgcolor: "rgba(10,10,20,0.85)", backdropFilter: "blur(16px)", border: "1px solid rgba(255,255,255,0.08)", boxShadow: "0 8px 40px rgba(0,0,0,0.6)", maxWidth: 460, width: "100%" }}>
+      <Stack direction="row" spacing={1} justifyContent="center" sx={{ mb: 2 }}>
+        {[1, 2].map((s) => (
+          <Box key={s} sx={{ width: 36, height: 6, borderRadius: 3, bgcolor: singleStep >= s ? stepColor : "rgba(255,255,255,0.15)", transition: "background 0.3s" }} />
+        ))}
+      </Stack>
+
+      <Typography variant="h5" fontWeight={800} sx={{ color: "#fff", textAlign: "center", mb: 0.5 }}>{game.title}</Typography>
+
+      <Stack direction="row" justifyContent="center" alignItems="center" spacing={1} sx={{ mb: 3 }}>
+        <Typography sx={{ color: stepColor, fontWeight: 700, fontSize: "1rem" }}>{stepLabel}</Typography>
+        <CrossZeroMarkVisual mark={stepMark} xImage={game?.xImage} oImage={game?.oImage} size={22} fallbackSize="1.2rem" />
+      </Stack>
+
+      <Stack spacing={2}>
+        <TextField
+          label={t.nameLabel || "Your Name"} required fullWidth
+          value={form.name}
+          onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+          onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+          InputProps={{ sx: { backgroundColor: "rgba(255,255,255,0.1)", color: "#fff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.25)" } } }}
+          InputLabelProps={{ sx: { color: "rgba(255,255,255,0.6)" } }}
+        />
+        <TextField
+          label={t.companyLabel || "Company (optional)"} fullWidth
+          value={form.company}
+          onChange={(e) => setForm((p) => ({ ...p, company: e.target.value }))}
+          InputProps={{ sx: { backgroundColor: "rgba(255,255,255,0.1)", color: "#fff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.25)" } } }}
+          InputLabelProps={{ sx: { color: "rgba(255,255,255,0.6)" } }}
+        />
+        <TextField
+          label={t.departmentLabel || "Department (optional)"} fullWidth
+          value={form.department}
+          onChange={(e) => setForm((p) => ({ ...p, department: e.target.value }))}
+          InputProps={{ sx: { backgroundColor: "rgba(255,255,255,0.1)", color: "#fff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.25)" } } }}
+          InputLabelProps={{ sx: { color: "rgba(255,255,255,0.6)" } }}
+        />
+      </Stack>
+
+      {singleStep === 2 && singleP1 && (
+        <Box sx={{ mt: 2, p: 1.5, borderRadius: 2, bgcolor: "rgba(255,107,107,0.12)", border: "1px solid rgba(255,107,107,0.3)" }}>
+          <Typography sx={{ color: "rgba(255,255,255,0.65)", fontSize: "0.8rem" }}>
+            {t.player1 || "Player 1"}: <Box component="span" sx={{ color: "#ff6b6b", fontWeight: 700 }}>{singleP1.name}</Box>
+          </Typography>
+        </Box>
+      )}
+
+      <Button
+        variant="contained" fullWidth size="large"
+        onClick={handleSubmit}
+        disabled={!form.name.trim() || singleSubmitting}
+        startIcon={singleSubmitting ? <CircularProgress size={18} color="inherit" /> : <ICONS.next />}
+        sx={{ ...getStartIconSpacing(dir), mt: 3, py: 1.2, borderRadius: 999, fontWeight: 800, bgcolor: stepColor, "&:hover": { filter: "brightness(1.15)" }, "&:disabled": { opacity: 0.5 } }}
+      >
+        {isStep1 ? (t.nextPlayer || "Next: Player 2") : (t.startGame || "Start Game")}
+      </Button>
+    </Paper>
+  );
+}
+
 // â”€â”€â”€ Main Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function CrossZeroPlayPage() {
   const { game, loading } = useGame();
@@ -255,7 +356,16 @@ export default function CrossZeroPlayPage() {
   const [soloPlayerName, setSoloPlayerName] = useState("");
   const [playerInfo, setPlayerInfo] = useState(null);
 
-  // Game phase: "difficulty" | "countdown" | "waiting" | "playing" | "result"
+  // Single-screen onboarding state
+  const isSingleScreen = game?.mode === "pvp" && game?.pvpScreenMode === "single";
+  const [singleStep, setSingleStep] = useState(1); // 1 = P1 form, 2 = P2 form
+  const [singleP1, setSingleP1] = useState(null); // { name, company, department, playerId, sessionId }
+  const [singleP2, setSingleP2] = useState(null);
+  const [singleSubmitting, setSingleSubmitting] = useState(false);
+  // Both players' info for single-screen turn display
+  const [singlePlayers, setSinglePlayers] = useState({ p1: null, p2: null });
+
+  // Game phase: "difficulty" | "single-onboarding" | "countdown" | "waiting" | "playing" | "result"
   const [phase, setPhase] = useState(null);
   const [difficulty, setDifficulty] = useState(null);
   const [countdown, setCountdown] = useState(3);
@@ -265,7 +375,7 @@ export default function CrossZeroPlayPage() {
 
   // AI mode local state
   const [board, setBoard] = useState(Array(9).fill(null));
-  const [currentTurn, setCurrentTurn] = useState("X");
+  const [currentTurn, setCurrentTurn] = useState("O");
   const [winResult, setWinResult] = useState(null); // { winner, line } | "draw"
   const [aiThinking, setAiThinking] = useState(false);
   const [aiResultSummary, setAiResultSummary] = useState({ timeTaken: 0, moves: 0 });
@@ -300,7 +410,7 @@ export default function CrossZeroPlayPage() {
 
   // â”€â”€ Init â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
-    const mark = sessionStorage.getItem("playerMark") || "X";
+    const mark = sessionStorage.getItem("playerMark") || "O";
     const pid = sessionStorage.getItem("playerId");
     const sid = sessionStorage.getItem("sessionId");
     const storedPlayerInfo = sessionStorage.getItem("playerInfo");
@@ -322,10 +432,12 @@ export default function CrossZeroPlayPage() {
 
     if (game?.mode === "solo") {
       setPhase("difficulty");
+    } else if (game?.pvpScreenMode === "single") {
+      setPhase("single-onboarding");
     } else {
       setPhase("waiting");
     }
-  }, [game?.mode]);
+  }, [game?.mode, game?.pvpScreenMode]);
 
   const matchingSession = useMemo(() => {
     if (!sessionId) return null;
@@ -426,7 +538,8 @@ export default function CrossZeroPlayPage() {
   }, []);
 
   useEffect(() => {
-    if (game?.mode !== "pvp" || !pendingSession?._id) return;
+    // In single-screen mode, we manage both players ourselves — no abandon timer needed
+    if (game?.mode !== "pvp" || !pendingSession?._id || phase === "single-onboarding" || phase === "single-instructions") return;
 
     const hasP1 = pendingSession.players?.some(
       (player) => player.playerType === "p1" && player.playerId
@@ -467,17 +580,22 @@ export default function CrossZeroPlayPage() {
       winResult &&
       winResult !== "draw" &&
       winResult.winner === playerMark;
+    const isSingleScreenWin =
+      isSingleScreen &&
+      completedPvPSession?.xoStats?.result &&
+      completedPvPSession.xoStats.result !== "draw";
     const isPvPWinner =
       game?.mode === "pvp" &&
+      !isSingleScreen &&
       completedPvPSession?.xoStats?.result === `${playerMark}_wins`;
-    const shouldCelebrate = Boolean(isSoloWinner || isPvPWinner);
+    const shouldCelebrate = Boolean(isSoloWinner || isPvPWinner || isSingleScreenWin);
 
     if (!shouldCelebrate) {
       celebrationPlayedRef.current = false;
       return;
     }
     triggerCelebration();
-  }, [completedPvPSession?.xoStats?.result, game?.mode, phase, playerMark, triggerCelebration, winResult]);
+  }, [completedPvPSession?.xoStats?.result, game?.mode, isSingleScreen, phase, playerMark, triggerCelebration, winResult]);
 
   // â”€â”€ Move timer tick (AI mode only, player's turn only) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
@@ -508,7 +626,7 @@ export default function CrossZeroPlayPage() {
   // â”€â”€ AI move â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   useEffect(() => {
     clearTimeout(aiMoveTimeoutRef.current);
-    if (game?.mode !== "solo" || phase !== "playing" || currentTurn !== "O" || winResult) {
+    if (game?.mode !== "solo" || phase !== "playing" || currentTurn !== "X" || winResult) {
       setAiThinking(false);
       return;
     }
@@ -518,7 +636,7 @@ export default function CrossZeroPlayPage() {
       const b = [...boardRef.current];
       const idx = getAIMove(b, difficulty);
       if (idx !== undefined && idx !== -1 && !b[idx]) {
-        b[idx] = "O";
+        b[idx] = "X";
         const result = checkWinner(b);
         setBoard(b);
         if (result) {
@@ -530,7 +648,7 @@ export default function CrossZeroPlayPage() {
           setPhase("result");
           handleAIGameEnd(b, null);
         } else {
-          setCurrentTurn("X");
+          setCurrentTurn("O");
         }
       }
       setAiThinking(false);
@@ -613,12 +731,17 @@ export default function CrossZeroPlayPage() {
     MARK_PLAYER_TYPE[playerMark] === "p1"
       ? (t.player1 || "Player 1")
       : (t.player2 || "Player 2");
+  const singleScreenWinner = isSingleScreen && activeResult
+    ? (activeResult === "O_wins" ? (singlePlayers.p1?.name || t.player1) : activeResult === "X_wins" ? (singlePlayers.p2?.name || t.player2) : null)
+    : null;
   const resultLabel = isDraw
     ? t.itsDraw
-    : isPlayerWinner
-      ? (isAIMode ? t.playerWins : t.youWin)
-      : (isAIMode ? t.aiWins : t.youLose);
-  const showConfetti = isResult && !isDraw && isPlayerWinner;
+    : isSingleScreen
+      ? (singleScreenWinner ? `${singleScreenWinner} ${t.wins || "Wins!"}` : t.itsDraw)
+      : isPlayerWinner
+        ? (isAIMode ? t.playerWins : t.youWin)
+        : (isAIMode ? t.aiWins : t.youLose);
+  const showConfetti = isResult && !isDraw && (isSingleScreen || isPlayerWinner);
   const playerMarkColor = playerMark === "X" ? "#00e5ff" : "#ff6b6b";
   const opponentMark = playerMark === "X" ? "O" : "X";
   const opponentMarkColor = opponentMark === "X" ? "#00e5ff" : "#ff6b6b";
@@ -639,19 +762,31 @@ export default function CrossZeroPlayPage() {
       };
   const resultBackgroundGradient = isDraw
     ? "linear-gradient(135deg, #FFC107CC, #FF9800CC)"
-    : isPlayerWinner
+    : isSingleScreen
       ? "linear-gradient(135deg, #4CAF50CC, #388E3CCC)"
-      : "linear-gradient(135deg, #F44336CC, #E53935CC)";
+      : isPlayerWinner
+        ? "linear-gradient(135deg, #4CAF50CC, #388E3CCC)"
+        : "linear-gradient(135deg, #F44336CC, #E53935CC)";
   const handlePvPCellClick = useCallback((index) => {
     if (phase !== "playing" || game?.mode !== "pvp") return;
     const xoStats = livePvPSession?.xoStats;
     if (!xoStats) return;
     if (xoStats.result) return;
-    if (xoStats.currentTurn !== playerMark) return;
     if (xoStats.board[index]) return;
-    if (!sessionId || !playerId) return;
-    makeMove(sessionId, playerId, index);
-  }, [phase, game?.mode, livePvPSession, playerMark, sessionId, playerId, makeMove]);
+
+    if (isSingleScreen) {
+      // In single screen mode, find the player whose turn it is and use their ID
+      const currentMark = xoStats.currentTurn;
+      const currentPlayerType = currentMark === "O" ? "p1" : "p2";
+      const currentPlayer = currentPlayerType === "p1" ? singleP1 : singleP2;
+      if (!currentPlayer?.playerId || !sessionId) return;
+      makeMove(sessionId, currentPlayer.playerId, index);
+    } else {
+      if (xoStats.currentTurn !== playerMark) return;
+      if (!sessionId || !playerId) return;
+      makeMove(sessionId, playerId, index);
+    }
+  }, [phase, game?.mode, livePvPSession, playerMark, sessionId, playerId, makeMove, isSingleScreen, singleP1, singleP2]);
 
   const handlePlayerActivate = useCallback(async () => {
     if (!pendingSession?._id || !bothPlayersJoined || starting) return;
@@ -665,9 +800,55 @@ export default function CrossZeroPlayPage() {
     }
   }, [bothPlayersJoined, pendingSession?._id, requestAllSessions, starting]);
 
+  const handleSingleStepSubmit = useCallback(async (formData) => {
+    if (singleSubmitting) return;
+    setSingleSubmitting(true);
+    try {
+      if (singleStep === 1) {
+        const sessionRes = await startGameSession(game?.slug);
+        const newSessionId = sessionRes?.data?._id || sessionRes?._id;
+        if (!newSessionId) return;
+
+        const joinRes = await joinGameSession({
+          gameSlug: game?.slug,
+          sessionId: newSessionId,
+          name: formData.name.trim(),
+          company: formData.company.trim(),
+          department: formData.department.trim(),
+          playerType: "p1",
+        });
+        if (joinRes?.error) return;
+
+        const p1Data = { name: formData.name.trim(), company: formData.company.trim(), department: formData.department.trim(), playerId: joinRes.playerId, playerType: "p1", mark: "O" };
+        setSingleP1(p1Data);
+        setSinglePlayers((prev) => ({ ...prev, p1: p1Data }));
+        setSessionId(newSessionId);
+        setSingleStep(2);
+      } else {
+        const joinRes = await joinGameSession({
+          gameSlug: game?.slug,
+          sessionId,
+          name: formData.name.trim(),
+          company: formData.company.trim(),
+          department: formData.department.trim(),
+          playerType: "p2",
+        });
+        if (joinRes?.error) return;
+
+        const p2Data = { name: formData.name.trim(), company: formData.company.trim(), department: formData.department.trim(), playerId: joinRes.playerId, playerType: "p2", mark: "X" };
+        setSingleP2(p2Data);
+        setSinglePlayers((prev) => ({ ...prev, p2: p2Data }));
+        await activateGameSession(sessionId);
+        setPhase("single-instructions");
+      }
+    } finally {
+      setSingleSubmitting(false);
+    }
+  }, [singleStep, singleSubmitting, game?.slug, sessionId, startCountdown]);
+
   const resetLocalSoloState = () => {
     setBoard(Array(9).fill(null));
-    setCurrentTurn("X");
+    setCurrentTurn("O");
     setWinResult(null);
     setAiThinking(false);
     setAiResultSummary({ timeTaken: 0, moves: 0 });
@@ -705,23 +886,32 @@ export default function CrossZeroPlayPage() {
         );
         sessionStorage.setItem("playerId", res.playerId);
         sessionStorage.setItem("sessionId", res.sessionId);
-        sessionStorage.setItem("playerMark", "X");
+        sessionStorage.setItem("playerMark", "O");
 
         setPlayerId(res.playerId);
         setSessionId(res.sessionId);
-        setPlayerMark("X");
+        setPlayerMark("O");
         setDifficulty(null);
         setPhase("difficulty");
       } finally {
         setReplaying(false);
       }
+    } else if (isSingleScreen) {
+      // Reset single screen state and go back to onboarding
+      setSingleStep(1);
+      setSingleP1(null);
+      setSingleP2(null);
+      setSinglePlayers({ p1: null, p2: null });
+      setSingleStep(1);
+      setSessionId(null);
+      setPhase("single-onboarding");
     } else {
       router.replace(`/crosszero/${game.slug}`);
     }
   };
 
   // â”€â”€â”€ Loading â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-  if (loading || !game || !playerMark) {
+  if (loading || !game || (!playerMark && !isSingleScreen)) {
     return (
       <Box sx={{ height: "100vh", width: "100vw", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <CircularProgress />
@@ -756,6 +946,118 @@ export default function CrossZeroPlayPage() {
   );
 
   // â”€â”€â”€ Phase: difficulty â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ─── Phase: single-onboarding ────────────────────────────────────────────────
+  if (phase === "single-onboarding") {
+    return (
+      <PageWrapper>
+        <SingleOnboardingForm
+          game={game}
+          singleStep={singleStep}
+          singleP1={singleP1}
+          singleSubmitting={singleSubmitting}
+          onSubmit={handleSingleStepSubmit}
+          t={t}
+          dir={dir}
+        />
+      </PageWrapper>
+    );
+  }
+
+  // ─── Phase: single-instructions ──────────────────────────────────────────────
+  if (phase === "single-instructions") {
+    const rules = [
+      t.rule1,
+      t.rule2,
+      t.rule3,
+      t.rule4Pvp,
+    ];
+    return (
+      <PageWrapper>
+        <Paper
+          dir={dir}
+          elevation={8}
+          sx={{
+            p: { xs: 3, sm: 4.5 },
+            borderRadius: 6,
+            bgcolor: "rgba(10,10,20,0.88)",
+            backdropFilter: "blur(16px)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            boxShadow: "0 8px 40px rgba(0,0,0,0.6)",
+            maxWidth: 520,
+            width: "100%",
+          }}
+        >
+          {/* Mark visuals */}
+          <Stack direction="row" justifyContent="center" spacing={1.5} sx={{ mb: 2 }}>
+            <CrossZeroMarkVisual mark="O" xImage={game.xImage} oImage={game.oImage} size={42} fallbackSize="2rem" />
+            <CrossZeroMarkVisual mark="X" xImage={game.xImage} oImage={game.oImage} size={42} fallbackSize="2rem" />
+          </Stack>
+
+          <Typography variant="h4" fontWeight={800} sx={{ color: "#fff", textAlign: "center", mb: 0.5 }}>
+            {game.title}
+          </Typography>
+
+          {/* Both player names */}
+          <Stack direction="row" justifyContent="center" spacing={2} sx={{ mb: 1, flexWrap: "wrap" }}>
+            {[
+              { data: singlePlayers.p1, mark: "O", color: "#ff6b6b", label: t.player1 },
+              { data: singlePlayers.p2, mark: "X", color: "#00e5ff", label: t.player2 },
+            ].map(({ data, mark, color, label }) => (
+              <Stack key={mark} direction="row" alignItems="center" spacing={0.5}>
+                <Typography sx={{ color, fontWeight: 700, fontSize: "0.9rem" }}>
+                  {data?.name || label}
+                </Typography>
+                <CrossZeroMarkVisual mark={mark} xImage={game.xImage} oImage={game.oImage} size={18} fallbackSize="1rem" />
+              </Stack>
+            ))}
+          </Stack>
+
+          <Typography sx={{ color: "rgba(255,255,255,0.5)", textAlign: "center", mb: 2.5, fontSize: "0.85rem" }}>
+            {t.pvpMode}
+          </Typography>
+
+          <Typography variant="h6" fontWeight={700} sx={{ color: "rgba(255,255,255,0.6)", textAlign: "center", mb: 2, fontSize: "0.95rem" }}>
+            {t.howToPlay}
+          </Typography>
+
+          <Stack spacing={1.2} sx={{ mb: 3 }}>
+            {rules.map((rule, i) => (
+              <Stack
+                key={i}
+                direction="row"
+                spacing={1.25}
+                alignItems="flex-start"
+                sx={{ px: 1.5, py: 1.1, borderRadius: 2.5, bgcolor: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}
+              >
+                <Box sx={{ minWidth: 26, height: 26, borderRadius: "50%", bgcolor: "rgba(255,255,255,0.1)", color: "primary.main", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: "0.82rem", mt: 0.1 }}>
+                  {i + 1}
+                </Box>
+                <Typography sx={{ color: "rgba(255,255,255,0.82)", fontSize: "0.92rem", lineHeight: 1.55 }}>
+                  {rule}
+                </Typography>
+              </Stack>
+            ))}
+          </Stack>
+
+          <Typography variant="h6" fontWeight={700} sx={{ color: "#00e5ff", textAlign: "center", mb: 3, textShadow: "0 0 12px rgba(0,229,255,0.4)" }}>
+            {t.goodLuck}
+          </Typography>
+
+          <Button
+            variant="contained"
+            size="large"
+            fullWidth
+            onClick={startCountdown}
+            startIcon={<ICONS.play />}
+            sx={{ ...getStartIconSpacing(dir), py: 1.2, borderRadius: 999, fontWeight: 800 }}
+          >
+            {t.startGame}
+          </Button>
+        </Paper>
+      </PageWrapper>
+    );
+  }
+
   if (phase === "difficulty") {
     const levels = [
       { id: "easy", label: t.easy, desc: t.easyDesc, color: "#00e676", glow: "rgba(0,230,118,0.4)" },
@@ -1168,7 +1470,7 @@ export default function CrossZeroPlayPage() {
             }}
           >
             <Typography variant="h5" fontWeight={700} sx={{ mb: 1, textShadow: "0 0 15px rgba(255,255,255,0.6)" }}>
-              {displayPlayerName || game.title}
+              {isSingleScreen ? game.title : (displayPlayerName || game.title)}
             </Typography>
             <Typography
               variant="h1"
@@ -1185,7 +1487,7 @@ export default function CrossZeroPlayPage() {
               <Typography variant="body1" sx={{ mb: 3, opacity: 0.95 }}>
                 {`${t.vsAI} · ${difficulty}`}
               </Typography>
-            ) : (
+            ) : !isSingleScreen ? (
               <Stack
                 direction="row"
                 spacing={1}
@@ -1204,72 +1506,126 @@ export default function CrossZeroPlayPage() {
                   fallbackSize="1.05rem"
                 />
               </Stack>
-            )}
+            ) : <Box sx={{ mb: 2 }} />}
 
-            <Box
-              sx={{
-                background: "#ffffffaa",
-                backdropFilter: "blur(4px)",
-                p: 2,
-                borderRadius: 2,
-                color: "#000",
-                mb: 3,
-              }}
-            >
-              <Typography variant="h6" sx={{ mb: 1 }}>
-                {displayPlayerName || (t.youAre || "You are")}
-              </Typography>
-              <Box sx={{ display: "flex", justifyContent: "center" }}>
-                <CrossZeroMarkVisual
-                  mark={playerMark}
-                  xImage={game?.xImage}
-                  oImage={game?.oImage}
-                  size={46}
-                  fallbackSize="2.2rem"
-                  color={playerMarkColor}
-                  shadow={`0 0 12px ${playerMarkColor}55`}
-                />
-              </Box>
-              <Typography variant="body1" sx={{ mt: 1 }}>
-                {(t.moves || "Moves")}: {resultSummary.moves ?? 0}
-                <Box component="span" sx={{ mx: 1, color: "text.secondary" }}>|</Box>
-                {t.timeTaken}: {resultSummary.timeTaken ?? 0}{t.seconds}
-              </Typography>
-            </Box>
-
-            <Box
-              sx={{
-                background: "#ffffffaa",
-                backdropFilter: "blur(4px)",
-                p: 2,
-                borderRadius: 2,
-                color: "#000",
-                mb: 3,
-              }}
-            >
-              <Typography variant="h6" sx={{ mb: 1 }}>
-                {isAIMode ? (t.aiOpponent || "AI Opponent") : (t.opponent || "Opponent")}
-              </Typography>
-              <Stack direction="row" spacing={1} justifyContent="center" alignItems="center" flexWrap="wrap">
-                <Typography variant="h4" fontWeight="bold" sx={{ color: opponentMarkColor, textShadow: `0 0 12px ${opponentMarkColor}55` }}>
-                  {isAIMode ? "AI" : (opponentSession?.playerId?.name || (t.opponent || "Opponent"))}
-                </Typography>
-                <CrossZeroMarkVisual
-                  mark={opponentMark}
-                  xImage={game?.xImage}
-                  oImage={game?.oImage}
-                  size={46}
-                  fallbackSize="2.2rem"
-                  color={opponentMarkColor}
-                  shadow={`0 0 12px ${opponentMarkColor}55`}
-                />
+            {isSingleScreen ? (
+              // Single-screen: show both named players with winner highlighted
+              <Stack spacing={1.5} sx={{ mb: 3 }}>
+                {[
+                  { data: singlePlayers.p1, mark: "O", label: t.player1 || "Player 1", color: "#ff6b6b" },
+                  { data: singlePlayers.p2, mark: "X", label: t.player2 || "Player 2", color: "#00e5ff" },
+                ].map(({ data, mark, label, color }) => {
+                  const isWinner = (mark === "O" && activeResult === "O_wins") || (mark === "X" && activeResult === "X_wins");
+                  return (
+                    <Box
+                      key={mark}
+                      sx={{
+                        background: isWinner ? "rgba(255,255,255,0.28)" : "rgba(255,255,255,0.12)",
+                        backdropFilter: "blur(4px)",
+                        p: 2,
+                        borderRadius: 2,
+                        border: isWinner ? "2px solid rgba(255,255,255,0.7)" : "2px solid transparent",
+                        color: "#000",
+                      }}
+                    >
+                      <Stack direction="row" justifyContent="center" alignItems="center" spacing={1} sx={{ mb: 0.5 }}>
+                        <Typography variant="h6" fontWeight={800} sx={{ color: isWinner ? "#fff" : "rgba(255,255,255,0.75)" }}>
+                          {data?.name || label}
+                        </Typography>
+                        <CrossZeroMarkVisual
+                          mark={mark}
+                          xImage={game?.xImage}
+                          oImage={game?.oImage}
+                          size={24}
+                          fallbackSize="1.3rem"
+                          color={color}
+                        />
+                        {isWinner && (
+                          <Typography sx={{ color: "#fff", fontWeight: 800, fontSize: "0.9rem" }}>🏆</Typography>
+                        )}
+                      </Stack>
+                      <Typography variant="body2" sx={{ color: isWinner ? "rgba(255,255,255,0.8)" : "rgba(255,255,255,0.45)", textAlign: "center" }}>
+                        {label}
+                      </Typography>
+                      {isWinner && (
+                        <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.75)", textAlign: "center", mt: 0.5 }}>
+                          {(t.moves || "Moves")}: {resultSummary.moves ?? 0}
+                          <Box component="span" sx={{ mx: 1 }}>|</Box>
+                          {t.timeTaken}: {resultSummary.timeTaken ?? 0}{t.seconds}
+                        </Typography>
+                      )}
+                    </Box>
+                  );
+                })}
               </Stack>
-              {isAIMode && (
-                <Typography variant="body1" sx={{ mt: 1 }}>
-                  {(t.difficultyLabel || "Difficulty")}: {difficulty}
-                </Typography>
-              )}
-            </Box>
+            ) : (
+              <>
+                <Box
+                  sx={{
+                    background: "#ffffffaa",
+                    backdropFilter: "blur(4px)",
+                    p: 2,
+                    borderRadius: 2,
+                    color: "#000",
+                    mb: 3,
+                  }}
+                >
+                  <Typography variant="h6" sx={{ mb: 1 }}>
+                    {displayPlayerName || (t.youAre || "You are")}
+                  </Typography>
+                  <Box sx={{ display: "flex", justifyContent: "center" }}>
+                    <CrossZeroMarkVisual
+                      mark={playerMark}
+                      xImage={game?.xImage}
+                      oImage={game?.oImage}
+                      size={46}
+                      fallbackSize="2.2rem"
+                      color={playerMarkColor}
+                      shadow={`0 0 12px ${playerMarkColor}55`}
+                    />
+                  </Box>
+                  <Typography variant="body1" sx={{ mt: 1 }}>
+                    {(t.moves || "Moves")}: {resultSummary.moves ?? 0}
+                    <Box component="span" sx={{ mx: 1, color: "text.secondary" }}>|</Box>
+                    {t.timeTaken}: {resultSummary.timeTaken ?? 0}{t.seconds}
+                  </Typography>
+                </Box>
+
+                <Box
+                  sx={{
+                    background: "#ffffffaa",
+                    backdropFilter: "blur(4px)",
+                    p: 2,
+                    borderRadius: 2,
+                    color: "#000",
+                    mb: 3,
+                  }}
+                >
+                  <Typography variant="h6" sx={{ mb: 1 }}>
+                    {isAIMode ? (t.aiOpponent || "AI Opponent") : (t.opponent || "Opponent")}
+                  </Typography>
+                  <Stack direction="row" spacing={1} justifyContent="center" alignItems="center" flexWrap="wrap">
+                    <Typography variant="h4" fontWeight="bold" sx={{ color: opponentMarkColor, textShadow: `0 0 12px ${opponentMarkColor}55` }}>
+                      {isAIMode ? "AI" : (opponentSession?.playerId?.name || (t.opponent || "Opponent"))}
+                    </Typography>
+                    <CrossZeroMarkVisual
+                      mark={opponentMark}
+                      xImage={game?.xImage}
+                      oImage={game?.oImage}
+                      size={46}
+                      fallbackSize="2.2rem"
+                      color={opponentMarkColor}
+                      shadow={`0 0 12px ${opponentMarkColor}55`}
+                    />
+                  </Stack>
+                  {isAIMode && (
+                    <Typography variant="body1" sx={{ mt: 1 }}>
+                      {(t.difficultyLabel || "Difficulty")}: {difficulty}
+                    </Typography>
+                  )}
+                </Box>
+              </>
+            )}
 
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5}>
               <Button
@@ -1327,42 +1683,31 @@ export default function CrossZeroPlayPage() {
       >
         {/* Header */}
         <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+          {/* Left: title + mode subtitle (AI only) */}
           <Box>
-            <Typography sx={{ color: "#fff", fontWeight: 800, fontSize: "1rem" }}>{displayPlayerName || game.title}</Typography>
-            {isAIMode ? (
-              <Typography sx={{ color: "rgba(255,255,255,0.72)", fontSize: "0.78rem" }}>
+            <Typography sx={{ color: "#fff", fontWeight: 800, fontSize: "1rem" }}>{game.title}</Typography>
+            {isAIMode && (
+              <Typography sx={{ color: "rgba(255,255,255,0.55)", fontSize: "0.75rem" }}>
                 {`${t.vsAI} · ${difficulty}`}
               </Typography>
-            ) : (
-              <Stack direction="row" spacing={0.75} alignItems="center" sx={{ flexWrap: "wrap" }}>
-                <Typography sx={{ color: "rgba(255,255,255,0.72)", fontSize: "0.78rem" }}>
-                  {playerRoleLabel || t.vs}
-                </Typography>
-                <CrossZeroMarkVisual
-                  mark={playerMark}
-                  xImage={game?.xImage}
-                  oImage={game?.oImage}
-                  size={16}
-                  fallbackSize="0.9rem"
-                />
-              </Stack>
             )}
           </Box>
+          {/* Center / Right: O vs X mark icons */}
           <Stack direction="row" spacing={1} alignItems="center">
-            <CrossZeroMarkVisual
-              mark="X"
-              xImage={game?.xImage}
-              oImage={game?.oImage}
-              size={20}
-              fallbackSize="1.2rem"
-            />
-            <Typography sx={{ color: "rgba(255,255,255,0.55)", fontSize: "0.8rem" }}>vs</Typography>
             <CrossZeroMarkVisual
               mark="O"
               xImage={game?.xImage}
               oImage={game?.oImage}
-              size={20}
-              fallbackSize="1.2rem"
+              size={26}
+              fallbackSize="1.4rem"
+            />
+            <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.75rem", fontWeight: 700 }}>vs</Typography>
+            <CrossZeroMarkVisual
+              mark="X"
+              xImage={game?.xImage}
+              oImage={game?.oImage}
+              size={26}
+              fallbackSize="1.4rem"
             />
           </Stack>
         </Stack>
@@ -1378,6 +1723,54 @@ export default function CrossZeroPlayPage() {
               {resultLabel}
             </Typography>
           </Box>
+        ) : isSingleScreen ? (
+          /* Single screen: player name cards with active turn highlighted */
+          <Stack direction="row" spacing={1.5} sx={{ mb: 2 }} alignItems="stretch">
+            {[
+              { player: singlePlayers.p1, mark: "O", color: "#ff6b6b", label: t.player1 || "Player 1" },
+              { player: singlePlayers.p2, mark: "X", color: "#00e5ff", label: t.player2 || "Player 2" },
+            ].map(({ player, mark, color, label }) => {
+              const isActive = activeTurn === mark && !isResult;
+              return (
+                <Box
+                  key={mark}
+                  sx={{
+                    flex: 1,
+                    borderRadius: 3,
+                    p: 1.5,
+                    border: `2px solid ${isActive ? color : "rgba(255,255,255,0.1)"}`,
+                    bgcolor: isActive ? `${color}18` : "rgba(255,255,255,0.04)",
+                    boxShadow: isActive ? `0 0 18px ${color}55` : "none",
+                    transition: "all 0.35s ease",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: 0.5,
+                    position: "relative",
+                    overflow: "hidden",
+                  }}
+                >
+                  {isActive && (
+                    <Box sx={{
+                      position: "absolute", top: 0, left: 0, right: 0, height: 3,
+                      bgcolor: color,
+                      boxShadow: `0 0 10px ${color}`,
+                      borderRadius: "3px 3px 0 0",
+                    }} />
+                  )}
+                  <CrossZeroMarkVisual mark={mark} xImage={game?.xImage} oImage={game?.oImage} size={20} fallbackSize="1.1rem" color={isActive ? color : "rgba(255,255,255,0.35)"} shadow={isActive ? `0 0 10px ${color}` : "none"} />
+                  <Typography sx={{ color: isActive ? "#fff" : "rgba(255,255,255,0.45)", fontWeight: isActive ? 800 : 500, fontSize: "0.82rem", textAlign: "center", lineHeight: 1.2 }}>
+                    {player?.name || label}
+                  </Typography>
+                  {isActive && (
+                    <Typography sx={{ color, fontSize: "0.7rem", fontWeight: 700, letterSpacing: 0.5 }}>
+                      {t.yourTurn || "Your Turn"}
+                    </Typography>
+                  )}
+                </Box>
+              );
+            })}
+          </Stack>
         ) : (
           <Box sx={{ textAlign: "center", mb: 2 }}>
             <Typography sx={{
@@ -1406,28 +1799,30 @@ export default function CrossZeroPlayPage() {
               index={i}
               onClick={isAIMode ? handleCellClick : handlePvPCellClick}
               isWinning={winLine?.includes(i)}
-              disabled={aiThinking || (!isAIMode && activeTurn !== playerMark)}
+              disabled={aiThinking || (!isAIMode && !isSingleScreen && activeTurn !== playerMark)}
               xImage={game?.xImage}
               oImage={game?.oImage}
             />
           ))}
         </Box>
 
-        {/* My mark indicator */}
-        <Stack direction="row" justifyContent="center" spacing={1} sx={{ mb: 0.5 }} alignItems="center">
-          <Typography sx={{ color: "rgba(255,255,255,0.72)", fontSize: "0.8rem" }}>
-            {t.youAre || "You are"}:
-          </Typography>
-          <CrossZeroMarkVisual
-            mark={playerMark}
-            xImage={game?.xImage}
-            oImage={game?.oImage}
-            size={16}
-            fallbackSize="0.9rem"
-            color={playerMarkColor}
-            shadow={`0 0 8px ${playerMarkColor}`}
-          />
-        </Stack>
+        {/* My mark indicator — hidden in single screen mode */}
+        {!isSingleScreen && (
+          <Stack direction="row" justifyContent="center" spacing={1} sx={{ mb: 0.5 }} alignItems="center">
+            <Typography sx={{ color: "rgba(255,255,255,0.72)", fontSize: "0.8rem" }}>
+              {t.youAre || "You are"}:
+            </Typography>
+            <CrossZeroMarkVisual
+              mark={playerMark}
+              xImage={game?.xImage}
+              oImage={game?.oImage}
+              size={16}
+              fallbackSize="0.9rem"
+              color={playerMarkColor}
+              shadow={`0 0 8px ${playerMarkColor}`}
+            />
+          </Stack>
+        )}
       </Paper>
     </PageWrapper>
   );

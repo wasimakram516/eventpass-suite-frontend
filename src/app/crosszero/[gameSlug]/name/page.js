@@ -58,7 +58,7 @@ export default function CrossZeroNamePage() {
       );
       sessionStorage.setItem("playerId", res.playerId);
       sessionStorage.setItem("sessionId", res.sessionId);
-      sessionStorage.setItem("playerMark", "X");
+      sessionStorage.setItem("playerMark", "O");
       router.push(`/crosszero/${game.slug}/instructions`);
     } else {
       setError(res?.message || "Something went wrong. Try again.");
@@ -118,10 +118,11 @@ export default function CrossZeroNamePage() {
             width: "100%",
             maxWidth: 520,
             textAlign: "center",
-            backdropFilter: "blur(10px)",
-            backgroundColor: "rgba(255,255,255,0.6)",
+            backdropFilter: "blur(16px)",
+            backgroundColor: "rgba(10,10,20,0.85)",
             borderRadius: 6,
-            boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            boxShadow: "0 8px 40px rgba(0,0,0,0.6)",
           }}
         >
           {/* Mode header icons */}
@@ -138,10 +139,10 @@ export default function CrossZeroNamePage() {
             )}
           </Stack>
 
-          <Typography variant="h4" fontWeight={800} sx={{ color: "primary.main", mb: 0.5 }}>
+          <Typography variant="h4" fontWeight={800} sx={{ color: "#fff", mb: 0.5 }}>
             {game.title}
           </Typography>
-          <Typography sx={{ color: "rgba(15,23,42,0.6)", mb: 3, fontSize: "0.9rem", fontWeight: 600 }}>
+          <Typography sx={{ color: "rgba(255,255,255,0.5)", mb: 3, fontSize: "0.9rem", fontWeight: 600 }}>
             {t.aiMode}
           </Typography>
 
@@ -152,21 +153,21 @@ export default function CrossZeroNamePage() {
               px: 2.5,
               py: 1,
               borderRadius: 3,
-              border: "1.5px solid rgba(0,229,255,0.4)",
-              bgcolor: "rgba(0,229,255,0.06)",
+              border: "1.5px solid rgba(255,107,107,0.4)",
+              bgcolor: "rgba(255,107,107,0.12)",
               display: "inline-flex",
               alignItems: "center",
               gap: 1,
             }}
           >
-            <Typography sx={{ color: "#00e5ff", fontWeight: 700, fontSize: "0.9rem" }}>
+            <Typography sx={{ color: "#ff6b6b", fontWeight: 700, fontSize: "0.9rem" }}>
               {t.youPlayAs}:
             </Typography>
-            {game.xImage ? (
-              <Box component="img" src={game.xImage} alt="X" sx={{ width: 28, height: 28, objectFit: "contain" }} />
+            {game.oImage ? (
+              <Box component="img" src={game.oImage} alt="O" sx={{ width: 28, height: 28, objectFit: "contain" }} />
             ) : (
-              <Typography sx={{ fontSize: "1.4rem", fontWeight: 900, color: "#00e5ff", textShadow: "0 0 12px rgba(0,229,255,0.6)", lineHeight: 1 }}>
-                ✕
+              <Typography sx={{ fontSize: "1.4rem", fontWeight: 900, color: "#ff6b6b", textShadow: "0 0 12px rgba(255,107,107,0.6)", lineHeight: 1 }}>
+                ○
               </Typography>
             )}
           </Box>
@@ -179,7 +180,8 @@ export default function CrossZeroNamePage() {
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
             onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-            InputProps={{ sx: { backgroundColor: "rgba(255,255,255,0.75)" } }}
+            InputProps={{ sx: { backgroundColor: "rgba(255,255,255,0.1)", color: "#fff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.25)" } } }}
+            InputLabelProps={{ sx: { color: "rgba(255,255,255,0.6)" } }}
           />
           <TextField
             label={t.companyLabel}
@@ -187,7 +189,8 @@ export default function CrossZeroNamePage() {
             sx={{ mb: 2.5 }}
             value={form.company}
             onChange={(e) => setForm({ ...form, company: e.target.value })}
-            InputProps={{ sx: { backgroundColor: "rgba(255,255,255,0.75)" } }}
+            InputProps={{ sx: { backgroundColor: "rgba(255,255,255,0.1)", color: "#fff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.25)" } } }}
+            InputLabelProps={{ sx: { color: "rgba(255,255,255,0.6)" } }}
           />
           <TextField
             label={t.departmentLabel}
@@ -195,7 +198,8 @@ export default function CrossZeroNamePage() {
             sx={{ mb: 3 }}
             value={form.department}
             onChange={(e) => setForm({ ...form, department: e.target.value })}
-            InputProps={{ sx: { backgroundColor: "rgba(255,255,255,0.75)" } }}
+            InputProps={{ sx: { backgroundColor: "rgba(255,255,255,0.1)", color: "#fff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.25)" } } }}
+            InputLabelProps={{ sx: { color: "rgba(255,255,255,0.6)" } }}
           />
 
           <Button
