@@ -299,7 +299,7 @@ export default function DigiPassDashboard() {
           alignItems: "center",
           px: 2,
           pt: { xs: "12vw", sm: "6vw", md: "3vw" },
-          pb: "clamp(300px, 55vw, 420px)",
+          pb: "clamp(480px, 78vw, 600px)",
           gap: { xs: 1, sm: 1.5 },
         }}
       >
@@ -408,8 +408,8 @@ export default function DigiPassDashboard() {
           borderRadius: "24px 24px 0 0",
           backgroundColor: "white",
           px: { xs: 2, sm: 3 },
-          pt: { xs: 3, sm: 3.5 },
-          pb: { xs: 3.5, sm: 4 },
+          pt: { xs: 1, sm: 1.5 },
+          pb: { xs: 14, sm: 16 },
           display: "flex",
           flexDirection: "column",
           gap: { xs: 1.5, sm: 2 },
@@ -422,7 +422,7 @@ export default function DigiPassDashboard() {
             <Box
               sx={{
                 "& canvas": {
-                  width: "clamp(160px, 38vw, 240px) !important",
+                  width: "clamp(180px, 42vw, 260px) !important",
                   height: "auto !important",
                 },
               }}
