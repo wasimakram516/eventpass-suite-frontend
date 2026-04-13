@@ -163,14 +163,14 @@ export default function TapMatchNamePage() {
           />
 
           {/* Phone */}
-          <TextField
+          {/* <TextField
             label={t.phoneLabel}
             type="number"
             fullWidth
             sx={{ mb: 4 }}
             value={form.phone}
             onChange={(e) => setForm({ ...form, phone: e.target.value })}
-          />
+          /> */}
 
           {/* Company */}
           {/* <TextField

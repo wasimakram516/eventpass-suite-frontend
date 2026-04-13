@@ -176,14 +176,14 @@ export default function CrossZeroNamePage() {
             label={t.nameLabel}
             fullWidth
             required
-            sx={{ mb: 2.5 }}
+            sx={{ mb: 3 }}
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
             onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
             InputProps={{ sx: { backgroundColor: "rgba(255,255,255,0.1)", color: "#fff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.25)" } } }}
             InputLabelProps={{ sx: { color: "rgba(255,255,255,0.6)" } }}
           />
-          <TextField
+          {/* <TextField
             label={t.companyLabel}
             fullWidth
             sx={{ mb: 2.5 }}
@@ -200,7 +200,7 @@ export default function CrossZeroNamePage() {
             onChange={(e) => setForm({ ...form, department: e.target.value })}
             InputProps={{ sx: { backgroundColor: "rgba(255,255,255,0.1)", color: "#fff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.25)" } } }}
             InputLabelProps={{ sx: { color: "rgba(255,255,255,0.6)" } }}
-          />
+          /> */}
 
           <Button
             variant="contained"
