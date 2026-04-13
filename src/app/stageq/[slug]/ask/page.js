@@ -77,7 +77,6 @@ export default function AskQuestionsPage() {
   const userCompany = typeof window !== "undefined" ? sessionStorage.getItem(`stageq_company_${slug}`) : null;
 
   const [session, setSession] = useState(null);
-  const [event, setEvent] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [translatedQuestionTexts, setTranslatedQuestionTexts] = useState({});
   const [loading, setLoading] = useState(true);
@@ -104,7 +103,7 @@ export default function AskQuestionsPage() {
   useStageQSocket({
     sessionSlug: slug,
     onVoteUpdated: handleVoteUpdated,
-    onNewQuestion: handleNewQuestion,
+    onNewQuestionAdmin: handleNewQuestion,
     onTextUpdated: handleTextUpdated,
     onQuestionDeleted: handleQuestionDeleted,
   });
@@ -141,14 +140,6 @@ export default function AskQuestionsPage() {
     ]).then(async ([sessionData, questionsData]) => {
       if (sessionData && !sessionData.error) {
         setSession(sessionData);
-        const eventId = sessionData.linkedEventRegId?._id || sessionData.linkedEventRegId;
-        if (eventId) {
-          try {
-            const { getPublicEventById } = await import("@/services/eventreg/eventService");
-            const eventData = await getPublicEventById(eventId);
-            if (eventData && !eventData.error) setEvent(eventData);
-          } catch { /* ignore */ }
-        }
         // Redirect to verify if session requires verification and no reg ID
         if (sessionData.linkedEventRegId && sessionData.primaryField && !registrationId) {
           router.replace(`/stageq/${slug}`);
@@ -162,7 +153,7 @@ export default function AskQuestionsPage() {
     });
   }, [slug]);
 
-  const background = useMemo(() => getEventBackground(event, currentLang), [event, currentLang]);
+  const background = useMemo(() => getEventBackground(session, currentLang), [session, currentLang]);
 
   const voteStorageKey = `stageq_voted_${registrationId || slug}`;
 

@@ -206,13 +206,13 @@ export default function NamePage() {
           />
 
           {/* Company */}
-          <TextField
+          {/* <TextField
             label={t.companyLabel}
             fullWidth
             sx={{ mb: 3 }}
             value={form.company}
             onChange={(e) => setForm({ ...form, company: e.target.value })}
-          />
+          /> */}
 
           {/* Submit */}
           <Button

@@ -29,8 +29,8 @@ const translations = {
     rule1: "The board has 9 cells in a 3×3 grid.",
     rule2: "Players take turns placing their mark in an empty cell.",
     rule3: "Match 3 marks in a row to win. If the board fills first, it's a draw.",
-    rule4Solo: "In AI mode, you play as X and the AI plays as O.",
-    rule4Pvp: "In PvP mode, Player 1 is X and Player 2 is O.",
+    rule4Solo: "In AI mode, you play as O (go first) and the AI plays as X.",
+    rule4Pvp: "In PvP mode, Player 1 plays as O (goes first) and Player 2 plays as X.",
     goodLuck: "Good Luck!",
     start: "Start Game",
   },
@@ -44,8 +44,8 @@ const translations = {
     rule1: "تتكون اللوحة من 9 خانات ضمن شبكة 3×3.",
     rule2: "يتناوب اللاعبون على وضع علامتهم داخل خانة فارغة.",
     rule3: "كوّن 3 علامات في صف واحد للفوز. وإذا امتلأت اللوحة أولًا تنتهي المباراة بالتعادل.",
-    rule4Solo: "في وضع الذكاء الاصطناعي تلعب بعلامة X بينما يلعب الذكاء الاصطناعي بعلامة O.",
-    rule4Pvp: "في وضع لاعب ضد لاعب، اللاعب الأول هو X واللاعب الثاني هو O.",
+    rule4Solo: "في وضع الذكاء الاصطناعي تلعب بعلامة O (تبدأ أولاً) بينما يلعب الذكاء الاصطناعي بعلامة X.",
+    rule4Pvp: "في وضع لاعب ضد لاعب، اللاعب الأول يلعب بعلامة O (يبدأ أولاً) واللاعب الثاني يلعب بعلامة X.",
     goodLuck: "حظًا موفقًا!",
     start: "ابدأ اللعبة",
   },
@@ -130,15 +130,16 @@ export default function CrossZeroInstructionsPage() {
 
         <Paper
           dir={dir}
-          elevation={6}
+          elevation={8}
           sx={{
             p: { xs: 3, sm: 5 },
             width: "100%",
             maxWidth: 560,
-            backdropFilter: "blur(10px)",
-            backgroundColor: "rgba(255,255,255,0.6)",
+            backdropFilter: "blur(16px)",
+            backgroundColor: "rgba(10,10,20,0.85)",
             borderRadius: 6,
-            boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            boxShadow: "0 8px 40px rgba(0,0,0,0.6)",
           }}
         >
           <Stack direction="row" justifyContent="center" spacing={1.5} sx={{ mb: 2 }}>
@@ -149,7 +150,7 @@ export default function CrossZeroInstructionsPage() {
           <Typography
             variant="h4"
             fontWeight={800}
-            sx={{ color: "primary.main", textAlign: "center", mb: 0.5 }}
+            sx={{ color: "#fff", textAlign: "center", mb: 0.5 }}
           >
             {game.title}
           </Typography>
@@ -157,7 +158,7 @@ export default function CrossZeroInstructionsPage() {
           {playerInfo?.name ? (
             <Typography
               sx={{
-                color: "rgba(15,23,42,0.88)",
+                color: "rgba(255,255,255,0.9)",
                 textAlign: "center",
                 mb: 0.5,
                 fontWeight: 800,
@@ -170,7 +171,7 @@ export default function CrossZeroInstructionsPage() {
 
           <Typography
             sx={{
-              color: "rgba(15,23,42,0.62)",
+              color: "rgba(255,255,255,0.5)",
               textAlign: "center",
               mb: 1,
               fontSize: "0.9rem",
@@ -191,13 +192,13 @@ export default function CrossZeroInstructionsPage() {
               mx: "auto",
               width: "fit-content",
               borderRadius: 999,
-              bgcolor: "rgba(255,255,255,0.34)",
-              border: "1px solid rgba(255,255,255,0.28)",
+              bgcolor: "rgba(255,255,255,0.08)",
+              border: "1px solid rgba(255,255,255,0.15)",
             }}
           >
             <Typography
               sx={{
-                color: "rgba(15,23,42,0.74)",
+                color: "rgba(255,255,255,0.75)",
                 fontWeight: 700,
                 fontSize: "0.88rem",
               }}
@@ -211,7 +212,7 @@ export default function CrossZeroInstructionsPage() {
             variant="h6"
             fontWeight={700}
             sx={{
-              color: "rgba(15,23,42,0.7)",
+              color: "rgba(255,255,255,0.55)",
               textAlign: "center",
               mb: 3,
               fontSize: "1rem",
@@ -231,8 +232,8 @@ export default function CrossZeroInstructionsPage() {
                   px: 1.5,
                   py: 1.25,
                   borderRadius: 3,
-                  bgcolor: "rgba(255,255,255,0.36)",
-                  border: "1px solid rgba(255,255,255,0.28)",
+                  bgcolor: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.1)",
                 }}
               >
                 <Box
@@ -240,7 +241,7 @@ export default function CrossZeroInstructionsPage() {
                     minWidth: 28,
                     height: 28,
                     borderRadius: "50%",
-                    bgcolor: "rgba(15,23,42,0.08)",
+                    bgcolor: "rgba(255,255,255,0.1)",
                     color: "primary.main",
                     display: "flex",
                     alignItems: "center",
@@ -254,7 +255,7 @@ export default function CrossZeroInstructionsPage() {
                 </Box>
                 <Typography
                   sx={{
-                    color: "rgba(15,23,42,0.82)",
+                    color: "rgba(255,255,255,0.82)",
                     fontSize: "0.95rem",
                     lineHeight: 1.6,
                   }}

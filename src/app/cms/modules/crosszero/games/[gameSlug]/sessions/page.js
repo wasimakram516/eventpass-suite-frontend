@@ -165,10 +165,10 @@ export default function CrossZeroPvPSessionsPage() {
                       <Grid container spacing={3} direction={{ xs: "column", sm: "row" }} alignItems="stretch" justifyContent="space-between">
                         {/* P1 */}
                         <Grid item xs={12} sm={5.5}>
-                          <Box sx={{ bgcolor: xoStats.result === "X_wins" ? "rgba(0,180,216,0.08)" : "grey.50", borderRadius: 3, p: 2.5, height: "100%", display: "flex", flexDirection: "column", gap: 1 }}>
+                          <Box sx={{ bgcolor: xoStats.result === "O_wins" ? "rgba(255,107,107,0.08)" : "grey.50", borderRadius: 3, p: 2.5, height: "100%", display: "flex", flexDirection: "column", gap: 1 }}>
                             <Box sx={{ display: "flex", alignItems: "center", gap: 0.8 }}>
                               <CrossZeroMarkVisual
-                                mark="X"
+                                mark="O"
                                 xImage={game?.xImage}
                                 oImage={game?.oImage}
                                 size={18}
@@ -191,10 +191,10 @@ export default function CrossZeroPvPSessionsPage() {
 
                         {/* P2 */}
                         <Grid item xs={12} sm={5.5}>
-                          <Box sx={{ bgcolor: xoStats.result === "O_wins" ? "rgba(255,107,107,0.08)" : "grey.50", borderRadius: 3, p: 2.5, height: "100%", display: "flex", flexDirection: "column", gap: 1, textAlign: { xs: "left", sm: "right" }, alignItems: { xs: "flex-start", sm: "flex-end" } }}>
+                          <Box sx={{ bgcolor: xoStats.result === "X_wins" ? "rgba(0,180,216,0.08)" : "grey.50", borderRadius: 3, p: 2.5, height: "100%", display: "flex", flexDirection: "column", gap: 1, textAlign: { xs: "left", sm: "right" }, alignItems: { xs: "flex-start", sm: "flex-end" } }}>
                             <Box sx={{ display: "flex", alignItems: "center", gap: 0.8 }}>
                               <CrossZeroMarkVisual
-                                mark="O"
+                                mark="X"
                                 xImage={game?.xImage}
                                 oImage={game?.oImage}
                                 size={18}

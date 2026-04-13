@@ -52,6 +52,8 @@ const translations = {
     delete: "Delete",
     solo: "Solo vs AI",
     pvp: "Multiplayer · PvP",
+    pvpSingle: "Single Screen · PvP",
+    pvpDual: "Dual Screen · PvP",
     disabled: "disabled",
     seconds: "s",
   },
@@ -77,6 +79,8 @@ const translations = {
     delete: "حذف",
     solo: "فردي · ضد الذكاء الاصطناعي",
     pvp: "متعدد اللاعبين · PvP",
+    pvpSingle: "شاشة واحدة · PvP",
+    pvpDual: "شاشتان · PvP",
     disabled: "معطل",
     seconds: "ث",
   },
@@ -206,11 +210,25 @@ export default function CrossZeroGamesPage() {
                     <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 0.5 }}>
                       <Typography variant="h6" fontWeight="bold" noWrap>{g.title}</Typography>
                       <Chip
-                        label={g.mode === "pvp" ? t.pvp : t.solo}
+                        label={
+                          g.mode === "solo"
+                            ? t.solo
+                            : g.pvpScreenMode === "single"
+                              ? (t.pvpSingle || "Single Screen · PvP")
+                              : (t.pvpDual || "Dual Screen · PvP")
+                        }
                         size="small"
                         sx={{
-                          bgcolor: g.mode === "pvp" ? "rgba(123,47,247,0.1)" : "rgba(0,180,216,0.1)",
-                          color: g.mode === "pvp" ? "#7b2ff7" : "#0077b6",
+                          bgcolor: g.mode === "pvp"
+                            ? g.pvpScreenMode === "single"
+                              ? "rgba(0,200,150,0.1)"
+                              : "rgba(123,47,247,0.1)"
+                            : "rgba(0,180,216,0.1)",
+                          color: g.mode === "pvp"
+                            ? g.pvpScreenMode === "single"
+                              ? "#00a878"
+                              : "#7b2ff7"
+                            : "#0077b6",
                           fontWeight: 700, fontSize: "0.7rem",
                         }}
                       />

@@ -157,6 +157,7 @@ const GameFormModal = ({
     xImagePreview: "",
     oImage: null,
     oImagePreview: "",
+    pvpScreenMode: "dual",
   });
 
   const [errors, setErrors] = useState({});
@@ -218,6 +219,7 @@ const GameFormModal = ({
         xImagePreview: "",
         oImage: null,
         oImagePreview: "",
+        pvpScreenMode: "dual",
       });
       setErrors({});
       return;
@@ -251,6 +253,7 @@ const GameFormModal = ({
         moveTimer: initialValues.moveTimer?.toString() || "0",
         xImagePreview: initialValues.xImage || "",
         oImagePreview: initialValues.oImage || "",
+        pvpScreenMode: initialValues.pvpScreenMode || "dual",
       }));
 
       setErrors({});
@@ -731,6 +734,7 @@ const GameFormModal = ({
       if (isCrossZero) {
         payload.mode = form.mode;
         payload.moveTimer = Number(form.moveTimer) || 0;
+        payload.pvpScreenMode = form.mode === "pvp" ? form.pvpScreenMode : "dual";
         payload.xImage = xImageUrl || null;
         payload.oImage = oImageUrl || null;
       }
@@ -829,6 +833,22 @@ const GameFormModal = ({
                 <MenuItem value="solo">Solo (vs AI)</MenuItem>
                 <MenuItem value="pvp">Multiplayer (PvP)</MenuItem>
               </TextField>
+              {form.mode === "pvp" && (
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={form.pvpScreenMode === "single"}
+                      onChange={(e) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          pvpScreenMode: e.target.checked ? "single" : "dual",
+                        }))
+                      }
+                    />
+                  }
+                  label="Single Screen Mode (both players on one device, no host needed)"
+                />
+              )}
               <TextField
                 label="Per-Move Timer (seconds, 0 = disabled)"
                 name="moveTimer"
@@ -839,32 +859,13 @@ const GameFormModal = ({
                 inputProps={{ min: 0 }}
               />
 
-              {/* Player X / O custom images (optional) */}
+              {/* Player O / X custom images (optional) — O first since P1=O goes first */}
               <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
-                {/* X Image */}
-                <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", flex: 1, minWidth: 140 }}>
-                  <Button component="label" variant="outlined" size="small"
-                    sx={{ borderColor: "#00e5ff", color: "#00e5ff", "&:hover": { borderColor: "#00b8d4", bgcolor: "rgba(0,229,255,0.06)" } }}>
-                    Player ✕ Image <Typography component="span" variant="caption" sx={{ ml: 0.5, opacity: 0.6 }}>(optional)</Typography>
-                    <input hidden type="file" accept="image/*" onChange={(e) => handleFileChange(e, "xImage")} />
-                  </Button>
-                  {form.xImagePreview && (
-                    <Box sx={{ mt: 1, position: "relative", display: "inline-block" }}>
-                      <img src={form.xImagePreview} alt="X preview"
-                        style={{ width: 64, height: 64, borderRadius: 8, objectFit: "cover", border: "2px solid #00e5ff" }} />
-                      <IconButton size="small" onClick={() => setForm((p) => ({ ...p, xImage: null, xImagePreview: "" }))}
-                        sx={{ position: "absolute", top: -8, right: -8, bgcolor: "background.paper", border: "1px solid #ccc", p: 0.3 }}>
-                        <ICONS.close sx={{ fontSize: 14 }} />
-                      </IconButton>
-                    </Box>
-                  )}
-                </Box>
-
-                {/* O Image */}
+                {/* O Image (Player 1) */}
                 <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", flex: 1, minWidth: 140 }}>
                   <Button component="label" variant="outlined" size="small"
                     sx={{ borderColor: "#ff6b6b", color: "#ff6b6b", "&:hover": { borderColor: "#e53935", bgcolor: "rgba(255,107,107,0.06)" } }}>
-                    Player ○ Image <Typography component="span" variant="caption" sx={{ ml: 0.5, opacity: 0.6 }}>(optional)</Typography>
+                    Player 1 ○ Image <Typography component="span" variant="caption" sx={{ ml: 0.5, opacity: 0.6 }}>(optional)</Typography>
                     <input hidden type="file" accept="image/*" onChange={(e) => handleFileChange(e, "oImage")} />
                   </Button>
                   {form.oImagePreview && (
@@ -872,6 +873,25 @@ const GameFormModal = ({
                       <img src={form.oImagePreview} alt="O preview"
                         style={{ width: 64, height: 64, borderRadius: 8, objectFit: "cover", border: "2px solid #ff6b6b" }} />
                       <IconButton size="small" onClick={() => setForm((p) => ({ ...p, oImage: null, oImagePreview: "" }))}
+                        sx={{ position: "absolute", top: -8, right: -8, bgcolor: "background.paper", border: "1px solid #ccc", p: 0.3 }}>
+                        <ICONS.close sx={{ fontSize: 14 }} />
+                      </IconButton>
+                    </Box>
+                  )}
+                </Box>
+
+                {/* X Image (Player 2) */}
+                <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", flex: 1, minWidth: 140 }}>
+                  <Button component="label" variant="outlined" size="small"
+                    sx={{ borderColor: "#00e5ff", color: "#00e5ff", "&:hover": { borderColor: "#00b8d4", bgcolor: "rgba(0,229,255,0.06)" } }}>
+                    Player 2 ✕ Image <Typography component="span" variant="caption" sx={{ ml: 0.5, opacity: 0.6 }}>(optional)</Typography>
+                    <input hidden type="file" accept="image/*" onChange={(e) => handleFileChange(e, "xImage")} />
+                  </Button>
+                  {form.xImagePreview && (
+                    <Box sx={{ mt: 1, position: "relative", display: "inline-block" }}>
+                      <img src={form.xImagePreview} alt="X preview"
+                        style={{ width: 64, height: 64, borderRadius: 8, objectFit: "cover", border: "2px solid #00e5ff" }} />
+                      <IconButton size="small" onClick={() => setForm((p) => ({ ...p, xImage: null, xImagePreview: "" }))}
                         sx={{ position: "absolute", top: -8, right: -8, bgcolor: "background.paper", border: "1px solid #ccc", p: 0.3 }}>
                         <ICONS.close sx={{ fontSize: 14 }} />
                       </IconButton>

@@ -41,6 +41,14 @@ export default function CrossZeroLobby() {
 
   const handlePvP = async () => {
     if (!game?.slug || starting) return;
+
+    // Single screen mode: go directly to play page — onboarding happens there
+    if (game.pvpScreenMode === "single") {
+      router.replace(`/crosszero/${game.slug}/play`);
+      return;
+    }
+
+    // Dual screen mode: create session then send player to join page
     const alreadyPending = sessions?.some((s) => s.status === "pending");
     if (alreadyPending) {
       router.replace(`/crosszero/${game.slug}/player`);
@@ -83,29 +91,38 @@ export default function CrossZeroLobby() {
         }}
       >
         <Paper
-          elevation={6}
+          elevation={8}
           sx={{
             textAlign: "center",
             p: { xs: 3, sm: 5 },
             maxWidth: 480,
             width: "100%",
-            backdropFilter: "blur(10px)",
-            backgroundColor: "rgba(255,255,255,0.6)",
+            backdropFilter: "blur(16px)",
+            backgroundColor: "rgba(10,10,20,0.85)",
             borderRadius: 6,
-            boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            boxShadow: "0 8px 40px rgba(0,0,0,0.6)",
           }}
         >
           {/* X O decorative */}
           <Stack direction="row" justifyContent="center" spacing={2} sx={{ mb: 2 }}>
-            <Typography sx={{ fontSize: "2.5rem", fontWeight: 900, color: "#00e5ff", textShadow: "0 0 20px #00e5ff" }}>✕</Typography>
-            <Typography sx={{ fontSize: "2.5rem", fontWeight: 900, color: "#ff6b6b", textShadow: "0 0 20px #ff6b6b" }}>○</Typography>
+            {game.xImage ? (
+              <Box component="img" src={game.xImage} alt="X" sx={{ width: 48, height: 48, objectFit: "contain", filter: "drop-shadow(0 0 10px #00e5ff)" }} />
+            ) : (
+              <Typography sx={{ fontSize: "2.5rem", fontWeight: 900, color: "#00e5ff", textShadow: "0 0 20px #00e5ff", lineHeight: 1 }}>✕</Typography>
+            )}
+            {game.oImage ? (
+              <Box component="img" src={game.oImage} alt="O" sx={{ width: 48, height: 48, objectFit: "contain", filter: "drop-shadow(0 0 10px #ff6b6b)" }} />
+            ) : (
+              <Typography sx={{ fontSize: "2.5rem", fontWeight: 900, color: "#ff6b6b", textShadow: "0 0 20px #ff6b6b", lineHeight: 1 }}>○</Typography>
+            )}
           </Stack>
 
-          <Typography variant="h4" fontWeight={800} sx={{ color: "primary.main", mb: 0.5, letterSpacing: 1 }}>
+          <Typography variant="h4" fontWeight={800} sx={{ color: "#fff", mb: 0.5, letterSpacing: 1 }}>
             {game.title}
           </Typography>
 
-          <Typography variant="body2" sx={{ color: "rgba(15,23,42,0.62)", mb: 4 }}>
+          <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.5)", mb: 4 }}>
             {game.mode === "solo" ? t.aiMode : t.pvpMode}
           </Typography>
 

@@ -194,7 +194,7 @@ export default function ManagePollsPage() {
             ...poll,
             name: poll.title,
             pollCount: poll.questionCount ?? poll.questions?.length ?? 0,
-            logoUrl: linkedEvent?.logoUrl || null,
+            logoUrl: poll.logoUrl || null,
         };
     };
 

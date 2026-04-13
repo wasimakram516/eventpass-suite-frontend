@@ -62,7 +62,6 @@ export default function PublicSessionPage() {
   const videoRef = useRef(null);
 
   const [session, setSession] = useState(null);
-  const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isMuted, setIsMuted] = useState(true);
 
@@ -76,24 +75,14 @@ export default function PublicSessionPage() {
   // Fetch session + linked event
   useEffect(() => {
     if (!slug) return;
-    getPublicSessionBySlug(slug).then(async (data) => {
-      if (data && !data.error) {
-        setSession(data);
-        const eventId = data.linkedEventRegId?._id || data.linkedEventRegId;
-        if (eventId) {
-          try {
-            const { getPublicEventById } = await import("@/services/eventreg/eventService");
-            const eventData = await getPublicEventById(eventId);
-            if (eventData && !eventData.error) setEvent(eventData);
-          } catch { /* ignore */ }
-        }
-      }
+    getPublicSessionBySlug(slug).then((data) => {
+      if (data && !data.error) setSession(data);
       setLoading(false);
     });
   }, [slug]);
 
-  // Background from linked event
-  const background = useMemo(() => getEventBackground(event, currentLang), [event, currentLang]);
+  // Background from session's own branding
+  const background = useMemo(() => getEventBackground(session, currentLang), [session, currentLang]);
 
   useEffect(() => {
     if (videoRef.current && background?.fileType === "video" && background?.url) {
@@ -102,7 +91,7 @@ export default function PublicSessionPage() {
   }, [background]);
 
   const needsVerification = !!(session?.linkedEventRegId && session?.primaryField);
-  const logoUrl = event?.logoUrl;
+  const logoUrl = session?.logoUrl;
 
   const handleVerify = async () => {
     if (!fieldValue.trim() || !slug) return;

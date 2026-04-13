@@ -33,8 +33,8 @@ const translations = {
     selectSide: "Please select X or O to continue.",
     player1: "Player 1",
     player2: "Player 2",
-    markX: "Plays first",
-    markO: "Plays second",
+    markX: "Plays second",
+    markO: "Plays first",
     waitingSession: "Waiting for a session to be created...",
   },
   ar: {
@@ -48,8 +48,8 @@ const translations = {
     selectSide: "يرجى اختيار ✕ أو ○ للمتابعة.",
     player1: "اللاعب الأول",
     player2: "اللاعب الثاني",
-    markX: "يلعب أولاً",
-    markO: "يلعب ثانياً",
+    markX: "يلعب ثانياً",
+    markO: "يلعب أولاً",
     waitingSession: "بانتظار إنشاء جلسة...",
   },
 };
@@ -58,24 +58,24 @@ const PLAYER_OPTIONS = [
   {
     id: "p1",
     labelKey: "player1",
-    helperKey: "markX",
-    symbol: "✕",
-    mark: "X",
-    color: "#00e5ff",
-    glow: "rgba(0,229,255,0.5)",
-  },
-  {
-    id: "p2",
-    labelKey: "player2",
     helperKey: "markO",
     symbol: "○",
     mark: "O",
     color: "#ff6b6b",
     glow: "rgba(255,107,107,0.5)",
   },
+  {
+    id: "p2",
+    labelKey: "player2",
+    helperKey: "markX",
+    symbol: "✕",
+    mark: "X",
+    color: "#00e5ff",
+    glow: "rgba(0,229,255,0.5)",
+  },
 ];
 
-const MARK_MAP = { p1: "X", p2: "O" };
+const MARK_MAP = { p1: "O", p2: "X" };
 
 export default function CrossZeroPlayerPage() {
   const router = useRouter();
@@ -195,16 +195,17 @@ export default function CrossZeroPlayerPage() {
 
         <Paper
           dir={dir}
-          elevation={6}
+          elevation={8}
           sx={{
             p: { xs: 3, sm: 4 },
             width: "100%",
             maxWidth: 520,
             textAlign: "center",
-            backdropFilter: "blur(10px)",
-            backgroundColor: "rgba(255,255,255,0.6)",
+            backdropFilter: "blur(16px)",
+            backgroundColor: "rgba(10,10,20,0.85)",
             borderRadius: 6,
-            boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            boxShadow: "0 8px 40px rgba(0,0,0,0.6)",
           }}
         >
           {/* Mode header icons */}
@@ -221,21 +222,21 @@ export default function CrossZeroPlayerPage() {
             )}
           </Stack>
 
-          <Typography variant="h4" fontWeight={800} sx={{ color: "primary.main", mb: 0.5 }}>
+          <Typography variant="h4" fontWeight={800} sx={{ color: "#fff", mb: 0.5 }}>
             {game.title}
           </Typography>
-          <Typography sx={{ color: "rgba(15,23,42,0.6)", mb: 3, fontSize: "0.9rem", fontWeight: 600 }}>
+          <Typography sx={{ color: "rgba(255,255,255,0.5)", mb: 3, fontSize: "0.9rem", fontWeight: 600 }}>
             {t.pvpMode}
           </Typography>
 
           {/* Side selector */}
-          <Typography sx={{ color: "rgba(15,23,42,0.72)", mb: 1.5, fontWeight: 700 }}>
+          <Typography sx={{ color: "rgba(255,255,255,0.7)", mb: 1.5, fontWeight: 700 }}>
             {t.chooseSide}
           </Typography>
           <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ mb: 3 }}>
             {PLAYER_OPTIONS.map((option) => {
               const isSelected = selected === option.id;
-              const customImage = option.mark === "X" ? game.xImage : game.oImage;
+              const customImage = option.mark === "O" ? game.oImage : game.xImage;
               return (
                 <Paper
                   key={option.id}
@@ -252,10 +253,10 @@ export default function CrossZeroPlayerPage() {
                     borderRadius: 4,
                     border: isSelected
                       ? `2px solid ${option.color}`
-                      : "1px solid rgba(15,23,42,0.08)",
+                      : "1px solid rgba(255,255,255,0.1)",
                     background: isSelected
                       ? "linear-gradient(135deg, rgba(15,23,42,0.96), rgba(15,23,42,0.84))"
-                      : "rgba(255,255,255,0.45)",
+                      : "rgba(255,255,255,0.06)",
                     transition: "all 0.25s ease",
                     "&:hover": { transform: "translateY(-3px)" },
                   }}
@@ -279,7 +280,7 @@ export default function CrossZeroPlayerPage() {
                   <Typography
                     sx={{
                       mt: 0.8,
-                      color: isSelected ? "#fff" : "rgba(15,23,42,0.88)",
+                      color: isSelected ? "#fff" : "rgba(255,255,255,0.85)",
                       fontWeight: 800,
                       fontSize: "0.9rem",
                     }}
@@ -288,7 +289,7 @@ export default function CrossZeroPlayerPage() {
                   </Typography>
                   <Typography
                     sx={{
-                      color: isSelected ? "rgba(255,255,255,0.72)" : "rgba(15,23,42,0.62)",
+                      color: isSelected ? "rgba(255,255,255,0.72)" : "rgba(255,255,255,0.45)",
                       fontSize: "0.76rem",
                     }}
                   >
@@ -308,7 +309,8 @@ export default function CrossZeroPlayerPage() {
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
             onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-            InputProps={{ sx: { backgroundColor: "rgba(255,255,255,0.75)" } }}
+            InputProps={{ sx: { backgroundColor: "rgba(255,255,255,0.1)", color: "#fff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.25)" } } }}
+            InputLabelProps={{ sx: { color: "rgba(255,255,255,0.6)" } }}
           />
           <TextField
             label={t.companyLabel}
@@ -316,7 +318,8 @@ export default function CrossZeroPlayerPage() {
             sx={{ mb: 2.5 }}
             value={form.company}
             onChange={(e) => setForm({ ...form, company: e.target.value })}
-            InputProps={{ sx: { backgroundColor: "rgba(255,255,255,0.75)" } }}
+            InputProps={{ sx: { backgroundColor: "rgba(255,255,255,0.1)", color: "#fff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.25)" } } }}
+            InputLabelProps={{ sx: { color: "rgba(255,255,255,0.6)" } }}
           />
           <TextField
             label={t.departmentLabel}
@@ -324,7 +327,8 @@ export default function CrossZeroPlayerPage() {
             sx={{ mb: 3 }}
             value={form.department}
             onChange={(e) => setForm({ ...form, department: e.target.value })}
-            InputProps={{ sx: { backgroundColor: "rgba(255,255,255,0.75)" } }}
+            InputProps={{ sx: { backgroundColor: "rgba(255,255,255,0.1)", color: "#fff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.25)" } } }}
+            InputLabelProps={{ sx: { color: "rgba(255,255,255,0.6)" } }}
           />
 
           <Button
@@ -352,7 +356,7 @@ export default function CrossZeroPlayerPage() {
           ) : null}
 
           {!pendingSession ? (
-            <Typography sx={{ color: "rgba(15,23,42,0.55)", mt: 2, fontSize: "0.85rem" }}>
+            <Typography sx={{ color: "rgba(255,255,255,0.45)", mt: 2, fontSize: "0.85rem" }}>
               {t.waitingSession}
             </Typography>
           ) : null}

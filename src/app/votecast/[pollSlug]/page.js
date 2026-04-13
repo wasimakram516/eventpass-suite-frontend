@@ -65,7 +65,6 @@ export default function PublicPollPage() {
   const videoRef = useRef(null);
 
   const [poll, setPoll] = useState(null);
-  const [event, setEvent] = useState(null);
   const [translatedPoll, setTranslatedPoll] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isMuted, setIsMuted] = useState(true);
@@ -81,18 +80,8 @@ export default function PublicPollPage() {
   // Fetch poll + linked event
   useEffect(() => {
     if (!pollSlug) return;
-    getPublicPollBySlug(pollSlug).then(async (data) => {
-      if (data && !data.error) {
-        setPoll(data);
-        const eventId = data.linkedEventRegId?._id || data.linkedEventRegId;
-        if (eventId) {
-          try {
-            const { getPublicEventById } = await import("@/services/eventreg/eventService");
-            const eventData = await getPublicEventById(eventId);
-            if (eventData && !eventData.error) setEvent(eventData);
-          } catch { /* ignore */ }
-        }
-      }
+    getPublicPollBySlug(pollSlug).then((data) => {
+      if (data && !data.error) setPoll(data);
       setLoading(false);
     });
   }, [pollSlug]);
@@ -114,8 +103,8 @@ export default function PublicPollPage() {
       .catch(() => setTranslatedPoll(poll));
   }, [poll, currentLang]);
 
-  // Background from linked event, updates on language switch
-  const background = useMemo(() => getEventBackground(event, currentLang), [event, currentLang]);
+  // Background from poll's own branding
+  const background = useMemo(() => getEventBackground(poll, currentLang), [poll, currentLang]);
 
   // Reload video src when background changes due to language switch
   useEffect(() => {
@@ -125,7 +114,7 @@ export default function PublicPollPage() {
   }, [background]);
 
   const needsVerification = !!(poll?.linkedEventRegId && poll?.primaryField);
-  const logoUrl = event?.logoUrl;
+  const logoUrl = poll?.logoUrl;
   const displayPoll = translatedPoll || poll;
 
   const handleVerify = async () => {

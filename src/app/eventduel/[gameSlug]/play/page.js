@@ -1505,7 +1505,7 @@ export default function PlayPage() {
                 variant="contained"
                 color="secondary"
                 size="large"
-                onClick={() => router.push(`/eventduel/${game.slug}`)}
+                onClick={() => router.push(`/eventduel/${game.slug}/player`)}
                 startIcon={<ICONS.replay />}
                 sx={getStartIconSpacing(dir)}
               >
@@ -1782,7 +1782,7 @@ export default function PlayPage() {
               variant="contained"
               color="secondary"
               size="large"
-              onClick={() => router.push(`/eventduel/${game.slug}`)}
+              onClick={() => router.push(`/eventduel/${game.slug}/player`)}
               startIcon={<ICONS.replay />}
               sx={getStartIconSpacing(dir)}
             >

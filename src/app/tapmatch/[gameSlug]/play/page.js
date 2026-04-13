@@ -438,7 +438,7 @@ export default function TapMatchPlayPage() {
                   color="primary"
                   startIcon={<Replay />}
                   size="medium"
-                  onClick={() => router.push(`/tapmatch/${game.slug}`)}
+                  onClick={() => router.push(`/tapmatch/${game.slug}/name`)}
                   sx={{
                     borderRadius: 2,
                     px: 4,
@@ -495,7 +495,7 @@ export default function TapMatchPlayPage() {
             sx={{
               color: "#FFD700",
               fontWeight: "bold",
-              fontSize: "clamp(3rem, 10vw, 8rem)",
+              fontSize: "clamp(5rem, 18vw, 14rem)",
               textShadow:
                 "0 0 15px rgba(255,215,0,0.9), 0 0 30px rgba(255,215,0,0.6)",
             }}
@@ -512,33 +512,6 @@ export default function TapMatchPlayPage() {
             >
               {t.countdown}
             </Typography>
-          </Typography>
-        </Box>
-
-        {/* STATS */}
-        <Box
-          sx={{
-            mt: 1,
-            display: "flex",
-            justifyContent: "center",
-            gap: 3,
-            color: "#fff",
-            fontWeight: "bold",
-            textShadow: "0 0 10px rgba(0,0,0,0.5)",
-            fontSize: { xs: "0.9rem", sm: "1rem" },
-          }}
-        >
-          <Typography>
-            {t.moves}: {moves}
-          </Typography>
-          <Typography>
-            {t.matches}: {matchesCount}
-          </Typography>
-          <Typography>
-            {t.misses}: {misses}
-          </Typography>
-          <Typography>
-            {t.accuracy}: {accuracy}%
           </Typography>
         </Box>
 
