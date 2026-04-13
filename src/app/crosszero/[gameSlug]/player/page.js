@@ -86,7 +86,7 @@ export default function CrossZeroPlayerPage() {
   const { t, dir } = useI18nLayout(translations);
 
   const [selected, setSelected] = useState("");
-  const [form, setForm] = useState({ name: "", company: "", department: "" });
+  const [form, setForm] = useState({ name: "" });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -123,16 +123,12 @@ export default function CrossZeroPlayerPage() {
       gameSlug: game.slug,
       sessionId: pendingSession._id,
       name: form.name.trim(),
-      company: form.company.trim(),
-      department: form.department.trim(),
       playerType: selected,
     });
 
     if (!response?.error) {
       const playerInfo = {
         name: form.name.trim(),
-        company: form.company.trim(),
-        department: form.department.trim(),
         playerType: selected,
         mark: response.mark || MARK_MAP[selected] || "X",
         mode: "pvp",
@@ -312,7 +308,7 @@ export default function CrossZeroPlayerPage() {
             InputProps={{ sx: { backgroundColor: "rgba(255,255,255,0.1)", color: "#fff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.25)" } } }}
             InputLabelProps={{ sx: { color: "rgba(255,255,255,0.6)" } }}
           />
-          <TextField
+          {/* <TextField
             label={t.companyLabel}
             fullWidth
             sx={{ mb: 2.5 }}
@@ -329,7 +325,7 @@ export default function CrossZeroPlayerPage() {
             onChange={(e) => setForm({ ...form, department: e.target.value })}
             InputProps={{ sx: { backgroundColor: "rgba(255,255,255,0.1)", color: "#fff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.25)" } } }}
             InputLabelProps={{ sx: { color: "rgba(255,255,255,0.6)" } }}
-          />
+          /> */}
 
           <Button
             variant="contained"

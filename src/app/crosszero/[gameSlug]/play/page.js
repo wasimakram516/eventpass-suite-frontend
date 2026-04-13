@@ -262,7 +262,7 @@ function MoveTimerBar({ seconds, maxSeconds, isMyTurn }) {
 
 // ─── Single-Screen Onboarding Form (isolated to prevent re-render focus loss) ──
 function SingleOnboardingForm({ game, singleStep, singleP1, singleSubmitting, onSubmit, t, dir }) {
-  const [form, setForm] = useState({ name: "", company: "", department: "" });
+  const [form, setForm] = useState({ name: "" });
 
   const isStep1 = singleStep === 1;
   const stepLabel = isStep1 ? (t.player1 || "Player 1") : (t.player2 || "Player 2");
@@ -298,7 +298,7 @@ function SingleOnboardingForm({ game, singleStep, singleP1, singleSubmitting, on
           InputProps={{ sx: { backgroundColor: "rgba(255,255,255,0.1)", color: "#fff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.25)" } } }}
           InputLabelProps={{ sx: { color: "rgba(255,255,255,0.6)" } }}
         />
-        <TextField
+        {/* <TextField
           label={t.companyLabel || "Company (optional)"} fullWidth
           value={form.company}
           onChange={(e) => setForm((p) => ({ ...p, company: e.target.value }))}
@@ -311,7 +311,7 @@ function SingleOnboardingForm({ game, singleStep, singleP1, singleSubmitting, on
           onChange={(e) => setForm((p) => ({ ...p, department: e.target.value }))}
           InputProps={{ sx: { backgroundColor: "rgba(255,255,255,0.1)", color: "#fff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.25)" } } }}
           InputLabelProps={{ sx: { color: "rgba(255,255,255,0.6)" } }}
-        />
+        /> */}
       </Stack>
 
       {singleStep === 2 && singleP1 && (
@@ -359,7 +359,7 @@ export default function CrossZeroPlayPage() {
   // Single-screen onboarding state
   const isSingleScreen = game?.mode === "pvp" && game?.pvpScreenMode === "single";
   const [singleStep, setSingleStep] = useState(1); // 1 = P1 form, 2 = P2 form
-  const [singleP1, setSingleP1] = useState(null); // { name, company, department, playerId, sessionId }
+  const [singleP1, setSingleP1] = useState(null); // { name, playerId, playerType, mark }
   const [singleP2, setSingleP2] = useState(null);
   const [singleSubmitting, setSingleSubmitting] = useState(false);
   // Both players' info for single-screen turn display
@@ -813,13 +813,11 @@ export default function CrossZeroPlayPage() {
           gameSlug: game?.slug,
           sessionId: newSessionId,
           name: formData.name.trim(),
-          company: formData.company.trim(),
-          department: formData.department.trim(),
           playerType: "p1",
         });
         if (joinRes?.error) return;
 
-        const p1Data = { name: formData.name.trim(), company: formData.company.trim(), department: formData.department.trim(), playerId: joinRes.playerId, playerType: "p1", mark: "O" };
+        const p1Data = { name: formData.name.trim(), playerId: joinRes.playerId, playerType: "p1", mark: "O" };
         setSingleP1(p1Data);
         setSinglePlayers((prev) => ({ ...prev, p1: p1Data }));
         setSessionId(newSessionId);
@@ -829,13 +827,11 @@ export default function CrossZeroPlayPage() {
           gameSlug: game?.slug,
           sessionId,
           name: formData.name.trim(),
-          company: formData.company.trim(),
-          department: formData.department.trim(),
           playerType: "p2",
         });
         if (joinRes?.error) return;
 
-        const p2Data = { name: formData.name.trim(), company: formData.company.trim(), department: formData.department.trim(), playerId: joinRes.playerId, playerType: "p2", mark: "X" };
+        const p2Data = { name: formData.name.trim(), playerId: joinRes.playerId, playerType: "p2", mark: "X" };
         setSingleP2(p2Data);
         setSinglePlayers((prev) => ({ ...prev, p2: p2Data }));
         await activateGameSession(sessionId);
@@ -864,7 +860,6 @@ export default function CrossZeroPlayPage() {
 
     if (isAIMode) {
       const name = playerInfo?.name?.trim();
-      const company = playerInfo?.company?.trim() || "";
 
       if (!name || replaying) {
         router.replace(`/crosszero/${game.slug}/name`);
@@ -873,7 +868,7 @@ export default function CrossZeroPlayPage() {
 
       try {
         setReplaying(true);
-        const res = await joinGame(game._id, { name, company });
+        const res = await joinGame(game._id, { name });
 
         if (res?.error || !res?.playerId || !res?.sessionId) {
           router.replace(`/crosszero/${game.slug}/name`);
@@ -882,7 +877,7 @@ export default function CrossZeroPlayPage() {
 
         sessionStorage.setItem(
           "playerInfo",
-          JSON.stringify({ name, company, mode: "solo" })
+          JSON.stringify({ name, mode: "solo" })
         );
         sessionStorage.setItem("playerId", res.playerId);
         sessionStorage.setItem("sessionId", res.sessionId);
@@ -1317,11 +1312,6 @@ export default function CrossZeroPlayPage() {
                 <Typography sx={{ color: "#fff", fontWeight: 700 }}>
                   {p1?.playerId?.name || (t.emptySlot || "Waiting...")}
                 </Typography>
-                {p1?.playerId?.company ? (
-                  <Typography sx={{ color: "rgba(255,255,255,0.58)", fontSize: "0.8rem", mt: 0.25 }}>
-                    {p1.playerId.company}
-                  </Typography>
-                ) : null}
               </Paper>
               <Paper
                 elevation={0}
@@ -1348,11 +1338,6 @@ export default function CrossZeroPlayPage() {
                 <Typography sx={{ color: "#fff", fontWeight: 700 }}>
                   {p2?.playerId?.name || (t.emptySlot || "Waiting...")}
                 </Typography>
-                {p2?.playerId?.company ? (
-                  <Typography sx={{ color: "rgba(255,255,255,0.58)", fontSize: "0.8rem", mt: 0.25 }}>
-                    {p2.playerId.company}
-                  </Typography>
-                ) : null}
               </Paper>
             </Stack>
 
