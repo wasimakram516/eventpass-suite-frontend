@@ -1018,7 +1018,7 @@ export default function PlayPage() {
               alignItems: "flex-end",
               gap: 1,
               position: "absolute",
-              top: { xs: 20, sm: 150 },
+              top: { xs: 10, sm: 20 },
               left: "50%",
               transform: "translateX(-50%)",
             }}

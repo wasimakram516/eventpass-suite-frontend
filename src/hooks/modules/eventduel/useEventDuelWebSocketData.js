@@ -26,7 +26,9 @@ const useEventDuelWebSocketData = (gameSlug) => {
           teamQuestions,
         } = payload;
 
-        const session = populatedSession || payload.session;
+        // payload may be a wrapped object { populatedSession, ...questions }
+        // or a raw session document (legacy/completed paths)
+        const session = populatedSession || (payload._id ? payload : null);
         setCurrentSession(session);
 
         let resolvedQuestions = [];

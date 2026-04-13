@@ -10,6 +10,7 @@ import {
   Grid,
   Paper,
   Stack,
+  CircularProgress,
 } from "@mui/material";
 import { useMessage } from "@/contexts/MessageContext";
 import useWebSocketData from "@/hooks/modules/eventduel/useEventDuelWebSocketData";
@@ -17,6 +18,7 @@ import { useGame } from "@/contexts/GameContext";
 import LanguageSelector from "@/components/LanguageSelector";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { startGameSession } from "@/services/eventduel/gameSessionService";
 
 const translations = {
   en: {
@@ -51,6 +53,7 @@ export default function PlayerSelection() {
 
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [selectedTeamId, setSelectedTeamId] = useState(null);
+  const [starting, setStarting] = useState(false);
 
   const pendingSession = useMemo(
     () => sessions.find((s) => s.status === "pending") || null,
@@ -82,7 +85,7 @@ export default function PlayerSelection() {
     sessionStorage.setItem("selectedTeamName", teamName);
   };
 
-  const handleProceed = () => {
+  const handleProceed = async () => {
     if (game?.isTeamMode && !selectedTeamId) {
       showMessage(t.selectTeam, "error");
       return;
@@ -91,10 +94,21 @@ export default function PlayerSelection() {
       showMessage(t.selectPlayer, "error");
       return;
     }
+    if (starting) return;
+
+    // If no pending session, start one automatically (same as landing page)
     if (!pendingSession || !pendingSession._id) {
-      showMessage(t.noSessionAvailable, "error");
-      return;
+      try {
+        setStarting(true);
+        await startGameSession(game.slug);
+      } catch {
+        showMessage(t.noSessionAvailable, "error");
+        return;
+      } finally {
+        setStarting(false);
+      }
     }
+
     router.push(`/eventduel/${gameSlug}/player/details`);
   };
 
@@ -325,20 +339,25 @@ export default function PlayerSelection() {
             "&:hover": { bgcolor: "transparent" },
           }}
           disabled={
+            starting ||
             (!game?.isTeamMode && !selectedPlayer) ||
             (game?.isTeamMode && !selectedTeamId)
           }
           onClick={handleProceed}
         >
-          <Box sx={{ width: { xs: 150, sm: 200, md: 250 } }}>
-            <Image
-              src="/playGif.gif"
-              alt={t.play}
-              width={250}
-              height={100}
-              layout="responsive"
-            />
-          </Box>
+          {starting ? (
+            <CircularProgress size={36} sx={{ color: "primary.main" }} />
+          ) : (
+            <Box sx={{ width: { xs: 150, sm: 200, md: 250 } }}>
+              <Image
+                src="/playGif.gif"
+                alt={t.play}
+                width={250}
+                height={100}
+                layout="responsive"
+              />
+            </Box>
+          )}
         </Button>
 
         {/* Hint */}
