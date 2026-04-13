@@ -42,7 +42,7 @@ export default function CrossZeroNamePage() {
   const { game, loading } = useGame();
   const router = useRouter();
   const { t, dir } = useI18nLayout(translations);
-  const [form, setForm] = useState({ name: "", company: "", department: "" });
+  const [form, setForm] = useState({ name: "" });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -54,7 +54,7 @@ export default function CrossZeroNamePage() {
     if (!res?.error) {
       sessionStorage.setItem(
         "playerInfo",
-        JSON.stringify({ name: form.name.trim(), company: form.company.trim(), department: form.department.trim(), mode: "solo" })
+        JSON.stringify({ name: form.name.trim(), mode: "solo" })
       );
       sessionStorage.setItem("playerId", res.playerId);
       sessionStorage.setItem("sessionId", res.sessionId);
