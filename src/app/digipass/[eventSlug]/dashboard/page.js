@@ -7,7 +7,6 @@ import {
   Paper,
   CircularProgress,
   LinearProgress,
-  Stack,
   IconButton,
   Card,
 } from "@mui/material";
@@ -31,7 +30,7 @@ export default function DigiPassDashboard() {
   const t = {
     welcome: isArabic ? "مرحباً بك" : "Welcome",
     activities: isArabic ? "الأنشطة" : "Activities",
-    leftOutOf: isArabic ? "متبقي من" : "left out of",
+    completedOutOf: isArabic ? "أنجزت من أصل" : "completed out of",
     soFar: isArabic ? "حتى الآن..." : "So Far So Good!",
     scanQrCode: isArabic ? "امسح رمز QR" : "Scan QR Code",
     allCompleted: isArabic
@@ -213,14 +212,7 @@ export default function DigiPassDashboard() {
     : registration?.customFields
     ? pickFullName(registration.customFields)
     : null;
-  const welcomeMessage = userName
-    ? `${t.welcome}, ${userName}!`
-    : `${t.welcome}!`;
   const token = registration?.token || "";
-  const tasksLeft =
-    maxTasksPerUser !== null && maxTasksPerUser !== undefined
-      ? maxTasksPerUser - tasksCompleted
-      : 0;
   const completedCounterRaw = `${tasksCompleted}/${maxTasksPerUser ?? 0}`;
   const completedCounter = isArabic
     ? toArabicDigits(completedCounterRaw, language)
@@ -299,7 +291,7 @@ export default function DigiPassDashboard() {
           alignItems: "center",
           px: 2,
           pt: { xs: "12vw", sm: "6vw", md: "3vw" },
-          pb: "clamp(480px, 78vw, 600px)",
+          pb: "clamp(520px, 85vw, 650px)",
           gap: { xs: 1, sm: 1.5 },
         }}
       >
@@ -409,7 +401,7 @@ export default function DigiPassDashboard() {
           backgroundColor: "white",
           px: { xs: 2, sm: 3 },
           pt: { xs: 1, sm: 1.5 },
-          pb: { xs: 14, sm: 16 },
+          pb: { xs: 22, sm: 26 },
           display: "flex",
           flexDirection: "column",
           gap: { xs: 1.5, sm: 2 },
@@ -432,7 +424,7 @@ export default function DigiPassDashboard() {
                 size={220}
                 bgColor="#ffffff"
                 fgColor="#000000"
-                includeMargin
+                marginSize={4}
               />
             </Box>
           </Box>
@@ -494,7 +486,7 @@ export default function DigiPassDashboard() {
                 </Box>
               ) : (
                 <Typography sx={{ fontSize: "clamp(0.8rem, 3.5vw, 1rem)", fontWeight: 600, color: "primary.main" }}>
-                  {tasksLeft} {t.leftOutOf} {maxTasksPerUser}
+                  {tasksCompleted} {t.completedOutOf} {maxTasksPerUser}
                 </Typography>
               ))}
 
