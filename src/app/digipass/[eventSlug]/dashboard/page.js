@@ -238,7 +238,7 @@ export default function DigiPassDashboard() {
       }}
       dir={dir}
     >
-      {/* Base Background */}
+      {/* Background — absolute, covers full viewport */}
       {background && background.fileType === "image" && background.url && (
         <Box
           component="img"
@@ -246,8 +246,7 @@ export default function DigiPassDashboard() {
           alt="Background"
           sx={{
             position: "absolute",
-            top: 0,
-            left: 0,
+            inset: 0,
             width: "100%",
             height: "100%",
             objectFit: "cover",
@@ -256,17 +255,7 @@ export default function DigiPassDashboard() {
         />
       )}
       {background?.fileType === "video" && background?.url && (
-        <Box
-          sx={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            zIndex: 0,
-            overflow: "hidden",
-          }}
-        >
+        <Box sx={{ position: "absolute", inset: 0, zIndex: 0, overflow: "hidden" }}>
           <video
             ref={videoRef}
             src={background.url}
@@ -274,67 +263,64 @@ export default function DigiPassDashboard() {
             playsInline
             loop
             muted={isMuted}
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-            }}
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
           />
         </Box>
       )}
 
-      {/* Top 60% Section */}
-      <Box
+      {/* Back Button */}
+      <IconButton
+        onClick={() => router.push(`/digipass/${eventSlug}`)}
         sx={{
-          height: "60%",
-          width: "100%",
-          position: "relative",
-          display: "flex",
-          flexDirection: "column",
-          zIndex: 1,
+          position: "fixed",
+          top: { xs: 10, sm: 20 },
+          left: { xs: 10, sm: 20 },
+          backgroundColor: "primary.main",
+          color: "white",
+          zIndex: 9999,
         }}
       >
-        {/* Back Button */}
-        <IconButton
-          onClick={() => router.push(`/digipass/${eventSlug}`)}
-          sx={{
-            position: "fixed",
-            top: { xs: 10, sm: 20 },
-            left: { xs: 10, sm: 20 },
-            backgroundColor: "primary.main",
-            color: "white",
-            zIndex: 9999,
-          }}
-        >
-          <ICONS.back
-            sx={{
-              fontSize: { xs: 24, md: 32 },
-            }}
-          />
-        </IconButton>
+        <ICONS.back sx={{ fontSize: { xs: 24, md: 32 } }} />
+      </IconButton>
 
+      {/* Language Selector */}
+      <Box dir="ltr">
+        <LanguageSelector top={20} right={20} />
+      </Box>
+
+      {/* ── Main content: welcome + progress image, padded away from the bottom card ── */}
+      <Box
+        sx={{
+          flex: 1,
+          minHeight: 0,
+          zIndex: 1,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          px: 2,
+          pt: { xs: "12vw", sm: "6vw", md: "3vw" },
+          pb: "clamp(300px, 55vw, 420px)",
+          gap: { xs: 1, sm: 1.5 },
+        }}
+      >
         {/* Welcome Text */}
         <Box
           sx={{
-            position: "absolute",
-            top: { xs: "3vh", sm: "2.5vh", md: "2vh" },
-            left: "50%",
-            transform: "translateX(-50%)",
-            zIndex: 100,
+            flexShrink: 0,
             textAlign: "center",
-            whiteSpace: "nowrap",
             backgroundColor: "rgba(0,0,0,0.35)",
             borderRadius: "12px",
-            px: { xs: "3vw", sm: "2vw", md: "1.5vw" },
-            py: { xs: "0.8vh", sm: "0.6vh", md: "0.5vh" },
+            px: { xs: "4vw", sm: "3vw", md: "2vw" },
+            py: { xs: "1vw", sm: "0.8vw" },
             backdropFilter: "blur(4px)",
+            maxWidth: "90vw",
           }}
         >
           <Typography
             sx={{
               color: "white",
-              fontSize: { xs: "4.5vw", sm: "3.8vw", md: "3.2vw" },
-              fontWeight: "500",
+              fontSize: "clamp(0.85rem, 4vw, 1.5rem)",
+              fontWeight: 500,
               lineHeight: 1.2,
               textShadow: "0 1px 6px rgba(0,0,0,0.7)",
             }}
@@ -345,7 +331,7 @@ export default function DigiPassDashboard() {
             <Typography
               sx={{
                 color: "white",
-                fontSize: { xs: "6vw", sm: "5vw", md: "4.5vw" },
+                fontSize: "clamp(1rem, 5.5vw, 2rem)",
                 fontWeight: "bold",
                 lineHeight: 1.2,
                 textShadow: "0 1px 6px rgba(0,0,0,0.7)",
@@ -356,299 +342,185 @@ export default function DigiPassDashboard() {
           )}
         </Box>
 
-        {/* Progress image (CMS-uploaded or default) with progress reveal*/}
+        {/* Progress Image — takes all available space above the bottom card */}
         <Box
           sx={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            width: "90vw",
-            maxHeight: "45vh",
-            zIndex: 3,
-            overflow: "hidden",
+            flex: 1,
+            minHeight: 0,
+            position: "relative",
+            width: "100%",
             display: "flex",
-            alignItems: "flex-start",
+            alignItems: "center",
             justifyContent: "center",
           }}
         >
           <Box
             sx={{
               position: "relative",
+              height: "100%",
+              maxHeight: "100%",
+              maxWidth: "min(90vw, 380px)",
               width: "100%",
-              maxHeight: "45vh",
             }}
           >
-            {/* Grayscale Base Layer (Always Visible) — behind colored reveal */}
             <Box
               component="img"
               src={event?.progressImageUrl || "/Brain.png"}
               alt="Progress"
               sx={{
                 width: "100%",
-                height: "auto",
-                maxHeight: "45vh",
-                display: "block",
+                height: "100%",
                 objectFit: "contain",
+                display: "block",
                 filter: "grayscale(100%)",
-                position: "relative",
-                zIndex: 1,
               }}
             />
-            {/* Colored Reveal Layer (Revealed from Bottom) — on top so full color shows when completed */}
-            {maxTasksPerUser !== null && maxTasksPerUser !== undefined ? (
+            {maxTasksPerUser !== null && maxTasksPerUser !== undefined && (
               <Box
                 component="img"
                 src={event?.progressImageUrl || "/Brain.png"}
                 alt="Progress"
                 sx={{
                   position: "absolute",
-                  top: 0,
-                  left: 0,
+                  inset: 0,
                   width: "100%",
-                  height: "auto",
-                  maxHeight: "45vh",
-                  display: "block",
+                  height: "100%",
                   objectFit: "contain",
                   filter: "grayscale(0%)",
                   clipPath: `inset(${100 - (tasksCompleted / maxTasksPerUser) * 100}% 0 0 0)`,
                   transition: "clip-path 0.5s ease-in-out",
-                  zIndex: 2,
                 }}
               />
-            ) : null}
+            )}
           </Box>
         </Box>
       </Box>
 
-      {/* Bottom 40% Card Section */}
-      <Box
+      {/* Bottom sheet card — absolutely anchored to the bottom of the viewport */}
+      <Paper
+        elevation={6}
         sx={{
-          height: "40%",
-          width: "100%",
-          position: "relative",
-          zIndex: 0,
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          zIndex: 2,
+          borderRadius: "24px 24px 0 0",
+          backgroundColor: "white",
+          px: { xs: 2, sm: 3 },
+          pt: { xs: 3, sm: 3.5 },
+          pb: { xs: 3.5, sm: 4 },
           display: "flex",
-          alignItems: "flex-start",
-          justifyContent: "center",
-          px: 0,
-          pt: { xs: "2vh", sm: "1.5vh", md: "1vh" },
-          pb: { xs: "3vh", sm: "2.5vh", md: "2vh" },
+          flexDirection: "column",
+          gap: { xs: 1.5, sm: 2 },
+          boxShadow: "0 -4px 24px rgba(0,0,0,0.18)",
         }}
       >
-        <Paper
-          elevation={3}
-          sx={{
-            width: "80%",
-            height: "100%",
-            borderRadius: { xs: "20px", sm: "25px", md: "30px" },
-            backgroundColor: "white",
-            p: { xs: "2.5vw", sm: "2vw", md: "1.5vw" },
-            display: "flex",
-            flexDirection: "column",
-            overflow: "hidden",
-            boxSizing: "border-box",
-          }}
-        >
-          {/* QR Code Section */}
-          {token && (
+        {/* QR Code */}
+        {token && (
+          <Box sx={{ display: "flex", justifyContent: "center" }}>
             <Box
               sx={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                mb: { xs: "0.8vh", sm: "0.6vh", md: "0.5vh" },
+                "& canvas": {
+                  width: "clamp(160px, 38vw, 240px) !important",
+                  height: "auto !important",
+                },
               }}
             >
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  "& canvas": {
-                    width: { xs: "30vw", sm: "24vw", md: "19vw" },
-                    height: "auto",
-                    maxWidth: "185px",
-                    maxHeight: "185px",
-                  },
-                }}
-              >
-                <QRCodeCanvas
-                  value={token}
-                  size={220}
-                  bgColor="#ffffff"
-                  fgColor="#000000"
-                  includeMargin
-                />
-              </Box>
-            </Box>
-          )}
-
-          {/* Activities Title */}
-          <Typography
-            sx={{
-              fontSize: { xs: "4.5vw", sm: "3.8vw", md: "3vw" },
-              fontWeight: "bold",
-              color: "primary.main",
-              mb: { xs: "0.8vh", sm: "0.6vh", md: "0.5vh" },
-              lineHeight: 1.2,
-              textAlign: "center",
-            }}
-          >
-            {t.activities}
-          </Typography>
-
-          {/* Fire Icon and Progress Section Row — use flex gap so Arabic gets extra space */}
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: "row",
-              alignItems: "center",
-              gap: isArabic
-                ? { xs: "2.5vw", sm: "2vw", md: "1.5vw" }
-                : { xs: "2.5vw", sm: "2vw", md: "1.5vw" },
-            }}
-          >
-            {/* Fire Icon Card */}
-            <Card
-              sx={{
-                width: "20vw",
-                height: "17vw",
-                borderRadius: { xs: "10px", sm: "12px", md: "14px" },
-                border: "2px solid",
-                borderColor: "primary.main",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                p: { xs: "1.2vw", sm: "1vw", md: "0.8vw" },
-                backgroundColor: "white",
-                flexShrink: 0,
-              }}
-            >
-              <Box
-                component="img"
-                src="/fire.png"
-                alt="Fire"
-                sx={{
-                  width: "100%",
-                  height: "100%",
-                  objectFit: "contain",
-                }}
+              <QRCodeCanvas
+                value={token}
+                size={220}
+                bgColor="#ffffff"
+                fgColor="#000000"
+                includeMargin
               />
-            </Card>
-
-            {/* Tasks Text, Progress Bar, and So Far Text */}
-            <Box
-              sx={{
-                flex: 1,
-                minWidth: 0,
-                display: "flex",
-                flexDirection: "column",
-              }}
-            >
-              {/* Tasks Left Text */}
-              {maxTasksPerUser !== null &&
-                (tasksCompleted >= maxTasksPerUser ? (
-                  <Box
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      columnGap: isArabic ? "0.75em" : "0.5em",
-                      mb: { xs: "0.6vh", sm: "0.5vh", md: "0.4vh" },
-                    }}
-                  >
-                    <ICONS.checkCircle
-                      sx={{
-                        fontSize: { xs: "5vw", sm: "4vw", md: "3vw" },
-                        color: "#2E7D32",
-                      }}
-                    />
-                    <Typography
-                      sx={{
-                        fontSize: { xs: "4vw", sm: "3.2vw", md: "2.4vw" },
-                        fontWeight: "700",
-                        lineHeight: 1.2,
-                        color: "#FF6B35",
-                      }}
-                    >
-                      <Box
-                        component="span"
-                        sx={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          columnGap: isArabic ? "0.5em" : "0.35em",
-                        }}
-                      >
-                        <Box component="span" sx={{ unicodeBidi: "isolate" }}>
-                          {t.completed}
-                        </Box>
-                        <Box
-                          component="span"
-                          dir={isArabic ? "rtl" : "ltr"}
-                          sx={{ unicodeBidi: "isolate" }}
-                        >
-                          ({completedCounter})
-                        </Box>
-                      </Box>
-                    </Typography>
-                  </Box>
-                ) : (
-                  <Typography
-                    sx={{
-                      fontSize: { xs: "4vw", sm: "3.2vw", md: "2.4vw" },
-                      fontWeight: "600",
-                      color: "primary.main",
-                      mb: { xs: "0.6vh", sm: "0.5vh", md: "0.4vh" },
-                      lineHeight: 1.2,
-                    }}
-                  >
-                    {tasksLeft} {t.leftOutOf} {maxTasksPerUser}
-                  </Typography>
-                ))}
-
-              {/* Progress Bar */}
-              {maxTasksPerUser !== null && maxTasksPerUser !== undefined && (
-                <Box
-                  sx={{
-                    width: "100%",
-                    mb: { xs: "0.6vh", sm: "0.5vh", md: "0.4vh" },
-                  }}
-                >
-                  <LinearProgress
-                    variant="determinate"
-                    value={(tasksCompleted / maxTasksPerUser) * 100}
-                    sx={{
-                      height: { xs: "1.5vh", sm: "1.3vh", md: "1.2vh" },
-                      borderRadius: { xs: "8px", sm: "10px", md: "12px" },
-                      bgcolor: "#E0E0E0",
-                      "& .MuiLinearProgress-bar": {
-                        borderRadius: { xs: "8px", sm: "10px", md: "12px" },
-                        bgcolor: "primary.main",
-                        transition: "transform 0.4s linear",
-                      },
-                    }}
-                  />
-                </Box>
-              )}
-
-              {/* So Far Text */}
-              <Typography
-                sx={{
-                  fontSize: { xs: "3.5vw", sm: "2.8vw", md: "2.2vw" },
-                  color: "#666",
-                  lineHeight: 1.2,
-                }}
-              >
-                {t.soFar}
-              </Typography>
             </Box>
           </Box>
-        </Paper>
-      </Box>
-      {/* Force LanguageSelector subtree to LTR so EN/AR toggle behaves correctly in Arabic */}
-      <Box dir="ltr">
-        <LanguageSelector top={20} right={20} />
-      </Box>
+        )}
+
+        {/* Activities Title */}
+        <Typography
+          sx={{
+            fontSize: "clamp(0.9rem, 4vw, 1.3rem)",
+            fontWeight: "bold",
+            color: "primary.main",
+            lineHeight: 1.2,
+            textAlign: "center",
+          }}
+        >
+          {t.activities}
+        </Typography>
+
+        {/* Fire Icon + Progress Row */}
+        <Box sx={{ display: "flex", flexDirection: "row", alignItems: "center", gap: 1.5 }}>
+          {/* Fire Card */}
+          <Card
+            sx={{
+              width: "clamp(56px, 16vw, 80px)",
+              height: "clamp(50px, 14vw, 72px)",
+              borderRadius: "10px",
+              border: "2px solid",
+              borderColor: "primary.main",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              p: 0.75,
+              backgroundColor: "white",
+              flexShrink: 0,
+            }}
+          >
+            <Box
+              component="img"
+              src="/fire.png"
+              alt="Fire"
+              sx={{ width: "100%", height: "100%", objectFit: "contain" }}
+            />
+          </Card>
+
+          {/* Tasks + Bar + SoFar */}
+          <Box sx={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 0.5 }}>
+            {maxTasksPerUser !== null &&
+              (tasksCompleted >= maxTasksPerUser ? (
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                  <ICONS.checkCircle sx={{ fontSize: "clamp(1rem, 4vw, 1.4rem)", color: "#2E7D32" }} />
+                  <Typography sx={{ fontSize: "clamp(0.8rem, 3.5vw, 1rem)", fontWeight: 700, color: "#FF6B35" }}>
+                    <Box component="span" sx={{ display: "inline-flex", alignItems: "center", gap: 0.5 }}>
+                      <Box component="span" sx={{ unicodeBidi: "isolate" }}>{t.completed}</Box>
+                      <Box component="span" dir={isArabic ? "rtl" : "ltr"} sx={{ unicodeBidi: "isolate" }}>
+                        ({completedCounter})
+                      </Box>
+                    </Box>
+                  </Typography>
+                </Box>
+              ) : (
+                <Typography sx={{ fontSize: "clamp(0.8rem, 3.5vw, 1rem)", fontWeight: 600, color: "primary.main" }}>
+                  {tasksLeft} {t.leftOutOf} {maxTasksPerUser}
+                </Typography>
+              ))}
+
+            {maxTasksPerUser !== null && maxTasksPerUser !== undefined && (
+              <LinearProgress
+                variant="determinate"
+                value={(tasksCompleted / maxTasksPerUser) * 100}
+                sx={{
+                  height: 8,
+                  borderRadius: "8px",
+                  bgcolor: "#E0E0E0",
+                  "& .MuiLinearProgress-bar": {
+                    borderRadius: "8px",
+                    bgcolor: "primary.main",
+                    transition: "transform 0.4s linear",
+                  },
+                }}
+              />
+            )}
+
+            <Typography sx={{ fontSize: "clamp(0.7rem, 3vw, 0.875rem)", color: "#666" }}>
+              {t.soFar}
+            </Typography>
+          </Box>
+        </Box>
+      </Paper>
     </Box>
   );
 }
