@@ -142,14 +142,14 @@ export default function TapMatchInstructionsPage() {
           <Typography
             variant="h3"
             gutterBottom
-            sx={{ mb: 3, color: "primary.main", textTransform: "capitalize" }}
+            sx={{ mb: 3, color: "primary.main", textTransform: "capitalize", textAlign: "center" }}
           >
             {translatedTitle}
           </Typography>
 
           <Typography
             variant="h5"
-            sx={{ mb: 4, fontWeight: 500, color: "text.primary" }}
+            sx={{ mb: 4, fontWeight: 500, color: "text.primary", textAlign: "center" }}
           >
             {t.welcome}{" "}
             <Box component="span" fontWeight={600}>
@@ -211,6 +211,8 @@ export default function TapMatchInstructionsPage() {
               width: { xs: "100%", sm: "auto" },
               fontWeight: 600,
               textTransform: "none",
+              display: "block",
+              mx: "auto",
             }}
           >
             {t.startButton}

@@ -31,6 +31,8 @@ const translations = {
   en: {
     countdown: "sec",
     thankYou: "Well done,",
+    timesUp: "Time’s Up!",
+    betterLuck: "Better luck next time,",
     moves: "Moves",
     matches: "Matches",
     misses: "Misses",
@@ -39,11 +41,14 @@ const translations = {
     playAgain: "Play Again",
     matchingPairs: "Matching Pairs",
     allMatched: "You’ve matched all pairs!",
+    notAllMatched: "You didn’t match all pairs in time.",
     tap: "Tap",
   },
   ar: {
     countdown: "ثانية",
     thankYou: "أحسنت،",
+    timesUp: "انتهى الوقت!",
+    betterLuck: "حظاً أوفر في المرة القادمة،",
     moves: "المحاولات",
     matches: "التطابقات",
     misses: "الأخطاء",
@@ -52,6 +57,7 @@ const translations = {
     playAgain: "العب مجددًا",
     matchingPairs: "مطابقة البطاقات",
     allMatched: "لقد طابقت جميع الأزواج!",
+    notAllMatched: "لم تتمكن من مطابقة جميع الأزواج في الوقت المحدد.",
     tap: "اضغط",
   },
 };
@@ -66,6 +72,7 @@ export default function TapMatchPlayPage() {
   const [timeLeft, setTimeLeft] = useState(game?.gameSessionTimer || 60);
   const [started, setStarted] = useState(false);
   const [ended, setEnded] = useState(false);
+  const [won, setWon] = useState(false);
   const [cards, setCards] = useState([]);
   const [flipped, setFlipped] = useState([]);
   const [matched, setMatched] = useState([]);
@@ -233,7 +240,9 @@ export default function TapMatchPlayPage() {
   const endGame = async (completed = false) => {
     if (hasSubmittedRef.current) return;
     hasSubmittedRef.current = true;
-    celebrateSound?.play();
+    if (completed) celebrateSound?.play();
+    else wrongSound?.play();
+    setWon(completed);
     setEnded(true);
 
     const playerId = sessionStorage.getItem("playerId");
@@ -329,131 +338,152 @@ export default function TapMatchPlayPage() {
     const misses = moves - matchesCount;
     const accuracy = moves > 0 ? ((matchesCount / moves) * 100).toFixed(1) : 0;
 
-    return (
-      <Box sx={{ position: "relative" }}>
-        <Confetti width={window.innerWidth} height={window.innerHeight} />
-        <LanguageSelector top={20} right={20} />
+    const headlineText = won ? t.thankYou : t.timesUp;
+    const backgroundGradient = won
+      ? "linear-gradient(135deg, #4CAF50CC, #388E3CCC)"
+      : "linear-gradient(135deg, #F44336CC, #E53935CC)";
 
+    return (
+      <Box
+        sx={{
+          position: "relative",
+          height: "100vh",
+          width: "100vw",
+          backgroundImage: `url("${encodeURI(game?.backgroundImage)}")`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          overflow: "hidden",
+        }}
+      >
+        {/* Dark overlay — same as countdown screen */}
         <Box
-          dir={dir}
           sx={{
-            height: "100vh",
-            width: "100vw",
-            position: "relative",
-            backgroundImage: `url("${encodeURI(game?.backgroundImage)}")`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
+            position: "absolute",
+            inset: 0,
+            backgroundColor: "rgba(0,0,0,0.65)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            p: 2,
           }}
         >
-          <Box
+        {won && (
+          <Confetti
+            recycle={false}
+            numberOfPieces={300}
+            gravity={0.2}
+            style={{ position: "absolute", top: 0, left: 0 }}
+          />
+        )}
+        <LanguageSelector top={20} right={20} />
+        <Fade in timeout={800}>
+          <Paper
+            dir={dir}
+            elevation={8}
             sx={{
-              position: "absolute",
-              inset: 0,
-              backgroundColor: "rgba(0,0,0,0.65)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
+              width: { xs: "80%", sm: "50%" },
+              p: 4,
+              borderRadius: 3,
+              background: backgroundGradient,
+              color: "#fff",
+              textAlign: "center",
+              boxShadow: "0 0 30px rgba(0,0,0,0.6)",
+              backdropFilter: "blur(5px)",
             }}
           >
-            <Fade in timeout={700}>
-              <Paper
-                elevation={6}
-                sx={{
-                  p: { xs: 4, sm: 5 },
-                  borderRadius: 3,
-                  backgroundColor: "#fff",
-                  textAlign: "center",
-                  maxWidth: 420,
-                  width: "100%",
-                  border: "1px solid #e0e0e0",
-                }}
-              >
-                {/* Title */}
-                <Typography
-                  variant="h3"
-                  fontWeight={600}
-                  mb={0.5}
-                  sx={{ color: "#333" }}
-                >
-                  {t.thankYou} {playerInfo.name}
+            {/* Player Name */}
+            <Typography
+              variant="h3"
+              fontWeight={700}
+              sx={{
+                mb: 1,
+                textShadow: "0 0 15px rgba(255,255,255,0.8)",
+                fontSize: { xs: "1.5rem", sm: "2rem", md: "2.5rem" },
+              }}
+            >
+              {playerInfo?.name}
+            </Typography>
+
+            {/* Headline */}
+            <Typography
+              variant="h1"
+              sx={{
+                my: 2,
+                textShadow: "0 0 15px rgba(255,255,255,0.8)",
+                fontSize: { xs: "2rem", sm: "3rem", md: "4rem" },
+                fontWeight: 900,
+              }}
+            >
+              {headlineText}
+            </Typography>
+
+            {/* Subtitle */}
+            <Typography variant="body1" sx={{ mb: 3, opacity: 0.9 }}>
+              {won ? t.allMatched : t.notAllMatched}
+            </Typography>
+
+            {/* Stats */}
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "flex-start",
+                gap: 1.5,
+                px: 2,
+                mb: 4,
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Shuffle fontSize="small" sx={{ color: "#fff" }} />
+                <Typography variant="body1" sx={{ color: "#fff" }}>
+                  <strong>{t.moves}:</strong> {moves}
                 </Typography>
-                <Typography
-                  variant="subtitle2"
-                  mb={3}
-                  sx={{ color: "text.secondary" }}
-                >
-                  {t.allMatched}
+              </Box>
+
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <CheckCircle fontSize="small" sx={{ color: "#fff" }} />
+                <Typography variant="body1" sx={{ color: "#fff" }}>
+                  <strong>{t.matches}:</strong> {matchesCount}
                 </Typography>
+              </Box>
 
-                {/* Stats */}
-                <Box
-                  sx={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "flex-start",
-                    gap: 1.5,
-                    px: 2,
-                    mb: 4,
-                  }}
-                >
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <Shuffle fontSize="small" color="primary" />
-                    <Typography variant="body1">
-                      <strong>{t.moves}:</strong> {moves}
-                    </Typography>
-                  </Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <HighlightOff fontSize="small" sx={{ color: "#fff" }} />
+                <Typography variant="body1" sx={{ color: "#fff" }}>
+                  <strong>{t.misses}:</strong> {misses}
+                </Typography>
+              </Box>
 
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <CheckCircle fontSize="small" sx={{ color: "#4caf50" }} />
-                    <Typography variant="body1">
-                      <strong>{t.matches}:</strong> {matchesCount}
-                    </Typography>
-                  </Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Speed fontSize="small" sx={{ color: "#fff" }} />
+                <Typography variant="body1" sx={{ color: "#fff" }}>
+                  <strong>{t.accuracy}:</strong> {accuracy}%
+                </Typography>
+              </Box>
 
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <HighlightOff fontSize="small" sx={{ color: "#f44336" }} />
-                    <Typography variant="body1">
-                      <strong>{t.misses}:</strong> {misses}
-                    </Typography>
-                  </Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <AccessTime fontSize="small" sx={{ color: "#fff" }} />
+                <Typography variant="body1" sx={{ color: "#fff" }}>
+                  <strong>{t.timeTaken}:</strong> {timeTaken} {t.countdown}
+                </Typography>
+              </Box>
+            </Box>
 
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <Speed fontSize="small" sx={{ color: "#1976d2" }} />
-                    <Typography variant="body1">
-                      <strong>{t.accuracy}:</strong> {accuracy}%
-                    </Typography>
-                  </Box>
-
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <AccessTime fontSize="small" sx={{ color: "#ff9800" }} />
-                    <Typography variant="body1">
-                      <strong>{t.timeTaken}:</strong> {timeTaken} {t.countdown}
-                    </Typography>
-                  </Box>
-                </Box>
-
-                {/* Button */}
-                <Button
-                  variant="contained"
-                  color="primary"
-                  startIcon={<Replay />}
-                  size="medium"
-                  onClick={() => router.push(`/tapmatch/${game.slug}/name`)}
-                  sx={{
-                    borderRadius: 2,
-                    px: 4,
-                    py: 1,
-                    textTransform: "none",
-                    fontWeight: 600,
-                    boxShadow: "none",
-                    ...getStartIconSpacing(dir),
-                  }}
-                >
-                  {t.playAgain}
-                </Button>
-              </Paper>
-            </Fade>
-          </Box>
+            {/* Button */}
+            <Button
+              variant="contained"
+              color="secondary"
+              startIcon={<Replay />}
+              size="large"
+              onClick={() => router.push(`/tapmatch/${game.slug}/name`)}
+              sx={{
+                ...getStartIconSpacing(dir),
+              }}
+            >
+              {t.playAgain}
+            </Button>
+          </Paper>
+        </Fade>
         </Box>
       </Box>
     );
