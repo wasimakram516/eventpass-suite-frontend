@@ -425,10 +425,11 @@ export default function PlayPage() {
     let isWinner = false;
     if (game?.isTeamMode) {
       const { teamId } = getPlayerSessionData() || {};
-      isWinner = !!(
-        recentlyCompleted.winnerTeamId &&
-        recentlyCompleted.winnerTeamId?._id === teamId
-      );
+      const winnerIdStr =
+        recentlyCompleted.winnerTeamId?._id?.toString() ||
+        recentlyCompleted.winnerTeamId?.toString() ||
+        null;
+      isWinner = !!(winnerIdStr && winnerIdStr === teamId);
     } else {
       const playerObj = recentlyCompleted.players?.find(
         (p) => p.playerType === selectedPlayer
@@ -444,6 +445,13 @@ export default function PlayPage() {
       celebrateSoundRef.current?.play().catch(() => {});
     }
   }, [recentlyCompleted]);
+
+  // ─── 8.5 Play Again — clear stale session data before re-entering flow ──
+  const handlePlayAgain = () => {
+    ["playerId", "sessionId", "playerInfo", "selectedPlayer", "selectedTeamId", "selectedTeamName", "forceSubmitTriggered"]
+      .forEach((key) => sessionStorage.removeItem(key));
+    router.push(`/eventduel/${game.slug}/player`);
+  };
 
   // ─── 9. PROGRESS & FINAL SUBMISSION ────────────────────────────────────
   // --- SUBMIT PROGRESS (Team + PvP compatible) ---
@@ -1358,14 +1366,18 @@ export default function PlayPage() {
     if (isTeamMode) {
       const { teamId, teamName } = getPlayerSessionData();
 
-      const playerTeam = currentSession.teams?.find(
-        (t) => t.teamId?._id === teamId
-      );
-      const opponentTeams =
-        currentSession.teams?.filter((t) => t.teamId?._id !== teamId) || [];
+      // Normalize: winnerTeamId may be a populated object or a raw ObjectId string
+      const extractId = (val) => val?._id?.toString() || val?.toString() || null;
 
-      const isTie = !currentSession.winnerTeamId;
-      const isWinner = !isTie && currentSession.winnerTeamId?._id === teamId;
+      const playerTeam = currentSession.teams?.find(
+        (t) => extractId(t.teamId) === teamId
+      );
+      const opponentTeams = (currentSession.teams?.filter((t) => extractId(t.teamId) !== teamId) || [])
+        .sort((a, b) => (b.totalScore ?? 0) - (a.totalScore ?? 0));
+
+      const winnerTeamIdStr = extractId(currentSession.winnerTeamId);
+      const isTie = !winnerTeamIdStr;
+      const isWinner = !isTie && winnerTeamIdStr === teamId;
 
       const headlineText = isTie ? t.tie : isWinner ? t.teamWin : t.teamLose;
 
@@ -1485,7 +1497,7 @@ export default function PlayPage() {
                   {opponentTeams.map((opp, idx) => (
                     <Box key={idx} sx={{ mb: 1 }}>
                       <Typography variant="h5" fontWeight="bold">
-                        {opp.teamId?.name}
+                        {opp.teamId?.name || opp.teamName || `Team ${idx + 1}`}
                       </Typography>
                       <Typography variant="body2">
                         {t.totalScore}: {opp.totalScore ?? 0}
@@ -1505,7 +1517,7 @@ export default function PlayPage() {
                 variant="contained"
                 color="secondary"
                 size="large"
-                onClick={() => router.push(`/eventduel/${game.slug}/player`)}
+                onClick={handlePlayAgain}
                 startIcon={<ICONS.replay />}
                 sx={getStartIconSpacing(dir)}
               >
@@ -1782,7 +1794,7 @@ export default function PlayPage() {
               variant="contained"
               color="secondary"
               size="large"
-              onClick={() => router.push(`/eventduel/${game.slug}/player`)}
+              onClick={handlePlayAgain}
               startIcon={<ICONS.replay />}
               sx={getStartIconSpacing(dir)}
             >
