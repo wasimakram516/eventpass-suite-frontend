@@ -195,7 +195,7 @@ export default function PlayPage() {
 
         if (newTime <= 0) {
           clearInterval(intervalRef.current);
-          endGame();
+          endGame(true);
           return 0;
         }
         return newTime;
@@ -204,11 +204,12 @@ export default function PlayPage() {
   };
 
   //Submit Results and End Game
-  const endGame = async () => {
+  const endGame = async (timedOut = false) => {
     if (hasSubmittedRef.current) return;
     hasSubmittedRef.current = true;
 
-    celebrateSound?.play();
+    if (timedOut) wrongSound?.play();
+    else celebrateSound?.play();
     setEnded(true);
 
     const playerId = sessionStorage.getItem("playerId");
@@ -335,49 +336,66 @@ export default function PlayPage() {
       <Box
         dir={dir}
         sx={{
+          position: "relative",
           height: "100vh",
           width: "100vw",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background:
-            "linear-gradient(to bottom, rgba(0,0,0,0.9), rgba(0,0,0,0.6))",
+          backgroundImage: `url(${game.backgroundImage})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
-          backgroundAttachment: "fixed",
+          overflow: "hidden",
         }}
       >
-        <Typography
-          variant="h1"
+        <Box
           sx={{
-            fontWeight: "bold",
-            fontSize: "10rem",
-            color: "warning.light",
-            textShadow:
-              "0 0 15px rgba(255,215,0,0.8), 0 0 30px rgba(255,165,0,0.6)",
-            animation: "pulse 1s infinite alternate",
+            position: "absolute",
+            inset: 0,
+            backgroundColor: "rgba(0,0,0,0.65)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
           }}
         >
-          {delay}
-        </Typography>
+          <Typography
+            variant="h1"
+            sx={{
+              fontWeight: "bold",
+              fontSize: "10rem",
+              color: "warning.light",
+              textShadow:
+                "0 0 15px rgba(255,215,0,0.8), 0 0 30px rgba(255,165,0,0.6)",
+              animation: "pulse 1s infinite alternate",
+            }}
+          >
+            {delay}
+          </Typography>
+        </Box>
       </Box>
     );
   }
 
   if (ended) {
     return (
-      <Box sx={{ position: "relative" }}>
+      <Box
+        sx={{
+          position: "relative",
+          height: "100vh",
+          width: "100vw",
+          backgroundImage: `url(${game.backgroundImage})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          overflow: "hidden",
+        }}
+      >
         <LanguageSelector top={20} right={20} />
         <Box
           dir={dir}
           sx={{
-            height: "100vh",
-            width: "100vw",
+            position: "absolute",
+            inset: 0,
+            backgroundColor: "rgba(0,0,0,0.65)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            background:
-              "linear-gradient(135deg, rgba(0,0,0,0.8), rgba(50,50,50,0.8))",
             p: 2,
             textAlign: "center",
           }}
@@ -496,58 +514,55 @@ export default function PlayPage() {
           }}
         >
           <Paper
-            elevation={4}
+            elevation={8}
             sx={{
               width: "95%",
               maxWidth: "100%",
-              p: 4,
+              p: { xs: 3, sm: 4 },
               textAlign: align,
-              backdropFilter: "blur(6px)",
-              backgroundColor: "rgba(255,255,255,0.5)",
+              backdropFilter: "blur(16px)",
+              backgroundColor: "rgba(10,10,20,0.85)",
+              border: "1px solid rgba(255,255,255,0.08)",
               borderRadius: 4,
               marginTop: "10vh",
               overflow: "hidden",
               wordBreak: "break-word",
               boxSizing: "border-box",
+              boxShadow: "0 8px 40px rgba(0,0,0,0.6)",
             }}
           >
+            {/* Question label — small secondary badge */}
             <Typography
-              variant="h5"
               gutterBottom
-              fontWeight="bold"
               sx={{
-                fontSize: { xs: "1rem", sm: "1.25rem", md: "1.5rem" },
-                lineHeight: { xs: 1.2, sm: 1.3, md: 1.4 },
-                wordBreak: "break-word",
+                fontSize: { xs: "0.75rem", sm: "0.85rem", md: "1rem" },
+                fontWeight: 600,
+                color: "#00e5ff",
+                textTransform: "uppercase",
+                letterSpacing: 1,
+                lineHeight: 1.3,
               }}
             >
-              {translatedContent.uiLabels?.questionLabel || "Question"}{" "}
-              {questionIndex + 1} {translatedContent.uiLabels?.ofLabel || "of"}{" "}
-              {randomizedIndexes.length || game.questions.length}
+              {translatedContent.uiLabels?.questionLabel || "Question"} #{questionIndex + 1}
             </Typography>
+            {/* Question text — main/prominent */}
             <Typography
+              gutterBottom
               sx={{
                 fontSize: (() => {
-                  const questionText =
-                    translatedContent.question ||
-                    currentQuestion?.question ||
-                    "";
-                  const textLength = questionText.length;
-                  if (textLength <= 50) {
-                    return { xs: "0.9rem", sm: "1.1rem", md: "1.4rem" };
-                  } else if (textLength <= 100) {
-                    return { xs: "0.8rem", sm: "1rem", md: "1.2rem" };
-                  } else if (textLength <= 200) {
-                    return { xs: "0.7rem", sm: "0.9rem", md: "1rem" };
-                  } else {
-                    return { xs: "0.6rem", sm: "0.8rem", md: "0.9rem" };
-                  }
+                  const len = (translatedContent.question || currentQuestion?.question || "").length;
+                  if (len <= 60) return { xs: "1.2rem", sm: "1.6rem", md: "2rem" };
+                  if (len <= 120) return { xs: "1rem", sm: "1.3rem", md: "1.6rem" };
+                  if (len <= 200) return { xs: "0.9rem", sm: "1.15rem", md: "1.35rem" };
+                  return { xs: "0.8rem", sm: "1rem", md: "1.15rem" };
                 })(),
-                lineHeight: { xs: 1.2, sm: 1.3, md: 1.4 },
+                fontWeight: 700,
+                color: "#fff",
+                lineHeight: { xs: 1.4, sm: 1.5 },
                 wordBreak: "break-word",
                 overflowWrap: "break-word",
+                mb: 1,
               }}
-              gutterBottom
             >
               {translatedContent.question || currentQuestion?.question}
             </Typography>
@@ -598,22 +613,10 @@ export default function PlayPage() {
                   const isCorrect = i === currentQuestion.correctAnswerIndex;
                   const { bg, borderColor, borderWidth } = (() => {
                     if (isSelected && isCorrect)
-                      return {
-                        bg: "#c8e6c9",
-                        borderColor: "#81c784",
-                        borderWidth: 3,
-                      };
+                      return { bg: "rgba(76,175,80,0.35)", borderColor: "#81c784", borderWidth: 2 };
                     if (isSelected && !isCorrect)
-                      return {
-                        bg: "#ffcdd2",
-                        borderColor: "#e57373",
-                        borderWidth: 3,
-                      };
-                    return {
-                      bg: "#f5f5f5",
-                      borderColor: "#e0e0e0",
-                      borderWidth: 2,
-                    };
+                      return { bg: "rgba(244,67,54,0.35)", borderColor: "#e57373", borderWidth: 2 };
+                    return { bg: "rgba(255,255,255,0.08)", borderColor: "rgba(255,255,255,0.18)", borderWidth: 1.5 };
                   })();
 
                   return (
@@ -662,32 +665,14 @@ export default function PlayPage() {
                             "border-color 0.2s ease, border-width 0.2s ease",
                           "&:hover": { backgroundColor: bg, borderColor },
                           "&:active": { backgroundColor: bg, borderColor },
-                          fontSize: {
-                            xs:
-                              opt.length <= 10
-                                ? "0.8rem"
-                                : opt.length <= 30
-                                ? "0.7rem"
-                                : opt.length <= 60
-                                ? "0.6rem"
-                                : "0.5rem",
-                            sm:
-                              opt.length <= 10
-                                ? "0.9rem"
-                                : opt.length <= 30
-                                ? "0.8rem"
-                                : opt.length <= 60
-                                ? "0.7rem"
-                                : "0.6rem",
-                            md:
-                              opt.length <= 10
-                                ? "1.1rem"
-                                : opt.length <= 30
-                                ? "1rem"
-                                : opt.length <= 60
-                                ? "0.8rem"
-                                : "0.7rem",
-                          },
+                          color: "#fff",
+                          fontSize: (() => {
+                            const len = opt.length;
+                            if (len <= 15) return { xs: "1rem", sm: "1.1rem", md: "1.2rem" };
+                            if (len <= 40) return { xs: "0.9rem", sm: "1rem", md: "1.1rem" };
+                            if (len <= 80) return { xs: "0.82rem", sm: "0.9rem", md: "1rem" };
+                            return { xs: "0.75rem", sm: "0.85rem", md: "0.95rem" };
+                          })(),
                         }}
                       >
                         <Box

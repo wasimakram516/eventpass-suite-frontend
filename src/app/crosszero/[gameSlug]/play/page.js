@@ -391,7 +391,11 @@ export default function CrossZeroPlayPage() {
   const celebrateSoundRef = useRef(
     typeof Audio !== "undefined" ? new Audio("/celebrate.mp3") : null
   );
+  const wrongSoundRef = useRef(
+    typeof Audio !== "undefined" ? new Audio("/wrong.wav") : null
+  );
   const celebrationPlayedRef = useRef(false);
+  const wrongPlayedRef = useRef(false);
 
   // Refs for stable closures
   const boardRef = useRef(board);
@@ -592,8 +596,16 @@ export default function CrossZeroPlayPage() {
 
     if (!shouldCelebrate) {
       celebrationPlayedRef.current = false;
+      // Play wrong sound on loss (not draw, and only when there's an actual result)
+      const hasSoloLoss = game?.mode === "solo" && phase === "result" && winResult && winResult !== "draw" && winResult.winner !== playerMark;
+      const hasPvPLoss = game?.mode === "pvp" && !isSingleScreen && completedPvPSession?.xoStats?.result && completedPvPSession.xoStats.result !== "draw" && completedPvPSession.xoStats.result !== `${playerMark}_wins`;
+      if ((hasSoloLoss || hasPvPLoss) && !wrongPlayedRef.current) {
+        wrongPlayedRef.current = true;
+        wrongSoundRef.current?.play().catch(() => {});
+      }
       return;
     }
+    wrongPlayedRef.current = false;
     triggerCelebration();
   }, [completedPvPSession?.xoStats?.result, game?.mode, isSingleScreen, phase, playerMark, triggerCelebration, winResult]);
 
@@ -835,7 +847,7 @@ export default function CrossZeroPlayPage() {
         setSingleP2(p2Data);
         setSinglePlayers((prev) => ({ ...prev, p2: p2Data }));
         await activateGameSession(sessionId);
-        setPhase("single-instructions");
+        startCountdown();
       }
     } finally {
       setSingleSubmitting(false);
@@ -849,6 +861,7 @@ export default function CrossZeroPlayPage() {
     setAiThinking(false);
     setAiResultSummary({ timeTaken: 0, moves: 0 });
     celebrationPlayedRef.current = false;
+    wrongPlayedRef.current = false;
     clearInterval(moveTimerRef.current);
     clearTimeout(aiMoveTimeoutRef.current);
     clearInterval(countdownRef.current);
@@ -1131,15 +1144,7 @@ export default function CrossZeroPlayPage() {
           sx={{
             position: "absolute",
             inset: 0,
-            background: "linear-gradient(to bottom, rgba(0,0,0,0.85), rgba(0,0,0,0.65))",
-            backdropFilter: "blur(8px)",
-          }}
-        />
-        <Box
-          sx={{
-            position: "relative",
-            zIndex: 1,
-            minHeight: "100vh",
+            backgroundColor: "rgba(0,0,0,0.65)",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -1406,28 +1411,26 @@ export default function CrossZeroPlayPage() {
         dir={dir}
         sx={{
           position: "relative",
-          minHeight: "100vh",
+          height: "100vh",
           width: "100vw",
           backgroundImage: `url(${game.coverImage || game.nameImage || game.backgroundImage})`,
           backgroundSize: "cover",
           backgroundPosition: "center",
-          backgroundAttachment: "fixed",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          textAlign: "center",
           overflow: "hidden",
-          p: 2,
         }}
       >
         <Box
           sx={{
             position: "absolute",
             inset: 0,
-            background: "linear-gradient(135deg, rgba(0,0,0,0.8), rgba(50,50,50,0.8))",
-            backdropFilter: "blur(5px)",
+            backgroundColor: "rgba(0,0,0,0.65)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            textAlign: "center",
+            p: 2,
           }}
-        />
+        >
         {showConfetti && (
           <Confetti
             recycle={false}
@@ -1650,6 +1653,7 @@ export default function CrossZeroPlayPage() {
             </Stack>
           </Paper>
         </Fade>
+        </Box>
       </Box>
     );
   }
