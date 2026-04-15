@@ -285,7 +285,14 @@ export default function CrossZeroInstructionsPage() {
             fullWidth
             onClick={() => router.push(`/crosszero/${game.slug}/play`)}
             startIcon={<ICONS.play />}
-            sx={getStartIconSpacing(dir)}
+            sx={{
+              ...getStartIconSpacing(dir),
+              py: 1.2,
+              borderRadius: 999,
+              fontWeight: 800,
+              bgcolor: playerMark === "O" ? "#ff6b6b" : "#00e5ff",
+              "&:hover": { filter: "brightness(1.15)", bgcolor: playerMark === "O" ? "#ff6b6b" : "#00e5ff" },
+            }}
           >
             {t.start}
           </Button>

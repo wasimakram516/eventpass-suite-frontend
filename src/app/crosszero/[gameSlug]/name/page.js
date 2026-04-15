@@ -59,7 +59,7 @@ export default function CrossZeroNamePage() {
       sessionStorage.setItem("playerId", res.playerId);
       sessionStorage.setItem("sessionId", res.sessionId);
       sessionStorage.setItem("playerMark", "O");
-      router.push(`/crosszero/${game.slug}/instructions`);
+      router.push(`/crosszero/${game.slug}/play`);
     } else {
       setError(res?.message || "Something went wrong. Try again.");
     }
@@ -215,7 +215,16 @@ export default function CrossZeroNamePage() {
                 <ICONS.next />
               )
             }
-            sx={getStartIconSpacing(dir)}
+            sx={{
+              ...getStartIconSpacing(dir),
+              mt: 1,
+              py: 1.2,
+              borderRadius: 999,
+              fontWeight: 800,
+              bgcolor: "#ff6b6b",
+              "&:hover": { filter: "brightness(1.15)", bgcolor: "#ff6b6b" },
+              "&:disabled": { opacity: 0.5 },
+            }}
           >
             {t.startButton}
           </Button>

@@ -76,7 +76,7 @@ export default function NamePage() {
     if (!response?.error) {
       sessionStorage.setItem("playerId", response.player._id);
       sessionStorage.setItem("sessionId", response.session._id);
-      router.push(`/eventduel/${game.slug}/instructions`);
+      router.push(`/eventduel/${game.slug}/play`);
     } else {
       setError(response?.message || "Something went wrong. Try again.");
     }
@@ -137,18 +137,18 @@ export default function NamePage() {
 
         <Paper
           dir={dir}
-          elevation={6}
+          elevation={8}
           sx={{
             p: { xs: 3, sm: 4 },
             width: "100%",
             maxWidth: 500,
             textAlign: "center",
-            backdropFilter: "blur(10px)",
-            backgroundColor: "rgba(255,255,255,0.6)",
+            backdropFilter: "blur(16px)",
+            backgroundColor: "rgba(10,10,20,0.85)",
             borderRadius: 6,
-            mt: { xs: 10, sm: "15vh" },
             mx: "auto",
-            boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            boxShadow: "0 8px 40px rgba(0,0,0,0.6)",
           }}
         >
           {/* Game Title */}
@@ -157,7 +157,8 @@ export default function NamePage() {
             gutterBottom
             sx={{
               mb: 3,
-              color: "primary.main",
+              color: "#00e5ff",
+              textShadow: "0 0 16px rgba(0,229,255,0.4)",
               fontSize: (() => {
                 const len = game.title?.length || 0;
                 if (len <= 20) return { xs: "2rem", sm: "2.5rem", md: "3rem" };
@@ -181,14 +182,13 @@ export default function NamePage() {
                 p: 1.5,
                 borderRadius: 3,
                 textAlign: "center",
-                background:
-                  "linear-gradient(135deg, rgba(25,118,210,0.9), rgba(66,165,245,0.9))",
-                color: "#fff",
+                background: "linear-gradient(135deg, rgba(0,229,255,0.18), rgba(0,229,255,0.08))",
+                border: "1px solid rgba(0,229,255,0.3)",
               }}
             >
               <Typography
                 variant="body1"
-                sx={{ fontWeight: "bold", letterSpacing: 0.5 }}
+                sx={{ fontWeight: "bold", letterSpacing: 0.5, color: "#00e5ff" }}
               >
                 {t.joiningTeam}: {selectedTeamName}
               </Typography>
@@ -203,16 +203,10 @@ export default function NamePage() {
             sx={{ mb: 3 }}
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
+            onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+            InputProps={{ sx: { backgroundColor: "rgba(255,255,255,0.08)", color: "#fff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.25)" } } }}
+            InputLabelProps={{ sx: { color: "rgba(255,255,255,0.6)" } }}
           />
-
-          {/* Company */}
-          {/* <TextField
-            label={t.companyLabel}
-            fullWidth
-            sx={{ mb: 3 }}
-            value={form.company}
-            onChange={(e) => setForm({ ...form, company: e.target.value })}
-          /> */}
 
           {/* Submit */}
           <Button
@@ -220,7 +214,7 @@ export default function NamePage() {
             size="large"
             fullWidth
             onClick={handleSubmit}
-            disabled={submitting}
+            disabled={submitting || !form.name.trim()}
             startIcon={
               submitting ? (
                 <CircularProgress size={24} color="inherit" />
@@ -228,13 +222,22 @@ export default function NamePage() {
                 <ICONS.next />
               )
             }
-            sx={getStartIconSpacing(dir)}
+            sx={{
+              ...getStartIconSpacing(dir),
+              py: 1.2,
+              borderRadius: 999,
+              fontWeight: 800,
+              bgcolor: "#00e5ff",
+              color: "#000",
+              "&:hover": { filter: "brightness(1.15)", bgcolor: "#00e5ff" },
+              "&:disabled": { opacity: 0.5 },
+            }}
           >
             {t.startButton}
           </Button>
 
           {error && (
-            <Typography variant="caption" color="error" sx={{ mt: 2 }}>
+            <Typography variant="caption" color="error" sx={{ mt: 2, display: "block" }}>
               {error}
             </Typography>
           )}
