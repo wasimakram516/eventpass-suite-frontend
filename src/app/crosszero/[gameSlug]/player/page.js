@@ -137,7 +137,7 @@ export default function CrossZeroPlayerPage() {
       sessionStorage.setItem("sessionId", response.sessionId);
       sessionStorage.setItem("playerMark", response.mark || MARK_MAP[selected] || "X");
       sessionStorage.setItem("playerInfo", JSON.stringify(playerInfo));
-      router.push(`/crosszero/${game.slug}/instructions`);
+      router.push(`/crosszero/${game.slug}/play`);
     } else {
       setError(response?.message || "Something went wrong. Try again.");
     }
@@ -340,7 +340,15 @@ export default function CrossZeroPlayerPage() {
                 <ICONS.next />
               )
             }
-            sx={getStartIconSpacing(dir)}
+            sx={{
+              ...getStartIconSpacing(dir),
+              py: 1.2,
+              borderRadius: 999,
+              fontWeight: 800,
+              bgcolor: selected ? PLAYER_OPTIONS.find((o) => o.id === selected)?.color ?? "#00e5ff" : "#00e5ff",
+              "&:hover": { filter: "brightness(1.15)", bgcolor: selected ? PLAYER_OPTIONS.find((o) => o.id === selected)?.color ?? "#00e5ff" : "#00e5ff" },
+              "&:disabled": { opacity: 0.5 },
+            }}
           >
             {t.proceed}
           </Button>

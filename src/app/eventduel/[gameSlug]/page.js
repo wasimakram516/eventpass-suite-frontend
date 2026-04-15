@@ -90,25 +90,24 @@ export default function GameHomePage() {
           }}
         >
           <Paper
-            elevation={6}
+            elevation={8}
             sx={{
               textAlign: "center",
               p: { xs: 3, sm: 4 },
-              maxWidth: 480,
+              maxWidth: 800,
               width: "100%",
-              backdropFilter: "blur(10px)",
-              backgroundColor: "rgba(255, 255, 255, 0.6)",
+              backdropFilter: "blur(16px)",
+              backgroundColor: "rgba(10,10,20,0.85)",
               borderRadius: 6,
-              mt: { xs: 10, sm: "15vh" },
-              mx: "auto",
-              boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
+              border: "1px solid rgba(255,255,255,0.08)",
+              boxShadow: "0 8px 40px rgba(0,0,0,0.6)",
             }}
           >
             <Typography
               variant="h3"
-              fontWeight={700}
+              fontWeight={800}
               gutterBottom
-              sx={{ mb: 3, color: "primary.main", textTransform: "capitalize" }}
+              sx={{ mb: 3, color: "#fff", textTransform: "capitalize", wordBreak: "break-word" }}
             >
               {game.title}
             </Typography>
@@ -120,9 +119,17 @@ export default function GameHomePage() {
               onClick={handleStart}
               startIcon={<ICONS.play />}
               disabled={starting}
-              sx={getStartIconSpacing(dir)}
+              sx={{
+                ...getStartIconSpacing(dir),
+                py: 1.2,
+                borderRadius: 999,
+                fontWeight: 800,
+                bgcolor: "#00e5ff",
+                color: "#000",
+                "&:hover": { filter: "brightness(1.15)", bgcolor: "#00e5ff" },
+              }}
             >
-              {starting ? <CircularProgress size={22} sx={{ color: "#fff" }} /> : t.startButton}
+              {starting ? <CircularProgress size={22} sx={{ color: "#000" }} /> : t.startButton}
             </Button>
           </Paper>
         </Box>

@@ -106,80 +106,43 @@ export default function InstructionsPage() {
         </IconButton>
 
         <Paper
-          elevation={6}
+          elevation={8}
+          dir={dir}
           sx={{
             p: { xs: 3, sm: 4 },
             maxWidth: 800,
             width: "100%",
-            textAlign: align,
-            backdropFilter: "blur(10px)",
-            backgroundColor: "rgba(255,255,255,0.6)",
+            textAlign: "center",
+            backdropFilter: "blur(16px)",
+            backgroundColor: "rgba(10,10,20,0.85)",
             borderRadius: 6,
-            mt: { xs: 10, sm: "15vh" },
-            mx: "auto",
-            boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            boxShadow: "0 8px 40px rgba(0,0,0,0.6)",
           }}
-          dir={dir}
         >
           <Typography
-            variant="h1"
-            gutterBottom
-            sx={{ mb: 3, color: "primary.main", textTransform: "capitalize" }}
+            variant="h4"
+            fontWeight={800}
+            sx={{ mb: 0.5, color: "#fff", textTransform: "capitalize", wordBreak: "break-word" }}
           >
             {game.title}
           </Typography>
 
-          <Typography variant="h4" sx={{ mb: 4 }}>
+          <Typography sx={{ color: "rgba(255,255,255,0.75)", mb: 4, fontSize: "1rem" }}>
             {gameInstructionsTranslations[language].welcome}{" "}
-            <Box component="span" fontWeight={600}>
+            <Box component="span" fontWeight={700} sx={{ color: "#00e5ff" }}>
               {playerInfo.name}
-            </Box>{" "}
-            {gameInstructionsTranslations[language].instructionsTitle}
+            </Box>
+            {" — "}{gameInstructionsTranslations[language].instructionsTitle}
           </Typography>
 
-          <Stack spacing={2} sx={{ mb: 4 }} alignItems={align}>
-            <Stack
-              direction="row"
-              alignItems="center"
-              spacing={1}
-              sx={{
-                flexDirection: language === "ar" ? "row-reverse" : "row",
-                justifyContent: language === "ar" ? "flex-end" : "flex-start",
-              }}
-            >
-              <QuizIcon color="primary" />
-              <Typography
-                variant="h5"
-                sx={{
-                  textAlign: language === "ar" ? "right" : "left",
-                  direction: language === "ar" ? "rtl" : "ltr",
-                }}
-              >
-                {gameInstructionsTranslations[language].questionsCount}{" "}
-                <Box component="span" fontWeight={600}>
-                  {game.questions.length}
-                </Box>
-              </Typography>
-            </Stack>
-            <Stack
-              direction="row"
-              alignItems="center"
-              spacing={1}
-              sx={{
-                flexDirection: language === "ar" ? "row-reverse" : "row",
-                justifyContent: language === "ar" ? "flex-end" : "flex-start",
-              }}
-            >
-              <TimerIcon color="primary" />
-              <Typography
-                variant="h5"
-                sx={{
-                  textAlign: language === "ar" ? "right" : "left",
-                  direction: language === "ar" ? "rtl" : "ltr",
-                }}
-              >
+          <Stack spacing={2} sx={{ mb: 4 }} alignItems="center">
+            <Stack direction="row" alignItems="center" spacing={1.5}
+              sx={{ px: 2, py: 1.5, borderRadius: 3, bgcolor: "rgba(0,229,255,0.08)", border: "1px solid rgba(0,229,255,0.2)", width: "100%" }}>
+              <TimerIcon sx={{ color: "#00e5ff" }} />
+              <Typography sx={{ color: "#fff", fontSize: "1rem", textAlign: align, direction: dir }}>
                 {gameInstructionsTranslations[language].quizDuration}{" "}
-                <Box component="span" fontWeight={600}>
+                <Box component="span" fontWeight={700} sx={{ color: "#00e5ff" }}>
                   {game.gameSessionTimer}{" "}
                   {gameInstructionsTranslations[language].seconds}
                 </Box>
@@ -190,9 +153,15 @@ export default function InstructionsPage() {
           <Button
             variant="contained"
             size="large"
+            fullWidth
             onClick={handleStart}
             sx={{
-              width: { xs: "100%", sm: "auto" },
+              py: 1.2,
+              borderRadius: 999,
+              fontWeight: 800,
+              bgcolor: "#00e5ff",
+              color: "#000",
+              "&:hover": { filter: "brightness(1.15)", bgcolor: "#00e5ff" },
             }}
           >
             {gameInstructionsTranslations[language].startButton}

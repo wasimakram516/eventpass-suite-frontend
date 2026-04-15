@@ -443,6 +443,9 @@ export default function PlayPage() {
     if (isWinner) {
       celebrationPlayedRef.current = true;
       celebrateSoundRef.current?.play().catch(() => {});
+    } else if (!celebrationPlayedRef.current) {
+      celebrationPlayedRef.current = true;
+      wrongSoundRef.current?.play().catch(() => {});
     }
   }, [recentlyCompleted]);
 
@@ -629,15 +632,22 @@ export default function PlayPage() {
             position: "absolute",
             width: "100%",
             height: "100%",
-            background:
-              "linear-gradient(to bottom, rgba(0,0,0,0.9), rgba(0,0,0,0.6))",
+            backgroundImage: `url(${game?.backgroundImage})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundAttachment: "fixed",
+          }}
+        >
+        <Box sx={{
+            position: "absolute", inset: 0,
+            backgroundColor: "rgba(0,0,0,0.72)",
             color: "#fff",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
             textAlign: "center",
-            backdropFilter: "blur(10px)",
+            backdropFilter: "blur(4px)",
             animation: "fadeIn 1s ease-in-out",
             px: 3,
           }}
@@ -773,6 +783,7 @@ export default function PlayPage() {
             </>
           )}
         </Box>
+        </Box>
       </>
     );
   }
@@ -790,15 +801,23 @@ export default function PlayPage() {
             position: "relative",
             height: "100vh",
             width: "100vw",
-            background:
-              "linear-gradient(to bottom, rgba(0,0,0,0.85), rgba(0,0,0,0.65))",
+            backgroundImage: `url(${game?.backgroundImage})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundAttachment: "fixed",
+            overflow: "hidden",
+          }}
+        >
+        <Box sx={{
+            position: "absolute", inset: 0,
+            backgroundColor: "rgba(0,0,0,0.72)",
             color: "#fff",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
             textAlign: "center",
-            backdropFilter: "blur(8px)",
+            backdropFilter: "blur(4px)",
             animation: "fadeIn 1s ease-in-out",
             px: 3,
           }}
@@ -869,6 +888,7 @@ export default function PlayPage() {
             {isTeamMode ? t.teamCountdownMessage : t.waitingMessage}
           </Typography>
         </Box>
+        </Box>
       </>
     );
   }
@@ -879,7 +899,6 @@ export default function PlayPage() {
     if (hasFinishedEarly) {
       return (
         <>
-          <LanguageSelector top={20} right={20} />
           <Box
             dir={dir}
             sx={{
@@ -889,19 +908,22 @@ export default function PlayPage() {
               backgroundImage: `url(${game.backgroundImage})`,
               backgroundSize: "cover",
               backgroundPosition: "center",
-              "&::before": {
-                content: '""',
-                position: "absolute",
-                inset: 0,
-                bgcolor: "rgba(0,0,0,0.5)",
-              },
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              p: 3,
-              textAlign: "center",
+              overflow: "hidden",
             }}
           >
+            <Box
+              sx={{
+                position: "absolute",
+                inset: 0,
+                backgroundColor: "rgba(0,0,0,0.65)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                p: 3,
+                textAlign: "center",
+              }}
+            >
+            <LanguageSelector top={20} right={20} />
             <Confetti
               recycle={false}
               numberOfPieces={300}
@@ -997,6 +1019,7 @@ export default function PlayPage() {
                 </CardContent>
               </Card>
             </Container>
+            </Box>
           </Box>
         </>
       );
@@ -1072,67 +1095,52 @@ export default function PlayPage() {
             }}
           >
             <Paper
-              elevation={4}
+              elevation={8}
               sx={{
                 width: { xs: "95%", md: "85%", lg: "75%" },
                 maxWidth: "1200px",
-                p: { xs: 4, md: 3 },
+                p: { xs: 3, md: 4 },
                 textAlign: "center",
-                backdropFilter: "blur(6px)",
-                backgroundColor: "rgba(255,255,255,0.5)",
+                backdropFilter: "blur(16px)",
+                backgroundColor: "rgba(10,10,20,0.85)",
+                border: "1px solid rgba(255,255,255,0.08)",
                 borderRadius: 4,
                 my: { xs: 2, md: 3 },
+                boxShadow: "0 8px 40px rgba(0,0,0,0.6)",
               }}
             >
+              {/* Question label — small secondary badge */}
               <Typography
-                variant="h5"
                 gutterBottom
-                fontWeight="bold"
                 sx={{
-                  fontSize: (() => {
-                    const questionLabel = `${
-                      translatedContent?.uiLabels?.questionLabel
-                    } ${questionIndex + 1} ${
-                      translatedContent?.uiLabels?.ofLabel
-                    } ${questions.length}`;
-                    const labelLength = questionLabel?.length || 0;
-                    if (labelLength <= 25) {
-                      return { xs: "1.25rem", sm: "1.5rem", md: "1.75rem" };
-                    } else if (labelLength <= 40) {
-                      return { xs: "1rem", sm: "1.25rem", md: "1.5rem" };
-                    } else {
-                      return { xs: "0.875rem", sm: "1.125rem", md: "1.25rem" };
-                    }
-                  })(),
-                  lineHeight: { xs: 1.2, sm: 1.3, md: 1.4 },
-                  wordBreak: "break-word",
-                  overflowWrap: "break-word",
+                  fontSize: { xs: "0.75rem", sm: "0.85rem", md: "1rem" },
+                  fontWeight: 600,
+                  color: "#00e5ff",
+                  textTransform: "uppercase",
+                  letterSpacing: 1,
+                  lineHeight: 1.3,
                 }}
               >
-                {translatedContent?.uiLabels?.questionLabel} {questionIndex + 1}{" "}
-                {translatedContent?.uiLabels?.ofLabel} {questions.length}
+                {translatedContent?.uiLabels?.questionLabel} #{questionIndex + 1}
               </Typography>
+              {/* Question text — main/prominent */}
               <Typography
+                gutterBottom
                 sx={{
                   fontSize: (() => {
-                    const questionLength =
-                      translatedContent?.question?.length || 0;
-                    if (questionLength <= 30) {
-                      return { xs: "2rem", sm: "2.5rem", md: "3rem" };
-                    } else if (questionLength <= 60) {
-                      return { xs: "1.5rem", sm: "2rem", md: "2.5rem" };
-                    } else if (questionLength <= 100) {
-                      return { xs: "1.25rem", sm: "1.75rem", md: "2rem" };
-                    } else {
-                      return { xs: "1rem", sm: "1.5rem", md: "1.75rem" };
-                    }
+                    const len = translatedContent?.question?.length || 0;
+                    if (len <= 60) return { xs: "1.2rem", sm: "1.6rem", md: "2rem" };
+                    if (len <= 120) return { xs: "1rem", sm: "1.3rem", md: "1.6rem" };
+                    if (len <= 200) return { xs: "0.9rem", sm: "1.15rem", md: "1.35rem" };
+                    return { xs: "0.8rem", sm: "1rem", md: "1.15rem" };
                   })(),
-                  lineHeight: { xs: 1.2, sm: 1.3, md: 1.4 },
+                  fontWeight: 700,
+                  color: "#fff",
+                  lineHeight: { xs: 1.4, sm: 1.5 },
                   wordBreak: "break-word",
                   overflowWrap: "break-word",
-                  fontWeight: "bold",
+                  mb: 1,
                 }}
-                gutterBottom
               >
                 {translatedContent?.question}
               </Typography>
@@ -1182,22 +1190,10 @@ export default function PlayPage() {
                     const isCorrect = i === currentQuestion.correctAnswerIndex;
                     const { bg, borderColor, borderWidth } = (() => {
                       if (isSelected && isCorrect)
-                        return {
-                          bg: "#c8e6c9",
-                          borderColor: "#81c784",
-                          borderWidth: 3,
-                        };
+                        return { bg: "rgba(76,175,80,0.35)", borderColor: "#81c784", borderWidth: 2 };
                       if (isSelected && !isCorrect)
-                        return {
-                          bg: "#ffcdd2",
-                          borderColor: "#e57373",
-                          borderWidth: 3,
-                        };
-                      return {
-                        bg: "#f5f5f5",
-                        borderColor: "#e0e0e0",
-                        borderWidth: 2,
-                      };
+                        return { bg: "rgba(244,67,54,0.35)", borderColor: "#e57373", borderWidth: 2 };
+                      return { bg: "rgba(255,255,255,0.08)", borderColor: "rgba(255,255,255,0.18)", borderWidth: 1.5 };
                     })();
                     return (
                       <Grid
@@ -1244,31 +1240,13 @@ export default function PlayPage() {
                             transition: "border 0.2s ease",
                             "&:hover": { backgroundColor: bg, borderColor },
                             "&:active": { backgroundColor: bg, borderColor },
+                            color: "#fff",
                             fontSize: (() => {
                               const len = opt.length;
-                              if (len <= 10)
-                                return {
-                                  xs: "0.8rem",
-                                  sm: "0.9rem",
-                                  md: "1.1rem",
-                                };
-                              if (len <= 30)
-                                return {
-                                  xs: "0.7rem",
-                                  sm: "0.8rem",
-                                  md: "1rem",
-                                };
-                              if (len <= 60)
-                                return {
-                                  xs: "0.6rem",
-                                  sm: "0.7rem",
-                                  md: "0.8rem",
-                                };
-                              return {
-                                xs: "0.5rem",
-                                sm: "0.6rem",
-                                md: "0.7rem",
-                              };
+                              if (len <= 15) return { xs: "1rem", sm: "1.1rem", md: "1.2rem" };
+                              if (len <= 40) return { xs: "0.9rem", sm: "1rem", md: "1.1rem" };
+                              if (len <= 80) return { xs: "0.82rem", sm: "0.9rem", md: "1rem" };
+                              return { xs: "0.75rem", sm: "0.85rem", md: "0.95rem" };
                             })(),
                           }}
                         >
@@ -1393,16 +1371,22 @@ export default function PlayPage() {
             position: "relative",
             height: "100vh",
             width: "100vw",
-            background:
-              "linear-gradient(135deg, rgba(0,0,0,0.8), rgba(50,50,50,0.8))",
+            backgroundImage: `url(${game?.backgroundImage})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            overflow: "hidden",
+          }}
+        >
+          <Box sx={{
+            position: "absolute", inset: 0,
+            backgroundColor: "rgba(0,0,0,0.72)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             textAlign: "center",
-            overflow: "hidden",
+            backdropFilter: "blur(4px)",
             p: 2,
-          }}
-        >
+          }}>
           {isWinner && (
             <Confetti
               recycle={false}
@@ -1525,6 +1509,7 @@ export default function PlayPage() {
               </Button>
             </Paper>
           </Fade>
+          </Box>
         </Box>
       );
     }
@@ -1561,16 +1546,22 @@ export default function PlayPage() {
           position: "relative",
           height: "100vh",
           width: "100vw",
-          background:
-            "linear-gradient(135deg, rgba(0,0,0,0.8), rgba(50,50,50,0.8))",
+          backgroundImage: `url(${game?.backgroundImage})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          overflow: "hidden",
+        }}
+      >
+      <Box sx={{
+          position: "absolute", inset: 0,
+          backgroundColor: "rgba(0,0,0,0.72)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           textAlign: "center",
-          overflow: "hidden",
+          backdropFilter: "blur(4px)",
           p: 2,
-        }}
-      >
+        }}>
         {isWinner && (
           <Confetti
             recycle={false}
@@ -1802,6 +1793,7 @@ export default function PlayPage() {
             </Button>
           </Paper>
         </Fade>
+        </Box>
       </Box>
     );
   }

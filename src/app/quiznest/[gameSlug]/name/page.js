@@ -46,7 +46,7 @@ export default function NamePage() {
         sessionStorage.setItem("playerId", res.playerId);
         sessionStorage.setItem("sessionId", res.sessionId);
 
-        router.push(`/quiznest/${game.slug}/instructions`);
+        router.push(`/quiznest/${game.slug}/play`);
       } 
       setSubmitting(false);
   };
@@ -103,24 +103,24 @@ export default function NamePage() {
 
         <Paper
           dir={dir}
-          elevation={6}
+          elevation={8}
           sx={{
             p: { xs: 3, sm: 4 },
             width: "100%",
-            maxWidth: 500,
-            textAlign: align,
-            backdropFilter: "blur(10px)",
-            backgroundColor: "rgba(255,255,255,0.6)",
+            maxWidth: 800,
+            textAlign: "center",
+            backdropFilter: "blur(16px)",
+            backgroundColor: "rgba(10,10,20,0.85)",
             borderRadius: 6,
-            mt: { xs: 10, sm: "15vh" },
-            mx: "auto",
-            boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            boxShadow: "0 8px 40px rgba(0,0,0,0.6)",
           }}
         >
           <Typography
-            variant="h1"
+            variant="h4"
+            fontWeight={800}
             gutterBottom
-            sx={{ mb: 4, color: "primary.main" }}
+            sx={{ mb: 3, color: "#fff", textTransform: "capitalize", wordBreak: "break-word" }}
           >
             {game.title}
           </Typography>
@@ -129,11 +129,12 @@ export default function NamePage() {
             label={t.nameLabel}
             fullWidth
             required
-            sx={{
-              mb: 3,
-            }}
+            sx={{ mb: 3 }}
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
+            onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+            InputProps={{ sx: { backgroundColor: "rgba(255,255,255,0.1)", color: "#fff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.25)" } } }}
+            InputLabelProps={{ sx: { color: "rgba(255,255,255,0.6)" } }}
           />
 
           <Button
@@ -141,10 +142,19 @@ export default function NamePage() {
             size="large"
             fullWidth
             onClick={handleSubmit}
-            disabled={submitting}
+            disabled={submitting || !form.name.trim()}
+            sx={{
+              py: 1.2,
+              borderRadius: 999,
+              fontWeight: 800,
+              bgcolor: "#00e5ff",
+              color: "#000",
+              "&:hover": { filter: "brightness(1.15)", bgcolor: "#00e5ff" },
+              "&:disabled": { opacity: 0.5 },
+            }}
           >
             {submitting ? (
-              <CircularProgress size={24} color="inherit" />
+              <CircularProgress size={24} sx={{ color: "#000" }} />
             ) : (
               t.startButton
             )}
