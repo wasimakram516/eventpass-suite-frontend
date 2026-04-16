@@ -266,19 +266,16 @@ export default function ViewRegistrations() {
 
         let fieldsLocal = [];
         if (!evRes?.error) {
-            if (evRes.formFields?.length) {
-                fieldsLocal = evRes.formFields.map((f) => ({
+            const sourceFields = evRes.formFields?.length
+                ? evRes.formFields
+                : evRes.linkedEventRegId?.formFields || [];
+
+            if (sourceFields.length) {
+                fieldsLocal = sourceFields.map((f) => ({
                     name: f.inputName,
                     type: (f.inputType || "text").toLowerCase(),
                     values: Array.isArray(f.values) ? f.values : [],
                 }));
-            } else if (evRes.linkedEventRegId) {
-                fieldsLocal = [
-                    { name: "fullName", type: "text", values: [] },
-                    { name: "email", type: "email", values: [] },
-                    { name: "phone", type: "phone", values: [] },
-                    { name: "company", type: "text", values: [] },
-                ];
             }
         }
 
