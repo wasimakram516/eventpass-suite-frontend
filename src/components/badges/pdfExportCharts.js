@@ -147,7 +147,7 @@ const addEventHeader = async (
       });
       currentY -= imgDims.height + 17;
     } catch (error) {
-      console.error("Error loading event logo:", error);
+      console.warn("Error loading event logo:", error.message);
     }
   }
 
@@ -169,20 +169,25 @@ const addEventHeader = async (
   }
 
   // Event details
-  const fromDate = eventInfo.startDateFormatted || formatDate(eventInfo.startDate);
-  const toDate = eventInfo.endDateFormatted || formatDate(eventInfo.endDate);
-
   const fromLabel = translations.from || "From";
   const toLabel = translations.to || "To";
   const venueLabel = translations.venue || "Venue";
   const registrationsLabel = translations.registrations || "Registrations";
 
-  renderLabelValue(page, fromLabel, fromDate, margin, currentY, pageWidth, margin, isRTL, font, boldFont, FONT_LABEL);
-  currentY -= LINE_HEIGHT;
-  renderLabelValue(page, toLabel, toDate, margin, currentY, pageWidth, margin, isRTL, font, boldFont, FONT_LABEL);
-  currentY -= LINE_HEIGHT;
-  renderLabelValue(page, venueLabel, String(eventInfo.venue || ""), margin, currentY, pageWidth, margin, isRTL, font, boldFont, FONT_LABEL);
-  currentY -= LINE_HEIGHT;
+  if (eventInfo.startDate || eventInfo.startDateFormatted) {
+    const fromDate = eventInfo.startDateFormatted || formatDate(eventInfo.startDate);
+    renderLabelValue(page, fromLabel, fromDate, margin, currentY, pageWidth, margin, isRTL, font, boldFont, FONT_LABEL);
+    currentY -= LINE_HEIGHT;
+  }
+  if (eventInfo.endDate || eventInfo.endDateFormatted) {
+    const toDate = eventInfo.endDateFormatted || formatDate(eventInfo.endDate);
+    renderLabelValue(page, toLabel, toDate, margin, currentY, pageWidth, margin, isRTL, font, boldFont, FONT_LABEL);
+    currentY -= LINE_HEIGHT;
+  }
+  if (eventInfo.venue) {
+    renderLabelValue(page, venueLabel, String(eventInfo.venue), margin, currentY, pageWidth, margin, isRTL, font, boldFont, FONT_LABEL);
+    currentY -= LINE_HEIGHT;
+  }
   if (eventInfo.registrations !== undefined && eventInfo.registrations !== null) {
     const registrationsValue = eventInfo.registrationsFormatted !== undefined
       ? eventInfo.registrationsFormatted
@@ -396,7 +401,7 @@ export const exportChartsToPDF = async (
       boldFont
     );
   } catch (err) {
-    console.error("Error rendering PDF header:", err);
+    console.warn("Error rendering PDF header:", err.message);
     yPosition = PAGE_HEIGHT - margin;
   }
   yPosition -= spacing;

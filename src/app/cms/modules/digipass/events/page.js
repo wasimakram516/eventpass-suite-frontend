@@ -55,6 +55,7 @@ const translations = {
     delete: "Delete",
     shareTitle: "Share",
     viewRegs: "View Registrations",
+    insights: "Intelligent Insights",
     createdBy: "Created:",
     updatedBy: "Updated:",
     createdAt: "Created At:",
@@ -82,6 +83,7 @@ const translations = {
     delete: "حذف",
     shareTitle: "مشاركة",
     viewRegs: "عرض التسجيلات",
+    insights: "تحليلات ذكية",
     createdBy: "أنشئ:",
     updatedBy: "حدث:",
     createdAt: "تاريخ الإنشاء:",
@@ -307,6 +309,11 @@ export default function EventsPage() {
                       setEventToShare(ev);
                       setShareModalOpen(true);
                     }}
+                    onInsights={() =>
+                      router.push(
+                        `/cms/modules/digipass/events/${ev.slug}/insights`
+                      )
+                    }
                   />
                 </Grid>
               );
