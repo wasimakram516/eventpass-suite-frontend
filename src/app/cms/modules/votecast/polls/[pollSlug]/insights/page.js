@@ -631,7 +631,7 @@ export default function PollInsightsDashboard() {
                 endDateFormatted: formatPdfDate(linkedEvent?.endDate),
                 venue: linkedEvent?.venue || "N/A",
             };
-            await exportChartsToPDF(refs, labels, chartDataArray, pdfEventInfo, null, language, dir, t);
+            await exportChartsToPDF(refs, labels, chartDataArray, pdfEventInfo, null, language, dir, t, Intl.DateTimeFormat().resolvedOptions().timeZone);
         } catch (err) {
             console.error("PDF export failed:", err);
         }
@@ -642,7 +642,27 @@ export default function PollInsightsDashboard() {
         if (!selectedFields.length || !pollInfo) return;
         setExportRawLoading(true);
         try {
-            const formatDT = (val) => dayjs(val).format("DD-MMM-YY, hh:mm a");
+            const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            const getTimezoneLabel = (tz) => {
+                try {
+                    const now = new Date();
+                    const longName = new Intl.DateTimeFormat("en-US", { timeZone: tz, timeZoneName: "long" })
+                        .formatToParts(now).find((p) => p.type === "timeZoneName")?.value || tz;
+                    const shortOffset = new Intl.DateTimeFormat("en-US", { timeZone: tz, timeZoneName: "shortOffset" })
+                        .formatToParts(now).find((p) => p.type === "timeZoneName")?.value || "";
+                    return shortOffset ? `${longName} (${shortOffset})` : longName;
+                } catch { return tz || "UTC"; }
+            };
+            const formatDT = (val) => {
+                if (!val) return "";
+                try {
+                    return new Intl.DateTimeFormat("en-US", {
+                        year: "numeric", month: "short", day: "numeric",
+                        hour: "2-digit", minute: "2-digit", second: "2-digit",
+                        timeZone: timezone,
+                    }).format(new Date(val));
+                } catch { return String(val); }
+            };
             const wb = XLSX.utils.book_new();
             const wsData = [];
 
@@ -667,7 +687,7 @@ export default function PollInsightsDashboard() {
                 wsData.push(normalized);
             };
 
-            const formatDateTimeForExcel = (dateString) => dayjs(dateString).format("DD-MMM-YY, hh:mm a");
+            const formatDateTimeForExcel = (dateString) => formatDT(dateString);
 
             // Linked event section
             if (linkedEvent) {
@@ -684,6 +704,7 @@ export default function PollInsightsDashboard() {
             pushRow(t.totalVotes, leftAlign(summary?.totalVotes));
             pushRow(t.uniqueVoters, leftAlign(summary?.uniqueVoters));
             pushRow(t.participationRate, summary?.participationRate != null ? `${summary.participationRate}%` : "N/A");
+            pushRow("Timezone", getTimezoneLabel(timezone));
             wsData.push([]);
 
             // Chart data sections

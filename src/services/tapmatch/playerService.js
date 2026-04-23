@@ -39,8 +39,10 @@ export const getLeaderboard = withApiHandler(async (gameId, page = 1, limit = 10
 // Export TapMatch results (Excel download)
 export const exportResults = async (gameId) => {
   try {
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const { data } = await api.get(`/tapmatch/player/export/${gameId}`, {
       responseType: "blob",
+      params: { timezone },
     });
 
     const url = window.URL.createObjectURL(new Blob([data]));

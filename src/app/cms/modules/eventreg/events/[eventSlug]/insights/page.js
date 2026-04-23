@@ -830,7 +830,8 @@ export default function AnalyticsDashboard() {
                 null,
                 language,
                 dir,
-                t
+                t,
+                Intl.DateTimeFormat().resolvedOptions().timeZone
             );
         } catch (error) {
             console.error("PDF export failed:", error);
@@ -843,8 +844,26 @@ export default function AnalyticsDashboard() {
 
         setExportRawLoading(true);
         try {
+            const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            const getTimezoneLabel = (tz) => {
+                try {
+                    const now = new Date();
+                    const longName = new Intl.DateTimeFormat("en-US", { timeZone: tz, timeZoneName: "long" })
+                        .formatToParts(now).find((p) => p.type === "timeZoneName")?.value || tz;
+                    const shortOffset = new Intl.DateTimeFormat("en-US", { timeZone: tz, timeZoneName: "shortOffset" })
+                        .formatToParts(now).find((p) => p.type === "timeZoneName")?.value || "";
+                    return shortOffset ? `${longName} (${shortOffset})` : longName;
+                } catch { return tz || "UTC"; }
+            };
             const formatDateTimeForExcel = (dateString) => {
-                return dayjs(dateString).format('DD-MMM-YY, hh:mm a');
+                if (!dateString) return "";
+                try {
+                    return new Intl.DateTimeFormat("en-US", {
+                        year: "numeric", month: "short", day: "numeric",
+                        hour: "2-digit", minute: "2-digit", second: "2-digit",
+                        timeZone: timezone,
+                    }).format(new Date(dateString));
+                } catch { return String(dateString); }
             };
 
             const wb = XLSX.utils.book_new();
@@ -895,6 +914,7 @@ export default function AnalyticsDashboard() {
             pushRow(t.to, eventInfo.endDate ? formatDateTimeForExcel(eventInfo.endDate) : "N/A");
             pushRow(t.venue, eventInfo.venue || "N/A");
             pushRow(t.totalRegistrations, leftAlignNumber(eventInfo.registrations, 0));
+            pushRow("Timezone", getTimezoneLabel(timezone));
             wsData.push([]);
 
             // Data sections for each selected field

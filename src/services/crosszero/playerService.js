@@ -18,7 +18,8 @@ export const getSessionHistory = withApiHandler(async (gameId, page = 1, limit =
 
 export const exportResults = async (gameId) => {
   try {
-    const { data } = await api.get(`/crosszero/player/export/${gameId}`, { responseType: "blob" });
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const { data } = await api.get(`/crosszero/player/export/${gameId}`, { responseType: "blob", params: { timezone } });
     const url = window.URL.createObjectURL(new Blob([data]));
     const link = document.createElement("a");
     link.href = url;
