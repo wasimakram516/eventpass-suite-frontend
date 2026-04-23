@@ -169,6 +169,9 @@ const translations = {
     cancelPrint: "Cancel",
     exportBadgesWarning: "Some registrations in the current view have already had their badges exported. Do you still want to proceed?",
     exportBadgesProceed: "Proceed",
+    sort: "Sort",
+    mostRecent: "Most Recent",
+    oldest: "Oldest",
   },
   ar: {
     title: "تفاصيل الحدث",
@@ -264,6 +267,9 @@ const translations = {
     cancelPrint: "إلغاء",
     exportBadgesWarning: "تمت طباعة شارات بعض التسجيلات في العرض الحالي مسبقاً. هل تريد المتابعة؟",
     exportBadgesProceed: "متابعة",
+    sort: "ترتيب",
+    mostRecent: "الأحدث",
+    oldest: "الأقدم",
   },
 };
 
@@ -304,6 +310,7 @@ export default function ViewRegistrations() {
 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
+  const [sortOrder, setSortOrder] = useState(-1);
   const [loading, setLoading] = useState(true);
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -336,7 +343,7 @@ export default function ViewRegistrations() {
 
   useEffect(() => {
     if (eventSlug) fetchData();
-  }, [eventSlug]);
+  }, [eventSlug, sortOrder]);
 
   useEffect(() => {
     const initialSearch = searchParams.get("search");
@@ -414,7 +421,7 @@ export default function ViewRegistrations() {
 
     setFilters((prev) => buildFilterState(fieldsLocal, prev));
 
-    const regsRes = await getInitialRegistrations(eventSlug);
+    const regsRes = await getInitialRegistrations(eventSlug, sortOrder);
     if (!regsRes?.error) {
       const initialData = regsRes.data || [];
       const prepped = initialData.map((r) => {
@@ -534,7 +541,11 @@ export default function ViewRegistrations() {
       const exists = prev.some((r) => r._id === processed._id);
       if (exists) return prev;
 
-      return [processed, ...prev];
+      if (sortOrder === -1) {
+        return [processed, ...prev];
+      } else {
+        return [...prev, processed];
+      }
     });
 
     setTotalRegistrations((prev) => prev + 1);
@@ -1534,10 +1545,21 @@ export default function ViewRegistrations() {
             sx={{
               flex: 1,
               minWidth: { xs: "100%", sm: 220 },
-              mr: dir === "rtl" ? 0 : 1.5,
-              ml: dir === "rtl" ? 1.5 : 0,
             }}
           />
+
+          <FormControl size="small" sx={{ minWidth: 170 }}>
+            <InputLabel id="sort-label">{t.sort}</InputLabel>
+            <Select
+              labelId="sort-label"
+              value={sortOrder}
+              label={t.sort}
+              onChange={(e) => setSortOrder(Number(e.target.value))}
+            >
+              <MenuItem value={-1}>{t.mostRecent}</MenuItem>
+              <MenuItem value={1}>{t.oldest}</MenuItem>
+            </Select>
+          </FormControl>
           <Button
             variant="outlined"
             startIcon={<ICONS.filter />}

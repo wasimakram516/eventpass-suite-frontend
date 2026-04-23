@@ -125,17 +125,17 @@ export const uploadRegistrations = withApiHandler(
 
 // Get registrations for a specific event (CMS use, by slug)
 export const getRegistrationsByEvent = withApiHandler(
-  async (slug, page = 1, limit = 10) => {
+  async (slug, page = 1, limit = 10, sort = -1) => {
     const { data } = await api.get(
-      `/eventreg/registrations/event/${slug}?page=${page}&limit=${limit}`,
+      `/eventreg/registrations/event/${slug}?page=${page}&limit=${limit}&sort=${sort}`,
     );
     return data;
   },
 );
 
 // Get initial registrations (first 50)
-export const getInitialRegistrations = withApiHandler(async (slug) => {
-  const { data } = await api.get(`/eventreg/registrations/event/${slug}/all`);
+export const getInitialRegistrations = withApiHandler(async (slug, sort = -1) => {
+  const { data } = await api.get(`/eventreg/registrations/event/${slug}/all?sort=${sort}`);
   return data;
 });
 
