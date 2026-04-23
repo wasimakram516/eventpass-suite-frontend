@@ -3,6 +3,29 @@ import { PDFDocument, rgb } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
 import { formatDateTimeWithLocale, formatDate } from "@/utils/dateUtils";
 
+const getTimezoneLabel = (timezone) => {
+  try {
+    const now = new Date();
+    const longName = new Intl.DateTimeFormat("en-US", {
+      timeZone: timezone,
+      timeZoneName: "long",
+    })
+      .formatToParts(now)
+      .find((p) => p.type === "timeZoneName")?.value || timezone;
+
+    const shortOffset = new Intl.DateTimeFormat("en-US", {
+      timeZone: timezone,
+      timeZoneName: "shortOffset",
+    })
+      .formatToParts(now)
+      .find((p) => p.type === "timeZoneName")?.value || "";
+
+    return shortOffset ? `${longName} (${shortOffset})` : longName;
+  } catch {
+    return timezone || "UTC";
+  }
+};
+
 // Layout & font sizes
 const FONT_TITLE = 16;
 const FONT_SECTION = 14;
@@ -110,7 +133,8 @@ const addEventHeader = async (
   isRTL = false,
   translations = {},
   font,
-  boldFont
+  boldFont,
+  timezone = null
 ) => {
   if (!eventInfo) return PAGE_HEIGHT - margin;
 
@@ -342,6 +366,14 @@ const addEventHeader = async (
     }
   }
 
+  // Timezone
+  if (timezone) {
+    const tzLabel = getTimezoneLabel(timezone);
+    const timezoneKey = translations.timezone || "Timezone";
+    renderLabelValue(page, timezoneKey, tzLabel, margin, currentY, pageWidth, margin, isRTL, font, boldFont, FONT_LABEL);
+    currentY -= LINE_HEIGHT;
+  }
+
   // Separator line
   page.drawLine({
     start: { x: margin, y: currentY },
@@ -361,7 +393,8 @@ export const exportChartsToPDF = async (
   surveyInfo = null,
   language = "en",
   dir = "ltr",
-  translations = {}
+  translations = {},
+  timezone = null
 ) => {
   const pdf = await PDFDocument.create();
   pdf.registerFontkit(fontkit);
@@ -398,7 +431,8 @@ export const exportChartsToPDF = async (
       isRTL,
       translations,
       font,
-      boldFont
+      boldFont,
+      timezone
     );
   } catch (err) {
     console.warn("Error rendering PDF header:", err.message);

@@ -41,8 +41,10 @@ export const getLeaderboard = withApiHandler(async (gameId) => {
 // Export player results (blob response)
 export const exportResults = async (gameId) => {
   try {
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const { data } = await api.get(`/quiznest/players/export/${gameId}`, {
       responseType: "blob",
+      params: { timezone },
     });
 
     const url = window.URL.createObjectURL(new Blob([data]));

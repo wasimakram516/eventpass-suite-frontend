@@ -96,8 +96,10 @@ export const getPollResults = withApiHandler(async (pollId) => {
 
 // Export questions for a poll as XLSX
 export const exportQuestionsToExcel = async (pollId, pollSlug) => {
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
   const { data, headers } = await api.get(`/votecast/polls/${pollId}/questions/export`, {
     responseType: "blob",
+    params: { timezone },
   });
   const blob = new Blob([data], {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

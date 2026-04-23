@@ -53,7 +53,8 @@ export const resetSessions = withApiHandler(
 
 export const exportResults = async (gameSlug) => {
   try {
-    const { data } = await api.get(`/crosszero/sessions/export/${gameSlug}`, { responseType: "blob" });
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const { data } = await api.get(`/crosszero/sessions/export/${gameSlug}`, { responseType: "blob", params: { timezone } });
     const url = window.URL.createObjectURL(new Blob([data]));
     const link = document.createElement("a");
     link.href = url;

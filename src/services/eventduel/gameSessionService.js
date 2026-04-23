@@ -85,8 +85,10 @@ export const getLeaderboard = withApiHandler(async (gameSlug) => {
 // Export player results (blob response)
 export const exportResults = async (gameSlug) => {
   try {
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const { data } = await api.get(`/eventduel/sessions/export/${gameSlug}`, {
       responseType: "blob",
+      params: { timezone },
     });
 
     const url = window.URL.createObjectURL(new Blob([data]));
