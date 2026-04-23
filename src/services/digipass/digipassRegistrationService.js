@@ -15,17 +15,17 @@ export const signInDigipass = withApiHandler(async (payload) => {
 
 // Get registrations for a specific event (CMS use, by slug)
 export const getDigipassRegistrationsByEvent = withApiHandler(
-  async (slug, page = 1, limit = 10) => {
+  async (slug, page = 1, limit = 10, sort = -1) => {
     const { data } = await api.get(
-      `/digipass/registrations/event/${slug}?page=${page}&limit=${limit}`
+      `/digipass/registrations/event/${slug}?page=${page}&limit=${limit}&sort=${sort}`
     );
     return data;
   }
 );
 
 // Get initial registrations (first 50)
-export const getDigipassInitialRegistrations = withApiHandler(async (slug) => {
-  const { data } = await api.get(`/digipass/registrations/event/${slug}/all`);
+export const getDigipassInitialRegistrations = withApiHandler(async (slug, sort = -1) => {
+  const { data } = await api.get(`/digipass/registrations/event/${slug}/all?sort=${sort}`);
   return data;
 });
 
