@@ -154,6 +154,9 @@ const translations = {
     proceedPrint: "Proceed",
     exportBadgesWarning: "Some registrations in the current view have already had their badges exported. Do you still want to proceed?",
     exportBadgesProceed: "Proceed",
+    sort: "Sort",
+    mostRecent: "Most Recent",
+    oldest: "Oldest",
   },
   ar: {
     title: "إدارة التسجيلات",
@@ -233,6 +236,9 @@ const translations = {
     proceedPrint: "متابعة",
     exportBadgesWarning: "تمت طباعة شارات بعض التسجيلات في العرض الحالي مسبقاً. هل تريد المتابعة؟",
     exportBadgesProceed: "متابعة",
+    sort: "ترتيب",
+    mostRecent: "الأحدث أولاً",
+    oldest: "الأقدم أولاً",
   },
 };
 
@@ -290,6 +296,7 @@ export default function ViewRegistrations() {
 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
+  const [sortOrder, setSortOrder] = useState(-1);
   const [loading, setLoading] = useState(true);
 
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -320,6 +327,7 @@ export default function ViewRegistrations() {
   const fetchData = async () => {
     setLoading(true);
     setIsLoadingMore(false);
+    lastLoadedRef.current = null;
 
     const evRes = await getCheckInEventBySlug(eventSlug);
 
@@ -349,8 +357,9 @@ export default function ViewRegistrations() {
       )
     );
     setFilters((prev) => buildFilterState(fieldsLocal, prev));
+    setAllRegistrations([]);
 
-    const regsRes = await getCheckInInitialRegistrations(eventSlug);
+    const regsRes = await getCheckInInitialRegistrations(eventSlug, sortOrder);
     if (!regsRes?.error) {
       const initialData = regsRes.data || [];
       const prepped = initialData.map((r) => ({
@@ -372,7 +381,7 @@ export default function ViewRegistrations() {
 
   useEffect(() => {
     if (eventSlug) fetchData();
-  }, [eventSlug]);
+  }, [eventSlug, sortOrder]);
 
   useEffect(() => {
     const initialSearch = searchParams.get("search");
@@ -443,16 +452,29 @@ export default function ViewRegistrations() {
     setAllRegistrations((prev) => {
       const exists = prev.find((r) => r._id === reg._id);
       if (exists) return prev;
-      return [
-        {
-          ...reg,
-          approvalStatus: reg.approvalStatus || "pending",
-          _createdAtMs: Date.parse(reg.createdAt),
-          _scannedAtMs: (reg.walkIns || []).map((w) => Date.parse(w.scannedAt)),
-          _haystack: buildHaystack(reg, dynamicFieldsRef.current),
-        },
-        ...prev,
-      ];
+      if (sortOrder === -1) {
+        return [
+          {
+            ...reg,
+            approvalStatus: reg.approvalStatus || "pending",
+            _createdAtMs: Date.parse(reg.createdAt),
+            _scannedAtMs: (reg.walkIns || []).map((w) => Date.parse(w.scannedAt)),
+            _haystack: buildHaystack(reg, dynamicFieldsRef.current),
+          },
+          ...prev,
+        ];
+      } else {
+        return [
+          ...prev,
+          {
+            ...reg,
+            approvalStatus: reg.approvalStatus || "pending",
+            _createdAtMs: Date.parse(reg.createdAt),
+            _scannedAtMs: (reg.walkIns || []).map((w) => Date.parse(w.scannedAt)),
+            _haystack: buildHaystack(reg, dynamicFieldsRef.current),
+          },
+        ];
+      }
     });
     setTotalRegistrations((prev) => prev + 1);
   }, []);
@@ -1339,6 +1361,19 @@ export default function ViewRegistrations() {
               ml: dir === "rtl" ? 1.5 : 0,
             }}
           />
+
+          <FormControl size="small" sx={{ minWidth: 170 }}>
+            <InputLabel id="sort-label">{t.sort}</InputLabel>
+            <Select
+              labelId="sort-label"
+              value={sortOrder}
+              label={t.sort}
+              onChange={(e) => setSortOrder(Number(e.target.value))}
+            >
+              <MenuItem value={-1}>{t.mostRecent}</MenuItem>
+              <MenuItem value={1}>{t.oldest}</MenuItem>
+            </Select>
+          </FormControl>
           <Button
             variant="outlined"
             startIcon={<ICONS.filter />}
