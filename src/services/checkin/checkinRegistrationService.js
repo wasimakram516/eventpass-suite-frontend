@@ -52,16 +52,16 @@ export const exportCheckInRegistrations = async (slug, query = {}) => {
 };
 
 // Get initial registrations (first batch)
-export const getCheckInInitialRegistrations = withApiHandler(async (slug) => {
-  const { data } = await api.get(`/checkin/registrations/event/${slug}/all`);
+export const getCheckInInitialRegistrations = withApiHandler(async (slug, sort = -1) => {
+  const { data } = await api.get(`/checkin/registrations/event/${slug}/all?sort=${sort}`);
   return data;
 });
 
 // Get registrations for an event by slug (protected)
 export const getCheckInRegistrationsByEvent = withApiHandler(
-  async (slug, page = 1, limit = 10) => {
+  async (slug, page = 1, limit = 10, sort = -1) => {
     const { data } = await api.get(
-      `/checkin/registrations/event/${slug}?page=${page}&limit=${limit}`
+      `/checkin/registrations/event/${slug}?page=${page}&limit=${limit}&sort=${sort}`
     );
     return data;
   }
