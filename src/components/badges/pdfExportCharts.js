@@ -525,7 +525,7 @@ const addEventHeader = async (
 };
 
 // Generic KPI card row — takes array of { label, value, rgbColor }
-const drawKpiCards = (page, cards, yPosition, pageWidth, margin, font, boldFont, isRTL = false) => {
+const drawSimpleKpiCards = (page, cards, yPosition, pageWidth, margin, font, boldFont, isRTL = false) => {
   if (!cards.length) return yPosition;
   const count = cards.length;
   const gap = 10;
@@ -599,7 +599,7 @@ const drawPrintStatsKpiCards = (page, eventInfo, yPosition, pageWidth, margin, f
     { label: fixParens(translations.multiPrint      || "Multi-Print (2+)", isRTL),         value: String(eventInfo.multiPrintCount ?? 0), rgbColor: rgb(0.063, 0.725, 0.506) },
     { label: fixParens(translations.multiPrintRate  || "Multi-Print Rate", isRTL),         value: `${eventInfo.multiPrintRate ?? "0.00"}%`, rgbColor: rgb(0.545, 0.361, 0.965) },
   ];
-  return drawKpiCards(page, cards, yPosition, pageWidth, margin, font, boldFont, isRTL);
+  return drawSimpleKpiCards(page, cards, yPosition, pageWidth, margin, font, boldFont, isRTL);
 };
 
 export const exportChartsToPDF = async (
@@ -712,7 +712,7 @@ export const exportChartsToPDF = async (
       { label: fixParens(translations.totalScanned || "Total Scanned", isRTL),             value: String(eventInfo.uniqueScanned ?? 0),       rgbColor: rgb(0.008, 0.518, 0.780) },
       { label: fixParens(translations.scanRate || "Scan Rate", isRTL),                     value: `${eventInfo.scanRate ?? "0.00"}%`,          rgbColor: rgb(0.024, 0.714, 0.831) },
     ];
-    yPosition = drawKpiCards(page, regCards, yPosition, pageWidth, margin, font, boldFont, isRTL);
+    yPosition = drawSimpleKpiCards(page, regCards, yPosition, pageWidth, margin, font, boldFont, isRTL);
     yPosition -= spacing;
 
   } else if (eventInfo?.uniqueVoters !== undefined) {
@@ -728,7 +728,7 @@ export const exportChartsToPDF = async (
       ...(hasParticipationRate ? [{ label: fixParens(translations.participationRate || "Participation Rate", isRTL), value: `${eventInfo.participationRate}%`, rgbColor: rgb(0.008, 0.518, 0.780) }] : []),
       { label: fixParens(translations.questionCount || "Question Count", isRTL),        value: String(eventInfo.questionCount ?? 0), rgbColor: rgb(0.024, 0.714, 0.831) },
     ];
-    yPosition = drawKpiCards(page, voteCards, yPosition, pageWidth, margin, font, boldFont, isRTL);
+    yPosition = drawSimpleKpiCards(page, voteCards, yPosition, pageWidth, margin, font, boldFont, isRTL);
     yPosition -= spacing;
   }
 
