@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useParams } from "next/navigation";
@@ -229,7 +229,7 @@ export default function WhatsAppInboxPage() {
   ========================= */
 
   return (
-    <Container dir={dir} maxWidth="lg">
+    <Container dir={dir} maxWidth={false} disableGutters>
       <BreadcrumbsNav />
 
       <Stack spacing={1} mb={2}>

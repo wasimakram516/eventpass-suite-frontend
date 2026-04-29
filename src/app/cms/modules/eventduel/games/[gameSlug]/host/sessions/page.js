@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useMemo } from "react";
 import { useParams, useSearchParams } from "next/navigation";
@@ -189,7 +189,7 @@ export default function PvPSessions() {
   };
 
   return (
-    <Container dir={dir} maxWidth="lg">
+    <Container dir={dir} maxWidth={false} disableGutters>
       <Box sx={{ textAlign: align }}>
         <BreadcrumbsNav />
         <Box

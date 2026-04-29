@@ -47,7 +47,7 @@ export default function ModuleLandingPage({
         },
       }}
     >
-      <Container maxWidth="lg" sx={{ pt: 3, zIndex: 1 }}>
+      <Container maxWidth={false} disableGutters sx={{ pt: 3, zIndex: 1 }}>
         <BreadcrumbsNav />
       </Container>
 
@@ -59,7 +59,7 @@ export default function ModuleLandingPage({
           zIndex: 1,
         }}
       >
-        <Container maxWidth="lg" sx={{ direction: dir }}>
+        <Container maxWidth={false} disableGutters sx={{ direction: dir }}>
           <Stack
             spacing={4}
             alignItems={{ xs: "stretch", md: "center" }}

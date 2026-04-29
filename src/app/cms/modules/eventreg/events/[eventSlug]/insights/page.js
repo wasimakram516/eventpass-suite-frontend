@@ -18,6 +18,7 @@ import {
     getAvailableFields,
     getFieldDistribution,
     getTimeDistribution,
+    getInsightsSummary,
     getScannedByTypeDistribution,
     getScannedByUserDistribution,
 } from "@/services/eventreg/insightsService";
@@ -66,6 +67,13 @@ const translations = {
         intervalMinutesFull: "Interval (minutes)",
         timestamp: "Timestamp",
         totalRegistrations: "Total Registrations",
+        timezone: "Timezone",
+        badgePrintStats: "Badge Print Stats",
+        totalBadgePrints: "Total Badge Prints",
+        noPrints: "0 Prints (Never Printed)",
+        onePrint: "1 Print",
+        multiPrint: "Multi-Print (2+)",
+        multiPrintRate: "Multi-Print Rate",
     },
     ar: {
         pageTitle: "تحليلات ذكية",
@@ -98,6 +106,13 @@ const translations = {
         intervalMinutesFull: "الفاصل الزمني (بالدقائق)",
         timestamp: "الطابع الزمني",
         totalRegistrations: "إجمالي التسجيلات",
+        timezone: "المنطقة الزمنية",
+        badgePrintStats: "إحصائيات طباعة الشارات",
+        totalBadgePrints: "إجمالي طباعة الشارات",
+        noPrints: "0 طباعة (لم يُطبع)",
+        onePrint: "طباعة واحدة",
+        multiPrint: "طباعة متعددة (2+)",
+        multiPrintRate: "معدل الطباعة المتعددة",
     },
 };
 
@@ -576,6 +591,7 @@ export default function AnalyticsDashboard() {
     const [exportLoading, setExportLoading] = useState(false);
     const [exportRawLoading, setExportRawLoading] = useState(false);
     const [eventInfo, setEventInfo] = useState(null);
+    const [summary, setSummary] = useState(null);
 
     const getFieldParam = (fieldName, paramName, defaultValue) => {
         return fieldParams[fieldName]?.[paramName] ?? defaultValue;
@@ -597,15 +613,17 @@ export default function AnalyticsDashboard() {
 
             try {
                 setLoading(true);
-                const [fieldsResponse, eventResponse] = await Promise.all([
+                const [fieldsResponse, eventResponse, summaryResponse] = await Promise.all([
                     getAvailableFields(eventSlug),
                     getPublicEventBySlug(eventSlug),
+                    getInsightsSummary(eventSlug),
                 ]);
 
                 const eventData =
                     eventResponse?.data?.event || eventResponse?.data || eventResponse;
                 console.log("Event data structure:", eventData);
                 setEventInfo(eventData);
+                if (summaryResponse?.data) setSummary(summaryResponse.data);
                 const response = fieldsResponse;
 
                 const defaultParams = {};
@@ -826,7 +844,7 @@ export default function AnalyticsDashboard() {
                 refs,
                 labels,
                 chartDataArray,
-                eventInfo,
+                { ...eventInfo, ...(summary || {}) },
                 null,
                 language,
                 dir,
@@ -914,7 +932,16 @@ export default function AnalyticsDashboard() {
             pushRow(t.to, eventInfo.endDate ? formatDateTimeForExcel(eventInfo.endDate) : "N/A");
             pushRow(t.venue, eventInfo.venue || "N/A");
             pushRow(t.totalRegistrations, leftAlignNumber(eventInfo.registrations, 0));
-            pushRow("Timezone", getTimezoneLabel(timezone));
+            pushRow(t.timezone, getTimezoneLabel(timezone));
+            wsData.push([]);
+
+            // Badge print stats section
+            pushRow("=== Badge Print Stats ===");
+            pushRow(t.totalBadgePrints, leftAlignNumber(summary?.totalPrints, 0));
+            pushRow(t.noPrints, leftAlignNumber(summary?.noPrintCount, 0));
+            pushRow(t.onePrint, leftAlignNumber(summary?.onePrintCount, 0));
+            pushRow(t.multiPrint, leftAlignNumber(summary?.multiPrintCount, 0));
+            pushRow(t.multiPrintRate, summary ? `${summary.multiPrintRate}%` : "0.00%");
             wsData.push([]);
 
             // Data sections for each selected field
@@ -1085,6 +1112,37 @@ export default function AnalyticsDashboard() {
 
                 <Divider sx={{ mb: 3 }} />
             </>
+
+            {summary && (
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
+                    {[
+                        { label: t.totalBadgePrints, value: summary.totalPrints, color: "#0077b6" },
+                        { label: t.noPrints, value: summary.noPrintCount, color: "#ef4444" },
+                        { label: t.onePrint, value: summary.onePrintCount, color: "#f59e0b" },
+                        { label: t.multiPrint, value: summary.multiPrintCount, color: "#10b981" },
+                        { label: t.multiPrintRate, value: `${summary.multiPrintRate}%`, color: "#8b5cf6" },
+                    ].map(({ label, value, color }) => (
+                        <Paper
+                            key={label}
+                            sx={{
+                                p: 2,
+                                borderRadius: 2,
+                                boxShadow: 2,
+                                flex: "1 1 140px",
+                                minWidth: 140,
+                                textAlign: "center",
+                            }}
+                        >
+                            <Typography variant="h4" fontWeight="bold" sx={{ color }}>
+                                {value}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                                {label}
+                            </Typography>
+                        </Paper>
+                    ))}
+                </Box>
+            )}
 
             <Paper
                 sx={{

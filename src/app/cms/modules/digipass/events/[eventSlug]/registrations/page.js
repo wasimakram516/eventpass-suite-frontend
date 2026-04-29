@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect, useRef } from "react";
 import {
@@ -806,7 +806,7 @@ export default function ViewRegistrations() {
     };
 
     return (
-        <Container dir={dir} maxWidth="lg">
+        <Container dir={dir} maxWidth={false} disableGutters>
             <BreadcrumbsNav />
 
             <Stack

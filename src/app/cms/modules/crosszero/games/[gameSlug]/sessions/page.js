@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
@@ -97,7 +97,7 @@ export default function CrossZeroPvPSessionsPage() {
   };
 
   return (
-    <Container dir={dir} maxWidth="lg">
+    <Container dir={dir} maxWidth={false} disableGutters>
       <BreadcrumbsNav />
       <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, justifyContent: "space-between", alignItems: { xs: "stretch", sm: "center" }, gap: 2, mb: 2, mt: 1 }}>
         <Box>

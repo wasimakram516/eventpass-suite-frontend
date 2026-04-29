@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useMemo } from "react";
 import { useParams } from "next/navigation";
@@ -167,7 +167,7 @@ export default function QuestionsPage() {
 
     if (!poll) {
         return (
-            <Container maxWidth="lg" sx={{ mt: 4 }}>
+            <Container maxWidth={false} disableGutters sx={{ mt: 4 }}>
                 <Typography>{t.pollNotFound}</Typography>
             </Container>
         );
@@ -175,7 +175,7 @@ export default function QuestionsPage() {
 
     return (
         <Box dir={dir}>
-            <Container maxWidth="lg">
+            <Container maxWidth={false} disableGutters>
                 <BreadcrumbsNav />
 
                 <Box

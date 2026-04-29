@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -251,7 +251,7 @@ export default function CrossZeroHostPage() {
   };
 
   return (
-    <Container dir={dir} maxWidth="lg">
+    <Container dir={dir} maxWidth={false} disableGutters>
       <Box sx={{ textAlign: dir === "rtl" ? "right" : "left" }}>
         <BreadcrumbsNav />
         <Box

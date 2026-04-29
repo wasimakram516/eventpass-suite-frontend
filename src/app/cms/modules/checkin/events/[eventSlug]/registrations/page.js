@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import {
@@ -1136,7 +1136,7 @@ export default function ViewRegistrations() {
   return (
     <Container
       dir={dir}
-      maxWidth="lg"
+      maxWidth={false} disableGutters
       sx={{
         width: "100%",
         maxWidth: "100%",

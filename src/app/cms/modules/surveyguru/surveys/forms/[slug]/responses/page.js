@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect, Fragment } from "react";
 import {
@@ -766,7 +766,7 @@ export default function ViewSurveyResponses() {
   };
 
   return (
-    <Container dir={dir} maxWidth="lg">
+    <Container dir={dir} maxWidth={false} disableGutters>
       <BreadcrumbsNav />
 
       <Stack

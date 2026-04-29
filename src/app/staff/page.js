@@ -90,7 +90,7 @@ export default function Modules() {
 
   return (
     <Box dir={dir} sx={{ py: 4, bgcolor: "background.default" }}>
-      <Container>
+      <Container maxWidth={false}>
         <Box sx={{ mb: 3 }}>
           <Typography
             variant="h2"

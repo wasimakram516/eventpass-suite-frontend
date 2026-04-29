@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
@@ -172,7 +172,7 @@ export default function CrossZeroAIResultsPage() {
       dir={dir}
       sx={{ position: "relative", width: "100%", maxWidth: "90vw" }}
     >
-      <Container maxWidth="lg">
+      <Container maxWidth={false} disableGutters>
         <Box sx={{ mb: 4 }}>
           <BreadcrumbsNav />
           <Box

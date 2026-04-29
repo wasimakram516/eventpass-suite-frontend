@@ -68,7 +68,7 @@ export default function SettingsPage() {
 
   return (
     <Box dir={dir}>
-      <Container>
+      <Container maxWidth={false} disableGutters>
         <Typography
           variant="h2"
           fontWeight="bold"

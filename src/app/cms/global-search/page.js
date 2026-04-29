@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -451,7 +451,7 @@ export default function GlobalSearchPage() {
       <Container
         dir={dir}
         maxWidth={false}
-        sx={{ maxWidth: "1500px", px: { xs: 2, md: 3 } }}
+        sx={{ px: { xs: 2, md: 3 } }}
       >
         <BreadcrumbsNav />
 

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useParams } from "next/navigation";
 import {
@@ -305,7 +305,7 @@ const CMSUploadsPage = () => {
   }
 
   return (
-    <Container dir={dir} maxWidth="lg">
+    <Container dir={dir} maxWidth={false} disableGutters>
       <BreadcrumbsNav />
       <Typography variant="h4" fontWeight="bold" mt={3}>
         {t.mediaGallery}

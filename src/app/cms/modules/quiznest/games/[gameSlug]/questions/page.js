@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   Box,
@@ -250,7 +250,7 @@ export default function QuestionsPage() {
 
   return (
     <Box sx={{ position: "relative", width: "100%" }} dir={dir}>
-      <Container maxWidth="lg">
+      <Container maxWidth={false} disableGutters>
         <Box sx={{ mb: 4 }}>
           <BreadcrumbsNav />
 

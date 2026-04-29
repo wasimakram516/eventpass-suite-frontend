@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -216,7 +216,7 @@ export default function EventsPage() {
         />
       )}
 
-      <Container maxWidth="lg">
+      <Container maxWidth={false} disableGutters>
         <BreadcrumbsNav />
         <Box
           sx={{

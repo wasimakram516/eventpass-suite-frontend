@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useRef, useEffect } from "react";
 import { useParams } from "next/navigation";
@@ -626,7 +626,7 @@ export default function UploadPage() {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ minHeight: "100vh", py: 2 }} >
+    <Container maxWidth={false} sx={{ minHeight: "100vh", py: 2 }} >
       <Box
         sx={{
           display: "flex",

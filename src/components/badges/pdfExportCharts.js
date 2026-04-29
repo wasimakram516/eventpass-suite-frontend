@@ -385,6 +385,81 @@ const addEventHeader = async (
   return currentY - 8.5;
 };
 
+const drawPrintStatsKpiCards = (page, eventInfo, yPosition, pageWidth, margin, font, boldFont, translations, isRTL = false) => {
+  // pdf-lib has no bidi support — parentheses get visually mirrored in RTL rendering.
+  const fixParens = (text) =>
+    isRTL ? text.replace(/\(/g, "\x00").replace(/\)/g, "(").replace(/\x00/g, ")") : text;
+  const cardCount = 5;
+  const gap = 10;
+  const cardWidth = (pageWidth - margin * 2 - (cardCount - 1) * gap) / cardCount;
+  const cardHeight = 68;
+  const valueSize = 20;  // matches MUI h4 bold
+  const labelSize = 9;   // matches MUI body2
+  const labelLineHeight = 11;
+
+  const cards = [
+    { label: fixParens(translations.totalBadgePrints || "Total Badge Prints"),     value: String(eventInfo.totalPrints    ?? 0), color: rgb(0,      0.467, 0.714) },
+    { label: fixParens(translations.noPrints        || "0 Prints (Never Printed)"), value: String(eventInfo.noPrintCount   ?? 0), color: rgb(0.937, 0.267, 0.267) },
+    { label: fixParens(translations.onePrint        || "1 Print"),                  value: String(eventInfo.onePrintCount  ?? 0), color: rgb(0.961, 0.620, 0.043) },
+    { label: fixParens(translations.multiPrint      || "Multi-Print (2+)"),         value: String(eventInfo.multiPrintCount ?? 0), color: rgb(0.063, 0.725, 0.506) },
+    { label: fixParens(translations.multiPrintRate  || "Multi-Print Rate"),         value: `${eventInfo.multiPrintRate ?? "0.00"}%`, color: rgb(0.545, 0.361, 0.965) },
+  ];
+
+  cards.forEach((card, i) => {
+    const cardX = margin + i * (cardWidth + gap);
+    const cardY = yPosition - cardHeight;
+
+    // White card background with light border
+    page.drawRectangle({
+      x: cardX, y: cardY,
+      width: cardWidth, height: cardHeight,
+      color: rgb(1, 1, 1),
+      borderColor: rgb(0.878, 0.878, 0.878),
+      borderWidth: 0.75,
+    });
+
+    // Value — large bold colored 
+    const valueWidth = boldFont.widthOfTextAtSize(card.value, valueSize);
+    page.drawText(card.value, {
+      x: Math.max(cardX + 2, cardX + (cardWidth - valueWidth) / 2),
+      y: cardY + 40,
+      size: valueSize,
+      font: boldFont,
+      color: card.color,
+    });
+
+    // Label — word-wrapped, centered, gray (matches Typography variant="body2" color="text.secondary")
+    const maxLabelWidth = cardWidth - 8;
+    const words = card.label.split(" ");
+    const lines = [];
+    let cur = "";
+    for (const word of words) {
+      const test = cur ? `${cur} ${word}` : word;
+      if (font.widthOfTextAtSize(test, labelSize) > maxLabelWidth && cur) {
+        lines.push(cur);
+        cur = word;
+      } else {
+        cur = test;
+      }
+    }
+    if (cur) lines.push(cur);
+
+    const labelStartY = lines.length === 1 ? cardY + 16 : cardY + 24;
+    lines.forEach((line, li) => {
+      const lw = font.widthOfTextAtSize(line, labelSize);
+      page.drawText(line, {
+        x: Math.max(cardX + 2, cardX + (cardWidth - lw) / 2),
+        y: labelStartY - li * labelLineHeight,
+        size: labelSize,
+        font,
+        color: rgb(0.459, 0.459, 0.459), // MUI text.secondary
+      });
+    });
+  });
+
+  return yPosition - cardHeight;
+};
+
 export const exportChartsToPDF = async (
   chartRefs,
   fieldLabels,
@@ -439,6 +514,29 @@ export const exportChartsToPDF = async (
     yPosition = PAGE_HEIGHT - margin;
   }
   yPosition -= spacing;
+
+  if (eventInfo?.totalPrints !== undefined) {
+    const kpiSectionHeight = 20 + 65;
+    if (yPosition < kpiSectionHeight + margin) {
+      page = pdf.addPage([pageWidth, pageHeight]);
+      yPosition = pageHeight - margin;
+    }
+
+    const sectionLabel = translations.badgePrintStats || "Badge Print Stats";
+    const sectionLabelX = getTextX(sectionLabel, margin, pageWidth, margin, isRTL, "left", boldFont, FONT_SECTION);
+    page.drawText(sectionLabel, {
+      x: sectionLabelX,
+      y: yPosition,
+      size: FONT_SECTION,
+      font: boldFont,
+      color: rgb(0.12, 0.16, 0.22),
+    });
+    yPosition -= 20;
+
+    yPosition = drawPrintStatsKpiCards(page, eventInfo, yPosition, pageWidth, margin, font, boldFont, translations, isRTL);
+    yPosition -= spacing;
+  }
+
   let isFirstChart = true;
 
   const ensureSpace = async (needed) => {

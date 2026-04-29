@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -246,7 +246,7 @@ export default function GamesPage() {
         />
       )}
 
-      <Container maxWidth="lg">
+      <Container maxWidth={false} disableGutters>
         <Box sx={{ mb: 4 }}>
           <Box
             sx={{

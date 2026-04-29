@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useEffect, useMemo } from "react";
 import {
@@ -271,7 +271,7 @@ export default function WallConfigsPage() {
     qrCodeUrl = `${window.location.origin}/memorywall/${currentSlug}/capture`;
   }
   return (
-    <Container dir={dir} maxWidth="lg">
+    <Container dir={dir} maxWidth={false} disableGutters>
       <BreadcrumbsNav />
       {/* Header Section */}
       <Stack

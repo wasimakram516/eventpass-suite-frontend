@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -261,7 +261,7 @@ export default function HostDashboard() {
   };
 
   return (
-    <Container dir={dir} maxWidth="lg">
+    <Container dir={dir} maxWidth={false} disableGutters>
       <Box sx={{ textAlign: align }}>
         <BreadcrumbsNav />
         <Box

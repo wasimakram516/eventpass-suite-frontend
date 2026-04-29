@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useCallback, useRef } from "react";
 import {
@@ -193,7 +193,7 @@ export default function DigiPassVerifyPage() {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ py: 3 }}>
+    <Container maxWidth={false} sx={{ py: 3 }}>
       <BreadcrumbsNav />
       <Box
         dir={dir}
