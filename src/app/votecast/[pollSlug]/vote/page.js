@@ -86,6 +86,20 @@ export default function PollVotingPage() {
   const userName = typeof window !== "undefined"
     ? sessionStorage.getItem(`votecast_name_${pollSlug}`)
     : null;
+
+  // Session token for anonymous (unlinked) polls — persists for this browser session
+  const sessionToken = useMemo(() => {
+    if (typeof window === "undefined") return null;
+    const key = `votecast_session_${pollSlug}`;
+    let token = sessionStorage.getItem(key);
+    if (!token) {
+      token = typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : Math.random().toString(36).slice(2) + Date.now().toString(36);
+      sessionStorage.setItem(key, token);
+    }
+    return token;
+  }, [pollSlug]);
   const welcomeMessage = userName ? `${t.welcome}, ${userName}!` : `${t.welcome}!`;
 
   // Fetch poll + linked event
@@ -161,7 +175,8 @@ export default function PollVotingPage() {
     if (!currentQuestion?._id) return;
     setSubmitting(true);
     try {
-      await voteOnPoll(poll._id, currentQuestion._id, optionIndex, registrationId);
+      const anonToken = poll.linkedEventRegId ? null : sessionToken;
+      await voteOnPoll(poll._id, currentQuestion._id, optionIndex, registrationId, anonToken);
       setTimeout(() => {
         if (currentIndex < questions.length - 1) {
           setCurrentIndex((prev) => prev + 1);

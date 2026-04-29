@@ -128,7 +128,11 @@ export default function PublicPollPage() {
       return;
     }
     sessionStorage.setItem(`votecast_reg_${pollSlug}`, result.registrationId);
-    if (result.fullName) sessionStorage.setItem(`votecast_name_${pollSlug}`, result.fullName);
+    if (result.fullName) {
+      sessionStorage.setItem(`votecast_name_${pollSlug}`, result.fullName);
+    } else {
+      sessionStorage.removeItem(`votecast_name_${pollSlug}`);
+    }
     router.push(`/votecast/${pollSlug}/vote`);
   };
 
