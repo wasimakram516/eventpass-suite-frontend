@@ -23,3 +23,8 @@ export const getInsightsSummary = withApiHandler(async (slug) => {
     return await api.get(`/surveyguru/forms/${slug}/summary`);
 });
 
+export const getSegmentedDistribution = withApiHandler(async (slug, questionId, fieldName) => {
+    const params = new URLSearchParams({ questionId, fieldName });
+    return await api.get(`/surveyguru/forms/${slug}/segmented-distribution?${params}`);
+});
+

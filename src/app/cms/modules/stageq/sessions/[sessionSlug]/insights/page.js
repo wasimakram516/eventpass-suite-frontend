@@ -15,6 +15,7 @@ import {
 } from "@mui/material";
 import { PieChart } from "@mui/x-charts/PieChart";
 import { LineChart } from "@mui/x-charts/LineChart";
+import { BarChart } from "@mui/x-charts/BarChart";
 import { BarChart as BarChartIcon } from "@mui/icons-material";
 import {
     getSessionInsightsSummary,
@@ -23,6 +24,7 @@ import {
     getSessionInsightsTimeDistribution,
 } from "@/services/stageq/stageqInsightsService";
 import { getPublicSessionBySlug } from "@/services/stageq/stageqSessionService";
+import ChartVisualization from "@/components/insights/ChartVisualization";
 import ICONS from "@/utils/iconUtil";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import useI18nLayout from "@/hooks/useI18nLayout";
@@ -60,10 +62,16 @@ const translations = {
         totalRegistrations: "Total Registrations",
         uniqueSubmitters: "Unique Submitters",
         participationRate: "Participation Rate",
-        totalQuestions: "Total Questions",
+        totalQuestions: "Total Questions Submitted",
         sessionTitle: "Session Title",
         category: "Category",
+        venue: "Venue",
+        registrations: "Registrations",
         noData: "No data to display",
+        topVotedQuestion: "Top Voted Question",
+        votes: "votes",
+        participationRate: "Participation Rate",
+        uniqueSubmitters: "Unique Submitters",
     },
     ar: {
         pageTitle: "تحليلات الجلسة",
@@ -88,10 +96,18 @@ const translations = {
         totalRegistrations: "إجمالي التسجيلات",
         uniqueSubmitters: "المرسلون الفريدون",
         participationRate: "معدل المشاركة",
-        totalQuestions: "إجمالي الأسئلة",
+        totalQuestions: "إجمالي الأسئلة المرسلة",
         sessionTitle: "عنوان الجلسة",
         category: "الفئة",
+        venue: "الموقع",
+        from: "من",
+        to: "إلى",
+        registrations: "التسجيلات",
         noData: "لا توجد بيانات للعرض",
+        topVotedQuestion: "السؤال الأكثر تصويتاً",
+        votes: "أصوات",
+        participationRate: "معدل المشاركة",
+        uniqueSubmitters: "المرسلون الفريدون",
     },
 };
 
@@ -136,191 +152,6 @@ const FieldChip = ({ field, isSelected, onClick }) => (
     />
 );
 
-const ChartVisualization = ({
-    selectedField,
-    chartData,
-    onTopNChange,
-    onIntervalChange,
-    onStartDateTimeChange,
-    onEndDateTimeChange,
-    onGenerate,
-    startDateTime,
-    endDateTime,
-    topN,
-    intervalMinutes,
-    isGenerating,
-    t,
-    onRefReady,
-}) => {
-    const { dir } = useI18nLayout();
-    if (!selectedField || !chartData[selectedField]) return null;
-    const field = chartData[selectedField];
-    if (!field) return null;
-
-    const getChartDescription = () =>
-        field.chartType === "pie" ? t.distributionOverview : t.historicalTrend;
-
-    const showTopNControl = field.type === "text" || field.type === "number" || field.type === "categorical";
-    const showIntervalControl = field.type === "time";
-    const showGenerateButton = showTopNControl || showIntervalControl;
-    const hasNoData = field.chartType === "pie" && (!field.data || field.data.length === 0);
-
-    return (
-        <Box sx={{ display: "flex", flexDirection: "column", height: "100%", p: 2, width: "100%" }}>
-            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: 3, flexWrap: "wrap", gap: 2 }}>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", backgroundColor: `${field.color}15`, borderRadius: 1, p: 1, width: 48, height: 48, flexShrink: 0 }}>
-                        <ICONS.insights />
-                    </Box>
-                    <Box>
-                        <Typography variant="h6" sx={{ fontWeight: "bold", color: "#1f2937" }}>{field.label}</Typography>
-                        <Typography variant="caption" color="textSecondary">{getChartDescription()}</Typography>
-                    </Box>
-                </Box>
-                <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap", alignItems: "flex-end" }}>
-                    {showTopNControl && (
-                        <TextField
-                            label={t.topN}
-                            type="number"
-                            size="small"
-                            value={topN}
-                            onChange={(e) => {
-                                const val = e.target.value === "" ? 0 : parseInt(e.target.value);
-                                onTopNChange(isNaN(val) ? 0 : val);
-                            }}
-                            InputProps={{ inputProps: { min: 0, max: 50 } }}
-                            sx={{ width: "120px" }}
-                            disabled={isGenerating}
-                        />
-                    )}
-                    {showIntervalControl && (
-                        <>
-                            <DateTimePicker
-                                label={t.from}
-                                value={startDateTime}
-                                onChange={(val) => onStartDateTimeChange(val)}
-                                ampm
-                                format="DD/MM/YYYY hh:mm A"
-                                slotProps={{ textField: { size: "small", sx: { width: "200px" } } }}
-                                disabled={isGenerating}
-                            />
-                            <DateTimePicker
-                                label={t.to}
-                                value={endDateTime}
-                                onChange={(val) => onEndDateTimeChange(val)}
-                                ampm
-                                format="DD/MM/YYYY hh:mm A"
-                                slotProps={{ textField: { size: "small", sx: { width: "200px" } } }}
-                                disabled={isGenerating}
-                            />
-                            <TextField
-                                label={t.intervalMinutes}
-                                type="number"
-                                size="small"
-                                value={intervalMinutes}
-                                onChange={(e) => {
-                                    const val = e.target.value;
-                                    onIntervalChange(val === "" ? "" : parseInt(val));
-                                }}
-                                InputProps={{ inputProps: { min: 1, max: 1440 } }}
-                                sx={{ width: "140px" }}
-                                disabled={isGenerating}
-                            />
-                        </>
-                    )}
-                    {showGenerateButton && (
-                        <Button
-                            variant="text"
-                            onClick={onGenerate}
-                            disabled={isGenerating}
-                            sx={{ whiteSpace: "nowrap", minWidth: "120px", position: "relative", ...getStartIconSpacing(dir) }}
-                        >
-                            {isGenerating ? (
-                                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                    <CircularProgress size={18} color="inherit" thickness={5} sx={{ mr: 0.5 }} />
-                                    {t.generating}
-                                </Box>
-                            ) : (
-                                <>
-                                    <ICONS.insights style={{ marginRight: 8 }} />
-                                    {t.generate}
-                                </>
-                            )}
-                        </Button>
-                    )}
-                </Box>
-            </Box>
-
-            <Box ref={(el) => onRefReady && onRefReady(el)} sx={{ flex: 1, minHeight: 0, width: "100%", display: "flex", flexDirection: "column" }}>
-                {hasNoData ? (
-                    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%" }}>
-                        <Typography variant="body1" color="textSecondary">{t.noData}</Typography>
-                    </Box>
-                ) : field.chartType === "pie" ? (
-                    <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, gap: { xs: 2, md: 3 }, height: "100%", alignItems: { xs: "center", md: "stretch" } }}>
-                        <Box sx={{ flex: { xs: "0 0 auto", md: 1 }, display: "flex", justifyContent: "center", alignItems: "center", width: { xs: "100%", md: "auto" }, maxWidth: { xs: "400px", md: "none" } }}>
-                            <PieChart
-                                series={[{
-                                    data: field.data,
-                                    highlightScope: { faded: "global", highlighted: "item" },
-                                    faded: { innerRadius: 30, additionalRadius: -30, color: "gray" },
-                                    arcLabel: () => "",
-                                    valueFormatter: (item) => {
-                                        const total = field.data.reduce((sum, d) => sum + d.value, 0);
-                                        return `${total > 0 ? String(parseFloat(((item.value / total) * 100).toFixed(1))) : "0"}%`;
-                                    },
-                                }]}
-                                height={400}
-                                slotProps={{
-                                    legend: { hidden: true, sx: { display: "none !important" } },
-                                    pieArcLabel: { style: { fill: "white", fontWeight: 600, fontSize: "clamp(10px, 2vw, 14px)" } },
-                                }}
-                            />
-                        </Box>
-                        <Box sx={{ minWidth: { xs: "100%", md: "220px" }, overflow: "auto", px: { xs: 0, md: 2.5 }, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: { xs: "center", md: "flex-start" }, direction: "ltr" }}>
-                            {field.data.map((item, idx) => {
-                                const total = field.data.reduce((sum, d) => sum + d.value, 0);
-                                const percentage = total > 0 ? String(parseFloat(((item.value / total) * 100).toFixed(1))) : "0";
-                                return (
-                                    <Box key={idx} sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5, direction: "ltr", ml: { xs: 0, md: 1 } }}>
-                                        <Box sx={{ width: 12, height: 12, borderRadius: "50%", backgroundColor: item.color, flexShrink: 0 }} />
-                                        <Typography variant="body2" sx={{ fontWeight: 500, color: "#1f2937", whiteSpace: "nowrap", fontSize: "0.875rem", direction: "ltr", textAlign: "left" }}>
-                                            {item.label} {percentage}% ({item.value})
-                                        </Typography>
-                                    </Box>
-                                );
-                            })}
-                        </Box>
-                    </Box>
-                ) : (
-                    <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, gap: { xs: 2, md: 3 }, height: "100%", alignItems: { xs: "center", md: "stretch" } }}>
-                        <Box sx={{ flex: { xs: "0 0 auto", md: 1 }, display: "flex", justifyContent: "center", alignItems: "center", width: { xs: "100%", md: "auto" } }}>
-                            <LineChart
-                                xAxis={[{ scaleType: "point", data: field.xData, tickLabelStyle: { direction: "ltr", textAlign: "left" } }]}
-                                yAxis={[{ min: 0, max: Math.max(...field.yData) + Math.ceil(Math.max(...field.yData) * 0.05), tickLabelStyle: { direction: "ltr", textAlign: "left" } }]}
-                                series={[{ data: field.yData, color: field.color, curve: "linear" }]}
-                                height={400}
-                                margin={{ top: 30, bottom: 50, left: 50, right: 80 }}
-                                slotProps={{ legend: { hidden: true } }}
-                                sx={{ "& .MuiMarkElement-root": { display: (d) => d.value === 0 ? "none" : "auto" } }}
-                            />
-                        </Box>
-                        <Box sx={{ minWidth: { xs: "100%", md: "220px" }, overflow: "auto", pr: { xs: 0, md: 1 }, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: { xs: "center", md: "flex-start" } }}>
-                            {field.xData.map((label, idx) => (
-                                <Box key={idx} sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5, direction: "ltr" }}>
-                                    <Box sx={{ width: 12, height: 12, borderRadius: "50%", backgroundColor: field.color, flexShrink: 0 }} />
-                                    <Typography variant="body2" sx={{ fontWeight: 500, color: "#1f2937", whiteSpace: "nowrap", fontSize: "0.875rem", direction: "ltr", textAlign: "left" }}>
-                                        {label} ({field.yData[idx]})
-                                    </Typography>
-                                </Box>
-                            ))}
-                        </Box>
-                    </Box>
-                )}
-            </Box>
-        </Box>
-    );
-};
 
 export default function SessionInsightsDashboard() {
     const { sessionSlug } = useParams();
@@ -333,12 +164,13 @@ export default function SessionInsightsDashboard() {
     const [generatingFields, setGeneratingFields] = useState({});
     const [availableFields, setAvailableFields] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [chartRefs, setChartRefs] = useState({});
+    const chartRefs = React.useRef({});
     const [exportLoading, setExportLoading] = useState(false);
     const [exportRawLoading, setExportRawLoading] = useState(false);
     const [summary, setSummary] = useState(null);
     const [sessionInfo, setSessionInfo] = useState(null);
     const [linkedEvent, setLinkedEvent] = useState(null);
+    const [chartVisualTypes, setChartVisualTypes] = useState({});
 
     const getFieldParam = (fieldName, paramName, defaultValue) =>
         fieldParams[fieldName]?.[paramName] ?? defaultValue;
@@ -484,16 +316,21 @@ export default function SessionInsightsDashboard() {
         if (!selectedFields.length) return;
         setExportLoading(true);
         try {
-            const refs = selectedFields.map((f) => chartRefs[f]).filter(Boolean);
+            const refs = selectedFields.map((f) => chartRefs.current[f]).filter(Boolean);
             const labels = selectedFields.map((f) => availableFields.find((af) => af.name === f)?.label || f);
-            const chartDataArray = selectedFields.map((f) => ({
-                ...chartData[f],
-                topN: getFieldParam(f, "topN", 10),
-                intervalMinutes: getFieldParam(f, "intervalMinutes", 60),
-                startDateTime: getFieldParam(f, "startDateTime", dayjs().subtract(30, "day").startOf("day")).toDate(),
-                endDateTime: getFieldParam(f, "endDateTime", dayjs().endOf("day")).toDate(),
-                legend: false,
-            }));
+            const chartDataArray = selectedFields.map((f) => {
+                const field = availableFields.find((af) => af.name === f);
+                const activeType = chartVisualTypes[f] || field?.chartType;
+                return {
+                    ...chartData[f],
+                    chartType: activeType,
+                    topN: getFieldParam(f, "topN", 10),
+                    intervalMinutes: getFieldParam(f, "intervalMinutes", 60),
+                    startDateTime: getFieldParam(f, "startDateTime", dayjs().subtract(30, "day").startOf("day")).toDate(),
+                    endDateTime: getFieldParam(f, "endDateTime", dayjs().endOf("day")).toDate(),
+                    legend: false,
+                };
+            });
             const formatPdfDate = (d) => d ? dayjs(d).format("DD-MMM-YY, hh:mm a") : "N/A";
             const pdfEventInfo = {
                 name: sessionInfo?.slug || "",
@@ -502,6 +339,17 @@ export default function SessionInsightsDashboard() {
                 startDateFormatted: formatPdfDate(linkedEvent?.startDate),
                 endDateFormatted: formatPdfDate(linkedEvent?.endDate),
                 venue: linkedEvent?.venue || "N/A",
+                summaryCards: summary ? [
+                    { label: t.totalQuestions, value: summary.totalQuestions, color: "#0077b6" },
+                    { label: t.uniqueSubmitters, value: summary.uniqueSubmitters, color: "#f59e0b" },
+                    { label: t.participationRate, value: `${summary.participationRate}%`, color: "#10b981" },
+                    summary.topQuestion ? { 
+                        label: t.topVotedQuestion, 
+                        value: summary.topQuestion.text, 
+                        subValue: `${summary.topQuestion.voteCount} ${t.votes}`,
+                        isHighlight: true 
+                    } : null,
+                ].filter(Boolean) : []
             };
             await exportChartsToPDF(refs, labels, chartDataArray, pdfEventInfo, null, language, dir, t, Intl.DateTimeFormat().resolvedOptions().timeZone);
         } catch (err) {
@@ -688,7 +536,87 @@ export default function SessionInsightsDashboard() {
                 </Stack>
             </Stack>
 
-            <Divider sx={{ mb: 1 }} />
+            <Divider sx={{ mb: 3 }} />
+            
+            {summary && (
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 1 }}>
+                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, flex: "1 1 500px" }}>
+                        {[
+                            { label: t.totalQuestions, value: summary.totalQuestions, color: "#0077b6" },
+                            { label: t.uniqueSubmitters, value: summary.uniqueSubmitters, color: "#f59e0b" },
+                            { label: t.participationRate, value: `${summary.participationRate}%`, color: "#10b981" },
+                        ].map(({ label, value, color }) => (
+                            <Paper
+                                key={label}
+                                sx={{
+                                    p: 2,
+                                    borderRadius: 2,
+                                    boxShadow: 2,
+                                    flex: "1 1 180px",
+                                    minWidth: 160,
+                                    textAlign: "center",
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    justifyContent: 'center'
+                                }}
+                            >
+                                <Typography variant="h4" fontWeight="bold" sx={{ color }}>
+                                    {value}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                                    {label}
+                                </Typography>
+                            </Paper>
+                        ))}
+                    </Box>
+
+                    {summary.topQuestion && (
+                        <Paper
+                            sx={{
+                                p: 2,
+                                borderRadius: 2,
+                                boxShadow: 2,
+                                flex: "2 1 400px",
+                                minWidth: 300,
+                                display: "flex",
+                                flexDirection: "column",
+                                justifyContent: "center",
+                                position: "relative",
+                                overflow: "hidden",
+                                borderLeft: `6px solid #6366f1`,
+                                backgroundColor: "#f8faff"
+                            }}
+                        >
+                            <Typography variant="caption" sx={{ color: "#6366f1", fontWeight: 700, textTransform: "uppercase", mb: 1, letterSpacing: 1 }}>
+                                {t.topVotedQuestion}
+                            </Typography>
+                            <Typography 
+                                variant="h6" 
+                                sx={{ 
+                                    fontWeight: 600, 
+                                    color: "#1e293b", 
+                                    fontStyle: "italic",
+                                    lineHeight: 1.4,
+                                    mb: 1,
+                                    display: "-webkit-box",
+                                    WebkitLineClamp: 2,
+                                    WebkitBoxOrient: "vertical",
+                                    overflow: "hidden"
+                                }}
+                            >
+                                "{summary.topQuestion.text}"
+                            </Typography>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                <Chip 
+                                    size="small" 
+                                    label={`${summary.topQuestion.voteCount} ${t.votes}`} 
+                                    sx={{ backgroundColor: "#6366f1", color: "white", fontWeight: 600 }} 
+                                />
+                            </Box>
+                        </Paper>
+                    )}
+                </Box>
+            )}
 
             {/* Field Chip Selector */}
             <Paper sx={{ flex: "0 0 auto", p: { xs: 1, sm: 1.5, md: 2 }, borderRadius: 2, boxShadow: 2, width: "100%", boxSizing: "border-box" }}>
@@ -728,6 +656,8 @@ export default function SessionInsightsDashboard() {
                             <ChartVisualization
                                 selectedField={fieldName}
                                 chartData={chartData}
+                                chartType={chartVisualTypes[fieldName] || availableFields.find(af => af.name === fieldName)?.chartType}
+                                onChartTypeChange={(type) => setChartVisualTypes(prev => ({ ...prev, [fieldName]: type }))}
                                 topN={getFieldParam(fieldName, "topN", 10)}
                                 intervalMinutes={getFieldParam(fieldName, "intervalMinutes", 60)}
                                 startDateTime={getFieldParam(fieldName, "startDateTime", dayjs().subtract(30, "day").startOf("day"))}
@@ -743,8 +673,8 @@ export default function SessionInsightsDashboard() {
                                 onGenerate={() => handleGenerate(fieldName)}
                                 isGenerating={generatingFields[fieldName] || false}
                                 onRefReady={(el) => {
-                                    if (el && chartRefs[fieldName] !== el) {
-                                        setChartRefs((prev) => ({ ...prev, [fieldName]: el }));
+                                    if (el) {
+                                        chartRefs.current[fieldName] = el;
                                     }
                                 }}
                                 t={t}
