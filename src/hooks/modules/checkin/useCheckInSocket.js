@@ -11,6 +11,7 @@ export default function useCheckInSocket({
   onPresenceConfirmed,
   onUploadComplete,
   onBadgePrinted,
+  onScanConfirmed,
 }) {
   const handlersRef = useRef({
     onLoadingProgress,
@@ -20,6 +21,7 @@ export default function useCheckInSocket({
     onPresenceConfirmed,
     onUploadComplete,
     onBadgePrinted,
+    onScanConfirmed,
   });
 
   const [uploadProgress, setUploadProgress] = useState(null);
@@ -35,8 +37,9 @@ export default function useCheckInSocket({
       onPresenceConfirmed,
       onUploadComplete,
       onBadgePrinted,
+      onScanConfirmed,
     };
-  }, [onLoadingProgress, onUploadProgress, onEmailProgress, onNewRegistration, onPresenceConfirmed, onUploadComplete, onBadgePrinted]);
+  }, [onLoadingProgress, onUploadProgress, onEmailProgress, onNewRegistration, onPresenceConfirmed, onUploadComplete, onBadgePrinted, onScanConfirmed]);
 
   const events = useMemo(() => {
     const eventIdStr = eventId?.toString();
@@ -78,6 +81,11 @@ export default function useCheckInSocket({
       checkinRegistrationBadgePrinted: (data) => {
         if (data.eventId?.toString() !== eventIdStr) return;
         handlersRef.current.onBadgePrinted?.(data);
+      },
+
+      checkinRegistrationScanned: (data) => {
+        if (data.eventId?.toString() !== eventIdStr) return;
+        handlersRef.current.onScanConfirmed?.(data);
       },
     };
   }, [eventId]);

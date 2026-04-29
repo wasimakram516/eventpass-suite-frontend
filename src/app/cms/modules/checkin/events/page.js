@@ -57,6 +57,7 @@ const translations = {
     shareTitle: "Share",
     viewRegs: "View Registrations",
     viewWhatsAppLogs: "View WhatsApp Logs",
+    viewInsights: "View Insights",
     createdBy: "Created:",
     updatedBy: "Updated:",
     createdAt: "Created At:",
@@ -85,6 +86,7 @@ const translations = {
     shareTitle: "مشاركة",
     viewRegs: "عرض التسجيلات",
     viewWhatsAppLogs: "عرض سجلات واتساب",
+    viewInsights: "عرض التحليلات",
     createdBy: "أنشئ:",
     updatedBy: "حدث:",
     createdAt: "تاريخ الإنشاء:",
@@ -309,6 +311,14 @@ export default function EventsPage() {
                     showRegistrations
                     showAudit={true}
                     locale={language === "ar" ? "ar-SA" : "en-GB"}
+                    onInsights={
+                      event.slug
+                        ? () =>
+                          router.push(
+                            `/cms/modules/checkin/events/${event.slug}/insights`
+                          )
+                        : undefined
+                    }
                     onView={
                       event.slug
                         ? () =>
