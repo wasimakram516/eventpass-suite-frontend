@@ -27,6 +27,7 @@ import { getPublicSessionBySlug } from "@/services/stageq/stageqSessionService";
 import ChartVisualization from "@/components/insights/ChartVisualization";
 import ICONS from "@/utils/iconUtil";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
+import AppCard from "@/components/cards/AppCard";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
@@ -43,6 +44,7 @@ const translations = {
         pageTitle: "Session Insights",
         pageDescription: "Analyze participation, question trends, and breakdowns for this session.",
         availableFields: "Available Fields",
+        selectChipsPrompt: "Select the chips to see the charts",
         selectFieldPrompt: "Select a field to view insights",
         distributionOverview: "Distribution Overview",
         historicalTrend: "Historical Trend",
@@ -77,6 +79,7 @@ const translations = {
         pageTitle: "تحليلات الجلسة",
         pageDescription: "تحليل المشاركة واتجاهات الأسئلة والتوزيعات لهذه الجلسة.",
         availableFields: "الحقول المتاحة",
+        selectChipsPrompt: "اختر الشرائح لعرض الرسوم البيانية",
         selectFieldPrompt: "اختر حقلاً لعرض التحليلات",
         distributionOverview: "نظرة عامة على التوزيع",
         historicalTrend: "الاتجاه التاريخي",
@@ -212,7 +215,7 @@ export default function SessionInsightsDashboard() {
 
                 (fieldsRes?.data?.topQuestionFields || []).forEach((f) => {
                     defaultParams[f.name] = { topN: 10 };
-                    allFields.push({ ...f, chartType: "pie", color: FIELD_COLOR });
+                    allFields.push({ ...f, chartType: "pie", allowedChartTypes: ["pie", "bar", "horizontalBar"], color: FIELD_COLOR });
                 });
 
                 (fieldsRes?.data?.timeFields || []).forEach((f) => {
@@ -221,12 +224,12 @@ export default function SessionInsightsDashboard() {
                         startDateTime: dayjs().subtract(30, "day").startOf("day"),
                         endDateTime: dayjs().endOf("day"),
                     };
-                    allFields.push({ ...f, chartType: "line", color: FIELD_COLOR });
+                    allFields.push({ ...f, chartType: "line", allowedChartTypes: ["line", "bar", "horizontalBar", "heatmap"], color: FIELD_COLOR });
                 });
 
                 (fieldsRes?.data?.registrationFields || []).forEach((f) => {
                     defaultParams[f.name] = { topN: 10 };
-                    allFields.push({ ...f, chartType: "pie", color: FIELD_COLOR });
+                    allFields.push({ ...f, chartType: "pie", allowedChartTypes: ["pie", "bar", "horizontalBar"], color: FIELD_COLOR });
                 });
 
                 setFieldParams(defaultParams);
@@ -413,6 +416,7 @@ export default function SessionInsightsDashboard() {
             if (linkedEvent) {
                 pushRow("Logo URL", linkedEvent.logoUrl || "N/A");
                 pushRow("Event Name", linkedEvent.name || "N/A");
+                pushRow("Exported At", formatDateTimeWithLocale(new Date()));
                 pushRow("From", linkedEvent.startDate ? formatDateTimeForExcel(linkedEvent.startDate) : "N/A");
                 pushRow("To", linkedEvent.endDate ? formatDateTimeForExcel(linkedEvent.endDate) : "N/A");
                 pushRow("Venue", linkedEvent.venue || "N/A");
@@ -421,6 +425,7 @@ export default function SessionInsightsDashboard() {
 
             // Session info section
             pushRow(t.sessionTitle, sessionInfo.title || "N/A");
+            if (!linkedEvent) pushRow("Exported At", formatDateTimeWithLocale(new Date()));
             pushRow(t.totalQuestions, leftAlign(summary?.totalQuestions));
             pushRow(t.uniqueSubmitters, leftAlign(summary?.uniqueSubmitters));
             pushRow(t.participationRate, summary?.participationRate != null ? `${summary.participationRate}%` : "N/A");
@@ -546,36 +551,33 @@ export default function SessionInsightsDashboard() {
                             { label: t.uniqueSubmitters, value: summary.uniqueSubmitters, color: "#f59e0b" },
                             { label: t.participationRate, value: `${summary.participationRate}%`, color: "#10b981" },
                         ].map(({ label, value, color }) => (
-                            <Paper
+                            <AppCard
                                 key={label}
                                 sx={{
                                     p: 2,
-                                    borderRadius: 2,
-                                    boxShadow: 2,
                                     flex: "1 1 180px",
                                     minWidth: 160,
                                     textAlign: "center",
                                     display: 'flex',
                                     flexDirection: 'column',
-                                    justifyContent: 'center'
+                                    justifyContent: 'center',
+                                    border: "1px solid #f1f5f9"
                                 }}
                             >
                                 <Typography variant="h4" fontWeight="bold" sx={{ color }}>
                                     {value}
                                 </Typography>
-                                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
                                     {label}
                                 </Typography>
-                            </Paper>
+                            </AppCard>
                         ))}
                     </Box>
 
                     {summary.topQuestion && (
-                        <Paper
+                        <AppCard
                             sx={{
                                 p: 2,
-                                borderRadius: 2,
-                                boxShadow: 2,
                                 flex: "2 1 400px",
                                 minWidth: 300,
                                 display: "flex",
@@ -613,15 +615,25 @@ export default function SessionInsightsDashboard() {
                                     sx={{ backgroundColor: "#6366f1", color: "white", fontWeight: 600 }} 
                                 />
                             </Box>
-                        </Paper>
+                        </AppCard>
                     )}
                 </Box>
             )}
 
             {/* Field Chip Selector */}
-            <Paper sx={{ flex: "0 0 auto", p: { xs: 1, sm: 1.5, md: 2 }, borderRadius: 2, boxShadow: 2, width: "100%", boxSizing: "border-box" }}>
+            <AppCard sx={{ flex: "0 0 auto", p: { xs: 1, sm: 1.5, md: 2 }, width: "100%", boxSizing: "border-box" }}>
                 <Typography variant="subtitle1" sx={{ fontWeight: 600, color: "#374151", mb: 1 }}>
                     {t.availableFields}
+                </Typography>
+                <Typography
+                    variant="caption"
+                    sx={{
+                        display: "block",
+                        color: "text.secondary",
+                        mb: 1.5,
+                    }}
+                >
+                    {t.selectChipsPrompt}
                 </Typography>
                 <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 1, maxWidth: "100%" }}>
                     {availableFields.map((field) => (
@@ -639,20 +651,20 @@ export default function SessionInsightsDashboard() {
                         />
                     ))}
                 </Stack>
-            </Paper>
+            </AppCard>
 
             {/* Chart Panels */}
             <Stack spacing={2} sx={{ flex: "1 1 0%", overflow: "auto", minHeight: 0, pb: 2, px: 0.3 }}>
                 {selectedFields.length === 0 ? (
-                    <Paper sx={{ flex: 1, borderRadius: 2, boxShadow: 2, display: "flex", alignItems: "center", justifyContent: "center", minHeight: 300 }}>
+                    <AppCard sx={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", minHeight: 300 }}>
                         <Box textAlign="center">
                             <BarChartIcon sx={{ fontSize: 48, color: "#d1d5db", mb: 2 }} />
                             <Typography color="textSecondary">{t.selectFieldPrompt}</Typography>
                         </Box>
-                    </Paper>
+                    </AppCard>
                 ) : (
                     selectedFields.map((fieldName) => (
-                        <Paper key={fieldName} sx={{ borderRadius: 2, boxShadow: 2, minHeight: "450px" }}>
+                        <AppCard key={fieldName} sx={{ minHeight: "450px" }}>
                             <ChartVisualization
                                 selectedField={fieldName}
                                 chartData={chartData}
@@ -679,7 +691,7 @@ export default function SessionInsightsDashboard() {
                                 }}
                                 t={t}
                             />
-                        </Paper>
+                        </AppCard>
                     ))
                 )}
             </Stack>

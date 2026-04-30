@@ -24,6 +24,7 @@ import { getDigipassEventBySlug } from "@/services/digipass/digipassEventService
 import ICONS from "@/utils/iconUtil";
 import ChartVisualization from "@/components/insights/ChartVisualization";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
+import AppCard from "@/components/cards/AppCard";
 import { BarChart as BarChartIcon } from "@mui/icons-material";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import dayjs from "dayjs";
@@ -41,6 +42,7 @@ const translations = {
         pageDescription:
             "Analyze event data and visualize key metrics through interactive charts and distributions.",
         availableFields: "Available Fields",
+        selectChipsPrompt: "Select the chips to see the charts",
         selectFieldPrompt: "Select a field to view insights",
         distributionOverview: "Distribution Overview",
         historicalTrend: "Historical Trend",
@@ -77,6 +79,7 @@ const translations = {
         pageDescription:
             "تحليل بيانات الحدث وتصور المقاييس الرئيسية من خلال الرسوم البيانية والتوزيعات التفاعلية.",
         availableFields: "الحقول المتاحة",
+        selectChipsPrompt: "اختر الشرائح لعرض الرسوم البيانية",
         selectFieldPrompt: "اختر حقلاً لعرض التحليلات",
         distributionOverview: "نظرة عامة على التوزيع",
         historicalTrend: "الاتجاه التاريخي",
@@ -251,6 +254,7 @@ export default function AnalyticsDashboard() {
                         .map((f) => ({
                             ...f,
                             chartType: determineChartType(f),
+                            allowedChartTypes: f.type === "time" ? ["line", "bar", "horizontalBar", "heatmap"] : ["pie", "bar", "horizontalBar"],
                             color: FIELD_COLOR,
                         })),
                     ...response.data.timeFields
@@ -258,6 +262,7 @@ export default function AnalyticsDashboard() {
                         .map((f) => ({
                             ...f,
                             chartType: "line",
+                            allowedChartTypes: ["line", "bar", "horizontalBar", "heatmap"],
                             color: FIELD_COLOR,
                         })),
                 ];
@@ -268,7 +273,7 @@ export default function AnalyticsDashboard() {
                         label: "Activities Completed per Participant",
                         type: "special",
                         chartType: "bar",
-                        allowedChartTypes: ["pie", "donut", "bar", "line"],
+                        allowedChartTypes: ["pie", "bar", "horizontalBar", "line"],
                         color: FIELD_COLOR,
                     },
                     {
@@ -276,7 +281,7 @@ export default function AnalyticsDashboard() {
                         label: "Scanned By Staff Type",
                         type: "special",
                         chartType: "pie",
-                        allowedChartTypes: ["pie", "donut", "bar"],
+                        allowedChartTypes: ["pie", "bar", "horizontalBar"],
                         color: FIELD_COLOR,
                     },
                     {
@@ -284,7 +289,7 @@ export default function AnalyticsDashboard() {
                         label: "Staff Scan Breakdown",
                         type: "special",
                         chartType: "bar",
-                        allowedChartTypes: ["bar", "pie", "donut"],
+                        allowedChartTypes: ["bar", "pie", "horizontalBar"],
                         color: FIELD_COLOR,
                     }
                 );
@@ -524,11 +529,18 @@ export default function AnalyticsDashboard() {
                 };
             });
 
+            const summaryCards = summary ? [
+                { label: t.totalParticipants, value: summary.totalParticipants, color: "#0077b6" },
+                { label: t.totalActivityCompletions, value: summary.totalActivityCompletions, color: "#f59e0b" },
+                { label: t.avgActivities, value: summary.avgActivitiesPerParticipant, color: "#8b5cf6" },
+                eventInfo?.linkedEventRegId ? { label: t.scanRate, value: `${summary.scanRate}%`, color: "#10b981" } : null,
+            ].filter(Boolean) : [];
+
             await exportChartsToPDF(
                 refs,
                 labels,
                 chartDataArray,
-                eventInfo,
+                { ...eventInfo, summaryCards },
                 null,
                 language,
                 dir,
@@ -612,6 +624,7 @@ export default function AnalyticsDashboard() {
             // Event Details section
             pushRow(t.logoUrl, eventInfo.logoUrl || "N/A");
             pushRow(t.eventName, eventInfo.name || "N/A");
+            pushRow("Exported At", formatDateTimeWithLocale(new Date()));
             if (eventInfo.startDate) pushRow(t.from, formatDateTimeForExcel(eventInfo.startDate));
             if (eventInfo.endDate) pushRow(t.to, formatDateTimeForExcel(eventInfo.endDate));
             if (eventInfo.venue) pushRow(t.venue, eventInfo.venue);
@@ -797,12 +810,10 @@ export default function AnalyticsDashboard() {
                             { label: t.avgActivities, value: summary.avgActivitiesPerParticipant, color: "#8b5cf6" },
                             eventInfo?.linkedEventRegId ? { label: t.scanRate, value: `${summary.scanRate}%`, color: "#10b981" } : null,
                         ].filter(Boolean).map(({ label, value, color }) => (
-                            <Paper
+                            <AppCard
                                 key={label}
                                 sx={{
                                     p: 2,
-                                    borderRadius: 2,
-                                    boxShadow: 2,
                                     flex: "1 1 180px",
                                     minWidth: 160,
                                     textAlign: "center",
@@ -818,18 +829,16 @@ export default function AnalyticsDashboard() {
                                 <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
                                     {label}
                                 </Typography>
-                            </Paper>
+                            </AppCard>
                         ))}
                     </Box>
                 </Box>
             )}
 
-            <Paper
+            <AppCard
                 sx={{
                     flex: "0 0 auto",
                     p: { xs: 1, sm: 1.5, md: 2 },
-                    borderRadius: 2,
-                    boxShadow: 2,
                     width: "100%",
                     boxSizing: "border-box",
                     overflow: "hidden",
@@ -844,6 +853,16 @@ export default function AnalyticsDashboard() {
                     }}
                 >
                     {t.availableFields}
+                </Typography>
+                <Typography
+                    variant="caption"
+                    sx={{
+                        display: "block",
+                        color: "text.secondary",
+                        mb: 1.5,
+                    }}
+                >
+                    {t.selectChipsPrompt}
                 </Typography>
                 <Stack
                     direction="row"
@@ -870,21 +889,20 @@ export default function AnalyticsDashboard() {
                         />
                     ))}
                 </Stack>
-            </Paper>
+            </AppCard>
 
             <Stack
                 spacing={2}
                 sx={{ flex: "1 1 0%", overflow: "auto", minHeight: 0, pb: 2, px: 0.3 }}
             >
                 {selectedFields.length === 0 ? (
-                    <Paper
+                    <AppCard
                         sx={{
                             flex: 1,
-                            borderRadius: 2,
-                            boxShadow: 2,
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
+                            minHeight: 300
                         }}
                     >
                         <Box textAlign="center">
@@ -893,12 +911,12 @@ export default function AnalyticsDashboard() {
                                 {t.selectFieldPrompt}
                             </Typography>
                         </Box>
-                    </Paper>
+                    </AppCard>
                 ) : (
                     selectedFields.map((fieldName) => (
-                        <Paper
+                        <AppCard
                             key={fieldName}
-                            sx={{ borderRadius: 2, boxShadow: 2, minHeight: "450px" }}
+                            sx={{ minHeight: "450px" }}
                         >
                             <ChartVisualization
                                 selectedField={fieldName}
@@ -956,7 +974,7 @@ export default function AnalyticsDashboard() {
                                 }}
                                 t={t}
                             />
-                        </Paper>
+                        </AppCard>
                     ))
                 )}
             </Stack>

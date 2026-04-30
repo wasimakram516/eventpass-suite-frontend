@@ -49,6 +49,7 @@ const translations = {
         pageDescription:
             "Analyze survey responses and visualize key metrics through interactive charts and distributions.",
         availableQuestions: "Available Questions",
+        selectChipsPrompt: "Select the chips to see the charts",
         selectQuestionPrompt: "Select a question to view insights",
         distributionOverview: "Distribution Overview",
         historicalTrend: "Historical Trend",
@@ -85,6 +86,7 @@ const translations = {
         pageDescription:
             "تحليل استجابات الاستطلاع وتصور المقاييس الرئيسية من خلال الرسوم البيانية والتوزيعات التفاعلية.",
         availableQuestions: "الأسئلة المتاحة",
+        selectChipsPrompt: "اختر الشرائح لعرض الرسوم البيانية",
         selectQuestionPrompt: "اختر سؤالاً لعرض التحليلات",
         distributionOverview: "نظرة عامة على التوزيع",
         historicalTrend: "الاتجاه التاريخي",
@@ -345,11 +347,13 @@ export default function SurveyGuruInsightsPage() {
                     ...responseData.categoricalFields.map((f) => ({
                         ...f,
                         chartType: f.isRegistrationField ? "pie" : determineChartType(f),
+                        allowedChartTypes: f.type === "time" ? ["line", "bar", "horizontalBar", "heatmap"] : ["pie", "bar", "horizontalBar"],
                         color: FIELD_COLOR,
                     })),
                     ...(responseData.timeFields || []).map((f) => ({
                         ...f,
                         chartType: "line",
+                        allowedChartTypes: ["line", "bar", "horizontalBar", "heatmap"],
                         color: FIELD_COLOR,
                     })),
                 ];
@@ -778,7 +782,7 @@ export default function SurveyGuruInsightsPage() {
                         value: `${((totalResponses / eventInfo.registrations) * 100).toFixed(1)}%`,
                         color: "#10b981"
                     } : null,
-                    { label: "Questions", value: totalQuestions || availableQuestions.length, color: "#f59e0b" },
+                    { label: "Questions", value: totalQuestions || availableQuestions.filter(q => q.isSurveyQuestion).length, color: "#f59e0b" },
                 ].filter(Boolean)
             };
 
@@ -893,6 +897,7 @@ export default function SurveyGuruInsightsPage() {
             if (eventInfoToUse) {
                 pushRow(t.logoUrl, eventInfoToUse.logoUrl || "N/A");
                 pushRow(t.eventName, eventInfoToUse.name || "N/A");
+                pushRow("Exported At", formatDateTimeWithLocale(new Date()));
                 pushRow(t.from, eventInfoToUse.startDate ? formatDateTimeForExcel(eventInfoToUse.startDate) : "N/A");
                 pushRow(t.to, eventInfoToUse.endDate ? formatDateTimeForExcel(eventInfoToUse.endDate) : "N/A");
                 pushRow(t.venue, eventInfoToUse.venue || "N/A");
@@ -1062,12 +1067,10 @@ export default function SurveyGuruInsightsPage() {
                     } : null,
                     { label: "Questions", value: totalQuestions || availableQuestions.filter(q => q.isSurveyQuestion).length, color: "#f59e0b" },
                 ].filter(Boolean).map(({ label, value, color }) => (
-                    <Paper
+                    <AppCard
                         key={label}
                         sx={{
                             p: 2,
-                            borderRadius: 2,
-                            boxShadow: 2,
                             flex: "1 1 180px",
                             minWidth: 160,
                             textAlign: "center",
@@ -1083,7 +1086,7 @@ export default function SurveyGuruInsightsPage() {
                         <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
                             {label}
                         </Typography>
-                    </Paper>
+                    </AppCard>
                 ))}</Box>
 
             {/* Survey Questions Chip Selector */}
@@ -1096,8 +1099,18 @@ export default function SurveyGuruInsightsPage() {
                     mb: 1,
                 }}
             >
-                <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "#1e293b", mb: 2 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "#1e293b", mb: 1 }}>
                     {language === "ar" ? "أسئلة الاستطلاع" : "Survey Questions"}
+                </Typography>
+                <Typography
+                    variant="caption"
+                    sx={{
+                        display: "block",
+                        color: "text.secondary",
+                        mb: 2,
+                    }}
+                >
+                    {t.selectChipsPrompt}
                 </Typography>
                 <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 1.5 }}>
                     {(translatedQuestions.length > 0 ? translatedQuestions : availableQuestions)
@@ -1230,8 +1243,7 @@ export default function SurveyGuruInsightsPage() {
                                 <ChartVisualization
                                     selectedField={questionId}
                                     chartData={chartData}
-                                    chartType={isSegmented ? "bar" : getFieldParam(questionId, "chartType", determineChartType(chartData[questionId]))}
-                                    hideChartTypeSelection={isSegmented}
+                                    chartType={getFieldParam(questionId, "chartType", determineChartType(chartData[questionId]))}
                                     onChartTypeChange={(val) => updateFieldParam(questionId, "chartType", val)}
                                     intervalMinutes={getFieldParam(questionId, "intervalMinutes", 60)}
                                 startDateTime={getFieldParam(questionId, "startDateTime", dayjs().subtract(30, "day").startOf("day"))}

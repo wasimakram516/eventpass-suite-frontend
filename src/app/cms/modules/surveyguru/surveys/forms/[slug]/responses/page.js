@@ -348,15 +348,19 @@ function ResponseCard({ resp, t, dir, formDetails, align }) {
 
   const name = resp.attendee?.name;
   const email = resp.attendee?.email;
+  const phone = resp.attendee?.phone;
   const company = resp.attendee?.company;
   const hasSubmittedName = Boolean(name?.trim?.());
   const hasSubmittedEmail = Boolean(email?.trim?.());
+  const hasSubmittedPhone = Boolean(phone?.trim?.());
   const hasSubmittedCompany = Boolean(company?.trim?.());
   const hasSubmittedAttendeeFields =
-    hasSubmittedName || hasSubmittedEmail || hasSubmittedCompany;
+    hasSubmittedName || hasSubmittedEmail || hasSubmittedPhone || hasSubmittedCompany;
   const submittedAt = resp.submittedAt;
 
   const rec = resp.recipientId;
+  const recEmail = rec?.email;
+  const recPhone = rec?.phone;
   const registrationName =
     rec?.fullName?.trim?.() || pickFullName(rec?.customFields) || "";
 
@@ -364,17 +368,6 @@ function ResponseCard({ resp, t, dir, formDetails, align }) {
     minWidth: dir === "rtl" ? "140px" : "auto",
     px: dir === "rtl" ? 1.5 : 1,
   };
-
-  const statusChip = rec ? (
-    <Chip
-      size="small"
-      icon={rec.status === "responded" ? <ICONS.verified /> : undefined}
-      label={(rec.status || t.statusUnknown).toUpperCase()}
-      color={rec.status === "responded" ? "success" : "default"}
-      variant={rec.status === "responded" ? "filled" : "outlined"}
-      sx={chipStyles}
-    />
-  ) : null;
 
   const questions = formDetails?.questions || [];
   const ANSWER_PREVIEW_COUNT = 4;
@@ -387,21 +380,12 @@ function ResponseCard({ resp, t, dir, formDetails, align }) {
     <AppCard
       sx={{
         width: "100%",
-        maxWidth: { xs: "100%", sm: 420 },
         mx: "auto",
         height: "100%",
         display: "flex",
         flexDirection: "column",
-        borderRadius: 2.5,
-        boxShadow: 2,
-        overflow: "hidden",
-        bgcolor: "background.paper",
         border: "1px solid",
         borderColor: "divider",
-        transition: "box-shadow 0.2s ease",
-        "&:hover": {
-          boxShadow: 4,
-        },
       }}
       dir={dir}
     >
@@ -409,12 +393,12 @@ function ResponseCard({ resp, t, dir, formDetails, align }) {
         <Box
           sx={{
             display: "flex",
-            alignItems: "center",
+            alignItems: "flex-start",
             flexDirection: dir === "rtl" ? "row-reverse" : "row",
             gap: 1.25,
           }}
         >
-          <Avatar sx={{ bgcolor: "primary.main", width: 36, height: 36 }}>
+          <Avatar sx={{ bgcolor: "primary.main", width: 36, height: 36, mt: 0.5 }}>
             <ICONS.personOutline />
           </Avatar>
           <Box sx={{ flex: 1 }}>
@@ -433,11 +417,28 @@ function ResponseCard({ resp, t, dir, formDetails, align }) {
                 ? t.anonymous
                 : name || registrationName || t.unknownName}
             </Typography>
+            
+            {!isAnonymous && (
+              <Stack direction="column" spacing={0.25} sx={{ mt: 0.5 }}>
+                {(email || recEmail) && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                    <ICONS.emailOutline sx={{ fontSize: 14, color: 'text.secondary' }} />
+                    <Typography variant="caption" color="text.secondary">
+                      {email || recEmail}
+                    </Typography>
+                  </Box>
+                )}
+                {(phone || recPhone) && (
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+                    <ICONS.phoneOutline sx={{ fontSize: 14, color: 'text.secondary' }} />
+                    <Typography variant="caption" color="text.secondary">
+                      {phone || recPhone}
+                    </Typography>
+                  </Box>
+                )}
+              </Stack>
+            )}
           </Box>
-
-          {!isAnonymous && rec && (
-            <Tooltip title={t.originalParticipant}>{statusChip}</Tooltip>
-          )}
         </Box>
       </Box>
 
@@ -457,46 +458,29 @@ function ResponseCard({ resp, t, dir, formDetails, align }) {
           )}
         </Box>
 
-        {hasSubmittedAttendeeFields && (
+        {hasSubmittedCompany && (
           <Fragment>
+            <Divider sx={{ my: 1 }} />
             <Typography
               variant="overline"
-              sx={{ letterSpacing: 0.6, textAlign: align }}
+              sx={{ letterSpacing: 0.6, display: "block", textAlign: align }}
             >
               {t.submittedDetails}
             </Typography>
 
             <List dense sx={{ py: 0 }}>
-              {hasSubmittedName && (
-                <FieldRow
-                  icon={<ICONS.personOutline fontSize="small" />}
-                  primary={t.name}
-                  secondary={name}
-                  align={align}
-                />
-              )}
-              {hasSubmittedEmail && (
-                <FieldRow
-                  icon={<ICONS.emailOutline fontSize="small" />}
-                  primary={t.email}
-                  secondary={email}
-                  align={align}
-                />
-              )}
-              {hasSubmittedCompany && (
-                <FieldRow
-                  icon={<ICONS.apartment fontSize="small" />}
-                  primary={t.company}
-                  secondary={company}
-                  align={align}
-                />
-              )}
+              <FieldRow
+                icon={<ICONS.apartment fontSize="small" />}
+                primary={t.company}
+                secondary={company}
+                align={align}
+              />
             </List>
           </Fragment>
         )}
 
         {/* Original Participant Section */}
-        {!isAnonymous && rec && !hasSubmittedAttendeeFields && (
+        {!isAnonymous && rec && !hasSubmittedAttendeeFields && company && (
           <Fragment>
             <Divider sx={{ my: 1 }} />
             <Typography
@@ -506,18 +490,6 @@ function ResponseCard({ resp, t, dir, formDetails, align }) {
               {t.originalParticipantDetails}
             </Typography>
             <List dense sx={{ py: 0 }}>
-              <FieldRow
-                icon={<ICONS.personOutline fontSize="small" />}
-                primary={t.fullName}
-                secondary={registrationName}
-                align={align}
-              />
-              <FieldRow
-                icon={<ICONS.emailOutline fontSize="small" />}
-                primary={t.email}
-                secondary={rec.email}
-                align={align}
-              />
               <FieldRow
                 icon={<ICONS.apartment fontSize="small" />}
                 primary={t.company}
