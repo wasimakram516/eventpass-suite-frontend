@@ -244,7 +244,7 @@ export default function QuestionsPage() {
 
   // Download template
   const handleDownload = async () => {
-    await downloadTemplate(downloadChoices, includeHint);
+    await downloadTemplate(downloadChoices, includeHint, language);
     setDownloadModalOpen(false);
   };
 

@@ -80,6 +80,7 @@ const translations = {
         timestamp: "Timestamp",
         totalRegistrations: "Total Registrations",
         segmentedBy: "Segmented By",
+        exportedAt: "Exported At",
     },
     ar: {
         pageTitle: "تحليلات ذكية",
@@ -117,6 +118,7 @@ const translations = {
         timestamp: "الطابع الزمني",
         totalRegistrations: "إجمالي التسجيلات",
         segmentedBy: "مقسم حسب",
+        exportedAt: "تاريخ التصدير",
     },
 };
 
@@ -770,6 +772,7 @@ export default function SurveyGuruInsightsPage() {
 
             const eventDataForExport = {
                 name: currentEventInfo?.name || formInfo?.title || "Survey Insights",
+                logoUrl: currentEventInfo?.logoUrl || undefined,
                 subtitle: currentEventInfo?.name ? formInfo?.title : undefined,
                 subtitleLabel: "Survey",
                 startDateFormatted: currentEventInfo?.startDate ? dayjs(currentEventInfo.startDate).format("DD-MMM-YY, hh:mm a") : undefined,
@@ -839,7 +842,7 @@ export default function SurveyGuruInsightsPage() {
                 try {
                     return new Intl.DateTimeFormat("en-US", {
                         year: "numeric", month: "short", day: "numeric",
-                        hour: "2-digit", minute: "2-digit", second: "2-digit",
+                        hour: "2-digit", minute: "2-digit",
                         timeZone: timezone,
                     }).format(new Date(dateString));
                 } catch { return String(dateString); }
@@ -897,7 +900,7 @@ export default function SurveyGuruInsightsPage() {
             if (eventInfoToUse) {
                 pushRow(t.logoUrl, eventInfoToUse.logoUrl || "N/A");
                 pushRow(t.eventName, eventInfoToUse.name || "N/A");
-                pushRow("Exported At", formatDateTimeWithLocale(new Date()));
+                pushRow(t.exportedAt, formatDateTimeWithLocale(new Date()));
                 pushRow(t.from, eventInfoToUse.startDate ? formatDateTimeForExcel(eventInfoToUse.startDate) : "N/A");
                 pushRow(t.to, eventInfoToUse.endDate ? formatDateTimeForExcel(eventInfoToUse.endDate) : "N/A");
                 pushRow(t.venue, eventInfoToUse.venue || "N/A");
@@ -910,6 +913,11 @@ export default function SurveyGuruInsightsPage() {
             pushRow(t.totalResponses, leftAlignNumber(totalResponses, 0));
             pushRow("Timezone", getTimezoneLabel(timezone));
             wsData.push([]);
+
+            const getFieldTypeLabel = (field) => {
+                const typeMap = { rating: t.rating || "Rating", nps: "NPS", time: "Time", text: "Text" };
+                return field?.type ? (typeMap[field.type] || field.type) : null;
+            };
 
             // Data sections for each selected question
             selectedQuestions.forEach((questionId) => {

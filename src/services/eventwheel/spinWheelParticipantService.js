@@ -97,13 +97,13 @@ export const getSpinWheelSyncFilters = withApiHandler(async (spinWheelId) => {
 
 // Export participants to XLSX (synced + non-synced wheels)
 export const exportSpinWheelParticipantsXlsx = withApiHandler(
-  async (spinWheelId) => {
+  async (spinWheelId, language = "en") => {
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const response = await api.get(
       `/eventwheel/participants/export/${spinWheelId}/xlsx`,
       {
         responseType: "blob", // IMPORTANT for file downloads
-        params: { timezone },
+        params: { timezone, language },
       }
     );
 

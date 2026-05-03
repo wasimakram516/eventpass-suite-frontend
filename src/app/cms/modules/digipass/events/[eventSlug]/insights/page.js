@@ -73,6 +73,7 @@ const translations = {
         totalActivityCompletions: "Total Activity Completions",
         avgActivities: "Avg Activities per Participant",
         scanRate: "Scan Rate",
+        exportedAt: "Exported At",
     },
     ar: {
         pageTitle: "تحليلات ذكية",
@@ -110,6 +111,7 @@ const translations = {
         totalActivityCompletions: "إجمالي إنجازات الأنشطة",
         avgActivities: "متوسط الأنشطة لكل مشارك",
         scanRate: "معدل المسح",
+        exportedAt: "تاريخ التصدير",
     },
 };
 
@@ -574,7 +576,7 @@ export default function AnalyticsDashboard() {
                 try {
                     return new Intl.DateTimeFormat("en-US", {
                         year: "numeric", month: "short", day: "numeric",
-                        hour: "2-digit", minute: "2-digit", second: "2-digit",
+                        hour: "2-digit", minute: "2-digit",
                         timeZone: timezone,
                     }).format(new Date(dateString));
                 } catch { return String(dateString); }
@@ -624,7 +626,7 @@ export default function AnalyticsDashboard() {
             // Event Details section
             pushRow(t.logoUrl, eventInfo.logoUrl || "N/A");
             pushRow(t.eventName, eventInfo.name || "N/A");
-            pushRow("Exported At", formatDateTimeWithLocale(new Date()));
+            pushRow(t.exportedAt, formatDateTimeWithLocale(new Date()));
             if (eventInfo.startDate) pushRow(t.from, formatDateTimeForExcel(eventInfo.startDate));
             if (eventInfo.endDate) pushRow(t.to, formatDateTimeForExcel(eventInfo.endDate));
             if (eventInfo.venue) pushRow(t.venue, eventInfo.venue);

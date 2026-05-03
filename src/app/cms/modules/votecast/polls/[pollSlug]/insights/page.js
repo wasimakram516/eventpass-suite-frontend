@@ -5,7 +5,6 @@ import { useParams } from "next/navigation";
 import {
     Box,
     TextField,
-    Paper,
     Typography,
     Chip,
     Stack,
@@ -13,25 +12,22 @@ import {
     Button,
     CircularProgress,
     Grid,
-    Card,
-    CardContent,
     Collapse,
-    IconButton,
 } from "@mui/material";
 import { PieChart } from "@mui/x-charts/PieChart";
 import { LineChart } from "@mui/x-charts/LineChart";
 import { BarChart } from "@mui/x-charts/BarChart";
-import { BarChart as BarChartIcon, ExpandMore as ExpandMoreIcon } from "@mui/icons-material";
+import { BarChart as BarChartIcon } from "@mui/icons-material";
 import {
     getPollInsightsSummary,
     getPollInsightsFields,
     getPollInsightsDistribution,
     getPollInsightsTimeDistribution,
-    getPollCrossBreakdown,
 } from "@/services/votecast/pollInsightsService";
 import { getPublicPollBySlug } from "@/services/votecast/pollService";
 import useVotecastSocket from "@/hooks/modules/votecast/useVotecastSocket";
 import ICONS from "@/utils/iconUtil";
+import AppCard from "@/components/cards/AppCard";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import dayjs from "dayjs";
@@ -50,6 +46,7 @@ const translations = {
         pageDescription:
             "Analyze voting participation, trends, and breakdowns for this poll.",
         availableFields: "Available Fields",
+        selectChipsPrompt: "Select the chips to see the charts",
         selectFieldPrompt: "Select a field to view insights",
         distributionOverview: "Distribution Overview",
         historicalTrend: "Historical Trend",
@@ -75,18 +72,10 @@ const translations = {
         pollTitle: "Poll Title",
         category: "Category",
         noData: "No data to display",
-        crossBreakdown: "Cross Breakdown",
-        crossBreakdownDesc: "See how different groups voted on each question.",
-        chartTypeStacked: "Stacked Bar",
-        chartTypeGrouped: "Grouped Bar",
-        chartTypeNormalized: "100% Stacked",
-        chartTypePie: "Pie Groups",
-        noBreakdownData: "No breakdown data for this question.",
-        totalVotesLabel: "votes",
-        chartTypeDonut: "Donut Groups",
-        chartTypeLine: "Line",
         responsePattern: "Response Pattern",
         responsePatternDesc: "Aggregate option frequency across all questions.",
+        showResponses: "Show Responses",
+        hideResponses: "Hide Responses",
         pollOverview: "Poll Overview",
         postEventReport: "POST-EVENT REPORT",
         confidential: "Confidential — For Internal Use Only",
@@ -96,13 +85,16 @@ const translations = {
         of: "of",
         venue: "Venue",
         eventName: "Event",
+        exportedAt: "Exported At",
         timezone: "Timezone",
+        logoUrl: "Logo URL",
     },
     ar: {
         pageTitle: "تحليلات الاستطلاع",
         pageDescription:
             "تحليل مشاركة التصويت والاتجاهات والتوزيعات لهذا الاستطلاع.",
         availableFields: "الحقول المتاحة",
+        selectChipsPrompt: "اختر الشرائح لعرض الرسوم البيانية",
         selectFieldPrompt: "اختر حقلاً لعرض التحليلات",
         distributionOverview: "نظرة عامة على التوزيع",
         historicalTrend: "الاتجاه التاريخي",
@@ -127,18 +119,10 @@ const translations = {
         pollTitle: "عنوان الاستطلاع",
         category: "الفئة",
         noData: "لا توجد بيانات للعرض",
-        crossBreakdown: "التوزيع التقاطعي",
-        crossBreakdownDesc: "اعرف كيف صوّتت المجموعات المختلفة على كل سؤال.",
-        chartTypeStacked: "شريطي مكدّس",
-        chartTypeGrouped: "شريطي مجمّع",
-        chartTypeNormalized: "مكدّس 100%",
-        chartTypePie: "دائري للمجموعات",
-        noBreakdownData: "لا توجد بيانات لهذا السؤال.",
-        totalVotesLabel: "أصوات",
-        chartTypeDonut: "دائري حلقي",
-        chartTypeLine: "خطي",
         responsePattern: "نمط الاستجابة",
         responsePatternDesc: "تكرار الخيارات المجمّعة عبر جميع الأسئلة.",
+        showResponses: "عرض الإجابات",
+        hideResponses: "إخفاء الإجابات",
         pollOverview: "نظرة عامة على الاستطلاع",
         postEventReport: "تقرير ما بعد الحدث",
         confidential: "سري — للاستخدام الداخلي فقط",
@@ -148,7 +132,9 @@ const translations = {
         of: "من",
         venue: "الموقع",
         eventName: "الحدث",
+        exportedAt: "تاريخ التصدير",
         timezone: "المنطقة الزمنية",
+        logoUrl: "رابط الشعار",
     },
 };
 
@@ -180,16 +166,14 @@ const determineChartType = (field) => {
 };
 
 const KpiCard = ({ label, value }) => (
-    <Card elevation={2} sx={{ borderRadius: 2, textAlign: "center" }}>
-        <CardContent sx={{ py: 2 }}>
-            <Typography variant="h4" fontWeight="bold" color="primary.main">
-                {value ?? "—"}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" mt={0.5}>
-                {label}
-            </Typography>
-        </CardContent>
-    </Card>
+    <AppCard sx={{ textAlign: "center", p: 2, display: "flex", flexDirection: "column", justifyContent: "center", border: "1px solid #f1f5f9" }}>
+        <Typography variant="h4" fontWeight="bold" color="primary.main">
+            {value ?? "—"}
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
+            {label}
+        </Typography>
+    </AppCard>
 );
 
 const FieldChip = ({ field, isSelected, onClick }) => (
@@ -248,13 +232,15 @@ const ChartVisualization = ({
     const chartTypeChips = isCategorical
         ? [
               { label: "Pie", value: "pie" },
-              { label: "Donut", value: "donut" },
-              { label: "Bar", value: "bar" },
+              { label: "Vertical Bar", value: "bar" },
+              { label: "Horizontal Bar", value: "horizontalBar" },
           ]
         : isTimeBased
         ? [
               { label: "Line", value: "line" },
-              { label: "Bar", value: "bar" },
+              { label: "Vertical Bar", value: "bar" },
+              { label: "Horizontal Bar", value: "horizontalBar" },
+              { label: "Heatmap", value: "heatmap" },
           ]
         : null;
     const hasNoData = isCategorical && (!field.data || field.data.length === 0);
@@ -409,7 +395,7 @@ const ChartVisualization = ({
                     <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%" }}>
                         <Typography variant="body1" color="textSecondary">{t.noData}</Typography>
                     </Box>
-                ) : effectiveChartType === "pie" || effectiveChartType === "donut" ? (
+                ) : effectiveChartType === "pie" ? (
                     <Box
                         sx={{
                             display: "flex",
@@ -433,7 +419,7 @@ const ChartVisualization = ({
                                 series={[
                                     {
                                         data: barData,
-                                        innerRadius: effectiveChartType === "donut" ? 80 : 0,
+                                        innerRadius: 0,
                                         highlightScope: { faded: "global", highlighted: "item" },
                                         faded: { innerRadius: 30, additionalRadius: -30, color: "gray" },
                                         arcLabel: () => "",
@@ -479,7 +465,7 @@ const ChartVisualization = ({
                             })}
                         </Box>
                     </Box>
-                ) : effectiveChartType === "bar" && isCategorical ? (
+                ) : (effectiveChartType === "bar" || effectiveChartType === "horizontalBar") && isCategorical ? (
                     <Box
                         sx={{
                             display: "flex",
@@ -500,20 +486,30 @@ const ChartVisualization = ({
                             }}
                         >
                             <BarChart
-                                xAxis={[{
+                                layout={effectiveChartType === "horizontalBar" ? "horizontal" : "vertical"}
+                                xAxis={effectiveChartType === "horizontalBar" ? [{
+                                    label: "Count",
+                                    tickLabelStyle: { direction: "ltr", textAlign: "left", fontSize: 10 },
+                                }] : [{
                                     scaleType: "band",
                                     data: barData.map((d) => d.label),
                                     tickLabelStyle: { angle: -30, textAnchor: "end", fontSize: 11 },
-                                    colorMap: {
-                                        type: "ordinal",
-                                        colors: barData.map((d) => d.color),
-                                    },
+                                    colorMap: { type: "ordinal", colors: barData.map((d) => d.color) },
                                 }]}
-                                series={[{
-                                    data: barData.map((d) => d.value),
+                                yAxis={effectiveChartType === "horizontalBar" ? [{
+                                    scaleType: "band",
+                                    data: barData.map((d) => d.label),
+                                    tickLabelStyle: { direction: "ltr", textAlign: "right", fontSize: 10 },
+                                    colorMap: { type: "ordinal", colors: barData.map((d) => d.color) },
+                                }] : [{
+                                    label: "Count",
+                                    min: 0,
+                                    max: Math.max(0, ...barData.map((d) => d.value)) * 1.1,
+                                    tickLabelStyle: { direction: "ltr", textAlign: "left" },
                                 }]}
+                                series={[{ data: barData.map((d) => d.value) }]}
                                 height={400}
-                                margin={{ top: 20, bottom: 70, left: 50, right: 20 }}
+                                margin={{ top: 30, bottom: 70, left: effectiveChartType === "horizontalBar" ? 100 : 50, right: 30 }}
                                 slotProps={{ legend: { hidden: true } }}
                             />
                         </Box>
@@ -606,7 +602,7 @@ const ChartVisualization = ({
                             ))}
                         </Box>
                     </Box>
-                ) : (
+                ) : effectiveChartType === "bar" || effectiveChartType === "horizontalBar" ? (
                     <Box
                         sx={{
                             display: "flex",
@@ -626,17 +622,31 @@ const ChartVisualization = ({
                             }}
                         >
                             <BarChart
-                                xAxis={[{
+                                layout={effectiveChartType === "horizontalBar" ? "horizontal" : "vertical"}
+                                xAxis={effectiveChartType === "horizontalBar" ? [{
+                                    label: "Count",
+                                    tickLabelStyle: { direction: "ltr", textAlign: "left", fontSize: 10 },
+                                }] : [{
                                     scaleType: "band",
                                     data: field.xData,
                                     tickLabelStyle: { angle: -30, textAnchor: "end", fontSize: 11 },
+                                }]}
+                                yAxis={effectiveChartType === "horizontalBar" ? [{
+                                    scaleType: "band",
+                                    data: field.xData,
+                                    tickLabelStyle: { direction: "ltr", textAlign: "right", fontSize: 10 },
+                                }] : [{
+                                    label: "Count",
+                                    min: 0,
+                                    max: Math.max(0, ...(field.yData || [0])) * 1.1,
+                                    tickLabelStyle: { direction: "ltr", textAlign: "left" },
                                 }]}
                                 series={[{
                                     data: field.yData,
                                     color: field.color,
                                 }]}
                                 height={400}
-                                margin={{ top: 30, bottom: 70, left: 50, right: 80 }}
+                                margin={{ top: 30, bottom: 70, left: effectiveChartType === "horizontalBar" ? 100 : 50, right: 80 }}
                                 slotProps={{ legend: { hidden: true } }}
                             />
                         </Box>
@@ -664,184 +674,71 @@ const ChartVisualization = ({
                             ))}
                         </Box>
                     </Box>
-                )}
-            </Box>
-        </Box>
-    );
-};
-
-const CrossBreakdownChart = ({ breakdownData, chartType, t }) => {
-    if (!breakdownData?.segments?.length) {
-        return (
-            <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center", py: 2 }}>
-                {t.noBreakdownData}
-            </Typography>
-        );
-    }
-
-    const { options, segments } = breakdownData;
-    const segmentColors = segments.map((_, idx) => getPieSegmentColor(idx + 5));
-    const xAxisData = options.map((o) => o.text);
-
-    if (chartType === "pie" || chartType === "donut") {
-        return (
-            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, justifyContent: "flex-start", pt: 1 }}>
-                {segments.map((seg, segIdx) => {
-                    const pieData = seg.distribution
-                        .filter((d) => d.count > 0)
-                        .map((d, dIdx) => ({
-                            id: dIdx,
-                            value: d.count,
-                            label: d.optionText,
-                            color: getPieSegmentColor(dIdx),
-                        }));
-                    if (!pieData.length) return null;
-                    const total = pieData.reduce((sum, d) => sum + d.value, 0);
-                    return (
-                        <Box key={seg.fieldValue} sx={{ textAlign: "center", minWidth: 180, maxWidth: 220 }}>
-                            <Typography variant="caption" fontWeight={700} sx={{ display: "block", mb: 0.5, color: "#1f2937" }}>
-                                {seg.fieldValue}
-                            </Typography>
-                            <PieChart
-                                series={[{
-                                    data: pieData,
-                                    innerRadius: chartType === "donut" ? 45 : 0,
-                                    highlightScope: { faded: "global", highlighted: "item" },
-                                    arcLabel: () => "",
-                                }]}
-                                height={180}
-                                slotProps={{ legend: { hidden: true } }}
-                            />
-                            <Typography variant="caption" color="text.secondary">
-                                {total} {total === 1 ? "vote" : t.totalVotesLabel}
-                            </Typography>
+                ) : effectiveChartType === "heatmap" ? (
+                    <Box sx={{ height: 400, width: "100%", py: 2 }}>
+                        <Box sx={{ width: "100%", height: "100%", position: "relative" }}>
+                            <Box sx={{ display: "grid", gridTemplateColumns: "60px repeat(24, 1fr)", height: "100%", width: "100%" }}>
+                                <Box />
+                                {Array.from({ length: 24 }).map((_, h) => (
+                                    <Typography key={h} variant="caption" sx={{ textAlign: "center", color: "text.secondary", fontSize: "9px" }}>
+                                        {h}h
+                                    </Typography>
+                                ))}
+                                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((dayName, dIdx) => {
+                                    const dayNum = dIdx;
+                                    const start = startDateTime ? new Date(startDateTime) : null;
+                                    const end = endDateTime ? new Date(endDateTime) : null;
+                                    return (
+                                        <React.Fragment key={dayName}>
+                                            <Typography variant="caption" sx={{ display: "flex", alignItems: "center", fontWeight: 600, color: "text.secondary" }}>
+                                                {dayName}
+                                            </Typography>
+                                            {Array.from({ length: 24 }).map((_, h) => {
+                                                let count = 0;
+                                                if (field.xData && field.yData) {
+                                                    field.xData.forEach((ts, idx) => {
+                                                        const date = new Date(ts);
+                                                        if (start && date < start) return;
+                                                        if (end && date > end) return;
+                                                        if (!isNaN(date.getTime()) && date.getDay() === dayNum && date.getHours() === h) {
+                                                            count += (field.yData[idx] || 0);
+                                                        }
+                                                    });
+                                                }
+                                                const maxVal = field.yData ? Math.max(...field.yData, 1) : 1;
+                                                const alpha = count > 0 ? 0.2 + (count / maxVal) * 0.8 : 0.05;
+                                                return (
+                                                    <Box
+                                                        key={h}
+                                                        title={`${dayName}, ${h}:00 - ${count} activities`}
+                                                        sx={{
+                                                            m: 0.1,
+                                                            borderRadius: 0.5,
+                                                            backgroundColor: count > 0 ? field.color : "#f3f4f6",
+                                                            opacity: alpha,
+                                                            aspectRatio: "1/1",
+                                                            display: "flex",
+                                                            alignItems: "center",
+                                                            justifyContent: "center",
+                                                            transition: "transform 0.2s",
+                                                            "&:hover": { transform: "scale(1.2)", opacity: 1, zIndex: 1, cursor: "pointer", boxShadow: 2 }
+                                                        }}
+                                                    >
+                                                        {count > 0 && (
+                                                            <Typography sx={{ color: alpha > 0.6 ? "#fff" : "#000", fontSize: "8px", fontWeight: "bold" }}>
+                                                                {count}
+                                                            </Typography>
+                                                        )}
+                                                    </Box>
+                                                );
+                                            })}
+                                        </React.Fragment>
+                                    );
+                                })}
+                            </Box>
                         </Box>
-                    );
-                })}
-            </Box>
-        );
-    }
-
-    if (chartType === "line") {
-        const lineSeries = segments.map((seg, segIdx) => ({
-            label: seg.fieldValue,
-            data: options.map((opt) => {
-                const d = seg.distribution.find((d) => d.optionIndex === opt.index);
-                return d?.count || 0;
-            }),
-            color: segmentColors[segIdx],
-            curve: "linear",
-        }));
-
-        return (
-            <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, gap: 2, alignItems: { xs: "center", md: "stretch" } }}>
-                <Box sx={{ flex: 1, minWidth: 0, width: "100%" }}>
-                    <LineChart
-                        xAxis={[{ scaleType: "point", data: xAxisData, tickLabelStyle: { direction: "ltr" } }]}
-                        yAxis={[{ min: 0 }]}
-                        series={lineSeries}
-                        height={320}
-                        margin={{ top: 20, bottom: 60, left: 50, right: 20 }}
-                        slotProps={{ legend: { hidden: true } }}
-                        sx={{
-                            "& .MuiLineElement-root": { display: "none" },
-                            "& .MuiChartsLegend-root": { display: "none" },
-                        }}
-                    />
-                </Box>
-                <Box
-                    sx={{
-                        minWidth: 140,
-                        maxWidth: { xs: "100%", md: 200 },
-                        maxHeight: 280,
-                        overflow: "auto",
-                        display: "flex",
-                        flexDirection: "column",
-                        justifyContent: "center",
-                        gap: 0.75,
-                        py: 1,
-                        direction: "ltr",
-                    }}
-                >
-                    {segments.map((seg, idx) => (
-                        <Box key={seg.fieldValue} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                            <Box sx={{ width: 12, height: 12, borderRadius: "50%", backgroundColor: segmentColors[idx], flexShrink: 0 }} />
-                            <Typography variant="body2" sx={{ fontSize: "0.8rem", color: "#374151", whiteSpace: "nowrap" }}>
-                                {seg.fieldValue}
-                            </Typography>
-                        </Box>
-                    ))}
-                </Box>
-            </Box>
-        );
-    }
-
-    let series;
-
-    if (chartType === "normalized") {
-        const optionTotals = options.map((opt) =>
-            segments.reduce((sum, seg) => {
-                const d = seg.distribution.find((d) => d.optionIndex === opt.index);
-                return sum + (d?.count || 0);
-            }, 0)
-        );
-        series = segments.map((seg, segIdx) => ({
-            label: seg.fieldValue,
-            data: options.map((opt, optIdx) => {
-                const count = seg.distribution.find((d) => d.optionIndex === opt.index)?.count || 0;
-                const total = optionTotals[optIdx];
-                return total > 0 ? parseFloat(((count / total) * 100).toFixed(1)) : 0;
-            }),
-            color: segmentColors[segIdx],
-            stack: "total",
-            valueFormatter: (v) => `${v}%`,
-        }));
-    } else {
-        series = segments.map((seg, segIdx) => ({
-            label: seg.fieldValue,
-            data: options.map((opt) => {
-                const d = seg.distribution.find((d) => d.optionIndex === opt.index);
-                return d?.count || 0;
-            }),
-            color: segmentColors[segIdx],
-            ...(chartType === "stacked" ? { stack: "total" } : {}),
-        }));
-    }
-
-    return (
-        <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, gap: 2, alignItems: { xs: "center", md: "stretch" } }}>
-            <Box sx={{ flex: 1, minWidth: 0, width: "100%" }}>
-                <BarChart
-                    xAxis={[{ scaleType: "band", data: xAxisData, tickLabelStyle: { direction: "ltr" } }]}
-                    yAxis={chartType === "normalized" ? [{ min: 0, max: 100 }] : [{}]}
-                    series={series}
-                    height={320}
-                    margin={{ top: 20, bottom: 60, left: 50, right: 20 }}
-                    slotProps={{ legend: { hidden: true } }}
-                />
-            </Box>
-            <Box
-                sx={{
-                    minWidth: 140,
-                    maxWidth: { xs: "100%", md: 200 },
-                    maxHeight: 280,
-                    overflow: "auto",
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "center",
-                    gap: 0.75,
-                    py: 1,
-                    direction: "ltr",
-                }}
-            >
-                {segments.map((seg, idx) => (
-                    <Box key={seg.fieldValue} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                        <Box sx={{ width: 12, height: 12, borderRadius: "50%", backgroundColor: segmentColors[idx], flexShrink: 0 }} />
-                        <Typography variant="body2" sx={{ fontSize: "0.8rem", color: "#374151", whiteSpace: "nowrap" }}>
-                            {seg.fieldValue}
-                        </Typography>
                     </Box>
-                ))}
+                ) : null}
             </Box>
         </Box>
     );
@@ -851,10 +748,9 @@ const ResponsePatternSection = ({ questions, t }) => {
     const [open, setOpen] = useState(false);
     if (!questions?.length) return null;
     return (
-        <Paper sx={{ borderRadius: 2, boxShadow: 2, overflow: "hidden" }}>
+        <AppCard sx={{ overflow: "hidden" }}>
             <Box
-                onClick={() => setOpen((prev) => !prev)}
-                sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", p: { xs: 1.5, sm: 2 }, cursor: "pointer", userSelect: "none", "&:hover": { backgroundColor: "#f9fafb" } }}
+                sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", p: { xs: 1.5, sm: 2 } }}
             >
                 <Box>
                     <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "#1f2937" }}>
@@ -864,9 +760,14 @@ const ResponsePatternSection = ({ questions, t }) => {
                         {t.responsePatternDesc}
                     </Typography>
                 </Box>
-                <IconButton size="small" sx={{ ml: 1, transform: open ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.25s ease" }}>
-                    <ExpandMoreIcon fontSize="small" />
-                </IconButton>
+                <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => setOpen((prev) => !prev)}
+                    sx={{ ml: 1, whiteSpace: "nowrap", flexShrink: 0 }}
+                >
+                    {open ? t.hideResponses : t.showResponses}
+                </Button>
             </Box>
             <Collapse in={open}>
                 <Box sx={{ px: { xs: 1.5, sm: 2 }, pb: { xs: 1.5, sm: 2 } }}>
@@ -903,7 +804,7 @@ const ResponsePatternSection = ({ questions, t }) => {
                     </Stack>
                 </Box>
             </Collapse>
-        </Paper>
+        </AppCard>
     );
 };
 
@@ -919,18 +820,12 @@ export default function PollInsightsDashboard() {
     const [availableFields, setAvailableFields] = useState([]);
     const [loading, setLoading] = useState(true);
     const [chartRefs, setChartRefs] = useState({});
-    const [crossChartRefs, setCrossChartRefs] = useState({});
     const [exportLoading, setExportLoading] = useState(false);
     const [exportRawLoading, setExportRawLoading] = useState(false);
     const [chartTypeOverrides, setChartTypeOverrides] = useState({});
     const [summary, setSummary] = useState(null);
     const [pollInfo, setPollInfo] = useState(null);
     const [linkedEvent, setLinkedEvent] = useState(null);
-    const [regFields, setRegFields] = useState([]);
-    const [crossField, setCrossField] = useState(null);
-    const [crossChartType, setCrossChartType] = useState("pie");
-    const [crossBreakdownData, setCrossBreakdownData] = useState({});
-    const [crossBreakdownLoading, setCrossBreakdownLoading] = useState(false);
 
     const pollId = pollInfo?._id;
 
@@ -1015,7 +910,6 @@ export default function PollInsightsDashboard() {
                 setFieldParams(defaultParams);
                 setAppliedParams(defaultParams);
                 setAvailableFields(allFields);
-                setRegFields(fieldsRes?.data?.registrationFields || []);
             } catch (err) {
                 console.error("Error loading poll insights:", err);
             }
@@ -1088,25 +982,6 @@ export default function PollInsightsDashboard() {
         fetchChartData();
     }, [selectedFields, pollSlug, availableFields, appliedParams]);
 
-    useEffect(() => {
-        if (!crossField || !pollInfo?.questions?.length || !pollSlug) return;
-        const fetchCross = async () => {
-            setCrossBreakdownLoading(true);
-            const results = {};
-            await Promise.all(
-                (pollInfo.questions || []).map(async (q) => {
-                    try {
-                        const res = await getPollCrossBreakdown(pollSlug, crossField, String(q._id));
-                        if (res?.data) results[String(q._id)] = res.data;
-                    } catch {}
-                })
-            );
-            setCrossBreakdownData(results);
-            setCrossBreakdownLoading(false);
-        };
-        fetchCross();
-    }, [crossField, pollSlug, pollInfo]);
-
     const handleGenerate = async (fieldName) => {
         setGeneratingFields((prev) => ({ ...prev, [fieldName]: true }));
         setAppliedParams((prev) => ({ ...prev, [fieldName]: { ...fieldParams[fieldName] } }));
@@ -1129,19 +1004,6 @@ export default function PollInsightsDashboard() {
                 endDateTime: getFieldParam(f, "endDateTime", dayjs().endOf("day")).toDate(),
                 legend: false,
             }));
-
-            // Append cross breakdown charts if a cross field is selected and data is loaded
-            if (crossField && !crossBreakdownLoading) {
-                const crossFieldLabel = regFields.find((f) => f.name === crossField)?.label || crossField;
-                (pollInfo?.questions || []).forEach((q) => {
-                    const ref = crossChartRefs[String(q._id)];
-                    if (ref && crossBreakdownData[String(q._id)]?.segments?.length) {
-                        refs.push(ref);
-                        labels.push(`${t.crossBreakdown}: ${crossFieldLabel}`);
-                        chartDataArray.push({ chartType: "image" });
-                    }
-                });
-            }
 
             const formatPdfDate = (d) => d ? dayjs(d).format("DD-MMM-YY, hh:mm a") : undefined;
             const pdfEventInfo = {
@@ -1188,7 +1050,7 @@ export default function PollInsightsDashboard() {
                 try {
                     return new Intl.DateTimeFormat("en-US", {
                         year: "numeric", month: "short", day: "numeric",
-                        hour: "2-digit", minute: "2-digit", second: "2-digit",
+                        hour: "2-digit", minute: "2-digit",
                         timeZone: timezone,
                     }).format(new Date(val));
                 } catch { return String(val); }
@@ -1221,11 +1083,11 @@ export default function PollInsightsDashboard() {
 
             // Linked event section
             if (linkedEvent) {
-                pushRow("Logo URL", linkedEvent.logoUrl || "N/A");
-                pushRow("Event Name", linkedEvent.name || "N/A");
-                pushRow("From", linkedEvent.startDate ? formatDateTimeForExcel(linkedEvent.startDate) : "N/A");
-                pushRow("To", linkedEvent.endDate ? formatDateTimeForExcel(linkedEvent.endDate) : "N/A");
-                pushRow("Venue", linkedEvent.venue || "N/A");
+                pushRow(t.logoUrl, linkedEvent.logoUrl || "N/A");
+                pushRow(t.eventName, linkedEvent.name || "N/A");
+                pushRow(t.from, linkedEvent.startDate ? formatDateTimeForExcel(linkedEvent.startDate) : "N/A");
+                pushRow(t.to, linkedEvent.endDate ? formatDateTimeForExcel(linkedEvent.endDate) : "N/A");
+                pushRow(t.venue, linkedEvent.venue || "N/A");
                 wsData.push([]);
             }
 
@@ -1234,6 +1096,7 @@ export default function PollInsightsDashboard() {
             pushRow(t.totalVotes, leftAlign(summary?.totalVotes));
             if (summary?.participationRate != null) pushRow(t.participationRate, `${summary.participationRate}%`);
             pushRow(t.questionCount, leftAlign(summary?.questionCount));
+            pushRow(t.exportedAt, formatDateTimeForExcel(new Date().toISOString()));
             pushRow(t.timezone, getTimezoneLabel(timezone));
             wsData.push([]);
 
@@ -1268,36 +1131,6 @@ export default function PollInsightsDashboard() {
                 }
                 wsData.push([]);
             });
-
-            // Cross Breakdown section
-            if (crossField && Object.keys(crossBreakdownData).length > 0) {
-                const crossFieldLabel = regFields.find((f) => f.name === crossField)?.label || crossField;
-                pushRow(`=== ${t.crossBreakdown}: ${crossFieldLabel} ===`);
-                wsData.push([]);
-
-                (pollInfo?.questions || []).forEach((q) => {
-                    const bd = crossBreakdownData[String(q._id)];
-                    if (!bd?.segments?.length) return;
-
-                    pushRow(q.question);
-
-                    const segmentLabels = bd.segments.map((s) => s.fieldValue);
-                    const headerRow = [t.category, ...segmentLabels];
-                    if (language === "ar") wsData.push([...headerRow].reverse());
-                    else wsData.push(headerRow);
-
-                    bd.options.forEach((opt) => {
-                        const counts = bd.segments.map((seg) => {
-                            const d = seg.distribution.find((d) => d.optionIndex === opt.index);
-                            return d?.count || 0;
-                        });
-                        const dataRow = [toNumericIfPossible(opt.text), ...counts];
-                        if (language === "ar") wsData.push([...dataRow].reverse());
-                        else wsData.push(dataRow);
-                    });
-                    wsData.push([]);
-                });
-            }
 
             // Response Pattern section (unlinked polls only)
             if (!pollInfo?.linkedEventRegId && pollInfo?.questions?.length) {
@@ -1430,9 +1263,19 @@ export default function PollInsightsDashboard() {
             )}
 
             {/* Field Chip Selector */}
-            <Paper sx={{ flex: "0 0 auto", p: { xs: 1, sm: 1.5, md: 2 }, borderRadius: 2, boxShadow: 2, width: "100%", boxSizing: "border-box" }}>
+            <AppCard sx={{ flex: "0 0 auto", p: { xs: 1, sm: 1.5, md: 2 }, width: "100%", boxSizing: "border-box" }}>
                 <Typography variant="subtitle1" sx={{ fontWeight: 600, color: "#374151", mb: 1 }}>
                     {t.availableFields}
+                </Typography>
+                <Typography
+                    variant="caption"
+                    sx={{
+                        display: "block",
+                        color: "text.secondary",
+                        mb: 1.5,
+                    }}
+                >
+                    {t.selectChipsPrompt}
                 </Typography>
                 <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 1, maxWidth: "100%" }}>
                     {availableFields.map((field) => (
@@ -1450,20 +1293,20 @@ export default function PollInsightsDashboard() {
                         />
                     ))}
                 </Stack>
-            </Paper>
+            </AppCard>
 
             {/* Chart Panels */}
             <Stack spacing={2} sx={{ flex: "1 1 0%", overflow: "auto", minHeight: 0, pb: 2, px: 0.3 }}>
                 {selectedFields.length === 0 ? (
-                    <Paper sx={{ flex: 1, borderRadius: 2, boxShadow: 2, display: "flex", alignItems: "center", justifyContent: "center", minHeight: 300 }}>
+                    <AppCard sx={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", minHeight: 300 }}>
                         <Box textAlign="center">
                             <BarChartIcon sx={{ fontSize: 48, color: "#d1d5db", mb: 2 }} />
                             <Typography color="textSecondary">{t.selectFieldPrompt}</Typography>
                         </Box>
-                    </Paper>
+                    </AppCard>
                 ) : (
                     selectedFields.map((fieldName) => (
-                        <Paper key={fieldName} sx={{ borderRadius: 2, boxShadow: 2, minHeight: "450px" }}>
+                        <AppCard key={fieldName} sx={{ minHeight: "450px" }}>
                             <ChartVisualization
                                 selectedField={fieldName}
                                 chartData={chartData}
@@ -1492,110 +1335,10 @@ export default function PollInsightsDashboard() {
                                 }}
                                 t={t}
                             />
-                        </Paper>
+                        </AppCard>
                     ))
                 )}
 
-                {/* Cross Breakdown Section */}
-                {regFields.length > 0 && (
-                    <Paper sx={{ borderRadius: 2, boxShadow: 2, p: { xs: 1.5, sm: 2 } }}>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "#1f2937", mb: 0.5 }}>
-                            {t.crossBreakdown}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                            {t.crossBreakdownDesc}
-                        </Typography>
-
-                        {/* Registration field chips */}
-                        <Stack direction="row" sx={{ flexWrap: "wrap", gap: 1, mb: crossField ? 2 : 0 }}>
-                            {regFields.map((f) => (
-                                <Chip
-                                    key={f.name}
-                                    label={f.label}
-                                    onClick={() => {
-                                        setCrossField((prev) => (prev === f.name ? null : f.name));
-                                        setCrossBreakdownData({});
-                                    }}
-                                    sx={{
-                                        backgroundColor: crossField === f.name ? FIELD_COLOR : "#ffffff",
-                                        color: crossField === f.name ? "#ffffff" : "#374151",
-                                        fontWeight: crossField === f.name ? 600 : 500,
-                                        border: crossField === f.name ? "none" : "2px solid #e5e7eb",
-                                        cursor: "pointer",
-                                        transition: "all 0.2s ease",
-                                        "&:hover": {
-                                            backgroundColor: crossField === f.name ? FIELD_COLOR : `${FIELD_COLOR}15`,
-                                            color: crossField === f.name ? "#ffffff" : FIELD_COLOR,
-                                            borderColor: FIELD_COLOR,
-                                        },
-                                    }}
-                                />
-                            ))}
-                        </Stack>
-
-                        {crossField && (
-                            <>
-                                {/* Chart type chips */}
-                                <Stack direction="row" sx={{ flexWrap: "wrap", gap: 1, mb: 2 }}>
-                                    {[
-                                        { id: "pie", label: "Pie" },
-                                        { id: "donut", label: "Donut" },
-                                        { id: "bar", label: "Bar" },
-                                    ].map((ct) => (
-                                        <Chip
-                                            key={ct.id}
-                                            label={ct.label}
-                                            onClick={() => setCrossChartType(ct.id)}
-                                            sx={{
-                                                backgroundColor: crossChartType === ct.id ? FIELD_COLOR : "#ffffff",
-                                                color: crossChartType === ct.id ? "#ffffff" : "#374151",
-                                                fontWeight: crossChartType === ct.id ? 600 : 500,
-                                                border: crossChartType === ct.id ? "none" : "2px solid #e5e7eb",
-                                                cursor: "pointer",
-                                                transition: "all 0.2s ease",
-                                                "&:hover": {
-                                                    backgroundColor: crossChartType === ct.id ? FIELD_COLOR : `${FIELD_COLOR}15`,
-                                                    color: crossChartType === ct.id ? "#ffffff" : FIELD_COLOR,
-                                                    borderColor: FIELD_COLOR,
-                                                },
-                                            }}
-                                        />
-                                    ))}
-                                </Stack>
-
-                                {crossBreakdownLoading ? (
-                                    <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-                                        <CircularProgress />
-                                    </Box>
-                                ) : (
-                                    <Stack spacing={2}>
-                                        {(pollInfo?.questions || []).map((q) => {
-                                            const bd = crossBreakdownData[String(q._id)];
-                                            return (
-                                                <Paper
-                                                    key={String(q._id)}
-                                                    variant="outlined"
-                                                    sx={{ p: { xs: 1.5, sm: 2 }, borderRadius: 2 }}
-                                                    ref={(el) => {
-                                                        if (el) setCrossChartRefs((prev) => {
-                                                            if (prev[String(q._id)] === el) return prev;
-                                                            return { ...prev, [String(q._id)]: el };
-                                                        });
-                                                    }}
-                                                >
-                                                    <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 2, color: "#1f2937" }}>
-                                                        {q.question}
-                                                    </Typography>
-                                                    <CrossBreakdownChart breakdownData={bd} chartType={crossChartType} t={t} />
-                                                </Paper>
-                                            );
-                                        })}
-                                    </Stack>
-                                )}
-                            </>
-                        )}
-                    </Paper>
-                )}
             </Stack>
         </Box>
     );

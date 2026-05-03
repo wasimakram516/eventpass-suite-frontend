@@ -100,6 +100,21 @@ export const getPollVoterResults = withApiHandler(async (pollId) => {
   return data.data || data;
 });
 
+// Export poll voter raw data as CSV
+export const exportPollVoters = async (pollId, pollSlug) => {
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const response = await api.get(`/votecast/polls/${pollId}/voters/export`, {
+    responseType: "blob",
+    params: { timezone },
+  });
+  const url = URL.createObjectURL(new Blob([response.data], { type: "text/csv;charset=utf-8" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${pollSlug || pollId}_voters.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
 // Export questions for a poll as XLSX
 export const exportQuestionsToExcel = async (pollId, pollSlug) => {
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;

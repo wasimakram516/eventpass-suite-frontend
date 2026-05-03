@@ -1,5 +1,6 @@
 "use client";
 
+import * as XLSX from "xlsx";
 import { Fragment, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import {
@@ -11,6 +12,7 @@ import {
   CircularProgress,
   Container,
   Divider,
+  Grid,
   List,
   ListItem,
   ListItemIcon,
@@ -27,7 +29,6 @@ import {
   getPublicPollBySlug,
   getPollResults,
   getPollVoterResults,
-  resetVotes,
 } from "@/services/votecast/pollService";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import ICONS from "@/utils/iconUtil";
@@ -40,6 +41,8 @@ const translations = {
   en: {
     title: "Poll Results Viewer",
     subtitle: "View results and analytics for this poll.",
+    exportAll: "Export Raw Data",
+    exporting: "Exporting...",
     resetVotes: "Reset Votes",
     viewFullScreen: "View Full Screen",
     confirmVoteReset: "Confirm Vote Reset",
@@ -62,10 +65,17 @@ const translations = {
     records: "records",
     showing: "Showing",
     of: "of",
+    pollName: "Poll Name",
+    exportedAt: "Exported At",
+    timezone: "Timezone",
+    number: "#",
+    company: "Company",
   },
   ar: {
     title: "عارض نتائج الاستطلاع",
     subtitle: "عرض النتائج والتحليلات لهذا الاستطلاع.",
+    exportAll: "تصدير البيانات الخام",
+    exporting: "جاري التصدير...",
     resetVotes: "إعادة تعيين الأصوات",
     viewFullScreen: "عرض بملء الشاشة",
     confirmVoteReset: "تأكيد إعادة تعيين الأصوات",
@@ -88,6 +98,11 @@ const translations = {
     records: "سجلات",
     showing: "عرض",
     of: "من",
+    pollName: "اسم الاستطلاع",
+    exportedAt: "تاريخ التصدير",
+    timezone: "المنطقة الزمنية",
+    number: "#",
+    company: "الشركة",
   },
 };
 
@@ -146,22 +161,40 @@ function VoterCard({ voter, t, dir, align, language, isAnonymous }) {
   const hasMoreVotes = votes.length > PREVIEW_COUNT;
   const visibleVotes = showAllVotes ? votes : votes.slice(0, PREVIEW_COUNT);
 
-  const customEntries = Object.entries(voter.customFields || {}).filter(
-    ([, val]) => val !== null && val !== "" && val !== undefined
+  // Regex patterns for fields promoted to the header
+  const EMAIL_RE   = /^e-?mail$/i;
+  const PHONE_RE   = /^(phone|mobile|tel(ephone)?|cell)$/i;
+  const COMPANY_RE = /^(company|org(anization|anisation)?)$/i;
+  const NAME_RE    = /^(name|full.?name)$/i;
+
+  const cfEntries = Object.entries(voter.customFields || {});
+  const cfFind = (re) => cfEntries.find(([k]) => re.test(k.trim()))?.[1] || null;
+
+  // Resolve from classic field first, then customFields
+  const displayName    = voter.fullName || cfFind(NAME_RE) || null;
+  const displayEmail   = voter.email    || cfFind(EMAIL_RE);
+  const rawPhone       = voter.phone    || cfFind(PHONE_RE);
+  const displayPhone   = rawPhone
+    ? (voter.phoneCode ? `${voter.phoneCode}${rawPhone}` : rawPhone)
+    : null;
+  const displayCompany = voter.company  || cfFind(COMPANY_RE);
+
+  // Body: only remaining custom fields not already shown in header
+  const customEntries = cfEntries.filter(
+    ([key, val]) =>
+      val !== null && val !== "" && val !== undefined &&
+      !EMAIL_RE.test(key.trim()) &&
+      !PHONE_RE.test(key.trim()) &&
+      !COMPANY_RE.test(key.trim()) &&
+      !NAME_RE.test(key.trim())
   );
 
-  const detailFields = [
-    ...(voter.fullName ? [{ key: "__name", icon: <ICONS.personOutline fontSize="small" />, primary: t.name, secondary: voter.fullName }] : []),
-    ...(voter.email ? [{ key: "__email", icon: <ICONS.emailOutline fontSize="small" />, primary: t.email, secondary: voter.email }] : []),
-    ...(voter.phone ? [{ key: "__phone", icon: <ICONS.phone fontSize="small" />, primary: t.phone, secondary: <span dir="ltr" style={{ unicodeBidi: "embed" }}>{voter.phoneCode ? `${voter.phoneCode}${voter.phone}` : voter.phone}</span> }] : []),
-    ...customEntries.map(([key, val]) => {
-      const isPhone = /^(phone|mobile|tel(ephone)?|cell)$/i.test(String(key).trim());
-      const secondary = isPhone && voter.phoneCode
-        ? <span dir="ltr" style={{ unicodeBidi: "embed" }}>{`${voter.phoneCode}${val}`}</span>
-        : String(val);
-      return { key, icon: getFieldIcon(key), primary: key, secondary };
-    }),
-  ];
+  const detailFields = customEntries.map(([key, val]) => ({
+    key,
+    icon: getFieldIcon(key),
+    primary: key,
+    secondary: String(val),
+  }));
   const hasDetails = detailFields.length > 0;
   const hasMoreDetails = detailFields.length > PREVIEW_COUNT;
   const visibleDetails = showAllDetails ? detailFields : detailFields.slice(0, PREVIEW_COUNT);
@@ -174,9 +207,14 @@ function VoterCard({ voter, t, dir, align, language, isAnonymous }) {
       {/* HEADER */}
       <Box sx={{ p: 1.5, pb: 0.5 }}>
         <Box
-          sx={{ display: "flex", alignItems: "center", gap: 1.25 }}
+          sx={{
+            display: "flex",
+            alignItems: "flex-start",
+            flexDirection: dir === "rtl" ? "row-reverse" : "row",
+            gap: 1.25,
+          }}
         >
-          <Avatar sx={{ bgcolor: "primary.main", width: 36, height: 36 }}>
+          <Avatar sx={{ bgcolor: "primary.main", width: 36, height: 36, mt: 0.5 }}>
             <ICONS.personOutline />
           </Avatar>
           <Box sx={{ flex: 1 }}>
@@ -191,8 +229,32 @@ function VoterCard({ voter, t, dir, align, language, isAnonymous }) {
                 overflow: "hidden",
               }}
             >
-              {isAnonymous ? t.anonymous : (voter.fullName || t.unknownName)}
+              {isAnonymous ? t.anonymous : (displayName || t.unknownName)}
             </Typography>
+            {!isAnonymous && (displayEmail || displayPhone || displayCompany) && (
+              <Stack direction="column" spacing={0.25} sx={{ mt: 0.5 }}>
+                {displayEmail && (
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                    <ICONS.emailOutline sx={{ fontSize: 14, color: "text.secondary" }} />
+                    <Typography variant="caption" color="text.secondary">{displayEmail}</Typography>
+                  </Box>
+                )}
+                {displayPhone && (
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                    <ICONS.phone sx={{ fontSize: 14, color: "text.secondary" }} />
+                    <Typography variant="caption" color="text.secondary" dir="ltr" style={{ unicodeBidi: "embed" }}>
+                      {displayPhone}
+                    </Typography>
+                  </Box>
+                )}
+                {displayCompany && (
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
+                    <ICONS.apartment sx={{ fontSize: 14, color: "text.secondary" }} />
+                    <Typography variant="caption" color="text.secondary">{displayCompany}</Typography>
+                  </Box>
+                )}
+              </Stack>
+            )}
           </Box>
         </Box>
       </Box>
@@ -341,6 +403,7 @@ function buildVoterList(voterResults) {
             email: voter.email,
             phone: voter.phone,
             phoneCode: voter.phoneCode || null,
+            company: voter.company || null,
             votedAt: voter.votedAt,
             customFields: voter.customFields || {},
             isAnonymous: voter.isAnonymous === true,
@@ -370,7 +433,8 @@ export default function PollResultsPage() {
   const [results, setResults] = useState([]);
   const [voterResults, setVoterResults] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [confirmReset, setConfirmReset] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
+
   const [page, setPage] = useState(1);
 
   const fetchResults = async (pollId) => {
@@ -399,19 +463,164 @@ export default function PollResultsPage() {
     init();
   }, [pollSlug]);
 
-  const handleResetVotes = async () => {
-    if (!poll?._id) return;
-    setLoading(true);
+
+  const handleExportVoters = () => {
+    if (!poll || voterList.length === 0) return;
+    setExportLoading(true);
     try {
-      await resetVotes(poll._id);
-      await fetchResults(poll._id);
-      setPage(1);
-      showMessage(t.votesResetSuccess, "success");
-    } catch {
-      showMessage(t.failedToResetVotes, "error");
+      const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const getTimezoneLabel = (tz) => {
+        try {
+          const now = new Date();
+          const longName = new Intl.DateTimeFormat("en-US", { timeZone: tz, timeZoneName: "long" })
+            .formatToParts(now).find((p) => p.type === "timeZoneName")?.value || tz;
+          const shortOffset = new Intl.DateTimeFormat("en-US", { timeZone: tz, timeZoneName: "shortOffset" })
+            .formatToParts(now).find((p) => p.type === "timeZoneName")?.value || "";
+          return shortOffset ? `${longName} (${shortOffset})` : longName;
+        } catch { return tz || "UTC"; }
+      };
+      const formatDateTimeForExcel = (dateString) => {
+        if (!dateString) return "";
+        try {
+          return new Intl.DateTimeFormat("en-US", {
+            year: "numeric", month: "short", day: "numeric",
+            hour: "2-digit", minute: "2-digit",
+            timeZone: timezone,
+          }).format(new Date(dateString));
+        } catch { return String(dateString); }
+      };
+      const toNumericIfPossible = (val) => {
+        if (language !== "ar") return val;
+        if (typeof val === "number") return val;
+        if (typeof val === "string") {
+          const trimmed = val.trim();
+          if (trimmed !== "" && Number.isFinite(Number(trimmed))) return Number(trimmed);
+        }
+        return val;
+      };
+
+      const wb = XLSX.utils.book_new();
+      const wsData = [];
+
+      // Regex patterns for header field detection (same as VoterCard)
+      const EMAIL_RE   = /^e-?mail$/i;
+      const PHONE_RE   = /^(phone|mobile|tel(ephone)?|cell)$/i;
+      const COMPANY_RE = /^(company|org(anization|anisation)?)$/i;
+      const NAME_RE    = /^(name|full.?name)$/i;
+
+      // Collect unique custom field keys, excluding fields already in dedicated columns
+      const cfKeySet = new Set();
+      voterList.forEach((v) => Object.keys(v.customFields || {}).forEach((k) => {
+        const trimmed = k.trim();
+        if (!EMAIL_RE.test(trimmed) && !PHONE_RE.test(trimmed) && !COMPANY_RE.test(trimmed) && !NAME_RE.test(trimmed)) {
+          cfKeySet.add(k);
+        }
+      }));
+      const customFieldKeys = Array.from(cfKeySet);
+
+      // Collect unique questions in appearance order
+      const questionMap = new Map();
+      voterList.forEach((v) => {
+        (v.votes || []).forEach((vote) => {
+          if (!questionMap.has(String(vote.questionId))) questionMap.set(String(vote.questionId), vote.question);
+        });
+      });
+      const questionEntries = Array.from(questionMap.entries());
+
+      // Total columns: # + name + email + phone + company + customFields + questions + votedAt
+      const totalCols = 6 + customFieldKeys.length + questionEntries.length;
+
+      // In Arabic, pad metadata rows so labels align with the rightmost column (#)
+      const pushRow = (...cols) => {
+        const normalized = cols.map((col) => (col === undefined || col === null ? "" : col));
+        if (language === "ar") {
+          if (normalized.length === 1) {
+            wsData.push([...new Array(Math.max(0, totalCols - 1)).fill(""), normalized[0]]);
+            return;
+          }
+          if (normalized.length === 2) {
+            wsData.push([...new Array(Math.max(0, totalCols - 2)).fill(""), normalized[1], normalized[0]]);
+            return;
+          }
+          if (normalized.length === 3) {
+            wsData.push([...new Array(Math.max(0, totalCols - 3)).fill(""), normalized[2], normalized[1], normalized[0]]);
+            return;
+          }
+        }
+        wsData.push(normalized);
+      };
+
+      // Metadata
+      pushRow(t.pollName, poll.title || poll.name || "");
+      pushRow(t.exportedAt, formatDateTimeForExcel(new Date().toISOString()));
+      pushRow(t.timezone, getTimezoneLabel(timezone));
+      wsData.push([]);
+
+      // In Arabic RTL view the last array position is visually rightmost (first read),
+      // so reverse each row so that # (serial) ends up rightmost.
+      const pushTableRow = (row) => {
+        wsData.push(language === "ar" ? [...row].reverse() : row);
+      };
+
+      // Header row
+      pushTableRow([
+        t.number,
+        t.name,
+        t.email,
+        t.phone,
+        t.company,
+        ...customFieldKeys,
+        ...questionEntries.map(([, q]) => q),
+        t.votedAt,
+      ]);
+
+      // Data rows
+      voterList.forEach((voter, idx) => {
+        const cf = voter.customFields || {};
+        const cfEntries = Object.entries(cf);
+        const cfFind = (re) => cfEntries.find(([k]) => re.test(k.trim()))?.[1] || null;
+
+        const displayName    = voter.fullName    || cfFind(NAME_RE)    || "";
+        const displayEmail   = voter.email       || cfFind(EMAIL_RE)   || "";
+        const rawPhone       = voter.phone       || cfFind(PHONE_RE);
+        const displayPhone   = rawPhone ? (voter.phoneCode ? `${voter.phoneCode}${rawPhone}` : rawPhone) : "";
+        const displayCompany = voter.company     || cfFind(COMPANY_RE) || "";
+
+        const customFieldValues = customFieldKeys.map((key) => {
+          const val = cf[key];
+          return val !== undefined && val !== null ? toNumericIfPossible(String(val)) : "";
+        });
+        const voteMap = new Map((voter.votes || []).map((v) => [String(v.questionId), v.optionText || ""]));
+        const voteValues = questionEntries.map(([id]) => voteMap.get(id) || "");
+
+        pushTableRow([
+          toNumericIfPossible(String(idx + 1)),
+          voter.isAnonymous ? t.anonymous : displayName,
+          voter.isAnonymous ? "" : displayEmail,
+          voter.isAnonymous ? "" : displayPhone,
+          voter.isAnonymous ? "" : displayCompany,
+          ...customFieldValues,
+          ...voteValues,
+          voter.votedAt ? formatDateTimeForExcel(voter.votedAt) : "",
+        ]);
+      });
+
+      const ws = XLSX.utils.aoa_to_sheet(wsData);
+      if (language === "ar") ws["!views"] = [{ rightToLeft: true }];
+
+      XLSX.utils.book_append_sheet(wb, ws, "Poll Voters");
+      const excelBuffer = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+      const blob = new Blob([excelBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `${poll.slug || "poll"}_voters_raw_data.xlsx`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+    } catch (error) {
+      console.error("Poll voters export failed:", error);
+      showMessage(t.exporting, "error");
     }
-    setLoading(false);
-    setConfirmReset(false);
+    setExportLoading(false);
   };
 
   const handleViewFullScreen = () => {
@@ -443,15 +652,22 @@ export default function PollResultsPage() {
             </Box>
 
             {poll && totalVoters > 0 && (
-              <Stack direction={{ xs: "column", md: "row" }} spacing={1}>
+              <Stack direction={{ xs: "column", md: "row" }} spacing={2} sx={{ gap: dir === "rtl" ? 2 : 0 }}>
                 <Button
-                  variant="contained"
-                  color="error"
-                  onClick={() => setConfirmReset(true)}
-                  startIcon={<ICONS.refresh fontSize="small" />}
+                  variant="outlined"
+                  color="success"
+                  onClick={handleExportVoters}
+                  disabled={exportLoading}
+                  startIcon={
+                    exportLoading ? (
+                      <CircularProgress size={20} color="inherit" />
+                    ) : (
+                      <ICONS.description fontSize="small" />
+                    )
+                  }
                   sx={getStartIconSpacing(dir)}
                 >
-                  {t.resetVotes}
+                  {exportLoading ? t.exporting : t.exportAll}
                 </Button>
                 <Button
                   variant="contained"
@@ -484,12 +700,9 @@ export default function PollResultsPage() {
                   {t.showing} {Math.min((page - 1) * CARDS_PER_PAGE + 1, totalVoters)}–{Math.min(page * CARDS_PER_PAGE, totalVoters)} {t.of} {totalVoters} {t.records}
                 </Typography>
 
-                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, justifyContent: "center" }}>
+                <Grid container spacing={2} alignItems="stretch" justifyContent="center">
                   {displayVoters.map((voter) => (
-                    <Box
-                      key={String(voter._id)}
-                      sx={{ width: { xs: "100%", sm: "calc(50% - 8px)", md: "calc(33.333% - 11px)" }, minWidth: 0 }}
-                    >
+                    <Grid item xs={12} sm={6} md={6} lg={4} key={String(voter._id)}>
                       <VoterCard
                         voter={voter}
                         t={t}
@@ -498,9 +711,9 @@ export default function PollResultsPage() {
                         language={language}
                         isAnonymous={voter.isAnonymous}
                       />
-                    </Box>
+                    </Grid>
                   ))}
-                </Box>
+                </Grid>
 
                 <Box display="flex" justifyContent="center" mt={4}>
                   <Pagination
@@ -516,15 +729,6 @@ export default function PollResultsPage() {
         </Container>
       </Box>
 
-      <ConfirmationDialog
-        open={confirmReset}
-        onClose={() => setConfirmReset(false)}
-        onConfirm={handleResetVotes}
-        title={t.confirmVoteReset}
-        message={t.resetConfirmation}
-        confirmButtonText={t.resetButton}
-        confirmButtonIcon={<ICONS.refresh fontSize="small" />}
-      />
     </>
   );
 }

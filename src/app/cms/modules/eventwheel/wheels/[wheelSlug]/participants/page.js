@@ -247,7 +247,7 @@ const ParticipantsAdminPage = () => {
   };
 
   const handleExport = async () => {
-    await exportSpinWheelParticipantsXlsx(event._id);
+    await exportSpinWheelParticipantsXlsx(event._id, language);
   };
 
   const handleDownloadSample = async () => {

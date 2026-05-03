@@ -74,6 +74,7 @@ const translations = {
         votes: "votes",
         participationRate: "Participation Rate",
         uniqueSubmitters: "Unique Submitters",
+        exportedAt: "Exported At",
     },
     ar: {
         pageTitle: "تحليلات الجلسة",
@@ -111,6 +112,7 @@ const translations = {
         votes: "أصوات",
         participationRate: "معدل المشاركة",
         uniqueSubmitters: "المرسلون الفريدون",
+        exportedAt: "تاريخ التصدير",
     },
 };
 
@@ -337,6 +339,7 @@ export default function SessionInsightsDashboard() {
             const formatPdfDate = (d) => d ? dayjs(d).format("DD-MMM-YY, hh:mm a") : "N/A";
             const pdfEventInfo = {
                 name: sessionInfo?.slug || "",
+                logoUrl: linkedEvent?.logoUrl || undefined,
                 subtitle: linkedEvent?.name || undefined,
                 subtitleLabel: "Event Name",
                 startDateFormatted: formatPdfDate(linkedEvent?.startDate),
@@ -381,7 +384,7 @@ export default function SessionInsightsDashboard() {
                 try {
                     return new Intl.DateTimeFormat("en-US", {
                         year: "numeric", month: "short", day: "numeric",
-                        hour: "2-digit", minute: "2-digit", second: "2-digit",
+                        hour: "2-digit", minute: "2-digit",
                         timeZone: timezone,
                     }).format(new Date(val));
                 } catch { return String(val); }
@@ -416,7 +419,7 @@ export default function SessionInsightsDashboard() {
             if (linkedEvent) {
                 pushRow("Logo URL", linkedEvent.logoUrl || "N/A");
                 pushRow("Event Name", linkedEvent.name || "N/A");
-                pushRow("Exported At", formatDateTimeWithLocale(new Date()));
+                pushRow(t.exportedAt, formatDateTimeWithLocale(new Date()));
                 pushRow("From", linkedEvent.startDate ? formatDateTimeForExcel(linkedEvent.startDate) : "N/A");
                 pushRow("To", linkedEvent.endDate ? formatDateTimeForExcel(linkedEvent.endDate) : "N/A");
                 pushRow("Venue", linkedEvent.venue || "N/A");
@@ -425,7 +428,7 @@ export default function SessionInsightsDashboard() {
 
             // Session info section
             pushRow(t.sessionTitle, sessionInfo.title || "N/A");
-            if (!linkedEvent) pushRow("Exported At", formatDateTimeWithLocale(new Date()));
+            if (!linkedEvent) pushRow(t.exportedAt, formatDateTimeWithLocale(new Date()));
             pushRow(t.totalQuestions, leftAlign(summary?.totalQuestions));
             pushRow(t.uniqueSubmitters, leftAlign(summary?.uniqueSubmitters));
             pushRow(t.participationRate, summary?.participationRate != null ? `${summary.participationRate}%` : "N/A");

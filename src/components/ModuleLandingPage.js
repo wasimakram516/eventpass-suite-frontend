@@ -47,7 +47,7 @@ export default function ModuleLandingPage({
         },
       }}
     >
-      <Container maxWidth={false} disableGutters sx={{ pt: 3, zIndex: 1 }}>
+      <Container maxWidth="lg" sx={{ pt: 3, zIndex: 1 }}>
         <BreadcrumbsNav />
       </Container>
 
@@ -59,20 +59,16 @@ export default function ModuleLandingPage({
           zIndex: 1,
         }}
       >
-        <Container maxWidth={false} disableGutters sx={{ direction: dir }}>
+        <Container maxWidth="lg" sx={{ direction: dir }}>
           <Stack
             spacing={4}
             alignItems={{ xs: "stretch", md: "center" }}
-            direction={{ xs: "column", md: isRtl ? "row-reverse" : "row" }}
+            direction={{ xs: "column", md: "row" }}
           >
             <Box
               sx={{
                 flex: 1,
                 textAlign: align,
-                order: {
-                  xs: isRtl ? 2 : 1,
-                  md: isRtl ? 2 : 1,
-                },
               }}
             >
               <Stack spacing={3}>
@@ -160,10 +156,6 @@ export default function ModuleLandingPage({
             <Box
               sx={{
                 flex: 1,
-                order: {
-                  xs: isRtl ? 1 : 2,
-                  md: isRtl ? 1 : 2,
-                },
               }}
             >
               <Paper

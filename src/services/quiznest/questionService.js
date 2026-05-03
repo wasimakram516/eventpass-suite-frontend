@@ -55,11 +55,12 @@ export const uploadExcelQuestions = withApiHandler(
 );
 
 // Download Excel template
-export const downloadTemplate = async (choicesCount, includeHint = false) => {
+export const downloadTemplate = async (choicesCount, includeHint = false, language = "en") => {
   try {
+    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const { data } = await api.get(
-      `/quiznest/questions/sample/download/${choicesCount}?includeHint=${includeHint}`,
-      { responseType: "blob" }
+      `/quiznest/questions/sample/download/${choicesCount}`,
+      { responseType: "blob", params: { includeHint, timezone, language } }
     );
 
     const url = window.URL.createObjectURL(new Blob([data]));

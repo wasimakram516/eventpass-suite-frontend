@@ -5,7 +5,6 @@ import { useParams } from "next/navigation";
 import {
     Box,
     TextField,
-    Paper,
     Typography,
     Chip,
     Stack,
@@ -26,6 +25,7 @@ import {
 import { getPublicEventBySlug } from "@/services/eventreg/eventService";
 import useEventRegSocket from "@/hooks/modules/eventReg/useEventRegSocket";
 import ICONS from "@/utils/iconUtil";
+import AppCard from "@/components/cards/AppCard";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import dayjs from "dayjs";
@@ -43,6 +43,7 @@ const translations = {
         pageDescription:
             "Analyze event data and visualize key metrics through interactive charts and distributions.",
         availableFields: "Available Fields",
+        selectChipsPrompt: "Select the chips to see the charts",
         selectFieldPrompt: "Select a field to view insights",
         distributionOverview: "Distribution Overview",
         historicalTrend: "Historical Trend",
@@ -71,12 +72,13 @@ const translations = {
         totalRegistrations: "Total Registrations",
         totalScanned: "Total Scanned",
         scanRate: "Scan Rate",
+        exportedAt: "Exported At",
         timezone: "Timezone",
         badgePrintStats: "Badge Print Stats",
         totalBadgePrints: "Total Badge Prints",
         noPrints: "0 Prints (Never Printed)",
         onePrint: "1 Print",
-        multiPrint: "Multi-Print (2+)",
+        multiPrint: "Multi-Print",
         multiPrintRate: "Multi-Print Rate",
         registrationAttendance: "Registration & Attendance",
         postEventReport: "POST-EVENT REPORT",
@@ -89,6 +91,7 @@ const translations = {
         pageDescription:
             "تحليل بيانات الحدث وتصور المقاييس الرئيسية من خلال الرسوم البيانية والتوزيعات التفاعلية.",
         availableFields: "الحقول المتاحة",
+        selectChipsPrompt: "اختر الشرائح لعرض الرسوم البيانية",
         selectFieldPrompt: "اختر حقلاً لعرض التحليلات",
         distributionOverview: "نظرة عامة على التوزيع",
         historicalTrend: "الاتجاه التاريخي",
@@ -117,12 +120,13 @@ const translations = {
         totalRegistrations: "إجمالي التسجيلات",
         totalScanned: "إجمالي المسح",
         scanRate: "معدل المسح",
+        exportedAt: "تاريخ التصدير",
         timezone: "المنطقة الزمنية",
         badgePrintStats: "إحصائيات طباعة الشارات",
         totalBadgePrints: "إجمالي طباعة الشارات",
-        noPrints: "0 طباعة (لم يُطبع)",
+        noPrints: "0 طباعة - لم يُطبع",
         onePrint: "طباعة واحدة",
-        multiPrint: "طباعة متعددة (2+)",
+        multiPrint: "طباعة متعددة",
         multiPrintRate: "معدل الطباعة المتعددة",
         registrationAttendance: "التسجيل والحضور",
         postEventReport: "تقرير ما بعد الحدث",
@@ -226,13 +230,15 @@ const ChartVisualization = ({
     const chartTypeChips = isCategorical
         ? [
               { label: "Pie", value: "pie" },
-              { label: "Donut", value: "donut" },
-              { label: "Bar", value: "bar" },
+              { label: "Vertical Bar", value: "bar" },
+              { label: "Horizontal Bar", value: "horizontalBar" },
           ]
         : isTimeBased
         ? [
               { label: "Line", value: "line" },
-              { label: "Bar", value: "bar" },
+              { label: "Vertical Bar", value: "bar" },
+              { label: "Horizontal Bar", value: "horizontalBar" },
+              { label: "Heatmap", value: "heatmap" },
           ]
         : null;
     const hasNoData = isCategorical && (!field.data || field.data.length === 0);
@@ -444,7 +450,7 @@ const ChartVisualization = ({
                             No data to display
                         </Typography>
                     </Box>
-                ) : effectiveChartType === "pie" || effectiveChartType === "donut" ? (
+                ) : effectiveChartType === "pie" ? (
                     <>
                         <Box
                             sx={{
@@ -469,7 +475,7 @@ const ChartVisualization = ({
                                     series={[
                                         {
                                             data: barData,
-                                            innerRadius: effectiveChartType === "donut" ? 80 : 0,
+                                            innerRadius: 0,
                                             highlightScope: { faded: "global", highlighted: "item" },
                                             faded: {
                                                 innerRadius: 30,
@@ -546,7 +552,7 @@ const ChartVisualization = ({
                                                     textAlign: "left",
                                                 }}
                                             >
-                                                {item.label} {percentage}% ({item.value})
+                                                {item.label} {percentage}% · {item.value}
                                             </Typography>
                                         </Box>
                                     );
@@ -554,7 +560,7 @@ const ChartVisualization = ({
                             </Box>
                         </Box>
                     </>
-                ) : effectiveChartType === "bar" && isCategorical ? (
+                ) : (effectiveChartType === "bar" || effectiveChartType === "horizontalBar") && isCategorical ? (
                     <Box
                         sx={{
                             display: "flex",
@@ -575,20 +581,30 @@ const ChartVisualization = ({
                             }}
                         >
                             <BarChart
-                                xAxis={[{
+                                layout={effectiveChartType === "horizontalBar" ? "horizontal" : "vertical"}
+                                xAxis={effectiveChartType === "horizontalBar" ? [{
+                                    label: "Count",
+                                    tickLabelStyle: { direction: "ltr", textAlign: "left", fontSize: 10 },
+                                }] : [{
                                     scaleType: "band",
                                     data: barData.map((d) => d.label),
                                     tickLabelStyle: { angle: -30, textAnchor: "end", fontSize: 11 },
-                                    colorMap: {
-                                        type: "ordinal",
-                                        colors: barData.map((d) => d.color),
-                                    },
+                                    colorMap: { type: "ordinal", colors: barData.map((d) => d.color) },
                                 }]}
-                                series={[{
-                                    data: barData.map((d) => d.value),
+                                yAxis={effectiveChartType === "horizontalBar" ? [{
+                                    scaleType: "band",
+                                    data: barData.map((d) => d.label),
+                                    tickLabelStyle: { direction: "ltr", textAlign: "right", fontSize: 10 },
+                                    colorMap: { type: "ordinal", colors: barData.map((d) => d.color) },
+                                }] : [{
+                                    label: "Count",
+                                    min: 0,
+                                    max: Math.max(0, ...barData.map((d) => d.value)) * 1.1,
+                                    tickLabelStyle: { direction: "ltr", textAlign: "left" },
                                 }]}
+                                series={[{ data: barData.map((d) => d.value) }]}
                                 height={400}
-                                margin={{ top: 20, bottom: 70, left: 50, right: 20 }}
+                                margin={{ top: 30, bottom: 70, left: effectiveChartType === "horizontalBar" ? 100 : 50, right: 30 }}
                                 slotProps={{ legend: { hidden: true } }}
                             />
                         </Box>
@@ -639,7 +655,7 @@ const ChartVisualization = ({
                                                 textAlign: "left",
                                             }}
                                         >
-                                            {item.label} {percentage}% ({item.value})
+                                            {item.label} {percentage}% · {item.value}
                                         </Typography>
                                     </Box>
                                 );
@@ -714,13 +730,13 @@ const ChartVisualization = ({
                                 <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5, direction: 'ltr' }}>
                                     <Box sx={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: field.color, flexShrink: 0 }} />
                                     <Typography variant="body2" sx={{ fontWeight: 500, color: '#1f2937', whiteSpace: 'nowrap', fontSize: { xs: '0.875rem', md: '0.875rem' }, direction: 'ltr', textAlign: 'left' }}>
-                                        {label} ({field.yData[idx]})
+                                        {label} · {field.yData[idx]}
                                     </Typography>
                                 </Box>
                             ))}
                         </Box>
                     </Box>
-                ) : (
+                ) : effectiveChartType === "bar" || effectiveChartType === "horizontalBar" ? (
                     <Box sx={{
                         display: 'flex',
                         flexDirection: { xs: 'column', md: 'row' },
@@ -737,17 +753,31 @@ const ChartVisualization = ({
                             maxWidth: { xs: '100%', md: 'none' }
                         }}>
                             <BarChart
-                                xAxis={[{
+                                layout={effectiveChartType === "horizontalBar" ? "horizontal" : "vertical"}
+                                xAxis={effectiveChartType === "horizontalBar" ? [{
+                                    label: "Count",
+                                    tickLabelStyle: { direction: "ltr", textAlign: "left", fontSize: 10 },
+                                }] : [{
                                     scaleType: "band",
                                     data: field.xData,
                                     tickLabelStyle: { angle: -30, textAnchor: "end", fontSize: 11 },
+                                }]}
+                                yAxis={effectiveChartType === "horizontalBar" ? [{
+                                    scaleType: "band",
+                                    data: field.xData,
+                                    tickLabelStyle: { direction: "ltr", textAlign: "right", fontSize: 10 },
+                                }] : [{
+                                    label: "Count",
+                                    min: 0,
+                                    max: Math.max(0, ...(field.yData || [0])) * 1.1,
+                                    tickLabelStyle: { direction: "ltr", textAlign: "left" },
                                 }]}
                                 series={[{
                                     data: field.yData,
                                     color: field.color,
                                 }]}
                                 height={400}
-                                margin={{ top: 30, bottom: 70, left: 50, right: 80 }}
+                                margin={{ top: 30, bottom: 70, left: effectiveChartType === "horizontalBar" ? 100 : 50, right: 80 }}
                                 slotProps={{ legend: { hidden: true } }}
                             />
                         </Box>
@@ -765,13 +795,77 @@ const ChartVisualization = ({
                                 <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5, direction: 'ltr' }}>
                                     <Box sx={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: field.color, flexShrink: 0 }} />
                                     <Typography variant="body2" sx={{ fontWeight: 500, color: '#1f2937', whiteSpace: 'nowrap', fontSize: { xs: '0.875rem', md: '0.875rem' }, direction: 'ltr', textAlign: 'left' }}>
-                                        {label} ({field.yData[idx]})
+                                        {label} · {field.yData[idx]}
                                     </Typography>
                                 </Box>
                             ))}
                         </Box>
                     </Box>
-                )}
+                ) : effectiveChartType === "heatmap" ? (
+                    <Box sx={{ height: 400, width: "100%", py: 2 }}>
+                        <Box sx={{ width: "100%", height: "100%", position: "relative" }}>
+                            <Box sx={{ display: "grid", gridTemplateColumns: "60px repeat(24, 1fr)", height: "100%", width: "100%" }}>
+                                <Box />
+                                {Array.from({ length: 24 }).map((_, h) => (
+                                    <Typography key={h} variant="caption" sx={{ textAlign: "center", color: "text.secondary", fontSize: "9px" }}>
+                                        {h}h
+                                    </Typography>
+                                ))}
+                                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((dayName, dIdx) => {
+                                    const dayNum = dIdx;
+                                    const start = startDateTime ? new Date(startDateTime) : null;
+                                    const end = endDateTime ? new Date(endDateTime) : null;
+                                    return (
+                                        <React.Fragment key={dayName}>
+                                            <Typography variant="caption" sx={{ display: "flex", alignItems: "center", fontWeight: 600, color: "text.secondary" }}>
+                                                {dayName}
+                                            </Typography>
+                                            {Array.from({ length: 24 }).map((_, h) => {
+                                                let count = 0;
+                                                if (field.xData && field.yData) {
+                                                    field.xData.forEach((ts, idx) => {
+                                                        const date = new Date(ts);
+                                                        if (start && date < start) return;
+                                                        if (end && date > end) return;
+                                                        if (!isNaN(date.getTime()) && date.getDay() === dayNum && date.getHours() === h) {
+                                                            count += (field.yData[idx] || 0);
+                                                        }
+                                                    });
+                                                }
+                                                const maxVal = field.yData ? Math.max(...field.yData, 1) : 1;
+                                                const alpha = count > 0 ? 0.2 + (count / maxVal) * 0.8 : 0.05;
+                                                return (
+                                                    <Box
+                                                        key={h}
+                                                        title={`${dayName}, ${h}:00 - ${count} activities`}
+                                                        sx={{
+                                                            m: 0.1,
+                                                            borderRadius: 0.5,
+                                                            backgroundColor: count > 0 ? field.color : "#f3f4f6",
+                                                            opacity: alpha,
+                                                            aspectRatio: "1/1",
+                                                            display: "flex",
+                                                            alignItems: "center",
+                                                            justifyContent: "center",
+                                                            transition: "transform 0.2s",
+                                                            "&:hover": { transform: "scale(1.2)", opacity: 1, zIndex: 1, cursor: "pointer", boxShadow: 2 }
+                                                        }}
+                                                    >
+                                                        {count > 0 && (
+                                                            <Typography sx={{ color: alpha > 0.6 ? "#fff" : "#000", fontSize: "8px", fontWeight: "bold" }}>
+                                                                {count}
+                                                            </Typography>
+                                                        )}
+                                                    </Box>
+                                                );
+                                            })}
+                                        </React.Fragment>
+                                    );
+                                })}
+                            </Box>
+                        </Box>
+                    </Box>
+                ) : null}
             </Box>
         </Box>
     );
@@ -899,6 +993,7 @@ export default function AnalyticsDashboard() {
                 });
                 defaultParams["scannedByType"] = { topN: 10 };
                 defaultParams["scannedByUser"] = { topN: 10 };
+                defaultParams["badgePrintStats"] = {};
 
                 setFieldParams(defaultParams);
                 setAppliedParams(defaultParams);
@@ -934,6 +1029,13 @@ export default function AnalyticsDashboard() {
                         type: "special",
                         chartType: "pie",
                         color: FIELD_COLOR,
+                    },
+                    {
+                        name: "badgePrintStats",
+                        label: "Badge Print Stats",
+                        type: "special",
+                        chartType: "pie",
+                        color: FIELD_COLOR,
                     }
                 );
 
@@ -960,6 +1062,8 @@ export default function AnalyticsDashboard() {
             for (const fieldName of selectedFields) {
                 const field = availableFields.find((f) => f.name === fieldName);
                 if (!field) continue;
+
+                if (fieldName === "badgePrintStats") continue;
 
                 const appliedFieldParams = appliedParams[fieldName];
                 if (!appliedFieldParams) continue;
@@ -1066,6 +1170,27 @@ export default function AnalyticsDashboard() {
         fetchChartData();
     }, [selectedFields, eventSlug, availableFields, appliedParams]);
 
+    useEffect(() => {
+        if (!summary || !selectedFields.includes("badgePrintStats")) return;
+        const data = [
+            { id: 0, value: summary.noPrintCount ?? 0, label: t.noPrints || "0 Prints", color: "#ef4444" },
+            { id: 1, value: summary.onePrintCount ?? 0, label: t.onePrint || "1 Print", color: "#f59e0b" },
+            { id: 2, value: summary.multiPrintCount ?? 0, label: t.multiPrint || "Multi-Print", color: "#10b981" },
+        ];
+        setChartData((prev) => ({
+            ...prev,
+            badgePrintStats: {
+                name: "badgePrintStats",
+                label: t.badgePrintStats || "Badge Print Stats",
+                type: "special",
+                chartType: "pie",
+                color: FIELD_COLOR,
+                data,
+            },
+        }));
+    }, [summary, selectedFields, t]);
+
+
     const handleExportPDF = async () => {
         if (selectedFields.length === 0) return;
 
@@ -1138,7 +1263,7 @@ export default function AnalyticsDashboard() {
                 try {
                     return new Intl.DateTimeFormat("en-US", {
                         year: "numeric", month: "short", day: "numeric",
-                        hour: "2-digit", minute: "2-digit", second: "2-digit",
+                        hour: "2-digit", minute: "2-digit",
                         timeZone: timezone,
                     }).format(new Date(dateString));
                 } catch { return String(dateString); }
@@ -1194,6 +1319,7 @@ export default function AnalyticsDashboard() {
             pushRow(t.totalRegistrations, leftAlignNumber(eventInfo.registrations, 0));
             pushRow(t.totalScanned, leftAlignNumber(summary?.uniqueScanned, 0));
             pushRow(t.scanRate, summary ? `${summary.scanRate}%` : "0.00%");
+            pushRow(t.exportedAt, formatDateTimeForExcel(new Date().toISOString()));
             pushRow(t.timezone, getTimezoneLabel(timezone));
             wsData.push([]);
 
@@ -1381,40 +1507,37 @@ export default function AnalyticsDashboard() {
                         { label: t.totalRegistrations, value: summary.totalRegistrations, color: "#0077b6" },
                         { label: t.totalScanned, value: summary.uniqueScanned, color: "#0284c7" },
                         { label: t.scanRate, value: `${summary.scanRate}%`, color: "#06b6d4" },
-                        { label: t.totalBadgePrints, value: summary.totalPrints, color: "#f59e0b" },
-                        { label: t.noPrints, value: summary.noPrintCount, color: "#ef4444" },
-                        { label: t.onePrint, value: summary.onePrintCount, color: "#84cc16" },
-                        { label: t.multiPrint, value: summary.multiPrintCount, color: "#10b981" },
-                        { label: t.multiPrintRate, value: `${summary.multiPrintRate}%`, color: "#8b5cf6" },
+                        { label: t.totalBadgePrints, value: summary.totalPrints ?? 0, color: "#7c3aed" },
+                        { label: t.multiPrintRate, value: `${summary.multiPrintRate ?? "0.00"}%`, color: "#0ea5e9" },
                     ].map(({ label, value, color }) => (
-                        <Paper
+                        <AppCard
                             key={label}
                             sx={{
                                 p: 2,
-                                borderRadius: 2,
-                                boxShadow: 2,
                                 flex: "1 1 140px",
                                 minWidth: 140,
                                 textAlign: "center",
+                                display: "flex",
+                                flexDirection: "column",
+                                justifyContent: "center",
+                                border: "1px solid #f1f5f9",
                             }}
                         >
                             <Typography variant="h4" fontWeight="bold" sx={{ color }}>
                                 {value}
                             </Typography>
-                            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
                                 {label}
                             </Typography>
-                        </Paper>
+                        </AppCard>
                     ))}
                 </Box>
             )}
 
-            <Paper
+            <AppCard
                 sx={{
                     flex: "0 0 auto",
                     p: { xs: 1, sm: 1.5, md: 2 },
-                    borderRadius: 2,
-                    boxShadow: 2,
                     width: "100%",
                     boxSizing: "border-box",
                     overflow: "hidden",
@@ -1429,6 +1552,16 @@ export default function AnalyticsDashboard() {
                     }}
                 >
                     {t.availableFields}
+                </Typography>
+                <Typography
+                    variant="caption"
+                    sx={{
+                        display: "block",
+                        color: "text.secondary",
+                        mb: 1.5,
+                    }}
+                >
+                    {t.selectChipsPrompt}
                 </Typography>
                 <Stack
                     direction="row"
@@ -1455,18 +1588,16 @@ export default function AnalyticsDashboard() {
                         />
                     ))}
                 </Stack>
-            </Paper>
+            </AppCard>
 
             <Stack
                 spacing={2}
                 sx={{ flex: "1 1 0%", overflow: "auto", minHeight: 0, pb: 2, px: 0.3 }}
             >
                 {selectedFields.length === 0 ? (
-                    <Paper
+                    <AppCard
                         sx={{
                             flex: 1,
-                            borderRadius: 2,
-                            boxShadow: 2,
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
@@ -1478,12 +1609,12 @@ export default function AnalyticsDashboard() {
                                 {t.selectFieldPrompt}
                             </Typography>
                         </Box>
-                    </Paper>
+                    </AppCard>
                 ) : (
                     selectedFields.map((fieldName) => (
-                        <Paper
+                        <AppCard
                             key={fieldName}
-                            sx={{ borderRadius: 2, boxShadow: 2, minHeight: "450px" }}
+                            sx={{ minHeight: "450px" }}
                         >
                             <ChartVisualization
                                 selectedField={fieldName}
@@ -1537,7 +1668,7 @@ export default function AnalyticsDashboard() {
                                 }}
                                 t={t}
                             />
-                        </Paper>
+                        </AppCard>
                     ))
                 )}
             </Stack>
