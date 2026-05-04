@@ -94,6 +94,27 @@ export const getPollResults = withApiHandler(async (pollId) => {
   return data.data || data;
 });
 
+// Get voter-level results for a linked poll (CMS)
+export const getPollVoterResults = withApiHandler(async (pollId) => {
+  const { data } = await api.get(`/votecast/polls/${pollId}/voter-results`);
+  return data.data || data;
+});
+
+// Export poll voter raw data as CSV
+export const exportPollVoters = async (pollId, pollSlug) => {
+  const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const response = await api.get(`/votecast/polls/${pollId}/voters/export`, {
+    responseType: "blob",
+    params: { timezone },
+  });
+  const url = URL.createObjectURL(new Blob([response.data], { type: "text/csv;charset=utf-8" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${pollSlug || pollId}_voters.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+};
+
 // Export questions for a poll as XLSX
 export const exportQuestionsToExcel = async (pollId, pollSlug) => {
   const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -143,9 +164,10 @@ export const verifyAttendee = withApiHandler(async (eventSlug, fieldValue) => {
 
 // Vote on a question within a poll (public)
 export const voteOnPoll = withApiHandler(
-  async (pollId, questionId, optionIndex, registrationId = null) => {
+  async (pollId, questionId, optionIndex, registrationId = null, sessionToken = null) => {
     const payload = { questionId, optionIndex };
     if (registrationId) payload.registrationId = registrationId;
+    if (sessionToken) payload.sessionToken = sessionToken;
     const { data } = await api.post(`/votecast/polls/${pollId}/vote`, payload);
     return data;
   },

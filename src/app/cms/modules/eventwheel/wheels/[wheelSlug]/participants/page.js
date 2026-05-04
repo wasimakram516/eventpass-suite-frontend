@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useRouter, useParams, useSearchParams } from "next/navigation";
 import {
@@ -247,7 +247,7 @@ const ParticipantsAdminPage = () => {
   };
 
   const handleExport = async () => {
-    await exportSpinWheelParticipantsXlsx(event._id);
+    await exportSpinWheelParticipantsXlsx(event._id, language);
   };
 
   const handleDownloadSample = async () => {
@@ -389,7 +389,7 @@ const ParticipantsAdminPage = () => {
 
   return (
     <Box dir={dir} sx={{ minHeight: "100vh", display: "flex" }}>
-      <Container maxWidth="lg">
+      <Container maxWidth={false} disableGutters>
         <BreadcrumbsNav />
 
         {/* Header Section */}

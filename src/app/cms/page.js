@@ -356,7 +356,7 @@ export default function HomePage() {
       <Container
         dir={dir}
         maxWidth={false}
-        sx={{ px: { xs: 2, md: 3, lg: 4 }, maxWidth: "1600px", mx: "auto" }}
+        sx={{ px: { xs: 2, md: 3, lg: 4 } }}
       >
         {/* Welcome Header */}
         <AppCard

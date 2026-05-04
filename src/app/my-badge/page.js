@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useRef, useState } from "react";
 import html2canvas from "html2canvas";
@@ -364,7 +364,7 @@ export default function MyBadgePage() {
           pb: 8,
         }}
       >
-        <Container maxWidth="lg" sx={{ pt: 5 }}>
+        <Container maxWidth={false} sx={{ pt: 5 }}>
           <Stack spacing={1} alignItems="center" textAlign="center" mb={4}>
             <Typography variant="h4" fontWeight={800}>
               {t.title}

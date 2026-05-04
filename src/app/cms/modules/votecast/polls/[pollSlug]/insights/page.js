@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import {
     Box,
     TextField,
-    Paper,
     Typography,
     Chip,
     Stack,
@@ -13,11 +12,11 @@ import {
     Button,
     CircularProgress,
     Grid,
-    Card,
-    CardContent,
+    Collapse,
 } from "@mui/material";
 import { PieChart } from "@mui/x-charts/PieChart";
 import { LineChart } from "@mui/x-charts/LineChart";
+import { BarChart } from "@mui/x-charts/BarChart";
 import { BarChart as BarChartIcon } from "@mui/icons-material";
 import {
     getPollInsightsSummary,
@@ -26,7 +25,9 @@ import {
     getPollInsightsTimeDistribution,
 } from "@/services/votecast/pollInsightsService";
 import { getPublicPollBySlug } from "@/services/votecast/pollService";
+import useVotecastSocket from "@/hooks/modules/votecast/useVotecastSocket";
 import ICONS from "@/utils/iconUtil";
+import AppCard from "@/components/cards/AppCard";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import dayjs from "dayjs";
@@ -45,6 +46,7 @@ const translations = {
         pageDescription:
             "Analyze voting participation, trends, and breakdowns for this poll.",
         availableFields: "Available Fields",
+        selectChipsPrompt: "Select the chips to see the charts",
         selectFieldPrompt: "Select a field to view insights",
         distributionOverview: "Distribution Overview",
         historicalTrend: "Historical Trend",
@@ -64,18 +66,35 @@ const translations = {
         totalRegistrations: "Total Registrations",
         uniqueVoters: "Unique Voters",
         participationRate: "Participation Rate",
-        totalVotes: "Total Votes",
-        questionCount: "Questions",
+        totalVotes: "Total Votes Cast",
+        questionCount: "Question Count",
         voterName: "Name",
         pollTitle: "Poll Title",
         category: "Category",
         noData: "No data to display",
+        responsePattern: "Response Pattern",
+        responsePatternDesc: "Aggregate option frequency across all questions.",
+        showResponses: "Show Responses",
+        hideResponses: "Hide Responses",
+        pollOverview: "Poll Overview",
+        postEventReport: "POST-EVENT REPORT",
+        confidential: "Confidential — For Internal Use Only",
+        presentedBy: "Presented by",
+        poweredBy: "Powered by",
+        page: "Page",
+        of: "of",
+        venue: "Venue",
+        eventName: "Event",
+        exportedAt: "Exported At",
+        timezone: "Timezone",
+        logoUrl: "Logo URL",
     },
     ar: {
         pageTitle: "تحليلات الاستطلاع",
         pageDescription:
             "تحليل مشاركة التصويت والاتجاهات والتوزيعات لهذا الاستطلاع.",
         availableFields: "الحقول المتاحة",
+        selectChipsPrompt: "اختر الشرائح لعرض الرسوم البيانية",
         selectFieldPrompt: "اختر حقلاً لعرض التحليلات",
         distributionOverview: "نظرة عامة على التوزيع",
         historicalTrend: "الاتجاه التاريخي",
@@ -95,11 +114,27 @@ const translations = {
         totalRegistrations: "إجمالي التسجيلات",
         uniqueVoters: "الناخبون الفريدون",
         participationRate: "معدل المشاركة",
-        totalVotes: "إجمالي الأصوات",
-        questionCount: "الأسئلة",
+        totalVotes: "إجمالي الأصوات المُدلى بها",
+        questionCount: "عدد الأسئلة",
         pollTitle: "عنوان الاستطلاع",
         category: "الفئة",
         noData: "لا توجد بيانات للعرض",
+        responsePattern: "نمط الاستجابة",
+        responsePatternDesc: "تكرار الخيارات المجمّعة عبر جميع الأسئلة.",
+        showResponses: "عرض الإجابات",
+        hideResponses: "إخفاء الإجابات",
+        pollOverview: "نظرة عامة على الاستطلاع",
+        postEventReport: "تقرير ما بعد الحدث",
+        confidential: "سري — للاستخدام الداخلي فقط",
+        presentedBy: "مقدم من",
+        poweredBy: "مدعوم من",
+        page: "صفحة",
+        of: "من",
+        venue: "الموقع",
+        eventName: "الحدث",
+        exportedAt: "تاريخ التصدير",
+        timezone: "المنطقة الزمنية",
+        logoUrl: "رابط الشعار",
     },
 };
 
@@ -131,16 +166,14 @@ const determineChartType = (field) => {
 };
 
 const KpiCard = ({ label, value }) => (
-    <Card elevation={2} sx={{ borderRadius: 2, textAlign: "center" }}>
-        <CardContent sx={{ py: 2 }}>
-            <Typography variant="h4" fontWeight="bold" color="primary.main">
-                {value ?? "—"}
-            </Typography>
-            <Typography variant="body2" color="text.secondary" mt={0.5}>
-                {label}
-            </Typography>
-        </CardContent>
-    </Card>
+    <AppCard sx={{ textAlign: "center", p: 2, display: "flex", flexDirection: "column", justifyContent: "center", border: "1px solid #f1f5f9" }}>
+        <Typography variant="h4" fontWeight="bold" color="primary.main">
+            {value ?? "—"}
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
+            {label}
+        </Typography>
+    </AppCard>
 );
 
 const FieldChip = ({ field, isSelected, onClick }) => (
@@ -179,6 +212,8 @@ const ChartVisualization = ({
     isGenerating,
     t,
     onRefReady,
+    chartTypeOverride,
+    onChartTypeChange,
 }) => {
     const { dir } = useI18nLayout();
     if (!selectedField || !chartData[selectedField]) return null;
@@ -191,8 +226,26 @@ const ChartVisualization = ({
     const showTopNControl = field.type === "text" || field.type === "number" || field.type === "categorical";
     const showIntervalControl = field.type === "time";
     const showGenerateButton = showTopNControl || showIntervalControl;
-    const hasNoData =
-        field.chartType === "pie" && (!field.data || field.data.length === 0);
+    const isCategorical = field.chartType === "pie";
+    const isTimeBased = field.chartType === "line";
+    const effectiveChartType = chartTypeOverride || field.chartType;
+    const chartTypeChips = isCategorical
+        ? [
+              { label: "Pie", value: "pie" },
+              { label: "Vertical Bar", value: "bar" },
+              { label: "Horizontal Bar", value: "horizontalBar" },
+          ]
+        : isTimeBased
+        ? [
+              { label: "Line", value: "line" },
+              { label: "Vertical Bar", value: "bar" },
+              { label: "Horizontal Bar", value: "horizontalBar" },
+              { label: "Heatmap", value: "heatmap" },
+          ]
+        : null;
+    const hasNoData = isCategorical && (!field.data || field.data.length === 0);
+    const barData = isCategorical && field.data ? field.data.filter((d) => d.value > 0) : [];
+    const barTotal = field.data ? field.data.reduce((sum, d) => sum + d.value, 0) : 0;
 
     return (
         <Box sx={{ display: "flex", flexDirection: "column", height: "100%", p: 2, width: "100%" }}>
@@ -305,6 +358,35 @@ const ChartVisualization = ({
                 </Box>
             </Box>
 
+            {chartTypeChips && (
+                <Stack direction="row" spacing={1} sx={{ mb: 1.5 }}>
+                    {chartTypeChips.map((chip) => (
+                        <Chip
+                            key={chip.value}
+                            label={chip.label}
+                            size="small"
+                            onClick={() => onChartTypeChange(chip.value)}
+                            sx={{
+                                cursor: "pointer",
+                                fontWeight: effectiveChartType === chip.value ? 600 : 400,
+                                backgroundColor:
+                                    effectiveChartType === chip.value ? field.color : "transparent",
+                                color: effectiveChartType === chip.value ? "#fff" : "#374151",
+                                border: `1.5px solid ${effectiveChartType === chip.value ? field.color : "#e5e7eb"}`,
+                                "&:hover": {
+                                    backgroundColor:
+                                        effectiveChartType === chip.value
+                                            ? field.color
+                                            : `${field.color}15`,
+                                    borderColor: field.color,
+                                    color: effectiveChartType === chip.value ? "#fff" : field.color,
+                                },
+                            }}
+                        />
+                    ))}
+                </Stack>
+            )}
+
             <Box
                 ref={(el) => onRefReady && onRefReady(el)}
                 sx={{ flex: 1, minHeight: 0, width: "100%", display: "flex", flexDirection: "column" }}
@@ -313,7 +395,7 @@ const ChartVisualization = ({
                     <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%" }}>
                         <Typography variant="body1" color="textSecondary">{t.noData}</Typography>
                     </Box>
-                ) : field.chartType === "pie" ? (
+                ) : effectiveChartType === "pie" ? (
                     <Box
                         sx={{
                             display: "flex",
@@ -336,13 +418,13 @@ const ChartVisualization = ({
                             <PieChart
                                 series={[
                                     {
-                                        data: field.data,
+                                        data: barData,
+                                        innerRadius: 0,
                                         highlightScope: { faded: "global", highlighted: "item" },
                                         faded: { innerRadius: 30, additionalRadius: -30, color: "gray" },
                                         arcLabel: () => "",
                                         valueFormatter: (item) => {
-                                            const total = field.data.reduce((sum, d) => sum + d.value, 0);
-                                            return `${((item.value / total) * 100).toFixed(1)}%`;
+                                            return `${((item.value / barTotal) * 100).toFixed(1)}%`;
                                         },
                                     },
                                 ]}
@@ -367,9 +449,8 @@ const ChartVisualization = ({
                                 direction: "ltr",
                             }}
                         >
-                            {field.data.map((item, idx) => {
-                                const total = field.data.reduce((sum, d) => sum + d.value, 0);
-                                const percentage = ((item.value / total) * 100).toFixed(1);
+                            {barData.map((item, idx) => {
+                                const percentage = ((item.value / barTotal) * 100).toFixed(1);
                                 return (
                                     <Box key={idx} sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5, direction: "ltr", ml: { xs: 0, md: 1 } }}>
                                         <Box sx={{ width: 12, height: 12, borderRadius: "50%", backgroundColor: item.color, flexShrink: 0 }} />
@@ -384,7 +465,83 @@ const ChartVisualization = ({
                             })}
                         </Box>
                     </Box>
-                ) : (
+                ) : (effectiveChartType === "bar" || effectiveChartType === "horizontalBar") && isCategorical ? (
+                    <Box
+                        sx={{
+                            display: "flex",
+                            flexDirection: { xs: "column", md: "row" },
+                            gap: { xs: 2, md: 3 },
+                            height: "100%",
+                            alignItems: { xs: "center", md: "stretch" },
+                        }}
+                    >
+                        <Box
+                            sx={{
+                                flex: { xs: "0 0 auto", md: 1 },
+                                display: "flex",
+                                justifyContent: "center",
+                                alignItems: "center",
+                                width: { xs: "100%", md: "auto" },
+                                maxWidth: { xs: "400px", md: "none" },
+                            }}
+                        >
+                            <BarChart
+                                layout={effectiveChartType === "horizontalBar" ? "horizontal" : "vertical"}
+                                xAxis={effectiveChartType === "horizontalBar" ? [{
+                                    label: "Count",
+                                    tickLabelStyle: { direction: "ltr", textAlign: "left", fontSize: 10 },
+                                }] : [{
+                                    scaleType: "band",
+                                    data: barData.map((d) => d.label),
+                                    tickLabelStyle: { angle: -30, textAnchor: "end", fontSize: 11 },
+                                    colorMap: { type: "ordinal", colors: barData.map((d) => d.color) },
+                                }]}
+                                yAxis={effectiveChartType === "horizontalBar" ? [{
+                                    scaleType: "band",
+                                    data: barData.map((d) => d.label),
+                                    tickLabelStyle: { direction: "ltr", textAlign: "right", fontSize: 10 },
+                                    colorMap: { type: "ordinal", colors: barData.map((d) => d.color) },
+                                }] : [{
+                                    label: "Count",
+                                    min: 0,
+                                    max: Math.max(0, ...barData.map((d) => d.value)) * 1.1,
+                                    tickLabelStyle: { direction: "ltr", textAlign: "left" },
+                                }]}
+                                series={[{ data: barData.map((d) => d.value) }]}
+                                height={400}
+                                margin={{ top: 30, bottom: 70, left: effectiveChartType === "horizontalBar" ? 100 : 50, right: 30 }}
+                                slotProps={{ legend: { hidden: true } }}
+                            />
+                        </Box>
+                        <Box
+                            sx={{
+                                minWidth: { xs: "100%", md: "220px" },
+                                overflow: "auto",
+                                px: { xs: 0, md: 2.5 },
+                                display: "flex",
+                                flexDirection: "column",
+                                justifyContent: "center",
+                                alignItems: { xs: "center", md: "flex-start" },
+                                direction: "ltr",
+                            }}
+                        >
+                            {barData.map((item, idx) => {
+                                const percentage = ((item.value / barTotal) * 100).toFixed(1);
+                                return (
+                                    <Box key={idx} sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5, direction: "ltr", ml: { xs: 0, md: 1 } }}>
+                                        <Box sx={{ width: 12, height: 12, borderRadius: "50%", backgroundColor: item.color, flexShrink: 0 }} />
+                                        <Typography
+                                            variant="body2"
+                                            sx={{ fontWeight: 500, color: "#1f2937", whiteSpace: "nowrap", fontSize: { xs: "0.875rem", md: "0.875rem" }, direction: "ltr", textAlign: "left" }}
+                                        >
+                                            {item.label} {percentage}% ({item.value})
+                                        </Typography>
+                                    </Box>
+                                );
+                            })}
+                        </Box>
+                    </Box>
+                ) : effectiveChartType === "line" ? (
                     <Box
                         sx={{
                             display: "flex",
@@ -445,9 +602,209 @@ const ChartVisualization = ({
                             ))}
                         </Box>
                     </Box>
-                )}
+                ) : effectiveChartType === "bar" || effectiveChartType === "horizontalBar" ? (
+                    <Box
+                        sx={{
+                            display: "flex",
+                            flexDirection: { xs: "column", md: "row" },
+                            gap: { xs: 2, md: 3 },
+                            height: "100%",
+                            alignItems: { xs: "center", md: "stretch" },
+                        }}
+                    >
+                        <Box
+                            sx={{
+                                flex: { xs: "0 0 auto", md: 1 },
+                                display: "flex",
+                                justifyContent: "center",
+                                alignItems: "center",
+                                width: { xs: "100%", md: "auto" },
+                            }}
+                        >
+                            <BarChart
+                                layout={effectiveChartType === "horizontalBar" ? "horizontal" : "vertical"}
+                                xAxis={effectiveChartType === "horizontalBar" ? [{
+                                    label: "Count",
+                                    tickLabelStyle: { direction: "ltr", textAlign: "left", fontSize: 10 },
+                                }] : [{
+                                    scaleType: "band",
+                                    data: field.xData,
+                                    tickLabelStyle: { angle: -30, textAnchor: "end", fontSize: 11 },
+                                }]}
+                                yAxis={effectiveChartType === "horizontalBar" ? [{
+                                    scaleType: "band",
+                                    data: field.xData,
+                                    tickLabelStyle: { direction: "ltr", textAlign: "right", fontSize: 10 },
+                                }] : [{
+                                    label: "Count",
+                                    min: 0,
+                                    max: Math.max(0, ...(field.yData || [0])) * 1.1,
+                                    tickLabelStyle: { direction: "ltr", textAlign: "left" },
+                                }]}
+                                series={[{
+                                    data: field.yData,
+                                    color: field.color,
+                                }]}
+                                height={400}
+                                margin={{ top: 30, bottom: 70, left: effectiveChartType === "horizontalBar" ? 100 : 50, right: 80 }}
+                                slotProps={{ legend: { hidden: true } }}
+                            />
+                        </Box>
+                        <Box
+                            sx={{
+                                minWidth: { xs: "100%", md: "220px" },
+                                overflow: "auto",
+                                pr: { xs: 0, md: 1 },
+                                display: "flex",
+                                flexDirection: "column",
+                                justifyContent: "center",
+                                alignItems: { xs: "center", md: "flex-start" },
+                            }}
+                        >
+                            {field.xData.map((label, idx) => (
+                                <Box key={idx} sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5, direction: "ltr" }}>
+                                    <Box sx={{ width: 12, height: 12, borderRadius: "50%", backgroundColor: field.color, flexShrink: 0 }} />
+                                    <Typography
+                                        variant="body2"
+                                        sx={{ fontWeight: 500, color: "#1f2937", whiteSpace: "nowrap", fontSize: "0.875rem", direction: "ltr", textAlign: "left" }}
+                                    >
+                                        {label} ({field.yData[idx]})
+                                    </Typography>
+                                </Box>
+                            ))}
+                        </Box>
+                    </Box>
+                ) : effectiveChartType === "heatmap" ? (
+                    <Box sx={{ height: 400, width: "100%", py: 2 }}>
+                        <Box sx={{ width: "100%", height: "100%", position: "relative" }}>
+                            <Box sx={{ display: "grid", gridTemplateColumns: "60px repeat(24, 1fr)", height: "100%", width: "100%" }}>
+                                <Box />
+                                {Array.from({ length: 24 }).map((_, h) => (
+                                    <Typography key={h} variant="caption" sx={{ textAlign: "center", color: "text.secondary", fontSize: "9px" }}>
+                                        {h}h
+                                    </Typography>
+                                ))}
+                                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((dayName, dIdx) => {
+                                    const dayNum = dIdx;
+                                    const start = startDateTime ? new Date(startDateTime) : null;
+                                    const end = endDateTime ? new Date(endDateTime) : null;
+                                    return (
+                                        <React.Fragment key={dayName}>
+                                            <Typography variant="caption" sx={{ display: "flex", alignItems: "center", fontWeight: 600, color: "text.secondary" }}>
+                                                {dayName}
+                                            </Typography>
+                                            {Array.from({ length: 24 }).map((_, h) => {
+                                                let count = 0;
+                                                if (field.xData && field.yData) {
+                                                    field.xData.forEach((ts, idx) => {
+                                                        const date = new Date(ts);
+                                                        if (start && date < start) return;
+                                                        if (end && date > end) return;
+                                                        if (!isNaN(date.getTime()) && date.getDay() === dayNum && date.getHours() === h) {
+                                                            count += (field.yData[idx] || 0);
+                                                        }
+                                                    });
+                                                }
+                                                const maxVal = field.yData ? Math.max(...field.yData, 1) : 1;
+                                                const alpha = count > 0 ? 0.2 + (count / maxVal) * 0.8 : 0.05;
+                                                return (
+                                                    <Box
+                                                        key={h}
+                                                        title={`${dayName}, ${h}:00 - ${count} activities`}
+                                                        sx={{
+                                                            m: 0.1,
+                                                            borderRadius: 0.5,
+                                                            backgroundColor: count > 0 ? field.color : "#f3f4f6",
+                                                            opacity: alpha,
+                                                            aspectRatio: "1/1",
+                                                            display: "flex",
+                                                            alignItems: "center",
+                                                            justifyContent: "center",
+                                                            transition: "transform 0.2s",
+                                                            "&:hover": { transform: "scale(1.2)", opacity: 1, zIndex: 1, cursor: "pointer", boxShadow: 2 }
+                                                        }}
+                                                    >
+                                                        {count > 0 && (
+                                                            <Typography sx={{ color: alpha > 0.6 ? "#fff" : "#000", fontSize: "8px", fontWeight: "bold" }}>
+                                                                {count}
+                                                            </Typography>
+                                                        )}
+                                                    </Box>
+                                                );
+                                            })}
+                                        </React.Fragment>
+                                    );
+                                })}
+                            </Box>
+                        </Box>
+                    </Box>
+                ) : null}
             </Box>
         </Box>
+    );
+};
+
+const ResponsePatternSection = ({ questions, t }) => {
+    const [open, setOpen] = useState(false);
+    if (!questions?.length) return null;
+    return (
+        <AppCard sx={{ overflow: "hidden" }}>
+            <Box
+                sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", p: { xs: 1.5, sm: 2 } }}
+            >
+                <Box>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "#1f2937" }}>
+                        {t.responsePattern}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                        {t.responsePatternDesc}
+                    </Typography>
+                </Box>
+                <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => setOpen((prev) => !prev)}
+                    sx={{ ml: 1, whiteSpace: "nowrap", flexShrink: 0 }}
+                >
+                    {open ? t.hideResponses : t.showResponses}
+                </Button>
+            </Box>
+            <Collapse in={open}>
+                <Box sx={{ px: { xs: 1.5, sm: 2 }, pb: { xs: 1.5, sm: 2 } }}>
+                    <Stack spacing={2.5}>
+                        {questions.map((q, qi) => {
+                            const total = (q.options || []).reduce((sum, o) => sum + (o.votes || 0), 0);
+                            return (
+                                <Box key={String(q._id)}>
+                                    <Typography variant="body2" sx={{ fontWeight: 600, mb: 1.5, color: "#1f2937" }}>
+                                        {q.question}
+                                    </Typography>
+                                    <Stack spacing={1}>
+                                        {(q.options || []).map((opt, oi) => {
+                                            const pct = total > 0 ? ((opt.votes || 0) / total) * 100 : 0;
+                                            return (
+                                                <Box key={oi}>
+                                                    <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
+                                                        <Typography variant="caption" color="text.secondary">{opt.text}</Typography>
+                                                        <Typography variant="caption" color="text.secondary" sx={{ direction: "ltr", flexShrink: 0, ml: 1 }}>
+                                                            {opt.votes || 0} ({pct.toFixed(1)}%)
+                                                        </Typography>
+                                                    </Box>
+                                                    <Box sx={{ height: 8, borderRadius: 4, backgroundColor: "#f3f4f6", overflow: "hidden" }}>
+                                                        <Box sx={{ height: "100%", width: `${pct}%`, backgroundColor: getPieSegmentColor(oi), borderRadius: 4, transition: "width 0.5s ease" }} />
+                                                    </Box>
+                                                </Box>
+                                            );
+                                        })}
+                                    </Stack>
+                                    {qi < questions.length - 1 && <Divider sx={{ mt: 2 }} />}
+                                </Box>
+                            );
+                        })}
+                    </Stack>
+                </Box>
+            </Collapse>
+        </AppCard>
     );
 };
 
@@ -465,9 +822,34 @@ export default function PollInsightsDashboard() {
     const [chartRefs, setChartRefs] = useState({});
     const [exportLoading, setExportLoading] = useState(false);
     const [exportRawLoading, setExportRawLoading] = useState(false);
+    const [chartTypeOverrides, setChartTypeOverrides] = useState({});
     const [summary, setSummary] = useState(null);
     const [pollInfo, setPollInfo] = useState(null);
     const [linkedEvent, setLinkedEvent] = useState(null);
+
+    const pollId = pollInfo?._id;
+
+    const handleVoteCast = useCallback((data) => {
+        setSummary((prev) => {
+            if (!prev) return prev;
+            const totalVotes = (prev.totalVotes || 0) + 1;
+            const uniqueVoters = data.isNewVoter ? (prev.uniqueVoters || 0) + 1 : (prev.uniqueVoters || 0);
+            const participationRate = prev.totalRegistrations > 0
+                ? parseFloat(((uniqueVoters / prev.totalRegistrations) * 100).toFixed(2))
+                : prev.participationRate;
+            const questionCount = data.questionCount ?? prev.questionCount;
+            return { ...prev, totalVotes, uniqueVoters, participationRate, questionCount };
+        });
+    }, []);
+
+    const handleQuestionCountChanged = useCallback((data) => {
+        setSummary((prev) => {
+            if (!prev) return prev;
+            return { ...prev, questionCount: data.questionCount };
+        });
+    }, []);
+
+    useVotecastSocket({ pollId, onVoteCast: handleVoteCast, onQuestionCountChanged: handleQuestionCountChanged });
 
     const getFieldParam = (fieldName, paramName, defaultValue) =>
         fieldParams[fieldName]?.[paramName] ?? defaultValue;
@@ -622,14 +1004,24 @@ export default function PollInsightsDashboard() {
                 endDateTime: getFieldParam(f, "endDateTime", dayjs().endOf("day")).toDate(),
                 legend: false,
             }));
-            const formatPdfDate = (d) => d ? dayjs(d).format("DD-MMM-YY, hh:mm a") : "N/A";
+
+            const formatPdfDate = (d) => d ? dayjs(d).format("DD-MMM-YY, hh:mm a") : undefined;
             const pdfEventInfo = {
-                name: pollInfo?.slug || "",
+                name: pollInfo?.title || pollInfo?.slug || "",
+                logoUrl: linkedEvent?.logoUrl || undefined,
                 subtitle: linkedEvent?.name || undefined,
-                subtitleLabel: "Event Name",
+                subtitleLabel: t.eventName || "Event",
                 startDateFormatted: formatPdfDate(linkedEvent?.startDate),
                 endDateFormatted: formatPdfDate(linkedEvent?.endDate),
-                venue: linkedEvent?.venue || "N/A",
+                venue: linkedEvent?.venue || undefined,
+                // Poll KPI stats for the top card row in the PDF
+                uniqueVoters: summary?.uniqueVoters,
+                totalVotes: summary?.totalVotes,
+                questionCount: summary?.questionCount,
+                participationRate: summary?.participationRate ?? null,
+                totalRegistrations: summary?.totalRegistrations,
+                // Response pattern (unlinked polls only)
+                responsePatternQuestions: !pollInfo?.linkedEventRegId ? (pollInfo?.questions || []) : undefined,
             };
             await exportChartsToPDF(refs, labels, chartDataArray, pdfEventInfo, null, language, dir, t, Intl.DateTimeFormat().resolvedOptions().timeZone);
         } catch (err) {
@@ -658,7 +1050,7 @@ export default function PollInsightsDashboard() {
                 try {
                     return new Intl.DateTimeFormat("en-US", {
                         year: "numeric", month: "short", day: "numeric",
-                        hour: "2-digit", minute: "2-digit", second: "2-digit",
+                        hour: "2-digit", minute: "2-digit",
                         timeZone: timezone,
                     }).format(new Date(val));
                 } catch { return String(val); }
@@ -691,20 +1083,21 @@ export default function PollInsightsDashboard() {
 
             // Linked event section
             if (linkedEvent) {
-                pushRow("Logo URL", linkedEvent.logoUrl || "N/A");
-                pushRow("Event Name", linkedEvent.name || "N/A");
-                pushRow("From", linkedEvent.startDate ? formatDateTimeForExcel(linkedEvent.startDate) : "N/A");
-                pushRow("To", linkedEvent.endDate ? formatDateTimeForExcel(linkedEvent.endDate) : "N/A");
-                pushRow("Venue", linkedEvent.venue || "N/A");
+                pushRow(t.logoUrl, linkedEvent.logoUrl || "N/A");
+                pushRow(t.eventName, linkedEvent.name || "N/A");
+                pushRow(t.from, linkedEvent.startDate ? formatDateTimeForExcel(linkedEvent.startDate) : "N/A");
+                pushRow(t.to, linkedEvent.endDate ? formatDateTimeForExcel(linkedEvent.endDate) : "N/A");
+                pushRow(t.venue, linkedEvent.venue || "N/A");
                 wsData.push([]);
             }
 
             // Poll info section
             pushRow(t.pollTitle, pollInfo.title || "N/A");
             pushRow(t.totalVotes, leftAlign(summary?.totalVotes));
-            pushRow(t.uniqueVoters, leftAlign(summary?.uniqueVoters));
-            pushRow(t.participationRate, summary?.participationRate != null ? `${summary.participationRate}%` : "N/A");
-            pushRow("Timezone", getTimezoneLabel(timezone));
+            if (summary?.participationRate != null) pushRow(t.participationRate, `${summary.participationRate}%`);
+            pushRow(t.questionCount, leftAlign(summary?.questionCount));
+            pushRow(t.exportedAt, formatDateTimeForExcel(new Date().toISOString()));
+            pushRow(t.timezone, getTimezoneLabel(timezone));
             wsData.push([]);
 
             // Chart data sections
@@ -738,6 +1131,26 @@ export default function PollInsightsDashboard() {
                 }
                 wsData.push([]);
             });
+
+            // Response Pattern section (unlinked polls only)
+            if (!pollInfo?.linkedEventRegId && pollInfo?.questions?.length) {
+                pushRow(`=== ${t.responsePattern} ===`);
+                wsData.push([]);
+                pollInfo.questions.forEach((q) => {
+                    pushRow(q.question);
+                    const total = (q.options || []).reduce((sum, o) => sum + (o.votes || 0), 0);
+                    const headerRow = [t.category, t.count, t.percentage];
+                    if (language === "ar") wsData.push([...headerRow].reverse());
+                    else wsData.push(headerRow);
+                    (q.options || []).forEach((opt) => {
+                        const pct = total > 0 ? ((opt.votes || 0) / total * 100).toFixed(1) : "0.0";
+                        const dataRow = [toNumericIfPossible(opt.text), formatCount(opt.votes || 0), `${pct}%`];
+                        if (language === "ar") wsData.push([...dataRow].reverse());
+                        else wsData.push(dataRow);
+                    });
+                    wsData.push([]);
+                });
+            }
 
             const ws = XLSX.utils.aoa_to_sheet(wsData);
             if (language === "ar") ws["!views"] = [{ rightToLeft: true }];
@@ -827,11 +1240,42 @@ export default function PollInsightsDashboard() {
 
             <Divider sx={{ mb: 1 }} />
 
+            {/* KPI Summary Cards */}
+            {summary && (
+                <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+                    <Box sx={{ flex: "1 1 150px" }}>
+                        <KpiCard label={t.totalVotes} value={summary.totalVotes} />
+                    </Box>
+                    {summary.participationRate !== null && (
+                        <Box sx={{ flex: "1 1 150px" }}>
+                            <KpiCard label={t.participationRate} value={`${summary.participationRate}%`} />
+                        </Box>
+                    )}
+                    <Box sx={{ flex: "1 1 150px" }}>
+                        <KpiCard label={t.questionCount} value={summary.questionCount} />
+                    </Box>
+                </Box>
+            )}
+
+            {/* Response Pattern — unlinked polls only */}
+            {!pollInfo?.linkedEventRegId && pollInfo?.questions?.length > 0 && (
+                <ResponsePatternSection questions={pollInfo.questions} t={t} />
+            )}
 
             {/* Field Chip Selector */}
-            <Paper sx={{ flex: "0 0 auto", p: { xs: 1, sm: 1.5, md: 2 }, borderRadius: 2, boxShadow: 2, width: "100%", boxSizing: "border-box" }}>
+            <AppCard sx={{ flex: "0 0 auto", p: { xs: 1, sm: 1.5, md: 2 }, width: "100%", boxSizing: "border-box" }}>
                 <Typography variant="subtitle1" sx={{ fontWeight: 600, color: "#374151", mb: 1 }}>
                     {t.availableFields}
+                </Typography>
+                <Typography
+                    variant="caption"
+                    sx={{
+                        display: "block",
+                        color: "text.secondary",
+                        mb: 1.5,
+                    }}
+                >
+                    {t.selectChipsPrompt}
                 </Typography>
                 <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 1, maxWidth: "100%" }}>
                     {availableFields.map((field) => (
@@ -849,20 +1293,20 @@ export default function PollInsightsDashboard() {
                         />
                     ))}
                 </Stack>
-            </Paper>
+            </AppCard>
 
             {/* Chart Panels */}
             <Stack spacing={2} sx={{ flex: "1 1 0%", overflow: "auto", minHeight: 0, pb: 2, px: 0.3 }}>
                 {selectedFields.length === 0 ? (
-                    <Paper sx={{ flex: 1, borderRadius: 2, boxShadow: 2, display: "flex", alignItems: "center", justifyContent: "center", minHeight: 300 }}>
+                    <AppCard sx={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", minHeight: 300 }}>
                         <Box textAlign="center">
                             <BarChartIcon sx={{ fontSize: 48, color: "#d1d5db", mb: 2 }} />
                             <Typography color="textSecondary">{t.selectFieldPrompt}</Typography>
                         </Box>
-                    </Paper>
+                    </AppCard>
                 ) : (
                     selectedFields.map((fieldName) => (
-                        <Paper key={fieldName} sx={{ borderRadius: 2, boxShadow: 2, minHeight: "450px" }}>
+                        <AppCard key={fieldName} sx={{ minHeight: "450px" }}>
                             <ChartVisualization
                                 selectedField={fieldName}
                                 chartData={chartData}
@@ -880,6 +1324,10 @@ export default function PollInsightsDashboard() {
                                 }
                                 onGenerate={() => handleGenerate(fieldName)}
                                 isGenerating={generatingFields[fieldName] || false}
+                                chartTypeOverride={chartTypeOverrides[fieldName] || null}
+                                onChartTypeChange={(type) =>
+                                    setChartTypeOverrides((prev) => ({ ...prev, [fieldName]: type }))
+                                }
                                 onRefReady={(el) => {
                                     if (el && chartRefs[fieldName] !== el) {
                                         setChartRefs((prev) => ({ ...prev, [fieldName]: el }));
@@ -887,9 +1335,10 @@ export default function PollInsightsDashboard() {
                                 }}
                                 t={t}
                             />
-                        </Paper>
+                        </AppCard>
                     ))
                 )}
+
             </Stack>
         </Box>
     );

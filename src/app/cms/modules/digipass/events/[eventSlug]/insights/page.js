@@ -11,19 +11,21 @@ import {
     Stack,
     Divider,
 } from "@mui/material";
-import { PieChart } from "@mui/x-charts/PieChart";
-import { LineChart } from "@mui/x-charts/LineChart";
-import { BarChart as BarChartIcon } from "@mui/icons-material";
 import {
     getAvailableFields,
     getFieldDistribution,
     getTimeDistribution,
     getScannedByTypeDistribution,
     getScannedByUserDistribution,
+    getInsightsSummary,
+    getActivitiesPerParticipantDistribution,
 } from "@/services/digipass/insightsService";
 import { getDigipassEventBySlug } from "@/services/digipass/digipassEventService";
 import ICONS from "@/utils/iconUtil";
+import ChartVisualization from "@/components/insights/ChartVisualization";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
+import AppCard from "@/components/cards/AppCard";
+import { BarChart as BarChartIcon } from "@mui/icons-material";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
@@ -40,6 +42,7 @@ const translations = {
         pageDescription:
             "Analyze event data and visualize key metrics through interactive charts and distributions.",
         availableFields: "Available Fields",
+        selectChipsPrompt: "Select the chips to see the charts",
         selectFieldPrompt: "Select a field to view insights",
         distributionOverview: "Distribution Overview",
         historicalTrend: "Historical Trend",
@@ -66,12 +69,18 @@ const translations = {
         intervalMinutesFull: "Interval (minutes)",
         timestamp: "Timestamp",
         totalRegistrations: "Total Registrations",
+        totalParticipants: "Total Participants",
+        totalActivityCompletions: "Total Activity Completions",
+        avgActivities: "Avg Activities per Participant",
+        scanRate: "Scan Rate",
+        exportedAt: "Exported At",
     },
     ar: {
         pageTitle: "تحليلات ذكية",
         pageDescription:
             "تحليل بيانات الحدث وتصور المقاييس الرئيسية من خلال الرسوم البيانية والتوزيعات التفاعلية.",
         availableFields: "الحقول المتاحة",
+        selectChipsPrompt: "اختر الشرائح لعرض الرسوم البيانية",
         selectFieldPrompt: "اختر حقلاً لعرض التحليلات",
         distributionOverview: "نظرة عامة على التوزيع",
         historicalTrend: "الاتجاه التاريخي",
@@ -98,6 +107,11 @@ const translations = {
         intervalMinutesFull: "الفاصل الزمني (بالدقائق)",
         timestamp: "الطابع الزمني",
         totalRegistrations: "إجمالي التسجيلات",
+        totalParticipants: "إجمالي المشاركين",
+        totalActivityCompletions: "إجمالي إنجازات الأنشطة",
+        avgActivities: "متوسط الأنشطة لكل مشارك",
+        scanRate: "معدل المسح",
+        exportedAt: "تاريخ التصدير",
     },
 };
 
@@ -155,413 +169,6 @@ const FieldChip = ({ field, isSelected, onClick }) => {
     );
 };
 
-const ChartVisualization = ({
-    selectedField,
-    chartData,
-    onTopNChange,
-    onIntervalChange,
-    onStartDateTimeChange,
-    onEndDateTimeChange,
-    onGenerate,
-    startDateTime,
-    endDateTime,
-    topN,
-    intervalMinutes,
-    isGenerating,
-    t,
-    onRefReady,
-}) => {
-    if (!selectedField || !chartData[selectedField]) {
-        return null;
-    }
-    const { dir } = useI18nLayout();
-    const field = chartData[selectedField];
-
-    if (!field) return null;
-
-    const getChartDescription = () => {
-        if (field.chartType === "pie") return t.distributionOverview;
-        return t.historicalTrend;
-    };
-
-    const showTopNControl = field.type === "text" || field.type === "number";
-    const showIntervalControl = field.type === "time";
-    const showGenerateButton = showTopNControl || showIntervalControl;
-    const hasNoData =
-        field.chartType === "pie" && (!field.data || field.data.length === 0);
-
-    return (
-        <Box
-            sx={{
-                display: "flex",
-                flexDirection: "column",
-                height: "100%",
-                p: 2,
-                width: "100%",
-            }}
-        >
-            <Box
-                sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    mb: 3,
-                    flexWrap: "wrap",
-                    gap: 2,
-                }}
-            >
-                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                    <Box
-                        sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            backgroundColor: `${field.color}15`,
-                            borderRadius: 1,
-                            p: 1,
-                            width: 48,
-                            height: 48,
-                            flexShrink: 0,
-                        }}
-                    >
-                        <ICONS.insights />
-                    </Box>
-                    <Box>
-                        <Typography
-                            variant="h6"
-                            sx={{ fontWeight: "bold", color: "#1f2937" }}
-                        >
-                            {field.label}
-                        </Typography>
-                        <Typography variant="caption" color="textSecondary">
-                            {getChartDescription()}
-                        </Typography>
-                    </Box>
-                </Box>
-                <Box
-                    sx={{
-                        display: "flex",
-                        gap: 1.5,
-                        flexWrap: "wrap",
-                        alignItems: "flex-end",
-                    }}
-                >
-                    {showTopNControl && (
-                        <TextField
-                            label={t.topN}
-                            type="number"
-                            size="small"
-                            value={topN}
-                            onChange={(e) => {
-                                const val =
-                                    e.target.value === "" ? 0 : parseInt(e.target.value);
-                                onTopNChange(isNaN(val) ? 0 : val);
-                            }}
-                            InputProps={{ inputProps: { min: 0, max: 50 } }}
-                            sx={{ width: "120px" }}
-                            disabled={isGenerating}
-                        />
-                    )}
-
-                    {showIntervalControl && (
-                        <>
-                            <DateTimePicker
-                                label={t.from}
-                                value={startDateTime}
-                                onChange={(val) => onStartDateTimeChange(val)}
-                                ampm={true}
-                                format="DD/MM/YYYY hh:mm A"
-                                slotProps={{
-                                    textField: { size: "small", sx: { width: "200px" } },
-                                }}
-                                disabled={isGenerating}
-                            />
-                            <DateTimePicker
-                                label={t.to}
-                                value={endDateTime}
-                                onChange={(val) => onEndDateTimeChange(val)}
-                                ampm={true}
-                                format="DD/MM/YYYY hh:mm A"
-                                slotProps={{
-                                    textField: { size: "small", sx: { width: "200px" } },
-                                }}
-                                disabled={isGenerating}
-                            />
-                            <TextField
-                                label={t.intervalMinutes}
-                                type="number"
-                                size="small"
-                                value={intervalMinutes}
-                                onChange={(e) => {
-                                    const val = e.target.value;
-                                    onIntervalChange(val === "" ? "" : parseInt(val));
-                                }}
-                                InputProps={{ inputProps: { min: 1, max: 1440 } }}
-                                sx={{ width: "140px" }}
-                                disabled={isGenerating}
-                            />
-                        </>
-                    )}
-
-                    {showGenerateButton && (
-                        <Button
-                            variant="text"
-                            onClick={onGenerate}
-                            disabled={isGenerating}
-                            sx={{
-                                whiteSpace: "nowrap",
-                                minWidth: "120px",
-                                position: "relative",
-                                ...getStartIconSpacing(dir),
-                            }}
-                        >
-                            {isGenerating ? (
-                                <Box
-                                    sx={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        gap: 1,
-                                    }}
-                                >
-                                    <CircularProgress
-                                        size={18}
-                                        color="inherit"
-                                        thickness={5}
-                                        sx={{ mr: 0.5 }}
-                                    />
-                                    {t.generating}
-                                </Box>
-                            ) : (
-                                <>
-                                    <ICONS.insights style={{ marginRight: 8 }} />
-                                    {t.generate}
-                                </>
-                            )}
-                        </Button>
-                    )}
-                </Box>
-            </Box>
-
-            <Box
-                ref={(el) => onRefReady && onRefReady(el)}
-                sx={{
-                    flex: 1,
-                    minHeight: 0,
-                    width: "100%",
-                    display: "flex",
-                    flexDirection: "column",
-                }}
-            >
-                {hasNoData ? (
-                    <Box
-                        sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            height: "100%",
-                        }}
-                    >
-                        <Typography variant="body1" color="textSecondary">
-                            No data to display
-                        </Typography>
-                    </Box>
-                ) : field.chartType === "pie" ? (
-                    <>
-                        <Box
-                            sx={{
-                                display: "flex",
-                                flexDirection: { xs: "column", md: "row" },
-                                gap: { xs: 2, md: 3 },
-                                height: "100%",
-                                alignItems: { xs: "center", md: "stretch" },
-                            }}
-                        >
-                            <Box
-                                sx={{
-                                    flex: { xs: "0 0 auto", md: 1 },
-                                    display: "flex",
-                                    justifyContent: "center",
-                                    alignItems: "center",
-                                    width: { xs: "100%", md: "auto" },
-                                    maxWidth: { xs: "400px", md: "none" },
-                                }}
-                            >
-                                <PieChart
-                                    series={[
-                                        {
-                                            data: field.data,
-                                            highlightScope: { faded: "global", highlighted: "item" },
-                                            faded: {
-                                                innerRadius: 30,
-                                                additionalRadius: -30,
-                                                color: "gray",
-                                            },
-                                            arcLabel: () => "",
-                                            valueFormatter: (item) => {
-                                                const total = field.data.reduce(
-                                                    (sum, d) => sum + d.value,
-                                                    0
-                                                );
-                                                const percentage = ((item.value / total) * 100).toFixed(
-                                                    1
-                                                );
-                                                return `${percentage}%`;
-                                            },
-                                        },
-                                    ]}
-                                    height={400}
-                                    slotProps={{
-                                        legend: {
-                                            hidden: true,
-                                            sx: { display: "none !important" },
-                                        },
-                                        pieArcLabel: {
-                                            style: {
-                                                fill: "white",
-                                                fontWeight: 600,
-                                                fontSize: "clamp(10px, 2vw, 14px)",
-                                            },
-                                        },
-                                    }}
-                                />
-                            </Box>
-                            <Box
-                                sx={{
-                                    minWidth: { xs: "100%", md: "220px" },
-                                    width: { xs: "100%", md: "auto" },
-                                    overflow: "auto",
-                                    px: { xs: 0, md: 2.5 },
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    justifyContent: "center",
-                                    alignItems: { xs: "center", md: "flex-start" },
-                                    direction: "ltr",
-                                }}
-                            >
-                                {field.data.map((item, idx) => {
-                                    const total = field.data.reduce((sum, d) => sum + d.value, 0);
-                                    const percentage = ((item.value / total) * 100).toFixed(1);
-                                    return (
-                                        <Box
-                                            key={idx}
-                                            sx={{
-                                                display: "flex",
-                                                alignItems: "center",
-                                                gap: 1,
-                                                mb: 1.5,
-                                                direction: "ltr",
-                                                ml: { xs: 0, md: 1 },
-                                            }}
-                                        >
-                                            <Box
-                                                sx={{
-                                                    width: 12,
-                                                    height: 12,
-                                                    borderRadius: "50%",
-                                                    backgroundColor: item.color,
-                                                    flexShrink: 0,
-                                                }}
-                                            />
-                                            <Typography
-                                                variant="body2"
-                                                sx={{
-                                                    fontWeight: 500,
-                                                    color: "#1f2937",
-                                                    whiteSpace: "nowrap",
-                                                    fontSize: { xs: "0.875rem", md: "0.875rem" },
-                                                    direction: "ltr",
-                                                    textAlign: "left",
-                                                }}
-                                            >
-                                                {item.label} {percentage}% ({item.value})
-                                            </Typography>
-                                        </Box>
-                                    );
-                                })}
-                            </Box>
-                        </Box>
-                    </>
-                ) : (
-                    <Box sx={{
-                        display: 'flex',
-                        flexDirection: { xs: 'column', md: 'row' },
-                        gap: { xs: 2, md: 3 },
-                        height: '100%',
-                        alignItems: { xs: 'center', md: 'stretch' }
-                    }}>
-                        <Box sx={{
-                            flex: { xs: '0 0 auto', md: 1 },
-                            display: 'flex',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            width: { xs: '100%', md: 'auto' },
-                            maxWidth: { xs: '100%', md: 'none' }
-                        }}>
-                            <LineChart
-                                xAxis={[{
-                                    scaleType: 'point',
-                                    data: field.xData,
-                                    tickLabelStyle: {
-                                        direction: 'ltr',
-                                        textAlign: 'left',
-                                    },
-                                }]}
-                                yAxis={[
-                                    {
-                                        min: 0,
-                                        max: Math.max(...field.yData) + Math.ceil(Math.max(...field.yData) * 0.05),
-                                        tickLabelStyle: {
-                                            direction: 'ltr',
-                                            textAlign: 'left',
-                                        },
-                                    }
-                                ]}
-                                series={[
-                                    {
-                                        data: field.yData,
-                                        color: field.color,
-                                        curve: 'linear'
-                                    }
-                                ]}
-                                height={400}
-                                margin={{ top: 30, bottom: 50, left: 50, right: 80 }}
-                                slotProps={{
-                                    legend: { hidden: true }
-                                }}
-                                sx={{
-                                    '& .MuiMarkElement-root': {
-                                        display: (d) => d.value === 0 ? 'none' : 'auto'
-                                    }
-                                }}
-                            />
-                        </Box>
-                        <Box sx={{
-                            minWidth: { xs: '100%', md: '220px' },
-                            width: { xs: '100%', md: 'auto' },
-                            overflow: 'auto',
-                            pr: { xs: 0, md: 1 },
-                            display: 'flex',
-                            flexDirection: 'column',
-                            justifyContent: 'center',
-                            alignItems: { xs: 'center', md: 'flex-start' }
-                        }}>
-                            {field.xData.map((label, idx) => (
-                                <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5, direction: 'ltr' }}>
-                                    <Box sx={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: field.color, flexShrink: 0 }} />
-                                    <Typography variant="body2" sx={{ fontWeight: 500, color: '#1f2937', whiteSpace: 'nowrap', fontSize: { xs: '0.875rem', md: '0.875rem' }, direction: 'ltr', textAlign: 'left' }}>
-                                        {label} ({field.yData[idx]})
-                                    </Typography>
-                                </Box>
-                            ))}
-                        </Box>
-                    </Box>
-                )}
-            </Box>
-        </Box>
-    );
-};
-
 export default function AnalyticsDashboard() {
     const { eventSlug } = useParams();
     const { t, dir, language } = useI18nLayout(translations);
@@ -576,6 +183,9 @@ export default function AnalyticsDashboard() {
     const [exportLoading, setExportLoading] = useState(false);
     const [exportRawLoading, setExportRawLoading] = useState(false);
     const [eventInfo, setEventInfo] = useState(null);
+    const [summary, setSummary] = useState(null);
+    const [chartVisualTypes, setChartVisualTypes] = useState({});
+    const [fieldSegments, setFieldSegments] = useState({});
 
     const getFieldParam = (fieldName, paramName, defaultValue) => {
         return fieldParams[fieldName]?.[paramName] ?? defaultValue;
@@ -597,9 +207,10 @@ export default function AnalyticsDashboard() {
 
             try {
                 setLoading(true);
-                const [fieldsResponse, eventResponse] = await Promise.all([
+                const [fieldsResponse, eventResponse, summaryResponse] = await Promise.all([
                     getAvailableFields(eventSlug),
                     getDigipassEventBySlug(eventSlug),
+                    getInsightsSummary(eventSlug),
                 ]);
 
                 let eventData =
@@ -614,6 +225,11 @@ export default function AnalyticsDashboard() {
                 }
                 console.log("Event data structure:", eventData);
                 setEventInfo(eventData);
+
+                if (summaryResponse?.data) {
+                    setSummary(summaryResponse.data);
+                }
+
                 const response = fieldsResponse;
 
                 const defaultParams = {};
@@ -629,6 +245,7 @@ export default function AnalyticsDashboard() {
                 });
                 defaultParams["scannedByType"] = { topN: 10 };
                 defaultParams["scannedByUser"] = { topN: 10 };
+                defaultParams["activitiesPerParticipant"] = { topN: 10 };
 
                 setFieldParams(defaultParams);
                 setAppliedParams(defaultParams);
@@ -639,6 +256,7 @@ export default function AnalyticsDashboard() {
                         .map((f) => ({
                             ...f,
                             chartType: determineChartType(f),
+                            allowedChartTypes: f.type === "time" ? ["line", "bar", "horizontalBar", "heatmap"] : ["pie", "bar", "horizontalBar"],
                             color: FIELD_COLOR,
                         })),
                     ...response.data.timeFields
@@ -646,23 +264,34 @@ export default function AnalyticsDashboard() {
                         .map((f) => ({
                             ...f,
                             chartType: "line",
+                            allowedChartTypes: ["line", "bar", "horizontalBar", "heatmap"],
                             color: FIELD_COLOR,
                         })),
                 ];
 
                 allFields.push(
                     {
+                        name: "activitiesPerParticipant",
+                        label: "Activities Completed per Participant",
+                        type: "special",
+                        chartType: "bar",
+                        allowedChartTypes: ["pie", "bar", "horizontalBar", "line"],
+                        color: FIELD_COLOR,
+                    },
+                    {
                         name: "scannedByType",
                         label: "Scanned By Staff Type",
                         type: "special",
                         chartType: "pie",
+                        allowedChartTypes: ["pie", "bar", "horizontalBar"],
                         color: FIELD_COLOR,
                     },
                     {
                         name: "scannedByUser",
-                        label: "Scanned By Staff Name",
+                        label: "Staff Scan Breakdown",
                         type: "special",
-                        chartType: "pie",
+                        chartType: "bar",
+                        allowedChartTypes: ["bar", "pie", "horizontalBar"],
                         color: FIELD_COLOR,
                     }
                 );
@@ -737,25 +366,95 @@ export default function AnalyticsDashboard() {
                             ...prev,
                             [fieldName]: { ...field, xData, yData },
                         }));
-                    } else if (
-                        fieldName === "scannedByType" ||
-                        fieldName === "scannedByUser"
-                    ) {
-                        response =
-                            fieldName === "scannedByType"
-                                ? await getScannedByTypeDistribution(eventSlug)
-                                : await getScannedByUserDistribution(eventSlug);
+                    } else if (fieldName === "activitiesPerParticipant") {
+                        const segment = fieldSegments[fieldName];
+                        const useTopN = appliedFieldParams.topN ?? 10;
 
+                        if (segment) {
+                            response = await getFieldDistribution(
+                                eventSlug,
+                                segment,
+                                useTopN,
+                                "completions"
+                            );
+
+                            const data = response.data.data.map((item, idx) => ({
+                                id: idx,
+                                value: item.value,
+                                label: item.label,
+                                color: getPieSegmentColor(idx),
+                            }));
+
+                            setChartData((prev) => ({
+                                ...prev,
+                                [fieldName]: {
+                                    ...field,
+                                    data,
+                                    xData: response.data.data.map((item) => item.label),
+                                    yData: response.data.data.map((item) => item.value),
+                                    segmentLabel: segment,
+                                },
+                            }));
+                        } else {
+                            response = await getActivitiesPerParticipantDistribution(eventSlug);
+
+                            const data = response.data.data.map((item, idx) => ({
+                                id: idx,
+                                value: item.value,
+                                label: item.label,
+                                color: getPieSegmentColor(idx),
+                            }));
+
+                            setChartData((prev) => ({
+                                ...prev,
+                                [fieldName]: {
+                                    ...field,
+                                    data,
+                                    xData: response.data.data.map((item) => item.label),
+                                    yData: response.data.data.map((item) => item.value),
+                                },
+                            }));
+                        }
+                    } else if (fieldName === "scannedByType") {
+                        response = await getScannedByTypeDistribution(eventSlug);
                         const data = response.data.data.map((item, idx) => ({
                             id: idx,
                             value: item.value,
                             label: item.label,
                             color: getPieSegmentColor(idx),
                         }));
-
                         setChartData((prev) => ({
                             ...prev,
-                            [fieldName]: { ...field, data },
+                            [fieldName]: {
+                                ...field,
+                                data,
+                                xData: response.data.data.map((item) => item.label),
+                                yData: response.data.data.map((item) => item.value),
+                            },
+                        }));
+                    } else if (fieldName === "scannedByUser") {
+                        const useTopN = appliedFieldParams.topN ?? 10;
+                        response = await getScannedByUserDistribution(eventSlug);
+
+                        let rawData = response.data.data;
+                        if (useTopN && useTopN > 0) {
+                            rawData = rawData.slice(0, useTopN);
+                        }
+
+                        const data = rawData.map((item, idx) => ({
+                            id: idx,
+                            value: item.value,
+                            label: item.label,
+                            color: getPieSegmentColor(idx),
+                        }));
+                        setChartData((prev) => ({
+                            ...prev,
+                            [fieldName]: {
+                                ...field,
+                                data,
+                                xData: rawData.map((item) => item.label),
+                                yData: rawData.map((item) => item.value),
+                            },
                         }));
                     } else {
                         const useTopN =
@@ -812,8 +511,10 @@ export default function AnalyticsDashboard() {
 
             const chartDataArray = selectedFields.map((fieldName) => {
                 const data = chartData[fieldName];
+                const activeType = chartVisualTypes[fieldName] || data.chartType;
                 return {
                     ...data,
+                    chartType: activeType,
                     topN: getFieldParam(fieldName, "topN", 10),
                     intervalMinutes: getFieldParam(fieldName, "intervalMinutes", 60),
                     startDateTime: getFieldParam(
@@ -830,11 +531,18 @@ export default function AnalyticsDashboard() {
                 };
             });
 
+            const summaryCards = summary ? [
+                { label: t.totalParticipants, value: summary.totalParticipants, color: "#0077b6" },
+                { label: t.totalActivityCompletions, value: summary.totalActivityCompletions, color: "#f59e0b" },
+                { label: t.avgActivities, value: summary.avgActivitiesPerParticipant, color: "#8b5cf6" },
+                eventInfo?.linkedEventRegId ? { label: t.scanRate, value: `${summary.scanRate}%`, color: "#10b981" } : null,
+            ].filter(Boolean) : [];
+
             await exportChartsToPDF(
                 refs,
                 labels,
                 chartDataArray,
-                eventInfo,
+                { ...eventInfo, summaryCards },
                 null,
                 language,
                 dir,
@@ -868,7 +576,7 @@ export default function AnalyticsDashboard() {
                 try {
                     return new Intl.DateTimeFormat("en-US", {
                         year: "numeric", month: "short", day: "numeric",
-                        hour: "2-digit", minute: "2-digit", second: "2-digit",
+                        hour: "2-digit", minute: "2-digit",
                         timeZone: timezone,
                     }).format(new Date(dateString));
                 } catch { return String(dateString); }
@@ -918,6 +626,7 @@ export default function AnalyticsDashboard() {
             // Event Details section
             pushRow(t.logoUrl, eventInfo.logoUrl || "N/A");
             pushRow(t.eventName, eventInfo.name || "N/A");
+            pushRow(t.exportedAt, formatDateTimeWithLocale(new Date()));
             if (eventInfo.startDate) pushRow(t.from, formatDateTimeForExcel(eventInfo.startDate));
             if (eventInfo.endDate) pushRow(t.to, formatDateTimeForExcel(eventInfo.endDate));
             if (eventInfo.venue) pushRow(t.venue, eventInfo.venue);
@@ -1094,12 +803,44 @@ export default function AnalyticsDashboard() {
                 <Divider sx={{ mb: 3 }} />
             </>
 
-            <Paper
+            {summary && (
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 1 }}>
+                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, flex: "1 1 500px" }}>
+                        {[
+                            { label: t.totalParticipants, value: summary.totalParticipants, color: "#0077b6" },
+                            { label: t.totalActivityCompletions, value: summary.totalActivityCompletions, color: "#f59e0b" },
+                            { label: t.avgActivities, value: summary.avgActivitiesPerParticipant, color: "#8b5cf6" },
+                            eventInfo?.linkedEventRegId ? { label: t.scanRate, value: `${summary.scanRate}%`, color: "#10b981" } : null,
+                        ].filter(Boolean).map(({ label, value, color }) => (
+                            <AppCard
+                                key={label}
+                                sx={{
+                                    p: 2,
+                                    flex: "1 1 180px",
+                                    minWidth: 160,
+                                    textAlign: "center",
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    justifyContent: 'center',
+                                    border: "1px solid #f1f5f9"
+                                }}
+                            >
+                                <Typography variant="h4" fontWeight="bold" sx={{ color }}>
+                                    {value}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
+                                    {label}
+                                </Typography>
+                            </AppCard>
+                        ))}
+                    </Box>
+                </Box>
+            )}
+
+            <AppCard
                 sx={{
                     flex: "0 0 auto",
                     p: { xs: 1, sm: 1.5, md: 2 },
-                    borderRadius: 2,
-                    boxShadow: 2,
                     width: "100%",
                     boxSizing: "border-box",
                     overflow: "hidden",
@@ -1114,6 +855,16 @@ export default function AnalyticsDashboard() {
                     }}
                 >
                     {t.availableFields}
+                </Typography>
+                <Typography
+                    variant="caption"
+                    sx={{
+                        display: "block",
+                        color: "text.secondary",
+                        mb: 1.5,
+                    }}
+                >
+                    {t.selectChipsPrompt}
                 </Typography>
                 <Stack
                     direction="row"
@@ -1140,21 +891,20 @@ export default function AnalyticsDashboard() {
                         />
                     ))}
                 </Stack>
-            </Paper>
+            </AppCard>
 
             <Stack
                 spacing={2}
                 sx={{ flex: "1 1 0%", overflow: "auto", minHeight: 0, pb: 2, px: 0.3 }}
             >
                 {selectedFields.length === 0 ? (
-                    <Paper
+                    <AppCard
                         sx={{
                             flex: 1,
-                            borderRadius: 2,
-                            boxShadow: 2,
                             display: "flex",
                             alignItems: "center",
                             justifyContent: "center",
+                            minHeight: 300
                         }}
                     >
                         <Box textAlign="center">
@@ -1163,16 +913,24 @@ export default function AnalyticsDashboard() {
                                 {t.selectFieldPrompt}
                             </Typography>
                         </Box>
-                    </Paper>
+                    </AppCard>
                 ) : (
                     selectedFields.map((fieldName) => (
-                        <Paper
+                        <AppCard
                             key={fieldName}
-                            sx={{ borderRadius: 2, boxShadow: 2, minHeight: "450px" }}
+                            sx={{ minHeight: "450px" }}
                         >
                             <ChartVisualization
                                 selectedField={fieldName}
                                 chartData={chartData}
+                                chartType={chartVisualTypes[fieldName] || availableFields.find(af => af.name === fieldName)?.chartType}
+                                onChartTypeChange={(type) => setChartVisualTypes(prev => ({ ...prev, [fieldName]: type }))}
+                                segmentFields={fieldName === "activitiesPerParticipant" && eventInfo?.linkedEventRegId ? availableFields.filter(f => f.type !== "special" && f.type !== "time") : null}
+                                selectedSegment={fieldSegments[fieldName]}
+                                onSegmentChange={(segment) => {
+                                    setFieldSegments(prev => ({ ...prev, [fieldName]: segment }));
+                                    handleGenerate(fieldName);
+                                }}
                                 topN={getFieldParam(fieldName, "topN", 10)}
                                 intervalMinutes={getFieldParam(
                                     fieldName,
@@ -1218,7 +976,7 @@ export default function AnalyticsDashboard() {
                                 }}
                                 t={t}
                             />
-                        </Paper>
+                        </AppCard>
                     ))
                 )}
             </Stack>

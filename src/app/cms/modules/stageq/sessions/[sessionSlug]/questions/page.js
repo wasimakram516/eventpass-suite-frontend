@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   Box,
@@ -189,7 +189,7 @@ export default function SessionQuestionsPage() {
 
   return (
     <Box dir={dir} sx={{ display: "flex", minHeight: "100vh" }}>
-      <Container maxWidth="lg">
+      <Container maxWidth={false} disableGutters>
         <BreadcrumbsNav />
 
         <Stack

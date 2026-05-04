@@ -22,8 +22,8 @@ import {
     getScannedByTypeDistribution,
     getScannedByUserDistribution,
 } from "@/services/eventreg/insightsService";
-import { getPublicEventBySlug } from "@/services/eventreg/eventService";
-import useEventRegSocket from "@/hooks/modules/eventReg/useEventRegSocket";
+import { getCheckInEventBySlug } from "@/services/checkin/checkinEventService";
+import useCheckInSocket from "@/hooks/modules/checkin/useCheckInSocket";
 import ICONS from "@/utils/iconUtil";
 import AppCard from "@/components/cards/AppCard";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
@@ -155,10 +155,8 @@ const hslToHex = (h, s, l) => {
 const getPieSegmentColor = (index) => {
     const goldenRatioConjugate = 0.618033988749895;
     const hue = ((index * goldenRatioConjugate) % 1) * 360;
-
     const satBase = 65 + ((index * 17) % 25);
     const lightBase = 45 + ((index * 23) % 25);
-
     return hslToHex(Math.round(hue), satBase, lightBase);
 };
 
@@ -166,7 +164,9 @@ const determineChartType = (field) => {
     if (field.type === "time") return "line";
     return "pie";
 };
+
 dayjs.extend(utc);
+
 const FieldChip = ({ field, isSelected, onClick }) => {
     return (
         <Chip
@@ -664,27 +664,27 @@ const ChartVisualization = ({
                     </Box>
                 ) : effectiveChartType === "line" ? (
                     <Box sx={{
-                        display: 'flex',
-                        flexDirection: { xs: 'column', md: 'row' },
+                        display: "flex",
+                        flexDirection: { xs: "column", md: "row" },
                         gap: { xs: 2, md: 3 },
-                        height: '100%',
-                        alignItems: { xs: 'center', md: 'stretch' }
+                        height: "100%",
+                        alignItems: { xs: "center", md: "stretch" },
                     }}>
                         <Box sx={{
-                            flex: { xs: '0 0 auto', md: 1 },
-                            display: 'flex',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            width: { xs: '100%', md: 'auto' },
-                            maxWidth: { xs: '100%', md: 'none' }
+                            flex: { xs: "0 0 auto", md: 1 },
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            width: { xs: "100%", md: "auto" },
+                            maxWidth: { xs: "100%", md: "none" },
                         }}>
                             <LineChart
                                 xAxis={[{
-                                    scaleType: 'point',
+                                    scaleType: "point",
                                     data: field.xData,
                                     tickLabelStyle: {
-                                        direction: 'ltr',
-                                        textAlign: 'left',
+                                        direction: "ltr",
+                                        textAlign: "left",
                                     },
                                 }]}
                                 yAxis={[
@@ -692,8 +692,8 @@ const ChartVisualization = ({
                                         min: 0,
                                         max: Math.max(...field.yData) + Math.ceil(Math.max(...field.yData) * 0.05),
                                         tickLabelStyle: {
-                                            direction: 'ltr',
-                                            textAlign: 'left',
+                                            direction: "ltr",
+                                            textAlign: "left",
                                         },
                                     }
                                 ]}
@@ -701,35 +701,35 @@ const ChartVisualization = ({
                                     {
                                         data: field.yData,
                                         color: field.color,
-                                        curve: 'linear'
+                                        curve: "linear",
                                     }
                                 ]}
                                 height={400}
                                 margin={{ top: 30, bottom: 50, left: 50, right: 80 }}
                                 slotProps={{
-                                    legend: { hidden: true }
+                                    legend: { hidden: true },
                                 }}
                                 sx={{
-                                    '& .MuiMarkElement-root': {
-                                        display: (d) => d.value === 0 ? 'none' : 'auto'
-                                    }
+                                    "& .MuiMarkElement-root": {
+                                        display: (d) => d.value === 0 ? "none" : "auto",
+                                    },
                                 }}
                             />
                         </Box>
                         <Box sx={{
-                            minWidth: { xs: '100%', md: '220px' },
-                            width: { xs: '100%', md: 'auto' },
-                            overflow: 'auto',
+                            minWidth: { xs: "100%", md: "220px" },
+                            width: { xs: "100%", md: "auto" },
+                            overflow: "auto",
                             pr: { xs: 0, md: 1 },
-                            display: 'flex',
-                            flexDirection: 'column',
-                            justifyContent: 'center',
-                            alignItems: { xs: 'center', md: 'flex-start' }
+                            display: "flex",
+                            flexDirection: "column",
+                            justifyContent: "center",
+                            alignItems: { xs: "center", md: "flex-start" },
                         }}>
                             {field.xData.map((label, idx) => (
-                                <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5, direction: 'ltr' }}>
-                                    <Box sx={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: field.color, flexShrink: 0 }} />
-                                    <Typography variant="body2" sx={{ fontWeight: 500, color: '#1f2937', whiteSpace: 'nowrap', fontSize: { xs: '0.875rem', md: '0.875rem' }, direction: 'ltr', textAlign: 'left' }}>
+                                <Box key={idx} sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5, direction: "ltr" }}>
+                                    <Box sx={{ width: 12, height: 12, borderRadius: "50%", backgroundColor: field.color, flexShrink: 0 }} />
+                                    <Typography variant="body2" sx={{ fontWeight: 500, color: "#1f2937", whiteSpace: "nowrap", fontSize: { xs: "0.875rem", md: "0.875rem" }, direction: "ltr", textAlign: "left" }}>
                                         {label} · {field.yData[idx]}
                                     </Typography>
                                 </Box>
@@ -738,19 +738,19 @@ const ChartVisualization = ({
                     </Box>
                 ) : effectiveChartType === "bar" || effectiveChartType === "horizontalBar" ? (
                     <Box sx={{
-                        display: 'flex',
-                        flexDirection: { xs: 'column', md: 'row' },
+                        display: "flex",
+                        flexDirection: { xs: "column", md: "row" },
                         gap: { xs: 2, md: 3 },
-                        height: '100%',
-                        alignItems: { xs: 'center', md: 'stretch' }
+                        height: "100%",
+                        alignItems: { xs: "center", md: "stretch" },
                     }}>
                         <Box sx={{
-                            flex: { xs: '0 0 auto', md: 1 },
-                            display: 'flex',
-                            justifyContent: 'center',
-                            alignItems: 'center',
-                            width: { xs: '100%', md: 'auto' },
-                            maxWidth: { xs: '100%', md: 'none' }
+                            flex: { xs: "0 0 auto", md: 1 },
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            width: { xs: "100%", md: "auto" },
+                            maxWidth: { xs: "100%", md: "none" },
                         }}>
                             <BarChart
                                 layout={effectiveChartType === "horizontalBar" ? "horizontal" : "vertical"}
@@ -782,19 +782,19 @@ const ChartVisualization = ({
                             />
                         </Box>
                         <Box sx={{
-                            minWidth: { xs: '100%', md: '220px' },
-                            width: { xs: '100%', md: 'auto' },
-                            overflow: 'auto',
+                            minWidth: { xs: "100%", md: "220px" },
+                            width: { xs: "100%", md: "auto" },
+                            overflow: "auto",
                             pr: { xs: 0, md: 1 },
-                            display: 'flex',
-                            flexDirection: 'column',
-                            justifyContent: 'center',
-                            alignItems: { xs: 'center', md: 'flex-start' }
+                            display: "flex",
+                            flexDirection: "column",
+                            justifyContent: "center",
+                            alignItems: { xs: "center", md: "flex-start" },
                         }}>
                             {field.xData.map((label, idx) => (
-                                <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5, direction: 'ltr' }}>
-                                    <Box sx={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: field.color, flexShrink: 0 }} />
-                                    <Typography variant="body2" sx={{ fontWeight: 500, color: '#1f2937', whiteSpace: 'nowrap', fontSize: { xs: '0.875rem', md: '0.875rem' }, direction: 'ltr', textAlign: 'left' }}>
+                                <Box key={idx} sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5, direction: "ltr" }}>
+                                    <Box sx={{ width: 12, height: 12, borderRadius: "50%", backgroundColor: field.color, flexShrink: 0 }} />
+                                    <Typography variant="body2" sx={{ fontWeight: 500, color: "#1f2937", whiteSpace: "nowrap", fontSize: { xs: "0.875rem", md: "0.875rem" }, direction: "ltr", textAlign: "left" }}>
                                         {label} · {field.yData[idx]}
                                     </Typography>
                                 </Box>
@@ -871,7 +871,7 @@ const ChartVisualization = ({
     );
 };
 
-export default function AnalyticsDashboard() {
+export default function CheckInAnalyticsDashboard() {
     const { eventSlug } = useParams();
     const { t, dir, language } = useI18nLayout(translations);
     const [selectedFields, setSelectedFields] = useState([]);
@@ -926,12 +926,12 @@ export default function AnalyticsDashboard() {
         });
     }, []);
 
-    const handleWalkinCreated = useCallback((data) => {
+    const handleScanConfirmed = useCallback((data) => {
+        const registrationId = data.registrationId?.toString();
+        if (!registrationId || scannedIdsRef.current.has(registrationId)) return;
+        scannedIdsRef.current.add(registrationId);
         setSummary((prev) => {
             if (!prev) return prev;
-            const registrationId = data.registrationId?.toString();
-            if (!registrationId || scannedIdsRef.current.has(registrationId)) return prev;
-            scannedIdsRef.current.add(registrationId);
             const uniqueScanned = (prev.uniqueScanned || 0) + 1;
             const scanRate = prev.totalRegistrations > 0
                 ? ((uniqueScanned / prev.totalRegistrations) * 100).toFixed(2)
@@ -940,11 +940,11 @@ export default function AnalyticsDashboard() {
         });
     }, []);
 
-    useEventRegSocket({
+    useCheckInSocket({
         eventId,
         onBadgePrinted: handleBadgePrinted,
         onNewRegistration: handleNewRegistration,
-        onWalkinCreated: handleWalkinCreated,
+        onScanConfirmed: handleScanConfirmed,
     });
 
     const getFieldParam = (fieldName, paramName, defaultValue) => {
@@ -967,17 +967,15 @@ export default function AnalyticsDashboard() {
 
             try {
                 setLoading(true);
-                const [fieldsResponse, eventResponse, summaryResponse] = await Promise.all([
+                const [fieldsResponse, summaryResponse, eventRes] = await Promise.all([
                     getAvailableFields(eventSlug),
-                    getPublicEventBySlug(eventSlug),
                     getInsightsSummary(eventSlug),
+                    getCheckInEventBySlug(eventSlug),
                 ]);
 
-                const eventData =
-                    eventResponse?.data?.event || eventResponse?.data || eventResponse;
-                console.log("Event data structure:", eventData);
-                setEventInfo(eventData);
                 if (summaryResponse?.data) setSummary(summaryResponse.data);
+                if (eventRes && !eventRes.error) setEventInfo(eventRes.data ?? eventRes);
+
                 const response = fieldsResponse;
 
                 const defaultParams = {};
@@ -1190,7 +1188,6 @@ export default function AnalyticsDashboard() {
         }));
     }, [summary, selectedFields, t]);
 
-
     const handleExportPDF = async () => {
         if (selectedFields.length === 0) return;
 
@@ -1310,7 +1307,6 @@ export default function AnalyticsDashboard() {
                 wsData.push(normalized);
             };
 
-            // Event Details section
             pushRow(t.logoUrl, eventInfo.logoUrl || "N/A");
             pushRow(t.eventName, eventInfo.name || "N/A");
             pushRow(t.from, eventInfo.startDate ? formatDateTimeForExcel(eventInfo.startDate) : "N/A");
@@ -1323,7 +1319,6 @@ export default function AnalyticsDashboard() {
             pushRow(t.timezone, getTimezoneLabel(timezone));
             wsData.push([]);
 
-            // Badge print stats section
             pushRow("=== Badge Print Stats ===");
             pushRow(t.totalBadgePrints, leftAlignNumber(summary?.totalPrints, 0));
             pushRow(t.noPrints, leftAlignNumber(summary?.noPrintCount, 0));
@@ -1332,7 +1327,6 @@ export default function AnalyticsDashboard() {
             pushRow(t.multiPrintRate, summary ? `${summary.multiPrintRate}%` : "0.00%");
             wsData.push([]);
 
-            // Data sections for each selected field
             selectedFields.forEach((fieldName) => {
                 const field = availableFields.find((f) => f.name === fieldName);
                 const data = chartData[fieldName];
@@ -1389,7 +1383,7 @@ export default function AnalyticsDashboard() {
             const blob = new Blob([excelBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
             const link = document.createElement("a");
             link.href = URL.createObjectURL(blob);
-            link.download = `${eventInfo.slug || "event"}_insights_raw_data.xlsx`;
+            link.download = `${eventInfo.slug || "event"}_checkin_insights_raw_data.xlsx`;
             link.click();
             URL.revokeObjectURL(link.href);
         } catch (error) {

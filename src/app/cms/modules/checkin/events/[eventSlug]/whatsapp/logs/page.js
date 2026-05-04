@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useState, useCallback } from "react";
 import {
@@ -219,7 +219,7 @@ export default function WhatsAppLogsPage() {
   const to = Math.min(page * limit, total);
 
   return (
-    <Container dir={dir} maxWidth="lg">
+    <Container dir={dir} maxWidth={false} disableGutters>
       <BreadcrumbsNav />
 
       {/* HEADER */}

@@ -63,16 +63,12 @@ export default function ModuleLandingPage({
           <Stack
             spacing={4}
             alignItems={{ xs: "stretch", md: "center" }}
-            direction={{ xs: "column", md: isRtl ? "row-reverse" : "row" }}
+            direction={{ xs: "column", md: "row" }}
           >
             <Box
               sx={{
                 flex: 1,
                 textAlign: align,
-                order: {
-                  xs: isRtl ? 2 : 1,
-                  md: isRtl ? 2 : 1,
-                },
               }}
             >
               <Stack spacing={3}>
@@ -160,10 +156,6 @@ export default function ModuleLandingPage({
             <Box
               sx={{
                 flex: 1,
-                order: {
-                  xs: isRtl ? 1 : 2,
-                  md: isRtl ? 1 : 2,
-                },
               }}
             >
               <Paper

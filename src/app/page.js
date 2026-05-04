@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   Box,
@@ -139,7 +139,7 @@ export default function HomePage() {
       >
         {/* HERO */}
         <Box sx={{ py: 6 }}>
-          <Container maxWidth="lg">
+          <Container maxWidth={false}>
             <Stack spacing={3} alignItems="center" textAlign={align}>
               <Typography
                 variant="overline"
@@ -213,7 +213,7 @@ export default function HomePage() {
         </Box>
 
         {/* FEATURES */}
-        <Container maxWidth="lg" sx={{ pb: { xs: 3, md: 5 } }}>
+        <Container maxWidth={false} sx={{ pb: { xs: 3, md: 5 } }}>
           <Divider sx={{ mb: 4 }} />
           <Grid
             container

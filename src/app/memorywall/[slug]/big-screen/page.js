@@ -80,7 +80,7 @@ const BigScreenPage = () => {
 
   if (!connected) {
     return (
-      <Container>
+      <Container maxWidth={false}>
         <Typography variant="body2" color="error" mt={2}>
           {t.socketNotConnected}
           {connectionError ? `: ${connectionError}` : ""}

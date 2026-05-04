@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Container, Grid, Typography, Stack, Divider } from "@mui/material";
 import { useParams } from "next/navigation";
@@ -41,7 +41,7 @@ export default function WhatsAppDashboard() {
   const { t, dir } = useI18nLayout(translations);
 
   return (
-    <Container dir={dir} maxWidth="lg">
+    <Container dir={dir} maxWidth={false} disableGutters>
       <BreadcrumbsNav />
 
       <Stack spacing={1} alignItems="flex-start" mb={4}>

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState, useRef } from "react";
 import {
@@ -775,7 +775,7 @@ export default function SurveyFormsManagePage() {
         }}
       />
 
-      <Container maxWidth="lg">
+      <Container maxWidth={false} disableGutters>
         <BreadcrumbsNav />
 
         {/* Header */}

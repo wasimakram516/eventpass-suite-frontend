@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Container, Grid, Typography, Divider, Stack } from "@mui/material";
 import DashboardCard from "@/components/cards/DashboardCard";
@@ -41,7 +41,7 @@ export default function SurveyGuruDashboard() {
   const { t, dir } = useI18nLayout(translations);
 
   return (
-    <Container dir={dir} maxWidth="lg">
+    <Container dir={dir} maxWidth={false} disableGutters>
       <BreadcrumbsNav />
 
       {/* Header */}

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import {
@@ -178,7 +178,7 @@ export default function FileStorePage() {
         />
       )}
 
-      <Container maxWidth="lg">
+      <Container maxWidth={false} disableGutters>
         <BreadcrumbsNav />
         <Box
           sx={{

@@ -47,6 +47,8 @@ export default function CmsLayout({ children }) {
         component="main"
         sx={{
           flexGrow: 1,
+          minWidth: 0,
+          overflow: "hidden",
           bgcolor: "background.default",
           pl: { xs: 2, sm: 3, md: "30px" },
           pr: { xs: 2, sm: 3, md: "30px" },

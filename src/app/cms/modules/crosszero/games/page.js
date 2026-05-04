@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -171,7 +171,7 @@ export default function CrossZeroGamesPage() {
         />
       )}
 
-      <Container maxWidth="lg">
+      <Container maxWidth={false} disableGutters>
         <Box sx={{ mb: 4 }}>
           <BreadcrumbsNav />
           <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, justifyContent: "space-between", alignItems: { xs: "stretch", sm: "center" }, gap: 2, mb: 3 }}>

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -757,7 +757,7 @@ export default function RecipientsManagePage() {
         }}
       />
 
-      <Container maxWidth="xl">
+      <Container maxWidth={false} disableGutters>
         <BreadcrumbsNav />
 
         <Box
