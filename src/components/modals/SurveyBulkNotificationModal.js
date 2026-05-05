@@ -28,7 +28,8 @@ const translations = {
     title: "Send Bulk Survey Notifications",
     audience: "Sending Options",
     allRecipients: "Send to all recipients",
-    notResponded: "Send to those who not responded yet",
+    notResponded: "Send to those who have not responded yet",
+    neverNotified: "Send to those who have never been emailed",
     subject: "Email Subject",
     body: "Email Body",
     prefillHint: "Set custom subject and body for this notification send.",
@@ -40,6 +41,7 @@ const translations = {
     audience: "خيارات الإرسال",
     allRecipients: "إرسال إلى جميع المستلمين",
     notResponded: "إرسال إلى الذين لم يردوا بعد",
+    neverNotified: "إرسال إلى الذين لم يتلقوا أي بريد إلكتروني مطلقاً",
     subject: "موضوع البريد الإلكتروني",
     body: "نص البريد الإلكتروني",
     prefillHint: "قم بتخصيص الموضوع والنص لعملية الإرسال الحالية.",
@@ -119,6 +121,11 @@ const SurveyBulkNotificationModal = ({
                 value="not_responded"
                 control={<Radio />}
                 label={t.notResponded}
+              />
+              <FormControlLabel
+                value="never_notified"
+                control={<Radio />}
+                label={t.neverNotified}
               />
             </RadioGroup>
           </FormControl>
