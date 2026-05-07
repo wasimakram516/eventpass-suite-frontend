@@ -23,6 +23,7 @@ import {
     getPollInsightsFields,
     getPollInsightsDistribution,
     getPollInsightsTimeDistribution,
+    getPollInsights,
 } from "@/services/votecast/pollInsightsService";
 import { getPublicPollBySlug } from "@/services/votecast/pollService";
 import useVotecastSocket from "@/hooks/modules/votecast/useVotecastSocket";
@@ -90,6 +91,8 @@ const translations = {
         logoUrl: "Logo URL",
         registeredVoters: "Registered Voters",
         guestVoters: "Guest Voters",
+        average: "Average Score",
+        recentResponses: "Recent Responses",
     },
     ar: {
         pageTitle: "تحليلات الاستطلاع",
@@ -777,30 +780,70 @@ const ResponsePatternSection = ({ questions, t }) => {
                 <Box sx={{ px: { xs: 1.5, sm: 2 }, pb: { xs: 1.5, sm: 2 } }}>
                     <Stack spacing={2.5}>
                         {questions.map((q, qi) => {
+                            const type = q.type || "options";
                             const total = (q.options || []).reduce((sum, o) => sum + (o.votes || 0), 0);
                             return (
                                 <Box key={String(q._id)}>
                                     <Typography variant="body2" sx={{ fontWeight: 600, mb: 1.5, color: "#1f2937" }}>
                                         {q.question}
                                     </Typography>
-                                    <Stack spacing={1}>
-                                        {(q.options || []).map((opt, oi) => {
-                                            const pct = total > 0 ? ((opt.votes || 0) / total) * 100 : 0;
-                                            return (
-                                                <Box key={oi}>
-                                                    <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
-                                                        <Typography variant="caption" color="text.secondary">{opt.text}</Typography>
-                                                        <Typography variant="caption" color="text.secondary" sx={{ direction: "ltr", flexShrink: 0, ml: 1 }}>
-                                                            {opt.votes || 0} ({pct.toFixed(1)}%)
-                                                        </Typography>
+                                    
+                                    {type === "options" ? (
+                                        <Stack spacing={1}>
+                                            {(q.options || []).map((opt, oi) => {
+                                                const pct = total > 0 ? ((opt.votes || 0) / total) * 100 : 0;
+                                                return (
+                                                    <Box key={oi}>
+                                                        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
+                                                            <Typography variant="caption" color="text.secondary">{opt.text}</Typography>
+                                                            <Typography variant="caption" color="text.secondary" sx={{ direction: "ltr", flexShrink: 0, ml: 1 }}>
+                                                                {opt.votes || 0} ({pct.toFixed(1)}%)
+                                                            </Typography>
+                                                        </Box>
+                                                        <Box sx={{ height: 8, borderRadius: 4, backgroundColor: "#f3f4f6", overflow: "hidden" }}>
+                                                            <Box sx={{ height: "100%", width: `${pct}%`, backgroundColor: getPieSegmentColor(oi), borderRadius: 4, transition: "width 0.5s ease" }} />
+                                                        </Box>
                                                     </Box>
-                                                    <Box sx={{ height: 8, borderRadius: 4, backgroundColor: "#f3f4f6", overflow: "hidden" }}>
-                                                        <Box sx={{ height: "100%", width: `${pct}%`, backgroundColor: getPieSegmentColor(oi), borderRadius: 4, transition: "width 0.5s ease" }} />
-                                                    </Box>
-                                                </Box>
-                                            );
-                                        })}
-                                    </Stack>
+                                                );
+                                            })}
+                                        </Stack>
+                                    ) : (type === "rating" || type === "nps") ? (
+                                        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", bgcolor: "#f9fafb", p: 2, borderRadius: 2 }}>
+                                            <Box>
+                                                <Typography variant="h4" color="primary" fontWeight="bold">
+                                                    {q.average?.toFixed(1) || "0.0"}
+                                                </Typography>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    {t.average || "Average Score"}
+                                                </Typography>
+                                            </Box>
+                                            <Box textAlign="right">
+                                                <Typography variant="subtitle1" fontWeight="bold">
+                                                    {q.totalVotes || 0}
+                                                </Typography>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    {t.totalVotes || "Total Votes"}
+                                                </Typography>
+                                            </Box>
+                                        </Box>
+                                    ) : type === "text" ? (
+                                        <Box sx={{ bgcolor: "#f9fafb", p: 2, borderRadius: 2 }}>
+                                            <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: "block" }}>
+                                                {t.recentResponses || "Recent Responses"}:
+                                            </Typography>
+                                            <Stack spacing={1}>
+                                                {(q.recentResponses || []).map((resp, ri) => (
+                                                    <Typography key={ri} variant="body2" sx={{ fontStyle: "italic", borderLeft: "2px solid #e5e7eb", pl: 1 }}>
+                                                        "{resp}"
+                                                    </Typography>
+                                                ))}
+                                                {(!q.recentResponses || q.recentResponses.length === 0) && (
+                                                    <Typography variant="caption" color="text.secondary">{t.noData}</Typography>
+                                                )}
+                                            </Stack>
+                                        </Box>
+                                    ) : null}
+
                                     {qi < questions.length - 1 && <Divider sx={{ mt: 2 }} />}
                                 </Box>
                             );
@@ -879,7 +922,16 @@ export default function PollInsightsDashboard() {
                 ]);
 
                 if (pollRes && !pollRes.error) {
-                    setPollInfo(pollRes);
+                    const detailedRes = await getPollInsights(pollRes._id);
+                    if (detailedRes?.data?.questions) {
+                        const mergedQuestions = pollRes.questions.map(q => {
+                            const stats = detailedRes.data.questions.find(s => String(s._id) === String(q._id));
+                            return stats ? { ...q, ...stats } : q;
+                        });
+                        setPollInfo({ ...pollRes, questions: mergedQuestions });
+                    } else {
+                        setPollInfo(pollRes);
+                    }
                     const eventId = pollRes.linkedEventRegId?._id || pollRes.linkedEventRegId;
                     if (eventId) {
                         try {
@@ -1022,12 +1074,12 @@ export default function PollInsightsDashboard() {
                 venue: linkedEvent?.venue || undefined,
                 // Poll KPI stats for the top card row in the PDF
                 uniqueVoters: summary?.uniqueVoters,
-                registeredVoters: summary?.registeredVoters,
-                guestVoters: summary?.guestVoters,
+                registeredVoters: pollInfo?.linkedEventRegId ? summary?.registeredVoters : undefined,
+                guestVoters: pollInfo?.linkedEventRegId ? summary?.guestVoters : undefined,
                 totalVotes: summary?.totalVotes,
                 questionCount: summary?.questionCount,
-                participationRate: summary?.participationRate ?? null,
-                totalRegistrations: summary?.totalRegistrations,
+                participationRate: pollInfo?.linkedEventRegId ? (summary?.participationRate ?? null) : undefined,
+                totalRegistrations: pollInfo?.linkedEventRegId ? summary?.totalRegistrations : undefined,
                 // Response pattern (unlinked polls only)
                 responsePatternQuestions: !pollInfo?.linkedEventRegId ? (pollInfo?.questions || []) : undefined,
             };

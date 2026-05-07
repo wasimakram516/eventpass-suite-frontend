@@ -10,12 +10,12 @@ import {
   Box,
   Button,
   CircularProgress,
-  Slider,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   IconButton,
+  TextField as MuiTextField,
 } from "@mui/material";
 import VolumeUpIcon from "@mui/icons-material/VolumeUp";
 import VolumeOffIcon from "@mui/icons-material/VolumeOff";
@@ -74,7 +74,7 @@ export default function PollVotingPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [highlightedOption, setHighlightedOption] = useState(null);
-  const [sliderValue, setSliderValue] = useState(0);
+  const [textResponse, setTextResponse] = useState("");
   const [finished, setFinished] = useState(false);
   const [closeTimer, setCloseTimer] = useState(5);
 
@@ -176,19 +176,27 @@ export default function PollVotingPage() {
     }
   }, [background]);
 
-  const handleVote = async (optionIndex) => {
+  const handleVote = async (optionIndex, value = null, textValue = null) => {
     if (submitting || !poll?._id) return;
     const currentQuestion = questions[currentIndex];
     if (!currentQuestion?._id) return;
     setSubmitting(true);
     try {
       const anonToken = registrationId ? null : sessionToken;
-      await voteOnPoll(poll._id, currentQuestion._id, optionIndex, registrationId, anonToken);
+      await voteOnPoll(
+        poll._id,
+        currentQuestion._id,
+        optionIndex,
+        registrationId,
+        anonToken,
+        value,
+        textValue
+      );
       setTimeout(() => {
         if (currentIndex < questions.length - 1) {
           setCurrentIndex((prev) => prev + 1);
           setHighlightedOption(null);
-          setSliderValue(0);
+          setTextResponse("");
           setSubmitting(false);
         } else {
           setFinished(true);
@@ -249,10 +257,10 @@ export default function PollVotingPage() {
 
   if (!poll) {
     return (
-      <Container maxWidth="sm" sx={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <Box maxWidth="sm" sx={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <Background />
         <Typography variant="h5" fontWeight="bold">{t.pollNotFound}</Typography>
-      </Container>
+      </Box>
     );
   }
 
@@ -266,8 +274,7 @@ export default function PollVotingPage() {
   }
 
   const currentQuestion = translatedQuestions[currentIndex] || questions[currentIndex];
-  const optionCount = currentQuestion?.options?.length || 0;
-  const pollType = poll.type || "options";
+  const questionType = currentQuestion?.type || poll?.type || "options";
   const logoUrl = poll?.logoUrl;
 
   return (
@@ -363,57 +370,97 @@ export default function PollVotingPage() {
                 {currentQuestion?.question}
               </Typography>
 
-              {pollType === "slider" ? (
-                <>
-                  <Stack direction="row" spacing={2} justifyContent="center" flexWrap="wrap" sx={{ rowGap: 3, mt: 1, mb: 1 }}>
-                    {(currentQuestion?.options || []).map((option, idx) => (
-                      <Box
-                        key={idx}
-                        display="flex"
-                        flexDirection="column"
-                        alignItems="center"
-                        onClick={() => {
-                          setHighlightedOption(idx);
-                          setSliderValue(idx);
-                          clearTimeout(autoSubmitRef.current);
-                          autoSubmitRef.current = setTimeout(() => handleVote(idx), 500);
-                        }}
+              {questionType === "rating" ? (
+                <Stack direction="row" spacing={1} justifyContent="center">
+                  {Array.from({ length: currentQuestion.scale?.max || 5 }).map((_, i) => {
+                    const val = (currentQuestion.scale?.min || 1) + i * (currentQuestion.scale?.step || 1);
+                    if (val > (currentQuestion.scale?.max || 5)) return null;
+                    return (
+                      <IconButton
+                        key={val}
+                        onClick={() => handleVote(null, val)}
                         sx={{
-                          p: 4, borderRadius: 2, transition: "all 0.3s ease",
-                          borderColor: highlightedOption === idx ? "primary.main" : "grey.300",
-                          cursor: "pointer", minHeight: 150,
+                          color: highlightedOption >= val ? "primary.main" : "grey.400",
+                          transition: "transform 0.2s",
+                          "&:hover": { transform: "scale(1.2)" },
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: 0.5
                         }}
+                        onMouseEnter={() => setHighlightedOption(val)}
+                        onMouseLeave={() => setHighlightedOption(null)}
                       >
-                        {option.imageUrl && (
-                          <Box sx={{ width: "100%", maxWidth: "clamp(50px, 15vw, 120px)", aspectRatio: "1 / 1", transition: "transform 0.25s ease", transform: highlightedOption === idx ? "scale(1.15)" : "scale(1)" }}>
-                            <Box component="img" src={option.imageUrl} alt={option.text || "option"} sx={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: 2, display: "block" }} />
-                          </Box>
+                        {highlightedOption >= val ? (
+                          <ICONS.star sx={{ fontSize: { xs: 40, sm: 60 } }} />
+                        ) : (
+                          <ICONS.starBorder sx={{ fontSize: { xs: 40, sm: 60 } }} />
                         )}
-                        {option.text && (
-                          <Typography variant="caption" textAlign={align} fontWeight="bold" color={highlightedOption === idx ? "primary.main" : "text.secondary"} sx={{ wordBreak: "break-word", fontSize: { xs: "0.75rem", sm: "0.8rem" }, maxWidth: 80 }}>
-                            {option.text}
-                          </Typography>
-                        )}
+                        <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: "bold" }}>
+                          {val}
+                        </Typography>
+                      </IconButton>
+                    );
+                  })}
+                </Stack>
+              ) : questionType === "nps" ? (
+                <Stack direction="row" spacing={1} justifyContent="center" flexWrap="wrap" sx={{ gap: 1 }}>
+                  {Array.from({ length: (currentQuestion.scale?.max || 10) - (currentQuestion.scale?.min || 0) + 1 }).map((_, i) => {
+                    const val = (currentQuestion.scale?.min || 0) + i * (currentQuestion.scale?.step || 1);
+                    if (val > (currentQuestion.scale?.max || 10)) return null;
+                    return (
+                      <Box
+                        key={val}
+                        onClick={() => handleVote(null, val)}
+                        sx={{
+                          width: { xs: 35, sm: 45 },
+                          height: { xs: 35, sm: 45 },
+                          borderRadius: "50%",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          cursor: "pointer",
+                          border: "2px solid",
+                          borderColor: highlightedOption === val ? "primary.main" : "grey.300",
+                          bgcolor: highlightedOption === val ? "primary.main" : "transparent",
+                          color: highlightedOption === val ? "white" : "text.primary",
+                          fontWeight: "bold",
+                          transition: "all 0.2s",
+                          "&:hover": { borderColor: "primary.main", transform: "scale(1.1)" },
+                        }}
+                        onMouseEnter={() => setHighlightedOption(val)}
+                        onMouseLeave={() => setHighlightedOption(null)}
+                      >
+                        {val}
                       </Box>
-                    ))}
-                  </Stack>
-
-                  <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center", mt: 1, mb: 1, fontSize: { xs: "0.875rem", sm: "1rem" } }}>
-                    {currentLang === "ar"
-                      ? "يمكنك اختيار الخيارات بالنقر عليها أو بتحريك المنزلق"
-                      : "You can select options by clicking them or moving the slider"}
-                  </Typography>
-
-                  <Box sx={{ width: "100%", display: "flex", justifyContent: "center", mt: 1 }}>
-                    <Slider
-                      value={sliderValue}
-                      onChange={(e, val) => { setSliderValue(val); const closest = Math.round(val); if (closest !== highlightedOption) setHighlightedOption(closest); }}
-                      onChangeCommitted={(e, val) => { const finalIndex = Math.round(val); clearTimeout(autoSubmitRef.current); autoSubmitRef.current = setTimeout(() => handleVote(finalIndex), 700); }}
-                      step={0.01} min={0} max={optionCount - 1}
-                      sx={{ width: { xs: "85%", sm: 400 }, mt: 1, "& .MuiSlider-thumb": { width: 24, height: 24, bgcolor: "white", border: "2px solid", borderColor: "primary.main" }, "& .MuiSlider-track": { height: 8, bgcolor: "primary.main" }, "& .MuiSlider-rail": { height: 8, bgcolor: "grey.300" } }}
-                    />
-                  </Box>
-                </>
+                    );
+                  })}
+                </Stack>
+              ) : questionType === "text" ? (
+                <Stack spacing={2} width="100%">
+                  <MuiTextField
+                    multiline
+                    minRows={3}
+                    placeholder={currentLang === "ar" ? "اكتب إجابتك هنا..." : "Type your answer here..."}
+                    value={textResponse}
+                    onChange={(e) => setTextResponse(e.target.value)}
+                    fullWidth
+                    sx={{
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: 3,
+                        bgcolor: "white",
+                      },
+                    }}
+                  />
+                  <Button
+                    variant="contained"
+                    size="large"
+                    disabled={!textResponse.trim() || submitting}
+                    onClick={() => handleVote(null, null, textResponse)}
+                    sx={{ borderRadius: 3, py: 1.5 }}
+                  >
+                    {submitting ? <CircularProgress size={24} color="inherit" /> : (currentLang === "ar" ? "إرسال" : "Submit")}
+                  </Button>
+                </Stack>
               ) : (
                 <Stack spacing={2} width="100%">
                   {(currentQuestion?.options || []).map((option, idx) => {

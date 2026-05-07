@@ -164,10 +164,12 @@ export const verifyAttendee = withApiHandler(async (eventSlug, fieldValue) => {
 
 // Vote on a question within a poll (public)
 export const voteOnPoll = withApiHandler(
-  async (pollId, questionId, optionIndex, registrationId = null, sessionToken = null) => {
+  async (pollId, questionId, optionIndex, registrationId = null, sessionToken = null, value = null, textValue = null) => {
     const payload = { questionId, optionIndex };
     if (registrationId) payload.registrationId = registrationId;
     if (sessionToken) payload.sessionToken = sessionToken;
+    if (value !== null) payload.value = value;
+    if (textValue !== null) payload.textValue = textValue;
     const { data } = await api.post(`/votecast/polls/${pollId}/vote`, payload);
     return data;
   },

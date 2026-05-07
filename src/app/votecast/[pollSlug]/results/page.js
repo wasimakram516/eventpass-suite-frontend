@@ -10,11 +10,15 @@ import {
   Chip,
   CircularProgress,
   Divider,
+  FormControl,
+  InputLabel,
   List,
   ListItem,
   ListItemIcon,
   ListItemText,
+  MenuItem,
   Pagination,
+  Select,
   Typography,
 } from "@mui/material";
 import AppCard from "@/components/cards/AppCard";
@@ -219,7 +223,7 @@ function VoterCard({ voter, t, dir, align, language, isAnonymous }) {
                   <Box sx={{ mt: 0.25, textAlign: align, overflow: "hidden", maxWidth: "100%" }}>
                     <Chip
                       size="small"
-                      label={v.optionText || "—"}
+                      label={v.optionText || v.answer || "—"}
                       variant="outlined"
                       avatar={v.optionImage ? <OptionThumb url={v.optionImage} label={v.optionText} /> : undefined}
                       sx={{
@@ -254,8 +258,38 @@ function VoterCard({ voter, t, dir, align, language, isAnonymous }) {
 function buildVoterList(voterResults) {
   const voterMap = new Map();
   for (const question of voterResults.questions || []) {
-    for (const option of question.options || []) {
-      for (const voter of option.voters || []) {
+    const type = question.type || "options";
+    if (type === "options") {
+      for (const option of question.options || []) {
+        for (const voter of option.voters || []) {
+          const key = String(voter._id);
+          if (!voterMap.has(key)) {
+            voterMap.set(key, {
+              _id: voter._id,
+              fullName: voter.fullName,
+              email: voter.email,
+              phone: voter.phone,
+              phoneCode: voter.phoneCode || null,
+              votedAt: voter.votedAt,
+              customFields: voter.customFields || {},
+              isAnonymous: voter.isAnonymous === true,
+              votes: [],
+            });
+          }
+          voterMap.get(key).votes.push({
+            questionId: question._id,
+            question: question.question,
+            type: type,
+            optionText: option.text,
+            optionImage: option.imageUrl || null,
+            answer: voter.answer,
+            value: voter.value,
+          });
+        }
+      }
+    } else {
+      // rating, nps, text
+      for (const voter of question.voters || []) {
         const key = String(voter._id);
         if (!voterMap.has(key)) {
           voterMap.set(key, {
@@ -273,8 +307,9 @@ function buildVoterList(voterResults) {
         voterMap.get(key).votes.push({
           questionId: question._id,
           question: question.question,
-          optionText: option.text,
-          optionImage: option.imageUrl || null,
+          type: type,
+          answer: voter.answer,
+          value: voter.value,
         });
       }
     }
@@ -291,6 +326,7 @@ export default function FullScreenResultsPage() {
   const [loading, setLoading] = useState(true);
   const [poll, setPoll] = useState(null);
   const [page, setPage] = useState(1);
+  const [sortBy, setSortBy] = useState(-1);
 
   useEffect(() => {
     if (!pollSlug) return;
@@ -323,8 +359,15 @@ export default function FullScreenResultsPage() {
   }
 
   const voterList = voterResults ? buildVoterList(voterResults) : [];
-  const totalVoters = voterList.length;
-  const displayVoters = voterList.slice((page - 1) * CARDS_PER_PAGE, page * CARDS_PER_PAGE);
+  
+  const sortedVoterList = [...voterList].sort((a, b) => {
+    const da = a.votedAt ? new Date(a.votedAt).getTime() : 0;
+    const db = b.votedAt ? new Date(b.votedAt).getTime() : 0;
+    return sortBy === -1 ? db - da : da - db;
+  });
+
+  const totalVoters = sortedVoterList.length;
+  const displayVoters = sortedVoterList.slice((page - 1) * CARDS_PER_PAGE, page * CARDS_PER_PAGE);
 
   return (
     <>
@@ -343,9 +386,30 @@ export default function FullScreenResultsPage() {
           <NoDataAvailable />
         ) : (
           <Fragment>
-            <Typography variant="body2" color="text.secondary" mb={2.5} px={0.5}>
-              {t.showing} {Math.min((page - 1) * CARDS_PER_PAGE + 1, totalVoters)}–{Math.min(page * CARDS_PER_PAGE, totalVoters)} {t.of} {totalVoters} {t.records}
-            </Typography>
+            <Box sx={{ 
+              display: "flex", 
+              flexDirection: { xs: "column", sm: "row" },
+              justifyContent: "space-between", 
+              alignItems: { xs: "stretch", sm: "center" }, 
+              mb: 2.5, px: 0.5, gap: 2 
+            }}>
+              <Typography variant="body2" color="text.secondary">
+                {t.showing} {Math.min((page - 1) * CARDS_PER_PAGE + 1, totalVoters)}–{Math.min(page * CARDS_PER_PAGE, totalVoters)} {t.of} {totalVoters} {t.records}
+              </Typography>
+
+              <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 170 } }}>
+                <InputLabel id="sort-label">{language === "ar" ? "ترتيب حسب" : "Sort By"}</InputLabel>
+                <Select
+                  labelId="sort-label"
+                  value={sortBy}
+                  label={language === "ar" ? "ترتيب حسب" : "Sort By"}
+                  onChange={(e) => setSortBy(Number(e.target.value))}
+                >
+                  <MenuItem value={-1}>{language === "ar" ? "الأحدث" : "Most Recent"}</MenuItem>
+                  <MenuItem value={1}>{language === "ar" ? "الأقدم" : "Oldest"}</MenuItem>
+                </Select>
+              </FormControl>
+            </Box>
 
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, justifyContent: "center" }}>
               {displayVoters.map((voter) => (

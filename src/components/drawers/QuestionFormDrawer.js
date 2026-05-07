@@ -10,6 +10,7 @@ import {
   Stack,
   Divider,
   CircularProgress,
+  MenuItem,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import AddIcon from "@mui/icons-material/Add";
@@ -43,6 +44,14 @@ const translations = {
       question: "Question is required",
       options: "At least 2 options are required",
     },
+    type: "Type",
+    optionsType: "Options",
+    ratingType: "Rating",
+    npsType: "NPS",
+    textType: "Text",
+    min: "Min",
+    max: "Max",
+    step: "Step",
   },
   ar: {
     editQuestion: "تحرير السؤال",
@@ -60,6 +69,14 @@ const translations = {
       question: "السؤال مطلوب",
       options: "يجب أن يكون هناك خياران على الأقل",
     },
+    type: "النوع",
+    optionsType: "خيارات",
+    ratingType: "تقييم",
+    npsType: "NPS",
+    textType: "نص",
+    min: "الأدنى",
+    max: "الأقصى",
+    step: "الخطوة",
   },
 };
 
@@ -78,6 +95,8 @@ export default function QuestionFormDrawer({
 
   const [form, setForm] = useState({
     question: "",
+    type: "options",
+    scale: { min: 1, max: 5, step: 1 },
     options: [
       { text: "", imageFile: null, imagePreview: "", removeImage: false },
       { text: "", imageFile: null, imagePreview: "", removeImage: false },
@@ -99,6 +118,8 @@ export default function QuestionFormDrawer({
       }
       setForm({
         question: initialValues?.question || "",
+        type: initialValues?.type === "slider" ? "rating" : (initialValues?.type || "options"),
+        scale: initialValues?.scale || { min: 1, max: 5, step: 1 },
         options: initialValues?.options?.length > 0
           ? initialValues.options.map(opt => ({
               text: opt.text || "",
@@ -197,12 +218,14 @@ export default function QuestionFormDrawer({
   const validate = () => {
     const newErrors = {};
     if (!form.question.trim()) newErrors.question = t.errors.question;
-    const validOptions = form.options.filter(opt => {
-      const hasText = opt.text?.trim() !== "";
-      const hasImage = opt.imagePreview?.trim() !== "" && !opt.removeImage;
-      return hasText || hasImage;
-    });
-    if (validOptions.length < 2) newErrors.options = t.errors.options;
+    if (form.type === "options") {
+      const validOptions = form.options.filter(opt => {
+        const hasText = opt.text?.trim() !== "";
+        const hasImage = opt.imagePreview?.trim() !== "" && !opt.removeImage;
+        return hasText || hasImage;
+      });
+      if (validOptions.length < 2) newErrors.options = t.errors.options;
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -211,62 +234,68 @@ export default function QuestionFormDrawer({
     if (!validate()) return;
     setLoading(true);
     try {
-      const filesToUpload = [];
-      const fileKeyMap = {};
-      form.options.forEach((opt, index) => {
-        if (opt.imageFile && !opt.removeImage) {
-          filesToUpload.push({ file: opt.imageFile, type: "optionImage", label: `Option ${index + 1}` });
-          fileKeyMap[filesToUpload.length - 1] = index;
-        }
-      });
-
       let uploadedUrls = {};
-      if (filesToUpload.length > 0) {
-        setShowUploadProgress(true);
-        const uploads = filesToUpload.map(item => ({
-          file: item.file, label: item.label, percent: 0, loaded: 0, total: item.file.size, error: null, url: null, type: item.type,
-        }));
-        setUploadProgress(uploads);
+      let optionsPayload = [];
 
-        const urls = await uploadMediaFiles({
-          files: filesToUpload.map(item => item.file),
-          businessSlug,
-          moduleName: "VoteCast",
-          onProgress: (progressUploads) => {
-            progressUploads.forEach((pu, index) => {
-              if (uploads[index]) {
-                uploads[index].percent = pu.percent;
-                uploads[index].loaded = pu.loaded;
-                uploads[index].total = pu.total;
-                uploads[index].error = pu.error;
-                uploads[index].url = pu.url;
-              }
-            });
-            setUploadProgress([...uploads]);
-          },
+      if (form.type === "options") {
+        const filesToUpload = [];
+        const fileKeyMap = {};
+        form.options.forEach((opt, index) => {
+          if (opt.imageFile && !opt.removeImage) {
+            filesToUpload.push({ file: opt.imageFile, type: "optionImage", label: `Option ${index + 1}` });
+            fileKeyMap[filesToUpload.length - 1] = index;
+          }
         });
 
-        urls.forEach((url, uploadIndex) => {
-          const optionIndex = fileKeyMap[uploadIndex];
-          if (optionIndex !== undefined) uploadedUrls[optionIndex] = url;
-        });
-        setShowUploadProgress(false);
-      }
+        if (filesToUpload.length > 0) {
+          setShowUploadProgress(true);
+          const uploads = filesToUpload.map(item => ({
+            file: item.file, label: item.label, percent: 0, loaded: 0, total: item.file.size, error: null, url: null, type: item.type,
+          }));
+          setUploadProgress(uploads);
 
-      const optionsPayload = form.options.map((opt, index) => {
-        let imageUrl = null;
-        if (opt.removeImage) {
-          imageUrl = null;
-        } else if (uploadedUrls[index]) {
-          imageUrl = uploadedUrls[index];
-        } else if (opt.imagePreview?.startsWith("http")) {
-          imageUrl = opt.imagePreview;
+          const urls = await uploadMediaFiles({
+            files: filesToUpload.map(item => item.file),
+            businessSlug,
+            moduleName: "VoteCast",
+            onProgress: (progressUploads) => {
+              progressUploads.forEach((pu, index) => {
+                if (uploads[index]) {
+                  uploads[index].percent = pu.percent;
+                  uploads[index].loaded = pu.loaded;
+                  uploads[index].total = pu.total;
+                  uploads[index].error = pu.error;
+                  uploads[index].url = pu.url;
+                }
+              });
+              setUploadProgress([...uploads]);
+            },
+          });
+
+          urls.forEach((url, uploadIndex) => {
+            const optionIndex = fileKeyMap[uploadIndex];
+            if (optionIndex !== undefined) uploadedUrls[optionIndex] = url;
+          });
+          setShowUploadProgress(false);
         }
-        return { text: opt.text, imageUrl };
-      });
+
+        optionsPayload = form.options.map((opt, index) => {
+          let imageUrl = null;
+          if (opt.removeImage) {
+            imageUrl = null;
+          } else if (uploadedUrls[index]) {
+            imageUrl = uploadedUrls[index];
+          } else if (opt.imagePreview?.startsWith("http")) {
+            imageUrl = opt.imagePreview;
+          }
+          return { text: opt.text, imageUrl };
+        });
+      }
 
       const payload = {
         question: form.question.trim(),
+        type: form.type,
+        scale: form.scale,
         options: JSON.stringify(optionsPayload),
       };
 
@@ -307,63 +336,106 @@ export default function QuestionFormDrawer({
             multiline
           />
 
-          <Divider />
-          <Typography variant="subtitle2" fontWeight="bold">{t.options}</Typography>
+          <TextField
+            select
+            label={t.type}
+            value={form.type}
+            onChange={e => setForm(prev => ({ ...prev, type: e.target.value }))}
+            fullWidth
+          >
+            <MenuItem value="options">{t.optionsType}</MenuItem>
+            <MenuItem value="rating">{t.ratingType}</MenuItem>
+            <MenuItem value="nps">{t.npsType}</MenuItem>
+            <MenuItem value="text">{t.textType}</MenuItem>
+          </TextField>
 
-          {form.options.map((option, index) => (
-            <Stack key={index} spacing={1}>
-              <Stack direction="row" spacing={1} alignItems="center">
-                <TextField
-                  fullWidth
-                  value={option.text}
-                  onChange={e => handleOptionChange(index, e.target.value)}
-                  placeholder={`${t.option} ${index + 1}`}
-                />
-                {form.options.length > 2 && (
-                  <IconButton color="error" onClick={() => removeOption(index)}>
-                    <DeleteIcon />
-                  </IconButton>
-                )}
-              </Stack>
-
-              <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-                <Button component="label" variant="outlined" size="small" startIcon={<UploadIcon />} sx={getStartIconSpacing(dir)}>
-                  {t.uploadImage}
-                  <input type="file" hidden accept="image/*" onChange={e => handleOptionImageChange(index, e.target.files[0])} />
-                </Button>
-
-                {option.imagePreview && !option.removeImage && (
-                  <Box sx={{ mt: 1.5 }}>
-                    <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
-                      {initialValues && !option.imageFile ? "Current Image" : "Preview"}
-                    </Typography>
-                    <Box sx={{ position: "relative", display: "inline-block", width: 200 }}>
-                      <img
-                        src={option.imagePreview}
-                        alt={`Option ${index + 1} preview`}
-                        style={{ width: "200px", maxHeight: 100, height: "auto", borderRadius: 6, objectFit: "cover" }}
-                      />
-                      <IconButton
-                        size="small"
-                        onClick={() => handleDeleteOptionImage(index)}
-                        sx={{ position: "absolute", top: -18, right: 6, bgcolor: "error.main", color: "#fff", "&:hover": { bgcolor: "error.dark" } }}
-                      >
-                        <ICONS.delete sx={{ fontSize: 18 }} />
-                      </IconButton>
-                    </Box>
-                  </Box>
-                )}
-              </Box>
+          {(form.type === "rating" || form.type === "nps") && (
+            <Stack direction="row" spacing={2}>
+              <TextField
+                label={t.min}
+                type="number"
+                value={form.scale.min}
+                onChange={e => setForm(prev => ({ ...prev, scale: { ...prev.scale, min: Number(e.target.value) } }))}
+                fullWidth
+              />
+              <TextField
+                label={t.max}
+                type="number"
+                value={form.scale.max}
+                onChange={e => setForm(prev => ({ ...prev, scale: { ...prev.scale, max: Number(e.target.value) } }))}
+                fullWidth
+              />
+              <TextField
+                label={t.step}
+                type="number"
+                value={form.scale.step}
+                onChange={e => setForm(prev => ({ ...prev, scale: { ...prev.scale, step: Number(e.target.value) } }))}
+                fullWidth
+              />
             </Stack>
-          ))}
-
-          {errors.options && (
-            <Typography variant="caption" color="error">{errors.options}</Typography>
           )}
 
-          <Button variant="outlined" startIcon={<AddIcon />} onClick={addOption} sx={getStartIconSpacing(dir)}>
-            {t.addOption}
-          </Button>
+          {form.type === "options" && (
+            <>
+              <Divider />
+              <Typography variant="subtitle2" fontWeight="bold">{t.options}</Typography>
+
+              {form.options.map((option, index) => (
+                <Stack key={index} spacing={1}>
+                  <Stack direction="row" spacing={1} alignItems="center">
+                    <TextField
+                      fullWidth
+                      value={option.text}
+                      onChange={e => handleOptionChange(index, e.target.value)}
+                      placeholder={`${t.option} ${index + 1}`}
+                    />
+                    {form.options.length > 2 && (
+                      <IconButton color="error" onClick={() => removeOption(index)}>
+                        <DeleteIcon />
+                      </IconButton>
+                    )}
+                  </Stack>
+
+                  <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+                    <Button component="label" variant="outlined" size="small" startIcon={<UploadIcon />} sx={getStartIconSpacing(dir)}>
+                      {t.uploadImage}
+                      <input type="file" hidden accept="image/*" onChange={e => handleOptionImageChange(index, e.target.files[0])} />
+                    </Button>
+
+                    {option.imagePreview && !option.removeImage && (
+                      <Box sx={{ mt: 1.5 }}>
+                        <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                          {initialValues && !option.imageFile ? "Current Image" : "Preview"}
+                        </Typography>
+                        <Box sx={{ position: "relative", display: "inline-block", width: 200 }}>
+                          <img
+                            src={option.imagePreview}
+                            alt={`Option ${index + 1} preview`}
+                            style={{ width: "200px", maxHeight: 100, height: "auto", borderRadius: 6, objectFit: "cover" }}
+                          />
+                          <IconButton
+                            size="small"
+                            onClick={() => handleDeleteOptionImage(index)}
+                            sx={{ position: "absolute", top: -18, right: 6, bgcolor: "error.main", color: "#fff", "&:hover": { bgcolor: "error.dark" } }}
+                          >
+                            <ICONS.delete sx={{ fontSize: 18 }} />
+                          </IconButton>
+                        </Box>
+                      </Box>
+                    )}
+                  </Box>
+                </Stack>
+              ))}
+
+              {errors.options && (
+                <Typography variant="caption" color="error">{errors.options}</Typography>
+              )}
+
+              <Button variant="outlined" startIcon={<AddIcon />} onClick={addOption} sx={getStartIconSpacing(dir)}>
+                {t.addOption}
+              </Button>
+            </>
+          )}
         </Stack>
 
         <Button
