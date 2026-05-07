@@ -83,6 +83,12 @@ export default function AskQuestionsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [openForm, setOpenForm] = useState(false);
   const [questionText, setQuestionText] = useState("");
+  // Use registrationId to verify access; if missing and verification is required, redirect back.
+  useEffect(() => {
+    if (session && session.linkedEventRegId?._id && session.primaryField && !registrationId) {
+      router.replace(`/stageq/${slug}`);
+    }
+  }, [session, registrationId, slug, router]);
 
   const handleVoteUpdated = useCallback(({ questionId, votes }) => {
     setQuestions(prev => prev.map(q => q._id === questionId ? { ...q, votes } : q));

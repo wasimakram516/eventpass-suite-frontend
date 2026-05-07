@@ -464,7 +464,7 @@ export default function DigiPassRegistration() {
               <CountryCodeSelector
                 value={isoCode}
                 onChange={(iso) => handleCountryCodeChange(field.name, iso)}
-                disabled={false}
+                disabled={event?.linkedEventRegId ? !event.linkedEventRegId.useInternationalNumbers : false}
                 dir={dir}
               />
             ),

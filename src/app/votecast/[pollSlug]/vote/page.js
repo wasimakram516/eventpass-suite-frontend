@@ -99,6 +99,14 @@ export default function PollVotingPage() {
     }
     return token;
   }, [pollSlug]);
+
+  // Use registrationId to verify access; if missing and verification is required (and no guest access), redirect back.
+  useEffect(() => {
+    if (!loading && poll && poll.linkedEventRegId && poll.primaryField && !registrationId && !poll.allowGuest) {
+      router.replace(`/votecast/${pollSlug}`);
+    }
+  }, [loading, poll, registrationId, pollSlug, router]);
+
   const welcomeMessage = userName ? `${t.welcome}, ${userName}!` : `${t.welcome}!`;
 
   // Fetch poll + linked event
@@ -174,7 +182,7 @@ export default function PollVotingPage() {
     if (!currentQuestion?._id) return;
     setSubmitting(true);
     try {
-      const anonToken = poll.linkedEventRegId ? null : sessionToken;
+      const anonToken = registrationId ? null : sessionToken;
       await voteOnPoll(poll._id, currentQuestion._id, optionIndex, registrationId, anonToken);
       setTimeout(() => {
         if (currentIndex < questions.length - 1) {

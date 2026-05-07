@@ -704,8 +704,11 @@ export const exportChartsToPDF = async (
     const hasParticipationRate = eventInfo.participationRate !== undefined && eventInfo.participationRate !== null;
     const voteCards = [
       { label: fixParens(translations.totalVotes || "Total Votes Cast", isRTL),         value: String(eventInfo.totalVotes ?? 0),    rgbColor: rgb(0, 0.467, 0.714) },
-      ...(hasParticipationRate ? [{ label: fixParens(translations.participationRate || "Participation Rate", isRTL), value: `${eventInfo.participationRate}%`, rgbColor: rgb(0.008, 0.518, 0.780) }] : []),
-      { label: fixParens(translations.questionCount || "Question Count", isRTL),        value: String(eventInfo.questionCount ?? 0), rgbColor: rgb(0.024, 0.714, 0.831) },
+      { label: fixParens(translations.uniqueVoters || "Unique Voters", isRTL),         value: String(eventInfo.uniqueVoters ?? 0),   rgbColor: rgb(0.008, 0.518, 0.780) },
+      ...(eventInfo.registeredVoters !== undefined ? [{ label: fixParens(translations.registeredVoters || "Registered Voters", isRTL), value: String(eventInfo.registeredVoters), rgbColor: rgb(0.015, 0.616, 0.805) }] : []),
+      ...(eventInfo.guestVoters !== undefined ? [{ label: fixParens(translations.guestVoters || "Guest Voters", isRTL), value: String(eventInfo.guestVoters), rgbColor: rgb(0.024, 0.714, 0.831) }] : []),
+      ...(hasParticipationRate ? [{ label: fixParens(translations.participationRate || "Participation Rate", isRTL), value: `${eventInfo.participationRate}%`, rgbColor: rgb(0.486, 0.227, 0.929) }] : []),
+      { label: fixParens(translations.questionCount || "Question Count", isRTL),        value: String(eventInfo.questionCount ?? 0), rgbColor: rgb(0.055, 0.647, 0.914) },
     ];
     yPosition = drawSimpleKpiCards(page, voteCards, yPosition, pageWidth, margin, font, boldFont, isRTL);
     yPosition -= spacing;

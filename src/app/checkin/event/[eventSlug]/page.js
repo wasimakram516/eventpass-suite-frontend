@@ -37,6 +37,7 @@ import { formatDateWithTime, formatTime } from "@/utils/dateUtils";
 import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
 import { useMessage } from "@/contexts/MessageContext";
 import { downloadDefaultQrWrapperAsImage, hasDefaultQrWrapperDesign, hasWrapperDesign } from "@/utils/defaultQrWrapperDownload";
+import BadgePreview from "@/components/badges/BadgePreview";
 
 export default function EventDetails() {
   const { eventSlug } = useParams();
@@ -145,6 +146,7 @@ export default function EventDetails() {
 
   const [event, setEvent] = useState(null);
   const [translatedEvent, setTranslatedEvent] = useState(null);
+  const [showSummaryModal, setShowSummaryModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [registration, setRegistration] = useState(null);
@@ -443,7 +445,7 @@ export default function EventDetails() {
         }}
       >
         {/* Logo shown outside the card */}
-        {logoUrl && (
+        {logoUrl && logoUrl.trim() !== "" && (
           <Box
             sx={{
               width: "100%",
@@ -718,18 +720,69 @@ export default function EventDetails() {
 
                 {/* Confirmation status */}
                 <Stack spacing={2} alignItems="center" sx={{ width: "100%" }}>
-                  {confirmed ? (
-                    <Alert severity="success" sx={{ mb: 0, width: "100%" }}>
-                      {justConfirmed ? t.presenceConfirmed : t.alreadyConfirmed}
-                    </Alert>
-                  ) : notConfirmed ? (
-                    <Alert severity="error" sx={{ mb: 0, width: "100%" }}>
-                      {justNotConfirmed ? t.attendanceNotConfirmed : t.alreadyNotConfirmed}
-                    </Alert>
+                  {registration && event?.showBadgePreviewInAttendance && (
+                    <Box sx={{ width: "100%", mt: 1 }}>
+                      <Button
+                        variant="outlined"
+                        startIcon={<ICONS.view />}
+                        onClick={() => setShowSummaryModal(true)}
+                        fullWidth
+                        sx={{ borderRadius: "12px", textTransform: "none", fontWeight: 700 }}
+                      >
+                        Show Summary
+                      </Button>
+
+                      <Dialog
+                        open={showSummaryModal}
+                        onClose={() => setShowSummaryModal(false)}
+                        maxWidth="sm"
+                        fullWidth
+                        PaperProps={{
+                          sx: { borderRadius: "24px", p: 0, bgcolor: "transparent", boxShadow: "none" }
+                        }}
+                      >
+                        <Box sx={{ position: "relative" }}>
+                          <Button
+                            onClick={() => setShowSummaryModal(false)}
+                            sx={{
+                              position: "absolute",
+                              top: 12,
+                              right: 24,
+                              zIndex: 10,
+                              minWidth: 0,
+                              p: 1,
+                              bgcolor: "rgba(255,255,255,0.8)",
+                              borderRadius: "50%",
+                              color: "#000",
+                              "&:hover": { bgcolor: "#fff" }
+                            }}
+                          >
+                            <ICONS.close />
+                          </Button>
+                          <BadgePreview
+                            registration={registration}
+                            event={translatedEvent || event}
+                            preview={true}
+                          />
+                        </Box>
+                      </Dialog>
+                    </Box>
+                  )}
+
+                  {(confirmed || notConfirmed) ? (
+                    confirmed ? (
+                      <Alert severity="success" sx={{ mb: 0, width: "100%", borderRadius: 2 }}>
+                        {justConfirmed ? t.presenceConfirmed : t.alreadyConfirmed}
+                      </Alert>
+                    ) : (
+                      <Alert severity="error" sx={{ mb: 0, width: "100%", borderRadius: 2 }}>
+                        {justNotConfirmed ? t.attendanceNotConfirmed : t.alreadyNotConfirmed}
+                      </Alert>
+                    )
                   ) : (
                     <>
                       {registrationError && (
-                        <Alert severity="error" sx={{ mb: 0, width: "100%" }}>
+                        <Alert severity="error" sx={{ mb: 0, width: "100%", borderRadius: 2 }}>
                           {registrationError}
                         </Alert>
                       )}
@@ -738,6 +791,7 @@ export default function EventDetails() {
                         size="large"
                         onClick={handleConfirmPresenceClick}
                         disabled={confirming}
+                        fullWidth
                         {...(dir === "rtl"
                           ? { endIcon: <ICONS.checkCircle /> }
                           : { startIcon: <ICONS.checkCircle /> })}
@@ -757,8 +811,9 @@ export default function EventDetails() {
                   {/* Download QR button */}
                   {registration?.token && (
                     <Button
-                      variant="contained"
+                      variant="outlined"
                       size="large"
+                      fullWidth
                       {...(dir === "rtl"
                         ? { endIcon: <ICONS.download /> }
                         : { startIcon: <ICONS.download /> })}

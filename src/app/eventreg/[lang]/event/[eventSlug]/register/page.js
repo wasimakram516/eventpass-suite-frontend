@@ -38,6 +38,7 @@ import { validatePhoneNumber } from "@/utils/phoneValidation";
 import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
 import { useMessage } from "@/contexts/MessageContext";
 import { downloadDefaultQrWrapperAsImage, hasDefaultQrWrapperDesign, hasWrapperDesign } from "@/utils/defaultQrWrapperDownload";
+import BadgePreview from "@/components/badges/BadgePreview";
 
 export default function Registration() {
   const { eventSlug, lang } = useParams();
@@ -92,6 +93,7 @@ export default function Registration() {
   const [translationsReady, setTranslationsReady] = useState(false);
   const [translatedEvent, setTranslatedEvent] = useState(null);
   const [qrToken, setQrToken] = useState(null);
+  const [registrationData, setRegistrationData] = useState(null);
   const [countryIsoCodes, setCountryIsoCodes] = useState({});
   const qrCodeRef = useRef(null);
   const { globalConfig } = useGlobalConfig();
@@ -303,6 +305,7 @@ export default function Registration() {
     if (!result?.error) {
       setShowDialog(true);
       if (event?.showQrAfterRegistration) setQrToken(result.token);
+      setRegistrationData(result.registration || { ...normalizedFormData, token: result.token });
     } else {
       setFieldErrors({ _global: result.message || t.registrationFailed });
     }
@@ -610,7 +613,7 @@ export default function Registration() {
       <Dialog
         open={showDialog}
         onClose={handleDialogClose}
-        maxWidth="md"
+        maxWidth="sm"
         fullWidth
         dir={dir}
       >
@@ -635,91 +638,114 @@ export default function Registration() {
             <ICONS.close sx={{ fontSize: 22 }} />
           </IconButton>
 
-          <Box display="flex" flexDirection="column" alignItems="center">
-            <ICONS.checkCircle sx={{ fontSize: 70, color: "#28a745", mb: 2 }} />
-            <Typography variant="h5" fontWeight="bold">
+          <Box display="flex" flexDirection="column" alignItems="center" sx={{ mt: 1 }}>
+            <ICONS.checkCircle sx={{ fontSize: 44, color: "#28a745", mb: 0.5 }} />
+            <Typography variant="h6" fontWeight="bold" sx={{ fontSize: "1.1rem" }}>
               {t.registrationSuccess}
             </Typography>
           </Box>
         </DialogTitle>
 
-        <DialogContent sx={{ textAlign: "center" }}>
-          <Typography variant="body1" sx={{ mb: 2 }}>
-            {t.thankYouForRegistering}
-          </Typography>
-
-          {/* Approval message (does NOT block QR anymore) */}
-          {event?.requiresApproval && (
-            <Box
-              sx={{
-                backgroundColor: "#fff3e0",
-                borderLeft: dir === "rtl" ? "none" : "4px solid #ff6f00",
-                borderRight: dir === "rtl" ? "4px solid #ff6f00" : "none",
-                borderRadius: 1,
-                p: 2,
-                mb: 3,
-                textAlign: dir === "rtl" ? "right" : "left",
-                mx: "auto",
-                width: "fit-content",
-                maxWidth: "100%",
-              }}
-            >
-              <Typography variant="body1">
-                {t.approvalPendingMessage}
-              </Typography>
+        <DialogContent sx={{ textAlign: "center", px: 1 }}>
+          {/* Hidden QR for download logic if preview is shown */}
+          {qrToken && (
+            <Box sx={{ display: "none" }} ref={qrCodeRef}>
+              <QRCodeCanvas
+                id="qr-code-download-hidden"
+                value={qrToken}
+                size={180}
+                bgColor="#ffffff"
+                includeMargin
+              />
             </Box>
           )}
 
-          {/* Show QR ONLY if event.showQrAfterRegistration is true */}
-          {event?.showQrAfterRegistration && qrToken && (
+          {event?.showBadgePreviewAfterRegistration && registrationData ? (
+            <BadgePreview
+              registration={registrationData}
+              event={translatedEvent || event}
+              preview={true}
+            />
+          ) : (
             <>
-              <Typography variant="subtitle2" sx={{ color: "text.secondary" }}>
-                {t.yourToken}
+              <Typography variant="body1" sx={{ mb: 2 }}>
+                {t.thankYouForRegistering}
               </Typography>
 
-              <Box sx={{ display: "flex", justifyContent: "center", mt: 1 }}>
+              {/* Approval message (does NOT block QR anymore) */}
+              {event?.requiresApproval && (
                 <Box
                   sx={{
-                    px: 2,
-                    py: 0.5,
-                    backgroundColor: "primary.main",
-                    color: "#fff",
-                    borderRadius: "20px",
-                    fontWeight: 600,
-                    fontFamily: "monospace",
-                    fontSize: 16,
-                  }}
-                >
-                  {qrToken}
-                </Box>
-              </Box>
-
-              {/* QR canvas */}
-              <Box mt={2} display="flex" justifyContent="center" ref={qrCodeRef}>
-                <Paper
-                  id="qr-container"
-                  elevation={3}
-                  sx={{
+                    backgroundColor: "#fff3e0",
+                    borderLeft: dir === "rtl" ? "none" : "4px solid #ff6f00",
+                    borderRight: dir === "rtl" ? "4px solid #ff6f00" : "none",
+                    borderRadius: 1,
                     p: 2,
-                    borderRadius: 2,
-                    backgroundColor: "#fff",
-                    display: "inline-block",
+                    mb: 3,
+                    textAlign: dir === "rtl" ? "right" : "left",
+                    mx: "auto",
+                    width: "fit-content",
+                    maxWidth: "100%",
                   }}
                 >
-                  <QRCodeCanvas
-                    id="qr-code"
-                    value={qrToken}
-                    size={180}
-                    bgColor="#ffffff"
-                    includeMargin
-                    style={{
-                      padding: "12px",
-                      background: "#ffffff",
-                      borderRadius: "8px",
-                    }}
-                  />
-                </Paper>
-              </Box>
+                  <Typography variant="body1">
+                    {t.approvalPendingMessage}
+                  </Typography>
+                </Box>
+              )}
+
+              {/* Show QR ONLY if event.showQrAfterRegistration is true */}
+              {event?.showQrAfterRegistration && qrToken && (
+                <>
+                  <Typography variant="subtitle2" sx={{ color: "text.secondary" }}>
+                    {t.yourToken}
+                  </Typography>
+
+                  <Box sx={{ display: "flex", justifyContent: "center", mt: 1 }}>
+                    <Box
+                      sx={{
+                        px: 2,
+                        py: 0.5,
+                        backgroundColor: "primary.main",
+                        color: "#fff",
+                        borderRadius: "20px",
+                        fontWeight: 600,
+                        fontFamily: "monospace",
+                        fontSize: 16,
+                      }}
+                    >
+                      {qrToken}
+                    </Box>
+                  </Box>
+
+                  {/* QR canvas */}
+                  <Box mt={2} display="flex" justifyContent="center">
+                    <Paper
+                      id="qr-container"
+                      elevation={3}
+                      sx={{
+                        p: 2,
+                        borderRadius: 2,
+                        backgroundColor: "#fff",
+                        display: "inline-block",
+                      }}
+                    >
+                      <QRCodeCanvas
+                        id="qr-code"
+                        value={qrToken}
+                        size={180}
+                        bgColor="#ffffff"
+                        includeMargin
+                        style={{
+                          padding: "12px",
+                          background: "#ffffff",
+                          borderRadius: "8px",
+                        }}
+                      />
+                    </Paper>
+                  </Box>
+                </>
+              )}
             </>
           )}
         </DialogContent>

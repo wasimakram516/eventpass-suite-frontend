@@ -151,8 +151,8 @@ export const cloneQuestion = withApiHandler(
 );
 
 // Verify attendee by poll ID (public)
-export const verifyAttendeeByPoll = withApiHandler(async (pollId, fieldValue) => {
-  const { data } = await api.post("/votecast/polls/verify-by-poll", { pollId, fieldValue });
+export const verifyAttendeeByPoll = withApiHandler(async (pollId, fieldValue, isoCode) => {
+  const { data } = await api.post("/votecast/polls/verify-by-poll", { pollId, fieldValue, isoCode });
   return data;
 });
 

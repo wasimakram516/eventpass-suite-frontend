@@ -64,6 +64,8 @@ const translations = {
     deleteMediaTitle: "Delete Media",
     deleteMediaMessage: "Are you sure you want to delete this media? This action cannot be undone.",
     deleteConfirmBtn: "Delete",
+    allowGuest: "Allow to continue as a guest",
+    guestThreshold: "Tries required before guest option appears",
   },
   ar: {
     createTitle: "إنشاء استطلاع",
@@ -96,6 +98,8 @@ const translations = {
     deleteMediaTitle: "حذف الوسائط",
     deleteMediaMessage: "هل أنت متأكد من حذف هذه الوسائط؟ لا يمكن التراجع عن هذا الإجراء.",
     deleteConfirmBtn: "حذف",
+    allowGuest: "السماح بالمتابعة كضيف",
+    guestThreshold: "المحاولات المطلوبة قبل ظهور خيار الضيف",
   },
 };
 
@@ -150,6 +154,8 @@ export default function PollModal({ open, onClose, onSubmit, initialValues, sele
     type: "options",
     linkedEventRegId: "",
     primaryField: "",
+    allowGuest: false,
+    guestThreshold: 0,
   });
 
   // Media state
@@ -173,6 +179,8 @@ export default function PollModal({ open, onClose, onSubmit, initialValues, sele
         type: initialValues?.type || "options",
         linkedEventRegId: linkedId,
         primaryField: initialValues?.primaryField || "",
+        allowGuest: initialValues?.allowGuest || false,
+        guestThreshold: initialValues?.guestThreshold || 0,
       });
       // Restore existing media previews
       setLogo(null);
@@ -324,6 +332,8 @@ export default function PollModal({ open, onClose, onSubmit, initialValues, sele
         logoUrl: finalLogoUrl,
         background: { en: finalBgEn || null, ar: finalBgAr || null },
         businessSlug: selectedBusiness,
+        allowGuest: formData.allowGuest,
+        guestThreshold: formData.guestThreshold,
       };
       await onSubmit(payload, isEdit ? initialValues._id : null);
       setLoading(false);
@@ -484,6 +494,33 @@ export default function PollModal({ open, onClose, onSubmit, initialValues, sele
                 <Typography variant="caption" color="error" sx={{ mt: 0.5, display: "block" }}>
                   {errors.primaryField}
                 </Typography>
+              )}
+            </Box>
+          )}
+
+          {/* Guest Option */}
+          {formData.linkedEventRegId && (
+            <Box sx={{ mt: 1 }}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={formData.allowGuest}
+                    onChange={(e) => setFormData(prev => ({ ...prev, allowGuest: e.target.checked }))}
+                  />
+                }
+                label={<Typography variant="body2">{t.allowGuest}</Typography>}
+              />
+              {formData.allowGuest && (
+                <TextField
+                  label={t.guestThreshold}
+                  type="number"
+                  fullWidth
+                  size="small"
+                  sx={{ mt: 1 }}
+                  value={formData.guestThreshold}
+                  onChange={(e) => setFormData(prev => ({ ...prev, guestThreshold: parseInt(e.target.value) || 0 }))}
+                  InputProps={{ inputProps: { min: 0 } }}
+                />
               )}
             </Box>
           )}

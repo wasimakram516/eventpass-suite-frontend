@@ -97,6 +97,8 @@ const translations = {
     useInternationalNumbers: "Allow International Numbers",
     showQrToggle: "Show QR code after registration?",
     showQrOnBadgeToggle: "Show QR Code on Printed Badge?",
+    showBadgePreviewAfterRegistrationToggle: "Show Badge Preview after Registration?",
+    showBadgePreviewInAttendanceToggle: "Show Preview Badge in Attendance Page?",
     requiresApprovalToggle: "Require admin approval for registrations?",
     allowMultipleBadgePrintingToggle: "Allow Multiple Badge Printing",
     createCheckinOnFirstPrintToggle: "Create Check-in Record on First Badge Print",
@@ -198,6 +200,8 @@ const translations = {
     useInternationalNumbers: "السماح بالأرقام الدولية",
     showQrToggle: "عرض رمز الاستجابة السريعة بعد التسجيل؟",
     showQrOnBadgeToggle: "عرض رمز QR على بطاقة الطباعة؟",
+    showBadgePreviewAfterRegistrationToggle: "عرض معاينة الشارة بعد التسجيل؟",
+    showBadgePreviewInAttendanceToggle: "عرض معاينة الشارة في صفحة الحضور؟",
     requiresApprovalToggle: "يتطلب موافقة المسؤول على التسجيلات؟",
     allowMultipleBadgePrintingToggle: "السماح بطباعة الشارة أكثر من مرة",
     createCheckinOnFirstPrintToggle: "إنشاء سجل تسجيل دخول عند أول طباعة للشارة",
@@ -338,6 +342,8 @@ const EventModal = ({
     useInternationalNumbers: false,
     showQrAfterRegistration: false,
     showQrOnBadge: true,
+    showBadgePreviewAfterRegistration: false,
+    showBadgePreviewInAttendance: false,
     requiresApproval: false,
     allowMultipleBadgePrinting: true,
     createCheckinOnFirstPrint: false,
@@ -427,6 +433,8 @@ const EventModal = ({
         showQrAfterRegistration:
           initialValues?.showQrAfterRegistration || false,
         showQrOnBadge: initialValues?.showQrOnBadge ?? true,
+        showBadgePreviewAfterRegistration: initialValues?.showBadgePreviewAfterRegistration || false,
+        showBadgePreviewInAttendance: initialValues?.showBadgePreviewInAttendance || false,
         requiresApproval: initialValues?.requiresApproval || false,
         allowMultipleBadgePrinting: initialValues?.allowMultipleBadgePrinting ?? true,
         createCheckinOnFirstPrint: initialValues?.createCheckinOnFirstPrint ?? false,
@@ -520,6 +528,7 @@ const EventModal = ({
         useInternationalNumbers: false,
         showQrAfterRegistration: false,
         showQrOnBadge: true,
+        showBadgePreviewAfterRegistration: false,
         requiresApproval: false,
         allowMultipleBadgePrinting: true,
         createCheckinOnFirstPrint: false,
@@ -1211,6 +1220,8 @@ const EventModal = ({
         requiresApproval: formData.requiresApproval,
         allowMultipleBadgePrinting: formData.allowMultipleBadgePrinting,
         createCheckinOnFirstPrint: formData.createCheckinOnFirstPrint,
+        showBadgePreviewAfterRegistration: formData.showBadgePreviewAfterRegistration,
+        showBadgePreviewInAttendance: formData.showBadgePreviewInAttendance,
         defaultLanguage: formData.defaultLanguage,
         useInternationalNumbers: formData.useInternationalNumbers,
         useCustomEmailTemplate: formData.useCustomEmailTemplate,
@@ -1601,6 +1612,27 @@ const EventModal = ({
                     />
                   </Box>
 
+                  {!isClosed && (
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={formData.showBadgePreviewAfterRegistration}
+                            onChange={(e) =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                showBadgePreviewAfterRegistration: e.target.checked,
+                              }))
+                            }
+                            color="primary"
+                          />
+                        }
+                        label={t.showBadgePreviewAfterRegistrationToggle}
+                        sx={{ alignSelf: "start" }}
+                      />
+                    </Box>
+                  )}
+
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     <FormControlLabel
                       control={
@@ -1619,8 +1651,28 @@ const EventModal = ({
                       sx={{ alignSelf: "start" }}
                     />
                   </Box>
-
                 </>
+              )}
+
+              {isClosed && (
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={formData.showBadgePreviewInAttendance}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            showBadgePreviewInAttendance: e.target.checked,
+                          }))
+                        }
+                        color="primary"
+                      />
+                    }
+                    label={t.showBadgePreviewInAttendanceToggle}
+                    sx={{ alignSelf: "start" }}
+                  />
+                </Box>
               )}
 
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>

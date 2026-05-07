@@ -88,6 +88,8 @@ const translations = {
         exportedAt: "Exported At",
         timezone: "Timezone",
         logoUrl: "Logo URL",
+        registeredVoters: "Registered Voters",
+        guestVoters: "Guest Voters",
     },
     ar: {
         pageTitle: "تحليلات الاستطلاع",
@@ -135,6 +137,8 @@ const translations = {
         exportedAt: "تاريخ التصدير",
         timezone: "المنطقة الزمنية",
         logoUrl: "رابط الشعار",
+        registeredVoters: "الناخبون المسجلون",
+        guestVoters: "الناخبون الضيوف",
     },
 };
 
@@ -834,11 +838,13 @@ export default function PollInsightsDashboard() {
             if (!prev) return prev;
             const totalVotes = (prev.totalVotes || 0) + 1;
             const uniqueVoters = data.isNewVoter ? (prev.uniqueVoters || 0) + 1 : (prev.uniqueVoters || 0);
+            const registeredVoters = data.isNewVoter && data.isRegistered ? (prev.registeredVoters || 0) + 1 : (prev.registeredVoters || 0);
+            const guestVoters = data.isNewVoter && !data.isRegistered ? (prev.guestVoters || 0) + 1 : (prev.guestVoters || 0);
             const participationRate = prev.totalRegistrations > 0
-                ? parseFloat(((uniqueVoters / prev.totalRegistrations) * 100).toFixed(2))
+                ? parseFloat(((registeredVoters / prev.totalRegistrations) * 100).toFixed(2))
                 : prev.participationRate;
             const questionCount = data.questionCount ?? prev.questionCount;
-            return { ...prev, totalVotes, uniqueVoters, participationRate, questionCount };
+            return { ...prev, totalVotes, uniqueVoters, registeredVoters, guestVoters, participationRate, questionCount };
         });
     }, []);
 
@@ -1016,6 +1022,8 @@ export default function PollInsightsDashboard() {
                 venue: linkedEvent?.venue || undefined,
                 // Poll KPI stats for the top card row in the PDF
                 uniqueVoters: summary?.uniqueVoters,
+                registeredVoters: summary?.registeredVoters,
+                guestVoters: summary?.guestVoters,
                 totalVotes: summary?.totalVotes,
                 questionCount: summary?.questionCount,
                 participationRate: summary?.participationRate ?? null,
@@ -1094,6 +1102,11 @@ export default function PollInsightsDashboard() {
             // Poll info section
             pushRow(t.pollTitle, pollInfo.title || "N/A");
             pushRow(t.totalVotes, leftAlign(summary?.totalVotes));
+            pushRow(t.uniqueVoters, leftAlign(summary?.uniqueVoters));
+            if (pollInfo.linkedEventRegId) {
+                pushRow(t.registeredVoters, leftAlign(summary?.registeredVoters));
+                pushRow(t.guestVoters, leftAlign(summary?.guestVoters));
+            }
             if (summary?.participationRate != null) pushRow(t.participationRate, `${summary.participationRate}%`);
             pushRow(t.questionCount, leftAlign(summary?.questionCount));
             pushRow(t.exportedAt, formatDateTimeForExcel(new Date().toISOString()));
@@ -1246,6 +1259,19 @@ export default function PollInsightsDashboard() {
                     <Box sx={{ flex: "1 1 150px" }}>
                         <KpiCard label={t.totalVotes} value={summary.totalVotes} />
                     </Box>
+                    <Box sx={{ flex: "1 1 150px" }}>
+                        <KpiCard label={t.uniqueVoters} value={summary.uniqueVoters} />
+                    </Box>
+                    {pollInfo?.linkedEventRegId && (
+                        <>
+                            <Box sx={{ flex: "1 1 150px" }}>
+                                <KpiCard label={t.registeredVoters} value={summary.registeredVoters} />
+                            </Box>
+                            <Box sx={{ flex: "1 1 150px" }}>
+                                <KpiCard label={t.guestVoters} value={summary.guestVoters} />
+                            </Box>
+                        </>
+                    )}
                     {summary.participationRate !== null && (
                         <Box sx={{ flex: "1 1 150px" }}>
                             <KpiCard label={t.participationRate} value={`${summary.participationRate}%`} />

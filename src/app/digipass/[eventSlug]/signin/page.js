@@ -336,9 +336,13 @@ export default function DigiPassSignIn() {
       }
     });
 
+    const phoneField = identityFields.find(f => f.type === "phone");
+    const isoCode = phoneField ? (countryIsoCodes[phoneField.name] || DEFAULT_ISO_CODE) : undefined;
+
     const result = await signInDigipass({
       ...normalizedFormData,
       slug: eventSlug,
+      isoCode
     });
     setSubmitting(false);
 
@@ -496,7 +500,7 @@ export default function DigiPassSignIn() {
               <CountryCodeSelector
                 value={isoCode}
                 onChange={(iso) => handleCountryCodeChange(field.name, iso)}
-                disabled={false}
+                disabled={event?.linkedEventRegId ? !event.linkedEventRegId.useInternationalNumbers : false}
                 dir={dir}
               />
             ),

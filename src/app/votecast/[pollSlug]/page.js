@@ -26,6 +26,10 @@ import AppCard from "@/components/cards/AppCard";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { getEventBackground } from "@/utils/eventBackground";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
+import CountryCodeSelector from "@/components/CountryCodeSelector";
+import { validatePhoneNumber } from "@/utils/phoneValidation";
+
+
 
 const translations = {
   en: {
@@ -40,6 +44,7 @@ const translations = {
     verifySubmit: "Continue",
     verifying: "Verifying…",
     verifyError: "No matching registration found. Please check your entry.",
+    continueAsGuest: "Continue as Guest",
   },
   ar: {
     pollNotFound: "الاستطلاع غير موجود",
@@ -53,6 +58,7 @@ const translations = {
     verifySubmit: "متابعة",
     verifying: "جارٍ التحقق…",
     verifyError: "لم يُعثر على تسجيل مطابق. يرجى التحقق من المدخلات.",
+    continueAsGuest: "المتابعة كضيف",
   },
 };
 
@@ -74,8 +80,11 @@ export default function PublicPollPage() {
 
   // Verification state
   const [fieldValue, setFieldValue] = useState("");
+  const [isoCode, setIsoCode] = useState("om");
   const [verifying, setVerifying] = useState(false);
   const [verifyError, setVerifyError] = useState("");
+  const [failedAttempts, setFailedAttempts] = useState(0);
+
 
   // Fetch poll + linked event
   useEffect(() => {
@@ -121,18 +130,39 @@ export default function PublicPollPage() {
     if (!fieldValue.trim() || !poll?._id) return;
     setVerifying(true);
     setVerifyError("");
-    const result = await verifyAttendeeByPoll(poll._id, fieldValue.trim());
+    const isPhone = poll.primaryField?.toLowerCase().includes("phone");
+    if (isPhone) {
+      const phoneError = validatePhoneNumber(fieldValue.trim(), isoCode);
+      if (phoneError) {
+        setVerifyError(phoneError);
+        setVerifying(false);
+        return;
+      }
+    }
+
+
+    const result = await verifyAttendeeByPoll(poll._id, fieldValue.trim(), isoCode);
     if (result?.error || !result?.registrationId) {
       setVerifyError(t.verifyError);
+      setFailedAttempts(prev => prev + 1);
       setVerifying(false);
       return;
     }
+
+
+
     sessionStorage.setItem(`votecast_reg_${pollSlug}`, result.registrationId);
     if (result.fullName) {
       sessionStorage.setItem(`votecast_name_${pollSlug}`, result.fullName);
     } else {
       sessionStorage.removeItem(`votecast_name_${pollSlug}`);
     }
+    router.push(`/votecast/${pollSlug}/vote`);
+  };
+
+  const handleContinueAsGuest = () => {
+    sessionStorage.removeItem(`votecast_reg_${pollSlug}`);
+    sessionStorage.removeItem(`votecast_name_${pollSlug}`);
     router.push(`/votecast/${pollSlug}/vote`);
   };
 
@@ -345,11 +375,33 @@ export default function PublicPollPage() {
               <TextField
                 fullWidth
                 value={fieldValue}
-                onChange={(e) => setFieldValue(e.target.value)}
+                onChange={(e) => {
+                  let val = e.target.value;
+                  const isPhone = poll.primaryField?.toLowerCase().includes("phone");
+                  if (isPhone) {
+                    val = val.replace(/[^0-9]/g, "");
+                  }
+                  setFieldValue(val);
+                  setVerifyError("");
+                }}
                 placeholder={t.verifyPlaceholder}
                 error={!!verifyError}
+                helperText={verifyError}
                 onKeyDown={(e) => e.key === "Enter" && handleVerify()}
                 inputProps={{ dir: "auto" }}
+                InputProps={{
+                  startAdornment: poll.primaryField?.toLowerCase().includes("phone") ? (
+                    <CountryCodeSelector
+                      value={isoCode}
+                      onChange={setIsoCode}
+                      disabled={!poll.linkedEventRegId?.useInternationalNumbers}
+                    />
+                  ) : null,
+                  sx: {
+                    borderRadius: 999,
+                    backgroundColor: "rgba(255,255,255,0.9)",
+                  }
+                }}
               />
             </Box>
             <Button
@@ -363,6 +415,18 @@ export default function PublicPollPage() {
             >
               {verifying ? t.verifying : t.verifySubmit}
             </Button>
+            {poll?.allowGuest && failedAttempts >= (poll?.guestThreshold || 0) && (
+              <Button
+                variant="outlined"
+                size="large"
+                fullWidth
+                onClick={handleContinueAsGuest}
+                startIcon={<ICONS.person />}
+                sx={{ ...getStartIconSpacing(dir) }}
+              >
+                {t.continueAsGuest}
+              </Button>
+            )}
           </Stack>
         </AppCard>
       </Box>
