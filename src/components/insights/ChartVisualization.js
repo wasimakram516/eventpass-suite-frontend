@@ -349,10 +349,10 @@ const ChartVisualization = ({
                                         const value = field.segmentedData.series.reduce((sum, s) => sum + (s.data[xIdx] || 0), 0);
                                         return {
                                             id: label,
-                                            label: label,
+                                            label: label === "Anonymous" ? (t.anonymous || "Anonymous") : label,
                                             value: value
                                         };
-                                    }) : field.data,
+                                    }) : field.data.map(d => ({ ...d, label: d.label === "Anonymous" ? (t.anonymous || "Anonymous") : d.label })),
                                     innerRadius: chartType === "donut" ? 60 : 0,
                                     highlightScope: { faded: "global", highlighted: "item" },
                                     faded: { innerRadius: 30, additionalRadius: -30, color: "gray" },
@@ -382,7 +382,7 @@ const ChartVisualization = ({
                                     return (
                                         <Box key={xIdx} sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5, direction: "ltr", ml: { xs: 0, md: 1 } }}>
                                             <Typography variant="body2" sx={{ fontWeight: 500, color: "#1f2937", whiteSpace: "nowrap", fontSize: "0.875rem", direction: "ltr", textAlign: "left" }}>
-                                                {label} {percentage}% ({val})
+                                                {label === "Anonymous" ? (t.anonymous || "Anonymous") : label} {percentage}% ({val})
                                             </Typography>
                                         </Box>
                                     );
@@ -395,7 +395,7 @@ const ChartVisualization = ({
                                         <Box key={idx} sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5, direction: "ltr", ml: { xs: 0, md: 1 } }}>
                                             <Box sx={{ width: 12, height: 12, borderRadius: "50%", backgroundColor: item.color, flexShrink: 0 }} />
                                             <Typography variant="body2" sx={{ fontWeight: 500, color: "#1f2937", whiteSpace: "nowrap", fontSize: "0.875rem", direction: "ltr", textAlign: "left" }}>
-                                                {item.label} {percentage}% ({item.value})
+                                                {item.label === "Anonymous" ? (t.anonymous || "Anonymous") : item.label} {percentage}% ({item.value})
                                             </Typography>
                                         </Box>
                                     );
@@ -407,9 +407,9 @@ const ChartVisualization = ({
                     <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, gap: { xs: 2, md: 3 }, height: "100%", alignItems: { xs: "center", md: "stretch" } }}>
                         <Box sx={{ flex: { xs: "0 0 auto", md: 1 }, display: "flex", justifyContent: "center", alignItems: "center", width: { xs: "100%", md: "auto" } }}>
                             <LineChart
-                                xAxis={[{ scaleType: "point", data: field.isSegmented ? (field.segmentedData?.xAxis || []) : (field.xData || []), tickLabelStyle: { direction: "ltr", textAlign: "left" } }]}
+                                xAxis={[{ scaleType: "point", data: (field.isSegmented ? (field.segmentedData?.xAxis || []) : (field.xData || [])).map(label => label === "Anonymous" ? (t.anonymous || "Anonymous") : label), tickLabelStyle: { direction: "ltr", textAlign: "left" } }]}
                                 yAxis={[{ min: 0, max: Math.max(0, ...(field.isSegmented ? (field.segmentedData?.series?.flatMap(s => s.data) || [0]) : (field.yData || [0]))) + Math.ceil(Math.max(0, ...(field.isSegmented ? (field.segmentedData?.series?.flatMap(s => s.data) || [0]) : (field.yData || [0]))) * 0.05), tickLabelStyle: { direction: "ltr", textAlign: "left" } }]}
-                                series={field.isSegmented ? (field.segmentedData?.series || []).map(s => ({ data: s.data || [], color: s.color, label: s.label, curve: "linear" })) : [{ data: field.yData || [], color: field.color, curve: "linear" }]}
+                                series={field.isSegmented ? (field.segmentedData?.series || []).map(s => ({ data: s.data || [], color: s.color, label: s.label === "Anonymous" ? (t.anonymous || "Anonymous") : s.label, curve: "linear" })) : [{ data: field.yData || [], color: field.color, curve: "linear" }]}
                                 height={400}
                                 margin={{ top: 30, bottom: 50, left: 50, right: 80 }}
                                 slotProps={{ legend: { hidden: !field.isSegmented } }}
@@ -443,17 +443,17 @@ const ChartVisualization = ({
                                         tickLabelStyle: { direction: "ltr", textAlign: "left", fontSize: 10 } 
                                     }] : [{ 
                                         scaleType: "band", 
-                                        data: chartType === "average" ? (field.averages?.map(a => a.segment) || []) : (field.segmentedData?.xAxis || []),
+                                        data: (chartType === "average" ? (field.averages?.map(a => a.segment) || []) : (field.segmentedData?.xAxis || [])).map(label => label === "Anonymous" ? (t.anonymous || "Anonymous") : label),
                                         tickLabelStyle: { direction: "ltr", textAlign: "left", fontSize: 10 },
                                         colorMap: chartType === "average" ? {
                                             type: 'ordinal',
                                             colors: field.averages?.map((_, i) => field.data?.[i]?.color || field.color) || [field.color],
-                                            values: field.averages?.map(a => a.segment) || []
+                                            values: field.averages?.map(a => a.segment === "Anonymous" ? (t.anonymous || "Anonymous") : a.segment) || []
                                         } : undefined
                                     }]}
                                     yAxis={chartType === "horizontalBar" ? [{ 
                                         scaleType: "band", 
-                                        data: field.segmentedData?.xAxis || [],
+                                        data: (field.segmentedData?.xAxis || []).map(label => label === "Anonymous" ? (t.anonymous || "Anonymous") : label),
                                         tickLabelStyle: { direction: "ltr", textAlign: "right", fontSize: 10 }
                                     }] : [{ 
                                         label: chartType === "average" ? (t.averageRating || "Average Rating") : (t.count || "Count"),
@@ -463,7 +463,7 @@ const ChartVisualization = ({
                                         label: "Average Rating", 
                                         data: field.averages?.map(a => a.average) || [], 
                                         color: field.color,
-                                    }] : (field.segmentedData?.series || [])}
+                                    }] : (field.segmentedData?.series || []).map(s => ({ data: s.data || [], color: s.color, label: s.label === "Anonymous" ? (t.anonymous || "Anonymous") : s.label }))}
                                     height={400}
                                     margin={{ top: 30, bottom: 70, left: chartType === "horizontalBar" ? 100 : 50, right: 30 }}
                                 />
@@ -476,12 +476,12 @@ const ChartVisualization = ({
                                         tickLabelStyle: { direction: "ltr", textAlign: "left", fontSize: 10 } 
                                     }] : [{ 
                                         scaleType: "band", 
-                                        data: field.type === "time" ? (field.xData || []) : (field.data?.map(d => d.label) || []),
+                                        data: field.type === "time" ? (field.xData || []) : (field.data?.map(d => d.label === "Anonymous" ? (t.anonymous || "Anonymous") : d.label) || []),
                                         tickLabelStyle: { direction: "ltr", textAlign: "left", fontSize: 10 },
                                         colorMap: (field.type !== "time" && !field.isSegmented) ? {
                                             type: 'ordinal',
                                             colors: field.data?.map(d => d.color || field.color) || [field.color],
-                                            values: field.data?.map(d => d.label) || []
+                                            values: field.data?.map(d => d.label === "Anonymous" ? (t.anonymous || "Anonymous") : d.label) || []
                                         } : (field.type === "time" && !field.isSegmented ? {
                                             type: 'ordinal',
                                             colors: field.xData?.map((_, i) => getPieSegmentColor(i)) || [field.color],
@@ -490,12 +490,12 @@ const ChartVisualization = ({
                                     }]}
                                     yAxis={chartType === "horizontalBar" ? [{ 
                                         scaleType: "band", 
-                                        data: field.type === "time" ? (field.xData || []) : (field.data?.map(d => d.label) || []),
+                                        data: field.type === "time" ? (field.xData || []) : (field.data?.map(d => d.label === "Anonymous" ? (t.anonymous || "Anonymous") : d.label) || []),
                                         tickLabelStyle: { direction: "ltr", textAlign: "right", fontSize: 10 },
                                         colorMap: (field.type !== "time" && !field.isSegmented) ? {
                                             type: 'ordinal',
                                             colors: field.data?.map(d => d.color || field.color) || [field.color],
-                                            values: field.data?.map(d => d.label) || []
+                                            values: field.data?.map(d => d.label === "Anonymous" ? (t.anonymous || "Anonymous") : d.label) || []
                                         } : (field.type === "time" && !field.isSegmented ? {
                                             type: 'ordinal',
                                             colors: field.xData?.map((_, i) => getPieSegmentColor(i)) || [field.color],
@@ -526,7 +526,7 @@ const ChartVisualization = ({
                                         <Box key={idx} sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5, direction: "ltr", ml: { xs: 0, md: 1 } }}>
                                             <Box sx={{ width: 12, height: 12, borderRadius: "50%", backgroundColor: item.color, flexShrink: 0 }} />
                                             <Typography variant="body2" sx={{ fontWeight: 500, color: "#1f2937", whiteSpace: "nowrap", fontSize: "0.875rem", direction: "ltr", textAlign: "left" }}>
-                                                {item.label} {percentage}% ({item.value})
+                                                {item.label === "Anonymous" ? (t.anonymous || "Anonymous") : item.label} {percentage}% ({item.value})
                                             </Typography>
                                         </Box>
                                     );

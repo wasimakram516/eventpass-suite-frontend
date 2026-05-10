@@ -81,6 +81,7 @@ const translations = {
         totalRegistrations: "Total Registrations",
         segmentedBy: "Segmented By",
         exportedAt: "Exported At",
+        anonymous: "Anonymous",
     },
     ar: {
         pageTitle: "تحليلات ذكية",
@@ -119,6 +120,7 @@ const translations = {
         totalRegistrations: "إجمالي التسجيلات",
         segmentedBy: "مقسم حسب",
         exportedAt: "تاريخ التصدير",
+        anonymous: "مجهول",
     },
 };
 
@@ -344,9 +346,17 @@ export default function SurveyGuruInsightsPage() {
                 setFieldParams(defaultParams);
                 setAppliedParams(defaultParams);
 
+                let categorical = responseData.categoricalFields || [];
+                const time = responseData.timeFields || [];
+
+                // Hide registration fields from segmentation if form is currently anonymous
+                if (formData?.isAnonymous) {
+                    categorical = categorical.filter(f => !f.isRegistrationField);
+                }
+
                 const registrationFieldsData = responseData.registrationFields || [];
                 const allFields = [
-                    ...responseData.categoricalFields.map((f) => ({
+                    ...categorical.map((f) => ({
                         ...f,
                         chartType: f.isRegistrationField ? "pie" : determineChartType(f),
                         allowedChartTypes: f.type === "time" ? ["line", "bar", "horizontalBar", "heatmap"] : ["pie", "bar", "horizontalBar"],
@@ -652,10 +662,11 @@ export default function SurveyGuruInsightsPage() {
                                 },
                             }));
                         } else {
-                            response = await getQuestionDistribution(
-                                slug,
-                                questionId
-                            );
+                             response = await getQuestionDistribution(
+                                 slug,
+                                 questionId,
+                                 field.isRegistrationField
+                             );
 
                             if (response?.error || !response?.data?.data) {
                                 console.error(`Error loading distribution data for ${questionId}:`, response?.message);
@@ -1141,8 +1152,8 @@ export default function SurveyGuruInsightsPage() {
                 </Stack>
             </AppCard>
 
-                            {/* Segment By — only show if form is linked to an event AND a question is selected */}
-                            {formInfo?.eventId && registrationFields.length > 0 && selectedQuestions.length > 0 && (
+                            {/* Segment By — only show if form is linked to an event AND a question is selected AND not anonymous */}
+                            {formInfo?.eventId && !formInfo?.isAnonymous && registrationFields.length > 0 && selectedQuestions.length > 0 && (
                                 <AppCard
                                     sx={{
                                         p: { xs: 2, md: 3 },

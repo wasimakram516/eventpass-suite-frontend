@@ -5,8 +5,9 @@ export const getAvailableQuestions = withApiHandler(async (slug) => {
     return await api.get(`/surveyguru/forms/${slug}/questions`);
 });
 
-export const getQuestionDistribution = withApiHandler(async (slug, questionId) => {
+export const getQuestionDistribution = withApiHandler(async (slug, questionId, isRegistrationField = false) => {
     const params = new URLSearchParams({ questionId });
+    if (isRegistrationField) params.append("isRegistrationField", "true");
     return await api.get(`/surveyguru/forms/${slug}/distribution?${params}`);
 });
 

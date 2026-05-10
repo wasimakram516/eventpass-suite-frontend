@@ -93,6 +93,7 @@ const translations = {
         guestVoters: "Guest Voters",
         average: "Average Score",
         recentResponses: "Recent Responses",
+        anonymous: "Anonymous",
     },
     ar: {
         pageTitle: "تحليلات الاستطلاع",
@@ -142,6 +143,7 @@ const translations = {
         logoUrl: "رابط الشعار",
         registeredVoters: "الناخبون المسجلون",
         guestVoters: "الناخبون الضيوف",
+        anonymous: "مجهول",
     },
 };
 
@@ -425,7 +427,7 @@ const ChartVisualization = ({
                             <PieChart
                                 series={[
                                     {
-                                        data: barData,
+                                        data: barData.map(d => ({ ...d, label: d.label === "Anonymous" ? (t.anonymous || "Anonymous") : d.label })),
                                         innerRadius: 0,
                                         highlightScope: { faded: "global", highlighted: "item" },
                                         faded: { innerRadius: 30, additionalRadius: -30, color: "gray" },
@@ -458,6 +460,7 @@ const ChartVisualization = ({
                         >
                             {barData.map((item, idx) => {
                                 const percentage = ((item.value / barTotal) * 100).toFixed(1);
+                                const displayLabel = item.label === "Anonymous" ? (t.anonymous || "Anonymous") : item.label;
                                 return (
                                     <Box key={idx} sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5, direction: "ltr", ml: { xs: 0, md: 1 } }}>
                                         <Box sx={{ width: 12, height: 12, borderRadius: "50%", backgroundColor: item.color, flexShrink: 0 }} />
@@ -465,7 +468,7 @@ const ChartVisualization = ({
                                             variant="body2"
                                             sx={{ fontWeight: 500, color: "#1f2937", whiteSpace: "nowrap", fontSize: { xs: "0.875rem", md: "0.875rem" }, direction: "ltr", textAlign: "left" }}
                                         >
-                                            {item.label} {percentage}% ({item.value})
+                                            {displayLabel} {percentage}% ({item.value})
                                         </Typography>
                                     </Box>
                                 );
@@ -499,13 +502,13 @@ const ChartVisualization = ({
                                     tickLabelStyle: { direction: "ltr", textAlign: "left", fontSize: 10 },
                                 }] : [{
                                     scaleType: "band",
-                                    data: barData.map((d) => d.label),
+                                    data: barData.map((d) => d.label === "Anonymous" ? (t.anonymous || "Anonymous") : d.label),
                                     tickLabelStyle: { angle: -30, textAnchor: "end", fontSize: 11 },
                                     colorMap: { type: "ordinal", colors: barData.map((d) => d.color) },
                                 }]}
                                 yAxis={effectiveChartType === "horizontalBar" ? [{
                                     scaleType: "band",
-                                    data: barData.map((d) => d.label),
+                                    data: barData.map((d) => d.label === "Anonymous" ? (t.anonymous || "Anonymous") : d.label),
                                     tickLabelStyle: { direction: "ltr", textAlign: "right", fontSize: 10 },
                                     colorMap: { type: "ordinal", colors: barData.map((d) => d.color) },
                                 }] : [{
@@ -534,6 +537,7 @@ const ChartVisualization = ({
                         >
                             {barData.map((item, idx) => {
                                 const percentage = ((item.value / barTotal) * 100).toFixed(1);
+                                const displayLabel = item.label === "Anonymous" ? (t.anonymous || "Anonymous") : item.label;
                                 return (
                                     <Box key={idx} sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5, direction: "ltr", ml: { xs: 0, md: 1 } }}>
                                         <Box sx={{ width: 12, height: 12, borderRadius: "50%", backgroundColor: item.color, flexShrink: 0 }} />
@@ -541,7 +545,7 @@ const ChartVisualization = ({
                                             variant="body2"
                                             sx={{ fontWeight: 500, color: "#1f2937", whiteSpace: "nowrap", fontSize: { xs: "0.875rem", md: "0.875rem" }, direction: "ltr", textAlign: "left" }}
                                         >
-                                            {item.label} {percentage}% ({item.value})
+                                            {displayLabel} {percentage}% ({item.value})
                                         </Typography>
                                     </Box>
                                 );
