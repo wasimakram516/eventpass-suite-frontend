@@ -89,6 +89,15 @@ export default function PublicSessionPage() {
     });
   }, [slug]);
 
+  // Clear any existing session/login when they land on the verify/welcome page
+  useEffect(() => {
+    if (typeof window !== "undefined" && slug) {
+      sessionStorage.removeItem(`stageq_reg_${slug}`);
+      sessionStorage.removeItem(`stageq_name_${slug}`);
+      sessionStorage.removeItem(`stageq_company_${slug}`);
+    }
+  }, [slug]);
+
   // Background from session's own branding
   const background = useMemo(() => getEventBackground(session, currentLang), [session, currentLang]);
 

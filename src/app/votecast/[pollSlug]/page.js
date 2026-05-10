@@ -95,6 +95,15 @@ export default function PublicPollPage() {
     });
   }, [pollSlug]);
 
+  // Clear any existing session/login when they land on the verify/welcome page
+  useEffect(() => {
+    if (typeof window !== "undefined" && pollSlug) {
+      sessionStorage.removeItem(`votecast_reg_${pollSlug}`);
+      sessionStorage.removeItem(`votecast_name_${pollSlug}`);
+      sessionStorage.removeItem(`votecast_session_${pollSlug}`);
+    }
+  }, [pollSlug]);
+
   // Translate poll title/description on language change
   useEffect(() => {
     if (!poll) return;
@@ -163,6 +172,10 @@ export default function PublicPollPage() {
   const handleContinueAsGuest = () => {
     sessionStorage.removeItem(`votecast_reg_${pollSlug}`);
     sessionStorage.removeItem(`votecast_name_${pollSlug}`);
+    const token = typeof crypto !== "undefined" && crypto.randomUUID
+      ? crypto.randomUUID()
+      : Math.random().toString(36).slice(2) + Date.now().toString(36);
+    sessionStorage.setItem(`votecast_session_${pollSlug}`, token);
     router.push(`/votecast/${pollSlug}/vote`);
   };
 

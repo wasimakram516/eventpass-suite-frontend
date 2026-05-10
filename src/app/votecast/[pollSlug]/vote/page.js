@@ -89,23 +89,15 @@ export default function PollVotingPage() {
   // Session token for anonymous (unlinked) polls — persists for this browser session
   const sessionToken = useMemo(() => {
     if (typeof window === "undefined") return null;
-    const key = `votecast_session_${pollSlug}`;
-    let token = sessionStorage.getItem(key);
-    if (!token) {
-      token = typeof crypto !== "undefined" && crypto.randomUUID
-        ? crypto.randomUUID()
-        : Math.random().toString(36).slice(2) + Date.now().toString(36);
-      sessionStorage.setItem(key, token);
-    }
-    return token;
+    return sessionStorage.getItem(`votecast_session_${pollSlug}`);
   }, [pollSlug]);
 
-  // Use registrationId to verify access; if missing and verification is required (and no guest access), redirect back.
+  // If missing access (no regId and no sessionToken), redirect back to welcome page.
   useEffect(() => {
-    if (!loading && poll && poll.linkedEventRegId && poll.primaryField && !registrationId && !poll.allowGuest) {
+    if (!loading && poll && !registrationId && !sessionToken) {
       router.replace(`/votecast/${pollSlug}`);
     }
-  }, [loading, poll, registrationId, pollSlug, router]);
+  }, [loading, poll, registrationId, sessionToken, pollSlug, router]);
 
   const welcomeMessage = userName ? `${t.welcome}, ${userName}!` : `${t.welcome}!`;
 
