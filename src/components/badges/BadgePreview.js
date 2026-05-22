@@ -10,13 +10,16 @@ const BADGE_HEIGHT = 480;
 const BadgePreview = ({
   registration = {},
   event = {},
+  preview = false,
 }) => {
   const { dir, language, t } = useI18nLayout({
     en: {
-        noData: "No data available"
+      noData: "No data available",
+      preview: "PREVIEW"
     },
     ar: {
-        noData: "لا توجد بيانات متاحة"
+      noData: "لا توجد بيانات متاحة",
+      preview: "معاينة"
     }
   });
 
@@ -25,65 +28,65 @@ const BadgePreview = ({
   // Helper to get all relevant fields from registration dynamically
   const getDisplayFields = () => {
     let sourceData = registration;
-    
+
     if (registration.registration) {
-        sourceData = registration.registration;
+      sourceData = registration.registration;
     } else if (registration.data) {
-        sourceData = registration.data.data || registration.data;
+      sourceData = registration.data.data || registration.data;
     }
-    
+
     if (!sourceData || typeof sourceData !== "object") return [];
-    
+
     const fields = [];
     const processedKeys = new Set();
     const ignored = new Set([
-        "_id", "id", "token", "eventid", "slug", "createdat", 
-        "updatedat", "isdeleted", "customfields", "emailsent", 
-        "whatsappsent", "__v", "pushedtounity", "unitystatus"
+      "_id", "id", "token", "eventid", "slug", "createdat",
+      "updatedat", "isdeleted", "customfields", "emailsent",
+      "whatsappsent", "__v", "pushedtounity", "unitystatus"
     ]);
 
     const addField = (label, value) => {
-        if (value === null || value === undefined || typeof value === 'object') return;
-        const stringVal = String(value).trim();
-        if (!stringVal) return;
+      if (value === null || value === undefined || typeof value === 'object') return;
+      const stringVal = String(value).trim();
+      if (!stringVal) return;
 
-        const lowerLabel = label.toLowerCase();
-        if (ignored.has(lowerLabel)) return;
+      const lowerLabel = label.toLowerCase();
+      if (ignored.has(lowerLabel)) return;
 
-        const norm = lowerLabel.replace(/[^a-z0-9]/g, "");
-        if (processedKeys.has(norm)) return;
-        
-        // Clean up common technical keys to readable labels
-        let displayLabel = label;
-        if (lowerLabel === "fullname") displayLabel = "Full Name";
-        else if (lowerLabel === "email") displayLabel = "Email";
-        else if (lowerLabel === "company") displayLabel = "Company";
-        else if (lowerLabel === "phone") displayLabel = "Phone";
-        else if (lowerLabel === "position") displayLabel = "Position";
-        else if (lowerLabel === "country") displayLabel = "Country";
-        else {
-            // Convert camelCase or snake_case to Space Case
-            displayLabel = label
-                .replace(/_/g, ' ')
-                .replace(/([A-Z])/g, ' $1')
-                .replace(/^./, str => str.toUpperCase())
-                .trim();
-        }
+      const norm = lowerLabel.replace(/[^a-z0-9]/g, "");
+      if (processedKeys.has(norm)) return;
 
-        fields.push({ label: displayLabel, value: stringVal });
-        processedKeys.add(norm);
+      // Clean up common technical keys to readable labels
+      let displayLabel = label;
+      if (lowerLabel === "fullname") displayLabel = "Full Name";
+      else if (lowerLabel === "email") displayLabel = "Email";
+      else if (lowerLabel === "company") displayLabel = "Company";
+      else if (lowerLabel === "phone") displayLabel = "Phone";
+      else if (lowerLabel === "position") displayLabel = "Position";
+      else if (lowerLabel === "country") displayLabel = "Country";
+      else {
+        // Convert camelCase or snake_case to Space Case
+        displayLabel = label
+          .replace(/_/g, ' ')
+          .replace(/([A-Z])/g, ' $1')
+          .replace(/^./, str => str.toUpperCase())
+          .trim();
+      }
+
+      fields.push({ label: displayLabel, value: stringVal });
+      processedKeys.add(norm);
     };
 
     // Process customFields first (if they exist)
     const cf = sourceData.customFields || {};
     if (cf && typeof cf === 'object') {
-        const cfEntries = (cf instanceof Map) ? Array.from(cf.entries()) : Object.entries(cf);
-        cfEntries.forEach(([k, v]) => addField(k, v));
+      const cfEntries = (cf instanceof Map) ? Array.from(cf.entries()) : Object.entries(cf);
+      cfEntries.forEach(([k, v]) => addField(k, v));
     }
 
     // Process all top-level fields
     Object.entries(sourceData).forEach(([k, v]) => addField(k, v));
-    
+
     return fields;
   };
 
@@ -102,8 +105,8 @@ const BadgePreview = ({
 
   useEffect(() => {
     if (language === "en" || (!displayFields.length && !category)) {
-        setTranslatedLabels({});
-        return;
+      setTranslatedLabels({});
+      return;
     }
 
     const labels = displayFields.map(f => f.label);
@@ -111,20 +114,20 @@ const BadgePreview = ({
     const toTranslate = Array.from(new Set([...labels, category]));
 
     translateTexts(toTranslate, language)
-        .then(results => {
-            const map = {};
-            toTranslate.forEach((text, i) => {
-                map[text] = results[i] || text;
-            });
-            setTranslatedLabels(map);
-        })
-        .catch(err => {
-            console.error("Translation failed:", err);
+      .then(results => {
+        const map = {};
+        toTranslate.forEach((text, i) => {
+          map[text] = results[i] || text;
         });
+        setTranslatedLabels(map);
+      })
+      .catch(err => {
+        console.error("Translation failed:", err);
+      });
   }, [displayFields, language, category]);
 
-  // QR Visibility: Only hide if showQrAfterRegistration is explicitly false.
-  const shouldShowQr = event?.showQrAfterRegistration !== false && !!token;
+  // QR Visibility: Always show if preview=true (UI mockup), otherwise check toggle.
+  const shouldShowQr = preview || (event?.showQrAfterRegistration !== false && !!token);
 
   return (
     <Box
@@ -226,61 +229,61 @@ const BadgePreview = ({
           {/* Dynamic Content Area (The Summary) */}
           <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column", gap: 1.5, mb: 2 }}>
             {displayFields.length > 0 ? (
-                displayFields.map((f, i) => (
-                    <Box key={i} sx={{ display: "flex", flexDirection: "column", gap: 0.1, borderBottom: "1px dotted #e2e8f0", pb: 0.5 }}>
-                        <Typography 
-                            sx={{ 
-                                fontSize: "11px", 
-                                fontWeight: 800, 
-                                color: "#64748b", 
-                                textTransform: "uppercase", 
-                                letterSpacing: "0.5px",
-                                textAlign: language === "ar" ? "right" : "left"
-                            }}
-                        >
-                            {translatedLabels[f.label] || f.label}
-                        </Typography>
-                        <Typography 
-                            sx={{ 
-                                fontSize: "15px", 
-                                fontWeight: 700, 
-                                color: "#1e293b", 
-                                wordBreak: "break-word", 
-                                lineHeight: 1.1,
-                                textAlign: language === "ar" ? "right" : "left"
-                            }}
-                        >
-                            {f.value}
-                        </Typography>
-                    </Box>
-                ))
-            ) : (
-                <Box sx={{ flexGrow: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                    <Typography variant="body2" color="text.secondary" italic>{t.noData}</Typography>
+              displayFields.map((f, i) => (
+                <Box key={i} sx={{ display: "flex", flexDirection: "column", gap: 0.1, borderBottom: "1px dotted #e2e8f0", pb: 0.5 }}>
+                  <Typography
+                    sx={{
+                      fontSize: "11px",
+                      fontWeight: 800,
+                      color: "#64748b",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.5px",
+                      textAlign: language === "ar" ? "right" : "left"
+                    }}
+                  >
+                    {translatedLabels[f.label] || f.label}
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontSize: "15px",
+                      fontWeight: 700,
+                      color: "#1e293b",
+                      wordBreak: "break-word",
+                      lineHeight: 1.1,
+                      textAlign: language === "ar" ? "right" : "left"
+                    }}
+                  >
+                    {f.value}
+                  </Typography>
                 </Box>
+              ))
+            ) : (
+              <Box sx={{ flexGrow: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Typography variant="body2" color="text.secondary" sx={{ fontStyle: "italic" }}>{t.noData}</Typography>
+              </Box>
             )}
           </Box>
 
           {/* Footer Area */}
-          <Box 
-            sx={{ 
-                display: "flex", 
-                justifyContent: shouldShowQr ? "space-between" : "center", 
-                alignItems: "center", 
-                pt: 1, 
-                mt: shouldShowQr ? "auto" : 2 
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: shouldShowQr ? "space-between" : "flex-start",
+              alignItems: "center",
+              pt: 1,
+              mt: shouldShowQr ? "auto" : 2
             }}
           >
             {/* Category Tag */}
-            <Box 
-                sx={{ 
-                    border: "2.5px solid #0f172a", 
-                    borderRadius: "8px", 
-                    px: 3, 
-                    py: 0.8, 
-                    bgcolor: "#fff",
-                    boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)"
-                }}
+            <Box
+              sx={{
+                border: "2.5px solid #0f172a",
+                borderRadius: "8px",
+                px: 3,
+                py: 0.8,
+                bgcolor: "#fff",
+                boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)"
+              }}
             >
               <Typography sx={{ fontSize: "20px", fontWeight: 900, color: "#0f172a", letterSpacing: "1.5px" }}>
                 {(translatedLabels[category] || category).toUpperCase()}
@@ -290,8 +293,31 @@ const BadgePreview = ({
             {/* QR Code */}
             {shouldShowQr && (
               <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
-                <Box sx={{ p: 0.5, bgcolor: "#fff", border: "1px solid #f1f5f9", borderRadius: "8px" }}>
-                    <QRCodeCanvas id="qr-code-preview" value={token} size={80} level="M" fgColor="#000" />
+                <Box sx={{ p: 0.5, bgcolor: "#fff", border: "1px solid #f1f5f9", borderRadius: "8px", position: "relative", overflow: "hidden", display: "flex", justifyContent: "center", alignItems: "center" }}>
+                  <QRCodeCanvas id="qr-code-preview" value={token} size={80} level="M" fgColor="#cbd5e0" />
+                  <Box
+                    sx={{
+                      position: "absolute",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      pointerEvents: "none",
+                      transform: "rotate(-45deg)",
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        color: "#cbd5e0",
+                        fontWeight: 900,
+                        fontSize: "15px",
+                        letterSpacing: "2px",
+                        textTransform: "uppercase",
+                        textShadow: "-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000",
+                      }}
+                    >
+                      {t.preview}
+                    </Typography>
+                  </Box>
                 </Box>
               </Box>
             )}

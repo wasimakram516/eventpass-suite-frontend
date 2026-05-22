@@ -39,6 +39,8 @@ import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
 import { useMessage } from "@/contexts/MessageContext";
 import { downloadDefaultQrWrapperAsImage, hasDefaultQrWrapperDesign, hasWrapperDesign } from "@/utils/defaultQrWrapperDownload";
 import BadgePreview from "@/components/badges/BadgePreview";
+import BadgeCard from "@/components/badges/BadgeCard";
+import html2canvas from "html2canvas";
 
 export default function Registration() {
   const { eventSlug, lang } = useParams();
@@ -96,6 +98,7 @@ export default function Registration() {
   const [registrationData, setRegistrationData] = useState(null);
   const [countryIsoCodes, setCountryIsoCodes] = useState({});
   const qrCodeRef = useRef(null);
+  const badgePreviewRef = useRef(null);
   const { globalConfig } = useGlobalConfig();
   const { showMessage } = useMessage();
   const hasCustomDesign =
@@ -245,13 +248,13 @@ export default function Registration() {
       const val = formData[f.name]?.trim();
       if (f.required && !val) errors[f.name] = `${f.label} ${t.required}`;
       if (
-        (f.type === "email" || f.name === "email") &&
+        (f.type === "email" || f.name.toLowerCase() === "email") &&
         val &&
         !isValidEmail(val)
       )
         errors[f.name] = t.invalidEmail;
 
-      if ((f.type === "phone" || (!event.formFields?.length && f.name === "phone")) && val) {
+      if ((f.type === "phone" || (!event.formFields?.length && f.name.toLowerCase() === "phone")) && val) {
         const isoCode = countryIsoCodes[f.name] || DEFAULT_ISO_CODE;
         const phoneError = validatePhoneNumber(val, isoCode);
         if (phoneError) {
@@ -271,7 +274,7 @@ export default function Registration() {
     let phoneIsoCode = null;
 
     dynamicFields.forEach((f) => {
-      if (f.type === "phone" || (!event.formFields?.length && f.name === "phone")) {
+      if (f.type === "phone" || (!event.formFields?.length && f.name.toLowerCase() === "phone")) {
         const phoneValue = normalizedFormData[f.name];
         if (phoneValue) {
           const isoCode = countryIsoCodes[f.name] || DEFAULT_ISO_CODE;
@@ -306,6 +309,18 @@ export default function Registration() {
       setShowDialog(true);
       if (event?.showQrAfterRegistration) setQrToken(result.token);
       setRegistrationData(result.registration || { ...normalizedFormData, token: result.token });
+
+      // Clear the form
+      const resetData = {};
+      const resetIsoCodes = {};
+      dynamicFields.forEach(f => {
+        if (f.name) resetData[f.name] = "";
+        if (f.type === "phone" || (!event.formFields?.length && f.name.toLowerCase() === "phone")) {
+          resetIsoCodes[f.name] = DEFAULT_ISO_CODE;
+        }
+      });
+      setFormData(resetData);
+      setCountryIsoCodes(resetIsoCodes);
     } else {
       setFieldErrors({ _global: result.message || t.registrationFailed });
     }
@@ -313,7 +328,7 @@ export default function Registration() {
 
   const handleDialogClose = () => {
     setShowDialog(false);
-    router.replace(`/${lang}/event/${eventSlug}`);
+    router.replace(`/eventreg/${lang}/event/${eventSlug}`);
   };
 
   // image background only (no videos on registration page)
@@ -444,7 +459,7 @@ export default function Registration() {
       );
     }
 
-    const isPhoneField = field.type === "phone" || (!event.formFields?.length && field.name === "phone");
+    const isPhoneField = field.type === "phone" || (!event.formFields?.length && field.name.toLowerCase() === "phone");
     const useInternationalNumbers = event.useInternationalNumbers !== false;
 
     if (isPhoneField) {
@@ -478,7 +493,7 @@ export default function Registration() {
         type={
           field.type === "number"
             ? "number"
-            : field.type === "email"
+            : field.type === "email" || field.name.toLowerCase() === "email"
               ? "email"
               : "text"
         }
@@ -527,7 +542,7 @@ export default function Registration() {
         <Box
           sx={{
             width: "100%",
-            maxWidth: 600,
+            maxWidth: 1040,
             borderRadius: 3,
             overflow: "hidden",
             boxShadow: 3,
@@ -548,19 +563,21 @@ export default function Registration() {
         </Box>
       )}
 
-      <Paper
-        dir={dir}
-        elevation={3}
-        sx={{
-          width: "100%",
-          maxWidth: 600,
-          borderRadius: 3,
-          p: 4,
-          textAlign: "center",
-          backdropFilter: "blur(6px)",
-          backgroundColor: "rgba(255,255,255,0.9)",
-        }}
-      >
+      <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 4, width: '100%', maxWidth: 1040, justifyContent: 'center', alignItems: 'flex-start' }}>
+        <Paper
+          dir={dir}
+          elevation={3}
+          sx={{
+            flex: 1,
+            width: "100%",
+            maxWidth: 600,
+            borderRadius: 3,
+            p: 4,
+            textAlign: "center",
+            backdropFilter: "blur(6px)",
+            backgroundColor: "rgba(255,255,255,0.9)",
+          }}
+        >
         <Typography variant="h5" fontWeight="bold" sx={{ mb: 1 }}>
           {name}
         </Typography>
@@ -607,7 +624,18 @@ export default function Registration() {
         >
           {submitting ? <CircularProgress size={22} /> : t.submit}
         </Button>
-      </Paper>
+        </Paper>
+
+        {event?.showBadgePreviewDuringRegistration && (
+          <Box sx={{ flex: 1, width: '100%', maxWidth: 400, position: { md: 'sticky' }, top: { md: 24 }, mt: { md: -1.5 } }}>
+            <BadgePreview
+              registration={formData}
+              event={translatedEvent || event}
+              preview={true}
+            />
+          </Box>
+        )}
+      </Box>
 
       {/* Success dialog */}
       <Dialog
@@ -660,12 +688,19 @@ export default function Registration() {
             </Box>
           )}
 
-          {event?.showBadgePreviewAfterRegistration && registrationData ? (
-            <BadgePreview
-              registration={registrationData}
-              event={translatedEvent || event}
-              preview={true}
-            />
+          {event?.showBadgeCardAfterRegistration && registrationData ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column', mt: 2, mb: 2 }}>
+              <Box ref={badgePreviewRef} sx={{ display: 'inline-block', mt: 0 }}>
+                <BadgeCard
+                  registration={registrationData}
+                  event={translatedEvent || event}
+                  module={event?.module}
+                  qrRef={qrCodeRef}
+                  t={t}
+                  compact={true}
+                />
+              </Box>
+            </Box>
           ) : (
             <>
               <Typography variant="body1" sx={{ mb: 2 }}>
@@ -751,6 +786,36 @@ export default function Registration() {
         </DialogContent>
 
         <DialogActions sx={{ justifyContent: "center", pb: 2 }}>
+          {/* Download BadgeCard button */}
+          {event?.showBadgeCardAfterRegistration && registrationData && (
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={async () => {
+                const badgeElement = badgePreviewRef.current;
+                if (!badgeElement) return;
+
+                try {
+                  const canvas = await html2canvas(badgeElement, {
+                    backgroundColor: null,
+                    useCORS: true,
+                    scale: Math.max(window.devicePixelRatio || 1, 2),
+                    logging: false,
+                  });
+                  const link = document.createElement("a");
+                  link.href = canvas.toDataURL("image/png");
+                  link.download = `badge-${qrToken || "download"}.png`;
+                  link.click();
+                } catch (err) {
+                  console.error(err);
+                  showMessage(t.qrError, "error");
+                }
+              }}
+            >
+              {t.downloadQr?.replace("QR Code", "Badge") || "Download Badge"}
+            </Button>
+          )}
+
           {/* Download QR button (only when QR is shown) */}
           {event?.showQrAfterRegistration && qrToken && (
             <Button

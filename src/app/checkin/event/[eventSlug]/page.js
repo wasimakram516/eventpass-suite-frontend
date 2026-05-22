@@ -37,7 +37,8 @@ import { formatDateWithTime, formatTime } from "@/utils/dateUtils";
 import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
 import { useMessage } from "@/contexts/MessageContext";
 import { downloadDefaultQrWrapperAsImage, hasDefaultQrWrapperDesign, hasWrapperDesign } from "@/utils/defaultQrWrapperDownload";
-import BadgePreview from "@/components/badges/BadgePreview";
+import BadgeCard from "@/components/badges/BadgeCard";
+import html2canvas from "html2canvas";
 
 export default function EventDetails() {
   const { eventSlug } = useParams();
@@ -120,6 +121,10 @@ export default function EventDetails() {
         setNotConfirmed(status === "not_attending");
         if (status === "confirmed") {
           setJustConfirmed(true);
+        setShowSuccessDialog(true);
+          if (event?.showBadgeCardAfterAttendanceConfirmation) {
+            setShowBadgeCardModal(true);
+          }
         } else if (status === "not_attending") {
           setJustNotConfirmed(true);
         }
@@ -147,6 +152,9 @@ export default function EventDetails() {
   const [event, setEvent] = useState(null);
   const [translatedEvent, setTranslatedEvent] = useState(null);
   const [showSummaryModal, setShowSummaryModal] = useState(false);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [showBadgeCardModal, setShowBadgeCardModal] = useState(false);
+  const badgePreviewRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [registration, setRegistration] = useState(null);
@@ -720,54 +728,6 @@ export default function EventDetails() {
 
                 {/* Confirmation status */}
                 <Stack spacing={2} alignItems="center" sx={{ width: "100%" }}>
-                  {registration && event?.showBadgePreviewInAttendance && (
-                    <Box sx={{ width: "100%", mt: 1 }}>
-                      <Button
-                        variant="outlined"
-                        startIcon={<ICONS.view />}
-                        onClick={() => setShowSummaryModal(true)}
-                        fullWidth
-                        sx={{ borderRadius: "12px", textTransform: "none", fontWeight: 700 }}
-                      >
-                        Show Summary
-                      </Button>
-
-                      <Dialog
-                        open={showSummaryModal}
-                        onClose={() => setShowSummaryModal(false)}
-                        maxWidth="sm"
-                        fullWidth
-                        PaperProps={{
-                          sx: { borderRadius: "24px", p: 0, bgcolor: "transparent", boxShadow: "none" }
-                        }}
-                      >
-                        <Box sx={{ position: "relative" }}>
-                          <Button
-                            onClick={() => setShowSummaryModal(false)}
-                            sx={{
-                              position: "absolute",
-                              top: 12,
-                              right: 24,
-                              zIndex: 10,
-                              minWidth: 0,
-                              p: 1,
-                              bgcolor: "rgba(255,255,255,0.8)",
-                              borderRadius: "50%",
-                              color: "#000",
-                              "&:hover": { bgcolor: "#fff" }
-                            }}
-                          >
-                            <ICONS.close />
-                          </Button>
-                          <BadgePreview
-                            registration={registration}
-                            event={translatedEvent || event}
-                            preview={true}
-                          />
-                        </Box>
-                      </Dialog>
-                    </Box>
-                  )}
 
                   {(confirmed || notConfirmed) ? (
                     confirmed ? (
@@ -1004,6 +964,103 @@ export default function EventDetails() {
           >
             {t.confirmButton}
           </Button>
+        </DialogActions>
+        </Dialog>
+
+      <Dialog
+        open={showBadgeCardModal}
+        onClose={() => {
+          setShowBadgeCardModal(false);
+          setShowSuccessDialog(false);
+        }}
+        dir={dir}
+        disableScrollLock={true}
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            padding: 0,
+            maxWidth: "800px",
+            width: "100%",
+            backgroundColor: "#ffffff",
+            boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
+          },
+        }}
+      >
+        <DialogContent sx={{ p: 0, bgcolor: '#ffffff', textAlign: 'center', position: 'relative' }}>
+          <Button
+            onClick={() => {
+              setShowBadgeCardModal(false);
+              setShowSuccessDialog(false);
+            }}
+            sx={{
+              position: "absolute",
+              top: 12,
+              right: 24,
+              zIndex: 10,
+              minWidth: 0,
+              p: 1,
+              bgcolor: "rgba(255,255,255,0.8)",
+              borderRadius: "50%",
+              color: "#000",
+              "&:hover": { bgcolor: "#fff" }
+            }}
+          >
+            <ICONS.close />
+          </Button>
+
+          {/* Heading for badge modal */}
+          <Box sx={{ pt: 2, pb: 1.5, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+            <ICONS.checkCircle sx={{ fontSize: 56, color: 'success.main' }} />
+            <Typography variant="h5" sx={{ mt: 1, fontWeight: 'bold' }}>
+              {t.presenceConfirmed}
+            </Typography>
+          </Box>
+
+            {registration && event?.showBadgeCardAfterAttendanceConfirmation && (
+              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', transform: 'scale(0.9)', transformOrigin: 'top center', mt: 1, mb: 0 }}>
+                <Box ref={badgePreviewRef} sx={{ display: 'inline-block', mt: 0 }}>
+                  <BadgeCard
+                    registration={registration}
+                    event={translatedEvent || event}
+                    module="checkin"
+                    qrRef={qrCodeRef}
+                    t={t}
+                    compact={true}
+                  />
+                </Box>
+              </Box>
+            )}
+
+        </DialogContent>
+        <DialogActions sx={{ justifyContent: "center", pb: 2, pt: 1, bgcolor: "transparent" }}>
+          {registration && event?.showBadgeCardAfterAttendanceConfirmation && (
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={async () => {
+                const badgeElement = badgePreviewRef.current;
+                if (!badgeElement) return;
+
+                try {
+                  const canvas = await html2canvas(badgeElement, {
+                    backgroundColor: null,
+                    useCORS: true,
+                    scale: Math.max(window.devicePixelRatio || 1, 2),
+                    logging: false,
+                  });
+                  const link = document.createElement("a");
+                  link.href = canvas.toDataURL("image/png");
+                  link.download = `badge-${registration.token || "download"}.png`;
+                  link.click();
+                } catch (err) {
+                  console.error(err);
+                  showMessage(t.qrError, "error");
+                }
+              }}
+            >
+              {t.downloadQr?.replace("QR Code", "Badge") || "Download Badge"}
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
     </Box>
