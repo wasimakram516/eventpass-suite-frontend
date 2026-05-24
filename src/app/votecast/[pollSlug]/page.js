@@ -315,7 +315,17 @@ export default function PublicPollPage() {
               <Button
                 variant="contained"
                 size="large"
-                onClick={() => needsVerification ? setStep("verify") : router.push(`/votecast/${pollSlug}/vote`)}
+                onClick={() => {
+                if (needsVerification) {
+                  setStep("verify");
+                } else {
+                  const token = typeof crypto !== "undefined" && crypto.randomUUID
+                    ? crypto.randomUUID()
+                    : Math.random().toString(36).slice(2) + Date.now().toString(36);
+                  sessionStorage.setItem(`votecast_session_${pollSlug}`, token);
+                  router.push(`/votecast/${pollSlug}/vote`);
+                }
+              }}
                 startIcon={needsVerification ? <ICONS.checkCircle /> : <ICONS.poll />}
                 sx={{ ...getStartIconSpacing(dir) }}
               >

@@ -42,6 +42,8 @@ const translations = {
     done: "Done",
     closingAutomatically: "Closing automatically…",
     pollNotFound: "Poll not found",
+    selectMultiple: "Select all that apply",
+    submit: "Submit",
   },
   ar: {
     welcome: "مرحباً",
@@ -53,6 +55,8 @@ const translations = {
     done: "تم",
     closingAutomatically: "سيُغلق تلقائيًا…",
     pollNotFound: "الاستطلاع غير موجود",
+    selectMultiple: "اختر كل ما ينطبق",
+    submit: "إرسال",
   },
 };
 
@@ -74,6 +78,7 @@ export default function PollVotingPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [highlightedOption, setHighlightedOption] = useState(null);
+  const [selectedOptions, setSelectedOptions] = useState([]);
   const [textResponse, setTextResponse] = useState("");
   const [finished, setFinished] = useState(false);
   const [closeTimer, setCloseTimer] = useState(5);
@@ -168,6 +173,18 @@ export default function PollVotingPage() {
     }
   }, [background]);
 
+  const advanceQuestion = () => {
+    if (currentIndex < questions.length - 1) {
+      setCurrentIndex((prev) => prev + 1);
+      setHighlightedOption(null);
+      setSelectedOptions([]);
+      setTextResponse("");
+      setSubmitting(false);
+    } else {
+      setFinished(true);
+    }
+  };
+
   const handleVote = async (optionIndex, value = null, textValue = null) => {
     if (submitting || !poll?._id) return;
     const currentQuestion = questions[currentIndex];
@@ -175,28 +192,31 @@ export default function PollVotingPage() {
     setSubmitting(true);
     try {
       const anonToken = registrationId ? null : sessionToken;
-      await voteOnPoll(
-        poll._id,
-        currentQuestion._id,
-        optionIndex,
-        registrationId,
-        anonToken,
-        value,
-        textValue
-      );
-      setTimeout(() => {
-        if (currentIndex < questions.length - 1) {
-          setCurrentIndex((prev) => prev + 1);
-          setHighlightedOption(null);
-          setTextResponse("");
-          setSubmitting(false);
-        } else {
-          setFinished(true);
-        }
-      }, 800);
+      await voteOnPoll(poll._id, currentQuestion._id, optionIndex, registrationId, anonToken, value, textValue);
+      setTimeout(advanceQuestion, 800);
     } catch {
       setSubmitting(false);
     }
+  };
+
+  const handleMultiSubmit = async () => {
+    if (submitting || !poll?._id || selectedOptions.length === 0) return;
+    const currentQuestion = questions[currentIndex];
+    if (!currentQuestion?._id) return;
+    setSubmitting(true);
+    try {
+      const anonToken = registrationId ? null : sessionToken;
+      await voteOnPoll(poll._id, currentQuestion._id, selectedOptions, registrationId, anonToken);
+      advanceQuestion();
+    } catch {
+      setSubmitting(false);
+    }
+  };
+
+  const toggleMultiOption = (idx) => {
+    setSelectedOptions((prev) =>
+      prev.includes(idx) ? prev.filter((i) => i !== idx) : [...prev, idx]
+    );
   };
 
   const handleRestart = () => {
@@ -453,6 +473,58 @@ export default function PollVotingPage() {
                     {submitting ? <CircularProgress size={24} color="inherit" /> : (currentLang === "ar" ? "إرسال" : "Submit")}
                   </Button>
                 </Stack>
+              ) : currentQuestion?.allowMultipleAnswers ? (
+                <>
+                  <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center", mt: -2, mb: 0 }}>
+                    {t.selectMultiple}
+                  </Typography>
+                  <Stack spacing={2} width="100%">
+                    {(currentQuestion?.options || []).map((option, idx) => {
+                      const isSelected = selectedOptions.includes(idx);
+                      return (
+                        <Box
+                          key={idx}
+                          onClick={() => !submitting && toggleMultiOption(idx)}
+                          sx={{
+                            p: 2, border: "2px solid",
+                            borderColor: isSelected ? "primary.main" : "grey.300",
+                            borderRadius: 3,
+                            cursor: submitting ? "default" : "pointer",
+                            display: "flex", alignItems: "center", justifyContent: "space-between",
+                            transition: "all 0.3s",
+                            bgcolor: isSelected ? "rgba(25,118,210,0.06)" : "transparent",
+                            "&:hover": !submitting ? { bgcolor: isSelected ? "rgba(25,118,210,0.1)" : "rgba(0,0,0,0.05)" } : {},
+                          }}
+                        >
+                          <Stack direction="row" alignItems="center" spacing={2} sx={{ gap: dir === "rtl" ? 2 : 0 }}>
+                            {option.imageUrl && (
+                              <Box sx={{ width: "100%", maxWidth: "clamp(50px, 15vw, 120px)", aspectRatio: "1 / 1", flexShrink: 0, transition: "transform 0.25s ease", transform: isSelected ? "scale(1.1)" : "scale(1)" }}>
+                                <Box component="img" src={option.imageUrl} alt={option.text || "option"} sx={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: 2, display: "block" }} />
+                              </Box>
+                            )}
+                            {option.text && (
+                              <Typography variant="body1" fontWeight="bold" sx={{ opacity: isSelected ? 1 : 0.8 }}>
+                                {option.text}
+                              </Typography>
+                            )}
+                          </Stack>
+                          {isSelected && <ICONS.checkCircle fontSize="small" color="primary" />}
+                        </Box>
+                      );
+                    })}
+                  </Stack>
+                  <Button
+                    variant="contained"
+                    size="large"
+                    fullWidth
+                    disabled={submitting || selectedOptions.length === 0}
+                    onClick={handleMultiSubmit}
+                    startIcon={submitting ? <CircularProgress size={18} color="inherit" thickness={5} /> : <ICONS.check />}
+                    sx={{ mt: 1, py: 1.5, fontWeight: "bold", fontSize: "1rem", borderRadius: 3 }}
+                  >
+                    {submitting ? t.processing : t.submit}
+                  </Button>
+                </>
               ) : (
                 <Stack spacing={2} width="100%">
                   {(currentQuestion?.options || []).map((option, idx) => {

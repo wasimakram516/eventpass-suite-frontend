@@ -11,6 +11,8 @@ import {
   Divider,
   CircularProgress,
   MenuItem,
+  FormControlLabel,
+  Switch,
 } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import AddIcon from "@mui/icons-material/Add";
@@ -40,6 +42,7 @@ const translations = {
     creatingQuestion: "Creating...",
     updateQuestion: "Update Question",
     createQuestionButton: "Create Question",
+    allowMultiple: "Allow multiple answers",
     errors: {
       question: "Question is required",
       options: "At least 2 options are required",
@@ -65,6 +68,7 @@ const translations = {
     creatingQuestion: "جاري الإنشاء...",
     updateQuestion: "تحديث السؤال",
     createQuestionButton: "إنشاء السؤال",
+    allowMultiple: "السماح بإجابات متعددة",
     errors: {
       question: "السؤال مطلوب",
       options: "يجب أن يكون هناك خياران على الأقل",
@@ -96,6 +100,7 @@ export default function QuestionFormDrawer({
   const [form, setForm] = useState({
     question: "",
     type: "options",
+    allowMultipleAnswers: false,
     scale: { min: 1, max: 5, step: 1 },
     options: [
       { text: "", imageFile: null, imagePreview: "", removeImage: false },
@@ -119,6 +124,7 @@ export default function QuestionFormDrawer({
       setForm({
         question: initialValues?.question || "",
         type: initialValues?.type === "slider" ? "rating" : (initialValues?.type || "options"),
+        allowMultipleAnswers: initialValues?.allowMultipleAnswers || false,
         scale: initialValues?.scale || { min: 1, max: 5, step: 1 },
         options: initialValues?.options?.length > 0
           ? initialValues.options.map(opt => ({
@@ -295,6 +301,7 @@ export default function QuestionFormDrawer({
       const payload = {
         question: form.question.trim(),
         type: form.type,
+        allowMultipleAnswers: form.type === "options" ? form.allowMultipleAnswers : false,
         scale: form.scale,
         options: JSON.stringify(optionsPayload),
       };
@@ -377,6 +384,15 @@ export default function QuestionFormDrawer({
 
           {form.type === "options" && (
             <>
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={form.allowMultipleAnswers}
+                    onChange={e => setForm(prev => ({ ...prev, allowMultipleAnswers: e.target.checked }))}
+                  />
+                }
+                label={t.allowMultiple}
+              />
               <Divider />
               <Typography variant="subtitle2" fontWeight="bold">{t.options}</Typography>
 

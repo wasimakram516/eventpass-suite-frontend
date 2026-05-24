@@ -348,18 +348,21 @@ function VoterCard({ voter, t, dir, align, language, isAnonymous }) {
                   </Typography>
                 }
                 secondary={
-                  <Box sx={{ mt: 0.25, textAlign: align, overflow: "hidden", maxWidth: "100%" }}>
-                    <Chip
-                      size="small"
-                      label={v.optionText || v.answer || "—"}
-                      variant="outlined"
-                      avatar={v.optionImage ? <OptionThumb url={v.optionImage} label={v.optionText} /> : undefined}
-                      sx={{
-                        maxWidth: "100%",
-                        "& .MuiChip-label": { overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" },
-                        ...(v.optionImage ? { "& .MuiChip-avatar": { width: 18, height: 18, borderRadius: 4 } } : {}),
-                      }}
-                    />
+                  <Box sx={{ mt: 0.25, display: "flex", flexWrap: "wrap", gap: 0.5, textAlign: align }}>
+                    {(v.chips || []).map((chip, chipIdx) => (
+                      <Chip
+                        key={chipIdx}
+                        size="small"
+                        label={chip.text || "—"}
+                        variant="outlined"
+                        avatar={chip.imageUrl ? <OptionThumb url={chip.imageUrl} label={chip.text} /> : undefined}
+                        sx={{
+                          maxWidth: "100%",
+                          "& .MuiChip-label": { overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" },
+                          ...(chip.imageUrl ? { "& .MuiChip-avatar": { width: 18, height: 18, borderRadius: 4 } } : {}),
+                        }}
+                      />
+                    ))}
                   </Box>
                 }
               />
@@ -416,15 +419,18 @@ function buildVoterList(voterResults) {
               votes: [],
             });
           }
-          voterMap.get(key).votes.push({
-            questionId: question._id,
-            question: question.question,
-            type: type,
-            optionText: option.text,
-            optionImage: option.imageUrl || null,
-            answer: voter.answer,
-            value: voter.value,
-          });
+          const voterEntry = voterMap.get(key);
+          const existing = voterEntry.votes.find(v => String(v.questionId) === String(question._id));
+          if (existing) {
+            existing.chips.push({ text: option.text, imageUrl: option.imageUrl || null });
+          } else {
+            voterEntry.votes.push({
+              questionId: question._id,
+              question: question.question,
+              type,
+              chips: [{ text: option.text, imageUrl: option.imageUrl || null }],
+            });
+          }
         }
       }
     } else {
@@ -448,10 +454,8 @@ function buildVoterList(voterResults) {
         voterMap.get(key).votes.push({
           questionId: question._id,
           question: question.question,
-          type: type,
-          answer: voter.answer,
-          value: voter.value,
-          textValue: voter.answer,
+          type,
+          chips: [{ text: voter.answer || "", imageUrl: null }],
         });
       }
     }
