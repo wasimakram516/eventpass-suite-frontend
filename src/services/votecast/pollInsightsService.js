@@ -25,3 +25,7 @@ export const getPollInsightsTimeDistribution = withApiHandler(
         return await api.get(`/votecast/polls/insights/${slug}/time-distribution?${params}`);
     }
 );
+
+export const getPollInsights = withApiHandler(async (id) =>
+    await api.get(`/votecast/polls/insights/${id}`)
+);

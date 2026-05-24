@@ -12,12 +12,16 @@ import {
   CircularProgress,
   Container,
   Divider,
+  FormControl,
   Grid,
+  InputLabel,
   List,
   ListItem,
   ListItemIcon,
   ListItemText,
+  MenuItem,
   Pagination,
+  Select,
   Stack,
   Typography,
 } from "@mui/material";
@@ -344,18 +348,21 @@ function VoterCard({ voter, t, dir, align, language, isAnonymous }) {
                   </Typography>
                 }
                 secondary={
-                  <Box sx={{ mt: 0.25, textAlign: align, overflow: "hidden", maxWidth: "100%" }}>
-                    <Chip
-                      size="small"
-                      label={v.optionText || "—"}
-                      variant="outlined"
-                      avatar={v.optionImage ? <OptionThumb url={v.optionImage} label={v.optionText} /> : undefined}
-                      sx={{
-                        maxWidth: "100%",
-                        "& .MuiChip-label": { overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" },
-                        ...(v.optionImage ? { "& .MuiChip-avatar": { width: 18, height: 18, borderRadius: 4 } } : {}),
-                      }}
-                    />
+                  <Box sx={{ mt: 0.25, display: "flex", flexWrap: "wrap", gap: 0.5, textAlign: align }}>
+                    {(v.chips || []).map((chip, chipIdx) => (
+                      <Chip
+                        key={chipIdx}
+                        size="small"
+                        label={chip.text || "—"}
+                        variant="outlined"
+                        avatar={chip.imageUrl ? <OptionThumb url={chip.imageUrl} label={chip.text} /> : undefined}
+                        sx={{
+                          maxWidth: "100%",
+                          "& .MuiChip-label": { overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" },
+                          ...(chip.imageUrl ? { "& .MuiChip-avatar": { width: 18, height: 18, borderRadius: 4 } } : {}),
+                        }}
+                      />
+                    ))}
                   </Box>
                 }
               />
@@ -392,9 +399,43 @@ function VoterCard({ voter, t, dir, align, language, isAnonymous }) {
 function buildVoterList(voterResults) {
   const voterMap = new Map();
   for (const question of voterResults.questions || []) {
-    for (let optIdx = 0; optIdx < (question.options || []).length; optIdx++) {
-      const option = question.options[optIdx];
-      for (const voter of option.voters || []) {
+    const type = question.type || "options";
+    if (type === "options") {
+      for (let optIdx = 0; optIdx < (question.options || []).length; optIdx++) {
+        const option = question.options[optIdx];
+        for (const voter of option.voters || []) {
+          const key = String(voter._id);
+          if (!voterMap.has(key)) {
+            voterMap.set(key, {
+              _id: voter._id,
+              fullName: voter.fullName,
+              email: voter.email,
+              phone: voter.phone,
+              phoneCode: voter.phoneCode || null,
+              company: voter.company || null,
+              votedAt: voter.votedAt,
+              customFields: voter.customFields || {},
+              isAnonymous: voter.isAnonymous === true,
+              votes: [],
+            });
+          }
+          const voterEntry = voterMap.get(key);
+          const existing = voterEntry.votes.find(v => String(v.questionId) === String(question._id));
+          if (existing) {
+            existing.chips.push({ text: option.text, imageUrl: option.imageUrl || null });
+          } else {
+            voterEntry.votes.push({
+              questionId: question._id,
+              question: question.question,
+              type,
+              chips: [{ text: option.text, imageUrl: option.imageUrl || null }],
+            });
+          }
+        }
+      }
+    } else {
+      // rating, nps, text
+      for (const voter of question.voters || []) {
         const key = String(voter._id);
         if (!voterMap.has(key)) {
           voterMap.set(key, {
@@ -413,8 +454,8 @@ function buildVoterList(voterResults) {
         voterMap.get(key).votes.push({
           questionId: question._id,
           question: question.question,
-          optionText: option.text,
-          optionImage: option.imageUrl || null,
+          type,
+          chips: [{ text: voter.answer || "", imageUrl: null }],
         });
       }
     }
@@ -518,11 +559,18 @@ export default function PollResultsPage() {
       }));
       const customFieldKeys = Array.from(cfKeySet);
 
-      // Collect unique questions in appearance order
+      // Collect unique questions in appearance order and their scales
       const questionMap = new Map();
       voterList.forEach((v) => {
         (v.votes || []).forEach((vote) => {
-          if (!questionMap.has(String(vote.questionId))) questionMap.set(String(vote.questionId), vote.question);
+          if (!questionMap.has(String(vote.questionId))) {
+            const pollQ = poll?.questions?.find(q => String(q._id) === String(vote.questionId));
+            const maxScale = pollQ?.scale?.max || (vote.type === "rating" ? 5 : 10);
+            questionMap.set(String(vote.questionId), {
+              text: vote.question,
+              maxScale: maxScale
+            });
+          }
         });
       });
       const questionEntries = Array.from(questionMap.entries());
@@ -570,7 +618,7 @@ export default function PollResultsPage() {
         t.phone,
         t.company,
         ...customFieldKeys,
-        ...questionEntries.map(([, q]) => q),
+        ...questionEntries.map(([, q]) => q.text),
         t.votedAt,
       ]);
 
@@ -590,7 +638,21 @@ export default function PollResultsPage() {
           const val = cf[key];
           return val !== undefined && val !== null ? toNumericIfPossible(String(val)) : "";
         });
-        const voteMap = new Map((voter.votes || []).map((v) => [String(v.questionId), v.optionText || ""]));
+        const voteMap = new Map((voter.votes || []).map((v) => {
+          let answer = "";
+          if (v.type === "options") {
+            answer = v.optionText || "";
+          } else if (v.type === "text") {
+            answer = v.answer || "";
+          } else if (v.type === "rating" || v.type === "nps") {
+            const qMeta = questionMap.get(String(v.questionId));
+            const maxScale = qMeta?.maxScale || (v.type === "rating" ? 5 : 10);
+            answer = v.value != null ? `${v.value} / ${maxScale}` : (v.answer || "");
+          } else {
+            answer = v.answer || v.optionText || "";
+          }
+          return [String(v.questionId), answer];
+        }));
         const voteValues = questionEntries.map(([id]) => voteMap.get(id) || "");
 
         pushTableRow([
@@ -628,9 +690,18 @@ export default function PollResultsPage() {
     window.open(`/votecast/${poll.slug}/results`, "_blank");
   };
 
+  const [sortBy, setSortBy] = useState(-1);
+
   const voterList = voterResults ? buildVoterList(voterResults) : [];
-  const totalVoters = voterList.length;
-  const displayVoters = voterList.slice((page - 1) * CARDS_PER_PAGE, page * CARDS_PER_PAGE);
+  
+  const sortedVoterList = [...voterList].sort((a, b) => {
+    const da = a.votedAt ? new Date(a.votedAt).getTime() : 0;
+    const db = b.votedAt ? new Date(b.votedAt).getTime() : 0;
+    return sortBy === -1 ? db - da : da - db;
+  });
+
+  const totalVoters = sortedVoterList.length;
+  const displayVoters = sortedVoterList.slice((page - 1) * CARDS_PER_PAGE, page * CARDS_PER_PAGE);
 
   return (
     <>
@@ -651,35 +722,57 @@ export default function PollResultsPage() {
               </Typography>
             </Box>
 
-            {poll && totalVoters > 0 && (
-              <Stack direction={{ xs: "column", md: "row" }} spacing={2} sx={{ gap: dir === "rtl" ? 2 : 0 }}>
-                <Button
-                  variant="outlined"
-                  color="success"
-                  onClick={handleExportVoters}
-                  disabled={exportLoading}
-                  startIcon={
-                    exportLoading ? (
-                      <CircularProgress size={20} color="inherit" />
-                    ) : (
-                      <ICONS.description fontSize="small" />
-                    )
-                  }
-                  sx={getStartIconSpacing(dir)}
-                >
-                  {exportLoading ? t.exporting : t.exportAll}
-                </Button>
+            <Stack
+              direction={{ xs: "column", md: "row" }}
+              spacing={2}
+              alignItems={{ xs: "stretch", md: "center" }}
+              sx={{ width: { xs: "100%", md: "auto" } }}
+            >
+              {poll && totalVoters > 0 && (
+                <>
+                  <FormControl size="small" sx={{ minWidth: { xs: "100%", md: 170 } }}>
+                    <InputLabel id="sort-label">{language === "ar" ? "ترتيب حسب" : "Sort By"}</InputLabel>
+                    <Select
+                      labelId="sort-label"
+                      value={sortBy}
+                      label={language === "ar" ? "ترتيب حسب" : "Sort By"}
+                      onChange={(e) => setSortBy(Number(e.target.value))}
+                    >
+                      <MenuItem value={-1}>{language === "ar" ? "الأحدث" : "Most Recent"}</MenuItem>
+                      <MenuItem value={1}>{language === "ar" ? "الأقدم" : "Oldest"}</MenuItem>
+                    </Select>
+                  </FormControl>
+
+                  <Button
+                    variant="outlined"
+                    color="success"
+                    onClick={handleExportVoters}
+                    disabled={exportLoading}
+                    startIcon={
+                      exportLoading ? (
+                        <CircularProgress size={20} color="inherit" />
+                      ) : (
+                        <ICONS.description fontSize="small" />
+                      )
+                    }
+                    sx={{ ...getStartIconSpacing(dir), width: { xs: "100%", md: "auto" } }}
+                  >
+                    {exportLoading ? t.exporting : t.exportAll}
+                  </Button>
+                </>
+              )}
+              {poll && (
                 <Button
                   variant="contained"
                   color="primary"
                   onClick={handleViewFullScreen}
                   startIcon={<ICONS.fullscreen fontSize="small" />}
-                  sx={getStartIconSpacing(dir)}
+                  sx={{ ...getStartIconSpacing(dir), width: { xs: "100%", md: "auto" } }}
                 >
                   {t.viewFullScreen}
                 </Button>
-              </Stack>
-            )}
+              )}
+            </Stack>
           </Stack>
 
           <Divider sx={{ mb: 4 }} />
@@ -728,7 +821,6 @@ export default function PollResultsPage() {
           )}
         </Container>
       </Box>
-
     </>
   );
 }

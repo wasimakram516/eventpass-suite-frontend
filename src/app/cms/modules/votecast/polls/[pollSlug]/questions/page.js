@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState, useMemo } from "react";
 import { useParams } from "next/navigation";
@@ -52,9 +52,11 @@ const translations = {
         option: "Option",
         loading: "Loading...",
         pollNotFound: "Poll not found.",
-        typeOptions: "Options",
-        typeSlider: "Slider",
         exportQuestions: "Export Questions",
+        typeRating: "Rating",
+        typeNps: "NPS",
+        typeText: "Text",
+        typeOptions: "Options",
     },
     ar: {
         questionsTitle: 'أسئلة استطلاع "{pollTitle}"',
@@ -70,9 +72,10 @@ const translations = {
         option: "الخيار",
         loading: "جارٍ التحميل...",
         pollNotFound: "الاستطلاع غير موجود.",
+        typeRating: "Rating",
+        typeNps: "NPS",
+        typeText: "Text",
         typeOptions: "خيارات",
-        typeSlider: "شريط تمرير",
-        exportQuestions: "تصدير الأسئلة",
     },
 };
 
@@ -193,7 +196,7 @@ export default function QuestionsPage() {
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
                             {t.questionsDescription
-                                .replace("{pollType}", poll.type === "slider" ? t.typeSlider : t.typeOptions)
+                                .replace("{pollType}", t[`type${poll.type.charAt(0).toUpperCase() + poll.type.slice(1)}`] || poll.type)
                                 .replace("{questionCount}", questions.length)}
                         </Typography>
                     </Box>
@@ -257,6 +260,18 @@ export default function QuestionsPage() {
                                                 >
                                                     {q.question}
                                                 </Typography>
+                                                <Box sx={{ mt: 0.5 }}>
+                                                    <Typography variant="caption" color="primary" fontWeight="bold">
+                                                        {q.type === 'rating' ? t.typeRating : 
+                                                        q.type === 'nps' ? t.typeNps : 
+                                                        q.type === 'text' ? t.typeText : t.typeOptions}
+                                                    </Typography>
+                                                    {(q.type === 'rating' || q.type === 'nps') && (
+                                                        <Typography variant="caption" sx={{ ml: 1, opacity: 0.8 }}>
+                                                            ({q.scale?.min ?? 1}-{q.scale?.max ?? (q.type === 'rating' ? 5 : 10)})
+                                                        </Typography>
+                                                    )}
+                                                </Box>
                                             </Box>
                                         </Stack>
 

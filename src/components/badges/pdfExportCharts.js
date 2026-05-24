@@ -704,8 +704,11 @@ export const exportChartsToPDF = async (
     const hasParticipationRate = eventInfo.participationRate !== undefined && eventInfo.participationRate !== null;
     const voteCards = [
       { label: fixParens(translations.totalVotes || "Total Votes Cast", isRTL),         value: String(eventInfo.totalVotes ?? 0),    rgbColor: rgb(0, 0.467, 0.714) },
-      ...(hasParticipationRate ? [{ label: fixParens(translations.participationRate || "Participation Rate", isRTL), value: `${eventInfo.participationRate}%`, rgbColor: rgb(0.008, 0.518, 0.780) }] : []),
-      { label: fixParens(translations.questionCount || "Question Count", isRTL),        value: String(eventInfo.questionCount ?? 0), rgbColor: rgb(0.024, 0.714, 0.831) },
+      { label: fixParens(translations.uniqueVoters || "Unique Voters", isRTL),         value: String(eventInfo.uniqueVoters ?? 0),   rgbColor: rgb(0.008, 0.518, 0.780) },
+      ...(eventInfo.registeredVoters !== undefined ? [{ label: fixParens(translations.registeredVoters || "Registered Voters", isRTL), value: String(eventInfo.registeredVoters), rgbColor: rgb(0.015, 0.616, 0.805) }] : []),
+      ...(eventInfo.guestVoters !== undefined ? [{ label: fixParens(translations.guestVoters || "Guest Voters", isRTL), value: String(eventInfo.guestVoters), rgbColor: rgb(0.024, 0.714, 0.831) }] : []),
+      ...(hasParticipationRate ? [{ label: fixParens(translations.participationRate || "Participation Rate", isRTL), value: `${eventInfo.participationRate}%`, rgbColor: rgb(0.486, 0.227, 0.929) }] : []),
+      { label: fixParens(translations.questionCount || "Question Count", isRTL),        value: String(eventInfo.questionCount ?? 0), rgbColor: rgb(0.055, 0.647, 0.914) },
     ];
     yPosition = drawSimpleKpiCards(page, voteCards, yPosition, pageWidth, margin, font, boldFont, isRTL);
     yPosition -= spacing;
@@ -886,8 +889,18 @@ export const exportChartsToPDF = async (
     const rowHeight = optFontSize + 4 + barH + 8;
 
     for (const q of eventInfo.responsePatternQuestions) {
+      const type = q.type || "options";
       const total = (q.options || []).reduce((sum, o) => sum + (o.votes || 0), 0);
-      const neededH = qFontSize + 8 + (q.options?.length || 0) * rowHeight + 12;
+      
+      let neededH = qFontSize + 8 + 12;
+      if (type === "options") {
+        neededH += (q.options?.length || 0) * rowHeight;
+      } else if (type === "rating" || type === "nps") {
+        neededH += 40;
+      } else if (type === "text") {
+        neededH += (Math.min(q.recentResponses?.length || 0, 5)) * 25;
+      }
+
       await ensureSpace(neededH);
 
       // Question text
@@ -896,47 +909,75 @@ export const exportChartsToPDF = async (
       page.drawText(qText, { x: qX, y: yPosition, size: qFontSize, font: boldFont, color: COLOR_TEXT_MAIN });
       yPosition -= qFontSize + 8;
 
-      for (const opt of (q.options || [])) {
-        await ensureSpace(rowHeight);
-        const votes = opt.votes || 0;
-        const pct = total > 0 ? (votes / total) * 100 : 0;
-        const fillW = (pct / 100) * contentWidth;
-        const pctText = `${votes} | ${pct.toFixed(1)}%`;
-        const optText = fixParens(String(opt.text || ""), isRTL);
+      if (type === "options") {
+        for (const opt of (q.options || [])) {
+          await ensureSpace(rowHeight);
+          const votes = opt.votes || 0;
+          const pct = total > 0 ? (votes / total) * 100 : 0;
+          const fillW = (pct / 100) * contentWidth;
+          const pctText = `${votes} | ${pct.toFixed(1)}%`;
+          const optText = fixParens(String(opt.text || ""), isRTL);
 
-        // Truncate option text if it would overlap the percentage label
-        const pctW = boldFont.widthOfTextAtSize(pctText, optFontSize);
-        const maxOptW = contentWidth - pctW - 12;
-        let displayOptText = optText;
-        while (displayOptText.length > 0 && font.widthOfTextAtSize(displayOptText, optFontSize) > maxOptW) {
-          displayOptText = displayOptText.slice(0, -1);
+          const pctW = boldFont.widthOfTextAtSize(pctText, optFontSize);
+          const maxOptW = contentWidth - pctW - 12;
+          let displayOptText = optText;
+          while (displayOptText.length > 0 && font.widthOfTextAtSize(displayOptText, optFontSize) > maxOptW) {
+            displayOptText = displayOptText.slice(0, -1);
+          }
+          if (displayOptText.length < optText.length) displayOptText += "…";
+
+          const optX = isRTL ? pageWidth - margin - font.widthOfTextAtSize(displayOptText, optFontSize) : margin;
+          page.drawText(displayOptText, { x: optX, y: yPosition, size: optFontSize, font, color: COLOR_TEXT_MAIN });
+
+          const pctX = isRTL ? margin : pageWidth - margin - pctW;
+          page.drawText(pctText, { x: pctX, y: yPosition, size: optFontSize, font: boldFont, color: COLOR_TEXT_SECONDARY });
+
+          const barY = yPosition - optFontSize - 4;
+          page.drawRectangle({ x: margin, y: barY, width: contentWidth, height: barH, color: rgb(0.92, 0.92, 0.92) });
+
+          if (fillW > 0) {
+            page.drawRectangle({
+              x: isRTL ? margin + contentWidth - fillW : margin,
+              y: barY,
+              width: fillW,
+              height: barH,
+              color: COLOR_PRIMARY,
+            });
+          }
+          yPosition -= rowHeight;
         }
-        if (displayOptText.length < optText.length) displayOptText += "…";
-
-        // Option label (left for LTR, right for RTL)
-        const optX = isRTL ? pageWidth - margin - font.widthOfTextAtSize(displayOptText, optFontSize) : margin;
-        page.drawText(displayOptText, { x: optX, y: yPosition, size: optFontSize, font, color: COLOR_TEXT_MAIN });
-
-        // Count | percentage (right for LTR, left for RTL)
-        const pctX = isRTL ? margin : pageWidth - margin - pctW;
-        page.drawText(pctText, { x: pctX, y: yPosition, size: optFontSize, font: boldFont, color: COLOR_TEXT_SECONDARY });
-
-        // Background bar
-        const barY = yPosition - optFontSize - 4;
-        page.drawRectangle({ x: margin, y: barY, width: contentWidth, height: barH, color: rgb(0.92, 0.92, 0.92) });
-
-        // Fill bar (RTL fills from right to left)
-        if (fillW > 0) {
-          page.drawRectangle({
-            x: isRTL ? margin + contentWidth - fillW : margin,
-            y: barY,
-            width: fillW,
-            height: barH,
-            color: COLOR_PRIMARY,
-          });
+      } else if (type === "rating" || type === "nps") {
+        const avg = q.average || 0;
+        const avgText = `${activeTranslations.average || "Average"}: ${avg.toFixed(1)}`;
+        const votesText = `${q.totalVotes || 0} ${activeTranslations.votesTitle || "votes"}`;
+        
+        const avgX = isRTL ? pageWidth - margin - font.widthOfTextAtSize(avgText, 12) : margin;
+        page.drawText(avgText, { x: avgX, y: yPosition - 5, size: 12, font: boldFont, color: COLOR_PRIMARY });
+        
+        const votesX = isRTL ? margin : pageWidth - margin - font.widthOfTextAtSize(votesText, optFontSize);
+        page.drawText(votesText, { x: votesX, y: yPosition - 5, size: optFontSize, font, color: COLOR_TEXT_SECONDARY });
+        
+        yPosition -= 35;
+      } else if (type === "text") {
+        const responses = (q.recentResponses || []).slice(0, 5);
+        for (const resp of responses) {
+          const rText = `"${resp}"`;
+          const maxW = contentWidth - 20;
+          let displayR = rText;
+          if (font.widthOfTextAtSize(displayR, optFontSize) > maxW) {
+             displayR = displayR.slice(0, 50) + "...";
+          }
+          
+          const rX = isRTL ? pageWidth - margin - font.widthOfTextAtSize(displayR, optFontSize) : margin + 10;
+          page.drawText(displayR, { x: rX, y: yPosition, size: optFontSize, font, color: COLOR_TEXT_SECONDARY });
+          yPosition -= 15;
         }
-
-        yPosition -= rowHeight;
+        if (responses.length === 0) {
+          const noDataX = isRTL ? pageWidth - margin - font.widthOfTextAtSize(activeTranslations.noData || "No Data", optFontSize) : margin + 10;
+          page.drawText(activeTranslations.noData || "No Data", { x: noDataX, y: yPosition, size: optFontSize, font, color: COLOR_TEXT_SECONDARY });
+          yPosition -= 15;
+        }
+        yPosition -= 10;
       }
 
       yPosition -= 12;

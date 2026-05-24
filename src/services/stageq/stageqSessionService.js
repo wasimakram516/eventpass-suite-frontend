@@ -41,8 +41,8 @@ export const getPublicSessionBySlug = withApiHandler(async (slug) => {
 });
 
 // Public: Verify attendee by session slug
-export const verifyAttendeeBySession = withApiHandler(async (slug, fieldValue) => {
-  const { data } = await api.post(`/stageq/sessions/${slug}/verify`, { fieldValue });
+export const verifyAttendeeBySession = withApiHandler(async (slug, fieldValue, isoCode) => {
+  const { data } = await api.post(`/stageq/sessions/${slug}/verify`, { fieldValue, isoCode });
   return data;
 });
 

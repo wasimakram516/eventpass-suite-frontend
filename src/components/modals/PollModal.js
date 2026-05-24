@@ -39,9 +39,6 @@ const translations = {
     title: "Poll Title",
     slug: "Slug",
     description: "Description",
-    pollType: "Poll Type",
-    optionsType: "Options (Standard)",
-    sliderType: "Slider",
     linkedEvent: "Select Event (Optional)",
     selectPrimaryField: "Select Primary Field",
     cancel: "Cancel",
@@ -64,6 +61,8 @@ const translations = {
     deleteMediaTitle: "Delete Media",
     deleteMediaMessage: "Are you sure you want to delete this media? This action cannot be undone.",
     deleteConfirmBtn: "Delete",
+    allowGuest: "Allow to continue as a guest",
+    guestThreshold: "Tries required before guest option appears",
   },
   ar: {
     createTitle: "إنشاء استطلاع",
@@ -71,9 +70,6 @@ const translations = {
     title: "عنوان الاستطلاع",
     slug: "المعرف",
     description: "الوصف",
-    pollType: "نوع الاستطلاع",
-    optionsType: "خيارات (قياسي)",
-    sliderType: "شريط التمرير",
     linkedEvent: "اختر الفعالية (اختياري)",
     selectPrimaryField: "اختر الحقل الأساسي",
     cancel: "إلغاء",
@@ -96,6 +92,8 @@ const translations = {
     deleteMediaTitle: "حذف الوسائط",
     deleteMediaMessage: "هل أنت متأكد من حذف هذه الوسائط؟ لا يمكن التراجع عن هذا الإجراء.",
     deleteConfirmBtn: "حذف",
+    allowGuest: "السماح بالمتابعة كضيف",
+    guestThreshold: "المحاولات المطلوبة قبل ظهور خيار الضيف",
   },
 };
 
@@ -147,9 +145,10 @@ export default function PollModal({ open, onClose, onSubmit, initialValues, sele
     title: "",
     slug: "",
     description: "",
-    type: "options",
     linkedEventRegId: "",
     primaryField: "",
+    allowGuest: false,
+    guestThreshold: 0,
   });
 
   // Media state
@@ -170,9 +169,10 @@ export default function PollModal({ open, onClose, onSubmit, initialValues, sele
         title: initialValues?.title || "",
         slug: initialValues?.slug || "",
         description: initialValues?.description || "",
-        type: initialValues?.type || "options",
         linkedEventRegId: linkedId,
         primaryField: initialValues?.primaryField || "",
+        allowGuest: initialValues?.allowGuest || false,
+        guestThreshold: initialValues?.guestThreshold || 0,
       });
       // Restore existing media previews
       setLogo(null);
@@ -284,7 +284,6 @@ export default function PollModal({ open, onClose, onSubmit, initialValues, sele
   const handleSubmit = async () => {
     const newErrors = {};
     if (!formData.title.trim()) newErrors.title = t.required;
-    if (!formData.type) newErrors.type = t.requiredType;
     if (formData.linkedEventRegId && loadedFields && loadedFields.length > 0 && !formData.primaryField) newErrors.primaryField = t.requiredPrimaryField;
     if (Object.keys(newErrors).length) { setErrors(newErrors); return; }
     setErrors({});
@@ -318,12 +317,13 @@ export default function PollModal({ open, onClose, onSubmit, initialValues, sele
         title: formData.title.trim(),
         slug: formData.slug || slugify(formData.title),
         description: formData.description || "",
-        type: formData.type,
         linkedEventRegId: formData.linkedEventRegId || null,
         primaryField: formData.linkedEventRegId ? (formData.primaryField || null) : null,
         logoUrl: finalLogoUrl,
         background: { en: finalBgEn || null, ar: finalBgAr || null },
         businessSlug: selectedBusiness,
+        allowGuest: formData.allowGuest,
+        guestThreshold: formData.guestThreshold,
       };
       await onSubmit(payload, isEdit ? initialValues._id : null);
       setLoading(false);
@@ -376,19 +376,6 @@ export default function PollModal({ open, onClose, onSubmit, initialValues, sele
             />
           </Box>
 
-          {/* Poll Type */}
-          <FormControl fullWidth error={!!errors.type}>
-            <InputLabel>{t.pollType} *</InputLabel>
-            <Select
-              value={formData.type}
-              label={`${t.pollType} *`}
-              onChange={e => { setFormData(prev => ({ ...prev, type: e.target.value })); setErrors(prev => ({ ...prev, type: undefined })); }}
-            >
-              <MenuItem value="options">{t.optionsType}</MenuItem>
-              <MenuItem value="slider">{t.sliderType}</MenuItem>
-            </Select>
-            {errors.type && <Typography variant="caption" color="error" sx={{ mt: 0.5, ml: 1.5 }}>{errors.type}</Typography>}
-          </FormControl>
 
           {/* Branding */}
           <Divider />
@@ -484,6 +471,33 @@ export default function PollModal({ open, onClose, onSubmit, initialValues, sele
                 <Typography variant="caption" color="error" sx={{ mt: 0.5, display: "block" }}>
                   {errors.primaryField}
                 </Typography>
+              )}
+            </Box>
+          )}
+
+          {/* Guest Option */}
+          {formData.linkedEventRegId && (
+            <Box sx={{ mt: 1 }}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={formData.allowGuest}
+                    onChange={(e) => setFormData(prev => ({ ...prev, allowGuest: e.target.checked }))}
+                  />
+                }
+                label={<Typography variant="body2">{t.allowGuest}</Typography>}
+              />
+              {formData.allowGuest && (
+                <TextField
+                  label={t.guestThreshold}
+                  type="number"
+                  fullWidth
+                  size="small"
+                  sx={{ mt: 1 }}
+                  value={formData.guestThreshold}
+                  onChange={(e) => setFormData(prev => ({ ...prev, guestThreshold: parseInt(e.target.value) || 0 }))}
+                  InputProps={{ inputProps: { min: 0 } }}
+                />
               )}
             </Box>
           )}

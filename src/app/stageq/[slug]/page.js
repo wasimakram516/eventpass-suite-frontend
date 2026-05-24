@@ -25,6 +25,10 @@ import AppCard from "@/components/cards/AppCard";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { getEventBackground } from "@/utils/eventBackground";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
+import CountryCodeSelector from "@/components/CountryCodeSelector";
+import { validatePhoneNumber } from "@/utils/phoneValidation";
+
+
 
 const translations = {
   en: {
@@ -70,7 +74,11 @@ export default function PublicSessionPage() {
 
   // Verification state
   const [fieldValue, setFieldValue] = useState("");
+  const [isoCode, setIsoCode] = useState("om");
   const [verifying, setVerifying] = useState(false);
+  const [verifyError, setVerifyError] = useState("");
+
+
 
   // Fetch session + linked event
   useEffect(() => {
@@ -79,6 +87,15 @@ export default function PublicSessionPage() {
       if (data && !data.error) setSession(data);
       setLoading(false);
     });
+  }, [slug]);
+
+  // Clear any existing session/login when they land on the verify/welcome page
+  useEffect(() => {
+    if (typeof window !== "undefined" && slug) {
+      sessionStorage.removeItem(`stageq_reg_${slug}`);
+      sessionStorage.removeItem(`stageq_name_${slug}`);
+      sessionStorage.removeItem(`stageq_company_${slug}`);
+    }
   }, [slug]);
 
   // Background from session's own branding
@@ -96,11 +113,24 @@ export default function PublicSessionPage() {
   const handleVerify = async () => {
     if (!fieldValue.trim() || !slug) return;
     setVerifying(true);
-    const result = await verifyAttendeeBySession(slug, fieldValue.trim());
+    setVerifyError("");
+    const isPhone = session.primaryField?.toLowerCase().includes("phone");
+    if (isPhone) {
+      const phoneError = validatePhoneNumber(fieldValue.trim(), isoCode);
+      if (phoneError) {
+        setVerifyError(phoneError);
+        setVerifying(false);
+        return;
+      }
+    }
+    const result = await verifyAttendeeBySession(slug, fieldValue.trim(), isoCode);
     if (result?.error || !result?.registrationId) {
+      setVerifyError(t.verifyError || "Verification failed");
       setVerifying(false);
       return;
     }
+
+
     sessionStorage.setItem(`stageq_reg_${slug}`, result.registrationId);
     if (result.fullName) sessionStorage.setItem(`stageq_name_${slug}`, result.fullName);
     if (result.company) sessionStorage.setItem(`stageq_company_${slug}`, result.company);
@@ -296,10 +326,33 @@ export default function PublicSessionPage() {
               <TextField
                 fullWidth
                 value={fieldValue}
-                onChange={(e) => setFieldValue(e.target.value)}
+                onChange={(e) => {
+                  let val = e.target.value;
+                  const isPhone = session.primaryField?.toLowerCase().includes("phone");
+                  if (isPhone) {
+                    val = val.replace(/[^0-9]/g, "");
+                  }
+                  setFieldValue(val);
+                  setVerifyError("");
+                }}
                 placeholder={t.verifyPlaceholder}
                 onKeyDown={(e) => e.key === "Enter" && handleVerify()}
                 inputProps={{ dir: "auto" }}
+                InputProps={{
+                  startAdornment: session.primaryField?.toLowerCase().includes("phone") ? (
+                    <CountryCodeSelector
+                      value={isoCode}
+                      onChange={setIsoCode}
+                      disabled={!session.linkedEventRegId?.useInternationalNumbers}
+                    />
+                  ) : null,
+                  sx: {
+                    borderRadius: 999,
+                    backgroundColor: "rgba(255,255,255,0.9)",
+                  }
+                }}
+                error={!!verifyError}
+                helperText={verifyError}
               />
             </Box>
             <Button

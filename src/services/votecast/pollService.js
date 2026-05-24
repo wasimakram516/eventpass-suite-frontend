@@ -151,8 +151,8 @@ export const cloneQuestion = withApiHandler(
 );
 
 // Verify attendee by poll ID (public)
-export const verifyAttendeeByPoll = withApiHandler(async (pollId, fieldValue) => {
-  const { data } = await api.post("/votecast/polls/verify-by-poll", { pollId, fieldValue });
+export const verifyAttendeeByPoll = withApiHandler(async (pollId, fieldValue, isoCode) => {
+  const { data } = await api.post("/votecast/polls/verify-by-poll", { pollId, fieldValue, isoCode });
   return data;
 });
 
@@ -164,10 +164,17 @@ export const verifyAttendee = withApiHandler(async (eventSlug, fieldValue) => {
 
 // Vote on a question within a poll (public)
 export const voteOnPoll = withApiHandler(
-  async (pollId, questionId, optionIndex, registrationId = null, sessionToken = null) => {
-    const payload = { questionId, optionIndex };
+  async (pollId, questionId, optionIndexOrIndices, registrationId = null, sessionToken = null, value = null, textValue = null) => {
+    const payload = { questionId };
+    if (Array.isArray(optionIndexOrIndices)) {
+      payload.optionIndices = optionIndexOrIndices;
+    } else if (optionIndexOrIndices !== null && optionIndexOrIndices !== undefined) {
+      payload.optionIndex = optionIndexOrIndices;
+    }
     if (registrationId) payload.registrationId = registrationId;
     if (sessionToken) payload.sessionToken = sessionToken;
+    if (value !== null) payload.value = value;
+    if (textValue !== null) payload.textValue = textValue;
     const { data } = await api.post(`/votecast/polls/${pollId}/vote`, payload);
     return data;
   },

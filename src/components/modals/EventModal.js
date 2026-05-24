@@ -97,6 +97,9 @@ const translations = {
     useInternationalNumbers: "Allow International Numbers",
     showQrToggle: "Show QR code after registration?",
     showQrOnBadgeToggle: "Show QR Code on Printed Badge?",
+    showBadgePreviewDuringRegistrationToggle: "Show Badge Preview During Registration?",
+    showBadgeCardAfterRegistrationToggle: "Show Badge Card After Registration?",
+    showBadgeCardAfterAttendanceConfirmationToggle: "Show Badge Card After Attendance Confirmation?",
     requiresApprovalToggle: "Require admin approval for registrations?",
     allowMultipleBadgePrintingToggle: "Allow Multiple Badge Printing",
     createCheckinOnFirstPrintToggle: "Create Check-in Record on First Badge Print",
@@ -198,6 +201,9 @@ const translations = {
     useInternationalNumbers: "السماح بالأرقام الدولية",
     showQrToggle: "عرض رمز الاستجابة السريعة بعد التسجيل؟",
     showQrOnBadgeToggle: "عرض رمز QR على بطاقة الطباعة؟",
+    showBadgePreviewDuringRegistrationToggle: "عرض معاينة الشارة أثناء التسجيل؟",
+    showBadgeCardAfterRegistrationToggle: "عرض بطاقة الشارة بعد التسجيل؟",
+    showBadgeCardAfterAttendanceConfirmationToggle: "عرض معاينة الشارة في صفحة الحضور؟",
     requiresApprovalToggle: "يتطلب موافقة المسؤول على التسجيلات؟",
     allowMultipleBadgePrintingToggle: "السماح بطباعة الشارة أكثر من مرة",
     createCheckinOnFirstPrintToggle: "إنشاء سجل تسجيل دخول عند أول طباعة للشارة",
@@ -338,6 +344,9 @@ const EventModal = ({
     useInternationalNumbers: false,
     showQrAfterRegistration: false,
     showQrOnBadge: true,
+    showBadgePreviewDuringRegistration: false,
+    showBadgeCardAfterRegistration: false,
+    showBadgeCardAfterAttendanceConfirmation: false,
     requiresApproval: false,
     allowMultipleBadgePrinting: true,
     createCheckinOnFirstPrint: false,
@@ -427,6 +436,9 @@ const EventModal = ({
         showQrAfterRegistration:
           initialValues?.showQrAfterRegistration || false,
         showQrOnBadge: initialValues?.showQrOnBadge ?? true,
+        showBadgePreviewDuringRegistration: initialValues?.showBadgePreviewDuringRegistration || false,
+        showBadgeCardAfterRegistration: initialValues?.showBadgeCardAfterRegistration || false,
+        showBadgeCardAfterAttendanceConfirmation: initialValues?.showBadgeCardAfterAttendanceConfirmation || false,
         requiresApproval: initialValues?.requiresApproval || false,
         allowMultipleBadgePrinting: initialValues?.allowMultipleBadgePrinting ?? true,
         createCheckinOnFirstPrint: initialValues?.createCheckinOnFirstPrint ?? false,
@@ -520,6 +532,9 @@ const EventModal = ({
         useInternationalNumbers: false,
         showQrAfterRegistration: false,
         showQrOnBadge: true,
+        showBadgePreviewDuringRegistration: false,
+        showBadgeCardAfterRegistration: false,
+        showBadgeCardAfterAttendanceConfirmation: false,
         requiresApproval: false,
         allowMultipleBadgePrinting: true,
         createCheckinOnFirstPrint: false,
@@ -1211,6 +1226,9 @@ const EventModal = ({
         requiresApproval: formData.requiresApproval,
         allowMultipleBadgePrinting: formData.allowMultipleBadgePrinting,
         createCheckinOnFirstPrint: formData.createCheckinOnFirstPrint,
+        showBadgePreviewDuringRegistration: formData.showBadgePreviewDuringRegistration,
+        showBadgeCardAfterRegistration: formData.showBadgeCardAfterRegistration,
+        showBadgeCardAfterAttendanceConfirmation: formData.showBadgeCardAfterAttendanceConfirmation,
         defaultLanguage: formData.defaultLanguage,
         useInternationalNumbers: formData.useInternationalNumbers,
         useCustomEmailTemplate: formData.useCustomEmailTemplate,
@@ -1601,6 +1619,47 @@ const EventModal = ({
                     />
                   </Box>
 
+                  {!isClosed && (
+                    <>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={formData.showBadgePreviewDuringRegistration}
+                              onChange={(e) =>
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  showBadgePreviewDuringRegistration: e.target.checked,
+                                }))
+                              }
+                              color="primary"
+                            />
+                          }
+                          label={t.showBadgePreviewDuringRegistrationToggle}
+                          sx={{ alignSelf: "start" }}
+                        />
+                      </Box>
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={formData.showBadgeCardAfterRegistration}
+                              onChange={(e) =>
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  showBadgeCardAfterRegistration: e.target.checked,
+                                }))
+                              }
+                              color="primary"
+                            />
+                          }
+                          label={t.showBadgeCardAfterRegistrationToggle}
+                          sx={{ alignSelf: "start" }}
+                        />
+                      </Box>
+                    </>
+                  )}
+
                   <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                     <FormControlLabel
                       control={
@@ -1619,8 +1678,28 @@ const EventModal = ({
                       sx={{ alignSelf: "start" }}
                     />
                   </Box>
-
                 </>
+              )}
+
+              {isClosed && (
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        checked={formData.showBadgeCardAfterAttendanceConfirmation}
+                        onChange={(e) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            showBadgeCardAfterAttendanceConfirmation: e.target.checked,
+                          }))
+                        }
+                        color="primary"
+                      />
+                    }
+                    label={t.showBadgeCardAfterAttendanceConfirmationToggle}
+                    sx={{ alignSelf: "start" }}
+                  />
+                </Box>
               )}
 
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -1881,53 +1960,53 @@ const EventModal = ({
               {(initialValues?.logoUrl ||
                 (Array.isArray(initialValues?.brandingMedia) && initialValues.brandingMedia.length > 0) ||
                 initialValues?.customQrWrapper?.backgroundImage?.url) && (
-                <>
-                  <Typography variant="subtitle2" sx={{ fontWeight: 600, mt: 2 }}>
-                    {t.customQrUploadsSection}
-                  </Typography>
-                  <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
-                    {initialValues?.logoUrl && (
-                      <FormControlLabel
-                        control={
-                          <Checkbox
-                            checked={!!formData.customQrIncludeLogo}
-                            onChange={(e) => setFormData((prev) => ({ ...prev, customQrIncludeLogo: e.target.checked }))}
-                            size="small"
-                            color="primary"
-                          />
-                        }
-                        label={t.customQrOptionLogo}
-                      />
-                    )}
-                    {Array.isArray(initialValues?.brandingMedia) && initialValues.brandingMedia.length > 0 && (
-                      <FormControlLabel
-                        control={
-                          <Checkbox
-                            checked={!!formData.customQrIncludeBrandingMedia}
-                            onChange={(e) => setFormData((prev) => ({ ...prev, customQrIncludeBrandingMedia: e.target.checked }))}
-                            size="small"
-                            color="primary"
-                          />
-                        }
-                        label={t.customQrOptionBrandingMedia}
-                      />
-                    )}
-                    {initialValues?.customQrWrapper?.backgroundImage?.url && (
-                      <FormControlLabel
-                        control={
-                          <Checkbox
-                            checked={!!formData.customQrIncludeBackground}
-                            onChange={(e) => setFormData((prev) => ({ ...prev, customQrIncludeBackground: e.target.checked }))}
-                            size="small"
-                            color="primary"
-                          />
-                        }
-                        label={t.customQrOptionBackground}
-                      />
-                    )}
-                  </Box>
-                </>
-              )}
+                  <>
+                    <Typography variant="subtitle2" sx={{ fontWeight: 600, mt: 2 }}>
+                      {t.customQrUploadsSection}
+                    </Typography>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
+                      {initialValues?.logoUrl && (
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={!!formData.customQrIncludeLogo}
+                              onChange={(e) => setFormData((prev) => ({ ...prev, customQrIncludeLogo: e.target.checked }))}
+                              size="small"
+                              color="primary"
+                            />
+                          }
+                          label={t.customQrOptionLogo}
+                        />
+                      )}
+                      {Array.isArray(initialValues?.brandingMedia) && initialValues.brandingMedia.length > 0 && (
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={!!formData.customQrIncludeBrandingMedia}
+                              onChange={(e) => setFormData((prev) => ({ ...prev, customQrIncludeBrandingMedia: e.target.checked }))}
+                              size="small"
+                              color="primary"
+                            />
+                          }
+                          label={t.customQrOptionBrandingMedia}
+                        />
+                      )}
+                      {initialValues?.customQrWrapper?.backgroundImage?.url && (
+                        <FormControlLabel
+                          control={
+                            <Checkbox
+                              checked={!!formData.customQrIncludeBackground}
+                              onChange={(e) => setFormData((prev) => ({ ...prev, customQrIncludeBackground: e.target.checked }))}
+                              size="small"
+                              color="primary"
+                            />
+                          }
+                          label={t.customQrOptionBackground}
+                        />
+                      )}
+                    </Box>
+                  </>
+                )}
               <Tooltip title={!initialValues?._id ? t.saveEventFirstToEditQr : ""}>
                 <span style={{ display: "inline-block" }}>
                   <Button

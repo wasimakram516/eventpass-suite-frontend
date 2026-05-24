@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useState, useRef } from "react";
 import {
@@ -418,12 +418,14 @@ export default function SurveyFormsManagePage() {
     setSelectedEventId(evId);
 
     const qs = (latestForm.questions || []).map((q, idx) => ({
+      _id: q._id,
       label: q.label || "",
       helpText: q.helpText || "",
-      type: q.type || "milti",
+      type: q.type || "multi",
       required: !!q.required,
       order: idx,
       options: (q.options || []).map((o) => ({
+        _id: o._id,
         label: o.label || "",
         imageUrl: o.imageUrl || null,
       })),
@@ -451,6 +453,10 @@ export default function SurveyFormsManagePage() {
   const duplicateQuestion = (idx) =>
     setQuestions((prev) => {
       const dupe = JSON.parse(JSON.stringify(prev[idx])); // deep clone
+      delete dupe._id; // Ensure duplicate gets a new ID
+      if (dupe.options) {
+        dupe.options.forEach(o => delete o._id);
+      }
       return [...prev.slice(0, idx + 1), dupe, ...prev.slice(idx + 1)];
     });
 
@@ -667,6 +673,7 @@ export default function SurveyFormsManagePage() {
       setShowUploadProgress(false);
 
       const qs = (questions || []).map((q, qi) => ({
+        _id: q._id,
         label: q.label.trim(),
         helpText: q.helpText?.trim() || "",
         type: q.type,
@@ -675,7 +682,7 @@ export default function SurveyFormsManagePage() {
         options: (q.options || []).map((o, oi) => {
           const key = `${qi}:${oi}`;
           let imageUrl = o.imageUrl || null;
-
+          
           if (uploadedUrls[key]) {
             imageUrl = uploadedUrls[key];
           } else if (o.imageRemove) {
@@ -685,6 +692,7 @@ export default function SurveyFormsManagePage() {
           }
 
           return {
+            _id: o._id,
             label: o.label?.trim() || "",
             imageUrl,
             imageRemove: !!o.imageRemove,
