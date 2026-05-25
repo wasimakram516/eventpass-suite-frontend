@@ -5,10 +5,10 @@ import { useParams, useRouter } from "next/navigation";
 import {
   Box,
   Typography,
-  CircularProgress,
   IconButton,
   Button,
 } from "@mui/material";
+import LoadingState from "@/components/LoadingState";
 import VolumeUpIcon from "@mui/icons-material/VolumeUp";
 import VolumeOffIcon from "@mui/icons-material/VolumeOff";
 import HorizontalCarousel from "@/components/HorizontalCarousel";
@@ -161,20 +161,7 @@ export default function EventDetails() {
     return null;
   }, [event, lang]);
 
-  if (loading) {
-    return (
-      <Box
-        sx={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <CircularProgress />
-      </Box>
-    );
-  }
+  if (loading) return <LoadingState />;
 
   if (error || !event) {
     return (

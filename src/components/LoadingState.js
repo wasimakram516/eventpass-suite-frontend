@@ -191,7 +191,7 @@ export default function LoadingState({
               {/* Logo */}
               <Box
                 component="img"
-                src="/logo.png"
+                src="/WW.png"
                 alt="EventPass"
                 sx={{
                   width: "auto",

@@ -25,6 +25,7 @@ import {
 import { QRCodeCanvas } from "qrcode.react";
 import AppCard from "@/components/cards/AppCard";
 import Background from "@/components/Background";
+import LoadingState from "@/components/LoadingState";
 import CountryCodeSelector from "@/components/CountryCodeSelector";
 import InitialsPlaceholder from "@/components/InitialsPlaceholder";
 import useI18nLayout from "@/hooks/useI18nLayout";
@@ -291,9 +292,7 @@ export default function MyBadgePage() {
           {step === 0 && (
             <>
               {eventsLoading ? (
-                <Box sx={{ textAlign: "center", mt: 8 }}>
-                  <CircularProgress />
-                </Box>
+                <LoadingState />
               ) : filteredEvents.length === 0 ? (
                 <Typography
                   sx={{

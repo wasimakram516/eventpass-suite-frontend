@@ -14,10 +14,10 @@ import {
   Paper,
   TextField,
   IconButton,
-  CircularProgress,
   Avatar,
   useMediaQuery,
 } from "@mui/material";
+import LoadingState from "@/components/LoadingState";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
@@ -214,15 +214,7 @@ export default function WhatsAppInboxPage() {
      LOADING
   ========================= */
 
-  if (loading) {
-    return (
-      <Box
-        sx={{ minHeight: "60vh", display: "flex", justifyContent: "center" }}
-      >
-        <CircularProgress />
-      </Box>
-    );
-  }
+  if (loading) return <LoadingState />;
 
   /* =========================
      UI
