@@ -4,7 +4,6 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Box,
   Typography,
-  Grid,
   Card,
   CardHeader,
   CardContent,
@@ -1758,22 +1757,10 @@ export default function ViewRegistrations() {
         <NoDataAvailable />
       ) : (
         <>
-          <Grid container spacing={4} sx={{
-            justifyContent: "center"
-          }}>
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 4, justifyContent: "center" }}>
             {paginatedRegistrations.map((reg) => (
-              <Grid
-                key={reg._id}
-                sx={{
-                  display: { xs: "flex", sm: "block" },
-                  width: { xs: "100%", sm: "auto" },
-                }}
-                size={{
-                  xs: 12,
-                  sm: 6,
-                  md: 4
-                }}>
                 <Card
+                  key={reg._id}
                   sx={{
                     width: { xs: "100%", sm: 360 },
                     maxWidth: 360,
@@ -2101,9 +2088,8 @@ export default function ViewRegistrations() {
                     </Box>
                   </CardActions>
                 </Card>
-              </Grid>
             ))}
-          </Grid>
+          </Box>
 
           <Box
             sx={{

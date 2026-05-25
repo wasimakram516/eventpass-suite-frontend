@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import {
   Box,
   Typography,
-  Grid,
   Divider,
   Stack,
 } from "@mui/material";
@@ -102,13 +101,9 @@ export default function Modules() {
         <Divider sx={{ my: 2 }} />
       </Box>
       {loading ? (
-        <Grid
-          container
-          spacing={3}
-          sx={{ justifyContent: "center" }}
-        >
+        <Box sx={{ display: "flex", justifyContent: "center" }}>
           <LoadingState />
-        </Grid>
+        </Box>
       ) : modules?.length === 0 ? (
         <Stack spacing={2} sx={{ mt: 5, alignItems: "center" }}>
           <SupportAgentIcon color="primary" sx={{ fontSize: 64 }} />
@@ -153,14 +148,12 @@ export default function Modules() {
           )}
         </Stack>
       ) : (
-        <Grid
-          container
-          spacing={3}
+        <Box
           sx={{
+            display: "flex",
+            flexWrap: "wrap",
+            gap: 3,
             justifyContent: "center",
-            "& > *": {
-              width: { xs: "100%", sm: "auto" },
-            },
           }}
         >
           {modules.map((mod) => (
@@ -178,7 +171,7 @@ export default function Modules() {
               route={mod.route}
             />
           ))}
-        </Grid>
+        </Box>
       )}
     </Box>
   );

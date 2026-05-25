@@ -6,7 +6,7 @@ import {
   Box,
   Container,
   Typography,
-  Grid,
+
   Button,
   CircularProgress,
   IconButton,
@@ -329,23 +329,14 @@ export default function GamesPage() {
         ) : filteredGames.length === 0 ? (
           <NoDataAvailable />
         ) : (
-          <Grid container spacing={3} sx={{
-            justifyContent: "center"
-          }}>
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, justifyContent: "center" }}>
             {filteredGames.map((g) => (
-              <Grid
-                key={g._id}
-                size={{
-                  xs: 12,
-                  sm: 6,
-                  md: 4,
-                  lg: 3
-                }}>
                 <AppCard
+                  key={g._id}
                   sx={{
                     p: 2,
                     height: "100%",
-                    maxWidth: "420px",
+                    width: { xs: "100%", sm: 340 },
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "space-between",
@@ -528,9 +519,8 @@ export default function GamesPage() {
                     </Box>
                   </Box>
                 </AppCard>
-              </Grid>
             ))}
-          </Grid>
+          </Box>
         )}
 
         <ShareLinkModal

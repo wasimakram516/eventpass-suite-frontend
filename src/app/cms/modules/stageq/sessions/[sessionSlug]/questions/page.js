@@ -8,7 +8,7 @@ import {
   Divider,
   IconButton,
   Button,
-  Grid,
+
   Tooltip,
   Dialog,
   DialogTitle,
@@ -234,18 +234,10 @@ export default function SessionQuestionsPage() {
         ) : questions.length === 0 ? (
           <NoDataAvailable />
         ) : (
-          <Grid container spacing={3} sx={{
-            justifyContent: "center"
-          }}>
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, justifyContent: "center" }}>
             {questions.map((q) => (
-              <Grid
-                key={q._id}
-                size={{
-                  xs: 12,
-                  sm: 6,
-                  md: 4
-                }}>
                 <AppCard
+                  key={q._id}
                   sx={{
                     display: "flex",
                     flexDirection: "column",
@@ -414,9 +406,8 @@ export default function SessionQuestionsPage() {
                     </Stack>
                   </CardActions>
                 </AppCard>
-              </Grid>
             ))}
-          </Grid>
+          </Box>
         )}
 
         {/* Edit Dialog */}

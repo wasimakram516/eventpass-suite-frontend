@@ -6,7 +6,6 @@ import {
   Box,
   Container,
   Typography,
-  Grid,
   Button,
   CircularProgress,
   Divider,
@@ -284,53 +283,44 @@ export default function EventsPage() {
         ) : filteredEvents.length === 0 ? (
           <NoDataAvailable />
         ) : (
-          <Grid container spacing={3} sx={{
-            justifyContent: "center"
-          }}>
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, justifyContent: "center" }}>
             {filteredEvents.map((ev) => {
               const status =
                 ev?.startDate && ev?.endDate
                   ? getEventStatus(ev.startDate, ev.endDate)
                   : "N/A";
               return (
-                <Grid
+                <EventCardBase
                   key={ev._id}
-                  size={{
-                    xs: 12,
-                    sm: 6,
-                    md: 4
-                  }}>
-                  <EventCardBase
-                    event={ev}
-                    t={t}
-                    status={status}
-                    showRegistrations
-                    showAudit={true}
-                    locale={language === "ar" ? "ar-SA" : "en-GB"}
-                    onView={() =>
-                      router.replace(
-                        `/cms/modules/eventreg/events/${ev.slug}/registrations`
-                      )
-                    }
-                    onEdit={() => handleOpenEdit(ev)}
-                    onDelete={() => {
-                      setEventToDelete(ev);
-                      setConfirmOpen(true);
-                    }}
-                    onShare={() => {
-                      setEventToShare(ev);
-                      setShareModalOpen(true);
-                    }}
-                    onInsights={() =>
-                      router.push(
-                        `/cms/modules/eventreg/events/${ev.slug}/insights`
-                      )
-                    }
-                  />
-                </Grid>
+                  event={ev}
+                  t={t}
+                  status={status}
+                  showRegistrations
+                  showAudit={true}
+                  locale={language === "ar" ? "ar-SA" : "en-GB"}
+                  onView={() =>
+                    router.replace(
+                      `/cms/modules/eventreg/events/${ev.slug}/registrations`
+                    )
+                  }
+                  onEdit={() => handleOpenEdit(ev)}
+                  onDelete={() => {
+                    setEventToDelete(ev);
+                    setConfirmOpen(true);
+                  }}
+                  onShare={() => {
+                    setEventToShare(ev);
+                    setShareModalOpen(true);
+                  }}
+                  onInsights={() =>
+                    router.push(
+                      `/cms/modules/eventreg/events/${ev.slug}/insights`
+                    )
+                  }
+                />
               );
             })}
-          </Grid>
+          </Box>
         )}
 
         <EventFormModal

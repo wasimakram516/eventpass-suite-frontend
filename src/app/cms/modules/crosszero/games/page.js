@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  Box, Container, Typography, Grid, Button, CircularProgress,
+  Box, Container, Typography, Button, CircularProgress,
   IconButton, Divider, Stack, Tooltip, Chip,
 } from "@mui/material";
 
@@ -205,19 +205,9 @@ export default function CrossZeroGamesPage() {
         ) : filteredGames.length === 0 ? (
           <NoDataAvailable />
         ) : (
-          <Grid container spacing={3} sx={{
-            justifyContent: "center"
-          }}>
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, justifyContent: "center" }}>
             {filteredGames.map((g) => (
-              <Grid
-                key={g._id}
-                size={{
-                  xs: 12,
-                  sm: 6,
-                  md: 4,
-                  lg: 3
-                }}>
-                <AppCard sx={{ p: 2, height: "100%", maxWidth: "420px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                <AppCard key={g._id} sx={{ p: 2, height: "100%", width: { xs: "100%", sm: 340 }, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
                   <Box>
                     <Stack
                       direction="row"
@@ -334,9 +324,8 @@ export default function CrossZeroGamesPage() {
                     </Stack>
                   </Box>
                 </AppCard>
-              </Grid>
             ))}
-          </Grid>
+          </Box>
         )}
 
         <ShareLinkModal

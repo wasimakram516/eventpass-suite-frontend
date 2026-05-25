@@ -804,17 +804,11 @@ export default function GlobalConfigPage() {
                   color: "text.secondary"
                 }}>{t.none}</Typography>
               ) : (
-                <Grid container spacing={2}>
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, justifyContent: "center" }}>
                   {config.clientLogos.map((cl, idx) => (
-                    <Grid
-                      key={cl._id || idx}
-                      size={{
-                        xs: 6,
-                        sm: 4,
-                        md: 4
-                      }}>
-                      <Stack spacing={0.75} sx={{
-                        alignItems: "center"
+                      <Stack key={cl._id || idx} spacing={0.75} sx={{
+                        alignItems: "center",
+                        width: { xs: "100%", sm: 120 },
                       }}>
                         <Box
                           sx={{
@@ -877,9 +871,8 @@ export default function GlobalConfigPage() {
                           </Stack>
                         )}
                       </Stack>
-                    </Grid>
                   ))}
-                </Grid>
+                </Box>
               )}
             </AppCard>
           </Grid>
@@ -930,7 +923,7 @@ export default function GlobalConfigPage() {
               ["facebook", "instagram", "linkedin", "website"].some(
                 (key) => !!config.socialLinks?.[key]
               ) ? (
-                <Grid container spacing={2}>
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, justifyContent: "center" }}>
                   {[
                     { key: "facebook", icon: <FacebookIcon /> },
                     { key: "instagram", icon: <InstagramIcon /> },
@@ -938,21 +931,16 @@ export default function GlobalConfigPage() {
                     { key: "website", icon: <LanguageIcon /> },
                   ].map(({ key, icon }) =>
                     config.socialLinks?.[key] ? (
-                      <Grid
-                        key={key}
-                        size={{
-                          xs: 12,
-                          md: 6
-                        }}>
+                      <Box key={key} sx={{ width: { xs: "100%", sm: 260 } }}>
                         {renderFieldRow(
                           key.charAt(0).toUpperCase() + key.slice(1),
                           normalizeUrl(config.socialLinks[key]),
                           icon
                         )}
-                      </Grid>
+                      </Box>
                     ) : null
                   )}
-                </Grid>
+                </Box>
               ) : (
                 <Typography sx={{
                   color: "text.secondary"

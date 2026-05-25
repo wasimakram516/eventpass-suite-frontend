@@ -6,7 +6,6 @@ import {
   Box,
   Container,
   Typography,
-  Grid,
   Button,
   CircularProgress,
   Divider,
@@ -285,51 +284,42 @@ export default function EventsPage() {
         ) : filteredEvents.length === 0 ? (
           <NoDataAvailable />
         ) : (
-          <Grid container spacing={3} sx={{
-            justifyContent: "center"
-          }}>
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, justifyContent: "center" }}>
             {filteredEvents.map((ev) => {
               return (
-                <Grid
+                <EventCardBase
                   key={ev._id}
-                  size={{
-                    xs: 12,
-                    sm: 6,
-                    md: 4
-                  }}>
-                  <EventCardBase
-                    event={ev}
-                    t={t}
-                    status={null}
-                    showRegistrations
-                    hideVenue={true}
-                    hideDates={true}
-                    showAudit={true}
-                    locale={language === "ar" ? "ar-SA" : "en-GB"}
-                    onView={() =>
-                      router.push(
-                        `/cms/modules/digipass/events/${ev.slug}/registrations`
-                      )
-                    }
-                    onEdit={() => handleOpenEdit(ev)}
-                    onDelete={() => {
-                      setEventToDelete(ev);
-                      setConfirmOpen(true);
-                    }}
-                    onShare={() => {
-                      setEventToShare(ev);
-                      setShareModalOpen(true);
-                    }}
-                    onInsights={() =>
-                      router.push(
-                        `/cms/modules/digipass/events/${ev.slug}/insights`
-                      )
-                    }
-                  />
-                </Grid>
+                  event={ev}
+                  t={t}
+                  status={null}
+                  showRegistrations
+                  hideVenue={true}
+                  hideDates={true}
+                  showAudit={true}
+                  locale={language === "ar" ? "ar-SA" : "en-GB"}
+                  onView={() =>
+                    router.push(
+                      `/cms/modules/digipass/events/${ev.slug}/registrations`
+                    )
+                  }
+                  onEdit={() => handleOpenEdit(ev)}
+                  onDelete={() => {
+                    setEventToDelete(ev);
+                    setConfirmOpen(true);
+                  }}
+                  onShare={() => {
+                    setEventToShare(ev);
+                    setShareModalOpen(true);
+                  }}
+                  onInsights={() =>
+                    router.push(
+                      `/cms/modules/digipass/events/${ev.slug}/insights`
+                    )
+                  }
+                />
               );
             })}
-          </Grid>
+          </Box>
         )}
 
         <DigiPassEventModal

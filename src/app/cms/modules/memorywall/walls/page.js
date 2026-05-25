@@ -16,7 +16,7 @@ import {
   Container,
   Typography,
   IconButton,
-  Grid,
+
   Card,
   CardContent,
   CardActions,
@@ -342,31 +342,21 @@ export default function WallConfigsPage() {
       ) : filteredWallConfigs.length === 0 ? (
         <NoDataAvailable />
       ) : (
-        <Grid container spacing={3} sx={{
-          justifyContent: "center"
-        }}>
+        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, justifyContent: "center" }}>
           {filteredWallConfigs.map((config) => (
-            <Grid
-              key={config._id}
-              sx={{ width: { xs: '100%', sm: 'auto' } }}
-              size={{
-                xs: 12,
-                sm: 6,
-                md: 4
-              }}>
               <Card
+                key={config._id}
                 elevation={3}
                 sx={{
                   position: "relative",
                   height: "100%",
-                  minWidth: "250px",
+                  width: { xs: "100%", sm: 340 },
                   display: "flex",
                   flexDirection: "column",
                   justifyContent: "space-between",
                   borderRadius: 2,
                   boxShadow: "0 2px 10px rgba(0,0,0,0.06)",
                   transition: "transform 0.2s, box-shadow 0.2s",
-                  width: { xs: "100%", md: "auto" },
                 }}
               >
                 {/* Chip at top-right */}
@@ -494,9 +484,8 @@ export default function WallConfigsPage() {
                   </Box>
                 </CardActions>
               </Card>
-            </Grid>
           ))}
-        </Grid>
+        </Box>
       )}
       {(user?.role === "admin" || user?.role === "superadmin") && (
         <BusinessDrawer
