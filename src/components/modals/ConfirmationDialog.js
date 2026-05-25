@@ -55,15 +55,17 @@ const ConfirmationDialog = ({
       onClose={loading ? null : onClose}
       dir={dir}
       disableScrollLock={true}
-      PaperProps={{
-        sx: {
-          borderRadius: 2,
-          padding: 2,
-          maxWidth: "500px",
-          width: "100%",
-          backgroundColor: "#f9fafb",
-          boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
-        },
+      slotProps={{
+        paper: {
+          sx: {
+            borderRadius: 2,
+            padding: 2,
+            maxWidth: "500px",
+            width: "100%",
+            backgroundColor: "#f9fafb",
+            boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
+          },
+        }
       }}
     >
       <DialogTitle

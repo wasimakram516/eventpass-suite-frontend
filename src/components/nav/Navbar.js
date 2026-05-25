@@ -100,33 +100,12 @@ export default function Navbar() {
       >
         <Toolbar sx={{ justifyContent: "space-between" }}>
           <Link href="/" style={{ textDecoration: "none" }}>
-            <Stack
-              direction="row"
-              alignItems="center"
-              spacing={1}
-              sx={{ cursor: "pointer", width: { xs: 180, sm: "auto" } }}
+            <Typography
+              variant="h6"
+              sx={{ fontWeight: "bold", color: "primary.main", letterSpacing: 1 }}
             >
-              {/* Logo for mobile devices */}
-              <Typography
-                variant="body1"
-                color="text.primary"
-                noWrap
-                sx={{ display: { xs: "block", sm: "none" } }}
-              >
-                {globalConfig?.appName || "EventPass"}
-              </Typography>
-
-              {/* App name for tablets and desktops */}
-              <Typography
-                variant="h6"
-                fontWeight="bold"
-                color="text.primary"
-                noWrap
-                sx={{ display: { xs: "none", sm: "block" } }}
-              >
-                {globalConfig?.appName || "EventPass Suite"}
-              </Typography>
-            </Stack>
+              EventPass
+            </Typography>
           </Link>
 
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
@@ -165,21 +144,25 @@ export default function Navbar() {
                   anchorEl={anchorEl}
                   open={Boolean(anchorEl)}
                   onClose={handleClose}
-                  PaperProps={{
-                    elevation: 0,
-                    sx: {
-                      mt: 1,
-                      borderRadius: 2,
-                      minWidth: 200,
-                      boxShadow: `
+                  slotProps={{
+                    paper: {
+                      elevation: 0,
+                      sx: {
+                        mt: 1,
+                        borderRadius: 2,
+                        minWidth: 200,
+                        boxShadow: `
             2px 2px 6px rgba(0, 0, 0, 0.1),
             -2px -2px 6px rgba(255, 255, 255, 0.4)
           `,
+                      },
                     },
                   }}
                 >
                   <MenuItem>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" sx={{
+                      color: "text.secondary"
+                    }}>
                       {t.loggedInAs}{" "}
                       <strong>
                         &nbsp;
@@ -206,7 +189,6 @@ export default function Navbar() {
           </Box>
         </Toolbar>
       </AppBar>
-
       <ConfirmationDialog
         open={!!user && confirmLogout}
         onClose={() => setConfirmLogout(false)}

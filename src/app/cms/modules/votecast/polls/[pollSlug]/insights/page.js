@@ -176,10 +176,21 @@ const determineChartType = (field) => {
 
 const KpiCard = ({ label, value }) => (
     <AppCard sx={{ textAlign: "center", p: 2, display: "flex", flexDirection: "column", justifyContent: "center", border: "1px solid #f1f5f9" }}>
-        <Typography variant="h4" fontWeight="bold" color="primary.main">
+        <Typography
+            variant="h4"
+            sx={{
+                fontWeight: "bold",
+                color: "primary.main"
+            }}>
             {value ?? "—"}
         </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
+        <Typography
+            variant="body2"
+            sx={{
+                color: "text.secondary",
+                mt: 0.5,
+                fontWeight: 500
+            }}>
             {label}
         </Typography>
     </AppCard>
@@ -304,9 +315,11 @@ const ChartVisualization = ({
                                 const val = e.target.value === "" ? 0 : parseInt(e.target.value);
                                 onTopNChange(isNaN(val) ? 0 : val);
                             }}
-                            InputProps={{ inputProps: { min: 0, max: 50 } }}
                             sx={{ width: "120px" }}
                             disabled={isGenerating}
+                            slotProps={{
+                                input: { inputProps: { min: 0, max: 50 } }
+                            }}
                         />
                     )}
                     {showIntervalControl && (
@@ -338,9 +351,11 @@ const ChartVisualization = ({
                                     const val = e.target.value;
                                     onIntervalChange(val === "" ? "" : parseInt(val));
                                 }}
-                                InputProps={{ inputProps: { min: 1, max: 1440 } }}
                                 sx={{ width: "140px" }}
                                 disabled={isGenerating}
+                                slotProps={{
+                                    input: { inputProps: { min: 1, max: 1440 } }
+                                }}
                             />
                         </>
                     )}
@@ -366,7 +381,6 @@ const ChartVisualization = ({
                     )}
                 </Box>
             </Box>
-
             {chartTypeChips && (
                 <Stack direction="row" spacing={1} sx={{ mb: 1.5 }}>
                     {chartTypeChips.map((chip) => (
@@ -395,7 +409,6 @@ const ChartVisualization = ({
                     ))}
                 </Stack>
             )}
-
             <Box
                 ref={(el) => onRefReady && onRefReady(el)}
                 sx={{ flex: 1, minHeight: 0, width: "100%", display: "flex", flexDirection: "column" }}
@@ -767,7 +780,9 @@ const ResponsePatternSection = ({ questions, t }) => {
                     <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "#1f2937" }}>
                         {t.responsePattern}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" sx={{
+                        color: "text.secondary"
+                    }}>
                         {t.responsePatternDesc}
                     </Typography>
                 </Box>
@@ -791,7 +806,6 @@ const ResponsePatternSection = ({ questions, t }) => {
                                     <Typography variant="body2" sx={{ fontWeight: 600, mb: 1.5, color: "#1f2937" }}>
                                         {q.question}
                                     </Typography>
-                                    
                                     {type === "options" ? (
                                         <Stack spacing={1}>
                                             {(q.options || []).map((opt, oi) => {
@@ -799,8 +813,17 @@ const ResponsePatternSection = ({ questions, t }) => {
                                                 return (
                                                     <Box key={oi}>
                                                         <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
-                                                            <Typography variant="caption" color="text.secondary">{opt.text}</Typography>
-                                                            <Typography variant="caption" color="text.secondary" sx={{ direction: "ltr", flexShrink: 0, ml: 1 }}>
+                                                            <Typography variant="caption" sx={{
+                                                                color: "text.secondary"
+                                                            }}>{opt.text}</Typography>
+                                                            <Typography
+                                                                variant="caption"
+                                                                sx={{
+                                                                    color: "text.secondary",
+                                                                    direction: "ltr",
+                                                                    flexShrink: 0,
+                                                                    ml: 1
+                                                                }}>
                                                                 {opt.votes || 0} ({pct.toFixed(1)}%)
                                                             </Typography>
                                                         </Box>
@@ -814,25 +837,41 @@ const ResponsePatternSection = ({ questions, t }) => {
                                     ) : (type === "rating" || type === "nps") ? (
                                         <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", bgcolor: "#f9fafb", p: 2, borderRadius: 2 }}>
                                             <Box>
-                                                <Typography variant="h4" color="primary" fontWeight="bold">
+                                                <Typography variant="h4" color="primary" sx={{
+                                                    fontWeight: "bold"
+                                                }}>
                                                     {q.average?.toFixed(1) || "0.0"}
                                                 </Typography>
-                                                <Typography variant="caption" color="text.secondary">
+                                                <Typography variant="caption" sx={{
+                                                    color: "text.secondary"
+                                                }}>
                                                     {t.average || "Average Score"}
                                                 </Typography>
                                             </Box>
-                                            <Box textAlign="right">
-                                                <Typography variant="subtitle1" fontWeight="bold">
+                                            <Box sx={{
+                                                textAlign: "right"
+                                            }}>
+                                                <Typography variant="subtitle1" sx={{
+                                                    fontWeight: "bold"
+                                                }}>
                                                     {q.totalVotes || 0}
                                                 </Typography>
-                                                <Typography variant="caption" color="text.secondary">
+                                                <Typography variant="caption" sx={{
+                                                    color: "text.secondary"
+                                                }}>
                                                     {t.totalVotes || "Total Votes"}
                                                 </Typography>
                                             </Box>
                                         </Box>
                                     ) : type === "text" ? (
                                         <Box sx={{ bgcolor: "#f9fafb", p: 2, borderRadius: 2 }}>
-                                            <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: "block" }}>
+                                            <Typography
+                                                variant="caption"
+                                                sx={{
+                                                    color: "text.secondary",
+                                                    mb: 1,
+                                                    display: "block"
+                                                }}>
                                                 {t.recentResponses || "Recent Responses"}:
                                             </Typography>
                                             <Stack spacing={1}>
@@ -842,12 +881,13 @@ const ResponsePatternSection = ({ questions, t }) => {
                                                     </Typography>
                                                 ))}
                                                 {(!q.recentResponses || q.recentResponses.length === 0) && (
-                                                    <Typography variant="caption" color="text.secondary">{t.noData}</Typography>
+                                                    <Typography variant="caption" sx={{
+                                                        color: "text.secondary"
+                                                    }}>{t.noData}</Typography>
                                                 )}
                                             </Stack>
                                         </Box>
                                     ) : null}
-
                                     {qi < questions.length - 1 && <Divider sx={{ mt: 2 }} />}
                                 </Box>
                             );
@@ -1260,18 +1300,22 @@ export default function PollInsightsDashboard() {
             }}
         >
             <BreadcrumbsNav />
-
             <Stack
                 direction={{ xs: "column", sm: "row" }}
-                justifyContent="space-between"
-                alignItems={{ xs: "stretch", sm: "center" }}
                 spacing={2}
-            >
+                sx={{
+                    justifyContent: "space-between",
+                    alignItems: { xs: "stretch", sm: "center" }
+                }}>
                 <Box sx={{ flex: 1 }}>
-                    <Typography variant="h3" fontWeight="bold" gutterBottom>
+                    <Typography variant="h3" gutterBottom sx={{
+                        fontWeight: "bold"
+                    }}>
                         {t.pageTitle}
                     </Typography>
-                    <Typography variant="body1" color="text.secondary" gutterBottom>
+                    <Typography variant="body1" gutterBottom sx={{
+                        color: "text.secondary"
+                    }}>
                         {t.pageDescription}
                     </Typography>
                 </Box>
@@ -1279,9 +1323,11 @@ export default function PollInsightsDashboard() {
                 <Stack
                     direction={{ xs: "column", sm: "row" }}
                     spacing={2}
-                    alignItems={{ xs: "stretch", sm: "center" }}
-                    sx={{ width: { xs: "100%", sm: "auto" }, gap: { xs: 1, sm: 2 } }}
-                >
+                    sx={{
+                        alignItems: { xs: "stretch", sm: "center" },
+                        width: { xs: "100%", sm: "auto" },
+                        gap: { xs: 1, sm: 2 }
+                    }}>
                     {selectedFields.length > 0 && (
                         <>
                             <Button
@@ -1306,9 +1352,7 @@ export default function PollInsightsDashboard() {
                     )}
                 </Stack>
             </Stack>
-
             <Divider sx={{ mb: 1 }} />
-
             {/* KPI Summary Cards */}
             {summary && (
                 <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
@@ -1338,12 +1382,10 @@ export default function PollInsightsDashboard() {
                     </Box>
                 </Box>
             )}
-
             {/* Response Pattern — unlinked polls only */}
             {!pollInfo?.linkedEventRegId && pollInfo?.questions?.length > 0 && (
                 <ResponsePatternSection questions={pollInfo.questions} t={t} />
             )}
-
             {/* Field Chip Selector */}
             <AppCard sx={{ flex: "0 0 auto", p: { xs: 1, sm: 1.5, md: 2 }, width: "100%", boxSizing: "border-box" }}>
                 <Typography variant="subtitle1" sx={{ fontWeight: 600, color: "#374151", mb: 1 }}>
@@ -1376,12 +1418,13 @@ export default function PollInsightsDashboard() {
                     ))}
                 </Stack>
             </AppCard>
-
             {/* Chart Panels */}
             <Stack spacing={2} sx={{ flex: "1 1 0%", overflow: "auto", minHeight: 0, pb: 2, px: 0.3 }}>
                 {selectedFields.length === 0 ? (
                     <AppCard sx={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", minHeight: 300 }}>
-                        <Box textAlign="center">
+                        <Box sx={{
+                            textAlign: "center"
+                        }}>
                             <BarChartIcon sx={{ fontSize: 48, color: "#d1d5db", mb: 2 }} />
                             <Typography color="textSecondary">{t.selectFieldPrompt}</Typography>
                         </Box>

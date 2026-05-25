@@ -122,27 +122,56 @@ export default function InstructionsPage() {
         >
           <Typography
             variant="h4"
-            fontWeight={800}
-            sx={{ mb: 0.5, color: "#fff", textTransform: "capitalize", wordBreak: "break-word" }}
-          >
+            sx={{
+              fontWeight: 800,
+              mb: 0.5,
+              color: "#fff",
+              textTransform: "capitalize",
+              wordBreak: "break-word"
+            }}>
             {game.title}
           </Typography>
 
           <Typography sx={{ color: "rgba(255,255,255,0.75)", mb: 4, fontSize: "1rem" }}>
             {gameInstructionsTranslations[language].welcome}{" "}
-            <Box component="span" fontWeight={700} sx={{ color: "#00e5ff" }}>
+            <Box
+              component="span"
+              sx={{
+                fontWeight: 700,
+                color: "#00e5ff"
+              }}>
               {playerInfo.name}
             </Box>
             {" — "}{gameInstructionsTranslations[language].instructionsTitle}
           </Typography>
 
-          <Stack spacing={2} sx={{ mb: 4 }} alignItems="center">
-            <Stack direction="row" alignItems="center" spacing={1.5}
-              sx={{ px: 2, py: 1.5, borderRadius: 3, bgcolor: "rgba(0,229,255,0.08)", border: "1px solid rgba(0,229,255,0.2)", width: "100%" }}>
+          <Stack
+            spacing={2}
+            sx={{
+              alignItems: "center",
+              mb: 4
+            }}>
+            <Stack
+              direction="row"
+              spacing={1.5}
+              sx={{
+                alignItems: "center",
+                px: 2,
+                py: 1.5,
+                borderRadius: 3,
+                bgcolor: "rgba(0,229,255,0.08)",
+                border: "1px solid rgba(0,229,255,0.2)",
+                width: "100%"
+              }}>
               <TimerIcon sx={{ color: "#00e5ff" }} />
               <Typography sx={{ color: "#fff", fontSize: "1rem", textAlign: align, direction: dir }}>
                 {gameInstructionsTranslations[language].quizDuration}{" "}
-                <Box component="span" fontWeight={700} sx={{ color: "#00e5ff" }}>
+                <Box
+                  component="span"
+                  sx={{
+                    fontWeight: 700,
+                    color: "#00e5ff"
+                  }}>
                   {game.gameSessionTimer}{" "}
                   {gameInstructionsTranslations[language].seconds}
                 </Box>

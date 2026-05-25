@@ -691,7 +691,6 @@ const Dashboard = () => {
           onSelect={handleBusinessSelect}
         />
       )}
-
       {/* Main Content */}
       <Container maxWidth={false} disableGutters>
         <BreadcrumbsNav />
@@ -707,10 +706,17 @@ const Dashboard = () => {
           }}
         >
           <Box sx={{ flex: { xs: "1 1 100%", sm: "auto" } }}>
-            <Typography variant="h4" fontWeight="bold">
+            <Typography variant="h4" sx={{
+              fontWeight: "bold"
+            }}>
               {t.spinWheelManagement}
             </Typography>
-            <Typography variant="body2" color="text.secondary" mt={0.5}>
+            <Typography
+              variant="body2"
+              sx={{
+                color: "text.secondary",
+                mt: 0.5
+              }}>
               {selectedBusinessObject
                 ? `${t.managingWheelsFor} ${selectedBusinessObject.name}`
                 : t.selectBusinessToView}
@@ -755,21 +761,31 @@ const Dashboard = () => {
           <EmptyBusinessState />
         ) : loading ? (
           <Box
-            display="flex"
-            justifyContent="center"
-            alignItems="center"
-            height="50vh"
-          >
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              alignItems: "center",
+              height: "50vh"
+            }}>
             <LoadingState />
           </Box>
         ) : spinWheels.length === 0 ? (
           <NoDataAvailable />
         ) : (
-          <Grid container spacing={3} justifyContent={"center"}>
+          <Grid container spacing={3} sx={{
+            justifyContent: "center"
+          }}>
             {filteredSpinWheels.map((wheel) => {
               const typeConfig = typeMap[wheel.type] || {};
               return (
-                <Grid item xs={12} sm={6} md={4} lg={3} key={wheel._id}>
+                <Grid
+                  key={wheel._id}
+                  size={{
+                    xs: 12,
+                    sm: 6,
+                    md: 4,
+                    lg: 3
+                  }}>
                   <Card
                     elevation={3}
                     sx={{
@@ -800,36 +816,45 @@ const Dashboard = () => {
                     />
 
                     <CardContent sx={{ flexGrow: 1, pt: 4 }}>
-                      <Typography variant="h6" fontWeight="bold" gutterBottom>
+                      <Typography variant="h6" gutterBottom sx={{
+                        fontWeight: "bold"
+                      }}>
                         {wheel.title}
                       </Typography>
 
                       <Typography
                         variant="body2"
-                        color="text.secondary"
-                        sx={{ mb: 2, wordBreak: "break-word" }}
-                      >
+                        sx={{
+                          color: "text.secondary",
+                          mb: 2,
+                          wordBreak: "break-word"
+                        }}>
                         <strong>{t.slug}:</strong> {wheel.slug}
                       </Typography>
 
                       <Typography
                         variant="body2"
-                        color="text.secondary"
-                        sx={{ mb: 2, wordBreak: "break-word" }}
-                      >
+                        sx={{
+                          color: "text.secondary",
+                          mb: 2,
+                          wordBreak: "break-word"
+                        }}>
                         <strong>{t.business}:</strong>{" "}
                         {wheel.business?.name || t.noBusiness}
                       </Typography>
 
                       <Typography
                         variant="body2"
-                        color="text.secondary"
-                        sx={{ mb: 2 }}
-                      >
+                        sx={{
+                          color: "text.secondary",
+                          mb: 2
+                        }}>
                         <strong>{t.participants}:</strong> {wheel.participantCount || 0}
                       </Typography>
 
-                      <Typography variant="caption" color="text.secondary">
+                      <Typography variant="caption" sx={{
+                        color: "text.secondary"
+                      }}>
                         {t.created}:{" "}
                         {(() => {
                           try {

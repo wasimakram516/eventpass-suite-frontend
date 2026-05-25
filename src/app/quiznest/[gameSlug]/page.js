@@ -78,10 +78,14 @@ export default function GameHomePage() {
         >
           <Typography
             variant="h3"
-            fontWeight={800}
             gutterBottom
-            sx={{ mb: 3, color: "#fff", textTransform: "capitalize", wordBreak: "break-word" }}
-          >
+            sx={{
+              fontWeight: 800,
+              mb: 3,
+              color: "#fff",
+              textTransform: "capitalize",
+              wordBreak: "break-word"
+            }}>
             {game.title}
           </Typography>
 

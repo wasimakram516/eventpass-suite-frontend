@@ -204,9 +204,10 @@ export default function NamePage() {
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
             onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-            InputProps={{ sx: { backgroundColor: "rgba(255,255,255,0.08)", color: "#fff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.25)" } } }}
-            InputLabelProps={{ sx: { color: "rgba(255,255,255,0.6)" } }}
-          />
+            slotProps={{
+              input: { sx: { backgroundColor: "rgba(255,255,255,0.08)", color: "#fff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.25)" } } },
+              inputLabel: { sx: { color: "rgba(255,255,255,0.6)" } }
+            }} />
 
           {/* Submit */}
           <Button

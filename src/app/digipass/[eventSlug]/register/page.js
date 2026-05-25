@@ -454,23 +454,25 @@ export default function DigiPassRegistration() {
       const phoneValue = formData[field.name] || "";
 
           return (
-        <TextField
-          key={field.name}
-          {...commonProps}
-          value={phoneValue}
-          onChange={(e) => handlePhoneChange(field.name, e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <CountryCodeSelector
-                value={isoCode}
-                onChange={(iso) => handleCountryCodeChange(field.name, iso)}
-                disabled={event?.linkedEventRegId ? !event.linkedEventRegId.useInternationalNumbers : false}
-                dir={dir}
-              />
-            ),
-          }}
-        />
-      );
+            <TextField
+              key={field.name}
+              {...commonProps}
+              value={phoneValue}
+              onChange={(e) => handlePhoneChange(field.name, e.target.value)}
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <CountryCodeSelector
+                      value={isoCode}
+                      onChange={(iso) => handleCountryCodeChange(field.name, iso)}
+                      disabled={event?.linkedEventRegId ? !event.linkedEventRegId.useInternationalNumbers : false}
+                      dir={dir}
+                    />
+                  ),
+                }
+              }}
+            />
+          );
     }
 
     return (

@@ -221,27 +221,34 @@ export default function WhatsAppLogsPage() {
   return (
     <Container dir={dir} maxWidth={false} disableGutters>
       <BreadcrumbsNav />
-
       {/* HEADER */}
-      <Stack spacing={0.5} mb={2}>
-        <Typography variant="h5" fontWeight={600}>
+      <Stack spacing={0.5} sx={{
+        mb: 2
+      }}>
+        <Typography variant="h5" sx={{
+          fontWeight: 600
+        }}>
           {t.title}
         </Typography>
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" sx={{
+          color: "text.secondary"
+        }}>
           {t.description}
         </Typography>
       </Stack>
-
       {/* META ROW */}
       <Stack
         direction="row"
-        justifyContent="space-between"
-        alignItems="center"
-        mb={2}
-        flexWrap="wrap"
-        gap={2}
-      >
-        <Typography variant="body2" color="text.secondary">
+        sx={{
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 2,
+          flexWrap: "wrap",
+          gap: 2
+        }}>
+        <Typography variant="body2" sx={{
+          color: "text.secondary"
+        }}>
           {t.showing} {from}–{to} {t.of} {total}
         </Typography>
 
@@ -265,16 +272,15 @@ export default function WhatsAppLogsPage() {
           </Select>
         </FormControl>
       </Stack>
-
       <Divider sx={{ mb: 2 }} />
-
       {/* FILTER BAR */}
       <Stack
         direction={{ xs: "column", md: "row" }}
         spacing={2}
-        alignItems="stretch"
-        mb={2}
-      >
+        sx={{
+          alignItems: "stretch",
+          mb: 2
+        }}>
         {/* SEARCH */}
         <TextField
           size="small"
@@ -326,7 +332,6 @@ export default function WhatsAppLogsPage() {
           </Select>
         </FormControl>
       </Stack>
-
       {/* TABLE / CARDS */}
       {isMobile ? (
         <Stack spacing={2}>
@@ -338,7 +343,9 @@ export default function WhatsAppLogsPage() {
               <Card key={log._id} variant="outlined">
                 <CardContent>
                   <Stack spacing={1}>
-                    <Stack direction="row" justifyContent="space-between">
+                    <Stack direction="row" sx={{
+                      justifyContent: "space-between"
+                    }}>
                       <Chip size="small" {...direction} />
                       <Chip size="small" {...status} />
                     </Stack>
@@ -350,7 +357,9 @@ export default function WhatsAppLogsPage() {
                       {log.body || "—"}
                     </Typography>
 
-                    <Typography variant="caption" color="text.secondary">
+                    <Typography variant="caption" sx={{
+                      color: "text.secondary"
+                    }}>
                       {log.to} • {formatDateTimeWithLocale(log.createdAt)}
                     </Typography>
                   </Stack>
@@ -405,7 +414,6 @@ export default function WhatsAppLogsPage() {
           </Table>
         </TableContainer>
       )}
-
       {/* PAGINATION */}
       <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
         <Pagination

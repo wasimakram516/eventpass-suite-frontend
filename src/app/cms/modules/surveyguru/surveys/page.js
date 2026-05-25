@@ -43,21 +43,36 @@ export default function SurveyGuruDashboard() {
   return (
     <Container dir={dir} maxWidth={false} disableGutters>
       <BreadcrumbsNav />
-
       {/* Header */}
-      <Stack spacing={1} alignItems="flex-start" mb={4}>
-        <Typography variant="h4" fontWeight="bold">
+      <Stack
+        spacing={1}
+        sx={{
+          alignItems: "flex-start",
+          mb: 4
+        }}>
+        <Typography variant="h4" sx={{
+          fontWeight: "bold"
+        }}>
           {t.title}
         </Typography>
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" sx={{
+          color: "text.secondary"
+        }}>
           {t.subtitle}
         </Typography>
         <Divider sx={{ width: "100%", mt: 2 }} />
       </Stack>
-
       {/* Cards */}
-      <Grid container spacing={3} justifyContent="center">
-        <Grid item xs={12} sm={6} md={6} lg={3}>
+      <Grid container spacing={3} sx={{
+        justifyContent: "center"
+      }}>
+        <Grid
+          size={{
+            xs: 12,
+            sm: 6,
+            md: 6,
+            lg: 3
+          }}>
           <DashboardCard
             title={t.formTitle}
             description={t.formDesc}
@@ -68,7 +83,13 @@ export default function SurveyGuruDashboard() {
           />
         </Grid>
 
-        <Grid item xs={12} sm={6} md={6} lg={3}>
+        <Grid
+          size={{
+            xs: 12,
+            sm: 6,
+            md: 6,
+            lg: 3
+          }}>
           <DashboardCard
             title={t.recTitle}
             description={t.recDesc}

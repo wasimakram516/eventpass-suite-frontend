@@ -44,14 +44,15 @@ export default function CrossZeroPlayerEntryCard({
     >
       <Typography
         variant="h4"
-        fontWeight={800}
-        sx={{ color: "primary.main", mb: 1, textAlign: "center" }}
-      >
+        sx={{
+          fontWeight: 800,
+          color: "primary.main",
+          mb: 1,
+          textAlign: "center"
+        }}>
         {title}
       </Typography>
-
       {badge ? <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>{badge}</Box> : null}
-
       <Typography
         sx={{
           color: "rgba(15,23,42,0.62)",
@@ -62,7 +63,6 @@ export default function CrossZeroPlayerEntryCard({
       >
         {subtitle}
       </Typography>
-
       <TextField
         label={nameLabel}
         fullWidth
@@ -71,27 +71,30 @@ export default function CrossZeroPlayerEntryCard({
         value={form.name}
         onChange={(event) => onChange({ ...form, name: event.target.value })}
         onKeyDown={(event) => event.key === "Enter" && onSubmit()}
-        InputProps={{ sx: { backgroundColor: "rgba(255,255,255,0.75)" } }}
+        slotProps={{
+          input: { sx: { backgroundColor: "rgba(255,255,255,0.75)" } }
+        }}
       />
-
       <TextField
         label={companyLabel}
         fullWidth
         sx={{ mb: 3 }}
         value={form.company}
         onChange={(event) => onChange({ ...form, company: event.target.value })}
-        InputProps={{ sx: { backgroundColor: "rgba(255,255,255,0.75)" } }}
+        slotProps={{
+          input: { sx: { backgroundColor: "rgba(255,255,255,0.75)" } }
+        }}
       />
-
       <TextField
         label={departmentLabel}
         fullWidth
         sx={{ mb: 3 }}
         value={form.department}
         onChange={(event) => onChange({ ...form, department: event.target.value })}
-        InputProps={{ sx: { backgroundColor: "rgba(255,255,255,0.75)" } }}
+        slotProps={{
+          input: { sx: { backgroundColor: "rgba(255,255,255,0.75)" } }
+        }}
       />
-
       <Button
         variant="contained"
         size="large"
@@ -109,7 +112,6 @@ export default function CrossZeroPlayerEntryCard({
       >
         {buttonLabel}
       </Button>
-
       {error ? (
         <Typography
           variant="caption"

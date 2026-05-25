@@ -238,10 +238,12 @@ const BulkEmailModal = ({
             dir={dir}
             maxWidth="md"
             fullWidth
-            PaperProps={{
-                sx: {
-                    borderRadius: 2,
-                },
+            slotProps={{
+                paper: {
+                    sx: {
+                        borderRadius: 2,
+                    },
+                }
             }}
         >
             <DialogTitle
@@ -257,7 +259,6 @@ const BulkEmailModal = ({
                     <ICONS.close />
                 </IconButton>
             </DialogTitle>
-
             <DialogContent dividers>
                 <Stack spacing={3}>
                     {/* Filter Dropdown */}
@@ -367,14 +368,13 @@ const BulkEmailModal = ({
                     {notificationType === "default" && (
                         <Typography
                             variant="body2"
-                            color="text.secondary"
                             sx={{
+                                color: "text.secondary",
                                 mt: 1,
                                 maxWidth: 520,
                                 fontSize: "0.85rem",
-                                lineHeight: 1.6,
-                            }}
-                        >
+                                lineHeight: 1.6
+                            }}>
                             {t.defaultEmailInfo}
                         </Typography>
                     )}
@@ -417,7 +417,9 @@ const BulkEmailModal = ({
                                     onChange={handleFileChange}
                                     style={{ display: "none" }}
                                 />
-                                <Stack direction="row" spacing={2} alignItems="center">
+                                <Stack direction="row" spacing={2} sx={{
+                                    alignItems: "center"
+                                }}>
                                     <Button
                                         variant="outlined"
                                         component="label"
@@ -429,8 +431,16 @@ const BulkEmailModal = ({
                                         {t.uploadFile}
                                     </Button>
                                     {attachedFile && (
-                                        <Stack direction="row" spacing={1} alignItems="center" sx={{ flex: 1 }}>
-                                            <Typography variant="body2" color="text.secondary">
+                                        <Stack
+                                            direction="row"
+                                            spacing={1}
+                                            sx={{
+                                                alignItems: "center",
+                                                flex: 1
+                                            }}>
+                                            <Typography variant="body2" sx={{
+                                                color: "text.secondary"
+                                            }}>
                                                 {attachedFile.name}
                                             </Typography>
                                             <IconButton
@@ -445,9 +455,11 @@ const BulkEmailModal = ({
                                 </Stack>
                                 <Typography
                                     variant="caption"
-                                    color="text.secondary"
-                                    sx={{ mt: 0.5, display: "block" }}
-                                >
+                                    sx={{
+                                        color: "text.secondary",
+                                        mt: 0.5,
+                                        display: "block"
+                                    }}>
                                     {t.uploadHelperText}
                                 </Typography>
                             </Box>
@@ -455,7 +467,6 @@ const BulkEmailModal = ({
                     )}
                 </Stack>
             </DialogContent>
-
             <DialogActions
                 sx={{
                     justifyContent: "flex-end",

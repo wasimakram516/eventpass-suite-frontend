@@ -33,12 +33,11 @@ export default function InitialsPlaceholder({
       }}
     >
       <Typography
-        fontWeight="bold"
         sx={{
+          fontWeight: "bold",
           fontSize: fontSize || size / 3.5,
-          textAlign: "center",
-        }}
-      >
+          textAlign: "center"
+        }}>
         {initials || "?"}
       </Typography>
     </Box>

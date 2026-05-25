@@ -188,10 +188,14 @@ export default function CrossZeroAIResultsPage() {
             }}
           >
             <Box>
-              <Typography variant="h5" fontWeight="bold">
+              <Typography variant="h5" sx={{
+                fontWeight: "bold"
+              }}>
                 {t.title} - &quot;{game?.title}&quot;
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" sx={{
+                color: "text.secondary"
+              }}>
                 {t.totalRecords} <strong>{totalRecords}</strong>
               </Typography>
             </Box>
@@ -221,7 +225,9 @@ export default function CrossZeroAIResultsPage() {
               gap: 2,
             }}
           >
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" sx={{
+              color: "text.secondary"
+            }}>
               {t.showing} <strong>{fromRecord}</strong>-<strong>{toRecord}</strong>{" "}
               {t.of} <strong>{totalRecords}</strong> {t.records}
             </Typography>
@@ -256,27 +262,29 @@ export default function CrossZeroAIResultsPage() {
             <Grid
               container
               spacing={{ xs: 1.5, sm: 2.5 }}
-              justifyContent="center"
               sx={{
+                justifyContent: "center",
+
                 "& > *": {
                   width: { xs: "100%", sm: "auto" },
-                },
-              }}
-            >
+                }
+              }}>
               {records.map((record, index) => {
                 const style = RESULT_STYLE[record.result] || RESULT_STYLE.draw;
 
                 return (
                   <Grid
-                    item
-                    xs={12}
-                    sm={6}
-                    md={6}
-                    lg={4}
                     key={record._id || index}
-                    display="flex"
-                    justifyContent="center"
-                  >
+                    sx={{
+                      display: "flex",
+                      justifyContent: "center"
+                    }}
+                    size={{
+                      xs: 12,
+                      sm: 6,
+                      md: 6,
+                      lg: 4
+                    }}>
                     <AppCard
                       sx={{
                         p: { xs: 2, sm: 2.5 },
@@ -289,15 +297,18 @@ export default function CrossZeroAIResultsPage() {
                     >
                       <Typography
                         variant="h6"
-                        fontWeight="bold"
-                        color="primary.main"
                         noWrap
-                      >
+                        sx={{
+                          fontWeight: "bold",
+                          color: "primary.main"
+                        }}>
                         {record.name || "-"}
                       </Typography>
 
                       {record.company ? (
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography variant="body2" sx={{
+                          color: "text.secondary"
+                        }}>
                           {record.company}
                         </Typography>
                       ) : null}
@@ -326,9 +337,10 @@ export default function CrossZeroAIResultsPage() {
                         ) : style.icon}
                         <Typography
                           variant="body2"
-                          fontWeight={700}
-                          sx={{ color: style.color }}
-                        >
+                          sx={{
+                            fontWeight: 700,
+                            color: style.color
+                          }}>
                           {t[record.result] || record.result}
                         </Typography>
                       </Box>
@@ -352,13 +364,17 @@ export default function CrossZeroAIResultsPage() {
 
                       <Box sx={{ display: "flex", alignItems: "center", gap: 0.8 }}>
                         <AccessTime fontSize="small" sx={{ color: "text.secondary" }} />
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography variant="body2" sx={{
+                          color: "text.secondary"
+                        }}>
                           {t.timeTaken}: <strong>{record.timeTaken ?? 0}s</strong>
                         </Typography>
                       </Box>
 
                       {record.submittedAt ? (
-                        <Typography variant="caption" color="text.secondary">
+                        <Typography variant="caption" sx={{
+                          color: "text.secondary"
+                        }}>
                           {t.playedAt}: {formatDateTimeWithLocale(record.submittedAt)}
                         </Typography>
                       ) : null}

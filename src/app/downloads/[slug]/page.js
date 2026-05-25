@@ -102,10 +102,14 @@ export default function FileDownloadPage() {
         >
           <CardContent>
             <CloudOffIcon sx={{ fontSize: 80, color: "error.main", mb: 2 }} />
-            <Typography variant="h5" fontWeight="bold" gutterBottom>
+            <Typography variant="h5" gutterBottom sx={{
+              fontWeight: "bold"
+            }}>
               {t.fileNotFound}
             </Typography>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" sx={{
+              color: "text.secondary"
+            }}>
               {t.fileRemoved}
             </Typography>
           </CardContent>
@@ -233,7 +237,6 @@ export default function FileDownloadPage() {
       >
         {preview}
       </Box>
-
       {/* ===== Footer Section ===== */}
       <Box
         sx={{
@@ -249,10 +252,12 @@ export default function FileDownloadPage() {
         <Box sx={{ display: "flex", alignItems: "center" }}>
           <Typography
             variant="subtitle1"
-            fontWeight="bold"
-            color="text.primary"
-            sx={{ display: "flex", alignItems: "center" }}
-          >
+            sx={{
+              fontWeight: "bold",
+              color: "text.primary",
+              display: "flex",
+              alignItems: "center"
+            }}>
             {fileIcon}
             {file.title || "File"}
           </Typography>

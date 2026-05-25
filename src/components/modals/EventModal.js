@@ -1295,7 +1295,11 @@ const EventModal = ({
             pt: 3,
           }}
         >
-          <Typography fontWeight="bold" fontSize="1.25rem">
+          <Typography
+            sx={{
+              fontWeight: "bold",
+              fontSize: "1.25rem"
+            }}>
             {initialValues ? t.editTitle : t.createTitle}
           </Typography>
 
@@ -1386,8 +1390,10 @@ const EventModal = ({
                 type="date"
                 value={formData.startDate}
                 onChange={handleInputChange}
-                InputLabelProps={{ shrink: true }}
                 fullWidth
+                slotProps={{
+                  inputLabel: { shrink: true }
+                }}
               />
               <TextField
                 label={`${t.endDate} *`}
@@ -1395,8 +1401,10 @@ const EventModal = ({
                 type="date"
                 value={formData.endDate}
                 onChange={handleInputChange}
-                InputLabelProps={{ shrink: true }}
                 fullWidth
+                slotProps={{
+                  inputLabel: { shrink: true }
+                }}
               />
               {isClosed && (
                 <>
@@ -1406,8 +1414,10 @@ const EventModal = ({
                     type="time"
                     value={formData.startTime}
                     onChange={handleInputChange}
-                    InputLabelProps={{ shrink: true }}
                     fullWidth
+                    slotProps={{
+                      inputLabel: { shrink: true }
+                    }}
                   />
                   <TextField
                     label={t.endTime}
@@ -1415,8 +1425,10 @@ const EventModal = ({
                     type="time"
                     value={formData.endTime}
                     onChange={handleInputChange}
-                    InputLabelProps={{ shrink: true }}
                     fullWidth
+                    slotProps={{
+                      inputLabel: { shrink: true }
+                    }}
                   />
                 </>
               )}
@@ -1476,23 +1488,25 @@ const EventModal = ({
                 helperText={organizerPhoneError || "Enter your phone number"}
                 fullWidth
                 type="tel"
-                InputProps={{
-                  startAdornment: (
-                    <CountryCodeSelector
-                      value={organizerPhoneIsoCode}
-                      onChange={(iso) => {
-                        setOrganizerPhoneIsoCode(iso);
-                        if (formData.organizerPhone && formData.organizerPhone.trim()) {
-                          const error = validatePhoneNumber(formData.organizerPhone, iso);
-                          setOrganizerPhoneError(error || "");
-                        } else {
-                          setOrganizerPhoneError("");
-                        }
-                      }}
-                      disabled={false}
-                      dir={dir}
-                    />
-                  ),
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <CountryCodeSelector
+                        value={organizerPhoneIsoCode}
+                        onChange={(iso) => {
+                          setOrganizerPhoneIsoCode(iso);
+                          if (formData.organizerPhone && formData.organizerPhone.trim()) {
+                            const error = validatePhoneNumber(formData.organizerPhone, iso);
+                            setOrganizerPhoneError(error || "");
+                          } else {
+                            setOrganizerPhoneError("");
+                          }
+                        }}
+                        disabled={false}
+                        dir={dir}
+                      />
+                    ),
+                  }
                 }}
               />
             </Box>
@@ -1889,7 +1903,12 @@ const EventModal = ({
           {/* Tab: Custom QR Code (visible when useCustomQrCode, last tab) */}
           {formData.useCustomQrCode && activeTab === (formData.useCustomFields ? 6 : 5) && (
             <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 2 }}>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: "text.secondary",
+                  mb: 1
+                }}>
                 {t.customQrCodeDescription}
               </Typography>
               <Typography variant="subtitle2" sx={{ fontWeight: 600, mt: 1 }}>
@@ -2517,7 +2536,9 @@ const EventModal = ({
                           ? "Current Agenda:"
                           : "Selected Agenda:"}
                       </Typography>
-                      <Typography variant="body2" color="text.secondary">
+                      <Typography variant="body2" sx={{
+                        color: "text.secondary"
+                      }}>
                         {formData.agendaPreview}
                       </Typography>
                     </Box>
@@ -2558,7 +2579,6 @@ const EventModal = ({
                       <TextField
                         label={t.inputType}
                         select
-                        SelectProps={{ native: true }}
                         value={field.inputType}
                         onChange={(e) =>
                           handleFormFieldChange(
@@ -2568,6 +2588,9 @@ const EventModal = ({
                           )
                         }
                         fullWidth
+                        slotProps={{
+                          select: { native: true }
+                        }}
                       >
                         {[
                           { value: "text", label: t.textType },
@@ -2785,7 +2808,12 @@ const EventModal = ({
                 </>
               ) : (
                 <>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: "text.secondary",
+                      mb: 2
+                    }}>
                     {t.noCustomFields || "No custom fields available. Please add custom fields first."}
                   </Typography>
                   <Button
@@ -2890,7 +2918,6 @@ const EventModal = ({
         onClose={() => setShowUploadProgress(false)}
         allowClose={false}
       />
-
       {/* Confirmation Dialog for Media Deletion */}
       <ConfirmationDialog
         open={deleteConfirm.open}
@@ -2929,7 +2956,6 @@ const EventModal = ({
         showQrOnBadge={formData.showQrOnBadge}
         badgeCustomizations={formData.badgeCustomizations}
       />
-
       <DefaultQrWrapperModal
         open={customQrWrapperModalOpen}
         onClose={() => setCustomQrWrapperModalOpen(false)}

@@ -104,7 +104,6 @@ export default function CrossZeroInstructionsPage() {
   return (
     <Box sx={{ position: "relative" }}>
       <LanguageSelector top={20} right={20} />
-
       <Box
         sx={{
           display: "flex",
@@ -142,16 +141,25 @@ export default function CrossZeroInstructionsPage() {
             boxShadow: "0 8px 40px rgba(0,0,0,0.6)",
           }}
         >
-          <Stack direction="row" justifyContent="center" spacing={1.5} sx={{ mb: 2 }}>
+          <Stack
+            direction="row"
+            spacing={1.5}
+            sx={{
+              justifyContent: "center",
+              mb: 2
+            }}>
             <CrossZeroMarkVisual mark="X" xImage={game.xImage} oImage={game.oImage} size={42} fallbackSize="2rem" />
             <CrossZeroMarkVisual mark="O" xImage={game.xImage} oImage={game.oImage} size={42} fallbackSize="2rem" />
           </Stack>
 
           <Typography
             variant="h4"
-            fontWeight={800}
-            sx={{ color: "#fff", textAlign: "center", mb: 0.5 }}
-          >
+            sx={{
+              fontWeight: 800,
+              color: "#fff",
+              textAlign: "center",
+              mb: 0.5
+            }}>
             {game.title}
           </Typography>
 
@@ -182,10 +190,10 @@ export default function CrossZeroInstructionsPage() {
 
           <Stack
             direction="row"
-            justifyContent="center"
-            alignItems="center"
             spacing={1}
             sx={{
+              justifyContent: "center",
+              alignItems: "center",
               mb: 2.5,
               px: 1.5,
               py: 0.8,
@@ -193,9 +201,8 @@ export default function CrossZeroInstructionsPage() {
               width: "fit-content",
               borderRadius: 999,
               bgcolor: "rgba(255,255,255,0.08)",
-              border: "1px solid rgba(255,255,255,0.15)",
-            }}
-          >
+              border: "1px solid rgba(255,255,255,0.15)"
+            }}>
             <Typography
               sx={{
                 color: "rgba(255,255,255,0.75)",
@@ -210,14 +217,13 @@ export default function CrossZeroInstructionsPage() {
 
           <Typography
             variant="h6"
-            fontWeight={700}
             sx={{
+              fontWeight: 700,
               color: "rgba(255,255,255,0.55)",
               textAlign: "center",
               mb: 3,
-              fontSize: "1rem",
-            }}
-          >
+              fontSize: "1rem"
+            }}>
             {t.howToPlay}
           </Typography>
 
@@ -227,15 +233,14 @@ export default function CrossZeroInstructionsPage() {
                 key={`${index}-${rule}`}
                 direction="row"
                 spacing={1.25}
-                alignItems="flex-start"
                 sx={{
+                  alignItems: "flex-start",
                   px: 1.5,
                   py: 1.25,
                   borderRadius: 3,
                   bgcolor: "rgba(255,255,255,0.06)",
-                  border: "1px solid rgba(255,255,255,0.1)",
-                }}
-              >
+                  border: "1px solid rgba(255,255,255,0.1)"
+                }}>
                 <Box
                   sx={{
                     minWidth: 28,
@@ -268,14 +273,13 @@ export default function CrossZeroInstructionsPage() {
 
           <Typography
             variant="h6"
-            fontWeight={700}
             sx={{
+              fontWeight: 700,
               color: "#00e5ff",
               textAlign: "center",
               mb: 3,
-              textShadow: "0 0 12px rgba(0,229,255,0.4)",
-            }}
-          >
+              textShadow: "0 0 12px rgba(0,229,255,0.4)"
+            }}>
             {t.goodLuck}
           </Typography>
 

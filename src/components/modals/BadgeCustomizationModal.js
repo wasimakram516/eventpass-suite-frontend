@@ -707,26 +707,28 @@ export default function BadgeCustomizationModal({
             maxWidth="lg"
             fullWidth
             dir={dir}
-            TransitionProps={{
-                onEntered: () => {
-                    const container = scrollableContainerRef.current;
-                    if (container) {
-                        container.scrollTop = 0;
-                        requestAnimationFrame(() => {
-                            if (container) {
-                                container.scrollTop = 0;
-                            }
-                        });
-                    }
+            slotProps={{
+                transition: {
+                    onEntered: () => {
+                        const container = scrollableContainerRef.current;
+                        if (container) {
+                            container.scrollTop = 0;
+                            requestAnimationFrame(() => {
+                                if (container) {
+                                    container.scrollTop = 0;
+                                }
+                            });
+                        }
+                    },
                 },
-            }}
-            PaperProps={{
-                sx: {
-                    height: "90vh",
-                    maxHeight: "90vh",
-                },
-            }}
-        >
+
+                paper: {
+                    sx: {
+                        height: "90vh",
+                        maxHeight: "90vh",
+                    },
+                }
+            }}>
             <DialogTitle
                 sx={{
                     display: "flex",
@@ -737,14 +739,17 @@ export default function BadgeCustomizationModal({
                     pt: 3,
                 }}
             >
-                <Typography fontWeight="bold" fontSize="1.25rem">
+                <Typography
+                    sx={{
+                        fontWeight: "bold",
+                        fontSize: "1.25rem"
+                    }}>
                     {t.title}
                 </Typography>
                 <IconButton onClick={onClose} size="small">
                     <ICONS.close />
                 </IconButton>
             </DialogTitle>
-
             <DialogContent sx={{ p: 0, display: "flex", height: "calc(90vh - 120px)", overflow: "hidden" }}>
                 <Box
                     ref={setScrollableContainerRef}
@@ -840,7 +845,9 @@ export default function BadgeCustomizationModal({
                                         }}
                                         size="small"
                                         sx={{ flex: 1 }}
-                                        inputProps={{ min: 0, max: 100, step: 0.1 }}
+                                        slotProps={{
+                                            htmlInput: { min: 0, max: 100, step: 0.1 }
+                                        }}
                                     />
                                     <TextField
                                         label={t.yAxis}
@@ -870,7 +877,9 @@ export default function BadgeCustomizationModal({
                                         }}
                                         size="small"
                                         sx={{ flex: 1 }}
-                                        inputProps={{ min: 0, max: 100, step: 0.1 }}
+                                        slotProps={{
+                                            htmlInput: { min: 0, max: 100, step: 0.1 }
+                                        }}
                                     />
                                     <TextField
                                         label={t.qrSize}
@@ -900,7 +909,9 @@ export default function BadgeCustomizationModal({
                                         }}
                                         size="small"
                                         sx={{ flex: 1 }}
-                                        inputProps={{ min: 10, max: 200, step: 1 }}
+                                        slotProps={{
+                                            htmlInput: { min: 10, max: 200, step: 1 }
+                                        }}
                                     />
                                 </Box>
                             </Box>
@@ -1042,7 +1053,6 @@ export default function BadgeCustomizationModal({
                     </Box>
                 </Box>
             </DialogContent>
-
             <DialogActions sx={{ px: 3, pb: 3 }}>
                 <Stack direction="row" spacing={2} sx={{ width: "100%", justifyContent: "flex-end" }}>
                     <Button

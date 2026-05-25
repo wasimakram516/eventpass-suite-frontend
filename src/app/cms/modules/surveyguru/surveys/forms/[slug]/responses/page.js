@@ -62,20 +62,22 @@ function FieldRow({ icon, primary, secondary, dir, align }) {
         primary={
           <Typography
             variant="body2"
-            color="text.secondary"
             component="div"
-            sx={{ textAlign: align }}
-          >
+            sx={{
+              color: "text.secondary",
+              textAlign: align
+            }}>
             {primary}
           </Typography>
         }
         secondary={
           <Typography
             variant="body1"
-            fontWeight={500}
             component="div"
-            sx={{ textAlign: align }}
-          >
+            sx={{
+              fontWeight: 500,
+              textAlign: align
+            }}>
             {secondary || "N/A"}
           </Typography>
         }
@@ -131,9 +133,11 @@ function renderAnswer({ q, ans, dir, align }) {
       <Stack
         direction="row"
         spacing={0.75}
-        flexWrap="wrap"
         useFlexGap
         dir={dir}
+        sx={{
+          flexWrap: "wrap"
+        }}
       >
         {ids.map((id) => {
           const opt = findOpt(id);
@@ -187,7 +191,9 @@ function renderAnswer({ q, ans, dir, align }) {
     const img = opt?.imageUrl;
 
     return (
-      <Stack direction="row" alignItems="center" spacing={1} dir={dir}>
+      <Stack direction="row" spacing={1} dir={dir} sx={{
+        alignItems: "center"
+      }}>
         {img && <OptionThumb url={img} label={label} size={20} />}
         <Typography variant="body2" component="span" sx={{ textAlign: align }}>
           {label}
@@ -241,14 +247,13 @@ function renderAnswer({ q, ans, dir, align }) {
     return (
       <Stack
         direction="row"
-        alignItems="center"
         spacing={1}
         dir={dir}
         sx={{
+          alignItems: "center",
           justifyContent: align === "right" ? "flex-end" : "flex-start",
-          width: "100%",
-        }}
-      >
+          width: "100%"
+        }}>
         <Stack direction="row" spacing={0.25}>
           {Array.from({ length: max }).map((_, i) =>
             i < n ? (
@@ -404,15 +409,14 @@ function ResponseCard({ resp, t, dir, formDetails, align }) {
           <Box sx={{ flex: 1 }}>
             <Typography
               variant="body1"
-              fontWeight={700}
               sx={{
+                fontWeight: 700,
                 textAlign: align,
                 display: "-webkit-box",
                 WebkitLineClamp: 1,
                 WebkitBoxOrient: "vertical",
-                overflow: "hidden",
-              }}
-            >
+                overflow: "hidden"
+              }}>
               {isAnonymous
                 ? t.anonymous
                 : name || registrationName || t.unknownName}
@@ -423,7 +427,9 @@ function ResponseCard({ resp, t, dir, formDetails, align }) {
                 {(email || recEmail) && (
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                     <ICONS.emailOutline sx={{ fontSize: 14, color: 'text.secondary' }} />
-                    <Typography variant="caption" color="text.secondary">
+                    <Typography variant="caption" sx={{
+                      color: "text.secondary"
+                    }}>
                       {email || recEmail}
                     </Typography>
                   </Box>
@@ -431,7 +437,9 @@ function ResponseCard({ resp, t, dir, formDetails, align }) {
                 {(phone || recPhone) && (
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
                     <ICONS.phoneOutline sx={{ fontSize: 14, color: 'text.secondary' }} />
-                    <Typography variant="caption" color="text.secondary">
+                    <Typography variant="caption" sx={{
+                      color: "text.secondary"
+                    }}>
                       {phone || recPhone}
                     </Typography>
                   </Box>
@@ -441,18 +449,21 @@ function ResponseCard({ resp, t, dir, formDetails, align }) {
           </Box>
         </Box>
       </Box>
-
       <CardContent sx={{ pt: 1, px: 1.5, pb: 1.5 }}>
         <Box sx={{ mb: 1 }}>
           {submittedAt ? (
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <ICONS.eventOutline fontSize="small" color="text.secondary" />
-              <Typography variant="caption" color="text.secondary">
+              <Typography variant="caption" sx={{
+                color: "text.secondary"
+              }}>
                 {t.submittedAt}: {formatDateTimeWithLocale(submittedAt)}
               </Typography>
             </Box>
           ) : (
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" sx={{
+              color: "text.secondary"
+            }}>
               {t.noSubmitTime}
             </Typography>
           )}
@@ -531,9 +542,10 @@ function ResponseCard({ resp, t, dir, formDetails, align }) {
                   primary={
                     <Typography
                       variant="body2"
-                      color="text.secondary"
-                      sx={{ textAlign: align }}
-                    >
+                      sx={{
+                        color: "text.secondary",
+                        textAlign: align
+                      }}>
                       {q.label}
                     </Typography>
                   }
@@ -740,19 +752,23 @@ export default function ViewSurveyResponses() {
   return (
     <Container dir={dir} maxWidth={false} disableGutters>
       <BreadcrumbsNav />
-
       <Stack
         direction={{ xs: "column", sm: "row" }}
-        justifyContent="space-between"
-        alignItems={{ xs: "stretch", sm: "center" }}
         spacing={2}
-        sx={{ my: 3 }}
-      >
+        sx={{
+          justifyContent: "space-between",
+          alignItems: { xs: "stretch", sm: "center" },
+          my: 3
+        }}>
         <Box sx={{ flex: 1 }}>
-          <Typography variant="h4" fontWeight="bold">
+          <Typography variant="h4" sx={{
+            fontWeight: "bold"
+          }}>
             {t.title}
           </Typography>
-          <Typography variant="body1" color="text.secondary">
+          <Typography variant="body1" sx={{
+            color: "text.secondary"
+          }}>
             {t.description}
           </Typography>
           {formDetails?.isAnonymous && (
@@ -783,23 +799,29 @@ export default function ViewSurveyResponses() {
           </Button>
         )}
       </Stack>
-
       <Divider sx={{ my: 2 }} />
-
       {/* Search */}
-      <Stack direction="row" spacing={1} mb={2} alignItems="center">
+      <Stack
+        direction="row"
+        spacing={1}
+        sx={{
+          mb: 2,
+          alignItems: "center"
+        }}>
         <TextField
           size="small"
           placeholder={t.searchPlaceholder}
           value={searchTerm}
           onChange={handleSearchChange}
           sx={{ minWidth: 280 }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <ICONS.search fontSize="small" sx={{ opacity: 0.7 }} />
-              </InputAdornment>
-            ),
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <ICONS.search fontSize="small" sx={{ opacity: 0.7 }} />
+                </InputAdornment>
+              ),
+            }
           }}
         />
         {searchTerm && (
@@ -808,17 +830,19 @@ export default function ViewSurveyResponses() {
           </Button>
         )}
       </Stack>
-
       {/* Top bar */}
       <Stack
         direction={{ xs: "column", sm: "row" }}
-        justifyContent="space-between"
-        alignItems={{ xs: "stretch", sm: "center" }}
         spacing={1.25}
-        mb={2.5}
-        px={0.5}
-      >
-        <Typography variant="body2" color="text.secondary">
+        sx={{
+          justifyContent: "space-between",
+          alignItems: { xs: "stretch", sm: "center" },
+          mb: 2.5,
+          px: 0.5
+        }}>
+        <Typography variant="body2" sx={{
+          color: "text.secondary"
+        }}>
           {t.showing} {(page - 1) * limit + 1}-
           {Math.min(page * limit, displayTotal)} {t.of} {displayTotal}{" "}
           {t.records}
@@ -845,22 +869,27 @@ export default function ViewSurveyResponses() {
           </Select>
         </FormControl>
       </Stack>
-
       {/* Cards */}
       {!displayResponses.length ? (
         <NoDataAvailable />
       ) : (
         <Fragment>
-          <Grid container spacing={2} alignItems="stretch" justifyContent="center">
+          <Grid
+            container
+            spacing={2}
+            sx={{
+              alignItems: "stretch",
+              justifyContent: "center"
+            }}>
             {displayResponses.slice((page - 1) * limit, page * limit).map((resp) => (
               <Grid
-                item
-                xs={12}
-                sm={6}
-                md={6}
-                lg={4}
                 key={resp._id}
-              >
+                size={{
+                  xs: 12,
+                  sm: 6,
+                  md: 6,
+                  lg: 4
+                }}>
                 <ResponseCard
                   resp={resp}
                   t={t}
@@ -872,7 +901,12 @@ export default function ViewSurveyResponses() {
             ))}
           </Grid>
 
-          <Box display="flex" justifyContent="center" mt={4}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              mt: 4
+            }}>
             <Pagination
               dir="ltr"
               count={Math.ceil(displayTotal / limit)}

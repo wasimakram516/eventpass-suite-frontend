@@ -140,10 +140,14 @@ export default function TapMatchNamePage() {
         >
           <Typography
             variant="h4"
-            fontWeight={800}
             gutterBottom
-            sx={{ mb: 3, color: "#fff", textTransform: "capitalize", wordBreak: "break-word" }}
-          >
+            sx={{
+              fontWeight: 800,
+              mb: 3,
+              color: "#fff",
+              textTransform: "capitalize",
+              wordBreak: "break-word"
+            }}>
             {translatedTitle}
           </Typography>
 
@@ -156,9 +160,10 @@ export default function TapMatchNamePage() {
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
             onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-            InputProps={{ sx: { backgroundColor: "rgba(255,255,255,0.1)", color: "#fff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.25)" } } }}
-            InputLabelProps={{ sx: { color: "rgba(255,255,255,0.6)" } }}
-          />
+            slotProps={{
+              input: { sx: { backgroundColor: "rgba(255,255,255,0.1)", color: "#fff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.25)" } } },
+              inputLabel: { sx: { color: "rgba(255,255,255,0.6)" } }
+            }} />
 
           {/* Phone */}
           {/* <TextField

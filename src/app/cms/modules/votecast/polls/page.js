@@ -209,7 +209,6 @@ export default function ManagePollsPage() {
                     onSelect={(slug) => { setSelectedBusiness(slug); setDrawerOpen(false); }}
                 />
             )}
-
             <Container maxWidth={false} disableGutters>
                 <BreadcrumbsNav />
                 <Box
@@ -222,8 +221,12 @@ export default function ManagePollsPage() {
                     }}
                 >
                     <Box sx={{ flex: 1 }}>
-                        <Typography variant="h5" fontWeight="bold">{t.pageTitle}</Typography>
-                        <Typography variant="body2" color="text.secondary">{t.pageDescription}</Typography>
+                        <Typography variant="h5" sx={{
+                            fontWeight: "bold"
+                        }}>{t.pageTitle}</Typography>
+                        <Typography variant="body2" sx={{
+                            color: "text.secondary"
+                        }}>{t.pageDescription}</Typography>
                     </Box>
 
                     <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 1, width: { xs: "100%", sm: "auto" } }}>
@@ -249,9 +252,17 @@ export default function ManagePollsPage() {
                 ) : filteredPolls.length === 0 ? (
                     <NoDataAvailable />
                 ) : (
-                    <Grid container spacing={3} justifyContent="center">
+                    <Grid container spacing={3} sx={{
+                        justifyContent: "center"
+                    }}>
                         {filteredPolls.map(poll => (
-                            <Grid item xs={12} sm={6} md={4} key={poll._id}>
+                            <Grid
+                                key={poll._id}
+                                size={{
+                                    xs: 12,
+                                    sm: 6,
+                                    md: 4
+                                }}>
                                 <EventCardBase
                                     event={toPollCard(poll)}
                                     t={{ ...t, polls: t.questions, viewPolls: t.viewQuestions }}

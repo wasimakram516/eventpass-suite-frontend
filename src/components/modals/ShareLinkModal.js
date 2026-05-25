@@ -112,11 +112,12 @@ export default function ShareLinkModal({
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth dir={dir}>
       <Stack
         direction="row"
-        alignItems="center"
-        justifyContent="space-between"
-        mx={2}
-        mt={1}
-      >
+        sx={{
+          alignItems: "center",
+          justifyContent: "space-between",
+          mx: 2,
+          mt: 1
+        }}>
         <DialogTitle
           sx={{
             fontWeight: "bold",
@@ -132,9 +133,13 @@ export default function ShareLinkModal({
           <CloseIcon />
         </IconButton>
       </Stack>
-
       <DialogContent sx={{ backgroundColor: "#fff", textAlign: "center" }}>
-        <Typography variant="body2" color="text.secondary" mb={2}>
+        <Typography
+          variant="body2"
+          sx={{
+            color: "text.secondary",
+            mb: 2
+          }}>
           {description || t.description}
         </Typography>
 
@@ -154,16 +159,18 @@ export default function ShareLinkModal({
             value={url}
             fullWidth
             variant="standard"
-            InputProps={{
-              readOnly: true,
-              disableUnderline: true,
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton onClick={handleCopyLink}>
-                    <ContentCopyIcon />
-                  </IconButton>
-                </InputAdornment>
-              ),
+            slotProps={{
+              input: {
+                readOnly: true,
+                disableUnderline: true,
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton onClick={handleCopyLink}>
+                      <ContentCopyIcon />
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }
             }}
           />
         </Box>

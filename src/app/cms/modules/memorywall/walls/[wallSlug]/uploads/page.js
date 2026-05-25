@@ -74,106 +74,153 @@ const FullScreenPreview = ({ open, media, wallConfig, onClose, t }) => {
   const inputType = media?.wall?.cardSettings?.inputType || wallConfig?.cardSettings?.inputType;
 
   return (
-  <Dialog
-    open={open}
-    onClose={onClose}
-    fullScreen
-    TransitionComponent={Zoom}
-    sx={{ "& .MuiDialog-paper": { backgroundColor: "#000" } }}
-  >
-    {media && (
-      <Box position="relative" display="flex" flexDirection="column" height="100vh">
-        <IconButton
-          onClick={onClose}
-          sx={{
-            position: "absolute",
-            top: 16,
-            right: 16,
-            zIndex: 10,
-            color: "white",
-            backgroundColor: "rgba(0,0,0,0.5)",
-            "&:hover": { backgroundColor: "rgba(0,0,0,0.8)" },
-          }}
-        >
-          <ICONS.close />
-        </IconButton>
-
-        <Box flex={1} display="flex" alignItems="center" justifyContent="center" px={2} py={4}>
-          <Box sx={{ maxWidth: "100%", maxHeight: "85vh", borderRadius: 2, overflow: "hidden", boxShadow: 5 }}>
-            {media.imageUrl ? (
-              <img
-                src={media.imageUrl}
-                alt="Full screen preview"
-                style={{ maxWidth: "90%", maxHeight: "85vh", objectFit: "contain", display: "block", margin: "0 auto" }}
-              />
-            ) : (
-              <Box
-                width={300}
-                height={300}
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-                bgcolor="grey.900"
-              >
-                <Typography variant="h5" color="grey.500" sx={{ textTransform: "capitalize" }}>
-                  No Image Content
-                </Typography>
-              </Box>
-            )}
-          </Box>
-        </Box>
-
+    <Dialog
+      open={open}
+      onClose={onClose}
+      fullScreen
+      sx={{ "& .MuiDialog-paper": { backgroundColor: "#000" } }}
+      slots={{
+        transition: Zoom
+      }}
+    >
+      {media && (
         <Box
           sx={{
-            position: "absolute",
-            bottom: 0,
-            left: 0,
-            right: 0,
-            px: 4,
-            py: 3,
-            background: "linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.6), transparent)",
-            color: "white",
-          }}
-        >
-          <Typography variant="subtitle2" color="grey.400" gutterBottom>
-            {t.uploadedVia} {wallMode === "card" ? t.cardWall : t.memoryWall}
-          </Typography>
-          <Typography variant="h5" fontWeight="bold" gutterBottom>
-            {wallName}
-          </Typography>
-          {wallMode === "card" && (
-            <Box sx={{ mt: 1, mb: 1 }}>
-              {media.text && (
-                <Typography variant="body1" color="grey.200" sx={{ whiteSpace: "pre-wrap", wordBreak: "break-word", maxWidth: "800px", mb: media.signatureUrl ? 2 : 0 }}>
-                  {media.text}
-                </Typography>
-              )}
-              {media.signatureUrl && (
-                <Box
-                  component="img"
-                  src={media.signatureUrl}
-                  alt="Signature"
-                  sx={{ width: 120, height: 120, objectFit: "contain", bgcolor: "#fff", borderRadius: 1, p: 0.5 }}
+            position: "relative",
+            display: "flex",
+            flexDirection: "column",
+            height: "100vh"
+          }}>
+          <IconButton
+            onClick={onClose}
+            sx={{
+              position: "absolute",
+              top: 16,
+              right: 16,
+              zIndex: 10,
+              color: "white",
+              backgroundColor: "rgba(0,0,0,0.5)",
+              "&:hover": { backgroundColor: "rgba(0,0,0,0.8)" },
+            }}
+          >
+            <ICONS.close />
+          </IconButton>
+
+          <Box
+            sx={{
+              flex: 1,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              px: 2,
+              py: 4
+            }}>
+            <Box sx={{ maxWidth: "100%", maxHeight: "85vh", borderRadius: 2, overflow: "hidden", boxShadow: 5 }}>
+              {media.imageUrl ? (
+                <img
+                  src={media.imageUrl}
+                  alt="Full screen preview"
+                  style={{ maxWidth: "90%", maxHeight: "85vh", objectFit: "contain", display: "block", margin: "0 auto" }}
                 />
-              )}
-              {!media.text && !media.signatureUrl && (
-                <Typography variant="body2" color="grey.300" sx={{ fontStyle: "italic" }}>
-                  {t.noMessage}
-                </Typography>
+              ) : (
+                <Box
+                  sx={{
+                    width: 300,
+                    height: 300,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    bgcolor: "grey.900"
+                  }}>
+                  <Typography
+                    variant="h5"
+                    sx={{
+                      color: "grey.500",
+                      textTransform: "capitalize"
+                    }}>
+                    No Image Content
+                  </Typography>
+                </Box>
               )}
             </Box>
-          )}
-          <Box display="flex" alignItems="center" gap={1} mb={1}>
-            <ICONS.time fontSize="small" color="action" />
-            <Typography variant="caption" color="text.secondary">
-              {formatDateTimeWithLocale(media.createdAt)}
+          </Box>
+
+          <Box
+            sx={{
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              px: 4,
+              py: 3,
+              background: "linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.6), transparent)",
+              color: "white",
+            }}
+          >
+            <Typography variant="subtitle2" gutterBottom sx={{
+              color: "grey.400"
+            }}>
+              {t.uploadedVia} {wallMode === "card" ? t.cardWall : t.memoryWall}
             </Typography>
+            <Typography variant="h5" gutterBottom sx={{
+              fontWeight: "bold"
+            }}>
+              {wallName}
+            </Typography>
+            {wallMode === "card" && (
+              <Box sx={{ mt: 1, mb: 1 }}>
+                {media.text && (
+                  <Typography
+                    variant="body1"
+                    sx={{
+                      color: "grey.200",
+                      whiteSpace: "pre-wrap",
+                      wordBreak: "break-word",
+                      maxWidth: "800px",
+                      mb: media.signatureUrl ? 2 : 0
+                    }}>
+                    {media.text}
+                  </Typography>
+                )}
+                {media.signatureUrl && (
+                  <Box
+                    component="img"
+                    src={media.signatureUrl}
+                    alt="Signature"
+                    sx={{ width: 120, height: 120, objectFit: "contain", bgcolor: "#fff", borderRadius: 1, p: 0.5 }}
+                  />
+                )}
+                {!media.text && !media.signatureUrl && (
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: "grey.300",
+                      fontStyle: "italic"
+                    }}>
+                    {t.noMessage}
+                  </Typography>
+                )}
+              </Box>
+            )}
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 1,
+                mb: 1
+              }}>
+              <ICONS.time fontSize="small" color="action" />
+              <Typography variant="caption" sx={{
+                color: "text.secondary"
+              }}>
+                {formatDateTimeWithLocale(media.createdAt)}
+              </Typography>
+            </Box>
           </Box>
         </Box>
-      </Box>
-    )}
-  </Dialog>
-)};
+      )}
+    </Dialog>
+  );};
 
 const CMSUploadsPage = () => {
   const { wallSlug } = useParams();
@@ -307,126 +354,177 @@ const CMSUploadsPage = () => {
   return (
     <Container dir={dir} maxWidth={false} disableGutters>
       <BreadcrumbsNav />
-      <Typography variant="h4" fontWeight="bold" mt={3}>
+      <Typography
+        variant="h4"
+        sx={{
+          fontWeight: "bold",
+          mt: 3
+        }}>
         {t.mediaGallery}
       </Typography>
-      <Typography variant="body2" color="text.secondary" mb={2}>
+      <Typography
+        variant="body2"
+        sx={{
+          color: "text.secondary",
+          mb: 2
+        }}>
         {user?.role === "business" ? t.businessDescription : t.adminDescription}
       </Typography>
       <Divider sx={{ mb: 4 }} />
-
-      <Box mb={3}>
+      <Box sx={{
+        mb: 3
+      }}>
         <Typography
           component="div"
           variant="body2"
-          color="text.secondary"
-          sx={{ display: "flex", alignItems: "center", gap: 1 }}
-        >
+          sx={{
+            color: "text.secondary",
+            display: "flex",
+            alignItems: "center",
+            gap: 1
+          }}>
           <ICONS.library fontSize="small" />
           {t.mediaCount.replace("{total}", media.length)}
         </Typography>
       </Box>
-
       {media.length === 0 ? (
         <NoDataAvailable message={t.noMediaAvailable} />
       ) : (
-        <Grid container spacing={3} justifyContent="center">
+        <Grid container spacing={3} sx={{
+          justifyContent: "center"
+        }}>
           {media.map((item) => {
             const wallMode = item.wall?.mode || wallConfig?.mode;
             const wallName = item.wall?.name || wallConfig?.name;
             const displayTag = (!item.imageUrl && wallMode !== "card") ? "card" : wallMode;
 
             return (
-            <Grid item xs={12} sm={12} md={6} key={item._id}>
-              <Card elevation={2} sx={{ height: "100%", position: "relative" }}>
-                {item.imageUrl ? (
-                  <CardMedia
-                    component="img"
-                    height="200"
-                    image={item.imageUrl}
-                    alt="Media"
-                    sx={{ objectFit: "cover", cursor: "pointer" }}
-                    onClick={() => handlePreview(item)}
-                  />
-                ) : (
-                  <Box
-                    height={200}
-                    display="flex"
-                    alignItems="center"
-                    justifyContent="center"
-                    bgcolor="grey.100"
-                    onClick={() => handlePreview(item)}
-                    sx={{ cursor: "pointer", borderBottom: "1px solid #eee" }}
-                  >
-                    <Typography variant="h6" color="text.secondary" sx={{ textTransform: "capitalize" }}>
-                      No Image
-                    </Typography>
-                  </Box>
-                )}
-                {displayTag && (
-                  <Chip
-                    label={displayTag.toUpperCase()}
-                    size="small"
-                    color={displayTag === "card" ? "primary" : "secondary"}
-                    sx={{ position: "absolute", top: 8, right: 8, zIndex: 2 }}
-                  />
-                )}
-
-                <CardContent sx={{ p: 2 }}>
-                  <Typography variant="h6" fontWeight="bold">
-                    {wallName}
-                  </Typography>
-
-                  {wallMode === "card" && (
-                    <Box sx={{ mt: 1, mb: 1 }}>
-                      {item.text && (
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: item.signatureUrl ? 1 : 0, whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
-                          {item.text}
-                        </Typography>
-                      )}
-                      {item.signatureUrl && (
-                        <Box
-                          component="img"
-                          src={item.signatureUrl}
-                          alt="Signature"
-                          sx={{ width: 96, height: 96, objectFit: "contain", bgcolor: "#fafafa", borderRadius: 1, border: "1px solid #eee", p: 0.5 }}
-                        />
-                      )}
-                      {!item.text && !item.signatureUrl && (
-                        <Typography variant="body2" color="text.secondary">
-                          <em>{t.noMessage}</em>
-                        </Typography>
-                      )}
+              <Grid
+                key={item._id}
+                size={{
+                  xs: 12,
+                  sm: 12,
+                  md: 6
+                }}>
+                <Card elevation={2} sx={{ height: "100%", position: "relative" }}>
+                  {item.imageUrl ? (
+                    <CardMedia
+                      component="img"
+                      height="200"
+                      image={item.imageUrl}
+                      alt="Media"
+                      sx={{ objectFit: "cover", cursor: "pointer" }}
+                      onClick={() => handlePreview(item)}
+                    />
+                  ) : (
+                    <Box
+                      onClick={() => handlePreview(item)}
+                      sx={{
+                        height: 200,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        bgcolor: "grey.100",
+                        cursor: "pointer",
+                        borderBottom: "1px solid #eee"
+                      }}>
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          color: "text.secondary",
+                          textTransform: "capitalize"
+                        }}>
+                        No Image
+                      </Typography>
                     </Box>
                   )}
+                  {displayTag && (
+                    <Chip
+                      label={displayTag.toUpperCase()}
+                      size="small"
+                      color={displayTag === "card" ? "primary" : "secondary"}
+                      sx={{ position: "absolute", top: 8, right: 8, zIndex: 2 }}
+                    />
+                  )}
 
-                  <Box display="flex" alignItems="center" gap={1} mb={1}>
-                    <ICONS.time fontSize="small" color="action" />
-                    <Typography variant="caption" color="text.secondary">
-                      {formatDateTimeWithLocale(item.createdAt)}
+                  <CardContent sx={{ p: 2 }}>
+                    <Typography variant="h6" sx={{
+                      fontWeight: "bold"
+                    }}>
+                      {wallName}
                     </Typography>
-                  </Box>
-                  <Divider sx={{ my: 2 }} />
-                  <Box display="flex" justifyContent="center" gap={1}>
-                    <Tooltip title={t.viewDetails}>
-                      <IconButton color="primary" size="small" onClick={() => handlePreview(item)}>
-                        <ICONS.view fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title={t.delete}>
-                      <IconButton color="error" size="small" onClick={() => handleDeleteClick(item)}>
-                        <ICONS.delete fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-          );
+
+                    {wallMode === "card" && (
+                      <Box sx={{ mt: 1, mb: 1 }}>
+                        {item.text && (
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              color: "text.secondary",
+                              mb: item.signatureUrl ? 1 : 0,
+                              whiteSpace: "pre-wrap",
+                              wordBreak: "break-word"
+                            }}>
+                            {item.text}
+                          </Typography>
+                        )}
+                        {item.signatureUrl && (
+                          <Box
+                            component="img"
+                            src={item.signatureUrl}
+                            alt="Signature"
+                            sx={{ width: 96, height: 96, objectFit: "contain", bgcolor: "#fafafa", borderRadius: 1, border: "1px solid #eee", p: 0.5 }}
+                          />
+                        )}
+                        {!item.text && !item.signatureUrl && (
+                          <Typography variant="body2" sx={{
+                            color: "text.secondary"
+                          }}>
+                            <em>{t.noMessage}</em>
+                          </Typography>
+                        )}
+                      </Box>
+                    )}
+
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        mb: 1
+                      }}>
+                      <ICONS.time fontSize="small" color="action" />
+                      <Typography variant="caption" sx={{
+                        color: "text.secondary"
+                      }}>
+                        {formatDateTimeWithLocale(item.createdAt)}
+                      </Typography>
+                    </Box>
+                    <Divider sx={{ my: 2 }} />
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "center",
+                        gap: 1
+                      }}>
+                      <Tooltip title={t.viewDetails}>
+                        <IconButton color="primary" size="small" onClick={() => handlePreview(item)}>
+                          <ICONS.view fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title={t.delete}>
+                        <IconButton color="error" size="small" onClick={() => handleDeleteClick(item)}>
+                          <ICONS.delete fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                  </CardContent>
+                </Card>
+              </Grid>
+            );
         })}
         </Grid>
       )}
-
       <FullScreenPreview
         open={previewOpen}
         media={selectedMedia}
@@ -434,7 +532,6 @@ const CMSUploadsPage = () => {
         onClose={closePreview}
         t={t}
       />
-
       <ConfirmationDialog
         open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}

@@ -203,10 +203,17 @@ export default function PvPSessions() {
           }}
         >
           <Box>
-            <Typography variant="h5" fontWeight="bold" sx={{ mt: 2 }}>
+            <Typography
+              variant="h5"
+              sx={{
+                fontWeight: "bold",
+                mt: 2
+              }}>
               {t.hostDashboard}
             </Typography>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" sx={{
+              color: "text.secondary"
+            }}>
               {t.hostDescription}
             </Typography>
           </Box>
@@ -257,14 +264,14 @@ export default function PvPSessions() {
         </Box>
         <Divider sx={{ my: 2 }} />
       </Box>
-
       <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        mb={3}
-        px={2}
-      >
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 3,
+          px: 2
+        }}>
         <Typography>
           {t.showing} {(page - 1) * limit + 1}-
           {Math.min(page * limit, displayTotal)} {t.of} {displayTotal}{" "}
@@ -289,11 +296,12 @@ export default function PvPSessions() {
           </Select>
         </FormControl>
       </Box>
-
       {loading ? (
         <LoadingState />
       ) : (
-        <Stack spacing={3} alignItems="center">
+        <Stack spacing={3} sx={{
+          alignItems: "center"
+        }}>
           <Box sx={{ mt: 2, width: "100%", maxWidth: 600 }}>
             {paginatedSessions && paginatedSessions.length > 0 ? (
               <>
@@ -345,9 +353,10 @@ export default function PvPSessions() {
                             )}
                             <Typography
                               variant="h6"
-                              color="#fff"
-                              fontWeight="bold"
-                            >
+                              sx={{
+                                color: "#fff",
+                                fontWeight: "bold"
+                              }}>
                               {session.winner ? session.winner.name : t.tie}
                             </Typography>
                           </Box>
@@ -364,11 +373,16 @@ export default function PvPSessions() {
                               container
                               spacing={3}
                               direction={{ xs: "column", sm: "row" }}
-                              alignItems="stretch"
-                              justifyContent="space-between"
-                            >
+                              sx={{
+                                alignItems: "stretch",
+                                justifyContent: "space-between"
+                              }}>
                               {/* Player 1 */}
-                              <Grid item xs={12} sm={5.5}>
+                              <Grid
+                                size={{
+                                  xs: 12,
+                                  sm: 5.5
+                                }}>
                                 <Box
                                   sx={{
                                     background: isPlayer1Winner
@@ -384,47 +398,58 @@ export default function PvPSessions() {
                                     alignItems: "flex-start",
                                   }}
                                 >
-                                  <Typography variant="h6" fontWeight="bold">
+                                  <Typography variant="h6" sx={{
+                                    fontWeight: "bold"
+                                  }}>
                                     {player1?.playerId?.name || t.unknown}
                                   </Typography>
 
                                   <Box
-                                    display="flex"
-                                    gap={1}
-                                    alignItems="center"
-                                  >
+                                    sx={{
+                                      display: "flex",
+                                      gap: 1,
+                                      alignItems: "center"
+                                    }}>
                                     <ICONS.business fontSize="small" />
                                     <Typography
                                       variant="body2"
-                                      color="text.secondary"
+                                      sx={{
+                                        color: "text.secondary"
+                                      }}
                                     >
                                       {player1?.playerId?.company || "N/A"}
                                     </Typography>
                                   </Box>
 
                                   <Box
-                                    display="flex"
-                                    gap={1}
-                                    alignItems="center"
-                                  >
+                                    sx={{
+                                      display: "flex",
+                                      gap: 1,
+                                      alignItems: "center"
+                                    }}>
                                     <ICONS.leaderboard fontSize="small" />
                                     <Typography
                                       variant="body2"
-                                      color="text.secondary"
+                                      sx={{
+                                        color: "text.secondary"
+                                      }}
                                     >
                                       {t.score}: {player1?.score ?? 0}
                                     </Typography>
                                   </Box>
 
                                   <Box
-                                    display="flex"
-                                    gap={1}
-                                    alignItems="center"
-                                  >
+                                    sx={{
+                                      display: "flex",
+                                      gap: 1,
+                                      alignItems: "center"
+                                    }}>
                                     <ICONS.assignment fontSize="small" />
                                     <Typography
                                       variant="body2"
-                                      color="text.secondary"
+                                      sx={{
+                                        color: "text.secondary"
+                                      }}
                                     >
                                       {t.attempted}:{" "}
                                       {player1?.attemptedQuestions ?? 0}
@@ -432,14 +457,17 @@ export default function PvPSessions() {
                                   </Box>
 
                                   <Box
-                                    display="flex"
-                                    gap={1}
-                                    alignItems="center"
-                                  >
+                                    sx={{
+                                      display: "flex",
+                                      gap: 1,
+                                      alignItems: "center"
+                                    }}>
                                     <ICONS.time fontSize="small" />
                                     <Typography
                                       variant="body2"
-                                      color="text.secondary"
+                                      sx={{
+                                        color: "text.secondary"
+                                      }}
                                     >
                                       {t.timeTaken}:{" "}
                                       {player1?.timeTaken != null
@@ -476,7 +504,11 @@ export default function PvPSessions() {
                               </Box>
 
                               {/* Player 2 */}
-                              <Grid item xs={12} sm={5.5}>
+                              <Grid
+                                size={{
+                                  xs: 12,
+                                  sm: 5.5
+                                }}>
                                 <Box
                                   sx={{
                                     background: isPlayer2Winner
@@ -492,18 +524,23 @@ export default function PvPSessions() {
                                     alignItems: "flex-end",
                                   }}
                                 >
-                                  <Typography variant="h6" fontWeight="bold">
+                                  <Typography variant="h6" sx={{
+                                    fontWeight: "bold"
+                                  }}>
                                     {player2?.playerId?.name || t.unknown}
                                   </Typography>
 
                                   <Box
-                                    display="flex"
-                                    gap={1}
-                                    alignItems="center"
-                                  >
+                                    sx={{
+                                      display: "flex",
+                                      gap: 1,
+                                      alignItems: "center"
+                                    }}>
                                     <Typography
                                       variant="body2"
-                                      color="text.secondary"
+                                      sx={{
+                                        color: "text.secondary"
+                                      }}
                                     >
                                       {player2?.playerId?.company || "N/A"}
                                     </Typography>
@@ -511,13 +548,16 @@ export default function PvPSessions() {
                                   </Box>
 
                                   <Box
-                                    display="flex"
-                                    gap={1}
-                                    alignItems="center"
-                                  >
+                                    sx={{
+                                      display: "flex",
+                                      gap: 1,
+                                      alignItems: "center"
+                                    }}>
                                     <Typography
                                       variant="body2"
-                                      color="text.secondary"
+                                      sx={{
+                                        color: "text.secondary"
+                                      }}
                                     >
                                       {t.score}: {player2?.score ?? 0}
                                     </Typography>
@@ -525,13 +565,16 @@ export default function PvPSessions() {
                                   </Box>
 
                                   <Box
-                                    display="flex"
-                                    gap={1}
-                                    alignItems="center"
-                                  >
+                                    sx={{
+                                      display: "flex",
+                                      gap: 1,
+                                      alignItems: "center"
+                                    }}>
                                     <Typography
                                       variant="body2"
-                                      color="text.secondary"
+                                      sx={{
+                                        color: "text.secondary"
+                                      }}
                                     >
                                       {t.attempted}:{" "}
                                       {player2?.attemptedQuestions ?? 0}
@@ -540,13 +583,16 @@ export default function PvPSessions() {
                                   </Box>
 
                                   <Box
-                                    display="flex"
-                                    gap={1}
-                                    alignItems="center"
-                                  >
+                                    sx={{
+                                      display: "flex",
+                                      gap: 1,
+                                      alignItems: "center"
+                                    }}>
                                     <Typography
                                       variant="body2"
-                                      color="text.secondary"
+                                      sx={{
+                                        color: "text.secondary"
+                                      }}
                                     >
                                       {t.timeTaken}:{" "}
                                       {player2?.timeTaken != null
@@ -597,10 +643,11 @@ export default function PvPSessions() {
                           <ICONS.trophy sx={{ color: "#fff" }} />
                           <Typography
                             variant="h6"
-                            color="#fff"
-                            fontWeight="bold"
-                            sx={{ textAlign: "center" }}
-                          >
+                            sx={{
+                              color: "#fff",
+                              fontWeight: "bold",
+                              textAlign: "center"
+                            }}>
                             {session.winnerTeamId?.name || t.tie}
                           </Typography>
                         </Box>
@@ -609,21 +656,22 @@ export default function PvPSessions() {
                         <Grid
                           container
                           spacing={2}
-                          justifyContent="center"
-                          alignItems="stretch"
-                          sx={{ position: "relative" }}
-                        >
+                          sx={{
+                            justifyContent: "center",
+                            alignItems: "stretch",
+                            position: "relative"
+                          }}>
                           {session.teams?.map((team, idx) => {
                             const isWinner =
                               session.winnerTeamId?._id === team.teamId;
 
                             return (
                               <Grid
-                                item
-                                xs={12}
-                                sm={session.teams?.length === 2 ? 6 : 12}
                                 key={idx}
-                              >
+                                size={{
+                                  xs: 12,
+                                  sm: session.teams?.length === 2 ? 6 : 12
+                                }}>
                                 <Paper
                                   elevation={isWinner ? 6 : 1}
                                   sx={{
@@ -642,13 +690,12 @@ export default function PvPSessions() {
                                   {/* Team Name */}
                                   <Typography
                                     variant="h6"
-                                    fontWeight="bold"
                                     sx={{
+                                      fontWeight: "bold",
                                       textAlign: "center",
                                       color: "text.primary",
-                                      wordBreak: "break-word",
-                                    }}
-                                  >
+                                      wordBreak: "break-word"
+                                    }}>
                                     {team.teamName ||
                                       team.teamId?.name ||
                                       `${t.teams} ${idx + 1}`}
@@ -658,8 +705,6 @@ export default function PvPSessions() {
                                   <Stack
                                     direction="row"
                                     spacing={2}
-                                    justifyContent="center"
-                                    alignItems="center"
                                     divider={
                                       <Divider
                                         orientation="vertical"
@@ -667,59 +712,69 @@ export default function PvPSessions() {
                                       />
                                     }
                                     sx={{
+                                      justifyContent: "center",
+                                      alignItems: "center",
                                       flexWrap: "wrap",
                                       bgcolor: "white",
                                       borderRadius: 2,
                                       py: 0.7,
-                                      px: 1.5,
-                                    }}
-                                  >
+                                      px: 1.5
+                                    }}>
                                     <Box
-                                      display="flex"
-                                      alignItems="center"
-                                      gap={0.6}
-                                    >
+                                      sx={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 0.6
+                                      }}>
                                       <ICONS.leaderboard
                                         fontSize="small"
                                         color="action"
                                       />
                                       <Typography
                                         variant="caption"
-                                        color="text.secondary"
+                                        sx={{
+                                          color: "text.secondary"
+                                        }}
                                       >
                                         {t.totalScore}:{" "}
                                         <b>{team.totalScore ?? 0}</b>
                                       </Typography>
                                     </Box>
                                     <Box
-                                      display="flex"
-                                      alignItems="center"
-                                      gap={0.6}
-                                    >
+                                      sx={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 0.6
+                                      }}>
                                       <ICONS.time
                                         fontSize="small"
                                         color="action"
                                       />
                                       <Typography
                                         variant="caption"
-                                        color="text.secondary"
+                                        sx={{
+                                          color: "text.secondary"
+                                        }}
                                       >
                                         {t.averageTime}:{" "}
                                         <b>{team.avgTimeTaken ?? 0}s</b>
                                       </Typography>
                                     </Box>
                                     <Box
-                                      display="flex"
-                                      alignItems="center"
-                                      gap={0.6}
-                                    >
+                                      sx={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 0.6
+                                      }}>
                                       <ICONS.assignment
                                         fontSize="small"
                                         color="action"
                                       />
                                       <Typography
                                         variant="caption"
-                                        color="text.secondary"
+                                        sx={{
+                                          color: "text.secondary"
+                                        }}
                                       >
                                         {t.averageAttempted}:{" "}
                                         <b>{team.avgAttemptedQuestions ?? 0}</b>
@@ -757,24 +812,22 @@ export default function PvPSessions() {
                                         <Box sx={{ flexGrow: 1 }}>
                                           <Typography
                                             variant="subtitle2"
-                                            fontWeight="bold"
                                             sx={{
+                                              fontWeight: "bold",
                                               color: "text.primary",
-                                              wordBreak: "break-word",
-                                            }}
-                                          >
+                                              wordBreak: "break-word"
+                                            }}>
                                             {p.name ||
                                               p.playerId?.name ||
                                               t.unknown}
                                           </Typography>
                                           <Typography
                                             variant="caption"
-                                            color="text.secondary"
                                             sx={{
+                                              color: "text.secondary",
                                               display: "block",
-                                              wordBreak: "break-word",
-                                            }}
-                                          >
+                                              wordBreak: "break-word"
+                                            }}>
                                             {p.company ||
                                               p.playerId?.company ||
                                               "N/A"}
@@ -784,31 +837,34 @@ export default function PvPSessions() {
                                         <Stack
                                           direction="row"
                                           spacing={2}
-                                          alignItems="center"
-                                          justifyContent={{
-                                            xs: "flex-start",
-                                            sm: "flex-end",
-                                          }}
-                                          flexWrap="wrap"
                                           sx={{
-                                            width: { xs: "100%", sm: "auto" },
-                                          }}
-                                        >
+                                            alignItems: "center",
+
+                                            justifyContent: {
+                                              xs: "flex-start",
+                                              sm: "flex-end",
+                                            },
+
+                                            flexWrap: "wrap",
+                                            width: { xs: "100%", sm: "auto" }
+                                          }}>
                                           <Box
-                                            display="flex"
-                                            alignItems="center"
-                                            gap={0.4}
-                                          >
+                                            sx={{
+                                              display: "flex",
+                                              alignItems: "center",
+                                              gap: 0.4
+                                            }}>
                                             <ICONS.leaderboard fontSize="small" />
                                             <Typography variant="caption">
                                               {t.score}: {p.score ?? 0}
                                             </Typography>
                                           </Box>
                                           <Box
-                                            display="flex"
-                                            alignItems="center"
-                                            gap={0.4}
-                                          >
+                                            sx={{
+                                              display: "flex",
+                                              alignItems: "center",
+                                              gap: 0.4
+                                            }}>
                                             <ICONS.assignment fontSize="small" />
                                             <Typography variant="caption">
                                               {t.attempted}:{" "}
@@ -816,10 +872,11 @@ export default function PvPSessions() {
                                             </Typography>
                                           </Box>
                                           <Box
-                                            display="flex"
-                                            alignItems="center"
-                                            gap={0.4}
-                                          >
+                                            sx={{
+                                              display: "flex",
+                                              alignItems: "center",
+                                              gap: 0.4
+                                            }}>
                                             <ICONS.time fontSize="small" />
                                             <Typography variant="caption">
                                               {t.timeTaken}: {p.timeTaken ?? 0}s
@@ -862,7 +919,12 @@ export default function PvPSessions() {
                   );
                 })}
 
-                <Box display="flex" justifyContent="center" mt={4}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "center",
+                    mt: 4
+                  }}>
                   <Pagination
                     dir="ltr"
                     count={Math.ceil(displayTotal / limit) || 1}
@@ -877,7 +939,6 @@ export default function PvPSessions() {
           </Box>
         </Stack>
       )}
-
       <ConfirmationDialog
         open={showConfirm}
         onClose={() => setShowConfirm(false)}

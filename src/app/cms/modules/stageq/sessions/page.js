@@ -185,7 +185,6 @@ export default function ManageSessionsPage() {
                     onSelect={(slug) => { setSelectedBusiness(slug); setDrawerOpen(false); }}
                 />
             )}
-
             <Container maxWidth={false} disableGutters>
                 <BreadcrumbsNav />
                 <Box
@@ -198,8 +197,12 @@ export default function ManageSessionsPage() {
                     }}
                 >
                     <Box sx={{ flex: 1 }}>
-                        <Typography variant="h5" fontWeight="bold">{t.pageTitle}</Typography>
-                        <Typography variant="body2" color="text.secondary">{t.pageDescription}</Typography>
+                        <Typography variant="h5" sx={{
+                            fontWeight: "bold"
+                        }}>{t.pageTitle}</Typography>
+                        <Typography variant="body2" sx={{
+                            color: "text.secondary"
+                        }}>{t.pageDescription}</Typography>
                     </Box>
 
                     <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, gap: 1, width: { xs: "100%", sm: "auto" } }}>
@@ -225,9 +228,17 @@ export default function ManageSessionsPage() {
                 ) : sessions.length === 0 ? (
                     <NoDataAvailable />
                 ) : (
-                    <Grid container spacing={3} justifyContent="center">
+                    <Grid container spacing={3} sx={{
+                        justifyContent: "center"
+                    }}>
                         {sessions.map(session => (
-                            <Grid item xs={12} sm={6} md={4} key={session._id}>
+                            <Grid
+                                key={session._id}
+                                size={{
+                                    xs: 12,
+                                    sm: 6,
+                                    md: 4
+                                }}>
                                 <EventCardBase
                                     event={toSessionCard(session)}
                                     t={{ ...t, polls: t.questions, viewPolls: t.viewQuestions }}

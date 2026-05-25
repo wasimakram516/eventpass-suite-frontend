@@ -374,49 +374,89 @@ export default function GlobalSearchPage() {
         }}
       >
         <Stack sx={{ py: 1.5, px: 2 }} spacing={0.75}>
-          <Typography variant="body2" color="text.secondary" textAlign={align}>
+          <Typography
+            variant="body2"
+            sx={{
+              color: "text.secondary",
+              textAlign: align
+            }}>
             <Box component="span" sx={{ fontWeight: 600, color: "text.primary", marginInlineEnd: 0.5 }}>
               {labels.fullName}:
             </Box>
             {row.fullName}
           </Typography>
-          <Typography variant="body2" color="text.secondary" textAlign={align}>
+          <Typography
+            variant="body2"
+            sx={{
+              color: "text.secondary",
+              textAlign: align
+            }}>
             <Box component="span" sx={{ fontWeight: 600, color: "text.primary", marginInlineEnd: 0.5 }}>
               {labels.company}:
             </Box>
             {row.company}
           </Typography>
-          <Typography variant="body2" color="text.secondary" textAlign={align}>
+          <Typography
+            variant="body2"
+            sx={{
+              color: "text.secondary",
+              textAlign: align
+            }}>
             <Box component="span" sx={{ fontWeight: 600, color: "text.primary", marginInlineEnd: 0.5 }}>
               {labels.phone}:
             </Box>
             {row.phone}
           </Typography>
-          <Typography variant="body2" color="text.secondary" textAlign={align}>
+          <Typography
+            variant="body2"
+            sx={{
+              color: "text.secondary",
+              textAlign: align
+            }}>
             <Box component="span" sx={{ fontWeight: 600, color: "text.primary", marginInlineEnd: 0.5 }}>
               {labels.email}:
             </Box>
             {row.email}
           </Typography>
-          <Typography variant="body2" color="text.secondary" textAlign={align}>
+          <Typography
+            variant="body2"
+            sx={{
+              color: "text.secondary",
+              textAlign: align
+            }}>
             <Box component="span" sx={{ fontWeight: 600, color: "text.primary", marginInlineEnd: 0.5 }}>
               {labels.module}:
             </Box>
             {row.module}
           </Typography>
-          <Typography variant="body2" color="text.secondary" textAlign={align}>
+          <Typography
+            variant="body2"
+            sx={{
+              color: "text.secondary",
+              textAlign: align
+            }}>
             <Box component="span" sx={{ fontWeight: 600, color: "text.primary", marginInlineEnd: 0.5 }}>
               {labels.eventName}:
             </Box>
             {row.eventName}
           </Typography>
-          <Typography variant="body2" color="text.secondary" textAlign={align}>
+          <Typography
+            variant="body2"
+            sx={{
+              color: "text.secondary",
+              textAlign: align
+            }}>
             <Box component="span" sx={{ fontWeight: 600, color: "text.primary", marginInlineEnd: 0.5 }}>
               {labels.itemType}:
             </Box>
             {formatItemType(row.itemType)}
           </Typography>
-          <Typography variant="body2" color="text.secondary" textAlign={align}>
+          <Typography
+            variant="body2"
+            sx={{
+              color: "text.secondary",
+              textAlign: align
+            }}>
             <Box component="span" sx={{ fontWeight: 600, color: "text.primary", marginInlineEnd: 0.5 }}>
               {labels.time}:
             </Box>
@@ -457,16 +497,28 @@ export default function GlobalSearchPage() {
 
         <Stack
           direction={{ xs: "column", md: "row" }}
-          justifyContent="space-between"
-          alignItems={{ xs: "flex-start", md: "center" }}
-          gap={2}
-          sx={{ mb: 3 }}
-        >
+          sx={{
+            justifyContent: "space-between",
+            alignItems: { xs: "flex-start", md: "center" },
+            gap: 2,
+            mb: 3
+          }}>
           <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography variant="h4" fontWeight="bold" textAlign={align}>
+            <Typography
+              variant="h4"
+              sx={{
+                fontWeight: "bold",
+                textAlign: align
+              }}>
               {t.title}
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }} textAlign={align}>
+            <Typography
+              variant="body2"
+              sx={{
+                color: "text.secondary",
+                textAlign: align,
+                mt: 0.5
+              }}>
               {t.subtitle}
             </Typography>
           </Box>
@@ -474,9 +526,10 @@ export default function GlobalSearchPage() {
           <Stack
             direction={{ xs: "column", sm: "row" }}
             spacing={1.5}
-            alignItems={{ xs: "stretch", sm: "center" }}
-            sx={{ width: { xs: "100%", md: "auto" } }}
-          >
+            sx={{
+              alignItems: { xs: "stretch", sm: "center" },
+              width: { xs: "100%", md: "auto" }
+            }}>
             <TextField
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -491,19 +544,21 @@ export default function GlobalSearchPage() {
                   bgcolor: "background.paper",
                 },
               }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <ICONS.search fontSize="small" sx={{ opacity: 0.7 }} />
-                  </InputAdornment>
-                ),
-                endAdornment: query ? (
-                  <InputAdornment position="end">
-                    <IconButton size="small" onClick={() => setQuery("")} aria-label="Clear">
-                      <ICONS.clear fontSize="small" />
-                    </IconButton>
-                  </InputAdornment>
-                ) : null,
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <ICONS.search fontSize="small" sx={{ opacity: 0.7 }} />
+                    </InputAdornment>
+                  ),
+                  endAdornment: query ? (
+                    <InputAdornment position="end">
+                      <IconButton size="small" onClick={() => setQuery("")} aria-label="Clear">
+                        <ICONS.clear fontSize="small" />
+                      </IconButton>
+                    </InputAdornment>
+                  ) : null,
+                }
               }}
             />
             <Button
@@ -524,7 +579,12 @@ export default function GlobalSearchPage() {
         {searching && (
           <Box sx={{ py: 6, textAlign: "center" }}>
             <CircularProgress size={32} />
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+            <Typography
+              variant="body2"
+              sx={{
+                color: "text.secondary",
+                mt: 1
+              }}>
               {t.searching}
             </Typography>
           </Box>
@@ -532,7 +592,9 @@ export default function GlobalSearchPage() {
 
         {!searching && loadError && (
           <Box sx={{ py: 6, textAlign: "center" }}>
-            <Typography variant="body1" color="error.main">
+            <Typography variant="body1" sx={{
+              color: "error.main"
+            }}>
               {loadError}
             </Typography>
           </Box>
@@ -541,14 +603,21 @@ export default function GlobalSearchPage() {
         {hasSearched && !searching && !loadError && results.length > 0 && (
           <>
             <Box
-              display="flex"
-              flexDirection={{ xs: "column", md: "row" }}
-              justifyContent="space-between"
-              alignItems={{ xs: "flex-start", md: "center" }}
-              gap={2}
-              sx={{ mb: 2 }}
-            >
-              <Typography variant="body2" color="text.secondary" fontWeight={500} textAlign={align}>
+              sx={{
+                display: "flex",
+                flexDirection: { xs: "column", md: "row" },
+                justifyContent: "space-between",
+                alignItems: { xs: "flex-start", md: "center" },
+                gap: 2,
+                mb: 2
+              }}>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: "text.secondary",
+                  fontWeight: 500,
+                  textAlign: align
+                }}>
                 {t.showing}{" "}
                 {(page - 1) * limit + 1}-{Math.min(page * limit, results.length)} {t.of}{" "}
                 {results.length} {t.records}
@@ -623,7 +692,12 @@ export default function GlobalSearchPage() {
             )}
 
             {results.length > limit && (
-              <Box display="flex" justifyContent="center" mt={4}>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "center",
+                  mt: 4
+                }}>
                 <Pagination
                   dir="ltr"
                   count={totalPages}
@@ -641,7 +715,9 @@ export default function GlobalSearchPage() {
 
         {hasSearched && !searching && !loadError && results.length === 0 && query.trim() && (
           <Box sx={{ py: 6, textAlign: "center" }}>
-            <Typography variant="body1" color="text.secondary">
+            <Typography variant="body1" sx={{
+              color: "text.secondary"
+            }}>
               {t.noResults}
             </Typography>
           </Box>

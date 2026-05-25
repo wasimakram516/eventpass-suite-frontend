@@ -785,11 +785,12 @@ export default function ViewRegistrations() {
     if (loading) {
         return (
             <Box
-                minHeight="60vh"
-                display="flex"
-                alignItems="center"
-                justifyContent="center"
-            >
+                sx={{
+                    minHeight: "60vh",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center"
+                }}>
                 <CircularProgress />
             </Box>
         );
@@ -808,19 +809,23 @@ export default function ViewRegistrations() {
     return (
         <Container dir={dir} maxWidth={false} disableGutters>
             <BreadcrumbsNav />
-
             <Stack
                 direction={{ xs: "column", sm: "row" }}
-                justifyContent="space-between"
-                alignItems={{ xs: "stretch", sm: "center" }}
                 spacing={2}
-                sx={{ my: 3 }}
-            >
+                sx={{
+                    justifyContent: "space-between",
+                    alignItems: { xs: "stretch", sm: "center" },
+                    my: 3
+                }}>
                 <Box sx={{ flex: 1 }}>
-                    <Typography variant="h4" fontWeight="bold">
+                    <Typography variant="h4" sx={{
+                        fontWeight: "bold"
+                    }}>
                         {t.title}
                     </Typography>
-                    <Typography variant="body1" color="text.secondary">
+                    <Typography variant="body1" sx={{
+                        color: "text.secondary"
+                    }}>
                         {t.description}
                     </Typography>
                 </Box>
@@ -899,31 +904,40 @@ export default function ViewRegistrations() {
                             : t.exportAll}
                 </Button>
             </Stack>
-
             <Divider sx={{ my: 3 }} />
-
             <Box
-                display="flex"
-                flexDirection={{ xs: "column", md: "row" }}
-                justifyContent="space-between"
-                alignItems={{ xs: "flex-start", md: "center" }}
-                gap={2}
-                mb={3}
-                px={{ xs: 1, sm: 2 }}
-            >
-                <Box width="100%" maxWidth={{ xs: "100%", md: "50%" }}>
+                sx={{
+                    display: "flex",
+                    flexDirection: { xs: "column", md: "row" },
+                    justifyContent: "space-between",
+                    alignItems: { xs: "flex-start", md: "center" },
+                    gap: 2,
+                    mb: 3,
+                    px: { xs: 1, sm: 2 }
+                }}>
+                <Box
+                    sx={{
+                        width: "100%",
+                        maxWidth: { xs: "100%", md: "50%" }
+                    }}>
                     {isLoadingMore && (
                         <Typography
                             variant="body2"
-                            color="info.main"
-                            fontWeight="500"
-                            sx={{ display: "flex", alignItems: "center", gap: 0.5, mb: 0.5 }}
-                        >
+                            sx={{
+                                color: "info.main",
+                                fontWeight: "500",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 0.5,
+                                mb: 0.5
+                            }}>
                             <CircularProgress size={14} thickness={5} sx={{ mr: 0.5 }} />
                             Loading {allRegistrations.length} of {totalRegistrations} records
                         </Typography>
                     )}
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" sx={{
+                        color: "text.secondary"
+                    }}>
                         {t.showing} {(page - 1) * limit + 1}-
                         {Math.min(page * limit, filteredRegistrations.length)} {t.of}{" "}
                         {filteredRegistrations.length} {t.records}
@@ -933,10 +947,13 @@ export default function ViewRegistrations() {
                         <Typography
                             variant="body2"
                             color="primary"
-                            fontWeight="500"
-                            mt={0.5}
-                            sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
-                        >
+                            sx={{
+                                fontWeight: "500",
+                                mt: 0.5,
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 0.5
+                            }}>
                             <ICONS.search fontSize="small" sx={{ opacity: 0.7 }} />
                             {filteredRegistrations.length === 1
                                 ? t.matchingRecords.replace(
@@ -955,45 +972,45 @@ export default function ViewRegistrations() {
                 <Stack
                     direction={{ xs: "column", sm: "row" }}
                     spacing={1.5}
-                    alignItems={{ xs: "stretch", sm: "center" }}
-                    justifyContent="flex-end"
-                    width="100%"
-                    sx={
-                        dir === "rtl"
-                            ? {
-                                columnGap: 1.5,
-                                rowGap: 1.5,
-                            }
-                            : {}
-                    }
-                >
+                    sx={[{
+                        alignItems: { xs: "stretch", sm: "center" },
+                        justifyContent: "flex-end",
+                        width: "100%"
+                    }, dir === "rtl"
+                        ? {
+                            columnGap: 1.5,
+                            rowGap: 1.5,
+                        }
+                        : {}]}>
                     <TextField
                         size="small"
                         variant="outlined"
                         placeholder={t.searchPlaceholder}
                         value={rawSearch}
                         onChange={(e) => setRawSearch(e.target.value)}
-                        InputProps={{
-                            startAdornment: (
-                                <ICONS.search
-                                    fontSize="small"
-                                    sx={{
-                                        mr: dir === "rtl" ? 0 : 1,
-                                        ml: dir === "rtl" ? 1 : 0,
-                                        opacity: 0.6,
-                                    }}
-                                />
-                            ),
-                            sx:
-                                dir === "rtl"
-                                    ? {
-                                        paddingRight: 2,
-                                    }
-                                    : {},
-                        }}
                         sx={{
                             flex: 1,
                             minWidth: { xs: "100%", sm: 220 },
+                        }}
+                        slotProps={{
+                            input: {
+                                startAdornment: (
+                                    <ICONS.search
+                                        fontSize="small"
+                                        sx={{
+                                            mr: dir === "rtl" ? 0 : 1,
+                                            ml: dir === "rtl" ? 1 : 0,
+                                            opacity: 0.6,
+                                        }}
+                                    />
+                                ),
+                                sx:
+                                    dir === "rtl"
+                                        ? {
+                                            paddingRight: 2,
+                                        }
+                                        : {},
+                            }
                         }}
                     />
 
@@ -1042,7 +1059,6 @@ export default function ViewRegistrations() {
                     </FormControl>
                 </Stack>
             </Box>
-
             {(() => {
                 const activeFilterEntries = [];
 
@@ -1090,10 +1106,14 @@ export default function ViewRegistrations() {
                             px: { xs: 1, sm: 2 },
                         }}
                     >
-                        <Typography variant="body2" fontWeight={500} color="text.secondary">
+                        <Typography
+                            variant="body2"
+                            sx={{
+                                fontWeight: 500,
+                                color: "text.secondary"
+                            }}>
                             {t.activeFilters}:
                         </Typography>
-
                         {activeFilterEntries.map(([key, val]) => {
                             const translatedKey =
                                 key === "token"
@@ -1142,7 +1162,6 @@ export default function ViewRegistrations() {
                                 />
                             );
                         })}
-
                         <Button
                             size="small"
                             color="secondary"
@@ -1165,28 +1184,29 @@ export default function ViewRegistrations() {
                     </Box>
                 );
             })()}
-
             {!filteredRegistrations.length ? (
                 <NoDataAvailable />
             ) : (
                 <>
-                    <Grid container spacing={4} justifyContent="center">
+                    <Grid container spacing={4} sx={{
+                        justifyContent: "center"
+                    }}>
                         {paginatedRegistrations.map((reg) => {
                             const name = reg.fullName || pickFullName(reg.customFields) || "—";
                             const email = reg.email || pickEmail(reg.customFields) || "—";
 
                             return (
                                 <Grid
-                                    item
-                                    xs={12}
-                                    sm={6}
-                                    md={4}
                                     key={reg._id}
                                     sx={{
                                         display: { xs: "flex", sm: "block" },
                                         width: { xs: "100%", sm: "auto" },
                                     }}
-                                >
+                                    size={{
+                                        xs: 12,
+                                        sm: 6,
+                                        md: 4
+                                    }}>
                                     <Card
                                         sx={{
                                             width: { xs: "100%", sm: 360 },
@@ -1215,9 +1235,10 @@ export default function ViewRegistrations() {
                                             <Stack spacing={0.6}>
                                                 <Stack
                                                     direction="row"
-                                                    alignItems="center"
-                                                    sx={{ gap: dir === "rtl" ? 1 : 1 }}
-                                                >
+                                                    sx={{
+                                                        alignItems: "center",
+                                                        gap: dir === "rtl" ? 1 : 1
+                                                    }}>
                                                     <ICONS.qrcode
                                                         sx={{ fontSize: 28, color: "primary.main" }}
                                                     />
@@ -1244,13 +1265,12 @@ export default function ViewRegistrations() {
 
                                                         <Typography
                                                             variant="subtitle1"
-                                                            fontWeight="bold"
                                                             sx={{
+                                                                fontWeight: "bold",
                                                                 fontFamily: "monospace",
                                                                 wordBreak: "break-all",
-                                                                color: "primary.main",
-                                                            }}
-                                                        >
+                                                                color: "primary.main"
+                                                            }}>
                                                             {reg.token}
                                                         </Typography>
 
@@ -1328,15 +1348,14 @@ export default function ViewRegistrations() {
 
                                                         <Typography
                                                             variant="body2"
-                                                            fontWeight={500}
                                                             sx={{
+                                                                fontWeight: 500,
                                                                 ml: 2,
                                                                 textAlign: dir === "rtl" ? "left" : "right",
                                                                 flex: 1,
                                                                 color: "text.primary",
-                                                                ...wrapTextBox,
-                                                            }}
-                                                        >
+                                                                ...wrapTextBox
+                                                            }}>
                                                             {(() => {
                                                                 const fieldValue = reg[f.name] ?? reg.customFields?.[f.name] ?? "";
                                                                 if (!fieldValue) return "—";
@@ -1380,15 +1399,14 @@ export default function ViewRegistrations() {
                                                         </Typography>
                                                         <Typography
                                                             variant="body2"
-                                                            fontWeight={500}
                                                             sx={{
+                                                                fontWeight: 500,
                                                                 ml: 2,
                                                                 textAlign: dir === "rtl" ? "left" : "right",
                                                                 flex: 1,
                                                                 color: "text.primary",
-                                                                ...wrapTextBox,
-                                                            }}
-                                                        >
+                                                                ...wrapTextBox
+                                                            }}>
                                                             {name}
                                                         </Typography>
                                                     </Box>
@@ -1419,15 +1437,14 @@ export default function ViewRegistrations() {
                                                         </Typography>
                                                         <Typography
                                                             variant="body2"
-                                                            fontWeight={500}
                                                             sx={{
+                                                                fontWeight: 500,
                                                                 ml: 2,
                                                                 textAlign: dir === "rtl" ? "left" : "right",
                                                                 flex: 1,
                                                                 color: "text.primary",
-                                                                ...wrapTextBox,
-                                                            }}
-                                                        >
+                                                                ...wrapTextBox
+                                                            }}>
                                                             {email}
                                                         </Typography>
                                                     </Box>
@@ -1523,7 +1540,12 @@ export default function ViewRegistrations() {
                         })}
                     </Grid>
 
-                    <Box display="flex" justifyContent="center" mt={4}>
+                    <Box
+                        sx={{
+                            display: "flex",
+                            justifyContent: "center",
+                            mt: 4
+                        }}>
                         {filteredRegistrations.length > limit && (
                             <Pagination
                                 dir="ltr"
@@ -1535,7 +1557,6 @@ export default function ViewRegistrations() {
                     </Box>
                 </>
             )}
-
             <RegistrationModal
                 open={editModalOpen}
                 onClose={() => setEditModalOpen(false)}
@@ -1545,7 +1566,6 @@ export default function ViewRegistrations() {
                 mode="edit"
                 event={eventDetails}
             />
-
             <RegistrationModal
                 open={createModalOpen}
                 onClose={() => setCreateModalOpen(false)}
@@ -1555,7 +1575,6 @@ export default function ViewRegistrations() {
                 mode="create"
                 event={eventDetails}
             />
-
             <ConfirmationDialog
                 open={deleteDialogOpen}
                 onClose={() => setDeleteDialogOpen(false)}
@@ -1565,14 +1584,12 @@ export default function ViewRegistrations() {
                 confirmButtonText={t.delete}
                 confirmButtonIcon={<ICONS.delete />}
             />
-
-             <WalkInModal
-                 open={walkInModalOpen}
-                 onClose={() => setWalkInModalOpen(false)}
-                 registration={selectedRegistration}
-                 isDigiPass={true}
-             />
-
+            <WalkInModal
+                open={walkInModalOpen}
+                onClose={() => setWalkInModalOpen(false)}
+                registration={selectedRegistration}
+                isDigiPass={true}
+            />
             <FilterDialog
                 open={filterModalOpen}
                 onClose={() => setFilterModalOpen(false)}
@@ -1805,11 +1822,11 @@ export default function ViewRegistrations() {
 
                     <Stack
                         direction="row"
-                        justifyContent="flex-end"
                         spacing={2}
-                        mt={2}
-                        sx={dir === "rtl" ? { gap: 2 } : {}}
-                    >
+                        sx={[{
+                            justifyContent: "flex-end",
+                            mt: 2
+                        }, dir === "rtl" ? { gap: 2 } : {}]}>
                         <Button
                             variant="outlined"
                             color="secondary"

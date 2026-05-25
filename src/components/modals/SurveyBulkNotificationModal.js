@@ -88,7 +88,9 @@ const SurveyBulkNotificationModal = ({
       dir={dir}
       maxWidth="md"
       fullWidth
-      PaperProps={{ sx: { borderRadius: 2 } }}
+      slotProps={{
+        paper: { sx: { borderRadius: 2 } }
+      }}
     >
       <DialogTitle
         sx={{
@@ -103,7 +105,6 @@ const SurveyBulkNotificationModal = ({
           <ICONS.close />
         </IconButton>
       </DialogTitle>
-
       <DialogContent dividers>
         <Stack spacing={2.5}>
           <FormControl>
@@ -130,7 +131,9 @@ const SurveyBulkNotificationModal = ({
             </RadioGroup>
           </FormControl>
 
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" sx={{
+            color: "text.secondary"
+          }}>
             {t.prefillHint}
           </Typography>
 
@@ -154,7 +157,6 @@ const SurveyBulkNotificationModal = ({
           </Box>
         </Stack>
       </DialogContent>
-
       <DialogActions sx={{ px: 2, py: 2, gap: 1 }}>
         <Button onClick={handleClose} disabled={sendingEmails}>
           {t.cancel}

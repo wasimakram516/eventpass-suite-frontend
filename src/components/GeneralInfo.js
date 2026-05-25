@@ -52,7 +52,6 @@ export default function GeneralInfo({
       }}
     >
       <LanguageSelector top={20} right={20} />
-
       <Container maxWidth="md" sx={{ textAlign: "center" }} dir={dir}>
         {Icon && (
            <Box
@@ -88,14 +87,23 @@ export default function GeneralInfo({
           </Box>
         )}
 
-        <Typography variant="h3" fontWeight="bold" gutterBottom>
+        <Typography variant="h3" gutterBottom sx={{
+          fontWeight: "bold"
+        }}>
           {title}
         </Typography>
-        <Typography variant="h6" color="text.secondary" gutterBottom>
+        <Typography variant="h6" gutterBottom sx={{
+          color: "text.secondary"
+        }}>
           {subtitle}
         </Typography>
 
-        <Typography variant="body1" color="text.secondary" sx={{ mt: 3 }}>
+        <Typography
+          variant="body1"
+          sx={{
+            color: "text.secondary",
+            mt: 3
+          }}>
           {description}
         </Typography>
 
@@ -112,9 +120,14 @@ export default function GeneralInfo({
 
         <Divider sx={{ my: 6 }} />
       </Container>
-
       {globalConfig && (
-        <Stack spacing={1} mt={6} direction="column" alignItems="center">
+        <Stack
+          spacing={1}
+          direction="column"
+          sx={{
+            mt: 6,
+            alignItems: "center"
+          }}>
           {globalConfig?.companyLogoUrl && (
             <Box
               component="img"
@@ -128,13 +141,16 @@ export default function GeneralInfo({
             <Stack
               spacing={1}
               direction="row"
-              alignItems="center"
-              flexWrap="wrap"
-              justifyContent="center"
               useFlexGap
-            >
+              sx={{
+                alignItems: "center",
+                flexWrap: "wrap",
+                justifyContent: "center"
+              }}>
               {globalConfig?.contact?.email && (
-                <Stack direction="row" alignItems="center" spacing={1}>
+                <Stack direction="row" spacing={1} sx={{
+                  alignItems: "center"
+                }}>
                   <EmailIcon fontSize="small" />
                   <Typography variant="body2">
                     {globalConfig.contact.email}
@@ -142,7 +158,9 @@ export default function GeneralInfo({
                 </Stack>
               )}
               {globalConfig?.contact?.phone && (
-                <Stack direction="row" alignItems="center" spacing={1}>
+                <Stack direction="row" spacing={1} sx={{
+                  alignItems: "center"
+                }}>
                   <PhoneIcon fontSize="small" />
                   <Typography variant="body2">
                     {globalConfig.contact.phone}
@@ -156,7 +174,9 @@ export default function GeneralInfo({
             globalConfig?.socialLinks?.instagram ||
             globalConfig?.socialLinks?.linkedin ||
             globalConfig?.socialLinks?.website) && (
-            <Stack direction="row" spacing={2} mt={1}>
+            <Stack direction="row" spacing={2} sx={{
+              mt: 1
+            }}>
               {globalConfig?.socialLinks?.facebook && (
                 <MuiLink
                   href={globalConfig.socialLinks.facebook}

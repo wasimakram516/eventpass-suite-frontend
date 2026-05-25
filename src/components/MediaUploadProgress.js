@@ -72,11 +72,13 @@ const MediaUploadProgress = ({ open, uploads, onClose, allowClose = false }) => 
                 maxWidth="sm"
                 fullWidth
                 disableEscapeKeyDown={!allowClose && !allComplete}
-                PaperProps={{
-                    sx: {
-                        borderRadius: 3,
-                        boxShadow: "0px 10px 32px rgba(0,0,0,0.15)",
-                        overflow: "hidden",
+                slotProps={{
+                    paper: {
+                        sx: {
+                            borderRadius: 3,
+                            boxShadow: "0px 10px 32px rgba(0,0,0,0.15)",
+                            overflow: "hidden",
+                        }
                     }
                 }}
             >
@@ -125,7 +127,12 @@ const MediaUploadProgress = ({ open, uploads, onClose, allowClose = false }) => 
                             </Box>
                         )}
                         <Box>
-                            <Typography fontWeight={700} fontSize="1.1rem" sx={{ color: "#ffffff" }}>
+                            <Typography
+                                sx={{
+                                    fontWeight: 700,
+                                    fontSize: "1.1rem",
+                                    color: "#ffffff"
+                                }}>
                                 {allComplete ? "Upload Complete" : "Uploading Media"}
                             </Typography>
                             {!allComplete && uploadingCount > 0 && (
@@ -186,13 +193,12 @@ const MediaUploadProgress = ({ open, uploads, onClose, allowClose = false }) => 
                                     <Box sx={{ flex: 1, minWidth: 0 }}>
                                         <Typography
                                             variant="body2"
-                                            fontWeight={600}
                                             sx={{
+                                                fontWeight: 600,
                                                 color: "#033649",
                                                 mb: 0.5,
-                                                fontSize: "0.95rem",
-                                            }}
-                                        >
+                                                fontSize: "0.95rem"
+                                            }}>
                                             {upload.label}
                                         </Typography>
                                         {upload.percent < 100 && upload.loaded && upload.total && (

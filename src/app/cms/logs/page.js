@@ -754,38 +754,75 @@ export default function LogsPage() {
           }}
         >
           <CardContent sx={{ py: 1.5, px: 2, "&:last-child": { pb: 1.5 } }}>
-            <Stack direction="row" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={1}>
-              <Typography variant="subtitle2" fontWeight="600" textAlign={align}>
+            <Stack
+              direction="row"
+              sx={{
+                alignItems: "center",
+                justifyContent: "space-between",
+                flexWrap: "wrap",
+                gap: 1
+              }}>
+              <Typography
+                variant="subtitle2"
+                sx={{
+                  fontWeight: "600",
+                  textAlign: align
+                }}>
                 {userName}
               </Typography>
               <Chip {...getLogTypeChipProps(log.logType)} />
             </Stack>
             <Stack spacing={0.75} sx={{ mt: 1.5 }}>
-              <Typography variant="body2" color="text.secondary" textAlign={align}>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: "text.secondary",
+                  textAlign: align
+                }}>
                 <Box component="span" sx={{ fontWeight: 600, color: "text.primary", marginInlineEnd: 0.5 }}>
                   {labels.itemType}:
                 </Box>
                 {itemType}
               </Typography>
-              <Typography variant="body2" color="text.secondary" textAlign={align}>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: "text.secondary",
+                  textAlign: align
+                }}>
                 <Box component="span" sx={{ fontWeight: 600, color: "text.primary", marginInlineEnd: 0.5 }}>
                   {labels.itemName}:
                 </Box>
                 {itemName}
               </Typography>
-              <Typography variant="body2" color="text.secondary" textAlign={align}>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: "text.secondary",
+                  textAlign: align
+                }}>
                 <Box component="span" sx={{ fontWeight: 600, color: "text.primary", marginInlineEnd: 0.5 }}>
                   {labels.business}:
                 </Box>
                 {businessName}
               </Typography>
-              <Typography variant="body2" color="text.secondary" textAlign={align}>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: "text.secondary",
+                  textAlign: align
+                }}>
                 <Box component="span" sx={{ fontWeight: 600, color: "text.primary", marginInlineEnd: 0.5 }}>
                   {labels.module}:
                 </Box>
                 {moduleName}
               </Typography>
-              <Typography variant="body2" color="text.secondary" textAlign={align}>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: "text.secondary",
+                  textAlign: align
+                }}>
                 <Box component="span" sx={{ fontWeight: 600, color: "text.primary", marginInlineEnd: 0.5 }}>
                   {labels.time}:
                 </Box>
@@ -928,19 +965,38 @@ export default function LogsPage() {
 
         <Stack
           direction={{ xs: "column", md: "row" }}
-          justifyContent="space-between"
-          alignItems={{ xs: "flex-start", md: "center" }}
-          gap={2}
-          sx={{ mb: 2 }}
-        >
+          sx={{
+            justifyContent: "space-between",
+            alignItems: { xs: "flex-start", md: "center" },
+            gap: 2,
+            mb: 2
+          }}>
           <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography variant="h4" fontWeight="bold" textAlign={align}>
+            <Typography
+              variant="h4"
+              sx={{
+                fontWeight: "bold",
+                textAlign: align
+              }}>
               {t.title}
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }} textAlign={align}>
+            <Typography
+              variant="body2"
+              sx={{
+                color: "text.secondary",
+                textAlign: align,
+                mt: 0.5
+              }}>
               {t.subtitle}
             </Typography>
-            <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.75 }} textAlign={align}>
+            <Typography
+              variant="caption"
+              sx={{
+                color: "text.secondary",
+                display: "block",
+                textAlign: align,
+                mt: 0.75
+              }}>
               {t.searchHint}
             </Typography>
           </Box>
@@ -948,20 +1004,18 @@ export default function LogsPage() {
           <Stack
             direction="column"
             spacing={1}
-            alignItems={{ xs: "stretch", md: "flex-end" }}
             sx={{
-              width: { xs: "100%", md: "auto" },
-            }}
-          >
+              alignItems: { xs: "stretch", md: "flex-end" },
+              width: { xs: "100%", md: "auto" }
+            }}>
             <Stack
               direction={{ xs: "column", sm: "row" }}
               spacing={1.5}
-              alignItems={{ xs: "stretch", sm: "center" }}
               sx={{
+                alignItems: { xs: "stretch", sm: "center" },
                 justifyContent: { xs: "flex-start", md: "flex-end" },
-                width: "100%",
-              }}
-            >
+                width: "100%"
+              }}>
               <Button
                 variant="outlined"
                 startIcon={<ICONS.filter />}
@@ -1008,9 +1062,10 @@ export default function LogsPage() {
             <Stack
               direction="row"
               spacing={1}
-              flexWrap="wrap"
-              alignItems="center"
-            >
+              sx={{
+                flexWrap: "wrap",
+                alignItems: "center"
+              }}>
               <Chip
                 label="All"
                 color={dateRangePreset === "all" ? "primary" : "default"}
@@ -1062,13 +1117,20 @@ export default function LogsPage() {
           }}
         >
           <Box
-            display="flex"
-            flexDirection={{ xs: "column", md: "row" }}
-            justifyContent="space-between"
-            alignItems={{ xs: "flex-start", md: "center" }}
-            gap={2}
-          >
-            <Typography variant="body2" color="text.secondary" fontWeight={500} textAlign={align}>
+            sx={{
+              display: "flex",
+              flexDirection: { xs: "column", md: "row" },
+              justifyContent: "space-between",
+              alignItems: { xs: "flex-start", md: "center" },
+              gap: 2
+            }}>
+            <Typography
+              variant="body2"
+              sx={{
+                color: "text.secondary",
+                fontWeight: 500,
+                textAlign: align
+              }}>
               {t.showing} {filteredLogs.length === 0 ? 0 : (page - 1) * limit + 1}-
               {filteredLogs.length === 0 ? 0 : Math.min(page * limit, filteredLogs.length)} {t.of}{" "}
               {filteredLogs.length} {t.records}
@@ -1077,10 +1139,11 @@ export default function LogsPage() {
             <Stack
               direction={{ xs: "column", sm: "row" }}
               spacing={1.5}
-              alignItems={{ xs: "stretch", sm: "center" }}
-              justifyContent="flex-end"
-              width="100%"
-            >
+              sx={{
+                alignItems: { xs: "stretch", sm: "center" },
+                justifyContent: "flex-end",
+                width: "100%"
+              }}>
               <TextField
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -1093,19 +1156,21 @@ export default function LogsPage() {
                     bgcolor: "background.paper",
                   },
                 }}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <ICONS.search fontSize="small" sx={{ opacity: 0.7 }} />
-                    </InputAdornment>
-                  ),
-                  endAdornment: search ? (
-                    <InputAdornment position="end">
-                      <IconButton size="small" onClick={() => setSearch("")} aria-label="Clear search">
-                        <ICONS.clear fontSize="small" />
-                      </IconButton>
-                    </InputAdornment>
-                  ) : null,
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <ICONS.search fontSize="small" sx={{ opacity: 0.7 }} />
+                      </InputAdornment>
+                    ),
+                    endAdornment: search ? (
+                      <InputAdornment position="end">
+                        <IconButton size="small" onClick={() => setSearch("")} aria-label="Clear search">
+                          <ICONS.clear fontSize="small" />
+                        </IconButton>
+                      </InputAdornment>
+                    ) : null,
+                  }
                 }}
               />
 
@@ -1179,10 +1244,14 @@ export default function LogsPage() {
                 mb: 3,
               }}
             >
-              <Typography variant="body2" fontWeight={500} color="text.secondary">
+              <Typography
+                variant="body2"
+                sx={{
+                  fontWeight: 500,
+                  color: "text.secondary"
+                }}>
                 {t.activeFilters}:
               </Typography>
-
               {activeFilterEntries.map(({ key, label, value }) => (
                 <Chip
                   key={key}
@@ -1207,7 +1276,6 @@ export default function LogsPage() {
                   }}
                 />
               ))}
-
               <Button
                 size="small"
                 color="secondary"
@@ -1230,13 +1298,17 @@ export default function LogsPage() {
           </Box>
         ) : loadError ? (
           <Box sx={{ mt: 6, textAlign: "center" }}>
-            <Typography variant="body1" color="error.main">
+            <Typography variant="body1" sx={{
+              color: "error.main"
+            }}>
               {loadError}
             </Typography>
           </Box>
         ) : filteredLogs.length === 0 ? (
           <Box sx={{ mt: 6, textAlign: "center" }}>
-            <Typography variant="body1" color="text.secondary">
+            <Typography variant="body1" sx={{
+              color: "text.secondary"
+            }}>
               {search.trim() ? t.searchNoResults : t.noLogs}
             </Typography>
           </Box>
@@ -1274,7 +1346,12 @@ export default function LogsPage() {
         )}
 
         {filteredLogs.length > limit && (
-          <Box display="flex" justifyContent="center" mt={4}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              mt: 4
+            }}>
             <Pagination
               dir="ltr"
               count={totalFilteredPages}

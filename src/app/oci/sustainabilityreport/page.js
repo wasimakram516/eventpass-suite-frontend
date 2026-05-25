@@ -20,7 +20,9 @@ export default function DownloadPage() {
         bgcolor: "#f9f9f9",
       }}
     >
-      <Stack spacing={2} alignItems="center">
+      <Stack spacing={2} sx={{
+        alignItems: "center"
+      }}>
         <CloudDownloadIcon sx={{ fontSize: 60, color: "primary.main" }} />
         <Typography variant="h6" color="textPrimary">
           Downloading Sustainability Report...

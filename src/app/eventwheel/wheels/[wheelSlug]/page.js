@@ -113,10 +113,14 @@ const ParticipantsUserPage = () => {
       }}
       dir={dir}
     >
-      <Typography variant="h4" fontWeight="bold" textAlign={align}>
+      <Typography
+        variant="h4"
+        sx={{
+          fontWeight: "bold",
+          textAlign: align
+        }}>
         {`${t.welcomeTo} ${translatedTitle || event.title || event.slug}`}
       </Typography>
-
       <Image
         src={imgDivider}
         alt="Divider"
@@ -129,11 +133,9 @@ const ParticipantsUserPage = () => {
           marginBottom: "16px",
         }}
       />
-
       <Typography variant="body1" sx={{ mb: 2 }}>
         {t.enterNames} <strong>{t.goodLuck}</strong>
       </Typography>
-
       <TextField
         fullWidth
         multiline
@@ -148,16 +150,14 @@ const ParticipantsUserPage = () => {
           boxShadow: "0px 4px 8px rgba(0, 0, 0, 0.2)",
         }}
       />
-
       <Box
-        mt={3}
         sx={{
+          mt: 3,
           display: "flex",
           flexDirection: "column",
           gap: 2,
-          alignItems: "center",
-        }}
-      >
+          alignItems: "center"
+        }}>
         <Button
           onClick={handleShuffleNames}
           startIcon={

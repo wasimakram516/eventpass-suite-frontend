@@ -194,12 +194,15 @@ export default function TapMatchResultsPage() {
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <Typography
                 variant="h5"
-                fontWeight="bold"
-                sx={{ fontSize: { xs: "1.1rem", sm: "1.5rem" } }}
-              >
+                sx={{
+                  fontWeight: "bold",
+                  fontSize: { xs: "1.1rem", sm: "1.5rem" }
+                }}>
                 {t.resultsTitle} "{game?.title}"
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" sx={{
+                color: "text.secondary"
+              }}>
                 {t.totalPlayers} <strong>{displayTotal}</strong>
               </Typography>
             </Box>
@@ -244,7 +247,9 @@ export default function TapMatchResultsPage() {
             }}
           >
             {/* Record range info */}
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" sx={{
+              color: "text.secondary"
+            }}>
               {t.showing} <strong>{fromRecord}</strong>–
               <strong>{toRecord}</strong> {t.of} <strong>{displayTotal}</strong>{" "}
               {t.records}
@@ -282,11 +287,19 @@ export default function TapMatchResultsPage() {
             <Grid
               container
               spacing={{ xs: 1, sm: 3 }}
-              justifyContent="center"
-              sx={{ width: "100%", maxWidth: "100%" }}
-            >
+              sx={{
+                justifyContent: "center",
+                width: "100%",
+                maxWidth: "100%"
+              }}>
               {paginatedDisplay.map((p, i) => (
-                <Grid item xs={12} sm={6} md={4} key={p.sessionId || i}>
+                <Grid
+                  key={p.sessionId || i}
+                  size={{
+                    xs: 12,
+                    sm: 6,
+                    md: 4
+                  }}>
                   <Box
                     sx={{
                       p: 3,
@@ -299,10 +312,11 @@ export default function TapMatchResultsPage() {
                   >
                     <Typography
                       variant="h6"
-                      fontWeight="bold"
-                      color="primary.main"
-                      mb={1}
-                    >
+                      sx={{
+                        fontWeight: "bold",
+                        color: "primary.main",
+                        mb: 1
+                      }}>
                       #{(page - 1) * limit + (i + 1)} • {p.name}
                     </Typography>
 
@@ -354,7 +368,9 @@ export default function TapMatchResultsPage() {
                           fontSize="small"
                           sx={{ mr: 1, color: "primary.main" }}
                         />
-                        <Typography variant="body2" fontStyle="italic">
+                        <Typography variant="body2" sx={{
+                          fontStyle: "italic"
+                        }}>
                           {t.completionTimeLabel}:{" "}
                           <strong>{p.totalTime}s</strong>
                         </Typography>
@@ -367,9 +383,10 @@ export default function TapMatchResultsPage() {
                         />
                         <Typography
                           variant="body2"
-                          color="text.secondary"
-                          fontStyle="italic"
-                        >
+                          sx={{
+                            color: "text.secondary",
+                            fontStyle: "italic"
+                          }}>
                           {t.submittedAtLabel}:{" "}
                           <strong>{formatDateTimeWithLocale(p.endTime)}</strong>
                         </Typography>

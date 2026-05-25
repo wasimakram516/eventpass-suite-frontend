@@ -197,7 +197,13 @@ export default function AskQuestionsPage() {
 
   if (loading) {
     return (
-      <Box minHeight="100vh" display="flex" justifyContent="center" alignItems="center">
+      <Box
+        sx={{
+          minHeight: "100vh",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center"
+        }}>
         <Background />
         <CircularProgress />
       </Box>
@@ -206,9 +212,17 @@ export default function AskQuestionsPage() {
 
   if (!session) {
     return (
-      <Box minHeight="100vh" display="flex" justifyContent="center" alignItems="center">
+      <Box
+        sx={{
+          minHeight: "100vh",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center"
+        }}>
         <Background />
-        <Typography variant="h5" fontWeight="bold">{t.sessionNotFound}</Typography>
+        <Typography variant="h5" sx={{
+          fontWeight: "bold"
+        }}>{t.sessionNotFound}</Typography>
       </Box>
     );
   }
@@ -224,7 +238,6 @@ export default function AskQuestionsPage() {
         />
       )}
       {!background && <Background />}
-
       <Container
         sx={{
           textAlign: align,
@@ -266,10 +279,14 @@ export default function AskQuestionsPage() {
           }}
         >
           <Box>
-            <Typography variant="h4" fontWeight="bold" gutterBottom>
+            <Typography variant="h4" gutterBottom sx={{
+              fontWeight: "bold"
+            }}>
               {t.askQuestion}
             </Typography>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" sx={{
+              color: "text.secondary"
+            }}>
               {t.askDescription}
             </Typography>
           </Box>
@@ -298,18 +315,22 @@ export default function AskQuestionsPage() {
                 <Card key={q._id} variant="outlined" sx={{ background: "rgba(255,255,255,0.85)", backdropFilter: "blur(8px)" }}>
                   <CardContent>
                     {/* Question text */}
-                    <Typography fontWeight="bold" gutterBottom>
+                    <Typography gutterBottom sx={{
+                      fontWeight: "bold"
+                    }}>
                       {translatedQuestionTexts[q._id] ?? q.text}
                     </Typography>
 
                     {/* Submitter Info */}
                     <Box
-                      display="flex"
-                      justifyContent="space-between"
-                      alignItems="flex-start"
-                      mb={1}
-                      sx={{ flexWrap: "nowrap", gap: 2 }}
-                    >
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "flex-start",
+                        mb: 1,
+                        flexWrap: "nowrap",
+                        gap: 2
+                      }}>
                       {[
                         { icon: <ICONS.person fontSize="small" />, text: displayName },
                         { icon: <ICONS.business fontSize="small" />, text: displayCompany },
@@ -332,7 +353,13 @@ export default function AskQuestionsPage() {
                     </Box>
 
                     {/* Voting */}
-                    <Stack direction="row" spacing={1} alignItems="center" mt={1}>
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      sx={{
+                        alignItems: "center",
+                        mt: 1
+                      }}>
                       <IconButton onClick={() => handleVote(q._id)} color="primary">
                         {hasVoted ? <ICONS.thumb /> : <ICONS.thumbOff />}
                       </IconButton>
@@ -351,7 +378,9 @@ export default function AskQuestionsPage() {
           onClose={() => setOpenForm(false)}
           maxWidth="sm"
           fullWidth
-          PaperProps={{ sx: { borderRadius: 3, boxShadow: 6 } }}
+          slotProps={{
+            paper: { sx: { borderRadius: 3, boxShadow: 6 } }
+          }}
         >
           <DialogTitle fontWeight="bold">{t.submitQuestion}</DialogTitle>
           <DialogContent sx={{ pt: 1 }}>

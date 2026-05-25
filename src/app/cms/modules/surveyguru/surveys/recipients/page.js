@@ -681,65 +681,70 @@ export default function RecipientsManagePage() {
         : undefined;
 
     return (
-    <AppCard variant="outlined" sx={{ borderRadius: 2 }}>
-      <CardContent sx={{ pb: 1.5 }}>
-        <Stack
-          direction={dir === "rtl" ? "row-reverse" : "row"}
-          justifyContent="space-between"
-          alignItems="center"
-          width="100%"
-        >
-          <Typography variant="subtitle1" fontWeight={600}>
-            {r.fullName || "—"}
-          </Typography>
-          <Chip
-            size="small"
-            icon={chipIcon}
-            color={chipColor}
-            label={chipLabel}
+      <AppCard variant="outlined" sx={{ borderRadius: 2 }}>
+        <CardContent sx={{ pb: 1.5 }}>
+          <Stack
+            direction={dir === "rtl" ? "row-reverse" : "row"}
             sx={{
-              minWidth: dir === "rtl" ? "120px" : "auto", // Wider in Arabic
-              ml: 2,
-            }}
-          />
-        </Stack>
-        <Typography variant="body2" color="text.secondary">
-          {t.email}: {r.email}
-        </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {t.company}: {r.organization || r.company || "—"}
-        </Typography>
-      </CardContent>
+              justifyContent: "space-between",
+              alignItems: "center",
+              width: "100%"
+            }}>
+            <Typography variant="subtitle1" sx={{
+              fontWeight: 600
+            }}>
+              {r.fullName || "—"}
+            </Typography>
+            <Chip
+              size="small"
+              icon={chipIcon}
+              color={chipColor}
+              label={chipLabel}
+              sx={{
+                minWidth: dir === "rtl" ? "120px" : "auto", // Wider in Arabic
+                ml: 2,
+              }}
+            />
+          </Stack>
+          <Typography variant="body2" sx={{
+            color: "text.secondary"
+          }}>
+            {t.email}: {r.email}
+          </Typography>
+          <Typography variant="body2" sx={{
+            color: "text.secondary"
+          }}>
+            {t.company}: {r.organization || r.company || "—"}
+          </Typography>
+        </CardContent>
+        <RecordMetadata
+          createdByName={r.createdBy}
+          updatedByName={r.updatedBy}
+          createdAt={r.createdAt}
+          updatedAt={r.updatedAt}
+          locale={language === "ar" ? "ar-SA" : "en-GB"}
+        />
+        <CardActions sx={{ justifyContent: "flex-end", pt: 0 }}>
+          <Tooltip title={t.copyLink}>
+            <IconButton
+              onClick={() => onCopySurveyLink(r)}
+              color="primary"
+              disabled={!selectedForm?.slug}
+            >
+              <ICONS.copy fontSize="small" />
+            </IconButton>
+          </Tooltip>
 
-      <RecordMetadata
-        createdByName={r.createdBy}
-        updatedByName={r.updatedBy}
-        createdAt={r.createdAt}
-        updatedAt={r.updatedAt}
-        locale={language === "ar" ? "ar-SA" : "en-GB"}
-      />
-
-      <CardActions sx={{ justifyContent: "flex-end", pt: 0 }}>
-        <Tooltip title={t.copyLink}>
-          <IconButton
-            onClick={() => onCopySurveyLink(r)}
-            color="primary"
-            disabled={!selectedForm?.slug}
-          >
-            <ICONS.copy fontSize="small" />
-          </IconButton>
-        </Tooltip>
-
-        <Tooltip title={t.delete}>
-          <IconButton
-            color="error"
-            onClick={() => setConfirmDelete({ open: true, id: r._id })}
-          >
-            <ICONS.delete fontSize="small" />
-          </IconButton>
-        </Tooltip>
-      </CardActions>
-    </AppCard>
+          <Tooltip title={t.delete}>
+            <IconButton
+              color="error"
+              onClick={() => setConfirmDelete({ open: true, id: r._id })}
+            >
+              <ICONS.delete fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </CardActions>
+      </AppCard>
     );
   };
 
@@ -756,7 +761,6 @@ export default function RecipientsManagePage() {
           setBizDrawerOpen(false);
         }}
       />
-
       <Container maxWidth={false} disableGutters>
         <BreadcrumbsNav />
 
@@ -771,10 +775,17 @@ export default function RecipientsManagePage() {
           }}
         >
           <Box sx={{ minWidth: 260 }}>
-            <Typography variant="h4" fontWeight="bold">
+            <Typography variant="h4" sx={{
+              fontWeight: "bold"
+            }}>
               {t.title}
             </Typography>
-            <Typography variant="body2" color="text.secondary" mt={0.5}>
+            <Typography
+              variant="body2"
+              sx={{
+                color: "text.secondary",
+                mt: 0.5
+              }}>
               {t.subtitle}
             </Typography>
           </Box>
@@ -787,7 +798,9 @@ export default function RecipientsManagePage() {
             }}
           >
             <Stack spacing={1.5}>
-              <Typography variant="subtitle1" fontWeight={700}>
+              <Typography variant="subtitle1" sx={{
+                fontWeight: 700
+              }}>
                 {t.workflowTitle}
               </Typography>
 
@@ -795,11 +808,22 @@ export default function RecipientsManagePage() {
                 <Stack
                   direction="row"
                   spacing={1}
-                  alignItems="center"
-                  sx={{ overflowX: "auto", pb: 0.5, flexWrap: "nowrap" }}
-                >
-                  <Stack direction="row" spacing={0.75} alignItems="center" sx={{ whiteSpace: "nowrap" }}>
-                    <Stack direction="row" spacing={0.5} alignItems="center">
+                  sx={{
+                    alignItems: "center",
+                    overflowX: "auto",
+                    pb: 0.5,
+                    flexWrap: "nowrap"
+                  }}>
+                  <Stack
+                    direction="row"
+                    spacing={0.75}
+                    sx={{
+                      alignItems: "center",
+                      whiteSpace: "nowrap"
+                    }}>
+                    <Stack direction="row" spacing={0.5} sx={{
+                      alignItems: "center"
+                    }}>
                       {selectedBusiness?._id ? (
                         <ICONS.checkCircle sx={{ fontSize: 18, color: "success.main" }} />
                       ) : (
@@ -807,8 +831,10 @@ export default function RecipientsManagePage() {
                       )}
                       <Typography
                         variant="body2"
-                        fontWeight={selectedBusiness?._id ? 700 : 500}
                         color={selectedBusiness?._id ? "success.main" : "text.secondary"}
+                        sx={{
+                          fontWeight: selectedBusiness?._id ? 700 : 500
+                        }}
                       >
                         {t.stepBusiness}
                       </Typography>
@@ -816,7 +842,9 @@ export default function RecipientsManagePage() {
 
                     <ICONS.next sx={{ fontSize: 16, color: "text.disabled" }} />
 
-                    <Stack direction="row" spacing={0.5} alignItems="center">
+                    <Stack direction="row" spacing={0.5} sx={{
+                      alignItems: "center"
+                    }}>
                       {eventId ? (
                         <ICONS.checkCircle sx={{ fontSize: 18, color: "success.main" }} />
                       ) : (
@@ -824,8 +852,10 @@ export default function RecipientsManagePage() {
                       )}
                       <Typography
                         variant="body2"
-                        fontWeight={eventId ? 700 : 500}
                         color={eventId ? "success.main" : "text.secondary"}
+                        sx={{
+                          fontWeight: eventId ? 700 : 500
+                        }}
                       >
                         {t.stepEvent}
                       </Typography>
@@ -833,7 +863,9 @@ export default function RecipientsManagePage() {
 
                     <ICONS.next sx={{ fontSize: 16, color: "text.disabled" }} />
 
-                    <Stack direction="row" spacing={0.5} alignItems="center">
+                    <Stack direction="row" spacing={0.5} sx={{
+                      alignItems: "center"
+                    }}>
                       {formId ? (
                         <ICONS.checkCircle sx={{ fontSize: 18, color: "success.main" }} />
                       ) : (
@@ -841,8 +873,10 @@ export default function RecipientsManagePage() {
                       )}
                       <Typography
                         variant="body2"
-                        fontWeight={formId ? 700 : 500}
                         color={formId ? "success.main" : "text.secondary"}
+                        sx={{
+                          fontWeight: formId ? 700 : 500
+                        }}
                       >
                         {t.stepForm}
                       </Typography>
@@ -853,9 +887,13 @@ export default function RecipientsManagePage() {
                 <Stack
                   direction="row"
                   spacing={1}
-                  alignItems="center"
-                  sx={{ overflowX: "auto", pb: 0.5, flexWrap: "nowrap", mt: 0.5 }}
-                >
+                  sx={{
+                    alignItems: "center",
+                    overflowX: "auto",
+                    pb: 0.5,
+                    flexWrap: "nowrap",
+                    mt: 0.5
+                  }}>
                   <Button
                     variant="outlined"
                     startIcon={<ICONS.business fontSize="small" />}
@@ -950,8 +988,17 @@ export default function RecipientsManagePage() {
               </Box>
 
               <Box sx={{ display: { xs: "block", md: "none" } }}>
-                <Stack direction="row" spacing={0.75} alignItems="center" sx={{ overflowX: "auto", whiteSpace: "nowrap" }}>
-                  <Stack direction="row" spacing={0.5} alignItems="center">
+                <Stack
+                  direction="row"
+                  spacing={0.75}
+                  sx={{
+                    alignItems: "center",
+                    overflowX: "auto",
+                    whiteSpace: "nowrap"
+                  }}>
+                  <Stack direction="row" spacing={0.5} sx={{
+                    alignItems: "center"
+                  }}>
                     {selectedBusiness?._id ? (
                       <ICONS.checkCircle sx={{ fontSize: 18, color: "success.main" }} />
                     ) : (
@@ -959,8 +1006,10 @@ export default function RecipientsManagePage() {
                     )}
                     <Typography
                       variant="body2"
-                      fontWeight={selectedBusiness?._id ? 700 : 500}
                       color={selectedBusiness?._id ? "success.main" : "text.secondary"}
+                      sx={{
+                        fontWeight: selectedBusiness?._id ? 700 : 500
+                      }}
                     >
                       {t.stepBusiness}
                     </Typography>
@@ -968,7 +1017,9 @@ export default function RecipientsManagePage() {
 
                   <ICONS.next sx={{ fontSize: 16, color: "text.disabled" }} />
 
-                  <Stack direction="row" spacing={0.5} alignItems="center">
+                  <Stack direction="row" spacing={0.5} sx={{
+                    alignItems: "center"
+                  }}>
                     {eventId ? (
                       <ICONS.checkCircle sx={{ fontSize: 18, color: "success.main" }} />
                     ) : (
@@ -976,8 +1027,10 @@ export default function RecipientsManagePage() {
                     )}
                     <Typography
                       variant="body2"
-                      fontWeight={eventId ? 700 : 500}
                       color={eventId ? "success.main" : "text.secondary"}
+                      sx={{
+                        fontWeight: eventId ? 700 : 500
+                      }}
                     >
                       {t.stepEvent}
                     </Typography>
@@ -985,7 +1038,9 @@ export default function RecipientsManagePage() {
 
                   <ICONS.next sx={{ fontSize: 16, color: "text.disabled" }} />
 
-                  <Stack direction="row" spacing={0.5} alignItems="center">
+                  <Stack direction="row" spacing={0.5} sx={{
+                    alignItems: "center"
+                  }}>
                     {formId ? (
                       <ICONS.checkCircle sx={{ fontSize: 18, color: "success.main" }} />
                     ) : (
@@ -993,15 +1048,19 @@ export default function RecipientsManagePage() {
                     )}
                     <Typography
                       variant="body2"
-                      fontWeight={formId ? 700 : 500}
                       color={formId ? "success.main" : "text.secondary"}
+                      sx={{
+                        fontWeight: formId ? 700 : 500
+                      }}
                     >
                       {t.stepForm}
                     </Typography>
                   </Stack>
                 </Stack>
 
-                <Stack direction={{ xs: "column", md: "row" }} spacing={1.25} mt={1.25}>
+                <Stack direction={{ xs: "column", md: "row" }} spacing={1.25} sx={{
+                  mt: 1.25
+                }}>
                   <Button
                     variant="outlined"
                     startIcon={<ICONS.business fontSize="small" />}
@@ -1043,7 +1102,9 @@ export default function RecipientsManagePage() {
                   </FormControl>
                 </Stack>
 
-                <Stack direction={{ xs: "column", sm: "row" }} spacing={1} mt={1.25}>
+                <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{
+                  mt: 1.25
+                }}>
                   <Button
                     variant="contained"
                     startIcon={
@@ -1142,7 +1203,9 @@ export default function RecipientsManagePage() {
 
         {/* Recipients responsive list */}
         {!formId ? (
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" sx={{
+            color: "text.secondary"
+          }}>
             {t.noFormSelected}
           </Typography>
         ) : loading ? (
@@ -1150,10 +1213,21 @@ export default function RecipientsManagePage() {
             <CircularProgress />
           </Box>
         ) : !rows.length ? (
-          <Stack spacing={1.25} alignItems="center" sx={{ py: 2, textAlign: "center" }}>
+          <Stack
+            spacing={1.25}
+            sx={{
+              alignItems: "center",
+              py: 2,
+              textAlign: "center"
+            }}>
             <ICONS.people sx={{ fontSize: 36, color: "text.secondary" }} />
             <Typography variant="h6">{t.noRecipientsYet}</Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 720 }}>
+            <Typography
+              variant="body2"
+              sx={{
+                color: "text.secondary",
+                maxWidth: 720
+              }}>
               {t.syncHint}
             </Typography>
           </Stack>
@@ -1175,12 +1249,20 @@ export default function RecipientsManagePage() {
           <>
             <Grid
               container
-              justifyContent="center"
               spacing={1.5}
               id="recipients-list"
+              sx={{
+                justifyContent: "center"
+              }}
             >
               {rows.map((r) => (
-                <Grid item xs={12} md={6} lg={4} key={r._id}>
+                <Grid
+                  key={r._id}
+                  size={{
+                    xs: 12,
+                    md: 6,
+                    lg: 4
+                  }}>
                   <RecipientCard r={r} />
                 </Grid>
               ))}
@@ -1224,7 +1306,6 @@ export default function RecipientsManagePage() {
           sendingEmails={sendingEmails}
         />
       </Container>
-
       {/* Filters Modal */}
       <FilterDialog
         open={filtersOpen}
@@ -1254,7 +1335,13 @@ export default function RecipientsManagePage() {
             </Select>
           </FormControl>
 
-          <Stack direction="row" spacing={1} justifyContent="flex-end" mt={1}>
+          <Stack
+            direction="row"
+            spacing={1}
+            sx={{
+              justifyContent: "flex-end",
+              mt: 1
+            }}>
             <Button
               variant="contained"
               startIcon={<ICONS.check fontSize="small" />}

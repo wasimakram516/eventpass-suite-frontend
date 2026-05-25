@@ -3,6 +3,12 @@
 
 :root {
   --font-primary: "Comfortaa", sans-serif;
+  --font-arabic: "Noto Kufi Arabic", sans-serif;
+}
+
+body.lang-ar,
+body.lang-ar * {
+  font-family: var(--font-arabic) !important;
 }
 
 html,

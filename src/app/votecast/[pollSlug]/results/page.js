@@ -96,12 +96,24 @@ function FieldRow({ icon, primary, secondary, dir, align }) {
       <ListItemText
         disableTypography
         primary={
-          <Typography variant="body2" color="text.secondary" component="div" sx={{ textAlign: align }}>
+          <Typography
+            variant="body2"
+            component="div"
+            sx={{
+              color: "text.secondary",
+              textAlign: align
+            }}>
             {primary}
           </Typography>
         }
         secondary={
-          <Typography variant="body1" fontWeight={500} component="div" sx={{ textAlign: align }}>
+          <Typography
+            variant="body1"
+            component="div"
+            sx={{
+              fontWeight: 500,
+              textAlign: align
+            }}>
             {secondary || "N/A"}
           </Typography>
         }
@@ -154,20 +166,26 @@ function VoterCard({ voter, t, dir, align, language, isAnonymous }) {
           <Box sx={{ flex: 1 }}>
             <Typography
               variant="body1"
-              fontWeight={700}
-              sx={{ textAlign: align, display: "-webkit-box", WebkitLineClamp: 1, WebkitBoxOrient: "vertical", overflow: "hidden" }}
-            >
+              sx={{
+                fontWeight: 700,
+                textAlign: align,
+                display: "-webkit-box",
+                WebkitLineClamp: 1,
+                WebkitBoxOrient: "vertical",
+                overflow: "hidden"
+              }}>
               {isAnonymous ? t.anonymous : (voter.fullName || t.unknownName)}
             </Typography>
           </Box>
         </Box>
       </Box>
-
       <CardContent sx={{ pt: 1, px: 1.5, pb: 1.5 }}>
         {voter.votedAt && (
           <Box sx={{ mb: 1, display: "flex", alignItems: "center", gap: 1 }}>
             <ICONS.eventOutline fontSize="small" color="text.secondary" />
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" sx={{
+              color: "text.secondary"
+            }}>
               {t.votedAt}: {formatDateTimeWithLocale(voter.votedAt, language === "ar" ? "ar-SA" : "en-GB")}
             </Typography>
           </Box>
@@ -215,7 +233,14 @@ function VoterCard({ voter, t, dir, align, language, isAnonymous }) {
                 disableTypography
                 sx={{ flex: 1, minWidth: 0, overflow: "hidden" }}
                 primary={
-                  <Typography variant="body2" color="text.secondary" sx={{ textAlign: align, wordBreak: "break-word", overflowWrap: "break-word" }}>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: "text.secondary",
+                      textAlign: align,
+                      wordBreak: "break-word",
+                      overflowWrap: "break-word"
+                    }}>
                     {v.question}
                   </Typography>
                 }
@@ -344,7 +369,13 @@ export default function FullScreenResultsPage() {
 
   if (loading) {
     return (
-      <Box minHeight="100vh" display="flex" justifyContent="center" alignItems="center">
+      <Box
+        sx={{
+          minHeight: "100vh",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center"
+        }}>
         <CircularProgress />
       </Box>
     );
@@ -352,7 +383,13 @@ export default function FullScreenResultsPage() {
 
   if (!poll) {
     return (
-      <Box minHeight="100vh" display="flex" justifyContent="center" alignItems="center">
+      <Box
+        sx={{
+          minHeight: "100vh",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center"
+        }}>
         <Typography variant="h6" color="error">{t.pollNotFound}</Typography>
       </Box>
     );
@@ -393,7 +430,9 @@ export default function FullScreenResultsPage() {
               alignItems: { xs: "stretch", sm: "center" }, 
               mb: 2.5, px: 0.5, gap: 2 
             }}>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" sx={{
+                color: "text.secondary"
+              }}>
                 {t.showing} {Math.min((page - 1) * CARDS_PER_PAGE + 1, totalVoters)}–{Math.min(page * CARDS_PER_PAGE, totalVoters)} {t.of} {totalVoters} {t.records}
               </Typography>
 
@@ -429,7 +468,12 @@ export default function FullScreenResultsPage() {
               ))}
             </Box>
 
-            <Box display="flex" justifyContent="center" mt={4}>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                mt: 4
+              }}>
               <Pagination
                 dir="ltr"
                 count={Math.ceil(totalVoters / CARDS_PER_PAGE)}

@@ -13,11 +13,18 @@ const DashboardCard = ({
   color = "#1976d2",
   route,
   actions,
+  gridSize,
 }) => {
   const router = useRouter();
 
   return (
-    <Grid item xs={12} sm={6} md={4} display="flex" justifyContent="center">
+    <Grid
+      sx={{ display: "flex", justifyContent: "center" }}
+      size={gridSize || {
+        xs: 12,
+        sm: 6,
+        md: 4
+      }}>
       <AppCard
         sx={{
           p: 3,
@@ -52,9 +59,12 @@ const DashboardCard = ({
         {/* Title */}
         <Typography
           variant="h6"
-          fontWeight="bold"
-          sx={{ color, mb: 1, lineHeight: 1.3 }}
-        >
+          sx={{
+            fontWeight: "bold",
+            color,
+            mb: 1,
+            lineHeight: 1.3
+          }}>
           {title}
         </Typography>
 

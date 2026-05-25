@@ -1170,9 +1170,9 @@ export default function PlayPage() {
               <Grid
                 container
                 spacing={2}
-                justifyContent="center"
-                alignItems="stretch"
                 sx={{
+                  justifyContent: "center",
+                  alignItems: "stretch",
                   mt: 2,
                   maxWidth: "600px",
                   mx: "auto",
@@ -1181,9 +1181,8 @@ export default function PlayPage() {
                   gridAutoRows: "1fr",
                   overflow: "hidden",
                   boxSizing: "border-box",
-                  gap: "8px",
-                }}
-              >
+                  gap: "8px"
+                }}>
                 {currentQuestion &&
                   translatedContent?.answers?.map((opt, i) => {
                     const isSelected = selected === i;
@@ -1197,9 +1196,6 @@ export default function PlayPage() {
                     })();
                     return (
                       <Grid
-                        item
-                        xs={12}
-                        sm={6}
                         key={i}
                         sx={{
                           display: "flex",
@@ -1211,7 +1207,10 @@ export default function PlayPage() {
                           boxSizing: "border-box",
                           flexShrink: 0,
                         }}
-                      >
+                        size={{
+                          xs: 12,
+                          sm: 6
+                        }}>
                         <Box
                           onClick={() => handleSelect(i)}
                           sx={{
@@ -1414,10 +1413,11 @@ export default function PlayPage() {
               {/* Team Name */}
               <Typography
                 variant="h3"
-                fontWeight={700}
                 sx={{
+                  fontWeight: 700,
                   mb: 1,
                   textShadow: "0 0 15px rgba(255,255,255,0.8)",
+
                   fontSize: (() => {
                     const nameLen = teamName?.length || 0;
                     if (nameLen <= 20)
@@ -1425,9 +1425,8 @@ export default function PlayPage() {
                     if (nameLen <= 35)
                       return { xs: "1.25rem", sm: "1.75rem", md: "2rem" };
                     return { xs: "1rem", sm: "1.5rem", md: "1.75rem" };
-                  })(),
-                }}
-              >
+                  })()
+                }}>
                 {teamName}
               </Typography>
 
@@ -1480,7 +1479,9 @@ export default function PlayPage() {
                   </Typography>
                   {opponentTeams.map((opp, idx) => (
                     <Box key={idx} sx={{ mb: 1 }}>
-                      <Typography variant="h5" fontWeight="bold">
+                      <Typography variant="h5" sx={{
+                        fontWeight: "bold"
+                      }}>
                         {opp.teamId?.name || opp.teamName || `Team ${idx + 1}`}
                       </Typography>
                       <Typography variant="body2">
@@ -1552,212 +1553,109 @@ export default function PlayPage() {
           overflow: "hidden",
         }}
       >
-      <Box sx={{
-          position: "absolute", inset: 0,
-          backgroundColor: "rgba(0,0,0,0.72)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          textAlign: "center",
-          backdropFilter: "blur(4px)",
-          p: 2,
-        }}>
-        {isWinner && (
-          <Confetti
-            recycle={false}
-            numberOfPieces={300}
-            gravity={0.2}
-            style={{ position: "absolute", top: 0, left: 0 }}
-          />
-        )}
-        <LanguageSelector top={20} right={20} />
-        <Fade in timeout={800}>
-          <Paper
-            dir={dir}
-            elevation={8}
-            sx={{
-              width: { xs: "80%", sm: "50%" },
-              p: 4,
-              borderRadius: 3,
-              background: backgroundGradient,
-              color: "#fff",
-              textAlign: "center",
-              boxShadow: "0 0 30px rgba(0,0,0,0.6)",
-              backdropFilter: "blur(5px)",
-            }}
-          >
-            {/* Player Name */}
-            <Typography
-              variant="h3"
-              fontWeight={700}
+        <Box sx={{
+            position: "absolute", inset: 0,
+            backgroundColor: "rgba(0,0,0,0.72)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            textAlign: "center",
+            backdropFilter: "blur(4px)",
+            p: 2,
+          }}>
+          {isWinner && (
+            <Confetti
+              recycle={false}
+              numberOfPieces={300}
+              gravity={0.2}
+              style={{ position: "absolute", top: 0, left: 0 }}
+            />
+          )}
+          <LanguageSelector top={20} right={20} />
+          <Fade in timeout={800}>
+            <Paper
+              dir={dir}
+              elevation={8}
               sx={{
-                mb: 1,
-                textShadow: "0 0 15px rgba(255,255,255,0.8)",
-                fontSize: (() => {
-                  const playerNameLength =
-                    playerObj?.playerId?.name?.length || 0;
-                  if (playerNameLength <= 20) {
-                    return { xs: "1.5rem", sm: "2rem", md: "2.5rem" };
-                  } else if (playerNameLength <= 35) {
-                    return { xs: "1.25rem", sm: "1.75rem", md: "2rem" };
-                  } else {
-                    return { xs: "1rem", sm: "1.5rem", md: "1.75rem" };
-                  }
-                })(),
-                lineHeight: { xs: 1.2, sm: 1.3, md: 1.4 },
-                wordBreak: "break-word",
-                overflowWrap: "break-word",
+                width: { xs: "80%", sm: "50%" },
+                p: 4,
+                borderRadius: 3,
+                background: backgroundGradient,
+                color: "#fff",
+                textAlign: "center",
+                boxShadow: "0 0 30px rgba(0,0,0,0.6)",
+                backdropFilter: "blur(5px)",
               }}
             >
-              {playerObj?.playerId?.name}
-            </Typography>
-
-            {/* Headline */}
-            <Typography
-              variant="h1"
-              sx={{
-                my: 2,
-                textShadow: "0 0 15px rgba(255,255,255,0.8)",
-                fontSize: (() => {
-                  const headlineLength = headlineText?.length || 0;
-                  if (headlineLength <= 15) {
-                    return { xs: "2rem", sm: "3rem", md: "4rem" };
-                  } else if (headlineLength <= 25) {
-                    return { xs: "1.5rem", sm: "2.5rem", md: "3rem" };
-                  } else {
-                    return { xs: "1.25rem", sm: "2rem", md: "2.5rem" };
-                  }
-                })(),
-                lineHeight: { xs: 1.2, sm: 1.3, md: 1.4 },
-                wordBreak: "break-word",
-                overflowWrap: "break-word",
-                fontWeight: "bold",
-              }}
-            >
-              {headlineText}
-            </Typography>
-
-            {/* Score */}
-            <Typography
-              variant="h2"
-              sx={{
-                fontWeight: "bold",
-                fontSize: { xs: "4rem", sm: "6rem" },
-                textShadow: "0 0 20px rgba(255,255,255,0.6)",
-              }}
-            >
-              {playerScore}
-            </Typography>
-            <Typography
-              variant="body1"
-              sx={{
-                mb: 1,
-                fontSize: (() => {
-                  const statsText = `${t.attempted}: ${playerAttempted} | ${t.timeTaken}: ${playerTimeTaken}`;
-                  const statsLength = statsText?.length || 0;
-                  if (statsLength <= 40) {
-                    return { xs: "0.875rem", sm: "1rem", md: "1.125rem" };
-                  } else if (statsLength <= 60) {
-                    return { xs: "0.75rem", sm: "0.875rem", md: "1rem" };
-                  } else {
-                    return { xs: "0.625rem", sm: "0.75rem", md: "0.875rem" };
-                  }
-                })(),
-                lineHeight: { xs: 1.2, sm: 1.3, md: 1.4 },
-                wordBreak: "break-word",
-                overflowWrap: "break-word",
-              }}
-            >
-              {t.attempted}: {playerAttempted}{" "}
-              <Box component="span" sx={{ mx: 1, color: "text.secondary" }}>
-                |
-              </Box>{" "}
-              {t.timeTaken}: {playerTimeTaken}
-            </Typography>
-
-            {/* Opponent Box */}
-            <Box
-              sx={{
-                background: "#ffffffaa",
-                backdropFilter: "blur(4px)",
-                p: 2,
-                borderRadius: 2,
-                color: "#000",
-                mb: 3,
-              }}
-            >
+              {/* Player Name */}
               <Typography
-                variant="h6"
+                variant="h3"
                 sx={{
+                  fontWeight: 700,
                   mb: 1,
+                  textShadow: "0 0 15px rgba(255,255,255,0.8)",
+
                   fontSize: (() => {
-                    const opponentLabelLength = t.opponent?.length || 0;
-                    if (opponentLabelLength <= 10) {
-                      return { xs: "1rem", sm: "1.25rem", md: "1.5rem" };
-                    } else if (opponentLabelLength <= 20) {
-                      return { xs: "0.875rem", sm: "1.125rem", md: "1.25rem" };
-                    } else {
-                      return { xs: "0.75rem", sm: "1rem", md: "1.125rem" };
-                    }
-                  })(),
-                  lineHeight: { xs: 1.2, sm: 1.3, md: 1.4 },
-                  wordBreak: "break-word",
-                  overflowWrap: "break-word",
-                }}
-              >
-                {t.opponent}
-              </Typography>
-              <Typography
-                variant="h4"
-                fontWeight="bold"
-                sx={{
-                  mb: 1,
-                  fontSize: (() => {
-                    const opponentNameLength =
-                      opponentObj.playerId.name?.length || 0;
-                    if (opponentNameLength <= 20) {
+                    const playerNameLength =
+                      playerObj?.playerId?.name?.length || 0;
+                    if (playerNameLength <= 20) {
+                      return { xs: "1.5rem", sm: "2rem", md: "2.5rem" };
+                    } else if (playerNameLength <= 35) {
                       return { xs: "1.25rem", sm: "1.75rem", md: "2rem" };
-                    } else if (opponentNameLength <= 35) {
+                    } else {
                       return { xs: "1rem", sm: "1.5rem", md: "1.75rem" };
-                    } else {
-                      return { xs: "0.875rem", sm: "1.25rem", md: "1.5rem" };
                     }
                   })(),
+
                   lineHeight: { xs: 1.2, sm: 1.3, md: 1.4 },
                   wordBreak: "break-word",
-                  overflowWrap: "break-word",
-                }}
-              >
-                {opponentObj.playerId.name}
+                  overflowWrap: "break-word"
+                }}>
+                {playerObj?.playerId?.name}
               </Typography>
+
+              {/* Headline */}
               <Typography
-                variant="body1"
+                variant="h1"
                 sx={{
-                  mb: 0.5,
+                  my: 2,
+                  textShadow: "0 0 15px rgba(255,255,255,0.8)",
                   fontSize: (() => {
-                    const scoreText = `${t.score}: ${opponentScore}`;
-                    const scoreLength = scoreText?.length || 0;
-                    if (scoreLength <= 25) {
-                      return { xs: "0.875rem", sm: "1rem", md: "1.125rem" };
-                    } else if (scoreLength <= 40) {
-                      return { xs: "0.75rem", sm: "0.875rem", md: "1rem" };
+                    const headlineLength = headlineText?.length || 0;
+                    if (headlineLength <= 15) {
+                      return { xs: "2rem", sm: "3rem", md: "4rem" };
+                    } else if (headlineLength <= 25) {
+                      return { xs: "1.5rem", sm: "2.5rem", md: "3rem" };
                     } else {
-                      return { xs: "0.625rem", sm: "0.75rem", md: "0.875rem" };
+                      return { xs: "1.25rem", sm: "2rem", md: "2.5rem" };
                     }
                   })(),
                   lineHeight: { xs: 1.2, sm: 1.3, md: 1.4 },
                   wordBreak: "break-word",
                   overflowWrap: "break-word",
+                  fontWeight: "bold",
                 }}
               >
-                {t.score}: {opponentScore}
+                {headlineText}
+              </Typography>
+
+              {/* Score */}
+              <Typography
+                variant="h2"
+                sx={{
+                  fontWeight: "bold",
+                  fontSize: { xs: "4rem", sm: "6rem" },
+                  textShadow: "0 0 20px rgba(255,255,255,0.6)",
+                }}
+              >
+                {playerScore}
               </Typography>
               <Typography
                 variant="body1"
                 sx={{
                   mb: 1,
                   fontSize: (() => {
-                    const statsText = `${t.attempted}: ${opponentAttempted} | ${t.timeTaken}: ${opponentTimeTaken}`;
+                    const statsText = `${t.attempted}: ${playerAttempted} | ${t.timeTaken}: ${playerTimeTaken}`;
                     const statsLength = statsText?.length || 0;
                     if (statsLength <= 40) {
                       return { xs: "0.875rem", sm: "1rem", md: "1.125rem" };
@@ -1772,28 +1670,133 @@ export default function PlayPage() {
                   overflowWrap: "break-word",
                 }}
               >
-                {t.attempted}: {opponentAttempted}{" "}
+                {t.attempted}: {playerAttempted}{" "}
                 <Box component="span" sx={{ mx: 1, color: "text.secondary" }}>
                   |
                 </Box>{" "}
-                {t.timeTaken}: {opponentTimeTaken}
+                {t.timeTaken}: {playerTimeTaken}
               </Typography>
-            </Box>
 
-            {/* Play Again */}
-            <Button
-              variant="contained"
-              color="secondary"
-              size="large"
-              onClick={handlePlayAgain}
-              startIcon={<ICONS.replay />}
-              sx={getStartIconSpacing(dir)}
-            >
-              {t.playAgain}
-            </Button>
-          </Paper>
-        </Fade>
-        </Box>
+              {/* Opponent Box */}
+              <Box
+                sx={{
+                  background: "#ffffffaa",
+                  backdropFilter: "blur(4px)",
+                  p: 2,
+                  borderRadius: 2,
+                  color: "#000",
+                  mb: 3,
+                }}
+              >
+                <Typography
+                  variant="h6"
+                  sx={{
+                    mb: 1,
+                    fontSize: (() => {
+                      const opponentLabelLength = t.opponent?.length || 0;
+                      if (opponentLabelLength <= 10) {
+                        return { xs: "1rem", sm: "1.25rem", md: "1.5rem" };
+                      } else if (opponentLabelLength <= 20) {
+                        return { xs: "0.875rem", sm: "1.125rem", md: "1.25rem" };
+                      } else {
+                        return { xs: "0.75rem", sm: "1rem", md: "1.125rem" };
+                      }
+                    })(),
+                    lineHeight: { xs: 1.2, sm: 1.3, md: 1.4 },
+                    wordBreak: "break-word",
+                    overflowWrap: "break-word",
+                  }}
+                >
+                  {t.opponent}
+                </Typography>
+                <Typography
+                  variant="h4"
+                  sx={{
+                    fontWeight: "bold",
+                    mb: 1,
+
+                    fontSize: (() => {
+                      const opponentNameLength =
+                        opponentObj.playerId.name?.length || 0;
+                      if (opponentNameLength <= 20) {
+                        return { xs: "1.25rem", sm: "1.75rem", md: "2rem" };
+                      } else if (opponentNameLength <= 35) {
+                        return { xs: "1rem", sm: "1.5rem", md: "1.75rem" };
+                      } else {
+                        return { xs: "0.875rem", sm: "1.25rem", md: "1.5rem" };
+                      }
+                    })(),
+
+                    lineHeight: { xs: 1.2, sm: 1.3, md: 1.4 },
+                    wordBreak: "break-word",
+                    overflowWrap: "break-word"
+                  }}>
+                  {opponentObj.playerId.name}
+                </Typography>
+                <Typography
+                  variant="body1"
+                  sx={{
+                    mb: 0.5,
+                    fontSize: (() => {
+                      const scoreText = `${t.score}: ${opponentScore}`;
+                      const scoreLength = scoreText?.length || 0;
+                      if (scoreLength <= 25) {
+                        return { xs: "0.875rem", sm: "1rem", md: "1.125rem" };
+                      } else if (scoreLength <= 40) {
+                        return { xs: "0.75rem", sm: "0.875rem", md: "1rem" };
+                      } else {
+                        return { xs: "0.625rem", sm: "0.75rem", md: "0.875rem" };
+                      }
+                    })(),
+                    lineHeight: { xs: 1.2, sm: 1.3, md: 1.4 },
+                    wordBreak: "break-word",
+                    overflowWrap: "break-word",
+                  }}
+                >
+                  {t.score}: {opponentScore}
+                </Typography>
+                <Typography
+                  variant="body1"
+                  sx={{
+                    mb: 1,
+                    fontSize: (() => {
+                      const statsText = `${t.attempted}: ${opponentAttempted} | ${t.timeTaken}: ${opponentTimeTaken}`;
+                      const statsLength = statsText?.length || 0;
+                      if (statsLength <= 40) {
+                        return { xs: "0.875rem", sm: "1rem", md: "1.125rem" };
+                      } else if (statsLength <= 60) {
+                        return { xs: "0.75rem", sm: "0.875rem", md: "1rem" };
+                      } else {
+                        return { xs: "0.625rem", sm: "0.75rem", md: "0.875rem" };
+                      }
+                    })(),
+                    lineHeight: { xs: 1.2, sm: 1.3, md: 1.4 },
+                    wordBreak: "break-word",
+                    overflowWrap: "break-word",
+                  }}
+                >
+                  {t.attempted}: {opponentAttempted}{" "}
+                  <Box component="span" sx={{ mx: 1, color: "text.secondary" }}>
+                    |
+                  </Box>{" "}
+                  {t.timeTaken}: {opponentTimeTaken}
+                </Typography>
+              </Box>
+
+              {/* Play Again */}
+              <Button
+                variant="contained"
+                color="secondary"
+                size="large"
+                onClick={handlePlayAgain}
+                startIcon={<ICONS.replay />}
+                sx={getStartIconSpacing(dir)}
+              >
+                {t.playAgain}
+              </Button>
+            </Paper>
+          </Fade>
+          </Box>
       </Box>
     );
   }

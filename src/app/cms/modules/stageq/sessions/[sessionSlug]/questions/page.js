@@ -194,17 +194,24 @@ export default function SessionQuestionsPage() {
 
         <Stack
           direction={{ xs: "column", sm: "row" }}
-          justifyContent="space-between"
-          alignItems={{ xs: "stretch", sm: "center" }}
           spacing={2}
-          mb={3}
-        >
+          sx={{
+            justifyContent: "space-between",
+            alignItems: { xs: "stretch", sm: "center" },
+            mb: 3
+          }}>
           <Box sx={{ flex: 1 }}>
-            <Typography variant="h4" fontWeight="bold">{t.title}</Typography>
-            <Typography variant="body2" color="text.secondary">{t.description}</Typography>
+            <Typography variant="h4" sx={{
+              fontWeight: "bold"
+            }}>{t.title}</Typography>
+            <Typography variant="body2" sx={{
+              color: "text.secondary"
+            }}>{t.description}</Typography>
           </Box>
 
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems={{ xs: "stretch", sm: "center" }}>
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{
+            alignItems: { xs: "stretch", sm: "center" }
+          }}>
             {sessionSlug && (
               <Button
                 variant="contained"
@@ -227,9 +234,17 @@ export default function SessionQuestionsPage() {
         ) : questions.length === 0 ? (
           <NoDataAvailable />
         ) : (
-          <Grid container spacing={3} justifyContent="center">
+          <Grid container spacing={3} sx={{
+            justifyContent: "center"
+          }}>
             {questions.map((q) => (
-              <Grid item xs={12} sm={6} md={4} key={q._id}>
+              <Grid
+                key={q._id}
+                size={{
+                  xs: 12,
+                  sm: 6,
+                  md: 4
+                }}>
                 <AppCard
                   sx={{
                     display: "flex",
@@ -241,7 +256,13 @@ export default function SessionQuestionsPage() {
                 >
                   {countdowns[q._id] > 0 && (
                     <Box sx={{ px: 2, pt: 1.5 }}>
-                      <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        sx={{
+                          alignItems: "center",
+                          mb: 0.5
+                        }}>
                         <Chip
                           label={`On screen in ${countdowns[q._id]}s`}
                           size="small"
@@ -258,16 +279,30 @@ export default function SessionQuestionsPage() {
                     </Box>
                   )}
                   <Box sx={{ px: 2, pt: 2 }}>
-                    <Typography fontWeight="bold" fontSize="1.05rem" color="text.primary" sx={{ lineHeight: 1.4 }}>
+                    <Typography
+                      sx={{
+                        fontWeight: "bold",
+                        fontSize: "1.05rem",
+                        color: "text.primary",
+                        lineHeight: 1.4
+                      }}>
                       {q.text}
                     </Typography>
                   </Box>
 
                   <Box sx={{ px: 2, pt: 1, pb: 1, display: "flex", flexDirection: "column", gap: 1 }}>
                     {/* Votes */}
-                    <Stack direction="row" spacing={1} alignItems="center" sx={{ gap: dir === "rtl" ? 1 : 0 }}>
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      sx={{
+                        alignItems: "center",
+                        gap: dir === "rtl" ? 1 : 0
+                      }}>
                       {<ICONS.thumb fontSize="small" />}
-                      <Typography variant="body2" color="text.secondary">
+                      <Typography variant="body2" sx={{
+                        color: "text.secondary"
+                      }}>
                         {q.votes} {q.votes === 1 ? t.vote : t.votes}
                       </Typography>
                     </Stack>
@@ -275,14 +310,26 @@ export default function SessionQuestionsPage() {
 
                     {/* Submitter Info */}
                     <Stack spacing={0.5}>
-                      <Stack direction="row" spacing={1} alignItems="center" sx={{ gap: dir === "rtl" ? 1 : 0 }}>
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        sx={{
+                          alignItems: "center",
+                          gap: dir === "rtl" ? 1 : 0
+                        }}>
                         <ICONS.person fontSize="small" />
                         <Typography variant="body2">
                           {q.submitterName || q.visitor?.name || t.anonymous}
                         </Typography>
                       </Stack>
                       {(q.submitterPhone || q.visitor?.phone) && (
-                        <Stack direction="row" spacing={1} alignItems="center" sx={{ gap: dir === "rtl" ? 1 : 0 }}>
+                        <Stack
+                          direction="row"
+                          spacing={1}
+                          sx={{
+                            alignItems: "center",
+                            gap: dir === "rtl" ? 1 : 0
+                          }}>
                           <ICONS.phone fontSize="small" />
                           <Typography variant="body2">
                             {(() => {
@@ -294,7 +341,13 @@ export default function SessionQuestionsPage() {
                           </Typography>
                         </Stack>
                       )}
-                      <Stack direction="row" spacing={1} alignItems="center" sx={{ gap: dir === "rtl" ? 1 : 0 }}>
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        sx={{
+                          alignItems: "center",
+                          gap: dir === "rtl" ? 1 : 0
+                        }}>
                         <ICONS.business fontSize="small" />
                         <Typography variant="body2">
                           {q.submitterCompany || q.visitor?.company || t.notProvided}

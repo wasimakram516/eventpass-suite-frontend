@@ -509,7 +509,6 @@ export default function QRScanner({ onScanSuccess, onError, onCancel }) {
           <ICONS.close />
         </IconButton>
       </Tooltip>
-
       <Box
         sx={{
           width: "90vmin",
@@ -554,7 +553,11 @@ export default function QRScanner({ onScanSuccess, onError, onCancel }) {
             }}
           >
             <CircularProgress color="inherit" />
-            <Typography ml={2} color="#fff">
+            <Typography
+              sx={{
+                ml: 2,
+                color: "#fff"
+              }}>
               {t.initializing}
             </Typography>
           </Box>

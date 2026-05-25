@@ -319,10 +319,14 @@ export default function PlayPage() {
             }}
           >
             <QuizOutlinedIcon color="warning" sx={{ fontSize: 64, mb: 2 }} />
-            <Typography variant="h5" fontWeight="bold" gutterBottom>
+            <Typography variant="h5" gutterBottom sx={{
+              fontWeight: "bold"
+            }}>
               {t.noQuestionsTitle}
             </Typography>
-            <Typography variant="body1" color="text.secondary">
+            <Typography variant="body1" sx={{
+              color: "text.secondary"
+            }}>
               {t.noQuestionsMessage}
             </Typography>
           </Paper>
@@ -415,19 +419,30 @@ export default function PlayPage() {
                 textAlign: "center",
               }}
             >
-              <Typography variant="h3" fontWeight="bold" mb={2}>
+              <Typography
+                variant="h3"
+                sx={{
+                  fontWeight: "bold",
+                  mb: 2
+                }}>
                 {t.thankYou} {playerInfo.name}!
               </Typography>
 
-              <Typography variant="h2" mb={2}>
+              <Typography variant="h2" sx={{
+                mb: 2
+              }}>
                 {t.score}: {score}
               </Typography>
 
-              <Typography variant="h6" mb={1}>
+              <Typography variant="h6" sx={{
+                mb: 1
+              }}>
                 {t.attempted}: {attempted}
               </Typography>
 
-              <Typography variant="h6" mb={3}>
+              <Typography variant="h6" sx={{
+                mb: 3
+              }}>
                 {t.timeTaken}: {timeTaken} {t.countdown}
               </Typography>
 
@@ -592,9 +607,9 @@ export default function PlayPage() {
             <Grid
               container
               spacing={2}
-              justifyContent="center"
-              alignItems="stretch"
               sx={{
+                justifyContent: "center",
+                alignItems: "stretch",
                 mt: 2,
                 maxWidth: "100%",
                 width: "100%",
@@ -604,9 +619,8 @@ export default function PlayPage() {
                 gridAutoRows: "1fr",
                 overflow: "hidden",
                 boxSizing: "border-box",
-                gap: "8px",
-              }}
-            >
+                gap: "8px"
+              }}>
               {Array.isArray(translatedContent.answers) &&
                 translatedContent.answers.map((opt, i) => {
                   const isSelected = selected === i;
@@ -621,9 +635,6 @@ export default function PlayPage() {
 
                   return (
                     <Grid
-                      item
-                      xs={12}
-                      sm={6}
                       key={i}
                       sx={{
                         display: "flex",
@@ -635,7 +646,10 @@ export default function PlayPage() {
                         boxSizing: "border-box",
                         flexShrink: 0,
                       }}
-                    >
+                      size={{
+                        xs: 12,
+                        sm: 6
+                      }}>
                       <Box
                         onClick={() => handleSelect(i)}
                         sx={{

@@ -177,7 +177,6 @@ export default function FileStorePage() {
           onSelect={handleBusinessSelect}
         />
       )}
-
       <Container maxWidth={false} disableGutters>
         <BreadcrumbsNav />
         <Box
@@ -192,10 +191,14 @@ export default function FileStorePage() {
           }}
         >
           <Box sx={{ flex: 1 }}>
-            <Typography variant="h5" fontWeight="bold">
+            <Typography variant="h5" sx={{
+              fontWeight: "bold"
+            }}>
               {t.pageTitle}
             </Typography>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" sx={{
+              color: "text.secondary"
+            }}>
               {t.pageDescription}
             </Typography>
           </Box>
@@ -254,17 +257,17 @@ export default function FileStorePage() {
 
               return (
                 <Grid
-                  item
-                  xs={12}
-                  sm={6}
-                  md={4}
-                  lg={3}
                   key={f._id}
                   sx={{
                     display: { xs: "flex", sm: "block" },
                     width: { xs: "100%", sm: "auto" },
                   }}
-                >
+                  size={{
+                    xs: 12,
+                    sm: 6,
+                    md: 4,
+                    lg: 3
+                  }}>
                   <AppCard
                     sx={{
                       p: 2,
@@ -275,18 +278,27 @@ export default function FileStorePage() {
                   >
                     <Box>
                       {fileIcon}
-                      <Typography variant="subtitle1" fontWeight="bold" mt={1}>
+                      <Typography
+                        variant="subtitle1"
+                        sx={{
+                          fontWeight: "bold",
+                          mt: 1
+                        }}>
                         {f.title}
                       </Typography>
                       <Typography
                         variant="body2"
-                        color="text.secondary"
                         noWrap
                         title={f.slug}
+                        sx={{
+                          color: "text.secondary"
+                        }}
                       >
                         {f.slug}
                       </Typography>
-                      <Typography variant="caption" color="text.secondary">
+                      <Typography variant="caption" sx={{
+                        color: "text.secondary"
+                      }}>
                         {f.contentType}
                       </Typography>
                     </Box>
@@ -393,12 +405,14 @@ export default function FileStorePage() {
             onClose={() => setPreviewFile(null)}
             fullWidth
             maxWidth="md"
-            PaperProps={{
-              sx: {
-                height: "80vh",
-                backgroundColor: "#fff",
-                position: "relative",
-              },
+            slotProps={{
+              paper: {
+                sx: {
+                  height: "80vh",
+                  backgroundColor: "#fff",
+                  position: "relative",
+                },
+              }
             }}
           >
             <IconButton

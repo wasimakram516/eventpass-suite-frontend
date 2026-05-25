@@ -216,7 +216,6 @@ export default function EventsPage() {
           onSelect={handleBusinessSelect}
         />
       )}
-
       <Container maxWidth={false} disableGutters>
         <BreadcrumbsNav />
         <Box
@@ -232,10 +231,14 @@ export default function EventsPage() {
           }}
         >
           <Box sx={{ flex: 1 }}>
-            <Typography variant="h5" fontWeight="bold">
+            <Typography variant="h5" sx={{
+              fontWeight: "bold"
+            }}>
               {t.pageTitle}
             </Typography>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" sx={{
+              color: "text.secondary"
+            }}>
               {t.pageDescription}
             </Typography>
           </Box>
@@ -282,10 +285,18 @@ export default function EventsPage() {
         ) : filteredEvents.length === 0 ? (
           <NoDataAvailable />
         ) : (
-          <Grid container spacing={3} justifyContent="center">
+          <Grid container spacing={3} sx={{
+            justifyContent: "center"
+          }}>
             {filteredEvents.map((ev) => {
               return (
-                <Grid item xs={12} sm={6} md={4} key={ev._id}>
+                <Grid
+                  key={ev._id}
+                  size={{
+                    xs: 12,
+                    sm: 6,
+                    md: 4
+                  }}>
                   <EventCardBase
                     event={ev}
                     t={t}

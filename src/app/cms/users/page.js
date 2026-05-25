@@ -687,13 +687,16 @@ export default function UsersPage() {
             <Stack
               direction="row"
               spacing={2}
-              alignItems="flex-start"
-              sx={{ gap: dir === "rtl" ? "16px" : "" }}
-            >
+              sx={{
+                alignItems: "flex-start",
+                gap: dir === "rtl" ? "16px" : ""
+              }}>
               <Avatar sx={{ width: 56, height: 56 }}>{user.name?.[0]}</Avatar>
               <Box sx={{ flexGrow: 1, ...wrapTextBox }}>
                 <Typography variant="h6">{user.name}</Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" sx={{
+                  color: "text.secondary"
+                }}>
                   {user.email}
                 </Typography>
                 <Stack
@@ -854,13 +857,19 @@ export default function UsersPage() {
         <Box>
           <Typography
             variant="h4"
-            fontWeight="bold"
             gutterBottom
-            textAlign={align}
-          >
+            sx={{
+              fontWeight: "bold",
+              textAlign: align
+            }}>
             {t.title}
           </Typography>
-          <Typography variant="body1" color="text.secondary" textAlign={align}>
+          <Typography
+            variant="body1"
+            sx={{
+              color: "text.secondary",
+              textAlign: align
+            }}>
             {t.subtitle}
           </Typography>
         </Box>
@@ -875,13 +884,12 @@ export default function UsersPage() {
           <Stack
             direction="row"
             spacing={1}
-            flexWrap="wrap"
             sx={{
+              flexWrap: "wrap",
               gap: 1,
               width: "100%",
-              justifyContent: { xs: "flex-start", md: "flex-end" },
-            }}
-          >
+              justifyContent: { xs: "flex-start", md: "flex-end" }
+            }}>
             {getGroupCount("Super Admins") > 0 && (
               <Chip
                 label={`${t.superAdmins}: ${getGroupCount("Super Admins")}`}
@@ -942,13 +950,15 @@ export default function UsersPage() {
                 maxWidth: "100%",
                 minWidth: { sm: 220, md: 280 },
               }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <ICONS.search sx={{ opacity: 0.7 }} />
-                  </InputAdornment>
-                ),
-                sx: { width: "100%", maxWidth: "100%" },
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <ICONS.search sx={{ opacity: 0.7 }} />
+                    </InputAdornment>
+                  ),
+                  sx: { width: "100%", maxWidth: "100%" },
+                }
               }}
             />
             <Button
@@ -977,7 +987,9 @@ export default function UsersPage() {
             !["Super Admins", "Admins", "Unassigned"].includes(group);
 
           const groupContent = (
-            <Grid container spacing={3} justifyContent="center">
+            <Grid container spacing={3} sx={{
+              justifyContent: "center"
+            }}>
               {isBusinessUser &&
                 group === currentUser.business.name &&
                 renderUserCard(currentUser, true)}
@@ -1038,9 +1050,12 @@ export default function UsersPage() {
                   <Stack
                     direction="row"
                     spacing={1}
-                    alignItems="center"
-                    sx={{ minWidth: 0, flexWrap: "wrap", rowGap: 0.5 }}
-                  >
+                    sx={{
+                      alignItems: "center",
+                      minWidth: 0,
+                      flexWrap: "wrap",
+                      rowGap: 0.5
+                    }}>
                     <Typography
                       variant="h6"
                       sx={{ fontWeight: 600, wordBreak: "break-word" }}
@@ -1060,13 +1075,12 @@ export default function UsersPage() {
                   <Stack
                     direction="row"
                     spacing={1}
-                    alignItems="center"
                     sx={{
+                      alignItems: "center",
                       width: { xs: "100%", sm: "auto" },
                       flexWrap: "wrap",
-                      rowGap: 0.5,
-                    }}
-                  >
+                      rowGap: 0.5
+                    }}>
                     <Chip
                       label={`${t.desk}: ${deskCount}`}
                       size="small"
@@ -1111,9 +1125,10 @@ export default function UsersPage() {
               <Stack
                 direction="row"
                 spacing={1}
-                alignItems="center"
-                sx={{ mb: 1 }}
-              >
+                sx={{
+                  alignItems: "center",
+                  mb: 1
+                }}>
                 <Typography variant="h6">{getGroupLabel(group)}</Typography>
                 <Chip
                   label={`${users.length}`}
@@ -1126,7 +1141,6 @@ export default function UsersPage() {
           );
         })
       )}
-
       <Dialog
         open={modalOpen}
         onClose={() => setModalOpen(false)}
@@ -1270,8 +1284,8 @@ export default function UsersPage() {
                   }
                   error={!!errors[field]}
                   helperText={errors[field] || ""}
-                  InputProps={
-                    field === "password"
+                  slotProps={{
+                    input: field === "password"
                       ? {
                         endAdornment: (
                           <IconButton
@@ -1283,7 +1297,7 @@ export default function UsersPage() {
                         ),
                       }
                       : {}
-                  }
+                  }}
                 />
               ))}
 
@@ -1451,9 +1465,10 @@ export default function UsersPage() {
                     <Stack
                       direction="row"
                       spacing={2}
-                      alignItems="center"
-                      sx={{ gap: dir === "rtl" ? "16px" : "" }}
-                    >
+                      sx={{
+                        alignItems: "center",
+                        gap: dir === "rtl" ? "16px" : ""
+                      }}>
                       <Avatar
                         src={form.logoPreview}
                         alt="Preview"
@@ -1492,7 +1507,9 @@ export default function UsersPage() {
               (form.userType === "admin" && activeTab === 1) ||
               (form.userType === "business" && activeTab === 2)) && (
               <Box sx={{ mt: 2 }}>
-                <Typography variant="subtitle1" gutterBottom textAlign={align}>
+                <Typography variant="subtitle1" gutterBottom sx={{
+                  textAlign: align
+                }}>
                   {t.permissions}
                 </Typography>
 
@@ -1644,7 +1661,6 @@ export default function UsersPage() {
           </Stack>
         </DialogActions>
       </Dialog>
-
       <ConfirmationDialog
         open={deleteConfirm}
         title={t.deleteConfirm}

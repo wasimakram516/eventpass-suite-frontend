@@ -192,7 +192,6 @@ export default function DigiPassEventDetails() {
           }}
         />
       )}
-
       {/* Video Background */}
       {background?.fileType === "video" && background?.url && (
         <Box
@@ -253,7 +252,12 @@ export default function DigiPassEventDetails() {
           }}
         >
           {name && (
-            <Typography variant="h5" fontWeight="bold" sx={{ width: "100%" }}>
+            <Typography
+              variant="h5"
+              sx={{
+                fontWeight: "bold",
+                width: "100%"
+              }}>
               {name}
             </Typography>
           )}
@@ -335,7 +339,6 @@ export default function DigiPassEventDetails() {
           </Stack>
         </Card>
       </Container>
-
       {/* Force LanguageSelector subtree to LTR so EN/AR toggle behaves correctly in Arabic */}
       <Box dir="ltr">
         <LanguageSelector top={20} right={20} />

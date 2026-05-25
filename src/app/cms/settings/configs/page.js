@@ -516,7 +516,9 @@ export default function GlobalConfigPage() {
   };
 
   const renderFieldRow = (label, value, icon) => (
-    <Stack direction="row" spacing={1.5} alignItems="center">
+    <Stack direction="row" spacing={1.5} sx={{
+      alignItems: "center"
+    }}>
       <Avatar
         sx={{
           width: 36,
@@ -528,7 +530,9 @@ export default function GlobalConfigPage() {
         {icon}
       </Avatar>
       <Box sx={{ minWidth: 0 }}>
-        <Typography variant="caption" color="text.secondary">
+        <Typography variant="caption" sx={{
+          color: "text.secondary"
+        }}>
           {label}
         </Typography>
         <Typography variant="body1" sx={{ wordBreak: "break-word" }}>
@@ -555,7 +559,9 @@ export default function GlobalConfigPage() {
           <Typography variant="h4" gutterBottom>
             {t.title}
           </Typography>
-          <Typography variant="body1" color="text.secondary">
+          <Typography variant="body1" sx={{
+            color: "text.secondary"
+          }}>
             {t.subtitle}
           </Typography>
         </Box>
@@ -601,13 +607,15 @@ export default function GlobalConfigPage() {
           </Stack>
         )}
       </Box>
-
       <Divider />
-
       {loading ? (
         <LoadingState />
       ) : !config ? (
-        <Box textAlign="center" py={4}>
+        <Box
+          sx={{
+            textAlign: "center",
+            py: 4
+          }}>
           <Typography sx={{ mb: 4 }}>{t.noConfig}</Typography>
           <Button
             startIcon={<ICONS.add />}
@@ -625,9 +633,16 @@ export default function GlobalConfigPage() {
           columnSpacing={{ xs: 0, md: 3 }}
           sx={{ mt: 1 }}
         >
-          <Grid item xs={12} md={6} sx={{ px: { xs: 0 } }}>
+          <Grid
+            sx={{ px: { xs: 0 } }}
+            size={{
+              xs: 12,
+              md: 6
+            }}>
             <AppCard sx={{ p: 2.5, height: "100%", width: "100%" }}>
-              <Stack direction="row" spacing={1.5} alignItems="center">
+              <Stack direction="row" spacing={1.5} sx={{
+                alignItems: "center"
+              }}>
                 <ICONS.settings sx={{ color: "#0077b6" }} />
                 <Typography variant="h6">{t.appName}</Typography>
               </Stack>
@@ -643,9 +658,16 @@ export default function GlobalConfigPage() {
             </AppCard>
           </Grid>
 
-          <Grid item xs={12} md={6} sx={{ px: { xs: 0 } }}>
+          <Grid
+            sx={{ px: { xs: 0 } }}
+            size={{
+              xs: 12,
+              md: 6
+            }}>
             <AppCard sx={{ p: 2.5, height: "100%", width: "100%" }}>
-              <Stack direction="row" spacing={1.5} alignItems="center">
+              <Stack direction="row" spacing={1.5} sx={{
+                alignItems: "center"
+              }}>
                 <ICONS.email sx={{ color: "#0077b6" }} />
                 <Typography variant="h6">
                   {t.contact} & {t.support}
@@ -677,9 +699,16 @@ export default function GlobalConfigPage() {
             </AppCard>
           </Grid>
 
-          <Grid item xs={12} md={6} sx={{ px: { xs: 0 } }}>
+          <Grid
+            sx={{ px: { xs: 0 } }}
+            size={{
+              xs: 12,
+              md: 6
+            }}>
             <AppCard sx={{ p: 2.5, height: "100%", width: "100%" }}>
-              <Stack direction="row" spacing={1.5} alignItems="center">
+              <Stack direction="row" spacing={1.5} sx={{
+                alignItems: "center"
+              }}>
                 <ICONS.image sx={{ color: "#0077b6" }} />
                 <Typography variant="h6">{t.mediaUploadsSection}</Typography>
               </Stack>
@@ -695,7 +724,9 @@ export default function GlobalConfigPage() {
                       sx={{ width: 120, height: 120 }}
                     />
                   ) : (
-                    <Typography color="text.secondary">{t.none}</Typography>
+                    <Typography sx={{
+                      color: "text.secondary"
+                    }}>{t.none}</Typography>
                   )}
                 </Stack>
 
@@ -718,7 +749,9 @@ export default function GlobalConfigPage() {
                       />
                     )
                   ) : (
-                    <Typography color="text.secondary">{t.none}</Typography>
+                    <Typography sx={{
+                      color: "text.secondary"
+                    }}>{t.none}</Typography>
                   )}
                 </Stack>
 
@@ -741,16 +774,25 @@ export default function GlobalConfigPage() {
                       />
                     )
                   ) : (
-                    <Typography color="text.secondary">{t.none}</Typography>
+                    <Typography sx={{
+                      color: "text.secondary"
+                    }}>{t.none}</Typography>
                   )}
                 </Stack>
               </Stack>
             </AppCard>
           </Grid>
 
-          <Grid item xs={12} md={6} sx={{ px: { xs: 0 } }}>
+          <Grid
+            sx={{ px: { xs: 0 } }}
+            size={{
+              xs: 12,
+              md: 6
+            }}>
             <AppCard sx={{ p: 2.5, height: "100%", width: "100%" }}>
-              <Stack direction="row" spacing={1.5} alignItems="center">
+              <Stack direction="row" spacing={1.5} sx={{
+                alignItems: "center"
+              }}>
                 <ICONS.business sx={{ color: "#0077b6" }} />
                 <Typography variant="h6">
                   {t.clientLogosSection || "Client Logos"}
@@ -758,12 +800,22 @@ export default function GlobalConfigPage() {
               </Stack>
               <Divider sx={{ my: 2 }} />
               {!config?.clientLogos?.length ? (
-                <Typography color="text.secondary">{t.none}</Typography>
+                <Typography sx={{
+                  color: "text.secondary"
+                }}>{t.none}</Typography>
               ) : (
                 <Grid container spacing={2}>
                   {config.clientLogos.map((cl, idx) => (
-                    <Grid item xs={6} sm={4} md={4} key={cl._id || idx}>
-                      <Stack spacing={0.75} alignItems="center">
+                    <Grid
+                      key={cl._id || idx}
+                      size={{
+                        xs: 6,
+                        sm: 4,
+                        md: 4
+                      }}>
+                      <Stack spacing={0.75} sx={{
+                        alignItems: "center"
+                      }}>
                         <Box
                           sx={{
                             width: "100%",
@@ -832,14 +884,26 @@ export default function GlobalConfigPage() {
             </AppCard>
           </Grid>
 
-          <Grid item xs={12} md={6} sx={{ px: { xs: 0 } }}>
+          <Grid
+            sx={{ px: { xs: 0 } }}
+            size={{
+              xs: 12,
+              md: 6
+            }}>
             <AppCard sx={{ p: 2.5, height: "100%", width: "100%" }}>
-              <Stack direction="row" spacing={1.5} alignItems="center">
+              <Stack direction="row" spacing={1.5} sx={{
+                alignItems: "center"
+              }}>
                 <ICONS.qrcode sx={{ color: "#0077b6" }} />
                 <Typography variant="h6">{t.defaultQrWrapper}</Typography>
               </Stack>
               <Divider sx={{ my: 2 }} />
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: "text.secondary",
+                  mb: 2
+                }}>
                 {t.defaultQrWrapperDesc}
               </Typography>
               <Button
@@ -853,9 +917,11 @@ export default function GlobalConfigPage() {
             </AppCard>
           </Grid>
 
-          <Grid item xs={12} sx={{ px: { xs: 0 } }}>
+          <Grid sx={{ px: { xs: 0 } }} size={12}>
             <AppCard sx={{ p: 2.5, width: "100%" }}>
-              <Stack direction="row" spacing={1.5} alignItems="center">
+              <Stack direction="row" spacing={1.5} sx={{
+                alignItems: "center"
+              }}>
                 <LanguageIcon sx={{ color: "#0077b6" }} />
                 <Typography variant="h6">{t.socialLinks}</Typography>
               </Stack>
@@ -872,7 +938,12 @@ export default function GlobalConfigPage() {
                     { key: "website", icon: <LanguageIcon /> },
                   ].map(({ key, icon }) =>
                     config.socialLinks?.[key] ? (
-                      <Grid item xs={12} md={6} key={key}>
+                      <Grid
+                        key={key}
+                        size={{
+                          xs: 12,
+                          md: 6
+                        }}>
                         {renderFieldRow(
                           key.charAt(0).toUpperCase() + key.slice(1),
                           normalizeUrl(config.socialLinks[key]),
@@ -883,13 +954,14 @@ export default function GlobalConfigPage() {
                   )}
                 </Grid>
               ) : (
-                <Typography color="text.secondary">{t.none}</Typography>
+                <Typography sx={{
+                  color: "text.secondary"
+                }}>{t.none}</Typography>
               )}
             </AppCard>
           </Grid>
         </Grid>
       )}
-
       {/* EDIT / CREATE DIALOG */}
       <Dialog
         open={openEdit}
@@ -899,7 +971,9 @@ export default function GlobalConfigPage() {
       >
         <DialogTitle>{config ? "Edit" : "Create"} Configuration</DialogTitle>
         <DialogContent>
-          <Stack spacing={2} mt={1}>
+          <Stack spacing={2} sx={{
+            mt: 1
+          }}>
             <TextField
               fullWidth
               label={t.appName}
@@ -996,8 +1070,10 @@ export default function GlobalConfigPage() {
             {/* Company Logo */}
             <Stack
               direction={{ xs: "column", sm: "row" }}
-              alignItems="center"
               spacing={2}
+              sx={{
+                alignItems: "center"
+              }}
             >
               <Avatar
                 src={form.companyLogoUrl}
@@ -1042,8 +1118,10 @@ export default function GlobalConfigPage() {
             {/* Branding Media */}
             <Stack
               direction={{ xs: "column", sm: "row" }}
-              alignItems="center"
               spacing={2}
+              sx={{
+                alignItems: "center"
+              }}
             >
               {form.brandingMediaUrl &&
                 (form.brandingMediaFile?.type?.startsWith("video/") ||
@@ -1108,8 +1186,10 @@ export default function GlobalConfigPage() {
             {/* Powered By Media */}
             <Stack
               direction={{ xs: "column", sm: "row" }}
-              alignItems="center"
               spacing={2}
+              sx={{
+                alignItems: "center"
+              }}
             >
               {form.poweredBy.mediaUrl &&
                 (form.poweredByMediaFile?.type?.startsWith("video/") ||
@@ -1174,7 +1254,12 @@ export default function GlobalConfigPage() {
 
             <Divider />
             <Typography variant="subtitle2">{t.defaultQrWrapper}</Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+            <Typography
+              variant="body2"
+              sx={{
+                color: "text.secondary",
+                mb: 1
+              }}>
               {t.defaultQrWrapperDesc}
             </Typography>
             <Button
@@ -1192,9 +1277,10 @@ export default function GlobalConfigPage() {
             <Stack
               direction={{ xs: "column", sm: "row" }}
               spacing={2}
-              alignItems="center"
-              sx={{ mb: 1 }}
-            >
+              sx={{
+                alignItems: "center",
+                mb: 1
+              }}>
               <Button
                 variant="outlined"
                 component="label"
@@ -1225,7 +1311,9 @@ export default function GlobalConfigPage() {
               sx={{ maxHeight: { xs: 420, md: 360 }, overflow: "auto", pr: 1 }}
             >
               {form.clientLogos.length === 0 && (
-                <Typography color="text.secondary">{t.none}</Typography>
+                <Typography sx={{
+                  color: "text.secondary"
+                }}>{t.none}</Typography>
               )}
 
               {form.clientLogos.map((item, idx) => (
@@ -1234,9 +1322,15 @@ export default function GlobalConfigPage() {
                   variant="outlined"
                   sx={{ p: 1.5, borderRadius: 1.5 }}
                 >
-                  <Grid container spacing={1.5} alignItems="center">
+                  <Grid container spacing={1.5} sx={{
+                    alignItems: "center"
+                  }}>
                     {/* thumbnail */}
-                    <Grid item xs={12} sm="auto">
+                    <Grid
+                      size={{
+                        xs: 12,
+                        sm: "auto"
+                      }}>
                       <Avatar
                         src={item.logoUrl}
                         variant="square"
@@ -1245,7 +1339,12 @@ export default function GlobalConfigPage() {
                     </Grid>
 
                     {/* name */}
-                    <Grid item xs={12} sm={4} md={4}>
+                    <Grid
+                      size={{
+                        xs: 12,
+                        sm: 4,
+                        md: 4
+                      }}>
                       <TextField
                         size="small"
                         fullWidth
@@ -1258,7 +1357,12 @@ export default function GlobalConfigPage() {
                     </Grid>
 
                     {/* website */}
-                    <Grid item xs={12} sm={6} md={6}>
+                    <Grid
+                      size={{
+                        xs: 12,
+                        sm: 6,
+                        md: 6
+                      }}>
                       <TextField
                         size="small"
                         fullWidth
@@ -1271,7 +1375,11 @@ export default function GlobalConfigPage() {
                     </Grid>
 
                     {/* remove button */}
-                    <Grid item xs={12} sm="auto">
+                    <Grid
+                      size={{
+                        xs: 12,
+                        sm: "auto"
+                      }}>
                       <Tooltip title={t.remove}>
                         <IconButton
                           color="error"
@@ -1331,7 +1439,6 @@ export default function GlobalConfigPage() {
           </Button>
         </DialogActions>
       </Dialog>
-
       <ConfirmationDialog
         open={confirmDeleteOpen}
         onClose={() => setConfirmDeleteOpen(false)}
@@ -1344,7 +1451,6 @@ export default function GlobalConfigPage() {
         confirmButtonText={t.deleteConfirmBtn}
         confirmButtonIcon={<ICONS.delete />}
       />
-
       <DefaultQrWrapperModal
         open={openQrWrapperModal}
         onClose={() => setOpenQrWrapperModal(false)}

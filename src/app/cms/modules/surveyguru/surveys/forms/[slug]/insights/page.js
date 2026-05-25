@@ -1036,19 +1036,29 @@ export default function SurveyGuruInsightsPage() {
             }}
         >
             <BreadcrumbsNav />
-
             <Stack
                 direction={{ xs: "column", sm: "row" }}
-                justifyContent="space-between"
-                alignItems={{ xs: "stretch", sm: "center" }}
                 spacing={2}
-            >
+                sx={{
+                    justifyContent: "space-between",
+                    alignItems: { xs: "stretch", sm: "center" }
+                }}>
                 <Box sx={{ flex: 1 }}>
-                    <Typography variant="h3" fontWeight="bold" gutterBottom>{t.pageTitle}</Typography>
-                    <Typography variant="body1" color="text.secondary" gutterBottom>{t.pageDescription}</Typography>
+                    <Typography variant="h3" gutterBottom sx={{
+                        fontWeight: "bold"
+                    }}>{t.pageTitle}</Typography>
+                    <Typography variant="body1" gutterBottom sx={{
+                        color: "text.secondary"
+                    }}>{t.pageDescription}</Typography>
                 </Box>
 
-                <Stack direction={{ xs: "column", sm: "row" }} spacing={2} alignItems={{ xs: "stretch", sm: "center" }} sx={{ width: { xs: "100%", sm: "auto" } }}>
+                <Stack
+                    direction={{ xs: "column", sm: "row" }}
+                    spacing={2}
+                    sx={{
+                        alignItems: { xs: "stretch", sm: "center" },
+                        width: { xs: "100%", sm: "auto" }
+                    }}>
                     {selectedQuestions.length > 0 && (
                         <>
                             <Button
@@ -1073,9 +1083,7 @@ export default function SurveyGuruInsightsPage() {
                     )}
                 </Stack>
             </Stack>
-
             <Divider />
-
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 2 }}>
                 {[
                     { label: t.totalResponses, value: totalResponses, color: "#0077b6" },
@@ -1099,15 +1107,25 @@ export default function SurveyGuruInsightsPage() {
                             border: "1px solid #f1f5f9"
                         }}
                     >
-                        <Typography variant="h4" fontWeight="bold" sx={{ color }}>
+                        <Typography
+                            variant="h4"
+                            sx={{
+                                fontWeight: "bold",
+                                color
+                            }}>
                             {value}
                         </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
+                        <Typography
+                            variant="body2"
+                            sx={{
+                                color: "text.secondary",
+                                mt: 0.5,
+                                fontWeight: 500
+                            }}>
                             {label}
                         </Typography>
                     </AppCard>
                 ))}</Box>
-
             {/* Survey Questions Chip Selector */}
             <AppCard
                 sx={{
@@ -1151,74 +1169,79 @@ export default function SurveyGuruInsightsPage() {
                         ))}
                 </Stack>
             </AppCard>
+            {/* Segment By — only show if form is linked to an event AND a question is selected AND not anonymous */}
+            {formInfo?.eventId && !formInfo?.isAnonymous && registrationFields.length > 0 && selectedQuestions.length > 0 && (
+                <AppCard
+                    sx={{
+                        p: { xs: 2, md: 3 },
+                        borderRadius: 3,
+                        boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                        border: selectedRegistrationField ? "1.5px solid #0077b6" : "1px solid #f1f5f9",
+                        transition: "border-color 0.2s",
+                        mb: 1,
+                    }}
+                >
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "#1e293b" }}>
+                            {language === "ar" ? "تقسيم حسب حقل التسجيل" : "Segment By Registration Field"}
+                        </Typography>
+                        {selectedRegistrationField && (
+                            <Typography
+                                variant="caption"
+                                sx={{ color: "#6b7280", ml: "auto", cursor: "pointer", "&:hover": { color: "#0077b6" } }}
+                                onClick={() => setSelectedRegistrationField(null)}
+                            >
+                                {language === "ar" ? "مسح" : "Clear"}
+                            </Typography>
+                        )}
+                    </Box>
+                    
+                    {selectedQuestions.some(qId => {
+                        const q = availableQuestions.find(f => f.name === qId);
+                        return q?.type === "text";
+                    }) && (
+                        <Typography
+                            variant="caption"
+                            sx={{
+                                color: "warning.main",
+                                display: 'block',
+                                mb: 1,
+                                fontWeight: 500
+                            }}>
+                            {language === "ar" ? "ملاحظة: لا يمكن تقسيم الأسئلة النصية" : "Note: Text-based questions cannot be segmented"}
+                        </Typography>
+                    )}
 
-                            {/* Segment By — only show if form is linked to an event AND a question is selected AND not anonymous */}
-                            {formInfo?.eventId && !formInfo?.isAnonymous && registrationFields.length > 0 && selectedQuestions.length > 0 && (
-                                <AppCard
-                                    sx={{
-                                        p: { xs: 2, md: 3 },
-                                        borderRadius: 3,
-                                        boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
-                                        border: selectedRegistrationField ? "1.5px solid #0077b6" : "1px solid #f1f5f9",
-                                        transition: "border-color 0.2s",
-                                        mb: 1,
-                                    }}
-                                >
-                                    <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-                                        <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "#1e293b" }}>
-                                            {language === "ar" ? "تقسيم حسب حقل التسجيل" : "Segment By Registration Field"}
-                                        </Typography>
-                                        {selectedRegistrationField && (
-                                            <Typography
-                                                variant="caption"
-                                                sx={{ color: "#6b7280", ml: "auto", cursor: "pointer", "&:hover": { color: "#0077b6" } }}
-                                                onClick={() => setSelectedRegistrationField(null)}
-                                            >
-                                                {language === "ar" ? "مسح" : "Clear"}
-                                            </Typography>
-                                        )}
-                                    </Box>
-                                    
-                                    {selectedQuestions.some(qId => {
-                                        const q = availableQuestions.find(f => f.name === qId);
-                                        return q?.type === "text";
-                                    }) && (
-                                        <Typography variant="caption" color="warning.main" sx={{ display: 'block', mb: 1, fontWeight: 500 }}>
-                                            {language === "ar" ? "ملاحظة: لا يمكن تقسيم الأسئلة النصية" : "Note: Text-based questions cannot be segmented"}
-                                        </Typography>
-                                    )}
+                    <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 1.5 }}>
+                        {availableQuestions
+                            .filter(f => f.isRegistrationField)
+                            .map((field) => {
+                                const isSegmentAvailable = !selectedQuestions.some(qId => {
+                                    const q = availableQuestions.find(f => f.name === qId);
+                                    return q?.type === "text";
+                                });
 
-                                    <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 1.5 }}>
-                                        {availableQuestions
-                                            .filter(f => f.isRegistrationField)
-                                            .map((field) => {
-                                                const isSegmentAvailable = !selectedQuestions.some(qId => {
-                                                    const q = availableQuestions.find(f => f.name === qId);
-                                                    return q?.type === "text";
-                                                });
-
-                                                return (
-                                                    <QuestionChip
-                                                        key={field.name}
-                                                        field={field}
-                                                        translatedLabel={field.label}
-                                                        isSelected={selectedRegistrationField === field.name}
-                                                        onClick={() => {
-                                                            if (!isSegmentAvailable) return;
-                                                            setSelectedRegistrationField(prev => prev === field.name ? null : field.name);
-                                                        }}
-                                                        sx={{
-                                                            opacity: isSegmentAvailable ? 1 : 0.5,
-                                                            cursor: isSegmentAvailable ? "pointer" : "not-allowed",
-                                                            filter: isSegmentAvailable ? "none" : "grayscale(1)"
-                                                        }}
-                                                    />
-                                                );
-                                            })}
-                                    </Stack>
-                                </AppCard>
-                            )}
-
+                                return (
+                                    <QuestionChip
+                                        key={field.name}
+                                        field={field}
+                                        translatedLabel={field.label}
+                                        isSelected={selectedRegistrationField === field.name}
+                                        onClick={() => {
+                                            if (!isSegmentAvailable) return;
+                                            setSelectedRegistrationField(prev => prev === field.name ? null : field.name);
+                                        }}
+                                        sx={{
+                                            opacity: isSegmentAvailable ? 1 : 0.5,
+                                            cursor: isSegmentAvailable ? "pointer" : "not-allowed",
+                                            filter: isSegmentAvailable ? "none" : "grayscale(1)"
+                                        }}
+                                    />
+                                );
+                            })}
+                    </Stack>
+                </AppCard>
+            )}
             <Stack
                 spacing={2}
                 sx={{ flex: "1 1 0%", overflow: "auto", minHeight: 0, pb: 2, px: 0.3 }}
@@ -1234,7 +1257,9 @@ export default function SurveyGuruInsightsPage() {
                             justifyContent: "center",
                         }}
                     >
-                        <Box textAlign="center">
+                        <Box sx={{
+                            textAlign: "center"
+                        }}>
                             <BarChartIcon sx={{ fontSize: 48, color: "#d1d5db", mb: 2 }} />
                             <Typography color="textSecondary">
                                 {t.selectQuestionPrompt}

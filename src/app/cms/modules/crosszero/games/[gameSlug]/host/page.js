@@ -265,10 +265,17 @@ export default function CrossZeroHostPage() {
           }}
         >
           <Box>
-            <Typography variant="h5" fontWeight="bold" sx={{ mt: 2 }}>
+            <Typography
+              variant="h5"
+              sx={{
+                fontWeight: "bold",
+                mt: 2
+              }}>
               {t.title}
             </Typography>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" sx={{
+              color: "text.secondary"
+            }}>
               {t.description}
             </Typography>
           </Box>
@@ -289,8 +296,9 @@ export default function CrossZeroHostPage() {
         </Box>
         <Divider sx={{ my: 2 }} />
       </Box>
-
-      <Stack spacing={3} alignItems="center">
+      <Stack spacing={3} sx={{
+        alignItems: "center"
+      }}>
         {/* ── Idle: start button ── */}
         {!pendingSession && !activeSession && (
           <Button
@@ -378,20 +386,24 @@ export default function CrossZeroHostPage() {
 
             <Typography
               variant="h5"
-              fontWeight={800}
-              sx={{ mb: 1, color: "#4CAF50", letterSpacing: 1 }}
-            >
+              sx={{
+                fontWeight: 800,
+                mb: 1,
+                color: "#4CAF50",
+                letterSpacing: 1
+              }}>
               {t.activeSession}
             </Typography>
 
             {/* X vs O */}
             <Stack
               direction="row"
-              justifyContent="center"
-              alignItems="center"
               spacing={1.5}
-              sx={{ mb: 3 }}
-            >
+              sx={{
+                justifyContent: "center",
+                alignItems: "center",
+                mb: 3
+              }}>
               <CrossZeroMarkVisual
                 mark="X"
                 xImage={activeSession?.gameId?.xImage}
@@ -418,10 +430,11 @@ export default function CrossZeroHostPage() {
             <Stack
               direction="row"
               spacing={0.75}
-              justifyContent="center"
-              alignItems="center"
-              sx={{ mt: 2 }}
-            >
+              sx={{
+                justifyContent: "center",
+                alignItems: "center",
+                mt: 2
+              }}>
               <Typography sx={{ color: "rgba(255,255,255,0.65)", fontSize: "0.9rem" }}>
                 {t.currentTurn}:
               </Typography>
@@ -436,7 +449,13 @@ export default function CrossZeroHostPage() {
             </Stack>
 
             {/* Player info */}
-            <Grid container spacing={2} sx={{ mt: 2 }} justifyContent="center">
+            <Grid
+              container
+              spacing={2}
+              sx={{
+                justifyContent: "center",
+                mt: 2
+              }}>
               {[
                 {
                   label: t.player1,
@@ -455,7 +474,12 @@ export default function CrossZeroHostPage() {
                   ),
                 },
               ].map(({ label, mark, color, player }) => (
-                <Grid item xs={12} sm={6} key={label}>
+                <Grid
+                  key={label}
+                  size={{
+                    xs: 12,
+                    sm: 6
+                  }}>
                   <Box
                     sx={{
                       bgcolor: "rgba(255,255,255,0.06)",
@@ -483,7 +507,9 @@ export default function CrossZeroHostPage() {
                     >
                       {label}
                     </Typography>
-                    <Typography fontWeight={700}>
+                    <Typography sx={{
+                      fontWeight: 700
+                    }}>
                       {player?.playerId?.name || "—"}
                     </Typography>
                     {player?.playerId?.company && (
@@ -519,18 +545,28 @@ export default function CrossZeroHostPage() {
           >
             <Typography
               variant="h6"
-              fontWeight="bold"
-              sx={{ mb: 3, color: "white", textShadow: "0 0 10px rgba(255,255,255,0.3)" }}
-            >
+              sx={{
+                fontWeight: "bold",
+                mb: 3,
+                color: "white",
+                textShadow: "0 0 10px rgba(255,255,255,0.3)"
+              }}>
               {bothPlayersJoined ? t.bothPlayersJoined : t.waitingForPlayers}
             </Typography>
 
-            <Grid container spacing={3} justifyContent="center">
+            <Grid container spacing={3} sx={{
+              justifyContent: "center"
+            }}>
               {[
                 { label: t.player1, mark: "X", player: pendingP1 },
                 { label: t.player2, mark: "O", player: pendingP2 },
               ].map(({ label, mark, player }) => (
-                <Grid item xs={12} sm={6} key={label}>
+                <Grid
+                  key={label}
+                  size={{
+                    xs: 12,
+                    sm: 6
+                  }}>
                   <Box
                     sx={{
                       backgroundColor: player?.playerId ? "#4CAF50" : "#ffffff11",
@@ -569,12 +605,19 @@ export default function CrossZeroHostPage() {
                     </Typography>
                     <Typography
                       variant="subtitle1"
-                      fontWeight="bold"
-                      sx={{ color: "#fff", wordWrap: "break-word" }}
-                    >
+                      sx={{
+                        fontWeight: "bold",
+                        color: "#fff",
+                        wordWrap: "break-word"
+                      }}>
                       {player?.playerId?.name || ""}
                     </Typography>
-                    <Box display="flex" alignItems="center" gap={0.5}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 0.5
+                      }}>
                       <ICONS.business sx={{ fontSize: 18 }} />
                       <Typography variant="caption" sx={{ color: "#e0f2f1" }}>
                         {player?.playerId?.company || "N/A"}
@@ -608,10 +651,11 @@ export default function CrossZeroHostPage() {
         <Box sx={{ mt: 2, width: "100%", maxWidth: 700 }}>
           <Typography
             variant="h6"
-            fontWeight="bold"
-            textAlign="center"
-            color="primary.dark"
-          >
+            sx={{
+              fontWeight: "bold",
+              textAlign: "center",
+              color: "primary.dark"
+            }}>
             {t.previousSession}
           </Typography>
 
@@ -657,7 +701,12 @@ export default function CrossZeroHostPage() {
                       }}
                     >
                       {winnerName && <ICONS.trophy sx={{ color: "#fff" }} />}
-                      <Typography variant="h6" color="#fff" fontWeight="bold">
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          color: "#fff",
+                          fontWeight: "bold"
+                        }}>
                         {winnerName || t.tie}
                       </Typography>
                     </Box>
@@ -668,11 +717,16 @@ export default function CrossZeroHostPage() {
                         container
                         spacing={3}
                         direction={{ xs: "column", sm: "row" }}
-                        alignItems="stretch"
-                        justifyContent="space-between"
-                      >
+                        sx={{
+                          alignItems: "stretch",
+                          justifyContent: "space-between"
+                        }}>
                         {/* Player 1 */}
-                        <Grid item xs={12} sm={5.5}>
+                        <Grid
+                          size={{
+                            xs: 12,
+                            sm: 5.5
+                          }}>
                           <Box
                             sx={{
                               background: isP1Winner
@@ -688,7 +742,12 @@ export default function CrossZeroHostPage() {
                               alignItems: "flex-start",
                             }}
                           >
-                            <Box display="flex" alignItems="center" gap={1}>
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1
+                              }}>
                               <CrossZeroMarkVisual
                                 mark="X"
                                 xImage={session?.gameId?.xImage}
@@ -696,28 +755,51 @@ export default function CrossZeroHostPage() {
                                 size={24}
                                 fallbackSize="1.4rem"
                               />
-                              <Typography variant="h6" fontWeight="bold">
+                              <Typography variant="h6" sx={{
+                                fontWeight: "bold"
+                              }}>
                                 {p1?.playerId?.name || t.unknown}
                               </Typography>
                             </Box>
-                            <Box display="flex" gap={1} alignItems="center">
+                            <Box
+                              sx={{
+                                display: "flex",
+                                gap: 1,
+                                alignItems: "center"
+                              }}>
                               <ICONS.business fontSize="small" />
-                              <Typography variant="body2" color="text.secondary">
+                              <Typography variant="body2" sx={{
+                                color: "text.secondary"
+                              }}>
                                 {p1?.playerId?.company || "N/A"}
                               </Typography>
                             </Box>
-                            <Box display="flex" gap={1} alignItems="center">
+                            <Box
+                              sx={{
+                                display: "flex",
+                                gap: 1,
+                                alignItems: "center"
+                              }}>
                               <ICONS.time fontSize="small" />
-                              <Typography variant="body2" color="text.secondary">
+                              <Typography variant="body2" sx={{
+                                color: "text.secondary"
+                              }}>
                                 {t.timeTaken}:{" "}
                                 {session?.xoStats?.timeTaken != null
                                   ? `${session.xoStats.timeTaken}s`
                                   : "0s"}
                               </Typography>
                             </Box>
-                            <Box display="flex" gap={1} alignItems="center">
+                            <Box
+                              sx={{
+                                display: "flex",
+                                gap: 1,
+                                alignItems: "center"
+                              }}>
                               <ICONS.leaderboard fontSize="small" />
-                              <Typography variant="body2" color="text.secondary">
+                              <Typography variant="body2" sx={{
+                                color: "text.secondary"
+                              }}>
                                 {t.moves}: {session?.xoStats?.moves ?? 0}
                               </Typography>
                             </Box>
@@ -747,7 +829,11 @@ export default function CrossZeroHostPage() {
                         </Box>
 
                         {/* Player 2 */}
-                        <Grid item xs={12} sm={5.5}>
+                        <Grid
+                          size={{
+                            xs: 12,
+                            sm: 5.5
+                          }}>
                           <Box
                             sx={{
                               background: isP2Winner
@@ -763,8 +849,15 @@ export default function CrossZeroHostPage() {
                               alignItems: "flex-end",
                             }}
                           >
-                            <Box display="flex" alignItems="center" gap={1}>
-                              <Typography variant="h6" fontWeight="bold">
+                            <Box
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 1
+                              }}>
+                              <Typography variant="h6" sx={{
+                                fontWeight: "bold"
+                              }}>
                                 {p2?.playerId?.name || t.unknown}
                               </Typography>
                               <CrossZeroMarkVisual
@@ -775,14 +868,28 @@ export default function CrossZeroHostPage() {
                                 fallbackSize="1.4rem"
                               />
                             </Box>
-                            <Box display="flex" gap={1} alignItems="center">
-                              <Typography variant="body2" color="text.secondary">
+                            <Box
+                              sx={{
+                                display: "flex",
+                                gap: 1,
+                                alignItems: "center"
+                              }}>
+                              <Typography variant="body2" sx={{
+                                color: "text.secondary"
+                              }}>
                                 {p2?.playerId?.company || "N/A"}
                               </Typography>
                               <ICONS.business fontSize="small" />
                             </Box>
-                            <Box display="flex" gap={1} alignItems="center">
-                              <Typography variant="body2" color="text.secondary">
+                            <Box
+                              sx={{
+                                display: "flex",
+                                gap: 1,
+                                alignItems: "center"
+                              }}>
+                              <Typography variant="body2" sx={{
+                                color: "text.secondary"
+                              }}>
                                 {t.timeTaken}:{" "}
                                 {session?.xoStats?.timeTaken != null
                                   ? `${session.xoStats.timeTaken}s`
@@ -790,8 +897,15 @@ export default function CrossZeroHostPage() {
                               </Typography>
                               <ICONS.time fontSize="small" />
                             </Box>
-                            <Box display="flex" gap={1} alignItems="center">
-                              <Typography variant="body2" color="text.secondary">
+                            <Box
+                              sx={{
+                                display: "flex",
+                                gap: 1,
+                                alignItems: "center"
+                              }}>
+                              <Typography variant="body2" sx={{
+                                color: "text.secondary"
+                              }}>
                                 {t.moves}: {session?.xoStats?.moves ?? 0}
                               </Typography>
                               <ICONS.leaderboard fontSize="small" />

@@ -136,9 +136,11 @@ const ChartVisualization = ({
                                 const val = e.target.value === "" ? 0 : parseInt(e.target.value);
                                 onTopNChange(isNaN(val) ? 0 : val);
                             }}
-                            InputProps={{ inputProps: { min: 0, max: 50 } }}
                             sx={{ width: "120px" }}
                             disabled={isGenerating}
+                            slotProps={{
+                                input: { inputProps: { min: 0, max: 50 } }
+                            }}
                         />
                     )}
                     {showIntervalControl && (
@@ -170,9 +172,11 @@ const ChartVisualization = ({
                                     const val = e.target.value;
                                     onIntervalChange(val === "" ? "" : parseInt(val));
                                 }}
-                                InputProps={{ inputProps: { min: 1, max: 1440 } }}
                                 sx={{ width: "140px" }}
                                 disabled={isGenerating}
+                                slotProps={{
+                                    input: { inputProps: { min: 1, max: 1440 } }
+                                }}
                             />
                         </>
                     )}
@@ -198,12 +202,17 @@ const ChartVisualization = ({
                     )}
                 </Box>
             </Box>
-
             {!hideChartTypeSelection && (
                 <Box sx={{ mb: 1.5 }}>
                     <Stack direction="column" spacing={1.5}>
                         {segmentFields && segmentFields.length > 0 && (
-                            <Stack direction="row" spacing={1} flexWrap="wrap" alignItems="center">
+                            <Stack
+                                direction="row"
+                                spacing={1}
+                                sx={{
+                                    flexWrap: "wrap",
+                                    alignItems: "center"
+                                }}>
                                 <Typography variant="body2" sx={{ fontWeight: 600, color: "text.secondary", mr: 1 }}>
                                     {t.segmentBy || "Segment By"}
                                 </Typography>
@@ -230,7 +239,9 @@ const ChartVisualization = ({
                             </Stack>
                         )}
                         
-                        <Stack direction="row" spacing={1} flexWrap="wrap">
+                        <Stack direction="row" spacing={1} sx={{
+                            flexWrap: "wrap"
+                        }}>
                             {field.isSegmented && (field.type === "rating" || field.type === "nps") ? (
                                 ["bar", "average"].map((type) => (
                                 <Chip
@@ -334,7 +345,6 @@ const ChartVisualization = ({
                 </Stack>
             </Box>
             )}
-
             <Box sx={{ flex: 1, minHeight: 0, width: "100%", display: "flex", flexDirection: "column" }}>
                 {hasNoData ? (
                     <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%" }}>

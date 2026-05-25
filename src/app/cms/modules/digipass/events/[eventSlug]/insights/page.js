@@ -731,15 +731,20 @@ export default function AnalyticsDashboard() {
 
                 <Stack
                     direction={{ xs: "column", sm: "row" }}
-                    justifyContent="space-between"
-                    alignItems={{ xs: "stretch", sm: "center" }}
                     spacing={2}
-                >
+                    sx={{
+                        justifyContent: "space-between",
+                        alignItems: { xs: "stretch", sm: "center" }
+                    }}>
                     <Box sx={{ flex: 1 }}>
-                        <Typography variant="h3" fontWeight="bold" gutterBottom>
+                        <Typography variant="h3" gutterBottom sx={{
+                            fontWeight: "bold"
+                        }}>
                             {t.pageTitle}
                         </Typography>
-                        <Typography variant="body1" color="text.secondary" gutterBottom>
+                        <Typography variant="body1" gutterBottom sx={{
+                            color: "text.secondary"
+                        }}>
                             {t.pageDescription}
                         </Typography>
                     </Box>
@@ -747,9 +752,11 @@ export default function AnalyticsDashboard() {
                     <Stack
                         direction={{ xs: "column", sm: "row" }}
                         spacing={2}
-                        alignItems={{ xs: "stretch", sm: "center" }}
-                        sx={{ width: { xs: "100%", sm: "auto" }, gap: { xs: 1, sm: 2 } }}
-                    >
+                        sx={{
+                            alignItems: { xs: "stretch", sm: "center" },
+                            width: { xs: "100%", sm: "auto" },
+                            gap: { xs: 1, sm: 2 }
+                        }}>
                         {selectedFields.length > 0 && (
                             <>
                                 <Button
@@ -802,7 +809,6 @@ export default function AnalyticsDashboard() {
 
                 <Divider sx={{ mb: 3 }} />
             </>
-
             {summary && (
                 <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 1 }}>
                     <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, flex: "1 1 500px" }}>
@@ -825,10 +831,21 @@ export default function AnalyticsDashboard() {
                                     border: "1px solid #f1f5f9"
                                 }}
                             >
-                                <Typography variant="h4" fontWeight="bold" sx={{ color }}>
+                                <Typography
+                                    variant="h4"
+                                    sx={{
+                                        fontWeight: "bold",
+                                        color
+                                    }}>
                                     {value}
                                 </Typography>
-                                <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
+                                <Typography
+                                    variant="body2"
+                                    sx={{
+                                        color: "text.secondary",
+                                        mt: 0.5,
+                                        fontWeight: 500
+                                    }}>
                                     {label}
                                 </Typography>
                             </AppCard>
@@ -836,7 +853,6 @@ export default function AnalyticsDashboard() {
                     </Box>
                 </Box>
             )}
-
             <AppCard
                 sx={{
                     flex: "0 0 auto",
@@ -892,7 +908,6 @@ export default function AnalyticsDashboard() {
                     ))}
                 </Stack>
             </AppCard>
-
             <Stack
                 spacing={2}
                 sx={{ flex: "1 1 0%", overflow: "auto", minHeight: 0, pb: 2, px: 0.3 }}
@@ -907,7 +922,9 @@ export default function AnalyticsDashboard() {
                             minHeight: 300
                         }}
                     >
-                        <Box textAlign="center">
+                        <Box sx={{
+                            textAlign: "center"
+                        }}>
                             <BarChartIcon sx={{ fontSize: 48, color: "#d1d5db", mb: 2 }} />
                             <Typography color="textSecondary">
                                 {t.selectFieldPrompt}

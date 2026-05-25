@@ -262,10 +262,14 @@ export default function QuestionsPage() {
             }}
           >
             <Box sx={{ flex: 1 }}>
-              <Typography variant="h5" fontWeight="bold">
+              <Typography variant="h5" sx={{
+                fontWeight: "bold"
+              }}>
                 {t.questionsTitle.replace("{gameTitle}", game?.title)}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" sx={{
+                color: "text.secondary"
+              }}>
                 <span
                   dangerouslySetInnerHTML={{
                     __html: t.questionsDescription
@@ -357,19 +361,21 @@ export default function QuestionsPage() {
         ) : filteredQuestions.length === 0 ? (
           <NoDataAvailable />
         ) : (
-          <Grid container spacing={3} justifyContent="center">
+          <Grid container spacing={3} sx={{
+            justifyContent: "center"
+          }}>
             {filteredQuestions?.map((q, idx) => {
               const answerImages = q.answerImages || [];
               const answers = q.answers || [];
               return (
                 <Grid
-                  item
-                  xs={12}
-                  sm={6}
-                  md={4}
                   key={q._id || idx}
                   sx={{ width: { xs: "100%", sm: "auto" } }}
-                >
+                  size={{
+                    xs: 12,
+                    sm: 6,
+                    md: 4
+                  }}>
                   <AppCard
                     sx={{
                       width: "100%",
@@ -384,14 +390,21 @@ export default function QuestionsPage() {
                     <CardContent>
                       <Typography
                         variant="subtitle1"
-                        fontWeight="bold"
                         gutterBottom
+                        sx={{
+                          fontWeight: "bold"
+                        }}
                       >
                         Q{idx + 1}
                       </Typography>
 
                       <Box>
-                        <Typography variant="body1" fontWeight="bold" sx={{ mb: 1 }}>
+                        <Typography
+                          variant="body1"
+                          sx={{
+                            fontWeight: "bold",
+                            mb: 1
+                          }}>
                           <strong>{t.questionLabel}</strong> {q.question}
                         </Typography>
                         {q.questionImage && (
@@ -414,9 +427,10 @@ export default function QuestionsPage() {
                       <Box>
                         <Typography
                           variant="body2"
-                          fontWeight="bold"
-                          sx={{ mb: 0.5 }}
-                        >
+                          sx={{
+                            fontWeight: "bold",
+                            mb: 0.5
+                          }}>
                           {t.optionsLabel}
                         </Typography>
                         <Box
@@ -470,9 +484,11 @@ export default function QuestionsPage() {
                       {q.hint && (
                         <Typography
                           variant="caption"
-                          color="text.secondary"
-                          sx={{ mt: 1, display: "block" }}
-                        >
+                          sx={{
+                            color: "text.secondary",
+                            mt: 1,
+                            display: "block"
+                          }}>
                           <strong>{t.hintLabel}</strong> {q.hint}
                         </Typography>
                       )}
@@ -515,7 +531,7 @@ export default function QuestionsPage() {
                     </CardActions>
                   </AppCard>
                 </Grid>
-              )
+              );
             })}
           </Grid>
         )}

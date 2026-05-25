@@ -31,14 +31,18 @@ const FilterDialog = ({ open, onClose, title, children }) => {
       keepMounted
       fullWidth
       maxWidth="sm"
-      TransitionComponent={Transition}
-      PaperProps={{
-        sx: {
-          borderRadius: 2,
-          minHeight: "40vh",
-          display: "flex",
-          flexDirection: "column",
-        },
+      slots={{
+        transition: Transition
+      }}
+      slotProps={{
+        paper: {
+          sx: {
+            borderRadius: 2,
+            minHeight: "40vh",
+            display: "flex",
+            flexDirection: "column",
+          },
+        }
       }}
     >
       <DialogTitle
@@ -54,7 +58,6 @@ const FilterDialog = ({ open, onClose, title, children }) => {
           <ICONS.close />
         </IconButton>
       </DialogTitle>
-
       <DialogContent dividers sx={{ pt: 2, flex: 1 }}>
         {hasChildren ? children : <EmptyBusinessState />}
       </DialogContent>

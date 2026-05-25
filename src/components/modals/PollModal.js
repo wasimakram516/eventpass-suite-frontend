@@ -335,197 +335,204 @@ export default function PollModal({ open, onClose, onSubmit, initialValues, sele
 
   return (
     <>
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth dir={dir}>
-      <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontWeight: "bold", px: 3, pt: 3 }}>
-        <Typography fontWeight="bold" fontSize="1.25rem">
-          {isEdit ? t.editTitle : t.createTitle}
-        </Typography>
-        <IconButton onClick={onClose} sx={{ ml: 2, alignSelf: "flex-start" }}>
-          <ICONS.close />
-        </IconButton>
-      </DialogTitle>
+      <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth dir={dir}>
+        <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontWeight: "bold", px: 3, pt: 3 }}>
+          <Typography
+            sx={{
+              fontWeight: "bold",
+              fontSize: "1.25rem"
+            }}>
+            {isEdit ? t.editTitle : t.createTitle}
+          </Typography>
+          <IconButton onClick={onClose} sx={{ ml: 2, alignSelf: "flex-start" }}>
+            <ICONS.close />
+          </IconButton>
+        </DialogTitle>
 
-      <DialogContent>
-        <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 2 }}>
-          {/* Title */}
-          <TextField
-            label={`${t.title} *`}
-            value={formData.title}
-            onChange={e => { handleTitleChange(e); setErrors(prev => ({ ...prev, title: undefined })); }}
-            error={!!errors.title}
-            helperText={errors.title}
-            fullWidth
-          />
-
-          {/* Slug */}
-          <TextField
-            label={t.slug}
-            value={formData.slug}
-            onChange={e => setFormData(prev => ({ ...prev, slug: e.target.value }))}
-            fullWidth
-          />
-
-          {/* Description */}
-          <Box>
-            <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>{t.description}</Typography>
-            <RichTextEditor
-              value={formData.description}
-              onChange={(html) => setFormData(prev => ({ ...prev, description: html }))}
-              placeholder={t.description}
-              dir={dir}
+        <DialogContent>
+          <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 2 }}>
+            {/* Title */}
+            <TextField
+              label={`${t.title} *`}
+              value={formData.title}
+              onChange={e => { handleTitleChange(e); setErrors(prev => ({ ...prev, title: undefined })); }}
+              error={!!errors.title}
+              helperText={errors.title}
+              fullWidth
             />
-          </Box>
 
-
-          {/* Branding */}
-          <Divider />
-          <MediaUploadField
-            label={t.logo}
-            preview={logoPreview}
-            fileType="image"
-            accept="image/*"
-            onFileSelect={f => handleMediaSelect("logo", f)}
-            onRemove={() => handleMediaRemove("logo")}
-          />
-          <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 2, width: "100%" }}>
-            <Typography variant="body2" sx={{ fontWeight: 500 }}>{t.uploadBackground}</Typography>
-            <MediaUploadField
-              label={t.backgroundEn}
-              preview={backgroundEnPreview}
-              fileType={backgroundEnFileType}
-              onFileSelect={f => handleMediaSelect("backgroundEn", f)}
-              onRemove={() => handleMediaRemove("backgroundEn")}
+            {/* Slug */}
+            <TextField
+              label={t.slug}
+              value={formData.slug}
+              onChange={e => setFormData(prev => ({ ...prev, slug: e.target.value }))}
+              fullWidth
             />
-            <MediaUploadField
-              label={t.backgroundAr}
-              preview={backgroundArPreview}
-              fileType={backgroundArFileType}
-              onFileSelect={f => handleMediaSelect("backgroundAr", f)}
-              onRemove={() => handleMediaRemove("backgroundAr")}
-            />
-          </Box>
-          <Divider />
 
-          {/* Event Select */}
-          <FormControl fullWidth>
-            <InputLabel>{t.linkedEvent}</InputLabel>
-            <Select
-              value={formData.linkedEventRegId}
-              label={t.linkedEvent}
-              onChange={e => handleEventChange(e)}
-            >
-              <MenuItem value=""><em>None</em></MenuItem>
-              {eventRegEvents.map(ev => (
-                <MenuItem key={ev._id} value={ev._id}>{ev.name}</MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-
-          {/* Load Fields Button */}
-          {formData.linkedEventRegId && (
-            <Button
-              variant="outlined"
-              size="small"
-              onClick={() => fetchFields(formData.linkedEventRegId)}
-              disabled={loadingFields}
-              startIcon={loadingFields ? <CircularProgress size={16} color="inherit" /> : <DownloadingIcon />}
-            >
-              {loadingFields ? t.loading : t.loadFields}
-            </Button>
-          )}
-
-          {/* Verification Field */}
-          {formData.linkedEventRegId && loadedFields && loadedFields.length > 0 && (
+            {/* Description */}
             <Box>
-              <Typography variant="caption" fontWeight={600} color={errors.primaryField ? "error" : "text.secondary"}>
-                {t.selectPrimaryField} *
-              </Typography>
-              <FormGroup sx={{ mt: 0.5 }}>
-                {loadedFields.map(f => (
-                  <FormControlLabel
-                    key={f.name}
-                    control={
-                      <Checkbox
-                        size="small"
-                        disabled={!f.required}
-                        checked={formData.primaryField === f.name}
-                        onChange={() => {
-                          if (!f.required) return;
-                          setFormData(prev => ({
-                            ...prev,
-                            primaryField: prev.primaryField === f.name ? "" : f.name,
-                          }));
-                          setErrors(prev => ({ ...prev, primaryField: undefined }));
-                        }}
-                      />
-                    }
-                    label={
-                      <Typography variant="body2" color={f.required ? "text.primary" : "text.disabled"}>
-                        {f.label}
-                      </Typography>
-                    }
-                  />
-                ))}
-              </FormGroup>
-              {errors.primaryField && (
-                <Typography variant="caption" color="error" sx={{ mt: 0.5, display: "block" }}>
-                  {errors.primaryField}
-                </Typography>
-              )}
-            </Box>
-          )}
-
-          {/* Guest Option */}
-          {formData.linkedEventRegId && (
-            <Box sx={{ mt: 1 }}>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={formData.allowGuest}
-                    onChange={(e) => setFormData(prev => ({ ...prev, allowGuest: e.target.checked }))}
-                  />
-                }
-                label={<Typography variant="body2">{t.allowGuest}</Typography>}
+              <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>{t.description}</Typography>
+              <RichTextEditor
+                value={formData.description}
+                onChange={(html) => setFormData(prev => ({ ...prev, description: html }))}
+                placeholder={t.description}
+                dir={dir}
               />
-              {formData.allowGuest && (
-                <TextField
-                  label={t.guestThreshold}
-                  type="number"
-                  fullWidth
-                  size="small"
-                  sx={{ mt: 1 }}
-                  value={formData.guestThreshold}
-                  onChange={(e) => setFormData(prev => ({ ...prev, guestThreshold: parseInt(e.target.value) || 0 }))}
-                  InputProps={{ inputProps: { min: 0 } }}
-                />
-              )}
             </Box>
-          )}
-        </Box>
-      </DialogContent>
 
-      <DialogActions sx={{ p: 3, gap: 1, justifyContent: "flex-end" }}>
-        <Button
-          onClick={handleSubmit}
-          variant="contained"
-          disabled={loading}
-          startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <ICONS.save />}
-        >
-          {loading ? (isEdit ? t.updating : t.creating) : (isEdit ? t.update : t.create)}
-        </Button>
-      </DialogActions>
-    </Dialog>
 
-    <ConfirmationDialog
-      open={deleteConfirmState.open}
-      onClose={() => setDeleteConfirmState({ open: false, type: null, fileUrl: null })}
-      onConfirm={confirmDeleteMedia}
-      title={t.deleteMediaTitle}
-      message={t.deleteMediaMessage}
-      confirmButtonText={t.deleteConfirmBtn}
-      confirmButtonIcon={<ICONS.delete />}
-      confirmButtonColor="error"
-    />
+            {/* Branding */}
+            <Divider />
+            <MediaUploadField
+              label={t.logo}
+              preview={logoPreview}
+              fileType="image"
+              accept="image/*"
+              onFileSelect={f => handleMediaSelect("logo", f)}
+              onRemove={() => handleMediaRemove("logo")}
+            />
+            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 2, width: "100%" }}>
+              <Typography variant="body2" sx={{ fontWeight: 500 }}>{t.uploadBackground}</Typography>
+              <MediaUploadField
+                label={t.backgroundEn}
+                preview={backgroundEnPreview}
+                fileType={backgroundEnFileType}
+                onFileSelect={f => handleMediaSelect("backgroundEn", f)}
+                onRemove={() => handleMediaRemove("backgroundEn")}
+              />
+              <MediaUploadField
+                label={t.backgroundAr}
+                preview={backgroundArPreview}
+                fileType={backgroundArFileType}
+                onFileSelect={f => handleMediaSelect("backgroundAr", f)}
+                onRemove={() => handleMediaRemove("backgroundAr")}
+              />
+            </Box>
+            <Divider />
+
+            {/* Event Select */}
+            <FormControl fullWidth>
+              <InputLabel>{t.linkedEvent}</InputLabel>
+              <Select
+                value={formData.linkedEventRegId}
+                label={t.linkedEvent}
+                onChange={e => handleEventChange(e)}
+              >
+                <MenuItem value=""><em>None</em></MenuItem>
+                {eventRegEvents.map(ev => (
+                  <MenuItem key={ev._id} value={ev._id}>{ev.name}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            {/* Load Fields Button */}
+            {formData.linkedEventRegId && (
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => fetchFields(formData.linkedEventRegId)}
+                disabled={loadingFields}
+                startIcon={loadingFields ? <CircularProgress size={16} color="inherit" /> : <DownloadingIcon />}
+              >
+                {loadingFields ? t.loading : t.loadFields}
+              </Button>
+            )}
+
+            {/* Verification Field */}
+            {formData.linkedEventRegId && loadedFields && loadedFields.length > 0 && (
+              <Box>
+                <Typography variant="caption" color={errors.primaryField ? "error" : "text.secondary"} sx={{
+                  fontWeight: 600
+                }}>
+                  {t.selectPrimaryField} *
+                </Typography>
+                <FormGroup sx={{ mt: 0.5 }}>
+                  {loadedFields.map(f => (
+                    <FormControlLabel
+                      key={f.name}
+                      control={
+                        <Checkbox
+                          size="small"
+                          disabled={!f.required}
+                          checked={formData.primaryField === f.name}
+                          onChange={() => {
+                            if (!f.required) return;
+                            setFormData(prev => ({
+                              ...prev,
+                              primaryField: prev.primaryField === f.name ? "" : f.name,
+                            }));
+                            setErrors(prev => ({ ...prev, primaryField: undefined }));
+                          }}
+                        />
+                      }
+                      label={
+                        <Typography variant="body2" color={f.required ? "text.primary" : "text.disabled"}>
+                          {f.label}
+                        </Typography>
+                      }
+                    />
+                  ))}
+                </FormGroup>
+                {errors.primaryField && (
+                  <Typography variant="caption" color="error" sx={{ mt: 0.5, display: "block" }}>
+                    {errors.primaryField}
+                  </Typography>
+                )}
+              </Box>
+            )}
+
+            {/* Guest Option */}
+            {formData.linkedEventRegId && (
+              <Box sx={{ mt: 1 }}>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={formData.allowGuest}
+                      onChange={(e) => setFormData(prev => ({ ...prev, allowGuest: e.target.checked }))}
+                    />
+                  }
+                  label={<Typography variant="body2">{t.allowGuest}</Typography>}
+                />
+                {formData.allowGuest && (
+                  <TextField
+                    label={t.guestThreshold}
+                    type="number"
+                    fullWidth
+                    size="small"
+                    sx={{ mt: 1 }}
+                    value={formData.guestThreshold}
+                    onChange={(e) => setFormData(prev => ({ ...prev, guestThreshold: parseInt(e.target.value) || 0 }))}
+                    slotProps={{
+                      input: { inputProps: { min: 0 } }
+                    }}
+                  />
+                )}
+              </Box>
+            )}
+          </Box>
+        </DialogContent>
+
+        <DialogActions sx={{ p: 3, gap: 1, justifyContent: "flex-end" }}>
+          <Button
+            onClick={handleSubmit}
+            variant="contained"
+            disabled={loading}
+            startIcon={loading ? <CircularProgress size={20} color="inherit" /> : <ICONS.save />}
+          >
+            {loading ? (isEdit ? t.updating : t.creating) : (isEdit ? t.update : t.create)}
+          </Button>
+        </DialogActions>
+      </Dialog>
+      <ConfirmationDialog
+        open={deleteConfirmState.open}
+        onClose={() => setDeleteConfirmState({ open: false, type: null, fileUrl: null })}
+        onConfirm={confirmDeleteMedia}
+        title={t.deleteMediaTitle}
+        message={t.deleteMediaMessage}
+        confirmButtonText={t.deleteConfirmBtn}
+        confirmButtonIcon={<ICONS.delete />}
+        confirmButtonColor="error"
+      />
     </>
   );
 }

@@ -404,10 +404,17 @@ const ParticipantsAdminPage = () => {
           }}
         >
           <Box>
-            <Typography variant="h4" fontWeight="bold">
+            <Typography variant="h4" sx={{
+              fontWeight: "bold"
+            }}>
               {t.participants}
             </Typography>
-            <Typography variant="body2" color="text.secondary" mt={0.5}>
+            <Typography
+              variant="body2"
+              sx={{
+                color: "text.secondary",
+                mt: 0.5
+              }}>
               {t.manageParticipants} {event.title}
             </Typography>
           </Box>
@@ -481,17 +488,24 @@ const ParticipantsAdminPage = () => {
 
         {/* Search, Filter, and Info Toolbar */}
         <Box
-          display="flex"
-          flexDirection={{ xs: "column", md: "row" }}
-          justifyContent="space-between"
-          alignItems={{ xs: "flex-start", md: "center" }}
-          gap={2}
-          mb={3}
-          px={{ xs: 1, sm: 2 }}
-        >
+          sx={{
+            display: "flex",
+            flexDirection: { xs: "column", md: "row" },
+            justifyContent: "space-between",
+            alignItems: { xs: "flex-start", md: "center" },
+            gap: 2,
+            mb: 3,
+            px: { xs: 1, sm: 2 }
+          }}>
           {/* Left: Record info */}
-          <Box width="100%" maxWidth={{ xs: "100%", md: "50%" }}>
-            <Typography variant="body2" color="text.secondary">
+          <Box
+            sx={{
+              width: "100%",
+              maxWidth: { xs: "100%", md: "50%" }
+            }}>
+            <Typography variant="body2" sx={{
+              color: "text.secondary"
+            }}>
               {t.showing}{" "}
               {effectiveTotal === 0
                 ? 0
@@ -543,9 +557,17 @@ const ParticipantsAdminPage = () => {
           ) : effectiveTotal === 0 ? (
             <NoDataAvailable />
           ) : (
-            <Grid container spacing={3} justifyContent="center">
+            <Grid container spacing={3} sx={{
+              justifyContent: "center"
+            }}>
               {visibleParticipants.map((participant) => (
-                <Grid item xs={12} sm={6} md={4} key={participant._id}>
+                <Grid
+                  key={participant._id}
+                  size={{
+                    xs: 12,
+                    sm: 6,
+                    md: 4
+                  }}>
                   <Card
                     elevation={3}
                     sx={{
@@ -578,17 +600,26 @@ const ParticipantsAdminPage = () => {
                     />
                     <CardContent sx={{ flexGrow: 1 }}>
                       {participant.phone && (
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography variant="body2" sx={{
+                          color: "text.secondary"
+                        }}>
                           <strong>{t.phone}:</strong> {formatPhoneNumberForDisplay(participant.phone, participant.isoCode)}
                         </Typography>
                       )}
                       {participant.company && (
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography variant="body2" sx={{
+                          color: "text.secondary"
+                        }}>
                           <strong>{t.company}:</strong> {participant.company}
                         </Typography>
                       )}
                       {participant.visible === false && (
-                        <Typography variant="body2" color="warning.main" sx={{ mt: 1 }}>
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color: "warning.main",
+                            mt: 1
+                          }}>
                           <strong>Removed from wheel</strong>
                         </Typography>
                       )}
@@ -624,7 +655,12 @@ const ParticipantsAdminPage = () => {
 
           {/* Pagination */}
           {effectiveTotal > perPage && (
-            <Box display="flex" justifyContent="center" mt={4}>
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                mt: 4
+              }}>
               <Pagination
                 dir="ltr"
                 count={effectiveTotalPages}
@@ -670,17 +706,19 @@ const ParticipantsAdminPage = () => {
               error={!!errors.phone}
               helperText={errors.phone}
               type="tel"
-              InputProps={{
-                startAdornment: (
-                  <CountryCodeSelector
-                    value={form.isoCode}
-                    onChange={(iso) =>
-                      setForm((prev) => ({ ...prev, isoCode: iso }))
-                    }
-                    disabled={false}
-                    dir={dir}
-                  />
-                ),
+              slotProps={{
+                input: {
+                  startAdornment: (
+                    <CountryCodeSelector
+                      value={form.isoCode}
+                      onChange={(iso) =>
+                        setForm((prev) => ({ ...prev, isoCode: iso }))
+                      }
+                      disabled={false}
+                      dir={dir}
+                    />
+                  ),
+                }
               }}
             />
             <TextField
@@ -728,9 +766,11 @@ const ParticipantsAdminPage = () => {
               select
               label="Scanned By"
               fullWidth
-              SelectProps={{ multiple: true }}
               value={selectedScanners}
               onChange={(e) => setSelectedScanners(e.target.value)}
+              slotProps={{
+                select: { multiple: true }
+              }}
             >
               {availableScanners.map((user) => (
                 <MenuItem key={user._id} value={user._id}>

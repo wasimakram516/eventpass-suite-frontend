@@ -140,12 +140,24 @@ function FieldRow({ icon, primary, secondary, dir, align }) {
       <ListItemText
         disableTypography
         primary={
-          <Typography variant="body2" color="text.secondary" component="div" sx={{ textAlign: align }}>
+          <Typography
+            variant="body2"
+            component="div"
+            sx={{
+              color: "text.secondary",
+              textAlign: align
+            }}>
             {primary}
           </Typography>
         }
         secondary={
-          <Typography variant="body1" fontWeight={500} component="div" sx={{ textAlign: align }}>
+          <Typography
+            variant="body1"
+            component="div"
+            sx={{
+              fontWeight: 500,
+              textAlign: align
+            }}>
             {secondary || "N/A"}
           </Typography>
         }
@@ -224,15 +236,14 @@ function VoterCard({ voter, t, dir, align, language, isAnonymous }) {
           <Box sx={{ flex: 1 }}>
             <Typography
               variant="body1"
-              fontWeight={700}
               sx={{
+                fontWeight: 700,
                 textAlign: align,
                 display: "-webkit-box",
                 WebkitLineClamp: 1,
                 WebkitBoxOrient: "vertical",
-                overflow: "hidden",
-              }}
-            >
+                overflow: "hidden"
+              }}>
               {isAnonymous ? t.anonymous : (displayName || t.unknownName)}
             </Typography>
             {!isAnonymous && (displayEmail || displayPhone || displayCompany) && (
@@ -240,13 +251,17 @@ function VoterCard({ voter, t, dir, align, language, isAnonymous }) {
                 {displayEmail && (
                   <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
                     <ICONS.emailOutline sx={{ fontSize: 14, color: "text.secondary" }} />
-                    <Typography variant="caption" color="text.secondary">{displayEmail}</Typography>
+                    <Typography variant="caption" sx={{
+                      color: "text.secondary"
+                    }}>{displayEmail}</Typography>
                   </Box>
                 )}
                 {displayPhone && (
                   <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
                     <ICONS.phone sx={{ fontSize: 14, color: "text.secondary" }} />
-                    <Typography variant="caption" color="text.secondary" dir="ltr" style={{ unicodeBidi: "embed" }}>
+                    <Typography variant="caption" dir="ltr" style={{ unicodeBidi: "embed" }} sx={{
+                      color: "text.secondary"
+                    }}>
                       {displayPhone}
                     </Typography>
                   </Box>
@@ -254,7 +269,9 @@ function VoterCard({ voter, t, dir, align, language, isAnonymous }) {
                 {displayCompany && (
                   <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
                     <ICONS.apartment sx={{ fontSize: 14, color: "text.secondary" }} />
-                    <Typography variant="caption" color="text.secondary">{displayCompany}</Typography>
+                    <Typography variant="caption" sx={{
+                      color: "text.secondary"
+                    }}>{displayCompany}</Typography>
                   </Box>
                 )}
               </Stack>
@@ -262,14 +279,15 @@ function VoterCard({ voter, t, dir, align, language, isAnonymous }) {
           </Box>
         </Box>
       </Box>
-
       <CardContent sx={{ pt: 1, px: 1.5, pb: 1.5 }}>
         {/* Voted At */}
         <Box sx={{ mb: 1 }}>
           {voter.votedAt && (
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <ICONS.eventOutline fontSize="small" color="text.secondary" />
-              <Typography variant="caption" color="text.secondary">
+              <Typography variant="caption" sx={{
+                color: "text.secondary"
+              }}>
                 {t.votedAt}: {formatDateTimeWithLocale(voter.votedAt, language === "ar" ? "ar-SA" : "en-GB")}
               </Typography>
             </Box>
@@ -343,7 +361,14 @@ function VoterCard({ voter, t, dir, align, language, isAnonymous }) {
                 disableTypography
                 sx={{ flex: 1, minWidth: 0, overflow: "hidden" }}
                 primary={
-                  <Typography variant="body2" color="text.secondary" sx={{ textAlign: align, wordBreak: "break-word", overflowWrap: "break-word" }}>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: "text.secondary",
+                      textAlign: align,
+                      wordBreak: "break-word",
+                      overflowWrap: "break-word"
+                    }}>
                     {v.question}
                   </Typography>
                 }
@@ -710,14 +735,22 @@ export default function PollResultsPage() {
           <BreadcrumbsNav />
           <Stack
             direction={{ xs: "column", sm: "row" }}
-            justifyContent="space-between"
-            alignItems={{ xs: "stretch", sm: "center" }}
             spacing={2}
-            mb={2}
-          >
+            sx={{
+              justifyContent: "space-between",
+              alignItems: { xs: "stretch", sm: "center" },
+              mb: 2
+            }}>
             <Box>
-              <Typography variant="h4" fontWeight="bold">{t.title}</Typography>
-              <Typography variant="body2" color="text.secondary" mt={0.5}>
+              <Typography variant="h4" sx={{
+                fontWeight: "bold"
+              }}>{t.title}</Typography>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: "text.secondary",
+                  mt: 0.5
+                }}>
                 {t.subtitle}
               </Typography>
             </Box>
@@ -725,9 +758,10 @@ export default function PollResultsPage() {
             <Stack
               direction={{ xs: "column", md: "row" }}
               spacing={2}
-              alignItems={{ xs: "stretch", md: "center" }}
-              sx={{ width: { xs: "100%", md: "auto" } }}
-            >
+              sx={{
+                alignItems: { xs: "stretch", md: "center" },
+                width: { xs: "100%", md: "auto" }
+              }}>
               {poll && totalVoters > 0 && (
                 <>
                   <FormControl size="small" sx={{ minWidth: { xs: "100%", md: 170 } }}>
@@ -785,39 +819,57 @@ export default function PollResultsPage() {
             <NoDataAvailable />
           ) : (
             /* ALL POLLS → voter cards (SurveyGuru-style); anonymous for unlinked */
-            !totalVoters ? (
-              <NoDataAvailable />
-            ) : (
-              <Fragment>
-                <Typography variant="body2" color="text.secondary" mb={2.5} px={0.5}>
-                  {t.showing} {Math.min((page - 1) * CARDS_PER_PAGE + 1, totalVoters)}–{Math.min(page * CARDS_PER_PAGE, totalVoters)} {t.of} {totalVoters} {t.records}
-                </Typography>
-
-                <Grid container spacing={2} alignItems="stretch" justifyContent="center">
-                  {displayVoters.map((voter) => (
-                    <Grid item xs={12} sm={6} md={6} lg={4} key={String(voter._id)}>
-                      <VoterCard
-                        voter={voter}
-                        t={t}
-                        dir={dir}
-                        align={align}
-                        language={language}
-                        isAnonymous={voter.isAnonymous}
-                      />
-                    </Grid>
-                  ))}
-                </Grid>
-
-                <Box display="flex" justifyContent="center" mt={4}>
-                  <Pagination
-                    dir="ltr"
-                    count={Math.ceil(totalVoters / CARDS_PER_PAGE)}
-                    page={Math.min(page, Math.ceil(totalVoters / CARDS_PER_PAGE) || 1)}
-                    onChange={(_, v) => setPage(v)}
-                  />
-                </Box>
-              </Fragment>
-            )
+            (!totalVoters ? (<NoDataAvailable />) : (<Fragment>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: "text.secondary",
+                  mb: 2.5,
+                  px: 0.5
+                }}>
+                {t.showing} {Math.min((page - 1) * CARDS_PER_PAGE + 1, totalVoters)}–{Math.min(page * CARDS_PER_PAGE, totalVoters)} {t.of} {totalVoters} {t.records}
+              </Typography>
+              <Grid
+                container
+                spacing={2}
+                sx={{
+                  alignItems: "stretch",
+                  justifyContent: "center"
+                }}>
+                {displayVoters.map((voter) => (
+                  <Grid
+                    key={String(voter._id)}
+                    size={{
+                      xs: 12,
+                      sm: 6,
+                      md: 6,
+                      lg: 4
+                    }}>
+                    <VoterCard
+                      voter={voter}
+                      t={t}
+                      dir={dir}
+                      align={align}
+                      language={language}
+                      isAnonymous={voter.isAnonymous}
+                    />
+                  </Grid>
+                ))}
+              </Grid>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "center",
+                  mt: 4
+                }}>
+                <Pagination
+                  dir="ltr"
+                  count={Math.ceil(totalVoters / CARDS_PER_PAGE)}
+                  page={Math.min(page, Math.ceil(totalVoters / CARDS_PER_PAGE) || 1)}
+                  onChange={(_, v) => setPage(v)}
+                />
+              </Box>
+            </Fragment>))
           )}
         </Container>
       </Box>

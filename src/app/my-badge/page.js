@@ -270,11 +270,21 @@ export default function MyBadgePage() {
         }}
       >
         <Container maxWidth={false} sx={{ pt: 5 }}>
-          <Stack spacing={1} alignItems="center" textAlign="center" mb={4}>
-            <Typography variant="h4" fontWeight={800}>
+          <Stack
+            spacing={1}
+            sx={{
+              alignItems: "center",
+              textAlign: "center",
+              mb: 4
+            }}>
+            <Typography variant="h4" sx={{
+              fontWeight: 800
+            }}>
               {t.title}
             </Typography>
-            <Typography variant="body1" color="text.secondary">
+            <Typography variant="body1" sx={{
+              color: "text.secondary"
+            }}>
               {t.subtitle}
             </Typography>
           </Stack>
@@ -286,20 +296,31 @@ export default function MyBadgePage() {
                   <CircularProgress />
                 </Box>
               ) : filteredEvents.length === 0 ? (
-                <Typography color="text.secondary" textAlign="center" mt={6}>
+                <Typography
+                  sx={{
+                    color: "text.secondary",
+                    textAlign: "center",
+                    mt: 6
+                  }}>
                   {t.noEvents}
                 </Typography>
               ) : (
-                <Grid container spacing={3} justifyContent="center" alignItems="stretch">
+                <Grid
+                  container
+                  spacing={3}
+                  sx={{
+                    justifyContent: "center",
+                    alignItems: "stretch"
+                  }}>
                   {filteredEvents.map((event) => (
                     <Grid
-                      item
-                      xs={12}
-                      sm={6}
-                      md={4}
                       key={event._id || event.slug}
                       sx={{ display: "flex", justifyContent: "center" }}
-                    >
+                      size={{
+                        xs: 12,
+                        sm: 6,
+                        md: 4
+                      }}>
                       <BadgeEventCard
                         event={event}
                         t={t}
@@ -313,7 +334,11 @@ export default function MyBadgePage() {
           )}
 
           {step === 1 && selectedEvent && (
-            <Box maxWidth={520} mx="auto">
+            <Box
+              sx={{
+                maxWidth: 520,
+                mx: "auto"
+              }}>
               <Button
                 startIcon={<ICONS.back />}
                 onClick={() => setStep(0)}
@@ -363,9 +388,11 @@ export default function MyBadgePage() {
                   <Stack
                     direction={{ xs: "column", sm: "row" }}
                     spacing={2}
-                    alignItems={{ xs: "stretch", sm: "center" }}
-                    sx={{ position: "relative", zIndex: 1 }}
-                  >
+                    sx={{
+                      alignItems: { xs: "stretch", sm: "center" },
+                      position: "relative",
+                      zIndex: 1
+                    }}>
                     <Box
                       sx={{
                         width: { xs: "100%", sm: 120 },
@@ -438,22 +465,23 @@ export default function MyBadgePage() {
 
                       <Typography
                         variant="h5"
-                        fontWeight={800}
                         sx={{
+                          fontWeight: 800,
                           color: BADGE_COLORS.white,
                           lineHeight: 1.15,
                           mb: 1.5,
-                          wordBreak: "break-word",
-                        }}
-                      >
+                          wordBreak: "break-word"
+                        }}>
                         {selectedEvent.name}
                       </Typography>
 
                       <Stack
                         direction={{ xs: "column", sm: "row" }}
                         spacing={1}
-                        flexWrap="wrap"
                         useFlexGap
+                        sx={{
+                          flexWrap: "wrap"
+                        }}
                       >
                         {selectedEvent.venue && (
                           <Box
@@ -508,7 +536,9 @@ export default function MyBadgePage() {
                       border: `1px solid ${alpha(BADGE_COLORS.primary, 0.12)}`,
                     }}
                   >
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" sx={{
+                      color: "text.secondary"
+                    }}>
                       {t.step2Subtitle}
                     </Typography>
                   </Box>
@@ -607,14 +637,21 @@ export default function MyBadgePage() {
           )}
 
           {step === 2 && registration && (
-            <Box maxWidth={480} mx="auto">
+            <Box
+              sx={{
+                maxWidth: 480,
+                mx: "auto"
+              }}>
               <Stack
                 direction="row"
-                justifyContent="space-between"
-                alignItems="center"
-                mb={2}
-              >
-                <Typography variant="h6" fontWeight={700}>
+                sx={{
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  mb: 2
+                }}>
+                <Typography variant="h6" sx={{
+                  fontWeight: 700
+                }}>
                   {t.badgeTitle}
                 </Typography>
                 <Button
@@ -759,14 +796,17 @@ function BadgeEventCard({ event, t, onSelect }) {
           </Typography>
         </Box>
       </Box>
-
       <CardContent sx={{ px: 2, py: 1.5, flexGrow: 1 }}>
         {event.venue && (
           <Typography
             variant="body2"
-            color="text.secondary"
-            sx={{ display: "flex", alignItems: "center", gap: 0.8, mb: 0.6 }}
-          >
+            sx={{
+              color: "text.secondary",
+              display: "flex",
+              alignItems: "center",
+              gap: 0.8,
+              mb: 0.6
+            }}>
             <ICONS.location fontSize="small" sx={{ opacity: 0.7 }} />
             {event.venue}
           </Typography>
@@ -775,15 +815,17 @@ function BadgeEventCard({ event, t, onSelect }) {
         {dateLabel && (
           <Typography
             variant="body2"
-            color="text.secondary"
-            sx={{ display: "flex", alignItems: "center", gap: 0.8 }}
-          >
+            sx={{
+              color: "text.secondary",
+              display: "flex",
+              alignItems: "center",
+              gap: 0.8
+            }}>
             <ICONS.event fontSize="small" sx={{ opacity: 0.7 }} />
             {dateLabel}
           </Typography>
         )}
       </CardContent>
-
       <CardActions
         sx={{
           justifyContent: "center",
@@ -812,7 +854,12 @@ function FormField({ field, value, isoCode, error, onChange, onIsoChange }) {
   if (inputType === "radio") {
     return (
       <Box>
-        <Typography variant="body2" fontWeight={600} mb={0.5}>
+        <Typography
+          variant="body2"
+          sx={{
+            fontWeight: 600,
+            mb: 0.5
+          }}>
           {inputName}
           {required && " *"}
         </Typography>
@@ -871,12 +918,14 @@ function FormField({ field, value, isoCode, error, onChange, onIsoChange }) {
         error={!!error}
         helperText={error}
         placeholder={placeholder}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <CountryCodeSelector value={isoCode} onChange={onIsoChange} />
-            </InputAdornment>
-          ),
+        slotProps={{
+          input: {
+            startAdornment: (
+              <InputAdornment position="start">
+                <CountryCodeSelector value={isoCode} onChange={onIsoChange} />
+              </InputAdornment>
+            ),
+          }
         }}
       />
     );
@@ -910,12 +959,14 @@ function PhoneClassicField({ value, isoCode, onChange, onIsoChange }) {
       fullWidth
       value={value}
       onChange={(event) => onChange(event.target.value)}
-      InputProps={{
-        startAdornment: (
-          <InputAdornment position="start">
-            <CountryCodeSelector value={isoCode} onChange={onIsoChange} />
-          </InputAdornment>
-        ),
+      slotProps={{
+        input: {
+          startAdornment: (
+            <InputAdornment position="start">
+              <CountryCodeSelector value={isoCode} onChange={onIsoChange} />
+            </InputAdornment>
+          ),
+        }
       }}
     />
   );

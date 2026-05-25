@@ -191,17 +191,23 @@ export default function QuestionsPage() {
                     }}
                 >
                     <Box sx={{ flex: 1 }}>
-                        <Typography variant="h5" fontWeight="bold">
+                        <Typography variant="h5" sx={{
+                            fontWeight: "bold"
+                        }}>
                             {t.questionsTitle.replace("{pollTitle}", poll.title)}
                         </Typography>
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography variant="body2" sx={{
+                            color: "text.secondary"
+                        }}>
                             {t.questionsDescription
                                 .replace("{pollType}", t[`type${poll.type.charAt(0).toUpperCase() + poll.type.slice(1)}`] || poll.type)
                                 .replace("{questionCount}", questions.length)}
                         </Typography>
                     </Box>
 
-                    <Stack direction="row" spacing={1} flexWrap="wrap">
+                    <Stack direction="row" spacing={1} sx={{
+                        flexWrap: "wrap"
+                    }}>
                         <Button
                             variant="contained"
                             startIcon={<ICONS.add />}
@@ -227,12 +233,19 @@ export default function QuestionsPage() {
                 {questions.length === 0 ? (
                     <NoDataAvailable />
                 ) : (
-                    <Grid container spacing={3} justifyContent="center">
+                    <Grid container spacing={3} sx={{
+                        justifyContent: "center"
+                    }}>
                         {questions.map((q, idx) => (
                             <Grid
-                                item xs={12} sm={6} md={4} lg={3} key={q._id}
+                                key={q._id}
                                 sx={{ display: "flex", justifyContent: "center", width: { xs: "100%", sm: 420 } }}
-                            >
+                                size={{
+                                    xs: 12,
+                                    sm: 6,
+                                    md: 4,
+                                    lg: 3
+                                }}>
                                 <AppCard
                                     sx={{
                                         width: { xs: "100%", sm: 420 },
@@ -242,26 +255,35 @@ export default function QuestionsPage() {
                                     }}
                                 >
                                     <Box sx={{ px: 2, pt: 2, flexGrow: 1 }}>
-                                        <Stack direction="row" spacing={1} alignItems="center" mb={1}>
+                                        <Stack
+                                            direction="row"
+                                            spacing={1}
+                                            sx={{
+                                                alignItems: "center",
+                                                mb: 1
+                                            }}>
                                             <Avatar sx={{ bgcolor: "primary.main" }}>
                                                 <ICONS.poll fontSize="small" />
                                             </Avatar>
-                                            <Box flexGrow={1}>
+                                            <Box sx={{
+                                                flexGrow: 1
+                                            }}>
                                                 <Typography
                                                     variant="subtitle2"
-                                                    fontWeight={600}
                                                     sx={{
+                                                        fontWeight: 600,
                                                         overflow: "hidden",
                                                         textOverflow: "ellipsis",
                                                         display: "-webkit-box",
                                                         WebkitLineClamp: 2,
-                                                        WebkitBoxOrient: "vertical",
-                                                    }}
-                                                >
+                                                        WebkitBoxOrient: "vertical"
+                                                    }}>
                                                     {q.question}
                                                 </Typography>
                                                 <Box sx={{ mt: 0.5 }}>
-                                                    <Typography variant="caption" color="primary" fontWeight="bold">
+                                                    <Typography variant="caption" color="primary" sx={{
+                                                        fontWeight: "bold"
+                                                    }}>
                                                         {q.type === 'rating' ? t.typeRating : 
                                                         q.type === 'nps' ? t.typeNps : 
                                                         q.type === 'text' ? t.typeText : t.typeOptions}
@@ -282,9 +304,11 @@ export default function QuestionsPage() {
                                                         key={optIdx}
                                                         direction="row"
                                                         spacing={1}
-                                                        alignItems="center"
-                                                        sx={{ overflow: "hidden", gap: dir === "rtl" ? 1 : 0 }}
-                                                    >
+                                                        sx={{
+                                                            alignItems: "center",
+                                                            overflow: "hidden",
+                                                            gap: dir === "rtl" ? 1 : 0
+                                                        }}>
                                                         {opt.imageUrl && (
                                                             <Avatar
                                                                 src={opt.imageUrl}
@@ -294,7 +318,13 @@ export default function QuestionsPage() {
                                                             />
                                                         )}
                                                         {opt.text && (
-                                                            <Typography variant="body2" color="text.secondary" noWrap sx={{ flexGrow: 1 }}>
+                                                            <Typography
+                                                                variant="body2"
+                                                                noWrap
+                                                                sx={{
+                                                                    color: "text.secondary",
+                                                                    flexGrow: 1
+                                                                }}>
                                                                 {opt.text}
                                                             </Typography>
                                                         )}

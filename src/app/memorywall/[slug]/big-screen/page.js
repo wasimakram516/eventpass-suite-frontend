@@ -68,11 +68,12 @@ const BigScreenPage = () => {
   if (loading) {
     return (
       <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        height="100vh"
-      >
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh"
+        }}>
         <LoadingState />
       </Box>
     );
@@ -81,7 +82,9 @@ const BigScreenPage = () => {
   if (!connected) {
     return (
       <Container maxWidth={false}>
-        <Typography variant="body2" color="error" mt={2}>
+        <Typography variant="body2" color="error" sx={{
+          mt: 2
+        }}>
           {t.socketNotConnected}
           {connectionError ? `: ${connectionError}` : ""}
         </Typography>
@@ -92,23 +95,25 @@ const BigScreenPage = () => {
   if (!media.length) {
     return (
       <Box
-        display="flex"
-        justifyContent="center"
-        alignItems="center"
-        height="100vh"
-        sx={{ position: "relative" }}
         dir={dir}
-      >
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          height: "100vh",
+          position: "relative"
+        }}>
         <Box sx={{ position: "absolute", inset: 0, zIndex: 0 }}>
           <Shift />
         </Box>
         <Typography
           variant="h6"
-          textAlign={align}
-          mt={4}
-          color="#fff"
-          zIndex={1}
-        >
+          sx={{
+            textAlign: align,
+            mt: 4,
+            color: "#fff",
+            zIndex: 1
+          }}>
           {t.noMediaAvailable}
         </Typography>
       </Box>
@@ -216,11 +221,12 @@ const BigScreenPage = () => {
 
   return (
     <Box
-      display="flex"
-      justifyContent="center"
-      alignItems="center"
-      height="100vh"
-    >
+      sx={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        height: "100vh"
+      }}>
       <LoadingState />
     </Box>
   );

@@ -182,8 +182,7 @@ export default function RegisterPage() {
                     <Stack
                       direction="row"
                       spacing={0.75}
-                      alignItems="center"
-                      sx={{ opacity: 0.9 }}
+                      sx={{ opacity: 0.9, alignItems: "center" }}
                     >
                       <Typography
                         variant="caption"
@@ -205,7 +204,12 @@ export default function RegisterPage() {
                     </Stack>
                   )}
                 </Box>
-                <Typography variant="h4" fontWeight={700} sx={{ mt: 2.5 }}>
+                <Typography
+                  variant="h4"
+                  sx={{
+                    fontWeight: 700,
+                    mt: 2.5
+                  }}>
                   {t.leftTitle}
                 </Typography>
                 <Typography sx={{ mt: 1, opacity: 0.9 }}>
@@ -213,15 +217,15 @@ export default function RegisterPage() {
                 </Typography>
               </Box>
               <Stack spacing={1.5} sx={{ mt: 3 }}>
-                <Stack direction="row" spacing={1.5} alignItems="center">
+                <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
                   <ICONS.checkCircleOutline fontSize="small" />
                   <Typography variant="body2">{t.featureOne}</Typography>
                 </Stack>
-                <Stack direction="row" spacing={1.5} alignItems="center">
+                <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
                   <ICONS.checkCircleOutline fontSize="small" />
                   <Typography variant="body2">{t.featureTwo}</Typography>
                 </Stack>
-                <Stack direction="row" spacing={1.5} alignItems="center">
+                <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
                   <ICONS.checkCircleOutline fontSize="small" />
                   <Typography variant="body2">{t.featureThree}</Typography>
                 </Stack>
@@ -238,17 +242,21 @@ export default function RegisterPage() {
                         {t.contact}
                       </Typography>
                       {globalConfig?.contact?.email && (
-                        <Stack direction="row" spacing={0.5} alignItems="center">
+                        <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
                           <ICONS.email fontSize="inherit" sx={{ fontSize: 14 }} />
-                          <Typography variant="body2" fontSize="0.75rem">
+                          <Typography variant="body2" sx={{
+                            fontSize: "0.75rem"
+                          }}>
                             {globalConfig.contact.email}
                           </Typography>
                         </Stack>
                       )}
                       {globalConfig?.contact?.phone && (
-                        <Stack direction="row" spacing={0.5} alignItems="center">
+                        <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
                           <ICONS.phone fontSize="inherit" sx={{ fontSize: 14 }} />
-                          <Typography variant="body2" fontSize="0.75rem">
+                          <Typography variant="body2" sx={{
+                            fontSize: "0.75rem"
+                          }}>
                             {globalConfig.contact.phone}
                           </Typography>
                         </Stack>
@@ -263,17 +271,21 @@ export default function RegisterPage() {
                         {t.support}
                       </Typography>
                       {globalConfig?.support?.email && (
-                        <Stack direction="row" spacing={0.5} alignItems="center">
+                        <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
                           <ICONS.email fontSize="inherit" sx={{ fontSize: 14 }} />
-                          <Typography variant="body2" fontSize="0.75rem">
+                          <Typography variant="body2" sx={{
+                            fontSize: "0.75rem"
+                          }}>
                             {globalConfig.support.email}
                           </Typography>
                         </Stack>
                       )}
                       {globalConfig?.support?.phone && (
-                        <Stack direction="row" spacing={0.5} alignItems="center">
+                        <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
                           <ICONS.phone fontSize="inherit" sx={{ fontSize: 14 }} />
-                          <Typography variant="body2" fontSize="0.75rem">
+                          <Typography variant="body2" sx={{
+                            fontSize: "0.75rem"
+                          }}>
                             {globalConfig.support.phone}
                           </Typography>
                         </Stack>
@@ -287,18 +299,20 @@ export default function RegisterPage() {
             <Box sx={{ flex: 1, p: { xs: 2, md: 3 } }}>
               <Typography
                 variant="h5"
-                fontWeight={700}
-                textAlign={align}
                 gutterBottom
-              >
+                sx={{
+                  fontWeight: 700,
+                  textAlign: align
+                }}>
                 {t.register}
               </Typography>
               <Typography
                 variant="body2"
-                color="text.secondary"
-                textAlign={align}
-                sx={{ mb: 3 }}
-              >
+                sx={{
+                  color: "text.secondary",
+                  textAlign: align,
+                  mb: 3
+                }}>
                 {t.subtitle}
               </Typography>
 
@@ -315,15 +329,17 @@ export default function RegisterPage() {
                   onChange={handleChange}
                   error={!!errors.name}
                   helperText={errors.name}
-                  inputProps={{ dir }}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <ICONS.badge fontSize="small" />
-                      </InputAdornment>
-                    ),
-                  }}
-                />
+                  slotProps={{
+                    input: {
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <ICONS.badge fontSize="small" />
+                        </InputAdornment>
+                      ),
+                    },
+
+                    htmlInput: { dir }
+                  }} />
                 <TextField
                   label={t.email}
                   name="email"
@@ -333,15 +349,17 @@ export default function RegisterPage() {
                   onChange={handleChange}
                   error={!!errors.email}
                   helperText={errors.email}
-                  inputProps={{ dir: "ltr" }}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <ICONS.emailOutline fontSize="small" />
-                      </InputAdornment>
-                    ),
-                  }}
-                />
+                  slotProps={{
+                    input: {
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <ICONS.emailOutline fontSize="small" />
+                        </InputAdornment>
+                      ),
+                    },
+
+                    htmlInput: { dir: "ltr" }
+                  }} />
                 <TextField
                   label={t.password}
                   name="password"
@@ -351,25 +369,27 @@ export default function RegisterPage() {
                   onChange={handleChange}
                   error={!!errors.password}
                   helperText={errors.password}
-                  inputProps={{ dir: "ltr" }}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <ICONS.vpnKey fontSize="small" />
-                      </InputAdornment>
-                    ),
-                    endAdornment: (
-                      <InputAdornment position="end">
-                        <IconButton
-                          onClick={() => setShowPassword((prev) => !prev)}
-                          edge="end"
-                        >
-                          {showPassword ? <ICONS.hide /> : <ICONS.view />}
-                        </IconButton>
-                      </InputAdornment>
-                    ),
-                  }}
-                />
+                  slotProps={{
+                    input: {
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <ICONS.vpnKey fontSize="small" />
+                        </InputAdornment>
+                      ),
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            onClick={() => setShowPassword((prev) => !prev)}
+                            edge="end"
+                          >
+                            {showPassword ? <ICONS.hide /> : <ICONS.view />}
+                          </IconButton>
+                        </InputAdornment>
+                      ),
+                    },
+
+                    htmlInput: { dir: "ltr" }
+                  }} />
 
                 <Button
                   fullWidth
@@ -393,10 +413,11 @@ export default function RegisterPage() {
 
               <Typography
                 variant="body2"
-                color="text.secondary"
                 align={align}
-                sx={{ mt: 2 }}
-              >
+                sx={{
+                  color: "text.secondary",
+                  mt: 2
+                }}>
                 {t.alreadyHave}{" "}
                 <span
                   onClick={() => router.push("/auth/login")}
@@ -416,10 +437,11 @@ export default function RegisterPage() {
                   <Divider sx={{ my: 3 }} />
                   <Typography
                     variant="caption"
-                    color="text.secondary"
-                    display="block"
-                    textAlign={align}
-                  >
+                    sx={{
+                      color: "text.secondary",
+                      display: "block",
+                      textAlign: align
+                    }}>
                     {globalConfig?.poweredBy?.mediaUrl && (
                       <Box
                         component="img"

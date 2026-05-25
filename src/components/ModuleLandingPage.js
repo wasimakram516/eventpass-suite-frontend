@@ -50,7 +50,6 @@ export default function ModuleLandingPage({
       <Container maxWidth="lg" sx={{ pt: 3, zIndex: 1 }}>
         <BreadcrumbsNav />
       </Container>
-
       <Box
         sx={{
           flex: 1,
@@ -62,8 +61,10 @@ export default function ModuleLandingPage({
         <Container maxWidth="lg" sx={{ direction: dir }}>
           <Stack
             spacing={4}
-            alignItems={{ xs: "stretch", md: "center" }}
             direction={{ xs: "column", md: "row" }}
+            sx={{
+              alignItems: { xs: "stretch", md: "center" }
+            }}
           >
             <Box
               sx={{
@@ -75,9 +76,10 @@ export default function ModuleLandingPage({
                 <Stack
                   direction="row"
                   spacing={2}
-                  alignItems="center"
-                  justifyContent={{ xs: "center", sm: align }}
-                >
+                  sx={{
+                    alignItems: "center",
+                    justifyContent: { xs: "center", sm: align }
+                  }}>
                   {Icon && (
                     <Box
                       sx={{
@@ -94,20 +96,22 @@ export default function ModuleLandingPage({
 
                 <Typography
                   variant="h3"
-                  fontWeight={800}
-                  textAlign={{ xs: "center", sm: align }}
-                  color="text.primary"
-                >
+                  sx={{
+                    fontWeight: 800,
+                    textAlign: { xs: "center", sm: align },
+                    color: "text.primary"
+                  }}>
                   {t.title}
                 </Typography>
 
                 {t.subtitle && (
                   <Typography
                     variant="h6"
-                    textAlign={align}
-                    color="text.secondary"
-                    sx={{ maxWidth: 560 }}
-                  >
+                    sx={{
+                      textAlign: align,
+                      color: "text.secondary",
+                      maxWidth: 560
+                    }}>
                     {t.subtitle}
                   </Typography>
                 )}
@@ -123,9 +127,10 @@ export default function ModuleLandingPage({
                       sm: dir === "rtl" ? "row-reverse" : "row",
                     }}
                     spacing={2}
-                    justifyContent={align}
-                    alignItems={{ xs: "stretch", sm: "center" }}
-                  >
+                    sx={{
+                      justifyContent: align,
+                      alignItems: { xs: "stretch", sm: "center" }
+                    }}>
                     <Button
                       variant="contained"
                       size="large"
@@ -214,9 +219,11 @@ export default function ModuleLandingPage({
                       </Box>
                       <Typography
                         variant="body1"
-                        color="text.primary"
-                        sx={{ lineHeight: 1.7, textAlign: align }}
-                      >
+                        sx={{
+                          color: "text.primary",
+                          lineHeight: 1.7,
+                          textAlign: align
+                        }}>
                         {feat}
                       </Typography>
                     </Box>

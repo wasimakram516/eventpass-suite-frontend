@@ -252,7 +252,6 @@ function MediaCard({
           )}
         </Box>
       )}
-
       {isFull && (isSignatureMode ? (item.imageUrl || item.signatureUrl) : (item.imageUrl && item.text)) && (
         <Box
           sx={{
@@ -278,7 +277,6 @@ function MediaCard({
           }}
         />
       )}
-
       <Box sx={{ 
         width: '100%', 
         zIndex: 3, 
@@ -350,12 +348,13 @@ function MediaCard({
           </Box>
         )}
         {item.text && (
-          <Typography 
-            variant="body1" 
-            textAlign={item.text.length < 50 ? "center" : "start"}
-            sx={{ 
+          <Typography
+            variant="body1"
+            sx={{
+              textAlign: item.text.length < 50 ? "center" : "start",
               fontWeight: (!item.imageUrl && !item.signatureUrl) ? 700 : ((isFull && (item.imageUrl || item.signatureUrl)) ? 600 : 400),
               textShadow: 'none',
+
               fontSize: (() => {
                 const len = item.text.length;
                 const hasMedia = item.imageUrl || item.signatureUrl;
@@ -377,6 +376,7 @@ function MediaCard({
                 if (len > 40) return '0.75rem';
                 return '0.85rem';
               })(),
+
               px: isFull ? 0 : ((isCircle && (item.imageUrl || item.signatureUrl)) ? 1.5 : 2),
               py: 0,
               width: "100%",
@@ -387,14 +387,15 @@ function MediaCard({
               WebkitBoxOrient: (item.imageUrl || item.signatureUrl) ? 'vertical' : 'unset',
               WebkitLineClamp: (item.imageUrl || item.signatureUrl) ? (isFull ? 3 : (isCircle ? 2 : 3)) : 'unset',
               overflow: 'hidden',
+
               color: (isFull && (item.imageUrl || item.signatureUrl))
                 ? (isSignatureMode ? (mediaType2TextColor || '#ffffff') : '#ffffff')
                 : (isSignatureMode
                    ? (mediaType2TextColor || '#000000')
                    : ((!item.imageUrl && !isFull) ? 'rgba(0,0,0,0.85)' : 'inherit')),
-              letterSpacing: !item.imageUrl ? '0.01em' : 'normal',
-            }}
-          >
+
+              letterSpacing: !item.imageUrl ? '0.01em' : 'normal'
+            }}>
             {item.text}
           </Typography>
         )}
