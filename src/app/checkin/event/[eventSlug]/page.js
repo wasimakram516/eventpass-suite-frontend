@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useRef, useMemo } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
+import LoadingState from "@/components/LoadingState";
 import {
   Box,
   Typography,
@@ -310,21 +311,7 @@ export default function EventDetails() {
     return null;
   }, [event, language]);
 
-  if (loading) {
-    return (
-      <Box
-        sx={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <Background />
-        <CircularProgress />
-      </Box>
-    );
-  }
+  if (loading) return <LoadingState />;
 
   if (error || !event) {
     return (

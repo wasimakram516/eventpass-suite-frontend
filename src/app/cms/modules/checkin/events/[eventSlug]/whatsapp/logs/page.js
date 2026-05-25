@@ -7,7 +7,6 @@ import {
   Typography,
   Stack,
   Divider,
-  CircularProgress,
   Chip,
   Table,
   TableBody,
@@ -28,6 +27,7 @@ import {
 } from "@mui/material";
 import { useParams } from "next/navigation";
 
+import LoadingState from "@/components/LoadingState";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
@@ -205,15 +205,7 @@ export default function WhatsAppLogsPage() {
     onOutboundMessage: handleOutbound,
   });
 
-  if (loading && !logs.length) {
-    return (
-      <Box
-        sx={{ minHeight: "60vh", display: "flex", justifyContent: "center" }}
-      >
-        <CircularProgress />
-      </Box>
-    );
-  }
+  if (loading && !logs.length) return <LoadingState />;
 
   const from = total === 0 ? 0 : (page - 1) * limit + 1;
   const to = Math.min(page * limit, total);

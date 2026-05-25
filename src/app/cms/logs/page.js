@@ -37,6 +37,7 @@ import {
   MenuItem,
   CircularProgress,
 } from "@mui/material";
+import LoadingState from "@/components/LoadingState";
 import { DateTimePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
@@ -1293,9 +1294,7 @@ export default function LogsPage() {
         })()}
 
         {loading ? (
-          <Box sx={{ mt: 6, textAlign: "center" }}>
-            <CircularProgress size={24} />
-          </Box>
+          <LoadingState />
         ) : loadError ? (
           <Box sx={{ mt: 6, textAlign: "center" }}>
             <Typography variant="body1" sx={{

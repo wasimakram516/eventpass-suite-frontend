@@ -5,11 +5,11 @@ import {
   Box,
   Typography,
   Paper,
-  CircularProgress,
   LinearProgress,
   IconButton,
   Card,
 } from "@mui/material";
+import LoadingState from "@/components/LoadingState";
 import { useParams, useRouter } from "next/navigation";
 import { getDigipassEventBySlug } from "@/services/digipass/digipassEventService";
 import ICONS from "@/utils/iconUtil";
@@ -148,64 +148,7 @@ export default function DigiPassDashboard() {
     onTaskCompletedUpdate: handleTaskCompletedUpdate,
   });
 
-  if (loading || !event) {
-    return (
-      <Box
-        sx={{
-          minHeight: "100vh",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          position: "relative",
-        }}
-      >
-        {background && background.fileType === "image" && background.url && (
-          <Box
-            component="img"
-            src={background.url}
-            alt="Background"
-            sx={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-              zIndex: -1,
-            }}
-          />
-        )}
-        {background?.fileType === "video" && background?.url && (
-          <Box
-            sx={{
-              position: "fixed",
-              top: 0,
-              left: 0,
-              width: "100%",
-              height: "100%",
-              zIndex: -1,
-              overflow: "hidden",
-            }}
-          >
-            <video
-              ref={videoRef}
-              src={background.url}
-              autoPlay
-              playsInline
-              loop
-              muted={isMuted}
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-              }}
-            />
-          </Box>
-        )}
-        <CircularProgress />
-      </Box>
-    );
-  }
+  if (loading || !event) return <LoadingState />;
 
   const userName = registration?.fullName
     ? registration.fullName

@@ -21,6 +21,7 @@ import {
   Chip,
 } from "@mui/material";
 import { useEffect, useState } from "react";
+import LoadingState from "@/components/LoadingState";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import {
   getAllBusinesses,
@@ -363,9 +364,7 @@ export default function BusinessDetailsPage() {
           </Button>
         </Box>
       ) : loading ? (
-        <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
-          <CircularProgress size={36} />
-        </Box>
+        <LoadingState />
       ) : businesses.length === 0 ? (
         <NoDataAvailable />
       ) : (

@@ -22,6 +22,7 @@ import {
   Download,
   EmojiEvents,
 } from "@mui/icons-material";
+import LoadingState from "@/components/LoadingState";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import AppCard from "@/components/cards/AppCard";
 import CrossZeroMarkVisual from "@/components/crosszero/CrossZeroMarkVisual";
@@ -252,9 +253,7 @@ export default function CrossZeroAIResultsPage() {
         </Box>
 
         {loading ? (
-          <Box sx={{ textAlign: "center", mt: 8 }}>
-            <CircularProgress />
-          </Box>
+          <LoadingState />
         ) : records.length === 0 ? (
           <NoDataAvailable />
         ) : (
