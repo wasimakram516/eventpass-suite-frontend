@@ -12,7 +12,6 @@ import {
   Container,
   Divider,
   FormControlLabel,
-  Grid,
   InputAdornment,
   MenuItem,
   Paper,
@@ -305,30 +304,16 @@ export default function MyBadgePage() {
                   {t.noEvents}
                 </Typography>
               ) : (
-                <Grid
-                  container
-                  spacing={3}
-                  sx={{
-                    justifyContent: "center",
-                    alignItems: "stretch"
-                  }}>
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, justifyContent: "center" }}>
                   {filteredEvents.map((event) => (
-                    <Grid
+                    <BadgeEventCard
                       key={event._id || event.slug}
-                      sx={{ display: "flex", justifyContent: "center" }}
-                      size={{
-                        xs: 12,
-                        sm: 6,
-                        md: 4
-                      }}>
-                      <BadgeEventCard
-                        event={event}
-                        t={t}
-                        onSelect={() => handleSelectEvent(event)}
-                      />
-                    </Grid>
+                      event={event}
+                      t={t}
+                      onSelect={() => handleSelectEvent(event)}
+                    />
                   ))}
-                </Grid>
+                </Box>
               )}
             </>
           )}
@@ -735,10 +720,8 @@ function BadgeEventCard({ event, t, onSelect }) {
   return (
     <AppCard
       sx={{
-        width: "100%",
-        maxWidth: { xs: "100%", sm: 360 },
+        width: { xs: "100%", sm: 360 },
         height: "100%",
-        mx: "auto",
       }}
     >
       <Box sx={{ position: "relative", height: 200 }}>
