@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Grid, Typography, Button, Box } from "@mui/material";
+import { Typography, Button, Box } from "@mui/material";
 import { useRouter } from "next/navigation";
 import AppCard from "@/components/cards/AppCard";
 
@@ -13,18 +13,10 @@ const DashboardCard = ({
   color = "#1976d2",
   route,
   actions,
-  gridSize,
 }) => {
   const router = useRouter();
 
   return (
-    <Grid
-      sx={{ display: "flex", justifyContent: "center" }}
-      size={gridSize || {
-        xs: 12,
-        sm: 6,
-        md: 4
-      }}>
       <AppCard
         sx={{
           p: 3,
@@ -118,7 +110,6 @@ const DashboardCard = ({
           </Box>
         )}
       </AppCard>
-    </Grid>
   );
 };
 

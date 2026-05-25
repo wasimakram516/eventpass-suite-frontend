@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { Container, Grid, Typography, Divider, Stack } from "@mui/material";
+import { Box, Container, Typography, Divider, Stack } from "@mui/material";
 import DashboardCard from "@/components/cards/DashboardCard";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import useI18nLayout from "@/hooks/useI18nLayout";
@@ -63,16 +63,7 @@ export default function SurveyGuruDashboard() {
         <Divider sx={{ width: "100%", mt: 2 }} />
       </Stack>
       {/* Cards */}
-      <Grid container spacing={3} sx={{
-        justifyContent: "center"
-      }}>
-        <Grid
-          size={{
-            xs: 12,
-            sm: 6,
-            md: 6,
-            lg: 3
-          }}>
+      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, justifyContent: "center" }}>
           <DashboardCard
             title={t.formTitle}
             description={t.formDesc}
@@ -81,15 +72,6 @@ export default function SurveyGuruDashboard() {
             color="#1976d2"
             route="/cms/modules/surveyguru/surveys/forms"
           />
-        </Grid>
-
-        <Grid
-          size={{
-            xs: 12,
-            sm: 6,
-            md: 6,
-            lg: 3
-          }}>
           <DashboardCard
             title={t.recTitle}
             description={t.recDesc}
@@ -98,8 +80,7 @@ export default function SurveyGuruDashboard() {
             color="#8e24aa"
             route="/cms/modules/surveyguru/surveys/recipients"
           />
-        </Grid>
-      </Grid>
+      </Box>
     </Container>
   );
 }

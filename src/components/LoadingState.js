@@ -25,9 +25,9 @@ export default function LoadingState({
         sx={{
           position: "fixed",
           inset: 0,
-          bgcolor: "rgba(6, 10, 22, 0.42)",
-          backdropFilter: "blur(22px) saturate(160%)",
-          WebkitBackdropFilter: "blur(22px) saturate(160%)",
+          bgcolor: "rgba(240, 245, 255, 0.6)",
+          backdropFilter: "blur(18px) saturate(140%)",
+          WebkitBackdropFilter: "blur(18px) saturate(140%)",
           zIndex: 9999,
           display: "flex",
           alignItems: "center",
@@ -109,12 +109,11 @@ export default function LoadingState({
             position: "relative",
             overflow: "hidden",
             borderRadius: "20px",
-            bgcolor: "rgba(10, 16, 34, 0.65)",
+            bgcolor: "rgba(255, 255, 255, 0.92)",
             backdropFilter: "blur(18px) saturate(140%)",
             WebkitBackdropFilter: "blur(18px) saturate(140%)",
-            border: "1px solid rgba(255,255,255,0.12)",
-            boxShadow:
-              "0 24px 54px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.08)",
+            border: "1px solid rgba(0,0,0,0.07)",
+            boxShadow: "0 24px 54px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.9)",
             animation: "ep-panel-in 0.3s ease-out",
           }}
         >
@@ -214,7 +213,7 @@ export default function LoadingState({
                 sx={{
                   fontWeight: 800,
                   fontSize: { xs: "1.05rem", sm: "1.2rem" },
-                  color: "#fff",
+                  color: "rgba(10, 20, 50, 0.9)",
                   lineHeight: 1.3,
                 }}
               >
@@ -223,7 +222,7 @@ export default function LoadingState({
               <Typography
                 sx={{
                   fontSize: "0.85rem",
-                  color: "rgba(255,255,255,0.45)",
+                  color: "rgba(10, 20, 50, 0.45)",
                   mt: 0.75,
                   lineHeight: 1.65,
                   maxWidth: 320,
@@ -249,9 +248,9 @@ export default function LoadingState({
                 sx={{
                   height: 10,
                   borderRadius: "999px",
-                  border: "1px solid rgba(255,255,255,0.1)",
+                  border: "1px solid rgba(0,0,0,0.08)",
                   background:
-                    "linear-gradient(90deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.02) 48%, rgba(255,255,255,0.04) 100%)",
+                    "linear-gradient(90deg, rgba(0,0,0,0.04) 0%, rgba(0,0,0,0.02) 48%, rgba(0,0,0,0.04) 100%)",
                   backgroundSize: "220% 100%",
                   animation: "ep-shimmer 1.9s linear infinite",
                   position: "relative",
@@ -281,7 +280,7 @@ export default function LoadingState({
                   sx={{
                     mx: "auto",
                     borderRadius: "999px",
-                    bgcolor: "rgba(255,255,255,0.07)",
+                    bgcolor: "rgba(0,0,0,0.07)",
                   }}
                 />
               ))}

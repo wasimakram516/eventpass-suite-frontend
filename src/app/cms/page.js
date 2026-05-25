@@ -657,9 +657,7 @@ export default function HomePage() {
             )}
 
             {/* Module Cards */}
-            <Grid container spacing={3} sx={{
-              justifyContent: "center"
-            }}>
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, justifyContent: "center" }}>
               {modules.map((mod) => {
                 const data = moduleStats[mod.key] || {};
                 const totals = data.totals || {};
@@ -678,20 +676,14 @@ export default function HomePage() {
                 );
 
                 return (
-                  <Grid
-                    key={mod.key}
-                    size={{
-                      xs: 12,
-                      sm: 6,
-                      lg: 4
-                    }}>
                     <AppCard
+                      key={mod.key}
                       sx={{
                         p: 3,
                         borderRadius: 3,
                         boxShadow: "0 6px 12px rgba(0,0,0,0.1)",
                         height: "100%",
-                        width: { xs: 300, sm: 350 },
+                        width: { xs: "100%", sm: 350 },
                         display: "flex",
                         flexDirection: "column",
                         justifyContent: "space-between",
@@ -803,10 +795,9 @@ export default function HomePage() {
                         )}
                       </Box>
                     </AppCard>
-                  </Grid>
                 );
               })}
-            </Grid>
+            </Box>
           </>
         )}
 

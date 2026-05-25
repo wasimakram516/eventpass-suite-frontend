@@ -4,7 +4,6 @@ import React, { useEffect, useState, useRef, useCallback } from "react";
 import {
   Box,
   Typography,
-  Grid,
   CircularProgress,
   Button,
   Pagination,
@@ -1571,22 +1570,10 @@ export default function ViewRegistrations() {
               boxSizing: "border-box",
             }}
           >
-            <Grid container spacing={3} sx={{
-              justifyContent: "center"
-            }}>
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, justifyContent: "center" }}>
               {paginated.map((reg) => (
-                <Grid
-                  key={reg._id}
-                  sx={{
-                    width: { xs: "100%", sm: "auto" },
-                    boxSizing: "border-box",
-                  }}
-                  size={{
-                    xs: 12,
-                    sm: 6,
-                    md: 4
-                  }}>
                   <Card
+                    key={reg._id}
                     sx={{
                       width: { xs: "100%", sm: 420 },
                       maxWidth: 420,
@@ -1920,9 +1907,8 @@ export default function ViewRegistrations() {
                       </Box>
                     </CardActions>
                   </Card>
-                </Grid>
               ))}
-            </Grid>
+            </Box>
           </Box>
 
           <Box

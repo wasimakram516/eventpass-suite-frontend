@@ -6,7 +6,7 @@ import {
     Box,
     Container,
     Typography,
-    Grid,
+
     Button,
     CircularProgress,
     Divider,
@@ -228,37 +228,28 @@ export default function ManageSessionsPage() {
                 ) : sessions.length === 0 ? (
                     <NoDataAvailable />
                 ) : (
-                    <Grid container spacing={3} sx={{
-                        justifyContent: "center"
-                    }}>
+                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, justifyContent: "center" }}>
                         {sessions.map(session => (
-                            <Grid
+                            <EventCardBase
                                 key={session._id}
-                                size={{
-                                    xs: 12,
-                                    sm: 6,
-                                    md: 4
-                                }}>
-                                <EventCardBase
-                                    event={toSessionCard(session)}
-                                    t={{ ...t, polls: t.questions, viewPolls: t.viewQuestions }}
-                                    status={null}
-                                    showRegistrations={false}
-                                    showPollCount={true}
-                                    hideVenue={true}
-                                    hideDates={true}
-                                    showAudit={true}
-                                    locale={language === "ar" ? "ar-SA" : "en-GB"}
-                                    onView={() => router.push(`/cms/modules/stageq/sessions/${session.slug}/questions`)}
-                                    onInsights={() => router.push(`/cms/modules/stageq/sessions/${session.slug}/insights`)}
-                                    onEdit={() => handleOpenEdit(session)}
-                                    onDelete={() => { setSessionToDelete(session); setConfirmOpen(true); }}
-                                    onShare={() => { setSessionToShare(session); setShareModalOpen(true); }}
-                                    onViewFullScreen={() => window.open(`/stageq/${session.slug}/display`, "_blank")}
-                                />
-                            </Grid>
+                                event={toSessionCard(session)}
+                                t={{ ...t, polls: t.questions, viewPolls: t.viewQuestions }}
+                                status={null}
+                                showRegistrations={false}
+                                showPollCount={true}
+                                hideVenue={true}
+                                hideDates={true}
+                                showAudit={true}
+                                locale={language === "ar" ? "ar-SA" : "en-GB"}
+                                onView={() => router.push(`/cms/modules/stageq/sessions/${session.slug}/questions`)}
+                                onInsights={() => router.push(`/cms/modules/stageq/sessions/${session.slug}/insights`)}
+                                onEdit={() => handleOpenEdit(session)}
+                                onDelete={() => { setSessionToDelete(session); setConfirmOpen(true); }}
+                                onShare={() => { setSessionToShare(session); setShareModalOpen(true); }}
+                                onViewFullScreen={() => window.open(`/stageq/${session.slug}/display`, "_blank")}
+                            />
                         ))}
-                    </Grid>
+                    </Box>
                 )}
 
                 <StageQSessionModal

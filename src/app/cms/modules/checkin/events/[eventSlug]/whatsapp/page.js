@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { Container, Grid, Typography, Stack, Divider } from "@mui/material";
+import { Box, Container, Typography, Stack, Divider } from "@mui/material";
 import { useParams } from "next/navigation";
 import DashboardCard from "@/components/cards/DashboardCard";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
@@ -61,39 +61,17 @@ export default function WhatsAppDashboard() {
         </Typography>
         <Divider sx={{ width: "100%", mt: 2 }} />
       </Stack>
-      {/* Cards Grid */}
-      <Grid container spacing={3} sx={{
-        justifyContent: "center"
-      }}>
-        {/* Logs */}
-        <Grid
-          size={{
-            xs: 12,
-            sm: 6,
-            md: 4
-          }}>
+      {/* Cards */}
+      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, justifyContent: "center" }}>
           <DashboardCard
             title={t.logsTitle}
             description={t.logsDescription}
             buttonLabel={t.logsButton}
             icon={<ICONS.list />}
-            color="#42a5f5" // blue (audit / logs)
+            color="#42a5f5"
             route={`/cms/modules/checkin/events/${eventSlug}/whatsapp/logs`}
           />
-        </Grid>
-
-        {/* Inbox */}
-        {/* <Grid item xs={12} sm={6} md={4}>
-          <DashboardCard
-            title={t.inboxTitle}
-            description={t.inboxDescription}
-            buttonLabel={t.inboxButton}
-            icon={<ICONS.whatsapp />}
-            color="#25D366" // WhatsApp green
-            route={`/cms/modules/checkin/events/${eventSlug}/whatsapp/inbox`}
-          />
-        </Grid> */}
-      </Grid>
+      </Box>
     </Container>
   );
 }

@@ -6,7 +6,7 @@ import {
     Box,
     Container,
     Typography,
-    Grid,
+
     Button,
     CircularProgress,
     Divider,
@@ -252,37 +252,28 @@ export default function ManagePollsPage() {
                 ) : filteredPolls.length === 0 ? (
                     <NoDataAvailable />
                 ) : (
-                    <Grid container spacing={3} sx={{
-                        justifyContent: "center"
-                    }}>
+                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, justifyContent: "center" }}>
                         {filteredPolls.map(poll => (
-                            <Grid
+                            <EventCardBase
                                 key={poll._id}
-                                size={{
-                                    xs: 12,
-                                    sm: 6,
-                                    md: 4
-                                }}>
-                                <EventCardBase
-                                    event={toPollCard(poll)}
-                                    t={{ ...t, polls: t.questions, viewPolls: t.viewQuestions }}
-                                    status={null}
-                                    showRegistrations={false}
-                                    showPollCount={true}
-                                    hideVenue={true}
-                                    hideDates={true}
-                                    showAudit={true}
-                                    locale={language === "ar" ? "ar-SA" : "en-GB"}
-                                    onView={() => router.push(`/cms/modules/votecast/polls/${poll.slug}/questions`)}
-                                    onViewResults={() => router.push(`/cms/modules/votecast/polls/${poll.slug}/results`)}
-                                    onInsights={() => router.push(`/cms/modules/votecast/polls/${poll.slug}/insights`)}
-                                    onEdit={() => handleOpenEdit(poll)}
-                                    onDelete={() => { setPollToDelete(poll); setConfirmOpen(true); }}
-                                    onShare={() => { setPollToShare(poll); setShareModalOpen(true); }}
-                                />
-                            </Grid>
+                                event={toPollCard(poll)}
+                                t={{ ...t, polls: t.questions, viewPolls: t.viewQuestions }}
+                                status={null}
+                                showRegistrations={false}
+                                showPollCount={true}
+                                hideVenue={true}
+                                hideDates={true}
+                                showAudit={true}
+                                locale={language === "ar" ? "ar-SA" : "en-GB"}
+                                onView={() => router.push(`/cms/modules/votecast/polls/${poll.slug}/questions`)}
+                                onViewResults={() => router.push(`/cms/modules/votecast/polls/${poll.slug}/results`)}
+                                onInsights={() => router.push(`/cms/modules/votecast/polls/${poll.slug}/insights`)}
+                                onEdit={() => handleOpenEdit(poll)}
+                                onDelete={() => { setPollToDelete(poll); setConfirmOpen(true); }}
+                                onShare={() => { setPollToShare(poll); setShareModalOpen(true); }}
+                            />
                         ))}
-                    </Grid>
+                    </Box>
                 )}
 
                 <PollModal

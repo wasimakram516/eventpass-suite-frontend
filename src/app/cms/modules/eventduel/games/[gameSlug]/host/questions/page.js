@@ -4,7 +4,7 @@ import {
   Box,
   Button,
   Container,
-  Grid,
+
   Typography,
   IconButton,
   CircularProgress,
@@ -361,26 +361,15 @@ export default function QuestionsPage() {
         ) : filteredQuestions.length === 0 ? (
           <NoDataAvailable />
         ) : (
-          <Grid container spacing={3} sx={{
-            justifyContent: "center"
-          }}>
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, justifyContent: "center" }}>
             {filteredQuestions?.map((q, idx) => {
               const answerImages = q.answerImages || [];
               const answers = q.answers || [];
               return (
-                <Grid
-                  key={q._id || idx}
-                  sx={{ width: { xs: "100%", sm: "auto" } }}
-                  size={{
-                    xs: 12,
-                    sm: 6,
-                    md: 4
-                  }}>
                   <AppCard
+                    key={q._id || idx}
                     sx={{
-                      width: "100%",
-                      maxWidth: { xs: "none", sm: 360 },
-                      mx: { xs: 0, sm: "auto" },
+                      width: { xs: "100%", sm: 360 },
                       height: "100%",
                       display: "flex",
                       flexDirection: "column",
@@ -530,10 +519,9 @@ export default function QuestionsPage() {
                       </Tooltip>
                     </CardActions>
                   </AppCard>
-                </Grid>
               );
             })}
-          </Grid>
+          </Box>
         )}
 
         <QuestionFormModal

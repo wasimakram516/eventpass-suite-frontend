@@ -6,7 +6,6 @@ import {
   Box,
   Container,
   Typography,
-  Grid,
   Button,
   CircularProgress,
   Divider,
@@ -292,68 +291,58 @@ export default function EventsPage() {
         ) : filteredEvents.length === 0 ? (
           <NoDataAvailable />
         ) : (
-          <Grid container spacing={3} sx={{
-            justifyContent: "center"
-          }}>
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, justifyContent: "center" }}>
             {filteredEvents.map((event) => {
               const eventStatus =
                 event?.startDate && event?.endDate
                   ? getEventStatus(event.startDate, event.endDate)
                   : "N/A";
               return (
-                <Grid
+                <EventCardBase
                   key={event._id}
-                  sx={{ width: { xs: "100%", sm: "auto" } }}
-                  size={{
-                    xs: 12,
-                    sm: 6,
-                    md: 4
-                  }}>
-                  <EventCardBase
-                    event={event}
-                    t={t}
-                    status={eventStatus}
-                    showRegistrations
-                    showAudit={true}
-                    locale={language === "ar" ? "ar-SA" : "en-GB"}
-                    onInsights={
-                      event.slug
-                        ? () =>
-                          router.push(
-                            `/cms/modules/checkin/events/${event.slug}/insights`
-                          )
-                        : undefined
-                    }
-                    onView={
-                      event.slug
-                        ? () =>
-                          router.replace(
-                            `/cms/modules/checkin/events/${event.slug}/registrations`
-                          )
-                        : undefined
-                    }
-                    onViewWhatsAppLogs={
-                      event.slug
-                        ? () =>
-                          router.push(
-                            `/cms/modules/checkin/events/${event.slug}/whatsapp`
-                          )
-                        : undefined
-                    }
-                    onEdit={() => handleOpenEdit(event)}
-                    onDelete={() => {
-                      setEventToDelete(event);
-                      setConfirmOpen(true);
-                    }}
-                    onShare={() => {
-                      setEventToShare(event);
-                      setShareModalOpen(true);
-                    }}
-                  />
-                </Grid>
+                  event={event}
+                  t={t}
+                  status={eventStatus}
+                  showRegistrations
+                  showAudit={true}
+                  locale={language === "ar" ? "ar-SA" : "en-GB"}
+                  onInsights={
+                    event.slug
+                      ? () =>
+                        router.push(
+                          `/cms/modules/checkin/events/${event.slug}/insights`
+                        )
+                      : undefined
+                  }
+                  onView={
+                    event.slug
+                      ? () =>
+                        router.replace(
+                          `/cms/modules/checkin/events/${event.slug}/registrations`
+                        )
+                      : undefined
+                  }
+                  onViewWhatsAppLogs={
+                    event.slug
+                      ? () =>
+                        router.push(
+                          `/cms/modules/checkin/events/${event.slug}/whatsapp`
+                        )
+                      : undefined
+                  }
+                  onEdit={() => handleOpenEdit(event)}
+                  onDelete={() => {
+                    setEventToDelete(event);
+                    setConfirmOpen(true);
+                  }}
+                  onShare={() => {
+                    setEventToShare(event);
+                    setShareModalOpen(true);
+                  }}
+                />
               );
             })}
-          </Grid>
+          </Box>
         )}
 
         <EventFormModal

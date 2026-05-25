@@ -5,7 +5,6 @@ import {
   Box,
   Container,
   Typography,
-  Grid,
   Button,
   CircularProgress,
   Divider,
@@ -239,7 +238,7 @@ export default function FileStorePage() {
         ) : files.length === 0 ? (
           <NoDataAvailable />
         ) : (
-          <Grid container spacing={2}>
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, justifyContent: "center" }}>
             {files.map((f) => {
               const isPdf = f.contentType === "application/pdf";
               const isImage = f.contentType?.startsWith("image/");
@@ -256,19 +255,8 @@ export default function FileStorePage() {
               );
 
               return (
-                <Grid
-                  key={f._id}
-                  sx={{
-                    display: { xs: "flex", sm: "block" },
-                    width: { xs: "100%", sm: "auto" },
-                  }}
-                  size={{
-                    xs: 12,
-                    sm: 6,
-                    md: 4,
-                    lg: 3
-                  }}>
                   <AppCard
+                    key={f._id}
                     sx={{
                       p: 2,
                       height: "100%",
@@ -360,10 +348,9 @@ export default function FileStorePage() {
                       </Tooltip>
                     </Box>
                   </AppCard>
-                </Grid>
               );
             })}
-          </Grid>
+          </Box>
         )}
 
         {openDialog && (

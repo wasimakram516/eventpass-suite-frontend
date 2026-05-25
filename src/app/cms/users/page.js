@@ -3,7 +3,6 @@
 import {
   Box,
   Typography,
-  Grid,
   CardContent,
   CardActions,
   Avatar,
@@ -987,14 +986,12 @@ export default function UsersPage() {
             !["Super Admins", "Admins", "Unassigned"].includes(group);
 
           const groupContent = (
-            <Grid container spacing={3} sx={{
-              justifyContent: "center"
-            }}>
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, justifyContent: "center" }}>
               {isBusinessUser &&
                 group === currentUser.business.name &&
                 renderUserCard(currentUser, true)}
               {users.map((user) => renderUserCard(user))}
-            </Grid>
+            </Box>
           );
 
           if (isBusinessGroup) {

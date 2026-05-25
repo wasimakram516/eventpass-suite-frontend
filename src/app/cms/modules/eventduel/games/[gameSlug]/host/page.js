@@ -676,20 +676,13 @@ export default function HostDashboard() {
                 </Typography>
                 {/* PvP Layout */}
                 {!isTeamMode && (
-                  <Grid container spacing={3} sx={{
-                    justifyContent: "center"
-                  }}>
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, justifyContent: "center" }}>
                     {[
                       { label: t.player1, player: player1 },
                       { label: t.player2, player: player2 },
                     ].map(({ label, player }, idx) => (
-                      <Grid
-                        key={idx}
-                        size={{
-                          xs: 12,
-                          sm: 6
-                        }}>
                         <Box
+                          key={idx}
                           sx={{
                             backgroundColor: player?.playerId
                               ? "#4CAF50"
@@ -703,7 +696,7 @@ export default function HostDashboard() {
                             flexDirection: "column",
                             alignItems: "center",
                             gap: 1,
-                            width: "200px",
+                            width: { xs: "100%", sm: 200 },
                             height: "100%",
                             textAlign: "center",
                             animation: !player?.playerId
@@ -754,29 +747,20 @@ export default function HostDashboard() {
                             </Typography>
                           </Box>
                         </Box>
-                      </Grid>
                     ))}
-                  </Grid>
+                  </Box>
                 )}
                 {/* TEAM MODE Layout */}
                 {isTeamMode && (
-                  <Grid container spacing={3} sx={{
-                    justifyContent: "center"
-                  }}>
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, justifyContent: "center" }}>
                     {pendingSession.teams?.map((team, idx) => {
                       const totalRequired =
                         pendingSession.gameId?.playersPerTeam || 0;
                       const joined = team.players?.length || 0;
 
                       return (
-                        <Grid
-                          key={idx}
-                          size={{
-                            xs: 12,
-                            sm: 6,
-                            md: 4
-                          }}>
                           <Box
+                            key={idx}
                             sx={{
                               backgroundColor:
                                 joined >= totalRequired
@@ -793,7 +777,7 @@ export default function HostDashboard() {
                               flexDirection: "column",
                               alignItems: "center",
                               gap: 1,
-                              minWidth: 220,
+                              width: { xs: "100%", sm: 220 },
                               height: "100%",
                               textAlign: "center",
                               animation:
@@ -846,10 +830,9 @@ export default function HostDashboard() {
                               </Typography>
                             ))}
                           </Box>
-                        </Grid>
                       );
                     })}
-                  </Grid>
+                  </Box>
                 )}
                 <style jsx>{`
                   @keyframes waitingPulse {

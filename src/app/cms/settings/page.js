@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Typography, Divider, Grid, Container } from "@mui/material";
+import { Box, Typography, Divider, Container } from "@mui/material";
 import DashboardCard from "@/components/cards/DashboardCard";
 import SettingsIcon from "@mui/icons-material/Settings";
 import BusinessIcon from "@mui/icons-material/Business";
@@ -88,10 +88,7 @@ export default function SettingsPage() {
         </Typography>
         <Divider sx={{ my: 2 }} />
 
-        <Grid
-          container
-          spacing={3}
-          sx={{ justifyContent: "center" }}>
+        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, justifyContent: "center" }}>
           {filteredCards.map((card, i) => (
             <DashboardCard
               key={i}
@@ -101,10 +98,9 @@ export default function SettingsPage() {
               route={card.route}
               buttonLabel={card.buttonLabel}
               color={card.color}
-              gridSize={{ xs: 12, sm: "auto" }}
             />
           ))}
-        </Grid>
+        </Box>
       </Container>
     </Box>
   );

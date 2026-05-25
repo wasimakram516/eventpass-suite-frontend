@@ -8,7 +8,6 @@ import {
   Card,
   CardContent,
   CardMedia,
-  Grid,
   Chip,
   IconButton,
   Divider,
@@ -390,23 +389,14 @@ const CMSUploadsPage = () => {
       {media.length === 0 ? (
         <NoDataAvailable message={t.noMediaAvailable} />
       ) : (
-        <Grid container spacing={3} sx={{
-          justifyContent: "center"
-        }}>
+        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, justifyContent: "center" }}>
           {media.map((item) => {
             const wallMode = item.wall?.mode || wallConfig?.mode;
             const wallName = item.wall?.name || wallConfig?.name;
             const displayTag = (!item.imageUrl && wallMode !== "card") ? "card" : wallMode;
 
             return (
-              <Grid
-                key={item._id}
-                size={{
-                  xs: 12,
-                  sm: 12,
-                  md: 6
-                }}>
-                <Card elevation={2} sx={{ height: "100%", position: "relative" }}>
+                <Card key={item._id} elevation={2} sx={{ height: "100%", width: { xs: "100%", sm: 300 }, position: "relative" }}>
                   {item.imageUrl ? (
                     <CardMedia
                       component="img"
@@ -520,10 +510,9 @@ const CMSUploadsPage = () => {
                     </Box>
                   </CardContent>
                 </Card>
-              </Grid>
             );
         })}
-        </Grid>
+        </Box>
       )}
       <FullScreenPreview
         open={previewOpen}

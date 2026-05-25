@@ -7,7 +7,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
-  Grid,
+
   IconButton,
   Typography,
   TextField,
@@ -772,26 +772,17 @@ const Dashboard = () => {
         ) : spinWheels.length === 0 ? (
           <NoDataAvailable />
         ) : (
-          <Grid container spacing={3} sx={{
-            justifyContent: "center"
-          }}>
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, justifyContent: "center" }}>
             {filteredSpinWheels.map((wheel) => {
               const typeConfig = typeMap[wheel.type] || {};
               return (
-                <Grid
-                  key={wheel._id}
-                  size={{
-                    xs: 12,
-                    sm: 6,
-                    md: 4,
-                    lg: 3
-                  }}>
                   <Card
+                    key={wheel._id}
                     elevation={3}
                     sx={{
                       position: "relative",
                       height: "100%",
-                      minWidth: "250px",
+                      width: { xs: "100%", sm: 340 },
                       display: "flex",
                       flexDirection: "column",
                       justifyContent: "space-between",
@@ -934,10 +925,9 @@ const Dashboard = () => {
                       </Box>
                     </CardActions>
                   </Card>
-                </Grid>
               );
             })}
-          </Grid>
+          </Box>
         )}
 
         <ShareLinkModal

@@ -6,7 +6,7 @@ import {
     Box,
     Container,
     Typography,
-    Grid,
+
     Button,
     CircularProgress,
     Stack,
@@ -233,20 +233,10 @@ export default function QuestionsPage() {
                 {questions.length === 0 ? (
                     <NoDataAvailable />
                 ) : (
-                    <Grid container spacing={3} sx={{
-                        justifyContent: "center"
-                    }}>
+                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, justifyContent: "center" }}>
                         {questions.map((q, idx) => (
-                            <Grid
-                                key={q._id}
-                                sx={{ display: "flex", justifyContent: "center", width: { xs: "100%", sm: 420 } }}
-                                size={{
-                                    xs: 12,
-                                    sm: 6,
-                                    md: 4,
-                                    lg: 3
-                                }}>
                                 <AppCard
+                                    key={q._id}
                                     sx={{
                                         width: { xs: "100%", sm: 420 },
                                         maxWidth: { xs: "100%", sm: 420 },
@@ -378,9 +368,8 @@ export default function QuestionsPage() {
                                         </Tooltip>
                                     </CardActions>
                                 </AppCard>
-                            </Grid>
                         ))}
-                    </Grid>
+                    </Box>
                 )}
 
                 <QuestionFormDrawer

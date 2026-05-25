@@ -554,20 +554,13 @@ export default function CrossZeroHostPage() {
               {bothPlayersJoined ? t.bothPlayersJoined : t.waitingForPlayers}
             </Typography>
 
-            <Grid container spacing={3} sx={{
-              justifyContent: "center"
-            }}>
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, justifyContent: "center" }}>
               {[
                 { label: t.player1, mark: "X", player: pendingP1 },
                 { label: t.player2, mark: "O", player: pendingP2 },
               ].map(({ label, mark, player }) => (
-                <Grid
-                  key={label}
-                  size={{
-                    xs: 12,
-                    sm: 6
-                  }}>
                   <Box
+                    key={label}
                     sx={{
                       backgroundColor: player?.playerId ? "#4CAF50" : "#ffffff11",
                       border: `2px solid ${player?.playerId ? "#4caf50" : "#ffffff44"}`,
@@ -577,6 +570,7 @@ export default function CrossZeroHostPage() {
                       flexDirection: "column",
                       alignItems: "center",
                       gap: 1,
+                      width: { xs: "100%", sm: 220 },
                       textAlign: "center",
                       animation: !player?.playerId
                         ? "waitingPulse 1.2s ease-in-out infinite"
@@ -624,9 +618,8 @@ export default function CrossZeroHostPage() {
                       </Typography>
                     </Box>
                   </Box>
-                </Grid>
               ))}
-            </Grid>
+            </Box>
 
             {/* Abandon timer */}
             {!bothPlayersJoined && (

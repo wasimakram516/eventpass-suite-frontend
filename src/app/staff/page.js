@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import {
   Box,
   Typography,
-  Grid,
   Container,
   Divider,
   Stack,
@@ -165,13 +164,7 @@ export default function Modules() {
             )}
           </Stack>
         ) : (
-          <Grid
-            container
-            spacing={3}
-            sx={{
-              justifyContent: "center"
-            }}
-          >
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, justifyContent: "center" }}>
             {modules?.map((mod) => (
               <DashboardCard
                 key={mod.key}
@@ -183,7 +176,7 @@ export default function Modules() {
                 route={`/staff/${mod.key}/verify`}
               />
             ))}
-          </Grid>
+          </Box>
         )}
       </Container>
     </Box>
