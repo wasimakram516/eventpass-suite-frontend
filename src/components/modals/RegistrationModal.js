@@ -324,15 +324,17 @@ export default function RegistrationModal({
                     error={!!errorMsg}
                     helperText={errorMsg || "Enter your phone number"}
                     type="tel"
-                    InputProps={{
-                        startAdornment: (
-                            <CountryCodeSelector
-                                value={isoCode}
-                                onChange={(iso) => handleCountryCodeChange(f.inputName, iso)}
-                                disabled={!useInternationalNumbers}
-                                dir="ltr"
-                            />
-                        ),
+                    slotProps={{
+                        input: {
+                            startAdornment: (
+                                <CountryCodeSelector
+                                    value={isoCode}
+                                    onChange={(iso) => handleCountryCodeChange(f.inputName, iso)}
+                                    disabled={!useInternationalNumbers}
+                                    dir="ltr"
+                                />
+                            ),
+                        }
                     }}
                 />
             );
@@ -361,7 +363,9 @@ export default function RegistrationModal({
         <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
             <DialogTitle>{displayTitle}</DialogTitle>
             <DialogContent dividers>
-                <Stack spacing={2} mt={1}>
+                <Stack spacing={2} sx={{
+                    mt: 1
+                }}>
                     {fieldsToRender.map((f) => renderField(f))}
                 </Stack>
             </DialogContent>

@@ -753,7 +753,13 @@ const WallConfigModal = ({
                   </Button>
                 </label>
                 {errors.background && (
-                  <Typography variant="caption" color="error" display="block" sx={{ mt: 0.5 }}>
+                  <Typography
+                    variant="caption"
+                    color="error"
+                    sx={{
+                      display: "block",
+                      mt: 0.5
+                    }}>
                     {errors.background}
                   </Typography>
                 )}
@@ -783,7 +789,13 @@ const WallConfigModal = ({
                   </Button>
                 </label>
                 {errors.backgroundLogo && (
-                  <Typography variant="caption" color="error" display="block" sx={{ mt: 0.5 }}>
+                  <Typography
+                    variant="caption"
+                    color="error"
+                    sx={{
+                      display: "block",
+                      mt: 0.5
+                    }}>
                     {errors.backgroundLogo}
                   </Typography>
                 )}
@@ -792,12 +804,16 @@ const WallConfigModal = ({
 
               {form.backgroundLogoPreview && (
                 <Box sx={{ border: '1px solid #eee', p: 1.5, borderRadius: 1, backgroundColor: '#fafafa' }}>
-                  <Typography variant="subtitle2" gutterBottom fontWeight="bold">
+                  <Typography variant="subtitle2" gutterBottom sx={{
+                    fontWeight: "bold"
+                  }}>
                     Logo Settings
                   </Typography>
 
                   <Box sx={{ px: 1, mb: 1, mt: 1 }}>
-                    <Typography variant="caption" color="text.secondary">
+                    <Typography variant="caption" sx={{
+                      color: "text.secondary"
+                    }}>
                       {t.logoOpacity}: {form.logoOpacity}%
                     </Typography>
                     <Slider
@@ -867,7 +883,9 @@ const WallConfigModal = ({
                     error={!!errors.mosaicRows}
                     helperText={errors.mosaicRows}
                     disabled={loading}
-                    InputProps={{ inputProps: { min: 1 } }}
+                    slotProps={{
+                      input: { inputProps: { min: 1 } }
+                    }}
                   />
                   <TextField
                     label={t.mosaicCols}
@@ -878,7 +896,9 @@ const WallConfigModal = ({
                     error={!!errors.mosaicCols}
                     helperText={errors.mosaicCols}
                     disabled={loading}
-                    InputProps={{ inputProps: { min: 1 } }}
+                    slotProps={{
+                      input: { inputProps: { min: 1 } }
+                    }}
                   />
                 </Box>
               ) : (
@@ -907,7 +927,9 @@ const WallConfigModal = ({
                         helperText={errors.minSize}
                         disabled={loading}
                         size="small"
-                        InputProps={{ inputProps: { min: 1 } }}
+                        slotProps={{
+                          input: { inputProps: { min: 1 } }
+                        }}
                       />
                       <TextField
                         label={t.maxSize}
@@ -919,7 +941,9 @@ const WallConfigModal = ({
                         helperText={errors.maxSize}
                         disabled={loading}
                         size="small"
-                        InputProps={{ inputProps: { min: 1 } }}
+                        slotProps={{
+                          input: { inputProps: { min: 1 } }
+                        }}
                       />
                     </Box>
                   )}
@@ -963,13 +987,15 @@ const WallConfigModal = ({
                             onChange={(e) => handleInputChange({ target: { name: 'cardBackgroundColor', value: e.target.value } })}
                             disabled={loading}
                             sx={{ width: 90 }}
-                            inputProps={{ 
-                              style: { 
-                                fontFamily: 'monospace', 
-                                textTransform: 'uppercase',
-                                fontSize: '0.75rem',
-                                padding: '4px 8px'
-                              } 
+                            slotProps={{
+                              htmlInput: { 
+                                style: { 
+                                  fontFamily: 'monospace', 
+                                  textTransform: 'uppercase',
+                                  fontSize: '0.75rem',
+                                  padding: '4px 8px'
+                                } 
+                              }
                             }}
                           />
                           <Popover
@@ -977,7 +1003,9 @@ const WallConfigModal = ({
                             anchorEl={colorAnchorEl}
                             onClose={() => setColorAnchorEl(null)}
                             anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-                            PaperProps={{ sx: { p: 2, borderRadius: 2, boxShadow: 6 } }}
+                            slotProps={{
+                              paper: { sx: { p: 2, borderRadius: 2, boxShadow: 6 } }
+                            }}
                           >
                             <Box sx={{ "& .react-colorful": { width: '200px', height: '200px' } }}>
                               <HexColorPicker 
@@ -1058,13 +1086,17 @@ const WallConfigModal = ({
                       <MenuItem value="type1">
                         <Box>
                           <Typography variant="body2">{t.type1}</Typography>
-                          <Typography variant="caption" color="text.secondary">{t.type1Desc}</Typography>
+                          <Typography variant="caption" sx={{
+                            color: "text.secondary"
+                          }}>{t.type1Desc}</Typography>
                         </Box>
                       </MenuItem>
                       <MenuItem value="type2">
                         <Box>
                           <Typography variant="body2">{t.type2}</Typography>
-                          <Typography variant="caption" color="text.secondary">{t.type2Desc}</Typography>
+                          <Typography variant="caption" sx={{
+                            color: "text.secondary"
+                          }}>{t.type2Desc}</Typography>
                         </Box>
                       </MenuItem>
                     </Select>
@@ -1101,13 +1133,15 @@ const WallConfigModal = ({
                         onChange={(e) => handleInputChange({ target: { name: 'mediaType2TextColor', value: e.target.value } })}
                         disabled={loading}
                         sx={{ width: 90 }}
-                        inputProps={{ 
-                          style: { 
-                            fontFamily: 'monospace', 
-                            textTransform: 'uppercase',
-                            fontSize: '0.75rem',
-                            padding: '4px 8px'
-                          } 
+                        slotProps={{
+                          htmlInput: { 
+                            style: { 
+                              fontFamily: 'monospace', 
+                              textTransform: 'uppercase',
+                              fontSize: '0.75rem',
+                              padding: '4px 8px'
+                            } 
+                          }
                         }}
                       />
                       <Popover
@@ -1115,7 +1149,9 @@ const WallConfigModal = ({
                         anchorEl={textColorAnchorEl}
                         onClose={() => setTextColorAnchorEl(null)}
                         anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-                        PaperProps={{ sx: { p: 2, borderRadius: 2, boxShadow: 6 } }}
+                        slotProps={{
+                          paper: { sx: { p: 2, borderRadius: 2, boxShadow: 6 } }
+                        }}
                       >
                         <Box sx={{ "& .react-colorful": { width: '200px', height: '200px' } }}>
                           <HexColorPicker 
@@ -1171,13 +1207,15 @@ const WallConfigModal = ({
                         onChange={(e) => handleInputChange({ target: { name: 'mediaType2SignatureColor', value: e.target.value } })}
                         disabled={loading}
                         sx={{ width: 90 }}
-                        inputProps={{ 
-                          style: { 
-                            fontFamily: 'monospace', 
-                            textTransform: 'uppercase',
-                            fontSize: '0.75rem',
-                            padding: '4px 8px'
-                          } 
+                        slotProps={{
+                          htmlInput: { 
+                            style: { 
+                              fontFamily: 'monospace', 
+                              textTransform: 'uppercase',
+                              fontSize: '0.75rem',
+                              padding: '4px 8px'
+                            } 
+                          }
                         }}
                       />
                       <Popover
@@ -1185,7 +1223,9 @@ const WallConfigModal = ({
                         anchorEl={signatureColorAnchorEl}
                         onClose={() => setSignatureColorAnchorEl(null)}
                         anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
-                        PaperProps={{ sx: { p: 2, borderRadius: 2, boxShadow: 6 } }}
+                        slotProps={{
+                          paper: { sx: { p: 2, borderRadius: 2, boxShadow: 6 } }
+                        }}
                       >
                         <Box sx={{ "& .react-colorful": { width: '200px', height: '200px' } }}>
                           <HexColorPicker 
@@ -1242,7 +1282,6 @@ const WallConfigModal = ({
           </DialogActions>
         </form>
       </Dialog>
-
       <ConfirmationDialog
         open={deleteConfirm.open}
         title={deleteConfirm.mediaType === 'background' ? t.deleteBackgroundTitle : t.deleteLogoTitle}

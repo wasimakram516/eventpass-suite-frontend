@@ -137,17 +137,19 @@ const CountryCodeSelector = ({
                             onChange={(e) => setSearchQuery(e.target.value)}
                             onClick={(e) => e.stopPropagation()}
                             onKeyDown={(e) => e.stopPropagation()}
-                            InputProps={{
-                                startAdornment: (
-                                    <InputAdornment position="start">
-                                        <SearchIcon fontSize="small" />
-                                    </InputAdornment>
-                                ),
-                            }}
                             sx={{
                                 "& .MuiOutlinedInput-root": {
                                     backgroundColor: "background.default",
                                 },
+                            }}
+                            slotProps={{
+                                input: {
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            <SearchIcon fontSize="small" />
+                                        </InputAdornment>
+                                    ),
+                                }
                             }}
                         />
                     </Box>
@@ -176,7 +178,9 @@ const CountryCodeSelector = ({
                     ))
                 ) : (
                     <MenuItem disabled>
-                        <Typography variant="body2" color="text.secondary">
+                        <Typography variant="body2" sx={{
+                            color: "text.secondary"
+                        }}>
                             No countries found
                         </Typography>
                     </MenuItem>

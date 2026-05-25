@@ -85,14 +85,18 @@ export default function FileUploadDialog({
         {editingFile ? t.updateFile : t.uploadNewFile}
       </DialogTitle>
       <DialogContent sx={{ direction: dir, textAlign: align }}>
-        <Stack spacing={2} mt={1}>
+        <Stack spacing={2} sx={{
+          mt: 1
+        }}>
           <TextField
             label={t.title}
             value={title}
             onChange={handleTitleChange}
             fullWidth
             disabled={loading}
-            inputProps={{ style: { textAlign: align } }}
+            slotProps={{
+              htmlInput: { style: { textAlign: align } }
+            }}
           />
           <TextField
             label={t.slug}
@@ -100,7 +104,9 @@ export default function FileUploadDialog({
             onChange={(e) => setSlug(e.target.value)}
             fullWidth
             disabled={loading}
-            inputProps={{ style: { textAlign: align } }}
+            slotProps={{
+              htmlInput: { style: { textAlign: align } }
+            }}
           />
           <input
             type="file"

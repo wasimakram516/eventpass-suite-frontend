@@ -785,7 +785,6 @@ const GameFormModal = ({
       <DialogTitle>
         {editMode ? t.dialogTitleUpdate : t.dialogTitleCreate}
       </DialogTitle>
-
       <DialogContent>
         <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 2 }}>
           <TextField
@@ -856,7 +855,9 @@ const GameFormModal = ({
                 value={form.moveTimer}
                 onChange={handleChange}
                 fullWidth
-                inputProps={{ min: 0 }}
+                slotProps={{
+                  htmlInput: { min: 0 }
+                }}
               />
 
               {/* Player O / X custom images (optional) — O first since P1=O goes first */}
@@ -1202,7 +1203,6 @@ const GameFormModal = ({
           )}
         </Box>
       </DialogContent>
-
       <DialogActions sx={{ p: 3 }}>
         <Button
           onClick={onClose}

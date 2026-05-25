@@ -105,7 +105,13 @@ export default function CrossZeroLobby() {
           }}
         >
           {/* X O decorative */}
-          <Stack direction="row" justifyContent="center" spacing={2} sx={{ mb: 2 }}>
+          <Stack
+            direction="row"
+            spacing={2}
+            sx={{
+              justifyContent: "center",
+              mb: 2
+            }}>
             {game.xImage ? (
               <Box component="img" src={game.xImage} alt="X" sx={{ width: 48, height: 48, objectFit: "contain", filter: "drop-shadow(0 0 10px #00e5ff)" }} />
             ) : (
@@ -118,7 +124,14 @@ export default function CrossZeroLobby() {
             )}
           </Stack>
 
-          <Typography variant="h4" fontWeight={800} sx={{ color: "#fff", mb: 0.5, letterSpacing: 1 }}>
+          <Typography
+            variant="h4"
+            sx={{
+              fontWeight: 800,
+              color: "#fff",
+              mb: 0.5,
+              letterSpacing: 1
+            }}>
             {game.title}
           </Typography>
 

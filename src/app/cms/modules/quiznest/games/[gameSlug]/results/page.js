@@ -144,20 +144,20 @@ export default function ResultsPage() {
             <Box sx={{ flex: 1, minWidth: 0 }}>
               <Typography
                 variant="h5"
-                fontWeight="bold"
                 sx={{
+                  fontWeight: "bold",
                   fontSize: { xs: "1.1rem", sm: "1.5rem" },
                   lineHeight: { xs: 1.2, sm: 1.5 },
-                  wordBreak: "break-word",
-                }}
-              >
+                  wordBreak: "break-word"
+                }}>
                 {t.resultsTitle} "{game?.title}"
               </Typography>
               <Typography
                 variant="body2"
-                color="text.secondary"
-                sx={{ fontSize: { xs: "0.8rem", sm: "0.875rem" } }}
-              >
+                sx={{
+                  color: "text.secondary",
+                  fontSize: { xs: "0.8rem", sm: "0.875rem" }
+                }}>
                 {t.totalPlayers} <strong>{displayTotal}</strong>
               </Typography>
             </Box>
@@ -197,18 +197,20 @@ export default function ResultsPage() {
           <Grid
             container
             spacing={{ xs: 1, sm: 3 }}
-            justifyContent="center"
-            sx={{ width: "100%", maxWidth: "100%" }}
-          >
+            sx={{
+              justifyContent: "center",
+              width: "100%",
+              maxWidth: "100%"
+            }}>
             {displayPlayers?.map((p, i) => (
               <Grid
-                item
-                xs={12}
-                sm={6}
-                md={4}
                 key={p._id || i}
                 sx={{ width: { xs: "100%", sm: "auto" }, minWidth: 0 }}
-              >
+                size={{
+                  xs: 12,
+                  sm: 6,
+                  md: 4
+                }}>
                 <Box
                   sx={{
                     width: "100%",
@@ -240,16 +242,15 @@ export default function ResultsPage() {
                     )}
                     <Typography
                       variant="h6"
-                      fontWeight="bold"
-                      color="primary.main"
                       sx={{
+                        fontWeight: "bold",
+                        color: "primary.main",
                         fontSize: { xs: "0.9rem", sm: "1.25rem" },
                         lineHeight: { xs: 1.2, sm: 1.4 },
                         wordBreak: "break-word",
                         overflowWrap: "break-word",
-                        whiteSpace: "normal",
-                      }}
-                    >
+                        whiteSpace: "normal"
+                      }}>
                       #{i + 1} • {p.name}
                     </Typography>
                   </Box>
@@ -321,13 +322,12 @@ export default function ResultsPage() {
                       />
                       <Typography
                         variant="body2"
-                        fontStyle="italic"
                         sx={{
+                          fontStyle: "italic",
                           fontSize: { xs: "0.7rem", sm: "0.85rem" },
                           lineHeight: { xs: 1.2, sm: 1.4 },
-                          wordBreak: "break-word",
-                        }}
-                      >
+                          wordBreak: "break-word"
+                        }}>
                         {t.submittedAtLabel}{" "}
                         <strong>{formatDateTimeWithLocale(p.endTime)}</strong>
                       </Typography>

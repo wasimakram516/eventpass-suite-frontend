@@ -259,7 +259,12 @@ const BadgePreview = ({
               ))
             ) : (
               <Box sx={{ flexGrow: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Typography variant="body2" color="text.secondary" sx={{ fontStyle: "italic" }}>{t.noData}</Typography>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    color: "text.secondary",
+                    fontStyle: "italic"
+                  }}>{t.noData}</Typography>
               </Box>
             )}
           </Box>

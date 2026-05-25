@@ -113,7 +113,7 @@ function HorizontalCarousel({
           >
             {isFew ? (
               // FEW: single pass (starts at right, exits left)
-              validItems.map((item, i) => (
+              (validItems.map((item, i) => (
                 <CarouselItem
                   key={`few-${item._id || i}`}
                   item={item}
@@ -121,10 +121,10 @@ function HorizontalCarousel({
                   itemMaxWidth={itemMaxWidth}
                   itemPadding={itemPadding}
                 />
-              ))
+              )))
             ) : (
               // MANY: render two copies for seamless loop
-              <>
+              (<>
                 {validItems.map((item, i) => (
                   <CarouselItem
                     key={`a-${item._id || i}`}
@@ -143,7 +143,7 @@ function HorizontalCarousel({
                     itemPadding={itemPadding}
                   />
                 ))}
-              </>
+              </>)
             )}
           </Box>
         </Box>

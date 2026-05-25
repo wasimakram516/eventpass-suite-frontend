@@ -173,7 +173,13 @@ export default function PublicSessionPage() {
 
   if (loading) {
     return (
-      <Box minHeight="100vh" display="flex" justifyContent="center" alignItems="center">
+      <Box
+        sx={{
+          minHeight: "100vh",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center"
+        }}>
         <Background />
         <CircularProgress />
       </Box>
@@ -182,9 +188,17 @@ export default function PublicSessionPage() {
 
   if (!session) {
     return (
-      <Box minHeight="100vh" display="flex" justifyContent="center" alignItems="center">
+      <Box
+        sx={{
+          minHeight: "100vh",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center"
+        }}>
         <Background />
-        <Typography variant="h5" fontWeight="bold">{t.sessionNotFound}</Typography>
+        <Typography variant="h5" sx={{
+          fontWeight: "bold"
+        }}>{t.sessionNotFound}</Typography>
       </Box>
     );
   }
@@ -208,7 +222,6 @@ export default function PublicSessionPage() {
         }}
       >
         {renderBackground()}
-
         <Box
           sx={{
             display: "flex",
@@ -237,9 +250,13 @@ export default function PublicSessionPage() {
           <AppCard dir={dir} sx={{ width: "100%", maxWidth: 800, textAlign: "center", p: 4 }}>
             <Typography
               variant="h4"
-              fontWeight="bold"
-              sx={{ fontSize: { xs: 28, md: 36 }, color: "primary.main", letterSpacing: "1.5px", mb: 2 }}
-            >
+              sx={{
+                fontWeight: "bold",
+                fontSize: { xs: 28, md: 36 },
+                color: "primary.main",
+                letterSpacing: "1.5px",
+                mb: 2
+              }}>
               {session.title}
             </Typography>
 
@@ -260,13 +277,17 @@ export default function PublicSessionPage() {
               >
                 {needsVerification ? t.verify : t.startAsking}
               </Button>
-              <Typography variant="caption" color="text.secondary" sx={{ fontSize: 13 }}>
+              <Typography
+                variant="caption"
+                sx={{
+                  color: "text.secondary",
+                  fontSize: 13
+                }}>
                 {needsVerification ? t.helperText : t.helperTextNoVerify}
               </Typography>
             </Box>
           </AppCard>
         </Box>
-
         <Box dir="ltr"><LanguageSelector top={20} right={20} /></Box>
       </Box>
     );
@@ -289,7 +310,6 @@ export default function PublicSessionPage() {
       }}
     >
       {renderBackground()}
-
       <Box
         sx={{
           display: "flex",
@@ -313,12 +333,27 @@ export default function PublicSessionPage() {
         )}
 
         <AppCard dir={dir} sx={{ width: "100%", textAlign: "center", p: 4 }}>
-          <Typography variant="h5" fontWeight="bold" sx={{ fontSize: { xs: 24, md: 28 }, color: "primary.main", mb: 1 }}>
+          <Typography
+            variant="h5"
+            sx={{
+              fontWeight: "bold",
+              fontSize: { xs: 24, md: 28 },
+              color: "primary.main",
+              mb: 1
+            }}>
             {t.verifyTitle}
           </Typography>
-          <Stack spacing={2} mt={3}>
+          <Stack spacing={2} sx={{
+            mt: 3
+          }}>
             <Box sx={{ textAlign: dir === "rtl" ? "right" : "left" }}>
-              <Typography variant="body2" fontWeight={600} color="text.secondary" sx={{ mb: 0.5 }}>
+              <Typography
+                variant="body2"
+                sx={{
+                  fontWeight: 600,
+                  color: "text.secondary",
+                  mb: 0.5
+                }}>
                 {session.primaryField
                   ? session.primaryField.replace(/([A-Z])/g, " $1").trim()
                   : ""}
@@ -337,23 +372,25 @@ export default function PublicSessionPage() {
                 }}
                 placeholder={t.verifyPlaceholder}
                 onKeyDown={(e) => e.key === "Enter" && handleVerify()}
-                inputProps={{ dir: "auto" }}
-                InputProps={{
-                  startAdornment: session.primaryField?.toLowerCase().includes("phone") ? (
-                    <CountryCodeSelector
-                      value={isoCode}
-                      onChange={setIsoCode}
-                      disabled={!session.linkedEventRegId?.useInternationalNumbers}
-                    />
-                  ) : null,
-                  sx: {
-                    borderRadius: 999,
-                    backgroundColor: "rgba(255,255,255,0.9)",
-                  }
-                }}
                 error={!!verifyError}
                 helperText={verifyError}
-              />
+                slotProps={{
+                  input: {
+                    startAdornment: session.primaryField?.toLowerCase().includes("phone") ? (
+                      <CountryCodeSelector
+                        value={isoCode}
+                        onChange={setIsoCode}
+                        disabled={!session.linkedEventRegId?.useInternationalNumbers}
+                      />
+                    ) : null,
+                    sx: {
+                      borderRadius: 999,
+                      backgroundColor: "rgba(255,255,255,0.9)",
+                    }
+                  },
+
+                  htmlInput: { dir: "auto" }
+                }} />
             </Box>
             <Button
               variant="contained"
@@ -369,7 +406,6 @@ export default function PublicSessionPage() {
           </Stack>
         </AppCard>
       </Box>
-
       <LanguageSelector top={20} right={20} />
     </Box>
   );

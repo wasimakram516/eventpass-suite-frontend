@@ -261,7 +261,13 @@ export default function PollVotingPage() {
 
   if (loading) {
     return (
-      <Box minHeight="100vh" display="flex" justifyContent="center" alignItems="center">
+      <Box
+        sx={{
+          minHeight: "100vh",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center"
+        }}>
         <Background />
       </Box>
     );
@@ -269,9 +275,18 @@ export default function PollVotingPage() {
 
   if (!poll) {
     return (
-      <Box maxWidth="sm" sx={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <Box
+        sx={{
+          maxWidth: "sm",
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center"
+        }}>
         <Background />
-        <Typography variant="h5" fontWeight="bold">{t.pollNotFound}</Typography>
+        <Typography variant="h5" sx={{
+          fontWeight: "bold"
+        }}>{t.pollNotFound}</Typography>
       </Box>
     );
   }
@@ -280,7 +295,9 @@ export default function PollVotingPage() {
     return (
       <Box sx={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
         {renderBackground()}
-        <Typography variant="h6" color="text.secondary">{t.noQuestions}</Typography>
+        <Typography variant="h6" sx={{
+          color: "text.secondary"
+        }}>{t.noQuestions}</Typography>
       </Box>
     );
   }
@@ -376,14 +393,20 @@ export default function PollVotingPage() {
             <CardContent sx={{ p: 4, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
               <Typography
                 variant="h5"
-                fontWeight="bold"
-                sx={{ fontSize: { xs: "1.2rem", md: "1.4rem" }, textAlign: "center", width: "100%", mb: 2 }}
-              >
+                sx={{
+                  fontWeight: "bold",
+                  fontSize: { xs: "1.2rem", md: "1.4rem" },
+                  textAlign: "center",
+                  width: "100%",
+                  mb: 2
+                }}>
                 {currentQuestion?.question}
               </Typography>
 
               {questionType === "rating" ? (
-                <Stack direction="row" spacing={1} justifyContent="center">
+                <Stack direction="row" spacing={1} sx={{
+                  justifyContent: "center"
+                }}>
                   {Array.from({ length: currentQuestion.scale?.max || 5 }).map((_, i) => {
                     const val = (currentQuestion.scale?.min || 1) + i * (currentQuestion.scale?.step || 1);
                     if (val > (currentQuestion.scale?.max || 5)) return null;
@@ -415,7 +438,14 @@ export default function PollVotingPage() {
                   })}
                 </Stack>
               ) : questionType === "nps" ? (
-                <Stack direction="row" spacing={1} justifyContent="center" flexWrap="wrap" sx={{ gap: 1 }}>
+                <Stack
+                  direction="row"
+                  spacing={1}
+                  sx={{
+                    justifyContent: "center",
+                    flexWrap: "wrap",
+                    gap: 1
+                  }}>
                   {Array.from({ length: (currentQuestion.scale?.max || 10) - (currentQuestion.scale?.min || 0) + 1 }).map((_, i) => {
                     const val = (currentQuestion.scale?.min || 0) + i * (currentQuestion.scale?.step || 1);
                     if (val > (currentQuestion.scale?.max || 10)) return null;
@@ -448,7 +478,9 @@ export default function PollVotingPage() {
                   })}
                 </Stack>
               ) : questionType === "text" ? (
-                <Stack spacing={2} width="100%">
+                <Stack spacing={2} sx={{
+                  width: "100%"
+                }}>
                   <MuiTextField
                     multiline
                     minRows={3}
@@ -475,10 +507,19 @@ export default function PollVotingPage() {
                 </Stack>
               ) : currentQuestion?.allowMultipleAnswers ? (
                 <>
-                  <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center", mt: -2, mb: 0 }}>
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: "text.secondary",
+                      textAlign: "center",
+                      mt: -2,
+                      mb: 0
+                    }}>
                     {t.selectMultiple}
                   </Typography>
-                  <Stack spacing={2} width="100%">
+                  <Stack spacing={2} sx={{
+                    width: "100%"
+                  }}>
                     {(currentQuestion?.options || []).map((option, idx) => {
                       const isSelected = selectedOptions.includes(idx);
                       return (
@@ -496,14 +537,25 @@ export default function PollVotingPage() {
                             "&:hover": !submitting ? { bgcolor: isSelected ? "rgba(25,118,210,0.1)" : "rgba(0,0,0,0.05)" } : {},
                           }}
                         >
-                          <Stack direction="row" alignItems="center" spacing={2} sx={{ gap: dir === "rtl" ? 2 : 0 }}>
+                          <Stack
+                            direction="row"
+                            spacing={2}
+                            sx={{
+                              alignItems: "center",
+                              gap: dir === "rtl" ? 2 : 0
+                            }}>
                             {option.imageUrl && (
                               <Box sx={{ width: "100%", maxWidth: "clamp(50px, 15vw, 120px)", aspectRatio: "1 / 1", flexShrink: 0, transition: "transform 0.25s ease", transform: isSelected ? "scale(1.1)" : "scale(1)" }}>
                                 <Box component="img" src={option.imageUrl} alt={option.text || "option"} sx={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: 2, display: "block" }} />
                               </Box>
                             )}
                             {option.text && (
-                              <Typography variant="body1" fontWeight="bold" sx={{ opacity: isSelected ? 1 : 0.8 }}>
+                              <Typography
+                                variant="body1"
+                                sx={{
+                                  fontWeight: "bold",
+                                  opacity: isSelected ? 1 : 0.8
+                                }}>
                                 {option.text}
                               </Typography>
                             )}
@@ -526,7 +578,9 @@ export default function PollVotingPage() {
                   </Button>
                 </>
               ) : (
-                <Stack spacing={2} width="100%">
+                <Stack spacing={2} sx={{
+                  width: "100%"
+                }}>
                   {(currentQuestion?.options || []).map((option, idx) => {
                     const isSelected = highlightedOption === idx;
                     const canSelect = highlightedOption === null;
@@ -548,14 +602,26 @@ export default function PollVotingPage() {
                           "&:hover": canSelect ? { bgcolor: "rgba(0,0,0,0.05)" } : {},
                         }}
                       >
-                        <Stack direction="row" alignItems="center" spacing={2} sx={{ gap: dir === "rtl" ? 2 : 0 }}>
+                        <Stack
+                          direction="row"
+                          spacing={2}
+                          sx={{
+                            alignItems: "center",
+                            gap: dir === "rtl" ? 2 : 0
+                          }}>
                           {option.imageUrl && (
                             <Box sx={{ width: "100%", maxWidth: "clamp(50px, 15vw, 120px)", aspectRatio: "1 / 1", flexShrink: 0, transition: "transform 0.25s ease", transform: isSelected ? "scale(1.15)" : "scale(1)" }}>
                               <Box component="img" src={option.imageUrl} alt={option.text || "option"} sx={{ width: "100%", height: "100%", objectFit: "contain", borderRadius: 2, display: "block" }} />
                             </Box>
                           )}
                           {option.text && (
-                            <Typography variant="body1" fontWeight="bold" sx={{ transition: "opacity 0.2s ease", opacity: isSelected ? 1 : 0.8 }}>
+                            <Typography
+                              variant="body1"
+                              sx={{
+                                fontWeight: "bold",
+                                transition: "opacity 0.2s ease",
+                                opacity: isSelected ? 1 : 0.8
+                              }}>
                               {option.text}
                             </Typography>
                           )}
@@ -570,23 +636,42 @@ export default function PollVotingPage() {
           </Card>
         </Box>
       </Box>
-
       {/* Thank You Dialog */}
       <Dialog
         open={finished}
         onClose={handleRestart}
-        PaperProps={{ sx: { borderRadius: 4, p: 4, maxWidth: { xs: "90%", sm: 420 }, width: { xs: "90%", sm: "auto" }, mx: "auto", textAlign: "center", boxShadow: 6 } }}
+        slotProps={{
+          paper: { sx: { borderRadius: 4, p: 4, maxWidth: { xs: "90%", sm: 420 }, width: { xs: "90%", sm: "auto" }, mx: "auto", textAlign: "center", boxShadow: 6 } }
+        }}
       >
         <DialogTitle sx={{ fontSize: "2rem", fontWeight: "bold", color: "primary.main", textAlign: "center", pb: 1 }}>
           {t.thankYou}
         </DialogTitle>
         <DialogContent sx={{ mt: 2, display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-          <Typography variant="body1" fontWeight="medium" color="text.secondary" textAlign="center">{t.voteRecorded}</Typography>
-          <Typography variant="body2" color="text.secondary" textAlign="center">{t.waitForResults}</Typography>
+          <Typography
+            variant="body1"
+            sx={{
+              fontWeight: "medium",
+              color: "text.secondary",
+              textAlign: "center"
+            }}>{t.voteRecorded}</Typography>
+          <Typography
+            variant="body2"
+            sx={{
+              color: "text.secondary",
+              textAlign: "center"
+            }}>{t.waitForResults}</Typography>
           <Box sx={{ mt: 3, width: 72, height: 72, borderRadius: "50%", border: "3px solid", borderColor: "primary.main", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <Typography variant="h4" fontWeight="bold" color="primary.main">{closeTimer}</Typography>
+            <Typography
+              variant="h4"
+              sx={{
+                fontWeight: "bold",
+                color: "primary.main"
+              }}>{closeTimer}</Typography>
           </Box>
-          <Typography variant="caption" color="text.secondary">{t.closingAutomatically}</Typography>
+          <Typography variant="caption" sx={{
+            color: "text.secondary"
+          }}>{t.closingAutomatically}</Typography>
         </DialogContent>
         <DialogActions sx={{ justifyContent: "center", mt: 3 }}>
           <Button variant="contained" size="large" onClick={handleRestart} startIcon={<ICONS.check />}>

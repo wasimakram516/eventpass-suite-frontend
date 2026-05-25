@@ -276,44 +276,67 @@ function SingleOnboardingForm({ game, singleStep, singleP1, singleSubmitting, on
 
   return (
     <Paper elevation={8} sx={{ p: { xs: 2.5, sm: 3.5 }, borderRadius: 6, bgcolor: "rgba(10,10,20,0.85)", backdropFilter: "blur(16px)", border: "1px solid rgba(255,255,255,0.08)", boxShadow: "0 8px 40px rgba(0,0,0,0.6)", maxWidth: 460, width: "100%" }}>
-      <Stack direction="row" spacing={1} justifyContent="center" sx={{ mb: 2 }}>
+      <Stack
+        direction="row"
+        spacing={1}
+        sx={{
+          justifyContent: "center",
+          mb: 2
+        }}>
         {[1, 2].map((s) => (
           <Box key={s} sx={{ width: 36, height: 6, borderRadius: 3, bgcolor: singleStep >= s ? stepColor : "rgba(255,255,255,0.15)", transition: "background 0.3s" }} />
         ))}
       </Stack>
-
-      <Typography variant="h5" fontWeight={800} sx={{ color: "#fff", textAlign: "center", mb: 0.5 }}>{game.title}</Typography>
-
-      <Stack direction="row" justifyContent="center" alignItems="center" spacing={1} sx={{ mb: 3 }}>
+      <Typography
+        variant="h5"
+        sx={{
+          fontWeight: 800,
+          color: "#fff",
+          textAlign: "center",
+          mb: 0.5
+        }}>{game.title}</Typography>
+      <Stack
+        direction="row"
+        spacing={1}
+        sx={{
+          justifyContent: "center",
+          alignItems: "center",
+          mb: 3
+        }}>
         <Typography sx={{ color: stepColor, fontWeight: 700, fontSize: "1rem" }}>{stepLabel}</Typography>
         <CrossZeroMarkVisual mark={stepMark} xImage={game?.xImage} oImage={game?.oImage} size={22} fallbackSize="1.2rem" />
       </Stack>
-
       <Stack spacing={2}>
         <TextField
-          label={t.nameLabel || "Your Name"} required fullWidth
+          label={t.nameLabel || "Your Name"}
+          required
+          fullWidth
           value={form.name}
           onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
           onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-          InputProps={{ sx: { backgroundColor: "rgba(255,255,255,0.1)", color: "#fff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.25)" } } }}
-          InputLabelProps={{ sx: { color: "rgba(255,255,255,0.6)" } }}
-        />
+          slotProps={{
+            input: { sx: { backgroundColor: "rgba(255,255,255,0.1)", color: "#fff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.25)" } } },
+            inputLabel: { sx: { color: "rgba(255,255,255,0.6)" } }
+          }} />
         {/* <TextField
           label={t.companyLabel || "Company (optional)"} fullWidth
           value={form.company}
           onChange={(e) => setForm((p) => ({ ...p, company: e.target.value }))}
-          InputProps={{ sx: { backgroundColor: "rgba(255,255,255,0.1)", color: "#fff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.25)" } } }}
-          InputLabelProps={{ sx: { color: "rgba(255,255,255,0.6)" } }}
+          slotProps={{
+            input: { sx: { backgroundColor: "rgba(255,255,255,0.1)", color: "#fff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.25)" } } },
+            inputLabel: { sx: { color: "rgba(255,255,255,0.6)" } }
+          }}
         />
         <TextField
           label={t.departmentLabel || "Department (optional)"} fullWidth
           value={form.department}
           onChange={(e) => setForm((p) => ({ ...p, department: e.target.value }))}
-          InputProps={{ sx: { backgroundColor: "rgba(255,255,255,0.1)", color: "#fff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.25)" } } }}
-          InputLabelProps={{ sx: { color: "rgba(255,255,255,0.6)" } }}
+          slotProps={{
+            input: { sx: { backgroundColor: "rgba(255,255,255,0.1)", color: "#fff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.25)" } } },
+            inputLabel: { sx: { color: "rgba(255,255,255,0.6)" } }
+          }}
         /> */}
       </Stack>
-
       {singleStep === 2 && singleP1 && (
         <Box sx={{ mt: 2, p: 1.5, borderRadius: 2, bgcolor: "rgba(255,107,107,0.12)", border: "1px solid rgba(255,107,107,0.3)" }}>
           <Typography sx={{ color: "rgba(255,255,255,0.65)", fontSize: "0.8rem" }}>
@@ -321,7 +344,6 @@ function SingleOnboardingForm({ game, singleStep, singleP1, singleSubmitting, on
           </Typography>
         </Box>
       )}
-
       <Button
         variant="contained" fullWidth size="large"
         onClick={handleSubmit}
@@ -996,22 +1018,44 @@ export default function CrossZeroPlayPage() {
           }}
         >
           {/* Mark visuals */}
-          <Stack direction="row" justifyContent="center" spacing={1.5} sx={{ mb: 2 }}>
+          <Stack
+            direction="row"
+            spacing={1.5}
+            sx={{
+              justifyContent: "center",
+              mb: 2
+            }}>
             <CrossZeroMarkVisual mark="O" xImage={game.xImage} oImage={game.oImage} size={42} fallbackSize="2rem" />
             <CrossZeroMarkVisual mark="X" xImage={game.xImage} oImage={game.oImage} size={42} fallbackSize="2rem" />
           </Stack>
 
-          <Typography variant="h4" fontWeight={800} sx={{ color: "#fff", textAlign: "center", mb: 0.5 }}>
+          <Typography
+            variant="h4"
+            sx={{
+              fontWeight: 800,
+              color: "#fff",
+              textAlign: "center",
+              mb: 0.5
+            }}>
             {game.title}
           </Typography>
 
           {/* Both player names */}
-          <Stack direction="row" justifyContent="center" spacing={2} sx={{ mb: 1, flexWrap: "wrap" }}>
+          <Stack
+            direction="row"
+            spacing={2}
+            sx={{
+              justifyContent: "center",
+              mb: 1,
+              flexWrap: "wrap"
+            }}>
             {[
               { data: singlePlayers.p1, mark: "O", color: "#ff6b6b", label: t.player1 },
               { data: singlePlayers.p2, mark: "X", color: "#00e5ff", label: t.player2 },
             ].map(({ data, mark, color, label }) => (
-              <Stack key={mark} direction="row" alignItems="center" spacing={0.5}>
+              <Stack key={mark} direction="row" spacing={0.5} sx={{
+                alignItems: "center"
+              }}>
                 <Typography sx={{ color, fontWeight: 700, fontSize: "0.9rem" }}>
                   {data?.name || label}
                 </Typography>
@@ -1024,7 +1068,15 @@ export default function CrossZeroPlayPage() {
             {t.pvpMode}
           </Typography>
 
-          <Typography variant="h6" fontWeight={700} sx={{ color: "rgba(255,255,255,0.6)", textAlign: "center", mb: 2, fontSize: "0.95rem" }}>
+          <Typography
+            variant="h6"
+            sx={{
+              fontWeight: 700,
+              color: "rgba(255,255,255,0.6)",
+              textAlign: "center",
+              mb: 2,
+              fontSize: "0.95rem"
+            }}>
             {t.howToPlay}
           </Typography>
 
@@ -1034,9 +1086,14 @@ export default function CrossZeroPlayPage() {
                 key={i}
                 direction="row"
                 spacing={1.25}
-                alignItems="flex-start"
-                sx={{ px: 1.5, py: 1.1, borderRadius: 2.5, bgcolor: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}
-              >
+                sx={{
+                  alignItems: "flex-start",
+                  px: 1.5,
+                  py: 1.1,
+                  borderRadius: 2.5,
+                  bgcolor: "rgba(255,255,255,0.06)",
+                  border: "1px solid rgba(255,255,255,0.1)"
+                }}>
                 <Box sx={{ minWidth: 26, height: 26, borderRadius: "50%", bgcolor: "rgba(255,255,255,0.1)", color: "primary.main", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: "0.82rem", mt: 0.1 }}>
                   {i + 1}
                 </Box>
@@ -1047,7 +1104,15 @@ export default function CrossZeroPlayPage() {
             ))}
           </Stack>
 
-          <Typography variant="h6" fontWeight={700} sx={{ color: "#00e5ff", textAlign: "center", mb: 3, textShadow: "0 0 12px rgba(0,229,255,0.4)" }}>
+          <Typography
+            variant="h6"
+            sx={{
+              fontWeight: 700,
+              color: "#00e5ff",
+              textAlign: "center",
+              mb: 3,
+              textShadow: "0 0 12px rgba(0,229,255,0.4)"
+            }}>
             {t.goodLuck}
           </Typography>
 
@@ -1087,7 +1152,15 @@ export default function CrossZeroPlayPage() {
             width: "100%",
           }}
         >
-          <Typography variant="h5" fontWeight={800} sx={{ color: "#fff", mb: 1, textAlign: "center", textShadow: "0 2px 16px #000" }}>
+          <Typography
+            variant="h5"
+            sx={{
+              fontWeight: 800,
+              color: "#fff",
+              mb: 1,
+              textAlign: "center",
+              textShadow: "0 2px 16px #000"
+            }}>
             {displayPlayerName || game.title}
           </Typography>
           <Typography sx={{ color: "rgba(255,255,255,0.5)", mb: 4, textAlign: "center", fontSize: "0.9rem" }}>
@@ -1108,7 +1181,9 @@ export default function CrossZeroPlayPage() {
                   "&:hover": { transform: "translateY(-3px)", boxShadow: `0 12px 28px ${lvl.glow}`, border: `1.5px solid ${lvl.color}` },
                 }}
               >
-                <Stack direction="row" alignItems="center" spacing={2}>
+                <Stack direction="row" spacing={2} sx={{
+                  alignItems: "center"
+                }}>
                   <Box sx={{ width: 12, height: 12, borderRadius: "50%", bgcolor: lvl.color, boxShadow: `0 0 10px ${lvl.glow}` }} />
                   <Box>
                     <Typography sx={{ color: lvl.color, fontWeight: 800, fontSize: "1rem" }}>{lvl.label}</Typography>
@@ -1216,7 +1291,12 @@ export default function CrossZeroPlayPage() {
               boxShadow: "0 8px 40px rgba(0,0,0,0.6)",
             }}
           >
-            <Typography variant="h5" fontWeight={800} sx={{ mb: 1.5 }}>
+            <Typography
+              variant="h5"
+              sx={{
+                fontWeight: 800,
+                mb: 1.5
+              }}>
               {t.sessionClosed || "Session closed"}
             </Typography>
             <Typography sx={{ color: "rgba(255,255,255,0.72)", mb: 3 }}>
@@ -1261,18 +1341,23 @@ export default function CrossZeroPlayPage() {
           >
             <Typography
               variant="h5"
-              fontWeight={800}
-              sx={{ color: "#fff", textAlign: "center", mb: 1 }}
-            >
+              sx={{
+                fontWeight: 800,
+                color: "#fff",
+                textAlign: "center",
+                mb: 1
+              }}>
               {displayPlayerName || game.title}
             </Typography>
             <Stack
               direction="row"
-              justifyContent="center"
-              alignItems="center"
               spacing={1}
-              sx={{ mb: 3, flexWrap: "wrap" }}
-            >
+              sx={{
+                justifyContent: "center",
+                alignItems: "center",
+                mb: 3,
+                flexWrap: "wrap"
+              }}>
               <Typography
                 sx={{
                   color: "rgba(255,255,255,0.72)",
@@ -1302,7 +1387,13 @@ export default function CrossZeroPlayPage() {
                   border: "1px solid rgba(0,229,255,0.4)",
                 }}
               >
-                <Stack direction="row" spacing={0.75} alignItems="center" sx={{ mb: 0.5 }}>
+                <Stack
+                  direction="row"
+                  spacing={0.75}
+                  sx={{
+                    alignItems: "center",
+                    mb: 0.5
+                  }}>
                   <Typography sx={{ color: "#00e5ff", fontWeight: 800 }}>
                     {t.player1 || "Player 1"}
                   </Typography>
@@ -1328,7 +1419,13 @@ export default function CrossZeroPlayPage() {
                   border: "1px solid rgba(255,107,107,0.4)",
                 }}
               >
-                <Stack direction="row" spacing={0.75} alignItems="center" sx={{ mb: 0.5 }}>
+                <Stack
+                  direction="row"
+                  spacing={0.75}
+                  sx={{
+                    alignItems: "center",
+                    mb: 0.5
+                  }}>
                   <Typography sx={{ color: "#ff6b6b", fontWeight: 800 }}>
                     {t.player2 || "Player 2"}
                   </Typography>
@@ -1457,7 +1554,13 @@ export default function CrossZeroPlayPage() {
               backdropFilter: "blur(5px)",
             }}
           >
-            <Typography variant="h5" fontWeight={700} sx={{ mb: 1, textShadow: "0 0 15px rgba(255,255,255,0.6)" }}>
+            <Typography
+              variant="h5"
+              sx={{
+                fontWeight: 700,
+                mb: 1,
+                textShadow: "0 0 15px rgba(255,255,255,0.6)"
+              }}>
               {isSingleScreen ? game.title : (displayPlayerName || game.title)}
             </Typography>
             <Typography
@@ -1479,10 +1582,13 @@ export default function CrossZeroPlayPage() {
               <Stack
                 direction="row"
                 spacing={1}
-                justifyContent="center"
-                alignItems="center"
-                sx={{ mb: 3, opacity: 0.95, flexWrap: "wrap" }}
-              >
+                sx={{
+                  justifyContent: "center",
+                  alignItems: "center",
+                  mb: 3,
+                  opacity: 0.95,
+                  flexWrap: "wrap"
+                }}>
                 <Typography variant="body1">
                   {displayPlayerName || (t.youAre || "You are")}
                 </Typography>
@@ -1498,7 +1604,7 @@ export default function CrossZeroPlayPage() {
 
             {isSingleScreen ? (
               // Single-screen: show both named players with winner highlighted
-              <Stack spacing={1.5} sx={{ mb: 3 }}>
+              (<Stack spacing={1.5} sx={{ mb: 3 }}>
                 {[
                   { data: singlePlayers.p1, mark: "O", label: t.player1 || "Player 1", color: "#ff6b6b" },
                   { data: singlePlayers.p2, mark: "X", label: t.player2 || "Player 2", color: "#00e5ff" },
@@ -1516,8 +1622,20 @@ export default function CrossZeroPlayPage() {
                         color: "#000",
                       }}
                     >
-                      <Stack direction="row" justifyContent="center" alignItems="center" spacing={1} sx={{ mb: 0.5 }}>
-                        <Typography variant="h6" fontWeight={800} sx={{ color: isWinner ? "#fff" : "rgba(255,255,255,0.75)" }}>
+                      <Stack
+                        direction="row"
+                        spacing={1}
+                        sx={{
+                          justifyContent: "center",
+                          alignItems: "center",
+                          mb: 0.5
+                        }}>
+                        <Typography
+                          variant="h6"
+                          sx={{
+                            fontWeight: 800,
+                            color: isWinner ? "#fff" : "rgba(255,255,255,0.75)"
+                          }}>
                           {data?.name || label}
                         </Typography>
                         <CrossZeroMarkVisual
@@ -1545,7 +1663,7 @@ export default function CrossZeroPlayPage() {
                     </Box>
                   );
                 })}
-              </Stack>
+              </Stack>)
             ) : (
               <>
                 <Box
@@ -1592,8 +1710,21 @@ export default function CrossZeroPlayPage() {
                   <Typography variant="h6" sx={{ mb: 1 }}>
                     {isAIMode ? (t.aiOpponent || "AI Opponent") : (t.opponent || "Opponent")}
                   </Typography>
-                  <Stack direction="row" spacing={1} justifyContent="center" alignItems="center" flexWrap="wrap">
-                    <Typography variant="h4" fontWeight="bold" sx={{ color: opponentMarkColor, textShadow: `0 0 12px ${opponentMarkColor}55` }}>
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    sx={{
+                      justifyContent: "center",
+                      alignItems: "center",
+                      flexWrap: "wrap"
+                    }}>
+                    <Typography
+                      variant="h4"
+                      sx={{
+                        fontWeight: "bold",
+                        color: opponentMarkColor,
+                        textShadow: `0 0 12px ${opponentMarkColor}55`
+                      }}>
                       {isAIMode ? "AI" : (opponentSession?.playerId?.name || (t.opponent || "Opponent"))}
                     </Typography>
                     <CrossZeroMarkVisual
@@ -1671,7 +1802,13 @@ export default function CrossZeroPlayPage() {
         }}
       >
         {/* Header */}
-        <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2 }}>
+        <Stack
+          direction="row"
+          sx={{
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 2
+          }}>
           {/* Left: title + mode subtitle (AI only) */}
           <Box>
             <Typography sx={{ color: "#fff", fontWeight: 800, fontSize: "1rem" }}>{game.title}</Typography>
@@ -1682,7 +1819,9 @@ export default function CrossZeroPlayPage() {
             )}
           </Box>
           {/* Center / Right: O vs X mark icons */}
-          <Stack direction="row" spacing={1} alignItems="center">
+          <Stack direction="row" spacing={1} sx={{
+            alignItems: "center"
+          }}>
             <CrossZeroMarkVisual
               mark="O"
               xImage={game?.xImage}
@@ -1704,17 +1843,29 @@ export default function CrossZeroPlayPage() {
         {/* Turn indicator / result */}
         {isResult ? (
           <Box sx={{ textAlign: "center", mb: 2 }}>
-            <Typography variant="h4" fontWeight={900} sx={{
-              color: resultLabel === t.itsDraw ? "#ffb300"
-                : (resultLabel === t.youWin || resultLabel === t.playerWins) ? "#00e5ff" : "#ff4444",
-              textShadow: `0 0 24px currentColor`, mb: 0.5,
-            }}>
+            <Typography
+              variant="h4"
+              sx={{
+                fontWeight: 900,
+
+                color: resultLabel === t.itsDraw ? "#ffb300"
+                  : (resultLabel === t.youWin || resultLabel === t.playerWins) ? "#00e5ff" : "#ff4444",
+
+                textShadow: `0 0 24px currentColor`,
+                mb: 0.5
+              }}>
               {resultLabel}
             </Typography>
           </Box>
         ) : isSingleScreen ? (
           /* Single screen: player name cards with active turn highlighted */
-          <Stack direction="row" spacing={1.5} sx={{ mb: 2 }} alignItems="stretch">
+          (<Stack
+            direction="row"
+            spacing={1.5}
+            sx={{
+              alignItems: "stretch",
+              mb: 2
+            }}>
             {[
               { player: singlePlayers.p1, mark: "O", color: "#ff6b6b", label: t.player1 || "Player 1" },
               { player: singlePlayers.p2, mark: "X", color: "#00e5ff", label: t.player2 || "Player 2" },
@@ -1759,7 +1910,7 @@ export default function CrossZeroPlayPage() {
                 </Box>
               );
             })}
-          </Stack>
+          </Stack>)
         ) : (
           <Box sx={{ textAlign: "center", mb: 2 }}>
             <Typography sx={{
@@ -1797,7 +1948,14 @@ export default function CrossZeroPlayPage() {
 
         {/* My mark indicator — hidden in single screen mode */}
         {!isSingleScreen && (
-          <Stack direction="row" justifyContent="center" spacing={1} sx={{ mb: 0.5 }} alignItems="center">
+          <Stack
+            direction="row"
+            spacing={1}
+            sx={{
+              justifyContent: "center",
+              alignItems: "center",
+              mb: 0.5
+            }}>
             <Typography sx={{ color: "rgba(255,255,255,0.72)", fontSize: "0.8rem" }}>
               {t.youAre || "You are"}:
             </Typography>

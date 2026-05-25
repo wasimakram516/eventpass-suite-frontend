@@ -181,12 +181,15 @@ export default function DemoPoll() {
       <Box sx={{ minHeight: "calc(100vh - 80px)", p: 4, mt: 2 }}>
         <Stack
           direction="row"
-          justifyContent="space-between"
-          alignItems="center"
           spacing={2}
-          mb={2}
-        >
-          <Typography variant="h4" fontWeight="bold">
+          sx={{
+            justifyContent: "space-between",
+            alignItems: "center",
+            mb: 2
+          }}>
+          <Typography variant="h4" sx={{
+            fontWeight: "bold"
+          }}>
             Results for Demo Poll
           </Typography>
           {/* Restart Icon */}
@@ -219,17 +222,25 @@ export default function DemoPoll() {
     <Box sx={{ minHeight: "calc(100vh - 80px)", p: 4 }}>
       <Stack
         direction={{ xs: "column", sm: "row" }}
-        justifyContent="space-between"
-        alignItems="center"
         spacing={2}
-        mt={2}
-        mb={2}
-      >
+        sx={{
+          justifyContent: "space-between",
+          alignItems: "center",
+          mt: 2,
+          mb: 2
+        }}>
         <Box>
-          <Typography variant="h4" fontWeight="bold">
+          <Typography variant="h4" sx={{
+            fontWeight: "bold"
+          }}>
             Vote Now
           </Typography>
-          <Typography variant="body2" color="text.secondary" mt={0.5}>
+          <Typography
+            variant="body2"
+            sx={{
+              color: "text.secondary",
+              mt: 0.5
+            }}>
             Choose the option that best fits you.
           </Typography>
         </Box>
@@ -240,7 +251,6 @@ export default function DemoPoll() {
         </IconButton>
       </Stack>
       <Divider sx={{ width: "100%", my: 2 }} />
-
       <Box
         sx={{
           flexGrow: 1,
@@ -289,7 +299,9 @@ export default function DemoPoll() {
                       "&:hover": { bgcolor: "grey.100" },
                     }}
                   >
-                    <Stack direction="row" alignItems="center" spacing={2}>
+                    <Stack direction="row" spacing={2} sx={{
+                      alignItems: "center"
+                    }}>
                       {option.imageUrl && (
                         <Avatar
                           src={option.imageUrl}
@@ -298,7 +310,9 @@ export default function DemoPoll() {
                         />
                       )}
                       {option.text && (
-                        <Typography fontWeight="bold">{option.text}</Typography>
+                        <Typography sx={{
+                          fontWeight: "bold"
+                        }}>{option.text}</Typography>
                       )}
                     </Stack>
                     {highlightedOption === idx && (
@@ -312,43 +326,47 @@ export default function DemoPoll() {
                 <Stack
                   direction="row"
                   spacing={2}
-                  justifyContent="center"
-                  mb={4}
-                  flexWrap="wrap"
-                >
+                  sx={{
+                    justifyContent: "center",
+                    mb: 4,
+                    flexWrap: "wrap"
+                  }}>
                   {currentPoll.options.map((option, idx) => (
                     <Box
                       key={idx}
-                      display="flex"
-                      flexDirection="column"
-                      alignItems="center"
-                      width={90}
                       sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        width: 90,
                         p: 1.5,
                         borderRadius: 2,
                         transition: "all 0.3s ease",
+
                         border:
                           highlightedOption === idx
                             ? "2px solid"
                             : "2px dashed",
+
                         borderColor:
                           highlightedOption === idx
                             ? "primary.main"
                             : "grey.300",
-                        cursor: "pointer",
-                      }}
-                    >
+
+                        cursor: "pointer"
+                      }}>
                       {/* Number */}
                       <Typography
                         variant="caption"
-                        fontWeight="bold"
                         color={
                           highlightedOption === idx
                             ? "primary.main"
                             : "text.secondary"
                         }
-                        mb={0.5}
-                      >
+                        sx={{
+                          fontWeight: "bold",
+                          mb: 0.5
+                        }}>
                         {idx + 1}
                       </Typography>
 
@@ -374,15 +392,16 @@ export default function DemoPoll() {
                       {option.text && (
                         <Typography
                           variant="caption"
-                          textAlign="center"
-                          fontWeight="bold"
                           color={
                             highlightedOption === idx
                               ? "primary.main"
                               : "text.secondary"
                           }
-                          sx={{ wordBreak: "break-word" }}
-                        >
+                          sx={{
+                            textAlign: "center",
+                            fontWeight: "bold",
+                            wordBreak: "break-word"
+                          }}>
                           {option.text}
                         </Typography>
                       )}
@@ -390,7 +409,11 @@ export default function DemoPoll() {
                   ))}
                 </Stack>
 
-                <Box width="100%" px={4}>
+                <Box
+                  sx={{
+                    width: "100%",
+                    px: 4
+                  }}>
                   <Slider
                     value={sliderValue}
                     onChange={(e, val) => {

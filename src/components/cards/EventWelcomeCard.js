@@ -41,17 +41,15 @@ export default function EventWelcomeCard({
       {/* Title */}
       <Typography
         variant="h4"
-        fontWeight="bold"
         sx={{
+          fontWeight: "bold",
           fontSize: { xs: 28, md: 36 },
           color: "primary.main",
           letterSpacing: "1.5px",
-          mb: 2,
-        }}
-      >
+          mb: 2
+        }}>
         {name}
       </Typography>
-
       {/* Description */}
       {description && (
         <Box
@@ -75,15 +73,15 @@ export default function EventWelcomeCard({
           dangerouslySetInnerHTML={{ __html: description }}
         />
       )}
-
       {/* Venue */}
       <Stack
         direction="row"
         spacing={dir === "ltr" ? 1 : 0}
-        justifyContent="center"
-        alignItems="center"
-        flexWrap="wrap"
-      >
+        sx={{
+          justifyContent: "center",
+          alignItems: "center",
+          flexWrap: "wrap"
+        }}>
         <ICONS.location
           color="primary"
           sx={{
@@ -94,16 +92,16 @@ export default function EventWelcomeCard({
           {venue || t.dateNotAvailable}
         </Typography>
       </Stack>
-
       {/* Dates */}
       <Stack
         direction="row"
         spacing={dir === "ltr" ? 1 : 0}
-        justifyContent="center"
-        alignItems="center"
-        flexWrap="wrap"
-        sx={{ my: 2 }}
-      >
+        sx={{
+          justifyContent: "center",
+          alignItems: "center",
+          flexWrap: "wrap",
+          my: 2
+        }}>
         <ICONS.event
           color="primary"
           sx={{
@@ -144,7 +142,6 @@ export default function EventWelcomeCard({
           </Typography>
         )}
       </Stack>
-
       {/* Organizer Contact Details */}
       {(organizerName || organizerEmail || organizerPhone) && (
         <Box
@@ -169,18 +166,19 @@ export default function EventWelcomeCard({
           >
             {contactOrganizer}
           </Typography>
-          <Stack spacing={1.5} alignItems="center">
+          <Stack spacing={1.5} sx={{
+            alignItems: "center"
+          }}>
             {organizerName && (
               <Stack
                 direction="row"
                 spacing={1}
-                alignItems="center"
                 sx={{
+                  alignItems: "center",
                   fontSize: { xs: 16, md: 18 },
                   fontWeight: 600,
-                  color: "primary.main",
-                }}
-              >
+                  color: "primary.main"
+                }}>
                 <ICONS.person fontSize="small" color="primary" />
                 <Typography
                   variant="h6"
@@ -198,12 +196,11 @@ export default function EventWelcomeCard({
               <Stack
                 direction="row"
                 spacing={1}
-                alignItems="center"
                 sx={{
+                  alignItems: "center",
                   fontSize: { xs: 14, md: 16 },
-                  color: "text.primary",
-                }}
-              >
+                  color: "text.primary"
+                }}>
                 <ICONS.email fontSize="small" color="primary" />
                 <Typography
                   sx={{
@@ -218,12 +215,11 @@ export default function EventWelcomeCard({
               <Stack
                 direction="row"
                 spacing={1}
-                alignItems="center"
                 sx={{
+                  alignItems: "center",
                   fontSize: { xs: 14, md: 16 },
-                  color: "text.primary",
-                }}
-              >
+                  color: "text.primary"
+                }}>
                 <ICONS.phone fontSize="small" color="primary" />
                 <Typography
                   sx={{
@@ -237,7 +233,6 @@ export default function EventWelcomeCard({
           </Stack>
         </Box>
       )}
-
       {/* Thank you message */}
       {/* <Typography
         variant="body2"
@@ -249,7 +244,6 @@ export default function EventWelcomeCard({
       >
         {t.thankYou}
       </Typography> */}
-
       {/* Action button (centered) */}
       {!hideActionButton && (
         <Box sx={{ display: "flex", justifyContent: "center" }}>
@@ -278,7 +272,6 @@ export default function EventWelcomeCard({
           </Button>
         </Box>
       )}
-
       {/* Footer note */}
       {/* <Stack
         direction="row"

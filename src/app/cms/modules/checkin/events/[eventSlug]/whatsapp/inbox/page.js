@@ -231,17 +231,21 @@ export default function WhatsAppInboxPage() {
   return (
     <Container dir={dir} maxWidth={false} disableGutters>
       <BreadcrumbsNav />
-
-      <Stack spacing={1} mb={2}>
-        <Typography variant="h5" fontWeight={600}>
+      <Stack spacing={1} sx={{
+        mb: 2
+      }}>
+        <Typography variant="h5" sx={{
+          fontWeight: 600
+        }}>
           {t.title}
         </Typography>
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" sx={{
+          color: "text.secondary"
+        }}>
           {t.description}
         </Typography>
         <Divider />
       </Stack>
-
       <Box sx={{ display: "flex", height: "72vh", gap: 2 }}>
         {/* INBOX */}
         {(!isMobile || !showChat) && (
@@ -267,12 +271,16 @@ export default function WhatsAppInboxPage() {
                 >
                   <ListItemText
                     primary={
-                      <Typography fontWeight={500}>
+                      <Typography sx={{
+                        fontWeight: 500
+                      }}>
                         {item.phone.replace("whatsapp:", "")}
                       </Typography>
                     }
                     secondary={
-                      <Typography variant="body2" color="text.secondary" noWrap>
+                      <Typography variant="body2" noWrap sx={{
+                        color: "text.secondary"
+                      }}>
                         {item.lastMessage}
                       </Typography>
                     }
@@ -302,7 +310,9 @@ export default function WhatsAppInboxPage() {
                   justifyContent: "center",
                 }}
               >
-                <Typography color="text.secondary">
+                <Typography sx={{
+                  color: "text.secondary"
+                }}>
                   {t.noConversation}
                 </Typography>
               </Box>
@@ -329,7 +339,9 @@ export default function WhatsAppInboxPage() {
                   >
                     {activeTo.slice(-2)}
                   </Avatar>
-                  <Typography fontWeight={600}>
+                  <Typography sx={{
+                    fontWeight: 600
+                  }}>
                     {activeTo.replace("whatsapp:", "")}
                   </Typography>
                 </Box>
@@ -411,11 +423,13 @@ export default function WhatsAppInboxPage() {
                       onChange={(e) => setReply(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && handleSend()}
                       disabled={sending}
-                      InputProps={{
-                        disableUnderline: true,
-                        sx: {
-                          fontSize: 14,
-                        },
+                      slotProps={{
+                        input: {
+                          disableUnderline: true,
+                          sx: {
+                            fontSize: 14,
+                          },
+                        }
                       }}
                     />
 

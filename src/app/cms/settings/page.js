@@ -71,13 +71,19 @@ export default function SettingsPage() {
       <Container maxWidth={false} disableGutters>
         <Typography
           variant="h2"
-          fontWeight="bold"
           gutterBottom
-          textAlign={align}
-        >
+          sx={{
+            fontWeight: "bold",
+            textAlign: align
+          }}>
           {t.title}
         </Typography>
-        <Typography variant="body1" color="text.secondary" textAlign={align}>
+        <Typography
+          variant="body1"
+          sx={{
+            color: "text.secondary",
+            textAlign: align
+          }}>
           {t.subtitle}
         </Typography>
         <Divider sx={{ my: 2 }} />
@@ -85,14 +91,7 @@ export default function SettingsPage() {
         <Grid
           container
           spacing={3}
-          justifyContent="center"
-          sx={{
-            '& > *': { 
-              xs: { width: '100%' }, 
-              sm: { width: 'auto' }
-            }
-          }}
-        >
+          sx={{ justifyContent: "center" }}>
           {filteredCards.map((card, i) => (
             <DashboardCard
               key={i}
@@ -102,6 +101,7 @@ export default function SettingsPage() {
               route={card.route}
               buttonLabel={card.buttonLabel}
               color={card.color}
+              gridSize={{ xs: 12, sm: "auto" }}
             />
           ))}
         </Grid>

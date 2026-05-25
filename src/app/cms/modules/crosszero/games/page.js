@@ -170,14 +170,17 @@ export default function CrossZeroGamesPage() {
           onSelect={(slug) => { setSelectedBusiness(slug); setDrawerOpen(false); }}
         />
       )}
-
       <Container maxWidth={false} disableGutters>
         <Box sx={{ mb: 4 }}>
           <BreadcrumbsNav />
           <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, justifyContent: "space-between", alignItems: { xs: "stretch", sm: "center" }, gap: 2, mb: 3 }}>
             <Box>
-              <Typography variant="h5" fontWeight="bold">{t.manageGames}</Typography>
-              <Typography variant="body2" color="text.secondary">{t.gamesDescription}</Typography>
+              <Typography variant="h5" sx={{
+                fontWeight: "bold"
+              }}>{t.manageGames}</Typography>
+              <Typography variant="body2" sx={{
+                color: "text.secondary"
+              }}>{t.gamesDescription}</Typography>
             </Box>
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ width: { xs: "100%", sm: "auto" }, alignItems: "center", justifyContent: "flex-end", gap: dir === "rtl" ? 2 : 1 }}>
               {(user?.role === "admin" || user?.role === "superadmin") && (
@@ -202,13 +205,30 @@ export default function CrossZeroGamesPage() {
         ) : filteredGames.length === 0 ? (
           <NoDataAvailable />
         ) : (
-          <Grid container spacing={3} justifyContent="center">
+          <Grid container spacing={3} sx={{
+            justifyContent: "center"
+          }}>
             {filteredGames.map((g) => (
-              <Grid item xs={12} sm={6} md={4} lg={3} key={g._id}>
+              <Grid
+                key={g._id}
+                size={{
+                  xs: 12,
+                  sm: 6,
+                  md: 4,
+                  lg: 3
+                }}>
                 <AppCard sx={{ p: 2, height: "100%", maxWidth: "420px", display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
                   <Box>
-                    <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 0.5 }}>
-                      <Typography variant="h6" fontWeight="bold" noWrap>{g.title}</Typography>
+                    <Stack
+                      direction="row"
+                      sx={{
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        mb: 0.5
+                      }}>
+                      <Typography variant="h6" noWrap sx={{
+                        fontWeight: "bold"
+                      }}>{g.title}</Typography>
                       <Chip
                         label={
                           g.mode === "solo"
@@ -233,15 +253,26 @@ export default function CrossZeroGamesPage() {
                         }}
                       />
                     </Stack>
-                    <Typography variant="body2" color="text.secondary"><strong>{t.slugLabel}</strong> {g.slug}</Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" sx={{
+                      color: "text.secondary"
+                    }}><strong>{t.slugLabel}</strong> {g.slug}</Typography>
+                    <Typography variant="body2" sx={{
+                      color: "text.secondary"
+                    }}>
                       <strong>{t.moveTimerLabel}</strong> {g.moveTimer > 0 ? `${g.moveTimer}${t.seconds}` : t.disabled}
                     </Typography>
 
                     <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 1, mt: 2 }}>
                       {["coverImage", "nameImage", "backgroundImage"].map((imgKey) => (
                         <Box key={imgKey}>
-                          <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5, fontSize: "0.7rem" }}>
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: "text.secondary",
+                              display: "block",
+                              mb: 0.5,
+                              fontSize: "0.7rem"
+                            }}>
                             {t[`${imgKey}Label`]}
                           </Typography>
                           <Box component="img" src={g[imgKey]} alt={imgKey} sx={{ width: "100%", height: { xs: 70, sm: 80 }, objectFit: "cover", borderRadius: 1, border: "1px solid #eee" }} />
@@ -259,7 +290,14 @@ export default function CrossZeroGamesPage() {
                   />
 
                   <Box sx={{ mt: 2 }}>
-                    <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" spacing={1}>
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      sx={{
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        flexWrap: "wrap"
+                      }}>
                       <Stack direction="row" spacing={1}>
                         {g.mode === "pvp" && (
                             <Button

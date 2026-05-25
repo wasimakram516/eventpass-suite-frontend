@@ -320,12 +320,23 @@ export default function QuestionFormDrawer({
       anchor="right"
       open={open}
       onClose={onClose}
-      PaperProps={{ sx: { width: { xs: "90%", sm: 420 }, borderRadius: { xs: 0, sm: "8px 0 0 8px" } } }}
       dir={dir}
+      slotProps={{
+        paper: { sx: { width: { xs: "90%", sm: 420 }, borderRadius: { xs: 0, sm: "8px 0 0 8px" } } }
+      }}
     >
       <Box sx={{ p: 3, display: "flex", flexDirection: "column", height: "100%" }}>
-        <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2} mb={2}>
-          <Typography variant="h6" fontWeight="bold">
+        <Stack
+          direction="row"
+          spacing={2}
+          sx={{
+            alignItems: "center",
+            justifyContent: "space-between",
+            mb: 2
+          }}>
+          <Typography variant="h6" sx={{
+            fontWeight: "bold"
+          }}>
             {isEdit ? t.editQuestion : t.createQuestion}
           </Typography>
           <IconButton onClick={onClose}><CloseIcon /></IconButton>
@@ -394,11 +405,15 @@ export default function QuestionFormDrawer({
                 label={t.allowMultiple}
               />
               <Divider />
-              <Typography variant="subtitle2" fontWeight="bold">{t.options}</Typography>
+              <Typography variant="subtitle2" sx={{
+                fontWeight: "bold"
+              }}>{t.options}</Typography>
 
               {form.options.map((option, index) => (
                 <Stack key={index} spacing={1}>
-                  <Stack direction="row" spacing={1} alignItems="center">
+                  <Stack direction="row" spacing={1} sx={{
+                    alignItems: "center"
+                  }}>
                     <TextField
                       fullWidth
                       value={option.text}
@@ -467,9 +482,7 @@ export default function QuestionFormDrawer({
           {loading ? (isEdit ? t.updatingQuestion : t.creatingQuestion) : (isEdit ? t.updateQuestion : t.createQuestionButton)}
         </Button>
       </Box>
-
       <MediaUploadProgress open={showUploadProgress} uploads={uploadProgress} onClose={() => setShowUploadProgress(false)} allowClose={false} />
-
       <ConfirmationDialog
         open={deleteConfirm.open}
         onClose={() => setDeleteConfirm({ open: false, optionIndex: null, fileUrl: null })}

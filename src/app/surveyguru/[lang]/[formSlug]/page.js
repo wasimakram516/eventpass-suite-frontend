@@ -463,10 +463,14 @@ export default function PublicSurveyPage() {
       >
         <LanguageSelector top={20} right={20} />
         <Container dir={dir} maxWidth="sm" sx={{ py: 8, zIndex: 1 }}>
-          <Typography variant="h5" fontWeight={700} gutterBottom>
+          <Typography variant="h5" gutterBottom sx={{
+            fontWeight: 700
+          }}>
             {trans.surveyUnavailable}
           </Typography>
-          <Typography color="text.secondary">{trans.surveyNotFound}</Typography>
+          <Typography sx={{
+            color: "text.secondary"
+          }}>{trans.surveyNotFound}</Typography>
         </Container>
       </Box>
     );
@@ -600,7 +604,11 @@ export default function PublicSurveyPage() {
             </Typography>
 
             {/* message */}
-            <Typography color="text.secondary" sx={{ mb: 2.5 }}>
+            <Typography
+              sx={{
+                color: "text.secondary",
+                mb: 2.5
+              }}>
               {trans.thankYouMessage}
             </Typography>
 
@@ -676,16 +684,19 @@ export default function PublicSurveyPage() {
             <ICONS.appRegister
               sx={{ fontSize: 40, color: "primary.main", mr: 1.5 }}
             />
-            <Typography variant="h5" fontWeight={800} component="h1">
+            <Typography variant="h5" component="h1" sx={{
+              fontWeight: 800
+            }}>
               {tForm?.title}
             </Typography>
           </Box>
           {isAnonymousMode && (
             <Stack
               direction={dir === "rtl" ? "row-reverse" : "row"}
-              justifyContent="center"
-              sx={{ mb: 1.5 }}
-            >
+              sx={{
+                justifyContent: "center",
+                mb: 1.5
+              }}>
               <Box
                 sx={{
                   px: 1.25,
@@ -705,9 +716,11 @@ export default function PublicSurveyPage() {
 
           {tForm?.description && (
             <Typography
-              color="text.secondary"
-              sx={{ mb: 3, textAlign: "center" }}
-            >
+              sx={{
+                color: "text.secondary",
+                mb: 3,
+                textAlign: "center"
+              }}>
               {tForm?.description}
             </Typography>
           )}
@@ -727,7 +740,9 @@ export default function PublicSurveyPage() {
               <Stack
                 direction={dir === "rtl" ? "row-reverse" : "row"}
                 spacing={1}
-                alignItems="flex-start"
+                sx={{
+                  alignItems: "flex-start"
+                }}
               >
                 <ICONS.info sx={{ color: "#92400e", fontSize: 20, mt: 0.2 }} />
                 <Box>
@@ -770,9 +785,11 @@ export default function PublicSurveyPage() {
                     required
                     autoFocus
                     autoComplete="name"
-                    inputProps={{ enterKeyHint: "next", "aria-label": "Full Name" }}
                     sx={{
                       "& input": { fontSize: { xs: "0.95rem", sm: "1.05rem" } },
+                    }}
+                    slotProps={{
+                      htmlInput: { enterKeyHint: "next", "aria-label": "Full Name" }
                     }}
                   />
 
@@ -789,13 +806,15 @@ export default function PublicSurveyPage() {
                     fullWidth
                     required
                     autoComplete="email"
-                    inputProps={{
-                      inputMode: "email",
-                      enterKeyHint: "next",
-                      "aria-label": "Email address",
-                    }}
                     sx={{
                       "& input": { fontSize: { xs: "0.95rem", sm: "1.05rem" } },
+                    }}
+                    slotProps={{
+                      htmlInput: {
+                        inputMode: "email",
+                        enterKeyHint: "next",
+                        "aria-label": "Email address",
+                      }
                     }}
                   />
 
@@ -809,9 +828,11 @@ export default function PublicSurveyPage() {
                     helperText={" "}
                     fullWidth
                     autoComplete="organization"
-                    inputProps={{ enterKeyHint: "done", "aria-label": "Organization" }}
                     sx={{
                       "& input": { fontSize: { xs: "0.95rem", sm: "1.05rem" } },
+                    }}
+                    slotProps={{
+                      htmlInput: { enterKeyHint: "done", "aria-label": "Organization" }
                     }}
                   />
                 </>
@@ -869,10 +890,14 @@ export default function PublicSurveyPage() {
         >
           <LanguageSelector top={20} right={20} />
           <Container dir={dir} maxWidth="sm" sx={{ py: 8, zIndex: 1 }}>
-            <Typography variant="h5" fontWeight={700} gutterBottom>
+            <Typography variant="h5" gutterBottom sx={{
+              fontWeight: 700
+            }}>
               {trans.noQuestionFound}
             </Typography>
-            <Typography color="text.secondary">
+            <Typography sx={{
+              color: "text.secondary"
+            }}>
               {trans.noQuestionsToDisplay}
             </Typography>
           </Container>
@@ -1034,7 +1059,11 @@ export default function PublicSurveyPage() {
                   {currentQ.label}
                 </Typography>
                 {!!currentQ.helpText && (
-                  <Typography color="text.secondary" sx={{ fontSize: 13.5 }}>
+                  <Typography
+                    sx={{
+                      color: "text.secondary",
+                      fontSize: 13.5
+                    }}>
                     {currentQ.helpText}
                   </Typography>
                 )}
@@ -1343,7 +1372,6 @@ export default function PublicSurveyPage() {
             </Box>
           </Box>
         </Box>
-
         {/* ============ DESKTOP VIEW (md+) ============ */}
         <Box
           dir={dir}
@@ -1372,10 +1400,16 @@ export default function PublicSurveyPage() {
               minHeight: 0,
             }}
           >
-            <Typography variant="h4" fontWeight={800} gutterBottom>
+            <Typography variant="h4" gutterBottom sx={{
+              fontWeight: 800
+            }}>
               {tForm?.title}
             </Typography>
-            <Typography color="text.secondary" sx={{ mb: 3 }}>
+            <Typography
+              sx={{
+                color: "text.secondary",
+                mb: 3
+              }}>
               {tForm?.description}
             </Typography>
             <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto", pr: 0.5 }}>
@@ -1498,7 +1532,11 @@ export default function PublicSurveyPage() {
                   {currentQ.label}
                 </Typography>
                 {!!currentQ.helpText && (
-                  <Typography color="text.secondary" sx={{ fontSize: 15 }}>
+                  <Typography
+                    sx={{
+                      color: "text.secondary",
+                      fontSize: 15
+                    }}>
                     {currentQ.helpText}
                   </Typography>
                 )}

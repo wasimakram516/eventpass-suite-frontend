@@ -149,7 +149,7 @@ export default function PlayerSelection() {
         {/* Dynamic Selection */}
         {!game?.isTeamMode ? (
           // --- PvP MODE ---
-          <Box
+          (<Box
             sx={{
               position: "absolute",
               top: 50,
@@ -198,7 +198,6 @@ export default function PlayerSelection() {
                 layout="responsive"
               />
             </Box>
-
             {/* Player 2 */}
             <Box
               sx={{
@@ -235,10 +234,10 @@ export default function PlayerSelection() {
                 layout="responsive"
               />
             </Box>
-          </Box>
+          </Box>)
         ) : (
           // --- TEAM MODE ---
-          <Box
+          (<Box
             sx={{
               width: "100%",
               maxWidth: 600,
@@ -251,20 +250,27 @@ export default function PlayerSelection() {
           >
             <Typography
               variant="h5"
-              textAlign="center"
               color="primary"
-              fontWeight="bold"
-              mb={3}
-            >
+              sx={{
+                textAlign: "center",
+                fontWeight: "bold",
+                mb: 3
+              }}>
               {t.selectTeam}
             </Typography>
-
-            <Grid container spacing={2} justifyContent={"center"}>
+            <Grid container spacing={2} sx={{
+              justifyContent: "center"
+            }}>
               {game?.teams?.length > 0 ? (
                 game.teams.map((team) => {
                   const isSelected = selectedTeamId === team._id;
                   return (
-                    <Grid item xs={12} sm={6} key={team._id}>
+                    <Grid
+                      key={team._id}
+                      size={{
+                        xs: 12,
+                        sm: 6
+                      }}>
                       <Paper
                         elevation={isSelected ? 8 : 2}
                         onClick={() => handleTeamSelect(team._id)}
@@ -287,10 +293,11 @@ export default function PlayerSelection() {
                         }}
                       >
                         <Stack
-                          alignItems="center"
-                          justifyContent="center"
                           spacing={1}
-                        >
+                          sx={{
+                            alignItems: "center",
+                            justifyContent: "center"
+                          }}>
                           <ICONS.group
                             style={{
                               fontSize: 40,
@@ -299,12 +306,11 @@ export default function PlayerSelection() {
                           />
                           <Typography
                             variant="h6"
-                            fontWeight="bold"
                             sx={{
+                              fontWeight: "bold",
                               letterSpacing: 0.5,
-                              textTransform: "capitalize",
-                            }}
-                          >
+                              textTransform: "capitalize"
+                            }}>
                             {team.name}
                           </Typography>
                         </Stack>
@@ -314,15 +320,16 @@ export default function PlayerSelection() {
                 })
               ) : (
                 <Typography
-                  textAlign="center"
-                  width="100%"
-                  color="text.secondary"
-                >
+                  sx={{
+                    textAlign: "center",
+                    width: "100%",
+                    color: "text.secondary"
+                  }}>
                   No teams available
                 </Typography>
               )}
             </Grid>
-          </Box>
+          </Box>)
         )}
 
         {/* Play Button */}
@@ -386,7 +393,6 @@ export default function PlayerSelection() {
           </Box>
         ) : null}
       </Box>
-
       <LanguageSelector top={20} right={20} />
     </>
   );

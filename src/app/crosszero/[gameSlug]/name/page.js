@@ -126,7 +126,13 @@ export default function CrossZeroNamePage() {
           }}
         >
           {/* Mode header icons */}
-          <Stack direction="row" justifyContent="center" spacing={1.5} sx={{ mb: 2 }}>
+          <Stack
+            direction="row"
+            spacing={1.5}
+            sx={{
+              justifyContent: "center",
+              mb: 2
+            }}>
             {game.xImage ? (
               <Box component="img" src={game.xImage} alt="X" sx={{ width: 44, height: 44, objectFit: "contain" }} />
             ) : (
@@ -139,7 +145,13 @@ export default function CrossZeroNamePage() {
             )}
           </Stack>
 
-          <Typography variant="h4" fontWeight={800} sx={{ color: "#fff", mb: 0.5 }}>
+          <Typography
+            variant="h4"
+            sx={{
+              fontWeight: 800,
+              color: "#fff",
+              mb: 0.5
+            }}>
             {game.title}
           </Typography>
           <Typography sx={{ color: "rgba(255,255,255,0.5)", mb: 3, fontSize: "0.9rem", fontWeight: 600 }}>
@@ -180,17 +192,20 @@ export default function CrossZeroNamePage() {
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
             onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-            InputProps={{ sx: { backgroundColor: "rgba(255,255,255,0.1)", color: "#fff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.25)" } } }}
-            InputLabelProps={{ sx: { color: "rgba(255,255,255,0.6)" } }}
-          />
+            slotProps={{
+              input: { sx: { backgroundColor: "rgba(255,255,255,0.1)", color: "#fff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.25)" } } },
+              inputLabel: { sx: { color: "rgba(255,255,255,0.6)" } }
+            }} />
           {/* <TextField
             label={t.companyLabel}
             fullWidth
             sx={{ mb: 2.5 }}
             value={form.company}
             onChange={(e) => setForm({ ...form, company: e.target.value })}
-            InputProps={{ sx: { backgroundColor: "rgba(255,255,255,0.1)", color: "#fff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.25)" } } }}
-            InputLabelProps={{ sx: { color: "rgba(255,255,255,0.6)" } }}
+            slotProps={{
+              input: { sx: { backgroundColor: "rgba(255,255,255,0.1)", color: "#fff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.25)" } } },
+              inputLabel: { sx: { color: "rgba(255,255,255,0.6)" } }
+            }}
           />
           <TextField
             label={t.departmentLabel}
@@ -198,8 +213,10 @@ export default function CrossZeroNamePage() {
             sx={{ mb: 3 }}
             value={form.department}
             onChange={(e) => setForm({ ...form, department: e.target.value })}
-            InputProps={{ sx: { backgroundColor: "rgba(255,255,255,0.1)", color: "#fff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.25)" } } }}
-            InputLabelProps={{ sx: { color: "rgba(255,255,255,0.6)" } }}
+            slotProps={{
+              input: { sx: { backgroundColor: "rgba(255,255,255,0.1)", color: "#fff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.25)" } } },
+              inputLabel: { sx: { color: "rgba(255,255,255,0.6)" } }
+            }}
           /> */}
 
           <Button

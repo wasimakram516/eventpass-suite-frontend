@@ -318,34 +318,43 @@ export default function BusinessDetailsPage() {
       sx={{ px: { xs: 2, md: 3 } }}
     >
       <BreadcrumbsNav />
-
       {/* HEADER: only show “Create” for admins OR business users with no biz */}
       <Stack
         direction={{ xs: "column", sm: "row" }}
-        justifyContent="space-between"
-        alignItems={{ xs: "stretch", sm: "flex-start" }}
         spacing={2}
-        mb={2}
-      >
+        sx={{
+          justifyContent: "space-between",
+          alignItems: { xs: "stretch", sm: "flex-start" },
+          mb: 2
+        }}>
         <Box>
-          <Typography variant="h4" fontWeight="bold" textAlign={align}>
+          <Typography
+            variant="h4"
+            sx={{
+              fontWeight: "bold",
+              textAlign: align
+            }}>
             {t.title}
           </Typography>
           <Typography
             variant="body2"
-            color="text.secondary"
-            mt={0.5}
-            textAlign={align}
-          >
+            sx={{
+              color: "text.secondary",
+              mt: 0.5,
+              textAlign: align
+            }}>
             {t.subtitle}
           </Typography>
         </Box>
       </Stack>
       <Divider sx={{ mb: 2 }} />
-
       {/* IF business user AND no biz => special “no biz” callout */}
       {user.role === "business" && businesses.length === 0 ? (
-        <Box textAlign="center" sx={{ mt: 6 }}>
+        <Box
+          sx={{
+            textAlign: "center",
+            mt: 6
+          }}>
           <Typography variant="h6" gutterBottom>
             {t.noBiz}
           </Typography>
@@ -363,19 +372,17 @@ export default function BusinessDetailsPage() {
         /* ELSE show the grid of businesses
         - admin: all businesses
         - business user: all businesses they own */
-        <Grid
+        (<Grid
           container
           rowSpacing={{ xs: 2, sm: 2 }}
           columnSpacing={{ xs: 0, sm: 2 }}
-          justifyContent={{ xs: "stretch", sm: "center" }}
-          sx={{ width: "100%", mx: 0 }}
-        >
+          sx={{
+            justifyContent: { xs: "stretch", sm: "center" },
+            width: "100%",
+            mx: 0
+          }}>
           {businesses.map((biz) => (
             <Grid
-              item
-              xs={12}
-              sm={6}
-              md={4}
               key={biz._id}
               sx={{
                 display: "flex",
@@ -387,7 +394,11 @@ export default function BusinessDetailsPage() {
                 minWidth: 0,
                 px: { xs: 0 },
               }}
-            >
+              size={{
+                xs: 12,
+                sm: 6,
+                md: 4
+              }}>
               <AppCard
                 sx={{
                   p: 2,
@@ -412,24 +423,22 @@ export default function BusinessDetailsPage() {
                   <AppCardText sx={{ flexGrow: 1 }}>
                     <Typography
                       variant="h6"
-                      fontWeight="bold"
                       sx={{
-                        ...wrapTextBox,
-                      }}
-                    >
+                        fontWeight: "bold",
+                        ...wrapTextBox
+                      }}>
                       {biz.name}
                     </Typography>
                     <Typography
                       variant="caption"
-                      color="text.secondary"
                       sx={{
+                        color: "text.secondary",
                         ...wrapTextBox,
                         display: "-webkit-box",
                         WebkitLineClamp: 1,
                         WebkitBoxOrient: "vertical",
-                        overflow: "hidden",
-                      }}
-                    >
+                        overflow: "hidden"
+                      }}>
                       Slug: {biz.slug}
                     </Typography>
                   </AppCardText>
@@ -509,31 +518,33 @@ export default function BusinessDetailsPage() {
                       <ICONS.location fontSize="small" color="action" />
                       <Typography
                         variant="body2"
-                        color="text.secondary"
                         sx={{
+                          color: "text.secondary",
                           ...wrapTextBox,
                           flex: 1,
                           minWidth: 0,
-                          maxWidth: "100%",
-                        }}
-                      >
+                          maxWidth: "100%"
+                        }}>
                         {biz.address}
                       </Typography>
                     </Box>
                   )}
                   {Array.isArray(biz.owners) && biz.owners.length > 0 && (
                     <Box sx={{ mt: 0.5 }}>
-                      <Typography variant="caption" color="text.secondary">
+                      <Typography variant="caption" sx={{
+                        color: "text.secondary"
+                      }}>
                         {t.owner}:
                       </Typography>
 
                       <Stack
                         direction="row"
                         spacing={1}
-                        flexWrap="wrap"
-                        mt={0.5}
-                        sx={{ minWidth: 0 }}
-                      >
+                        sx={{
+                          flexWrap: "wrap",
+                          mt: 0.5,
+                          minWidth: 0
+                        }}>
                         {biz.owners.map((o) => (
                           <Chip
                             key={typeof o === "string" ? o : o._id}
@@ -598,9 +609,8 @@ export default function BusinessDetailsPage() {
               </AppCard>
             </Grid>
           ))}
-        </Grid>
+        </Grid>)
       )}
-
       {/* MODAL FORM */}
       <Dialog open={formOpen} onClose={handleClose} fullWidth dir={dir}>
         <DialogTitle>{editingBiz ? t.edit : t.createNewBusiness}</DialogTitle>
@@ -644,9 +654,11 @@ export default function BusinessDetailsPage() {
             fullWidth
             margin="normal"
             type="tel"
-            inputProps={{ pattern: "[0-9]*" }}
             error={!!formErrors.phone}
             helperText={formErrors.phone}
+            slotProps={{
+              htmlInput: { pattern: "[0-9]*" }
+            }}
           />
           <TextField
             label="Address"
@@ -668,9 +680,10 @@ export default function BusinessDetailsPage() {
             <Stack
               direction="row"
               spacing={2}
-              alignItems="center"
-              sx={{ gap: dir === "rtl" ? 2 : undefined }}
-            >
+              sx={{
+                alignItems: "center",
+                gap: dir === "rtl" ? 2 : undefined
+              }}>
               <Avatar
                 src={form.logoPreview}
                 alt="Preview"

@@ -91,7 +91,6 @@ export default function TapMatchInstructionsPage() {
   return (
     <Box sx={{ position: "relative" }}>
       <LanguageSelector top={20} right={20} />
-
       <Box
         sx={{
           height: "100vh",
@@ -139,10 +138,15 @@ export default function TapMatchInstructionsPage() {
         >
           <Typography
             variant="h4"
-            fontWeight={800}
             gutterBottom
-            sx={{ mb: 1, color: "#fff", textTransform: "capitalize", textAlign: "center", wordBreak: "break-word" }}
-          >
+            sx={{
+              fontWeight: 800,
+              mb: 1,
+              color: "#fff",
+              textTransform: "capitalize",
+              textAlign: "center",
+              wordBreak: "break-word"
+            }}>
             {translatedTitle}
           </Typography>
 
@@ -151,32 +155,70 @@ export default function TapMatchInstructionsPage() {
             sx={{ mb: 4, fontWeight: 500, color: "rgba(255,255,255,0.75)", textAlign: "center" }}
           >
             {t.welcome}{" "}
-            <Box component="span" fontWeight={700} sx={{ color: "#00e5ff" }}>
+            <Box
+              component="span"
+              sx={{
+                fontWeight: 700,
+                color: "#00e5ff"
+              }}>
               {playerInfo.name}
             </Box>
             , {t.instructionsTitle}
           </Typography>
 
-          <Stack spacing={2} sx={{ mb: 4 }} alignItems={align}>
+          <Stack
+            spacing={2}
+            sx={{
+              alignItems: align,
+              mb: 4
+            }}>
             {/* Total pairs */}
-            <Stack direction="row" alignItems="center" spacing={2}
-              sx={{ px: 2, py: 1.5, borderRadius: 3, bgcolor: "rgba(0,229,255,0.08)", border: "1px solid rgba(0,229,255,0.2)" }}>
+            <Stack
+              direction="row"
+              spacing={2}
+              sx={{
+                alignItems: "center",
+                px: 2,
+                py: 1.5,
+                borderRadius: 3,
+                bgcolor: "rgba(0,229,255,0.08)",
+                border: "1px solid rgba(0,229,255,0.2)"
+              }}>
               <ICONS.grid sx={{ color: "#00e5ff" }} />
               <Typography variant="h6" sx={{ color: "#fff", textAlign: align, direction: dir }}>
                 {t.pairsCount}{" "}
-                <Box component="span" fontWeight={700} sx={{ color: "#00e5ff" }}>
+                <Box
+                  component="span"
+                  sx={{
+                    fontWeight: 700,
+                    color: "#00e5ff"
+                  }}>
                   {game.memoryImages.length}
                 </Box>
               </Typography>
             </Stack>
 
             {/* Game time */}
-            <Stack direction="row" alignItems="center" spacing={2}
-              sx={{ px: 2, py: 1.5, borderRadius: 3, bgcolor: "rgba(0,229,255,0.08)", border: "1px solid rgba(0,229,255,0.2)" }}>
+            <Stack
+              direction="row"
+              spacing={2}
+              sx={{
+                alignItems: "center",
+                px: 2,
+                py: 1.5,
+                borderRadius: 3,
+                bgcolor: "rgba(0,229,255,0.08)",
+                border: "1px solid rgba(0,229,255,0.2)"
+              }}>
               <ICONS.time sx={{ color: "#00e5ff" }} />
               <Typography variant="h6" sx={{ color: "#fff", textAlign: align, direction: dir }}>
                 {t.gameDuration}{" "}
-                <Box component="span" fontWeight={700} sx={{ color: "#00e5ff" }}>
+                <Box
+                  component="span"
+                  sx={{
+                    fontWeight: 700,
+                    color: "#00e5ff"
+                  }}>
                   {game.gameSessionTimer} {t.seconds}
                 </Box>
               </Typography>

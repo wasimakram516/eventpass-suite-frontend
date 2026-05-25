@@ -98,7 +98,9 @@ const WalkInModal = ({ open, onClose, registration, onCheckInSuccess, createWalk
           justifyContent: "center",
         }}
       >
-        <Typography variant="h6" fontWeight="bold" component="div">
+        <Typography variant="h6" component="div" sx={{
+          fontWeight: "bold"
+        }}>
           {modalTitle}
         </Typography>
         <IconButton
@@ -122,7 +124,6 @@ const WalkInModal = ({ open, onClose, registration, onCheckInSuccess, createWalk
           <ICONS.close />
         </IconButton>
       </DialogTitle>
-
       <DialogContent dividers>
         {registration?.walkIns?.length > 0 ? (
           <List disablePadding>
@@ -144,11 +145,12 @@ const WalkInModal = ({ open, onClose, registration, onCheckInSuccess, createWalk
                       primary={
                         <Stack
                           direction="row"
-                          alignItems="center"
-                          justifyContent="space-between"
                           spacing={1}
-                          flexWrap="wrap"
-                        >
+                          sx={{
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            flexWrap: "wrap"
+                          }}>
                           <Typography variant="body1" component="span">
                             {staffType ? t.scannedBy : t.checkedInBy}:{" "}
                             {walk.scannedBy?.name ||
@@ -186,10 +188,11 @@ const WalkInModal = ({ open, onClose, registration, onCheckInSuccess, createWalk
                       secondary={
                         <Typography
                           variant="body2"
-                          color="text.secondary"
-                          sx={{ mt: 0.4 }}
                           component="span"
-                        >
+                          sx={{
+                            color: "text.secondary",
+                            mt: 0.4
+                          }}>
                           {staffType ? t.scannedAt : t.checkedInAt}:{" "}
                           {new Date(walk.scannedAt).toLocaleString()}
                         </Typography>
@@ -202,12 +205,13 @@ const WalkInModal = ({ open, onClose, registration, onCheckInSuccess, createWalk
             })}
           </List>
         ) : (
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" sx={{
+            color: "text.secondary"
+          }}>
             {t.noRecords}
           </Typography>
         )}
       </DialogContent>
-
       {(onCheckInSuccess && canCheckIn) && (
         <DialogActions sx={{ justifyContent: "center" }}>
           <Button

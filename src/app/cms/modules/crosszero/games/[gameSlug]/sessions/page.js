@@ -101,8 +101,12 @@ export default function CrossZeroPvPSessionsPage() {
       <BreadcrumbsNav />
       <Box sx={{ display: "flex", flexDirection: { xs: "column", sm: "row" }, justifyContent: "space-between", alignItems: { xs: "stretch", sm: "center" }, gap: 2, mb: 2, mt: 1 }}>
         <Box>
-          <Typography variant="h5" fontWeight="bold">{t.title}</Typography>
-          <Typography variant="body2" color="text.secondary">{t.description}</Typography>
+          <Typography variant="h5" sx={{
+            fontWeight: "bold"
+          }}>{t.title}</Typography>
+          <Typography variant="body2" sx={{
+            color: "text.secondary"
+          }}>{t.description}</Typography>
         </Box>
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ width: { xs: "100%", sm: "auto" } }}>
           <Button variant="contained" color="error" startIcon={<ICONS.delete />} onClick={() => setShowConfirm(true)} sx={getStartIconSpacing(dir)}>
@@ -116,9 +120,10 @@ export default function CrossZeroPvPSessionsPage() {
         </Stack>
       </Box>
       <Divider sx={{ mb: 2 }} />
-
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" sx={{
+          color: "text.secondary"
+        }}>
           {t.showing} {(page - 1) * limit + 1}–{Math.min(page * limit, totalSessions)} {t.of} {totalSessions} {t.records}
         </Typography>
         <FormControl size="small" sx={{ minWidth: 140 }}>
@@ -128,9 +133,10 @@ export default function CrossZeroPvPSessionsPage() {
           </Select>
         </FormControl>
       </Box>
-
       {loading ? <LoadingState /> : sessions.length === 0 ? <NoDataAvailable /> : (
-        <Stack spacing={3} alignItems="center">
+        <Stack spacing={3} sx={{
+          alignItems: "center"
+        }}>
           <Box sx={{ width: "100%", maxWidth: 620 }}>
             {sessions.map((session) => {
               const p1 = session.players?.find((p) => p.playerType === "p1");
@@ -156,15 +162,31 @@ export default function CrossZeroPvPSessionsPage() {
                           shadow={`0 0 10px ${resultInfo.symbolColor}`}
                         />
                       )}
-                      <Typography variant="h6" color="#fff" fontWeight="bold">
+                      <Typography
+                        variant="h6"
+                        sx={{
+                          color: "#fff",
+                          fontWeight: "bold"
+                        }}>
                         {xoStats.result === "draw" ? t.tie : t.wins}
                       </Typography>
                     </Box>
 
                     <Box sx={{ px: { xs: 2, sm: 4 }, py: 3, position: "relative" }}>
-                      <Grid container spacing={3} direction={{ xs: "column", sm: "row" }} alignItems="stretch" justifyContent="space-between">
+                      <Grid
+                        container
+                        spacing={3}
+                        direction={{ xs: "column", sm: "row" }}
+                        sx={{
+                          alignItems: "stretch",
+                          justifyContent: "space-between"
+                        }}>
                         {/* P1 */}
-                        <Grid item xs={12} sm={5.5}>
+                        <Grid
+                          size={{
+                            xs: 12,
+                            sm: 5.5
+                          }}>
                           <Box sx={{ bgcolor: xoStats.result === "O_wins" ? "rgba(255,107,107,0.08)" : "grey.50", borderRadius: 3, p: 2.5, height: "100%", display: "flex", flexDirection: "column", gap: 1 }}>
                             <Box sx={{ display: "flex", alignItems: "center", gap: 0.8 }}>
                               <CrossZeroMarkVisual
@@ -174,12 +196,23 @@ export default function CrossZeroPvPSessionsPage() {
                                 size={18}
                                 fallbackSize="1.1rem"
                               />
-                              <Typography variant="subtitle2" color="text.secondary" fontWeight={700}>{t.player1}</Typography>
+                              <Typography
+                                variant="subtitle2"
+                                sx={{
+                                  color: "text.secondary",
+                                  fontWeight: 700
+                                }}>{t.player1}</Typography>
                             </Box>
-                            <Typography variant="h6" fontWeight="bold">{p1?.playerId?.name || t.unknown}</Typography>
-                            <Typography variant="body2" color="text.secondary">{p1?.playerId?.company || "—"}</Typography>
+                            <Typography variant="h6" sx={{
+                              fontWeight: "bold"
+                            }}>{p1?.playerId?.name || t.unknown}</Typography>
+                            <Typography variant="body2" sx={{
+                              color: "text.secondary"
+                            }}>{p1?.playerId?.company || "—"}</Typography>
                             {xoStats.timeTaken > 0 && (
-                              <Typography variant="body2" color="text.secondary">{t.timeTaken}: <strong>{xoStats.timeTaken}s</strong></Typography>
+                              <Typography variant="body2" sx={{
+                                color: "text.secondary"
+                              }}>{t.timeTaken}: <strong>{xoStats.timeTaken}s</strong></Typography>
                             )}
                           </Box>
                         </Grid>
@@ -190,7 +223,11 @@ export default function CrossZeroPvPSessionsPage() {
                         </Box>
 
                         {/* P2 */}
-                        <Grid item xs={12} sm={5.5}>
+                        <Grid
+                          size={{
+                            xs: 12,
+                            sm: 5.5
+                          }}>
                           <Box sx={{ bgcolor: xoStats.result === "X_wins" ? "rgba(0,180,216,0.08)" : "grey.50", borderRadius: 3, p: 2.5, height: "100%", display: "flex", flexDirection: "column", gap: 1, textAlign: { xs: "left", sm: "right" }, alignItems: { xs: "flex-start", sm: "flex-end" } }}>
                             <Box sx={{ display: "flex", alignItems: "center", gap: 0.8 }}>
                               <CrossZeroMarkVisual
@@ -200,10 +237,19 @@ export default function CrossZeroPvPSessionsPage() {
                                 size={18}
                                 fallbackSize="1.1rem"
                               />
-                              <Typography variant="subtitle2" color="text.secondary" fontWeight={700}>{t.player2}</Typography>
+                              <Typography
+                                variant="subtitle2"
+                                sx={{
+                                  color: "text.secondary",
+                                  fontWeight: 700
+                                }}>{t.player2}</Typography>
                             </Box>
-                            <Typography variant="h6" fontWeight="bold">{p2?.playerId?.name || t.unknown}</Typography>
-                            <Typography variant="body2" color="text.secondary">{p2?.playerId?.company || "—"}</Typography>
+                            <Typography variant="h6" sx={{
+                              fontWeight: "bold"
+                            }}>{p2?.playerId?.name || t.unknown}</Typography>
+                            <Typography variant="body2" sx={{
+                              color: "text.secondary"
+                            }}>{p2?.playerId?.company || "—"}</Typography>
                           </Box>
                         </Grid>
                       </Grid>
@@ -211,7 +257,9 @@ export default function CrossZeroPvPSessionsPage() {
                       {/* Stats bar */}
                       {xoStats.moves > 0 && (
                         <Box sx={{ mt: 2, pt: 1.5, borderTop: "1px solid #f0f0f0", display: "flex", justifyContent: "center" }}>
-                          <Typography variant="caption" color="text.secondary">{t.moves}: <strong>{xoStats.moves}</strong></Typography>
+                          <Typography variant="caption" sx={{
+                            color: "text.secondary"
+                          }}>{t.moves}: <strong>{xoStats.moves}</strong></Typography>
                         </Box>
                       )}
                     </Box>
@@ -226,7 +274,6 @@ export default function CrossZeroPvPSessionsPage() {
           </Box>
         </Stack>
       )}
-
       <ConfirmationDialog
         open={showConfirm}
         onClose={() => setShowConfirm(false)}

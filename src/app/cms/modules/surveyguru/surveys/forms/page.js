@@ -782,7 +782,6 @@ export default function SurveyFormsManagePage() {
           setBizDrawerOpen(false);
         }}
       />
-
       <Container maxWidth={false} disableGutters>
         <BreadcrumbsNav />
 
@@ -798,10 +797,17 @@ export default function SurveyFormsManagePage() {
           }}
         >
           <Box>
-            <Typography variant="h4" fontWeight="bold">
+            <Typography variant="h4" sx={{
+              fontWeight: "bold"
+            }}>
               {t.title}
             </Typography>
-            <Typography variant="body2" color="text.secondary" mt={0.5}>
+            <Typography
+              variant="body2"
+              sx={{
+                color: "text.secondary",
+                mt: 0.5
+              }}>
               {t.subtitle}
             </Typography>
           </Box>
@@ -885,7 +891,9 @@ export default function SurveyFormsManagePage() {
         ) : !forms.length ? (
           <NoDataAvailable />
         ) : (
-          <Grid container spacing={3} justifyContent="center">
+          <Grid container spacing={3} sx={{
+            justifyContent: "center"
+          }}>
             {forms
               .filter((f) => {
                 const term = searchTerm.trim().toLowerCase();
@@ -895,7 +903,14 @@ export default function SurveyFormsManagePage() {
                 return titleVal.includes(term) || slugVal.includes(term);
               })
               .map((f) => (
-              <Grid item xs={12} sm={6} md={4} lg={3} key={f._id}>
+              <Grid
+                key={f._id}
+                size={{
+                  xs: 12,
+                  sm: 6,
+                  md: 4,
+                  lg: 3
+                }}>
                 <AppCard
                   sx={{
                     width: "100%",
@@ -910,9 +925,10 @@ export default function SurveyFormsManagePage() {
                     <Stack
                       direction="row"
                       spacing={dir === "rtl" ? 1.5 : 1}
-                      alignItems="center"
-                      mb={1}
-                    >
+                      sx={{
+                        alignItems: "center",
+                        mb: 1
+                      }}>
                       <Avatar
                         sx={{
                           bgcolor: f.isActive ? "success.main" : "grey.500",
@@ -921,14 +937,22 @@ export default function SurveyFormsManagePage() {
                         <ICONS.form fontSize="small" />
                       </Avatar>
                       <Box sx={dir === "rtl" ? { mr: 1.5 } : { ml: 1 }} />
-                      <Stack flex={1} overflow="hidden">
-                        <Typography variant="subtitle1" fontWeight={600} noWrap>
+                      <Stack
+                        sx={{
+                          flex: 1,
+                          overflow: "hidden"
+                        }}>
+                        <Typography variant="subtitle1" noWrap sx={{
+                          fontWeight: 600
+                        }}>
                           {f.title}
                         </Typography>
                         <Typography
                           variant="caption"
-                          color="text.secondary"
                           noWrap
+                          sx={{
+                            color: "text.secondary"
+                          }}
                         >
                           {f.slug}
                         </Typography>
@@ -953,39 +977,46 @@ export default function SurveyFormsManagePage() {
 
                     <Typography
                       variant="body2"
-                      color="text.secondary"
-                      sx={{ mt: 1 }}
-                    >
+                      sx={{
+                        color: "text.secondary",
+                        mt: 1
+                      }}>
                       {f.description || "—"}
                     </Typography>
                     <Stack spacing={0.5} sx={{ mt: 1 }}>
-                      <Stack direction="row" alignItems="center">
+                      <Stack direction="row" sx={{
+                        alignItems: "center"
+                      }}>
                         <ICONS.help fontSize="inherit" />
                         <Typography
                           variant="caption"
-                          color="text.secondary"
-                          sx={dir === "rtl" ? { mr: 1 } : { ml: 1 }}
-                        >
+                          sx={[{
+                            color: "text.secondary"
+                          }, dir === "rtl" ? { mr: 1 } : { ml: 1 }]}>
                           {f.questions?.length || 0} question(s)
                         </Typography>
                       </Stack>
-                      <Stack direction="row" alignItems="center">
+                      <Stack direction="row" sx={{
+                        alignItems: "center"
+                      }}>
                         <ICONS.people fontSize="inherit" />
                         <Typography
                           variant="caption"
-                          color="text.secondary"
-                          sx={dir === "rtl" ? { mr: 1 } : { ml: 1 }}
-                        >
+                          sx={[{
+                            color: "text.secondary"
+                          }, dir === "rtl" ? { mr: 1 } : { ml: 1 }]}>
                           {f.recipientCount ?? 0} recipient(s)
                         </Typography>
                       </Stack>
-                      <Stack direction="row" alignItems="center">
+                      <Stack direction="row" sx={{
+                        alignItems: "center"
+                      }}>
                         <ICONS.results fontSize="inherit" />
                         <Typography
                           variant="caption"
-                          color="text.secondary"
-                          sx={dir === "rtl" ? { mr: 1 } : { ml: 1 }}
-                        >
+                          sx={[{
+                            color: "text.secondary"
+                          }, dir === "rtl" ? { mr: 1 } : { ml: 1 }]}>
                           {f.responseCount ?? 0} response(s)
                         </Typography>
                       </Stack>
@@ -1089,7 +1120,6 @@ export default function SurveyFormsManagePage() {
           confirmButtonColor="secondary"
         />
       </Container>
-
       {/* Create/Edit Dialog */}
       <Dialog
         open={open}
@@ -1241,10 +1271,13 @@ export default function SurveyFormsManagePage() {
 
             <Stack
               direction="row"
-              justifyContent="space-between"
-              alignItems="center"
-            >
-              <Typography variant="subtitle1" fontWeight={600}>
+              sx={{
+                justifyContent: "space-between",
+                alignItems: "center"
+              }}>
+              <Typography variant="subtitle1" sx={{
+                fontWeight: 600
+              }}>
                 {t.questions}
               </Typography>
             </Stack>
@@ -1304,9 +1337,10 @@ export default function SurveyFormsManagePage() {
                     <Stack
                       direction={{ xs: "column", sm: "row" }}
                       spacing={{ xs: 0, sm: 2 }}
-                      alignItems={{ sm: "center" }}
-                      sx={{ mt: { xs: 4, sm: 0 } }}
-                    >
+                      sx={{
+                        alignItems: { sm: "center" },
+                        mt: { xs: 4, sm: 0 }
+                      }}>
                       <TextField
                         label={t.qHelp}
                         value={q.helpText}
@@ -1333,9 +1367,10 @@ export default function SurveyFormsManagePage() {
                       <>
                         <Stack
                           direction="row"
-                          alignItems="center"
-                          justifyContent="space-between"
-                        >
+                          sx={{
+                            alignItems: "center",
+                            justifyContent: "space-between"
+                          }}>
                           <Typography variant="subtitle2">
                             {t.options}
                           </Typography>
@@ -1362,7 +1397,9 @@ export default function SurveyFormsManagePage() {
                                 key={oi}
                                 direction={{ xs: "column", sm: "row" }}
                                 spacing={1}
-                                alignItems="center"
+                                sx={{
+                                  alignItems: "center"
+                                }}
                               >
                                 <Box sx={{ position: "relative", display: "inline-block" }}>
                                   <Avatar
@@ -1405,7 +1442,6 @@ export default function SurveyFormsManagePage() {
                                     </IconButton>
                                   )}
                                 </Box>
-
                                 <TextField
                                   label={t.optLabel}
                                   value={opt.label}
@@ -1416,7 +1452,6 @@ export default function SurveyFormsManagePage() {
                                   }
                                   fullWidth
                                 />
-
                                 <input
                                   id={`file-${key}`}
                                   type="file"
@@ -1441,7 +1476,6 @@ export default function SurveyFormsManagePage() {
                                     {t.upload}
                                   </Button>
                                 </label>
-
                                 <IconButton
                                   color="error"
                                   onClick={() => removeOption(qi, oi)}
@@ -1524,14 +1558,17 @@ export default function SurveyFormsManagePage() {
 
                     <Stack
                       direction={{ xs: "column", sm: "row" }}
-                      justifyContent="flex-end"
-                      alignItems={{ xs: "stretch", sm: "center" }}
-                      sx={{ mt: 1 }}
-                    >
+                      sx={{
+                        justifyContent: "flex-end",
+                        alignItems: { xs: "stretch", sm: "center" },
+                        mt: 1
+                      }}>
                       <Stack
                         direction="row"
                         spacing={1}
-                        justifyContent="flex-end"
+                        sx={{
+                          justifyContent: "flex-end"
+                        }}
                       >
                         <Tooltip title={t.duplicateQuestion}>
                           <IconButton onClick={() => duplicateQuestion(qi)}>
@@ -1598,7 +1635,6 @@ export default function SurveyFormsManagePage() {
           </Button>
         </DialogActions>
       </Dialog>
-
       <ShareLinkModal
         open={shareModalOpen}
         onClose={() => setShareModalOpen(false)}
@@ -1610,7 +1646,6 @@ export default function SurveyFormsManagePage() {
         name={formToShare?.title || "survey-form"}
         title={t.copyLink}
       />
-
       <MediaUploadProgress
         open={showUploadProgress}
         uploads={uploadProgress}
@@ -1621,7 +1656,6 @@ export default function SurveyFormsManagePage() {
         }}
         allowClose={uploadProgress.every((u) => u.percent === 100 || u.error)}
       />
-
       <ConfirmationDialog
         open={deleteConfirm.open}
         onClose={() => setDeleteConfirm({ open: false, qi: null, oi: null, fileUrl: null })}

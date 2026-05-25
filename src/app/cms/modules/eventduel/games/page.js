@@ -245,7 +245,6 @@ export default function GamesPage() {
           onSelect={handleBusinessSelect}
         />
       )}
-
       <Container maxWidth={false} disableGutters>
         <Box sx={{ mb: 4 }}>
           <Box
@@ -271,10 +270,14 @@ export default function GamesPage() {
           >
             {/* Heading + Subheading */}
             <Box>
-              <Typography variant="h5" fontWeight="bold">
+              <Typography variant="h5" sx={{
+                fontWeight: "bold"
+              }}>
                 {t.manageGames}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" sx={{
+                color: "text.secondary"
+              }}>
                 {t.gamesDescription}
               </Typography>
             </Box>
@@ -329,9 +332,18 @@ export default function GamesPage() {
         ) : filteredGames.length === 0 ? (
           <NoDataAvailable />
         ) : (
-          <Grid container spacing={3} justifyContent={"center"}>
+          <Grid container spacing={3} sx={{
+            justifyContent: "center"
+          }}>
             {filteredGames.map((g) => (
-              <Grid item xs={12} sm={6} md={4} lg={3} key={g._id}>
+              <Grid
+                key={g._id}
+                size={{
+                  xs: 12,
+                  sm: 6,
+                  md: 4,
+                  lg: 3
+                }}>
                 <AppCard
                   sx={{
                     p: 2,
@@ -347,24 +359,31 @@ export default function GamesPage() {
                   <Box>
                     <Typography
                       variant="h6"
-                      fontWeight="bold"
                       gutterBottom
-                      sx={{ lineHeight: 1.3, textTransform: "capitalize" }}
-                    >
+                      sx={{
+                        fontWeight: "bold",
+                        lineHeight: 1.3,
+                        textTransform: "capitalize"
+                      }}>
                       {g.title}
                     </Typography>
 
                     <Typography
                       variant="body2"
-                      color="text.secondary"
-                      sx={{ wordBreak: "break-word" }}
-                    >
+                      sx={{
+                        color: "text.secondary",
+                        wordBreak: "break-word"
+                      }}>
                       <strong>{t.slugLabel}</strong> {g.slug}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" sx={{
+                      color: "text.secondary"
+                    }}>
                       <strong>{t.optionCountLabel}</strong> {g.choicesCount}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" sx={{
+                      color: "text.secondary"
+                    }}>
                       <strong>{t.quizTimeLabel}</strong> {g.gameSessionTimer}s
                     </Typography>
                   </Box>

@@ -383,7 +383,6 @@ export default function EventDetails() {
           }}
         />
       )}
-
       {/* Video Background */}
       {background?.fileType === "video" && background?.url && (
         <Box
@@ -412,7 +411,6 @@ export default function EventDetails() {
           />
         </Box>
       )}
-
       {/* Mute/Unmute Button for Video */}
       {background?.fileType === "video" && (
         <IconButton
@@ -435,9 +433,7 @@ export default function EventDetails() {
           {isMuted ? <VolumeOffIcon /> : <VolumeUpIcon />}
         </IconButton>
       )}
-
       {!background && <Background />}
-
       <Box
         sx={{
           display: "flex",
@@ -503,26 +499,24 @@ export default function EventDetails() {
                 {/* Welcome message with name */}
                 <Typography
                   variant="h3"
-                  fontWeight="bold"
                   sx={{
+                    fontWeight: "bold",
                     fontSize: { xs: 32, md: 48 },
                     color: "primary.main",
-                    mb: 2,
-                  }}
-                >
+                    mb: 2
+                  }}>
                   {t.welcome} {registration.fullName || "Guest"}!
                 </Typography>
 
                 {/* Event name */}
                 <Typography
                   variant="h4"
-                  fontWeight="bold"
                   sx={{
+                    fontWeight: "bold",
                     fontSize: { xs: 24, md: 32 },
                     color: "text.primary",
-                    mb: 2,
-                  }}
-                >
+                    mb: 2
+                  }}>
                   {name}
                 </Typography>
 
@@ -554,11 +548,12 @@ export default function EventDetails() {
                 <Stack
                   direction="row"
                   spacing={dir === "ltr" ? 1 : 0}
-                  justifyContent="center"
-                  alignItems="center"
-                  flexWrap="wrap"
-                  sx={{ mb: 2 }}
-                >
+                  sx={{
+                    justifyContent: "center",
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                    mb: 2
+                  }}>
                   <ICONS.location
                     color="primary"
                     sx={{
@@ -574,11 +569,12 @@ export default function EventDetails() {
                 <Stack
                   direction="row"
                   spacing={dir === "ltr" ? 1 : 0}
-                  justifyContent="center"
-                  alignItems="center"
-                  flexWrap="wrap"
-                  sx={{ mb: 3 }}
-                >
+                  sx={{
+                    justifyContent: "center",
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                    mb: 3
+                  }}>
                   <ICONS.event
                     color="primary"
                     sx={{
@@ -644,18 +640,19 @@ export default function EventDetails() {
                     >
                       {t.contactOrganizer}
                     </Typography>
-                    <Stack spacing={1.5} alignItems="center">
+                    <Stack spacing={1.5} sx={{
+                      alignItems: "center"
+                    }}>
                       {organizerName && (
                         <Stack
                           direction="row"
                           spacing={1}
-                          alignItems="center"
                           sx={{
+                            alignItems: "center",
                             fontSize: { xs: 16, md: 18 },
                             fontWeight: 600,
-                            color: "primary.main",
-                          }}
-                        >
+                            color: "primary.main"
+                          }}>
                           <ICONS.person fontSize="small" color="primary" />
                           <Typography
                             variant="h6"
@@ -673,12 +670,11 @@ export default function EventDetails() {
                         <Stack
                           direction="row"
                           spacing={1}
-                          alignItems="center"
                           sx={{
+                            alignItems: "center",
                             fontSize: { xs: 14, md: 16 },
-                            color: "text.primary",
-                          }}
-                        >
+                            color: "text.primary"
+                          }}>
                           <ICONS.email fontSize="small" color="primary" />
                           <Typography
                             sx={{
@@ -693,12 +689,11 @@ export default function EventDetails() {
                         <Stack
                           direction="row"
                           spacing={1}
-                          alignItems="center"
                           sx={{
+                            alignItems: "center",
                             fontSize: { xs: 14, md: 16 },
-                            color: "text.primary",
-                          }}
-                        >
+                            color: "text.primary"
+                          }}>
                           <ICONS.phone fontSize="small" color="primary" />
                           <Typography
                             sx={{
@@ -727,7 +722,12 @@ export default function EventDetails() {
                 )}
 
                 {/* Confirmation status */}
-                <Stack spacing={2} alignItems="center" sx={{ width: "100%" }}>
+                <Stack
+                  spacing={2}
+                  sx={{
+                    alignItems: "center",
+                    width: "100%"
+                  }}>
 
                   {(confirmed || notConfirmed) ? (
                     confirmed ? (
@@ -828,7 +828,7 @@ export default function EventDetails() {
           </Box>
         ) : (
           // Regular event view (no token)
-          <EventWelcomeCard
+          (<EventWelcomeCard
             t={t}
             name={name}
             description={description}
@@ -849,27 +849,27 @@ export default function EventDetails() {
             organizerEmail={organizerEmail}
             organizerPhone={organizerPhone}
             contactOrganizer={t.contactOrganizer}
-          />
+          />)
         )}
       </Box>
-
       <LanguageSelector top={20} right={20} />
-
       {/* Confirmation Modal */}
       <Dialog
         open={showConfirmModal}
         onClose={confirming ? null : () => setShowConfirmModal(false)}
         dir={dir}
         disableScrollLock={true}
-        PaperProps={{
-          sx: {
-            borderRadius: 2,
-            padding: 2,
-            maxWidth: "500px",
-            width: "100%",
-            backgroundColor: "#f9fafb",
-            boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
-          },
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: 2,
+              padding: 2,
+              maxWidth: "500px",
+              width: "100%",
+              backgroundColor: "#f9fafb",
+              boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
+            },
+          }
         }}
       >
         <DialogTitle
@@ -966,7 +966,6 @@ export default function EventDetails() {
           </Button>
         </DialogActions>
         </Dialog>
-
       <Dialog
         open={showBadgeCardModal}
         onClose={() => {
@@ -975,15 +974,17 @@ export default function EventDetails() {
         }}
         dir={dir}
         disableScrollLock={true}
-        PaperProps={{
-          sx: {
-            borderRadius: 2,
-            padding: 0,
-            maxWidth: "800px",
-            width: "100%",
-            backgroundColor: "#ffffff",
-            boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
-          },
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: 2,
+              padding: 0,
+              maxWidth: "800px",
+              width: "100%",
+              backgroundColor: "#ffffff",
+              boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
+            },
+          }
         }}
       >
         <DialogContent sx={{ p: 0, bgcolor: '#ffffff', textAlign: 'center', position: 'relative' }}>

@@ -1,8 +1,4 @@
 const nextConfig = {
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-
   async rewrites() {
     return [
       // Handle explicit language routes
@@ -17,6 +13,10 @@ const nextConfig = {
       },
     ];
   },
+
+  // Turbopack (default in Next.js 16) handles TTF/OTF natively — no rule needed.
+  // Keep webpack config for non-Turbopack builds (next build).
+  turbopack: {},
 
   webpack(config) {
     config.module.rules.push({

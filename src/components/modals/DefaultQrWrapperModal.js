@@ -201,10 +201,11 @@ function ClampedNumberInput({ value, min, max, onChange, label, inputProps = {},
       value={displayValue}
       onChange={handleChange}
       onBlur={handleBlur}
-      inputProps={{ min, max, ...inputProps }}
       sx={sx}
       {...rest}
-    />
+      slotProps={{
+        htmlInput: { min, max, ...inputProps }
+      }} />
   );
 }
 
@@ -212,9 +213,24 @@ function WidthHeightField({ width, height, onWidthChange, onHeightChange, widthL
   const widthAuto = width == null;
   const heightAuto = height == null;
   return (
-    <Stack direction="row" spacing={1.5} flexWrap="wrap" alignItems="center" sx={{ ...sx }}>
-      <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-        <Typography variant="caption" color="text.secondary">{widthLabel}</Typography>
+    <Stack
+      direction="row"
+      spacing={1.5}
+      sx={{
+        flexWrap: "wrap",
+        alignItems: "center",
+        ...sx
+      }}>
+      <Stack
+        direction="row"
+        spacing={1}
+        sx={{
+          alignItems: "center",
+          flexWrap: "wrap"
+        }}>
+        <Typography variant="caption" sx={{
+          color: "text.secondary"
+        }}>{widthLabel}</Typography>
         <FormControl size="small" sx={{ minWidth: 72 }}>
           <Select
             value={widthAuto ? "auto" : "custom"}
@@ -229,8 +245,16 @@ function WidthHeightField({ width, height, onWidthChange, onHeightChange, widthL
           <ClampedNumberInput label="" value={width} min={minSize} onChange={onWidthChange} sx={{ width: 90, minWidth: 80 }} />
         )}
       </Stack>
-      <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
-        <Typography variant="caption" color="text.secondary">{heightLabel}</Typography>
+      <Stack
+        direction="row"
+        spacing={1}
+        sx={{
+          alignItems: "center",
+          flexWrap: "wrap"
+        }}>
+        <Typography variant="caption" sx={{
+          color: "text.secondary"
+        }}>{heightLabel}</Typography>
         <FormControl size="small" sx={{ minWidth: 72 }}>
           <Select
             value={heightAuto ? "auto" : "custom"}
@@ -1003,15 +1027,20 @@ export default function DefaultQrWrapperModal({
       maxWidth="lg"
       fullWidth
       dir={dir}
-      PaperProps={{ sx: { height: "90vh", maxHeight: "90vh" } }}
+      slotProps={{
+        paper: { sx: { height: "90vh", maxHeight: "90vh" } }
+      }}
     >
       <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontWeight: "bold", px: 3, pt: 3 }}>
-        <Typography fontWeight="bold" fontSize="1.25rem">
+        <Typography
+          sx={{
+            fontWeight: "bold",
+            fontSize: "1.25rem"
+          }}>
           {isEventMode ? t.titleEvent : t.title}
         </Typography>
         <IconButton onClick={onClose} size="small"><ICONS.close /></IconButton>
       </DialogTitle>
-
       <DialogContent sx={{ p: 0, display: "flex", flexDirection: "row", overflow: "hidden" }}>
         <Box sx={{ flex: 1, minWidth: 0, overflowY: "auto", p: 2, borderRight: "1px solid", borderColor: "divider" }}>
           <Stack spacing={2}>
@@ -1022,7 +1051,9 @@ export default function DefaultQrWrapperModal({
                     {eventFields.map((f) => (
                       <Paper key={f.id} variant="outlined" sx={{ p: 1.5 }}>
                         <Stack spacing={1.5}>
-                          <Typography variant="subtitle1" fontWeight={600}>{f.label || f.id}</Typography>
+                          <Typography variant="subtitle1" sx={{
+                            fontWeight: 600
+                          }}>{f.label || f.id}</Typography>
                           {renderFieldEditor(f, handleEventFieldContentChange, handleEventFormattingChange, handleEventFieldChange, handleEventFieldChange, handleEventFieldChange)}
                         </Stack>
                       </Paper>
@@ -1034,8 +1065,15 @@ export default function DefaultQrWrapperModal({
                 {customFields.map((f) => (
                   <Paper key={f.id} variant="outlined" sx={{ p: 1.5 }}>
                     <Stack spacing={1.5}>
-                      <Stack direction="row" justifyContent="space-between" alignItems="center">
-                        <Typography variant="subtitle1" fontWeight={600}>{f.label || "field1"}</Typography>
+                      <Stack
+                        direction="row"
+                        sx={{
+                          justifyContent: "space-between",
+                          alignItems: "center"
+                        }}>
+                        <Typography variant="subtitle1" sx={{
+                          fontWeight: 600
+                        }}>{f.label || "field1"}</Typography>
                         <IconButton size="small" color="error" onClick={() => handleRemoveField(f.id)} aria-label={t.remove}>
                           <ICONS.delete />
                         </IconButton>
@@ -1051,9 +1089,17 @@ export default function DefaultQrWrapperModal({
 
                 {includeLogo && (
                   <>
-                    <Typography variant="subtitle1" fontWeight={600}>{t.logo}</Typography>
+                    <Typography variant="subtitle1" sx={{
+                      fontWeight: 600
+                    }}>{t.logo}</Typography>
                     {logoPreview && <Avatar src={logoPreview} variant="square" sx={{ width: 72, height: 72 }} />}
-                    <Stack direction="row" spacing={1.5} flexWrap="wrap" alignItems="center">
+                    <Stack
+                      direction="row"
+                      spacing={1.5}
+                      sx={{
+                        flexWrap: "wrap",
+                        alignItems: "center"
+                      }}>
                       <WidthHeightField width={logo.width} height={logo.height} onWidthChange={(v) => setLogo((p) => ({ ...p, width: v }))} onHeightChange={(v) => setLogo((p) => ({ ...p, height: v }))} widthLabel={t.logoWidth} heightLabel={t.logoHeight} t={t} minSize={0} defaultPx={150} />
                       <ClampedNumberInput label={t.logoX} value={logo.x} min={0} max={100} onChange={(v) => setLogo((p) => ({ ...p, x: v }))} sx={{ width: 90, minWidth: 80 }} />
                       <ClampedNumberInput label={t.logoY} value={logo.y} min={0} max={100} onChange={(v) => setLogo((p) => ({ ...p, y: v }))} sx={{ width: 90, minWidth: 80 }} />
@@ -1064,7 +1110,9 @@ export default function DefaultQrWrapperModal({
 
                 {includeBackground && (
                   <>
-                    <Typography variant="subtitle1" fontWeight={600}>{t.backgroundImage}</Typography>
+                    <Typography variant="subtitle1" sx={{
+                      fontWeight: 600
+                    }}>{t.backgroundImage}</Typography>
                     {backgroundPreview && <Avatar src={backgroundPreview} variant="square" sx={{ width: 72, height: 72 }} />}
                     <Divider />
                   </>
@@ -1072,14 +1120,28 @@ export default function DefaultQrWrapperModal({
 
                 {includeBrandingMedia && (
                   <>
-                    <Typography variant="subtitle1" fontWeight={600}>{t.brandingMedia}</Typography>
+                    <Typography variant="subtitle1" sx={{
+                      fontWeight: 600
+                    }}>{t.brandingMedia}</Typography>
                     <Stack spacing={1.5} sx={{ maxHeight: 360, overflow: "auto" }}>
-                      {brandingMediaItems.length === 0 && <Typography color="text.secondary">{t.none}</Typography>}
+                      {brandingMediaItems.length === 0 && <Typography sx={{
+                        color: "text.secondary"
+                      }}>{t.none}</Typography>}
                       {brandingMediaItems.map((item, idx) => (
                         <Paper key={idx} variant="outlined" sx={{ p: 1.5, borderRadius: 1.5 }}>
-                          <Stack direction="row" alignItems="flex-start" spacing={2}>
+                          <Stack direction="row" spacing={2} sx={{
+                            alignItems: "flex-start"
+                          }}>
                             {item.url && <Avatar src={item.url} variant="square" sx={{ width: 56, height: 56, flexShrink: 0 }} />}
-                            <Stack direction="row" spacing={1.5} flexWrap="wrap" alignItems="center" sx={{ flex: 1, minWidth: 0 }}>
+                            <Stack
+                              direction="row"
+                              spacing={1.5}
+                              sx={{
+                                flexWrap: "wrap",
+                                alignItems: "center",
+                                flex: 1,
+                                minWidth: 0
+                              }}>
                               <WidthHeightField width={item.width} height={item.height} onWidthChange={(v) => handleBrandingItemFieldChange(idx, "width", v)} onHeightChange={(v) => handleBrandingItemFieldChange(idx, "height", v)} widthLabel={t.brandingWidth} heightLabel={t.brandingHeight} t={t} minSize={0} />
                               <ClampedNumberInput label={t.brandingX} value={item.x} min={0} max={100} onChange={(v) => handleBrandingItemFieldChange(idx, "x", v)} sx={{ width: 72, minWidth: 72 }} />
                               <ClampedNumberInput label={t.brandingY} value={item.y} min={0} max={100} onChange={(v) => handleBrandingItemFieldChange(idx, "y", v)} sx={{ width: 72, minWidth: 72 }} />
@@ -1099,8 +1161,12 @@ export default function DefaultQrWrapperModal({
               </>
             ) : (
               <>
-                <Typography variant="subtitle1" fontWeight={600}>{t.logo}</Typography>
-                <Stack direction="row" alignItems="center" spacing={2}>
+                <Typography variant="subtitle1" sx={{
+                  fontWeight: 600
+                }}>{t.logo}</Typography>
+                <Stack direction="row" spacing={2} sx={{
+                  alignItems: "center"
+                }}>
                   {logoPreview && <Avatar src={logoPreview} variant="square" sx={{ width: 72, height: 72 }} />}
                   <Button variant="outlined" component="label" size="small">
                     {t.upload}
@@ -1112,15 +1178,25 @@ export default function DefaultQrWrapperModal({
                     </Button>
                   )}
                 </Stack>
-                <Stack direction="row" spacing={1.5} flexWrap="wrap" alignItems="center">
+                <Stack
+                  direction="row"
+                  spacing={1.5}
+                  sx={{
+                    flexWrap: "wrap",
+                    alignItems: "center"
+                  }}>
                   <WidthHeightField width={logo.width} height={logo.height} onWidthChange={(v) => setLogo((p) => ({ ...p, width: v }))} onHeightChange={(v) => setLogo((p) => ({ ...p, height: v }))} widthLabel={t.logoWidth} heightLabel={t.logoHeight} t={t} minSize={0} defaultPx={150} />
                   <ClampedNumberInput label={t.logoX} value={logo.x} min={0} max={100} onChange={(v) => setLogo((p) => ({ ...p, x: v }))} sx={{ width: 90, minWidth: 80 }} />
                   <ClampedNumberInput label={t.logoY} value={logo.y} min={0} max={100} onChange={(v) => setLogo((p) => ({ ...p, y: v }))} sx={{ width: 90, minWidth: 80 }} />
                 </Stack>
                 <Divider />
 
-                <Typography variant="subtitle1" fontWeight={600}>{t.backgroundImage}</Typography>
-                <Stack direction="row" alignItems="center" spacing={2}>
+                <Typography variant="subtitle1" sx={{
+                  fontWeight: 600
+                }}>{t.backgroundImage}</Typography>
+                <Stack direction="row" spacing={2} sx={{
+                  alignItems: "center"
+                }}>
                   {backgroundPreview && <Avatar src={backgroundPreview} variant="square" sx={{ width: 72, height: 72 }} />}
                   <Button variant="outlined" component="label" size="small">
                     {t.upload}
@@ -1134,8 +1210,16 @@ export default function DefaultQrWrapperModal({
                 </Stack>
                 <Divider />
 
-                <Typography variant="subtitle1" fontWeight={600}>{t.brandingMedia}</Typography>
-                <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 1 }}>
+                <Typography variant="subtitle1" sx={{
+                  fontWeight: 600
+                }}>{t.brandingMedia}</Typography>
+                <Stack
+                  direction="row"
+                  spacing={2}
+                  sx={{
+                    alignItems: "center",
+                    mb: 1
+                  }}>
                   <Button variant="outlined" component="label" size="small">
                     {t.addBrandingMedia}
                     <input ref={brandingFileInputRef} type="file" accept="image/*,video/*" multiple hidden onChange={handleAddBrandingMedia} />
@@ -1146,12 +1230,24 @@ export default function DefaultQrWrapperModal({
                   </Button>
                 </Stack>
                 <Stack spacing={1.5} sx={{ maxHeight: 360, overflow: "auto" }}>
-                  {brandingMediaItems.length === 0 && <Typography color="text.secondary">{t.none}</Typography>}
+                  {brandingMediaItems.length === 0 && <Typography sx={{
+                    color: "text.secondary"
+                  }}>{t.none}</Typography>}
                   {brandingMediaItems.map((item, idx) => (
                     <Paper key={idx} variant="outlined" sx={{ p: 1.5, borderRadius: 1.5 }}>
-                      <Stack direction="row" alignItems="flex-start" spacing={2}>
+                      <Stack direction="row" spacing={2} sx={{
+                        alignItems: "flex-start"
+                      }}>
                         <Avatar src={item.url} variant="square" sx={{ width: 56, height: 56, flexShrink: 0 }} />
-                        <Stack direction="row" spacing={1.5} flexWrap="wrap" alignItems="center" sx={{ flex: 1, minWidth: 0 }}>
+                        <Stack
+                          direction="row"
+                          spacing={1.5}
+                          sx={{
+                            flexWrap: "wrap",
+                            alignItems: "center",
+                            flex: 1,
+                            minWidth: 0
+                          }}>
                           <WidthHeightField width={item.width} height={item.height} onWidthChange={(v) => handleBrandingItemFieldChange(idx, "width", v)} onHeightChange={(v) => handleBrandingItemFieldChange(idx, "height", v)} widthLabel={t.brandingWidth} heightLabel={t.brandingHeight} t={t} minSize={0} />
                           <ClampedNumberInput label={t.brandingX} value={item.x} min={0} max={100} onChange={(v) => handleBrandingItemFieldChange(idx, "x", v)} sx={{ width: 72, minWidth: 72 }} />
                           <ClampedNumberInput label={t.brandingY} value={item.y} min={0} max={100} onChange={(v) => handleBrandingItemFieldChange(idx, "y", v)} sx={{ width: 72, minWidth: 72 }} />
@@ -1169,8 +1265,12 @@ export default function DefaultQrWrapperModal({
               </>
             )}
 
-            <Typography variant="subtitle1" fontWeight={600}>{t.qrPosition}</Typography>
-            <Stack direction="row" spacing={1} flexWrap="wrap">
+            <Typography variant="subtitle1" sx={{
+              fontWeight: 600
+            }}>{t.qrPosition}</Typography>
+            <Stack direction="row" spacing={1} sx={{
+              flexWrap: "wrap"
+            }}>
               <ClampedNumberInput label={t.qrX} value={qr.x} min={0} max={100} onChange={(v) => setQr((p) => ({ ...p, x: v }))} sx={{ width: 90 }} />
               <ClampedNumberInput label={t.qrY} value={qr.y} min={0} max={100} onChange={(v) => setQr((p) => ({ ...p, y: v }))} sx={{ width: 90 }} />
               <ClampedNumberInput label={t.qrSize} value={qr.size} min={60} onChange={(v) => setQr((p) => ({ ...p, size: v }))} sx={{ width: 100 }} />
@@ -1182,8 +1282,15 @@ export default function DefaultQrWrapperModal({
                 {customFields.map((f) => (
                   <Paper key={f.id} variant="outlined" sx={{ p: 1.5 }}>
                     <Stack spacing={1.5}>
-                      <Stack direction="row" justifyContent="space-between" alignItems="center">
-                        <Typography variant="subtitle1" fontWeight={600}>{f.label || "field1"}</Typography>
+                      <Stack
+                        direction="row"
+                        sx={{
+                          justifyContent: "space-between",
+                          alignItems: "center"
+                        }}>
+                        <Typography variant="subtitle1" sx={{
+                          fontWeight: 600
+                        }}>{f.label || "field1"}</Typography>
                         <IconButton size="small" color="error" onClick={() => handleRemoveField(f.id)} aria-label={t.remove}>
                           <ICONS.delete />
                         </IconButton>
@@ -1201,7 +1308,12 @@ export default function DefaultQrWrapperModal({
         </Box>
 
         <Box sx={{ width: "380px", flexShrink: 0, p: 2, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", bgcolor: "background.default" }}>
-          <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 1 }}>{t.preview}</Typography>
+          <Typography
+            variant="subtitle2"
+            sx={{
+              color: "text.secondary",
+              mb: 1
+            }}>{t.preview}</Typography>
           <Box sx={{ width: PREVIEW_WIDTH, height: PREVIEW_HEIGHT, position: "relative", bgcolor: "#f5f5f5", borderRadius: 1, overflow: "hidden", border: "1px solid", borderColor: "divider" }}>
             <Box sx={{ position: "absolute", left: 0, top: 0, width: TEMPLATE_WIDTH, height: TEMPLATE_HEIGHT, transform: `scale(${PREVIEW_SCALE})`, transformOrigin: "0 0", bgcolor: "#f5f5f5" }}>
               {backgroundPreview && (!isEventMode || includeBackground) && (
@@ -1263,7 +1375,6 @@ export default function DefaultQrWrapperModal({
           </Box>
         </Box>
       </DialogContent>
-
       <ConfirmationDialog open={confirmRemoveLogo} onClose={() => setConfirmRemoveLogo(false)}
         onConfirm={async () => {
           if (isEventMode) { setLogoFile(null); setLogo((p) => ({ ...p, url: "" })); setLogoPreview(""); setConfirmRemoveLogo(false); return; }
@@ -1293,7 +1404,6 @@ export default function DefaultQrWrapperModal({
         }}
         title={t.confirmClearAllBranding} message={t.confirmClearAllBrandingMsg} confirmButtonText={t.remove} confirmButtonIcon={<ICONS.delete />}
       />
-
       <DialogActions sx={{ px: 3, pb: 2 }}>
         <Button onClick={onClose} variant="outlined" startIcon={<ICONS.cancel />} sx={getStartIconSpacing(dir)}>{t.cancel}</Button>
         <Button variant="contained" onClick={handleSave} disabled={saving} startIcon={saving ? null : <ICONS.save />} sx={getStartIconSpacing(dir)}>

@@ -515,7 +515,6 @@ const SpinningPage = () => {
           <LanguageSelector />
         </Box>
       )}
-
       {eventData?.type === "enter_names" && (
         <Button
           variant="contained"
@@ -533,7 +532,6 @@ const SpinningPage = () => {
           Menu
         </Button>
       )}
-
       {/* Drawer button (for onspot, admin, and sync types) */}
       {["onspot", "admin", "synced"].includes(eventData?.type) && !drawerOpen && (
         <Button
@@ -552,9 +550,7 @@ const SpinningPage = () => {
           Menu
         </Button>
       )}
-
       {selectedWinner && <Confetti numberOfPieces={500} recycle={false} />}
-
       <Box
         sx={{
           mb: 8,
@@ -618,9 +614,7 @@ const SpinningPage = () => {
           }
         `}</style>
       </Box>
-
       {/* Pointer (top centered) */}
-
       <Box
         sx={{
           position: "absolute",
@@ -635,7 +629,6 @@ const SpinningPage = () => {
           boxShadow: "0px 6px 15px rgba(0, 0, 0, 0.9)",
         }}
       />
-
       {/* Wheel */}
       <Box sx={{ position: "relative", width: size, height: size }}>
         {/* Rotating wheel */}
@@ -712,7 +705,6 @@ const SpinningPage = () => {
           }}
         />
       </Box>
-
       <Button
         variant="contained"
         onClick={handleSpinWheel}
@@ -754,19 +746,20 @@ const SpinningPage = () => {
       >
         {spinning ? t.spinning : t.spinTheWheel}
       </Button>
-
       {/* Winner Popup Dialog */}
       <Dialog
         open={!!selectedWinner && !spinning}
         onClose={() => setSelectedWinner(null)}
         maxWidth="sm"
         fullWidth
-        PaperProps={{
-          sx: {
-            borderRadius: 3,
-            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-            color: "white",
-          },
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: 3,
+              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+              color: "white",
+            },
+          }
         }}
       >
         <DialogTitle
@@ -841,20 +834,21 @@ const SpinningPage = () => {
           </Button>
         </DialogActions>
       </Dialog>
-
       {/* Drawer for onspot, admin, and sync types */}
       {["onspot", "admin", "synced"].includes(eventData?.type) && (
         <Drawer
           anchor="right"
           open={drawerOpen}
           onClose={handleDrawerClose}
-          PaperProps={{
-            sx: {
-              width: { xs: "90%", sm: 400 },
-              backgroundColor: "white",
-              color: "text.primary",
-              zIndex: 10001,
-            },
+          slotProps={{
+            paper: {
+              sx: {
+                width: { xs: "90%", sm: 400 },
+                backgroundColor: "white",
+                color: "text.primary",
+                zIndex: 10001,
+              },
+            }
           }}
         >
           <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }} dir={dir}>
@@ -907,7 +901,7 @@ const SpinningPage = () => {
             <Box sx={{ flex: 1, overflow: "auto", p: 2 }}>
               {eventData?.type === "onspot" && drawerTab === 0 ? (
                 // Entries Tab (only for onspot type, tab index 0)
-                <Box>
+                (<Box>
                   {/* Shuffle and Sort Buttons */}
                   <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
                     <Button
@@ -935,7 +929,6 @@ const SpinningPage = () => {
                       {t.sort}
                     </Button>
                   </Box>
-
                   {/* Editable Names TextField */}
                   <TextField
                     fullWidth
@@ -946,7 +939,6 @@ const SpinningPage = () => {
                     variant="outlined"
                     placeholder={t.placeholder}
                   />
-
                   {/* Ready Button */}
                   <Button
                     variant="contained"
@@ -963,19 +955,23 @@ const SpinningPage = () => {
                   >
                     {t.ready}
                   </Button>
-                </Box>
+                </Box>)
               ) : (
                 // Results Tab (tab index 1 for onspot, or tab index 0 for admin/sync)
-                <Box>
+                (<Box>
                   {loadingWinners ? (
                     <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
-                      <Typography variant="body2" color="text.secondary">
+                      <Typography variant="body2" sx={{
+                        color: "text.secondary"
+                      }}>
                         Loading...
                       </Typography>
                     </Box>
                   ) : winners.length === 0 ? (
                     <Box sx={{ textAlign: "center", mt: 4 }}>
-                      <Typography variant="body2" color="text.secondary">
+                      <Typography variant="body2" sx={{
+                        color: "text.secondary"
+                      }}>
                         {t.noWinners}
                       </Typography>
                     </Box>
@@ -995,7 +991,9 @@ const SpinningPage = () => {
                         >
                           <ListItemText
                             primary={
-                              <Box component="span" dir="ltr" display="inline-block">
+                              <Box component="span" dir="ltr" sx={{
+                                display: "inline-block"
+                              }}>
                                 {winner.name}
                               </Box>
                             }
@@ -1015,7 +1013,7 @@ const SpinningPage = () => {
                       ))}
                     </List>
                   )}
-                </Box>
+                </Box>)
               )}
             </Box>
           </Box>

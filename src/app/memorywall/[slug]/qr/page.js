@@ -60,11 +60,22 @@ export default function PublicQrPage() {
         dir={dir}
       >
         {/* Heading */}
-        <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ mt: 4 }}>
+        <Typography
+          variant="h4"
+          gutterBottom
+          sx={{
+            fontWeight: "bold",
+            mt: 4
+          }}>
           {t.scanToCapture}
         </Typography>
 
-        <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+        <Typography
+          variant="body1"
+          sx={{
+            color: "text.secondary",
+            mb: 4
+          }}>
           {t.useYourPhone}
         </Typography>
 

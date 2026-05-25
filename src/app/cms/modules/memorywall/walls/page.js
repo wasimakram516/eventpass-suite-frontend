@@ -276,16 +276,24 @@ export default function WallConfigsPage() {
       {/* Header Section */}
       <Stack
         direction={{ xs: "column", sm: "row" }}
-        justifyContent="space-between"
-        alignItems={{ xs: "stretch", sm: "center" }}
         spacing={2}
-        sx={{ my: 3 }}
-      >
+        sx={{
+          justifyContent: "space-between",
+          alignItems: { xs: "stretch", sm: "center" },
+          my: 3
+        }}>
         <Box>
-          <Typography variant="h4" fontWeight="bold">
+          <Typography variant="h4" sx={{
+            fontWeight: "bold"
+          }}>
             {t.wallConfigurations}
           </Typography>
-          <Typography variant="body2" color="text.secondary" mt={0.5}>
+          <Typography
+            variant="body2"
+            sx={{
+              color: "text.secondary",
+              mt: 0.5
+            }}>
             {selectedBusiness
               ? `${t.manageDisplayWalls} ${selectedBusinessObject?.name}`
               : t.selectBusinessToView}
@@ -293,12 +301,13 @@ export default function WallConfigsPage() {
         </Box>
         <Stack
           direction={{ xs: "column", sm: "row" }}
-          justifyContent="space-between"
-          alignItems={{ xs: "stretch", sm: "center" }}
           spacing={1}
-          sx={{ my: 3 }}
-          gap={dir === "rtl" ? 2 : 1}
-        >
+          sx={{
+            justifyContent: "space-between",
+            alignItems: { xs: "stretch", sm: "center" },
+            gap: dir === "rtl" ? 2 : 1,
+            my: 3
+          }}>
           {(user?.role === "admin" || user?.role === "superadmin") && (
             <Button
               variant="outlined"
@@ -323,7 +332,6 @@ export default function WallConfigsPage() {
       </Stack>
       {/* Divider */}
       <Divider sx={{ mb: 4 }} />
-
       {/* Grid of Config Cards */}
       {!selectedBusiness ? (
         <EmptyBusinessState />
@@ -334,9 +342,18 @@ export default function WallConfigsPage() {
       ) : filteredWallConfigs.length === 0 ? (
         <NoDataAvailable />
       ) : (
-        <Grid container spacing={3} justifyContent={"center"}>
+        <Grid container spacing={3} sx={{
+          justifyContent: "center"
+        }}>
           {filteredWallConfigs.map((config) => (
-            <Grid item xs={12} sm={6} md={4} key={config._id} sx={{ width: { xs: '100%', sm: 'auto' } }}>
+            <Grid
+              key={config._id}
+              sx={{ width: { xs: '100%', sm: 'auto' } }}
+              size={{
+                xs: 12,
+                sm: 6,
+                md: 4
+              }}>
               <Card
                 elevation={3}
                 sx={{
@@ -369,19 +386,25 @@ export default function WallConfigsPage() {
                 />
 
                 <CardContent sx={{ flexGrow: 1, pt: 4 }}>
-                  <Typography variant="h6" fontWeight="bold" gutterBottom>
+                  <Typography variant="h6" gutterBottom sx={{
+                    fontWeight: "bold"
+                  }}>
                     {config.name}
                   </Typography>
 
                   <Typography
                     variant="body2"
-                    color="text.secondary"
-                    sx={{ mb: 2, wordBreak: "break-word" }}
-                  >
+                    sx={{
+                      color: "text.secondary",
+                      mb: 2,
+                      wordBreak: "break-word"
+                    }}>
                     <strong>{t.slugLabel}</strong> {config.slug}
                   </Typography>
 
-                  <Typography variant="caption" color="text.secondary">
+                  <Typography variant="caption" sx={{
+                    color: "text.secondary"
+                  }}>
                     {t.createdLabel}{" "}
                     {(() => {
                       try {
@@ -496,7 +519,6 @@ export default function WallConfigsPage() {
         selectedBusiness={selectedBusiness}
         wallConfigId={currentConfig?._id}
       />
-
       {/* QR Modal */}
       <ShareLinkModal
         open={isQRModalOpen}

@@ -1,417 +1,252 @@
-﻿"use client";
+"use client";
 
-import {
-  Box,
-  Button,
-  Typography,
-  Stack,
-  Divider,
-  Link as MuiLink,
-  Container,
-  Grid,
-  Paper,
-  alpha,
-} from "@mui/material";
+import Image from "next/image";
+import { Box, Button, Container, Typography } from "@mui/material";
+import { motion } from "framer-motion";
+import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
+import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
+import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { useRouter } from "next/navigation";
-import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
+import { useAuth } from "@/contexts/AuthContext";
 import useI18nLayout from "@/hooks/useI18nLayout";
-import { getModuleIcon } from "@/utils/iconMapper";
-import ICONS from "@/utils/iconUtil";
-import Background from "@/components/Background";
-import HorizontalCarousel from "@/components/HorizontalCarousel";
- 
+
+const WEBSITE_URL =
+  process.env.NEXT_PUBLIC_WEBSITE_URL || "https://eventpass.whitewall.solutions";
+
 const translations = {
   en: {
-    heading: "Unified Event Engagement Suite",
+    title: "The All-In-One Event Engagement Platform",
     subtitle:
-      "Run interactive quizzes, real-time polls, photo walls, audience Q&A, registration and check-in — all in one place.",
-    button: "Go to CMS",
-    badgeButton: "View Your Badge",
-    features: {
-      quiz: "QuizNest",
-      games: "Event Duel",
-      tapmatch: "TapMatch",
-      poll: "VoteCast",
-      forum: "StageQ",
-      image: "MemoryWall",
-      assignment: "Event Reg",
-      checkin: "Check-In",
-      trophy: "Event Wheel",
-      email: "SurveyGuru",
-    },
+      "The premier solution for digital event passes and attendee engagement by WhiteWall.",
+    dashboard: "Go To The Dashboard",
+    badge: "View Your Badge",
+    learnMore: "Learn More",
   },
   ar: {
-    heading: "مجموعة موحدة للتفاعل في الفعاليات",
-    subtitle:
-      "شغّل الاختبارات التفاعلية، التصويت، جدار الصور، أسئلة الجمهور، التسجيل والدخول — كل ذلك في مكان واحد.",
-    button: "اذهب إلى لوحة التحكم",
-    badgeButton: "عرض بطاقتك",
-    features: {
-      quiz: "QuizNest",
-      games: "Event Duel",
-      tapmatch: "TapMatch",
-      poll: "VoteCast",
-      forum: "StageQ",
-      image: "MemoryWall",
-      assignment: "Event Reg",
-      checkin: "Check-In",
-      trophy: "Event Wheel",
-      email: "SurveyGuru",
-    },
+    title: "المنصة المتكاملة للتفاعل في الفعاليات",
+    subtitle: "الحل الأمثل للبطاقات الرقمية وتفاعل الحضور، من وايت وول.",
+    dashboard: "الذهاب إلى لوحة التحكم",
+    badge: "عرض بطاقتك",
+    learnMore: "اعرف أكثر",
   },
 };
- 
-// ---------- helpers ----------
-const normalizeUrl = (url) => {
-  if (!url) return "";
-  return /^https?:\/\//i.test(url) ? url : `https://${url}`;
-};
-// -----------------------------
 
-export default function HomePage() {
+export default function LandingPage() {
   const router = useRouter();
-  const { globalConfig } = useGlobalConfig();
-  const { t, dir, align } = useI18nLayout(translations);
-
-  const features = [
-    { key: "quiz", label: t.features.quiz, hue: "#0d47a1", route: "/quiznest" },
-    {
-      key: "games",
-      label: t.features.games,
-      hue: "#5e35b1",
-      route: "/eventduel",
-    }, 
-    {
-      key: "grid",
-      label: t.features.tapmatch,
-      hue: "#00897b",
-      route: "/tapmatch",
-    }, 
-    {
-      key: "assignment",
-      label: t.features.assignment,
-      hue: "#006064",
-      route: "/eventreg",
-    },
-    {
-      key: "checkin",
-      label: t.features.checkin,
-      hue: "#0277bd",
-      route: "/checkin",
-    },
-
-    {
-      key: "email",
-      label: t.features.email,
-      hue: "#1565c0",
-      route: "/surveyguru",
-    },
-    { key: "poll", label: t.features.poll, hue: "#00695c", route: "/votecast" },
-    { key: "forum", label: t.features.forum, hue: "#ef6c00", route: "/stageq" },
-    {
-      key: "image",
-      label: t.features.image,
-      hue: "#4e342e",
-      route: "/memorywall",
-    },
-    {
-      key: "trophy",
-      label: t.features.trophy,
-      hue: "#c62828",
-      route: "/eventwheel",
-    },
-  ];
+  const { user } = useAuth();
+  const { t } = useI18nLayout(translations);
 
   return (
-    <>
-      <Background />
+    <Box
+      sx={{
+        position: "fixed",
+        inset: 0,
+        overflow: "hidden",
+        bgcolor: "#000",
+        color: "#fff",
+        zIndex: 0,
+      }}
+    >
+      {/* Background */}
+      <Box sx={{ position: "absolute", inset: 0 }}>
+        <Image
+          src="/landing-bg-image.webp"
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          style={{ objectFit: "cover", objectPosition: "center" }}
+        />
+      </Box>
 
-      {/* Content */}
-      <Box
-        dir={dir}
+      <Container
+        maxWidth="xl"
         sx={{
           position: "relative",
           zIndex: 1,
-          minHeight: "calc(100vh - 64px)",
+          height: "100%",
           display: "flex",
           flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          px: { xs: 3, sm: 5, md: 8, lg: 10 },
+          py: { xs: 4, md: 6 },
         }}
       >
-        {/* HERO */}
-        <Box sx={{ py: 6 }}>
-          <Container maxWidth={false}>
-            <Stack spacing={3} alignItems="center" textAlign={align}>
-              <Typography
-                variant="overline"
-                color="primary"
-                letterSpacing={2}
-                fontWeight={700}
-              >
-                {t.heading}
-              </Typography>
-
-              <Typography
-                variant="h2"
-                fontWeight={800}
-                sx={{
-                  fontSize: { xs: "2rem", md: "3.25rem" },
-                  lineHeight: 1.12,
-                  textAlign: "center",
-                }}
-              >
-                {globalConfig?.appName || "EventPass Suite"}
-              </Typography>
-
-              <Typography
-                variant="body1"
-                color="text.secondary"
-                sx={{ maxWidth: 860, textAlign: "center" }}
-              >
-                {t.subtitle}
-              </Typography>
-
-              <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-                <Button
-                  variant="contained"
-                  size="large"
-                  startIcon={<ICONS.module />}
-                  onClick={() => router.push("/cms")}
-                  sx={(th) => ({
-                    mt: 1,
-                    px: 4,
-                    py: 1.4,
-                    borderRadius: 3,
-                    textTransform: "none",
-                    fontWeight: 700,
-                    boxShadow: `0 12px 30px ${alpha(
-                      th.palette.primary.main,
-                      0.25
-                    )}`,
-                  })}
-                >
-                  {t.button}
-                </Button>
-                <Button
-                  variant="outlined"
-                  size="large"
-                  startIcon={<ICONS.badge />}
-                  onClick={() => router.push("/my-badge")}
-                  sx={{
-                    mt: 1,
-                    px: 4,
-                    py: 1.4,
-                    borderRadius: 3,
-                    textTransform: "none",
-                    fontWeight: 700,
-                  }}
-                >
-                  {t.badgeButton}
-                </Button>
-              </Stack>
-            </Stack>
-          </Container>
-        </Box>
-
-        {/* FEATURES */}
-        <Container maxWidth={false} sx={{ pb: { xs: 3, md: 5 } }}>
-          <Divider sx={{ mb: 4 }} />
-          <Grid
-            container
-            spacing={{ xs: 2, sm: 3, md: 4 }}
-            columns={{ xs: 6, sm: 12, md: 12 }}
-            justifyContent="center"
+        <Box sx={{ textAlign: "center" }}>
+          {/* Logo */}
+          <Box
+            component={motion.div}
+            initial={{ opacity: 0, y: -10, scale: 0.96 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{ duration: 0.65, ease: "easeOut" }}
+            sx={{
+              display: "flex",
+              justifyContent: "center",
+              mb: { xs: 2, md: 3 },
+            }}
           >
-            {features.map((f) => (
-              <Grid key={f.key} item xs={3} sm={4} md={3}>
-                <FeatureBadge
-                  iconKey={f.key}
-                  label={f.label}
-                  hue={f.hue}
-                  route={f.route}
-                />
-              </Grid>
-            ))}
-          </Grid>
-        </Container>
-
-        {/* CLIENT LOGOS CAROUSEL (below features, above footer) */}
-        <HorizontalCarousel
-          items={globalConfig?.clientLogos || []}
-          showBorders={true}
-          maxWidth="md"
-          itemHeight={{ xs: 28, sm: 36, md: 44 }}
-          itemMaxWidth={{ xs: 120, sm: 160 }}
-        />
-
-        {/* FOOTER */}
-        <Footer globalConfig={globalConfig} align={align} />
-      </Box>
-    </>
-  );
-} 
-
-function FeatureBadge({ iconKey, label, hue, route }) {
-  const iconEl = getModuleIcon(iconKey);
-  const router = useRouter();
-
-  const handleClick = () => {
-    router.push(route);
-  };
-
-  return (
-    <Paper
-      elevation={0}
-      onClick={handleClick}
-      sx={(th) => ({
-        p: 2.25,
-        borderRadius: 3,
-        minWidth: 190,
-        display: "flex",
-        alignItems: "center",
-        gap: 1.25,
-        cursor: "pointer",
-        background:
-          th.palette.mode === "light"
-            ? `linear-gradient(180deg, ${alpha("#fff", 0.92)} 0%, ${alpha(
-                "#f8fafc",
-                0.92
-              )} 100%)`
-            : `linear-gradient(180deg, ${alpha("#0f172a", 0.7)} 0%, ${alpha(
-                "#0b1220",
-                0.7
-              )} 100%)`,
-        border: `1px solid ${alpha(th.palette.divider, 0.6)}`,
-        transition:
-          "transform .18s ease, box-shadow .18s ease, border-color .18s ease",
-        "&:hover": {
-          transform: "translateY(-3px)",
-          boxShadow: `0 14px 36px ${alpha(hue, 0.28)}`,
-          borderColor: alpha(hue, 0.5),
-        },
-      })}
-    >
-      <Box
-        sx={{
-          width: 52,
-          height: 52,
-          borderRadius: "16px",
-          display: "grid",
-          placeItems: "center",
-          background: (th) =>
-            th.palette.mode === "light" ? alpha(hue, 0.12) : alpha(hue, 0.22),
-          outline: (th) => `1px solid ${alpha(hue, 0.35)}`,
-          "& svg": { fontSize: 26, color: hue },
-          flexShrink: 0,
-        }}
-      >
-        {iconEl}
-      </Box>
-
-      <Typography variant="subtitle1" fontWeight={800}>
-        {label}
-      </Typography>
-    </Paper>
-  );
-}
-
-/* -------------------------------------- */
-function Footer({ globalConfig, align }) {
-  return (
-    <Stack
-      spacing={1.5}
-      alignItems="center"
-      mt={4}
-      sx={{ pb: { xs: 4, md: 6 } }}
-    >
-      {globalConfig?.companyLogoUrl && (
-        <Box
-          component="img"
-          src={globalConfig.companyLogoUrl}
-          alt="Company Logo"
-          sx={{ height: 56, opacity: 0.7, mt: 1.5 }}
-        />
-      )}
-
-      {(globalConfig?.contact?.email || globalConfig?.contact?.phone) && (
-        <Stack
-          direction="row"
-          flexWrap="wrap"
-          justifyContent="center"
-          spacing={2}
-          sx={{ maxWidth: "100%", rowGap: 0.5 }}
-        >
-          {globalConfig?.contact?.email && (
-            <Stack direction="row" spacing={0.5} alignItems="center">
-              <ICONS.email fontSize="small" />
-              <Typography variant="body2" color="text.secondary">
-                {globalConfig.contact.email}
-              </Typography>
-            </Stack>
-          )}
-
-          {globalConfig?.contact?.phone && (
-            <Stack direction="row" spacing={0.5} alignItems="center">
-              <ICONS.phone fontSize="small" />
-              <Typography variant="body2" color="text.secondary">
-                {globalConfig.contact.phone}
-              </Typography>
-            </Stack>
-          )}
-        </Stack>
-      )}
-
-      {(globalConfig?.socialLinks?.facebook ||
-        globalConfig?.socialLinks?.instagram ||
-        globalConfig?.socialLinks?.linkedin ||
-        globalConfig?.socialLinks?.website) && (
-        <Stack
-          direction="row"
-          spacing={2}
-          sx={{ mt: 0.5, flexWrap: "wrap" }}
-          justifyContent="center"
-        >
-          {globalConfig?.socialLinks?.facebook && (
-            <MuiLink
-              href={normalizeUrl(globalConfig.socialLinks.facebook)}
-              target="_blank"
-              underline="hover"
-              color="inherit"
+            <Box
+              sx={{
+                width: { xs: 180, sm: 330, md: 440 },
+                height: { xs: 58, sm: 102, md: 138 },
+                position: "relative",
+              }}
             >
-              <ICONS.facebook fontSize="small" />
-            </MuiLink>
-          )}
-          {globalConfig?.socialLinks?.instagram && (
-            <MuiLink
-              href={normalizeUrl(globalConfig.socialLinks.instagram)}
-              target="_blank"
-              underline="hover"
-              color="inherit"
+              <Image
+                src="/logo.png"
+                alt="EventPass"
+                fill
+                sizes="440px"
+                style={{ objectFit: "contain" }}
+                priority
+              />
+            </Box>
+          </Box>
+
+          {/* Title */}
+          <Typography
+            component={motion.h1}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55, delay: 0.1, ease: "easeOut" }}
+            sx={{
+              fontSize: { xs: "1.3rem", sm: "2.25rem", md: "3rem" },
+              lineHeight: 1.1,
+              fontWeight: 900,
+              letterSpacing: "-0.04em",
+              mb: 1.2,
+            }}
+          >
+            {t.title}
+          </Typography>
+
+          {/* Subtitle */}
+          <Typography
+            component={motion.p}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55, delay: 0.18, ease: "easeOut" }}
+            sx={{
+              maxWidth: 580,
+              mx: "auto",
+              color: "rgba(255,255,255,0.62)",
+              fontSize: { xs: "0.7rem", sm: "0.82rem", md: "0.88rem" },
+              lineHeight: 1.55,
+              mb: { xs: 2.5, md: 3 },
+            }}
+          >
+            {t.subtitle}
+          </Typography>
+
+          {/* Buttons */}
+          <Box
+            component={motion.div}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.26, ease: "easeOut" }}
+            sx={{
+              display: "flex",
+              flexWrap: "wrap",
+              justifyContent: "center",
+              gap: { xs: 1.25, md: 2 },
+            }}
+          >
+            <Button
+              onClick={() => router.push(user ? "/cms" : "/auth/login")}
+              variant="contained"
+              startIcon={<AccessTimeRoundedIcon sx={{ fontSize: 18 }} />}
+              sx={{
+                minWidth: { xs: 150, sm: 230, md: 280 },
+                px: { xs: 2, md: 3 },
+                py: { xs: 0.9, md: 1.15 },
+                borderRadius: "100px",
+                background:
+                  "linear-gradient(180deg, rgba(27,77,126,0.98) 0%, rgba(18,49,89,0.98) 100%)",
+                color: "#fff",
+                border: "1px solid rgba(63,169,255,0.95)",
+                boxShadow:
+                  "0 0 0 1px rgba(0,0,0,0.35), 0 10px 26px rgba(0,120,255,0.22)",
+                fontSize: { xs: "0.68rem", md: "0.76rem" },
+                fontWeight: 800,
+                letterSpacing: "0.14em",
+                textTransform: "uppercase",
+                "& .MuiButton-startIcon": { marginRight: "10px", marginLeft: 0 },
+                "&:hover": {
+                  background:
+                    "linear-gradient(180deg, rgba(35,91,145,1) 0%, rgba(24,63,111,1) 100%)",
+                  borderColor: "rgba(84,195,255,1)",
+                },
+              }}
             >
-              <ICONS.instagram fontSize="small" />
-            </MuiLink>
-          )}
-          {globalConfig?.socialLinks?.linkedin && (
-            <MuiLink
-              href={normalizeUrl(globalConfig.socialLinks.linkedin)}
-              target="_blank"
-              underline="hover"
-              color="inherit"
+              {t.dashboard}
+            </Button>
+
+            <Button
+              onClick={() => router.push("/my-badge")}
+              variant="contained"
+              startIcon={<PersonRoundedIcon sx={{ fontSize: 18 }} />}
+              sx={{
+                minWidth: { xs: 150, sm: 230, md: 280 },
+                px: { xs: 2, md: 3 },
+                py: { xs: 0.9, md: 1.15 },
+                borderRadius: "100px",
+                background:
+                  "linear-gradient(180deg, rgba(36,133,90,0.98) 0%, rgba(28,104,72,0.98) 100%)",
+                color: "#fff",
+                border: "1px solid rgba(86,224,160,0.85)",
+                boxShadow:
+                  "0 0 0 1px rgba(0,0,0,0.35), 0 10px 26px rgba(23,190,114,0.22)",
+                fontSize: { xs: "0.68rem", md: "0.76rem" },
+                fontWeight: 800,
+                letterSpacing: "0.14em",
+                textTransform: "uppercase",
+                "& .MuiButton-startIcon": { marginRight: "10px", marginLeft: 0 },
+                "&:hover": {
+                  background:
+                    "linear-gradient(180deg, rgba(42,155,105,1) 0%, rgba(33,124,85,1) 100%)",
+                  borderColor: "rgba(112,255,182,1)",
+                },
+              }}
             >
-              <ICONS.linkedin fontSize="small" />
-            </MuiLink>
-          )}
-          {globalConfig?.socialLinks?.website && (
-            <MuiLink
-              href={normalizeUrl(globalConfig.socialLinks.website)}
+              {t.badge}
+            </Button>
+
+            <Button
+              component="a"
+              href={WEBSITE_URL}
               target="_blank"
-              underline="hover"
-              color="inherit"
+              rel="noopener noreferrer"
+              variant="contained"
+              startIcon={<InfoOutlinedIcon sx={{ fontSize: 18 }} />}
+              sx={{
+                minWidth: { xs: 150, sm: 230, md: 280 },
+                px: { xs: 2, md: 3 },
+                py: { xs: 0.9, md: 1.15 },
+                borderRadius: "100px",
+                background:
+                  "linear-gradient(180deg, rgba(33,33,38,0.98) 0%, rgba(27,27,31,0.98) 100%)",
+                color: "#fff",
+                border: "1px solid rgba(232,232,232,0.88)",
+                boxShadow:
+                  "0 0 0 1px rgba(0,0,0,0.35), 0 10px 26px rgba(0,0,0,0.38)",
+                fontSize: { xs: "0.68rem", md: "0.76rem" },
+                fontWeight: 800,
+                letterSpacing: "0.14em",
+                textTransform: "uppercase",
+                "& .MuiButton-startIcon": { marginRight: "10px", marginLeft: 0 },
+                "&:hover": {
+                  background:
+                    "linear-gradient(180deg, rgba(42,42,48,1) 0%, rgba(34,34,39,1) 100%)",
+                  borderColor: "rgba(255,255,255,1)",
+                },
+              }}
             >
-              <ICONS.Language fontSize="small" />
-            </MuiLink>
-          )}
-        </Stack>
-      )}
-    </Stack>
+              {t.learnMore}
+            </Button>
+          </Box>
+        </Box>
+      </Container>
+    </Box>
   );
 }

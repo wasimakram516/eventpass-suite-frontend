@@ -56,14 +56,16 @@ export default function BusinessDrawer({
       anchor="left"
       open={open}
       onClose={onClose}
-      PaperProps={{
-        sx: {
-          width: 320,
-          p: 3,
-          bgcolor: "background.paper",
-          borderTopRightRadius: 12,
-          borderBottomRightRadius: 12,
-        },
+      slotProps={{
+        paper: {
+          sx: {
+            width: 320,
+            p: 3,
+            bgcolor: "background.paper",
+            borderTopRightRadius: 12,
+            borderBottomRightRadius: 12,
+          },
+        }
       }}
     >
       <Box dir={dir}>
@@ -76,7 +78,9 @@ export default function BusinessDrawer({
             mb: 2,
           }}
         >
-          <Typography variant="h6" fontWeight={600}>
+          <Typography variant="h6" sx={{
+            fontWeight: 600
+          }}>
             {t.title}
           </Typography>
           <IconButton
@@ -97,20 +101,29 @@ export default function BusinessDrawer({
           size="small"
           fullWidth
           sx={{ mb: 2 }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <ICONS.search fontSize="small" />
-              </InputAdornment>
-            ),
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <ICONS.search fontSize="small" />
+                </InputAdornment>
+              ),
+            }
           }}
         />
 
         {/* Content */}
         {isLoading ? (
-          <Stack alignItems="center" spacing={2} sx={{ mt: 6 }}>
+          <Stack
+            spacing={2}
+            sx={{
+              alignItems: "center",
+              mt: 6
+            }}>
             <LoadingState size={40} />
-            <Typography variant="body2" color="text.secondary" align={align}>
+            <Typography variant="body2" align={align} sx={{
+              color: "text.secondary"
+            }}>
               {t.loading}
             </Typography>
           </Stack>

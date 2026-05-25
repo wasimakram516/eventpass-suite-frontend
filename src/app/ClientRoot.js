@@ -10,6 +10,7 @@ import Script from "next/script";
 import { LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { useEffect } from "react";
+import ArabicFontSync from "@/components/ArabicFontSync";
 
 export default function ClientRoot({ children }) {
   useEffect(() => {
@@ -138,6 +139,7 @@ export default function ClientRoot({ children }) {
   return (
     <>
       <LanguageProvider>
+        <ArabicFontSync />
         <MessageProvider>
           <GlobalConfigProvider>
             <ThemeRegistry>

@@ -179,19 +179,17 @@ export default function BadgeCard({ event, module, registration, qrRef, t, compa
 
             <Typography
               variant="h5"
-              fontWeight={800}
               sx={{
+                fontWeight: 800,
                 color: BADGE_COLORS.white,
                 lineHeight: 1.15,
-                wordBreak: "break-word",
-              }}
-            >
+                wordBreak: "break-word"
+              }}>
               {event?.name}
             </Typography>
           </Box>
         </Box>
       </Box>
-
       <Box sx={{ px: { xs: 2.5, sm: 3 }, py: 3, textAlign: "start" }}>
         <Typography
           variant="caption"
@@ -205,16 +203,15 @@ export default function BadgeCard({ event, module, registration, qrRef, t, compa
         </Typography>
 
             <Typography
-          variant="h4"
-          fontWeight={800}
-          sx={{
-            color: BADGE_COLORS.ink,
-            lineHeight: 1.05,
+              variant="h4"
+              sx={{
+                fontWeight: 800,
+                color: BADGE_COLORS.ink,
+                lineHeight: 1.05,
                 mt: 0.5,
                 mb: compact ? 1 : 2.25,
-            wordBreak: "break-word",
-          }}
-        >
+                wordBreak: "break-word"
+              }}>
           {attendeeName}
         </Typography>
 
@@ -256,14 +253,13 @@ export default function BadgeCard({ event, module, registration, qrRef, t, compa
               </Typography>
               <Typography
                 variant="body1"
-                fontWeight={700}
                 sx={{
+                  fontWeight: 700,
                   color: BADGE_COLORS.ink,
                   lineHeight: 1.45,
                   mt: 0.45,
-                  wordBreak: "break-word",
-                }}
-              >
+                  wordBreak: "break-word"
+                }}>
                 {row.value}
               </Typography>
             </Box>
@@ -319,13 +315,12 @@ export default function BadgeCard({ event, module, registration, qrRef, t, compa
             >
               <Typography
                 variant="caption"
-                fontWeight={700}
                 sx={{
+                  fontWeight: 700,
                   color: BADGE_COLORS.primaryDark,
                   letterSpacing: 0.8,
-                  wordBreak: "break-all",
-                }}
-              >
+                  wordBreak: "break-all"
+                }}>
                 {t?.token || "Token"}: {registration.token}
               </Typography>
             </Box>
@@ -335,10 +330,11 @@ export default function BadgeCard({ event, module, registration, qrRef, t, compa
 
         <Typography
           variant="caption"
-          display="block"
-          textAlign="center"
-          sx={{ color: BADGE_COLORS.inkSoft }}
-        >
+          sx={{
+            display: "block",
+            textAlign: "center",
+            color: BADGE_COLORS.inkSoft
+          }}>
           {t?.poweredBy || "Powered by"} eventPass
         </Typography>
       </Box>

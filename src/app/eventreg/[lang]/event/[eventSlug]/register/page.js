@@ -361,11 +361,12 @@ export default function Registration() {
   if (loading || !event || !translatedEvent || !translationsReady) {
     return (
       <Box
-        minHeight="100vh"
-        display="flex"
-        alignItems="center"
-        justifyContent="center"
-      >
+        sx={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center"
+        }}>
         <Background />
         <CircularProgress />
       </Box>
@@ -472,15 +473,17 @@ export default function Registration() {
           {...commonProps}
           value={phoneValue}
           onChange={(e) => handlePhoneChange(field.name, e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <CountryCodeSelector
-                value={isoCode}
-                onChange={(iso) => handleCountryCodeChange(field.name, iso)}
-                disabled={!useInternationalNumbers}
-                dir={dir}
-              />
-            ),
+          slotProps={{
+            input: {
+              startAdornment: (
+                <CountryCodeSelector
+                  value={isoCode}
+                  onChange={(iso) => handleCountryCodeChange(field.name, iso)}
+                  disabled={!useInternationalNumbers}
+                  dir={dir}
+                />
+              ),
+            }
           }}
         />
       );
@@ -537,7 +540,6 @@ export default function Registration() {
         />
       )}
       {!imageBackgroundUrl && <Background />}
-
       {logoUrl && (
         <Box
           sx={{
@@ -562,7 +564,6 @@ export default function Registration() {
           />
         </Box>
       )}
-
       <Box sx={{ display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 4, width: '100%', maxWidth: 1040, justifyContent: 'center', alignItems: 'flex-start' }}>
         <Paper
           dir={dir}
@@ -578,7 +579,12 @@ export default function Registration() {
             backgroundColor: "rgba(255,255,255,0.9)",
           }}
         >
-        <Typography variant="h5" fontWeight="bold" sx={{ mb: 1 }}>
+        <Typography
+          variant="h5"
+          sx={{
+            fontWeight: "bold",
+            mb: 1
+          }}>
           {name}
         </Typography>
         {description && (
@@ -604,7 +610,12 @@ export default function Registration() {
           />
         )}
 
-        <Typography variant="h6" fontWeight="bold" sx={{ mb: 2 }}>
+        <Typography
+          variant="h6"
+          sx={{
+            fontWeight: "bold",
+            mb: 2
+          }}>
           {t.registerForEvent}
         </Typography>
 
@@ -636,7 +647,6 @@ export default function Registration() {
           </Box>
         )}
       </Box>
-
       {/* Success dialog */}
       <Dialog
         open={showDialog}
@@ -666,9 +676,20 @@ export default function Registration() {
             <ICONS.close sx={{ fontSize: 22 }} />
           </IconButton>
 
-          <Box display="flex" flexDirection="column" alignItems="center" sx={{ mt: 1 }}>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              mt: 1
+            }}>
             <ICONS.checkCircle sx={{ fontSize: 44, color: "#28a745", mb: 0.5 }} />
-            <Typography variant="h6" fontWeight="bold" sx={{ fontSize: "1.1rem" }}>
+            <Typography
+              variant="h6"
+              sx={{
+                fontWeight: "bold",
+                fontSize: "1.1rem"
+              }}>
               {t.registrationSuccess}
             </Typography>
           </Box>
@@ -754,7 +775,12 @@ export default function Registration() {
                   </Box>
 
                   {/* QR canvas */}
-                  <Box mt={2} display="flex" justifyContent="center">
+                  <Box
+                    sx={{
+                      mt: 2,
+                      display: "flex",
+                      justifyContent: "center"
+                    }}>
                     <Paper
                       id="qr-container"
                       elevation={3}

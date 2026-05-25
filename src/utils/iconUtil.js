@@ -47,7 +47,7 @@ import {
 
 // Outlined / Extras
 import {
-  PersonOutline as PersonOutlineIcon,
+  PersonOutlined as PersonOutlineIcon,
   EmailOutlined as EmailOutlinedIcon,
   ApartmentOutlined as ApartmentOutlinedIcon,
   QueryBuilderOutlined as QueryBuilderOutlinedIcon,
@@ -61,9 +61,9 @@ import {
 import {
   Info as InfoIcon,
   Warning as WarningIcon,
-  ErrorOutline as ErrorOutlineIcon,
+  ErrorOutlined as ErrorOutlineIcon,
   CheckCircle as CheckCircleIcon,
-  CheckCircleOutline as CheckCircleOutlineIcon,
+  CheckCircleOutlined as CheckCircleOutlineIcon,
 } from "@mui/icons-material";
 
 // Authentication

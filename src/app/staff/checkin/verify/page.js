@@ -191,23 +191,35 @@ export default function VerifyPage() {
       <BreadcrumbsNav />
       <Box
         dir={dir}
-        p={3}
-        maxWidth={500}
-        mx="auto"
-        minHeight="90vh"
-        display="flex"
-        flexDirection="column"
-        justifyContent="center"
-        alignItems="center"
-      >
+        sx={{
+          p: 3,
+          maxWidth: 500,
+          mx: "auto",
+          minHeight: "90vh",
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center"
+        }}>
         {/* Initial Options */}
         {!showScanner && !loading && !result && !error && (
-          <Box textAlign="center" my={4} width="100%">
-            <Stack spacing={2} alignItems="center">
-              <Typography variant="h6" fontWeight={600}>
+          <Box
+            sx={{
+              textAlign: "center",
+              my: 4,
+              width: "100%"
+            }}>
+            <Stack spacing={2} sx={{
+              alignItems: "center"
+            }}>
+              <Typography variant="h6" sx={{
+                fontWeight: 600
+              }}>
                 {t.startVerification}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" sx={{
+                color: "text.secondary"
+              }}>
                 {t.scanMessage}
               </Typography>
 
@@ -258,13 +270,20 @@ export default function VerifyPage() {
                   {/* Manual Mode Instructions */}
                   <Typography
                     variant="body2"
-                    sx={{ mb: 1 }}
-                    color="text.secondary"
-                  >
+                    sx={{
+                      color: "text.secondary",
+                      mb: 1
+                    }}>
                     {t.manualInstructions}
                   </Typography>
 
-                  <Stack direction="row" spacing={1} width="100%" maxWidth={350}>
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    sx={{
+                      width: "100%",
+                      maxWidth: 350
+                    }}>
                     <TextField
                       fullWidth
                       label={t.enterToken}
@@ -275,7 +294,9 @@ export default function VerifyPage() {
                           doVerify(token);
                         }
                       }}
-                      inputProps={{ maxLength: 10 }}
+                      slotProps={{
+                        htmlInput: { maxLength: 10 }
+                      }}
                     />
                     <Button
                       variant="contained"
@@ -306,7 +327,11 @@ export default function VerifyPage() {
               }}
               onCancel={() => setShowScanner(false)}
             />
-            <Box textAlign="center" mt={2}>
+            <Box
+              sx={{
+                textAlign: "center",
+                mt: 2
+              }}>
               <Tooltip title={t.tooltip.cancel}>
                 <Button
                   variant="text"
@@ -324,7 +349,12 @@ export default function VerifyPage() {
 
         {/* Loading */}
         {loading && (
-          <Stack spacing={2} alignItems="center" mt={5}>
+          <Stack
+            spacing={2}
+            sx={{
+              alignItems: "center",
+              mt: 5
+            }}>
             <CircularProgress />
             <Typography variant="body2">{t.verifying}</Typography>
           </Stack>
@@ -332,9 +362,17 @@ export default function VerifyPage() {
 
         {/* Success */}
         {result && (
-          <Stack spacing={3} alignItems="center" textAlign="center" mt={5}>
+          <Stack
+            spacing={3}
+            sx={{
+              alignItems: "center",
+              textAlign: "center",
+              mt: 5
+            }}>
             <ICONS.checkCircle sx={{ fontSize: 64, color: "success.main" }} />
-            <Typography variant="h2" color="success.main">
+            <Typography variant="h2" sx={{
+              color: "success.main"
+            }}>
               {t.verified}
             </Typography>
 
@@ -383,9 +421,17 @@ export default function VerifyPage() {
 
         {/* Error */}
         {error && (
-          <Stack spacing={2} alignItems="center" textAlign="center" mt={5}>
+          <Stack
+            spacing={2}
+            sx={{
+              alignItems: "center",
+              textAlign: "center",
+              mt: 5
+            }}>
             <ICONS.errorOutline sx={{ fontSize: 64, color: "error.main" }} />
-            <Typography variant="h6" color="error.main">
+            <Typography variant="h6" sx={{
+              color: "error.main"
+            }}>
               {error}
             </Typography>
             <Tooltip title={t.tooltip.retry}>
@@ -405,7 +451,6 @@ export default function VerifyPage() {
         <audio ref={successAudioRef} src="/correct.wav" preload="auto" />
         <audio ref={errorAudioRef} src="/wrong.wav" preload="auto" />
       </Box>
-
       <ConfirmationDialog
         open={printWarningOpen}
         onClose={() => setPrintWarningOpen(false)}

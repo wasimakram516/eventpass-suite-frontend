@@ -232,10 +232,11 @@ export default function HomePage() {
     return (
       <Typography
         variant="body2"
-        textAlign={align}
-        sx={{ color: "rgba(255,255,255,0.9)" }}
-      >
-        {formattedDate} · {formattedTime}
+        sx={{
+          textAlign: align,
+          color: "rgba(255,255,255,0.9)"
+        }}>
+        {formattedDate}· {formattedTime}
       </Typography>
     );
   };
@@ -318,15 +319,14 @@ export default function HomePage() {
         />
         <Typography
           variant="h6"
-          fontWeight="bold"
           sx={{
+            fontWeight: "bold",
             position: "absolute",
             top: "50%",
             left: "50%",
             transform: "translate(-50%, -50%)",
-            whiteSpace: "nowrap",
-          }}
-        >
+            whiteSpace: "nowrap"
+          }}>
           {centerLabel}
         </Typography>
       </Box>
@@ -408,15 +408,14 @@ export default function HomePage() {
               <Typography
                 variant="h5"
                 gutterBottom
-                textAlign={align}
                 sx={{
+                  textAlign: align,
                   color: "#fff",
                   letterSpacing: "0.3px",
                   textShadow: "0 2px 12px rgba(0,0,0,0.28)",
                   fontWeight: 600,
-                  lineHeight: 1.15,
-                }}
-              >
+                  lineHeight: 1.15
+                }}>
                 {greeting},{" "}
                 <Typography
                   component="span"
@@ -433,9 +432,11 @@ export default function HomePage() {
               <Clock />
               <Typography
                 variant="body1"
-                sx={{ mt: 2, color: "rgba(255,255,255,0.9)" }}
-                textAlign={align}
-              >
+                sx={{
+                  textAlign: align,
+                  mt: 2,
+                  color: "rgba(255,255,255,0.9)"
+                }}>
                 {t.overviewIntro}
               </Typography>
             </Box>
@@ -559,10 +560,15 @@ export default function HomePage() {
                     <Grid
                       container
                       spacing={2}
-                      sx={{ mt: 2 }}
-                      justifyContent="center"
-                    >
-                      <Grid item xs={12} md={4}>
+                      sx={{
+                        justifyContent: "center",
+                        mt: 2
+                      }}>
+                      <Grid
+                        size={{
+                          xs: 12,
+                          md: 4
+                        }}>
                         <AppCard
                           sx={{
                             p: 2,
@@ -582,10 +588,11 @@ export default function HomePage() {
                           <Stack
                             direction="row"
                             spacing={1}
-                            flexWrap="wrap"
-                            justifyContent="center"
-                            sx={{ mt: 1 }}
-                          >
+                            sx={{
+                              flexWrap: "wrap",
+                              justifyContent: "center",
+                              mt: 1
+                            }}>
                             {roleKeys.map((role) => (
                               <RenderTruncatedChip
                                 key={role}
@@ -597,7 +604,11 @@ export default function HomePage() {
                           </Stack>
                         </AppCard>
                       </Grid>
-                      <Grid item xs={12} md={4}>
+                      <Grid
+                        size={{
+                          xs: 12,
+                          md: 4
+                        }}>
                         <AppCard
                           sx={{
                             p: 2,
@@ -616,7 +627,11 @@ export default function HomePage() {
                           />
                         </AppCard>
                       </Grid>
-                      <Grid item xs={12} md={4}>
+                      <Grid
+                        size={{
+                          xs: 12,
+                          md: 4
+                        }}>
                         <AppCard
                           sx={{
                             p: 2,
@@ -642,7 +657,9 @@ export default function HomePage() {
             )}
 
             {/* Module Cards */}
-            <Grid container spacing={3} justifyContent="center">
+            <Grid container spacing={3} sx={{
+              justifyContent: "center"
+            }}>
               {modules.map((mod) => {
                 const data = moduleStats[mod.key] || {};
                 const totals = data.totals || {};
@@ -661,7 +678,13 @@ export default function HomePage() {
                 );
 
                 return (
-                  <Grid item xs={12} sm={6} lg={4} key={mod.key}>
+                  <Grid
+                    key={mod.key}
+                    size={{
+                      xs: 12,
+                      sm: 6,
+                      lg: 4
+                    }}>
                     <AppCard
                       sx={{
                         p: 3,
@@ -700,10 +723,12 @@ export default function HomePage() {
 
                         <Typography
                           variant="body2"
-                          color="text.secondary"
                           gutterBottom
-                          sx={{ ...wrapTextBox, minHeight: 44 }}
-                        >
+                          sx={{
+                            color: "text.secondary",
+                            ...wrapTextBox,
+                            minHeight: 44
+                          }}>
                           {mod.descriptions?.[language] || mod.descriptions?.en}
                         </Typography>
                         <Box sx={{ mt: 2 }}>
@@ -719,7 +744,9 @@ export default function HomePage() {
 
                         {/* Totals */}
                         {totalEntries.length > 0 ? (
-                          <Stack direction="row" flexWrap="wrap" spacing={1}>
+                          <Stack direction="row" spacing={1} sx={{
+                            flexWrap: "wrap"
+                          }}>
                             {totalEntries.map(([k, v]) => (
                               <RenderTruncatedChip
                                 key={k}
@@ -730,7 +757,9 @@ export default function HomePage() {
                             ))}
                           </Stack>
                         ) : (
-                          <Typography variant="body2" color="text.secondary">
+                          <Typography variant="body2" sx={{
+                            color: "text.secondary"
+                          }}>
                             {t.noTotals}
                           </Typography>
                         )}

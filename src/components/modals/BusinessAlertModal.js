@@ -43,12 +43,14 @@ const BusinessAlertModal = ({ open, onNavigate }) => {
       maxWidth="xs"
       fullWidth
       disableEscapeKeyDown
-      PaperProps={{
-        sx: {
-          borderRadius: 4,
-          overflow: "hidden",
-          boxShadow: 8,
-        },
+      slotProps={{
+        paper: {
+          sx: {
+            borderRadius: 4,
+            overflow: "hidden",
+            boxShadow: 8,
+          },
+        }
       }}
     >
       <Box
@@ -70,22 +72,20 @@ const BusinessAlertModal = ({ open, onNavigate }) => {
           <WarningAmberIcon sx={{ fontSize: 40, color: orange[700] }} />
         </Avatar>
       </Box>
-
       <DialogTitle sx={{ textAlign: "center", fontWeight: "bold", mt: 1 }}>
         {t.title}
       </DialogTitle>
-
       <Divider sx={{ mx: 4, mb: 2 }} />
-
       <DialogContent sx={{ textAlign: "center", px: 4 }}>
         <Typography variant="h6" gutterBottom>
           {t.heading}
         </Typography>
-        <Typography variant="body2" color="text.secondary">
+        <Typography variant="body2" sx={{
+          color: "text.secondary"
+        }}>
           {t.message}
         </Typography>
       </DialogContent>
-
       <DialogActions sx={{ justifyContent: "center", pb: 3 }}>
         <Button
           onClick={onNavigate}

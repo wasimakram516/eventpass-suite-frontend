@@ -870,30 +870,38 @@ export default function TrashPage() {
       <BreadcrumbsNav />
       <Stack
         direction={{ xs: "column", sm: "row" }}
-        justifyContent="space-between"
-        alignItems={{ xs: "stretch", sm: "center" }}
-        mb={2}
-        gap={2}
-      >
+        sx={{
+          justifyContent: "space-between",
+          alignItems: { xs: "stretch", sm: "center" },
+          mb: 2,
+          gap: 2
+        }}>
         <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography variant="h4" fontWeight="bold" textAlign={align}>
+          <Typography
+            variant="h4"
+            sx={{
+              fontWeight: "bold",
+              textAlign: align
+            }}>
             {t.title}
           </Typography>
           <Typography
             variant="body2"
-            color="text.secondary"
-            mt={0.5}
-            textAlign={align}
-          >
+            sx={{
+              color: "text.secondary",
+              mt: 0.5,
+              textAlign: align
+            }}>
             {t.subtitle}
           </Typography>
           <Typography
             variant="caption"
-            color="text.secondary"
-            mt={0.75}
-            display="block"
-            textAlign={align}
-          >
+            sx={{
+              color: "text.secondary",
+              mt: 0.75,
+              display: "block",
+              textAlign: align
+            }}>
             {t.filterHint}
           </Typography>
         </Box>
@@ -920,12 +928,14 @@ export default function TrashPage() {
               width: "100%",
               maxWidth: { xs: "100%", sm: 360, md: 420 },
             }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <ICONS.search fontSize="small" />
-                </InputAdornment>
-              ),
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <ICONS.search fontSize="small" />
+                  </InputAdornment>
+                ),
+              }
             }}
           />
           <Button
@@ -964,7 +974,6 @@ export default function TrashPage() {
         </Box>
       </Stack>
       <Divider sx={{ mb: 2 }} />
-
       {/* Module Count Chips */}
       {Object.keys(filteredModuleCounts).length > 0 && (
         <Box
@@ -1064,7 +1073,6 @@ export default function TrashPage() {
             })}
         </Box>
       )}
-
       {loading ? (
         <LoadingState />
       ) : !chipFilteredTrashData ||
@@ -1122,10 +1130,11 @@ export default function TrashPage() {
                 <Box key={module} sx={{ mb: 4 }}>
                   <Stack
                     direction={{ xs: "column", sm: "row" }}
-                    justifyContent="space-between"
-                    alignItems={{ xs: "flex-start", sm: "center" }}
-                    sx={{ mb: 2 }}
-                  >
+                    sx={{
+                      justifyContent: "space-between",
+                      alignItems: { xs: "flex-start", sm: "center" },
+                      mb: 2
+                    }}>
                     <Typography variant="h6">
                       {getModuleDisplayName(module)} - {total}
                     </Typography>
@@ -1174,20 +1183,22 @@ export default function TrashPage() {
                     container
                     rowSpacing={{ xs: 2, md: 3 }}
                     columnSpacing={{ xs: 0, md: 3 }}
-                    justifyContent="center"
+                    sx={{
+                      justifyContent: "center"
+                    }}
                   >
                     {filtered.map((item) => (
                       <Grid
-                        item
-                        xs={12}
-                        sm={6}
-                        md={4}
                         key={item._id}
                         sx={{
                           width: { xs: "100%", md: "auto" },
                           px: { xs: 0 },
                         }}
-                      >
+                        size={{
+                          xs: 12,
+                          sm: 6,
+                          md: 4
+                        }}>
                         <AppCard
                           sx={{
                             p: 2,
@@ -1222,7 +1233,9 @@ export default function TrashPage() {
                               <Box sx={{ flexGrow: 1, ...wrapTextBox }}>
                                 <Typography
                                   variant="subtitle1"
-                                  fontWeight="bold"
+                                  sx={{
+                                    fontWeight: "bold"
+                                  }}
                                 >
                                   {(() => {
                                     const displayInfo = getRecordDisplayInfo(
@@ -1240,9 +1253,11 @@ export default function TrashPage() {
                                   return displayInfo.secondary ? (
                                     <Typography
                                       variant="caption"
-                                      color="text.secondary"
-                                      sx={{ display: "block", mt: 0.5 }}
-                                    >
+                                      sx={{
+                                        color: "text.secondary",
+                                        display: "block",
+                                        mt: 0.5
+                                      }}>
                                       {displayInfo.secondary}
                                     </Typography>
                                   ) : null;
@@ -1269,7 +1284,9 @@ export default function TrashPage() {
 
                                 <Typography
                                   variant="caption"
-                                  color="text.secondary"
+                                  sx={{
+                                    color: "text.secondary"
+                                  }}
                                 >
                                   {t.deletedAt}:{" "}
                                   {item.deletedAt
@@ -1287,7 +1304,9 @@ export default function TrashPage() {
                                 <ICONS.person fontSize="small" color="action" />
                                 <Typography
                                   variant="caption"
-                                  color="text.secondary"
+                                  sx={{
+                                    color: "text.secondary"
+                                  }}
                                 >
                                   {t.deletedBy}:{" "}
                                   {getLabelForDeletedBy(item.deletedBy)}
@@ -1323,9 +1342,13 @@ export default function TrashPage() {
                       </Grid>
                     ))}
                   </Grid>
-
                   {total > limit && (
-                    <Box display="flex" justifyContent="center" mt={3}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "center",
+                        mt: 3
+                      }}>
                       <Pagination
                         dir="ltr"
                         count={Math.ceil(total / limit)}
@@ -1346,7 +1369,6 @@ export default function TrashPage() {
           return renderedModules;
         })()
       )}
-
       {/* Filter Modal for mobile */}
       <FilterModal open={filterOpen} onClose={() => setFilterOpen(false)}>
         <Stack spacing={2}>
@@ -1392,14 +1414,18 @@ export default function TrashPage() {
             type="date"
             value={dateFrom}
             onChange={(e) => setDateFrom(e.target.value)}
-            InputLabelProps={{ shrink: true }}
+            slotProps={{
+              inputLabel: { shrink: true }
+            }}
           />
           <TextField
             label={t.dateTo}
             type="date"
             value={dateTo}
             onChange={(e) => setDateTo(e.target.value)}
-            InputLabelProps={{ shrink: true }}
+            slotProps={{
+              inputLabel: { shrink: true }
+            }}
           />
 
           <FormControl size="small">
@@ -1443,7 +1469,6 @@ export default function TrashPage() {
           </Button>
         </Stack>
       </FilterModal>
-
       <ConfirmationDialog
         open={restoreConfirm}
         onClose={() => setRestoreConfirm(false)}

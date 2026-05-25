@@ -99,10 +99,14 @@ export default function TapMatchHomePage() {
         >
           <Typography
             variant="h3"
-            fontWeight={800}
             gutterBottom
-            sx={{ mb: 3, color: "#fff", textTransform: "capitalize", wordBreak: "break-word" }}
-          >
+            sx={{
+              fontWeight: 800,
+              mb: 3,
+              color: "#fff",
+              textTransform: "capitalize",
+              wordBreak: "break-word"
+            }}>
             {translatedTitle || game.title}
           </Typography>
 
@@ -124,7 +128,6 @@ export default function TapMatchHomePage() {
           </Button>
         </Paper>
       </Box>
-
       <LanguageSelector top={20} right={20} />
     </Box>
   );

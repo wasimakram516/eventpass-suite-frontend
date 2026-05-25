@@ -24,27 +24,33 @@ export default function NotFoundPage() {
     >
       {/* Background */}
       <Background/>
-
       {/* Logo + Code */}
       <Box sx={{ mb: 3 }}>
         <Typography
           variant="h1"
-          fontWeight="bold"
-          sx={{ fontSize: "5rem", color: "primary.main" }}
-        >
+          sx={{
+            fontWeight: "bold",
+            fontSize: "5rem",
+            color: "primary.main"
+          }}>
           404
         </Typography>
       </Box>
-
       {/* Heading + Message */}
-      <Typography variant="h5" fontWeight="bold" gutterBottom>
+      <Typography variant="h5" gutterBottom sx={{
+        fontWeight: "bold"
+      }}>
         Page Not Found
       </Typography>
-      <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
+      <Typography
+        variant="body1"
+        sx={{
+          color: "text.secondary",
+          mb: 4
+        }}>
         Sorry, the page you&apos;re looking for doesn&apos;t exist or may have
         been moved.
       </Typography>
-
       {/* Actions */}
       <Stack direction="row" spacing={2}>
         <Button
@@ -74,9 +80,13 @@ export default function NotFoundPage() {
           Go Back
         </Button>
       </Stack>
-
       {/* Footer Note */}
-      <Typography variant="caption" color="text.secondary" sx={{ mt: 6 }}>
+      <Typography
+        variant="caption"
+        sx={{
+          color: "text.secondary",
+          mt: 6
+        }}>
         Powered by{" "}
         <a
           href="https://whitewall.om"

@@ -275,10 +275,17 @@ export default function HostDashboard() {
           }}
         >
           <Box>
-            <Typography variant="h5" fontWeight="bold" sx={{ mt: 2 }}>
+            <Typography
+              variant="h5"
+              sx={{
+                fontWeight: "bold",
+                mt: 2
+              }}>
               {t.hostDashboard}
             </Typography>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" sx={{
+              color: "text.secondary"
+            }}>
               {t.hostDescription}
             </Typography>
           </Box>
@@ -329,8 +336,9 @@ export default function HostDashboard() {
 
         <Divider sx={{ my: 2 }} />
       </Box>
-
-      <Stack spacing={3} alignItems="center">
+      <Stack spacing={3} sx={{
+        alignItems: "center"
+      }}>
         {!pendingSession && !activeSession && (
           <Button
             variant="contained"
@@ -449,14 +457,13 @@ export default function HostDashboard() {
             {/* Header */}
             <Typography
               variant="h5"
-              fontWeight="bold"
               sx={{
+                fontWeight: "bold",
                 mb: 3,
                 color: "success.dark",
                 textShadow: "0 0 6px rgba(0, 0, 0, 0.1)",
-                letterSpacing: "1px",
-              }}
-            >
+                letterSpacing: "1px"
+              }}>
               {t.activeSession}
             </Typography>
 
@@ -465,20 +472,23 @@ export default function HostDashboard() {
               <>
                 <Typography
                   variant="subtitle1"
-                  fontWeight="bold"
-                  sx={{ color: "primary.main", mb: 2 }}
-                >
+                  sx={{
+                    fontWeight: "bold",
+                    color: "primary.main",
+                    mb: 2
+                  }}>
                   {t.teamMode}
                 </Typography>
 
                 {/* Display all team names */}
                 <Stack
                   direction="row"
-                  flexWrap="wrap"
-                  justifyContent="center"
                   spacing={1.5}
-                  mb={2}
-                >
+                  sx={{
+                    flexWrap: "wrap",
+                    justifyContent: "center",
+                    mb: 2
+                  }}>
                   {activeSession.teams?.length > 0 ? (
                     activeSession.teams.map((tObj, index) => (
                       <Box
@@ -494,9 +504,10 @@ export default function HostDashboard() {
                       >
                         <Typography
                           variant="subtitle2"
-                          fontWeight="bold"
-                          sx={{ color: "primary.dark" }}
-                        >
+                          sx={{
+                            fontWeight: "bold",
+                            color: "primary.dark"
+                          }}>
                           {tObj.teamId?.name || `${t.teamMode} ${index + 1}`}
                         </Typography>
                         <Typography
@@ -508,7 +519,9 @@ export default function HostDashboard() {
                       </Box>
                     ))
                   ) : (
-                    <Typography variant="caption" color="text.secondary">
+                    <Typography variant="caption" sx={{
+                      color: "text.secondary"
+                    }}>
                       {t.waitingPlayers}
                     </Typography>
                   )}
@@ -516,12 +529,12 @@ export default function HostDashboard() {
               </>
             ) : (
               // Original PvP Header
-              <Typography
+              (<Typography
                 variant="subtitle1"
                 sx={{ color: "primary.main", mb: 2, fontWeight: "bold" }}
               >
-                {t.player1} vs {t.player2}
-              </Typography>
+                {t.player1}vs {t.player2}
+              </Typography>)
             )}
 
             {/* Delay Countdown */}
@@ -530,9 +543,11 @@ export default function HostDashboard() {
                 <Box>
                   <Typography
                     variant="body1"
-                    fontWeight="bold"
-                    sx={{ color: "warning.main", mb: 1 }}
-                  >
+                    sx={{
+                      fontWeight: "bold",
+                      color: "warning.main",
+                      mb: 1
+                    }}>
                     {t.getReady}
                   </Typography>
                   <Box
@@ -563,9 +578,11 @@ export default function HostDashboard() {
                 <Box>
                   <Typography
                     variant="body1"
-                    fontWeight="bold"
-                    sx={{ color: "info.main", mb: 1 }}
-                  >
+                    sx={{
+                      fontWeight: "bold",
+                      color: "info.main",
+                      mb: 1
+                    }}>
                     {t.timeRemaining}
                   </Typography>
                   <Box
@@ -645,28 +662,33 @@ export default function HostDashboard() {
                 {/* Header */}
                 <Typography
                   variant="h6"
-                  fontWeight="bold"
                   sx={{
+                    fontWeight: "bold",
                     mb: 3,
                     color: "white",
-                    textShadow: "0 0 10px rgba(255,255,255,0.3)",
-                  }}
-                >
+                    textShadow: "0 0 10px rgba(255,255,255,0.3)"
+                  }}>
                   {isTeamMode
                     ? t.waitingForPlayers || t.waitingPlayers
                     : player1 && player2
                     ? t.bothPlayersJoined
                     : t.waitingPlayers}
                 </Typography>
-
                 {/* PvP Layout */}
                 {!isTeamMode && (
-                  <Grid container spacing={3} justifyContent="center">
+                  <Grid container spacing={3} sx={{
+                    justifyContent: "center"
+                  }}>
                     {[
                       { label: t.player1, player: player1 },
                       { label: t.player2, player: player2 },
                     ].map(({ label, player }, idx) => (
-                      <Grid item xs={12} sm={6} key={idx}>
+                      <Grid
+                        key={idx}
+                        size={{
+                          xs: 12,
+                          sm: 6
+                        }}>
                         <Box
                           sx={{
                             backgroundColor: player?.playerId
@@ -708,17 +730,21 @@ export default function HostDashboard() {
                           </Typography>
                           <Typography
                             variant="subtitle1"
-                            fontWeight="bold"
-                            sx={{ color: "#fff", wordWrap: "break-word" }}
-                          >
+                            sx={{
+                              fontWeight: "bold",
+                              color: "#fff",
+                              wordWrap: "break-word"
+                            }}>
                             {player?.playerId?.name || ""}
                           </Typography>
                           <Box
-                            display="flex"
-                            alignItems="center"
-                            gap={0.5}
-                            sx={{ justifyContent: "center", flexWrap: "wrap" }}
-                          >
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 0.5,
+                              justifyContent: "center",
+                              flexWrap: "wrap"
+                            }}>
                             <ICONS.business sx={{ fontSize: 18 }} />
                             <Typography
                               variant="caption"
@@ -732,17 +758,24 @@ export default function HostDashboard() {
                     ))}
                   </Grid>
                 )}
-
                 {/* TEAM MODE Layout */}
                 {isTeamMode && (
-                  <Grid container spacing={3} justifyContent="center">
+                  <Grid container spacing={3} sx={{
+                    justifyContent: "center"
+                  }}>
                     {pendingSession.teams?.map((team, idx) => {
                       const totalRequired =
                         pendingSession.gameId?.playersPerTeam || 0;
                       const joined = team.players?.length || 0;
 
                       return (
-                        <Grid item xs={12} sm={6} md={4} key={idx}>
+                        <Grid
+                          key={idx}
+                          size={{
+                            xs: 12,
+                            sm: 6,
+                            md: 4
+                          }}>
                           <Box
                             sx={{
                               backgroundColor:
@@ -783,9 +816,10 @@ export default function HostDashboard() {
                             </Avatar>
                             <Typography
                               variant="subtitle1"
-                              fontWeight="bold"
-                              sx={{ color: "#fff" }}
-                            >
+                              sx={{
+                                fontWeight: "bold",
+                                color: "#fff"
+                              }}>
                               {team.teamId?.name || `${t.teamMode} ${idx + 1}`}
                             </Typography>
                             <Typography
@@ -817,7 +851,6 @@ export default function HostDashboard() {
                     })}
                   </Grid>
                 )}
-
                 <style jsx>{`
                   @keyframes waitingPulse {
                     0% {
@@ -831,7 +864,6 @@ export default function HostDashboard() {
                     }
                   }
                 `}</style>
-
                 {/* Abandon Timer */}
                 {((!player1 || !player2) && !isTeamMode) ||
                 (isTeamMode &&
@@ -855,10 +887,11 @@ export default function HostDashboard() {
         <Box sx={{ mt: 4, width: "100%", maxWidth: 600 }}>
           <Typography
             variant="h6"
-            fontWeight="bold"
-            textAlign="center"
-            color="primary.dark"
-          >
+            sx={{
+              fontWeight: "bold",
+              textAlign: "center",
+              color: "primary.dark"
+            }}>
             {t.previousSession}
           </Typography>
 
@@ -910,7 +943,12 @@ export default function HostDashboard() {
                         {session?.winner && (
                           <ICONS.trophy sx={{ color: "#fff" }} />
                         )}
-                        <Typography variant="h6" color="#fff" fontWeight="bold">
+                        <Typography
+                          variant="h6"
+                          sx={{
+                            color: "#fff",
+                            fontWeight: "bold"
+                          }}>
                           {session.winner ? session.winner.name : t.tie}
                         </Typography>
                       </Box>
@@ -927,11 +965,16 @@ export default function HostDashboard() {
                           container
                           spacing={3}
                           direction={{ xs: "column", sm: "row" }}
-                          alignItems="stretch"
-                          justifyContent="space-between"
-                        >
+                          sx={{
+                            alignItems: "stretch",
+                            justifyContent: "space-between"
+                          }}>
                           {/* Player 1 */}
-                          <Grid item xs={12} sm={5.5}>
+                          <Grid
+                            size={{
+                              xs: 12,
+                              sm: 5.5
+                            }}>
                             <Box
                               sx={{
                                 background: isPlayer1Winner
@@ -947,45 +990,75 @@ export default function HostDashboard() {
                                 alignItems: "flex-start",
                               }}
                             >
-                              <Typography variant="h6" fontWeight="bold">
+                              <Typography variant="h6" sx={{
+                                fontWeight: "bold"
+                              }}>
                                 {player1?.playerId?.name || t.unknown}
                               </Typography>
 
-                              <Box display="flex" gap={1} alignItems="center">
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  gap: 1,
+                                  alignItems: "center"
+                                }}>
                                 <ICONS.business fontSize="small" />
                                 <Typography
                                   variant="body2"
-                                  color="text.secondary"
+                                  sx={{
+                                    color: "text.secondary"
+                                  }}
                                 >
                                   {player1?.playerId?.company || "N/A"}
                                 </Typography>
                               </Box>
 
-                              <Box display="flex" gap={1} alignItems="center">
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  gap: 1,
+                                  alignItems: "center"
+                                }}>
                                 <ICONS.leaderboard fontSize="small" />
                                 <Typography
                                   variant="body2"
-                                  color="text.secondary"
+                                  sx={{
+                                    color: "text.secondary"
+                                  }}
                                 >
                                   {t.score}: {player1?.score ?? 0}
                                 </Typography>
                               </Box>
 
-                              <Box display="flex" gap={1} alignItems="center">
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  gap: 1,
+                                  alignItems: "center"
+                                }}>
                                 <ICONS.assignment fontSize="small" />
                                 <Typography
                                   variant="body2"
-                                  color="text.secondary"
+                                  sx={{
+                                    color: "text.secondary"
+                                  }}
                                 >
                                   {t.attempted}:{" "}
                                   {player1?.attemptedQuestions ?? 0}
                                 </Typography>
                               </Box>
-                              <Box display="flex" gap={1} alignItems="center">
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  gap: 1,
+                                  alignItems: "center"
+                                }}>
                                 <ICONS.time fontSize="small" />
                                 <Typography
                                   variant="body2"
-                                  color="text.secondary"
+                                  sx={{
+                                    color: "text.secondary"
+                                  }}
                                 >
                                   {t.timeTaken}:{" "}
                                   {player1?.timeTaken != null
@@ -1022,7 +1095,11 @@ export default function HostDashboard() {
                           </Box>
 
                           {/* Player 2 */}
-                          <Grid item xs={12} sm={5.5}>
+                          <Grid
+                            size={{
+                              xs: 12,
+                              sm: 5.5
+                            }}>
                             <Box
                               sx={{
                                 background: isPlayer2Winner
@@ -1038,34 +1115,57 @@ export default function HostDashboard() {
                                 alignItems: "flex-end",
                               }}
                             >
-                              <Typography variant="h6" fontWeight="bold">
+                              <Typography variant="h6" sx={{
+                                fontWeight: "bold"
+                              }}>
                                 {player2?.playerId?.name || t.unknown}
                               </Typography>
 
-                              <Box display="flex" gap={1} alignItems="center">
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  gap: 1,
+                                  alignItems: "center"
+                                }}>
                                 <Typography
                                   variant="body2"
-                                  color="text.secondary"
+                                  sx={{
+                                    color: "text.secondary"
+                                  }}
                                 >
                                   {player2?.playerId?.company || "N/A"}
                                 </Typography>
                                 <ICONS.business fontSize="small" />
                               </Box>
 
-                              <Box display="flex" gap={1} alignItems="center">
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  gap: 1,
+                                  alignItems: "center"
+                                }}>
                                 <Typography
                                   variant="body2"
-                                  color="text.secondary"
+                                  sx={{
+                                    color: "text.secondary"
+                                  }}
                                 >
                                   {t.score}: {player2?.score ?? 0}
                                 </Typography>
                                 <ICONS.leaderboard fontSize="small" />
                               </Box>
 
-                              <Box display="flex" gap={1} alignItems="center">
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  gap: 1,
+                                  alignItems: "center"
+                                }}>
                                 <Typography
                                   variant="body2"
-                                  color="text.secondary"
+                                  sx={{
+                                    color: "text.secondary"
+                                  }}
                                 >
                                   {t.attempted}:{" "}
                                   {player2?.attemptedQuestions ?? 0}
@@ -1073,10 +1173,17 @@ export default function HostDashboard() {
                                 <ICONS.assignment fontSize="small" />
                               </Box>
 
-                              <Box display="flex" gap={1} alignItems="center">
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  gap: 1,
+                                  alignItems: "center"
+                                }}>
                                 <Typography
                                   variant="body2"
-                                  color="text.secondary"
+                                  sx={{
+                                    color: "text.secondary"
+                                  }}
                                 >
                                   {t.timeTaken}:{" "}
                                   {player2?.timeTaken != null
@@ -1127,10 +1234,11 @@ export default function HostDashboard() {
                       <ICONS.trophy sx={{ color: "#fff" }} />
                       <Typography
                         variant="h6"
-                        color="#fff"
-                        fontWeight="bold"
-                        sx={{ textAlign: "center" }}
-                      >
+                        sx={{
+                          color: "#fff",
+                          fontWeight: "bold",
+                          textAlign: "center"
+                        }}>
                         {session.winnerTeamId?.name || t.tie}
                       </Typography>
                     </Box>
@@ -1139,21 +1247,22 @@ export default function HostDashboard() {
                     <Grid
                       container
                       spacing={2}
-                      justifyContent="center"
-                      alignItems="stretch"
-                      sx={{ position: "relative" }}
-                    >
+                      sx={{
+                        justifyContent: "center",
+                        alignItems: "stretch",
+                        position: "relative"
+                      }}>
                       {session.teams?.map((team, idx) => {
                         const isWinner =
                           session.winnerTeamId?._id === team.teamId?._id;
 
                         return (
                           <Grid
-                            item
-                            xs={12}
-                            sm={session.teams?.length === 2 ? 6 : 12}
                             key={idx}
-                          >
+                            size={{
+                              xs: 12,
+                              sm: session.teams?.length === 2 ? 6 : 12
+                            }}>
                             <Paper
                               elevation={isWinner ? 6 : 1}
                               sx={{
@@ -1172,13 +1281,12 @@ export default function HostDashboard() {
                               {/* Team Name */}
                               <Typography
                                 variant="h6"
-                                fontWeight="bold"
                                 sx={{
+                                  fontWeight: "bold",
                                   textAlign: "center",
                                   color: "text.primary",
-                                  wordBreak: "break-word",
-                                }}
-                              >
+                                  wordBreak: "break-word"
+                                }}>
                                 {team.teamId?.name || `${t.teams} ${idx + 1}`}
                               </Typography>
 
@@ -1186,62 +1294,70 @@ export default function HostDashboard() {
                               <Stack
                                 direction="row"
                                 spacing={2}
-                                justifyContent="center"
-                                alignItems="center"
                                 divider={
                                   <Divider orientation="vertical" flexItem />
                                 }
                                 sx={{
+                                  justifyContent: "center",
+                                  alignItems: "center",
                                   flexWrap: "wrap",
                                   bgcolor: "white",
                                   borderRadius: 2,
                                   py: 0.7,
-                                  px: 1.5,
-                                }}
-                              >
+                                  px: 1.5
+                                }}>
                                 <Box
-                                  display="flex"
-                                  alignItems="center"
-                                  gap={0.6}
-                                >
+                                  sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 0.6
+                                  }}>
                                   <ICONS.leaderboard
                                     fontSize="small"
                                     color="action"
                                   />
                                   <Typography
                                     variant="caption"
-                                    color="text.secondary"
+                                    sx={{
+                                      color: "text.secondary"
+                                    }}
                                   >
                                     {t.totalScore}:{" "}
                                     <b>{team.totalScore ?? 0}</b>
                                   </Typography>
                                 </Box>
                                 <Box
-                                  display="flex"
-                                  alignItems="center"
-                                  gap={0.6}
-                                >
+                                  sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 0.6
+                                  }}>
                                   <ICONS.time fontSize="small" color="action" />
                                   <Typography
                                     variant="caption"
-                                    color="text.secondary"
+                                    sx={{
+                                      color: "text.secondary"
+                                    }}
                                   >
                                     {t.averageTime}:{" "}
                                     <b>{team.avgTimeTaken ?? 0}s</b>
                                   </Typography>
                                 </Box>
                                 <Box
-                                  display="flex"
-                                  alignItems="center"
-                                  gap={0.6}
-                                >
+                                  sx={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 0.6
+                                  }}>
                                   <ICONS.assignment
                                     fontSize="small"
                                     color="action"
                                   />
                                   <Typography
                                     variant="caption"
-                                    color="text.secondary"
+                                    sx={{
+                                      color: "text.secondary"
+                                    }}
                                   >
                                     {t.averageAttempted}:{" "}
                                     <b>{team.avgAttemptedQuestions ?? 0}</b>
@@ -1278,22 +1394,20 @@ export default function HostDashboard() {
                                     <Box sx={{ flexGrow: 1 }}>
                                       <Typography
                                         variant="subtitle2"
-                                        fontWeight="bold"
                                         sx={{
+                                          fontWeight: "bold",
                                           color: "text.primary",
-                                          wordBreak: "break-word",
-                                        }}
-                                      >
+                                          wordBreak: "break-word"
+                                        }}>
                                         {p.playerId?.name || t.unknown}
                                       </Typography>
                                       <Typography
                                         variant="caption"
-                                        color="text.secondary"
                                         sx={{
+                                          color: "text.secondary",
                                           display: "block",
-                                          wordBreak: "break-word",
-                                        }}
-                                      >
+                                          wordBreak: "break-word"
+                                        }}>
                                         {p.playerId?.company || "N/A"}
                                       </Typography>
                                     </Box>
@@ -1301,29 +1415,34 @@ export default function HostDashboard() {
                                     <Stack
                                       direction="row"
                                       spacing={2}
-                                      alignItems="center"
-                                      justifyContent={{
-                                        xs: "flex-start",
-                                        sm: "flex-end",
-                                      }}
-                                      flexWrap="wrap"
-                                      sx={{ width: { xs: "100%", sm: "auto" } }}
-                                    >
+                                      sx={{
+                                        alignItems: "center",
+
+                                        justifyContent: {
+                                          xs: "flex-start",
+                                          sm: "flex-end",
+                                        },
+
+                                        flexWrap: "wrap",
+                                        width: { xs: "100%", sm: "auto" }
+                                      }}>
                                       <Box
-                                        display="flex"
-                                        alignItems="center"
-                                        gap={0.4}
-                                      >
+                                        sx={{
+                                          display: "flex",
+                                          alignItems: "center",
+                                          gap: 0.4
+                                        }}>
                                         <ICONS.leaderboard fontSize="small" />
                                         <Typography variant="caption">
                                           {t.score}: {p.score ?? 0}
                                         </Typography>
                                       </Box>
                                       <Box
-                                        display="flex"
-                                        alignItems="center"
-                                        gap={0.4}
-                                      >
+                                        sx={{
+                                          display: "flex",
+                                          alignItems: "center",
+                                          gap: 0.4
+                                        }}>
                                         <ICONS.assignment fontSize="small" />
                                         <Typography variant="caption">
                                           {t.attempted}:{" "}
@@ -1331,10 +1450,11 @@ export default function HostDashboard() {
                                         </Typography>
                                       </Box>
                                       <Box
-                                        display="flex"
-                                        alignItems="center"
-                                        gap={0.4}
-                                      >
+                                        sx={{
+                                          display: "flex",
+                                          alignItems: "center",
+                                          gap: 0.4
+                                        }}>
                                         <ICONS.time fontSize="small" />
                                         <Typography variant="caption">
                                           {t.timeTaken}: {p.timeTaken ?? 0}s

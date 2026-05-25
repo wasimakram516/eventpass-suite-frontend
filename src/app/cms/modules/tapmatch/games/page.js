@@ -232,7 +232,6 @@ export default function TapMatchGamesPage() {
           onSelect={handleBusinessSelect}
         />
       )}
-
       <Container maxWidth={false} disableGutters>
         <Box sx={{ mb: 4 }}>
           <BreadcrumbsNav />
@@ -248,10 +247,14 @@ export default function TapMatchGamesPage() {
             }}
           >
             <Box>
-              <Typography variant="h5" fontWeight="bold">
+              <Typography variant="h5" sx={{
+                fontWeight: "bold"
+              }}>
                 {t.manageGames}
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" sx={{
+                color: "text.secondary"
+              }}>
                 {t.gamesDescription}
               </Typography>
             </Box>
@@ -307,9 +310,18 @@ export default function TapMatchGamesPage() {
         ) : filteredGames.length === 0 ? (
           <NoDataAvailable />
         ) : (
-          <Grid container spacing={3} justifyContent="center">
+          <Grid container spacing={3} sx={{
+            justifyContent: "center"
+          }}>
             {filteredGames.map((g) => (
-              <Grid item xs={12} sm={6} md={4} lg={3} key={g._id}>
+              <Grid
+                key={g._id}
+                size={{
+                  xs: 12,
+                  sm: 6,
+                  md: 4,
+                  lg: 3
+                }}>
                 <AppCard
                   sx={{
                     p: 2,
@@ -321,17 +333,25 @@ export default function TapMatchGamesPage() {
                   }}
                 >
                   <Box>
-                    <Typography variant="h6" fontWeight="bold" gutterBottom>
+                    <Typography variant="h6" gutterBottom sx={{
+                      fontWeight: "bold"
+                    }}>
                       {g.title}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" sx={{
+                      color: "text.secondary"
+                    }}>
                       <strong>{t.slugLabel}</strong> {g.slug}
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" sx={{
+                      color: "text.secondary"
+                    }}>
                       <strong>{t.countdownTimerLabel}</strong>{" "}
                       {g.countdownTimer}s
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" sx={{
+                      color: "text.secondary"
+                    }}>
                       <strong>{t.gameTimeLabel}</strong> {g.gameSessionTimer}s
                     </Typography>
 
@@ -349,10 +369,12 @@ export default function TapMatchGamesPage() {
                           <Box key={imgKey}>
                             <Typography
                               variant="caption"
-                              color="text.secondary"
-                              display="block"
-                              sx={{ mb: 0.5, fontSize: "0.7rem" }}
-                            >
+                              sx={{
+                                color: "text.secondary",
+                                display: "block",
+                                mb: 0.5,
+                                fontSize: "0.7rem"
+                              }}>
                               {t[`${imgKey}Label`]}
                             </Typography>
                             <Box
@@ -384,11 +406,12 @@ export default function TapMatchGamesPage() {
                   <Box sx={{ mt: 2 }}>
                     <Stack
                       direction="row"
-                      justifyContent="space-between"
-                      alignItems="center"
-                      flexWrap="wrap"
                       spacing={1}
-                    >
+                      sx={{
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        flexWrap: "wrap"
+                      }}>
                       <Button
                         size="small"
                         variant="outlined"

@@ -394,13 +394,12 @@ export default function TapMatchPlayPage() {
             {/* Player Name */}
             <Typography
               variant="h3"
-              fontWeight={700}
               sx={{
+                fontWeight: 700,
                 mb: 1,
                 textShadow: "0 0 15px rgba(255,255,255,0.8)",
-                fontSize: { xs: "1.5rem", sm: "2rem", md: "2.5rem" },
-              }}
-            >
+                fontSize: { xs: "1.5rem", sm: "2rem", md: "2.5rem" }
+              }}>
               {playerInfo?.name}
             </Typography>
 
@@ -549,19 +548,18 @@ export default function TapMatchPlayPage() {
         <Grid
           container
           spacing={{ xs: 1, sm: 2, md: 3 }}
-          justifyContent="center"
-          alignItems="center"
           columns={{ xs: 8, sm: 12, md: 12 }}
           sx={{
+            justifyContent: "center",
+            alignItems: "center",
             width: "90vw",
             position: "absolute",
             top: "50%",
             left: "50%",
             transform: "translate(-50%, -50%)",
             mx: "auto",
-            mt: 6,
-          }}
-        >
+            mt: 6
+          }}>
           {cards.map((card, index) => {
             const isFlipped =
               flipped.includes(index) || matched.includes(index);
@@ -569,13 +567,13 @@ export default function TapMatchPlayPage() {
 
             return (
               <Grid
-                item
                 key={card.id}
-                xs={3}
-                sm={2}
-                md={2}
                 sx={{ display: "flex", justifyContent: "center" }}
-              >
+                size={{
+                  xs: 3,
+                  sm: 2,
+                  md: 2
+                }}>
                 <Box
                   sx={{
                     perspective: "1000px",

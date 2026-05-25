@@ -312,9 +312,11 @@ const ChartVisualization = ({
                                     e.target.value === "" ? 0 : parseInt(e.target.value);
                                 onTopNChange(isNaN(val) ? 0 : val);
                             }}
-                            InputProps={{ inputProps: { min: 0, max: 50 } }}
                             sx={{ width: "120px" }}
                             disabled={isGenerating}
+                            slotProps={{
+                                input: { inputProps: { min: 0, max: 50 } }
+                            }}
                         />
                     )}
 
@@ -351,9 +353,11 @@ const ChartVisualization = ({
                                     const val = e.target.value;
                                     onIntervalChange(val === "" ? "" : parseInt(val));
                                 }}
-                                InputProps={{ inputProps: { min: 1, max: 1440 } }}
                                 sx={{ width: "140px" }}
                                 disabled={isGenerating}
+                                slotProps={{
+                                    input: { inputProps: { min: 1, max: 1440 } }
+                                }}
                             />
                         </>
                     )}
@@ -397,7 +401,6 @@ const ChartVisualization = ({
                     )}
                 </Box>
             </Box>
-
             {chartTypeChips && (
                 <Stack direction="row" spacing={1} sx={{ mb: 1.5 }}>
                     {chartTypeChips.map((chip) => (
@@ -426,7 +429,6 @@ const ChartVisualization = ({
                     ))}
                 </Stack>
             )}
-
             <Box
                 ref={(el) => onRefReady && onRefReady(el)}
                 sx={{
@@ -1423,15 +1425,20 @@ export default function CheckInAnalyticsDashboard() {
 
                 <Stack
                     direction={{ xs: "column", sm: "row" }}
-                    justifyContent="space-between"
-                    alignItems={{ xs: "stretch", sm: "center" }}
                     spacing={2}
-                >
+                    sx={{
+                        justifyContent: "space-between",
+                        alignItems: { xs: "stretch", sm: "center" }
+                    }}>
                     <Box sx={{ flex: 1 }}>
-                        <Typography variant="h3" fontWeight="bold" gutterBottom>
+                        <Typography variant="h3" gutterBottom sx={{
+                            fontWeight: "bold"
+                        }}>
                             {t.pageTitle}
                         </Typography>
-                        <Typography variant="body1" color="text.secondary" gutterBottom>
+                        <Typography variant="body1" gutterBottom sx={{
+                            color: "text.secondary"
+                        }}>
                             {t.pageDescription}
                         </Typography>
                     </Box>
@@ -1439,9 +1446,11 @@ export default function CheckInAnalyticsDashboard() {
                     <Stack
                         direction={{ xs: "column", sm: "row" }}
                         spacing={2}
-                        alignItems={{ xs: "stretch", sm: "center" }}
-                        sx={{ width: { xs: "100%", sm: "auto" }, gap: { xs: 1, sm: 2 } }}
-                    >
+                        sx={{
+                            alignItems: { xs: "stretch", sm: "center" },
+                            width: { xs: "100%", sm: "auto" },
+                            gap: { xs: 1, sm: 2 }
+                        }}>
                         {selectedFields.length > 0 && (
                             <>
                                 <Button
@@ -1494,7 +1503,6 @@ export default function CheckInAnalyticsDashboard() {
 
                 <Divider sx={{ mb: 3 }} />
             </>
-
             {summary && (
                 <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
                     {[
@@ -1517,17 +1525,27 @@ export default function CheckInAnalyticsDashboard() {
                                 border: "1px solid #f1f5f9",
                             }}
                         >
-                            <Typography variant="h4" fontWeight="bold" sx={{ color }}>
+                            <Typography
+                                variant="h4"
+                                sx={{
+                                    fontWeight: "bold",
+                                    color
+                                }}>
                                 {value}
                             </Typography>
-                            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontWeight: 500 }}>
+                            <Typography
+                                variant="body2"
+                                sx={{
+                                    color: "text.secondary",
+                                    mt: 0.5,
+                                    fontWeight: 500
+                                }}>
                                 {label}
                             </Typography>
                         </AppCard>
                     ))}
                 </Box>
             )}
-
             <AppCard
                 sx={{
                     flex: "0 0 auto",
@@ -1583,7 +1601,6 @@ export default function CheckInAnalyticsDashboard() {
                     ))}
                 </Stack>
             </AppCard>
-
             <Stack
                 spacing={2}
                 sx={{ flex: "1 1 0%", overflow: "auto", minHeight: 0, pb: 2, px: 0.3 }}
@@ -1597,7 +1614,9 @@ export default function CheckInAnalyticsDashboard() {
                             justifyContent: "center",
                         }}
                     >
-                        <Box textAlign="center">
+                        <Box sx={{
+                            textAlign: "center"
+                        }}>
                             <BarChartIcon sx={{ fontSize: 48, color: "#d1d5db", mb: 2 }} />
                             <Typography color="textSecondary">
                                 {t.selectFieldPrompt}

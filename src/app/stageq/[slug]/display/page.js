@@ -129,7 +129,13 @@ export default function SessionLiveDisplay() {
   if (loading && questions.length === 0) {
     return (
       <Box sx={{ position: "relative", minHeight: "100vh" }}>
-        <Box minHeight="100vh" display="flex" justifyContent="center" alignItems="center">
+        <Box
+          sx={{
+            minHeight: "100vh",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center"
+          }}>
           <Shift />
           <CircularProgress />
         </Box>
@@ -179,7 +185,13 @@ export default function SessionLiveDisplay() {
 
         {/* Bubbles */}
         {questions.length === 0 ? (
-          <Typography variant="h6" color="text.secondary" textAlign="center" mt={6}>
+          <Typography
+            variant="h6"
+            sx={{
+              color: "text.secondary",
+              textAlign: "center",
+              mt: 6
+            }}>
             {t.noQuestionsYet}
           </Typography>
         ) : (

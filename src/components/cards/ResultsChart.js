@@ -34,20 +34,19 @@ export default function ResultsChart({ poll }) {
 
   return (
     <Box
-      width={{ xs: "100%", sm: "20rem" }}
-      minHeight="550px"
-      display="flex"
-      flexDirection="column"
-      justifyContent="space-between"
-      alignItems="center"
-      textAlign="center"
       sx={{
+        width: { xs: "100%", sm: "20rem" },
+        minHeight: "550px",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        alignItems: "center",
+        textAlign: "center",
         p: 3,
         bgcolor: "background.paper",
         borderRadius: 4,
-        boxShadow: 3,
-      }}
-    >
+        boxShadow: 3
+      }}>
       {/* Question (Fixed Height + Scroll inside if too big) */}
       <Box
         sx={{
@@ -58,24 +57,21 @@ export default function ResultsChart({ poll }) {
       >
         <Typography
           variant="h5"
-          fontWeight="bold"
-          color="primary.main"
           sx={{
+            fontWeight: "bold",
+            color: "primary.main",
             display: "-webkit-box",
             WebkitLineClamp: 4,
             WebkitBoxOrient: "vertical",
             overflow: "hidden",
             textOverflow: "ellipsis",
-            wordBreak: "break-word",
-          }}
-        >
+            wordBreak: "break-word"
+          }}>
           {poll.question}
         </Typography>
       </Box>
-
       {/* Divider */}
       <Divider sx={{ width: "100%", my: 2 }} />
-
       {/* Pie Chart */}
       <Box
         sx={{
@@ -110,34 +106,32 @@ export default function ResultsChart({ poll }) {
           </PieChart>
         </ResponsiveContainer>
       </Box>
-
       {/* Divider */}
       <Divider sx={{ width: "100%", my: 2 }} />
-
       {/* Options List */}
       <Stack spacing={1.5} sx={{ width: "100%" }}>
         {poll.options.map((option, idx) => (
           <Stack
-  key={idx}
-  direction="row"
-  alignItems="center"
-  justifyContent="space-between"
-  sx={{
-    p: 1.5,
-    borderRadius: 2,
-    bgcolor: "grey.100",
-    transition: "all 0.3s",
-    "&:hover": { bgcolor: "grey.200" },
-    gap: 1.5,
-  }}
->
+            key={idx}
+            direction="row"
+            sx={{
+              alignItems: "center",
+              justifyContent: "space-between",
+              p: 1.5,
+              borderRadius: 2,
+              bgcolor: "grey.100",
+              transition: "all 0.3s",
+              "&:hover": { bgcolor: "grey.200" },
+              gap: 1.5
+            }}>
   {/* Image + Text */}
   <Stack
     direction="row"
-    alignItems="center"
     spacing={1.5}
-    sx={{ minWidth: 0 }}
-  >
+    sx={{
+      alignItems: "center",
+      minWidth: 0
+    }}>
     {option.imageUrl && (
       <Box
         component="img"
@@ -156,12 +150,11 @@ export default function ResultsChart({ poll }) {
     {option.text && (
       <Typography
         variant="body2"
-        fontWeight="bold"
         sx={{
+          fontWeight: "bold",
           color: COLORS[idx % COLORS.length],
-          wordBreak: "break-word",
-        }}
-      >
+          wordBreak: "break-word"
+        }}>
         {option.text}
       </Typography>
     )}
@@ -182,14 +175,14 @@ export default function ResultsChart({ poll }) {
 
         ))}
       </Stack>
-
       {/* Total Votes */}
       <Typography
         variant="subtitle2"
-        color="text.secondary"
-        fontStyle="italic"
-        mt={3}
-      >
+        sx={{
+          color: "text.secondary",
+          fontStyle: "italic",
+          mt: 3
+        }}>
         {t.totalVotesCasted} <strong>{totalVotes}</strong>
       </Typography>
     </Box>

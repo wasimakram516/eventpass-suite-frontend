@@ -646,7 +646,9 @@ export default function UploadPage() {
             mb: 4,
           }}
         >
-          <Typography variant="h5" fontWeight="bold" gutterBottom>
+          <Typography variant="h5" gutterBottom sx={{
+            fontWeight: "bold"
+          }}>
             {t.capturePhoto}
           </Typography>
 
@@ -789,7 +791,9 @@ export default function UploadPage() {
               alignSelf: "center",
             }}
           >
-            <Typography variant="h6" fontWeight="bold" gutterBottom>
+            <Typography variant="h6" gutterBottom sx={{
+              fontWeight: "bold"
+            }}>
               {t.preview}
             </Typography>
             <Box sx={{ mb: 2, display: "flex", justifyContent: "center" }}>
@@ -899,7 +903,9 @@ export default function UploadPage() {
             {mediaType === "type2" ? (
               <>
                 <Box sx={{ mb: 3 }}>
-                  <Typography variant="h6" fontWeight="bold" gutterBottom>
+                  <Typography variant="h6" gutterBottom sx={{
+                    fontWeight: "bold"
+                  }}>
                     {t.addMessage}
                   </Typography>
                   <TextField
@@ -921,7 +927,9 @@ export default function UploadPage() {
                   </Typography>
                 </Box>
 
-                <Typography variant="h6" fontWeight="bold" gutterBottom>
+                <Typography variant="h6" gutterBottom sx={{
+                  fontWeight: "bold"
+                }}>
                   {t.addSignature}
                 </Typography>
                 <Box
@@ -963,7 +971,9 @@ export default function UploadPage() {
               </>
             ) : (
               <Box sx={{ mb: 3 }}>
-                <Typography variant="h6" fontWeight="bold" gutterBottom>
+                <Typography variant="h6" gutterBottom sx={{
+                  fontWeight: "bold"
+                }}>
                   {t.addMessage}
                 </Typography>
                 <TextField
@@ -1042,11 +1052,15 @@ export default function UploadPage() {
             alignSelf: "center",
           }}
         >
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" sx={{
+            color: "text.secondary"
+          }}>
             <strong>{t.instructions}</strong>
           </Typography>
           {mode ? (
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" sx={{
+              color: "text.secondary"
+            }}>
               {mode === "mosaic" ? t.mosaicInstructions : t.cardInstructions}
             </Typography>
           ) : (

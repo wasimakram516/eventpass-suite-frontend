@@ -773,7 +773,11 @@ const DigiPassEventModal = ({
                         pt: 3,
                     }}
                 >
-                    <Typography fontWeight="bold" fontSize="1.25rem">
+                    <Typography
+                        sx={{
+                            fontWeight: "bold",
+                            fontSize: "1.25rem"
+                        }}>
                         {initialValues ? t.editTitle : t.createTitle}
                     </Typography>
 
@@ -824,7 +828,9 @@ const DigiPassEventModal = ({
                                 value={formData.minTasksPerUser}
                                 onChange={handleInputChange}
                                 fullWidth
-                                inputProps={{ min: 0 }}
+                                slotProps={{
+                                    htmlInput: { min: 0 }
+                                }}
                             />
                             <TextField
                                 label={t.maxTasksPerUser}
@@ -833,7 +839,9 @@ const DigiPassEventModal = ({
                                 value={formData.maxTasksPerUser}
                                 onChange={handleInputChange}
                                 fullWidth
-                                inputProps={{ min: 0 }}
+                                slotProps={{
+                                    htmlInput: { min: 0 }
+                                }}
                             />
                         </Box>
 
@@ -869,7 +877,12 @@ const DigiPassEventModal = ({
                         {/* Verification Field */}
                         {formData.linkedEventRegId && loadedFields && loadedFields.length > 0 && (
                             <Box>
-                                <Typography variant="caption" fontWeight={600} color="text.secondary">
+                                <Typography
+                                    variant="caption"
+                                    sx={{
+                                        fontWeight: 600,
+                                        color: "text.secondary"
+                                    }}>
                                     {t.selectPrimaryField} *
                                 </Typography>
                                 <FormGroup sx={{ mt: 0.5 }}>
@@ -1329,7 +1342,6 @@ const DigiPassEventModal = ({
                                         <TextField
                                             label={t.inputType}
                                             select
-                                            SelectProps={{ native: true }}
                                             value={field.inputType}
                                             onChange={(e) =>
                                                 handleFormFieldChange(
@@ -1339,6 +1351,9 @@ const DigiPassEventModal = ({
                                                 )
                                             }
                                             fullWidth
+                                            slotProps={{
+                                                select: { native: true }
+                                            }}
                                         >
                                             {[
                                                 { value: "text", label: t.textType },
@@ -1526,7 +1541,6 @@ const DigiPassEventModal = ({
                 onClose={() => setShowUploadProgress(false)}
                 allowClose={false}
             />
-
             {/* Confirmation Dialog for Media Deletion */}
             <ConfirmationDialog
                 open={deleteConfirm.open}

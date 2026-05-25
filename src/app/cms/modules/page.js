@@ -5,7 +5,6 @@ import {
   Box,
   Typography,
   Grid,
-  Container,
   Divider,
   Stack,
 } from "@mui/material";
@@ -82,44 +81,60 @@ export default function Modules() {
 
   return (
     <Box dir={dir} sx={{ pb: 8, bgcolor: "background.default" }}>
-
       <Box sx={{ mb: 3 }}>
         <Typography
           variant="h2"
-          fontWeight="bold"
           gutterBottom
-          textAlign={align}
-        >
+          sx={{
+            fontWeight: "bold",
+            textAlign: align
+          }}>
           {t.title}
         </Typography>
-        <Typography variant="body1" color="text.secondary" textAlign={align}>
+        <Typography
+          variant="body1"
+          sx={{
+            color: "text.secondary",
+            textAlign: align
+          }}>
           {t.subtitle}
         </Typography>
         <Divider sx={{ my: 2 }} />
       </Box>
-
       {loading ? (
-        <Grid container spacing={3} justifyContent="center">
+        <Grid
+          container
+          spacing={3}
+          sx={{ justifyContent: "center" }}
+        >
           <LoadingState />
         </Grid>
       ) : modules?.length === 0 ? (
-        <Stack spacing={2} alignItems="center" sx={{ mt: 5 }}>
+        <Stack spacing={2} sx={{ mt: 5, alignItems: "center" }}>
           <SupportAgentIcon color="primary" sx={{ fontSize: 64 }} />
-          <Typography variant="h6" textAlign="center">
+          <Typography variant="h6" sx={{
+            textAlign: "center"
+          }}>
             {t.noPermission}
           </Typography>
           <Typography
             variant="body1"
-            color="text.secondary"
-            textAlign="center"
-          >
+            sx={{
+              color: "text.secondary",
+              textAlign: "center"
+            }}>
             {t.contactSupport}
           </Typography>
 
           {(globalConfig?.support?.email || globalConfig?.support?.phone) && (
-            <Stack spacing={1} textAlign="center" alignItems="center">
+            <Stack
+              spacing={1}
+              sx={{
+                textAlign: "center",
+                alignItems: "center"
+              }}>
               {globalConfig?.support?.email && (
-                <Stack direction="row" spacing={1} alignItems="center">
+                <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
                   <EmailOutlinedIcon fontSize="small" color="action" />
                   <Typography variant="body2">
                     {globalConfig.support.email}
@@ -127,7 +142,7 @@ export default function Modules() {
                 </Stack>
               )}
               {globalConfig?.support?.phone && (
-                <Stack direction="row" spacing={1} alignItems="center">
+                <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
                   <PhoneOutlinedIcon fontSize="small" color="action" />
                   <Typography variant="body2">
                     {globalConfig.support.phone}
@@ -141,11 +156,11 @@ export default function Modules() {
         <Grid
           container
           spacing={3}
-          justifyContent="center"
           sx={{
-            '& > *': {
-              width: { xs: '100%', sm: 'auto' }
-            }
+            justifyContent: "center",
+            "& > *": {
+              width: { xs: "100%", sm: "auto" },
+            },
           }}
         >
           {modules.map((mod) => (
