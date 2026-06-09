@@ -43,10 +43,13 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Skip refresh for login/refresh endpoints
+    // Skip refresh for auth endpoints and public payment endpoints (which never require a JWT)
     if (
       originalRequest.url.includes("/auth/refresh") ||
-      originalRequest.url.includes("/auth/login")
+      originalRequest.url.includes("/auth/login") ||
+      originalRequest.url.includes("/eventreg/payments/initiate") ||
+      originalRequest.url.includes("/eventreg/payments/verify") ||
+      originalRequest.url.includes("/eventreg/payments/cancel")
     ) {
       return Promise.reject(error);
     }
