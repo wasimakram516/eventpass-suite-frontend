@@ -318,14 +318,12 @@ export default function Registration() {
 
     // Paid event — redirect to Thawani
     if (event?.isPaid) {
-      const result = await initiatePayment({
-        eventSlug,
-        ticketTypeId: selectedTicketTypeId,
-        lang,
-        ...normalizedFormData,
-        isoCode: phoneIsoCode,
-        customFields: {},
-      });
+      const hasCustomFields = event.formFields?.length > 0;
+      const result = await initiatePayment(
+        hasCustomFields
+          ? { eventSlug, ticketTypeId: selectedTicketTypeId, lang, isoCode: phoneIsoCode, customFields: normalizedFormData }
+          : { eventSlug, ticketTypeId: selectedTicketTypeId, lang, ...normalizedFormData, isoCode: phoneIsoCode, customFields: {} }
+      );
       setSubmitting(false);
 
       if (!result?.error && result?.sessionUrl) {
