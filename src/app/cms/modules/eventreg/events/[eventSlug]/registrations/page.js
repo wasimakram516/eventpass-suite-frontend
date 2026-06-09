@@ -50,6 +50,7 @@ import {
   trackBadgePrint,
 } from "@/services/eventreg/registrationService";
 import { getPublicEventBySlug } from "@/services/eventreg/eventService";
+import { getPaymentLink } from "@/services/eventreg/paymentService";
 
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
@@ -134,6 +135,13 @@ const translations = {
     editRegistration: "Edit Registration",
     createRegistration: "New",
     copyToken: "Copy Token",
+    tokenCopied: "Token Copied!",
+    copyPaymentLink: "Copy Payment Link",
+    paymentLinkCopied: "Payment link copied!",
+    paymentPaid: "Payment Paid",
+    paymentPending: "Payment Pending",
+    paymentCancelled: "Payment Cancelled",
+    paymentFailed: "Payment Failed",
     approve: "Approve",
     reject: "Reject",
     bulkApprove: "Bulk Approve",
@@ -232,6 +240,13 @@ const translations = {
     editRegistration: "تعديل التسجيل",
     createRegistration: "جديد",
     copyToken: "نسخ الرمز",
+    tokenCopied: "تم نسخ الرمز!",
+    copyPaymentLink: "نسخ رابط الدفع",
+    paymentLinkCopied: "تم نسخ رابط الدفع!",
+    paymentPaid: "تم الدفع",
+    paymentPending: "بانتظار الدفع",
+    paymentCancelled: "تم الإلغاء",
+    paymentFailed: "فشل الدفع",
     approve: "موافقة",
     reject: "رفض",
     bulkApprove: "موافقة جماعية",
@@ -339,6 +354,9 @@ export default function ViewRegistrations() {
   const [printWarningOpen, setPrintWarningOpen] = useState(false);
   const [pendingPrintReg, setPendingPrintReg] = useState(null);
   const [exportBadgesWarningOpen, setExportBadgesWarningOpen] = useState(false);
+
+  const [copiedTokenId, setCopiedTokenId] = useState(null);
+  const [copiedPaymentLinkId, setCopiedPaymentLinkId] = useState(null);
 
   useEffect(() => {
     if (eventSlug) fetchData();
@@ -536,10 +554,17 @@ export default function ViewRegistrations() {
       _haystack: buildHaystack(reg, dynamicFieldsRef.current),
     };
 
-    setAllRegistrations((prev) => {
-      const exists = prev.some((r) => r._id === processed._id);
-      if (exists) return prev;
+    let isNewRegistration = false;
 
+    setAllRegistrations((prev) => {
+      const existingIndex = prev.findIndex((r) => r._id === processed._id);
+      if (existingIndex >= 0) {
+        // Update the existing entry in-place (e.g. emailSent flipped to true after payment email sends)
+        const updated = [...prev];
+        updated[existingIndex] = { ...updated[existingIndex], ...processed };
+        return updated;
+      }
+      isNewRegistration = true;
       if (sortOrder === -1) {
         return [processed, ...prev];
       } else {
@@ -547,7 +572,9 @@ export default function ViewRegistrations() {
       }
     });
 
-    setTotalRegistrations((prev) => prev + 1);
+    if (isNewRegistration) {
+      setTotalRegistrations((prev) => prev + 1);
+    }
   }, []);
 
   const handleBadgePrinted = useCallback((data) => {
@@ -1829,22 +1856,24 @@ export default function ViewRegistrations() {
                             {reg.token}
                           </Typography>
 
-                          <Tooltip title={t.copyToken}>
+                          <Tooltip title={copiedTokenId === reg._id ? t.tokenCopied : t.copyToken}>
                             <IconButton
                               size="small"
                               onClick={() => {
                                 navigator.clipboard.writeText(reg.token);
+                                setCopiedTokenId(reg._id);
+                                setTimeout(() => setCopiedTokenId(null), 2000);
                               }}
                               sx={{
                                 p: 0.5,
-                                color: "primary.main",
+                                color: copiedTokenId === reg._id ? "success.main" : "primary.main",
                                 "&:hover": {
                                   backgroundColor: "transparent",
                                   opacity: 0.8,
                                 },
                               }}
                             >
-                              <ICONS.copy fontSize="small" />
+                              {copiedTokenId === reg._id ? <ICONS.checkCircle fontSize="small" /> : <ICONS.copy fontSize="small" />}
                             </IconButton>
                           </Tooltip>
                         </Box>
@@ -1888,6 +1917,53 @@ export default function ViewRegistrations() {
                         {renderConfirmation(reg)}
                       </Stack>
                     )}
+
+                    {/* Payment Status - Show for paid events */}
+                    {eventDetails?.isPaid && (() => {
+                      const ps = reg.paymentStatus || "pending";
+                      const paymentStatusMap = {
+                        paid:      { label: t.paymentPaid,      color: "success.main",      icon: <ICONS.payment fontSize="small" sx={{ color: "success.main" }} />,     statusIcon: <ICONS.checkCircle fontSize="small" sx={{ color: "success.main" }} /> },
+                        pending:   { label: t.paymentPending,   color: "warning.main",      icon: <ICONS.payment fontSize="small" sx={{ color: "warning.main" }} />,     statusIcon: <ICONS.time fontSize="small" sx={{ color: "warning.main" }} /> },
+                        cancelled: { label: t.paymentCancelled, color: "text.secondary",    icon: <ICONS.payment fontSize="small" sx={{ color: "text.secondary" }} />,   statusIcon: <ICONS.cancel fontSize="small" sx={{ color: "text.secondary" }} /> },
+                        failed:    { label: t.paymentFailed,    color: "error.main",        icon: <ICONS.payment fontSize="small" sx={{ color: "error.main" }} />,       statusIcon: <ICONS.errorOutline fontSize="small" sx={{ color: "error.main" }} /> },
+                      };
+                      const entry = paymentStatusMap[ps] || paymentStatusMap.pending;
+                      return (
+                        <Typography
+                          variant="caption"
+                          sx={{ display: "flex", alignItems: "center", gap: 0.6, fontWeight: 500, flexWrap: "wrap", mt: 0.3 }}
+                        >
+                          {entry.icon}
+                          {entry.statusIcon}
+                          <Box component="span" sx={{ color: entry.color }}>{entry.label}</Box>
+                          {reg.ticketTypeName && (
+                            <Box component="span" sx={{ color: "text.secondary" }}>
+                              {` · ${reg.ticketTypeName}`}{reg.ticketPrice != null ? ` · ${reg.ticketPrice} OMR` : ""}
+                            </Box>
+                          )}
+                          {ps === "pending" && (
+                            <Tooltip title={copiedPaymentLinkId === reg._id ? t.paymentLinkCopied : t.copyPaymentLink}>
+                              <IconButton
+                                size="small"
+                                onClick={async () => {
+                                  const result = await getPaymentLink(reg._id);
+                                  if (!result?.error && result?.paymentUrl) {
+                                    await navigator.clipboard.writeText(result.paymentUrl);
+                                    setCopiedPaymentLinkId(reg._id);
+                                    setTimeout(() => setCopiedPaymentLinkId((prev) => prev === reg._id ? null : prev), 2000);
+                                  }
+                                }}
+                                sx={{ p: 0.3, color: copiedPaymentLinkId === reg._id ? "success.main" : "warning.main", "&:hover": { backgroundColor: "transparent", opacity: 0.7 } }}
+                              >
+                                {copiedPaymentLinkId === reg._id
+                                  ? <ICONS.checkCircle sx={{ fontSize: "0.85rem" }} />
+                                  : <ICONS.copy sx={{ fontSize: "0.85rem" }} />}
+                              </IconButton>
+                            </Tooltip>
+                          )}
+                        </Typography>
+                      );
+                    })()}
 
                     {/* Print History - Always show */}
                     <Typography
