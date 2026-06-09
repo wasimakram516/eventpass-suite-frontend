@@ -108,9 +108,11 @@ const CountryCodeSelector = ({
                     },
                 }}
                 MenuProps={{
-                    PaperProps: {
-                        sx: {
-                            maxHeight: 400,
+                    slotProps: {
+                        paper: {
+                            sx: {
+                                maxHeight: 400,
+                            },
                         },
                     },
                     autoFocus: false,

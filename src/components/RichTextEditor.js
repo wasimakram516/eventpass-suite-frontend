@@ -568,9 +568,11 @@ const RichTextEditor = ({ value, onChange, placeholder, dir, minHeight, maxHeigh
                             displayEmpty
                             inputRef={fontSizeSelectRef}
                             MenuProps={{
-                                PaperProps: {
-                                    style: {
-                                        maxHeight: 240,
+                                slotProps: {
+                                    paper: {
+                                        style: {
+                                            maxHeight: 240,
+                                        },
                                     },
                                 },
                             }}

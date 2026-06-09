@@ -454,13 +454,15 @@ export default function DigiPassSignIn() {
             onChange={handleInputChange}
             label={fieldLabel}
             MenuProps={{
-              PaperProps: {
-                sx: {
-                  backgroundColor: "#f5f5f5",
-                  "& .MuiMenuItem-root": {
-                    color: "#333",
-                    "&:hover": {
-                      backgroundColor: "#e0e0e0",
+              slotProps: {
+                paper: {
+                  sx: {
+                    backgroundColor: "#f5f5f5",
+                    "& .MuiMenuItem-root": {
+                      color: "#333",
+                      "&:hover": {
+                        backgroundColor: "#e0e0e0",
+                      },
                     },
                   },
                 },
