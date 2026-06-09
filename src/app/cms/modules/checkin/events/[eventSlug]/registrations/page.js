@@ -106,6 +106,7 @@ const translations = {
     emailSent: "Email Sent",
     emailNotSent: "Email Not Sent",
     copyToken: "Copy Token",
+    tokenCopied: "Token Copied!",
     editRegistration: "Edit Registration",
     createRegistration: "New",
     confirmed: "Confirmed",
@@ -190,6 +191,7 @@ const translations = {
     emailSent: "تم إرسال البريد",
     emailNotSent: "لم يتم الإرسال",
     copyToken: "نسخ الرمز",
+    tokenCopied: "تم نسخ الرمز!",
     editRegistration: "تعديل التسجيل",
     createRegistration: "جديد",
     confirmed: "مؤكد",
@@ -308,6 +310,8 @@ export default function ViewRegistrations() {
   const [printWarningOpen, setPrintWarningOpen] = useState(false);
   const [pendingPrintReg, setPendingPrintReg] = useState(null);
   const [exportBadgesWarningOpen, setExportBadgesWarningOpen] = useState(false);
+
+  const [copiedTokenId, setCopiedTokenId] = useState(null);
 
   const [rawSearch, setRawSearch] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
@@ -1639,22 +1643,24 @@ export default function ViewRegistrations() {
                               }}>
                               {reg.token}
                             </Typography>
-                            <Tooltip title={t.copyToken}>
+                            <Tooltip title={copiedTokenId === reg._id ? t.tokenCopied : t.copyToken}>
                               <IconButton
                                 size="small"
-                                onClick={() =>
-                                  navigator.clipboard.writeText(reg.token)
-                                }
+                                onClick={() => {
+                                  navigator.clipboard.writeText(reg.token);
+                                  setCopiedTokenId(reg._id);
+                                  setTimeout(() => setCopiedTokenId(null), 2000);
+                                }}
                                 sx={{
                                   p: 0.5,
-                                  color: "primary.main",
+                                  color: copiedTokenId === reg._id ? "success.main" : "primary.main",
                                   "&:hover": {
                                     backgroundColor: "transparent",
                                     opacity: 0.8,
                                   },
                                 }}
                               >
-                                <ICONS.copy fontSize="small" />
+                                {copiedTokenId === reg._id ? <ICONS.checkCircle fontSize="small" /> : <ICONS.copy fontSize="small" />}
                               </IconButton>
                             </Tooltip>
                           </Box>
