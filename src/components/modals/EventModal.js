@@ -148,6 +148,19 @@ const translations = {
     next: "Next",
     back: "Back",
     defaultLanguage: "Default Language",
+    isPaidEvent: "Paid Event",
+    isPaidEventDescription: "Attendees must pay to complete their registration.",
+    ticketTypes: "Ticket Types",
+    addTicketType: "Add Ticket Type",
+    ticketName: "Ticket Name",
+    ticketDescription: "Description (optional)",
+    ticketPrice: "Price (OMR)",
+    ticketCapacity: "Capacity (optional)",
+    removeTicket: "Remove",
+    ticketNameRequired: "Ticket name is required.",
+    ticketPriceRequired: "Ticket price is required.",
+    ticketPriceInvalid: "Ticket price must be a positive number.",
+    noTicketTypes: "Add at least one ticket type for paid events.",
   },
   ar: {
     createTitle: "إنشاء فعالية",
@@ -252,6 +265,19 @@ const translations = {
     next: "التالي",
     back: "رجوع",
     defaultLanguage: "اللغة الافتراضية",
+    isPaidEvent: "فعالية مدفوعة",
+    isPaidEventDescription: "يجب على الحضور الدفع لإتمام التسجيل.",
+    ticketTypes: "أنواع التذاكر",
+    addTicketType: "إضافة نوع تذكرة",
+    ticketName: "اسم التذكرة",
+    ticketDescription: "الوصف (اختياري)",
+    ticketPrice: "السعر (ريال عماني)",
+    ticketCapacity: "السعة (اختياري)",
+    removeTicket: "إزالة",
+    ticketNameRequired: "اسم التذكرة مطلوب.",
+    ticketPriceRequired: "سعر التذكرة مطلوب.",
+    ticketPriceInvalid: "يجب أن يكون سعر التذكرة رقماً موجباً.",
+    noTicketTypes: "أضف نوع تذكرة واحداً على الأقل للفعاليات المدفوعة.",
   },
 };
 
@@ -351,6 +377,8 @@ const EventModal = ({
     allowMultipleBadgePrinting: true,
     createCheckinOnFirstPrint: false,
     defaultLanguage: "en",
+    isPaid: false,
+    ticketTypes: [],
     removeLogo: false,
     removeBackgroundEn: false,
     removeBackgroundAr: false,
@@ -452,6 +480,14 @@ const EventModal = ({
         useCustomEmailTemplate: initialValues?.useCustomEmailTemplate || false,
         emailTemplateSubject: initialValues?.emailTemplate?.subject || "",
         emailTemplateBody: initialValues?.emailTemplate?.body || "",
+        isPaid: initialValues?.isPaid || false,
+        ticketTypes: initialValues?.ticketTypes?.map((tt) => ({
+          _id: tt._id,
+          name: tt.name || "",
+          description: tt.description || "",
+          price: tt.price ?? "",
+          capacity: tt.capacity ?? "",
+        })) || [],
         useCustomQrCode: initialValues?.useCustomQrCode || false,
         customQrSelectedFields: (initialValues?.customQrWrapper && Array.isArray(initialValues.customQrWrapper.customFields) && initialValues.customQrWrapper.customFields.length > 0)
           ? getSelectedFieldsFromWrapper(initialValues.customQrWrapper)
@@ -545,6 +581,8 @@ const EventModal = ({
         useCustomEmailTemplate: false,
         emailTemplateSubject: "",
         emailTemplateBody: "",
+        isPaid: false,
+        ticketTypes: [],
         useCustomQrCode: false,
         customQrSelectedFields: {},
         qrWrapperBackground: null,
@@ -1266,6 +1304,16 @@ const EventModal = ({
         useCustomQrCode: formData.useCustomQrCode || false,
         ...(qrWrapperBackgroundUrl ? { customQrWrapperBackgroundUrl: qrWrapperBackgroundUrl } : {}),
         ...(formData.removeQrWrapperBackground ? { removeQrWrapperBackground: "true" } : {}),
+        isPaid: formData.isPaid || false,
+        ticketTypes: formData.isPaid
+          ? formData.ticketTypes.map((tt) => ({
+              ...(tt._id ? { _id: tt._id } : {}),
+              name: tt.name,
+              description: tt.description || "",
+              price: parseFloat(tt.price),
+              capacity: tt.capacity ? parseInt(tt.capacity, 10) : null,
+            }))
+          : [],
       };
 
       if (!initialValues) {
@@ -1692,6 +1740,142 @@ const EventModal = ({
                       sx={{ alignSelf: "start" }}
                     />
                   </Box>
+
+                  {/* Paid Event Toggle */}
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <FormControlLabel
+                      control={
+                        <Checkbox
+                          checked={formData.isPaid}
+                          onChange={(e) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              isPaid: e.target.checked,
+                              ticketTypes: e.target.checked ? prev.ticketTypes : [],
+                            }))
+                          }
+                          color="primary"
+                        />
+                      }
+                      label={t.isPaidEvent}
+                      sx={{ alignSelf: "start" }}
+                    />
+                  </Box>
+
+                  {formData.isPaid && (
+                    <Box sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2, p: 2, mt: 1 }}>
+                      <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+                        {t.ticketTypes}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 2 }}>
+                        {t.isPaidEventDescription}
+                      </Typography>
+
+                      {formData.ticketTypes.map((tt, idx) => (
+                        <Paper key={idx} variant="outlined" sx={{ p: 2, mb: 2, borderRadius: 2 }}>
+                          <Stack direction="row" sx={{ mb: 1.5, justifyContent: "space-between", alignItems: "center" }}>
+                            <Typography variant="body2" fontWeight={600}>#{idx + 1}</Typography>
+                            <Button
+                              size="small"
+                              color="error"
+                              onClick={() =>
+                                setFormData((prev) => ({
+                                  ...prev,
+                                  ticketTypes: prev.ticketTypes.filter((_, i) => i !== idx),
+                                }))
+                              }
+                            >
+                              {t.removeTicket}
+                            </Button>
+                          </Stack>
+                          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
+                            <Box sx={{ flex: "1 1 200px" }}>
+                              <TextField
+                                fullWidth
+                                size="small"
+                                label={t.ticketName}
+                                required
+                                value={tt.name}
+                                onChange={(e) =>
+                                  setFormData((prev) => {
+                                    const types = [...prev.ticketTypes];
+                                    types[idx] = { ...types[idx], name: e.target.value };
+                                    return { ...prev, ticketTypes: types };
+                                  })
+                                }
+                              />
+                            </Box>
+                            <Box sx={{ flex: "1 1 200px" }}>
+                              <TextField
+                                fullWidth
+                                size="small"
+                                label={t.ticketPrice}
+                                required
+                                type="number"
+                                slotProps={{ htmlInput: { min: 0, step: 0.1 } }}
+                                value={tt.price}
+                                onChange={(e) =>
+                                  setFormData((prev) => {
+                                    const types = [...prev.ticketTypes];
+                                    types[idx] = { ...types[idx], price: e.target.value };
+                                    return { ...prev, ticketTypes: types };
+                                  })
+                                }
+                              />
+                            </Box>
+                            <Box sx={{ flex: "1 1 200px" }}>
+                              <TextField
+                                fullWidth
+                                size="small"
+                                label={t.ticketCapacity}
+                                type="number"
+                                slotProps={{ htmlInput: { min: 1 } }}
+                                value={tt.capacity}
+                                onChange={(e) =>
+                                  setFormData((prev) => {
+                                    const types = [...prev.ticketTypes];
+                                    types[idx] = { ...types[idx], capacity: e.target.value };
+                                    return { ...prev, ticketTypes: types };
+                                  })
+                                }
+                              />
+                            </Box>
+                            <Box sx={{ flex: "1 1 200px" }}>
+                              <TextField
+                                fullWidth
+                                size="small"
+                                label={t.ticketDescription}
+                                value={tt.description}
+                                onChange={(e) =>
+                                  setFormData((prev) => {
+                                    const types = [...prev.ticketTypes];
+                                    types[idx] = { ...types[idx], description: e.target.value };
+                                    return { ...prev, ticketTypes: types };
+                                  })
+                                }
+                              />
+                            </Box>
+                          </Box>
+                        </Paper>
+                      ))}
+
+                      <Button
+                        variant="outlined"
+                        size="small"
+                        onClick={() =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            ticketTypes: [
+                              ...prev.ticketTypes,
+                              { name: "", description: "", price: "", capacity: "" },
+                            ],
+                          }))
+                        }
+                      >
+                        + {t.addTicketType}
+                      </Button>
+                    </Box>
+                  )}
                 </>
               )}
 
