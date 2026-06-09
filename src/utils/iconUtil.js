@@ -97,6 +97,7 @@ import {
 
 // Domain-Specific / App Features
 import {
+  MonetizationOnOutlined as MonetizationOnIcon,
   AppRegistration as AppRegistrationIcon,
   QrCodeScanner as QrCodeScannerIcon,
   Business as BusinessIcon,
@@ -245,6 +246,7 @@ const ICONS = {
   grid: GridViewIcon,
   insights: InsightsIcon,
   key: KeyIcon,
+  payment: MonetizationOnIcon,
   peopleAlt: PeopleAltIcon,
   person: PersonIcon,
   poll: PollIcon,
