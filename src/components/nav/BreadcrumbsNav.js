@@ -19,6 +19,10 @@ const segmentMap = {
     label: "Logs",
     icon: <ICONS.history fontSize="small" sx={{ mr: 0.5 }} />,
   },
+  payments: {
+    label: "Payments",
+    icon: <ICONS.payment fontSize="small" sx={{ mr: 0.5 }} />,
+  },
   inbox: {
     label: "Inbox",
     icon: <ICONS.chat fontSize="small" sx={{ mr: 0.5 }} />,

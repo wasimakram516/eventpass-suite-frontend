@@ -66,6 +66,7 @@ export default function Sidebar() {
       ? [
           { label: "Global Search", icon: ICONS.search, path: "/cms/global-search" },
           { label: "Logs", icon: ICONS.history, path: "/cms/logs" },
+          { label: "Payments", icon: ICONS.payment, path: "/cms/payments" },
         ]
       : []),
   ];
