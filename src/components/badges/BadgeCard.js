@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, Chip, Divider, Paper, Typography, alpha } from "@mui/material";
+import { Box, Divider, Paper, Typography, alpha } from "@mui/material";
 import { QRCodeCanvas } from "qrcode.react";
 import { formatDate } from "@/utils/dateUtils";
 
@@ -88,7 +88,7 @@ export function getModuleLabel(module, t) {
 }
 
 export function getBadgeDetailRows(event, registration, t) {
-  const ticketType = pickRegistrationType(registration) || (t?.noTicket || "Attendee");
+  const ticketType = pickRegistrationType(registration) || registration?.ticketTypeName || (t?.noTicket || "Attendee");
   const dateLabel = getEventDateLabel(event);
 
   return [
@@ -151,25 +151,6 @@ export default function BadgeCard({ event, module, registration, qrRef, t, compa
 
         <Box sx={{ position: "relative", zIndex: 1, width: "100%" }}>
           <Box sx={{ minWidth: 0, flex: 1, display: "flex", flexDirection: "column" }}>
-            <Chip
-              label={getModuleLabel(module, t)}
-              sx={{
-                mb: compact ? 0.5 : 1.5,
-                alignSelf: "flex-start",
-                bgcolor:
-                  module === MODULE_CHECKIN
-                    ? alpha(BADGE_COLORS.accent, 0.92)
-                    : alpha(BADGE_COLORS.white, 0.16),
-                color:
-                  module === MODULE_CHECKIN
-                    ? BADGE_COLORS.ink
-                    : BADGE_COLORS.white,
-                borderRadius: 999,
-                fontWeight: 700,
-                backdropFilter: "blur(10px)",
-              }}
-            />
-
             <Typography
               variant="body2"
               sx={{ color: alpha(BADGE_COLORS.white, 0.78), mb: compact ? 0.5 : 0.75 }}

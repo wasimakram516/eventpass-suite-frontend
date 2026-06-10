@@ -10,40 +10,9 @@ import {
 } from "@react-pdf/renderer";
 
 
-// Auto-generated font imports
-import arial_0 from "../../fonts/arial/ArialBold.ttf";
-import arial_1 from "../../fonts/arial/ArialRegular.ttf";
-import futura_0 from "../../fonts/futura/FuturaStdBold.otf";
-import futura_1 from "../../fonts/futura/FuturaStdBoldOblique.otf";
-import futura_2 from "../../fonts/futura/FuturaStdBook.otf";
-import futura_3 from "../../fonts/futura/FuturaStdBookOblique.otf";
-import futura_4 from "../../fonts/futura/FuturaStdCondensed.otf";
-import futura_5 from "../../fonts/futura/FuturaStdCondensedBold.otf";
-import futura_6 from "../../fonts/futura/FuturaStdCondensedBoldObl.otf";
-import futura_7 from "../../fonts/futura/FuturaStdCondensedExtraBd.otf";
-import futura_8 from "../../fonts/futura/FuturaStdCondensedLight.otf";
-import futura_9 from "../../fonts/futura/FuturaStdCondensedLightObl.otf";
-import futura_10 from "../../fonts/futura/FuturaStdCondensedOblique.otf";
-import futura_11 from "../../fonts/futura/FuturaStdCondExtraBoldObl.otf";
-import futura_12 from "../../fonts/futura/FuturaStdExtraBold.otf";
-import futura_13 from "../../fonts/futura/FuturaStdExtraBoldOblique.otf";
-import futura_14 from "../../fonts/futura/FuturaStdHeavy.otf";
-import futura_15 from "../../fonts/futura/FuturaStdHeavyOblique.otf";
-import futura_16 from "../../fonts/futura/FuturaStdLight.otf";
-import futura_17 from "../../fonts/futura/FuturaStdLightOblique.otf";
-import futura_18 from "../../fonts/futura/FuturaStdMedium.otf";
-import futura_19 from "../../fonts/futura/FuturaStdMediumOblique.otf";
-import IBMPlexSansArabic_0 from "../../fonts/IBMPlexSansArabic/IBMPlexSansArabic-Bold.ttf";
-import IBMPlexSansArabic_1 from "../../fonts/IBMPlexSansArabic/IBMPlexSansArabic-Medium.ttf";
-import IBMPlexSansArabic_2 from "../../fonts/IBMPlexSansArabic/IBMPlexSansArabic-Regular.ttf";
-import love_0 from "../../fonts/love/LoveDays-2v7Oe.ttf";
-import Midable_0 from "../../fonts/Midable/Midable.ttf";
-import romeo_0 from "../../fonts/romeo/Pinky Peace.otf";
-import welcome_0 from "../../fonts/welcome/Welcome September.ttf";
 
 // --------------------------------------------------------------
 
-// --------------------------------------------------------------
 
 
 
@@ -56,71 +25,71 @@ import welcome_0 from "../../fonts/welcome/Welcome September.ttf";
 Font.register({
   family: "Arial",
   fonts: [
-    { src: arial_0, fontWeight: 700, fontStyle: 'normal' },
-    { src: arial_1, fontWeight: 400, fontStyle: 'normal' }
+    { src: "/fonts/arial/ArialBold.ttf", fontWeight: 700, fontStyle: 'normal' },
+    { src: "/fonts/arial/ArialRegular.ttf", fontWeight: 400, fontStyle: 'normal' }
   ],
 });
 
 Font.register({
   family: "Futura",
   fonts: [
-    { src: futura_0, fontWeight: 700, fontStyle: 'normal' },
-    { src: futura_1, fontWeight: 700, fontStyle: 'italic' },
-    { src: futura_2, fontWeight: 400, fontStyle: 'normal' },
-    { src: futura_3, fontWeight: 400, fontStyle: 'italic' },
-    { src: futura_4, fontWeight: 400, fontStyle: 'normal' },
-    { src: futura_5, fontWeight: 700, fontStyle: 'normal' },
-    { src: futura_6, fontWeight: 700, fontStyle: 'italic' },
-    { src: futura_7, fontWeight: 900, fontStyle: 'normal' },
-    { src: futura_8, fontWeight: 300, fontStyle: 'normal' },
-    { src: futura_9, fontWeight: 300, fontStyle: 'italic' },
-    { src: futura_10, fontWeight: 400, fontStyle: 'italic' },
-    { src: futura_11, fontWeight: 700, fontStyle: 'italic' },
-    { src: futura_12, fontWeight: 700, fontStyle: 'normal' },
-    { src: futura_13, fontWeight: 700, fontStyle: 'italic' },
-    { src: futura_14, fontWeight: 800, fontStyle: 'normal' },
-    { src: futura_15, fontWeight: 800, fontStyle: 'italic' },
-    { src: futura_16, fontWeight: 300, fontStyle: 'normal' },
-    { src: futura_17, fontWeight: 300, fontStyle: 'italic' },
-    { src: futura_18, fontWeight: 500, fontStyle: 'normal' },
-    { src: futura_19, fontWeight: 500, fontStyle: 'italic' }
+    { src: "/fonts/futura/FuturaStdBold.otf", fontWeight: 700, fontStyle: 'normal' },
+    { src: "/fonts/futura/FuturaStdBoldOblique.otf", fontWeight: 700, fontStyle: 'italic' },
+    { src: "/fonts/futura/FuturaStdBook.otf", fontWeight: 400, fontStyle: 'normal' },
+    { src: "/fonts/futura/FuturaStdBookOblique.otf", fontWeight: 400, fontStyle: 'italic' },
+    { src: "/fonts/futura/FuturaStdCondensed.otf", fontWeight: 400, fontStyle: 'normal' },
+    { src: "/fonts/futura/FuturaStdCondensedBold.otf", fontWeight: 700, fontStyle: 'normal' },
+    { src: "/fonts/futura/FuturaStdCondensedBoldObl.otf", fontWeight: 700, fontStyle: 'italic' },
+    { src: "/fonts/futura/FuturaStdCondensedExtraBd.otf", fontWeight: 900, fontStyle: 'normal' },
+    { src: "/fonts/futura/FuturaStdCondensedLight.otf", fontWeight: 300, fontStyle: 'normal' },
+    { src: "/fonts/futura/FuturaStdCondensedLightObl.otf", fontWeight: 300, fontStyle: 'italic' },
+    { src: "/fonts/futura/FuturaStdCondensedOblique.otf", fontWeight: 400, fontStyle: 'italic' },
+    { src: "/fonts/futura/FuturaStdCondExtraBoldObl.otf", fontWeight: 700, fontStyle: 'italic' },
+    { src: "/fonts/futura/FuturaStdExtraBold.otf", fontWeight: 700, fontStyle: 'normal' },
+    { src: "/fonts/futura/FuturaStdExtraBoldOblique.otf", fontWeight: 700, fontStyle: 'italic' },
+    { src: "/fonts/futura/FuturaStdHeavy.otf", fontWeight: 800, fontStyle: 'normal' },
+    { src: "/fonts/futura/FuturaStdHeavyOblique.otf", fontWeight: 800, fontStyle: 'italic' },
+    { src: "/fonts/futura/FuturaStdLight.otf", fontWeight: 300, fontStyle: 'normal' },
+    { src: "/fonts/futura/FuturaStdLightOblique.otf", fontWeight: 300, fontStyle: 'italic' },
+    { src: "/fonts/futura/FuturaStdMedium.otf", fontWeight: 500, fontStyle: 'normal' },
+    { src: "/fonts/futura/FuturaStdMediumOblique.otf", fontWeight: 500, fontStyle: 'italic' }
   ],
 });
 
 Font.register({
   family: "IBM Plex Sans Arabic",
   fonts: [
-    { src: IBMPlexSansArabic_0, fontWeight: 700, fontStyle: 'normal' },
-    { src: IBMPlexSansArabic_1, fontWeight: 500, fontStyle: 'normal' },
-    { src: IBMPlexSansArabic_2, fontWeight: 400, fontStyle: 'normal' }
+    { src: "/fonts/IBMPlexSansArabic/IBMPlexSansArabic-Bold.ttf", fontWeight: 700, fontStyle: 'normal' },
+    { src: "/fonts/IBMPlexSansArabic/IBMPlexSansArabic-Medium.ttf", fontWeight: 500, fontStyle: 'normal' },
+    { src: "/fonts/IBMPlexSansArabic/IBMPlexSansArabic-Regular.ttf", fontWeight: 400, fontStyle: 'normal' }
   ],
 });
 
 Font.register({
   family: "Love",
   fonts: [
-    { src: love_0, fontWeight: 400, fontStyle: 'normal' }
+    { src: "/fonts/love/LoveDays-2v7Oe.ttf", fontWeight: 400, fontStyle: 'normal' }
   ],
 });
 
 Font.register({
   family: "Midable",
   fonts: [
-    { src: Midable_0, fontWeight: 400, fontStyle: 'normal' }
+    { src: "/fonts/Midable/Midable.ttf", fontWeight: 400, fontStyle: 'normal' }
   ],
 });
 
 Font.register({
   family: "Romeo",
   fonts: [
-    { src: romeo_0, fontWeight: 400, fontStyle: 'normal' }
+    { src: "/fonts/romeo/Pinky Peace.otf", fontWeight: 400, fontStyle: 'normal' }
   ],
 });
 
 Font.register({
   family: "Welcome",
   fonts: [
-    { src: welcome_0, fontWeight: 400, fontStyle: 'normal' }
+    { src: "/fonts/welcome/Welcome September.ttf", fontWeight: 400, fontStyle: 'normal' }
   ],
 });
 

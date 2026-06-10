@@ -111,20 +111,11 @@ export function getFontFamily(fontName) {
 }
 
 function generateBadgePDFImports(fontFamilies) {
-    const imports = [];
     const registrations = [];
 
     Object.entries(fontFamilies).forEach(([key, font]) => {
-        const fontVars = [];
-        font.files.forEach((file, index) => {
-            const varName = `${key}_${index}`.replace(/[^a-zA-Z0-9_]/g, '_');
-            const importPath = file.path.replace(/^\//, '../../');
-            imports.push(`import ${varName} from "${importPath}";`);
-            fontVars.push({ varName, ...file });
-        });
-
-        const fontEntries = fontVars.map(({ varName, weight, style }) =>
-            `    { src: ${varName}, fontWeight: ${weight}, fontStyle: '${style}' }`
+        const fontEntries = font.files.map(({ path: fontPath, weight, style }) =>
+            `    { src: "${fontPath}", fontWeight: ${weight}, fontStyle: '${style}' }`
         ).join(',\n');
 
         registrations.push(`Font.register({
@@ -135,7 +126,7 @@ ${fontEntries}
 });`);
     });
 
-    return { imports, registrations };
+    return { registrations };
 }
 
 function copyFontsToPublic(fontFamilies) {
@@ -181,7 +172,7 @@ try {
     copyFontsToPublic(fontFamilies);
     console.log('✓ Copied fonts to public/fonts');
 
-    const { imports, registrations } = generateBadgePDFImports(fontFamilies);
+    const { registrations } = generateBadgePDFImports(fontFamilies);
 
     const fontScannerContent = generateFontScanner(fontFamilies);
     fs.writeFileSync(fontScannerOutput, fontScannerContent, 'utf8');
@@ -189,15 +180,12 @@ try {
 
     const badgePDFContent = fs.readFileSync(badgePDFOutput, 'utf8');
 
-    const importSection = imports.join('\n');
     const registrationSection = registrations.join('\n\n');
-
-    const newImportSection = `// Auto-generated font imports\n${importSection}\n\n// --------------------------------------------------------------`;
     const newRegistrationSection = `// --------------------------------------------------------------\n// STATIC FONT REGISTRATION (AUTO-GENERATED)\n// --------------------------------------------------------------\n${registrationSection}\n\nconst A6_WIDTH`;
 
     let updatedContent = badgePDFContent;
 
-
+    // Remove any leftover static import block (from old generator runs)
     const importRegex = /\/\/ Auto-generated font imports[\s\S]*?(?=\n\/\/ -{60,}|\nconst A6_WIDTH|\nFont\.register)/;
     updatedContent = updatedContent.replace(importRegex, '');
 
@@ -206,26 +194,12 @@ try {
 
     updatedContent = updatedContent.replace(/\/\/ -{60,}\s*\n\s*\/\/ -{60,}/g, '// --------------------------------------------------------------');
     updatedContent = updatedContent.replace(/\n{3,}/g, '\n\n');
-    const reactPdfImportEnd = updatedContent.indexOf('} from "@react-pdf/renderer";');
-    if (reactPdfImportEnd !== -1) {
-        const afterReactPdfImport = updatedContent.indexOf('\n', reactPdfImportEnd) + 1;
-        let insertPoint = afterReactPdfImport;
-        const nextLine = updatedContent.substring(afterReactPdfImport, afterReactPdfImport + 100);
-        if (nextLine.trim() === '' || nextLine.trim().startsWith('//')) {
-            const nextNonEmpty = updatedContent.indexOf('\n', afterReactPdfImport + 1);
-            if (nextNonEmpty !== -1) {
-                insertPoint = nextNonEmpty + 1;
-            }
-        }
-        updatedContent = updatedContent.slice(0, insertPoint) + '\n' + newImportSection + '\n' + updatedContent.slice(insertPoint);
-    }
 
     const a6Index = updatedContent.indexOf('const A6_WIDTH');
     if (a6Index !== -1) {
         const beforeA6 = updatedContent.lastIndexOf('\n', a6Index);
         updatedContent = updatedContent.slice(0, beforeA6 + 1) + newRegistrationSection + updatedContent.slice(a6Index);
     }
-
 
     updatedContent = updatedContent.replace(/const A6_WIDTH\s*\n\s*const A6_WIDTH/g, 'const A6_WIDTH');
     updatedContent = updatedContent.replace(/const A6_WIDTHconst A6_WIDTH/g, 'const A6_WIDTH');

@@ -71,7 +71,9 @@ const MediaUploadProgress = ({ open, uploads, onClose, allowClose = false }) => 
                 onClose={allowClose || allComplete ? onClose : undefined}
                 maxWidth="sm"
                 fullWidth
-                disableEscapeKeyDown={!allowClose && !allComplete}
+                onKeyDown={(e) => {
+                    if (e.key === "Escape" && !allowClose && !allComplete) e.stopPropagation();
+                }}
                 slotProps={{
                     paper: {
                         sx: {

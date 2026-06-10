@@ -26,6 +26,7 @@ import { QRCodeCanvas } from "qrcode.react";
 import { useParams, useRouter } from "next/navigation";
 import LanguageSelector from "@/components/LanguageSelector";
 import { createRegistration } from "@/services/eventreg/registrationService";
+import { initiatePayment } from "@/services/eventreg/paymentService";
 import { getPublicEventBySlug } from "@/services/eventreg/eventService";
 import ICONS from "@/utils/iconUtil";
 import { translateTexts } from "@/services/translationService";
@@ -82,6 +83,13 @@ export default function Registration() {
     approvalPendingMessage: isArabic
       ? "يرجى الانتظار حتى يوافق المسؤول على تسجيلك."
       : "Please wait for the admin to approve your registration.",
+    selectTicket: isArabic ? "اختر نوع التذكرة" : "Select a Ticket",
+    ticketSoldOut: isArabic ? "نفدت التذاكر" : "Sold Out",
+    ticketRequired: isArabic ? "يرجى اختيار نوع التذكرة." : "Please select a ticket type.",
+    proceedToPayment: isArabic ? "المتابعة للدفع" : "Proceed to Payment",
+    unlimitedCapacity: isArabic ? "غير محدود" : "Unlimited",
+    available: isArabic ? "متاح" : "available",
+    omr: isArabic ? "ر.ع." : "OMR",
   };
 
   const [event, setEvent] = useState(null);
@@ -97,6 +105,8 @@ export default function Registration() {
   const [qrToken, setQrToken] = useState(null);
   const [registrationData, setRegistrationData] = useState(null);
   const [countryIsoCodes, setCountryIsoCodes] = useState({});
+  const [selectedTicketTypeId, setSelectedTicketTypeId] = useState(null);
+  const [ticketTypeError, setTicketTypeError] = useState("");
   const qrCodeRef = useRef(null);
   const badgePreviewRef = useRef(null);
   const { globalConfig } = useGlobalConfig();
@@ -263,7 +273,15 @@ export default function Registration() {
       }
     });
 
-    if (Object.keys(errors).length) {
+    let hasTicketError = false;
+    if (event?.isPaid && !selectedTicketTypeId) {
+      setTicketTypeError(t.ticketRequired);
+      hasTicketError = true;
+    } else {
+      setTicketTypeError("");
+    }
+
+    if (Object.keys(errors).length || hasTicketError) {
       setFieldErrors(errors);
       return;
     }
@@ -298,6 +316,26 @@ export default function Registration() {
       }
     });
 
+    // Paid event — redirect to Thawani
+    if (event?.isPaid) {
+      const result = await initiatePayment({
+        eventSlug,
+        ticketTypeId: selectedTicketTypeId,
+        lang,
+        ...normalizedFormData,
+        isoCode: phoneIsoCode,
+      });
+      setSubmitting(false);
+
+      if (!result?.error && result?.sessionUrl) {
+        window.location.href = result.sessionUrl;
+      } else {
+        setFieldErrors({ _global: result?.message || t.registrationFailed });
+      }
+      return;
+    }
+
+    // Free event — normal registration flow
     const result = await createRegistration({
       ...normalizedFormData,
       slug: eventSlug,
@@ -310,7 +348,6 @@ export default function Registration() {
       if (event?.showQrAfterRegistration) setQrToken(result.token);
       setRegistrationData(result.registration || { ...normalizedFormData, token: result.token });
 
-      // Clear the form
       const resetData = {};
       const resetIsoCodes = {};
       dynamicFields.forEach(f => {
@@ -625,6 +662,83 @@ export default function Registration() {
           </Alert>
         )}
 
+        {/* Ticket type selector for paid events */}
+        {event?.isPaid && event?.ticketTypes?.length > 0 && (
+          <Box sx={{ mb: 3 }}>
+            <FormControl fullWidth error={!!ticketTypeError}>
+              <InputLabel id="ticket-type-label">
+                {t.selectTicket} *
+              </InputLabel>
+              <Select
+                labelId="ticket-type-label"
+                value={selectedTicketTypeId || ""}
+                label={`${t.selectTicket} *`}
+                onChange={(e) => {
+                  setSelectedTicketTypeId(e.target.value);
+                  setTicketTypeError("");
+                }}
+                inputProps={{ dir }}
+                sx={{
+                  textAlign: "start",
+                  "& .MuiSelect-icon": {
+                    right: isArabic ? "unset" : undefined,
+                    left: isArabic ? 7 : "unset",
+                  },
+                  "& .MuiSelect-select": isArabic
+                    ? { paddingRight: "14px !important", paddingLeft: "32px !important" }
+                    : {},
+                }}
+                renderValue={(val) => {
+                  const tt = event.ticketTypes.find((x) => x._id === val);
+                  if (!tt) return "";
+                  return (
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 1 }}>
+                      <Typography variant="body2" fontWeight={600}>{tt.name}</Typography>
+                      <Typography variant="body2" color="primary.main" fontWeight={700} sx={{ whiteSpace: "nowrap" }}>
+                        {tt.price} {t.omr}
+                      </Typography>
+                    </Box>
+                  );
+                }}
+              >
+                {event.ticketTypes.map((tt) => {
+                  const isSoldOut = tt.capacity !== null && tt.sold >= tt.capacity;
+                  const remaining = tt.capacity !== null ? tt.capacity - (tt.sold || 0) : null;
+                  const isLowStock = remaining !== null && remaining > 0 && remaining <= 20;
+                  return (
+                    <MenuItem key={tt._id} value={tt._id} disabled={isSoldOut}>
+                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", gap: 2, py: 0.5 }}>
+                        <Box sx={{ minWidth: 0 }}>
+                          <Typography variant="body2" fontWeight={600}>{tt.name}</Typography>
+                          {tt.description && (
+                            <Typography variant="caption" color="text.secondary" sx={{ display: "block", lineHeight: 1.3 }}>
+                              {tt.description}
+                            </Typography>
+                          )}
+                          <Typography
+                            variant="caption"
+                            sx={{ display: "block", color: isSoldOut ? "error.main" : isLowStock ? "warning.main" : "text.secondary", fontWeight: isSoldOut || isLowStock ? 600 : 400 }}
+                          >
+                            {isSoldOut ? t.ticketSoldOut : remaining !== null ? `${remaining} ${t.available}` : t.unlimitedCapacity}
+                          </Typography>
+                        </Box>
+                        <Typography variant="body2" fontWeight={700} color={isSoldOut ? "text.disabled" : "primary.main"} sx={{ whiteSpace: "nowrap", flexShrink: 0 }}>
+                          {isSoldOut ? "—" : `${tt.price} ${t.omr}`}
+                        </Typography>
+                      </Box>
+                    </MenuItem>
+                  );
+                })}
+              </Select>
+              {ticketTypeError && (
+                <Typography variant="caption" color="error" sx={{ mt: 0.5, display: "block", textAlign: "start", px: 1.5 }}>
+                  {ticketTypeError}
+                </Typography>
+              )}
+            </FormControl>
+          </Box>
+        )}
+
         {dynamicFields.map((f) => renderField(f))}
 
         <Button
@@ -633,7 +747,7 @@ export default function Registration() {
           disabled={submitting}
           onClick={handleSubmit}
         >
-          {submitting ? <CircularProgress size={22} /> : t.submit}
+          {submitting ? <CircularProgress size={22} /> : event?.isPaid ? t.proceedToPayment : t.submit}
         </Button>
         </Paper>
 
