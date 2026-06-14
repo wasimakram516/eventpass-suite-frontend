@@ -1384,7 +1384,7 @@ export default function CrossZeroPlayPage() {
                   p: 2,
                   borderRadius: 4,
                   bgcolor: p1?.playerId ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.04)",
-                  border: "1px solid rgba(0,229,255,0.4)",
+                  border: "1px solid rgba(255,107,107,0.4)",
                 }}
               >
                 <Stack
@@ -1394,11 +1394,11 @@ export default function CrossZeroPlayPage() {
                     alignItems: "center",
                     mb: 0.5
                   }}>
-                  <Typography sx={{ color: "#00e5ff", fontWeight: 800 }}>
+                  <Typography sx={{ color: "#ff6b6b", fontWeight: 800 }}>
                     {t.player1 || "Player 1"}
                   </Typography>
                   <CrossZeroMarkVisual
-                    mark="X"
+                    mark="O"
                     xImage={game?.xImage}
                     oImage={game?.oImage}
                     size={18}
@@ -1416,7 +1416,7 @@ export default function CrossZeroPlayPage() {
                   p: 2,
                   borderRadius: 4,
                   bgcolor: p2?.playerId ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.04)",
-                  border: "1px solid rgba(255,107,107,0.4)",
+                  border: "1px solid rgba(0,229,255,0.4)",
                 }}
               >
                 <Stack
@@ -1426,11 +1426,11 @@ export default function CrossZeroPlayPage() {
                     alignItems: "center",
                     mb: 0.5
                   }}>
-                  <Typography sx={{ color: "#ff6b6b", fontWeight: 800 }}>
+                  <Typography sx={{ color: "#00e5ff", fontWeight: 800 }}>
                     {t.player2 || "Player 2"}
                   </Typography>
                   <CrossZeroMarkVisual
-                    mark="O"
+                    mark="X"
                     xImage={game?.xImage}
                     oImage={game?.oImage}
                     size={18}

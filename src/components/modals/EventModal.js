@@ -10,7 +10,6 @@ import {
   CircularProgress,
   List,
   ListItem,
-  ListItemText,
   Box,
   Typography,
   IconButton,
@@ -94,6 +93,7 @@ const translations = {
     phoneType: "Phone",
     radioType: "Radio",
     listType: "List",
+    countryType: "Country",
     useInternationalNumbers: "Allow International Numbers",
     showQrToggle: "Show QR code after registration?",
     showQrOnBadgeToggle: "Show QR Code on Printed Badge?",
@@ -211,6 +211,7 @@ const translations = {
     phoneType: "هاتف",
     radioType: "اختيار",
     listType: "قائمة",
+    countryType: "البلد",
     useInternationalNumbers: "السماح بالأرقام الدولية",
     showQrToggle: "عرض رمز الاستجابة السريعة بعد التسجيل؟",
     showQrOnBadgeToggle: "عرض رمز QR على بطاقة الطباعة؟",
@@ -2783,6 +2784,7 @@ const EventModal = ({
                           { value: "phone", label: t.phoneType },
                           { value: "radio", label: t.radioType },
                           { value: "list", label: t.listType },
+                          { value: "country", label: t.countryType },
                         ].map((type) => (
                           <option key={type.value} value={type.value}>
                             {type.label}
