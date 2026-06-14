@@ -8,6 +8,7 @@ import {
   Image,
   Font,
 } from "@react-pdf/renderer";
+import { resolveBadgeDimensions } from "@/utils/badgeSize";
 
 
 
@@ -388,13 +389,27 @@ function getFieldValue(fieldName, data) {
 }
 
 export default function BadgePDF({ data, qrCodeDataUrl, customizations, single = true }) {
-  const hasCustomizations = customizations && Object.keys(customizations).length > 0;
+  // Resolve the badge page size / orientation (stored under _badgeSize),
+  // falling back to A6 portrait when not configured.
+  const {
+    widthPt: pageWidth,
+    heightPt: pageHeight,
+    rotated180,
+  } = resolveBadgeDimensions(customizations?._badgeSize);
+
+  const customizationFieldKeys = customizations
+    ? Object.keys(customizations).filter(
+        (key) => key !== "_qrCode" && key !== "_badgeSize"
+      )
+    : [];
+
+  const hasCustomizations = customizationFieldKeys.length > 0;
 
   if (hasCustomizations) {
-    const customFields = Object.keys(customizations).filter(key => key !== "_qrCode");
+    const customFields = customizationFieldKeys;
 
-    const content = (
-      <Page size={[A6_WIDTH, A6_HEIGHT]} style={styles.pageCustomized}>
+    const innerContent = (
+      <>
         {customFields.map((fieldName) => {
           const customization = customizations[fieldName];
           if (!customization) return null;
@@ -469,7 +484,7 @@ export default function BadgePDF({ data, qrCodeDataUrl, customizations, single =
 
           const fontSizePt = fontSize * (72 / 96);
           const baselineAdjustmentPt = fontSizePt * 0.2;
-          const baselineAdjustmentPercent = (baselineAdjustmentPt / A6_HEIGHT) * 100;
+          const baselineAdjustmentPercent = (baselineAdjustmentPt / pageHeight) * 100;
           const adjustedYPercent = Math.max(0, yPercent - baselineAdjustmentPercent);
 
           let finalFontFamily = fontFamily || "Arial";
@@ -579,6 +594,18 @@ export default function BadgePDF({ data, qrCodeDataUrl, customizations, single =
             </Text>
           </View>
         )}
+      </>
+    );
+
+    const content = (
+      <Page size={[pageWidth, pageHeight]} style={[styles.pageCustomized, { width: pageWidth, height: pageHeight }]}>
+        {rotated180 ? (
+          <View style={{ width: "100%", height: "100%", position: "relative", transform: "rotate(180deg)" }}>
+            {innerContent}
+          </View>
+        ) : (
+          innerContent
+        )}
       </Page>
     );
 
@@ -626,7 +653,7 @@ export default function BadgePDF({ data, qrCodeDataUrl, customizations, single =
   // const titleLines = data?.title ? wrapTextAtWords(data.title, titleFontSize, AVAILABLE_TITLE_WIDTH, false) : [];
 
   const content = (
-    <Page size={[A6_WIDTH, A6_HEIGHT]} style={styles.page}>
+    <Page size={[pageWidth, pageHeight]} style={[styles.page, { width: pageWidth, height: pageHeight }]}>
       <View style={styles.contentArea}>
         {nameLines.length > 0 && (
           <View style={{ width: `${NAME_WIDTH_PERCENT * 100}%`, alignSelf: "center" }}>
