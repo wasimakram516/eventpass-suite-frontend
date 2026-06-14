@@ -24,13 +24,18 @@ import useI18nLayout from "@/hooks/useI18nLayout";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
+import {
+    BADGE_SIZE_PRESETS,
+    UNIT_OPTIONS,
+    ORIENTATION_OPTIONS,
+    DEFAULT_BADGE_SIZE,
+    PT_TO_PX,
+    resolveBadgeDimensions,
+} from "@/utils/badgeSize";
 
-const A6_WIDTH_PT = 297.6;
-const A6_HEIGHT_PT = 419.5;
-const PT_TO_PX = 96 / 72;
-const A6_WIDTH_PX = A6_WIDTH_PT * PT_TO_PX;
-const A6_HEIGHT_PX = A6_HEIGHT_PT * PT_TO_PX;
-const PREVIEW_SCALE = 0.75;
+// Max area (px) the badge preview is allowed to occupy in the right pane.
+const PREVIEW_MAX_WIDTH = 360;
+const PREVIEW_MAX_HEIGHT = 520;
 
 const translations = {
     en: {
@@ -41,6 +46,12 @@ const translations = {
         qrSize: "Size (px)",
         save: "Save",
         cancel: "Cancel",
+        badgeSize: "Badge Size",
+        size: "Size",
+        width: "Width",
+        height: "Height",
+        unit: "Unit",
+        orientation: "Orientation",
     },
     ar: {
         title: "تخصيص الشارة",
@@ -50,6 +61,12 @@ const translations = {
         qrSize: "الحجم (بكسل)",
         save: "حفظ",
         cancel: "إلغاء",
+        badgeSize: "حجم الشارة",
+        size: "الحجم",
+        width: "العرض",
+        height: "الارتفاع",
+        unit: "الوحدة",
+        orientation: "الاتجاه",
     },
 };
 
@@ -567,6 +584,11 @@ export default function BadgeCustomizationModal({
                 };
             }
 
+            initialCustomizations._badgeSize = {
+                ...DEFAULT_BADGE_SIZE,
+                ...(badgeCustomizations._badgeSize || {}),
+            };
+
             setCustomizations(initialCustomizations);
         }
     }, [open, selectedFields, allFields, showQrOnBadge, badgeCustomizations]);
@@ -692,13 +714,37 @@ export default function BadgeCustomizationModal({
         }));
     };
 
+    const handleBadgeSizeChange = (key, value) => {
+        setCustomizations((prev) => ({
+            ...prev,
+            _badgeSize: {
+                ...DEFAULT_BADGE_SIZE,
+                ...prev._badgeSize,
+                [key]: value,
+            },
+        }));
+    };
+
     const handleSave = () => {
         onSave(customizations);
         onClose();
     };
 
-    const previewWidth = A6_WIDTH_PX * PREVIEW_SCALE;
-    const previewHeight = A6_HEIGHT_PX * PREVIEW_SCALE;
+    const badgeSize = customizations._badgeSize || DEFAULT_BADGE_SIZE;
+    const isCustomSize = badgeSize.preset === "custom";
+
+    const { widthPt, heightPt, rotated180 } = resolveBadgeDimensions(badgeSize);
+    const badgeWidthPx = widthPt * PT_TO_PX;
+    const badgeHeightPx = heightPt * PT_TO_PX;
+
+    // Scale the badge down to fit the preview pane, never scaling up past 1:1.
+    const previewScale = Math.min(
+        PREVIEW_MAX_WIDTH / badgeWidthPx,
+        PREVIEW_MAX_HEIGHT / badgeHeightPx,
+        1
+    );
+    const previewWidth = badgeWidthPx * previewScale;
+    const previewHeight = badgeHeightPx * previewScale;
 
     return (
         <Dialog
@@ -762,6 +808,100 @@ export default function BadgeCustomizationModal({
                     }}
                 >
                     <Stack spacing={3}>
+                        <Box>
+                            <Typography variant="h6" sx={{ mb: 2, fontWeight: 600 }}>
+                                {t.badgeSize}
+                            </Typography>
+                            <Stack spacing={2}>
+                                <Box sx={{ display: "flex", gap: 2 }}>
+                                    <FormControl size="small" sx={{ flex: 1 }}>
+                                        <InputLabel>{t.size}</InputLabel>
+                                        <Select
+                                            label={t.size}
+                                            value={badgeSize.preset}
+                                            onChange={(e) =>
+                                                handleBadgeSizeChange("preset", e.target.value)
+                                            }
+                                        >
+                                            {BADGE_SIZE_PRESETS.map((preset) => (
+                                                <MenuItem key={preset.id} value={preset.id}>
+                                                    {preset.label}
+                                                </MenuItem>
+                                            ))}
+                                        </Select>
+                                    </FormControl>
+                                    <FormControl size="small" sx={{ flex: 1 }}>
+                                        <InputLabel>{t.orientation}</InputLabel>
+                                        <Select
+                                            label={t.orientation}
+                                            value={badgeSize.orientation}
+                                            onChange={(e) =>
+                                                handleBadgeSizeChange("orientation", e.target.value)
+                                            }
+                                        >
+                                            {ORIENTATION_OPTIONS.map((opt) => (
+                                                <MenuItem key={opt.id} value={opt.id}>
+                                                    {opt.label}
+                                                </MenuItem>
+                                            ))}
+                                        </Select>
+                                    </FormControl>
+                                </Box>
+
+                                {isCustomSize && (
+                                    <Box sx={{ display: "flex", gap: 2 }}>
+                                        <TextField
+                                            label={t.width}
+                                            type="number"
+                                            size="small"
+                                            sx={{ flex: 1 }}
+                                            value={badgeSize.width ?? ""}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                handleBadgeSizeChange(
+                                                    "width",
+                                                    val === "" ? "" : parseFloat(val)
+                                                );
+                                            }}
+                                            slotProps={{ htmlInput: { min: 0, step: 0.1 } }}
+                                        />
+                                        <TextField
+                                            label={t.height}
+                                            type="number"
+                                            size="small"
+                                            sx={{ flex: 1 }}
+                                            value={badgeSize.height ?? ""}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                handleBadgeSizeChange(
+                                                    "height",
+                                                    val === "" ? "" : parseFloat(val)
+                                                );
+                                            }}
+                                            slotProps={{ htmlInput: { min: 0, step: 0.1 } }}
+                                        />
+                                        <FormControl size="small" sx={{ flex: 1 }}>
+                                            <InputLabel>{t.unit}</InputLabel>
+                                            <Select
+                                                label={t.unit}
+                                                value={badgeSize.unit}
+                                                onChange={(e) =>
+                                                    handleBadgeSizeChange("unit", e.target.value)
+                                                }
+                                            >
+                                                {UNIT_OPTIONS.map((opt) => (
+                                                    <MenuItem key={opt.id} value={opt.id}>
+                                                        {opt.label}
+                                                    </MenuItem>
+                                                ))}
+                                            </Select>
+                                        </FormControl>
+                                    </Box>
+                                )}
+                            </Stack>
+                            <Divider sx={{ mt: 3 }} />
+                        </Box>
+
                         {selectedFields.map((fieldName) => {
                             const field = allFields.find((f) => f.inputName === fieldName);
                             if (!field) return null;
@@ -945,14 +1085,23 @@ export default function BadgeCustomizationModal({
                     >
                         <Box
                             sx={{
-                                width: A6_WIDTH_PX,
-                                height: A6_HEIGHT_PX,
+                                width: badgeWidthPx,
+                                height: badgeHeightPx,
                                 bgcolor: "white",
                                 position: "relative",
-                                transform: `scale(${PREVIEW_SCALE})`,
+                                transform: `scale(${previewScale})`,
                                 transformOrigin: "top left",
                             }}
                         >
+                          <Box
+                            sx={{
+                                width: "100%",
+                                height: "100%",
+                                position: "relative",
+                                transform: rotated180 ? "rotate(180deg)" : "none",
+                                transformOrigin: "center",
+                            }}
+                          >
                             {selectedFields.map((fieldName) => {
                                 const customization = customizations[fieldName];
                                 if (!customization) return null;
@@ -1049,6 +1198,7 @@ export default function BadgeCustomizationModal({
                                     </Typography>
                                 </Box>
                             )}
+                          </Box>
                         </Box>
                     </Box>
                 </Box>

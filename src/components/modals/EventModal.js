@@ -3120,7 +3120,7 @@ const EventModal = ({
         onClose={() => setBadgeCustomizationModalOpen(false)}
         onSave={(customizations) => {
           if (formData.useCustomFields) {
-            const fieldsFromCustomizations = Object.keys(customizations).filter(key => key !== "_qrCode");
+            const fieldsFromCustomizations = Object.keys(customizations).filter(key => key !== "_qrCode" && key !== "_badgeSize");
             setFormData((prev) => ({
               ...prev,
               badgeCustomizations: customizations,
