@@ -33,6 +33,7 @@ import { translateTexts } from "@/services/translationService";
 import Background from "@/components/Background";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import CountryCodeSelector from "@/components/CountryCodeSelector";
+import CountryPicker from "@/components/CountryPicker";
 import { normalizePhone } from "@/utils/phoneUtils";
 import { DEFAULT_COUNTRY_CODE, DEFAULT_ISO_CODE, COUNTRY_CODES, getCountryCodeByIsoCode } from "@/utils/countryCodes";
 import { validatePhoneNumber } from "@/utils/phoneValidation";
@@ -486,6 +487,23 @@ export default function Registration() {
           )}
         </FormControl>
       );
+
+    if (field.type === "country") {
+      return (
+        <Box key={field.name} sx={{ mb: 2 }}>
+          <CountryPicker
+            label={fieldLabel}
+            value={formData[field.name] || ""}
+            onChange={(iso) => handleInputChange({ target: { name: field.name, value: iso } })}
+            required={field.required}
+            error={!!errorMsg}
+            helperText={errorMsg || ""}
+            lang={isArabic ? "ar" : "en"}
+            dir={dir}
+          />
+        </Box>
+      );
+    }
 
     if (field.type === "number") {
       return (
