@@ -35,6 +35,7 @@ import { exportChartsToPDF } from "@/components/badges/pdfExportCharts";
 import { Button, CircularProgress } from "@mui/material";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import { formatDateTimeWithLocale } from "@/utils/dateUtils";
+import { COUNTRY_CODES, getFlagImageUrl } from "@/utils/countryCodes";
 import * as XLSX from "xlsx";
 
 const translations = {
@@ -554,6 +555,7 @@ const ChartVisualization = ({
                                                     textAlign: "left",
                                                 }}
                                             >
+                                                {item.flagUrl ? <Box component="img" src={item.flagUrl} alt="" sx={{ width: 20, height: 14, borderRadius: 0.5, mr: 0.5, verticalAlign: "middle" }} /> : null}
                                                 {item.label} {percentage}% · {item.value}
                                             </Typography>
                                         </Box>
@@ -657,6 +659,7 @@ const ChartVisualization = ({
                                                 textAlign: "left",
                                             }}
                                         >
+                                            {item.flagUrl ? <Box component="img" src={item.flagUrl} alt="" sx={{ width: 20, height: 14, borderRadius: 0.5, mr: 0.5, verticalAlign: "middle" }} /> : null}
                                             {item.label} {percentage}% · {item.value}
                                         </Typography>
                                     </Box>
@@ -1151,12 +1154,25 @@ export default function AnalyticsDashboard() {
                             useTopN
                         );
 
-                        const data = response.data.data.map((item, idx) => ({
-                            id: idx,
-                            value: item.value,
-                            label: item.label,
-                            color: getPieSegmentColor(idx),
-                        }));
+                        const isCountryField = field.type === "country";
+                        const data = response.data.data.map((item, idx) => {
+                            let label = item.label;
+                            let flagUrl = null;
+                            if (isCountryField) {
+                                const country = COUNTRY_CODES.find(c => c.isoCode === label.toLowerCase());
+                                if (country) {
+                                    label = country.country;
+                                    flagUrl = getFlagImageUrl(country.isoCode);
+                                }
+                            }
+                            return {
+                                id: idx,
+                                value: item.value,
+                                label,
+                                flagUrl,
+                                color: getPieSegmentColor(idx),
+                            };
+                        });
 
                         setChartData((prev) => ({
                             ...prev,

@@ -19,6 +19,7 @@ import {
     Select,
     MenuItem,
     FormGroup,
+    Autocomplete,
 } from "@mui/material";
 import DownloadingIcon from "@mui/icons-material/Downloading";
 import { useState, useEffect, useRef } from "react";
@@ -75,6 +76,8 @@ const translations = {
         phoneType: "Phone",
         radioType: "Radio",
         listType: "List",
+        countryType: "Country",
+        fileType: "File",
         maxTasksPerUser: "Max Tasks Per User",
         minTasksPerUser: "Min Tasks Per User",
         invalidTasks: "Max tasks must be greater than or equal to min tasks.",
@@ -91,6 +94,10 @@ const translations = {
         loading: "Loading Fields...",
         requiredPrimaryField: "Please select a primary field.",
         requiredEvent: "Please select an event.",
+        dependentsLabel: "Dependent Fields",
+        dependentsHint: "When this option is selected, the chosen fields below will appear.",
+        dependentsSelect: "Select fields to show",
+        noOptionsAvailable: "No other fields available",
     },
     ar: {
         createTitle: "إنشاء فعالية DigiPass",
@@ -133,6 +140,8 @@ const translations = {
         phoneType: "هاتف",
         radioType: "اختيار",
         listType: "قائمة",
+        countryType: "البلد",
+        fileType: "ملف",
         maxTasksPerUser: "الحد الأقصى للمهام لكل مستخدم",
         minTasksPerUser: "الحد الأدنى للمهام لكل مستخدم",
         invalidTasks: "يجب أن يكون الحد الأقصى للمهام أكبر من أو يساوي الحد الأدنى.",
@@ -149,6 +158,10 @@ const translations = {
         loading: "جارٍ تحميل الحقول...",
         requiredPrimaryField: "يرجى اختيار الحقل الأساسي.",
         requiredEvent: "يرجى اختيار فعالية.",
+        dependentsLabel: "الحقول التابعة",
+        dependentsHint: "عند اختيار هذا الخيار، ستظهر الحقول المحددة أدناه.",
+        dependentsSelect: "اختر الحقول التي ستظهر",
+        noOptionsAvailable: "لا توجد حقول أخرى متاحة",
     },
 };
 
@@ -522,6 +535,7 @@ const DigiPassEventModal = ({
                     visible: true,
                     identity: false,
                     _temp: "",
+                    dependents: "{}",
                 },
             ],
         }));
@@ -531,6 +545,17 @@ const DigiPassEventModal = ({
         const updated = [...formData.formFields];
         updated.splice(index, 1);
         setFormData((prev) => ({ ...prev, formFields: updated }));
+    };
+
+    const handleDependentsChange = (fieldIndex, optionValue, selectedFields) => {
+        const field = formData.formFields[fieldIndex];
+        const currentDependents = (() => { try { return JSON.parse(field.dependents || "{}"); } catch { return {}; } })();
+        if (selectedFields.length > 0) {
+            currentDependents[optionValue] = { fieldIds: selectedFields };
+        } else {
+            delete currentDependents[optionValue];
+        }
+        handleFormFieldChange(fieldIndex, "dependents", JSON.stringify(currentDependents));
     };
 
     const handleSubmit = async () => {
@@ -1362,6 +1387,8 @@ const DigiPassEventModal = ({
                                                 { value: "phone", label: t.phoneType },
                                                 { value: "radio", label: t.radioType },
                                                 { value: "list", label: t.listType },
+                                                { value: "country", label: t.countryType },
+                                                { value: "file", label: t.fileType },
                                             ].map((type) => (
                                                 <option key={type.value} value={type.value}>
                                                     {type.label}
@@ -1423,6 +1450,42 @@ const DigiPassEventModal = ({
                                                         }}
                                                         fullWidth
                                                     />
+
+                                                    {field.values.length > 0 && (
+                                                        <Box sx={{ mt: 2 }}>
+                                                            <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                                                                {t.dependentsLabel}
+                                                            </Typography>
+                                                            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
+                                                                {t.dependentsHint}
+                                                            </Typography>
+                                                            {field.values.map((option) => {
+                                                                const dependentsMap = (() => { try { return JSON.parse(field.dependents || "{}"); } catch { return {}; } })();
+                                                                const selectedFieldIds = dependentsMap[option]?.fieldIds || [];
+                                                                const otherFields = formData.formFields.filter((f, i) => i !== index && f.inputName && f.inputName.trim());
+                                                                return (
+                                                                    <Box key={option} sx={{ mb: 1.5 }}>
+                                                                        <Autocomplete
+                                                                            multiple
+                                                                            size="small"
+                                                                            options={otherFields.map(f => f.inputName)}
+                                                                            value={selectedFieldIds}
+                                                                            onChange={(e, newVal) => handleDependentsChange(index, option, newVal)}
+                                                                            renderInput={(params) => (
+                                                                                <TextField
+                                                                                    {...params}
+                                                                                    label={`${option} → ${t.dependentsSelect}`}
+                                                                                    placeholder={t.dependentsSelect}
+                                                                                />
+                                                                            )}
+                                                                            noOptionsText={t.noOptionsAvailable}
+                                                                            fullWidth
+                                                                        />
+                                                                    </Box>
+                                                                );
+                                                            })}
+                                                        </Box>
+                                                    )}
                                                 </Box>
                                             )}
 

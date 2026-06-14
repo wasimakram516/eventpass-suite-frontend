@@ -1776,6 +1776,37 @@ export default function ViewRegistrations() {
                                   const { formatPhoneNumberForDisplay } = require("@/utils/countryCodes");
                                   return formatPhoneNumberForDisplay(displayValue, reg.isoCode);
                                 }
+                                if (f.type === "country") {
+                                  const { COUNTRY_CODES, getFlagImageUrl } = require("@/utils/countryCodes");
+                                  const country = COUNTRY_CODES.find(c => c.isoCode === displayValue.toLowerCase());
+                                  if (!country) return displayValue;
+                                  return (
+                                    <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                                      <img
+                                        src={getFlagImageUrl(country.isoCode)}
+                                        alt={country.country}
+                                        style={{ width: 20, height: 14, objectFit: "cover", borderRadius: 2, flexShrink: 0 }}
+                                      />
+                                      <span style={{ marginLeft: 4 }}>{country.country}</span>
+                                    </span>
+                                  );
+                                }
+                                if (f.type === "file" && displayValue && displayValue !== "—") {
+                                  const isImage = displayValue.match(/\.(jpg|jpeg|png|gif|webp|svg)(\?|$)/i);
+                                  const isVideo = displayValue.match(/\.(mp4|webm|mov)(\?|$)/i);
+                                  if (isImage) {
+                                    return <Box component="img" src={displayValue} alt="" sx={{ width: 48, height: 48, borderRadius: 1.5, objectFit: "contain", bgcolor: "grey.100", cursor: "pointer" }} onClick={() => window.open(displayValue, "_blank")} />;
+                                  }
+                                  if (isVideo) {
+                                    return <Box component="video" src={displayValue} sx={{ width: 48, height: 48, borderRadius: 1.5, objectFit: "contain", bgcolor: "grey.100" }} controls />;
+                                  }
+                                  return (
+                                    <Box sx={{ display: "inline-flex", alignItems: "center", gap: 1, cursor: "pointer" }} onClick={() => window.open(displayValue, "_blank")}>
+                                      <ICONS.files sx={{ fontSize: 24, color: "text.secondary" }} />
+                                      <Typography variant="caption" color="primary" sx={{ textDecoration: "underline" }}>{displayValue.split("/").pop()}</Typography>
+                                    </Box>
+                                  );
+                                }
                                 return displayValue;
                               })()}
                             </Typography>

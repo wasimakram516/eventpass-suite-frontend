@@ -34,6 +34,7 @@ import { exportChartsToPDF } from "@/components/badges/pdfExportCharts";
 import { Button, CircularProgress } from "@mui/material";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import { formatDateTimeWithLocale } from "@/utils/dateUtils";
+import { COUNTRY_CODES, getFlagImageUrl } from "@/utils/countryCodes";
 import * as XLSX from "xlsx";
 
 const translations = {
@@ -474,12 +475,20 @@ export default function AnalyticsDashboard() {
                             useTopN
                         );
 
-                        const data = response.data.data.map((item, idx) => ({
-                            id: idx,
-                            value: item.value,
-                            label: item.label,
-                            color: getPieSegmentColor(idx),
-                        }));
+                        const isCountryField = field.type === "country";
+                        const data = response.data.data.map((item, idx) => {
+                            let label = item.label;
+                            if (isCountryField) {
+                                const country = COUNTRY_CODES.find(c => c.isoCode === label.toLowerCase());
+                                if (country) label = country.country;
+                            }
+                            return {
+                                id: idx,
+                                value: item.value,
+                                label,
+                                color: getPieSegmentColor(idx),
+                            };
+                        });
 
                         setChartData((prev) => ({
                             ...prev,
