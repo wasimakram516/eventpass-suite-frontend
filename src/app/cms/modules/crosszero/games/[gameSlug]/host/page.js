@@ -459,16 +459,16 @@ export default function CrossZeroHostPage() {
               {[
                 {
                   label: t.player1,
-                  mark: "X",
-                  color: "#00e5ff",
+                  mark: "O",
+                  color: "#ff6b6b",
                   player: activeSession.players?.find(
                     (p) => p.playerType === "p1"
                   ),
                 },
                 {
                   label: t.player2,
-                  mark: "O",
-                  color: "#ff6b6b",
+                  mark: "X",
+                  color: "#00e5ff",
                   player: activeSession.players?.find(
                     (p) => p.playerType === "p2"
                   ),
@@ -556,8 +556,8 @@ export default function CrossZeroHostPage() {
 
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, justifyContent: "center" }}>
               {[
-                { label: t.player1, mark: "X", player: pendingP1 },
-                { label: t.player2, mark: "O", player: pendingP2 },
+                { label: t.player1, mark: "O", player: pendingP1 },
+                { label: t.player2, mark: "X", player: pendingP2 },
               ].map(({ label, mark, player }) => (
                   <Box
                     key={label}
@@ -742,7 +742,7 @@ export default function CrossZeroHostPage() {
                                 gap: 1
                               }}>
                               <CrossZeroMarkVisual
-                                mark="X"
+                                mark="O"
                                 xImage={session?.gameId?.xImage}
                                 oImage={session?.gameId?.oImage}
                                 size={24}
@@ -854,7 +854,7 @@ export default function CrossZeroHostPage() {
                                 {p2?.playerId?.name || t.unknown}
                               </Typography>
                               <CrossZeroMarkVisual
-                                mark="O"
+                                mark="X"
                                 xImage={session?.gameId?.xImage}
                                 oImage={session?.gameId?.oImage}
                                 size={24}
