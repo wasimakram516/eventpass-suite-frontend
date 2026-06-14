@@ -3,6 +3,8 @@ import { Box, Typography, Paper } from "@mui/material";
 import { QRCodeCanvas } from "qrcode.react";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { translateTexts } from "@/services/translationService";
+import ICONS from "@/utils/iconUtil";
+import { COUNTRY_CODES, getFlagImageUrl, formatPhoneNumberForDisplay } from "@/utils/countryCodes";
 
 const BADGE_WIDTH = 380;
 const BADGE_HEIGHT = 480;
@@ -11,6 +13,9 @@ const BadgePreview = ({
   registration = {},
   event = {},
   preview = false,
+  badgeFields = null,
+  phoneIsoCodes = {},
+  filePreviews = {},
 }) => {
   const { dir, language, t } = useI18nLayout({
     en: {
@@ -24,6 +29,7 @@ const BadgePreview = ({
   });
 
   const [translatedLabels, setTranslatedLabels] = useState({});
+  const [translatedCountries, setTranslatedCountries] = useState({});
 
   // Helper to get all relevant fields from registration dynamically
   const getDisplayFields = () => {
@@ -45,6 +51,11 @@ const BadgePreview = ({
       "whatsappsent", "__v", "pushedtounity", "unitystatus"
     ]);
 
+    // Pre-normalize badgeFields keys once (handles "Full Name" matching "fullName", etc.)
+    const allowedNorms = Array.isArray(badgeFields)
+      ? new Set(badgeFields.map(f => f.toLowerCase().replace(/[^a-z0-9]/g, "")))
+      : null;
+
     const addField = (label, value) => {
       if (value === null || value === undefined || typeof value === 'object') return;
       const stringVal = String(value).trim();
@@ -54,6 +65,8 @@ const BadgePreview = ({
       if (ignored.has(lowerLabel)) return;
 
       const norm = lowerLabel.replace(/[^a-z0-9]/g, "");
+      if (allowedNorms && !allowedNorms.has(norm)) return;
+
       if (processedKeys.has(norm)) return;
 
       // Clean up common technical keys to readable labels
@@ -73,7 +86,7 @@ const BadgePreview = ({
           .trim();
       }
 
-      fields.push({ label: displayLabel, value: stringVal });
+      fields.push({ label: displayLabel, value: stringVal, key: label });
       processedKeys.add(norm);
     };
 
@@ -90,7 +103,7 @@ const BadgePreview = ({
     return fields;
   };
 
-  const displayFields = useMemo(() => getDisplayFields(), [registration]);
+  const displayFields = useMemo(() => getDisplayFields(), [registration, badgeFields]);
 
   // Extract metadata for the badge body
   let sourceData = registration;
@@ -106,20 +119,35 @@ const BadgePreview = ({
   useEffect(() => {
     if (language === "en" || (!displayFields.length && !category)) {
       setTranslatedLabels({});
+      setTranslatedCountries({});
       return;
     }
 
     const labels = displayFields.map(f => f.label);
-    // Include category in translation if it exists
-    const toTranslate = Array.from(new Set([...labels, category]));
+    // Collect country names from display fields where label is Country
+    const countryNames = displayFields
+      .filter(f => f.label.toLowerCase() === "country")
+      .map(f => {
+        const country = COUNTRY_CODES.find(c => c.isoCode === f.value.toLowerCase());
+        return country ? country.country : null;
+      })
+      .filter(Boolean);
+
+    const toTranslate = Array.from(new Set([...labels, ...countryNames, category]));
 
     translateTexts(toTranslate, language)
       .then(results => {
-        const map = {};
+        const labelMap = {};
+        const countryMap = {};
         toTranslate.forEach((text, i) => {
-          map[text] = results[i] || text;
+          const translated = results[i] || text;
+          labelMap[text] = translated;
+          if (countryNames.includes(text)) {
+            countryMap[text] = translated;
+          }
         });
-        setTranslatedLabels(map);
+        setTranslatedLabels(labelMap);
+        setTranslatedCountries(countryMap);
       })
       .catch(err => {
         console.error("Translation failed:", err);
@@ -243,18 +271,61 @@ const BadgePreview = ({
                   >
                     {translatedLabels[f.label] || f.label}
                   </Typography>
-                  <Typography
-                    sx={{
-                      fontSize: "15px",
-                      fontWeight: 700,
-                      color: "#1e293b",
-                      wordBreak: "break-word",
-                      lineHeight: 1.1,
-                      textAlign: language === "ar" ? "right" : "left"
-                    }}
-                  >
-                    {f.value}
-                  </Typography>
+                    <Typography
+                      sx={{
+                        fontSize: "15px",
+                        fontWeight: 700,
+                        color: "#1e293b",
+                        wordBreak: "break-word",
+                        lineHeight: 1.1,
+                        textAlign: language === "ar" ? "right" : "left",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 0.5,
+                      }}
+                    >
+                      {(() => {
+                        const lowerLabel = f.label.toLowerCase();
+                        if (lowerLabel === "country") {
+                          const country = COUNTRY_CODES.find(c => c.isoCode === f.value.toLowerCase());
+                          if (country) {
+                            const countryName = translatedCountries[country.country] || country.country;
+                            return (
+                              <>
+                                <Box component="img" src={getFlagImageUrl(country.isoCode)} alt={country.country} sx={{ width: 20, height: 14, objectFit: "cover", borderRadius: 0.5, flexShrink: 0 }} />
+                                <span>{countryName}</span>
+                              </>
+                            );
+                          }
+                        }
+                        if (lowerLabel === "phone") {
+                          const iso = phoneIsoCodes?.[f.key] || Object.keys(phoneIsoCodes || {}).find(k => phoneIsoCodes[k] && f.value.startsWith(k.replace(/[^0-9]/g, '')));
+                          if (iso) {
+                            return formatPhoneNumberForDisplay(f.value, iso);
+                          }
+                          if (f.value.startsWith("+")) {
+                            const cc = COUNTRY_CODES.find(c => f.value.startsWith(c.code));
+                            if (cc) return formatPhoneNumberForDisplay(f.value, cc.isoCode);
+                          }
+                        }
+                        // File type: show thumbnail from filePreviews or uploaded URL
+                        if (filePreviews[f.key]) {
+                          const fp = filePreviews[f.key];
+                          const previewUrl = fp.preview || fp;
+                          const fileType = fp.fileType || "";
+                          const isImage = fileType.startsWith("image/") || previewUrl.match(/\.(jpg|jpeg|png|gif|webp|svg)(\?|$)/i);
+                          const isVideo = fileType.startsWith("video/") || previewUrl.match(/\.(mp4|webm|mov)(\?|$)/i);
+                          if (isImage) {
+                            return <Box component="img" src={previewUrl} alt="" sx={{ width: 28, height: 28, objectFit: "contain", borderRadius: 1, bgcolor: "grey.100" }} />;
+                          }
+                          if (isVideo) {
+                            return <ICONS.play sx={{ fontSize: 20, color: "text.secondary" }} />;
+                          }
+                          return <ICONS.files sx={{ fontSize: 18, color: "text.secondary" }} />;
+                        }
+                        return f.value;
+                      })()}
+                    </Typography>
                 </Box>
               ))
             ) : (

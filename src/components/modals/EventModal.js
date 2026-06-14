@@ -22,6 +22,7 @@ import {
   Tabs,
   Tab,
   Stack,
+  Autocomplete,
 } from "@mui/material";
 import { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react";
 import slugify from "@/utils/slugify";
@@ -94,6 +95,7 @@ const translations = {
     radioType: "Radio",
     listType: "List",
     countryType: "Country",
+    fileType: "File",
     useInternationalNumbers: "Allow International Numbers",
     showQrToggle: "Show QR code after registration?",
     showQrOnBadgeToggle: "Show QR Code on Printed Badge?",
@@ -161,6 +163,10 @@ const translations = {
     ticketPriceRequired: "Ticket price is required.",
     ticketPriceInvalid: "Ticket price must be a positive number.",
     noTicketTypes: "Add at least one ticket type for paid events.",
+    dependentsLabel: "Dependent Fields",
+    dependentsHint: "When this option is selected, the chosen fields below will appear.",
+    dependentsSelect: "Select fields to show",
+    noOptionsAvailable: "No other fields available",
   },
   ar: {
     createTitle: "إنشاء فعالية",
@@ -212,6 +218,7 @@ const translations = {
     radioType: "اختيار",
     listType: "قائمة",
     countryType: "البلد",
+    fileType: "ملف",
     useInternationalNumbers: "السماح بالأرقام الدولية",
     showQrToggle: "عرض رمز الاستجابة السريعة بعد التسجيل؟",
     showQrOnBadgeToggle: "عرض رمز QR على بطاقة الطباعة؟",
@@ -279,6 +286,10 @@ const translations = {
     ticketPriceRequired: "سعر التذكرة مطلوب.",
     ticketPriceInvalid: "يجب أن يكون سعر التذكرة رقماً موجباً.",
     noTicketTypes: "أضف نوع تذكرة واحداً على الأقل للفعاليات المدفوعة.",
+    dependentsLabel: "الحقول التابعة",
+    dependentsHint: "عند اختيار هذا الخيار، ستظهر الحقول المحددة أدناه.",
+    dependentsSelect: "اختر الحقول التي ستظهر",
+    noOptionsAvailable: "لا توجد حقول أخرى متاحة",
   },
 };
 
@@ -366,7 +377,6 @@ const EventModal = ({
     eventType: isClosed ? "closed" : "public",
     formFields: [],
     useCustomFields: false,
-    badgeFields: [],
     badgeCustomizations: {},
     useInternationalNumbers: false,
     showQrAfterRegistration: false,
@@ -449,18 +459,7 @@ const EventModal = ({
         })),
 
         useCustomFields: !!initialValues.formFields?.length,
-        badgeFields: (() => {
-          const hasCustomFields = !!initialValues.formFields?.length;
-          if (!hasCustomFields) {
-            return ["Full Name", "Company"];
-          }
-          if (initialValues?.badgeFields && initialValues.badgeFields.length > 0) {
-            return initialValues.badgeFields;
-          }
-          const customizations = initialValues?.badgeCustomizations || initialValues?.customizations || {};
-          return Object.keys(customizations).filter(key => key !== "_qrCode");
-        })(),
-        badgeCustomizations: initialValues?.badgeCustomizations || initialValues?.customizations || {},
+        badgeCustomizations: initialValues?.customizations || {},
         useInternationalNumbers: initialValues?.useInternationalNumbers || false,
         showQrAfterRegistration:
           initialValues?.showQrAfterRegistration || false,
@@ -564,7 +563,6 @@ const EventModal = ({
         eventType: isClosed ? "closed" : "public",
         formFields: [],
         useCustomFields: false,
-        badgeFields: [],
         badgeCustomizations: {},
         useInternationalNumbers: false,
         showQrAfterRegistration: false,
@@ -609,18 +607,20 @@ const EventModal = ({
   }, [open]);
 
   useEffect(() => {
-    if (!formData.useCustomFields) {
-      const classicFields = ["Full Name", "Company"];
-      const hasAllClassicFields = classicFields.every(field => formData.badgeFields.includes(field));
-
-      if (!hasAllClassicFields) {
-        setFormData((prev) => ({
-          ...prev,
-          badgeFields: classicFields,
-        }));
-      }
-    }
-  }, [formData.useCustomFields, formData.badgeFields]);
+    setFormData((prev) => {
+      if (prev.useCustomFields) return prev;
+      const bc = prev.badgeCustomizations || {};
+      if ("Full Name" in bc && "Company" in bc) return prev;
+      return {
+        ...prev,
+        badgeCustomizations: {
+          ...bc,
+          "Full Name": bc["Full Name"] || {},
+          Company: bc["Company"] || {},
+        },
+      };
+    });
+  }, [formData.useCustomFields, formData.badgeCustomizations]);
 
   const measureWidths = useCallback(() => {
     setButtonWidths((prev) => {
@@ -983,6 +983,7 @@ const EventModal = ({
           required: false,
           visible: true,
           _temp: "",
+          dependents: "{}",
         },
       ],
     }));
@@ -992,6 +993,17 @@ const EventModal = ({
     const updated = [...formData.formFields];
     updated.splice(index, 1);
     setFormData((prev) => ({ ...prev, formFields: updated }));
+  };
+
+  const handleDependentsChange = (fieldIndex, optionValue, selectedFields) => {
+    const field = formData.formFields[fieldIndex];
+    const currentDependents = (() => { try { return JSON.parse(field.dependents || "{}"); } catch { return {}; } })();
+    if (selectedFields.length > 0) {
+      currentDependents[optionValue] = { fieldIds: selectedFields };
+    } else {
+      delete currentDependents[optionValue];
+    }
+    handleFormFieldChange(fieldIndex, "dependents", JSON.stringify(currentDependents));
   };
 
   const validateCurrentTab = () => {
@@ -1282,12 +1294,16 @@ const EventModal = ({
         ...(formData.useCustomFields
           ? {
             formFields: formData.formFields,
-            badgeFields: formData.badgeFields || [],
-            badgeCustomizations: formData.badgeCustomizations || {}
           }
           : {}),
-        badgeCustomizations: formData.badgeCustomizations || {},
-        customizations: formData.badgeCustomizations || {},
+        customizations: formData.useCustomFields
+          ? (() => {
+              const allowed = new Set((formData.formFields || []).map(f => f.inputName));
+              return Object.fromEntries(
+                Object.entries(formData.badgeCustomizations || {}).filter(([k]) => allowed.has(k) || k === "_qrCode")
+              );
+            })()
+          : formData.badgeCustomizations || {},
         ...(formData.removeLogo ? { removeLogo: "true" } : {}),
         ...(formData.removeBackgroundEn ? { removeBackgroundEn: "true" } : {}),
         ...(formData.removeBackgroundAr ? { removeBackgroundAr: "true" } : {}),
@@ -2785,6 +2801,7 @@ const EventModal = ({
                           { value: "radio", label: t.radioType },
                           { value: "list", label: t.listType },
                           { value: "country", label: t.countryType },
+                          { value: "file", label: t.fileType },
                         ].map((type) => (
                           <option key={type.value} value={type.value}>
                             {type.label}
@@ -2846,6 +2863,42 @@ const EventModal = ({
                               }}
                               fullWidth
                             />
+
+                            {field.values.length > 0 && (
+                              <Box sx={{ mt: 2 }}>
+                                <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                                  {t.dependentsLabel}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
+                                  {t.dependentsHint}
+                                </Typography>
+                                {field.values.map((option) => {
+                                  const dependentsMap = (() => { try { return JSON.parse(field.dependents || "{}"); } catch { return {}; } })();
+                                  const selectedFieldIds = dependentsMap[option]?.fieldIds || [];
+                                  const otherFields = formData.formFields.filter((f, i) => i !== index && f.inputName && f.inputName.trim());
+                                  return (
+                                    <Box key={option} sx={{ mb: 1.5 }}>
+                                      <Autocomplete
+                                        multiple
+                                        size="small"
+                                        options={otherFields.map(f => f.inputName)}
+                                        value={selectedFieldIds}
+                                        onChange={(e, newVal) => handleDependentsChange(index, option, newVal)}
+                                        renderInput={(params) => (
+                                          <TextField
+                                            {...params}
+                                            label={`${option} → ${t.dependentsSelect}`}
+                                            placeholder={t.dependentsSelect}
+                                          />
+                                        )}
+                                        noOptionsText={t.noOptionsAvailable}
+                                        fullWidth
+                                      />
+                                    </Box>
+                                  );
+                                })}
+                              </Box>
+                            )}
                           </Box>
                         )}
 
@@ -2908,6 +2961,7 @@ const EventModal = ({
           {/* Tab: Customize Badge (always visible) */}
           {activeTab === (formData.useCustomFields ? 5 : 4) && (
             <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 2 }}>
+              {(() => { if (typeof window !== 'undefined') console.log('[EventModal BadgeTab] bc keys:', Object.keys(formData.badgeCustomizations || {}), 'useCustomFields:', formData.useCustomFields, 'initialValues.customizations:', JSON.stringify(initialValues?.customizations)); return null; })()}
               {formData.useCustomFields && (
                 <Typography variant="body1" sx={{ mb: 2 }}>
                   {t.customizeBadgeDescription}
@@ -2920,28 +2974,17 @@ const EventModal = ({
                       key={index}
                       control={
                         <Checkbox
-                          checked={formData.badgeFields.includes(field.inputName)}
+                          checked={field.inputName in (formData.badgeCustomizations || {})}
                           onChange={(e) => {
-                            const updatedBadgeFields = e.target.checked
-                              ? [...formData.badgeFields, field.inputName]
-                              : formData.badgeFields.filter(
-                                (name) => name !== field.inputName
-                              );
-
-                            const updatedCustomizations = e.target.checked
-                              ? formData.badgeCustomizations
-                              : Object.keys(formData.badgeCustomizations).reduce((acc, key) => {
-                                if (key !== field.inputName) {
-                                  acc[key] = formData.badgeCustomizations[key];
-                                }
-                                return acc;
-                              }, {});
-
-                            setFormData((prev) => ({
-                              ...prev,
-                              badgeFields: updatedBadgeFields,
-                              badgeCustomizations: updatedCustomizations,
-                            }));
+                            setFormData((prev) => {
+                              const updated = { ...prev.badgeCustomizations };
+                              if (e.target.checked) {
+                                updated[field.inputName] = updated[field.inputName] || {};
+                              } else {
+                                delete updated[field.inputName];
+                              }
+                              return { ...prev, badgeCustomizations: updated };
+                            });
                           }}
                           color="primary"
                         />
@@ -2952,7 +2995,7 @@ const EventModal = ({
                   <Button
                     variant="contained"
                     onClick={() => {
-                      if (formData.badgeFields.length === 0) {
+                      if (!Object.keys(formData.badgeCustomizations || {}).some(k => k !== '_qrCode')) {
                         showMessage("Please select at least one field to customize.", "warning");
                         return;
                       }
@@ -2981,10 +3024,6 @@ const EventModal = ({
                   <Button
                     variant="contained"
                     onClick={() => {
-                      if (formData.badgeFields.length === 0) {
-                        showMessage("Please select at least one field to customize.", "warning");
-                        return;
-                      }
                       setBadgeCustomizationModalOpen(true);
                     }}
                     sx={{ mt: 2, alignSelf: "flex-start" }}
@@ -3119,22 +3158,11 @@ const EventModal = ({
         open={badgeCustomizationModalOpen}
         onClose={() => setBadgeCustomizationModalOpen(false)}
         onSave={(customizations) => {
-          if (formData.useCustomFields) {
-            const fieldsFromCustomizations = Object.keys(customizations).filter(key => key !== "_qrCode" && key !== "_badgeSize");
-            setFormData((prev) => ({
-              ...prev,
-              badgeCustomizations: customizations,
-              badgeFields: fieldsFromCustomizations,
-            }));
-          } else {
-            setFormData((prev) => ({
-              ...prev,
-              badgeCustomizations: customizations,
-              badgeFields: ["Full Name", "Company"],
-            }));
-          }
+          setFormData((prev) => ({ ...prev, badgeCustomizations: customizations }));
         }}
-        selectedFields={formData.badgeFields}
+        selectedFields={formData.useCustomFields
+          ? Object.keys(formData.badgeCustomizations || {}).filter(k => k !== '_qrCode')
+          : ["Full Name", "Company"]}
         allFields={formData.useCustomFields ? formData.formFields : [
           { inputName: "Full Name" },
           { inputName: "Company" }

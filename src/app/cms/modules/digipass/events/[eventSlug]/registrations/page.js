@@ -1352,6 +1352,43 @@ export default function ViewRegistrations() {
                                                                     return formatPhoneNumberForDisplay(fieldValue, reg.isoCode);
                                                                 }
 
+                                                                if (f.type === "country") {
+                                                                    const { COUNTRY_CODES, getFlagImageUrl } = require("@/utils/countryCodes");
+                                                                    const country = COUNTRY_CODES.find(c => c.isoCode === fieldValue.toLowerCase());
+                                                                    if (!country) return fieldValue;
+                                                                    return (
+                                                                        <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                                                                            <img
+                                                                                src={getFlagImageUrl(country.isoCode)}
+                                                                                alt={country.country}
+                                                                                style={{ width: 20, height: 14, objectFit: "cover", borderRadius: 2, flexShrink: 0 }}
+                                                                            />
+                                                                            <span style={{ marginLeft: 4 }}>{country.country}</span>
+                                                                        </span>
+                                                                    );
+                                                                }
+
+                                                                if (f.type === "file" && fieldValue) {
+                                                                    const isImage = fieldValue.match(/\.(jpg|jpeg|png|gif|webp|svg)(\?|$)/i);
+                                                                    const isVideo = fieldValue.match(/\.(mp4|webm|mov)(\?|$)/i);
+                                                                    if (isImage) {
+                                                                        return (
+                                                                            <Box component="img" src={fieldValue} alt="" sx={{ width: 48, height: 48, borderRadius: 1.5, objectFit: "contain", bgcolor: "grey.100", cursor: "pointer" }} onClick={() => window.open(fieldValue, "_blank")} />
+                                                                        );
+                                                                    }
+                                                                    if (isVideo) {
+                                                                        return (
+                                                                            <Box component="video" src={fieldValue} sx={{ width: 48, height: 48, borderRadius: 1.5, objectFit: "contain", bgcolor: "grey.100" }} controls />
+                                                                        );
+                                                                    }
+                                                                    return (
+                                                                        <Box sx={{ display: "inline-flex", alignItems: "center", gap: 1, cursor: "pointer" }} onClick={() => window.open(fieldValue, "_blank")}>
+                                                                            <ICONS.files sx={{ fontSize: 24, color: "text.secondary" }} />
+                                                                            <Typography variant="caption" color="primary" sx={{ textDecoration: "underline" }}>{fieldValue.split("/").pop()}</Typography>
+                                                                        </Box>
+                                                                    );
+                                                                }
+
                                                                 return fieldValue;
                                                             })()}
                                                         </Typography>

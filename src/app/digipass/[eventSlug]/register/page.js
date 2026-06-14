@@ -26,6 +26,7 @@ import ICONS from "@/utils/iconUtil";
 import { translateTexts } from "@/services/translationService";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import CountryCodeSelector from "@/components/CountryCodeSelector";
+import CountryPicker from "@/components/CountryPicker";
 import { normalizePhone } from "@/utils/phoneUtils";
 import {
   DEFAULT_COUNTRY_CODE,
@@ -34,6 +35,7 @@ import {
   getCountryCodeByIsoCode,
 } from "@/utils/countryCodes";
 import { validatePhoneNumber } from "@/utils/phoneValidation";
+import { uploadSingleFile } from "@/utils/mediaUpload";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useMessage } from "@/contexts/MessageContext";
 import LanguageSelector from "@/components/LanguageSelector";
@@ -78,6 +80,7 @@ export default function DigiPassRegistration() {
   const [translationsReady, setTranslationsReady] = useState(false);
   const [translatedEvent, setTranslatedEvent] = useState(null);
   const [countryIsoCodes, setCountryIsoCodes] = useState({});
+  const [fileData, setFileData] = useState({});
   const [isMuted] = useState(true);
   const videoRef = useRef(null);
 
@@ -139,6 +142,30 @@ export default function DigiPassRegistration() {
     return null;
   }, [event, language]);
 
+  // Compute which fields are visible based on parent-dependent relationships
+  const visibleFields = useMemo(() => {
+    const dependentsOf = {};
+    dynamicFields.forEach((f) => {
+      if (f.dependents) {
+        try {
+          const depMap = JSON.parse(f.dependents);
+          Object.entries(depMap).forEach(([option, config]) => {
+            (config.fieldIds || []).forEach((childName) => {
+              if (!dependentsOf[childName]) dependentsOf[childName] = [];
+              dependentsOf[childName].push({ parentName: f.name, option });
+            });
+          });
+        } catch {}
+      }
+    });
+
+    return dynamicFields.filter((f) => {
+      const deps = dependentsOf[f.name];
+      if (!deps || deps.length === 0) return true;
+      return deps.some((d) => formData[d.parentName] === d.option);
+    });
+  }, [dynamicFields, formData]);
+
   useEffect(() => {
     if (!event) return;
 
@@ -152,6 +179,7 @@ export default function DigiPassRegistration() {
             options: f.values || [],
             required: f.required,
             placeholder: f.placeholder || "",
+            dependents: f.dependents,
           }))
       : [];
 
@@ -233,7 +261,27 @@ export default function DigiPassRegistration() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((p) => ({ ...p, [name]: value }));
+    setFormData((prev) => {
+      // Find if this field has dependents and clear their values when option changes
+      const parentField = dynamicFields.find((f) => f.name === name);
+      if (parentField?.dependents) {
+        try {
+          const depMap = JSON.parse(parentField.dependents);
+          const allChildIds = new Set();
+          Object.values(depMap).forEach((config) => {
+            (config.fieldIds || []).forEach((id) => allChildIds.add(id));
+          });
+          if (allChildIds.size > 0) {
+            const cleared = {};
+            allChildIds.forEach((childName) => {
+              if (prev[childName] !== undefined) cleared[childName] = "";
+            });
+            return { ...prev, [name]: value, ...cleared };
+          }
+        } catch {}
+      }
+      return { ...prev, [name]: value };
+    });
     setFieldErrors((p) => ({ ...p, [name]: "" }));
   };
 
@@ -248,6 +296,38 @@ export default function DigiPassRegistration() {
   };
 
   const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+
+  const handleFileSelect = (fieldName, file) => {
+    if (fileData[fieldName]?.preview) {
+      URL.revokeObjectURL(fileData[fieldName].preview);
+    }
+    const preview = URL.createObjectURL(file);
+    setFileData((p) => ({ ...p, [fieldName]: { file, preview } }));
+    setFormData((p) => ({ ...p, [fieldName]: file.name }));
+    setFieldErrors((p) => ({ ...p, [fieldName]: "" }));
+  };
+
+  const handleFileRemove = (fieldName) => {
+    if (fileData[fieldName]?.preview) {
+      URL.revokeObjectURL(fileData[fieldName].preview);
+    }
+    setFileData((p) => {
+      const next = { ...p };
+      delete next[fieldName];
+      return next;
+    });
+    setFormData((p) => ({ ...p, [fieldName]: "" }));
+  };
+
+  const fileDataRef = useRef(fileData);
+  fileDataRef.current = fileData;
+  useEffect(() => {
+    return () => {
+      Object.values(fileDataRef.current).forEach((fd) => {
+        if (fd?.preview) URL.revokeObjectURL(fd.preview);
+      });
+    };
+  }, []);
 
   // Set body background to transparent
   useEffect(() => {
@@ -268,7 +348,7 @@ export default function DigiPassRegistration() {
 
   const handleSubmit = async () => {
     const errors = {};
-    dynamicFields.forEach((f) => {
+    visibleFields.forEach((f) => {
       if (!f || !f.name) return;
       const val = formData[f.name]?.trim();
       if (f.required && !val) errors[f.name] = `${f.label} ${t.required}`;
@@ -293,7 +373,30 @@ export default function DigiPassRegistration() {
 
     const normalizedFormData = { ...formData };
 
-    dynamicFields.forEach((f) => {
+    // Upload file-type fields to S3
+    const fileUploadFields = visibleFields.filter(f => f.type === "file" && fileData[f.name]?.file);
+    if (fileUploadFields.length > 0 && !event?.businessSlug) {
+      setFieldErrors({ _global: "Business slug not available for file upload." });
+      setSubmitting(false);
+      return;
+    }
+    for (const f of fileUploadFields) {
+      try {
+        const url = await uploadSingleFile({
+          file: fileData[f.name].file,
+          businessSlug: event.businessSlug,
+          moduleName: "digipass",
+        });
+        normalizedFormData[f.name] = url;
+      } catch (err) {
+        console.error("File upload failed:", err);
+        setFieldErrors({ [f.name]: "File upload failed. Please try again." });
+        setSubmitting(false);
+        return;
+      }
+    }
+
+    visibleFields.forEach((f) => {
       if (f.type === "phone") {
         const phoneValue = normalizedFormData[f.name];
         if (phoneValue) {
@@ -322,6 +425,8 @@ export default function DigiPassRegistration() {
     setSubmitting(false);
 
     if (!result?.error) {
+      Object.values(fileData).forEach(fd => { if (fd?.preview) URL.revokeObjectURL(fd.preview); });
+      setFileData({});
       showMessage(t.registrationSuccess, "success");
       router.replace(`/digipass/${eventSlug}/signin`);
     } else {
@@ -377,7 +482,7 @@ export default function DigiPassRegistration() {
           <RadioGroup
             row
             name={field.name}
-            value={formData[field.name]}
+            value={formData[field.name] ?? ""}
             onChange={handleInputChange}
             sx={{ justifyContent: "center", gap: 2 }}
           >
@@ -414,7 +519,7 @@ export default function DigiPassRegistration() {
           <InputLabel>{fieldLabel}</InputLabel>
           <Select
             name={field.name}
-            value={formData[field.name]}
+            value={formData[field.name] ?? ""}
             onChange={handleInputChange}
             label={fieldLabel}
             MenuProps={{
@@ -449,6 +554,39 @@ export default function DigiPassRegistration() {
 
     if (field.type === "number") {
       return <TextField key={field.name} {...commonProps} type="number" />;
+    }
+
+    if (field.type === "country") {
+      return (
+        <Box key={field.name} sx={{ mb: 2 }}>
+          <CountryPicker
+            label={fieldLabel}
+            value={formData[field.name] || ""}
+            onChange={(iso) => handleInputChange({ target: { name: field.name, value: iso } })}
+            required={field.required}
+            error={!!errorMsg}
+            helperText={errorMsg || ""}
+            lang={language}
+            dir={dir}
+          />
+        </Box>
+      );
+    }
+
+    if (field.type === "file") {
+      const fd = fileData[field.name];
+      return (
+        <DigiPassFileUploadField
+          key={field.name}
+          field={field}
+          fd={fd}
+          fieldLabel={fieldLabel}
+          errorMsg={errorMsg}
+          isArabic={isArabic}
+          onFileSelect={(file) => handleFileSelect(field.name, file)}
+          onFileRemove={() => handleFileRemove(field.name)}
+        />
+      );
     }
 
     if (field.type === "phone") {
@@ -648,7 +786,7 @@ export default function DigiPassRegistration() {
           gap: 2,
         }}
       >
-        {dynamicFields.map((f) => renderField(f))}
+        {visibleFields.map((f) => renderField(f))}
 
         <Button
           variant="contained"
@@ -679,6 +817,62 @@ export default function DigiPassRegistration() {
       <Box dir="ltr">
         <LanguageSelector top={20} right={20} />
       </Box>
+    </Box>
+  );
+}
+
+function DigiPassFileUploadField({ field, fd, fieldLabel, errorMsg, isArabic, onFileSelect, onFileRemove }) {
+  const [dragOver, setDragOver] = useState(false);
+  return (
+    <Box sx={{ mb: 2, textAlign: isArabic ? "right" : "left" }}>
+      <Typography variant="body2" sx={{ mb: 0.5, fontWeight: 500, textAlign: "start" }}>
+        {fieldLabel}
+        {field.required && <span style={{ color: "red" }}> *</span>}
+      </Typography>
+      {fd ? (
+        <Box sx={{ display: "inline-flex", alignItems: "center", gap: 1.5, p: 1, pr: 2, border: "1px solid", borderColor: "divider", borderRadius: 3, bgcolor: "background.paper", textAlign: "left" }}>
+          {fd.file.type.startsWith("image/") ? (
+            <Box component="img" src={fd.preview} alt="Preview" sx={{ width: 48, height: 48, borderRadius: 1.5, objectFit: "contain", bgcolor: "grey.100" }} />
+          ) : fd.file.type.startsWith("video/") ? (
+            <Box component="video" src={fd.preview} sx={{ width: 48, height: 48, borderRadius: 1.5, objectFit: "contain", bgcolor: "grey.100" }} />
+          ) : (
+            <ICONS.upload sx={{ fontSize: 28, color: "text.secondary", mx: 0.5 }} />
+          )}
+          <Typography variant="body2" sx={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+            {fd.file.name}
+          </Typography>
+          <IconButton onClick={onFileRemove} size="small" sx={{ bgcolor: "error.main", color: "#fff", "&:hover": { bgcolor: "error.dark" }, width: 28, height: 28, flexShrink: 0 }}>
+            <ICONS.delete sx={{ fontSize: 16 }} />
+          </IconButton>
+        </Box>
+      ) : (
+        <Box
+          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={(e) => { e.preventDefault(); setDragOver(false); const file = e.dataTransfer.files?.[0]; if (file) onFileSelect(file); }}
+          sx={{
+            border: "2px dashed",
+            borderColor: dragOver ? "primary.main" : "divider",
+            borderRadius: 3,
+            py: 3,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 1,
+            cursor: "pointer",
+            bgcolor: dragOver ? "action.hover" : "transparent",
+            transition: "border-color 0.2s, background-color 0.2s",
+          }}
+          onClick={() => document.getElementById(`file-input-${field.name}`)?.click()}
+        >
+          <ICONS.upload sx={{ fontSize: 28, color: "text.secondary" }} />
+          <Typography variant="body2" color="text.secondary">
+            {isArabic ? "اختر ملفًا أو اسحب وأفلت" : "Choose File or Drag & Drop"}
+          </Typography>
+          <input id={`file-input-${field.name}`} type="file" hidden onChange={(e) => { const file = e.target.files?.[0]; if (file) onFileSelect(file); e.target.value = ""; }} />
+        </Box>
+      )}
+      {errorMsg && <Typography variant="caption" color="error" sx={{ display: "block", mt: 0.5 }}>{errorMsg}</Typography>}
     </Box>
   );
 }

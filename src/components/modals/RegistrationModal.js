@@ -19,13 +19,16 @@ import {
     Typography,
     FormHelperText,
     CircularProgress,
+    IconButton,
 } from "@mui/material";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import CountryCodeSelector from "@/components/CountryCodeSelector";
+import CountryPicker from "@/components/CountryPicker";
 import { DEFAULT_COUNTRY_CODE, DEFAULT_ISO_CODE, COUNTRY_CODES, getCountryCodeByIsoCode } from "@/utils/countryCodes";
 import { normalizePhone } from "@/utils/phoneUtils";
 import { validatePhoneNumber } from "@/utils/phoneValidation";
+import { uploadSingleFile } from "@/utils/mediaUpload";
 
 
 export default function RegistrationModal({
@@ -42,6 +45,7 @@ export default function RegistrationModal({
     const [fieldErrors, setFieldErrors] = useState({});
     const [loading, setLoading] = useState(false);
     const [countryIsoCodes, setCountryIsoCodes] = useState({});
+    const [fileData, setFileData] = useState({});
 
     const hasCustomFields = useMemo(() => formFields && formFields.length > 0, [formFields]);
 
@@ -64,6 +68,32 @@ export default function RegistrationModal({
         () => (hasCustomFields ? filteredFormFields : classicFields),
         [hasCustomFields, filteredFormFields, classicFields]
     );
+
+    const visibleFields = useMemo(() => {
+        if (!hasCustomFields) return fieldsToRender;
+        const dependentsOf = {};
+        fieldsToRender.forEach(f => {
+            if (f.dependents) {
+                try {
+                    const depMap = JSON.parse(f.dependents);
+                    Object.entries(depMap).forEach(([option, config]) => {
+                        (config.fieldIds || []).forEach(childName => {
+                            if (!dependentsOf[childName]) dependentsOf[childName] = [];
+                            dependentsOf[childName].push({ parentName: f.inputName, option });
+                        });
+                    });
+                } catch { }
+            }
+        });
+        return fieldsToRender.filter(f => {
+            const deps = dependentsOf[f.inputName];
+            if (!deps) return true;
+            return deps.some(d => {
+                const parentVal = values[d.parentName];
+                return parentVal === d.option;
+            });
+        });
+    }, [fieldsToRender, values, hasCustomFields]);
 
     useEffect(() => {
         if (fieldsToRender.length > 0) {
@@ -136,6 +166,21 @@ export default function RegistrationModal({
                 return newErrors;
             });
         }
+        const parentField = fieldsToRender.find(f => f.inputName === key);
+        if (parentField?.dependents) {
+            try {
+                const depMap = JSON.parse(parentField.dependents);
+                const allChildIds = new Set();
+                Object.values(depMap).forEach(config => {
+                    (config.fieldIds || []).forEach(id => allChildIds.add(id));
+                });
+                setValues(prev => {
+                    const next = { ...prev };
+                    allChildIds.forEach(id => { next[id] = ""; });
+                    return next;
+                });
+            } catch { }
+        }
     };
 
     const handleCountryCodeChange = (fieldName, isoCode) => {
@@ -156,6 +201,34 @@ export default function RegistrationModal({
 
     const isValidEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
+    const handleFileSelect = (fieldName, file) => {
+        if (fileData[fieldName]?.preview) {
+            URL.revokeObjectURL(fileData[fieldName].preview);
+        }
+        const preview = URL.createObjectURL(file);
+        setFileData((prev) => ({ ...prev, [fieldName]: { file, preview } }));
+        setValues((prev) => ({ ...prev, [fieldName]: file.name }));
+        if (fieldErrors[fieldName]) {
+            setFieldErrors((prev) => {
+                const newErrors = { ...prev };
+                delete newErrors[fieldName];
+                return newErrors;
+            });
+        }
+    };
+
+    const handleFileRemove = (fieldName) => {
+        if (fileData[fieldName]?.preview) {
+            URL.revokeObjectURL(fileData[fieldName].preview);
+        }
+        setFileData((prev) => {
+            const next = { ...prev };
+            delete next[fieldName];
+            return next;
+        });
+        setValues((prev) => ({ ...prev, [fieldName]: "" }));
+    };
+
     const isPhoneField = (field) => {
         if (field.inputType === "number") return false;
         if (field.inputType === "phone") return true;
@@ -166,7 +239,7 @@ export default function RegistrationModal({
 
     const validateFields = () => {
         const errors = {};
-        fieldsToRender.forEach((f) => {
+        visibleFields.forEach((f) => {
             const rawValue = values[f.inputName];
             const val = rawValue != null ? String(rawValue).trim() : "";
             const required = f.required || false;
@@ -200,10 +273,36 @@ export default function RegistrationModal({
 
         setLoading(true);
         try {
-            const normalizedValues = { ...values };
+            const normalizedValues = {};
+            visibleFields.forEach(f => {
+                normalizedValues[f.inputName] = values[f.inputName] ?? "";
+            });
             let phoneIsoCode = null;
 
-            fieldsToRender.forEach((f) => {
+            // Upload file-type fields to S3
+            const fileUploadFields = visibleFields.filter(f => f.inputType === "file" && fileData[f.inputName]?.file);
+            if (fileUploadFields.length > 0 && !event?.businessSlug) {
+                setFieldErrors({ _global: "Business slug not available for file upload." });
+                setLoading(false);
+                return;
+            }
+            for (const f of fileUploadFields) {
+                try {
+                    const url = await uploadSingleFile({
+                        file: fileData[f.inputName].file,
+                        businessSlug: event.businessSlug,
+                        moduleName: "eventreg",
+                    });
+                    normalizedValues[f.inputName] = url;
+                } catch (err) {
+                    console.error("File upload failed:", err);
+                    setFieldErrors({ [f.inputName]: "File upload failed." });
+                    setLoading(false);
+                    return;
+                }
+            }
+
+            visibleFields.forEach((f) => {
                 if (isPhoneField(f)) {
                     const phoneValue = normalizedValues[f.inputName];
                     if (phoneValue) {
@@ -305,6 +404,37 @@ export default function RegistrationModal({
             );
         }
 
+        if (f.inputType === "country") {
+            return (
+                <Box key={f.inputName} sx={{ mb: 2 }}>
+                    <CountryPicker
+                        label={f.inputName}
+                        value={value}
+                        onChange={(iso) => handleChange(f.inputName, iso)}
+                        required={required}
+                        error={!!errorMsg}
+                        helperText={errorMsg || ""}
+                    />
+                </Box>
+            );
+        }
+
+        if (f.inputType === "file") {
+            const fd = fileData[f.inputName];
+            return (
+                <ModalFileUploadField
+                    key={f.inputName}
+                    field={f}
+                    fd={fd}
+                    fieldLabel={f.inputName}
+                    errorMsg={errorMsg}
+                    required={required}
+                    onFileSelect={(file) => handleFileSelect(f.inputName, file)}
+                    onFileRemove={() => handleFileRemove(f.inputName)}
+                />
+            );
+        }
+
         const isPhoneField = f.inputType === "phone" || (!hasCustomFields && f.inputName === "Phone");
         const useInternationalNumbers = event?.useInternationalNumbers !== false;
 
@@ -366,7 +496,7 @@ export default function RegistrationModal({
                 <Stack spacing={2} sx={{
                     mt: 1
                 }}>
-                    {fieldsToRender.map((f) => renderField(f))}
+                    {visibleFields.map((f) => renderField(f))}
                 </Stack>
             </DialogContent>
             <DialogActions>
@@ -397,6 +527,58 @@ export default function RegistrationModal({
                 </Button>
             </DialogActions>
         </Dialog>
+    );
+}
+
+function ModalFileUploadField({ field, fd, fieldLabel, errorMsg, required, onFileSelect, onFileRemove }) {
+    const [dragOver, setDragOver] = useState(false);
+    return (
+        <Box sx={{ mb: 2, textAlign: "left" }}>
+            <Typography variant="body2" sx={{ mb: 0.5, fontWeight: 500 }}>
+                {fieldLabel}
+                {required && <span style={{ color: "red" }}> *</span>}
+            </Typography>
+            {fd ? (
+                <Box sx={{ display: "inline-flex", alignItems: "center", gap: 1.5, p: 1, pr: 2, border: "1px solid", borderColor: "divider", borderRadius: 3, bgcolor: "background.paper" }}>
+                    {fd.file.type.startsWith("image/") ? (
+                        <Box component="img" src={fd.preview} alt="Preview" sx={{ width: 48, height: 48, borderRadius: 1.5, objectFit: "contain", bgcolor: "grey.100" }} />
+                    ) : fd.file.type.startsWith("video/") ? (
+                        <Box component="video" src={fd.preview} sx={{ width: 48, height: 48, borderRadius: 1.5, objectFit: "contain", bgcolor: "grey.100" }} />
+                    ) : (
+                        <ICONS.upload sx={{ fontSize: 28, mx: 0.5, color: "text.secondary" }} />
+                    )}
+                    <Typography variant="body2" sx={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{fd.file.name}</Typography>
+                    <IconButton onClick={onFileRemove} size="small" sx={{ bgcolor: "error.main", color: "#fff", "&:hover": { bgcolor: "error.dark" }, width: 28, height: 28, flexShrink: 0 }}>
+                        <ICONS.delete sx={{ fontSize: 16 }} />
+                    </IconButton>
+                </Box>
+            ) : (
+                <Box
+                    onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                    onDragLeave={() => setDragOver(false)}
+                    onDrop={(e) => { e.preventDefault(); setDragOver(false); const file = e.dataTransfer.files?.[0]; if (file) onFileSelect(file); }}
+                    sx={{
+                        border: "2px dashed",
+                        borderColor: dragOver ? "primary.main" : "divider",
+                        borderRadius: 3,
+                        py: 3,
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        gap: 1,
+                        cursor: "pointer",
+                        bgcolor: dragOver ? "action.hover" : "transparent",
+                        transition: "border-color 0.2s, background-color 0.2s",
+                    }}
+                    onClick={() => document.getElementById(`file-input-${field.inputName}`)?.click()}
+                >
+                    <ICONS.upload sx={{ fontSize: 28, color: "text.secondary" }} />
+                    <Typography variant="body2" color="text.secondary">Choose File or Drag & Drop</Typography>
+                    <input id={`file-input-${field.inputName}`} type="file" hidden onChange={(e) => { const file = e.target.files?.[0]; if (file) onFileSelect(file); e.target.value = ""; }} />
+                </Box>
+            )}
+            {errorMsg && <Typography variant="caption" color="error" sx={{ display: "block", mt: 0.5 }}>{errorMsg}</Typography>}
+        </Box>
     );
 }
 
