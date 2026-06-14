@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useState, useMemo } from "react";
 import {
   FormControl,
   InputLabel,
@@ -8,7 +8,11 @@ import {
   MenuItem,
   Box,
   Typography,
+  TextField,
+  InputAdornment,
+  ListSubheader,
 } from "@mui/material";
+import SearchIcon from "@mui/icons-material/Search";
 import { COUNTRY_CODES, getFlagImageUrl } from "@/utils/countryCodes";
 
 // Deduplicate by isoCode — COUNTRY_CODES may have entries with the same country listed multiple times
@@ -53,6 +57,8 @@ export default function CountryPicker({
   lang = "en",
   dir = "ltr",
 }) {
+  const [search, setSearch] = useState("");
+
   const UNIQUE_COUNTRIES = useMemo(() => {
     return BASE_COUNTRIES
       .map((cc) => ({ ...cc, displayName: getDisplayName(cc.isoCode, lang) || cc.country }))
@@ -60,6 +66,10 @@ export default function CountryPicker({
   }, [lang]);
 
   const selected = UNIQUE_COUNTRIES.find((cc) => cc.isoCode === value?.toLowerCase());
+  const q = search.toLowerCase().trim();
+  const hasNoMatch = q && !UNIQUE_COUNTRIES.some(cc =>
+    cc.displayName.toLowerCase().includes(q) || cc.country.toLowerCase().includes(q)
+  );
 
   return (
     <FormControl fullWidth required={required} error={error} disabled={disabled} dir={dir}>
@@ -68,6 +78,7 @@ export default function CountryPicker({
         value={(value || "").toLowerCase()}
         label={label}
         onChange={(e) => onChange?.(e.target.value)}
+        onClose={() => setSearch("")}
         renderValue={(val) => {
           if (!val) return null;
           return (
@@ -87,18 +98,51 @@ export default function CountryPicker({
         MenuProps={{ autoFocus: false }}
         slotProps={{ paper: { sx: { maxHeight: 320 } } }}
       >
-        {UNIQUE_COUNTRIES.map((cc) => (
-          <MenuItem key={cc.isoCode} value={cc.isoCode}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-              <img
-                src={getFlagImageUrl(cc.isoCode)}
-                alt={cc.country}
-                style={{ width: 20, height: 14, objectFit: "cover", borderRadius: 2 }}
-              />
-              <Typography variant="body2">{cc.displayName}</Typography>
-            </Box>
+        {/* Sticky search inside the dropdown */}
+        <ListSubheader sx={{ bgcolor: "background.paper", pt: 1, pb: 0.5 }}>
+          <TextField
+            size="small"
+            fullWidth
+            placeholder={lang === "ar" ? "ابحث عن دولة…" : "Search country…"}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            onKeyDown={(e) => e.stopPropagation()}
+            autoFocus
+            slotProps={{
+              input: {
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon fontSize="small" />
+                  </InputAdornment>
+                ),
+              },
+            }}
+          />
+        </ListSubheader>
+
+        {hasNoMatch && (
+          <MenuItem disabled>
+            <Typography variant="body2" color="text.secondary">{lang === "ar" ? "لا توجد دول" : "No countries found"}</Typography>
           </MenuItem>
-        ))}
+        )}
+
+        {UNIQUE_COUNTRIES.map((cc) => {
+          const matches = !q ||
+            cc.displayName.toLowerCase().includes(q) ||
+            cc.country.toLowerCase().includes(q);
+          return (
+            <MenuItem key={cc.isoCode} value={cc.isoCode} style={{ display: matches ? "flex" : "none" }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                <img
+                  src={getFlagImageUrl(cc.isoCode)}
+                  alt={cc.country}
+                  style={{ width: 20, height: 14, objectFit: "cover", borderRadius: 2 }}
+                />
+                <Typography variant="body2">{cc.displayName}</Typography>
+              </Box>
+            </MenuItem>
+          );
+        })}
       </Select>
       {helperText && (
         <Typography variant="caption" color={error ? "error" : "text.secondary"} sx={{ mt: 0.5, ml: 1.5 }}>
