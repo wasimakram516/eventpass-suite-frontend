@@ -55,6 +55,10 @@ const translations = {
     ticketSold: "Sold",
     ticketRevenue: "Revenue",
     noEmail: "—",
+    baseRevenue: "Base",
+    feesCollected: "Fees",
+    vatCollected: "VAT",
+    inclVat: "incl. VAT",
   },
   ar: {
     title: "المدفوعات",
@@ -82,6 +86,10 @@ const translations = {
     ticketSold: "المباع",
     ticketRevenue: "الإيرادات",
     noEmail: "—",
+    baseRevenue: "الأساسي",
+    feesCollected: "الرسوم",
+    vatCollected: "ضريبة القيمة المضافة",
+    inclVat: "شامل الضريبة",
   },
 };
 
@@ -170,9 +178,16 @@ export default function PaymentsPage() {
             {statsLoading ? (
               <CircularProgress size={20} />
             ) : (
-              <Typography variant="h5" fontWeight={700} color="primary.main">
-                {totalPaid.toFixed(3)} {t.omr}
-              </Typography>
+              <>
+                <Typography variant="h5" fontWeight={700} color="primary.main">
+                  {totalPaid.toFixed(3)} {t.omr}
+                </Typography>
+                {stats?.revenue && (stats.revenue.fees > 0 || stats.revenue.vat > 0) && (
+                  <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5 }}>
+                    {t.baseRevenue} {stats.revenue.base.toFixed(3)} · {t.feesCollected} {stats.revenue.fees.toFixed(3)} · {t.vatCollected} {stats.revenue.vat.toFixed(3)}
+                  </Typography>
+                )}
+              </>
             )}
           </CardContent>
         </Card>
@@ -294,6 +309,11 @@ export default function PaymentsPage() {
                       <Typography variant="body2" fontWeight={600}>
                         {p.amount?.toFixed(3)} {t.omr}
                       </Typography>
+                      {p.priceBreakdown?.vatAmount > 0 && (
+                        <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
+                          {t.inclVat} {p.priceBreakdown.vatAmount.toFixed(3)}
+                        </Typography>
+                      )}
                     </Box>
                     <Box sx={{ textAlign: { sm: "center" } }}>
                       <Chip

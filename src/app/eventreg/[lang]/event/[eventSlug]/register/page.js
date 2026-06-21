@@ -32,6 +32,7 @@ import ICONS from "@/utils/iconUtil";
 import { translateTexts } from "@/services/translationService";
 import Background from "@/components/Background";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
+import { computePaymentBreakdown, formatOmr } from "@/utils/paymentBreakdown";
 import CountryCodeSelector from "@/components/CountryCodeSelector";
 import CountryPicker from "@/components/CountryPicker";
 import { normalizePhone } from "@/utils/phoneUtils";
@@ -92,6 +93,19 @@ export default function Registration() {
     unlimitedCapacity: isArabic ? "غير محدود" : "Unlimited",
     available: isArabic ? "متاح" : "available",
     omr: isArabic ? "ر.ع." : "OMR",
+    paymentSummary: isArabic ? "ملخص الدفع" : "Payment Summary",
+    paymentSummaryNote: isArabic
+      ? "يرجى مراجعة التفاصيل أدناه قبل المتابعة إلى بوابة الدفع."
+      : "Please review the details below before proceeding to the payment gateway.",
+    ticketLabel: isArabic ? "التذكرة" : "Ticket",
+    subtotal: isArabic ? "المجموع الفرعي" : "Subtotal",
+    vatLabel: isArabic ? "ضريبة القيمة المضافة" : "VAT",
+    totalLabel: isArabic ? "الإجمالي" : "Total",
+    confirmAndPay: isArabic ? "تأكيد والدفع" : "Confirm & Pay",
+    cancel: isArabic ? "إلغاء" : "Cancel",
+    securePayment: isArabic ? "دفع آمن عبر ثواني" : "Secure payment via Thawani",
+    ticketCaption: isArabic ? "تذكرة" : "Ticket",
+    amountDue: isArabic ? "المبلغ المستحق" : "Amount due",
   };
 
   const [event, setEvent] = useState(null);
@@ -110,6 +124,11 @@ export default function Registration() {
   const [fileData, setFileData] = useState({});
   const [selectedTicketTypeId, setSelectedTicketTypeId] = useState(null);
   const [ticketTypeError, setTicketTypeError] = useState("");
+  // Paid-event payment summary dialog
+  const [showPaymentSummary, setShowPaymentSummary] = useState(false);
+  const [paymentPayload, setPaymentPayload] = useState(null);
+  const [payProcessing, setPayProcessing] = useState(false);
+  const [paymentError, setPaymentError] = useState("");
   const qrCodeRef = useRef(null);
   const badgePreviewRef = useRef(null);
   const { globalConfig } = useGlobalConfig();
@@ -423,22 +442,19 @@ export default function Registration() {
       }
     });
 
-    // Paid event — redirect to Thawani
+    // Paid event — stash the prepared payload and show the price-breakdown
+    // dialog. The actual gateway call happens from the dialog's "Confirm & Pay".
     if (event?.isPaid) {
-      const result = await initiatePayment({
+      setPaymentPayload({
         eventSlug,
         ticketTypeId: selectedTicketTypeId,
         lang,
         ...normalizedFormData,
         isoCode: phoneIsoCode,
       });
+      setPaymentError("");
       setSubmitting(false);
-
-      if (!result?.error && result?.sessionUrl) {
-        window.location.href = result.sessionUrl;
-      } else {
-        setFieldErrors({ _global: result?.message || t.registrationFailed });
-      }
+      setShowPaymentSummary(true);
       return;
     }
 
@@ -477,6 +493,27 @@ export default function Registration() {
     setShowDialog(false);
     router.replace(`/eventreg/${lang}/event/${eventSlug}`);
   };
+
+  // Fires from the payment-summary dialog — creates the Thawani session and
+  // redirects the user to the gateway.
+  const handleConfirmPayment = async () => {
+    if (!paymentPayload) return;
+    setPayProcessing(true);
+    setPaymentError("");
+    const result = await initiatePayment(paymentPayload);
+    if (!result?.error && result?.sessionUrl) {
+      window.location.href = result.sessionUrl;
+    } else {
+      setPayProcessing(false);
+      setPaymentError(result?.message || t.registrationFailed);
+    }
+  };
+
+  // Live breakdown for the selected ticket (base + event fees + VAT).
+  const selectedTicket = event?.ticketTypes?.find((tt) => tt._id === selectedTicketTypeId) || null;
+  const paymentBreakdown = selectedTicket
+    ? computePaymentBreakdown(selectedTicket.price, event?.fees || [], event?.vatPercentage ?? 0)
+    : null;
 
   // image background only (no videos on registration page)
   const getImageBackground = useMemo(() => {
@@ -897,6 +934,179 @@ export default function Registration() {
           </Box>
         )}
       </Box>
+      {/* Payment summary dialog (paid events) */}
+      <Dialog
+        open={showPaymentSummary}
+        onClose={() => !payProcessing && setShowPaymentSummary(false)}
+        maxWidth="xs"
+        fullWidth
+        dir={dir}
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: 4,
+              overflow: "hidden",
+              boxShadow: "0 24px 60px rgba(0,0,0,0.22)",
+            },
+          },
+        }}
+      >
+        {/* Header band */}
+        <Box
+          sx={{
+            background: "linear-gradient(135deg, #0f3d57 0%, #14708a 100%)",
+            color: "#fff",
+            px: 3,
+            pt: 3,
+            pb: 2.5,
+            display: "flex",
+            alignItems: "center",
+            gap: 1.5,
+          }}
+        >
+          <Box
+            sx={{
+              width: 44,
+              height: 44,
+              borderRadius: 2,
+              flexShrink: 0,
+              backgroundColor: "rgba(255,255,255,0.16)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <ICONS.list sx={{ fontSize: 24, color: "#fff" }} />
+          </Box>
+          <Box sx={{ minWidth: 0 }}>
+            <Typography variant="h6" fontWeight={800} sx={{ lineHeight: 1.2 }}>
+              {t.paymentSummary}
+            </Typography>
+            <Typography variant="caption" sx={{ opacity: 0.85, lineHeight: 1.4, display: "block" }}>
+              {t.paymentSummaryNote}
+            </Typography>
+          </Box>
+        </Box>
+
+        <DialogContent sx={{ px: 3, pt: 2.5, pb: 2 }}>
+          {paymentBreakdown && (
+            <Box>
+              {/* Ticket base — emphasized line */}
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", py: 1 }}>
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography variant="body1" fontWeight={700} noWrap>
+                    {selectedTicket?.name || t.ticketLabel}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {t.ticketCaption}
+                  </Typography>
+                </Box>
+                <Typography variant="body1" fontWeight={700} sx={{ whiteSpace: "nowrap", pl: 1 }}>
+                  {formatOmr(paymentBreakdown.base, t.omr)}
+                </Typography>
+              </Box>
+
+              {/* Fees */}
+              {paymentBreakdown.feeLines.map((fee, i) => (
+                <Box key={i} sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", py: 0.6 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    {fee.name} <Box component="span" sx={{ opacity: 0.7 }}>· {fee.percentage}%</Box>
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: "nowrap", pl: 1 }}>
+                    {formatOmr(fee.amount, t.omr)}
+                  </Typography>
+                </Box>
+              ))}
+
+              {/* Subtotal (only when there are fees or VAT) */}
+              {(paymentBreakdown.feeLines.length > 0 || paymentBreakdown.vatAmount > 0) && (
+                <Box sx={{ display: "flex", justifyContent: "space-between", py: 0.9, mt: 0.5, borderTop: "1px dashed", borderColor: "divider" }}>
+                  <Typography variant="body2" color="text.secondary">{t.subtotal}</Typography>
+                  <Typography variant="body2" fontWeight={600} sx={{ whiteSpace: "nowrap", pl: 1 }}>
+                    {formatOmr(paymentBreakdown.subtotal, t.omr)}
+                  </Typography>
+                </Box>
+              )}
+
+              {/* VAT */}
+              {paymentBreakdown.vatAmount > 0 && (
+                <Box sx={{ display: "flex", justifyContent: "space-between", py: 0.6 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    {t.vatLabel} <Box component="span" sx={{ opacity: 0.7 }}>· {paymentBreakdown.vatPercentage}%</Box>
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: "nowrap", pl: 1 }}>
+                    {formatOmr(paymentBreakdown.vatAmount, t.omr)}
+                  </Typography>
+                </Box>
+              )}
+
+              {/* Total — highlighted */}
+              <Box
+                sx={{
+                  mt: 1.5,
+                  px: 2,
+                  py: 1.5,
+                  borderRadius: 2.5,
+                  backgroundColor: "rgba(20,112,138,0.08)",
+                  border: "1px solid rgba(20,112,138,0.2)",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <Box>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: "block", lineHeight: 1.2 }}>
+                    {t.amountDue}
+                  </Typography>
+                  <Typography variant="subtitle1" fontWeight={800}>{t.totalLabel}</Typography>
+                </Box>
+                <Typography variant="h6" fontWeight={800} color="primary.dark" sx={{ whiteSpace: "nowrap", pl: 1 }}>
+                  {formatOmr(paymentBreakdown.total, t.omr)}
+                </Typography>
+              </Box>
+
+              {/* Trust note */}
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0.75, mt: 2 }}>
+                <ICONS.verified sx={{ fontSize: 16, color: "success.main" }} />
+                <Typography variant="caption" color="text.secondary">
+                  {t.securePayment}
+                </Typography>
+              </Box>
+            </Box>
+          )}
+
+          {paymentError && (
+            <Alert severity="error" sx={{ mt: 2 }}>{paymentError}</Alert>
+          )}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 3, pt: 0, gap: 1 }}>
+          <Button
+            onClick={() => setShowPaymentSummary(false)}
+            disabled={payProcessing}
+            sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2.5, color: "text.secondary" }}
+          >
+            {t.cancel}
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleConfirmPayment}
+            disabled={payProcessing || !paymentBreakdown}
+            startIcon={!payProcessing ? <ICONS.payment /> : undefined}
+            sx={{
+              textTransform: "none",
+              fontWeight: 700,
+              borderRadius: 2.5,
+              px: 3,
+              py: 1.1,
+              boxShadow: "0 8px 20px rgba(20,112,138,0.3)",
+              ...getStartIconSpacing(dir),
+            }}
+          >
+            {payProcessing ? <CircularProgress size={22} color="inherit" /> : t.confirmAndPay}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       {/* Success dialog */}
       <Dialog
         open={showDialog}

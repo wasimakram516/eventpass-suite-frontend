@@ -163,6 +163,18 @@ const translations = {
     ticketPriceRequired: "Ticket price is required.",
     ticketPriceInvalid: "Ticket price must be a positive number.",
     noTicketTypes: "Add at least one ticket type for paid events.",
+    fees: "Fees",
+    feesDescription: "Optional fees added on top of the ticket price. Each fee is a percentage of the base ticket price.",
+    feeName: "Fee Name",
+    feePercentage: "Percentage (%)",
+    addFee: "Add Fee",
+    removeFee: "Remove",
+    feeNameRequired: "Fee name is required.",
+    feePercentageInvalid: "Fee percentage must be a non-negative number.",
+    vat: "VAT",
+    vatDescription: "Applied to the ticket price plus fees. Set to 0 to disable VAT.",
+    vatPercentage: "VAT (%)",
+    vatInvalid: "VAT must be between 0 and 100.",
     dependentsLabel: "Dependent Fields",
     dependentsHint: "When this option is selected, the chosen fields below will appear.",
     dependentsSelect: "Select fields to show",
@@ -286,6 +298,18 @@ const translations = {
     ticketPriceRequired: "سعر التذكرة مطلوب.",
     ticketPriceInvalid: "يجب أن يكون سعر التذكرة رقماً موجباً.",
     noTicketTypes: "أضف نوع تذكرة واحداً على الأقل للفعاليات المدفوعة.",
+    fees: "الرسوم",
+    feesDescription: "رسوم اختيارية تُضاف إلى سعر التذكرة. كل رسم هو نسبة مئوية من سعر التذكرة الأساسي.",
+    feeName: "اسم الرسم",
+    feePercentage: "النسبة المئوية (%)",
+    addFee: "إضافة رسم",
+    removeFee: "إزالة",
+    feeNameRequired: "اسم الرسم مطلوب.",
+    feePercentageInvalid: "يجب أن تكون نسبة الرسم رقماً غير سالب.",
+    vat: "ضريبة القيمة المضافة",
+    vatDescription: "تُطبّق على سعر التذكرة مع الرسوم. اضبطها على 0 لتعطيل الضريبة.",
+    vatPercentage: "ضريبة القيمة المضافة (%)",
+    vatInvalid: "يجب أن تكون الضريبة بين 0 و 100.",
     dependentsLabel: "الحقول التابعة",
     dependentsHint: "عند اختيار هذا الخيار، ستظهر الحقول المحددة أدناه.",
     dependentsSelect: "اختر الحقول التي ستظهر",
@@ -390,6 +414,8 @@ const EventModal = ({
     defaultLanguage: "en",
     isPaid: false,
     ticketTypes: [],
+    fees: [],
+    vatPercentage: 5,
     removeLogo: false,
     removeBackgroundEn: false,
     removeBackgroundAr: false,
@@ -488,6 +514,11 @@ const EventModal = ({
           price: tt.price ?? "",
           capacity: tt.capacity ?? "",
         })) || [],
+        fees: initialValues?.fees?.map((f) => ({
+          name: f.name || "",
+          percentage: f.percentage ?? "",
+        })) || [],
+        vatPercentage: initialValues?.vatPercentage ?? 5,
         useCustomQrCode: initialValues?.useCustomQrCode || false,
         customQrSelectedFields: (initialValues?.customQrWrapper && Array.isArray(initialValues.customQrWrapper.customFields) && initialValues.customQrWrapper.customFields.length > 0)
           ? getSelectedFieldsFromWrapper(initialValues.customQrWrapper)
@@ -582,6 +613,8 @@ const EventModal = ({
         emailTemplateBody: "",
         isPaid: false,
         ticketTypes: [],
+        fees: [],
+        vatPercentage: 5,
         useCustomQrCode: false,
         customQrSelectedFields: {},
         qrWrapperBackground: null,
@@ -1331,6 +1364,12 @@ const EventModal = ({
               capacity: tt.capacity ? parseInt(tt.capacity, 10) : null,
             }))
           : [],
+        fees: formData.isPaid
+          ? formData.fees
+              .filter((f) => f.name?.trim() && f.percentage !== "" && f.percentage != null)
+              .map((f) => ({ name: f.name.trim(), percentage: parseFloat(f.percentage) }))
+          : [],
+        vatPercentage: formData.isPaid ? (parseFloat(formData.vatPercentage) || 0) : 0,
       };
 
       if (!initialValues) {
@@ -1769,6 +1808,7 @@ const EventModal = ({
                               ...prev,
                               isPaid: e.target.checked,
                               ticketTypes: e.target.checked ? prev.ticketTypes : [],
+                              fees: e.target.checked ? prev.fees : [],
                             }))
                           }
                           color="primary"
@@ -1891,6 +1931,106 @@ const EventModal = ({
                       >
                         + {t.addTicketType}
                       </Button>
+
+                      {/* ── Fees (percentage of base ticket price) ── */}
+                      <Box sx={{ mt: 3 }}>
+                        <Typography variant="subtitle2" sx={{ mb: 0.5, fontWeight: 600 }}>
+                          {t.fees}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 2 }}>
+                          {t.feesDescription}
+                        </Typography>
+
+                        {formData.fees.map((fee, idx) => (
+                          <Paper key={idx} variant="outlined" sx={{ p: 2, mb: 2, borderRadius: 2 }}>
+                            <Stack direction="row" sx={{ mb: 1.5, justifyContent: "space-between", alignItems: "center" }}>
+                              <Typography variant="body2" fontWeight={600}>#{idx + 1}</Typography>
+                              <Button
+                                size="small"
+                                color="error"
+                                onClick={() =>
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    fees: prev.fees.filter((_, i) => i !== idx),
+                                  }))
+                                }
+                              >
+                                {t.removeFee}
+                              </Button>
+                            </Stack>
+                            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
+                              <Box sx={{ flex: "1 1 200px" }}>
+                                <TextField
+                                  fullWidth
+                                  size="small"
+                                  label={t.feeName}
+                                  required
+                                  value={fee.name}
+                                  onChange={(e) =>
+                                    setFormData((prev) => {
+                                      const fees = [...prev.fees];
+                                      fees[idx] = { ...fees[idx], name: e.target.value };
+                                      return { ...prev, fees };
+                                    })
+                                  }
+                                />
+                              </Box>
+                              <Box sx={{ flex: "1 1 200px" }}>
+                                <TextField
+                                  fullWidth
+                                  size="small"
+                                  label={t.feePercentage}
+                                  required
+                                  type="number"
+                                  slotProps={{ htmlInput: { min: 0, step: 0.1 } }}
+                                  value={fee.percentage}
+                                  onChange={(e) =>
+                                    setFormData((prev) => {
+                                      const fees = [...prev.fees];
+                                      fees[idx] = { ...fees[idx], percentage: e.target.value };
+                                      return { ...prev, fees };
+                                    })
+                                  }
+                                />
+                              </Box>
+                            </Box>
+                          </Paper>
+                        ))}
+
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          onClick={() =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              fees: [...prev.fees, { name: "", percentage: "" }],
+                            }))
+                          }
+                        >
+                          + {t.addFee}
+                        </Button>
+                      </Box>
+
+                      {/* ── VAT ── */}
+                      <Box sx={{ mt: 3 }}>
+                        <Typography variant="subtitle2" sx={{ mb: 0.5, fontWeight: 600 }}>
+                          {t.vat}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1.5 }}>
+                          {t.vatDescription}
+                        </Typography>
+                        <TextField
+                          size="small"
+                          label={t.vatPercentage}
+                          type="number"
+                          slotProps={{ htmlInput: { min: 0, max: 100, step: 0.1 } }}
+                          value={formData.vatPercentage}
+                          onChange={(e) =>
+                            setFormData((prev) => ({ ...prev, vatPercentage: e.target.value }))
+                          }
+                          sx={{ maxWidth: 220 }}
+                        />
+                      </Box>
                     </Box>
                   )}
                 </>
