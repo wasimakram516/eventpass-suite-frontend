@@ -27,6 +27,7 @@ import { wrapTextBox } from "@/utils/wrapTextStyles";
 import { getModuleIcon } from "@/utils/iconMapper";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { toArabicDigits } from "@/utils/arabicDigits";
 import { getAllBusinesses } from "@/services/businessService";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import { formatDateTimeWithLocale } from "@/utils/dateUtils";
@@ -215,14 +216,15 @@ export default function HomePage() {
       return () => clearInterval(timer);
     }, []);
 
-    const formattedDate = now.toLocaleDateString(undefined, {
+    const locale = language === "ar" ? "ar-SA" : "en-GB";
+    const formattedDate = now.toLocaleDateString(locale, {
       weekday: "long",
       month: "short",
       day: "numeric",
       year: "numeric",
     });
 
-    const formattedTime = now.toLocaleTimeString(undefined, {
+    const formattedTime = now.toLocaleTimeString(locale, {
       hour: "2-digit",
       minute: "2-digit",
       second: "2-digit",
@@ -500,7 +502,7 @@ export default function HomePage() {
                   }}
                 >
                   {t.lastUpdated}{" "}
-                  {formatDateTimeWithLocale(insights.lastUpdated)}
+                  {formatDateTimeWithLocale(insights.lastUpdated, language === "ar" ? "ar-SA" : "en-GB")}
                 </Typography>
               )}
             </Box>
@@ -582,7 +584,7 @@ export default function HomePage() {
                           </Typography>
                           <DonutStat
                             data={usersDonut}
-                            centerLabel={usersTotal}
+                            centerLabel={toArabicDigits(usersTotal, language)}
                             height={200}
                           />
                           <Stack
@@ -596,9 +598,9 @@ export default function HomePage() {
                             {roleKeys.map((role) => (
                               <RenderTruncatedChip
                                 key={role}
-                                label={`${roleLabel(role)}: ${
+                                label={toArabicDigits(`${roleLabel(role)}: ${
                                   Number(userTotals?.[role] || 0)
-                                }`}
+                                }`, language)}
                               />
                             ))}
                           </Stack>
@@ -622,7 +624,7 @@ export default function HomePage() {
                           </Typography>
                           <DonutStat
                             data={businessesDonut.data}
-                            centerLabel={businessesDonut.total}
+                            centerLabel={toArabicDigits(businessesDonut.total, language)}
                             height={200}
                           />
                         </AppCard>
@@ -645,7 +647,7 @@ export default function HomePage() {
                           </Typography>
                           <DonutStat
                             data={trashDonut}
-                            centerLabel={trashTotal}
+                            centerLabel={toArabicDigits(trashTotal, language)}
                             height={200}
                           />
                         </AppCard>
@@ -726,7 +728,7 @@ export default function HomePage() {
                         <Box sx={{ mt: 2 }}>
                           <DonutStat
                             data={donutData}
-                            centerLabel={donutTotal}
+                            centerLabel={toArabicDigits(donutTotal, language)}
                             height={160}
                           />
                         </Box>
@@ -742,9 +744,9 @@ export default function HomePage() {
                             {totalEntries.map(([k, v]) => (
                               <RenderTruncatedChip
                                 key={k}
-                                label={`${k
+                                label={toArabicDigits(`${k
                                   .replace(/([A-Z])/g, " $1")
-                                  .replace(/^./, (c) => c.toUpperCase())}: ${v}`}
+                                  .replace(/^./, (c) => c.toUpperCase())}: ${v}`, language)}
                               />
                             ))}
                           </Stack>
@@ -785,9 +787,9 @@ export default function HomePage() {
                           {trashEntries.map(([k, v]) => (
                             <RenderTruncatedChip
                               key={k}
-                              label={`${k
+                              label={toArabicDigits(`${k
                                 .replace(/([A-Z])/g, " $1")
-                                .replace(/^./, (c) => c.toUpperCase())}: ${v}`}
+                                .replace(/^./, (c) => c.toUpperCase())}: ${v}`, language)}
                             />
                           ))}
                             </Box>

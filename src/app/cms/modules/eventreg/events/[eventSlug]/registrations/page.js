@@ -24,6 +24,7 @@ import {
   Chip,
   Alert,
 } from "@mui/material";
+import ArabicPagination from "@/components/ArabicPagination";
 import { DateTimePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
@@ -55,6 +56,7 @@ import { getPaymentLink } from "@/services/eventreg/paymentService";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import { formatDate, formatDateTimeWithLocale } from "@/utils/dateUtils";
+import { toArabicDigits } from "@/utils/arabicDigits";
 import { useParams, useSearchParams } from "next/navigation";
 import ICONS from "@/utils/iconUtil";
 import WalkInModal from "@/components/modals/WalkInModal";
@@ -410,7 +412,7 @@ export default function ViewRegistrations() {
     setUnsentEmailCount(unsentRes?.unsentCount || 0);
 
     const fieldsLocal =
-      !evRes?.error && evRes.formFields?.length
+      !evRes?.error && evRes.useCustomFields && evRes.formFields?.length
         ? evRes.formFields.map((f) => ({
           name: f.inputName,
           type: (f.inputType || "text").toLowerCase(),
@@ -624,7 +626,7 @@ export default function ViewRegistrations() {
   };
 
   const handleCreateRegistration = async (fields) => {
-    const hasCustomFields = eventDetails?.formFields?.length > 0;
+    const hasCustomFields = eventDetails?.useCustomFields && eventDetails?.formFields?.length > 0;
     let payload = { slug: eventSlug };
 
     if (hasCustomFields) {
@@ -1629,7 +1631,7 @@ export default function ViewRegistrations() {
             >
               {[5, 10, 20, 50, 100, 250, 500].map((n) => (
                 <MenuItem key={n} value={n}>
-                  {n}
+                  {toArabicDigits(n, language)}
                 </MenuItem>
               ))}
             </Select>
@@ -1652,10 +1654,10 @@ export default function ViewRegistrations() {
           activeFilterEntries.push([
             "Registered At",
             `${filters.createdAtFromMs
-              ? formatDateTimeWithLocale(filters.createdAtFromMs)
+              ? formatDateTimeWithLocale(filters.createdAtFromMs, language === "ar" ? "ar-SA" : "en-GB")
               : "—"
             } → ${filters.createdAtToMs
-              ? formatDateTimeWithLocale(filters.createdAtToMs)
+              ? formatDateTimeWithLocale(filters.createdAtToMs, language === "ar" ? "ar-SA" : "en-GB")
               : "—"
             }`,
           ]);
@@ -1664,10 +1666,10 @@ export default function ViewRegistrations() {
           activeFilterEntries.push([
             "Scanned At",
             `${filters.scannedAtFromMs
-              ? formatDateTimeWithLocale(filters.scannedAtFromMs)
+              ? formatDateTimeWithLocale(filters.scannedAtFromMs, language === "ar" ? "ar-SA" : "en-GB")
               : "—"
             } → ${filters.scannedAtToMs
-              ? formatDateTimeWithLocale(filters.scannedAtToMs)
+              ? formatDateTimeWithLocale(filters.scannedAtToMs, language === "ar" ? "ar-SA" : "en-GB")
               : "—"
             }`,
           ]);
@@ -1894,7 +1896,7 @@ export default function ViewRegistrations() {
                           component="span"
                           sx={{ direction: "ltr", unicodeBidi: "embed" }}
                         >
-                          {formatDateTimeWithLocale(reg.createdAt)}
+                          {formatDateTimeWithLocale(reg.createdAt, language === "ar" ? "ar-SA" : "en-GB")}
                         </Box>
                       </Typography>
                     </Stack>
@@ -1978,115 +1980,97 @@ export default function ViewRegistrations() {
                     >
                       <ICONS.print fontSize="small" sx={{ opacity: 0.7 }} />
                       {reg.printCount > 0
-                        ? `${t.printedTimes.replace("{count}", reg.printCount)}${reg.printTimestamp ? ` · ${t.lastPrintedAt} ${formatDateTimeWithLocale(reg.printTimestamp)}` : ""}`
+                        ? `${t.printedTimes.replace("{count}", toArabicDigits(reg.printCount, language))}${reg.printTimestamp ? ` · ${t.lastPrintedAt} ${formatDateTimeWithLocale(reg.printTimestamp, language === "ar" ? "ar-SA" : "en-GB")}` : ""}`
                         : t.neverPrinted}
                     </Typography>
                   </Box>
 
-                  {/* Dynamic Fields */}
+                  {/* Dynamic Fields — show registration's own format */}
                   <CardContent sx={{ flexGrow: 1, px: 2, py: 1.5 }}>
-                    {dynamicFields.map((f) => (
-                      <Box
-                        key={f.name}
-                        sx={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "flex-start",
-                          py: 0.8,
-                          borderBottom: "1px solid",
-                          borderColor: "divider",
-                          "&:last-of-type": { borderBottom: "none" },
-                        }}
-                      >
-                        {/* Field Label */}
-                        <Typography
-                          variant="body2"
+                    {(() => {
+                      const regCustomFields = reg.customFields instanceof Map
+                        ? Object.fromEntries(reg.customFields)
+                        : (reg.customFields || {});
+                      const regCustomKeys = Object.keys(regCustomFields).filter(k => regCustomFields[k] && String(regCustomFields[k]).trim());
+
+                      if (regCustomKeys.length > 0) {
+                        return regCustomKeys.map((key) => (
+                          <Box key={key} sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", py: 0.8, borderBottom: "1px solid", borderColor: "divider", "&:last-of-type": { borderBottom: "none" } }}>
+                            <Typography variant="body2" sx={{ display: "flex", alignItems: "center", gap: 0.6, color: "text.secondary" }}>
+                              <ICONS.personOutline fontSize="small" sx={{ opacity: 0.6 }} />
+                              {key}
+                            </Typography>
+                            <Typography variant="body2" sx={{ fontWeight: 500, ml: 2, textAlign: dir === "rtl" ? "left" : "right", flex: 1, color: "text.primary", ...wrapTextBox }}>
+                              {String(regCustomFields[key]) || "—"}
+                            </Typography>
+                          </Box>
+                        ));
+                      }
+
+                      // Registration has no customFields — show its classic fields
+                      const classicFields = [
+                        { name: "fullName", label: "Full Name" },
+                        { name: "email", label: "Email" },
+                        { name: "phone", label: "Phone" },
+                        { name: "company", label: "Company" },
+                      ];
+                      return classicFields.map((f) => {
+                      const fieldValue = reg[f.name] ?? null;
+                      if (fieldValue == null || String(fieldValue).trim() === "") return null;
+                      const displayValue = String(fieldValue).trim();
+
+                      return (
+                        <Box
+                          key={f.name}
                           sx={{
                             display: "flex",
-                            alignItems: "center",
-                            gap: 0.6,
-                            color: "text.secondary",
+                            justifyContent: "space-between",
+                            alignItems: "flex-start",
+                            py: 0.8,
+                            borderBottom: "1px solid",
+                            borderColor: "divider",
+                            "&:last-of-type": { borderBottom: "none" },
                           }}
                         >
-                          <ICONS.personOutline
-                            fontSize="small"
-                            sx={{ opacity: 0.6 }}
-                          />
-                          {getFieldLabel(f.name)}
-                        </Typography>
+                          {/* Field Label */}
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 0.6,
+                              color: "text.secondary",
+                            }}
+                          >
+                            <ICONS.personOutline
+                              fontSize="small"
+                              sx={{ opacity: 0.6 }}
+                            />
+                            {f.label}
+                          </Typography>
 
-                        {/* Field Value */}
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            fontWeight: 500,
-                            ml: 2,
-                            textAlign: dir === "rtl" ? "left" : "right",
-                            flex: 1,
-                            color: "text.primary",
-                            ...wrapTextBox
-                          }}>
-                          {(() => {
-                            const fieldValue =
-                              reg.customFields?.[f.name] ?? reg[f.name];
-                            if (!fieldValue) return "—";
-
-                            if (
-                              f.type === "phone" ||
-                              (!eventDetails?.formFields?.length &&
-                                f.name === "phone")
-                            ) {
-                              const {
-                                formatPhoneNumberForDisplay,
-                              } = require("@/utils/countryCodes");
-                              return formatPhoneNumberForDisplay(
-                                fieldValue,
-                                reg.isoCode,
-                              );
-                            }
-
-                              if (f.type === "country") {
-                              const { COUNTRY_CODES, getFlagImageUrl } = require("@/utils/countryCodes");
-                              const country = COUNTRY_CODES.find(c => c.isoCode === fieldValue.toLowerCase());
-                              if (!country) return fieldValue;
-                              return (
-                                <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                                  <img
-                                    src={getFlagImageUrl(country.isoCode)}
-                                    alt={country.country}
-                                    style={{ width: 20, height: 14, objectFit: "cover", borderRadius: 2, flexShrink: 0 }}
-                                  />
-                                  <span style={{ marginLeft: 4 }}>{country.country}</span>
-                                </span>
-                              );
-                            }
-
-                            if (f.type === "file" && fieldValue) {
-                              const isImage = fieldValue.match(/\.(jpg|jpeg|png|gif|webp|svg)(\?|$)/i);
-                              const isVideo = fieldValue.match(/\.(mp4|webm|mov)(\?|$)/i);
-                              if (isImage) {
-                                return (
-                                  <Box component="img" src={fieldValue} alt="" sx={{ width: 48, height: 48, borderRadius: 1.5, objectFit: "contain", bgcolor: "grey.100", cursor: "pointer" }} onClick={() => window.open(fieldValue, "_blank")} />
-                                );
-                              }
-                              if (isVideo) {
-                                return (
-                                  <Box component="video" src={fieldValue} sx={{ width: 48, height: 48, borderRadius: 1.5, objectFit: "contain", bgcolor: "grey.100" }} controls />
-                                );
-                              }
-                              return (
-                                <Box sx={{ display: "inline-flex", alignItems: "center", gap: 1, cursor: "pointer" }} onClick={() => window.open(fieldValue, "_blank")}>
-                                  <ICONS.files sx={{ fontSize: 24, color: "text.secondary" }} />
-                                  <Typography variant="caption" color="primary" sx={{ textDecoration: "underline" }}>{fieldValue.split("/").pop()}</Typography>
-                                </Box>
-                              );
-                            }
-
-                            return fieldValue;
-                          })()}
-                        </Typography>
-                      </Box>
-                    ))}
+                          {/* Field Value */}
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              fontWeight: 500,
+                              ml: 2,
+                              textAlign: dir === "rtl" ? "left" : "right",
+                              flex: 1,
+                              color: "text.primary",
+                              ...wrapTextBox
+                            }}>
+                            {f.name === "phone"
+                              ? (() => {
+                                  const { formatPhoneNumberForDisplay } = require("@/utils/countryCodes");
+                                  return formatPhoneNumberForDisplay(displayValue, reg.isoCode);
+                                })()
+                              : displayValue}
+                          </Typography>
+                        </Box>
+                      );
+                    }).filter(Boolean);
+                    })()}
                   </CardContent>
 
                   <RecordMetadata
@@ -2211,8 +2195,7 @@ export default function ViewRegistrations() {
               mt: 4
             }}>
             {filteredRegistrations.length > limit && (
-              <Pagination
-                dir="ltr"
+              <ArabicPagination
                 count={Math.ceil(filteredRegistrations.length / limit)}
                 page={page}
                 onChange={(_, v) => setPage(v)}

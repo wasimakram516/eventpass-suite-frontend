@@ -12,6 +12,7 @@ import {
 } from "@mui/material";
 import { useRouter } from "next/navigation";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { toArabicDigits } from "@/utils/arabicDigits";
 import BreadcrumbsNav from "./nav/BreadcrumbsNav";
 
 export default function ModuleLandingPage({
@@ -19,7 +20,7 @@ export default function ModuleLandingPage({
   ctaHref,
   translations,
 }) {
-  const { dir, align, t } = useI18nLayout(translations);
+  const { dir, align, t, language } = useI18nLayout(translations);
   const isRtl = dir === "rtl";
   const router = useRouter();
   const theme = useTheme();
@@ -215,7 +216,7 @@ export default function ModuleLandingPage({
                           flexShrink: 0,
                         }}
                       >
-                        {String(i + 1).padStart(2, "0")}
+                        {toArabicDigits(String(i + 1).padStart(2, "0"), language)}
                       </Box>
                       <Typography
                         variant="body1"

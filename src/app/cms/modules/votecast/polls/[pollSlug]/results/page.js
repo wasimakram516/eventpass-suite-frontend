@@ -25,6 +25,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
+import ArabicPagination from "@/components/ArabicPagination";
 import AppCard from "@/components/cards/AppCard";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
@@ -40,6 +41,7 @@ import { getFieldIcon } from "@/utils/iconMapper";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import { formatDateTimeWithLocale } from "@/utils/dateUtils";
+import { toArabicDigits } from "@/utils/arabicDigits";
 
 const translations = {
   en: {
@@ -331,7 +333,7 @@ function VoterCard({ voter, t, dir, align, language, isAnonymous }) {
               >
                 {showAllDetails
                   ? t.showLessAnswers
-                  : `${t.showMoreAnswers} (${detailFields.length - PREVIEW_COUNT})`}
+                  : `${t.showMoreAnswers} (${toArabicDigits(detailFields.length - PREVIEW_COUNT, language)})`}
               </Button>
             )}
           </Fragment>
@@ -378,7 +380,7 @@ function VoterCard({ voter, t, dir, align, language, isAnonymous }) {
                       <Chip
                         key={chipIdx}
                         size="small"
-                        label={chip.text || "—"}
+                        label={toArabicDigits(chip.text || "—", language)}
                         variant="outlined"
                         avatar={chip.imageUrl ? <OptionThumb url={chip.imageUrl} label={chip.text} /> : undefined}
                         sx={{
@@ -412,7 +414,7 @@ function VoterCard({ voter, t, dir, align, language, isAnonymous }) {
           >
             {showAllVotes
               ? t.showLessAnswers
-              : `${t.showMoreAnswers} (${votes.length - PREVIEW_COUNT})`}
+              : `${t.showMoreAnswers} (${toArabicDigits(votes.length - PREVIEW_COUNT, language)})`}
           </Button>
         )}
       </CardContent>
@@ -453,6 +455,10 @@ function buildVoterList(voterResults) {
               questionId: question._id,
               question: question.question,
               type,
+              optionText: option.text,
+              optionImage: option.imageUrl || null,
+              answer: voter.answer,
+              value: voter.value,
               chips: [{ text: option.text, imageUrl: option.imageUrl || null }],
             });
           }
@@ -480,6 +486,8 @@ function buildVoterList(voterResults) {
           questionId: question._id,
           question: question.question,
           type,
+          answer: voter.answer,
+          value: voter.value,
           chips: [{ text: voter.answer || "", imageUrl: null }],
         });
       }
@@ -827,7 +835,7 @@ export default function PollResultsPage() {
                   mb: 2.5,
                   px: 0.5
                 }}>
-                {t.showing} {Math.min((page - 1) * CARDS_PER_PAGE + 1, totalVoters)}–{Math.min(page * CARDS_PER_PAGE, totalVoters)} {t.of} {totalVoters} {t.records}
+                {t.showing} {toArabicDigits(Math.min((page - 1) * CARDS_PER_PAGE + 1, totalVoters), language)}–{toArabicDigits(Math.min(page * CARDS_PER_PAGE, totalVoters), language)} {t.of} {toArabicDigits(totalVoters, language)} {t.records}
               </Typography>
               <Grid
                 container
@@ -862,8 +870,7 @@ export default function PollResultsPage() {
                   justifyContent: "center",
                   mt: 4
                 }}>
-                <Pagination
-                  dir="ltr"
+                <ArabicPagination
                   count={Math.ceil(totalVoters / CARDS_PER_PAGE)}
                   page={Math.min(page, Math.ceil(totalVoters / CARDS_PER_PAGE) || 1)}
                   onChange={(_, v) => setPage(v)}

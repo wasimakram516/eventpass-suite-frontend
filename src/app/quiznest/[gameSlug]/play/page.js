@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation";
 import { submitResult } from "@/services/quiznest/playerService";
 import LanguageSelector from "@/components/LanguageSelector";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { toArabicDigits } from "@/utils/arabicDigits";
 import { translateTexts } from "@/services/translationService";
 import QuizOutlinedIcon from "@mui/icons-material/QuizOutlined";
 
@@ -370,7 +371,7 @@ export default function PlayPage() {
               animation: "pulse 1s infinite alternate",
             }}
           >
-            {delay}
+            {toArabicDigits(delay, language)}
           </Typography>
         </Box>
       </Box>
@@ -431,19 +432,19 @@ export default function PlayPage() {
               <Typography variant="h2" sx={{
                 mb: 2
               }}>
-                {t.score}: {score}
+                {t.score}: {toArabicDigits(score, language)}
               </Typography>
 
               <Typography variant="h6" sx={{
                 mb: 1
               }}>
-                {t.attempted}: {attempted}
+                {t.attempted}: {toArabicDigits(attempted, language)}
               </Typography>
 
               <Typography variant="h6" sx={{
                 mb: 3
               }}>
-                {t.timeTaken}: {timeTaken} {t.countdown}
+                {t.timeTaken}: {toArabicDigits(timeTaken, language)} {t.countdown}
               </Typography>
 
               <Button
@@ -499,7 +500,7 @@ export default function PlayPage() {
               lineHeight: 1,
             }}
           >
-            {timeLeft}
+            {toArabicDigits(timeLeft, language)}
           </Typography>
           <Typography
             variant="h6"
@@ -558,7 +559,7 @@ export default function PlayPage() {
                 lineHeight: 1.3,
               }}
             >
-              {translatedContent.uiLabels?.questionLabel || "Question"} #{questionIndex + 1}
+              {translatedContent.uiLabels?.questionLabel || "Question"} #{toArabicDigits(questionIndex + 1, language)}
             </Typography>
             {/* Question text — main/prominent */}
             <Typography

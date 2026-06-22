@@ -19,6 +19,7 @@ import {
 } from "@mui/material";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { toArabicDigits } from "@/utils/arabicDigits";
 import { useParams, useRouter } from "next/navigation";
 import {
   getQuestionsBySession,
@@ -363,7 +364,7 @@ export default function AskQuestionsPage() {
                       <IconButton onClick={() => handleVote(q._id)} color="primary">
                         {hasVoted ? <ICONS.thumb /> : <ICONS.thumbOff />}
                       </IconButton>
-                      <Typography>{q.votes}</Typography>
+                      <Typography>{toArabicDigits(q.votes, language)}</Typography>
                     </Stack>
                   </CardContent>
                 </Card>

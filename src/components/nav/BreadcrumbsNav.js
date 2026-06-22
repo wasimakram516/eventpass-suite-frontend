@@ -5,187 +5,262 @@ import { usePathname, useRouter } from "next/navigation";
 
 import ICONS from "@/utils/iconUtil";
 import { capitalize } from "@/utils/stringUtil";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const segmentMap = {
   dashboard: {
-    label: "Dashboard",
-    icon: <ICONS.home fontSize="small" sx={{ mr: 0.5 }} />,
+    en: "Dashboard",
+    ar: "لوحة التحكم",
+    icon: <ICONS.home fontSize="small" />,
   },
   whatsapp: {
-    label: "WhatsApp",
+    en: "WhatsApp",
+    ar: "واتساب",
     icon: <ICONS.whatsapp fontSize="small" sx={{ mr: 0.5 }} />,
   },
   logs: {
-    label: "Logs",
+    en: "Logs",
+    ar: "السجلات",
     icon: <ICONS.history fontSize="small" sx={{ mr: 0.5 }} />,
   },
   payments: {
-    label: "Payments",
+    en: "Payments",
+    ar: "المدفوعات",
     icon: <ICONS.payment fontSize="small" sx={{ mr: 0.5 }} />,
   },
   inbox: {
-    label: "Inbox",
+    en: "Inbox",
+    ar: "صندوق الوارد",
     icon: <ICONS.chat fontSize="small" sx={{ mr: 0.5 }} />,
   },
   downloads: {
-    label: "Manage Files",
+    en: "Manage Files",
+    ar: "إدارة الملفات",
     icon: <ICONS.cloud fontSize="small" sx={{ mr: 0.5 }} />,
   },
   "global-search": {
-    label: "Global Search",
+    en: "Global Search",
+    ar: "بحث عام",
     icon: <ICONS.search fontSize="small" sx={{ mr: 0.5 }} />,
   },
   businesses: {
-    label: "Businesses",
+    en: "Businesses",
+    ar: "الشركات",
     icon: <ICONS.business fontSize="small" sx={{ mr: 0.5 }} />,
   },
   insights: {
-    label: "Intelligent Insights",
+    en: "Intelligent Insights",
+    ar: "التحليلات",
     icon: <ICONS.insights fontSize="small" sx={{ mr: 0.5 }} />,
   },
   polls: {
-    label: "Polls",
+    en: "Polls",
+    ar: "الاستفتاءات",
     icon: <ICONS.poll fontSize="small" sx={{ mr: 0.5 }} />,
   },
   manage: {
-    label: "Manage Polls",
+    en: "Manage Polls",
+    ar: "إدارة الاستفتاءات",
     icon: <ICONS.poll fontSize="small" sx={{ mr: 0.5 }} />,
   },
   results: {
-    label: "Results",
+    en: "Results",
+    ar: "النتائج",
     icon: <ICONS.results fontSize="small" sx={{ mr: 0.5 }} />,
   },
   users: {
-    label: "Users",
+    en: "Users",
+    ar: "المستخدمين",
     icon: <ICONS.peopleAlt fontSize="small" sx={{ mr: 0.5 }} />,
   },
   games: {
-    label: "Games",
+    en: "Games",
+    ar: "الألعاب",
     icon: <ICONS.games fontSize="small" sx={{ mr: 0.5 }} />,
   },
   questions: {
-    label: "All Questions",
+    en: "All Questions",
+    ar: "جميع الأسئلة",
     icon: <ICONS.forum fontSize="small" sx={{ mr: 0.5 }} />,
   },
   queries: {
-    label: "Queries",
+    en: "Queries",
+    ar: "الاستفسارات",
     icon: <ICONS.info fontSize="small" sx={{ mr: 0.5 }} />,
   },
   "share-link": {
-    label: "Share Link",
+    en: "Share Link",
+    ar: "رابط المشاركة",
     icon: <ICONS.share fontSize="small" sx={{ mr: 0.5 }} />,
   },
   visitors: {
-    label: "Visitors",
+    en: "Visitors",
+    ar: "الزوار",
     icon: <ICONS.people fontSize="small" sx={{ mr: 0.5 }} />,
   },
 
   // CMS Modules
   modules: {
-    label: "Modules",
+    en: "Modules",
+    ar: "الوحدات",
     icon: <ICONS.module fontSize="small" sx={{ mr: 0.5 }} />,
   },
 
   quiznest: {
-    label: "QuizNest",
+    en: "QuizNest",
+    ar: "كويز نيست",
     icon: <ICONS.quiz fontSize="small" sx={{ mr: 0.5 }} />,
   },
   eventduel: {
-    label: "EventDuel",
+    en: "EventDuel",
+    ar: "مباراة الفعاليات",
     icon: <ICONS.games fontSize="small" sx={{ mr: 0.5 }} />,
   },
   tapmatch: {
-    label: "TapMatch",
+    en: "TapMatch",
+    ar: "تاب ماتش",
     icon: <ICONS.grid fontSize="small" sx={{ mr: 0.5 }} />,
   },
   votecast: {
-    label: "VoteCast",
+    en: "VoteCast",
+    ar: "التصويت",
     icon: <ICONS.poll fontSize="small" sx={{ mr: 0.5 }} />,
   },
+  crosszero: {
+    en: "CrossZero",
+    ar: "تقاطع وصفر",
+    icon: <ICONS.grid fontSize="small" sx={{ mr: 0.5 }} />,
+  },
   stageq: {
-    label: "StageQ",
+    en: "StageQ",
+    ar: "ستيج كيو",
     icon: <ICONS.forum fontSize="small" sx={{ mr: 0.5 }} />,
   },
   memorywall: {
-    label: "MemoryWall",
+    en: "MemoryWall",
+    ar: "جدار الذكريات",
     icon: <ICONS.image fontSize="small" sx={{ mr: 0.5 }} />,
   },
   eventreg: {
-    label: "Event Reg",
+    en: "Event Reg",
+    ar: "تسجيل الفعالية",
     icon: <ICONS.assignment fontSize="small" sx={{ mr: 0.5 }} />,
   },
   checkin: {
-    label: "Check-In",
+    en: "Check-In",
+    ar: "تسجيل الدخول",
     icon: <ICONS.checkin fontSize="small" sx={{ mr: 0.5 }} />,
   },
   eventwheel: {
-    label: "Event Wheel",
+    en: "Event Wheel",
+    ar: "عجلة الفعالية",
     icon: <ICONS.trophy fontSize="small" sx={{ mr: 0.5 }} />,
   },
   surveyguru: {
-    label: "SurveyGuru",
+    en: "SurveyGuru",
+    ar: "استطلاعات",
     icon: <ICONS.email fontSize="small" sx={{ mr: 0.5 }} />,
   },
   digipass: {
-    label: "DigiPass",
+    en: "DigiPass",
+    ar: "بطاقة رقمية",
     icon: <ICONS.badge fontSize="small" sx={{ mr: 0.5 }} />,
   },
 
   // Staff pages
   verify: {
-    label: "Verify",
+    en: "Verify",
+    ar: "تحقق",
     icon: <ICONS.checkCircle fontSize="small" sx={{ mr: 0.5 }} />,
   },
 
   // Sub pages
   events: {
-    label: "Events",
+    en: "Events",
+    ar: "الفعاليات",
     icon: <ICONS.event fontSize="small" sx={{ mr: 0.5 }} />,
   },
   registrations: {
-    label: "Registrations",
+    en: "Registrations",
+    ar: "التسجيلات",
     icon: <ICONS.appRegister fontSize="small" sx={{ mr: 0.5 }} />,
   },
   walls: {
-    label: "Media Walls",
+    en: "Media Walls",
+    ar: "جدران الوسائط",
     icon: <ICONS.cast fontSize="small" sx={{ mr: 0.5 }} />,
   },
   uploads: {
-    label: "Media Uploads",
+    en: "Media Uploads",
+    ar: "رفع الوسائط",
     icon: <ICONS.upload fontSize="small" sx={{ mr: 0.5 }} />,
   },
   host: {
-    label: "Host",
+    en: "Host",
+    ar: "الاستضافة",
     icon: <ICONS.adminPanel fontSize="small" sx={{ mr: 0.5 }} />,
   },
   sessions: {
-    label: "Sessions",
+    en: "Sessions",
+    ar: "الجلسات",
     icon: <ICONS.leaderboard fontSize="small" sx={{ mr: 0.5 }} />,
   },
   surveys: {
-    label: "Surveys",
+    en: "Surveys",
+    ar: "الاستبيانات",
     icon: <ICONS.email fontSize="small" sx={{ mr: 0.5 }} />,
   },
   forms: {
-    label: "Surveys Forms",
+    en: "Surveys Forms",
+    ar: "نماذج الاستبيانات",
     icon: <ICONS.form fontSize="small" sx={{ mr: 0.5 }} />,
   },
   recipients: {
-    label: "Survey Recipients",
+    en: "Survey Recipients",
+    ar: "مستلمي الاستبيان",
     icon: <ICONS.people fontSize="small" sx={{ mr: 0.5 }} />,
   },
   responses: {
-    label: "Survey Responses",
+    en: "Survey Responses",
+    ar: "إجابات الاستبيان",
     icon: <ICONS.results fontSize="small" sx={{ mr: 0.5 }} />,
+  },
+  trash: {
+    en: "Recycle Bin",
+    ar: "سلة المحذوفات",
+    icon: <ICONS.delete fontSize="small" sx={{ mr: 0.5 }} />,
+  },
+  settings: {
+    en: "Settings",
+    ar: "الإعدادات",
+    icon: <ICONS.settings fontSize="small" />,
+  },
+  participants: {
+    en: "Participants",
+    ar: "المشاركون",
+    icon: <ICONS.people fontSize="small" />,
+  },
+  wheels: {
+    en: "Wheels",
+    ar: "العجلات",
+    icon: <ICONS.trophy fontSize="small" />,
+  },
+  configs: {
+    en: "Configurations",
+    ar: "التكوينات",
+    icon: <ICONS.settings fontSize="small" sx={{ mr: 0.5 }} />,
   },
 };
 
-const formatSegment = (seg) => {
+const formatSegment = (seg, lang, dir) => {
   if (segmentMap[seg]) {
-    const { icon, label } = segmentMap[seg];
+    const { icon, en, ar } = segmentMap[seg];
+    const label = lang === "ar" ? ar : en;
     return (
       <Box sx={{ display: "flex", alignItems: "center" }}>
-        {icon}
+        <Box sx={{ display: "flex", mr: dir === "rtl" ? 0 : 0.5, ml: dir === "rtl" ? 0.5 : 0 }}>
+          {icon}
+        </Box>
         <span>{label}</span>
       </Box>
     );
@@ -196,10 +271,15 @@ const formatSegment = (seg) => {
 export default function BreadcrumbsNav() {
   const pathname = usePathname();
   const router = useRouter();
+  const { language } = useLanguage() || {};
+  const lang = language === "ar" ? "ar" : "en";
+  const dir = language === "ar" ? "rtl" : "ltr";
 
   const isStaffPath = pathname.startsWith("/staff");
   const basePath = isStaffPath ? "/staff" : "/cms";
-  const baseLabel = isStaffPath ? "Modules" : "Dashboard";
+  const baseLabel = lang === "ar"
+    ? (isStaffPath ? "الوحدات" : "لوحة التحكم")
+    : (isStaffPath ? "Modules" : "Dashboard");
   const filterSeg = isStaffPath ? "staff" : "cms";
 
   if (isStaffPath && pathname === "/staff") {
@@ -241,13 +321,13 @@ export default function BreadcrumbsNav() {
           }}
         >
           <Box sx={{ display: "flex", alignItems: "center" }}>
-            <ICONS.home fontSize="small" sx={{ mr: 0.5 }} />
+            <ICONS.home fontSize="small" sx={{ mr: dir === "rtl" ? 0 : 0.5, ml: dir === "rtl" ? 0.5 : 0 }} />
             {baseLabel}
           </Box>
         </Link>
 
         {paths.map((p, i) => {
-          const segment = formatSegment(p.segment);
+          const segment = formatSegment(p.segment, lang, dir);
           const isLast = i === paths.length - 1;
 
           return isLast ? (

@@ -36,6 +36,7 @@ import EmptyBusinessState from "@/components/EmptyBusinessState";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import AppCard from "@/components/cards/AppCard";
 import RecordMetadata from "@/components/RecordMetadata";
+import { toArabicDigits } from "@/utils/arabicDigits";
 
 const translations = {
   en: {
@@ -338,12 +339,12 @@ export default function TapMatchGamesPage() {
                       color: "text.secondary"
                     }}>
                       <strong>{t.countdownTimerLabel}</strong>{" "}
-                      {g.countdownTimer}s
+                      {toArabicDigits(g.countdownTimer, language)}s
                     </Typography>
                     <Typography variant="body2" sx={{
                       color: "text.secondary"
                     }}>
-                      <strong>{t.gameTimeLabel}</strong> {g.gameSessionTimer}s
+                      <strong>{t.gameTimeLabel}</strong> {toArabicDigits(g.gameSessionTimer, language)}s
                     </Typography>
 
                     {/* Preview core images */}

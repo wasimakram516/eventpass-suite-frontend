@@ -17,7 +17,6 @@ import {
   ListItemIcon,
   ListItemText,
   MenuItem,
-  Pagination,
   Select,
   Typography,
 } from "@mui/material";
@@ -29,6 +28,8 @@ import { getFieldIcon } from "@/utils/iconMapper";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import LanguageSelector from "@/components/LanguageSelector";
 import { formatDateTimeWithLocale } from "@/utils/dateUtils";
+import ArabicPagination from "@/components/ArabicPagination";
+import { toArabicDigits } from "@/utils/arabicDigits";
 
 const translations = {
   en: {
@@ -211,7 +212,7 @@ function VoterCard({ voter, t, dir, align, language, isAnonymous }) {
                 startIcon={showAllDetails ? <ICONS.expandLess /> : <ICONS.expandMore />}
                 sx={{ mt: 0.25, px: 0, minWidth: 0, fontWeight: 700 }}
               >
-                {showAllDetails ? t.showLessAnswers : `${t.showMoreAnswers} (${detailFields.length - PREVIEW_COUNT})`}
+                {showAllDetails ? t.showLessAnswers : `${t.showMoreAnswers} (${toArabicDigits(detailFields.length - PREVIEW_COUNT, language)})`}
               </Button>
             )}
           </Fragment>
@@ -248,7 +249,7 @@ function VoterCard({ voter, t, dir, align, language, isAnonymous }) {
                   <Box sx={{ mt: 0.25, textAlign: align, overflow: "hidden", maxWidth: "100%" }}>
                     <Chip
                       size="small"
-                      label={v.optionText || v.answer || "—"}
+                      label={toArabicDigits(v.optionText || v.answer || "—", language)}
                       variant="outlined"
                       avatar={v.optionImage ? <OptionThumb url={v.optionImage} label={v.optionText} /> : undefined}
                       sx={{
@@ -272,7 +273,7 @@ function VoterCard({ voter, t, dir, align, language, isAnonymous }) {
             startIcon={showAllVotes ? <ICONS.expandLess /> : <ICONS.expandMore />}
             sx={{ mt: 0.25, px: 0, minWidth: 0, fontWeight: 700 }}
           >
-            {showAllVotes ? t.showLessAnswers : `${t.showMoreAnswers} (${votes.length - PREVIEW_COUNT})`}
+            {showAllVotes ? t.showLessAnswers : `${t.showMoreAnswers} (${toArabicDigits(votes.length - PREVIEW_COUNT, language)})`}
           </Button>
         )}
       </CardContent>
@@ -433,7 +434,7 @@ export default function FullScreenResultsPage() {
               <Typography variant="body2" sx={{
                 color: "text.secondary"
               }}>
-                {t.showing} {Math.min((page - 1) * CARDS_PER_PAGE + 1, totalVoters)}–{Math.min(page * CARDS_PER_PAGE, totalVoters)} {t.of} {totalVoters} {t.records}
+                {t.showing} {toArabicDigits(Math.min((page - 1) * CARDS_PER_PAGE + 1, totalVoters), language)}–{toArabicDigits(Math.min(page * CARDS_PER_PAGE, totalVoters), language)} {t.of} {toArabicDigits(totalVoters, language)} {t.records}
               </Typography>
 
               <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 170 } }}>
@@ -474,8 +475,7 @@ export default function FullScreenResultsPage() {
                 justifyContent: "center",
                 mt: 4
               }}>
-              <Pagination
-                dir="ltr"
+              <ArabicPagination
                 count={Math.ceil(totalVoters / CARDS_PER_PAGE)}
                 page={Math.min(page, Math.ceil(totalVoters / CARDS_PER_PAGE) || 1)}
                 onChange={(_, v) => setPage(v)}

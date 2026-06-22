@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useMemo, useRef } from "react";
+import React, { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import {
   Box,
   Typography,
@@ -138,9 +138,9 @@ export default function Registration() {
   const hasDefaultDesign = hasDefaultQrWrapperDesign(globalConfig);
 
   // Compute which fields are visible based on parent-dependent relationships
-  const visibleFields = useMemo(() => {
+  const getVisibleFields = useCallback((fields, data) => {
     const dependentsOf = {};
-    dynamicFields.forEach((f) => {
+    fields.forEach((f) => {
       if (f.dependents) {
         try {
           const depMap = JSON.parse(f.dependents);
@@ -154,12 +154,14 @@ export default function Registration() {
       }
     });
 
-    return dynamicFields.filter((f) => {
+    return fields.filter((f) => {
       const deps = dependentsOf[f.name];
       if (!deps || deps.length === 0) return true;
-      return deps.some((d) => formData[d.parentName] === d.option);
+      return deps.some((d) => data[d.parentName] === d.option);
     });
-  }, [dynamicFields, formData]);
+  }, []);
+
+  const visibleFields = useMemo(() => getVisibleFields(dynamicFields, formData), [dynamicFields, formData]);
 
   // Fetch event + translate event metadata
   useEffect(() => {
@@ -184,7 +186,7 @@ export default function Registration() {
       { name: "company", label: "Company", type: "text", required: false },
     ];
 
-    const fields = event.formFields?.length
+    const fields = event.useCustomFields && event.formFields?.length
       ? event.formFields
         .filter((f) => f.visible !== false)
         .map((f) => ({
@@ -205,7 +207,7 @@ export default function Registration() {
       if (f.name) {
         initial[f.name] = "";
       }
-      if (f.type === "phone" || (!event.formFields?.length && f.name === "phone")) {
+      if (f.type === "phone" || ((!event.useCustomFields || !event.formFields?.length) && f.name === "phone")) {
         initialCountryIsoCodes[f.name] = DEFAULT_ISO_CODE;
       }
     });
@@ -356,7 +358,8 @@ export default function Registration() {
 
   const handleSubmit = async () => {
     const errors = {};
-    visibleFields.forEach((f) => {
+    const currentVisible = getVisibleFields(dynamicFields, formData);
+    currentVisible.forEach((f) => {
       if (!f || !f.name) return;
       const val = formData[f.name]?.trim();
       if (f.required && !val) errors[f.name] = `${f.label} ${t.required}`;
@@ -367,7 +370,7 @@ export default function Registration() {
       )
         errors[f.name] = t.invalidEmail;
 
-      if ((f.type === "phone" || (!event.formFields?.length && f.name.toLowerCase() === "phone")) && val) {
+      if ((f.type === "phone" || ((!event.useCustomFields || !event.formFields?.length) && f.name.toLowerCase() === "phone")) && val) {
         const isoCode = countryIsoCodes[f.name] || DEFAULT_ISO_CODE;
         const phoneError = validatePhoneNumber(val, isoCode);
         if (phoneError) {
@@ -395,7 +398,7 @@ export default function Registration() {
     let phoneIsoCode = null;
 
     // Upload file-type fields to S3
-    const fileUploadFields = visibleFields.filter(f => f.type === "file" && fileData[f.name]?.file);
+    const fileUploadFields = currentVisible.filter(f => f.type === "file" && fileData[f.name]?.file);
     if (fileUploadFields.length > 0 && !event?.businessSlug) {
       setFieldErrors({ _global: "Business slug not available for file upload." });
       setSubmitting(false);
@@ -417,8 +420,8 @@ export default function Registration() {
       }
     }
 
-    visibleFields.forEach((f) => {
-      if (f.type === "phone" || (!event.formFields?.length && f.name.toLowerCase() === "phone")) {
+    currentVisible.forEach((f) => {
+      if (f.type === "phone" || ((!event.useCustomFields || !event.formFields?.length) && f.name.toLowerCase() === "phone")) {
         const phoneValue = normalizedFormData[f.name];
         if (phoneValue) {
           const isoCode = countryIsoCodes[f.name] || DEFAULT_ISO_CODE;
@@ -473,9 +476,9 @@ export default function Registration() {
 
       const resetData = {};
       const resetIsoCodes = {};
-      visibleFields.forEach(f => {
+      currentVisible.forEach(f => {
         if (f.name) resetData[f.name] = "";
-        if (f.type === "phone" || (!event.formFields?.length && f.name.toLowerCase() === "phone")) {
+        if (f.type === "phone" || ((!event.useCustomFields || !event.formFields?.length) && f.name.toLowerCase() === "phone")) {
           resetIsoCodes[f.name] = DEFAULT_ISO_CODE;
         }
       });
@@ -667,7 +670,7 @@ export default function Registration() {
       );
     }
 
-    const isPhoneField = field.type === "phone" || (!event.formFields?.length && field.name.toLowerCase() === "phone");
+    const isPhoneField = field.type === "phone" || ((!event.useCustomFields || !event.formFields?.length) && field.name.toLowerCase() === "phone");
     const useInternationalNumbers = event.useInternationalNumbers !== false;
 
     if (isPhoneField) {
@@ -780,7 +783,7 @@ export default function Registration() {
             width: "100%",
             maxWidth: 600,
             borderRadius: 3,
-            p: 4,
+            p: { xs: 2, sm: 4 },
             textAlign: "center",
             backdropFilter: "blur(6px)",
             backgroundColor: "rgba(255,255,255,0.9)",
@@ -1360,13 +1363,13 @@ function FileUploadField({ field, fd, fieldLabel, errorMsg, isArabic, onFileSele
         {field.required && <span style={{ color: "red" }}> *</span>}
       </Typography>
       {fd ? (
-        <Box sx={{ display: "inline-flex", alignItems: "center", gap: 1.5, p: 1, pr: 2, border: "1px solid", borderColor: "divider", borderRadius: 3, bgcolor: "background.paper", textAlign: "left" }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, p: 1, pr: 2, border: "1px solid", borderColor: "divider", borderRadius: 3, bgcolor: "background.paper", textAlign: "left", width: "100%", maxWidth: "100%", boxSizing: "border-box" }}>
           {fd.file.type.startsWith("image/") ? (
-            <Box component="img" src={fd.preview} alt="Preview" sx={{ width: 48, height: 48, borderRadius: 1.5, objectFit: "contain", bgcolor: "grey.100" }} />
+            <Box component="img" src={fd.preview} alt="Preview" sx={{ width: 48, height: 48, borderRadius: 1.5, objectFit: "contain", bgcolor: "grey.100", flexShrink: 0 }} />
           ) : fd.file.type.startsWith("video/") ? (
-            <Box component="video" src={fd.preview} sx={{ width: 48, height: 48, borderRadius: 1.5, objectFit: "contain", bgcolor: "grey.100" }} />
+            <Box component="video" src={fd.preview} sx={{ width: 48, height: 48, borderRadius: 1.5, objectFit: "contain", bgcolor: "grey.100", flexShrink: 0 }} />
           ) : (
-            <ICONS.upload sx={{ fontSize: 28, color: "text.secondary", mx: 0.5 }} />
+            <ICONS.upload sx={{ fontSize: 28, color: "text.secondary", mx: 0.5, flexShrink: 0 }} />
           )}
           <Typography variant="body2" sx={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {fd.file.name}

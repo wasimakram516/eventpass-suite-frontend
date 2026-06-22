@@ -47,7 +47,17 @@ export default function RegistrationModal({
     const [countryIsoCodes, setCountryIsoCodes] = useState({});
     const [fileData, setFileData] = useState({});
 
-    const hasCustomFields = useMemo(() => formFields && formFields.length > 0, [formFields]);
+    const hasCustomFields = useMemo(() => (event?.useCustomFields ?? formFields?.length > 0) && formFields?.length > 0, [event?.useCustomFields, formFields]);
+
+    // When editing, check if this registration has its own custom field data
+    const regCustomFields = useMemo(() => {
+        if (!registration || mode !== "edit") return null;
+        const cf = registration.customFields instanceof Map
+            ? Object.fromEntries(registration.customFields)
+            : (registration.customFields || {});
+        const keys = Object.keys(cf).filter(k => cf[k] && String(cf[k]).trim());
+        return keys.length > 0 ? cf : null;
+    }, [registration, mode]);
 
     const filteredFormFields = useMemo(() => {
         if (!formFields || !formFields.length) return [];
@@ -65,8 +75,19 @@ export default function RegistrationModal({
     );
 
     const fieldsToRender = useMemo(
-        () => (hasCustomFields ? filteredFormFields : classicFields),
-        [hasCustomFields, filteredFormFields, classicFields]
+        () => {
+            if (regCustomFields) {
+                return Object.keys(regCustomFields).map(key => ({
+                    inputName: key,
+                    inputType: "text",
+                    required: false,
+                }));
+            }
+            // When editing a registration without customFields, always show classic fields
+            if (mode === "edit") return classicFields;
+            return hasCustomFields ? filteredFormFields : classicFields;
+        },
+        [hasCustomFields, filteredFormFields, classicFields, regCustomFields, mode]
     );
 
     const visibleFields = useMemo(() => {
@@ -101,11 +122,8 @@ export default function RegistrationModal({
             const initCountryIsoCodes = {};
             if (registration && mode === "edit") {
                 fieldsToRender.forEach((f) => {
-                    if (hasCustomFields) {
-                        init[f.inputName] =
-                            registration.customFields?.[f.inputName] ||
-                            registration[f.inputName] ||
-                            "";
+                    if (regCustomFields) {
+                        init[f.inputName] = regCustomFields[f.inputName] || "";
                     } else {
                         const fieldMap = {
                             "Full Name": registration.fullName,
@@ -113,7 +131,7 @@ export default function RegistrationModal({
                             Phone: registration.phone,
                             Company: registration.company,
                         };
-                        init[f.inputName] = fieldMap[f.inputName] || "";
+                        init[f.inputName] = fieldMap[f.inputName] || registration[f.inputName] || "";
                     }
                     if (isPhoneField(f)) {
                         const phoneValue = init[f.inputName] || "";
@@ -232,7 +250,7 @@ export default function RegistrationModal({
     const isPhoneField = (field) => {
         if (field.inputType === "number") return false;
         if (field.inputType === "phone") return true;
-        if (!hasCustomFields && field.inputName === "Phone") return true;
+        if (field.inputName === "Phone") return true;
         return false;
     };
 
@@ -435,7 +453,7 @@ export default function RegistrationModal({
             );
         }
 
-        const isPhoneField = f.inputType === "phone" || (!hasCustomFields && f.inputName === "Phone");
+        const isPhoneField = f.inputType === "phone" || f.inputName === "Phone";
         const useInternationalNumbers = event?.useInternationalNumbers !== false;
 
         if (isPhoneField) {

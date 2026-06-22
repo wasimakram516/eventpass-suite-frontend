@@ -310,13 +310,14 @@ const addEventHeader = async (
   const venueLabel = translations.venue || "Venue";
   const registrationsLabel = translations.registrations || "Registrations";
 
+  const locale = _language === "ar" ? "ar-SA" : "en-GB";
   if (eventInfo.startDate || eventInfo.startDateFormatted) {
-    const fromDate = eventInfo.startDateFormatted || formatDate(eventInfo.startDate);
+    const fromDate = eventInfo.startDateFormatted || formatDate(eventInfo.startDate, locale);
     renderLabelValue(page, fromLabel, fromDate, margin, currentY, pageWidth, margin, isRTL, font, boldFont, FONT_LABEL);
     currentY -= LINE_HEIGHT;
   }
   if (eventInfo.endDate || eventInfo.endDateFormatted) {
-    const toDate = eventInfo.endDateFormatted || formatDate(eventInfo.endDate);
+    const toDate = eventInfo.endDateFormatted || formatDate(eventInfo.endDate, locale);
     renderLabelValue(page, toLabel, toDate, margin, currentY, pageWidth, margin, isRTL, font, boldFont, FONT_LABEL);
     currentY -= LINE_HEIGHT;
   }

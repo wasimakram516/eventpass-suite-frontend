@@ -38,6 +38,7 @@ import BusinessDrawer from "@/components/drawers/BusinessDrawer";
 import EmptyBusinessState from "@/components/EmptyBusinessState";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
+import { toArabicDigits } from "@/utils/arabicDigits";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import RecordMetadata from "@/components/RecordMetadata";
 import AppCard from "@/components/cards/AppCard";
@@ -132,6 +133,10 @@ const translations = {
     createdAt: "Created At:",
     updatedBy: "Updated:",
     updatedAt: "Updated At:",
+    recipients: "recipients",
+    responses: "responses",
+    optionRating: "Rating (1-5)",
+    optionNps: "NPS (0-10)",
   },
   ar: {
     title: "إدارة نماذج الاستبيان",
@@ -200,6 +205,10 @@ const translations = {
     createdAt: "تاريخ الإنشاء:",
     updatedBy: "حدث:",
     updatedAt: "تاريخ التحديث:",
+    recipients: "مستلمين",
+    responses: "ردود",
+    optionRating: "تقييم (١-٥)",
+    optionNps: "NPS (٠-١٠)",
   },
 };
 
@@ -993,7 +1002,7 @@ export default function SurveyFormsManagePage() {
                           sx={[{
                             color: "text.secondary"
                           }, dir === "rtl" ? { mr: 1 } : { ml: 1 }]}>
-                          {f.questions?.length || 0} question(s)
+                          {toArabicDigits(f.questions?.length || 0, language)} {t.questions}
                         </Typography>
                       </Stack>
                       <Stack direction="row" sx={{
@@ -1005,7 +1014,7 @@ export default function SurveyFormsManagePage() {
                           sx={[{
                             color: "text.secondary"
                           }, dir === "rtl" ? { mr: 1 } : { ml: 1 }]}>
-                          {f.recipientCount ?? 0} recipient(s)
+                          {toArabicDigits(f.recipientCount ?? 0, language)} {t.recipients}
                         </Typography>
                       </Stack>
                       <Stack direction="row" sx={{
@@ -1017,7 +1026,7 @@ export default function SurveyFormsManagePage() {
                           sx={[{
                             color: "text.secondary"
                           }, dir === "rtl" ? { mr: 1 } : { ml: 1 }]}>
-                          {f.responseCount ?? 0} response(s)
+                          {toArabicDigits(f.responseCount ?? 0, language)} {t.responses}
                         </Typography>
                       </Stack>
                     </Stack>
@@ -1329,8 +1338,8 @@ export default function SurveyFormsManagePage() {
                       >
                         <MenuItem value="multi">Multiple choice</MenuItem>
                         <MenuItem value="text">Text</MenuItem>
-                        <MenuItem value="rating">Rating (1-5)</MenuItem>
-                        <MenuItem value="nps">NPS (0-10)</MenuItem>
+                        <MenuItem value="rating">{t.optionRating}</MenuItem>
+                        <MenuItem value="nps">{t.optionNps}</MenuItem>
                       </TextField>
                     </Stack>
 

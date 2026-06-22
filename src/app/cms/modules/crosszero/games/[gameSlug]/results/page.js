@@ -17,6 +17,7 @@ import {
   Select,
   Typography,
 } from "@mui/material";
+import ArabicPagination from "@/components/ArabicPagination";
 import {
   AccessTime,
   Download,
@@ -28,6 +29,7 @@ import AppCard from "@/components/cards/AppCard";
 import CrossZeroMarkVisual from "@/components/crosszero/CrossZeroMarkVisual";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { toArabicDigits } from "@/utils/arabicDigits";
 import { getGameBySlug } from "@/services/crosszero/gameService";
 import {
   exportResults,
@@ -118,7 +120,7 @@ const mapSessionToRecord = (session) => {
 
 export default function CrossZeroAIResultsPage() {
   const { gameSlug } = useParams();
-  const { t, dir } = useI18nLayout(translations);
+  const { t, dir, language } = useI18nLayout(translations);
 
   const [game, setGame] = useState(null);
   const [records, setRecords] = useState([]);
@@ -197,7 +199,7 @@ export default function CrossZeroAIResultsPage() {
               <Typography variant="body2" sx={{
                 color: "text.secondary"
               }}>
-                {t.totalRecords} <strong>{totalRecords}</strong>
+                {t.totalRecords} <strong>{toArabicDigits(totalRecords, language)}</strong>
               </Typography>
             </Box>
             <Button
@@ -229,8 +231,8 @@ export default function CrossZeroAIResultsPage() {
             <Typography variant="body2" sx={{
               color: "text.secondary"
             }}>
-              {t.showing} <strong>{fromRecord}</strong>-<strong>{toRecord}</strong>{" "}
-              {t.of} <strong>{totalRecords}</strong> {t.records}
+              {t.showing} <strong>{toArabicDigits(fromRecord, language)}</strong>-<strong>{toArabicDigits(toRecord, language)}</strong>{" "}
+              {t.of} <strong>{toArabicDigits(totalRecords, language)}</strong> {t.records}
             </Typography>
             <FormControl size="small" sx={{ minWidth: 140 }}>
               <InputLabel>{t.perPage}</InputLabel>
@@ -244,7 +246,7 @@ export default function CrossZeroAIResultsPage() {
               >
                 {[5, 10, 20, 50].map((value) => (
                   <MenuItem key={value} value={value}>
-                    {value}
+                    {toArabicDigits(value, language)}
                   </MenuItem>
                 ))}
               </Select>
@@ -355,7 +357,7 @@ export default function CrossZeroAIResultsPage() {
                           />
                         ) : null}
                         <Chip
-                          label={`${record.moves || 0} ${t.moves}`}
+                          label={toArabicDigits(`${record.moves || 0} ${t.moves}`, language)}
                           size="small"
                           variant="outlined"
                         />
@@ -366,7 +368,7 @@ export default function CrossZeroAIResultsPage() {
                         <Typography variant="body2" sx={{
                           color: "text.secondary"
                         }}>
-                          {t.timeTaken}: <strong>{record.timeTaken ?? 0}s</strong>
+                          {t.timeTaken}: <strong>{toArabicDigits(record.timeTaken ?? 0, language)}s</strong>
                         </Typography>
                       </Box>
 
@@ -374,7 +376,7 @@ export default function CrossZeroAIResultsPage() {
                         <Typography variant="caption" sx={{
                           color: "text.secondary"
                         }}>
-                          {t.playedAt}: {formatDateTimeWithLocale(record.submittedAt)}
+                          {t.playedAt}: {formatDateTimeWithLocale(record.submittedAt, language === "ar" ? "ar-SA" : "en-GB")}
                         </Typography>
                       ) : null}
                     </AppCard>
@@ -384,8 +386,7 @@ export default function CrossZeroAIResultsPage() {
             </Grid>
 
             <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
-              <Pagination
-                dir="ltr"
+              <ArabicPagination
                 count={totalPages || 1}
                 page={page}
                 onChange={(_, value) => setPage(value)}

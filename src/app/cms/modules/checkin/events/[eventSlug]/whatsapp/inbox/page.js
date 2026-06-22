@@ -51,7 +51,7 @@ const translations = {
 
 export default function WhatsAppInboxPage() {
   const { eventSlug } = useParams();
-  const { t, dir } = useI18nLayout(translations);
+  const { t, dir, language } = useI18nLayout(translations);
   const isMobile = useMediaQuery("(max-width:900px)");
 
   const [event, setEvent] = useState(null);
@@ -376,7 +376,7 @@ export default function WhatsAppInboxPage() {
                               textAlign: "right",
                             }}
                           >
-                            {formatDateTimeWithLocale(m.createdAt)}
+                            {formatDateTimeWithLocale(m.createdAt, language === "ar" ? "ar-SA" : "en-GB")}
                           </Typography>
                         </Box>
                       </Box>

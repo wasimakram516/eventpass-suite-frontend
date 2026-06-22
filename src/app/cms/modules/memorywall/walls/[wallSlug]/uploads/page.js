@@ -27,6 +27,7 @@ import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import { formatDateTimeWithLocale } from "@/utils/dateUtils";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { toArabicDigits } from "@/utils/arabicDigits";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import useMediaSocket from "@/hooks/modules/memorywall/useMemoryWallMediaSocket";
 
@@ -67,7 +68,7 @@ const translations = {
   },
 };
 
-const FullScreenPreview = ({ open, media, wallConfig, onClose, t }) => {
+const FullScreenPreview = ({ open, media, wallConfig, onClose, t, language }) => {
   const wallMode = media?.wall?.mode || wallConfig?.mode;
   const wallName = media?.wall?.name || wallConfig?.name;
   const inputType = media?.wall?.cardSettings?.inputType || wallConfig?.cardSettings?.inputType;
@@ -212,7 +213,7 @@ const FullScreenPreview = ({ open, media, wallConfig, onClose, t }) => {
               <Typography variant="caption" sx={{
                 color: "text.secondary"
               }}>
-                {formatDateTimeWithLocale(media.createdAt)}
+                {formatDateTimeWithLocale(media.createdAt, language === "ar" ? "ar-SA" : "en-GB")}
               </Typography>
             </Box>
           </Box>
@@ -231,7 +232,7 @@ const CMSUploadsPage = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [mediaToDelete, setMediaToDelete] = useState(null);
   const { user } = useAuth();
-  const { t, dir } = useI18nLayout(translations);
+  const { t, dir, language } = useI18nLayout(translations);
 
   const userRef = useRef(user);
   const wallSlugRef = useRef(wallSlug);
@@ -383,7 +384,7 @@ const CMSUploadsPage = () => {
             gap: 1
           }}>
           <ICONS.library fontSize="small" />
-          {t.mediaCount.replace("{total}", media.length)}
+          {t.mediaCount.replace("{total}", toArabicDigits(media.length, language))}
         </Typography>
       </Box>
       {media.length === 0 ? (
@@ -487,7 +488,7 @@ const CMSUploadsPage = () => {
                       <Typography variant="caption" sx={{
                         color: "text.secondary"
                       }}>
-                        {formatDateTimeWithLocale(item.createdAt)}
+                        {formatDateTimeWithLocale(item.createdAt, language === "ar" ? "ar-SA" : "en-GB")}
                       </Typography>
                     </Box>
                     <Divider sx={{ my: 2 }} />
@@ -520,6 +521,7 @@ const CMSUploadsPage = () => {
         wallConfig={wallConfig}
         onClose={closePreview}
         t={t}
+        language={language}
       />
       <ConfirmationDialog
         open={deleteDialogOpen}

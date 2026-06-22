@@ -163,12 +163,16 @@ const translations = {
     deleteLogoMessage: "هل أنت متأكد من حذف هذا الشعار؟ لا يمكن التراجع عن هذا الإجراء.",
     deleteConfirm: "حذف",
     mediaType: "نوع الوسائط",
-    type1: "نوع الوسائط 1",
-    type2: "نوع الوسائط 2",
+    type1: "نوع الوسائط ١",
+    type2: "نوع الوسائط ٢",
     type1Desc: "صورة مع نص اختياري",
     type2Desc: "نص مع توقيع اختياري",
     mediaType2TextColor: "لون النص",
     mediaType2SignatureColor: "لون التوقيع",
+    imageShape: "شكل الصورة",
+    circle: "دائرة",
+    top70: "أعلى ٧٠٪",
+    fullCard: "البطاقة كاملة",
   },
 };
 
@@ -678,10 +682,9 @@ const WallConfigModal = ({
     <>
       <Dialog
         open={open}
-        onClose={onClose}
+        onClose={(_, reason) => { if (reason !== "escapeKeyDown" || !loading) onClose(); }}
         maxWidth="sm"
         fullWidth
-        disableEscapeKeyDown={loading}
       >
         <DialogTitle>
           {editMode ? t.dialogTitleUpdate : t.dialogTitleCreate}

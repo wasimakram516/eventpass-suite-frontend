@@ -15,22 +15,21 @@ import {
   TableHead,
   TableRow,
   Paper,
-  Pagination,
-  FormControl,
   Select,
-  MenuItem,
-  InputLabel,
   TextField,
-  Card,
-  CardContent,
+  MenuItem,
+  FormControl,
+  InputLabel,
   useMediaQuery,
 } from "@mui/material";
+import ArabicPagination from "@/components/ArabicPagination";
 import { useParams } from "next/navigation";
 
 import LoadingState from "@/components/LoadingState";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { toArabicDigits } from "@/utils/arabicDigits";
 
 import { getCheckInEventBySlug } from "@/services/checkin/checkinEventService";
 import { getWhatsAppLogs } from "@/services/notifications/whatsAppLogsService";
@@ -125,7 +124,7 @@ const getDirectionChipProps = (direction, t) => {
 
 export default function WhatsAppLogsPage() {
   const { eventSlug } = useParams();
-  const { t, dir } = useI18nLayout(translations);
+  const { t, dir, language } = useI18nLayout(translations);
   const isMobile = useMediaQuery("(max-width:900px)");
 
   const [event, setEvent] = useState(null);
@@ -241,7 +240,7 @@ export default function WhatsAppLogsPage() {
         <Typography variant="body2" sx={{
           color: "text.secondary"
         }}>
-          {t.showing} {from}–{to} {t.of} {total}
+          {t.showing} {toArabicDigits(from, language)}–{toArabicDigits(to, language)} {t.of} {toArabicDigits(total, language)}
         </Typography>
 
         {/* ROWS PER PAGE */}
@@ -258,7 +257,7 @@ export default function WhatsAppLogsPage() {
           >
             {[10, 20, 50, 100].map((n) => (
               <MenuItem key={n} value={n}>
-                {n}
+                {toArabicDigits(n, language)}
               </MenuItem>
             ))}
           </Select>
@@ -352,7 +351,7 @@ export default function WhatsAppLogsPage() {
                     <Typography variant="caption" sx={{
                       color: "text.secondary"
                     }}>
-                      {log.to} • {formatDateTimeWithLocale(log.createdAt)}
+                      {log.to} • {formatDateTimeWithLocale(log.createdAt, language === "ar" ? "ar-SA" : "en-GB")}
                     </Typography>
                   </Stack>
                 </CardContent>
@@ -397,7 +396,7 @@ export default function WhatsAppLogsPage() {
                       {log.body || "—"}
                     </TableCell>
                     <TableCell>
-                      {formatDateTimeWithLocale(log.createdAt)}
+                      {formatDateTimeWithLocale(log.createdAt, language === "ar" ? "ar-SA" : "en-GB")}
                     </TableCell>
                   </TableRow>
                 );
@@ -408,8 +407,7 @@ export default function WhatsAppLogsPage() {
       )}
       {/* PAGINATION */}
       <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
-        <Pagination
-          dir="ltr"
+        <ArabicPagination
           page={page}
           count={Math.max(1, Math.ceil(total / limit))}
           onChange={(_, v) => setPage(v)}

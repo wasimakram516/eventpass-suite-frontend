@@ -72,11 +72,11 @@ export function pickRegistrationType(registration) {
   return null;
 }
 
-export function getEventDateLabel(event) {
+export function getEventDateLabel(event, locale = "en-GB") {
   if (!event?.startDate) return "";
 
-  return `${formatDate(event.startDate)}${event.endDate && event.endDate !== event.startDate
-      ? ` - ${formatDate(event.endDate)}`
+  return `${formatDate(event.startDate, locale)}${event.endDate && event.endDate !== event.startDate
+      ? ` - ${formatDate(event.endDate, locale)}`
       : ""
     }`;
 }
@@ -87,9 +87,9 @@ export function getModuleLabel(module, t) {
   return t?.badgeTitle || "Your Badge";
 }
 
-export function getBadgeDetailRows(event, registration, t) {
-  const ticketType = pickRegistrationType(registration) || registration?.ticketTypeName || (t?.noTicket || "Attendee");
-  const dateLabel = getEventDateLabel(event);
+export function getBadgeDetailRows(event, registration, t, locale = "en-GB") {
+  const ticketType = pickRegistrationType(registration) || (t?.noTicket || "Attendee");
+  const dateLabel = getEventDateLabel(event, locale);
 
   return [
     { label: t?.ticket || "Ticket", value: ticketType },
@@ -98,9 +98,9 @@ export function getBadgeDetailRows(event, registration, t) {
   ];
 }
 
-export default function BadgeCard({ event, module, registration, qrRef, t, compact = false }) {
+export default function BadgeCard({ event, module, registration, qrRef, t, compact = false, locale = "en-GB" }) {
   const attendeeName = pickFullName(registration) || (t?.noName || "Attendee");
-  const detailRows = getBadgeDetailRows(event, registration, t);
+  const detailRows = getBadgeDetailRows(event, registration, t, locale);
 
   return (
     <Paper

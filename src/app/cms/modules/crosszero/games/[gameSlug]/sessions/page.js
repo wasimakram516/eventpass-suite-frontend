@@ -6,6 +6,7 @@ import {
   Box, Container, Typography, Stack, Divider, Paper, Grid, Fade,
   Button, CircularProgress, Pagination, FormControl, InputLabel, Select, MenuItem,
 } from "@mui/material";
+import ArabicPagination from "@/components/ArabicPagination";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import CrossZeroMarkVisual from "@/components/crosszero/CrossZeroMarkVisual";
@@ -14,6 +15,7 @@ import LoadingState from "@/components/LoadingState";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { toArabicDigits } from "@/utils/arabicDigits";
 import { getAllSessions, resetSessions, exportResults } from "@/services/crosszero/gameSessionService";
 
 const translations = {
@@ -61,7 +63,7 @@ const RESULT_MAP = {
 
 export default function CrossZeroPvPSessionsPage() {
   const { gameSlug } = useParams();
-  const { t, dir } = useI18nLayout(translations);
+  const { t, dir, language } = useI18nLayout(translations);
 
   const [sessions, setSessions] = useState([]);
   const [totalSessions, setTotalSessions] = useState(0);
@@ -124,12 +126,12 @@ export default function CrossZeroPvPSessionsPage() {
         <Typography variant="body2" sx={{
           color: "text.secondary"
         }}>
-          {t.showing} {(page - 1) * limit + 1}–{Math.min(page * limit, totalSessions)} {t.of} {totalSessions} {t.records}
+          {t.showing} {toArabicDigits((page - 1) * limit + 1, language)}–{toArabicDigits(Math.min(page * limit, totalSessions), language)} {t.of} {toArabicDigits(totalSessions, language)} {t.records}
         </Typography>
         <FormControl size="small" sx={{ minWidth: 140 }}>
           <InputLabel>{t.recordsPerPage}</InputLabel>
           <Select value={limit} label={t.recordsPerPage} onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}>
-            {[5, 10, 20].map((n) => <MenuItem key={n} value={n}>{n}</MenuItem>)}
+            {[5, 10, 20].map((n) => <MenuItem key={n} value={n}>{toArabicDigits(n, language)}</MenuItem>)}
           </Select>
         </FormControl>
       </Box>
@@ -212,7 +214,7 @@ export default function CrossZeroPvPSessionsPage() {
                             {xoStats.timeTaken > 0 && (
                               <Typography variant="body2" sx={{
                                 color: "text.secondary"
-                              }}>{t.timeTaken}: <strong>{xoStats.timeTaken}s</strong></Typography>
+                              }}>{t.timeTaken}: <strong>{toArabicDigits(xoStats.timeTaken, language)}s</strong></Typography>
                             )}
                           </Box>
                         </Grid>
@@ -259,7 +261,7 @@ export default function CrossZeroPvPSessionsPage() {
                         <Box sx={{ mt: 2, pt: 1.5, borderTop: "1px solid #f0f0f0", display: "flex", justifyContent: "center" }}>
                           <Typography variant="caption" sx={{
                             color: "text.secondary"
-                          }}>{t.moves}: <strong>{xoStats.moves}</strong></Typography>
+                          }}>{t.moves}: <strong>{toArabicDigits(xoStats.moves, language)}</strong></Typography>
                         </Box>
                       )}
                     </Box>
@@ -269,7 +271,7 @@ export default function CrossZeroPvPSessionsPage() {
             })}
 
             <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
-              <Pagination dir="ltr" count={Math.ceil(totalSessions / limit) || 1} page={page} onChange={(_, v) => setPage(v)} />
+              <ArabicPagination count={Math.ceil(totalSessions / limit) || 1} page={page} onChange={(_, v) => setPage(v)} />
             </Box>
           </Box>
         </Stack>

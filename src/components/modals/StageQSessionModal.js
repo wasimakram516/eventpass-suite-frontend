@@ -203,11 +203,44 @@ export default function StageQSessionModal({ open, onClose, onSubmit, initialVal
       const { getPublicEventById } = await import("@/services/eventreg/eventService");
       const freshEvent = await getPublicEventById(eventId);
       const formFields = Array.isArray(freshEvent?.formFields) ? freshEvent.formFields : [];
-      if (formFields.length > 0) {
-        setLoadedFields(formFields.map(f => ({ name: f.inputName, label: f.inputName, required: !!f.required })));
+      const isCustom = freshEvent?.useCustomFields && formFields.length > 0;
+      let fields;
+      if (isCustom) {
+        fields = formFields.map(f => ({ name: f.inputName, label: f.inputName, required: !!f.required, inputType: f.inputType }));
       } else {
-        setLoadedFields(STANDARD_FIELDS);
+        fields = STANDARD_FIELDS;
       }
+      setLoadedFields(fields);
+      // Auto-detect primaryField if current one is no longer valid
+      setFormData(prev => {
+        const currentPrimary = prev.primaryField;
+        const isValid = fields.some(f => f.name === currentPrimary);
+        if (isValid) return prev;
+        let detected = "";
+        if (!isCustom) {
+          detected = "email";
+        } else {
+          const required = fields.filter(f => f.required);
+          if (required.length === 1) {
+            detected = required[0].name;
+          } else if (required.length > 1) {
+            const emailField = required.find(f => f.inputType === "email");
+            detected = emailField ? emailField.name : "";
+            if (!detected) {
+              const phoneField = required.find(f => f.inputType === "phone");
+              detected = phoneField ? phoneField.name : required[0].name;
+            }
+          } else {
+            const emailField = fields.find(f => f.inputType === "email");
+            detected = emailField ? emailField.name : "";
+            if (!detected) {
+              const phoneField = fields.find(f => f.inputType === "phone");
+              detected = phoneField ? phoneField.name : "";
+            }
+          }
+        }
+        return { ...prev, primaryField: detected };
+      });
     } catch {
       setLoadedFields(STANDARD_FIELDS);
     }

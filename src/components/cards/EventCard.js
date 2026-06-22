@@ -14,6 +14,7 @@ import InitialsPlaceholder from "@/components/InitialsPlaceholder";
 import RecordMetadata from "@/components/RecordMetadata";
 import ICONS from "@/utils/iconUtil";
 import { formatDate, formatDateWithTime, formatTime } from "@/utils/dateUtils";
+import { toArabicDigits } from "@/utils/arabicDigits";
 
 export default function EventCardBase({
   event, // event object (works for public or closed)
@@ -34,6 +35,7 @@ export default function EventCardBase({
   onViewResults,
   onViewFullScreen,
 }) {
+  const language = locale === "ar-SA" ? "ar" : "en";
   return (
     <AppCard sx={{ width: { xs: "100%", sm: 360 }, height: "100%" }}>
       {/* Cover Image + Overlay */}
@@ -167,18 +169,18 @@ export default function EventCardBase({
                 const eventTimezone = event.timezone || null;
                 if (event?.endDate && event.endDate !== event.startDate) {
                   const startFormatted = event.startTime
-                    ? formatDateWithTime(event.startDate, event.startTime, "en-GB", eventTimezone)
-                    : formatDate(event.startDate);
+                    ? formatDateWithTime(event.startDate, event.startTime, locale, eventTimezone)
+                    : formatDate(event.startDate, locale);
                   const endFormatted = event.endTime
-                    ? formatDateWithTime(event.endDate, event.endTime, "en-GB", eventTimezone)
-                    : formatDate(event.endDate);
+                    ? formatDateWithTime(event.endDate, event.endTime, locale, eventTimezone)
+                    : formatDate(event.endDate, locale);
                   return `${startFormatted} → ${endFormatted}`;
                 } else {
                   const dateFormatted = event.startTime
-                    ? formatDateWithTime(event.startDate, event.startTime, "en-GB", eventTimezone)
-                    : formatDate(event.startDate);
+                    ? formatDateWithTime(event.startDate, event.startTime, locale, eventTimezone)
+                    : formatDate(event.startDate, locale);
                   if (event.startTime && event.endTime && event.startTime !== event.endTime) {
-                    return `${dateFormatted} - ${formatTime(event.endTime, "en-GB", eventTimezone, event.startDate)}`;
+                    return `${dateFormatted} - ${formatTime(event.endTime, locale, eventTimezone, event.startDate)}`;
                   }
                   return dateFormatted;
                 }
@@ -200,7 +202,7 @@ export default function EventCardBase({
           >
             <ICONS.people fontSize="small" sx={{ opacity: 0.7 }} />
             <strong>{t.registrations}:</strong>&nbsp;
-            {event.registrations}
+            {toArabicDigits(event.registrations, language)}
           </Typography>
         )}
         {/* Poll Count (votecast only) */}
@@ -216,7 +218,7 @@ export default function EventCardBase({
           >
             <ICONS.poll fontSize="small" sx={{ opacity: 0.7 }} />
             <strong>{t.polls || "Polls"}:</strong>&nbsp;
-            {event.pollCount || 0}
+            {toArabicDigits(event.pollCount || 0, language)}
           </Typography>
         )}
       </CardContent>

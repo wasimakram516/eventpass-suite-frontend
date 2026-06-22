@@ -28,6 +28,7 @@ import EmptyBusinessState from "@/components/EmptyBusinessState";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import AppCard from "@/components/cards/AppCard";
 import RecordMetadata from "@/components/RecordMetadata";
+import { toArabicDigits } from "@/utils/arabicDigits";
 
 const translations = {
   en: {
@@ -249,7 +250,7 @@ export default function CrossZeroGamesPage() {
                     <Typography variant="body2" sx={{
                       color: "text.secondary"
                     }}>
-                      <strong>{t.moveTimerLabel}</strong> {g.moveTimer > 0 ? `${g.moveTimer}${t.seconds}` : t.disabled}
+                      <strong>{t.moveTimerLabel}</strong> {g.moveTimer > 0 ? `${toArabicDigits(g.moveTimer, language)}${t.seconds}` : t.disabled}
                     </Typography>
 
                     <Box sx={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 1, mt: 2 }}>

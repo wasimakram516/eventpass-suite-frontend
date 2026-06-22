@@ -49,6 +49,8 @@ import MediaUploadProgress from "@/components/MediaUploadProgress";
 import { deleteMedia } from "@/services/deleteMediaService";
 import { useMessage } from "@/contexts/MessageContext";
 import { getEventsByBusinessId } from "@/services/eventreg/eventService";
+import { toArabicDigits } from "@/utils/arabicDigits";
+import { formatDateTimeWithLocale } from "@/utils/dateUtils";
 const translations = {
   en: {
     spinWheelManagement: "Spin Wheel Management",
@@ -840,7 +842,7 @@ const Dashboard = () => {
                           color: "text.secondary",
                           mb: 2
                         }}>
-                        <strong>{t.participants}:</strong> {wheel.participantCount || 0}
+                        <strong>{t.participants}:</strong> {toArabicDigits(wheel.participantCount || 0, language)}
                       </Typography>
 
                       <Typography variant="caption" sx={{
@@ -852,9 +854,10 @@ const Dashboard = () => {
                             if (!wheel.createdAt) return t.notAvailable;
                             const testDate = new Date(wheel.createdAt);
                             if (isNaN(testDate.getTime())) return t.invalidDate;
-                            return new Date(
-                              wheel.createdAt
-                            ).toLocaleDateString();
+                            return formatDateTimeWithLocale(
+                              wheel.createdAt,
+                              language === "ar" ? "ar-SA" : "en-GB"
+                            );
                           } catch (error) {
                             console.error(
                               "Error formatting date:",

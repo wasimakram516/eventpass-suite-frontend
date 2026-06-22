@@ -484,7 +484,7 @@ const EventModal = ({
           _temp: "",
         })),
 
-        useCustomFields: !!initialValues.formFields?.length,
+        useCustomFields: initialValues.useCustomFields ?? !!initialValues.formFields?.length,
         badgeCustomizations: initialValues?.customizations || {},
         useInternationalNumbers: initialValues?.useInternationalNumbers || false,
         showQrAfterRegistration:
@@ -1329,6 +1329,7 @@ const EventModal = ({
             formFields: formData.formFields,
           }
           : {}),
+        useCustomFields: formData.useCustomFields,
         customizations: formData.useCustomFields
           ? (() => {
               const allowed = new Set((formData.formFields || []).map(f => f.inputName));

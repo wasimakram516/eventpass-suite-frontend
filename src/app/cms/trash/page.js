@@ -26,6 +26,7 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
+import ArabicPagination from "@/components/ArabicPagination";
 
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import {
@@ -50,6 +51,7 @@ import { getModuleIcon } from "@/utils/iconMapper";
 import { getModules } from "@/services/moduleService";
 import LoadingState from "@/components/LoadingState";
 import { pickFullName, pickEmail } from "@/utils/customFieldUtils";
+import { toArabicDigits } from "@/utils/arabicDigits";
 import AppCard from "@/components/cards/AppCard";
 const translations = {
   en: {
@@ -160,7 +162,8 @@ const translations = {
 };
 
 export default function TrashPage() {
-  const { dir, align, t } = useI18nLayout(translations);
+  const { dir, align, t, language } = useI18nLayout(translations);
+  const locale = language === "ar" ? "ar-SA" : "en-GB";
   const searchParams = useSearchParams();
   const { user: currentUser } = useAuth();
   const theme = useTheme();
@@ -400,7 +403,7 @@ export default function TrashPage() {
   const safeFormatDate = (val) => {
     if (!val) return null;
     const d = new Date(val);
-    return isNaN(d) ? null : formatDate(val);
+    return isNaN(d) ? null : formatDate(val, locale);
   };
 
   // Clear filters
@@ -985,10 +988,10 @@ export default function TrashPage() {
           }}
         >
           <Chip
-            label={`${t.all} • ${Object.values(filteredModuleCounts).reduce(
+            label={`${t.all} • ${toArabicDigits(Object.values(filteredModuleCounts).reduce(
               (sum, val) => sum + (Number(val) || 0),
               0,
-            )}`}
+            ), language)}`}
             onClick={() => handleChipToggle("__ALL__")}
             color={selectedModule === "__ALL__" ? "primary" : "default"}
             variant={selectedModule === "__ALL__" ? "filled" : "outlined"}
@@ -1028,7 +1031,7 @@ export default function TrashPage() {
                       {getModuleIcon(moduleInfo?.icon)}
                     </Avatar>
                   }
-                  label={`${getModuleDisplayName(module)} • ${count}`}
+                  label={`${getModuleDisplayName(module)} • ${toArabicDigits(count, language)}`}
                   variant="outlined"
                   onClick={() => handleChipToggle(module)}
                   color={selectedModule === module ? "primary" : "default"}
@@ -1136,7 +1139,7 @@ export default function TrashPage() {
                       mb: 2
                     }}>
                     <Typography variant="h6">
-                      {getModuleDisplayName(module)} - {total}
+                      {getModuleDisplayName(module)} - {toArabicDigits(total, language)}
                     </Typography>
                     <Stack
                       direction={{ xs: "column", sm: "row" }}
@@ -1289,9 +1292,9 @@ export default function TrashPage() {
                                   }}
                                 >
                                   {t.deletedAt}:{" "}
-                                  {item.deletedAt
-                                    ? formatDateTimeWithLocale(item.deletedAt)
-                                    : "-"}
+                  {item.deletedAt
+                    ? formatDateTimeWithLocale(item.deletedAt, locale)
+                    : "-"}
                                 </Typography>
                               </Box>
                               <Box
@@ -1349,8 +1352,7 @@ export default function TrashPage() {
                         justifyContent: "center",
                         mt: 3
                       }}>
-                      <Pagination
-                        dir="ltr"
+                      <ArabicPagination
                         count={Math.ceil(total / limit)}
                         page={page}
                         onChange={(e, val) => handlePageChange(module, val)}
@@ -1437,7 +1439,7 @@ export default function TrashPage() {
             >
               {[5, 10, 20, 50].map((n) => (
                 <MenuItem key={n} value={n}>
-                  {n}
+                  {toArabicDigits(n, language)}
                 </MenuItem>
               ))}
             </Select>

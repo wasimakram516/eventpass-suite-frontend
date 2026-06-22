@@ -37,6 +37,7 @@ import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import { formatDateTimeWithLocale } from "@/utils/dateUtils";
 import { COUNTRY_CODES, getFlagImageUrl } from "@/utils/countryCodes";
 import * as XLSX from "xlsx";
+import { toArabicDigits } from "@/utils/arabicDigits";
 
 const translations = {
     en: {
@@ -86,6 +87,12 @@ const translations = {
         confidential: "Confidential — For Internal Use Only",
         presentedBy: "Presented by",
         poweredBy: "Powered by",
+        noData: "No data to display",
+        chartPie: "Pie",
+        chartBar: "Vertical Bar",
+        chartHorizontalBar: "Horizontal Bar",
+        chartLine: "Line",
+        chartHeatmap: "Heatmap",
     },
     ar: {
         pageTitle: "تحليلات ذكية",
@@ -134,6 +141,12 @@ const translations = {
         confidential: "سري — للاستخدام الداخلي فقط",
         presentedBy: "مقدم من",
         poweredBy: "مدعوم من",
+        noData: "لا توجد بيانات للعرض",
+        chartPie: "دائري",
+        chartBar: "شريطي عمودي",
+        chartHorizontalBar: "شريطي أفقي",
+        chartLine: "خطي",
+        chartHeatmap: "خريطة حرارية",
     },
 };
 
@@ -212,7 +225,7 @@ const ChartVisualization = ({
     if (!selectedField || !chartData[selectedField]) {
         return null;
     }
-    const { dir } = useI18nLayout();
+    const { dir, language } = useI18nLayout();
     const field = chartData[selectedField];
 
     if (!field) return null;
@@ -230,16 +243,16 @@ const ChartVisualization = ({
     const effectiveChartType = chartTypeOverride || field.chartType;
     const chartTypeChips = isCategorical
         ? [
-              { label: "Pie", value: "pie" },
-              { label: "Vertical Bar", value: "bar" },
-              { label: "Horizontal Bar", value: "horizontalBar" },
+              { label: t.chartPie, value: "pie" },
+              { label: t.chartBar, value: "bar" },
+              { label: t.chartHorizontalBar, value: "horizontalBar" },
           ]
         : isTimeBased
         ? [
-              { label: "Line", value: "line" },
-              { label: "Vertical Bar", value: "bar" },
-              { label: "Horizontal Bar", value: "horizontalBar" },
-              { label: "Heatmap", value: "heatmap" },
+              { label: t.chartLine, value: "line" },
+              { label: t.chartBar, value: "bar" },
+              { label: t.chartHorizontalBar, value: "horizontalBar" },
+              { label: t.chartHeatmap, value: "heatmap" },
           ]
         : null;
     const hasNoData = isCategorical && (!field.data || field.data.length === 0);
@@ -450,7 +463,7 @@ const ChartVisualization = ({
                         }}
                     >
                         <Typography variant="body1" color="textSecondary">
-                            No data to display
+                            {t.noData}
                         </Typography>
                     </Box>
                 ) : effectiveChartType === "pie" ? (
@@ -488,7 +501,7 @@ const ChartVisualization = ({
                                             arcLabel: () => "",
                                             valueFormatter: (item) => {
                                                 const percentage = ((item.value / barTotal) * 100).toFixed(1);
-                                                return `${percentage}%`;
+                                                return `${toArabicDigits(percentage, language)}%`;
                                             },
                                         },
                                     ]}
@@ -556,7 +569,7 @@ const ChartVisualization = ({
                                                 }}
                                             >
                                                 {item.flagUrl ? <Box component="img" src={item.flagUrl} alt="" sx={{ width: 20, height: 14, borderRadius: 0.5, mr: 0.5, verticalAlign: "middle" }} /> : null}
-                                                {item.label} {percentage}% · {item.value}
+                                                {item.label} {toArabicDigits(percentage, language)}% · {toArabicDigits(item.value, language)}
                                             </Typography>
                                         </Box>
                                     );
@@ -587,7 +600,7 @@ const ChartVisualization = ({
                             <BarChart
                                 layout={effectiveChartType === "horizontalBar" ? "horizontal" : "vertical"}
                                 xAxis={effectiveChartType === "horizontalBar" ? [{
-                                    label: "Count",
+                                    label: t.count,
                                     tickLabelStyle: { direction: "ltr", textAlign: "left", fontSize: 10 },
                                 }] : [{
                                     scaleType: "band",
@@ -601,7 +614,7 @@ const ChartVisualization = ({
                                     tickLabelStyle: { direction: "ltr", textAlign: "right", fontSize: 10 },
                                     colorMap: { type: "ordinal", colors: barData.map((d) => d.color) },
                                 }] : [{
-                                    label: "Count",
+                                    label: t.count,
                                     min: 0,
                                     max: Math.max(0, ...barData.map((d) => d.value)) * 1.1,
                                     tickLabelStyle: { direction: "ltr", textAlign: "left" },
@@ -660,7 +673,7 @@ const ChartVisualization = ({
                                             }}
                                         >
                                             {item.flagUrl ? <Box component="img" src={item.flagUrl} alt="" sx={{ width: 20, height: 14, borderRadius: 0.5, mr: 0.5, verticalAlign: "middle" }} /> : null}
-                                            {item.label} {percentage}% · {item.value}
+                                            {item.label} {toArabicDigits(percentage, language)}% · {toArabicDigits(item.value, language)}
                                         </Typography>
                                     </Box>
                                 );
@@ -735,7 +748,7 @@ const ChartVisualization = ({
                                 <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5, direction: 'ltr' }}>
                                     <Box sx={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: field.color, flexShrink: 0 }} />
                                     <Typography variant="body2" sx={{ fontWeight: 500, color: '#1f2937', whiteSpace: 'nowrap', fontSize: { xs: '0.875rem', md: '0.875rem' }, direction: 'ltr', textAlign: 'left' }}>
-                                        {label} · {field.yData[idx]}
+                                        {label} · {toArabicDigits(field.yData[idx], language)}
                                     </Typography>
                                 </Box>
                             ))}
@@ -760,7 +773,7 @@ const ChartVisualization = ({
                             <BarChart
                                 layout={effectiveChartType === "horizontalBar" ? "horizontal" : "vertical"}
                                 xAxis={effectiveChartType === "horizontalBar" ? [{
-                                    label: "Count",
+                                    label: t.count,
                                     tickLabelStyle: { direction: "ltr", textAlign: "left", fontSize: 10 },
                                 }] : [{
                                     scaleType: "band",
@@ -772,7 +785,7 @@ const ChartVisualization = ({
                                     data: field.xData,
                                     tickLabelStyle: { direction: "ltr", textAlign: "right", fontSize: 10 },
                                 }] : [{
-                                    label: "Count",
+                                    label: t.count,
                                     min: 0,
                                     max: Math.max(0, ...(field.yData || [0])) * 1.1,
                                     tickLabelStyle: { direction: "ltr", textAlign: "left" },
@@ -800,7 +813,7 @@ const ChartVisualization = ({
                                 <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5, direction: 'ltr' }}>
                                     <Box sx={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: field.color, flexShrink: 0 }} />
                                     <Typography variant="body2" sx={{ fontWeight: 500, color: '#1f2937', whiteSpace: 'nowrap', fontSize: { xs: '0.875rem', md: '0.875rem' }, direction: 'ltr', textAlign: 'left' }}>
-                                        {label} · {field.yData[idx]}
+                                        {label} · {toArabicDigits(field.yData[idx], language)}
                                     </Typography>
                                 </Box>
                             ))}
@@ -813,10 +826,10 @@ const ChartVisualization = ({
                                 <Box />
                                 {Array.from({ length: 24 }).map((_, h) => (
                                     <Typography key={h} variant="caption" sx={{ textAlign: "center", color: "text.secondary", fontSize: "9px" }}>
-                                        {h}h
-                                    </Typography>
-                                ))}
-                                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((dayName, dIdx) => {
+                                                {toArabicDigits(h, language)}h
+                                                    </Typography>
+                                                ))}
+                                                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((dayName, dIdx) => {
                                     const dayNum = dIdx;
                                     const start = startDateTime ? new Date(startDateTime) : null;
                                     const end = endDateTime ? new Date(endDateTime) : null;
@@ -842,7 +855,7 @@ const ChartVisualization = ({
                                                 return (
                                                     <Box
                                                         key={h}
-                                                        title={`${dayName}, ${h}:00 - ${count} activities`}
+                                                        title={`${dayName}, ${toArabicDigits(h, language)}:00 - ${toArabicDigits(count, language)} activities`}
                                                         sx={{
                                                             m: 0.1,
                                                             borderRadius: 0.5,
@@ -858,7 +871,7 @@ const ChartVisualization = ({
                                                     >
                                                         {count > 0 && (
                                                             <Typography sx={{ color: alpha > 0.6 ? "#fff" : "#000", fontSize: "8px", fontWeight: "bold" }}>
-                                                                {count}
+                                                                {toArabicDigits(count, language)}
                                                             </Typography>
                                                         )}
                                                     </Box>
@@ -1108,7 +1121,7 @@ export default function AnalyticsDashboard() {
                         });
 
                         const xData = filteredData.map((d) =>
-                            formatDateTimeWithLocale(d.timestamp)
+                            formatDateTimeWithLocale(d.timestamp, language === "ar" ? "ar-SA" : "en-GB")
                         );
                         const yData = filteredData.map((d) => d.count);
 
@@ -1528,11 +1541,11 @@ export default function AnalyticsDashboard() {
             {summary && (
                 <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
                     {[
-                        { label: t.totalRegistrations, value: summary.totalRegistrations, color: "#0077b6" },
-                        { label: t.totalScanned, value: summary.uniqueScanned, color: "#0284c7" },
-                        { label: t.scanRate, value: `${summary.scanRate}%`, color: "#06b6d4" },
-                        { label: t.totalBadgePrints, value: summary.totalPrints ?? 0, color: "#7c3aed" },
-                        { label: t.multiPrintRate, value: `${summary.multiPrintRate ?? "0.00"}%`, color: "#0ea5e9" },
+                        { label: t.totalRegistrations, value: toArabicDigits(summary.totalRegistrations, language), color: "#0077b6" },
+                        { label: t.totalScanned, value: toArabicDigits(summary.uniqueScanned, language), color: "#0284c7" },
+                        { label: t.scanRate, value: `${toArabicDigits(summary.scanRate, language)}%`, color: "#06b6d4" },
+                        { label: t.totalBadgePrints, value: toArabicDigits(summary.totalPrints ?? 0, language), color: "#7c3aed" },
+                        { label: t.multiPrintRate, value: `${toArabicDigits(summary.multiPrintRate ?? "0.00", language)}%`, color: "#0ea5e9" },
                     ].map(({ label, value, color }) => (
                         <AppCard
                             key={label}

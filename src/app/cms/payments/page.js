@@ -21,7 +21,6 @@ import {
   List,
   ListItem,
   MenuItem,
-  Pagination,
   Paper,
   Select,
   Stack,
@@ -46,6 +45,8 @@ import { getAllPayments, getPaymentLink } from "@/services/eventreg/paymentServi
 import usePaymentsSocket from "@/hooks/usePaymentsSocket";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { formatDateTimeWithLocale } from "@/utils/dateUtils";
+import { toArabicDigits } from "@/utils/arabicDigits";
+import ArabicPagination from "@/components/ArabicPagination";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import LoadingState from "@/components/LoadingState";
 import { getAllBusinesses } from "@/services/businessService";
@@ -62,6 +63,7 @@ const translations = {
     showing: "Showing",
     of: "of",
     records: "records",
+    omr: "OMR",
     filters: "Filters",
     from: "From",
     to: "To",
@@ -75,6 +77,9 @@ const translations = {
     business: "Business",
     allBusinesses: "All businesses",
     revenue: "Total Revenue",
+    allTime: "All Time",
+    last30Days: "Last 30 days",
+    last7Days: "Last 7 days",
     copyLink: "Copy Payment Link",
     linkCopied: "Link Copied!",
     loadError: "Failed to load payments.",
@@ -88,6 +93,7 @@ const translations = {
     showing: "عرض",
     of: "من",
     records: "سجلات",
+    omr: "ر.ع.",
     filters: "عوامل التصفية",
     from: "من",
     to: "إلى",
@@ -101,6 +107,9 @@ const translations = {
     business: "الشركة",
     allBusinesses: "جميع الشركات",
     revenue: "إجمالي الإيرادات",
+    allTime: "كل الوقت",
+    last30Days: "آخر ٣٠ يومًا",
+    last7Days: "آخر ٧ أيام",
     copyLink: "نسخ رابط الدفع",
     linkCopied: "تم النسخ!",
     loadError: "تعذر تحميل المدفوعات.",
@@ -299,7 +308,7 @@ export default function PaymentsPage() {
 
   const activeFilterEntries = useMemo(() => {
     const entries = [];
-    if (filterStatus) entries.push({ key: "status", label: t.status, value: STATUS_CHIP[filterStatus]?.label || filterStatus });
+    if (filterStatus) entries.push({ key: "status", label: t.status, value: isAr ? (STATUS_CHIP[filterStatus]?.labelAr || STATUS_CHIP[filterStatus]?.label || filterStatus) : (STATUS_CHIP[filterStatus]?.label || filterStatus) });
     if (filterBusinessId) {
       const biz = businessesList.find((b) => String(b._id) === String(filterBusinessId));
       entries.push({ key: "business", label: t.business, value: biz?.name || filterBusinessId });
@@ -361,7 +370,7 @@ export default function PaymentsPage() {
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ textAlign: align }}>
               <Box component="span" fontWeight={600} color="text.primary" sx={{ marginInlineEnd: 0.5 }}>{labels.amount}:</Box>
-              {p.amount != null ? `${p.amount} OMR` : "—"}
+              {p.amount != null ? `${isAr ? toArabicDigits(p.amount, language) : p.amount} ${t.omr}` : "—"}
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ textAlign: align }}>
               <Box component="span" fontWeight={600} color="text.primary" sx={{ marginInlineEnd: 0.5 }}>{labels.date}:</Box>
@@ -396,7 +405,7 @@ export default function PaymentsPage() {
         })()}
       </TableCell>
       <TableCell sx={{ py: 1.5, textAlign: align }}>
-        {p.amount != null ? `${p.amount} OMR` : "—"}
+        {p.amount != null ? `${isAr ? toArabicDigits(p.amount, language) : p.amount} ${t.omr}` : "—"}
       </TableCell>
       <TableCell sx={{ py: 1.5 }}>{getStatusChip(p.status)}</TableCell>
       <TableCell sx={{ py: 1.5, textAlign: align }}>{formatDate(p.createdAt)}</TableCell>
@@ -433,7 +442,7 @@ export default function PaymentsPage() {
                 <Select value={draftStatus} label={t.status} onChange={(e) => setDraftStatus(e.target.value)}>
                   <MenuItem value="">{t.allStatuses}</MenuItem>
                   {STATUS_OPTIONS.map((s) => (
-                    <MenuItem key={s} value={s}>{STATUS_CHIP[s]?.label || s}</MenuItem>
+                    <MenuItem key={s} value={s}>{isAr ? (STATUS_CHIP[s]?.labelAr || STATUS_CHIP[s]?.label || s) : (STATUS_CHIP[s]?.label || s)}</MenuItem>
                   ))}
                 </Select>
               </FormControl>
@@ -489,8 +498,8 @@ export default function PaymentsPage() {
                 {t.revenue}
               </Typography>
               <Typography variant="h6" fontWeight={800} sx={{ lineHeight: 1.2 }}>
-                {Math.round(revenue)}{" "}
-                <Typography component="span" variant="body2" fontWeight={600} color="text.secondary">OMR</Typography>
+                {isAr ? toArabicDigits(Math.round(revenue), language) : Math.round(revenue)}{" "}
+                <Typography component="span" variant="body2" fontWeight={600} color="text.secondary">{t.omr}</Typography>
               </Typography>
             </Box>
 
@@ -508,7 +517,7 @@ export default function PaymentsPage() {
         {/* ── Date preset chips ── */}
         <Stack direction="row" spacing={1} sx={{ mb: 2, flexWrap: "wrap" }}>
           {["all", "30", "7"].map((preset) => {
-            const presetLabel = preset === "all" ? "All Time" : preset === "30" ? "Last 30 days" : "Last 7 days";
+            const presetLabel = preset === "all" ? t.allTime : preset === "30" ? t.last30Days : t.last7Days;
             return (
               <Chip
                 key={preset}
@@ -543,7 +552,7 @@ export default function PaymentsPage() {
             sx={{ justifyContent: "space-between", alignItems: { xs: "flex-start", md: "center" }, gap: 2 }}
           >
             <Typography variant="body2" color="text.secondary" fontWeight={500} sx={{ textAlign: align }}>
-              {t.showing} {total === 0 ? 0 : (page - 1) * limit + 1}–{Math.min(page * limit, total)} {t.of} {total} {t.records}
+              {isAr ? toArabicDigits(`${t.showing} ${total === 0 ? 0 : (page - 1) * limit + 1}–${Math.min(page * limit, total)} ${t.of} ${total} ${t.records}`, language) : `${t.showing} ${total === 0 ? 0 : (page - 1) * limit + 1}–${Math.min(page * limit, total)} ${t.of} ${total} ${t.records}`}
             </Typography>
 
             <Stack direction={{ xs: "column", sm: "row" }} spacing={1.5} sx={{ width: "100%", alignItems: { xs: "stretch", sm: "center" }, justifyContent: "flex-end" }}>
@@ -567,7 +576,7 @@ export default function PaymentsPage() {
               <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 170 } }}>
                 <InputLabel>{t.recordsPerPage}</InputLabel>
                 <Select value={limit} onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }} label={t.recordsPerPage} sx={{ borderRadius: 2.5 }}>
-                  {[5, 10, 20, 50, 100].map((n) => <MenuItem key={n} value={n}>{n}</MenuItem>)}
+                  {[5, 10, 20, 50, 100].map((n) => <MenuItem key={n} value={n}>{isAr ? toArabicDigits(n, language) : n}</MenuItem>)}
                 </Select>
               </FormControl>
             </Stack>
@@ -641,8 +650,7 @@ export default function PaymentsPage() {
         {/* ── Pagination ── */}
         {total > limit && (
           <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
-            <Pagination
-              dir="ltr"
+            <ArabicPagination
               count={totalPages}
               page={Math.min(page, totalPages)}
               onChange={(_, v) => setPage(v)}

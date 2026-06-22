@@ -37,6 +37,7 @@ import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
 import { exportChartsToPDF } from "@/components/badges/pdfExportCharts";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import { formatDateTimeWithLocale } from "@/utils/dateUtils";
+import { toArabicDigits } from "@/utils/arabicDigits";
 import * as XLSX from "xlsx";
 
 dayjs.extend(utc);
@@ -94,6 +95,11 @@ const translations = {
         average: "Average Score",
         recentResponses: "Recent Responses",
         anonymous: "Anonymous",
+        chartPie: "Pie",
+        chartBar: "Vertical Bar",
+        chartHorizontalBar: "Horizontal Bar",
+        chartLine: "Line",
+        chartHeatmap: "Heatmap",
     },
     ar: {
         pageTitle: "تحليلات الاستطلاع",
@@ -144,6 +150,11 @@ const translations = {
         registeredVoters: "الناخبون المسجلون",
         guestVoters: "الناخبون الضيوف",
         anonymous: "مجهول",
+        chartPie: "دائري",
+        chartBar: "شريطي عمودي",
+        chartHorizontalBar: "شريطي أفقي",
+        chartLine: "خطي",
+        chartHeatmap: "خريطة حرارية",
     },
 };
 
@@ -234,6 +245,7 @@ const ChartVisualization = ({
     onRefReady,
     chartTypeOverride,
     onChartTypeChange,
+    language,
 }) => {
     const { dir } = useI18nLayout();
     if (!selectedField || !chartData[selectedField]) return null;
@@ -251,16 +263,16 @@ const ChartVisualization = ({
     const effectiveChartType = chartTypeOverride || field.chartType;
     const chartTypeChips = isCategorical
         ? [
-              { label: "Pie", value: "pie" },
-              { label: "Vertical Bar", value: "bar" },
-              { label: "Horizontal Bar", value: "horizontalBar" },
+              { label: t.chartPie, value: "pie" },
+              { label: t.chartBar, value: "bar" },
+              { label: t.chartHorizontalBar, value: "horizontalBar" },
           ]
         : isTimeBased
         ? [
-              { label: "Line", value: "line" },
-              { label: "Vertical Bar", value: "bar" },
-              { label: "Horizontal Bar", value: "horizontalBar" },
-              { label: "Heatmap", value: "heatmap" },
+              { label: t.chartLine, value: "line" },
+              { label: t.chartBar, value: "bar" },
+              { label: t.chartHorizontalBar, value: "horizontalBar" },
+              { label: t.chartHeatmap, value: "heatmap" },
           ]
         : null;
     const hasNoData = isCategorical && (!field.data || field.data.length === 0);
@@ -479,9 +491,8 @@ const ChartVisualization = ({
                                         <Box sx={{ width: 12, height: 12, borderRadius: "50%", backgroundColor: item.color, flexShrink: 0 }} />
                                         <Typography
                                             variant="body2"
-                                            sx={{ fontWeight: 500, color: "#1f2937", whiteSpace: "nowrap", fontSize: { xs: "0.875rem", md: "0.875rem" }, direction: "ltr", textAlign: "left" }}
-                                        >
-                                            {displayLabel} {percentage}% ({item.value})
+                                            sx={{ fontWeight: 500, color: "#1f2937", whiteSpace: "nowrap", fontSize: { xs: "0.875rem", md: "0.875rem" }, direction: "ltr", textAlign: "left",  }} >
+                                            {displayLabel} {toArabicDigits(percentage, language)}% ({toArabicDigits(item.value, language)})
                                         </Typography>
                                     </Box>
                                 );
@@ -511,7 +522,7 @@ const ChartVisualization = ({
                             <BarChart
                                 layout={effectiveChartType === "horizontalBar" ? "horizontal" : "vertical"}
                                 xAxis={effectiveChartType === "horizontalBar" ? [{
-                                    label: "Count",
+                                    label: t.count,
                                     tickLabelStyle: { direction: "ltr", textAlign: "left", fontSize: 10 },
                                 }] : [{
                                     scaleType: "band",
@@ -520,12 +531,12 @@ const ChartVisualization = ({
                                     colorMap: { type: "ordinal", colors: barData.map((d) => d.color) },
                                 }]}
                                 yAxis={effectiveChartType === "horizontalBar" ? [{
-                                    scaleType: "band",
-                                    data: barData.map((d) => d.label === "Anonymous" ? (t.anonymous || "Anonymous") : d.label),
-                                    tickLabelStyle: { direction: "ltr", textAlign: "right", fontSize: 10 },
-                                    colorMap: { type: "ordinal", colors: barData.map((d) => d.color) },
-                                }] : [{
-                                    label: "Count",
+        scaleType: "band",
+        data: barData.map((d) => d.label === "Anonymous" ? (t.anonymous || "Anonymous") : d.label),
+        tickLabelStyle: { direction: "ltr", textAlign: "right", fontSize: 10 },
+        colorMap: { type: "ordinal", colors: barData.map((d) => d.color) },
+    }] : [{
+        label: t.count,
                                     min: 0,
                                     max: Math.max(0, ...barData.map((d) => d.value)) * 1.1,
                                     tickLabelStyle: { direction: "ltr", textAlign: "left" },
@@ -556,9 +567,8 @@ const ChartVisualization = ({
                                         <Box sx={{ width: 12, height: 12, borderRadius: "50%", backgroundColor: item.color, flexShrink: 0 }} />
                                         <Typography
                                             variant="body2"
-                                            sx={{ fontWeight: 500, color: "#1f2937", whiteSpace: "nowrap", fontSize: { xs: "0.875rem", md: "0.875rem" }, direction: "ltr", textAlign: "left" }}
-                                        >
-                                            {displayLabel} {percentage}% ({item.value})
+                                            sx={{ fontWeight: 500, color: "#1f2937", whiteSpace: "nowrap", fontSize: { xs: "0.875rem", md: "0.875rem" }, direction: "ltr", textAlign: "left",  }} >
+                                            {displayLabel} {toArabicDigits(percentage, language)}% ({toArabicDigits(item.value, language)})
                                         </Typography>
                                     </Box>
                                 );
@@ -620,7 +630,7 @@ const ChartVisualization = ({
                                         variant="body2"
                                         sx={{ fontWeight: 500, color: "#1f2937", whiteSpace: "nowrap", fontSize: "0.875rem", direction: "ltr", textAlign: "left" }}
                                     >
-                                        {label} ({field.yData[idx]})
+                                        {label} ({toArabicDigits(field.yData[idx], language)})
                                     </Typography>
                                 </Box>
                             ))}
@@ -648,7 +658,7 @@ const ChartVisualization = ({
                             <BarChart
                                 layout={effectiveChartType === "horizontalBar" ? "horizontal" : "vertical"}
                                 xAxis={effectiveChartType === "horizontalBar" ? [{
-                                    label: "Count",
+                                    label: t.count,
                                     tickLabelStyle: { direction: "ltr", textAlign: "left", fontSize: 10 },
                                 }] : [{
                                     scaleType: "band",
@@ -660,7 +670,7 @@ const ChartVisualization = ({
                                     data: field.xData,
                                     tickLabelStyle: { direction: "ltr", textAlign: "right", fontSize: 10 },
                                 }] : [{
-                                    label: "Count",
+                                    label: t.count,
                                     min: 0,
                                     max: Math.max(0, ...(field.yData || [0])) * 1.1,
                                     tickLabelStyle: { direction: "ltr", textAlign: "left" },
@@ -692,7 +702,7 @@ const ChartVisualization = ({
                                         variant="body2"
                                         sx={{ fontWeight: 500, color: "#1f2937", whiteSpace: "nowrap", fontSize: "0.875rem", direction: "ltr", textAlign: "left" }}
                                     >
-                                        {label} ({field.yData[idx]})
+                                        {label} ({toArabicDigits(field.yData[idx], language)})
                                     </Typography>
                                 </Box>
                             ))}
@@ -750,7 +760,7 @@ const ChartVisualization = ({
                                                     >
                                                         {count > 0 && (
                                                             <Typography sx={{ color: alpha > 0.6 ? "#fff" : "#000", fontSize: "8px", fontWeight: "bold" }}>
-                                                                {count}
+                                                                {toArabicDigits(count, language)}
                                                             </Typography>
                                                         )}
                                                     </Box>
@@ -768,7 +778,7 @@ const ChartVisualization = ({
     );
 };
 
-const ResponsePatternSection = ({ questions, t }) => {
+const ResponsePatternSection = ({ questions, t, language }) => {
     const [open, setOpen] = useState(false);
     if (!questions?.length) return null;
     return (
@@ -824,8 +834,8 @@ const ResponsePatternSection = ({ questions, t }) => {
                                                                     flexShrink: 0,
                                                                     ml: 1
                                                                 }}>
-                                                                {opt.votes || 0} ({pct.toFixed(1)}%)
-                                                            </Typography>
+                                                                {toArabicDigits(opt.votes || 0, language)} ({toArabicDigits(pct.toFixed(1), language)}%)
+                                                             </Typography>
                                                         </Box>
                                                         <Box sx={{ height: 8, borderRadius: 4, backgroundColor: "#f3f4f6", overflow: "hidden" }}>
                                                             <Box sx={{ height: "100%", width: `${pct}%`, backgroundColor: getPieSegmentColor(oi), borderRadius: 4, transition: "width 0.5s ease" }} />
@@ -840,7 +850,7 @@ const ResponsePatternSection = ({ questions, t }) => {
                                                 <Typography variant="h4" color="primary" sx={{
                                                     fontWeight: "bold"
                                                 }}>
-                                                    {q.average?.toFixed(1) || "0.0"}
+                                                    {toArabicDigits(q.average?.toFixed(1) || "0.0", language)}
                                                 </Typography>
                                                 <Typography variant="caption" sx={{
                                                     color: "text.secondary"
@@ -854,7 +864,7 @@ const ResponsePatternSection = ({ questions, t }) => {
                                                 <Typography variant="subtitle1" sx={{
                                                     fontWeight: "bold"
                                                 }}>
-                                                    {q.totalVotes || 0}
+                                                    {toArabicDigits(q.totalVotes || 0, language)}
                                                 </Typography>
                                                 <Typography variant="caption" sx={{
                                                     color: "text.secondary"
@@ -1052,7 +1062,7 @@ export default function PollInsightsDashboard() {
                             ...prev,
                             [fieldName]: {
                                 ...field,
-                                xData: filtered.map((d) => formatDateTimeWithLocale(d.timestamp)),
+                                xData: filtered.map((d) => formatDateTimeWithLocale(d.timestamp, language === "ar" ? "ar-SA" : "en-GB")),
                                 yData: filtered.map((d) => d.count),
                             },
                         }));
@@ -1357,34 +1367,34 @@ export default function PollInsightsDashboard() {
             {summary && (
                 <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
                     <Box sx={{ flex: "1 1 150px" }}>
-                        <KpiCard label={t.totalVotes} value={summary.totalVotes} />
+                        <KpiCard label={t.totalVotes} value={toArabicDigits(summary.totalVotes, language)} />
                     </Box>
                     <Box sx={{ flex: "1 1 150px" }}>
-                        <KpiCard label={t.uniqueVoters} value={summary.uniqueVoters} />
+                        <KpiCard label={t.uniqueVoters} value={toArabicDigits(summary.uniqueVoters, language)} />
                     </Box>
                     {pollInfo?.linkedEventRegId && (
                         <>
                             <Box sx={{ flex: "1 1 150px" }}>
-                                <KpiCard label={t.registeredVoters} value={summary.registeredVoters} />
+                                <KpiCard label={t.registeredVoters} value={toArabicDigits(summary.registeredVoters, language)} />
                             </Box>
                             <Box sx={{ flex: "1 1 150px" }}>
-                                <KpiCard label={t.guestVoters} value={summary.guestVoters} />
+                                <KpiCard label={t.guestVoters} value={toArabicDigits(summary.guestVoters, language)} />
                             </Box>
                         </>
                     )}
                     {summary.participationRate !== null && (
                         <Box sx={{ flex: "1 1 150px" }}>
-                            <KpiCard label={t.participationRate} value={`${summary.participationRate}%`} />
+                            <KpiCard label={t.participationRate} value={toArabicDigits(`${summary.participationRate}%`, language)} />
                         </Box>
                     )}
                     <Box sx={{ flex: "1 1 150px" }}>
-                        <KpiCard label={t.questionCount} value={summary.questionCount} />
+                        <KpiCard label={t.questionCount} value={toArabicDigits(summary.questionCount, language)} />
                     </Box>
                 </Box>
             )}
             {/* Response Pattern — unlinked polls only */}
             {!pollInfo?.linkedEventRegId && pollInfo?.questions?.length > 0 && (
-                <ResponsePatternSection questions={pollInfo.questions} t={t} />
+                <ResponsePatternSection questions={pollInfo.questions} t={t} language={language} />
             )}
             {/* Field Chip Selector */}
             <AppCard sx={{ flex: "0 0 auto", p: { xs: 1, sm: 1.5, md: 2 }, width: "100%", boxSizing: "border-box" }}>
@@ -1459,6 +1469,7 @@ export default function PollInsightsDashboard() {
                                     }
                                 }}
                                 t={t}
+                                language={language}
                             />
                         </AppCard>
                     ))

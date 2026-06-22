@@ -19,6 +19,7 @@ import {
   FormControl,
   CircularProgress,
 } from "@mui/material";
+import ArabicPagination from "@/components/ArabicPagination";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 
 import ICONS from "@/utils/iconUtil";
@@ -32,6 +33,7 @@ import useI18nLayout from "@/hooks/useI18nLayout";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import LoadingState from "@/components/LoadingState";
+import { toArabicDigits } from "@/utils/arabicDigits";
 
 const translations = {
   en: {
@@ -122,7 +124,7 @@ function sessionMatchesSearch(session, term) {
 export default function PvPSessions() {
   const { gameSlug } = useParams();
   const searchParams = useSearchParams();
-  const { t, dir, align } = useI18nLayout(translations);
+  const { t, dir, align, language } = useI18nLayout(translations);
   const [sessions, setSessions] = useState([]);
   const [totalSessions, setTotalSessions] = useState(0);
   const [page, setPage] = useState(1);
@@ -273,8 +275,8 @@ export default function PvPSessions() {
           px: 2
         }}>
         <Typography>
-          {t.showing} {(page - 1) * limit + 1}-
-          {Math.min(page * limit, displayTotal)} {t.of} {displayTotal}{" "}
+          {t.showing} {toArabicDigits((page - 1) * limit + 1, language)}-
+          {toArabicDigits(Math.min(page * limit, displayTotal), language)} {t.of} {toArabicDigits(displayTotal, language)}{" "}
           {t.records}
         </Typography>
         <FormControl size="small" sx={{ minWidth: 150, ml: 2 }}>
@@ -290,7 +292,7 @@ export default function PvPSessions() {
           >
             {[5, 10, 20].map((n) => (
               <MenuItem key={n} value={n}>
-                {n}
+                {toArabicDigits(n, language)}
               </MenuItem>
             ))}
           </Select>
@@ -434,7 +436,7 @@ export default function PvPSessions() {
                                         color: "text.secondary"
                                       }}
                                     >
-                                      {t.score}: {player1?.score ?? 0}
+                                      {t.score}: {toArabicDigits(player1?.score ?? 0, language)}
                                     </Typography>
                                   </Box>
 
@@ -452,7 +454,7 @@ export default function PvPSessions() {
                                       }}
                                     >
                                       {t.attempted}:{" "}
-                                      {player1?.attemptedQuestions ?? 0}
+                                      {toArabicDigits(player1?.attemptedQuestions ?? 0, language)}
                                     </Typography>
                                   </Box>
 
@@ -471,8 +473,8 @@ export default function PvPSessions() {
                                     >
                                       {t.timeTaken}:{" "}
                                       {player1?.timeTaken != null
-                                        ? `${player1.timeTaken}s`
-                                        : "0s"}
+                                        ? `${toArabicDigits(player1.timeTaken, language)}s`
+                                        : `${toArabicDigits(0, language)}s`}
                                     </Typography>
                                   </Box>
                                 </Box>
@@ -559,7 +561,7 @@ export default function PvPSessions() {
                                         color: "text.secondary"
                                       }}
                                     >
-                                      {t.score}: {player2?.score ?? 0}
+                                      {t.score}: {toArabicDigits(player2?.score ?? 0, language)}
                                     </Typography>
                                     <ICONS.leaderboard fontSize="small" />
                                   </Box>
@@ -577,7 +579,7 @@ export default function PvPSessions() {
                                       }}
                                     >
                                       {t.attempted}:{" "}
-                                      {player2?.attemptedQuestions ?? 0}
+                                      {toArabicDigits(player2?.attemptedQuestions ?? 0, language)}
                                     </Typography>
                                     <ICONS.assignment fontSize="small" />
                                   </Box>
@@ -596,8 +598,8 @@ export default function PvPSessions() {
                                     >
                                       {t.timeTaken}:{" "}
                                       {player2?.timeTaken != null
-                                        ? `${player2.timeTaken}s`
-                                        : "0s"}
+                                        ? `${toArabicDigits(player2.timeTaken, language)}s`
+                                        : `${toArabicDigits(0, language)}s`}
                                     </Typography>
                                     <ICONS.time fontSize="small" />
                                   </Box>
@@ -737,7 +739,7 @@ export default function PvPSessions() {
                                         }}
                                       >
                                         {t.totalScore}:{" "}
-                                        <b>{team.totalScore ?? 0}</b>
+                                        <b>{toArabicDigits(team.totalScore ?? 0, language)}</b>
                                       </Typography>
                                     </Box>
                                     <Box
@@ -757,7 +759,7 @@ export default function PvPSessions() {
                                         }}
                                       >
                                         {t.averageTime}:{" "}
-                                        <b>{team.avgTimeTaken ?? 0}s</b>
+                                        <b>{toArabicDigits(team.avgTimeTaken ?? 0, language)}s</b>
                                       </Typography>
                                     </Box>
                                     <Box
@@ -777,7 +779,7 @@ export default function PvPSessions() {
                                         }}
                                       >
                                         {t.averageAttempted}:{" "}
-                                        <b>{team.avgAttemptedQuestions ?? 0}</b>
+                                        <b>{toArabicDigits(team.avgAttemptedQuestions ?? 0, language)}</b>
                                       </Typography>
                                     </Box>
                                   </Stack>
@@ -856,7 +858,7 @@ export default function PvPSessions() {
                                             }}>
                                             <ICONS.leaderboard fontSize="small" />
                                             <Typography variant="caption">
-                                              {t.score}: {p.score ?? 0}
+                                              {t.score}: {toArabicDigits(p.score ?? 0, language)}
                                             </Typography>
                                           </Box>
                                           <Box
@@ -868,7 +870,7 @@ export default function PvPSessions() {
                                             <ICONS.assignment fontSize="small" />
                                             <Typography variant="caption">
                                               {t.attempted}:{" "}
-                                              {p.attemptedQuestions ?? 0}
+                                              {toArabicDigits(p.attemptedQuestions ?? 0, language)}
                                             </Typography>
                                           </Box>
                                           <Box
@@ -879,7 +881,7 @@ export default function PvPSessions() {
                                             }}>
                                             <ICONS.time fontSize="small" />
                                             <Typography variant="caption">
-                                              {t.timeTaken}: {p.timeTaken ?? 0}s
+                                              {t.timeTaken}: {toArabicDigits(p.timeTaken ?? 0, language)}s
                                             </Typography>
                                           </Box>
                                         </Stack>
@@ -925,8 +927,7 @@ export default function PvPSessions() {
                     justifyContent: "center",
                     mt: 4
                   }}>
-                  <Pagination
-                    dir="ltr"
+                  <ArabicPagination
                     count={Math.ceil(displayTotal / limit) || 1}
                     page={page}
                     onChange={(_, value) => setPage(value)}
