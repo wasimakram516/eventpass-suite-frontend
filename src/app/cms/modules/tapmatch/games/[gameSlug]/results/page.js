@@ -15,6 +15,7 @@ import {
   FormControl,
   InputLabel,
 } from "@mui/material";
+import ArabicPagination from "@/components/ArabicPagination";
 import {
   AccessTime,
   TouchApp,
@@ -89,7 +90,7 @@ export default function TapMatchResultsPage() {
   const { gameSlug } = useParams();
   const searchParams = useSearchParams();
   const { showMessage } = useMessage();
-  const { t, dir } = useI18nLayout(translations);
+  const { t, dir, language } = useI18nLayout(translations);
   const [game, setGame] = useState(null);
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -388,7 +389,7 @@ export default function TapMatchResultsPage() {
                             fontStyle: "italic"
                           }}>
                           {t.submittedAtLabel}:{" "}
-                          <strong>{formatDateTimeWithLocale(p.endTime)}</strong>
+                          <strong>{formatDateTimeWithLocale(p.endTime, language === "ar" ? "ar-SA" : "en-GB")}</strong>
                         </Typography>
                       </Box>
                     </Box>
@@ -406,8 +407,7 @@ export default function TapMatchResultsPage() {
               }}
             >
               {/* Pagination controls */}
-              <Pagination
-                dir="ltr"
+              <ArabicPagination
                 count={displayTotalPages}
                 page={page}
                 onChange={(e, val) => setPage(val)}

@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation";
 import { submitResult } from "@/services/tapmatch/playerService";
 import LanguageSelector from "@/components/LanguageSelector";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { toArabicDigits } from "@/utils/arabicDigits";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import Confetti from "react-confetti";
 import { motion } from "framer-motion";
@@ -65,7 +66,7 @@ const translations = {
 export default function TapMatchPlayPage() {
   const { game, loading } = useGame();
   const router = useRouter();
-  const { t, dir, align } = useI18nLayout(translations);
+  const { t, dir, language } = useI18nLayout(translations);
 
   const [playerInfo, setPlayerInfo] = useState(null);
   const [delay, setDelay] = useState(game?.countdownTimer || 5);
@@ -307,7 +308,7 @@ export default function TapMatchPlayPage() {
                 "0 0 20px rgba(255,215,0,0.9), 0 0 40px rgba(255,215,0,0.7)",
             }}
           >
-            {delay}
+            {toArabicDigits(delay, language)}
           </Typography>
         </Box>
       </Box>
@@ -435,35 +436,35 @@ export default function TapMatchPlayPage() {
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <Shuffle fontSize="small" sx={{ color: "#fff" }} />
                 <Typography variant="body1" sx={{ color: "#fff" }}>
-                  <strong>{t.moves}:</strong> {moves}
+                  <strong>{t.moves}:</strong> {toArabicDigits(moves, language)}
                 </Typography>
               </Box>
 
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <CheckCircle fontSize="small" sx={{ color: "#fff" }} />
                 <Typography variant="body1" sx={{ color: "#fff" }}>
-                  <strong>{t.matches}:</strong> {matchesCount}
+                  <strong>{t.matches}:</strong> {toArabicDigits(matchesCount, language)}
                 </Typography>
               </Box>
 
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <HighlightOff fontSize="small" sx={{ color: "#fff" }} />
                 <Typography variant="body1" sx={{ color: "#fff" }}>
-                  <strong>{t.misses}:</strong> {misses}
+                  <strong>{t.misses}:</strong> {toArabicDigits(misses, language)}
                 </Typography>
               </Box>
 
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <Speed fontSize="small" sx={{ color: "#fff" }} />
                 <Typography variant="body1" sx={{ color: "#fff" }}>
-                  <strong>{t.accuracy}:</strong> {accuracy}%
+                  <strong>{t.accuracy}:</strong> {toArabicDigits(accuracy, language)}%
                 </Typography>
               </Box>
 
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                 <AccessTime fontSize="small" sx={{ color: "#fff" }} />
                 <Typography variant="body1" sx={{ color: "#fff" }}>
-                  <strong>{t.timeTaken}:</strong> {timeTaken} {t.countdown}
+                  <strong>{t.timeTaken}:</strong> {toArabicDigits(timeTaken, language)} {t.countdown}
                 </Typography>
               </Box>
             </Box>
@@ -529,7 +530,7 @@ export default function TapMatchPlayPage() {
                 "0 0 15px rgba(255,215,0,0.9), 0 0 30px rgba(255,215,0,0.6)",
             }}
           >
-            {timeLeft}
+            {toArabicDigits(timeLeft, language)}
             <Typography
               component="span"
               sx={{

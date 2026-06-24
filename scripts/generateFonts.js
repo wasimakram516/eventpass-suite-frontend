@@ -114,8 +114,8 @@ function generateBadgePDFImports(fontFamilies) {
     const registrations = [];
 
     Object.entries(fontFamilies).forEach(([key, font]) => {
-        const fontEntries = font.files.map(({ path: fontPath, weight, style }) =>
-            `    { src: "${fontPath}", fontWeight: ${weight}, fontStyle: '${style}' }`
+        const fontEntries = font.files.map((file, index) =>
+            `    { src: "${file.path}", fontWeight: ${file.weight}, fontStyle: '${file.style}' }`
         ).join(',\n');
 
         registrations.push(`Font.register({

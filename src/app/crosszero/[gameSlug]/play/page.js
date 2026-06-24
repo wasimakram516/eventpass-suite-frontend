@@ -16,6 +16,7 @@ import {
 } from "@/services/crosszero/gameSessionService";
 import LanguageSelector from "@/components/LanguageSelector";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { toArabicDigits } from "@/utils/arabicDigits";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 
@@ -361,7 +362,7 @@ function SingleOnboardingForm({ game, singleStep, singleP1, singleSubmitting, on
 export default function CrossZeroPlayPage() {
   const { game, loading } = useGame();
   const router = useRouter();
-  const { t, dir } = useI18nLayout(translations);
+  const { t, dir, language } = useI18nLayout(translations);
   const {
     sessions,
     currentSession,
@@ -1253,7 +1254,7 @@ export default function CrossZeroPlayPage() {
               lineHeight: 1,
             }}
           >
-            {countdown || "GO!"}
+            {toArabicDigits(countdown, language) || "GO!"}
           </Typography>
           <Typography
             variant="h6"
@@ -1655,9 +1656,9 @@ export default function CrossZeroPlayPage() {
                       </Typography>
                       {isWinner && (
                         <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.75)", textAlign: "center", mt: 0.5 }}>
-                          {(t.moves || "Moves")}: {resultSummary.moves ?? 0}
+                          {(t.moves || "Moves")}: {toArabicDigits(resultSummary.moves ?? 0, language)}
                           <Box component="span" sx={{ mx: 1 }}>|</Box>
-                          {t.timeTaken}: {resultSummary.timeTaken ?? 0}{t.seconds}
+                          {t.timeTaken}: {toArabicDigits(resultSummary.timeTaken ?? 0, language)}{t.seconds}
                         </Typography>
                       )}
                     </Box>
@@ -1691,9 +1692,9 @@ export default function CrossZeroPlayPage() {
                     />
                   </Box>
                   <Typography variant="body1" sx={{ mt: 1 }}>
-                    {(t.moves || "Moves")}: {resultSummary.moves ?? 0}
+                    {(t.moves || "Moves")}: {toArabicDigits(resultSummary.moves ?? 0, language)}
                     <Box component="span" sx={{ mx: 1, color: "text.secondary" }}>|</Box>
-                    {t.timeTaken}: {resultSummary.timeTaken ?? 0}{t.seconds}
+                    {t.timeTaken}: {toArabicDigits(resultSummary.timeTaken ?? 0, language)}{t.seconds}
                   </Typography>
                 </Box>
 

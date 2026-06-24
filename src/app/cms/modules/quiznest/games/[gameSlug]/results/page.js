@@ -76,7 +76,7 @@ export default function ResultsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [searchInitialized, setSearchInitialized] = useState(false);
   const { user } = useAuth();
-  const { t, dir } = useI18nLayout(translations);
+  const { t, dir, language } = useI18nLayout(translations);
 
   useEffect(() => {
     if (!searchInitialized) {
@@ -329,7 +329,7 @@ export default function ResultsPage() {
                           wordBreak: "break-word"
                         }}>
                         {t.submittedAtLabel}{" "}
-                        <strong>{formatDateTimeWithLocale(p.endTime)}</strong>
+                        <strong>{formatDateTimeWithLocale(p.endTime, language === "ar" ? "ar-SA" : "en-GB")}</strong>
                       </Typography>
                     </Box>
                   </Box>

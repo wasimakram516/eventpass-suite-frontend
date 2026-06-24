@@ -96,9 +96,9 @@ const translations = {
     name: "الاسم",
     slug: "الرمز",
     mode: "النمط",
-    mosaic: "mosaic",
-    card: "card",
-    bubble: "bubble",
+    mosaic: "فسيفساء",
+    card: "بطاقات",
+    bubble: "فقاعة",
     uploadBackground: "رفع خلفية",
     uploadLogo: "رفع شعار",
     enableRandomSizes: "تفعيل الأحجام العشوائية",
@@ -361,7 +361,7 @@ export default function WallConfigsPage() {
               >
                 {/* Chip at top-right */}
                 <Chip
-                  label={config.mode}
+                  label={t[config.mode] || config.mode}
                   color={config.mode === "mosaic" ? "primary" : "secondary"}
                   size="small"
                   sx={{
@@ -401,7 +401,7 @@ export default function WallConfigsPage() {
                         if (!config.createdAt) return t.notAvailable;
                         const testDate = new Date(config.createdAt);
                         if (isNaN(testDate.getTime())) return t.invalidDate;
-                        return formatDate(config.createdAt);
+                        return formatDate(config.createdAt, language === "ar" ? "ar-SA" : "en-GB");
                       } catch (error) {
                         console.error(
                           "Error formatting date:",

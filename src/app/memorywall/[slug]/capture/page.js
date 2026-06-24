@@ -16,6 +16,7 @@ import { createDisplayMedia } from "@/services/memorywall/displayMediaService";
 import { getWallConfigBySlug } from "@/services/memorywall/wallConfigService";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { toArabicDigits } from "@/utils/arabicDigits";
 import LoadingState from "@/components/LoadingState";
 import LanguageSelector from "@/components/LanguageSelector";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
@@ -82,7 +83,7 @@ const translations = {
 
 export default function UploadPage() {
   const { slug } = useParams();
-  const { t, dir, align } = useI18nLayout(translations);
+  const { t, dir, align, language } = useI18nLayout(translations);
   const { showMessage } = useMessage();
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -923,7 +924,7 @@ export default function UploadPage() {
                     color="textSecondary"
                     sx={{ display: "block", textAlign: align, mt: 0.5 }}
                   >
-                    {text.length}/150 {t.charactersCount}
+                    {toArabicDigits(`${text.length}/150 ${t.charactersCount}`, language)}
                   </Typography>
                 </Box>
 
@@ -991,7 +992,7 @@ export default function UploadPage() {
                   color="textSecondary"
                   sx={{ display: "block", textAlign: align, mt: 0.5 }}
                 >
-                  {text.length}/150 {t.charactersCount}
+                  {toArabicDigits(`${text.length}/150 ${t.charactersCount}`, language)}
                 </Typography>
               </Box>
             )}

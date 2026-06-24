@@ -3,13 +3,21 @@
  * @param {string} dateString - The date string to format.
  * @returns {string} - Formatted date string.
  */
-export const formatDate = (dateString) => {
+export const formatDate = (dateString, locale = "en-GB") => {
   const date = new Date(dateString);
-  return new Intl.DateTimeFormat("en-GB", {
+  const formatted = new Intl.DateTimeFormat("en-GB", {
     day: "2-digit",
     month: "long",
     year: "numeric",
   }).format(date);
+
+  if (locale === "ar-SA") {
+    return formatted.replace(/\d/g, (digit) =>
+      String.fromCharCode(digit.charCodeAt(0) + 0x0630)
+    );
+  }
+
+  return formatted;
 };
 
 /**

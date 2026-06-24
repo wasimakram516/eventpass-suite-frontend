@@ -37,6 +37,7 @@ import {
   MenuItem,
   CircularProgress,
 } from "@mui/material";
+import ArabicPagination from "@/components/ArabicPagination";
 import LoadingState from "@/components/LoadingState";
 import { DateTimePicker } from "@mui/x-date-pickers";
 import dayjs from "dayjs";
@@ -48,6 +49,7 @@ import { getAllBusinesses } from "@/services/businessService";
 import { getAllUsers } from "@/services/userService";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { formatDateTimeWithLocale } from "@/utils/dateUtils";
+import { toArabicDigits } from "@/utils/arabicDigits";
 import useLogsSocket from "@/hooks/useLogsSocket";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import { getRegistrationMeta } from "@/services/eventreg/registrationService";
@@ -86,6 +88,9 @@ const translations = {
     activeFilters: "Active Filters",
     clearAll: "Clear All",
     dateRange: "Date Range",
+    all: "All",
+    last30Days: "Last 30 days",
+    last7Days: "Last 7 days",
   },
   ar: {
     title: "سجل الأنشطة",
@@ -114,6 +119,9 @@ const translations = {
     activeFilters: "الفلاتر النشطة",
     clearAll: "مسح الكل",
     dateRange: "نطاق التاريخ",
+    all: "الكل",
+    last30Days: "آخر ٣٠ يومًا",
+    last7Days: "آخر ٧ أيام",
   },
 };
 
@@ -1068,7 +1076,7 @@ export default function LogsPage() {
                 alignItems: "center"
               }}>
               <Chip
-                label="All"
+                label={t.all || "All"}
                 color={dateRangePreset === "all" ? "primary" : "default"}
                 variant={dateRangePreset === "all" ? "filled" : "outlined"}
                 onClick={() => {
@@ -1079,7 +1087,7 @@ export default function LogsPage() {
                 sx={{ fontWeight: 500 }}
               />
               <Chip
-                label="Last 30 days"
+                label={t.last30Days || "Last 30 days"}
                 color={dateRangePreset === "30" ? "primary" : "default"}
                 variant={dateRangePreset === "30" ? "filled" : "outlined"}
                 onClick={() => {
@@ -1093,7 +1101,7 @@ export default function LogsPage() {
                 sx={{ fontWeight: 500 }}
               />
               <Chip
-                label="Last 7 days"
+                label={t.last7Days || "Last 7 days"}
                 color={dateRangePreset === "7" ? "primary" : "default"}
                 variant={dateRangePreset === "7" ? "filled" : "outlined"}
                 onClick={() => {
@@ -1132,9 +1140,9 @@ export default function LogsPage() {
                 fontWeight: 500,
                 textAlign: align
               }}>
-              {t.showing} {filteredLogs.length === 0 ? 0 : (page - 1) * limit + 1}-
-              {filteredLogs.length === 0 ? 0 : Math.min(page * limit, filteredLogs.length)} {t.of}{" "}
-              {filteredLogs.length} {t.records}
+              {t.showing} {toArabicDigits(filteredLogs.length === 0 ? 0 : (page - 1) * limit + 1, language)}-
+              {toArabicDigits(filteredLogs.length === 0 ? 0 : Math.min(page * limit, filteredLogs.length), language)} {t.of}{" "}
+              {toArabicDigits(filteredLogs.length, language)} {t.records}
             </Typography>
 
             <Stack
@@ -1185,7 +1193,7 @@ export default function LogsPage() {
                 >
                   {[5, 10, 20, 50, 100, 250, 500].map((n) => (
                     <MenuItem key={n} value={n}>
-                      {n}
+                      {toArabicDigits(n, language)}
                     </MenuItem>
                   ))}
                 </Select>
@@ -1351,8 +1359,7 @@ export default function LogsPage() {
               justifyContent: "center",
               mt: 4
             }}>
-            <Pagination
-              dir="ltr"
+            <ArabicPagination
               count={totalFilteredPages}
               page={Math.min(page, totalFilteredPages)}
               onChange={handleChangePage}

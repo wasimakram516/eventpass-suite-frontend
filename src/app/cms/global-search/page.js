@@ -30,6 +30,7 @@ import {
   Select,
   MenuItem,
 } from "@mui/material";
+import ArabicPagination from "@/components/ArabicPagination";
 import ICONS from "@/utils/iconUtil";
 import { useAuth } from "@/contexts/AuthContext";
 import { globalSearch as fetchGlobalSearch } from "@/services/globalSearchService";
@@ -698,8 +699,7 @@ export default function GlobalSearchPage() {
                   justifyContent: "center",
                   mt: 4
                 }}>
-                <Pagination
-                  dir="ltr"
+                <ArabicPagination
                   count={totalPages}
                   page={Math.min(page, totalPages)}
                   onChange={(_e, value) => setPage(value)}

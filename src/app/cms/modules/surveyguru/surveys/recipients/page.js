@@ -24,6 +24,7 @@ import {
   useTheme,
   Pagination,
 } from "@mui/material";
+import ArabicPagination from "@/components/ArabicPagination";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useMessage } from "@/contexts/MessageContext";
@@ -36,6 +37,7 @@ import RecordMetadata from "@/components/RecordMetadata";
 import AppCard from "@/components/cards/AppCard";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import ICONS from "@/utils/iconUtil";
+import { toArabicDigits } from "@/utils/arabicDigits";
 
 import { getAllBusinesses } from "@/services/businessService";
 import { getEventsByBusinessId } from "@/services/eventreg/eventService";
@@ -157,9 +159,9 @@ const translations = {
     copied: "تم نسخ الرابط!",
     noFormSelected: "استخدم عوامل التصفية لاختيار نموذج وتحميل المستلمين.",
     workflowTitle: "اتبع هذه الخطوات لتحميل المستلمين وإدارتهم",
-    stepBusiness: "1. اختر الشركة",
-    stepEvent: "2. اختر الفعالية",
-    stepForm: "3. اختر نموذج الاستبيان",
+    stepBusiness: "١. اختر الشركة",
+    stepEvent: "٢. اختر الفعالية",
+    stepForm: "٣. اختر نموذج الاستبيان",
     readyToLoad:
       "سيتم تحميل المستلمين تلقائيًا بعد اختيار النموذج. إذا لم يظهروا، اضغط مزامنة من الفعالية.",
     syncHint:
@@ -1174,8 +1176,8 @@ export default function RecipientsManagePage() {
             }}
           >
             <Typography variant="body1">
-              {t.showing} {Math.min((page - 1) * limit + 1, total)}–
-              {Math.min(page * limit, total)} {t.of} {total} {t.records}
+              {t.showing} {toArabicDigits(Math.min((page - 1) * limit + 1, total), language)}–
+              {toArabicDigits(Math.min(page * limit, total), language)} {t.of} {toArabicDigits(total, language)} {t.records}
             </Typography>
 
             <FormControl size="small" sx={{ minWidth: 150 }}>
@@ -1193,7 +1195,7 @@ export default function RecipientsManagePage() {
               >
                 {[5, 10, 20, 50, 100].map((value) => (
                   <MenuItem key={value} value={value}>
-                    {value}
+                    {toArabicDigits(value, language)}
                   </MenuItem>
                 ))}
               </Select>
@@ -1237,8 +1239,7 @@ export default function RecipientsManagePage() {
               <RecipientCard key={r._id} r={r} />
             ))}
             <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
-              <Pagination
-                dir="ltr"
+              <ArabicPagination
                 count={Math.ceil(total / limit)}
                 page={page}
                 onChange={(_, value) => setPage(value)}
@@ -1268,8 +1269,7 @@ export default function RecipientsManagePage() {
               ))}
             </Grid>
             <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
-              <Pagination
-                dir="ltr"
+              <ArabicPagination
                 count={Math.ceil(total / limit)}
                 page={page}
                 onChange={(_, value) => setPage(value)}

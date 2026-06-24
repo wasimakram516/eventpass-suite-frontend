@@ -25,6 +25,7 @@ import {
 } from "@/services/eventduel/gameSessionService";
 import LanguageSelector from "@/components/LanguageSelector";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { toArabicDigits } from "@/utils/arabicDigits";
 import { translateTexts } from "@/services/translationService";
 import useEventDuelWebSocketData from "@/hooks/modules/eventduel/useEventDuelWebSocketData";
 import ICONS from "@/utils/iconUtil";
@@ -725,7 +726,7 @@ export default function PlayPage() {
 
               <Box sx={{ mt: 3 }}>
                 <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                  {t.autoCloseNotice} <b>{abandonRemaining}</b> {t.seconds}.
+                  {t.autoCloseNotice} <b>{toArabicDigits(abandonRemaining, language)}</b> {t.seconds}.
                 </Typography>
               </Box>
             </>
@@ -860,7 +861,7 @@ export default function PlayPage() {
               animation: "pulse 1s infinite alternate",
             }}
           >
-            {localDelay}
+            {toArabicDigits(localDelay, language)}
           </Typography>
 
           {/* Subtext */}
@@ -1064,7 +1065,7 @@ export default function PlayPage() {
                 lineHeight: 1,
               }}
             >
-              {localTime}
+              {toArabicDigits(localTime, language)}
             </Typography>
             <Typography
               variant="h6"
@@ -1121,7 +1122,7 @@ export default function PlayPage() {
                   lineHeight: 1.3,
                 }}
               >
-                {translatedContent?.uiLabels?.questionLabel} #{questionIndex + 1}
+                {translatedContent?.uiLabels?.questionLabel} #{toArabicDigits(questionIndex + 1, language)}
               </Typography>
               {/* Question text — main/prominent */}
               <Typography
@@ -1282,7 +1283,7 @@ export default function PlayPage() {
                             >
                               <img
                                 src={currentQuestion.answerImages[i]}
-                                alt={`Answer ${i + 1}`}
+                                alt={`Answer ${toArabicDigits(i + 1, language)}`}
                                 style={{
                                   maxWidth: "clamp(80px, 30vw, 150px)",
                                   maxHeight: "clamp(60px, 20vh, 120px)",
@@ -1451,15 +1452,15 @@ export default function PlayPage() {
                   textShadow: "0 0 10px rgba(255,255,255,0.6)",
                 }}
               >
-                {t.totalScore}: {playerTeam?.totalScore ?? 0}
+                {t.totalScore}: {toArabicDigits(playerTeam?.totalScore ?? 0, language)}
               </Typography>
 
               <Typography variant="body1" sx={{ mb: 3 }}>
-                {t.averageTime}: {playerTeam?.avgTimeTaken ?? 0}s{" "}
+                {t.averageTime}: {toArabicDigits(playerTeam?.avgTimeTaken ?? 0, language)}s{" "}
                 <Box component="span" sx={{ mx: 1, color: "text.secondary" }}>
                   |
                 </Box>{" "}
-                {t.averageAttempted}: {playerTeam?.avgAttemptedQuestions ?? 0}
+                {t.averageAttempted}: {toArabicDigits(playerTeam?.avgAttemptedQuestions ?? 0, language)}
               </Typography>
 
               {/* Opponent Teams */}
@@ -1482,16 +1483,16 @@ export default function PlayPage() {
                       <Typography variant="h5" sx={{
                         fontWeight: "bold"
                       }}>
-                        {opp.teamId?.name || opp.teamName || `Team ${idx + 1}`}
+                        {opp.teamId?.name || opp.teamName || `Team ${toArabicDigits(idx + 1, language)}`}
                       </Typography>
                       <Typography variant="body2">
-                        {t.totalScore}: {opp.totalScore ?? 0}
+                        {t.totalScore}: {toArabicDigits(opp.totalScore ?? 0, language)}
                       </Typography>
                       <Typography variant="body2">
-                        {t.averageTime}: {opp.avgTimeTaken ?? 0}s
+                        {t.averageTime}: {toArabicDigits(opp.avgTimeTaken ?? 0, language)}s
                       </Typography>
                       <Typography variant="body2">
-                        {t.averageAttempted}: {opp.avgAttemptedQuestions ?? 0}
+                        {t.averageAttempted}: {toArabicDigits(opp.avgAttemptedQuestions ?? 0, language)}
                       </Typography>
                     </Box>
                   ))}
@@ -1648,7 +1649,7 @@ export default function PlayPage() {
                   textShadow: "0 0 20px rgba(255,255,255,0.6)",
                 }}
               >
-                {playerScore}
+                {toArabicDigits(playerScore, language)}
               </Typography>
               <Typography
                 variant="body1"
@@ -1670,11 +1671,11 @@ export default function PlayPage() {
                   overflowWrap: "break-word",
                 }}
               >
-                {t.attempted}: {playerAttempted}{" "}
+                {t.attempted}: {toArabicDigits(playerAttempted, language)}{" "}
                 <Box component="span" sx={{ mx: 1, color: "text.secondary" }}>
                   |
                 </Box>{" "}
-                {t.timeTaken}: {playerTimeTaken}
+                {t.timeTaken}: {toArabicDigits(playerTimeTaken, language)}
               </Typography>
 
               {/* Opponent Box */}
@@ -1753,7 +1754,7 @@ export default function PlayPage() {
                     overflowWrap: "break-word",
                   }}
                 >
-                  {t.score}: {opponentScore}
+                  {t.score}: {toArabicDigits(opponentScore, language)}
                 </Typography>
                 <Typography
                   variant="body1"
@@ -1775,11 +1776,11 @@ export default function PlayPage() {
                     overflowWrap: "break-word",
                   }}
                 >
-                  {t.attempted}: {opponentAttempted}{" "}
+                  {t.attempted}: {toArabicDigits(opponentAttempted, language)}{" "}
                   <Box component="span" sx={{ mx: 1, color: "text.secondary" }}>
                     |
                   </Box>{" "}
-                  {t.timeTaken}: {opponentTimeTaken}
+                  {t.timeTaken}: {toArabicDigits(opponentTimeTaken, language)}
                 </Typography>
               </Box>
 

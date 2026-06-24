@@ -2,14 +2,27 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { Box, CircularProgress, Skeleton, Typography } from "@mui/material";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const MotionBox = motion(Box);
 
+const translations = {
+  ar: {
+    text: "جاري تحميل إيفنت باس",
+    description: "جارٍ تجهيز تجربتك...",
+  },
+};
+
 export default function LoadingState({
   size,
-  text = "Loading EventPass",
-  description = "Preparing your experience...",
+  text,
+  description,
 }) {
+  const langCtx = useLanguage();
+  const lang = langCtx?.language || "en";
+  const t = translations[lang] || {};
+  const displayText = text ?? t.text ?? "Loading EventPass";
+  const displayDescription = description ?? t.description ?? "Preparing your experience...";
   if (size) {
     return <CircularProgress size={size} color="inherit" />;
   }
@@ -217,7 +230,7 @@ export default function LoadingState({
                   lineHeight: 1.3,
                 }}
               >
-                {text}
+                {displayText}
               </Typography>
               <Typography
                 sx={{
@@ -229,7 +242,7 @@ export default function LoadingState({
                   mx: "auto",
                 }}
               >
-                {description}
+                {displayDescription}
               </Typography>
             </Box>
 

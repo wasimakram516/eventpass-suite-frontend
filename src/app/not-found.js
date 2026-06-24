@@ -4,9 +4,32 @@ import { Box, Button, Container, Typography, Stack } from "@mui/material";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Background from "@/components/Background";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { toArabicDigits } from "@/utils/arabicDigits";
+
+const translations = {
+  en: {
+    title: "Page Not Found",
+    message:
+      "Sorry, the page you're looking for doesn't exist or may have been moved.",
+    goHome: "Go to Home",
+    goBack: "Go Back",
+    poweredBy: "Powered by",
+  },
+  ar: {
+    title: "الصفحة غير موجودة",
+    message: "عذرًا، الصفحة التي تبحث عنها غير موجودة أو ربما تم نقلها.",
+    goHome: "الذهاب إلى الرئيسية",
+    goBack: "العودة",
+    poweredBy: "مدعوم من",
+  },
+};
 
 export default function NotFoundPage() {
   const router = useRouter();
+  const { language } = useLanguage();
+  const t = translations[language] || translations.en;
+  const dir = language === "ar" ? "rtl" : "ltr";
 
   const handleGoHome = () => router.push("/");
 
@@ -21,10 +44,9 @@ export default function NotFoundPage() {
         alignItems: "center",
         textAlign: "center",
       }}
+      dir={dir}
     >
-      {/* Background */}
       <Background/>
-      {/* Logo + Code */}
       <Box sx={{ mb: 3 }}>
         <Typography
           variant="h1"
@@ -33,14 +55,13 @@ export default function NotFoundPage() {
             fontSize: "5rem",
             color: "primary.main"
           }}>
-          404
+          {toArabicDigits("404", language)}
         </Typography>
       </Box>
-      {/* Heading + Message */}
       <Typography variant="h5" gutterBottom sx={{
         fontWeight: "bold"
       }}>
-        Page Not Found
+        {t.title}
       </Typography>
       <Typography
         variant="body1"
@@ -48,11 +69,9 @@ export default function NotFoundPage() {
           color: "text.secondary",
           mb: 4
         }}>
-        Sorry, the page you&apos;re looking for doesn&apos;t exist or may have
-        been moved.
+        {t.message}
       </Typography>
-      {/* Actions */}
-      <Stack direction="row" spacing={2}>
+      <Stack direction="row" spacing={dir === "rtl" ? 6 : 2}>
         <Button
           variant="contained"
           size="large"
@@ -64,7 +83,7 @@ export default function NotFoundPage() {
             fontWeight: 500,
           }}
         >
-          Go to Home
+          {t.goHome}
         </Button>
         <Button
           variant="outlined"
@@ -77,17 +96,16 @@ export default function NotFoundPage() {
             fontWeight: 500,
           }}
         >
-          Go Back
+          {t.goBack}
         </Button>
       </Stack>
-      {/* Footer Note */}
       <Typography
         variant="caption"
         sx={{
           color: "text.secondary",
           mt: 6
         }}>
-        Powered by{" "}
+        {t.poweredBy}{" "}
         <a
           href="https://whitewall.om"
           target="_blank"

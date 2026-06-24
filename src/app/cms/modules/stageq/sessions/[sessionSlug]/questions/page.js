@@ -37,6 +37,7 @@ import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { toArabicDigits } from "@/utils/arabicDigits";
 import LoadingState from "@/components/LoadingState";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import RecordMetadata from "@/components/RecordMetadata";
@@ -256,7 +257,7 @@ export default function SessionQuestionsPage() {
                           mb: 0.5
                         }}>
                         <Chip
-                          label={`On screen in ${countdowns[q._id]}s`}
+                          label={`On screen in ${toArabicDigits(countdowns[q._id], language)}s`}
                           size="small"
                           color="warning"
                           variant="outlined"
@@ -295,7 +296,7 @@ export default function SessionQuestionsPage() {
                       <Typography variant="body2" sx={{
                         color: "text.secondary"
                       }}>
-                        {q.votes} {q.votes === 1 ? t.vote : t.votes}
+                        {toArabicDigits(q.votes, language)} {q.votes === 1 ? t.vote : t.votes}
                       </Typography>
                     </Stack>
                     <Divider sx={{ my: 1 }} />

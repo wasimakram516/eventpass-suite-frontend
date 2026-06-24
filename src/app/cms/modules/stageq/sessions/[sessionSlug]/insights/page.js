@@ -29,6 +29,7 @@ import ICONS from "@/utils/iconUtil";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import AppCard from "@/components/cards/AppCard";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { toArabicDigits } from "@/utils/arabicDigits";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import { DateTimePicker } from "@mui/x-date-pickers/DateTimePicker";
@@ -75,6 +76,13 @@ const translations = {
         participationRate: "Participation Rate",
         uniqueSubmitters: "Unique Submitters",
         exportedAt: "Exported At",
+        chartPie: "Pie",
+        chartBar: "Vertical Bar",
+        chartHorizontalBar: "Horizontal Bar",
+        chartLine: "Line",
+        chartHeatmap: "Heatmap",
+        chartDistribution: "Distribution",
+        chartAverage: "Average",
     },
     ar: {
         pageTitle: "تحليلات الجلسة",
@@ -113,6 +121,13 @@ const translations = {
         participationRate: "معدل المشاركة",
         uniqueSubmitters: "المرسلون الفريدون",
         exportedAt: "تاريخ التصدير",
+        chartPie: "دائري",
+        chartBar: "شريطي عمودي",
+        chartHorizontalBar: "شريطي أفقي",
+        chartLine: "خطي",
+        chartHeatmap: "خريطة حرارية",
+        chartDistribution: "التوزيع",
+        chartAverage: "المتوسط",
     },
 };
 
@@ -277,7 +292,7 @@ export default function SessionInsightsDashboard() {
                             ...prev,
                             [fieldName]: {
                                 ...field,
-                                xData: filtered.map((d) => formatDateTimeWithLocale(d.timestamp)),
+                                xData: filtered.map((d) => formatDateTimeWithLocale(d.timestamp, language === "ar" ? "ar-SA" : "en-GB")),
                                 yData: filtered.map((d) => d.count),
                             },
                         }));
@@ -346,13 +361,13 @@ export default function SessionInsightsDashboard() {
                 endDateFormatted: formatPdfDate(linkedEvent?.endDate),
                 venue: linkedEvent?.venue || "N/A",
                 summaryCards: summary ? [
-                    { label: t.totalQuestions, value: summary.totalQuestions, color: "#0077b6" },
-                    { label: t.uniqueSubmitters, value: summary.uniqueSubmitters, color: "#f59e0b" },
-                    { label: t.participationRate, value: `${summary.participationRate}%`, color: "#10b981" },
+                    { label: t.totalQuestions, value: toArabicDigits(summary.totalQuestions, language), color: "#0077b6" },
+                    { label: t.uniqueSubmitters, value: toArabicDigits(summary.uniqueSubmitters, language), color: "#f59e0b" },
+                    { label: t.participationRate, value: `${toArabicDigits(summary.participationRate, language)}%`, color: "#10b981" },
                     summary.topQuestion ? { 
                         label: t.topVotedQuestion, 
                         value: summary.topQuestion.text, 
-                        subValue: `${summary.topQuestion.voteCount} ${t.votes}`,
+                        subValue: `${toArabicDigits(summary.topQuestion.voteCount, language)} ${t.votes}`,
                         isHighlight: true 
                     } : null,
                 ].filter(Boolean) : []
@@ -419,7 +434,7 @@ export default function SessionInsightsDashboard() {
             if (linkedEvent) {
                 pushRow("Logo URL", linkedEvent.logoUrl || "N/A");
                 pushRow("Event Name", linkedEvent.name || "N/A");
-                pushRow(t.exportedAt, formatDateTimeWithLocale(new Date()));
+                pushRow(t.exportedAt, formatDateTimeWithLocale(new Date(), language === "ar" ? "ar-SA" : "en-GB"));
                 pushRow("From", linkedEvent.startDate ? formatDateTimeForExcel(linkedEvent.startDate) : "N/A");
                 pushRow("To", linkedEvent.endDate ? formatDateTimeForExcel(linkedEvent.endDate) : "N/A");
                 pushRow("Venue", linkedEvent.venue || "N/A");
@@ -428,7 +443,7 @@ export default function SessionInsightsDashboard() {
 
             // Session info section
             pushRow(t.sessionTitle, sessionInfo.title || "N/A");
-            if (!linkedEvent) pushRow(t.exportedAt, formatDateTimeWithLocale(new Date()));
+            if (!linkedEvent) pushRow(t.exportedAt, formatDateTimeWithLocale(new Date(), language === "ar" ? "ar-SA" : "en-GB"));
             pushRow(t.totalQuestions, leftAlign(summary?.totalQuestions));
             pushRow(t.uniqueSubmitters, leftAlign(summary?.uniqueSubmitters));
             pushRow(t.participationRate, summary?.participationRate != null ? `${summary.participationRate}%` : "N/A");
@@ -559,9 +574,9 @@ export default function SessionInsightsDashboard() {
                 <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 1 }}>
                     <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, flex: "1 1 500px" }}>
                         {[
-                            { label: t.totalQuestions, value: summary.totalQuestions, color: "#0077b6" },
-                            { label: t.uniqueSubmitters, value: summary.uniqueSubmitters, color: "#f59e0b" },
-                            { label: t.participationRate, value: `${summary.participationRate}%`, color: "#10b981" },
+                            { label: t.totalQuestions, value: toArabicDigits(summary.totalQuestions, language), color: "#0077b6" },
+                            { label: t.uniqueSubmitters, value: toArabicDigits(summary.uniqueSubmitters, language), color: "#f59e0b" },
+                            { label: t.participationRate, value: `${toArabicDigits(summary.participationRate, language)}%`, color: "#10b981" },
                         ].map(({ label, value, color }) => (
                             <AppCard
                                 key={label}
@@ -634,7 +649,7 @@ export default function SessionInsightsDashboard() {
                             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                                 <Chip 
                                     size="small" 
-                                    label={`${summary.topQuestion.voteCount} ${t.votes}`} 
+                                    label={`${toArabicDigits(summary.topQuestion.voteCount, language)} ${t.votes}`} 
                                     sx={{ backgroundColor: "#6366f1", color: "white", fontWeight: 600 }} 
                                 />
                             </Box>
@@ -713,6 +728,7 @@ export default function SessionInsightsDashboard() {
                                     }
                                 }}
                                 t={t}
+                                language={language}
                             />
                         </AppCard>
                     ))

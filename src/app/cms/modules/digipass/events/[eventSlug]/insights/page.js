@@ -36,6 +36,7 @@ import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import { formatDateTimeWithLocale } from "@/utils/dateUtils";
 import { COUNTRY_CODES, getFlagImageUrl } from "@/utils/countryCodes";
 import * as XLSX from "xlsx";
+import { toArabicDigits } from "@/utils/arabicDigits";
 
 const translations = {
     en: {
@@ -75,6 +76,12 @@ const translations = {
         avgActivities: "Avg Activities per Participant",
         scanRate: "Scan Rate",
         exportedAt: "Exported At",
+        noData: "No data to display",
+        chartPie: "Pie",
+        chartBar: "Vertical Bar",
+        chartHorizontalBar: "Horizontal Bar",
+        chartLine: "Line",
+        chartHeatmap: "Heatmap",
     },
     ar: {
         pageTitle: "تحليلات ذكية",
@@ -113,6 +120,12 @@ const translations = {
         avgActivities: "متوسط الأنشطة لكل مشارك",
         scanRate: "معدل المسح",
         exportedAt: "تاريخ التصدير",
+        noData: "لا توجد بيانات للعرض",
+        chartPie: "دائري",
+        chartBar: "شريطي عمودي",
+        chartHorizontalBar: "شريطي أفقي",
+        chartLine: "خطي",
+        chartHeatmap: "خريطة حرارية",
     },
 };
 
@@ -359,7 +372,7 @@ export default function AnalyticsDashboard() {
                         });
 
                         const xData = filteredData.map((d) =>
-                            formatDateTimeWithLocale(d.timestamp)
+                            formatDateTimeWithLocale(d.timestamp, language === "ar" ? "ar-SA" : "en-GB")
                         );
                         const yData = filteredData.map((d) => d.count);
 
@@ -635,7 +648,7 @@ export default function AnalyticsDashboard() {
             // Event Details section
             pushRow(t.logoUrl, eventInfo.logoUrl || "N/A");
             pushRow(t.eventName, eventInfo.name || "N/A");
-            pushRow(t.exportedAt, formatDateTimeWithLocale(new Date()));
+            pushRow(t.exportedAt, formatDateTimeWithLocale(new Date(), language === "ar" ? "ar-SA" : "en-GB"));
             if (eventInfo.startDate) pushRow(t.from, formatDateTimeForExcel(eventInfo.startDate));
             if (eventInfo.endDate) pushRow(t.to, formatDateTimeForExcel(eventInfo.endDate));
             if (eventInfo.venue) pushRow(t.venue, eventInfo.venue);
@@ -822,10 +835,10 @@ export default function AnalyticsDashboard() {
                 <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 1 }}>
                     <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, flex: "1 1 500px" }}>
                         {[
-                            { label: t.totalParticipants, value: summary.totalParticipants, color: "#0077b6" },
-                            { label: t.totalActivityCompletions, value: summary.totalActivityCompletions, color: "#f59e0b" },
-                            { label: t.avgActivities, value: summary.avgActivitiesPerParticipant, color: "#8b5cf6" },
-                            eventInfo?.linkedEventRegId ? { label: t.scanRate, value: `${summary.scanRate}%`, color: "#10b981" } : null,
+                            { label: t.totalParticipants, value: toArabicDigits(summary.totalParticipants, language), color: "#0077b6" },
+                            { label: t.totalActivityCompletions, value: toArabicDigits(summary.totalActivityCompletions, language), color: "#f59e0b" },
+                            { label: t.avgActivities, value: toArabicDigits(summary.avgActivitiesPerParticipant, language), color: "#8b5cf6" },
+                            eventInfo?.linkedEventRegId ? { label: t.scanRate, value: `${toArabicDigits(summary.scanRate, language)}%`, color: "#10b981" } : null,
                         ].filter(Boolean).map(({ label, value, color }) => (
                             <AppCard
                                 key={label}
@@ -1001,6 +1014,7 @@ export default function AnalyticsDashboard() {
                                     }
                                 }}
                                 t={t}
+                                language={language}
                             />
                         </AppCard>
                     ))

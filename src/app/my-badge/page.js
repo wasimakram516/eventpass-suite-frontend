@@ -98,7 +98,8 @@ const translations = {
 };
 
 export default function MyBadgePage() {
-  const { t, dir } = useI18nLayout(translations);
+  const { t, dir, language } = useI18nLayout(translations);
+  const locale = language === "ar" ? "ar-SA" : "en-GB";
   const [step, setStep] = useState(0);
   const [events, setEvents] = useState({ eventreg: [], checkin: [] });
   const [eventsLoading, setEventsLoading] = useState(true);
@@ -111,7 +112,7 @@ export default function MyBadgePage() {
 
   const qrRef = useRef(null);
   const badgePreviewRef = useRef(null);
-  const selectedEventDateLabel = getEventDateLabel(selectedEvent);
+  const selectedEventDateLabel = getEventDateLabel(selectedEvent, locale);
 
   useEffect(() => {
     Promise.all([getUpcomingEventRegEvents(), getUpcomingCheckInEvents()])
@@ -152,7 +153,7 @@ export default function MyBadgePage() {
 
   const validate = () => {
     const formFields = selectedEvent?.formFields || [];
-    const hasCustomFields = formFields.length > 0;
+    const hasCustomFields = selectedEvent?.useCustomFields && formFields.length > 0;
     const nextErrors = {};
 
     if (hasCustomFields) {
@@ -185,7 +186,7 @@ export default function MyBadgePage() {
     if (!validate()) return;
 
     const formFields = selectedEvent?.formFields || [];
-    const hasCustomFields = formFields.length > 0;
+    const hasCustomFields = selectedEvent?.useCustomFields && formFields.length > 0;
 
     let fields = {};
     let isoCode = DEFAULT_ISO_CODE;
@@ -309,6 +310,7 @@ export default function MyBadgePage() {
                       key={event._id || event.slug}
                       event={event}
                       t={t}
+                      locale={locale}
                       onSelect={() => handleSelectEvent(event)}
                     />
                   ))}
@@ -528,7 +530,7 @@ export default function MyBadgePage() {
                   </Box>
 
                   <Stack spacing={2.5}>
-                    {selectedEvent.formFields?.length > 0 ? (
+                    {selectedEvent?.useCustomFields && selectedEvent.formFields?.length > 0 ? (
                       selectedEvent.formFields
                         .filter((field) => field.visible !== false)
                         .map((field) => (
@@ -681,7 +683,7 @@ export default function MyBadgePage() {
   );
 }
 
-function BadgeEventCard({ event, t, onSelect }) {
+function BadgeEventCard({ event, t, onSelect, locale }) {
   const timezone = event.timezone || null;
   const dateLabel = event.startDate
     ? (() => {
@@ -690,18 +692,18 @@ function BadgeEventCard({ event, t, onSelect }) {
             ? formatDateWithTime(
                 event.startDate,
                 event.startTime,
-                "en-GB",
+                locale,
                 timezone
               )
-            : formatDate(event.startDate);
+            : formatDate(event.startDate, locale);
           const end = event.endTime
             ? formatDateWithTime(
                 event.endDate,
                 event.endTime,
-                "en-GB",
+                locale,
                 timezone
               )
-            : formatDate(event.endDate);
+            : formatDate(event.endDate, locale);
           return `${start} - ${end}`;
         }
 
@@ -709,10 +711,10 @@ function BadgeEventCard({ event, t, onSelect }) {
           ? formatDateWithTime(
               event.startDate,
               event.startTime,
-              "en-GB",
+              locale,
               timezone
             )
-          : formatDate(event.startDate);
+          : formatDate(event.startDate, locale);
       })()
     : null;
 

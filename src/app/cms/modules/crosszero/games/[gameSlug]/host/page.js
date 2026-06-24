@@ -18,6 +18,7 @@ import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import CrossZeroMarkVisual from "@/components/crosszero/CrossZeroMarkVisual";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { toArabicDigits } from "@/utils/arabicDigits";
 import useCrossZeroWebSocketData from "@/hooks/modules/crosszero/useCrossZeroWebSocketData";
 import {
   activateGameSession,
@@ -156,7 +157,7 @@ function SpectatorBoard({ board = [], xImage, oImage }) {
 export default function CrossZeroHostPage() {
   const { gameSlug } = useParams();
   const router = useRouter();
-  const { t, dir } = useI18nLayout(translations);
+  const { t, dir, language } = useI18nLayout(translations);
   const { sessions, currentSession, requestAllSessions, connected } =
     useCrossZeroWebSocketData(gameSlug);
 
@@ -625,7 +626,7 @@ export default function CrossZeroHostPage() {
             {!bothPlayersJoined && (
               <Box sx={{ mt: 3 }}>
                 <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                  {t.autoCloseNotice} <b>{abandonRemaining}</b> {t.seconds}.
+                  {t.autoCloseNotice} <b>{toArabicDigits(abandonRemaining, language)}</b> {t.seconds}.
                 </Typography>
               </Box>
             )}
@@ -778,9 +779,9 @@ export default function CrossZeroHostPage() {
                                 color: "text.secondary"
                               }}>
                                 {t.timeTaken}:{" "}
-                                {session?.xoStats?.timeTaken != null
+                                {toArabicDigits(session?.xoStats?.timeTaken != null
                                   ? `${session.xoStats.timeTaken}s`
-                                  : "0s"}
+                                  : "0s", language)}
                               </Typography>
                             </Box>
                             <Box
@@ -793,7 +794,7 @@ export default function CrossZeroHostPage() {
                               <Typography variant="body2" sx={{
                                 color: "text.secondary"
                               }}>
-                                {t.moves}: {session?.xoStats?.moves ?? 0}
+                                {t.moves}: {toArabicDigits(session?.xoStats?.moves ?? 0, language)}
                               </Typography>
                             </Box>
                           </Box>
@@ -884,9 +885,9 @@ export default function CrossZeroHostPage() {
                                 color: "text.secondary"
                               }}>
                                 {t.timeTaken}:{" "}
-                                {session?.xoStats?.timeTaken != null
+                                {toArabicDigits(session?.xoStats?.timeTaken != null
                                   ? `${session.xoStats.timeTaken}s`
-                                  : "0s"}
+                                  : "0s", language)}
                               </Typography>
                               <ICONS.time fontSize="small" />
                             </Box>
@@ -899,7 +900,7 @@ export default function CrossZeroHostPage() {
                               <Typography variant="body2" sx={{
                                 color: "text.secondary"
                               }}>
-                                {t.moves}: {session?.xoStats?.moves ?? 0}
+                                {t.moves}: {toArabicDigits(session?.xoStats?.moves ?? 0, language)}
                               </Typography>
                               <ICONS.leaderboard fontSize="small" />
                             </Box>

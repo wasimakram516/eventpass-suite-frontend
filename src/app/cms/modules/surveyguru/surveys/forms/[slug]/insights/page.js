@@ -82,6 +82,15 @@ const translations = {
         segmentedBy: "Segmented By",
         exportedAt: "Exported At",
         anonymous: "Anonymous",
+        responseRate: "Response Rate",
+        questions: "Questions",
+        chartPie: "Pie",
+        chartBar: "Vertical Bar",
+        chartHorizontalBar: "Horizontal Bar",
+        chartLine: "Line",
+        chartHeatmap: "Heatmap",
+        chartDistribution: "Distribution",
+        chartAverage: "Average",
     },
     ar: {
         pageTitle: "تحليلات ذكية",
@@ -121,6 +130,15 @@ const translations = {
         segmentedBy: "مقسم حسب",
         exportedAt: "تاريخ التصدير",
         anonymous: "مجهول",
+        responseRate: "معدل الاستجابة",
+        questions: "الأسئلة",
+        chartPie: "دائري",
+        chartBar: "شريطي عمودي",
+        chartHorizontalBar: "شريطي أفقي",
+        chartLine: "خطي",
+        chartHeatmap: "خريطة حرارية",
+        chartDistribution: "التوزيع",
+        chartAverage: "المتوسط",
     },
 };
 
@@ -790,13 +808,13 @@ export default function SurveyGuruInsightsPage() {
                 endDateFormatted: currentEventInfo?.endDate ? dayjs(currentEventInfo.endDate).format("DD-MMM-YY, hh:mm a") : undefined,
                 venue: currentEventInfo?.venue || "N/A",
                 summaryCards: [
-                    { label: t.totalResponses, value: totalResponses, color: "#0077b6" },
+                    { label: t.totalResponses, value: toArabicDigits(totalResponses, language), color: "#0077b6" },
                     formInfo?.isAnonymous === false && eventInfo?.registrations ? {
-                        label: "Response Rate",
-                        value: `${((totalResponses / eventInfo.registrations) * 100).toFixed(1)}%`,
+                        label: t.responseRate,
+                        value: toArabicDigits(`${((totalResponses / eventInfo.registrations) * 100).toFixed(1)}%`, language),
                         color: "#10b981"
                     } : null,
-                    { label: "Questions", value: totalQuestions || availableQuestions.filter(q => q.isSurveyQuestion).length, color: "#f59e0b" },
+                    { label: t.questions, value: toArabicDigits(totalQuestions || availableQuestions.filter(q => q.isSurveyQuestion).length, language), color: "#f59e0b" },
                 ].filter(Boolean)
             };
 
@@ -911,7 +929,7 @@ export default function SurveyGuruInsightsPage() {
             if (eventInfoToUse) {
                 pushRow(t.logoUrl, eventInfoToUse.logoUrl || "N/A");
                 pushRow(t.eventName, eventInfoToUse.name || "N/A");
-                pushRow(t.exportedAt, formatDateTimeWithLocale(new Date()));
+                pushRow(t.exportedAt, formatDateTimeWithLocale(new Date(), language === "ar" ? "ar-SA" : "en-GB"));
                 pushRow(t.from, eventInfoToUse.startDate ? formatDateTimeForExcel(eventInfoToUse.startDate) : "N/A");
                 pushRow(t.to, eventInfoToUse.endDate ? formatDateTimeForExcel(eventInfoToUse.endDate) : "N/A");
                 pushRow(t.venue, eventInfoToUse.venue || "N/A");
@@ -1086,13 +1104,13 @@ export default function SurveyGuruInsightsPage() {
             <Divider />
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 2 }}>
                 {[
-                    { label: t.totalResponses, value: totalResponses, color: "#0077b6" },
+                    { label: t.totalResponses, value: toArabicDigits(totalResponses, language), color: "#0077b6" },
                     formInfo?.isAnonymous === false && eventInfo?.registrations ? {
-                        label: "Response Rate",
-                        value: `${((totalResponses / eventInfo.registrations) * 100).toFixed(1)}%`,
+                        label: t.responseRate,
+                        value: toArabicDigits(`${((totalResponses / eventInfo.registrations) * 100).toFixed(1)}%`, language),
                         color: "#10b981"
                     } : null,
-                    { label: "Questions", value: totalQuestions || availableQuestions.filter(q => q.isSurveyQuestion).length, color: "#f59e0b" },
+                    { label: t.questions, value: toArabicDigits(totalQuestions || availableQuestions.filter(q => q.isSurveyQuestion).length, language), color: "#f59e0b" },
                 ].filter(Boolean).map(({ label, value, color }) => (
                     <AppCard
                         key={label}

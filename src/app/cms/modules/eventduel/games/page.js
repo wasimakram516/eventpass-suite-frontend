@@ -36,6 +36,7 @@ import NoDataAvailable from "@/components/NoDataAvailable";
 import LoadingState from "@/components/LoadingState";
 import AppCard from "@/components/cards/AppCard";
 import RecordMetadata from "@/components/RecordMetadata";
+import { toArabicDigits } from "@/utils/arabicDigits";
 
 const translations = {
   en: {
@@ -369,12 +370,12 @@ export default function GamesPage() {
                     <Typography variant="body2" sx={{
                       color: "text.secondary"
                     }}>
-                      <strong>{t.optionCountLabel}</strong> {g.choicesCount}
+                      <strong>{t.optionCountLabel}</strong> {toArabicDigits(g.choicesCount, language)}
                     </Typography>
                     <Typography variant="body2" sx={{
                       color: "text.secondary"
                     }}>
-                      <strong>{t.quizTimeLabel}</strong> {g.gameSessionTimer}s
+                      <strong>{t.quizTimeLabel}</strong> {toArabicDigits(g.gameSessionTimer, language)}s
                     </Typography>
                   </Box>
 

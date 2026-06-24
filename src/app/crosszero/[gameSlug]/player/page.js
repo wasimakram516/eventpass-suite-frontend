@@ -38,7 +38,7 @@ const translations = {
     waitingSession: "Waiting for a session to be created...",
   },
   ar: {
-    pvpMode: "لاعب ضد لاعب · 1 مقابل 1",
+    pvpMode: "لاعب ضد لاعب · ١ مقابل ١",
     chooseSide: "اختر جانبك",
     nameLabel: "اسمك",
     companyLabel: "الشركة (اختياري)",

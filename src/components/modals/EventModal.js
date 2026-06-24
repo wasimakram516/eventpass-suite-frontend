@@ -179,6 +179,22 @@ const translations = {
     dependentsHint: "When this option is selected, the chosen fields below will appear.",
     dependentsSelect: "Select fields to show",
     noOptionsAvailable: "No other fields available",
+    addDependentFields: "Add Dependent Fields",
+    depFieldLabel: "Field Label",
+    depInputType: "Input Type",
+    depRequired: "Required",
+    depVisible: "Visible",
+    depRemove: "Remove",
+    depAddField: "+ Add Field",
+    depDependentFields: "Dependent Fields",
+    depHint: "When this option is selected, the chosen fields below will appear.",
+    depNoFieldsYet: "No fields added yet",
+    depSelectFieldsFor: "Select fields to show for",
+    willClearAll: "Will Clear All (toggle off?)",
+    clearAllLogos: "Clear All Logos",
+    uploadAgenda: "Upload Agenda (PDF)",
+    currentAgenda: "Current Agenda:",
+    selectedAgenda: "Selected Agenda:",
   },
   ar: {
     createTitle: "إنشاء فعالية",
@@ -314,6 +330,22 @@ const translations = {
     dependentsHint: "عند اختيار هذا الخيار، ستظهر الحقول المحددة أدناه.",
     dependentsSelect: "اختر الحقول التي ستظهر",
     noOptionsAvailable: "لا توجد حقول أخرى متاحة",
+    addDependentFields: "إضافة حقول تابعة",
+    depFieldLabel: "اسم الحقل",
+    depInputType: "نوع الإدخال",
+    depRequired: "إلزامي",
+    depVisible: "مرئي",
+    depRemove: "إزالة",
+    depAddField: "+ إضافة حقل",
+    depDependentFields: "الحقول التابعة",
+    depHint: "عند اختيار هذا الخيار، ستظهر الحقول المحددة أدناه.",
+    depNoFieldsYet: "لا توجد حقول مضافة بعد",
+    depSelectFieldsFor: "اختر الحقول التي ستظهر عند",
+    willClearAll: "سيتم مسح الكل (إلغاء؟)",
+    clearAllLogos: "مسح جميع الشعارات",
+    uploadAgenda: "رفع جدول الأعمال (PDF)",
+    currentAgenda: "جدول الأعمال الحالي:",
+    selectedAgenda: "جدول الأعمال المحدد:",
   },
 };
 
@@ -433,6 +465,9 @@ const EventModal = ({
     customQrIncludeLogo: false,
     customQrIncludeBrandingMedia: false,
     customQrIncludeBackground: false,
+    dependentFieldsEnabled: false,
+    globalDependentFields: [],
+    globalDependentFieldMappings: {},
   });
 
   useEffect(() => {
@@ -441,6 +476,9 @@ const EventModal = ({
         ...prev,
         name: initialValues.name || "",
         slug: initialValues.slug || "",
+        dependentFieldsEnabled: !!(initialValues?.globalDependentFields?.length),
+        globalDependentFields: initialValues?.globalDependentFields || [],
+        globalDependentFieldMappings: initialValues?.globalDependentFieldMappings || {},
         startDate: initialValues.startDate
           ? new Date(initialValues.startDate).toISOString().split("T")[0]
           : "",
@@ -484,7 +522,7 @@ const EventModal = ({
           _temp: "",
         })),
 
-        useCustomFields: !!initialValues.formFields?.length,
+        useCustomFields: initialValues.useCustomFields ?? !!initialValues.formFields?.length,
         badgeCustomizations: initialValues?.customizations || {},
         useInternationalNumbers: initialValues?.useInternationalNumbers || false,
         showQrAfterRegistration:
@@ -507,6 +545,13 @@ const EventModal = ({
         emailTemplateSubject: initialValues?.emailTemplate?.subject || "",
         emailTemplateBody: initialValues?.emailTemplate?.body || "",
         isPaid: initialValues?.isPaid || false,
+        // ticketTypes: initialValues?.ticketTypes?.map((tt) => ({
+        //   _id: tt._id,
+        //   name: tt.name || "",
+        //   description: tt.description || "",
+        //   price: tt.price ?? "",
+        //   capacity: tt.capacity ?? "",
+        // })) || [],
         ticketTypes: initialValues?.ticketTypes?.map((tt) => ({
           _id: tt._id,
           name: tt.name || "",
@@ -620,6 +665,9 @@ const EventModal = ({
         qrWrapperBackground: null,
         qrWrapperBackgroundPreview: "",
         removeQrWrapperBackground: false,
+        dependentFieldsEnabled: false,
+        globalDependentFields: [],
+        globalDependentFieldMappings: {},
       }));
     }
   }, [initialValues, isClosed]);
@@ -1050,6 +1098,7 @@ const EventModal = ({
   };
 
   const handleSubmit = async () => {
+
     if (
       !formData.name ||
       !formData.startDate ||
@@ -1329,13 +1378,14 @@ const EventModal = ({
             formFields: formData.formFields,
           }
           : {}),
+        useCustomFields: formData.useCustomFields,
         customizations: formData.useCustomFields
           ? (() => {
-              const allowed = new Set((formData.formFields || []).map(f => f.inputName));
-              return Object.fromEntries(
-                Object.entries(formData.badgeCustomizations || {}).filter(([k]) => allowed.has(k) || k === "_qrCode")
-              );
-            })()
+            const allowed = new Set((formData.formFields || []).map(f => f.inputName));
+            return Object.fromEntries(
+              Object.entries(formData.badgeCustomizations || {}).filter(([k]) => allowed.has(k) || k === "_qrCode")
+            );
+          })()
           : formData.badgeCustomizations || {},
         ...(formData.removeLogo ? { removeLogo: "true" } : {}),
         ...(formData.removeBackgroundEn ? { removeBackgroundEn: "true" } : {}),
@@ -1357,19 +1407,27 @@ const EventModal = ({
         isPaid: formData.isPaid || false,
         ticketTypes: formData.isPaid
           ? formData.ticketTypes.map((tt) => ({
-              ...(tt._id ? { _id: tt._id } : {}),
-              name: tt.name,
-              description: tt.description || "",
-              price: parseFloat(tt.price),
-              capacity: tt.capacity ? parseInt(tt.capacity, 10) : null,
-            }))
+            ...(tt._id ? { _id: tt._id } : {}),
+            name: tt.name,
+            description: tt.description || "",
+            price: parseFloat(tt.price),
+            capacity: tt.capacity ? parseInt(tt.capacity, 10) : null,
+          }))
           : [],
+
         fees: formData.isPaid
           ? formData.fees
-              .filter((f) => f.name?.trim() && f.percentage !== "" && f.percentage != null)
-              .map((f) => ({ name: f.name.trim(), percentage: parseFloat(f.percentage) }))
+            .filter((f) => f.name?.trim() && f.percentage !== "" && f.percentage != null)
+            .map((f) => ({ name: f.name.trim(), percentage: parseFloat(f.percentage) }))
           : [],
         vatPercentage: formData.isPaid ? (parseFloat(formData.vatPercentage) || 0) : 0,
+        dependentFieldsEnabled: formData.dependentFieldsEnabled || false,
+        globalDependentFields: formData.dependentFieldsEnabled
+          ? (formData.globalDependentFields || []).filter(f => f.inputName?.trim())
+          : [],
+        globalDependentFieldMappings: formData.dependentFieldsEnabled
+          ? (formData.globalDependentFieldMappings || {})
+          : {},
       };
 
       if (!initialValues) {
@@ -1913,8 +1971,11 @@ const EventModal = ({
                               />
                             </Box>
                           </Box>
+
+
                         </Paper>
                       ))}
+
 
                       <Button
                         variant="outlined"
@@ -1931,6 +1992,222 @@ const EventModal = ({
                       >
                         + {t.addTicketType}
                       </Button>
+
+                      {/* --Ticket dependent field --*/}
+                      {!!initialValues && (
+                        <Box sx={{ mt: 2, mb: 1 }}>
+                          <FormControlLabel
+                            control={
+                              <Checkbox
+                                size="small"
+                                checked={!!formData.dependentFieldsEnabled}
+                                onChange={(e) =>
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    dependentFieldsEnabled: e.target.checked,
+                                  }))
+                                }
+                                color="primary"
+                              />
+                            }
+                            label={
+                              <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                                {t.addDependentFields}
+                              </Typography>
+                            }
+                          />
+
+                          {formData.dependentFieldsEnabled && (
+                            <Box
+                              sx={{
+                                mt: 1,
+                                p: 2,
+                                bgcolor: "background.default",
+                                border: "1px solid",
+                                borderColor: "divider",
+                                borderRadius: 2,
+                              }}
+                            >
+                              {/* Sub-fields list */}
+                              {(formData.globalDependentFields || []).map((depField, depIdx) => (
+                                <Box
+                                  key={depIdx}
+                                  sx={{
+                                    display: "flex",
+                                    flexWrap: "wrap",
+                                    gap: 1,
+                                    alignItems: "center",
+                                    mb: 1.5,
+                                    p: 1.5,
+                                    border: "1px solid",
+                                    borderColor: "divider",
+                                    borderRadius: 1.5,
+                                    bgcolor: "background.paper",
+                                  }}
+                                >
+                                  <TextField
+                                    size="small"
+                                    placeholder={t.depFieldLabel}
+                                    value={depField.inputName || ""}
+                                    onChange={(e) =>
+                                      setFormData((prev) => {
+                                        const fields = [...(prev.globalDependentFields || [])];
+                                        fields[depIdx] = { ...fields[depIdx], inputName: e.target.value };
+                                        return { ...prev, globalDependentFields: fields };
+                                      })
+                                    }
+                                    sx={{ flex: "1 1 140px" }}
+                                  />
+                                  <TextField
+                                    select
+                                    size="small"
+                                    label={t.depInputType}
+                                    value={depField.inputType || "text"}
+                                    onChange={(e) =>
+                                      setFormData((prev) => {
+                                        const fields = [...(prev.globalDependentFields || [])];
+                                        fields[depIdx] = { ...fields[depIdx], inputType: e.target.value };
+                                        return { ...prev, globalDependentFields: fields };
+                                      })
+                                    }
+                                    sx={{ flex: "1 1 110px" }}
+                                    slotProps={{ select: { native: true } }}
+                                  >
+                                    {[
+                                      { value: "text", label: t.textType },
+                                      { value: "number", label: t.numberType },
+                                      { value: "file", label: t.fileType },
+                                      { value: "email", label: t.emailType },
+                                      { value: "phone", label: t.phoneType },
+                                    ].map((o) => (
+                                      <option key={o.value} value={o.value}>{o.label}</option>
+                                    ))}
+                                  </TextField>
+                                  <FormControlLabel
+                                    control={
+                                      <Checkbox
+                                        size="small"
+                                        checked={!!depField.required}
+                                        onChange={(e) =>
+                                          setFormData((prev) => {
+                                            const fields = [...(prev.globalDependentFields || [])];
+                                            fields[depIdx] = { ...fields[depIdx], required: e.target.checked };
+                                            return { ...prev, globalDependentFields: fields };
+                                          })
+                                        }
+                                      />
+                                    }
+                                    label={<Typography variant="caption">{t.depRequired}</Typography>} sx={{ ml: 0 }}
+                                  />
+                                  <FormControlLabel
+                                    control={
+                                      <Checkbox
+                                        size="small"
+                                        checked={depField.visible !== false}
+                                        onChange={(e) =>
+                                          setFormData((prev) => {
+                                            const fields = [...(prev.globalDependentFields || [])];
+                                            fields[depIdx] = { ...fields[depIdx], visible: e.target.checked };
+                                            return { ...prev, globalDependentFields: fields };
+                                          })
+                                        }
+                                      />
+                                    }
+                                    label={<Typography variant="caption">{t.depVisible}</Typography>} sx={{ ml: 0 }}
+                                  />
+                                  <Button
+                                    size="small"
+                                    color="error"
+                                    variant="text"
+                                    onClick={() =>
+                                      setFormData((prev) => {
+                                        const fields = [...(prev.globalDependentFields || [])];
+                                        fields.splice(depIdx, 1);
+                                        return { ...prev, globalDependentFields: fields };
+                                      })
+                                    }
+                                  >
+                                    {t.depRemove}
+                                  </Button>
+                                </Box>
+                              ))}
+
+                              <Button
+                                variant="outlined"
+                                size="small"
+                                onClick={() =>
+                                  setFormData((prev) => ({
+                                    ...prev,
+                                    globalDependentFields: [
+                                      ...(prev.globalDependentFields || []),
+                                      { inputName: "", inputType: "text", required: false, visible: true },
+                                    ],
+                                  }))
+                                }
+                                sx={{ mb: 2 }}
+                              >
+                                {t.depAddField}
+                              </Button>
+
+                              {/* Dropdowns — one per ticket name */}
+                              {formData.ticketTypes.some(t => t.name?.trim()) && (
+                                <>
+                                  <Typography
+                                    variant="caption"
+                                    sx={{ fontWeight: 600, color: "text.secondary", display: "block", mb: 0.5 }}
+                                  >
+                                    {t.depDependentFields}
+                                  </Typography>
+                                  <Typography
+                                    variant="caption"
+                                    color="text.secondary"
+                                    sx={{ display: "block", mb: 1.5 }}
+                                  >
+                                    {t.depHint}
+                                  </Typography>
+
+                                  {formData.ticketTypes
+                                    .filter(t => t.name?.trim())
+                                    .map((ticketType, ticketIdx) => {
+                                      const availableFields = (formData.globalDependentFields || [])
+                                        .filter(f => f.inputName?.trim())
+                                        .map(f => f.inputName);
+
+                                      const selectedForThisTicket =
+                                        (formData.globalDependentFieldMappings || {})[ticketType.name] || [];
+
+                                      return (
+                                        <Box key={ticketIdx} sx={{ mb: 1 }}>
+                                          <Autocomplete
+                                            multiple
+                                            size="small"
+                                            options={availableFields}
+                                            value={selectedForThisTicket.filter(v => availableFields.includes(v))}
+                                            onChange={(e, newVal) =>
+                                              setFormData((prev) => {
+                                                const mappings = { ...(prev.globalDependentFieldMappings || {}) };
+                                                mappings[ticketType.name] = newVal;
+                                                return { ...prev, globalDependentFieldMappings: mappings };
+                                              })
+                                            }
+                                            renderInput={(params) => (
+                                              <TextField
+                                                {...params}
+                                                label={`${ticketType.name} → ${t.depSelectFieldsFor}`}
+                                                placeholder={t.dependentsSelect}
+                                              />
+                                            )}
+                                            noOptionsText={t.depNoFieldsYet} fullWidth
+                                          />
+                                        </Box>
+                                      );
+                                    })}
+                                </>
+                              )}
+                            </Box>
+                          )}
+                        </Box>
+                      )}
 
                       {/* ── Fees (percentage of base ticket price) ── */}
                       <Box sx={{ mt: 3 }}>
@@ -2737,8 +3014,8 @@ const EventModal = ({
                     onClick={handleClearAllBrandingLogos}
                   >
                     {formData.clearAllBrandingLogos
-                      ? t.willClearAll || "Will Clear All (toggle off?)"
-                      : t.clearAllLogos || "Clear All Logos"}
+                      ? t.willClearAll
+                      : t.clearAllLogos}
                   </Button>
                 </Box>
 
@@ -2861,7 +3138,7 @@ const EventModal = ({
               {!isClosed && (
                 <Box>
                   <Button component="label" variant="outlined">
-                    Upload Agenda (PDF)
+                    {t.uploadAgenda}
                     <input
                       hidden
                       name="agenda"
@@ -2874,8 +3151,8 @@ const EventModal = ({
                     <Box sx={{ mt: 1 }}>
                       <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
                         {initialValues && !formData.agenda
-                          ? "Current Agenda:"
-                          : "Selected Agenda:"}
+                          ? t.currentAgenda
+                          : t.selectedAgenda}
                       </Typography>
                       <Typography variant="body2" sx={{
                         color: "text.secondary"
@@ -3276,7 +3553,7 @@ const EventModal = ({
             </Stack>
           </Stack>
         </DialogActions>
-      </Dialog>
+      </Dialog >
       <MediaUploadProgress
         open={showUploadProgress}
         uploads={uploadProgress}

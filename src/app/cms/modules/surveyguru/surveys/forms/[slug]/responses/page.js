@@ -26,9 +26,11 @@ import {
   TextField,
   InputAdornment,
 } from "@mui/material";
+import ArabicPagination from "@/components/ArabicPagination";
 
 import { useParams, useSearchParams } from "next/navigation";
 import { formatDateTimeWithLocale } from "@/utils/dateUtils";
+import { toArabicDigits } from "@/utils/arabicDigits";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import ICONS from "@/utils/iconUtil";
@@ -109,7 +111,7 @@ function OptionThumb({ url, label, size = 22, dir }) {
   );
 }
 
-function renderAnswer({ q, ans, dir, align }) {
+function renderAnswer({ q, ans, dir, align, language }) {
   if (!q) return null;
 
   const findOpt = (id) =>
@@ -268,7 +270,7 @@ function renderAnswer({ q, ans, dir, align }) {
           component="span"
           sx={{ textAlign: align, flexGrow: 1 }}
         >
-          {n} / {max}
+          {toArabicDigits(n, language)} / {toArabicDigits(max, language)}
         </Typography>
       </Stack>
     );
@@ -295,7 +297,7 @@ function renderAnswer({ q, ans, dir, align }) {
         dir={dir}
         sx={{ textAlign: align }}
       >
-        {n} / {max}
+        {toArabicDigits(n, language)} / {toArabicDigits(max, language)}
       </Typography>
     );
   };
@@ -320,7 +322,7 @@ function renderAnswer({ q, ans, dir, align }) {
             dir={dir}
             sx={{ textAlign: align }}
           >
-            {String(ans.number)}
+            {toArabicDigits(ans.number, language)}
           </Typography>
         );
       if (typeof ans?.bool === "boolean")
@@ -347,7 +349,7 @@ function renderAnswer({ q, ans, dir, align }) {
   }
 }
 
-function ResponseCard({ resp, t, dir, formDetails, align }) {
+function ResponseCard({ resp, t, dir, language, formDetails, align }) {
   const [showAllAnswers, setShowAllAnswers] = useState(false);
   const isAnonymous = formDetails?.isAnonymous;
 
@@ -457,7 +459,7 @@ function ResponseCard({ resp, t, dir, formDetails, align }) {
               <Typography variant="caption" sx={{
                 color: "text.secondary"
               }}>
-                {t.submittedAt}: {formatDateTimeWithLocale(submittedAt)}
+                {t.submittedAt}: {formatDateTimeWithLocale(submittedAt, language === "ar" ? "ar-SA" : "en-GB")}
               </Typography>
             </Box>
           ) : (
@@ -551,7 +553,7 @@ function ResponseCard({ resp, t, dir, formDetails, align }) {
                   }
                   secondary={
                     <Box sx={{ mt: 0.25, textAlign: align }}>
-                      {renderAnswer({ q, ans, dir, align })}
+                      {renderAnswer({ q, ans, dir, align, language })}
                     </Box>
                   }
                 />
@@ -576,7 +578,7 @@ function ResponseCard({ resp, t, dir, formDetails, align }) {
           >
             {showAllAnswers
               ? (t.showLessAnswers || "Show fewer answers")
-              : `${t.showMoreAnswers || "Show more answers"} (${questions.length - ANSWER_PREVIEW_COUNT})`}
+              : `${t.showMoreAnswers || "Show more answers"} (${toArabicDigits(questions.length - ANSWER_PREVIEW_COUNT, language)})`}
           </Button>
         )}
       </CardContent>
@@ -609,7 +611,7 @@ export default function ViewSurveyResponses() {
   const { slug } = useParams();
   const searchParams = useSearchParams();
 
-  const { dir, t, align } = useI18nLayout({
+  const { dir, t, align, language } = useI18nLayout({
     en: {
       title: "Survey Responses",
       description: "View all responses for this survey form.",
@@ -843,8 +845,8 @@ export default function ViewSurveyResponses() {
         <Typography variant="body2" sx={{
           color: "text.secondary"
         }}>
-          {t.showing} {(page - 1) * limit + 1}-
-          {Math.min(page * limit, displayTotal)} {t.of} {displayTotal}{" "}
+          {t.showing} {toArabicDigits((page - 1) * limit + 1, language)}-
+          {toArabicDigits(Math.min(page * limit, displayTotal), language)} {t.of} {toArabicDigits(displayTotal, language)}{" "}
           {t.records}
         </Typography>
         <FormControl
@@ -863,7 +865,7 @@ export default function ViewSurveyResponses() {
           >
             {[6, 12, 18, 24, 48].map((n) => (
               <MenuItem key={n} value={n}>
-                {n}
+                {toArabicDigits(n, language)}
               </MenuItem>
             ))}
           </Select>
@@ -894,6 +896,7 @@ export default function ViewSurveyResponses() {
                   resp={resp}
                   t={t}
                   dir={dir}
+                  language={language}
                   formDetails={formDetails}
                   align={align}
                 />
@@ -907,8 +910,7 @@ export default function ViewSurveyResponses() {
               justifyContent: "center",
               mt: 4
             }}>
-            <Pagination
-              dir="ltr"
+            <ArabicPagination
               count={Math.ceil(displayTotal / limit)}
               page={Math.min(page, Math.ceil(displayTotal / limit) || 1)}
               onChange={handlePageChange}

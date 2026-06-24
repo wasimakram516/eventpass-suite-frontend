@@ -121,7 +121,7 @@ const ChartVisualization = ({
                             {field.label}
                         </Typography>
                         <Typography variant="caption" color="textSecondary">
-                            {selectedSegment ? "Total Completions" : (chartType === "line" ? "Historical Trend" : "Distribution Overview")}
+                            {selectedSegment ? (t.totalCompletions || "Total Completions") : (chartType === "line" ? (t.historicalTrend || "Historical Trend") : (t.chartDistribution || "Distribution Overview"))}
                         </Typography>
                     </Box>
                 </Box>
@@ -246,7 +246,7 @@ const ChartVisualization = ({
                                 ["bar", "average"].map((type) => (
                                 <Chip
                                     key={type}
-                                    label={type === "bar" ? "Distribution" : "Average"}
+                                    label={type === "bar" ? (t.chartDistribution || "Distribution") : (t.chartAverage || "Average")}
                                     size="small"
                                     onClick={() => onChartTypeChange(type)}
                                     sx={{
@@ -268,10 +268,10 @@ const ChartVisualization = ({
                                 <Chip
                                     key={type}
                                     label={
-                                        type === "line" ? "Line" : 
-                                        type === "bar" ? "Vertical Bar" : 
-                                        type === "horizontalBar" ? "Horizontal Bar" :
-                                        "Heatmap"
+                                        type === "line" ? (t.chartLine || "Line") : 
+                                        type === "bar" ? (t.chartBar || "Vertical Bar") : 
+                                        type === "horizontalBar" ? (t.chartHorizontalBar || "Horizontal Bar") :
+                                        (t.chartHeatmap || "Heatmap")
                                     }
                                     size="small"
                                     onClick={() => onChartTypeChange(type)}
@@ -294,9 +294,9 @@ const ChartVisualization = ({
                                 <Chip
                                     key={type}
                                     label={
-                                        type === "bar" ? "Vertical Bar" :
-                                        type === "horizontalBar" ? "Horizontal Bar" :
-                                        type === "pie" ? "Pie" :
+                                        type === "bar" ? (t.chartBar || "Vertical Bar") :
+                                        type === "horizontalBar" ? (t.chartHorizontalBar || "Horizontal Bar") :
+                                        type === "pie" ? (t.chartPie || "Pie") :
                                         type.charAt(0).toUpperCase() + type.slice(1)
                                     }
                                     size="small"
@@ -320,9 +320,9 @@ const ChartVisualization = ({
                                 <Chip
                                     key={type}
                                     label={
-                                        type === "pie" ? "Pie" : 
-                                        type === "bar" ? "Vertical Bar" : 
-                                        "Horizontal Bar"
+                                        type === "pie" ? (t.chartPie || "Pie") : 
+                                        type === "bar" ? (t.chartBar || "Vertical Bar") : 
+                                        (t.chartHorizontalBar || "Horizontal Bar")
                                     }
                                     size="small"
                                     onClick={() => onChartTypeChange(type)}
@@ -392,7 +392,7 @@ const ChartVisualization = ({
                                     return (
                                         <Box key={xIdx} sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5, direction: "ltr", ml: { xs: 0, md: 1 } }}>
                                             <Typography variant="body2" sx={{ fontWeight: 500, color: "#1f2937", whiteSpace: "nowrap", fontSize: "0.875rem", direction: "ltr", textAlign: "left" }}>
-                                                {label === "Anonymous" ? (t.anonymous || "Anonymous") : label} {percentage}% ({val})
+                                                {label === "Anonymous" ? (t.anonymous || "Anonymous") : label} {language === "ar" ? toArabicDigits(percentage, language) : percentage}% ({language === "ar" ? toArabicDigits(val, language) : val})
                                             </Typography>
                                         </Box>
                                     );
@@ -405,7 +405,7 @@ const ChartVisualization = ({
                                         <Box key={idx} sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5, direction: "ltr", ml: { xs: 0, md: 1 } }}>
                                             <Box sx={{ width: 12, height: 12, borderRadius: "50%", backgroundColor: item.color, flexShrink: 0 }} />
                                             <Typography variant="body2" sx={{ fontWeight: 500, color: "#1f2937", whiteSpace: "nowrap", fontSize: "0.875rem", direction: "ltr", textAlign: "left" }}>
-                                                {item.label === "Anonymous" ? (t.anonymous || "Anonymous") : item.label} {percentage}% ({item.value})
+                                                {item.label === "Anonymous" ? (t.anonymous || "Anonymous") : item.label} {language === "ar" ? toArabicDigits(percentage, language) : percentage}% ({language === "ar" ? toArabicDigits(item.value, language) : item.value})
                                             </Typography>
                                         </Box>
                                     );
@@ -536,7 +536,7 @@ const ChartVisualization = ({
                                         <Box key={idx} sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5, direction: "ltr", ml: { xs: 0, md: 1 } }}>
                                             <Box sx={{ width: 12, height: 12, borderRadius: "50%", backgroundColor: item.color, flexShrink: 0 }} />
                                             <Typography variant="body2" sx={{ fontWeight: 500, color: "#1f2937", whiteSpace: "nowrap", fontSize: "0.875rem", direction: "ltr", textAlign: "left" }}>
-                                                {item.label === "Anonymous" ? (t.anonymous || "Anonymous") : item.label} {percentage}% ({item.value})
+                                                {item.label === "Anonymous" ? (t.anonymous || "Anonymous") : item.label} {language === "ar" ? toArabicDigits(percentage, language) : percentage}% ({language === "ar" ? toArabicDigits(item.value, language) : item.value})
                                             </Typography>
                                         </Box>
                                     );
@@ -587,7 +587,7 @@ const ChartVisualization = ({
                                                 return (
                                                     <Box
                                                         key={h}
-                                                        title={`${dayName}, ${h}:00 - ${count} activities`}
+                                                        title={language === "ar" ? `${dayName}, ${toArabicDigits(h, language)}:00 - ${toArabicDigits(count, language)} أنشطة` : `${dayName}, ${h}:00 - ${count} activities`}
                                                         sx={{
                                                             m: 0.1,
                                                             borderRadius: 0.5,

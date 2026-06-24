@@ -36,6 +36,7 @@ import useI18nLayout from "@/hooks/useI18nLayout";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import RecordMetadata from "@/components/RecordMetadata";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
+import { toArabicDigits } from "@/utils/arabicDigits";
 
 const translations = {
     en: {
@@ -76,6 +77,7 @@ const translations = {
         typeNps: "NPS",
         typeText: "Text",
         typeOptions: "خيارات",
+        exportQuestions: "تصدير الأسئلة",
     },
 };
 
@@ -201,7 +203,7 @@ export default function QuestionsPage() {
                         }}>
                             {t.questionsDescription
                                 .replace("{pollType}", t[`type${poll.type.charAt(0).toUpperCase() + poll.type.slice(1)}`] || poll.type)
-                                .replace("{questionCount}", questions.length)}
+                                .replace("{questionCount}", toArabicDigits(questions.length, language))}
                         </Typography>
                     </Box>
 

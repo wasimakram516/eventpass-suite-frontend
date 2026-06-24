@@ -43,6 +43,7 @@ import {
 import { getSpinWheelBySlug } from "@/services/eventwheel/spinWheelService";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { toArabicDigits } from "@/utils/arabicDigits";
 import LanguageSelector from "@/components/LanguageSelector";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import { formatDateTimeWithLocale } from "@/utils/dateUtils";
@@ -891,9 +892,9 @@ const SpinningPage = () => {
                 }}
               >
                 {eventData?.type === "onspot" && (
-                  <Tab label={`${t.entries} ${entriesCount}`} />
+                  <Tab label={`${t.entries} ${toArabicDigits(entriesCount, language)}`} />
                 )}
-                <Tab label={`${t.results} ${winners.length}`} />
+                <Tab label={`${t.results} ${toArabicDigits(winners.length, language)}`} />
               </Tabs>
             </Box>
 

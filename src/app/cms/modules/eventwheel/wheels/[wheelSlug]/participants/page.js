@@ -27,6 +27,7 @@ import {
   FormControl,
   InputLabel,
 } from "@mui/material";
+import ArabicPagination from "@/components/ArabicPagination";
 import {
   addParticipant,
   deleteParticipant,
@@ -44,6 +45,7 @@ import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { toArabicDigits } from "@/utils/arabicDigits";
 import RecordMetadata from "@/components/RecordMetadata";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import LoadingState from "@/components/LoadingState";
@@ -446,7 +448,7 @@ const ParticipantsAdminPage = () => {
                   sx={getStartIconSpacing(dir)}
                 >
                   {uploading && uploadProgress?.total
-                    ? `${t.uploading} ${uploadProgress.uploaded}/${uploadProgress.total}`
+                    ? `${t.uploading} ${toArabicDigits(uploadProgress.uploaded, language)}/${toArabicDigits(uploadProgress.total, language)}`
                     : uploading
                       ? t.uploading
                       : t.uploadFile}
@@ -507,14 +509,14 @@ const ParticipantsAdminPage = () => {
             }}>
               {t.showing}{" "}
               {effectiveTotal === 0
-                ? 0
-                : (currentPage - 1) * perPage + 1}
+                ? toArabicDigits(0, language)
+                : toArabicDigits((currentPage - 1) * perPage + 1, language)}
               -
-              {Math.min(
+              {toArabicDigits(Math.min(
                 currentPage * perPage,
                 effectiveTotal,
-              )}{" "}
-              {t.of} {effectiveTotal}
+              ), language)}{" "}
+              {t.of} {toArabicDigits(effectiveTotal, language)}
             </Typography>
           </Box>
 
@@ -540,7 +542,7 @@ const ParticipantsAdminPage = () => {
               >
                 {[5, 10, 20, 50, 100, 250, 500].map((n) => (
                   <MenuItem key={n} value={n}>
-                    {n}
+                    {toArabicDigits(n, language)}
                   </MenuItem>
                 ))}
               </Select>
@@ -651,8 +653,7 @@ const ParticipantsAdminPage = () => {
                 justifyContent: "center",
                 mt: 4
               }}>
-              <Pagination
-                dir="ltr"
+              <ArabicPagination
                 count={effectiveTotalPages}
                 page={currentPage}
                 onChange={handlePageChange}
@@ -787,7 +788,7 @@ const ParticipantsAdminPage = () => {
 
               {syncing && (
                 <Typography variant="caption">
-                  Synced {syncProgress.synced} / {syncProgress.total}
+                  Synced {toArabicDigits(syncProgress.synced, language)} / {toArabicDigits(syncProgress.total, language)}
                 </Typography>
               )}
             </Button>
