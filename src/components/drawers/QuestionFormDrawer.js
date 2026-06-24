@@ -125,7 +125,9 @@ export default function QuestionFormDrawer({
         question: initialValues?.question || "",
         type: initialValues?.type === "slider" ? "rating" : (initialValues?.type || "options"),
         allowMultipleAnswers: initialValues?.allowMultipleAnswers || false,
-        scale: initialValues?.scale || { min: 1, max: 5, step: 1 },
+        scale: initialValues?.type === "nps"
+          ? { min: 0, max: 10, step: initialValues?.scale?.step || 1 }
+          : (initialValues?.scale || { min: 1, max: 5, step: 1 }),
         options: initialValues?.options?.length > 0
           ? initialValues.options.map(opt => ({
               text: opt.text || "",
@@ -367,7 +369,7 @@ export default function QuestionFormDrawer({
             <MenuItem value="text">{t.textType}</MenuItem>
           </TextField>
 
-          {(form.type === "rating" || form.type === "nps") && (
+          {form.type === "rating" && (
             <Stack direction="row" spacing={2}>
               <TextField
                 label={t.min}
@@ -383,6 +385,18 @@ export default function QuestionFormDrawer({
                 onChange={e => setForm(prev => ({ ...prev, scale: { ...prev.scale, max: Number(e.target.value) } }))}
                 fullWidth
               />
+              <TextField
+                label={t.step}
+                type="number"
+                value={form.scale.step}
+                onChange={e => setForm(prev => ({ ...prev, scale: { ...prev.scale, step: Number(e.target.value) } }))}
+                fullWidth
+              />
+            </Stack>
+          )}
+
+          {form.type === "nps" && (
+            <Stack direction="row" spacing={2}>
               <TextField
                 label={t.step}
                 type="number"
