@@ -181,6 +181,7 @@ const translations = {
     sort: "Sort",
     mostRecent: "Most Recent",
     oldest: "Oldest",
+    viewUploadedFile: "View uploaded file",
   },
   ar: {
     title: "تفاصيل الحدث",
@@ -286,6 +287,7 @@ const translations = {
     sort: "ترتيب",
     mostRecent: "الأحدث",
     oldest: "الأقدم",
+    viewUploadedFile: "عرض الملف المرفوع",
   },
 };
 
@@ -411,7 +413,7 @@ export default function ViewRegistrations() {
     const unsentRes = await getUnsentCount(eventSlug);
     setUnsentEmailCount(unsentRes?.unsentCount || 0);
 
-    const fieldsLocal =
+    const baseFields =
       !evRes?.error && evRes.useCustomFields && evRes.formFields?.length
         ? evRes.formFields.map((f) => ({
           name: f.inputName,
@@ -425,6 +427,24 @@ export default function ViewRegistrations() {
           { name: "company", type: "text", values: [] },
         ];
 
+    const ticketDependentFields =
+      (evRes?.ticketTypes || []).flatMap((ticket) =>
+        (ticket.dependentFields || ticket.fields || ticket.formFields || []).map((f) => ({
+          name: f.inputName || f.name,
+          type: (f.inputType || f.type || "text").toLowerCase(),
+          values: Array.isArray(f.values) ? f.values : [],
+        }))
+      );
+
+    const fieldsMap = new Map();
+
+    [...baseFields, ...ticketDependentFields].forEach((f) => {
+      if (f.name && !fieldsMap.has(f.name)) {
+        fieldsMap.set(f.name, f);
+      }
+    });
+
+    const fieldsLocal = Array.from(fieldsMap.values());
     if (!evRes?.error) {
       setEventDetails(evRes);
       setTotalRegistrations(evRes.registrations);
@@ -1301,6 +1321,73 @@ export default function ViewRegistrations() {
     };
     return labelMap[fieldName] || fieldName;
   };
+
+
+  // customFields may arrive as a plain object or a Map (depending on the source) — normalize it.
+  const getCustomFields = (reg) =>
+    reg?.customFields instanceof Map
+      ? Object.fromEntries(reg.customFields)
+      : (reg?.customFields || {});
+
+  const getFieldValue = (reg, fieldName) => {
+    return getCustomFields(reg)[fieldName] ?? reg[fieldName];
+  };
+
+  const looksLikeFileUrl = (value) => {
+    if (typeof value !== "string") return false;
+    // Cloud storage patterns (S3, Cloudfront, Firebase, Supabase, etc.)
+    if (/\.(s3|s3-website|cloudfront|firebasestorage|supabase)\./i.test(value)) return true;
+    // Explicit file extensions
+    if (/\.(pdf|doc|docx|xls|xlsx|jpg|jpeg|png|gif|webp|svg|mp4|webm|mov)(\?|$)/i.test(value)) return true;
+    // Any https URL that's very long (likely a presigned/CDN URL)
+    if (/^https?:\/\//i.test(value) && value.length > 80) return true;
+    return false;
+  };
+
+  // Names of ticket dependent fields (global + per-ticket sources), so they can
+  // be surfaced before the other registration fields on each card.
+  const getDependentFieldNames = () => {
+    const names = new Set();
+    (eventDetails?.globalDependentFields || []).forEach((f) => {
+      const n = f.inputName || f.name;
+      if (n) names.add(n);
+    });
+    (eventDetails?.ticketTypes || []).forEach((ticket) => {
+      (ticket.dependentFields || ticket.fields || ticket.formFields || []).forEach((f) => {
+        const n = f.inputName || f.name;
+        if (n) names.add(n);
+      });
+    });
+    return names;
+  };
+
+  const getDisplayFieldsForRegistration = (reg) => {
+    const fieldMap = new Map(dynamicFields.map((f) => [f.name, f]));
+
+    Object.entries(getCustomFields(reg)).forEach(([key, value]) => {
+      if (!fieldMap.has(key)) {
+        // Check fieldMetaMap for type (covers ticket-dependent fields)
+        const metaType = fieldMetaMap[key]?.type;
+        fieldMap.set(key, {
+          name: key,
+          type: metaType || (looksLikeFileUrl(value) ? "file" : "text"),
+          values: [],
+        });
+      }
+    });
+
+    const displayFields = Array.from(fieldMap.values()).filter((f) => {
+      const value = getFieldValue(reg, f.name);
+      return value !== undefined && value !== null && value !== "";
+    });
+
+    // Show this ticket's dependent fields before any other registration field.
+    const dependentNames = getDependentFieldNames();
+    const dependentFields = displayFields.filter((f) => dependentNames.has(f.name));
+    const otherFields = displayFields.filter((f) => !dependentNames.has(f.name));
+    return [...dependentFields, ...otherFields];
+  };
+
   return (
     <Container dir={dir} maxWidth={false} disableGutters>
       <BreadcrumbsNav />
@@ -1787,7 +1874,10 @@ export default function ViewRegistrations() {
       ) : (
         <>
           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 4, justifyContent: "center" }}>
-            {paginatedRegistrations.map((reg) => (
+            {paginatedRegistrations.map((reg) => {
+
+
+              return (
                 <Card
                   key={reg._id}
                   sx={{
@@ -1807,6 +1897,7 @@ export default function ViewRegistrations() {
                   }}
                 >
                   {/* Header with token + date */}
+
                   <Box
                     sx={{
                       background: "linear-gradient(to right, #f5f5f5, #fafafa)",
@@ -1924,10 +2015,10 @@ export default function ViewRegistrations() {
                     {eventDetails?.isPaid && (() => {
                       const ps = reg.paymentStatus || "pending";
                       const paymentStatusMap = {
-                        paid:      { label: t.paymentPaid,      color: "success.main",      icon: <ICONS.payment fontSize="small" sx={{ color: "success.main" }} />,     statusIcon: <ICONS.checkCircle fontSize="small" sx={{ color: "success.main" }} /> },
-                        pending:   { label: t.paymentPending,   color: "warning.main",      icon: <ICONS.payment fontSize="small" sx={{ color: "warning.main" }} />,     statusIcon: <ICONS.time fontSize="small" sx={{ color: "warning.main" }} /> },
-                        cancelled: { label: t.paymentCancelled, color: "text.secondary",    icon: <ICONS.payment fontSize="small" sx={{ color: "text.secondary" }} />,   statusIcon: <ICONS.cancel fontSize="small" sx={{ color: "text.secondary" }} /> },
-                        failed:    { label: t.paymentFailed,    color: "error.main",        icon: <ICONS.payment fontSize="small" sx={{ color: "error.main" }} />,       statusIcon: <ICONS.errorOutline fontSize="small" sx={{ color: "error.main" }} /> },
+                        paid: { label: t.paymentPaid, color: "success.main", icon: <ICONS.payment fontSize="small" sx={{ color: "success.main" }} />, statusIcon: <ICONS.checkCircle fontSize="small" sx={{ color: "success.main" }} /> },
+                        pending: { label: t.paymentPending, color: "warning.main", icon: <ICONS.payment fontSize="small" sx={{ color: "warning.main" }} />, statusIcon: <ICONS.time fontSize="small" sx={{ color: "warning.main" }} /> },
+                        cancelled: { label: t.paymentCancelled, color: "text.secondary", icon: <ICONS.payment fontSize="small" sx={{ color: "text.secondary" }} />, statusIcon: <ICONS.cancel fontSize="small" sx={{ color: "text.secondary" }} /> },
+                        failed: { label: t.paymentFailed, color: "error.main", icon: <ICONS.payment fontSize="small" sx={{ color: "error.main" }} />, statusIcon: <ICONS.errorOutline fontSize="small" sx={{ color: "error.main" }} /> },
                       };
                       const entry = paymentStatusMap[ps] || paymentStatusMap.pending;
                       return (
@@ -1940,7 +2031,11 @@ export default function ViewRegistrations() {
                           <Box component="span" sx={{ color: entry.color }}>{entry.label}</Box>
                           {reg.ticketTypeName && (
                             <Box component="span" sx={{ color: "text.secondary" }}>
-                              {` · ${reg.ticketTypeName}`}{reg.ticketPrice != null ? ` · ${reg.ticketPrice} OMR` : ""}
+                              {/* {` · ${reg.ticketTypeName}`}{reg.ticketPrice != null ? ` · ${reg.ticketPrice} OMR` : ""} */}
+                              {` · ${reg.ticketTypeName}`}
+                              {(reg.priceBreakdown?.total ?? reg.ticketPrice) != null
+                                ? ` · ${reg.priceBreakdown?.total ?? reg.ticketPrice} OMR`
+                                : ""}
                             </Box>
                           )}
                           {ps === "pending" && (
@@ -1987,90 +2082,114 @@ export default function ViewRegistrations() {
 
                   {/* Dynamic Fields — show registration's own format */}
                   <CardContent sx={{ flexGrow: 1, px: 2, py: 1.5 }}>
-                    {(() => {
-                      const regCustomFields = reg.customFields instanceof Map
-                        ? Object.fromEntries(reg.customFields)
-                        : (reg.customFields || {});
-                      const regCustomKeys = Object.keys(regCustomFields).filter(k => regCustomFields[k] && String(regCustomFields[k]).trim());
-
-                      if (regCustomKeys.length > 0) {
-                        return regCustomKeys.map((key) => (
-                          <Box key={key} sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", py: 0.8, borderBottom: "1px solid", borderColor: "divider", "&:last-of-type": { borderBottom: "none" } }}>
-                            <Typography variant="body2" sx={{ display: "flex", alignItems: "center", gap: 0.6, color: "text.secondary" }}>
-                              <ICONS.personOutline fontSize="small" sx={{ opacity: 0.6 }} />
-                              {key}
-                            </Typography>
-                            <Typography variant="body2" sx={{ fontWeight: 500, ml: 2, textAlign: dir === "rtl" ? "left" : "right", flex: 1, color: "text.primary", ...wrapTextBox }}>
-                              {String(regCustomFields[key]) || "—"}
-                            </Typography>
-                          </Box>
-                        ));
-                      }
-
-                      // Registration has no customFields — show its classic fields
-                      const classicFields = [
-                        { name: "fullName", label: "Full Name" },
-                        { name: "email", label: "Email" },
-                        { name: "phone", label: "Phone" },
-                        { name: "company", label: "Company" },
-                      ];
-                      return classicFields.map((f) => {
-                      const fieldValue = reg[f.name] ?? null;
-                      if (fieldValue == null || String(fieldValue).trim() === "") return null;
-                      const displayValue = String(fieldValue).trim();
-
-                      return (
-                        <Box
-                          key={f.name}
+                    {/* {dynamicFields.map((f) => ( */}
+                    {getDisplayFieldsForRegistration(reg).map((f) => (
+                      <Box
+                        key={f.name}
+                        sx={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          alignItems: "flex-start",
+                          py: 0.8,
+                          borderBottom: "1px solid",
+                          borderColor: "divider",
+                          "&:last-of-type": { borderBottom: "none" },
+                        }}
+                      >
+                        {/* Field Label */}
+                        <Typography
+                          variant="body2"
                           sx={{
                             display: "flex",
-                            justifyContent: "space-between",
-                            alignItems: "flex-start",
-                            py: 0.8,
-                            borderBottom: "1px solid",
-                            borderColor: "divider",
-                            "&:last-of-type": { borderBottom: "none" },
+                            alignItems: "center",
+                            gap: 0.6,
+                            color: "text.secondary",
                           }}
                         >
-                          {/* Field Label */}
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 0.6,
-                              color: "text.secondary",
-                            }}
-                          >
-                            <ICONS.personOutline
-                              fontSize="small"
-                              sx={{ opacity: 0.6 }}
-                            />
-                            {f.label}
-                          </Typography>
+                          <ICONS.personOutline
+                            fontSize="small"
+                            sx={{ opacity: 0.6 }}
+                          />
+                          {getFieldLabel(f.name)}
+                        </Typography>
 
-                          {/* Field Value */}
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              fontWeight: 500,
-                              ml: 2,
-                              textAlign: dir === "rtl" ? "left" : "right",
-                              flex: 1,
-                              color: "text.primary",
-                              ...wrapTextBox
-                            }}>
-                            {f.name === "phone"
-                              ? (() => {
-                                  const { formatPhoneNumberForDisplay } = require("@/utils/countryCodes");
-                                  return formatPhoneNumberForDisplay(displayValue, reg.isoCode);
-                                })()
-                              : displayValue}
-                          </Typography>
-                        </Box>
-                      );
-                    }).filter(Boolean);
-                    })()}
+                        {/* Field Value */}
+                        <Typography
+                          component="div"
+                          variant="body2"
+                          sx={{
+                            fontWeight: 500,
+                            ml: 2,
+                            textAlign: dir === "rtl" ? "left" : "right",
+                            flex: 1,
+                            color: "text.primary",
+                            ...wrapTextBox
+                          }}>
+                          {(() => {
+                            const fieldValue = getFieldValue(reg, f.name);
+                            if (!fieldValue) return "—";
+
+                            // Use fieldMetaMap as primary type source, fall back to f.type
+                            const fieldType = fieldMetaMap[f.name]?.type || (f.type || "text").toLowerCase();
+
+                            if (
+                              f.type === "phone" ||
+                              (!eventDetails?.formFields?.length &&
+                                f.name === "phone")
+                            ) {
+                              const {
+                                formatPhoneNumberForDisplay,
+                              } = require("@/utils/countryCodes");
+                              return formatPhoneNumberForDisplay(
+                                fieldValue,
+                                reg.isoCode,
+                              );
+                            }
+
+                            if (f.type === "country") {
+                              const { COUNTRY_CODES, getFlagImageUrl } = require("@/utils/countryCodes");
+                              const country = COUNTRY_CODES.find(c => c.isoCode === fieldValue.toLowerCase());
+                              if (!country) return fieldValue;
+                              return (
+                                <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                                  <img
+                                    src={getFlagImageUrl(country.isoCode)}
+                                    alt={country.country}
+                                    style={{ width: 20, height: 14, objectFit: "cover", borderRadius: 2, flexShrink: 0 }}
+                                  />
+                                  <span style={{ marginLeft: 4 }}>{country.country}</span>
+                                </span>
+                              );
+                            }
+
+                            // File check: use fieldMetaMap type OR looksLikeFileUrl as fallback
+                            if ((fieldType === "file" || looksLikeFileUrl(fieldValue)) && fieldValue) {
+                              return (
+                                <Button
+                                  size="small"
+                                  variant="text"
+                                  startIcon={<ICONS.files sx={{ fontSize: 18 }} />}
+                                  onClick={() => window.open(fieldValue, "_blank")}
+                                  sx={{
+                                    minWidth: 0,
+                                    p: 0,
+                                    textTransform: "none",
+                                    fontWeight: 600,
+                                    ...getStartIconSpacing(dir),
+                                  }}
+                                >
+                                  {t.viewUploadedFile}
+                                </Button>
+                              );
+                            }
+
+                            return fieldValue;
+                          })()}
+
+
+                        </Typography>
+                      </Box>
+                    ))}
                   </CardContent>
 
                   <RecordMetadata
@@ -2185,7 +2304,9 @@ export default function ViewRegistrations() {
                     </Box>
                   </CardActions>
                 </Card>
-            ))}
+              );
+            })}
+
           </Box>
 
           <Box
@@ -2381,9 +2502,13 @@ export default function ViewRegistrations() {
         registration={selectedRegistration}
         onCheckInSuccess={async () => {
           if (selectedRegistration?._id) {
-            const regsRes = await getInitialRegistrations(eventSlug);
+            const regsRes = await getInitialRegistrations(eventSlug, sortOrder);
+            console.log("REGS RESPONSE:", regsRes);
+
             if (!regsRes?.error) {
               const initialData = regsRes.data || [];
+              console.log("INITIAL REGISTRATIONS:", initialData);
+
               const prepped = initialData.map((r) => {
                 return {
                   ...r,

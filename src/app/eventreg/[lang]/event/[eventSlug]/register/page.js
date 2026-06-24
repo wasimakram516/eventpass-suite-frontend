@@ -106,6 +106,10 @@ export default function Registration() {
     securePayment: isArabic ? "دفع آمن عبر ثواني" : "Secure payment via Thawani",
     ticketCaption: isArabic ? "تذكرة" : "Ticket",
     amountDue: isArabic ? "المبلغ المستحق" : "Amount due",
+    downloadBadge: isArabic ? "تحميل الشارة" : "Download Badge",
+    fileUploadFailed: isArabic ? "فشل رفع الملف. يرجى المحاولة مرة أخرى." : "File upload failed. Please try again.",
+    businessSlugError: isArabic ? "معرف النشاط التجاري غير متاح لرفع الملفات." : "Business slug not available for file upload.",
+    chooseFileOrDrop: isArabic ? "اختر ملفًا أو اسحب وأفلت" : "Choose File or Drag & Drop",
   };
 
   const [event, setEvent] = useState(null);
@@ -133,6 +137,34 @@ export default function Registration() {
   const badgePreviewRef = useRef(null);
   const { globalConfig } = useGlobalConfig();
   const { showMessage } = useMessage();
+  const ticketDependentFields = useMemo(() => {
+    if (!selectedTicketTypeId || !event?.globalDependentFields?.length || !event?.globalDependentFieldMappings) {
+      return [];
+    }
+    const selectedTt = event.ticketTypes?.find(tt => tt._id === selectedTicketTypeId);
+    if (!selectedTt?.name) return [];
+    const mappedFieldNames = event.globalDependentFieldMappings[selectedTt.name] || [];
+    return event.globalDependentFields
+      .filter(f => mappedFieldNames.includes(f.inputName) && f.inputName?.trim() && f.visible !== false)
+      .map(f => ({
+        name: f.inputName,
+        label: f.inputName,
+        type: f.inputType || "text",
+        required: f.required || false,
+        visible: true,
+        options: f.values || [],
+      }));
+  }, [selectedTicketTypeId, event]);
+  useEffect(() => {
+    if (!ticketDependentFields.length) return;
+    setFormData(prev => {
+      const newVals = {};
+      ticketDependentFields.forEach(f => {
+        if (!(f.name in prev)) newVals[f.name] = "";
+      });
+      return { ...prev, ...newVals };
+    });
+  }, [ticketDependentFields]);
   const hasCustomDesign =
     event?.useCustomQrCode && event?.customQrWrapper && hasWrapperDesign(event.customQrWrapper);
   const hasDefaultDesign = hasDefaultQrWrapperDesign(globalConfig);
@@ -150,7 +182,7 @@ export default function Registration() {
               dependentsOf[childName].push({ parentName: f.name, option });
             });
           });
-        } catch {}
+        } catch { }
       }
     });
 
@@ -302,7 +334,7 @@ export default function Registration() {
             });
             return { ...prev, [name]: value, ...cleared };
           }
-        } catch {}
+        } catch { }
       }
       return { ...prev, [name]: value };
     });
@@ -357,9 +389,15 @@ export default function Registration() {
 
 
   const handleSubmit = async () => {
+    // const errors = {};
+    // visibleFields.forEach((f) => {
     const errors = {};
     const currentVisible = getVisibleFields(dynamicFields, formData);
-    currentVisible.forEach((f) => {
+    const allValidationFields = [
+      ...currentVisible,
+      ...ticketDependentFields.filter(f => f.visible !== false),
+    ];
+    allValidationFields.forEach((f) => {
       if (!f || !f.name) return;
       const val = formData[f.name]?.trim();
       if (f.required && !val) errors[f.name] = `${f.label} ${t.required}`;
@@ -398,10 +436,9 @@ export default function Registration() {
     let phoneIsoCode = null;
 
     // Upload file-type fields to S3
-    const fileUploadFields = currentVisible.filter(f => f.type === "file" && fileData[f.name]?.file);
+    const fileUploadFields = allValidationFields.filter(f => f.type === "file" && fileData[f.name]?.file);
     if (fileUploadFields.length > 0 && !event?.businessSlug) {
-      setFieldErrors({ _global: "Business slug not available for file upload." });
-      setSubmitting(false);
+      setFieldErrors({ _global: t.businessSlugError }); setSubmitting(false);
       return;
     }
     for (const f of fileUploadFields) {
@@ -414,13 +451,12 @@ export default function Registration() {
         normalizedFormData[f.name] = url;
       } catch (err) {
         console.error("File upload failed:", err);
-        setFieldErrors({ [f.name]: "File upload failed. Please try again." });
-        setSubmitting(false);
+        setFieldErrors({ [f.name]: t.fileUploadFailed }); setSubmitting(false);
         return;
       }
     }
 
-    currentVisible.forEach((f) => {
+    allValidationFields.forEach((f) => {
       if (f.type === "phone" || ((!event.useCustomFields || !event.formFields?.length) && f.name.toLowerCase() === "phone")) {
         const phoneValue = normalizedFormData[f.name];
         if (phoneValue) {
@@ -448,13 +484,23 @@ export default function Registration() {
     // Paid event — stash the prepared payload and show the price-breakdown
     // dialog. The actual gateway call happens from the dialog's "Confirm & Pay".
     if (event?.isPaid) {
-      setPaymentPayload({
-        eventSlug,
-        ticketTypeId: selectedTicketTypeId,
-        lang,
-        ...normalizedFormData,
-        isoCode: phoneIsoCode,
-      });
+  const currentDepFieldNames = new Set(ticketDependentFields.map(f => f.name));
+  const allGlobalDepNames = new Set((event?.globalDependentFields || []).map(f => f.inputName));
+
+  const prunedFormData = Object.fromEntries(
+    Object.entries(normalizedFormData).filter(([key]) => {
+      if (!allGlobalDepNames.has(key)) return true;
+      return currentDepFieldNames.has(key);
+    })
+  );
+
+  setPaymentPayload({
+    eventSlug,
+    ticketTypeId: selectedTicketTypeId,
+    lang,
+    ...prunedFormData,
+    isoCode: phoneIsoCode,
+  });
       setPaymentError("");
       setSubmitting(false);
       setShowPaymentSummary(true);
@@ -664,6 +710,7 @@ export default function Registration() {
           fieldLabel={fieldLabel}
           errorMsg={errorMsg}
           isArabic={isArabic}
+          chooseFileOrDrop={t.chooseFileOrDrop}
           onFileSelect={(file) => handleFileSelect(field.name, file)}
           onFileRemove={() => handleFileRemove(field.name)}
         />
@@ -789,139 +836,155 @@ export default function Registration() {
             backgroundColor: "rgba(255,255,255,0.9)",
           }}
         >
-        <Typography
-          variant="h5"
-          sx={{
-            fontWeight: "bold",
-            mb: 1
-          }}>
-          {name}
-        </Typography>
-        {description && (
-          <Box
+          <Typography
+            variant="h5"
             sx={{
-              mb: 3,
-              color: "text.secondary",
-              fontSize: "0.875rem",
-              "& h1": { fontSize: "2em", fontWeight: "bold", margin: "0.67em 0" },
-              "& h2": { fontSize: "1.5em", fontWeight: "bold", margin: "0.75em 0" },
-              "& h3": { fontSize: "1.17em", fontWeight: "bold", margin: "0.83em 0" },
-              "& ul, & ol": { margin: "1em 0", paddingLeft: "2.5em" },
-              "& ul": { listStyleType: "disc" },
-              "& ol": { listStyleType: "decimal" },
-              "& li": { margin: "0.5em 0" },
-              "& p": { margin: "1em 0" },
-              "& strong, & b": { fontWeight: "bold" },
-              "& em, & i": { fontStyle: "italic" },
-              "& u": { textDecoration: "underline" },
-              "& s, & strike": { textDecoration: "line-through" },
-            }}
-            dangerouslySetInnerHTML={{ __html: description }}
-          />
-        )}
+              fontWeight: "bold",
+              mb: 1
+            }}>
+            {name}
+          </Typography>
+          {description && (
+            <Box
+              sx={{
+                mb: 3,
+                color: "text.secondary",
+                fontSize: "0.875rem",
+                "& h1": { fontSize: "2em", fontWeight: "bold", margin: "0.67em 0" },
+                "& h2": { fontSize: "1.5em", fontWeight: "bold", margin: "0.75em 0" },
+                "& h3": { fontSize: "1.17em", fontWeight: "bold", margin: "0.83em 0" },
+                "& ul, & ol": { margin: "1em 0", paddingLeft: "2.5em" },
+                "& ul": { listStyleType: "disc" },
+                "& ol": { listStyleType: "decimal" },
+                "& li": { margin: "0.5em 0" },
+                "& p": { margin: "1em 0" },
+                "& strong, & b": { fontWeight: "bold" },
+                "& em, & i": { fontStyle: "italic" },
+                "& u": { textDecoration: "underline" },
+                "& s, & strike": { textDecoration: "line-through" },
+              }}
+              dangerouslySetInnerHTML={{ __html: description }}
+            />
+          )}
 
-        <Typography
-          variant="h6"
-          sx={{
-            fontWeight: "bold",
-            mb: 2
-          }}>
-          {t.registerForEvent}
-        </Typography>
+          <Typography
+            variant="h6"
+            sx={{
+              fontWeight: "bold",
+              mb: 2
+            }}>
+            {t.registerForEvent}
+          </Typography>
 
-        {fieldErrors._global && (
-          <Alert severity="error" sx={{ mb: 3 }}>
-            {fieldErrors._global}
-          </Alert>
-        )}
+          {fieldErrors._global && (
+            <Alert severity="error" sx={{ mb: 3 }}>
+              {fieldErrors._global}
+            </Alert>
+          )}
 
-        {/* Ticket type selector for paid events */}
-        {event?.isPaid && event?.ticketTypes?.length > 0 && (
-          <Box sx={{ mb: 3 }}>
-            <FormControl fullWidth error={!!ticketTypeError}>
-              <InputLabel id="ticket-type-label">
-                {t.selectTicket} *
-              </InputLabel>
-              <Select
-                labelId="ticket-type-label"
-                value={selectedTicketTypeId || ""}
-                label={`${t.selectTicket} *`}
-                onChange={(e) => {
-                  setSelectedTicketTypeId(e.target.value);
-                  setTicketTypeError("");
-                }}
-                inputProps={{ dir }}
-                sx={{
-                  textAlign: "start",
-                  "& .MuiSelect-icon": {
-                    right: isArabic ? "unset" : undefined,
-                    left: isArabic ? 7 : "unset",
-                  },
-                  "& .MuiSelect-select": isArabic
-                    ? { paddingRight: "14px !important", paddingLeft: "32px !important" }
-                    : {},
-                }}
-                renderValue={(val) => {
-                  const tt = event.ticketTypes.find((x) => x._id === val);
-                  if (!tt) return "";
-                  return (
-                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 1 }}>
-                      <Typography variant="body2" fontWeight={600}>{tt.name}</Typography>
-                      <Typography variant="body2" color="primary.main" fontWeight={700} sx={{ whiteSpace: "nowrap" }}>
-                        {tt.price} {t.omr}
-                      </Typography>
-                    </Box>
-                  );
-                }}
-              >
-                {event.ticketTypes.map((tt) => {
-                  const isSoldOut = tt.capacity !== null && tt.sold >= tt.capacity;
-                  const remaining = tt.capacity !== null ? tt.capacity - (tt.sold || 0) : null;
-                  const isLowStock = remaining !== null && remaining > 0 && remaining <= 20;
-                  return (
-                    <MenuItem key={tt._id} value={tt._id} disabled={isSoldOut}>
-                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", gap: 2, py: 0.5 }}>
-                        <Box sx={{ minWidth: 0 }}>
-                          <Typography variant="body2" fontWeight={600}>{tt.name}</Typography>
-                          {tt.description && (
-                            <Typography variant="caption" color="text.secondary" sx={{ display: "block", lineHeight: 1.3 }}>
-                              {tt.description}
-                            </Typography>
-                          )}
-                          <Typography
-                            variant="caption"
-                            sx={{ display: "block", color: isSoldOut ? "error.main" : isLowStock ? "warning.main" : "text.secondary", fontWeight: isSoldOut || isLowStock ? 600 : 400 }}
-                          >
-                            {isSoldOut ? t.ticketSoldOut : remaining !== null ? `${remaining} ${t.available}` : t.unlimitedCapacity}
-                          </Typography>
-                        </Box>
-                        <Typography variant="body2" fontWeight={700} color={isSoldOut ? "text.disabled" : "primary.main"} sx={{ whiteSpace: "nowrap", flexShrink: 0 }}>
-                          {isSoldOut ? "—" : `${tt.price} ${t.omr}`}
+          {/* Ticket type selector for paid events */}
+          {event?.isPaid && event?.ticketTypes?.length > 0 && (
+            <Box sx={{ mb: 3 }}>
+              <FormControl fullWidth error={!!ticketTypeError}>
+                <InputLabel id="ticket-type-label">
+                  {t.selectTicket} *
+                </InputLabel>
+                <Select
+                  labelId="ticket-type-label"
+                  value={selectedTicketTypeId || ""}
+                  label={`${t.selectTicket} *`}
+                  onChange={(e) => {
+                    const newTicketId = e.target.value;
+                    setSelectedTicketTypeId(newTicketId);
+                    setTicketTypeError("");
+
+                    // Clear old dependent field values when ticket changes
+                    setFormData(prev => {
+                      const allDepFieldNames = (event?.globalDependentFields || []).map(f => f.inputName);
+                      const cleared = {};
+                      allDepFieldNames.forEach(name => {
+                        if (name in prev) cleared[name] = "";
+                      });
+                      return { ...prev, ...cleared };
+                    });
+                  }}
+                  inputProps={{ dir }}
+                  sx={{
+                    textAlign: "start",
+                    "& .MuiSelect-icon": {
+                      right: isArabic ? "unset" : undefined,
+                      left: isArabic ? 7 : "unset",
+                    },
+                    "& .MuiSelect-select": isArabic
+                      ? { paddingRight: "14px !important", paddingLeft: "32px !important" }
+                      : {},
+                  }}
+                  renderValue={(val) => {
+                    const tt = event.ticketTypes.find((x) => x._id === val);
+                    if (!tt) return "";
+                    return (
+                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 1 }}>
+                        <Typography variant="body2" fontWeight={600}>{tt.name}</Typography>
+                        <Typography variant="body2" color="primary.main" fontWeight={700} sx={{ whiteSpace: "nowrap" }}>
+                          {tt.price} {t.omr}
                         </Typography>
                       </Box>
-                    </MenuItem>
-                  );
-                })}
-              </Select>
-              {ticketTypeError && (
-                <Typography variant="caption" color="error" sx={{ mt: 0.5, display: "block", textAlign: "start", px: 1.5 }}>
-                  {ticketTypeError}
-                </Typography>
+                    );
+                  }}
+                >
+                  {event.ticketTypes.map((tt) => {
+                    const isSoldOut = tt.capacity !== null && tt.sold >= tt.capacity;
+                    const remaining = tt.capacity !== null ? tt.capacity - (tt.sold || 0) : null;
+                    const isLowStock = remaining !== null && remaining > 0 && remaining <= 20;
+                    return (
+                      <MenuItem key={tt._id} value={tt._id} disabled={isSoldOut}>
+                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", gap: 2, py: 0.5 }}>
+                          <Box sx={{ minWidth: 0 }}>
+                            <Typography variant="body2" fontWeight={600}>{tt.name}</Typography>
+                            {tt.description && (
+                              <Typography variant="caption" color="text.secondary" sx={{ display: "block", lineHeight: 1.3 }}>
+                                {tt.description}
+                              </Typography>
+                            )}
+                            <Typography
+                              variant="caption"
+                              sx={{ display: "block", color: isSoldOut ? "error.main" : isLowStock ? "warning.main" : "text.secondary", fontWeight: isSoldOut || isLowStock ? 600 : 400 }}
+                            >
+                              {isSoldOut ? t.ticketSoldOut : remaining !== null ? `${remaining} ${t.available}` : t.unlimitedCapacity}
+                            </Typography>
+                          </Box>
+                          <Typography variant="body2" fontWeight={700} color={isSoldOut ? "text.disabled" : "primary.main"} sx={{ whiteSpace: "nowrap", flexShrink: 0 }}>
+                            {isSoldOut ? "—" : `${tt.price} ${t.omr}`}
+                          </Typography>
+                        </Box>
+                      </MenuItem>
+                    );
+                  })}
+                </Select>
+                {ticketTypeError && (
+                  <Typography variant="caption" color="error" sx={{ mt: 0.5, display: "block", textAlign: "start", px: 1.5 }}>
+                    {ticketTypeError}
+                  </Typography>
+                )}
+              </FormControl>
+              {ticketDependentFields.length > 0 && (
+                <Box sx={{ mt: 2 }}>
+                  {ticketDependentFields.map(f => renderField(f))}
+                </Box>
               )}
-            </FormControl>
-          </Box>
-        )}
+            </Box>
+          )}
 
-        {visibleFields.map((f) => renderField(f))}
+          {visibleFields.map((f) => renderField(f))}
 
-        <Button
-          variant="contained"
-          fullWidth
-          disabled={submitting}
-          onClick={handleSubmit}
-        >
-          {submitting ? <CircularProgress size={22} /> : event?.isPaid ? t.proceedToPayment : t.submit}
-        </Button>
+          <Button
+            variant="contained"
+            fullWidth
+            disabled={submitting}
+            onClick={handleSubmit}
+          >
+            {submitting ? <CircularProgress size={22} /> : event?.isPaid ? t.proceedToPayment : t.submit}
+          </Button>
         </Paper>
 
         {event?.showBadgePreviewDuringRegistration && (
@@ -1301,8 +1364,7 @@ export default function Registration() {
                 }
               }}
             >
-              {t.downloadQr?.replace("QR Code", "Badge") || "Download Badge"}
-            </Button>
+              {t.downloadBadge}            </Button>
           )}
 
           {/* Download QR button (only when QR is shown) */}
@@ -1354,7 +1416,7 @@ export default function Registration() {
   );
 }
 
-function FileUploadField({ field, fd, fieldLabel, errorMsg, isArabic, onFileSelect, onFileRemove }) {
+function FileUploadField({ field, fd, fieldLabel, errorMsg, isArabic, chooseFileOrDrop, onFileSelect, onFileRemove }) {
   const [dragOver, setDragOver] = useState(false);
   return (
     <Box sx={{ mb: 2, textAlign: isArabic ? "right" : "left" }}>
@@ -1400,7 +1462,8 @@ function FileUploadField({ field, fd, fieldLabel, errorMsg, isArabic, onFileSele
         >
           <ICONS.upload sx={{ fontSize: 28, color: "text.secondary" }} />
           <Typography variant="body2" color="text.secondary">
-            {isArabic ? "اختر ملفًا أو اسحب وأفلت" : "Choose File or Drag & Drop"}
+            {/* {isArabic ? "اختر ملفًا أو اسحب وأفلت" : "Choose File or Drag & Drop"} */}
+            {chooseFileOrDrop}
           </Typography>
           <input id={`file-input-${field.name}`} type="file" hidden onChange={(e) => { const file = e.target.files?.[0]; if (file) onFileSelect(file); e.target.value = ""; }} />
         </Box>
