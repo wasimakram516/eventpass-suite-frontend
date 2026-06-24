@@ -1,368 +1,325 @@
 "use client";
 
-import { Fragment, useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
+import LanguageSelector from "@/components/LanguageSelector";
 import {
-  Avatar,
   Box,
-  Button,
-  CardContent,
-  Chip,
   CircularProgress,
   Divider,
-  FormControl,
-  InputLabel,
-  List,
-  ListItem,
-  ListItemIcon,
-  ListItemText,
-  MenuItem,
-  Select,
   Typography,
 } from "@mui/material";
-import AppCard from "@/components/cards/AppCard";
-import { getPublicPollBySlug, getPollVoterResults } from "@/services/votecast/pollService";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+} from "recharts";
+import { getPublicPollBySlug, getPollResults } from "@/services/votecast/pollService";
 import useI18nLayout from "@/hooks/useI18nLayout";
-import ICONS from "@/utils/iconUtil";
-import { getFieldIcon } from "@/utils/iconMapper";
+import { useLanguage } from "@/contexts/LanguageContext";
+import AppCard from "@/components/cards/AppCard";
 import NoDataAvailable from "@/components/NoDataAvailable";
-import LanguageSelector from "@/components/LanguageSelector";
-import { formatDateTimeWithLocale } from "@/utils/dateUtils";
-import ArabicPagination from "@/components/ArabicPagination";
 import { toArabicDigits } from "@/utils/arabicDigits";
+
+const COLORS = [
+  "#8884d8",
+  "#82ca9d",
+  "#ffc658",
+  "#ff8042",
+  "#8dd1e1",
+  "#a4de6c",
+  "#d0ed57",
+  "#9e9e9e",
+  "#ba68c8",
+  "#4dd0e1",
+  "#f06292",
+];
+
+const NPS_GROUP_COLORS = {
+  detractors: "#ef5350",
+  passives: "#ffc107",
+  promoters: "#66bb6a",
+};
 
 const translations = {
   en: {
-    anonymous: "Anonymous",
-    unknownName: "Unknown voter",
-    votedAt: "Voted At",
-    voterDetails: "VOTER DETAILS",
-    votesTitle: "VOTES",
-    name: "Name",
-    email: "Email",
-    phone: "Phone",
-    showMoreAnswers: "Show more",
-    showLessAnswers: "Show less",
-    noResults: "No results available.",
     pollNotFound: "Poll not found",
-    records: "records",
-    showing: "Showing",
-    of: "of",
+    noResults: "No results available.",
+    totalVotes: "votes",
+    average: "Average",
+    npsScore: "NPS Score",
+    detractors: "Detractors (0-6)",
+    passives: "Passives (7-8)",
+    promoters: "Promoters (9-10)",
   },
   ar: {
-    anonymous: "مجهول",
-    unknownName: "ناخب غير معروف",
-    votedAt: "وقت التصويت",
-    voterDetails: "تفاصيل الناخب",
-    votesTitle: "الأصوات",
-    name: "الاسم",
-    email: "البريد الإلكتروني",
-    phone: "الهاتف",
-    showMoreAnswers: "عرض المزيد",
-    showLessAnswers: "عرض أقل",
-    noResults: "لا توجد نتائج متاحة.",
     pollNotFound: "الاستطلاع غير موجود",
-    records: "سجلات",
-    showing: "عرض",
-    of: "من",
+    noResults: "لا توجد نتائج متاحة.",
+    totalVotes: "أصوات",
+    average: "المتوسط",
+    npsScore: "نتيجة NPS",
+    detractors: "المُنافقون (0-6)",
+    passives: "السلبيون (7-8)",
+    promoters: "المروجون (9-10)",
   },
 };
 
-function OptionThumb({ url, label, size = 18 }) {
-  if (!url) return null;
+function LegendDot({ color, label, count, total, language }) {
+  const pct = total > 0 ? ((count / total) * 100).toFixed(1) : "0.0";
   return (
-    <Avatar
-      variant="rounded"
+    <Box
       sx={{
-        width: size,
-        height: size,
-        mr: 0.5,
-        border: (t) => `1px solid ${t.palette.divider}`,
-        bgcolor: "background.paper",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        gap: 1,
       }}
     >
-      <img alt={label || "option"} src={url} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-    </Avatar>
+      <Box sx={{ width: 12, height: 12, borderRadius: "50%", bgcolor: color, flexShrink: 0 }} />
+      <Typography variant="body2" sx={{ color: "text.secondary", whiteSpace: "nowrap" }}>
+        {label}
+      </Typography>
+      <Typography variant="body2" sx={{ fontWeight: 700, whiteSpace: "nowrap" }}>
+        {toArabicDigits(count, language)} ({toArabicDigits(pct, language)}%)
+      </Typography>
+    </Box>
   );
 }
 
-function FieldRow({ icon, primary, secondary, dir, align }) {
-  return (
-    <ListItem dense disableGutters sx={{ px: 0, py: 0.5 }} dir={dir}>
-      {icon && (
-        <ListItemIcon sx={{ minWidth: 34, color: "text.secondary" }}>
-          {icon}
-        </ListItemIcon>
-      )}
-      <ListItemText
-        disableTypography
-        primary={
-          <Typography
-            variant="body2"
-            component="div"
-            sx={{
-              color: "text.secondary",
-              textAlign: align
-            }}>
-            {primary}
-          </Typography>
-        }
-        secondary={
-          <Typography
-            variant="body1"
-            component="div"
-            sx={{
-              fontWeight: 500,
-              textAlign: align
-            }}>
-            {secondary || "N/A"}
-          </Typography>
-        }
-      />
-    </ListItem>
-  );
-}
-
-const PREVIEW_COUNT = 4;
-
-function VoterCard({ voter, t, dir, align, language, isAnonymous }) {
-  const [showAllVotes, setShowAllVotes] = useState(false);
-  const [showAllDetails, setShowAllDetails] = useState(false);
-
-  const votes = voter.votes || [];
-  const hasMoreVotes = votes.length > PREVIEW_COUNT;
-  const visibleVotes = showAllVotes ? votes : votes.slice(0, PREVIEW_COUNT);
-
-  const customEntries = Object.entries(voter.customFields || {}).filter(
-    ([, val]) => val !== null && val !== "" && val !== undefined
-  );
-
-  const detailFields = [
-    ...(voter.fullName ? [{ key: "__name", icon: <ICONS.personOutline fontSize="small" />, primary: t.name, secondary: voter.fullName }] : []),
-    ...(voter.email ? [{ key: "__email", icon: <ICONS.emailOutline fontSize="small" />, primary: t.email, secondary: voter.email }] : []),
-    ...(voter.phone ? [{ key: "__phone", icon: <ICONS.phone fontSize="small" />, primary: t.phone, secondary: <span dir="ltr" style={{ unicodeBidi: "embed" }}>{voter.phoneCode ? `${voter.phoneCode}${voter.phone}` : voter.phone}</span> }] : []),
-    ...customEntries.map(([key, val]) => {
-      const isPhone = /^(phone|mobile|tel(ephone)?|cell)$/i.test(String(key).trim());
-      const secondary = isPhone && voter.phoneCode
-        ? <span dir="ltr" style={{ unicodeBidi: "embed" }}>{`${voter.phoneCode}${val}`}</span>
-        : String(val);
-      return { key, icon: getFieldIcon(key), primary: key, secondary };
-    }),
-  ];
-  const hasDetails = detailFields.length > 0;
-  const hasMoreDetails = detailFields.length > PREVIEW_COUNT;
-  const visibleDetails = showAllDetails ? detailFields : detailFields.slice(0, PREVIEW_COUNT);
+function RatingCard({ question, dir, t, language }) {
+  const { distribution, totalVotes, average, scale } = question;
+  const data = distribution.filter((d) => d.count > 0);
+  if (data.length === 0) return null;
 
   return (
-    <AppCard
-      sx={{ width: "100%", height: "100%", overflow: "hidden" }}
-      dir={dir}
-    >
-      {/* HEADER */}
-      <Box sx={{ p: 1.5, pb: 0.5 }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1.25 }}>
-          <Avatar sx={{ bgcolor: "primary.main", width: 36, height: 36 }}>
-            <ICONS.personOutline />
-          </Avatar>
-          <Box sx={{ flex: 1 }}>
-            <Typography
-              variant="body1"
-              sx={{
-                fontWeight: 700,
-                textAlign: align,
-                display: "-webkit-box",
-                WebkitLineClamp: 1,
-                WebkitBoxOrient: "vertical",
-                overflow: "hidden"
-              }}>
-              {isAnonymous ? t.anonymous : (voter.fullName || t.unknownName)}
-            </Typography>
-          </Box>
-        </Box>
-      </Box>
-      <CardContent sx={{ pt: 1, px: 1.5, pb: 1.5 }}>
-        {voter.votedAt && (
-          <Box sx={{ mb: 1, display: "flex", alignItems: "center", gap: 1 }}>
-            <ICONS.eventOutline fontSize="small" color="text.secondary" />
-            <Typography variant="caption" sx={{
-              color: "text.secondary"
-            }}>
-              {t.votedAt}: {formatDateTimeWithLocale(voter.votedAt, language === "ar" ? "ar-SA" : "en-GB")}
-            </Typography>
-          </Box>
-        )}
-
-        <Divider sx={{ my: 1 }} />
-
-        {!isAnonymous && hasDetails && (
-          <Fragment>
-            <Typography variant="overline" sx={{ letterSpacing: 0.6, textAlign: align }}>
-              {t.voterDetails}
-            </Typography>
-            <List dense sx={{ py: 0 }}>
-              {visibleDetails.map((field) => (
-                <FieldRow key={field.key} icon={field.icon || null} primary={field.primary} secondary={field.secondary} dir={dir} align={align} />
-              ))}
-            </List>
-            {hasMoreDetails && (
-              <Button
-                size="small"
-                variant="text"
-                onClick={() => setShowAllDetails((v) => !v)}
-                startIcon={showAllDetails ? <ICONS.expandLess /> : <ICONS.expandMore />}
-                sx={{ mt: 0.25, px: 0, minWidth: 0, fontWeight: 700 }}
-              >
-                {showAllDetails ? t.showLessAnswers : `${t.showMoreAnswers} (${toArabicDigits(detailFields.length - PREVIEW_COUNT, language)})`}
-              </Button>
-            )}
-          </Fragment>
-        )}
-
-        {!isAnonymous && hasDetails && <Divider sx={{ my: 1 }} />}
-
-        <Typography variant="overline" sx={{ letterSpacing: 0.6, textAlign: align }}>
-          {t.votesTitle}
+    <AppCard sx={{ width: "100%", display: "flex", flexDirection: "column", height: "100%" }} dir={dir}>
+      <Box sx={{ p: 2, pb: 0, flexShrink: 0 }}>
+        <Typography variant="subtitle1" sx={{ fontWeight: 700, textAlign: "center", mb: 0.5 }}>
+          {question.question}
         </Typography>
+        <Typography variant="body2" sx={{ color: "text.secondary", textAlign: "center", display: "block", direction: "ltr" }}>
+          {t.average}: {toArabicDigits(average, language)} / {toArabicDigits(scale?.max || 5, language)}
+        </Typography>
+      </Box>
 
-        <List dense sx={{ py: 0 }}>
-          {visibleVotes.map((v) => (
-            <ListItem key={v.questionId} dense disableGutters sx={{ px: 0, py: 0.5, overflow: "hidden" }}>
-              <ListItemIcon sx={{ minWidth: 34, flexShrink: 0, color: "text.secondary", ...(dir === "rtl" ? { ml: 1 } : { mr: 1 }) }}>
-                <ICONS.assignmentOutline fontSize="small" />
-              </ListItemIcon>
-              <ListItemText
-                disableTypography
-                sx={{ flex: 1, minWidth: 0, overflow: "hidden" }}
-                primary={
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: "text.secondary",
-                      textAlign: align,
-                      wordBreak: "break-word",
-                      overflowWrap: "break-word"
-                    }}>
-                    {v.question}
-                  </Typography>
-                }
-                secondary={
-                  <Box sx={{ mt: 0.25, textAlign: align, overflow: "hidden", maxWidth: "100%" }}>
-                    <Chip
-                      size="small"
-                      label={toArabicDigits(v.optionText || v.answer || "—", language)}
-                      variant="outlined"
-                      avatar={v.optionImage ? <OptionThumb url={v.optionImage} label={v.optionText} /> : undefined}
-                      sx={{
-                        maxWidth: "100%",
-                        "& .MuiChip-label": { overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" },
-                        ...(v.optionImage ? { "& .MuiChip-avatar": { width: 18, height: 18, borderRadius: 4 } } : {}),
-                      }}
-                    />
-                  </Box>
-                }
-              />
-            </ListItem>
-          ))}
-        </List>
+      <Box sx={{ width: "100%", height: 200, flexShrink: 0, "& svg:focus": { outline: "none" } }} dir="ltr">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={data}
+              dataKey="count"
+              nameKey="value"
+              cx="50%"
+              cy="50%"
+              outerRadius={70}
+              innerRadius={40}
+              labelLine={false}
+              label={({ percent }) => toArabicDigits(`${(percent * 100).toFixed(0)}%`, language)}
+              style={{ fontSize: "14px", fontWeight: 600 }}
+            >
+              {data.map((_, i) => (
+                <Cell key={i} fill={COLORS[i % COLORS.length]} />
+              ))}
+            </Pie>
+            <Tooltip formatter={(value, name) => [`${toArabicDigits(value, language)} votes`, `Rating ${toArabicDigits(name, language)}`]} />
+          </PieChart>
+        </ResponsiveContainer>
+      </Box>
 
-        {hasMoreVotes && (
-          <Button
-            size="small"
-            variant="text"
-            onClick={() => setShowAllVotes((prev) => !prev)}
-            startIcon={showAllVotes ? <ICONS.expandLess /> : <ICONS.expandMore />}
-            sx={{ mt: 0.25, px: 0, minWidth: 0, fontWeight: 700 }}
-          >
-            {showAllVotes ? t.showLessAnswers : `${t.showMoreAnswers} (${toArabicDigits(votes.length - PREVIEW_COUNT, language)})`}
-          </Button>
-        )}
-      </CardContent>
+      <Divider sx={{ mx: 2 }} />
+
+      <Box sx={{ px: 2, py: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 0.5 }}>
+        {data.map((d, i) => (
+          <LegendDot
+            key={d.value}
+            color={COLORS[i % COLORS.length]}
+            label={`${toArabicDigits(d.value, language)} / ${toArabicDigits(scale?.max || 5, language)}`}
+            count={d.count}
+            total={totalVotes}
+            language={language}
+          />
+        ))}
+      </Box>
+
+      <Divider sx={{ mx: 2 }} />
+
+      <Box sx={{ px: 2, py: 1, display: "flex", justifyContent: "center", mt: "auto" }}>
+        <Typography variant="body2" sx={{ color: "text.secondary", direction: "ltr", textAlign: "center" }}>
+          {toArabicDigits(totalVotes, language)} {t.totalVotes}
+        </Typography>
+      </Box>
     </AppCard>
   );
 }
 
-function buildVoterList(voterResults) {
-  const voterMap = new Map();
-  for (const question of voterResults.questions || []) {
-    const type = question.type || "options";
-    if (type === "options") {
-      for (const option of question.options || []) {
-        for (const voter of option.voters || []) {
-          const key = String(voter._id);
-          if (!voterMap.has(key)) {
-            voterMap.set(key, {
-              _id: voter._id,
-              fullName: voter.fullName,
-              email: voter.email,
-              phone: voter.phone,
-              phoneCode: voter.phoneCode || null,
-              votedAt: voter.votedAt,
-              customFields: voter.customFields || {},
-              isAnonymous: voter.isAnonymous === true,
-              votes: [],
-            });
-          }
-          voterMap.get(key).votes.push({
-            questionId: question._id,
-            question: question.question,
-            type: type,
-            optionText: option.text,
-            optionImage: option.imageUrl || null,
-            answer: voter.answer,
-            value: voter.value,
-          });
-        }
-      }
-    } else {
-      // rating, nps, text
-      for (const voter of question.voters || []) {
-        const key = String(voter._id);
-        if (!voterMap.has(key)) {
-          voterMap.set(key, {
-            _id: voter._id,
-            fullName: voter.fullName,
-            email: voter.email,
-            phone: voter.phone,
-            phoneCode: voter.phoneCode || null,
-            votedAt: voter.votedAt,
-            customFields: voter.customFields || {},
-            isAnonymous: voter.isAnonymous === true,
-            votes: [],
-          });
-        }
-        voterMap.get(key).votes.push({
-          questionId: question._id,
-          question: question.question,
-          type: type,
-          answer: voter.answer,
-          value: voter.value,
-        });
-      }
-    }
-  }
-  return Array.from(voterMap.values());
+function NpsCard({ question, dir, t, language }) {
+  const { distribution, totalVotes, npsScore } = question;
+
+  const groupData = useMemo(() => {
+    if (!distribution || totalVotes === 0) return [];
+    const detractors = distribution.filter((d) => d.value >= 0 && d.value <= 6).reduce((s, d) => s + d.count, 0);
+    const passives = distribution.filter((d) => d.value >= 7 && d.value <= 8).reduce((s, d) => s + d.count, 0);
+    const promoters = distribution.filter((d) => d.value >= 9 && d.value <= 10).reduce((s, d) => s + d.count, 0);
+    const result = [];
+    if (detractors > 0) result.push({ name: t.detractors, value: detractors, color: NPS_GROUP_COLORS.detractors });
+    if (passives > 0) result.push({ name: t.passives, value: passives, color: NPS_GROUP_COLORS.passives });
+    if (promoters > 0) result.push({ name: t.promoters, value: promoters, color: NPS_GROUP_COLORS.promoters });
+    return result;
+  }, [distribution, totalVotes, t]);
+
+  if (groupData.length === 0) return null;
+
+  const scoreColor = npsScore >= 0 ? "success.main" : "error.main";
+
+  return (
+    <AppCard sx={{ width: "100%", display: "flex", flexDirection: "column", height: "100%" }} dir={dir}>
+      <Box sx={{ p: 2, pb: 0, flexShrink: 0 }}>
+        <Typography variant="subtitle1" sx={{ fontWeight: 700, textAlign: "center", mb: 0.5 }}>
+          {question.question}
+        </Typography>
+        <Typography variant="h4" sx={{ fontWeight: 800, textAlign: "center", color: scoreColor, direction: "ltr" }}>
+          {npsScore > 0 ? "+" : ""}{toArabicDigits(npsScore, language)}
+        </Typography>
+        <Typography variant="body2" sx={{ color: "text.secondary", textAlign: "center", display: "block", fontWeight: 600 }}>
+          {t.npsScore}
+        </Typography>
+      </Box>
+
+      <Box sx={{ width: "100%", height: 200, flexShrink: 0, "& svg:focus": { outline: "none" } }} dir="ltr">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={groupData}
+              dataKey="value"
+              nameKey="name"
+              cx="50%"
+              cy="50%"
+              outerRadius={70}
+              innerRadius={40}
+              labelLine={false}
+              label={({ percent }) => toArabicDigits(`${(percent * 100).toFixed(0)}%`, language)}
+              style={{ fontSize: "14px", fontWeight: 600 }}
+            >
+              {groupData.map((entry) => (
+                <Cell key={entry.name} fill={entry.color} />
+              ))}
+            </Pie>
+            <Tooltip formatter={(value, name) => [`${toArabicDigits(value, language)} votes`, name]} />
+          </PieChart>
+        </ResponsiveContainer>
+      </Box>
+
+      <Divider sx={{ mx: 2 }} />
+
+      <Box sx={{ px: 2, py: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 0.5 }}>
+        {groupData.map((d) => (
+          <LegendDot
+            key={d.name}
+            color={d.color}
+            label={d.name}
+            count={d.value}
+            total={totalVotes}
+            language={language}
+          />
+        ))}
+      </Box>
+
+      <Divider sx={{ mx: 2 }} />
+
+      <Box sx={{ px: 2, py: 1, display: "flex", justifyContent: "center", mt: "auto" }}>
+        <Typography variant="body2" sx={{ color: "text.secondary", direction: "ltr", textAlign: "center" }}>
+          {toArabicDigits(totalVotes, language)} {t.totalVotes}
+        </Typography>
+      </Box>
+    </AppCard>
+  );
 }
 
-const CARDS_PER_PAGE = 12;
+function OptionCard({ question, dir, t, language }) {
+  const { options, totalVotes } = question;
+  const data = (options || []).filter((o) => o.votes > 0);
+  if (data.length === 0) return null;
+
+  return (
+    <AppCard sx={{ width: "100%", display: "flex", flexDirection: "column", height: "100%" }} dir={dir}>
+      <Box sx={{ p: 2, pb: 0, flexShrink: 0 }}>
+        <Typography variant="subtitle1" sx={{ fontWeight: 700, textAlign: "center" }}>
+          {question.question}
+        </Typography>
+      </Box>
+
+      <Box sx={{ width: "100%", height: 200, flexShrink: 0, "& svg:focus": { outline: "none" } }} dir="ltr">
+        <ResponsiveContainer width="100%" height="100%">
+          <PieChart>
+            <Pie
+              data={data}
+              dataKey="votes"
+              nameKey="text"
+              cx="50%"
+              cy="50%"
+              outerRadius={70}
+              innerRadius={40}
+              labelLine={false}
+              label={({ percent }) => toArabicDigits(`${(percent * 100).toFixed(0)}%`, language)}
+              style={{ fontSize: "14px", fontWeight: 600 }}
+            >
+              {data.map((_, i) => (
+                <Cell key={i} fill={COLORS[i % COLORS.length]} />
+              ))}
+            </Pie>
+            <Tooltip formatter={(value, name) => [`${toArabicDigits(value, language)} votes`, name]} />
+          </PieChart>
+        </ResponsiveContainer>
+      </Box>
+
+      <Divider sx={{ mx: 2 }} />
+
+      <Box sx={{ px: 2, py: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 0.5 }}>
+        {data.map((o, i) => (
+          <LegendDot
+            key={i}
+            color={COLORS[i % COLORS.length]}
+            label={o.text || `Option ${toArabicDigits(i + 1, language)}`}
+            count={o.votes}
+            total={totalVotes}
+            language={language}
+          />
+        ))}
+      </Box>
+
+      <Divider sx={{ mx: 2 }} />
+
+      <Box sx={{ px: 2, py: 1, display: "flex", justifyContent: "center", mt: "auto" }}>
+        <Typography variant="body2" sx={{ color: "text.secondary", direction: "ltr", textAlign: "center" }}>
+          {toArabicDigits(totalVotes, language)} {t.totalVotes}
+        </Typography>
+      </Box>
+    </AppCard>
+  );
+}
 
 export default function FullScreenResultsPage() {
   const { pollSlug } = useParams();
-  const { t, dir, align, language } = useI18nLayout(translations);
-  const [voterResults, setVoterResults] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { t, dir } = useI18nLayout(translations);
+  const { language } = useLanguage();
   const [poll, setPoll] = useState(null);
-  const [page, setPage] = useState(1);
-  const [sortBy, setSortBy] = useState(-1);
+  const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!pollSlug) return;
     const init = async () => {
       setLoading(true);
       const pollData = await getPublicPollBySlug(pollSlug);
-      if (!pollData || pollData.error) { setLoading(false); return; }
+      if (!pollData || pollData.error) {
+        setLoading(false);
+        return;
+      }
       setPoll(pollData);
-      const voterData = await getPollVoterResults(pollData._id);
-      setVoterResults(voterData || null);
+      const resData = await getPollResults(pollData._id);
+      setResults(Array.isArray(resData) ? resData : []);
       setLoading(false);
     };
     init();
@@ -370,13 +327,7 @@ export default function FullScreenResultsPage() {
 
   if (loading) {
     return (
-      <Box
-        sx={{
-          minHeight: "100vh",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center"
-        }}>
+      <Box sx={{ minHeight: "100vh", display: "flex", justifyContent: "center", alignItems: "center" }}>
         <CircularProgress />
       </Box>
     );
@@ -384,104 +335,100 @@ export default function FullScreenResultsPage() {
 
   if (!poll) {
     return (
-      <Box
-        sx={{
-          minHeight: "100vh",
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center"
-        }}>
+      <Box sx={{ minHeight: "100vh", display: "flex", justifyContent: "center", alignItems: "center" }}>
         <Typography variant="h6" color="error">{t.pollNotFound}</Typography>
       </Box>
     );
   }
 
-  const voterList = voterResults ? buildVoterList(voterResults) : [];
-  
-  const sortedVoterList = [...voterList].sort((a, b) => {
-    const da = a.votedAt ? new Date(a.votedAt).getTime() : 0;
-    const db = b.votedAt ? new Date(b.votedAt).getTime() : 0;
-    return sortBy === -1 ? db - da : da - db;
-  });
-
-  const totalVoters = sortedVoterList.length;
-  const displayVoters = sortedVoterList.slice((page - 1) * CARDS_PER_PAGE, page * CARDS_PER_PAGE);
+  const displayQuestions = results.filter(
+    (q) => q.type === "rating" || q.type === "nps" || q.type === "options" || q.type === "option" || q.type === "slider"
+  );
 
   return (
     <>
-      <LanguageSelector top={20} right={20} />
       <Box
         dir={dir}
         sx={{
           minHeight: "100vh",
           backgroundColor: "#f9f9f9",
-          pt: { xs: 8, md: 10 },
+          pt: { xs: 3, md: 4 },
           px: { xs: 1.5, md: 4 },
           pb: 4,
         }}
       >
-        {!totalVoters ? (
+        {/* Header */}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            mb: 3,
+            px: 0.5,
+            gap: 2,
+          }}
+        >
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <Typography
+              variant="h5"
+              sx={{
+                fontWeight: 700,
+              }}
+            >
+              {poll.title}
+            </Typography>
+            {poll.description && (
+              <Typography
+                variant="body2"
+                component="div"
+                sx={{
+                  color: "text.secondary",
+                }}
+                dangerouslySetInnerHTML={{ __html: poll.description }}
+              />
+            )}
+          </Box>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, flexShrink: 0 }}>
+            {poll.logoUrl && (
+              <Box
+                component="img"
+                src={poll.logoUrl}
+                alt={poll.title}
+                sx={{
+                  width: { xs: 56, md: 80 },
+                  height: { xs: 56, md: 80 },
+                  objectFit: "contain",
+                }}
+              />
+            )}
+            <LanguageSelector />
+          </Box>
+        </Box>
+
+        {/* Cards Grid */}
+        {displayQuestions.length === 0 ? (
           <NoDataAvailable />
         ) : (
-          <Fragment>
-            <Box sx={{ 
-              display: "flex", 
-              flexDirection: { xs: "column", sm: "row" },
-              justifyContent: "space-between", 
-              alignItems: { xs: "stretch", sm: "center" }, 
-              mb: 2.5, px: 0.5, gap: 2 
-            }}>
-              <Typography variant="body2" sx={{
-                color: "text.secondary"
-              }}>
-                {t.showing} {toArabicDigits(Math.min((page - 1) * CARDS_PER_PAGE + 1, totalVoters), language)}–{toArabicDigits(Math.min(page * CARDS_PER_PAGE, totalVoters), language)} {t.of} {toArabicDigits(totalVoters, language)} {t.records}
-              </Typography>
-
-              <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 170 } }}>
-                <InputLabel id="sort-label">{language === "ar" ? "ترتيب حسب" : "Sort By"}</InputLabel>
-                <Select
-                  labelId="sort-label"
-                  value={sortBy}
-                  label={language === "ar" ? "ترتيب حسب" : "Sort By"}
-                  onChange={(e) => setSortBy(Number(e.target.value))}
-                >
-                  <MenuItem value={-1}>{language === "ar" ? "الأحدث" : "Most Recent"}</MenuItem>
-                  <MenuItem value={1}>{language === "ar" ? "الأقدم" : "Oldest"}</MenuItem>
-                </Select>
-              </FormControl>
-            </Box>
-
-            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, justifyContent: "center" }}>
-              {displayVoters.map((voter) => (
-                <Box
-                  key={String(voter._id)}
-                  sx={{ width: { xs: "100%", sm: "calc(50% - 8px)", md: "calc(33.333% - 11px)" }, minWidth: 0 }}
-                >
-                  <VoterCard
-                    voter={voter}
-                    t={t}
-                    dir={dir}
-                    align={align}
-                    language={language}
-                    isAnonymous={voter.isAnonymous}
-                  />
-                </Box>
-              ))}
-            </Box>
-
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "center",
-                mt: 4
-              }}>
-              <ArabicPagination
-                count={Math.ceil(totalVoters / CARDS_PER_PAGE)}
-                page={Math.min(page, Math.ceil(totalVoters / CARDS_PER_PAGE) || 1)}
-                onChange={(_, v) => setPage(v)}
-              />
-            </Box>
-          </Fragment>
+          <Box
+            sx={{
+              display: "flex",
+              flexWrap: "wrap",
+              justifyContent: "center",
+              gap: 2,
+            }}
+          >
+            {displayQuestions.map((q) => (
+              <Box key={q._id} sx={{ width: { xs: "100%", sm: 300 }, display: "flex" }}>
+                {q.type === "rating" ? (
+                  <RatingCard question={q} dir={dir} t={t} language={language} />
+                ) : q.type === "nps" ? (
+                  <NpsCard question={q} dir={dir} t={t} language={language} />
+                ) : (
+                  <OptionCard question={q} dir={dir} t={t} language={language} />
+                )}
+              </Box>
+            ))}
+          </Box>
         )}
       </Box>
     </>
