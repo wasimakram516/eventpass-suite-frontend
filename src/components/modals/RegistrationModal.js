@@ -105,7 +105,7 @@ export default function RegistrationModal({
         []
     );
 
-   
+
     const fieldsToRender = useMemo(
         () => {
             if (mode === "edit") return classicFields;
@@ -149,12 +149,12 @@ export default function RegistrationModal({
                     : (registration.customFields || {});
 
                 fieldsToRender.forEach((f) => {
-                   
+
                     const fieldMap = {
                         "Full Name": cf["Full Name"] ?? cf["fullName"] ?? registration.fullName ?? "",
-                        "Email":     cf["Email"]     ?? cf["email"]     ?? registration.email     ?? "",
-                        "Phone":     cf["Phone"]     ?? cf["phone"]     ?? registration.phone     ?? "",
-                        "Company":   cf["Company"]   ?? cf["company"]   ?? registration.company   ?? "",
+                        "Email": cf["Email"] ?? cf["email"] ?? registration.email ?? "",
+                        "Phone": cf["Phone"] ?? cf["phone"] ?? registration.phone ?? "",
+                        "Company": cf["Company"] ?? cf["company"] ?? registration.company ?? "",
                     };
                     init[f.inputName] = fieldMap[f.inputName] ?? "";
 
@@ -319,6 +319,7 @@ export default function RegistrationModal({
     };
 
     // ── Build normalized payload (shared by free-save and paid-preview) ───────
+    // ── Build normalized payload (shared by free-save and paid-preview) ───────
     const buildNormalizedPayload = async () => {
         const allFields = [
             ...visibleFields,
@@ -363,13 +364,12 @@ export default function RegistrationModal({
             }
         });
 
-        
         if (mode === "edit") {
             const classicKeyMap = {
                 "Full Name": "fullName",
-                "Email":     "email",
-                "Phone":     "phone",
-                "Company":   "company",
+                "Email": "email",
+                "Phone": "phone",
+                "Company": "company",
             };
             Object.entries(classicKeyMap).forEach(([label, key]) => {
                 if (label in normalizedValues) {
@@ -395,19 +395,22 @@ export default function RegistrationModal({
         setLoading(true);
         try {
             const { normalizedValues, phoneIsoCode } = await buildNormalizedPayload();
-
+            const remappedValues = { ...normalizedValues };
             // ── Paid event: show payment summary dialog instead of saving directly ──
             if (isPaidEvent && mode === "create") {
-                const classicKeyMap = {
+
+                const classicFallbacks = {
                     "Full Name": "fullName",
                     "Email": "email",
                     "Phone": "phone",
                     "Company": "company",
                 };
-                const remappedValues = {};
-                Object.entries(normalizedValues).forEach(([key, val]) => {
-                    const mappedKey = classicKeyMap[key] ?? key;
-                    remappedValues[mappedKey] = val;
+                Object.entries(classicFallbacks).forEach(([label, camelKey]) => {
+                    if (!remappedValues[camelKey]) {
+                        // Try raw values by label (classic form) or camelCase key
+                        const raw = values[label] ?? values[camelKey] ?? "";
+                        if (raw) remappedValues[camelKey] = raw;
+                    }
                 });
 
                 // Prune global dependent fields that don't belong to the current ticket
