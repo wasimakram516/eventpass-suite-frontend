@@ -195,6 +195,13 @@ const translations = {
     uploadAgenda: "Upload Agenda (PDF)",
     currentAgenda: "Current Agenda:",
     selectedAgenda: "Selected Agenda:",
+    organizerLogo: "Organizer Logo",
+    organizerAddress: "Address",
+    organizerWebsite: "Website Link",
+    organizerOtherDetails: "Other Details",
+    currentOrganizerLogo: "Current Organizer Logo:",
+    previewOrganizerLogo: "Preview:",
+
   },
   ar: {
     createTitle: "إنشاء فعالية",
@@ -346,6 +353,12 @@ const translations = {
     uploadAgenda: "رفع جدول الأعمال (PDF)",
     currentAgenda: "جدول الأعمال الحالي:",
     selectedAgenda: "جدول الأعمال المحدد:",
+    organizerLogo: "شعار المنظم",
+    organizerAddress: "العنوان",
+    organizerWebsite: "رابط الموقع",
+    organizerOtherDetails: "تفاصيل أخرى",
+    currentOrganizerLogo: "شعار المنظم الحالي:",
+    previewOrganizerLogo: "معاينة:",
   },
 };
 
@@ -468,6 +481,12 @@ const EventModal = ({
     dependentFieldsEnabled: false,
     globalDependentFields: [],
     globalDependentFieldMappings: {},
+    organizerLogo: null,
+    organizerLogoPreview: "",
+    removeOrganizerLogo: false,
+    organizerAddress: "",
+    organizerWebsite: "",
+    organizerOtherDetails: "",
   });
 
   useEffect(() => {
@@ -541,17 +560,16 @@ const EventModal = ({
         organizerName: initialValues?.organizerName || "",
         organizerEmail: initialValues?.organizerEmail || "",
         organizerPhone: initialValues?.organizerPhone || "",
+        organizerLogo: null,
+        organizerLogoPreview: initialValues?.organizerLogoUrl || "",
+        removeOrganizerLogo: false,
+        organizerAddress: initialValues?.organizerAddress || "",
+        organizerWebsite: initialValues?.organizerWebsite || "",
+        organizerOtherDetails: initialValues?.organizerOtherDetails || "",
         useCustomEmailTemplate: initialValues?.useCustomEmailTemplate || false,
         emailTemplateSubject: initialValues?.emailTemplate?.subject || "",
         emailTemplateBody: initialValues?.emailTemplate?.body || "",
         isPaid: initialValues?.isPaid || false,
-        // ticketTypes: initialValues?.ticketTypes?.map((tt) => ({
-        //   _id: tt._id,
-        //   name: tt.name || "",
-        //   description: tt.description || "",
-        //   price: tt.price ?? "",
-        //   capacity: tt.capacity ?? "",
-        // })) || [],
         ticketTypes: initialValues?.ticketTypes?.map((tt) => ({
           _id: tt._id,
           name: tt.name || "",
@@ -609,6 +627,7 @@ const EventModal = ({
       } else {
         setOrganizerPhoneIsoCode(DEFAULT_ISO_CODE);
         setOrganizerPhoneError("");
+
       }
     } else {
       setFormData((prev) => ({
@@ -668,6 +687,12 @@ const EventModal = ({
         dependentFieldsEnabled: false,
         globalDependentFields: [],
         globalDependentFieldMappings: {},
+        organizerLogo: null,
+        organizerLogoPreview: "",
+        removeOrganizerLogo: false,
+        organizerAddress: "",
+        organizerWebsite: "",
+        organizerOtherDetails: "",
       }));
     }
   }, [initialValues, isClosed]);
@@ -827,7 +852,19 @@ const EventModal = ({
           removeQrWrapperBackground: false,
         }));
       }
-    } else {
+    }
+    else if (name === "organizerLogo" && files?.[0]) {
+      const file = files[0];
+      if (file.type.startsWith("image/")) {
+        setFormData((prev) => ({
+          ...prev,
+          organizerLogo: file,
+          organizerLogoPreview: URL.createObjectURL(file),
+          removeOrganizerLogo: false,
+        }));
+      }
+    }
+    else {
       let processedValue = value;
 
       if (name === "organizerPhone") {
@@ -910,7 +947,15 @@ const EventModal = ({
           qrWrapperBackgroundPreview: "",
           removeQrWrapperBackground: false,
         }));
+      } else if (type === "organizerLogo") {
+        setFormData((prev) => ({
+          ...prev,
+          organizerLogo: null,
+          organizerLogoPreview: "",
+          removeOrganizerLogo: false,
+        }));
       }
+
       return;
     }
 
@@ -996,6 +1041,14 @@ const EventModal = ({
           qrWrapperBackground: null,
           qrWrapperBackgroundPreview: "",
           removeQrWrapperBackground: true,
+        }));
+      }
+      else if (deleteConfirm.type === "organizerLogo") {
+        setFormData((prev) => ({
+          ...prev,
+          organizerLogo: null,
+          organizerLogoPreview: "",
+          removeOrganizerLogo: true,
         }));
       }
 
@@ -1142,21 +1195,22 @@ const EventModal = ({
         return;
       }
     }
+    let logoUrl = formData.removeLogo ? null : (formData.logo ? null : (formData.logoPreview || null));
+    let backgroundEn = null;
+    let backgroundAr = null;
+    let qrWrapperBackgroundUrl = null;
+    let organizerLogoUrl = formData.removeOrganizerLogo ? null : (formData.organizerLogo ? null : (formData.organizerLogoPreview || null));
+
+    let agendaUrl = formData.agenda
+      ? null
+      : (formData.agendaPreview && formData.agendaPreview.startsWith('http')
+        ? formData.agendaPreview
+        : (initialValues?.agendaUrl || null));
 
     setLoading(true);
 
     try {
       const filesToUpload = [];
-
-      let logoUrl = formData.removeLogo ? null : (formData.logo ? null : (formData.logoPreview || null));
-      let backgroundEn = null;
-      let backgroundAr = null;
-      let qrWrapperBackgroundUrl = null;
-      let agendaUrl = formData.agenda
-        ? null
-        : (formData.agendaPreview && formData.agendaPreview.startsWith('http')
-          ? formData.agendaPreview
-          : (initialValues?.agendaUrl || null));
       const brandingMediaFiles = [];
 
       if (formData.logo && !formData.removeLogo) {
@@ -1212,6 +1266,13 @@ const EventModal = ({
           file: formData.qrWrapperBackground,
           type: "eventQrWrapperBackground",
           label: "QR wrapper background",
+        });
+      }
+      if (formData.organizerLogo && !formData.removeOrganizerLogo) {
+        filesToUpload.push({
+          file: formData.organizerLogo,
+          type: "organizerLogo",
+          label: "Organizer Logo",
         });
       }
 
@@ -1271,6 +1332,7 @@ const EventModal = ({
               };
             else if (result.type === "agenda") agendaUrl = result.url;
             else if (result.type === "eventQrWrapperBackground") qrWrapperBackgroundUrl = result.url;
+            else if (result.type === "organizerLogo") organizerLogoUrl = result.url;
           });
 
           let brandingIndex = 0;
@@ -1404,6 +1466,10 @@ const EventModal = ({
         useCustomQrCode: formData.useCustomQrCode || false,
         ...(qrWrapperBackgroundUrl ? { customQrWrapperBackgroundUrl: qrWrapperBackgroundUrl } : {}),
         ...(formData.removeQrWrapperBackground ? { removeQrWrapperBackground: "true" } : {}),
+        organizerLogoUrl: formData.removeOrganizerLogo ? null : (organizerLogoUrl || formData.organizerLogoPreview || null),
+        organizerAddress: formData.organizerAddress || "",
+        organizerWebsite: formData.organizerWebsite || "",
+        organizerOtherDetails: formData.organizerOtherDetails || "",
         isPaid: formData.isPaid || false,
         ticketTypes: formData.isPaid
           ? formData.ticketTypes.map((tt) => ({
@@ -1446,7 +1512,9 @@ const EventModal = ({
 
   return (
     <>
-      <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth dir={dir}>
+      {/* <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth dir={dir}> */}
+      <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth dir={dir}
+        PaperProps={{ sx: { maxHeight: "90vh" } }}>
         <DialogTitle
           sx={{
             display: "flex",
@@ -1475,7 +1543,8 @@ const EventModal = ({
             <ICONS.close />
           </IconButton>
         </DialogTitle>
-        <DialogContent>
+
+        <DialogContent sx={{ overflowY: "auto" }}>
           <Box sx={{ borderBottom: 1, borderColor: 'divider', mt: 2, mx: -3 }}>
             <Tabs
               value={activeTab}
@@ -1623,6 +1692,7 @@ const EventModal = ({
             </Box>
           )}
 
+
           {/* Tab 2: Organizer Details */}
           {activeTab === 1 && (
             <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 2 }}>
@@ -1671,6 +1741,94 @@ const EventModal = ({
                   }
                 }}
               />
+
+              {/* Organizer Logo */}
+              <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+                <Button component="label" variant="outlined">
+                  {t.organizerLogo}
+                  <input
+                    hidden
+                    name="organizerLogo"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleInputChange}
+                  />
+                </Button>
+                {formData.organizerLogoPreview && !formData.removeOrganizerLogo && (
+                  <Box sx={{ mt: 1.5 }}>
+                    <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                      {initialValues && !formData.organizerLogo ? t.currentOrganizerLogo : t.previewOrganizerLogo}
+                    </Typography>
+                    <Box sx={{ position: "relative", display: "inline-block" }}>
+                      <img
+                        src={formData.organizerLogoPreview}
+                        alt="Organizer logo preview"
+                        style={{
+                          maxWidth: 200,
+                          maxHeight: 100,
+                          height: "auto",
+                          borderRadius: 6,
+                          objectFit: "cover",
+                        }}
+                      />
+                      <IconButton
+                        size="small"
+                        onClick={() => {
+                          const fileUrl = initialValues?.organizerLogoUrl || formData.organizerLogoPreview;
+                          handleDeleteMedia("organizerLogo", fileUrl);
+                        }}
+                        sx={{
+                          position: "absolute",
+                          top: -18,
+                          right: 6,
+                          bgcolor: "error.main",
+                          color: "#fff",
+                          "&:hover": { bgcolor: "error.dark" },
+                        }}
+                      >
+                        <ICONS.delete sx={{ fontSize: 18 }} />
+                      </IconButton>
+                    </Box>
+                  </Box>
+                )}
+              </Box>
+
+              {/* Address (Rich Text) */}
+              <Box>
+                <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+                  {t.organizerAddress}
+                </Typography>
+                <RichTextEditor
+                  value={formData.organizerAddress}
+                  onChange={(html) => setFormData((prev) => ({ ...prev, organizerAddress: html }))}
+                  placeholder={t.organizerAddress}
+                  dir={dir}
+                />
+              </Box>
+
+              {/* Website Link */}
+              <TextField
+                label={t.organizerWebsite}
+                name="organizerWebsite"
+                type="url"
+                value={formData.organizerWebsite}
+                onChange={handleInputChange}
+                fullWidth
+                placeholder="https://example.com"
+              />
+
+              {/* Other Details (Rich Text) */}
+              <Box>
+                <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
+                  {t.organizerOtherDetails}
+                </Typography>
+                <RichTextEditor
+                  value={formData.organizerOtherDetails}
+                  onChange={(html) => setFormData((prev) => ({ ...prev, organizerOtherDetails: html }))}
+                  placeholder={t.organizerOtherDetails}
+                  dir={dir}
+                />
+              </Box>
             </Box>
           )}
 
