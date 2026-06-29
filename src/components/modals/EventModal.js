@@ -1522,7 +1522,7 @@ const EventModal = ({
     <>
       {/* <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth dir={dir}> */}
       <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth dir={dir}
-        PaperProps={{ sx: { maxHeight: "90vh" } }}>
+        slotProps={{ paper: { sx: { maxHeight: "90vh" } } }}>
         <DialogTitle
           sx={{
             display: "flex",
