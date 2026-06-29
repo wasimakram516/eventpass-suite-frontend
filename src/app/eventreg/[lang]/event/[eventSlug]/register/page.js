@@ -486,29 +486,28 @@ export default function Registration() {
     // Paid event — stash the prepared payload and show the price-breakdown
     // dialog. The actual gateway call happens from the dialog's "Confirm & Pay".
     if (event?.isPaid) {
-  const currentDepFieldNames = new Set(ticketDependentFields.map(f => f.name));
-  const allGlobalDepNames = new Set((event?.globalDependentFields || []).map(f => f.inputName));
+      const currentDepFieldNames = new Set(ticketDependentFields.map(f => f.name));
+      const allGlobalDepNames = new Set((event?.globalDependentFields || []).map(f => f.inputName));
 
-  const prunedFormData = Object.fromEntries(
-    Object.entries(normalizedFormData).filter(([key]) => {
-      if (!allGlobalDepNames.has(key)) return true;
-      return currentDepFieldNames.has(key);
-    })
-  );
+      const prunedFormData = Object.fromEntries(
+        Object.entries(normalizedFormData).filter(([key]) => {
+          if (!allGlobalDepNames.has(key)) return true;
+          return currentDepFieldNames.has(key);
+        })
+      );
 
-  setPaymentPayload({
-    eventSlug,
-    ticketTypeId: selectedTicketTypeId,
-    lang,
-    ...prunedFormData,
-    isoCode: phoneIsoCode,
-  });
+      setPaymentPayload({
+        eventSlug,
+        ticketTypeId: selectedTicketTypeId,
+        lang,
+        ...prunedFormData,
+        isoCode: phoneIsoCode,
+      });
       setPaymentError("");
       setSubmitting(false);
       setShowPaymentSummary(true);
       return;
     }
-
     // Free event — normal registration flow
     const result = await createRegistration({
       ...normalizedFormData,
@@ -546,14 +545,15 @@ export default function Registration() {
   };
 
   // Fires from the payment-summary dialog — creates the Thawani session and
-  // redirects the user to the gateway.
   const handleConfirmPayment = async () => {
     if (!paymentPayload) return;
     setPayProcessing(true);
     setPaymentError("");
     const result = await initiatePayment(paymentPayload);
-    if (!result?.error && result?.sessionUrl) {
-      window.location.href = result.sessionUrl;
+    const sessionUrl = result?.sessionUrl || result?.data?.sessionUrl;
+
+    if (!result?.error && sessionUrl) {
+      window.location.href = sessionUrl;
     } else {
       setPayProcessing(false);
       setPaymentError(result?.message || t.registrationFailed);
@@ -952,8 +952,7 @@ export default function Registration() {
                               variant="caption"
                               sx={{ display: "block", color: isSoldOut ? "error.main" : isLowStock ? "warning.main" : "text.secondary", fontWeight: isSoldOut || isLowStock ? 600 : 400 }}
                             >
-                              {isSoldOut ? t.ticketSoldOut : remaining !== null ? `${remaining} ${t.available}` : t.unlimitedCapacity}
-                            </Typography>
+                              {isSoldOut ? t.ticketSoldOut : remaining !== null ? `${remaining} ${t.available}` : ""}                            </Typography>
                           </Box>
                           <Typography variant="body2" fontWeight={700} color={isSoldOut ? "text.disabled" : "primary.main"} sx={{ whiteSpace: "nowrap", flexShrink: 0 }}>
                             {isSoldOut ? "—" : `${tt.price} ${t.omr}`}
