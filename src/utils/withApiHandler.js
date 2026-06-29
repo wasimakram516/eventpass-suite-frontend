@@ -14,7 +14,7 @@ const withApiHandler = (fn, { showSuccess = false } = {}) => async (...args) => 
     }
 
     return response.data ?? response;
-    
+
   } catch (err) {
     const message =
       err?.response?.data?.error ||

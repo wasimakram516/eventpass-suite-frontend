@@ -5,7 +5,7 @@ import withApiHandler from "@/utils/withApiHandler";
 export const createRegistration = withApiHandler(async (payload) => {
   const { data } = await api.post("/eventreg/registrations", payload);
   return data;
-});
+}, { showSuccess: true });
 
 // Get count of unsent registration emails for an event (CMS admin use)
 export const getUnsentCount = withApiHandler(async (eventSlug) => {

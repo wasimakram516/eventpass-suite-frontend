@@ -181,7 +181,8 @@ const translations = {
     sort: "Sort",
     mostRecent: "Most Recent",
     oldest: "Oldest",
-    viewUploadedFile: "View uploaded file",
+    viewUploadedFile: "View file",
+    totalLabel: "Total",
   },
   ar: {
     title: "تفاصيل الحدث",
@@ -287,7 +288,8 @@ const translations = {
     sort: "ترتيب",
     mostRecent: "الأحدث",
     oldest: "الأقدم",
-    viewUploadedFile: "عرض الملف المرفوع",
+    viewUploadedFile: "عرض الملف",
+    totalLabel: "الإجمالي",
   },
 };
 
@@ -671,7 +673,6 @@ export default function ViewRegistrations() {
     }
 
     setCreateModalOpen(false);
-    showMessage("Registration created successfully", "success");
     fetchData();
   };
 
@@ -1173,27 +1174,7 @@ export default function ViewRegistrations() {
         registration.company ||
         "";
 
-      // Commented out - Title/Designation not displayed on badge anymore (might be needed in future)
-      // const customFields = registration.customFields || {};
-      // const pickTitle = (fields) => {
-      //   if (!fields || typeof fields !== "object") return null;
-      //   const normalize = (str = "") => String(str).toLowerCase().replace(/[^a-z0-9]/g, "");
-      //   const target = "title";
-      //   const candidates = new Set([
-      //     target,
-      //     normalize("designation"),
-      //     normalize("job title"),
-      //     normalize("position"),
-      //     normalize("role"),
-      //   ]);
-      //   for (const [key, value] of Object.entries(fields)) {
-      //     const nk = normalize(key);
-      //     if (candidates.has(nk)) return value;
-      //   }
-      //   return null;
-      // };
-      // const title = pickTitle(customFields) || registration.title || "";
-
+      
       const badgeData = {
         fullName,
         company,
@@ -1362,19 +1343,45 @@ export default function ViewRegistrations() {
   };
 
   const getDisplayFieldsForRegistration = (reg) => {
-    const fieldMap = new Map(dynamicFields.map((f) => [f.name, f]));
+    const customFields = getCustomFields(reg);
+    // Decide the field source from where THIS registration's data actually lives,
+    // not the event's useCustomFields flag (which can be stale/inconsistent). A
+    // record stores its answers in customFields (custom-form) OR in the top-level
+    // identity fields (classic) — never both — so we render exactly one source and
+    // avoid the duplicate rows that appear when the two are mixed.
+    const hasCustomData = Object.values(customFields).some(
+      (v) => v !== undefined && v !== null && String(v).trim() !== "",
+    );
 
-    Object.entries(getCustomFields(reg)).forEach(([key, value]) => {
-      if (!fieldMap.has(key)) {
-        // Check fieldMetaMap for type (covers ticket-dependent fields)
-        const metaType = fieldMetaMap[key]?.type;
-        fieldMap.set(key, {
-          name: key,
-          type: metaType || (looksLikeFileUrl(value) ? "file" : "text"),
-          values: [],
-        });
-      }
-    });
+    const baseFields = hasCustomData
+      ? (eventDetails?.formFields || []).map((f) => ({
+          name: f.inputName,
+          type: (f.inputType || "text").toLowerCase(),
+          values: Array.isArray(f.values) ? f.values : [],
+        }))
+      : [
+          { name: "fullName", type: "text", values: [] },
+          { name: "email", type: "text", values: [] },
+          { name: "phone", type: "text", values: [] },
+          { name: "company", type: "text", values: [] },
+        ];
+
+    const fieldMap = new Map(baseFields.map((f) => [f.name, f]));
+
+    // Surface any customFields keys not covered by the form definition
+    // (ticket-dependent or legacy fields) — custom records only.
+    if (hasCustomData) {
+      Object.entries(customFields).forEach(([key, value]) => {
+        if (!fieldMap.has(key)) {
+          const metaType = fieldMetaMap[key]?.type;
+          fieldMap.set(key, {
+            name: key,
+            type: metaType || (looksLikeFileUrl(value) ? "file" : "text"),
+            values: [],
+          });
+        }
+      });
+    }
 
     const displayFields = Array.from(fieldMap.values()).filter((f) => {
       const value = getFieldValue(reg, f.name);
@@ -2029,15 +2036,20 @@ export default function ViewRegistrations() {
                           {entry.icon}
                           {entry.statusIcon}
                           <Box component="span" sx={{ color: entry.color }}>{entry.label}</Box>
-                          {reg.ticketTypeName && (
-                            <Box component="span" sx={{ color: "text.secondary" }}>
-                              {/* {` · ${reg.ticketTypeName}`}{reg.ticketPrice != null ? ` · ${reg.ticketPrice} OMR` : ""} */}
-                              {` · ${reg.ticketTypeName}`}
-                              {(reg.priceBreakdown?.total ?? reg.ticketPrice) != null
-                                ? ` · ${reg.priceBreakdown?.total ?? reg.ticketPrice} OMR`
-                                : ""}
-                            </Box>
-                          )}
+                          {reg.ticketTypeName && (() => {
+                            // Base = the ticket's own price; Total = what was actually
+                            // charged (base + fees + VAT). Both come from priceBreakdown,
+                            // which is included on the registration by API and sockets alike.
+                            const base = reg.priceBreakdown?.base ?? reg.ticketPrice;
+                            const total = reg.priceBreakdown?.total;
+                            return (
+                              <Box component="span" sx={{ color: "text.secondary" }}>
+                                {` · ${reg.ticketTypeName}`}
+                                {base != null ? ` · ${base} OMR` : ""}
+                                {total != null && total !== base ? ` · ${t.totalLabel}: ${total} OMR` : ""}
+                              </Box>
+                            );
+                          })()}
                           {ps === "pending" && (
                             <Tooltip title={copiedPaymentLinkId === reg._id ? t.paymentLinkCopied : t.copyPaymentLink}>
                               <IconButton
@@ -2340,6 +2352,10 @@ export default function ViewRegistrations() {
         registration={null}
         formFields={eventDetails?.formFields || []}
         onSave={handleCreateRegistration}
+        onPaymentInitiated={() => {
+          setCreateModalOpen(false);
+          fetchData();
+        }}
         mode="create"
         event={eventDetails}
       />
