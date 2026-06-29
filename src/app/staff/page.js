@@ -51,7 +51,9 @@ export default function Modules() {
     const fetchModules = async () => {
       if (!user) return;
 
-      const data = await getModules();
+      const result = await getModules();
+      // getModules returns an error object ({ error, message }) on API failure.
+      const data = Array.isArray(result) ? result : [];
 
       // Filter by user role
       const permitted =
