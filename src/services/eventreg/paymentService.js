@@ -5,7 +5,7 @@ import withApiHandler from "@/utils/withApiHandler";
 export const initiatePayment = withApiHandler(async (payload) => {
   const { data } = await api.post("/eventreg/payments/initiate", payload);
   return data;
-});
+}, { showSuccess: true });
 
 // Verify payment after Thawani success redirect (public)
 export const verifyPayment = withApiHandler(async (registrationId) => {
@@ -44,3 +44,12 @@ export const getAllPayments = withApiHandler(async (params = {}) => {
   const { data } = await api.get(`/eventreg/payments${qs ? `?${qs}` : ""}`);
   return data;
 });
+
+// Excel export of the global payments log (same filters). Returns a Blob.
+// Native axios (not withApiHandler) — withApiHandler breaks blob downloads.
+export const exportPayments = async (params = {}) => {
+  const qs = new URLSearchParams(params).toString();
+  const url = `/eventreg/payments/export${qs ? `?${qs}` : ""}`;
+  const response = await api.get(url, { responseType: "blob" });
+  return response.data;
+};

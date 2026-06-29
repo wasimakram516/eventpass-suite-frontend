@@ -56,6 +56,8 @@ const translations = {
     endTime: "End Time",
     venue: "Venue",
     description: "Description",
+    footnote: "Footnote (optional)",
+    footnoteHint: "Shown below the fields on the public registration page.",
     capacity: "Capacity",
     logo: "Upload Event Logo",
     brandingMedia: "Upload Branding Media",
@@ -214,6 +216,8 @@ const translations = {
     endTime: "وقت الانتهاء",
     venue: "المكان",
     description: "الوصف",
+    footnote: "ملاحظة ختامية (اختياري)",
+    footnoteHint: "تظهر أسفل الحقول في صفحة التسجيل العامة.",
     capacity: "السعة",
     logo: "رفع شعار الفعالية",
     brandingMedia: "رفع الوسائط التسويقية",
@@ -429,6 +433,7 @@ const EventModal = ({
     timezone: getUserTimezone(),
     venue: "",
     description: "",
+    footnote: "",
     logo: null,
     logoPreview: "",
     backgroundEn: null,
@@ -513,6 +518,7 @@ const EventModal = ({
         timezone: getUserTimezone(),
         venue: initialValues.venue || "",
         description: initialValues.description || "",
+        footnote: initialValues.footnote || "",
         capacity: initialValues.capacity?.toString() || "",
         eventType:
           initialValues.eventType || (isClosed ? "closed" : "public"),
@@ -641,6 +647,7 @@ const EventModal = ({
         timezone: getUserTimezone(),
         venue: "",
         description: "",
+        footnote: "",
         logo: null,
         logoPreview: "",
         backgroundEn: null,
@@ -1411,6 +1418,7 @@ const EventModal = ({
         ...(isClosed ? { timezone: formData.timezone } : {}),
         venue: formData.venue,
         description: formData.description || "",
+        footnote: formData.footnote || "",
         capacity: formData.capacity || 999,
         logoUrl: formData.removeLogo ? null : logoUrl,
         ...(Object.keys(background).length > 0 ? { background } : {}),
@@ -1681,6 +1689,16 @@ const EventModal = ({
                   dir={dir}
                 />
               </Box>
+              <TextField
+                label={t.footnote}
+                value={formData.footnote}
+                onChange={(e) => setFormData((prev) => ({ ...prev, footnote: e.target.value }))}
+                helperText={t.footnoteHint}
+                fullWidth
+                multiline
+                minRows={2}
+                dir={dir}
+              />
               <TextField
                 label={t.capacity}
                 name="capacity"

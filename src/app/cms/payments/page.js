@@ -41,7 +41,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import ICONS from "@/utils/iconUtil";
 import { useAuth } from "@/contexts/AuthContext";
-import { getAllPayments, getPaymentLink } from "@/services/eventreg/paymentService";
+import { getAllPayments, getPaymentLink, exportPayments } from "@/services/eventreg/paymentService";
 import usePaymentsSocket from "@/hooks/usePaymentsSocket";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { formatDateTimeWithLocale } from "@/utils/dateUtils";
@@ -83,6 +83,25 @@ const translations = {
     copyLink: "Copy Payment Link",
     linkCopied: "Link Copied!",
     loadError: "Failed to load payments.",
+    export: "Export",
+    exporting: "Exporting…",
+    exportFailed: "Export failed.",
+    viewDetails: "View Details",
+    paymentDetails: "Payment Details",
+    customerDetails: "Customer Details",
+    email: "Email",
+    showPaymentBreakdown: "Show Payment Breakdown",
+    hidePaymentBreakdown: "Hide Payment Breakdown",
+    customer: "Customer",
+    event: "Event",
+    ticket: "Ticket",
+    basePrice: "Base Price",
+    fees: "Fees",
+    feesTotal: "Fees Total",
+    subtotal: "Subtotal",
+    vat: "VAT",
+    totalLabel: "Total",
+    close: "Close",
   },
   ar: {
     title: "المدفوعات",
@@ -113,8 +132,28 @@ const translations = {
     copyLink: "نسخ رابط الدفع",
     linkCopied: "تم النسخ!",
     loadError: "تعذر تحميل المدفوعات.",
+    export: "تصدير",
+    exporting: "جاري التصدير…",
+    exportFailed: "فشل التصدير.",
+    viewDetails: "عرض التفاصيل",
+    paymentDetails: "تفاصيل الدفع",
+    customer: "العميل",
+    event: "الفعالية",
+    ticket: "التذكرة",
+    basePrice: "السعر الأساسي",
+    fees: "الرسوم",
+    feesTotal: "إجمالي الرسوم",
+    subtotal: "المجموع الفرعي",
+    vat: "ضريبة القيمة المضافة",
+    totalLabel: "الإجمالي",
+    close: "إغلاق",
   },
 };
+
+translations.ar.customerDetails = "\u062a\u0641\u0627\u0635\u064a\u0644 \u0627\u0644\u0639\u0645\u064a\u0644";
+translations.ar.email = "\u0627\u0644\u0628\u0631\u064a\u062f \u0627\u0644\u0625\u0644\u0643\u062a\u0631\u0648\u0646\u064a";
+translations.ar.showPaymentBreakdown = "\u0625\u0638\u0647\u0627\u0631 \u062a\u0641\u0627\u0635\u064a\u0644 \u0627\u0644\u062f\u0641\u0639";
+translations.ar.hidePaymentBreakdown = "\u0625\u062e\u0641\u0627\u0621 \u062a\u0641\u0627\u0635\u064a\u0644 \u0627\u0644\u062f\u0641\u0639";
 
 const STATUS_OPTIONS = ["paid", "pending", "cancelled", "failed"];
 
@@ -134,6 +173,7 @@ export default function PaymentsPage() {
 
   const [payments, setPayments] = useState([]);
   const [total, setTotal] = useState(0);
+  const [totalRevenue, setTotalRevenue] = useState(0);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [loading, setLoading] = useState(true);
@@ -159,10 +199,17 @@ export default function PaymentsPage() {
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   const [copiedId, setCopiedId] = useState(null);
+  const [exporting, setExporting] = useState(false);
+  const [viewPayment, setViewPayment] = useState(null);
+  const [showPaymentBreakdown, setShowPaymentBreakdown] = useState(false);
 
   const isSuperAdmin = user?.role === "superadmin";
 
   const { latestPayments, clearLatestPayments } = usePaymentsSocket();
+
+  useEffect(() => {
+    if (viewPayment) setShowPaymentBreakdown(false);
+  }, [viewPayment]);
 
   // Merge socket-pushed payments into the list (update-in-place or prepend)
   useEffect(() => {
@@ -217,23 +264,50 @@ export default function PaymentsPage() {
       setLoadError(res?.message || t.loadError);
       setPayments([]);
       setTotal(0);
+      setTotalRevenue(0);
     } else {
       setPayments(res?.payments ?? []);
       setTotal(res?.total ?? 0);
+      setTotalRevenue(res?.totalRevenue ?? 0);
     }
     setLoading(false);
   }, [page, limit, debouncedSearch, filterStatus, filterBusinessId, fromMs, toMs, t.loadError]);
 
   useEffect(() => { fetchPayments(); }, [fetchPayments]);
 
+  // Export the current filtered result set to Excel (no pagination).
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const params = {};
+      if (debouncedSearch) params.search = debouncedSearch;
+      if (filterStatus) params.status = filterStatus;
+      if (filterBusinessId) params.businessId = filterBusinessId;
+      if (fromMs) params.from = new Date(fromMs).toISOString();
+      if (toMs) params.to = new Date(toMs).toISOString();
+      params.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+
+      const blob = await exportPayments(params);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `payments_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      setLoadError(t.exportFailed);
+    } finally {
+      setExporting(false);
+    }
+  };
+
   const totalPages = Math.max(1, Math.ceil(total / limit));
 
-  // Revenue: sum of paid amounts in current result set
-  const revenue = useMemo(
-    () => payments.filter((p) => p.status === "paid").reduce((acc, p) => acc + (p.amount || 0), 0),
-    [payments]
-  );
-
+  // Revenue: sum of paid TOTALS (base + fees + VAT) in current result set.
+  // Use priceBreakdown.total — the charged amount — falling back to `amount` for
+  // legacy records that predate the breakdown.
   const handleCopyLink = async (payment) => {
     const res = await getPaymentLink(payment.registrationId);
     if (!res?.error && res?.paymentUrl) {
@@ -319,6 +393,44 @@ export default function PaymentsPage() {
     return entries;
   }, [filterStatus, filterBusinessId, hasDateFilter, fromMs, toMs, businessesList, t]);
 
+  const fmtAmt = (n) => (n == null ? "—" : `${isAr ? toArabicDigits(n, language) : n} ${t.omr}`);
+  const fmtRevenue = (n) => {
+    const value = Number(n || 0).toFixed(2);
+    return isAr ? toArabicDigits(value, language) : value;
+  };
+  const getBaseTotal = (p) => ({
+    base: p.priceBreakdown?.base ?? null,
+    total: p.priceBreakdown?.total ?? p.amount ?? null,
+  });
+  const getStatusTone = (status) => {
+    switch (status) {
+      case "paid":
+        return {
+          bg: "linear-gradient(135deg, rgba(56,142,60,0.16), rgba(76,175,80,0.08))",
+          border: "rgba(56,142,60,0.22)",
+          accent: "success.main",
+        };
+      case "pending":
+        return {
+          bg: "linear-gradient(135deg, rgba(237,108,2,0.16), rgba(255,183,77,0.08))",
+          border: "rgba(237,108,2,0.22)",
+          accent: "warning.main",
+        };
+      case "failed":
+        return {
+          bg: "linear-gradient(135deg, rgba(211,47,47,0.16), rgba(239,83,80,0.08))",
+          border: "rgba(211,47,47,0.22)",
+          accent: "error.main",
+        };
+      default:
+        return {
+          bg: "linear-gradient(135deg, rgba(100,116,139,0.16), rgba(148,163,184,0.08))",
+          border: "rgba(100,116,139,0.22)",
+          accent: "text.secondary",
+        };
+    }
+  };
+
   const renderMobileCard = (p) => (
     <ListItem key={p._id} sx={{ px: 0, py: 0.75 }}>
       <Card
@@ -337,6 +449,11 @@ export default function PaymentsPage() {
             <Typography variant="subtitle2" fontWeight={700}>{p.customerName || "—"}</Typography>
             <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
               {getStatusChip(p.status)}
+              <Tooltip title={t.viewDetails}>
+                <IconButton size="small" onClick={() => setViewPayment(p)} sx={{ p: 0.4, color: "primary.main" }}>
+                  <ICONS.view sx={{ fontSize: 16 }} />
+                </IconButton>
+              </Tooltip>
               {p.status === "pending" && (
                 <Tooltip title={copiedId === p._id ? t.linkCopied : t.copyLink}>
                   <IconButton size="small" onClick={() => handleCopyLink(p)}
@@ -368,10 +485,15 @@ export default function PaymentsPage() {
               <Box component="span" fontWeight={600} color="text.primary" sx={{ marginInlineEnd: 0.5 }}>{getItemLabel(p).prefix}:</Box>
               {getItemLabel(p).value || "—"}
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ textAlign: align }}>
-              <Box component="span" fontWeight={600} color="text.primary" sx={{ marginInlineEnd: 0.5 }}>{labels.amount}:</Box>
-              {p.amount != null ? `${isAr ? toArabicDigits(p.amount, language) : p.amount} ${t.omr}` : "—"}
-            </Typography>
+            {(() => { const { base, total } = getBaseTotal(p); return (
+              <Typography variant="body2" color="text.secondary" sx={{ textAlign: align }}>
+                <Box component="span" fontWeight={600} color="text.primary" sx={{ marginInlineEnd: 0.5 }}>{labels.amount}:</Box>
+                {fmtAmt(total)}
+                {base != null && base !== total && (
+                  <Box component="span" sx={{ color: "text.disabled", marginInlineStart: 0.75 }}>({t.basePrice}: {fmtAmt(base)})</Box>
+                )}
+              </Typography>
+            ); })()}
             <Typography variant="body2" color="text.secondary" sx={{ textAlign: align }}>
               <Box component="span" fontWeight={600} color="text.primary" sx={{ marginInlineEnd: 0.5 }}>{labels.date}:</Box>
               {formatDate(p.createdAt)}
@@ -405,19 +527,33 @@ export default function PaymentsPage() {
         })()}
       </TableCell>
       <TableCell sx={{ py: 1.5, textAlign: align }}>
-        {p.amount != null ? `${isAr ? toArabicDigits(p.amount, language) : p.amount} ${t.omr}` : "—"}
+        {(() => { const { base, total } = getBaseTotal(p); return (
+          <>
+            <Typography variant="body2" fontWeight={600}>{fmtAmt(total)}</Typography>
+            {base != null && base !== total && (
+              <Typography variant="caption" color="text.secondary">{t.basePrice}: {fmtAmt(base)}</Typography>
+            )}
+          </>
+        ); })()}
       </TableCell>
       <TableCell sx={{ py: 1.5 }}>{getStatusChip(p.status)}</TableCell>
       <TableCell sx={{ py: 1.5, textAlign: align }}>{formatDate(p.createdAt)}</TableCell>
       <TableCell sx={{ py: 1.5 }}>
-        {p.status === "pending" && (
-          <Tooltip title={copiedId === p._id ? t.linkCopied : t.copyLink}>
-            <IconButton size="small" onClick={() => handleCopyLink(p)}
-              sx={{ color: copiedId === p._id ? "success.main" : "warning.main" }}>
-              {copiedId === p._id ? <ICONS.checkCircle fontSize="small" /> : <ICONS.copy fontSize="small" />}
+        <Stack direction="row" spacing={0.5}>
+          <Tooltip title={t.viewDetails}>
+            <IconButton size="small" onClick={() => setViewPayment(p)} sx={{ color: "primary.main" }}>
+              <ICONS.view fontSize="small" />
             </IconButton>
           </Tooltip>
-        )}
+          {p.status === "pending" && (
+            <Tooltip title={copiedId === p._id ? t.linkCopied : t.copyLink}>
+              <IconButton size="small" onClick={() => handleCopyLink(p)}
+                sx={{ color: copiedId === p._id ? "success.main" : "warning.main" }}>
+                {copiedId === p._id ? <ICONS.checkCircle fontSize="small" /> : <ICONS.copy fontSize="small" />}
+              </IconButton>
+            </Tooltip>
+          )}
+        </Stack>
       </TableCell>
     </TableRow>
   );
@@ -429,13 +565,13 @@ export default function PaymentsPage() {
 
         {/* ── Filters dialog ── */}
         <Dialog open={filtersOpen} onClose={() => setFiltersOpen(false)} fullWidth maxWidth="sm" dir={dir}>
-          <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", pr: 4 }}>
+          <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: { xs: 2, sm: 3 }, py: 2.25 }}>
             {t.filters}
             <IconButton size="small" onClick={() => setFiltersOpen(false)}>
               <ICONS.close fontSize="small" />
             </IconButton>
           </DialogTitle>
-          <DialogContent dividers>
+          <DialogContent dividers sx={{ px: { xs: 2, sm: 3 }, py: 2.5 }}>
             <Stack spacing={2} sx={{ mt: 1 }}>
               <FormControl size="small" fullWidth>
                 <InputLabel>{t.status}</InputLabel>
@@ -481,6 +617,195 @@ export default function PaymentsPage() {
           </DialogActions>
         </Dialog>
 
+        {/* ── Payment detail dialog ── */}
+        <Dialog
+          open={!!viewPayment}
+          onClose={() => setViewPayment(null)}
+          fullWidth
+          maxWidth="sm"
+          dir={dir}
+          slotProps={{
+            paper: {
+              sx: {
+                borderRadius: 4,
+                overflow: "hidden",
+                border: "1px solid rgba(15,23,42,0.08)",
+                boxShadow: "0 28px 80px rgba(15,23,42,0.22)",
+                backgroundImage: "linear-gradient(180deg, rgba(247,250,252,0.98) 0%, rgba(255,255,255,1) 28%)",
+              },
+            },
+          }}
+        >
+          <DialogTitle sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", px: { xs: 2, sm: 3 }, py: 2.25 }}>
+            {t.paymentDetails}
+            <IconButton size="small" onClick={() => setViewPayment(null)}><ICONS.close /></IconButton>
+          </DialogTitle>
+          <DialogContent dividers sx={{ px: { xs: 2, sm: 3 }, py: 2.5 }}>
+            {viewPayment && (() => {
+              const pb = viewPayment.priceBreakdown || {};
+              const moduleName = viewPayment.module || "EventReg";
+              const base = pb.base ?? viewPayment.amount ?? null;
+              const total = pb.total ?? viewPayment.amount ?? null;
+              const statusTone = getStatusTone(viewPayment.status);
+              const row = (label, value, opts = {}) => (
+                <Stack
+                  direction="row"
+                  spacing={2}
+                  sx={{
+                    justifyContent: "space-between",
+                    alignItems: opts.alignTop ? "flex-start" : "center",
+                    gap: 1.5,
+                    py: opts.compact ? 0.65 : 0.9,
+                    ...(opts.sx || {}),
+                  }}
+                >
+                  <Typography variant="body2" color="text.secondary" fontWeight={500}>{label}</Typography>
+                  <Box sx={{ textAlign: isAr ? "left" : "right", minWidth: 0 }}>
+                    {typeof value === "string" || typeof value === "number"
+                      ? <Typography variant="body2" fontWeight={opts.strong ? 800 : 600}>{value}</Typography>
+                      : value}
+                  </Box>
+                </Stack>
+              );
+              const sectionCardSx = {
+                borderRadius: 3,
+                border: "1px solid",
+                borderColor: "rgba(15,23,42,0.08)",
+                bgcolor: "rgba(255,255,255,0.82)",
+                boxShadow: "0 12px 32px rgba(15,23,42,0.06)",
+                p: 2,
+              };
+              const sectionTitle = (icon, title) => (
+                <Stack direction="row" spacing={1} sx={{ alignItems: "center", mb: 1.25 }}>
+                  <Box
+                    sx={{
+                      width: 34,
+                      height: 34,
+                      borderRadius: 2,
+                      display: "grid",
+                      placeItems: "center",
+                      bgcolor: "rgba(10,101,122,0.10)",
+                      color: "primary.main",
+                    }}
+                  >
+                    {icon}
+                  </Box>
+                  <Typography variant="subtitle2" fontWeight={800}>{title}</Typography>
+                </Stack>
+              );
+              const feeLines = Array.isArray(pb.feeLines) ? pb.feeLines : [];
+              return (
+                <Stack spacing={2}>
+                  <Box
+                    sx={{
+                      position: "relative",
+                      overflow: "hidden",
+                      borderRadius: 3.5,
+                      p: { xs: 2, sm: 2.5 },
+                      border: "1px solid",
+                      borderColor: statusTone.border,
+                      background: statusTone.bg,
+                    }}
+                  >
+                    <Box
+                      sx={{
+                        position: "absolute",
+                        insetInlineEnd: -34,
+                        top: -32,
+                        width: 120,
+                        height: 120,
+                        borderRadius: "50%",
+                        bgcolor: "rgba(255,255,255,0.32)",
+                      }}
+                    />
+                    <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ justifyContent: "space-between", alignItems: { xs: "flex-start", sm: "center" }, position: "relative" }}>
+                      <Box sx={{ minWidth: 0 }}>
+                        <Typography variant="overline" sx={{ letterSpacing: 1.1, color: "text.secondary", fontWeight: 700 }}>
+                          {moduleName}
+                        </Typography>
+                        <Typography variant="h6" fontWeight={800} sx={{ lineHeight: 1.2, mb: 0.5 }}>
+                          {viewPayment.eventName || "—"}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {viewPayment.ticketTypeName || "—"}
+                        </Typography>
+                      </Box>
+                      <Box sx={{ textAlign: isAr ? "left" : "right" }}>
+                        {getStatusChip(viewPayment.status)}
+                        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 1 }}>
+                          {formatDate(viewPayment.createdAt)}
+                        </Typography>
+                        <Typography variant="h5" fontWeight={900} sx={{ mt: 0.5, color: statusTone.accent }}>
+                          {fmtAmt(total)}
+                        </Typography>
+                      </Box>
+                    </Stack>
+                  </Box>
+                  <Stack spacing={2}>
+                    <Box sx={{ ...sectionCardSx, flex: 1 }}>
+                      {sectionTitle(<ICONS.personOutline sx={{ fontSize: 18 }} />, t.customerDetails)}
+                      {row(t.customer, viewPayment.customerName || "—")}
+                      {viewPayment.customerEmail && row(t.email, viewPayment.customerEmail)}
+                      {isSuperAdmin && row(t.business, viewPayment.businessName || "—")}
+                    </Box>
+
+                    <Box sx={sectionCardSx}>
+                      <Button
+                        fullWidth
+                        onClick={() => setShowPaymentBreakdown((prev) => !prev)}
+                        endIcon={showPaymentBreakdown ? <ICONS.expandLess /> : <ICONS.expandMore />}
+                        sx={{
+                          justifyContent: "space-between",
+                          px: 0,
+                          py: 0,
+                          color: "text.primary",
+                          textTransform: "none",
+                          fontWeight: 800,
+                        }}
+                      >
+                        <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+                          <Box
+                            sx={{
+                              width: 34,
+                              height: 34,
+                              borderRadius: 2,
+                              display: "grid",
+                              placeItems: "center",
+                              bgcolor: "rgba(10,101,122,0.10)",
+                              color: "primary.main",
+                            }}
+                          >
+                            <ICONS.payment sx={{ fontSize: 18 }} />
+                          </Box>
+                          <Typography variant="subtitle2" fontWeight={800}>
+                            {showPaymentBreakdown ? t.hidePaymentBreakdown : t.showPaymentBreakdown}
+                          </Typography>
+                        </Stack>
+                      </Button>
+                      {showPaymentBreakdown && (
+                        <Box sx={{ mt: 1.5 }}>
+                          {row(t.basePrice, fmtAmt(base))}
+                          {feeLines.map((f, i) => (
+                            <Box key={i}>{row(`${f.name}${f.percentage != null ? ` (${f.percentage}%)` : ""}`, fmtAmt(f.amount))}</Box>
+                          ))}
+                          {pb.feesTotal != null && pb.feesTotal > 0 && row(t.feesTotal, fmtAmt(pb.feesTotal))}
+                          {pb.subtotal != null && row(t.subtotal, fmtAmt(pb.subtotal))}
+                          {row(`${t.vat}${pb.vatPercentage != null ? ` (${pb.vatPercentage}%)` : ""}`, fmtAmt(pb.vatAmount ?? 0))}
+                          <Divider sx={{ my: 1 }} />
+                          {row(t.totalLabel, fmtAmt(total), { strong: true })}
+                        </Box>
+                      )}
+                    </Box>
+                  </Stack>
+                </Stack>
+              );
+            })()}
+          </DialogContent>
+          <DialogActions sx={{ px: { xs: 2, sm: 3 }, py: 1.5 }}>
+            <Button onClick={() => setViewPayment(null)} sx={{ textTransform: "none" }}>{t.close}</Button>
+          </DialogActions>
+        </Dialog>
+
         {/* ── Header ── */}
         <Stack
           direction={{ xs: "column", md: "row" }}
@@ -498,10 +823,20 @@ export default function PaymentsPage() {
                 {t.revenue}
               </Typography>
               <Typography variant="h6" fontWeight={800} sx={{ lineHeight: 1.2 }}>
-                {isAr ? toArabicDigits(Math.round(revenue), language) : Math.round(revenue)}{" "}
+                {fmtRevenue(totalRevenue)}{" "}
                 <Typography component="span" variant="body2" fontWeight={600} color="text.secondary">{t.omr}</Typography>
               </Typography>
             </Box>
+
+            <Button
+              variant="outlined"
+              startIcon={exporting ? <CircularProgress size={16} /> : <ICONS.download />}
+              onClick={handleExport}
+              disabled={exporting || payments.length === 0}
+              sx={{ borderRadius: 999, px: 2.5, textTransform: "none", fontWeight: 600 }}
+            >
+              {exporting ? t.exporting : t.export}
+            </Button>
 
             <Button
               variant="outlined"

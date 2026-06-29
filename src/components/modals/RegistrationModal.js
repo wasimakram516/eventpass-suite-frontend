@@ -32,7 +32,44 @@ import { validatePhoneNumber } from "@/utils/phoneValidation";
 import { uploadSingleFile } from "@/utils/mediaUpload";
 import { initiatePayment } from "@/services/eventreg/paymentService";
 import { computePaymentBreakdown, formatOmr } from "@/utils/paymentBreakdown";
+import useI18nLayout from "@/hooks/useI18nLayout";
 
+const translations = {
+    en: {
+        createTitle: "Create Registration",
+        editTitle: "Edit Registration",
+        selectTicket: "Select a Ticket",
+        ticket: "Ticket",
+        ticketLockedPaid: "The ticket can't be changed once the payment is completed.",
+        soldOut: "Sold Out",
+        available: "available",
+        unlimited: "Unlimited",
+        viewCurrentFile: "View current file",
+        chooseFile: "Choose File or Drag & Drop",
+        replaceFile: "Replace File or Drag & Drop",
+        cancel: "Cancel",
+        create: "Create",
+        proceedToPayment: "Proceed to Payment",
+        saveChanges: "Save Changes",
+    },
+    ar: {
+        createTitle: "إنشاء تسجيل",
+        editTitle: "تعديل التسجيل",
+        selectTicket: "اختر التذكرة",
+        ticket: "التذكرة",
+        ticketLockedPaid: "لا يمكن تغيير التذكرة بعد إتمام الدفع.",
+        soldOut: "نفدت",
+        available: "متاح",
+        unlimited: "غير محدود",
+        viewCurrentFile: "عرض الملف الحالي",
+        chooseFile: "اختر ملفًا أو اسحبه وأفلته",
+        replaceFile: "استبدل الملف أو اسحبه وأفلته",
+        cancel: "إلغاء",
+        create: "إنشاء",
+        proceedToPayment: "المتابعة للدفع",
+        saveChanges: "حفظ التغييرات",
+    },
+};
 
 export default function RegistrationModal({
     open,
@@ -40,10 +77,12 @@ export default function RegistrationModal({
     registration,
     formFields,
     onSave,
+    onPaymentInitiated,
     mode = "edit",
     title,
     event,
 }) {
+    const { t, dir } = useI18nLayout(translations);
     const [values, setValues] = useState({});
     const [fieldErrors, setFieldErrors] = useState({});
     const [loading, setLoading] = useState(false);
@@ -107,11 +146,8 @@ export default function RegistrationModal({
 
 
     const fieldsToRender = useMemo(
-        () => {
-            if (mode === "edit") return classicFields;
-            return hasCustomFields ? filteredFormFields : classicFields;
-        },
-        [hasCustomFields, filteredFormFields, classicFields, mode]
+        () => (hasCustomFields ? filteredFormFields : classicFields),
+        [hasCustomFields, filteredFormFields, classicFields]
     );
 
     const visibleFields = useMemo(() => {
@@ -150,13 +186,19 @@ export default function RegistrationModal({
 
                 fieldsToRender.forEach((f) => {
 
-                    const fieldMap = {
+                    // Identity labels resolve from customFields → top-level (handles both
+                    // custom-form events, where identity lives in customFields, and classic
+                    // events, where it lives top-level). Any other field (custom or
+                    // ticket-dependent) reads its value straight from customFields by name.
+                    const identityMap = {
                         "Full Name": cf["Full Name"] ?? cf["fullName"] ?? registration.fullName ?? "",
                         "Email": cf["Email"] ?? cf["email"] ?? registration.email ?? "",
                         "Phone": cf["Phone"] ?? cf["phone"] ?? registration.phone ?? "",
                         "Company": cf["Company"] ?? cf["company"] ?? registration.company ?? "",
                     };
-                    init[f.inputName] = fieldMap[f.inputName] ?? "";
+                    init[f.inputName] = (f.inputName in identityMap)
+                        ? identityMap[f.inputName]
+                        : (cf[f.inputName] ?? "");
 
                     if (isPhoneField(f)) {
                         const phoneValue = init[f.inputName] || "";
@@ -185,6 +227,13 @@ export default function RegistrationModal({
                         }
                     }
                 });
+
+                // Carry over any remaining customFields (ticket-dependent fields, incl.
+                // uploaded file URLs) so they pre-fill and, crucially, are preserved on
+                // save instead of being wiped. Identity/base fields are already in `init`.
+                Object.entries(cf).forEach(([k, v]) => {
+                    if (!(k in init)) init[k] = v ?? "";
+                });
             } else {
                 fieldsToRender.forEach((f) => {
                     init[f.inputName] = "";
@@ -198,25 +247,47 @@ export default function RegistrationModal({
             setFieldErrors({});
             setLoading(false);
         }
-        // Reset ticket + payment state on open/close
-        setSelectedTicketTypeId("");
+        // Reset ticket + payment state on open/close. In edit mode, preselect the
+        // registration's existing ticket so its dependent fields resolve and the
+        // (read-only / editable-when-pending) selector shows the right value.
+        // Preselect by id when available, otherwise fall back to matching the stored
+        // ticket name (the registration always carries ticketTypeName, even if an
+        // older API response didn't include ticketTypeId).
+        const preselectedTicketId =
+            mode === "edit" && registration
+                ? String(
+                    registration.ticketTypeId ||
+                    ticketTypes.find((tt) => tt.name === registration.ticketTypeName)?._id ||
+                    ""
+                )
+                : "";
+        setSelectedTicketTypeId(preselectedTicketId);
         setTicketTypeError("");
         setShowPaymentSummary(false);
         setPaymentPayload(null);
         setPaymentError("");
     }, [registration, fieldsToRender, hasCustomFields, mode, open, registration?.isoCode]);
 
-    // Init dependent field values when ticket changes
+    // Init dependent field values when ticket changes. In edit mode, seed them from
+    // the registration's customFields so existing answers (incl. uploaded files) show.
     useEffect(() => {
         if (!ticketDependentFields.length) return;
+        const cf =
+            mode === "edit" && registration
+                ? (registration.customFields instanceof Map
+                    ? Object.fromEntries(registration.customFields)
+                    : (registration.customFields || {}))
+                : {};
         setValues(prev => {
             const next = { ...prev };
             ticketDependentFields.forEach(f => {
-                if (!(f.inputName in next)) next[f.inputName] = "";
+                if (!(f.inputName in next) || next[f.inputName] === "") {
+                    next[f.inputName] = cf[f.inputName] ?? "";
+                }
             });
             return next;
         });
-    }, [ticketDependentFields]);
+    }, [ticketDependentFields, mode, registration]);
 
     // ── Handlers ──────────────────────────────────────────────────────────────
     const handleChange = (key, value) => {
@@ -298,7 +369,10 @@ export default function RegistrationModal({
 
         const allFields = [
             ...visibleFields,
-            ...(isPaidEvent && mode === "create" ? ticketDependentFields : []),
+            // Dependent fields are part of the form in both create and edit (edit lets
+            // staff fix answers / re-upload files). ticketDependentFields is [] when
+            // no ticket is selected, so this is a no-op for non-paid events.
+            ...(isPaidEvent ? ticketDependentFields : []),
         ];
 
         allFields.forEach((f) => {
@@ -323,7 +397,10 @@ export default function RegistrationModal({
     const buildNormalizedPayload = async () => {
         const allFields = [
             ...visibleFields,
-            ...(isPaidEvent && mode === "create" ? ticketDependentFields : []),
+            // Dependent fields are part of the form in both create and edit (edit lets
+            // staff fix answers / re-upload files). ticketDependentFields is [] when
+            // no ticket is selected, so this is a no-op for non-paid events.
+            ...(isPaidEvent ? ticketDependentFields : []),
         ];
 
         const normalizedValues = {};
@@ -364,21 +441,9 @@ export default function RegistrationModal({
             }
         });
 
-        if (mode === "edit") {
-            const classicKeyMap = {
-                "Full Name": "fullName",
-                "Email": "email",
-                "Phone": "phone",
-                "Company": "company",
-            };
-            Object.entries(classicKeyMap).forEach(([label, key]) => {
-                if (label in normalizedValues) {
-                    normalizedValues[key] = normalizedValues[label];
-                    delete normalizedValues[label];
-                }
-            });
-        }
-
+        // Note: we intentionally do NOT remap field labels (e.g. "Full Name" → fullName)
+        // here. The frontend sends values by their field label and lets the backend own
+        // the custom-vs-classic routing (top-level identity vs customFields).
         if (phoneIsoCode) normalizedValues.isoCode = phoneIsoCode;
 
         return { normalizedValues, phoneIsoCode };
@@ -437,6 +502,12 @@ export default function RegistrationModal({
             }
 
             // ── Free event or edit: call onSave directly ──
+            // For a paid edit, just send the selected ticket. The backend decides what
+            // to do with it (no-op if unchanged, regenerate the payment if pending,
+            // reject if already paid) — the frontend doesn't replicate that logic.
+            if (mode === "edit" && isPaidEvent && selectedTicketTypeId) {
+                normalizedValues.ticketTypeId = selectedTicketTypeId;
+            }
             await onSave(normalizedValues);
         } catch (err) {
             console.error(err);
@@ -446,22 +517,23 @@ export default function RegistrationModal({
         }
     };
 
-    // ── Payment confirm (Thawani redirect) ────────────────────────────────────
+    // ── Payment confirm (Thawani) ─────────────────────────────────────────────
+    // Admin/CMS flow: initiatePayment creates the pending registration server-side
+    // and returns the gateway link. We do NOT redirect or open a tab here — we
+    // return the admin to the registrations list, where the new pending row
+    // exposes a "Copy payment link" action. All user messaging (success, duplicate,
+    // error) is surfaced by withApiHandler from the backend response; here we only
+    // drive the UI based on the response flags.
     const handleConfirmPayment = async () => {
         if (!paymentPayload) return;
         setPayProcessing(true);
-        setPaymentError("");
-        try {
-            const result = await initiatePayment(paymentPayload);
-            if (!result?.error && result?.sessionUrl) {
-                window.location.href = result.sessionUrl;
-            } else {
-                setPaymentError(result?.message || "Payment initiation failed.");
-                setPayProcessing(false);
-            }
-        } catch (err) {
-            setPaymentError(err.message || "Payment initiation failed.");
-            setPayProcessing(false);
+        const result = await initiatePayment(paymentPayload);
+        setPayProcessing(false);
+        // Only advance when a genuinely new registration was created. On a
+        // duplicate (alreadyInProgress) or error, stay on the form.
+        if (result?.created) {
+            setShowPaymentSummary(false);
+            onPaymentInitiated?.();
         }
     };
 
@@ -520,6 +592,8 @@ export default function RegistrationModal({
             return (
                 <ModalFileUploadField key={f.inputName} field={f} fd={fileData[f.inputName]}
                     fieldLabel={f.inputName} errorMsg={errorMsg} required={required}
+                    currentValue={typeof value === "string" ? value : ""}
+                    viewLabel={t.viewCurrentFile} chooseLabel={t.chooseFile} replaceLabel={t.replaceFile}
                     onFileSelect={(file) => handleFileSelect(f.inputName, file)}
                     onFileRemove={() => handleFileRemove(f.inputName)} />
             );
@@ -534,7 +608,7 @@ export default function RegistrationModal({
                 <TextField key={f.inputName} label={f.inputName} value={value || ""}
                     onChange={(e) => handlePhoneChange(f.inputName, e.target.value)}
                     fullWidth size="small" required={required} error={!!errorMsg}
-                    helperText={errorMsg || "Enter your phone number"} type="tel"
+                    helperText={errorMsg || ""} type="tel"
                     slotProps={{
                         input: {
                             startAdornment: (
@@ -556,15 +630,15 @@ export default function RegistrationModal({
     };
 
     // ── Labels ────────────────────────────────────────────────────────────────
-    const displayTitle = title || (mode === "create" ? "Create Registration" : "Edit Registration");
+    const displayTitle = title || (mode === "create" ? t.createTitle : t.editTitle);
     const saveButtonText = mode === "create"
-        ? (isPaidEvent ? "Proceed to Payment" : "Create")
-        : "Save Changes";
+        ? (isPaidEvent ? t.proceedToPayment : t.create)
+        : t.saveChanges;
 
     return (
         <>
             {/* ── Main form dialog ─────────────────────────────────────────── */}
-            <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+            <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" dir={dir}>
                 <DialogTitle>{displayTitle}</DialogTitle>
                 <DialogContent dividers>
                     <Stack spacing={2} sx={{ mt: 1 }}>
@@ -572,13 +646,15 @@ export default function RegistrationModal({
                             <Alert severity="error">{fieldErrors._global}</Alert>
                         )}
 
-                        {/* Ticket selector — paid, create mode only */}
-                        {isPaidEvent && mode === "create" && ticketTypes.length > 0 && (
+                        {/* Ticket selector — paid events (create, and edit). In edit it is
+                            read-only once paid; editable while the payment is still pending. */}
+                        {isPaidEvent && ticketTypes.length > 0 && (
                             <FormControl fullWidth size="small" error={!!ticketTypeError}>
-                                <InputLabel>Select a Ticket *</InputLabel>
+                                <InputLabel>{mode === "create" ? `${t.selectTicket} *` : t.ticket}</InputLabel>
                                 <Select
                                     value={selectedTicketTypeId}
-                                    label="Select a Ticket *"
+                                    label={mode === "create" ? `${t.selectTicket} *` : t.ticket}
+                                    disabled={mode === "edit" && registration?.paymentStatus === "paid"}
                                     onChange={(e) => handleTicketChange(e.target.value)}
                                     renderValue={(val) => {
                                         const tt = ticketTypes.find(x => x._id === val);
@@ -612,7 +688,7 @@ export default function RegistrationModal({
                                                             color: isSoldOut ? "error.main" : isLowStock ? "warning.main" : "text.secondary",
                                                             fontWeight: isSoldOut || isLowStock ? 600 : 400,
                                                         }}>
-                                                            {isSoldOut ? "Sold Out" : remaining !== null ? `${remaining} available` : "Unlimited"}
+                                                            {isSoldOut ? t.soldOut : remaining !== null ? `${remaining} ${t.available}` : t.unlimited}
                                                         </Typography>
                                                     </Box>
                                                     <Typography variant="body2" fontWeight={700}
@@ -626,11 +702,14 @@ export default function RegistrationModal({
                                     })}
                                 </Select>
                                 {ticketTypeError && <FormHelperText>{ticketTypeError}</FormHelperText>}
+                                {mode === "edit" && registration?.paymentStatus === "paid" && (
+                                    <FormHelperText>{t.ticketLockedPaid}</FormHelperText>
+                                )}
                             </FormControl>
                         )}
 
                         {/* Ticket-dependent fields — create mode only */}
-                        {isPaidEvent && mode === "create" && ticketDependentFields.map((f) => renderField(f))}
+                        {isPaidEvent && ticketDependentFields.map((f) => renderField(f))}
 
                         {/* Main form fields */}
                         {visibleFields.map((f) => renderField(f))}
@@ -639,7 +718,7 @@ export default function RegistrationModal({
                 <DialogActions>
                     <Button variant="outlined" onClick={onClose} disabled={loading}
                         startIcon={<ICONS.cancel />} sx={getStartIconSpacing("ltr")}>
-                        Cancel
+                        {t.cancel}
                     </Button>
                     <Button variant="contained" color="primary" onClick={handleSave} disabled={loading}
                         startIcon={loading ? <CircularProgress size={18} color="inherit" /> : (isPaidEvent && mode === "create" ? <ICONS.payment /> : <ICONS.save />)}
@@ -771,7 +850,7 @@ export default function RegistrationModal({
                         disabled={payProcessing}
                         sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2.5, color: "text.secondary" }}
                     >
-                        Cancel
+                        {t.cancel}
                     </Button>
                     <Button
                         variant="contained"
@@ -793,7 +872,7 @@ export default function RegistrationModal({
     );
 }
 
-function ModalFileUploadField({ field, fd, fieldLabel, errorMsg, required, onFileSelect, onFileRemove }) {
+function ModalFileUploadField({ field, fd, fieldLabel, errorMsg, required, currentValue, viewLabel, chooseLabel, replaceLabel, onFileSelect, onFileRemove }) {
     const [dragOver, setDragOver] = useState(false);
     return (
         <Box sx={{ mb: 2, textAlign: "left" }}>
@@ -815,26 +894,35 @@ function ModalFileUploadField({ field, fd, fieldLabel, errorMsg, required, onFil
                     </IconButton>
                 </Box>
             ) : (
-                <Box
-                    onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-                    onDragLeave={() => setDragOver(false)}
-                    onDrop={(e) => { e.preventDefault(); setDragOver(false); const file = e.dataTransfer.files?.[0]; if (file) onFileSelect(file); }}
-                    sx={{
-                        border: "2px dashed",
-                        borderColor: dragOver ? "primary.main" : "divider",
-                        borderRadius: 3, py: 3,
-                        display: "flex", flexDirection: "column", alignItems: "center", gap: 1,
-                        cursor: "pointer",
-                        bgcolor: dragOver ? "action.hover" : "transparent",
-                        transition: "border-color 0.2s, background-color 0.2s",
-                    }}
-                    onClick={() => document.getElementById(`file-input-${field.inputName}`)?.click()}
-                >
-                    <ICONS.upload sx={{ fontSize: 28, color: "text.secondary" }} />
-                    <Typography variant="body2" color="text.secondary">Choose File or Drag & Drop</Typography>
-                    <input id={`file-input-${field.inputName}`} type="file" hidden
-                        onChange={(e) => { const file = e.target.files?.[0]; if (file) onFileSelect(file); e.target.value = ""; }} />
-                </Box>
+                <>
+                    {currentValue && (
+                        <Button size="small" variant="text"
+                            onClick={() => window.open(currentValue, "_blank")}
+                            sx={{ mb: 1, textTransform: "none", px: 0 }}>
+                            {viewLabel}
+                        </Button>
+                    )}
+                    <Box
+                        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                        onDragLeave={() => setDragOver(false)}
+                        onDrop={(e) => { e.preventDefault(); setDragOver(false); const file = e.dataTransfer.files?.[0]; if (file) onFileSelect(file); }}
+                        sx={{
+                            border: "2px dashed",
+                            borderColor: dragOver ? "primary.main" : "divider",
+                            borderRadius: 3, py: 3,
+                            display: "flex", flexDirection: "column", alignItems: "center", gap: 1,
+                            cursor: "pointer",
+                            bgcolor: dragOver ? "action.hover" : "transparent",
+                            transition: "border-color 0.2s, background-color 0.2s",
+                        }}
+                        onClick={() => document.getElementById(`file-input-${field.inputName}`)?.click()}
+                    >
+                        <ICONS.upload sx={{ fontSize: 28, color: "text.secondary" }} />
+                        <Typography variant="body2" color="text.secondary">{currentValue ? replaceLabel : chooseLabel}</Typography>
+                        <input id={`file-input-${field.inputName}`} type="file" hidden
+                            onChange={(e) => { const file = e.target.files?.[0]; if (file) onFileSelect(file); e.target.value = ""; }} />
+                    </Box>
+                </>
             )}
             {errorMsg && <Typography variant="caption" color="error" sx={{ display: "block", mt: 0.5 }}>{errorMsg}</Typography>}
         </Box>

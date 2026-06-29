@@ -254,6 +254,7 @@ export default function Registration() {
       if (event.name) textsToTranslate.add(event.name);
       if (event.venue) textsToTranslate.add(event.venue);
       if (event.description) textsToTranslate.add(event.description);
+      if (event.footnote) textsToTranslate.add(event.footnote);
 
       // Form fields: labels, options, placeholders
       fields.forEach((f) => {
@@ -281,6 +282,7 @@ export default function Registration() {
           name: map[event.name] || event.name,
           venue: map[event.venue] || event.venue,
           description: map[event.description] || event.description,
+          footnote: map[event.footnote] || event.footnote,
           formFields:
             event.formFields?.map((f) => ({
               ...f,
@@ -761,7 +763,7 @@ export default function Registration() {
     );
   };
 
-  const { name, description, logoUrl } = translatedEvent || event;
+  const { name, description, logoUrl, footnote } = translatedEvent || event;
 
   return (
     <Box
@@ -985,6 +987,16 @@ export default function Registration() {
           >
             {submitting ? <CircularProgress size={22} /> : event?.isPaid ? t.proceedToPayment : t.submit}
           </Button>
+
+          {footnote && (
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              sx={{ display: "block", whiteSpace: "pre-line", textAlign: "start", fontStyle: "italic", mt: 1.5 }}
+            >
+              {footnote}
+            </Typography>
+          )}
         </Paper>
 
         {event?.showBadgePreviewDuringRegistration && (
