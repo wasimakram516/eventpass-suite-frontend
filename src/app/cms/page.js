@@ -137,7 +137,9 @@ export default function HomePage() {
       try {
         const role = user?.role || "admin";
         const mods = await getModules(role);
-        const list = mods || [];
+        // getModules returns an error object ({ error, message }) on API failure,
+        // so guard against a non-array before filtering/mapping.
+        const list = Array.isArray(mods) ? mods : [];
         const permitted =
           (user?.role === "admin" || user?.role === "business") &&
             Array.isArray(user?.modulePermissions)
