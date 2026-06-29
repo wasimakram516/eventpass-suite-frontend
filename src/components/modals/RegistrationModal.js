@@ -51,6 +51,7 @@ const translations = {
         create: "Create",
         proceedToPayment: "Proceed to Payment",
         saveChanges: "Save Changes",
+        registrationFailed: "Registration failed.",
     },
     ar: {
         createTitle: "إنشاء تسجيل",
@@ -68,6 +69,7 @@ const translations = {
         create: "إنشاء",
         proceedToPayment: "المتابعة للدفع",
         saveChanges: "حفظ التغييرات",
+        registrationFailed: "فشل التسجيل.",
     },
 };
 
@@ -143,6 +145,7 @@ export default function RegistrationModal({
         ],
         []
     );
+    
 
 
     const fieldsToRender = useMemo(
@@ -528,12 +531,14 @@ export default function RegistrationModal({
         if (!paymentPayload) return;
         setPayProcessing(true);
         const result = await initiatePayment(paymentPayload);
+
         setPayProcessing(false);
-        // Only advance when a genuinely new registration was created. On a
-        // duplicate (alreadyInProgress) or error, stay on the form.
+
         if (result?.created) {
             setShowPaymentSummary(false);
             onPaymentInitiated?.();
+        } else {
+            setPaymentError(result?.message || t.registrationFailed);
         }
     };
 
@@ -683,13 +688,15 @@ export default function RegistrationModal({
                                                                 {tt.description}
                                                             </Typography>
                                                         )}
-                                                        <Typography variant="caption" sx={{
-                                                            display: "block",
-                                                            color: isSoldOut ? "error.main" : isLowStock ? "warning.main" : "text.secondary",
-                                                            fontWeight: isSoldOut || isLowStock ? 600 : 400,
-                                                        }}>
-                                                            {isSoldOut ? t.soldOut : remaining !== null ? `${remaining} ${t.available}` : t.unlimited}
-                                                        </Typography>
+                                                        {(isSoldOut || remaining !== null) && (
+                                                            <Typography variant="caption" sx={{
+                                                                display: "block",
+                                                                color: isSoldOut ? "error.main" : isLowStock ? "warning.main" : "text.secondary",
+                                                                fontWeight: isSoldOut || isLowStock ? 600 : 400,
+                                                            }}>
+                                                                {isSoldOut ? t.soldOut : `${remaining} ${t.available}`}
+                                                            </Typography>
+                                                        )}
                                                     </Box>
                                                     <Typography variant="body2" fontWeight={700}
                                                         color={isSoldOut ? "text.disabled" : "primary.main"}
