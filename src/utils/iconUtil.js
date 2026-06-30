@@ -85,6 +85,7 @@ import {
   CameraAlt as CameraIcon,
   Cameraswitch as CameraSwitchIcon,
   Wallpaper as WallpaperIcon,
+  Receipt as ReceiptIcon,
 } from "@mui/icons-material";
 
 // Time & Location
@@ -173,6 +174,7 @@ const ICONS = {
   create: AddIcon,
   delete: DeleteIcon,
   down: ExpandMoreIcon,
+  up: ExpandLessIcon,
   expandMore: ExpandMoreIcon,
   edit: EditIcon,
   filter: FilterIcon,
@@ -227,7 +229,7 @@ const ICONS = {
   upload: FileUploadIcon,
   video: VideoIcon,
   wallpaper: WallpaperIcon,
-
+  receipt: ReceiptIcon,
   // Time & Location
   diningTable: TableRestaurantIcon,
   event: EventIcon,

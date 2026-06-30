@@ -201,3 +201,24 @@ export const trackBadgePrint = withApiHandler(async (id) => {
   const { data } = await api.patch(`/eventreg/registrations/${id}/track-print`);
   return data;
 });
+export const getRegistrationInvoice = async (registrationId) => {
+  try {
+    const res = await api.get(
+      `/eventreg/registrations/${registrationId}/invoice`,
+      { responseType: "blob" }
+    );
+    return res.data;
+  } catch (err) {
+    let message = "Failed to load invoice";
+    const errData = err?.response?.data;
+    if (errData instanceof Blob) {
+      try {
+        const text = await errData.text();
+        message = JSON.parse(text)?.message || message;
+      } catch { /* not JSON, keep default */ }
+    } else if (errData?.message) {
+      message = errData.message;
+    }
+    return { error: true, message };
+  }
+};
