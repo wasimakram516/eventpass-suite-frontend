@@ -174,6 +174,7 @@ const ICONS = {
   create: AddIcon,
   delete: DeleteIcon,
   down: ExpandMoreIcon,
+  up: ExpandLessIcon,
   expandMore: ExpandMoreIcon,
   edit: EditIcon,
   filter: FilterIcon,

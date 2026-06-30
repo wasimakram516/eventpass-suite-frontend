@@ -203,6 +203,9 @@ const translations = {
     organizerOtherDetails: "Other Details",
     currentOrganizerLogo: "Current Organizer Logo:",
     previewOrganizerLogo: "Preview:",
+    moveUp: "Move Up",
+    moveDown: "Move Down",
+    removeField: "Remove Field",
 
   },
   ar: {
@@ -363,6 +366,9 @@ const translations = {
     organizerOtherDetails: "تفاصيل أخرى",
     currentOrganizerLogo: "شعار المنظم الحالي:",
     previewOrganizerLogo: "معاينة:",
+    moveUp: "تحريك لأعلى",
+    moveDown: "تحريك لأسفل",
+    removeField: "إزالة الحقل",
   },
 };
 
@@ -2066,18 +2072,56 @@ const EventModal = ({
                         <Paper key={idx} variant="outlined" sx={{ p: 2, mb: 2, borderRadius: 2 }}>
                           <Stack direction="row" sx={{ mb: 1.5, justifyContent: "space-between", alignItems: "center" }}>
                             <Typography variant="body2" fontWeight={600}>#{idx + 1}</Typography>
-                            <Button
-                              size="small"
-                              color="error"
-                              onClick={() =>
-                                setFormData((prev) => ({
-                                  ...prev,
-                                  ticketTypes: prev.ticketTypes.filter((_, i) => i !== idx),
-                                }))
-                              }
-                            >
-                              {t.removeTicket}
-                            </Button>
+                            <Stack direction="row" spacing={0.5} alignItems="center">
+                              <Tooltip title={t.moveUp}>
+                                <span>
+                                  <IconButton
+                                    size="small"
+                                    disabled={idx === 0}
+                                    onClick={() =>
+                                      setFormData((prev) => {
+                                        const types = [...prev.ticketTypes];
+                                        [types[idx - 1], types[idx]] = [types[idx], types[idx - 1]];
+                                        return { ...prev, ticketTypes: types };
+                                      })
+                                    }
+                                  >
+                                    <ICONS.up fontSize="small" />
+                                  </IconButton>
+                                </span>
+                              </Tooltip>
+                              <Tooltip title={t.moveDown}>
+                                <span>
+                                  <IconButton
+                                    size="small"
+                                    disabled={idx === formData.ticketTypes.length - 1}
+                                    onClick={() =>
+                                      setFormData((prev) => {
+                                        const types = [...prev.ticketTypes];
+                                        [types[idx], types[idx + 1]] = [types[idx + 1], types[idx]];
+                                        return { ...prev, ticketTypes: types };
+                                      })
+                                    }
+                                  >
+                                    <ICONS.down fontSize="small" />
+                                  </IconButton>
+                                </span>
+                              </Tooltip>
+                              <Tooltip title={t.removeTicket}>
+                                <IconButton
+                                  size="small"
+                                  color="error"
+                                  onClick={() =>
+                                    setFormData((prev) => ({
+                                      ...prev,
+                                      ticketTypes: prev.ticketTypes.filter((_, i) => i !== idx),
+                                    }))
+                                  }
+                                >
+                                  <ICONS.delete fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            </Stack>
                           </Stack>
                           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
                             <Box sx={{ flex: "1 1 200px" }}>
@@ -2299,32 +2343,69 @@ const EventModal = ({
                                   }
                                   label={<Typography variant="caption">{t.depVisible}</Typography>} sx={{ ml: 0 }}
                                 />
-                                <Button
-                                  size="small"
-                                  color="error"
-                                  variant="text"
-                                  onClick={() =>
-  setFormData((prev) => {
-    const fields = [...(prev.globalDependentFields || [])];
-    const removedFieldName = fields[depIdx]?.inputName;
-    fields.splice(depIdx, 1);
+                                <Stack direction="row" spacing={0.5} alignItems="center" sx={{ ml: "auto" }}>
+                                  <Tooltip title={t.moveUp}>
+                                    <span>
+                                      <IconButton
+                                        size="small"
+                                        disabled={depIdx === 0}
+                                        onClick={() =>
+                                          setFormData((prev) => {
+                                            const fields = [...(prev.globalDependentFields || [])];
+                                            [fields[depIdx - 1], fields[depIdx]] = [fields[depIdx], fields[depIdx - 1]];
+                                            return { ...prev, globalDependentFields: fields };
+                                          })
+                                        }
+                                      >
+                                        <ICONS.up fontSize="small" />
+                                      </IconButton>
+                                    </span>
+                                  </Tooltip>
+                                  <Tooltip title={t.moveDown}>
+                                    <span>
+                                      <IconButton
+                                        size="small"
+                                        disabled={depIdx === (formData.globalDependentFields || []).length - 1}
+                                        onClick={() =>
+                                          setFormData((prev) => {
+                                            const fields = [...(prev.globalDependentFields || [])];
+                                            [fields[depIdx], fields[depIdx + 1]] = [fields[depIdx + 1], fields[depIdx]];
+                                            return { ...prev, globalDependentFields: fields };
+                                          })
+                                        }
+                                      >
+                                        <ICONS.down fontSize="small" />
+                                      </IconButton>
+                                    </span>
+                                  </Tooltip>
+                                  <Tooltip title={t.removeField}>
+                                    <IconButton
+                                      size="small"
+                                      color="error"
+                                      onClick={() =>
+                                        setFormData((prev) => {
+                                          const fields = [...(prev.globalDependentFields || [])];
+                                          const removedFieldName = fields[depIdx]?.inputName;
+                                          fields.splice(depIdx, 1);
 
-    // Prune the removed field name from all ticket mappings
-    const mappings = { ...(prev.globalDependentFieldMappings || {}) };
-    if (removedFieldName) {
-      Object.keys(mappings).forEach((ticketName) => {
-        mappings[ticketName] = mappings[ticketName].filter(
-          (f) => f !== removedFieldName
-        );
-      });
-    }
+                                          // Prune the removed field name from all ticket mappings
+                                          const mappings = { ...(prev.globalDependentFieldMappings || {}) };
+                                          if (removedFieldName) {
+                                            Object.keys(mappings).forEach((ticketName) => {
+                                              mappings[ticketName] = mappings[ticketName].filter(
+                                                (f) => f !== removedFieldName
+                                              );
+                                            });
+                                          }
 
-    return { ...prev, globalDependentFields: fields, globalDependentFieldMappings: mappings };
-  })
-}
-                                >
-                                  {t.depRemove}
-                                </Button>
+                                          return { ...prev, globalDependentFields: fields, globalDependentFieldMappings: mappings };
+                                        })
+                                      }
+                                    >
+                                      <ICONS.delete fontSize="small" />
+                                    </IconButton>
+                                  </Tooltip>
+                                </Stack>
                               </Box>
                             ))}
 
@@ -2418,18 +2499,56 @@ const EventModal = ({
                           <Paper key={idx} variant="outlined" sx={{ p: 2, mb: 2, borderRadius: 2 }}>
                             <Stack direction="row" sx={{ mb: 1.5, justifyContent: "space-between", alignItems: "center" }}>
                               <Typography variant="body2" fontWeight={600}>#{idx + 1}</Typography>
-                              <Button
-                                size="small"
-                                color="error"
-                                onClick={() =>
-                                  setFormData((prev) => ({
-                                    ...prev,
-                                    fees: prev.fees.filter((_, i) => i !== idx),
-                                  }))
-                                }
-                              >
-                                {t.removeFee}
-                              </Button>
+                              <Stack direction="row" spacing={0.5} alignItems="center">
+                                <Tooltip title={t.moveUp}>
+                                  <span>
+                                    <IconButton
+                                      size="small"
+                                      disabled={idx === 0}
+                                      onClick={() =>
+                                        setFormData((prev) => {
+                                          const fees = [...prev.fees];
+                                          [fees[idx - 1], fees[idx]] = [fees[idx], fees[idx - 1]];
+                                          return { ...prev, fees };
+                                        })
+                                      }
+                                    >
+                                      <ICONS.up fontSize="small" />
+                                    </IconButton>
+                                  </span>
+                                </Tooltip>
+                                <Tooltip title={t.moveDown}>
+                                  <span>
+                                    <IconButton
+                                      size="small"
+                                      disabled={idx === formData.fees.length - 1}
+                                      onClick={() =>
+                                        setFormData((prev) => {
+                                          const fees = [...prev.fees];
+                                          [fees[idx], fees[idx + 1]] = [fees[idx + 1], fees[idx]];
+                                          return { ...prev, fees };
+                                        })
+                                      }
+                                    >
+                                      <ICONS.down fontSize="small" />
+                                    </IconButton>
+                                  </span>
+                                </Tooltip>
+                                <Tooltip title={t.removeFee}>
+                                  <IconButton
+                                    size="small"
+                                    color="error"
+                                    onClick={() =>
+                                      setFormData((prev) => ({
+                                        ...prev,
+                                        fees: prev.fees.filter((_, i) => i !== idx),
+                                      }))
+                                    }
+                                  >
+                                    <ICONS.delete fontSize="small" />
+                                  </IconButton>
+                                </Tooltip>
+                              </Stack>
                             </Stack>
                             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
                               <Box sx={{ flex: "1 1 200px" }}>
@@ -3552,14 +3671,51 @@ const EventModal = ({
                           label={t.visibleField}
                         />
 
-                        <Button
-                          size="small"
-                          variant="text"
-                          color="error"
-                          onClick={() => removeFormField(index)}
-                        >
-                          {t.remove}
-                        </Button>
+                        <Stack direction="row" spacing={0.5} alignItems="center" sx={{ ml: "auto" }}>
+                          <Tooltip title={t.moveUp}>
+                            <span>
+                              <IconButton
+                                size="small"
+                                disabled={index === 0}
+                                onClick={() =>
+                                  setFormData((prev) => {
+                                    const fields = [...prev.formFields];
+                                    [fields[index - 1], fields[index]] = [fields[index], fields[index - 1]];
+                                    return { ...prev, formFields: fields };
+                                  })
+                                }
+                              >
+                                <ICONS.up fontSize="small" />
+                              </IconButton>
+                            </span>
+                          </Tooltip>
+                          <Tooltip title={t.moveDown}>
+                            <span>
+                              <IconButton
+                                size="small"
+                                disabled={index === formData.formFields.length - 1}
+                                onClick={() =>
+                                  setFormData((prev) => {
+                                    const fields = [...prev.formFields];
+                                    [fields[index], fields[index + 1]] = [fields[index + 1], fields[index]];
+                                    return { ...prev, formFields: fields };
+                                  })
+                                }
+                              >
+                                <ICONS.down fontSize="small" />
+                              </IconButton>
+                            </span>
+                          </Tooltip>
+                          <Tooltip title={t.removeField}>
+                            <IconButton
+                              size="small"
+                              color="error"
+                              onClick={() => removeFormField(index)}
+                            >
+                              <ICONS.delete fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </Stack>
                       </Box>
                     </Box>
                   ))}
