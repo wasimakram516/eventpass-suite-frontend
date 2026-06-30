@@ -49,6 +49,7 @@ import {
   createRegistration,
   createWalkIn,
   trackBadgePrint,
+  getRegistrationInvoice,
 } from "@/services/eventreg/registrationService";
 import { getPublicEventBySlug } from "@/services/eventreg/eventService";
 import { getPaymentLink } from "@/services/eventreg/paymentService";
@@ -183,6 +184,8 @@ const translations = {
     oldest: "Oldest",
     viewUploadedFile: "View file",
     totalLabel: "Total",
+    viewInvoice: "View Invoice",
+    invoiceFailed: "Failed to load invoice"
   },
   ar: {
     title: "تفاصيل الحدث",
@@ -290,6 +293,8 @@ const translations = {
     oldest: "الأقدم",
     viewUploadedFile: "عرض الملف",
     totalLabel: "الإجمالي",
+    viewInvoice: "عرض الفاتورة",
+    invoiceFailed: "تعذر تحميل الفاتورة",
   },
 };
 
@@ -1104,6 +1109,33 @@ export default function ViewRegistrations() {
       setExportingBadges(false);
     }
   };
+  const [loadingInvoiceId, setLoadingInvoiceId] = useState(null);
+
+  const handleViewInvoice = async (registrationId) => {
+    setLoadingInvoiceId(registrationId);
+    const invoiceWindow = window.open("", "_blank");
+    try {
+      const blob = await getRegistrationInvoice(registrationId);
+      if (blob?.error) {
+        invoiceWindow?.close();
+        showMessage(blob.message || t.invoiceFailed, "error");
+        return;
+      }
+      const url = URL.createObjectURL(blob);
+      if (invoiceWindow) {
+        invoiceWindow.location.href = url;
+      } else {
+        showMessage("Please allow pop-ups to view the invoice.", "warning");
+      }
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch (err) {
+      invoiceWindow?.close();
+      console.error("View invoice failed:", err);
+      showMessage(t.invoiceFailed, "error");
+    } finally {
+      setLoadingInvoiceId(null);
+    }
+  };
 
   const handlePrintBadge = (registration) => {
     if (!registration?.token) return;
@@ -1174,7 +1206,7 @@ export default function ViewRegistrations() {
         registration.company ||
         "";
 
-      
+
       const badgeData = {
         fullName,
         company,
@@ -1355,16 +1387,16 @@ export default function ViewRegistrations() {
 
     const baseFields = hasCustomData
       ? (eventDetails?.formFields || []).map((f) => ({
-          name: f.inputName,
-          type: (f.inputType || "text").toLowerCase(),
-          values: Array.isArray(f.values) ? f.values : [],
-        }))
+        name: f.inputName,
+        type: (f.inputType || "text").toLowerCase(),
+        values: Array.isArray(f.values) ? f.values : [],
+      }))
       : [
-          { name: "fullName", type: "text", values: [] },
-          { name: "email", type: "text", values: [] },
-          { name: "phone", type: "text", values: [] },
-          { name: "company", type: "text", values: [] },
-        ];
+        { name: "fullName", type: "text", values: [] },
+        { name: "email", type: "text", values: [] },
+        { name: "phone", type: "text", values: [] },
+        { name: "company", type: "text", values: [] },
+      ];
 
     const fieldMap = new Map(baseFields.map((f) => [f.name, f]));
 
@@ -2090,7 +2122,37 @@ export default function ViewRegistrations() {
                         ? `${t.printedTimes.replace("{count}", toArabicDigits(reg.printCount, language))}${reg.printTimestamp ? ` · ${t.lastPrintedAt} ${formatDateTimeWithLocale(reg.printTimestamp, language === "ar" ? "ar-SA" : "en-GB")}` : ""}`
                         : t.neverPrinted}
                     </Typography>
+                    {/* Invoice - only for paid registrations, shown right under print history */}
+                    {eventDetails?.isPaid && reg.paymentStatus === "paid" && (
+                      <Button
+                        size="small"
+                        variant="text"
+                        disabled={loadingInvoiceId === reg._id}
+                        startIcon={
+                          loadingInvoiceId === reg._id ? (
+                            <CircularProgress size={14} />
+                          ) : (
+                            <ICONS.receipt sx={{ fontSize: 16 }} />
+                          )
+                        }
+                        onClick={() => handleViewInvoice(reg._id)}
+                        sx={{
+                          minWidth: 0,
+                          p: 0,
+                          mt: 0.5,
+                          textTransform: "none",
+                          fontWeight: 600,
+                          fontSize: "0.75rem",
+                          color: "primary.main",
+                          display: "flex",
+                          ...getStartIconSpacing(dir),
+                        }}
+                      >
+                        {t.viewInvoice}
+                      </Button>
+                    )}
                   </Box>
+
 
                   {/* Dynamic Fields — show registration's own format */}
                   <CardContent sx={{ flexGrow: 1, px: 2, py: 1.5 }}>
@@ -2313,6 +2375,7 @@ export default function ViewRegistrations() {
                           </IconButton>
                         </Tooltip>
                       </Box>
+
                     </Box>
                   </CardActions>
                 </Card>

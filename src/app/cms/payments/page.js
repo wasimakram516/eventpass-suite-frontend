@@ -50,7 +50,7 @@ import ArabicPagination from "@/components/ArabicPagination";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import LoadingState from "@/components/LoadingState";
 import { getAllBusinesses } from "@/services/businessService";
-
+import { getRegistrationInvoice } from "@/services/eventreg/registrationService";
 dayjs.extend(utc);
 
 const translations = {
@@ -102,6 +102,8 @@ const translations = {
     vat: "VAT",
     totalLabel: "Total",
     close: "Close",
+    viewInvoice: "View Invoice",
+    invoiceFailed: "Failed to load invoice",
   },
   ar: {
     title: "المدفوعات",
@@ -147,6 +149,8 @@ const translations = {
     vat: "ضريبة القيمة المضافة",
     totalLabel: "الإجمالي",
     close: "إغلاق",
+    viewInvoice: "عرض الفاتورة",
+    invoiceFailed: "تعذر تحميل الفاتورة",
   },
 };
 
@@ -199,6 +203,33 @@ export default function PaymentsPage() {
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   const [copiedId, setCopiedId] = useState(null);
+  const [loadingInvoiceId, setLoadingInvoiceId] = useState(null);
+  const handleViewInvoice = async (payment) => {
+    if (!payment.registrationId) return;
+    setLoadingInvoiceId(payment._id);
+    const invoiceWindow = window.open("", "_blank");
+    try {
+      const blob = await getRegistrationInvoice(payment.registrationId);
+      if (blob?.error) {
+        invoiceWindow?.close();
+        setLoadError(blob.message || t.invoiceFailed);
+        return;
+      }
+      const url = URL.createObjectURL(blob);
+      if (invoiceWindow) {
+        invoiceWindow.location.href = url;
+      } else {
+        setLoadError("Please allow pop-ups to view the invoice.");
+      }
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch (err) {
+      invoiceWindow?.close();
+      console.error("View invoice failed:", err);
+      setLoadError(t.invoiceFailed);
+    } finally {
+      setLoadingInvoiceId(null);
+    }
+  };
   const [exporting, setExporting] = useState(false);
   const [viewPayment, setViewPayment] = useState(null);
   const [showPaymentBreakdown, setShowPaymentBreakdown] = useState(false);
@@ -454,6 +485,21 @@ export default function PaymentsPage() {
                   <ICONS.view sx={{ fontSize: 16 }} />
                 </IconButton>
               </Tooltip>
+              {p.status === "paid" && (
+                <Tooltip title={t.viewInvoice}>
+                  <IconButton
+                    size="small"
+                    disabled={loadingInvoiceId === p._id}
+                    onClick={() => handleViewInvoice(p)}
+                    sx={{ color: "info.main" }}>
+                    {loadingInvoiceId === p._id ? (
+                      <CircularProgress size={14} />
+                    ) : (
+                      <ICONS.receipt sx={{ fontSize: 16 }} />
+                    )}
+                  </IconButton>
+                </Tooltip>
+              )}
               {p.status === "pending" && (
                 <Tooltip title={copiedId === p._id ? t.linkCopied : t.copyLink}>
                   <IconButton size="small" onClick={() => handleCopyLink(p)}
@@ -485,15 +531,17 @@ export default function PaymentsPage() {
               <Box component="span" fontWeight={600} color="text.primary" sx={{ marginInlineEnd: 0.5 }}>{getItemLabel(p).prefix}:</Box>
               {getItemLabel(p).value || "—"}
             </Typography>
-            {(() => { const { base, total } = getBaseTotal(p); return (
-              <Typography variant="body2" color="text.secondary" sx={{ textAlign: align }}>
-                <Box component="span" fontWeight={600} color="text.primary" sx={{ marginInlineEnd: 0.5 }}>{labels.amount}:</Box>
-                {fmtAmt(total)}
-                {base != null && base !== total && (
-                  <Box component="span" sx={{ color: "text.disabled", marginInlineStart: 0.75 }}>({t.basePrice}: {fmtAmt(base)})</Box>
-                )}
-              </Typography>
-            ); })()}
+            {(() => {
+              const { base, total } = getBaseTotal(p); return (
+                <Typography variant="body2" color="text.secondary" sx={{ textAlign: align }}>
+                  <Box component="span" fontWeight={600} color="text.primary" sx={{ marginInlineEnd: 0.5 }}>{labels.amount}:</Box>
+                  {fmtAmt(total)}
+                  {base != null && base !== total && (
+                    <Box component="span" sx={{ color: "text.disabled", marginInlineStart: 0.75 }}>({t.basePrice}: {fmtAmt(base)})</Box>
+                  )}
+                </Typography>
+              );
+            })()}
             <Typography variant="body2" color="text.secondary" sx={{ textAlign: align }}>
               <Box component="span" fontWeight={600} color="text.primary" sx={{ marginInlineEnd: 0.5 }}>{labels.date}:</Box>
               {formatDate(p.createdAt)}
@@ -527,14 +575,16 @@ export default function PaymentsPage() {
         })()}
       </TableCell>
       <TableCell sx={{ py: 1.5, textAlign: align }}>
-        {(() => { const { base, total } = getBaseTotal(p); return (
-          <>
-            <Typography variant="body2" fontWeight={600}>{fmtAmt(total)}</Typography>
-            {base != null && base !== total && (
-              <Typography variant="caption" color="text.secondary">{t.basePrice}: {fmtAmt(base)}</Typography>
-            )}
-          </>
-        ); })()}
+        {(() => {
+          const { base, total } = getBaseTotal(p); return (
+            <>
+              <Typography variant="body2" fontWeight={600}>{fmtAmt(total)}</Typography>
+              {base != null && base !== total && (
+                <Typography variant="caption" color="text.secondary">{t.basePrice}: {fmtAmt(base)}</Typography>
+              )}
+            </>
+          );
+        })()}
       </TableCell>
       <TableCell sx={{ py: 1.5 }}>{getStatusChip(p.status)}</TableCell>
       <TableCell sx={{ py: 1.5, textAlign: align }}>{formatDate(p.createdAt)}</TableCell>
@@ -545,6 +595,22 @@ export default function PaymentsPage() {
               <ICONS.view fontSize="small" />
             </IconButton>
           </Tooltip>
+          {p.status === "paid" && (
+            <Tooltip title={t.viewInvoice}>
+              <IconButton
+                size="small"
+                disabled={loadingInvoiceId === p._id}
+                onClick={() => handleViewInvoice(p)}
+                sx={{ color: "info.main" }}
+              >
+                {loadingInvoiceId === p._id ? (
+                  <CircularProgress size={16} />
+                ) : (
+                  <ICONS.receipt fontSize="small" />
+                )}
+              </IconButton>
+            </Tooltip>
+          )}
           {p.status === "pending" && (
             <Tooltip title={copiedId === p._id ? t.linkCopied : t.copyLink}>
               <IconButton size="small" onClick={() => handleCopyLink(p)}
