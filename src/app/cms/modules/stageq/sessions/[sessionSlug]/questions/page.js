@@ -243,7 +243,6 @@ export default function SessionQuestionsPage() {
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "space-between",
-                    height: "100%",
                     width: { xs: "100%", sm: "360px" },
                   }}
                 >

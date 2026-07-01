@@ -289,7 +289,6 @@ export default function CrossZeroAIResultsPage() {
                     <AppCard
                       sx={{
                         p: { xs: 2, sm: 2.5 },
-                        height: "100%",
                         width: { xs: "100%", sm: 360 },
                         display: "flex",
                         flexDirection: "column",

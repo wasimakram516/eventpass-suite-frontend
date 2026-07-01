@@ -1922,7 +1922,6 @@ export default function ViewRegistrations() {
                   sx={{
                     width: { xs: "100%", sm: 360 },
                     maxWidth: 360,
-                    height: "100%",
                     borderRadius: 4,
                     overflow: "hidden",
                     boxShadow: "0 6px 18px rgba(0,0,0,0.12)",

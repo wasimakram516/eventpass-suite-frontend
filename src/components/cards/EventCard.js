@@ -38,7 +38,7 @@ export default function EventCardBase({
 }) {
   const language = locale === "ar-SA" ? "ar" : "en";
   return (
-    <AppCard sx={{ width: { xs: "100%", sm: 360 }, height: "100%" }}>
+    <AppCard sx={{ width: { xs: "100%", sm: 360 } }}>
       {/* Cover Image + Overlay */}
       <Box sx={{ position: "relative", height: 200 }}>
         {event.logoUrl ? (

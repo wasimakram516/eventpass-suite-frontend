@@ -259,7 +259,6 @@ export default function FileStorePage() {
                     key={f._id}
                     sx={{
                       p: 2,
-                      height: "100%",
                       justifyContent: "space-between",
                       width: { xs: "100%", sm: 340 },
                     }}

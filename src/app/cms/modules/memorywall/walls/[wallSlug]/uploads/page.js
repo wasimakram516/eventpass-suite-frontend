@@ -397,7 +397,7 @@ const CMSUploadsPage = () => {
             const displayTag = (!item.imageUrl && wallMode !== "card") ? "card" : wallMode;
 
             return (
-                <Card key={item._id} elevation={2} sx={{ height: "100%", width: { xs: "100%", sm: 300 }, position: "relative" }}>
+                <Card key={item._id} elevation={2} sx={{ width: { xs: "100%", sm: 300 }, position: "relative" }}>
                   {item.imageUrl ? (
                     <CardMedia
                       component="img"
