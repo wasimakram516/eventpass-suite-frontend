@@ -31,6 +31,7 @@ export default function EventCardBase({
   onEdit,
   onDelete,
   onShare,
+  onClone,
   onInsights,
   onViewResults,
   onViewFullScreen,
@@ -329,7 +330,20 @@ export default function EventCardBase({
             </IconButton>
           </Tooltip>
         )}
-
+        {onClone && (
+          <Tooltip title={t.clone || "Clone"}>
+            <IconButton
+              color="info"
+              onClick={onClone}
+              sx={{
+                "&:hover": { transform: "scale(1.1)" },
+                transition: "0.2s",
+              }}
+            >
+              <ICONS.copy />
+            </IconButton>
+          </Tooltip>
+        )}
         {onDelete && (
           <Tooltip title={t.delete}>
             <IconButton

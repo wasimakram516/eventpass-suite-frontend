@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -10,10 +10,13 @@ import {
   Button,
   Box,
   CircularProgress,
+  FormControlLabel,
+  Checkbox,
 } from "@mui/material";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
+
 
 const ConfirmationDialog = ({
   open,
@@ -24,8 +27,10 @@ const ConfirmationDialog = ({
   confirmButtonText,
   confirmButtonIcon,
   confirmButtonColor = "error",
+  checkboxOptions,
 }) => {
   const [loading, setLoading] = useState(false);
+  const [checkedValues, setCheckedValues] = useState({});
 
   const { t, dir } = useI18nLayout({
     en: {
@@ -40,10 +45,40 @@ const ConfirmationDialog = ({
     },
   });
 
+  // reset/initialize checkbox state every time dialog opens
+  useEffect(() => {
+    if (open && checkboxOptions?.length) {
+      const initial = {};
+      checkboxOptions.forEach((opt) => {
+        initial[opt.key] = !!opt.defaultChecked;
+      });
+      setCheckedValues(initial);
+    }
+  }, [open]);
+  const handleToggle = (key) => (e) => {
+    const checked = e.target.checked;
+    setCheckedValues((prev) => {
+      const updated = { ...prev, [key]: checked };
+      if (!checked) {
+        // Unchecking a parent forces all its dependents off too
+        checkboxOptions.forEach((opt) => {
+          if (opt.dependsOn === key) {
+            updated[opt.key] = false;
+          }
+        });
+      }
+      return updated;
+    });
+  };
+
   const handleConfirm = async () => {
     setLoading(true);
     try {
-      await onConfirm();
+      if (checkboxOptions?.length) {
+        await onConfirm(checkedValues);
+      } else {
+        await onConfirm();
+      }
     } finally {
       setLoading(false);
     }
@@ -65,7 +100,7 @@ const ConfirmationDialog = ({
             backgroundColor: "#f9fafb",
             boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
           },
-        }
+        },
       }}
     >
       <DialogTitle
@@ -94,6 +129,40 @@ const ConfirmationDialog = ({
           >
             {message}
           </DialogContentText>
+
+          {checkboxOptions?.length > 0 && (
+            <Box
+              sx={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "flex-start",
+                mt: 2,
+                textAlign: dir === "rtl" ? "right" : "left",
+              }}
+            >
+              {checkboxOptions.map((opt) => {
+                const parentSatisfied = opt.dependsOn
+                  ? !!checkedValues[opt.dependsOn]
+                  : true;
+                if (opt.dependsOn && !parentSatisfied) return null;
+
+                return (
+                  <FormControlLabel
+                    key={opt.key}
+                    control={
+                      <Checkbox
+                        checked={!!checkedValues[opt.key]}
+                        onChange={handleToggle(opt.key)}
+                        color="primary"
+                        disabled={loading}
+                      />
+                    }
+                    label={opt.label}
+                    sx={opt.dependsOn ? { marginInlineStart: 3 } : {}} />
+                );
+              })}
+            </Box>
+          )}
         </Box>
       </DialogContent>
       <DialogActions
