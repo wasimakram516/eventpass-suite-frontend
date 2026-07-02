@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Box,
@@ -153,7 +153,7 @@ export default function EventsPage() {
       clonePayments,
     });
     if (!res?.error) {
-      setEvents((prev) => [...prev, res]);
+      await fetchEvents({ silent: true });
     }
     setCloneConfirmOpen(false);
     setEventToClone(null);
@@ -177,23 +177,22 @@ export default function EventsPage() {
     }
   }, [user, selectedBusiness, setSelectedBusiness]);
 
-  useEffect(() => {
+  const fetchEvents = useCallback(async ({ silent = false } = {}) => {
     if (!selectedBusiness) {
       setEvents([]);
       setLoading(false);
       return;
     }
-
-    const fetchEvents = async () => {
-      setLoading(true);
-      const result = await getAllPublicEventsByBusiness(selectedBusiness);
-      if (!result?.error) setEvents(result.events || []);
-      else setEvents([]);
-      setLoading(false);
-    };
-
-    fetchEvents();
+    if (!silent) setLoading(true);
+    const result = await getAllPublicEventsByBusiness(selectedBusiness);
+    if (!result?.error) setEvents(result.events || []);
+    else if (!silent) setEvents([]);
+    if (!silent) setLoading(false);
   }, [selectedBusiness]);
+
+  useEffect(() => {
+    fetchEvents();
+  }, [fetchEvents]);
 
   const filteredEvents = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
@@ -239,7 +238,7 @@ export default function EventsPage() {
     } else {
       res = await createPublicEvent(formData);
       if (!res?.error) {
-        setEvents((prev) => [...prev, res]);
+        await fetchEvents({ silent: true });
         handleCloseModal();
       }
     }

@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Box,
@@ -145,7 +145,7 @@ export default function EventsPage() {
       cloneWalkIns,
     });
     if (!res?.error) {
-      setEvents((prev) => [...prev, res]);
+      await fetchEvents({ silent: true });
     }
     setCloneConfirmOpen(false);
     setEventToClone(null);
@@ -170,21 +170,21 @@ export default function EventsPage() {
     }
   }, [user, selectedBusiness, setSelectedBusiness]);
 
-  useEffect(() => {
+  const fetchEvents = useCallback(async ({ silent = false } = {}) => {
     if (!selectedBusiness) {
       setEvents([]);
       return;
     }
-
-    const fetchEvents = async () => {
-      setLoading(true);
-      const result = await getAllCheckInEvents(selectedBusiness);
-      setEvents(result?.events ?? []);
-      setLoading(false);
-    };
-
-    fetchEvents();
+    if (!silent) setLoading(true);
+    const result = await getAllCheckInEvents(selectedBusiness);
+    if (!result?.error) setEvents(result?.events ?? []);
+    else if (!silent) setEvents([]);
+    if (!silent) setLoading(false);
   }, [selectedBusiness]);
+
+  useEffect(() => {
+    fetchEvents();
+  }, [fetchEvents]);
 
   const filteredEvents = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
@@ -232,7 +232,7 @@ export default function EventsPage() {
     } else {
       result = await createCheckInEvent(formData);
       if (!result?.error) {
-        setEvents((prev) => [...prev, result]);
+        await fetchEvents({ silent: true });
         handleCloseModal();
       }
     }
