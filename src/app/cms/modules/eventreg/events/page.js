@@ -66,8 +66,9 @@ const translations = {
     cloneEventTitle: "Clone Event?",
     cloneEventMessage: "Create a copy of this event?",
     clone: "Clone",
-    cloneRegistrations: "Also clone registrations",
-    clonePayments: "Also clone payments",
+    cloneRegistrationsLabel: "Also clone registrations",
+    cloneWalkInsLabel: "Also clone walk-in records",
+    clonePaymentsLabel: "Also clone payment records",
   },
   ar: {
     pageTitle: "إدارة الفعاليات",
@@ -95,8 +96,9 @@ const translations = {
     cloneEventTitle: "استنساخ الفعالية؟",
     cloneEventMessage: "هل تريد إنشاء نسخة من هذه الفعالية؟",
     clone: "استنساخ",
-    cloneRegistrations: "استنساخ التسجيلات أيضًا",
-    clonePayments: "استنساخ المدفوعات أيضًا",
+    cloneRegistrationsLabel: "استنساخ التسجيلات أيضًا",
+    cloneWalkInsLabel: "استنساخ سجلات الحضور المباشر أيضًا",
+    clonePaymentsLabel: "استنساخ سجلات المدفوعات أيضًا",
   },
 };
 
@@ -120,13 +122,34 @@ export default function EventsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [cloneConfirmOpen, setCloneConfirmOpen] = useState(false);
   const [eventToClone, setEventToClone] = useState(null);
+  const buildCloneCheckboxOptions = (event) => [
+    { key: "cloneRegistrations", label: t.cloneRegistrationsLabel, defaultChecked: false },
+    {
+      key: "cloneWalkIns",
+      label: t.cloneWalkInsLabel,
+      defaultChecked: false,
+      dependsOn: "cloneRegistrations",
+    },
+    ...(event?.isPaid
+      ? [
+        {
+          key: "clonePayments",
+          label: t.clonePaymentsLabel,
+          defaultChecked: false,
+          dependsOn: "cloneRegistrations",
+        },
+      ]
+      : []),
+  ];
 
   const handleConfirmClone = async (selected) => {
     const cloneRegistrations = !!selected?.cloneRegistrations;
+    const cloneWalkIns = cloneRegistrations && !!selected?.cloneWalkIns;
     const clonePayments = cloneRegistrations && !!selected?.clonePayments;
 
     const res = await clonePublicEvent(eventToClone._id, {
       cloneRegistrations,
+      cloneWalkIns,
       clonePayments,
     });
     if (!res?.error) {
@@ -376,7 +399,7 @@ export default function EventsPage() {
         <ConfirmationDialog
           open={cloneConfirmOpen}
           title={t.cloneEventTitle}
-          message={t.cloneEventMessage}
+          message={`${t.cloneEventMessage} "${eventToClone?.name}"?`}
           onClose={() => {
             setCloneConfirmOpen(false);
             setEventToClone(null);
@@ -385,19 +408,7 @@ export default function EventsPage() {
           confirmButtonText={t.clone}
           confirmButtonIcon={<ICONS.add />}
           confirmButtonColor="primary"
-          checkboxOptions={[
-            {
-              key: "cloneRegistrations",
-              label: t.cloneRegistrations,
-              defaultChecked: false,
-            },
-            {
-              key: "clonePayments",
-              label: t.clonePayments,
-              defaultChecked: false,
-              dependsOn: "cloneRegistrations",
-            },
-          ]}
+          checkboxOptions={buildCloneCheckboxOptions(eventToClone)}
         />
         <ShareLinkModal
           open={shareModalOpen}

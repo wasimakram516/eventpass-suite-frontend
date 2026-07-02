@@ -126,6 +126,16 @@ export default function EventsPage() {
   const [cloneConfirmOpen, setCloneConfirmOpen] = useState(false);
   const [eventToClone, setEventToClone] = useState(null);
 
+  const buildCloneCheckboxOptions = () => [
+    { key: "cloneRegistrations", label: t.cloneRegistrations, defaultChecked: false },
+    {
+      key: "cloneWalkIns",
+      label: t.cloneWalkIns,
+      defaultChecked: false,
+      dependsOn: "cloneRegistrations",
+    },
+  ];
+
   const handleConfirmClone = async (selected) => {
     const cloneRegistrations = !!selected?.cloneRegistrations;
     const cloneWalkIns = cloneRegistrations && !!selected?.cloneWalkIns;
@@ -401,7 +411,7 @@ export default function EventsPage() {
         <ConfirmationDialog
           open={cloneConfirmOpen}
           title={t.cloneEventTitle}
-          message={t.cloneEventMessage}
+          message={`${t.cloneEventMessage} "${eventToClone?.name}"${language === "ar" ? "؟" : "?"}`}
           onClose={() => {
             setCloneConfirmOpen(false);
             setEventToClone(null);
@@ -410,19 +420,7 @@ export default function EventsPage() {
           confirmButtonText={t.clone}
           confirmButtonIcon={<ICONS.add />}
           confirmButtonColor="primary"
-          checkboxOptions={[
-            {
-              key: "cloneRegistrations",
-              label: t.cloneRegistrations,
-              defaultChecked: false,
-            },
-            {
-              key: "cloneWalkIns",
-              label: t.cloneWalkIns,
-              defaultChecked: false,
-              dependsOn: "cloneRegistrations",
-            },
-          ]}
+          checkboxOptions={buildCloneCheckboxOptions()}
         />
         <ShareLinkModal
           open={shareModalOpen}
