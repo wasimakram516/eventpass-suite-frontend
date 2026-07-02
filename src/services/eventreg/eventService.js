@@ -68,11 +68,10 @@ export const deletePublicEvent = withApiHandler(
   },
   { showSuccess: true }
 );
-export async function clonePublicEvent(id, options) {
-  try {
-    const res = await api.post(`/eventreg/events/${id}/clone`, options);
-    return res.data.data;
-  } catch (err) {
-    return { error: err.response?.data?.message || "Failed to clone event" };
-  }
-}
+export const clonePublicEvent = withApiHandler(
+  async (id, options) => {
+    const { data } = await api.post(`/eventreg/events/${id}/clone`, options);
+    return data;
+  },
+  { showSuccess: true }
+);
