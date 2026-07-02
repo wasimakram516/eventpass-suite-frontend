@@ -686,7 +686,6 @@ export default function HomePage() {
                         p: 3,
                         borderRadius: 3,
                         boxShadow: "0 6px 12px rgba(0,0,0,0.1)",
-                        height: "100%",
                         width: { xs: "100%", sm: 350 },
                         display: "flex",
                         flexDirection: "column",

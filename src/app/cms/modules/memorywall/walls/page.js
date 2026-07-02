@@ -349,7 +349,6 @@ export default function WallConfigsPage() {
                 elevation={3}
                 sx={{
                   position: "relative",
-                  height: "100%",
                   width: { xs: "100%", sm: 340 },
                   display: "flex",
                   flexDirection: "column",

@@ -31,13 +31,14 @@ export default function EventCardBase({
   onEdit,
   onDelete,
   onShare,
+  onClone,
   onInsights,
   onViewResults,
   onViewFullScreen,
 }) {
   const language = locale === "ar-SA" ? "ar" : "en";
   return (
-    <AppCard sx={{ width: { xs: "100%", sm: 360 }, height: "100%" }}>
+    <AppCard sx={{ width: { xs: "100%", sm: 360 } }}>
       {/* Cover Image + Overlay */}
       <Box sx={{ position: "relative", height: 200 }}>
         {event.logoUrl ? (
@@ -329,7 +330,20 @@ export default function EventCardBase({
             </IconButton>
           </Tooltip>
         )}
-
+        {onClone && (
+          <Tooltip title={t.clone || "Clone"}>
+            <IconButton
+              color="info"
+              onClick={onClone}
+              sx={{
+                "&:hover": { transform: "scale(1.1)" },
+                transition: "0.2s",
+              }}
+            >
+              <ICONS.copy />
+            </IconButton>
+          </Tooltip>
+        )}
         {onDelete && (
           <Tooltip title={t.delete}>
             <IconButton

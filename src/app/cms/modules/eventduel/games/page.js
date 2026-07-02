@@ -340,7 +340,6 @@ export default function GamesPage() {
                   sx={{
                     p: 2,
                     width: { xs: "100%", sm: 420 },
-                    height: "100%",
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "space-between",

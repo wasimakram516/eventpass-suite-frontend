@@ -58,4 +58,11 @@ export const deleteCheckInEvent = withApiHandler(
   },
   { showSuccess: true }
 );
+export const cloneCheckInEvent = withApiHandler(
+  async (id, options) => {
+    const { data } = await api.post(`/checkin/events/${id}/clone`, options);
+    return data;
+  },
+  { showSuccess: true }
+);
 

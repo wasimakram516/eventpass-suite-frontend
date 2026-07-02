@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Box,
@@ -26,6 +26,7 @@ import {
   createCheckInEvent,
   updateCheckInEvent,
   deleteCheckInEvent,
+  cloneCheckInEvent,
 } from "@/services/checkin/checkinEventService";
 import EmptyBusinessState from "@/components/EmptyBusinessState";
 import NoDataAvailable from "@/components/NoDataAvailable";
@@ -61,6 +62,12 @@ const translations = {
     updatedBy: "Updated:",
     createdAt: "Created At:",
     updatedAt: "Updated At:",
+    cloneEventTitle: "Clone Event?",
+    cloneEventMessage: "Create a copy of this event?",
+    clone: "Clone",
+    cloneRegistrations: "Also clone registrations",
+    cloneWalkIns: "Also clone walk-in / check-in history",
+
   },
   ar: {
     pageTitle: "إدارة الفعاليات",
@@ -90,6 +97,11 @@ const translations = {
     updatedBy: "حدث:",
     createdAt: "تاريخ الإنشاء:",
     updatedAt: "تاريخ التحديث:",
+    cloneEventTitle: "استنساخ الفعالية؟",
+    cloneEventMessage: "هل تريد إنشاء نسخة من هذه الفعالية؟",
+    clone: "استنساخ",
+    cloneRegistrations: "استنساخ التسجيلات أيضًا",
+    cloneWalkIns: "استنساخ سجل الحضور أيضًا",
   },
 };
 
@@ -111,6 +123,33 @@ export default function EventsPage() {
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [eventToShare, setEventToShare] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [cloneConfirmOpen, setCloneConfirmOpen] = useState(false);
+  const [eventToClone, setEventToClone] = useState(null);
+
+  const buildCloneCheckboxOptions = () => [
+    { key: "cloneRegistrations", label: t.cloneRegistrations, defaultChecked: false },
+    {
+      key: "cloneWalkIns",
+      label: t.cloneWalkIns,
+      defaultChecked: false,
+      dependsOn: "cloneRegistrations",
+    },
+  ];
+
+  const handleConfirmClone = async (selected) => {
+    const cloneRegistrations = !!selected?.cloneRegistrations;
+    const cloneWalkIns = cloneRegistrations && !!selected?.cloneWalkIns;
+
+    const res = await cloneCheckInEvent(eventToClone._id, {
+      cloneRegistrations,
+      cloneWalkIns,
+    });
+    if (!res?.error) {
+      await fetchEvents({ silent: true });
+    }
+    setCloneConfirmOpen(false);
+    setEventToClone(null);
+  };
 
   useEffect(() => {
     const initialSearch = searchParams.get("search");
@@ -131,21 +170,21 @@ export default function EventsPage() {
     }
   }, [user, selectedBusiness, setSelectedBusiness]);
 
-  useEffect(() => {
+  const fetchEvents = useCallback(async ({ silent = false } = {}) => {
     if (!selectedBusiness) {
       setEvents([]);
       return;
     }
-
-    const fetchEvents = async () => {
-      setLoading(true);
-      const result = await getAllCheckInEvents(selectedBusiness);
-      setEvents(result?.events ?? []);
-      setLoading(false);
-    };
-
-    fetchEvents();
+    if (!silent) setLoading(true);
+    const result = await getAllCheckInEvents(selectedBusiness);
+    if (!result?.error) setEvents(result?.events ?? []);
+    else if (!silent) setEvents([]);
+    if (!silent) setLoading(false);
   }, [selectedBusiness]);
+
+  useEffect(() => {
+    fetchEvents();
+  }, [fetchEvents]);
 
   const filteredEvents = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
@@ -193,7 +232,7 @@ export default function EventsPage() {
     } else {
       result = await createCheckInEvent(formData);
       if (!result?.error) {
-        setEvents((prev) => [...prev, result]);
+        await fetchEvents({ silent: true });
         handleCloseModal();
       }
     }
@@ -335,6 +374,10 @@ export default function EventsPage() {
                     setEventToDelete(event);
                     setConfirmOpen(true);
                   }}
+                  onClone={() => {
+                    setEventToClone(event);
+                    setCloneConfirmOpen(true);
+                  }}
                   onShare={() => {
                     setEventToShare(event);
                     setShareModalOpen(true);
@@ -365,7 +408,20 @@ export default function EventsPage() {
           onClose={() => setConfirmOpen(false)}
           onConfirm={handleDeleteEvent}
         />
-
+        <ConfirmationDialog
+          open={cloneConfirmOpen}
+          title={t.cloneEventTitle}
+          message={`${t.cloneEventMessage} "${eventToClone?.name}"${language === "ar" ? "؟" : "?"}`}
+          onClose={() => {
+            setCloneConfirmOpen(false);
+            setEventToClone(null);
+          }}
+          onConfirm={handleConfirmClone}
+          confirmButtonText={t.clone}
+          confirmButtonIcon={<ICONS.add />}
+          confirmButtonColor="primary"
+          checkboxOptions={buildCloneCheckboxOptions()}
+        />
         <ShareLinkModal
           open={shareModalOpen}
           onClose={() => setShareModalOpen(false)}

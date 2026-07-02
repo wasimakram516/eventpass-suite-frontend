@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Box,
@@ -22,6 +22,7 @@ import ICONS from "@/utils/iconUtil";
 import { getEventStatus, formatDate } from "@/utils/dateUtils";
 import { useAuth } from "@/contexts/AuthContext";
 import { getAllBusinesses } from "@/services/businessService";
+import { clonePublicEvent } from "@/services/eventreg/eventService";
 import {
   getAllPublicEventsByBusiness,
   deletePublicEvent,
@@ -62,6 +63,12 @@ const translations = {
     updatedBy: "Updated:",
     createdAt: "Created At:",
     updatedAt: "Updated At:",
+    cloneEventTitle: "Clone Event?",
+    cloneEventMessage: "Create a copy of this event?",
+    clone: "Clone",
+    cloneRegistrationsLabel: "Also clone registrations",
+    cloneWalkInsLabel: "Also clone walk-in records",
+    clonePaymentsLabel: "Also clone payment records",
   },
   ar: {
     pageTitle: "إدارة الفعاليات",
@@ -86,6 +93,12 @@ const translations = {
     shareTitle: "مشاركة",
     viewRegs: "عرض التسجيلات",
     insights: "تحليلات ذكية",
+    cloneEventTitle: "استنساخ الفعالية؟",
+    cloneEventMessage: "هل تريد إنشاء نسخة من هذه الفعالية؟",
+    clone: "استنساخ",
+    cloneRegistrationsLabel: "استنساخ التسجيلات أيضًا",
+    cloneWalkInsLabel: "استنساخ سجلات الحضور المباشر أيضًا",
+    clonePaymentsLabel: "استنساخ سجلات المدفوعات أيضًا",
   },
 };
 
@@ -107,7 +120,44 @@ export default function EventsPage() {
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [eventToShare, setEventToShare] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [cloneConfirmOpen, setCloneConfirmOpen] = useState(false);
+  const [eventToClone, setEventToClone] = useState(null);
+  const buildCloneCheckboxOptions = (event) => [
+    { key: "cloneRegistrations", label: t.cloneRegistrationsLabel, defaultChecked: false },
+    {
+      key: "cloneWalkIns",
+      label: t.cloneWalkInsLabel,
+      defaultChecked: false,
+      dependsOn: "cloneRegistrations",
+    },
+    ...(event?.isPaid
+      ? [
+        {
+          key: "clonePayments",
+          label: t.clonePaymentsLabel,
+          defaultChecked: false,
+          dependsOn: "cloneRegistrations",
+        },
+      ]
+      : []),
+  ];
 
+  const handleConfirmClone = async (selected) => {
+    const cloneRegistrations = !!selected?.cloneRegistrations;
+    const cloneWalkIns = cloneRegistrations && !!selected?.cloneWalkIns;
+    const clonePayments = cloneRegistrations && !!selected?.clonePayments;
+
+    const res = await clonePublicEvent(eventToClone._id, {
+      cloneRegistrations,
+      cloneWalkIns,
+      clonePayments,
+    });
+    if (!res?.error) {
+      await fetchEvents({ silent: true });
+    }
+    setCloneConfirmOpen(false);
+    setEventToClone(null);
+  };
   useEffect(() => {
     const initialSearch = searchParams.get("search");
     if (initialSearch) {
@@ -127,23 +177,22 @@ export default function EventsPage() {
     }
   }, [user, selectedBusiness, setSelectedBusiness]);
 
-  useEffect(() => {
+  const fetchEvents = useCallback(async ({ silent = false } = {}) => {
     if (!selectedBusiness) {
       setEvents([]);
       setLoading(false);
       return;
     }
-
-    const fetchEvents = async () => {
-      setLoading(true);
-      const result = await getAllPublicEventsByBusiness(selectedBusiness);
-      if (!result?.error) setEvents(result.events || []);
-      else setEvents([]);
-      setLoading(false);
-    };
-
-    fetchEvents();
+    if (!silent) setLoading(true);
+    const result = await getAllPublicEventsByBusiness(selectedBusiness);
+    if (!result?.error) setEvents(result.events || []);
+    else if (!silent) setEvents([]);
+    if (!silent) setLoading(false);
   }, [selectedBusiness]);
+
+  useEffect(() => {
+    fetchEvents();
+  }, [fetchEvents]);
 
   const filteredEvents = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
@@ -189,7 +238,7 @@ export default function EventsPage() {
     } else {
       res = await createPublicEvent(formData);
       if (!res?.error) {
-        setEvents((prev) => [...prev, res]);
+        await fetchEvents({ silent: true });
         handleCloseModal();
       }
     }
@@ -303,6 +352,10 @@ export default function EventsPage() {
                       `/cms/modules/eventreg/events/${ev.slug}/registrations`
                     )
                   }
+                  onClone={() => {
+                    setEventToClone(ev);
+                    setCloneConfirmOpen(true);
+                  }}
                   onEdit={() => handleOpenEdit(ev)}
                   onDelete={() => {
                     setEventToDelete(ev);
@@ -342,7 +395,20 @@ export default function EventsPage() {
           confirmButtonText={t.delete}
           confirmButtonIcon={<ICONS.delete />}
         />
-
+        <ConfirmationDialog
+          open={cloneConfirmOpen}
+          title={t.cloneEventTitle}
+          message={`${t.cloneEventMessage} "${eventToClone?.name}"?`}
+          onClose={() => {
+            setCloneConfirmOpen(false);
+            setEventToClone(null);
+          }}
+          onConfirm={handleConfirmClone}
+          confirmButtonText={t.clone}
+          confirmButtonIcon={<ICONS.add />}
+          confirmButtonColor="primary"
+          checkboxOptions={buildCloneCheckboxOptions(eventToClone)}
+        />
         <ShareLinkModal
           open={shareModalOpen}
           onClose={() => setShareModalOpen(false)}

@@ -68,3 +68,10 @@ export const deletePublicEvent = withApiHandler(
   },
   { showSuccess: true }
 );
+export const clonePublicEvent = withApiHandler(
+  async (id, options) => {
+    const { data } = await api.post(`/eventreg/events/${id}/clone`, options);
+    return data;
+  },
+  { showSuccess: true }
+);

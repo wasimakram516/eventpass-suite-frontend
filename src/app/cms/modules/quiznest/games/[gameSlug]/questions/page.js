@@ -366,7 +366,6 @@ export default function QuestionsPage() {
                   key={q._id || idx}
                   sx={{
                     width: { xs: "100%", sm: 360 },
-                    height: "100%",
                     display: "flex",
                     flexDirection: "column",
                     justifyContent: "space-between",

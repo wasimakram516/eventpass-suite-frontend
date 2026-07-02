@@ -208,7 +208,7 @@ export default function CrossZeroGamesPage() {
         ) : (
           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, justifyContent: "center" }}>
             {filteredGames.map((g) => (
-                <AppCard key={g._id} sx={{ p: 2, height: "100%", width: { xs: "100%", sm: 340 }, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
+                <AppCard key={g._id} sx={{ p: 2, width: { xs: "100%", sm: 340 }, display: "flex", flexDirection: "column", justifyContent: "space-between" }}>
                   <Box>
                     <Stack
                       direction="row"
