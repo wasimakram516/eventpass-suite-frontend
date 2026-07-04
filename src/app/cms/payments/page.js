@@ -236,7 +236,7 @@ export default function PaymentsPage() {
 
   const isSuperAdmin = user?.role === "superadmin";
 
-  const { latestPayments, clearLatestPayments } = usePaymentsSocket();
+  const { latestPayments, clearLatestPayments, removedPayments, clearRemovedPayments } = usePaymentsSocket();
 
   useEffect(() => {
     if (viewPayment) setShowPaymentBreakdown(false);
@@ -262,6 +262,26 @@ export default function PaymentsPage() {
     });
     clearLatestPayments();
   }, [latestPayments, clearLatestPayments]);
+
+  // Drop permanently removed payments (e.g. cancelled paid checkout) instantly.
+  useEffect(() => {
+    if (!removedPayments?.length) return;
+    setPayments((prev) => {
+      const ids = new Set();
+      const regIds = new Set();
+      removedPayments.forEach(({ registrationId, paymentIds }) => {
+        (paymentIds || []).forEach((id) => ids.add(id));
+        if (registrationId) regIds.add(registrationId.toString());
+      });
+      const next = prev.filter(
+        (p) => !ids.has(p._id) && !regIds.has(p.registrationId?.toString())
+      );
+      const removedCount = prev.length - next.length;
+      if (removedCount > 0) setTotal((t) => Math.max(0, t - removedCount));
+      return next;
+    });
+    clearRemovedPayments();
+  }, [removedPayments, clearRemovedPayments]);
 
   // Load businesses for superadmin filter
   useEffect(() => {
