@@ -7,6 +7,7 @@ const FLUSH_DELAY_MS = 200;
 
 export default function usePaymentsSocket() {
   const [latestPayments, setLatestPayments] = useState([]);
+  const [removedPayments, setRemovedPayments] = useState([]);
   const queueRef = useRef([]);
   const flushTimeoutRef = useRef(null);
 
@@ -23,6 +24,18 @@ export default function usePaymentsSocket() {
         queueRef.current = [payment, ...queueRef.current.filter((p) => p._id !== payment._id)];
         if (flushTimeoutRef.current) clearTimeout(flushTimeoutRef.current);
         flushTimeoutRef.current = setTimeout(flush, FLUSH_DELAY_MS);
+      },
+      // A permanently removed payment (e.g. cancelled paid checkout). Also drop
+      // any still-queued update for it so a pending card can't slip back in.
+      paymentRemoved: ({ registrationId, paymentIds }) => {
+        if (!registrationId && !(paymentIds?.length)) return;
+        const ids = paymentIds || [];
+        queueRef.current = queueRef.current.filter(
+          (p) =>
+            !ids.includes(p._id) &&
+            (!registrationId || p.registrationId?.toString() !== registrationId.toString())
+        );
+        setRemovedPayments((prev) => [...prev, { registrationId, paymentIds: ids }]);
       },
     }),
     [flush]
@@ -43,7 +56,17 @@ export default function usePaymentsSocket() {
     setLatestPayments([]);
   }, []);
 
+  const clearRemovedPayments = useCallback(() => setRemovedPayments([]), []);
+
   const { socket, connected, connectionError } = useSocket(events);
 
-  return { socket, connected, connectionError, latestPayments, clearLatestPayments };
+  return {
+    socket,
+    connected,
+    connectionError,
+    latestPayments,
+    clearLatestPayments,
+    removedPayments,
+    clearRemovedPayments,
+  };
 }
