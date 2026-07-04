@@ -617,6 +617,20 @@ export default function ViewRegistrations() {
     );
   }, []);
 
+  // A registration permanently removed on the backend (e.g. abandoned/cancelled
+  // paid checkout) is dropped from the list instantly.
+  const handleRegistrationRemoved = useCallback((data) => {
+    const removedId = data?.registrationId?.toString();
+    if (!removedId) return;
+    setAllRegistrations((prev) => {
+      const next = prev.filter((r) => r._id?.toString() !== removedId);
+      if (next.length !== prev.length) {
+        setTotalRegistrations((t) => Math.max(0, t - 1));
+      }
+      return next;
+    });
+  }, []);
+
   // ---- Use hook with stable callbacks ----
   const { uploadProgress, emailProgress } = useEventRegSocket({
     eventId: eventDetails?._id,
@@ -624,6 +638,7 @@ export default function ViewRegistrations() {
     onUploadProgress: handleUploadProgress,
     onEmailProgress: handleEmailProgress,
     onNewRegistration: handleNewRegistration,
+    onRegistrationRemoved: handleRegistrationRemoved,
     onBadgePrinted: handleBadgePrinted,
   });
 
