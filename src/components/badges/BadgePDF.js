@@ -23,6 +23,7 @@ import { resolveBadgeDimensions } from "@/utils/badgeSize";
 
 
 
+
 // --------------------------------------------------------------
 // STATIC FONT REGISTRATION (AUTO-GENERATED)
 // --------------------------------------------------------------
