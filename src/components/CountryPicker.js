@@ -131,7 +131,12 @@ export default function CountryPicker({
             cc.displayName.toLowerCase().includes(q) ||
             cc.country.toLowerCase().includes(q);
           return (
-            <MenuItem key={cc.isoCode} value={cc.isoCode} style={{ display: matches ? "flex" : "none" }}>
+            <MenuItem
+              key={cc.isoCode}
+              value={cc.isoCode}
+              style={{ display: matches ? "flex" : "none" }}
+              sx={{ "&:not(:last-of-type)": { borderBottom: "1px solid", borderColor: "divider" } }}
+            >
               <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
                 <img
                   src={getFlagImageUrl(cc.isoCode)}

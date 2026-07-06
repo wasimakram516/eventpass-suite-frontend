@@ -21,6 +21,8 @@ import {
   InputLabel,
   FormControl,
   IconButton,
+  ListSubheader,
+  InputAdornment,
 } from "@mui/material";
 import { QRCodeCanvas } from "qrcode.react";
 import { useParams, useRouter } from "next/navigation";
@@ -35,6 +37,7 @@ import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import { computePaymentBreakdown, formatOmr } from "@/utils/paymentBreakdown";
 import CountryCodeSelector from "@/components/CountryCodeSelector";
 import CountryPicker from "@/components/CountryPicker";
+import SearchableSelect from "@/components/SearchableSelect";
 import { normalizePhone } from "@/utils/phoneUtils";
 import { DEFAULT_COUNTRY_CODE, DEFAULT_ISO_CODE, COUNTRY_CODES, getCountryCodeByIsoCode } from "@/utils/countryCodes";
 import { validatePhoneNumber } from "@/utils/phoneValidation";
@@ -129,6 +132,7 @@ export default function Registration() {
   const [fileData, setFileData] = useState({});
   const [selectedTicketTypeId, setSelectedTicketTypeId] = useState(null);
   const [ticketTypeError, setTicketTypeError] = useState("");
+  const [ticketSearch, setTicketSearch] = useState("");
   // Paid-event payment summary dialog
   const [showPaymentSummary, setShowPaymentSummary] = useState(false);
   const [paymentPayload, setPaymentPayload] = useState(null);
@@ -659,31 +663,20 @@ export default function Registration() {
 
     if (field.type === "list")
       return (
-        <FormControl
-          fullWidth
+        <SearchableSelect
           key={field.name}
-          sx={{ mb: 2 }}
+          name={field.name}
+          label={fieldLabel}
+          value={formData[field.name] ?? ""}
+          onChange={handleInputChange}
+          options={field.options.map((opt) => ({ value: opt, label: translations[opt] || opt }))}
           required={field.required}
-        >
-          <InputLabel>{fieldLabel}</InputLabel>
-          <Select
-            name={field.name}
-            value={formData[field.name] ?? ""}
-            onChange={handleInputChange}
-            label={fieldLabel}
-          >
-            {field.options.map((opt) => (
-              <MenuItem key={`${field.name}-${opt}`} value={opt}>
-                {translations[opt] || opt}
-              </MenuItem>
-            ))}
-          </Select>
-          {errorMsg && (
-            <Typography variant="caption" color="error">
-              {errorMsg}
-            </Typography>
-          )}
-        </FormControl>
+          error={!!errorMsg}
+          helperText={errorMsg || ""}
+          lang={isArabic ? "ar" : "en"}
+          dir={dir}
+          sx={{ mb: 2 }}
+        />
       );
 
     if (field.type === "country") {
@@ -911,6 +904,7 @@ export default function Registration() {
                       return { ...prev, ...cleared };
                     });
                   }}
+                  onClose={() => setTicketSearch("")}
                   inputProps={{ dir }}
                   sx={{
                     textAlign: "start",
@@ -918,34 +912,77 @@ export default function Registration() {
                       right: isArabic ? "unset" : undefined,
                       left: isArabic ? 7 : "unset",
                     },
-                    "& .MuiSelect-select": isArabic
-                      ? { paddingRight: "14px !important", paddingLeft: "32px !important" }
-                      : {},
+                    "& .MuiSelect-select": {
+                      display: "flex",
+                      justifyContent: "flex-start",
+                      ...(isArabic
+                        ? { paddingRight: "14px !important", paddingLeft: "32px !important" }
+                        : {}),
+                    },
                   }}
+                  MenuProps={{ autoFocus: false }}
+                  slotProps={{ paper: { sx: { maxHeight: 360 } } }}
                   renderValue={(val) => {
                     const tt = event.ticketTypes.find((x) => x._id === val);
                     if (!tt) return "";
                     return (
-                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 1 }}>
-                        <Typography variant="body2" fontWeight={600}>{tt.name}</Typography>
-                        <Typography variant="body2" color="primary.main" fontWeight={700} sx={{ whiteSpace: "nowrap" }}>
+                      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 1, width: "100%" }}>
+                        <Typography variant="body2" fontWeight={600} sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                          {tt.name}
+                        </Typography>
+                        <Typography variant="body2" color="primary.main" fontWeight={700} sx={{ whiteSpace: "nowrap", flexShrink: 0 }}>
                           {tt.price} {t.omr}
                         </Typography>
                       </Box>
                     );
                   }}
                 >
+                  {event.ticketTypes.length > 5 && (
+                    <ListSubheader sx={{ bgcolor: "background.paper", pt: 1, pb: 0.5 }}>
+                      <TextField
+                        size="small"
+                        fullWidth
+                        placeholder={isArabic ? "بحث عن تذكرة…" : "Search tickets…"}
+                        value={ticketSearch}
+                        onChange={(e) => setTicketSearch(e.target.value)}
+                        onKeyDown={(e) => e.stopPropagation()}
+                        autoFocus
+                        slotProps={{
+                          input: {
+                            startAdornment: (
+                              <InputAdornment position="start">
+                                <ICONS.search fontSize="small" />
+                              </InputAdornment>
+                            ),
+                          },
+                        }}
+                      />
+                    </ListSubheader>
+                  )}
                   {event.ticketTypes.map((tt) => {
                     const isSoldOut = tt.capacity !== null && tt.sold >= tt.capacity;
                     const remaining = tt.capacity !== null ? tt.capacity - (tt.sold || 0) : null;
                     const isLowStock = remaining !== null && remaining > 0 && remaining <= 20;
+                    const q = ticketSearch.toLowerCase().trim();
+                    const matches = !q || tt.name.toLowerCase().includes(q);
                     return (
-                      <MenuItem key={tt._id} value={tt._id} disabled={isSoldOut}>
+                      <MenuItem
+                        key={tt._id}
+                        value={tt._id}
+                        disabled={isSoldOut}
+                        style={{ display: event.ticketTypes.length > 5 ? (matches ? "flex" : "none") : "flex" }}
+                        sx={{ "&:not(:last-of-type)": { borderBottom: "1px solid", borderColor: "divider" } }}
+                      >
                         <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", gap: 2, py: 0.5 }}>
-                          <Box sx={{ minWidth: 0 }}>
-                            <Typography variant="body2" fontWeight={600}>{tt.name}</Typography>
+                          {/* The menu Paper's width tracks the (often wide) anchor field —
+                              MUI sets an inline minWidth there that beats any CSS maxWidth
+                              on the Paper — so the wrap has to be forced here instead. */}
+                          <Box sx={{ minWidth: 0, maxWidth: 320 }}>
+                            <Typography variant="body2" fontWeight={600} sx={{ whiteSpace: "normal", wordBreak: "break-word" }}>
+                              {tt.name}
+                            </Typography>
                             {tt.description && (
-                              <Typography variant="caption" color="text.secondary" sx={{ display: "block", lineHeight: 1.3 }}>
+                              <Typography variant="caption" color="text.secondary" sx={{ display: "block", lineHeight: 1.3, whiteSpace: "normal", wordBreak: "break-word" }}>
                                 {tt.description}
                               </Typography>
                             )}
