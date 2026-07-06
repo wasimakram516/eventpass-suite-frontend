@@ -55,6 +55,13 @@ const translations = {
         proceedToPayment: "Proceed to Payment",
         saveChanges: "Save Changes",
         registrationFailed: "Registration failed.",
+        duplicatePaidTitle: "Already registered",
+        duplicatePaidMessage: "This attendee already has a confirmed registration for this event with the same email or phone number. We've re-sent their ticket and confirmation email.",
+        duplicatePendingTitle: "Payment outstanding",
+        duplicatePendingMessage: "This attendee already has a registration in progress for this event, and payment hasn't been completed yet. We've re-sent the secure payment link to their email.",
+        duplicatePendingExpiry: "This link will expire on:",
+        duplicatePendingAutoDelete: "If payment isn't completed before then, this registration will be automatically removed and can be created again.",
+        resumePaymentNow: "Open Payment Link",
     },
     ar: {
         createTitle: "إنشاء تسجيل",
@@ -73,6 +80,13 @@ const translations = {
         proceedToPayment: "المتابعة للدفع",
         saveChanges: "حفظ التغييرات",
         registrationFailed: "فشل التسجيل.",
+        duplicatePaidTitle: "مسجَّل بالفعل",
+        duplicatePaidMessage: "يوجد بالفعل تسجيل مؤكد لهذا الحاضر لهذه الفعالية بنفس البريد الإلكتروني أو رقم الهاتف. لقد أعدنا إرسال التذكرة وتأكيد التسجيل إلى بريده الإلكتروني.",
+        duplicatePendingTitle: "الدفع لم يكتمل بعد",
+        duplicatePendingMessage: "يوجد بالفعل تسجيل قيد الإجراء لهذا الحاضر لهذه الفعالية، ولم تكتمل عملية الدفع بعد. لقد أعدنا إرسال رابط الدفع الآمن إلى بريده الإلكتروني.",
+        duplicatePendingExpiry: "ستنتهي صلاحية الرابط في:",
+        duplicatePendingAutoDelete: "إذا لم تكتمل عملية الدفع قبل ذلك، ستتم إزالة هذا التسجيل تلقائيًا، ويمكن إنشاؤه مرة أخرى.",
+        resumePaymentNow: "فتح رابط الدفع",
     },
 };
 
@@ -104,6 +118,9 @@ export default function RegistrationModal({
     const [paymentPayload, setPaymentPayload] = useState(null);
     const [payProcessing, setPayProcessing] = useState(false);
     const [paymentError, setPaymentError] = useState("");
+    // Set when initiatePayment reports an existing registration (paid or
+    // still-pending) for the same email/phone, instead of creating a new one.
+    const [duplicateNotice, setDuplicateNotice] = useState(null);
 
     const isPaidEvent = !!event?.isPaid;
     const ticketTypes = event?.ticketTypes || [];
@@ -534,15 +551,49 @@ export default function RegistrationModal({
     const handleConfirmPayment = async () => {
         if (!paymentPayload) return;
         setPayProcessing(true);
+        setPaymentError("");
+        setDuplicateNotice(null);
         const result = await initiatePayment(paymentPayload);
 
         setPayProcessing(false);
+
+        const duplicateStatus = result?.duplicateStatus || result?.data?.duplicateStatus;
+        if (!result?.error && duplicateStatus) {
+            // An existing registration already covers this email/phone — show a
+            // clear info message (the backend already re-sent the relevant email)
+            // instead of treating it like a failed attempt.
+            setDuplicateNotice({
+                status: duplicateStatus,
+                expiresAt: result?.expiresAt || result?.data?.expiresAt || null,
+                sessionUrl: result?.sessionUrl || result?.data?.sessionUrl || null,
+            });
+            return;
+        }
 
         if (result?.created) {
             setShowPaymentSummary(false);
             onPaymentInitiated?.();
         } else {
             setPaymentError(result?.message || t.registrationFailed);
+        }
+    };
+
+    // Formats a payment-link expiry using the staff member's own browser
+    // timezone (display only — no server-side timezone detection needed).
+    const formatExpiryLocal = (expiresAt) => {
+        if (!expiresAt) return "";
+        try {
+            return new Intl.DateTimeFormat(dir === "rtl" ? "ar-EG" : "en-US", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+                timeZoneName: "shortOffset",
+            }).format(new Date(expiresAt));
+        } catch {
+            return new Date(expiresAt).toLocaleString();
         }
     };
 
@@ -788,7 +839,7 @@ export default function RegistrationModal({
             {/* ── Payment summary dialog (mirrors public registration page) ── */}
             <Dialog
                 open={showPaymentSummary}
-                onClose={() => !payProcessing && setShowPaymentSummary(false)}
+                onClose={() => { if (!payProcessing) { setShowPaymentSummary(false); setDuplicateNotice(null); } }}
                 maxWidth="xs"
                 fullWidth
                 slotProps={{
@@ -898,31 +949,90 @@ export default function RegistrationModal({
                         </Box>
                     )}
 
-                    {paymentError && <Alert severity="error" sx={{ mt: 2 }}>{paymentError}</Alert>}
+                    {duplicateNotice ? (
+                        <Box
+                            sx={{
+                                backgroundColor: "#e3f2fd",
+                                borderLeft: dir === "rtl" ? "none" : "4px solid #1976d2",
+                                borderRight: dir === "rtl" ? "4px solid #1976d2" : "none",
+                                borderRadius: 1,
+                                p: 2,
+                                mt: 2,
+                                textAlign: dir === "rtl" ? "right" : "left",
+                            }}
+                        >
+                            <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 0.5 }}>
+                                {duplicateNotice.status === "paid" ? t.duplicatePaidTitle : t.duplicatePendingTitle}
+                            </Typography>
+                            <Typography variant="body2">
+                                {duplicateNotice.status === "paid" ? t.duplicatePaidMessage : t.duplicatePendingMessage}
+                            </Typography>
+                            {duplicateNotice.status === "pending" && duplicateNotice.expiresAt && (
+                                <Typography variant="body2" sx={{ mt: 1 }}>
+                                    <strong>{t.duplicatePendingExpiry}</strong> {formatExpiryLocal(duplicateNotice.expiresAt)}
+                                </Typography>
+                            )}
+                            {duplicateNotice.status === "pending" && (
+                                <Typography variant="body2" sx={{ mt: 1 }}>
+                                    {t.duplicatePendingAutoDelete}
+                                </Typography>
+                            )}
+                        </Box>
+                    ) : (
+                        paymentError && <Alert severity="error" sx={{ mt: 2 }}>{paymentError}</Alert>
+                    )}
                 </DialogContent>
 
                 <DialogActions sx={{ px: 3, pb: 3, pt: 0, gap: 1 }}>
-                    <Button
-                        onClick={() => setShowPaymentSummary(false)}
-                        disabled={payProcessing}
-                        sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2.5, color: "text.secondary" }}
-                    >
-                        {t.cancel}
-                    </Button>
-                    <Button
-                        variant="contained"
-                        onClick={handleConfirmPayment}
-                        disabled={payProcessing || !paymentBreakdown}
-                        startIcon={!payProcessing ? <ICONS.payment /> : undefined}
-                        sx={{
-                            textTransform: "none", fontWeight: 700, borderRadius: 2.5,
-                            px: 3, py: 1.1,
-                            boxShadow: "0 8px 20px rgba(20,112,138,0.3)",
-                            ...getStartIconSpacing("ltr"),
-                        }}
-                    >
-                        {payProcessing ? <CircularProgress size={22} color="inherit" /> : "Confirm & Pay"}
-                    </Button>
+                    {duplicateNotice ? (
+                        <>
+                            <Button
+                                onClick={() => { setShowPaymentSummary(false); setDuplicateNotice(null); }}
+                                sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2.5, color: "text.secondary" }}
+                            >
+                                {t.cancel}
+                            </Button>
+                            {duplicateNotice.status === "pending" && duplicateNotice.sessionUrl && (
+                                <Button
+                                    variant="contained"
+                                    onClick={() => window.open(duplicateNotice.sessionUrl, "_blank", "noopener,noreferrer")}
+                                    startIcon={<ICONS.payment />}
+                                    sx={{
+                                        textTransform: "none", fontWeight: 700, borderRadius: 2.5,
+                                        px: 3, py: 1.1,
+                                        boxShadow: "0 8px 20px rgba(20,112,138,0.3)",
+                                        ...getStartIconSpacing("ltr"),
+                                    }}
+                                >
+                                    {t.resumePaymentNow}
+                                </Button>
+                            )}
+                        </>
+                    ) : (
+                        <>
+                            <Button
+                                onClick={() => setShowPaymentSummary(false)}
+                                disabled={payProcessing}
+                                sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2.5, color: "text.secondary" }}
+                            >
+                                {t.cancel}
+                            </Button>
+                            <Button
+                                variant="contained"
+                                onClick={handleConfirmPayment}
+                                disabled={payProcessing || !paymentBreakdown}
+                                startIcon={!payProcessing ? <ICONS.payment /> : undefined}
+                                sx={{
+                                    textTransform: "none", fontWeight: 700, borderRadius: 2.5,
+                                    px: 3, py: 1.1,
+                                    boxShadow: "0 8px 20px rgba(20,112,138,0.3)",
+                                    ...getStartIconSpacing("ltr"),
+                                }}
+                            >
+                                {payProcessing ? <CircularProgress size={22} color="inherit" /> : "Confirm & Pay"}
+                            </Button>
+                        </>
+                    )}
                 </DialogActions>
             </Dialog>
         </>
