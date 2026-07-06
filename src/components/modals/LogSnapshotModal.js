@@ -112,6 +112,30 @@ function guessTitle(obj) {
   return null;
 }
 
+// Reduces a raw User-Agent string down to a short, readable "Browser on OS"
+// summary — the full string is still available on hover, but dumping it
+// inline (often 100+ characters, wrapping across several lines) is unreadable.
+function parseUserAgent(ua) {
+  if (!ua || typeof ua !== "string") return null;
+
+  let browser = "Unknown browser";
+  if (/Edg\//.test(ua)) browser = "Edge";
+  else if (/OPR\//.test(ua)) browser = "Opera";
+  else if (/Chrome\//.test(ua) && !/Chromium/.test(ua)) browser = "Chrome";
+  else if (/Firefox\//.test(ua)) browser = "Firefox";
+  else if (/Safari\//.test(ua) && /Version\//.test(ua)) browser = "Safari";
+
+  let os = "Unknown OS";
+  if (/Windows NT 10/.test(ua)) os = "Windows 10/11";
+  else if (/Windows NT/.test(ua)) os = "Windows";
+  else if (/Mac OS X/.test(ua)) os = "macOS";
+  else if (/Android/.test(ua)) os = "Android";
+  else if (/iPhone|iPad/.test(ua)) os = "iOS";
+  else if (/Linux/.test(ua)) os = "Linux";
+
+  return `${browser} on ${os}`;
+}
+
 function sectionCardSx(depth) {
   return {
     borderRadius: 2.5,
@@ -282,6 +306,10 @@ export default function LogSnapshotModal({ open, onClose, log }) {
           {entries.map(([k, v]) => renderValue(k, v, depth + 1))}
         </Box>
       );
+    }
+
+    if (key === "userAgent" && typeof value === "string") {
+      return row(key, parseUserAgent(value) || formatPrimitive(value));
     }
 
     return row(key, formatPrimitive(value));
