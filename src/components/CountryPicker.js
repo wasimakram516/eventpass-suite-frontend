@@ -67,7 +67,7 @@ export default function CountryPicker({
 
   const selected = UNIQUE_COUNTRIES.find((cc) => cc.isoCode === value?.toLowerCase());
   const q = search.toLowerCase().trim();
-  const hasNoMatch = q && !UNIQUE_COUNTRIES.some(cc =>
+  const hasNoMatch = !!q && !UNIQUE_COUNTRIES.some(cc =>
     cc.displayName.toLowerCase().includes(q) || cc.country.toLowerCase().includes(q)
   );
 
