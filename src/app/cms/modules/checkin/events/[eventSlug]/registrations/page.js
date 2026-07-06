@@ -2579,6 +2579,13 @@ export default function ViewRegistrations() {
           setNotifyModalOpen(false);
           setRegistrationToNotify(null);
         }}
+        onSent={(channel) => {
+          const field = channel === "whatsapp" ? "whatsappSent" : "emailSent";
+          const id = registrationToNotify?._id;
+          setAllRegistrations((prev) =>
+            prev.map((r) => (r._id === id ? { ...r, [field]: true } : r))
+          );
+        }}
         registration={registrationToNotify}
       />
     </Container>

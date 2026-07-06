@@ -45,7 +45,7 @@ const translations = {
   },
 };
 
-const SingleNotificationModal = ({ open, onClose, registration, showReminderOption = false }) => {
+const SingleNotificationModal = ({ open, onClose, onSent, registration, showReminderOption = false }) => {
   const { t, dir } = useI18nLayout(translations);
   const [notificationType, setNotificationType] = useState("default");
   const [subject, setSubject] = useState("");
@@ -121,6 +121,7 @@ const SingleNotificationModal = ({ open, onClose, registration, showReminderOpti
         },
         notificationType === "custom" ? attachedFile : undefined
       );
+      onSent?.(channel);
       handleClose();
     } finally {
       setSending(false);
