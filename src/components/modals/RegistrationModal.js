@@ -21,11 +21,14 @@ import {
     CircularProgress,
     IconButton,
     Alert,
+    ListSubheader,
+    InputAdornment,
 } from "@mui/material";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import CountryCodeSelector from "@/components/CountryCodeSelector";
 import CountryPicker from "@/components/CountryPicker";
+import SearchableSelect from "@/components/SearchableSelect";
 import { DEFAULT_COUNTRY_CODE, DEFAULT_ISO_CODE, COUNTRY_CODES, getCountryCodeByIsoCode } from "@/utils/countryCodes";
 import { normalizePhone } from "@/utils/phoneUtils";
 import { validatePhoneNumber } from "@/utils/phoneValidation";
@@ -94,6 +97,7 @@ export default function RegistrationModal({
     // ── Paid-event: ticket selection ──────────────────────────────────────────
     const [selectedTicketTypeId, setSelectedTicketTypeId] = useState("");
     const [ticketTypeError, setTicketTypeError] = useState("");
+    const [ticketSearch, setTicketSearch] = useState("");
 
     // ── Paid-event: payment summary dialog ────────────────────────────────────
     const [showPaymentSummary, setShowPaymentSummary] = useState(false);
@@ -566,13 +570,18 @@ export default function RegistrationModal({
 
         if (["list", "select", "dropdown"].includes(f.inputType)) {
             return (
-                <FormControl key={f.inputName} fullWidth size="small" required={required} error={!!errorMsg}>
-                    <InputLabel>{f.inputName}</InputLabel>
-                    <Select value={value} onChange={(e) => handleChange(f.inputName, e.target.value)} label={f.inputName}>
-                        {f.values?.map((opt) => <MenuItem key={opt} value={opt}>{opt}</MenuItem>)}
-                    </Select>
-                    {errorMsg && <FormHelperText>{errorMsg}</FormHelperText>}
-                </FormControl>
+                <SearchableSelect
+                    key={f.inputName}
+                    name={f.inputName}
+                    label={f.inputName}
+                    value={value}
+                    onChange={(e) => handleChange(f.inputName, e.target.value)}
+                    options={f.values || []}
+                    required={required}
+                    error={!!errorMsg}
+                    helperText={errorMsg || ""}
+                    size="small"
+                />
             );
         }
 
@@ -661,30 +670,71 @@ export default function RegistrationModal({
                                     label={mode === "create" ? `${t.selectTicket} *` : t.ticket}
                                     disabled={mode === "edit" && registration?.paymentStatus === "paid"}
                                     onChange={(e) => handleTicketChange(e.target.value)}
+                                    onClose={() => setTicketSearch("")}
+                                    sx={{ "& .MuiSelect-select": { display: "flex", justifyContent: "flex-start" } }}
+                                    MenuProps={{ autoFocus: false }}
+                                    slotProps={{ paper: { sx: { maxHeight: 360 } } }}
                                     renderValue={(val) => {
                                         const tt = ticketTypes.find(x => x._id === val);
                                         if (!tt) return "";
                                         return (
-                                            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 1 }}>
-                                                <Typography variant="body2" fontWeight={600}>{tt.name}</Typography>
-                                                <Typography variant="body2" color="primary.main" fontWeight={700} sx={{ whiteSpace: "nowrap" }}>
+                                            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 1, width: "100%" }}>
+                                                <Typography variant="body2" fontWeight={600} sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                                    {tt.name}
+                                                </Typography>
+                                                <Typography variant="body2" color="primary.main" fontWeight={700} sx={{ whiteSpace: "nowrap", flexShrink: 0 }}>
                                                     {tt.price} OMR
                                                 </Typography>
                                             </Box>
                                         );
                                     }}
                                 >
+                                    {ticketTypes.length > 5 && (
+                                        <ListSubheader sx={{ bgcolor: "background.paper", pt: 1, pb: 0.5 }}>
+                                            <TextField
+                                                size="small"
+                                                fullWidth
+                                                placeholder="Search tickets…"
+                                                value={ticketSearch}
+                                                onChange={(e) => setTicketSearch(e.target.value)}
+                                                onKeyDown={(e) => e.stopPropagation()}
+                                                autoFocus
+                                                slotProps={{
+                                                    input: {
+                                                        startAdornment: (
+                                                            <InputAdornment position="start">
+                                                                <ICONS.search fontSize="small" />
+                                                            </InputAdornment>
+                                                        ),
+                                                    },
+                                                }}
+                                            />
+                                        </ListSubheader>
+                                    )}
                                     {ticketTypes.map((tt) => {
                                         const isSoldOut = tt.capacity !== null && tt.sold >= tt.capacity;
                                         const remaining = tt.capacity !== null ? tt.capacity - (tt.sold || 0) : null;
                                         const isLowStock = remaining !== null && remaining > 0 && remaining <= 20;
+                                        const q = ticketSearch.toLowerCase().trim();
+                                        const matches = !q || tt.name.toLowerCase().includes(q);
                                         return (
-                                            <MenuItem key={tt._id} value={tt._id} disabled={isSoldOut}>
+                                            <MenuItem
+                                                key={tt._id}
+                                                value={tt._id}
+                                                disabled={isSoldOut}
+                                                style={{ display: ticketTypes.length > 5 ? (matches ? "flex" : "none") : "flex" }}
+                                                sx={{ "&:not(:last-of-type)": { borderBottom: "1px solid", borderColor: "divider" } }}
+                                            >
                                                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", gap: 2, py: 0.5 }}>
-                                                    <Box sx={{ minWidth: 0 }}>
-                                                        <Typography variant="body2" fontWeight={600}>{tt.name}</Typography>
+                                                    {/* Menu Paper width tracks the anchor field's (often wide) width via
+                                                        an inline minWidth MUI sets, which beats a CSS maxWidth on the
+                                                        Paper — so the wrap is forced here at the content level instead. */}
+                                                    <Box sx={{ minWidth: 0, maxWidth: 320 }}>
+                                                        <Typography variant="body2" fontWeight={600} sx={{ whiteSpace: "normal", wordBreak: "break-word" }}>
+                                                            {tt.name}
+                                                        </Typography>
                                                         {tt.description && (
-                                                            <Typography variant="caption" color="text.secondary" sx={{ display: "block", lineHeight: 1.3 }}>
+                                                            <Typography variant="caption" color="text.secondary" sx={{ display: "block", lineHeight: 1.3, whiteSpace: "normal", wordBreak: "break-word" }}>
                                                                 {tt.description}
                                                             </Typography>
                                                         )}
