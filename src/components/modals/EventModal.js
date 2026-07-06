@@ -33,6 +33,7 @@ import { uploadMediaFiles, uploadSingleFile } from "@/utils/mediaUpload";
 import MediaUploadProgress from "@/components/MediaUploadProgress";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import BadgeCustomizationModal from "@/components/modals/BadgeCustomizationModal";
+import { RESERVED_CUSTOMIZATION_KEYS } from "@/utils/badgeSize";
 import DefaultQrWrapperModal from "@/components/modals/DefaultQrWrapperModal";
 import { updatePublicEventCustomQrWrapper } from "@/services/eventreg/eventService";
 import { updateCheckInEventCustomQrWrapper } from "@/services/checkin/checkinEventService";
@@ -1459,7 +1460,7 @@ const EventModal = ({
           ? (() => {
             const allowed = new Set((formData.formFields || []).map(f => f.inputName));
             return Object.fromEntries(
-              Object.entries(formData.badgeCustomizations || {}).filter(([k]) => allowed.has(k) || k === "_qrCode")
+              Object.entries(formData.badgeCustomizations || {}).filter(([k]) => allowed.has(k) || RESERVED_CUSTOMIZATION_KEYS.includes(k))
             );
           })()
           : formData.badgeCustomizations || {},
@@ -3764,7 +3765,7 @@ const EventModal = ({
                   <Button
                     variant="contained"
                     onClick={() => {
-                      if (!Object.keys(formData.badgeCustomizations || {}).some(k => k !== '_qrCode')) {
+                      if (!Object.keys(formData.badgeCustomizations || {}).some(k => !RESERVED_CUSTOMIZATION_KEYS.includes(k))) {
                         showMessage("Please select at least one field to customize.", "warning");
                         return;
                       }
@@ -3930,7 +3931,7 @@ const EventModal = ({
           setFormData((prev) => ({ ...prev, badgeCustomizations: customizations }));
         }}
         selectedFields={formData.useCustomFields
-          ? Object.keys(formData.badgeCustomizations || {}).filter(k => k !== '_qrCode')
+          ? Object.keys(formData.badgeCustomizations || {}).filter(k => !RESERVED_CUSTOMIZATION_KEYS.includes(k))
           : ["Full Name", "Company"]}
         allFields={formData.useCustomFields ? formData.formFields : [
           { inputName: "Full Name" },
