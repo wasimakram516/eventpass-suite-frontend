@@ -36,6 +36,7 @@ import {
   Select,
   MenuItem,
   CircularProgress,
+  Tooltip,
 } from "@mui/material";
 import ArabicPagination from "@/components/ArabicPagination";
 import LoadingState from "@/components/LoadingState";
@@ -52,6 +53,7 @@ import { formatDateTimeWithLocale } from "@/utils/dateUtils";
 import { toArabicDigits } from "@/utils/arabicDigits";
 import useLogsSocket from "@/hooks/useLogsSocket";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
+import LogSnapshotModal from "@/components/modals/LogSnapshotModal";
 import { getRegistrationMeta } from "@/services/eventreg/registrationService";
 import { getPollMeta } from "@/services/votecast/pollService";
 import { getQuestionMeta as getQuiznestQuestionMeta } from "@/services/quiznest/questionService";
@@ -91,6 +93,9 @@ const translations = {
     all: "All",
     last30Days: "Last 30 days",
     last7Days: "Last 7 days",
+    viewSnapshot: "View Details",
+    goToRecord: "Go to record",
+    permanentlyDeleted: "Permanently Deleted",
   },
   ar: {
     title: "سجل الأنشطة",
@@ -122,6 +127,9 @@ const translations = {
     all: "الكل",
     last30Days: "آخر ٣٠ يومًا",
     last7Days: "آخر ٧ أيام",
+    viewSnapshot: "عرض التفاصيل",
+    goToRecord: "الانتقال إلى السجل",
+    permanentlyDeleted: "حذف نهائي",
   },
 };
 
@@ -139,6 +147,7 @@ export default function LogsPage() {
           business: "الشركة",
           module: "الوحدة",
           time: "الوقت",
+          actions: "الإجراءات",
         }
       : {
           user: "User",
@@ -148,6 +157,7 @@ export default function LogsPage() {
           business: "Business",
           module: "Module",
           time: "Time",
+          actions: "Actions",
         };
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -175,6 +185,7 @@ export default function LogsPage() {
   const [filterUserId, setFilterUserId] = useState("");
   const [businessesList, setBusinessesList] = useState([]);
   const [allUsersList, setAllUsersList] = useState([]);
+  const [viewLog, setViewLog] = useState(null);
 
   const { latestLogs, clearLatestLogs } = useLogsSocket();
 
@@ -399,6 +410,12 @@ export default function LogsPage() {
     }
 
     if (logType === "login") {
+      return;
+    }
+
+    // A permanently deleted record has nothing left to navigate to.
+    if (logType === "delete" && log?.meta?.hardDelete) {
+      setClickLoading(false);
       return;
     }
 
@@ -663,10 +680,12 @@ export default function LogsPage() {
   const formatLogType = (logType) =>
     logType ? logType.charAt(0).toUpperCase() + logType.slice(1).toLowerCase() : "-";
 
-  const getLogTypeChipProps = (logType) => {
+  const getLogTypeChipProps = (log) => {
+    const logType = log?.logType;
     const type = (logType || "").toLowerCase();
+    const isHardDelete = type === "delete" && !!log?.meta?.hardDelete;
     const base = {
-      label: formatLogType(logType),
+      label: isHardDelete ? t.permanentlyDeleted : formatLogType(logType),
       size: "small",
       sx: {
         fontWeight: 700,
@@ -678,6 +697,13 @@ export default function LogsPage() {
     if (type === "create") return { ...base, color: "success", variant: "outlined" };
     if (type === "update") return { ...base, color: "info", variant: "outlined" };
     if (type === "restore") return { ...base, color: "success", variant: "filled" };
+    if (isHardDelete) {
+      return {
+        ...base,
+        sx: { ...base.sx, bgcolor: "#4a0404", color: "#fff", minWidth: 130 },
+        variant: "filled",
+      };
+    }
     if (type === "delete") return { ...base, color: "error", variant: "filled" };
     if (type === "login") return { ...base, color: "secondary", variant: "filled" };
     return { ...base, color: "default", variant: "outlined" };
@@ -703,27 +729,50 @@ export default function LogsPage() {
     const businessName = log.businessId?.name || "-";
     const itemName = getDisplayItemName(log);
     const isLogin = (log.logType || "").toLowerCase() === "login";
+    const canGoToRecord = !isLogin && !log?.meta?.hardDelete;
 
     return (
       <TableRow
         key={log._id}
         sx={{
-          "&:hover": { bgcolor: isLogin ? undefined : "action.hover" },
+          "&:hover": { bgcolor: "action.hover" },
           "&:nth-of-type(odd)": { bgcolor: "action.selected" },
           "&:last-child td": { border: 0 },
-          cursor: isLogin ? "default" : "pointer",
         }}
-        onClick={() => !isLogin && handleLogClick(log)}
       >
         <TableCell sx={{ py: 1.5, textAlign: align }}>{userName}</TableCell>
         <TableCell sx={{ py: 1.5 }}>
-          <Chip {...getLogTypeChipProps(log.logType)} />
+          <Chip {...getLogTypeChipProps(log)} />
         </TableCell>
         <TableCell sx={{ py: 1.5, textAlign: align }}>{log.itemType || "-"}</TableCell>
         <TableCell sx={{ py: 1.5, textAlign: align }}>{itemName}</TableCell>
         <TableCell sx={{ py: 1.5, textAlign: align }}>{businessName}</TableCell>
         <TableCell sx={{ py: 1.5, textAlign: align }}>{log.module || "-"}</TableCell>
         <TableCell sx={{ py: 1.5, textAlign: align }}>{renderCreatedAt(log.createdAt)}</TableCell>
+        <TableCell sx={{ py: 1.5 }}>
+          <Stack direction="row" spacing={0.5}>
+            <Tooltip title={t.viewSnapshot}>
+              <IconButton
+                size="small"
+                onClick={() => setViewLog(log)}
+                sx={{ color: "primary.main" }}
+              >
+                <ICONS.view fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            {canGoToRecord && (
+              <Tooltip title={t.goToRecord}>
+                <IconButton
+                  size="small"
+                  onClick={() => handleLogClick(log)}
+                  sx={{ color: "text.secondary" }}
+                >
+                  <ICONS.next fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            )}
+          </Stack>
+        </TableCell>
       </TableRow>
     );
   };
@@ -735,6 +784,7 @@ export default function LogsPage() {
     const itemType = log.itemType || "-";
     const moduleName = log.module || "-";
     const isLogin = (log.logType || "").toLowerCase() === "login";
+    const canGoToRecord = !isLogin && !log?.meta?.hardDelete;
 
     return (
       <ListItem
@@ -742,9 +792,7 @@ export default function LogsPage() {
         sx={{
           px: 0,
           py: 1.5,
-          cursor: isLogin ? "default" : "pointer",
         }}
-        onClick={() => !isLogin && handleLogClick(log)}
       >
         <Card
           elevation={0}
@@ -779,7 +827,29 @@ export default function LogsPage() {
                 }}>
                 {userName}
               </Typography>
-              <Chip {...getLogTypeChipProps(log.logType)} />
+              <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
+                <Chip {...getLogTypeChipProps(log)} />
+                <Tooltip title={t.viewSnapshot}>
+                  <IconButton
+                    size="small"
+                    onClick={() => setViewLog(log)}
+                    sx={{ color: "primary.main" }}
+                  >
+                    <ICONS.view fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+                {canGoToRecord && (
+                  <Tooltip title={t.goToRecord}>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleLogClick(log)}
+                      sx={{ color: "text.secondary" }}
+                    >
+                      <ICONS.next fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                )}
+              </Stack>
             </Stack>
             <Stack spacing={0.75} sx={{ mt: 1.5 }}>
               <Typography
@@ -871,6 +941,8 @@ export default function LogsPage() {
         sx={{ px: { xs: 2, md: 3 } }}
       >
         <BreadcrumbsNav />
+
+        <LogSnapshotModal open={!!viewLog} onClose={() => setViewLog(null)} log={viewLog} />
 
         <Dialog open={filtersOpen} onClose={() => setFiltersOpen(false)} fullWidth maxWidth="sm" dir={dir}>
           <DialogTitle
@@ -1345,6 +1417,7 @@ export default function LogsPage() {
                   <TableCell sx={{ fontWeight: 700, bgcolor: "background.default", py: 1.5, textAlign: align }}>{labels.business}</TableCell>
                   <TableCell sx={{ fontWeight: 700, bgcolor: "background.default", py: 1.5, textAlign: align }}>{labels.module}</TableCell>
                   <TableCell sx={{ fontWeight: 700, bgcolor: "background.default", py: 1.5, textAlign: align }}>{labels.time}</TableCell>
+                  <TableCell sx={{ fontWeight: 700, bgcolor: "background.default", py: 1.5 }}>{labels.actions}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>{paginatedLogs.map((log) => renderRowDesktop(log))}</TableBody>

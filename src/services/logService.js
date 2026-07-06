@@ -11,6 +11,13 @@ export const getLogStats = withApiHandler(async (params = {}) => {
   return data;
 });
 
+// Full record snapshot for the "View" modal — recorded snapshot if present,
+// otherwise a live lookup fallback for logs written before snapshots existed.
+export const getLogSnapshot = withApiHandler(async (logId) => {
+  const { data } = await api.get(`/logs/${logId}/snapshot`);
+  return data;
+});
+
 // Export logs (all or filtered by query params) as CSV
 export const exportLogs = async (params = {}) => {
   const qs = new URLSearchParams(params).toString();
