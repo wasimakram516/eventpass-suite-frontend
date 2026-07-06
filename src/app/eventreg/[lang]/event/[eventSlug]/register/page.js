@@ -40,6 +40,7 @@ import { DEFAULT_COUNTRY_CODE, DEFAULT_ISO_CODE, COUNTRY_CODES, getCountryCodeBy
 import { validatePhoneNumber } from "@/utils/phoneValidation";
 import { uploadSingleFile } from "@/utils/mediaUpload";
 import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
+import { RESERVED_CUSTOMIZATION_KEYS } from "@/utils/badgeSize";
 import { useMessage } from "@/contexts/MessageContext";
 import { downloadDefaultQrWrapperAsImage, hasDefaultQrWrapperDesign, hasWrapperDesign } from "@/utils/defaultQrWrapperDownload";
 import BadgePreview from "@/components/badges/BadgePreview";
@@ -1004,7 +1005,7 @@ export default function Registration() {
               registration={formData}
               event={translatedEvent || event}
               preview={true}
-              badgeFields={(() => { const keys = Object.keys(event?.customizations || {}).filter(k => k !== '_qrCode'); return keys.length > 0 ? keys : ["Full Name", "Company"]; })()}
+              badgeFields={(() => { const keys = Object.keys(event?.customizations || {}).filter(k => !RESERVED_CUSTOMIZATION_KEYS.includes(k)); return keys.length > 0 ? keys : ["Full Name", "Company"]; })()}
               phoneIsoCodes={countryIsoCodes}
               filePreviews={Object.fromEntries(Object.entries(fileData).map(([k, v]) => [k, v ? { preview: v.preview, fileType: v.file?.type || "" } : null]).filter(([, v]) => v && v.preview))}
             />
