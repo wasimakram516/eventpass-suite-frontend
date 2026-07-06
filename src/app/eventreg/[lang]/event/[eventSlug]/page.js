@@ -14,6 +14,7 @@ import VolumeOffIcon from "@mui/icons-material/VolumeOff";
 import HorizontalCarousel from "@/components/HorizontalCarousel";
 import { getPublicEventBySlug } from "@/services/eventreg/eventService";
 import { translateTexts } from "@/services/translationService";
+import { applyTranslationOverridesToArray } from "@/utils/translationOverrides";
 import Background from "@/components/Background";
 import EventWelcomeCard from "@/components/cards/EventWelcomeCard";
 import ICONS from "@/utils/iconUtil";
@@ -81,7 +82,8 @@ export default function EventDetails() {
         return;
       }
 
-      const results = await translateTexts(textsToTranslate, targetLang);
+      const rawResults = await translateTexts(textsToTranslate, targetLang);
+      const results = applyTranslationOverridesToArray(rawResults, targetLang);
 
       // Map translations back to event fields
       const translated = {
