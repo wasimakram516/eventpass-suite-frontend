@@ -32,6 +32,7 @@ import { initiatePayment } from "@/services/eventreg/paymentService";
 import { getPublicEventBySlug } from "@/services/eventreg/eventService";
 import ICONS from "@/utils/iconUtil";
 import { translateTexts } from "@/services/translationService";
+import { applyTranslationOverridesToArray } from "@/utils/translationOverrides";
 import Background from "@/components/Background";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import { computePaymentBreakdown, formatOmr } from "@/utils/paymentBreakdown";
@@ -278,7 +279,8 @@ export default function Registration() {
       }
 
       try {
-        const results = await translateTexts(textArray, lang);
+        const rawResults = await translateTexts(textArray, lang);
+        const results = applyTranslationOverridesToArray(rawResults, lang);
         const map = {};
         textArray.forEach((txt, i) => (map[txt] = results[i] || txt));
 
