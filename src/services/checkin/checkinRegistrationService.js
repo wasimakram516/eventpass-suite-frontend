@@ -210,3 +210,22 @@ export const sendCheckInBulkWhatsApp = withApiHandler(
   },
   { showSuccess: true }
 );
+// Send notification to a single registration
+export const sendCheckInSingleNotification = withApiHandler(
+  async (id, payload, file = null) => {
+    const formData = new FormData();
+    Object.keys(payload).forEach((key) => {
+      if (payload[key] !== undefined && payload[key] !== null) {
+        formData.append(key, payload[key]);
+      }
+    });
+    if (file) formData.append("file", file);
+
+    const { data } = await api.post(
+      `/checkin/registrations/${id}/send-notification`,
+      formData
+    );
+    return data;
+  },
+  { showSuccess: true }
+);

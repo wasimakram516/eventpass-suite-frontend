@@ -56,6 +56,7 @@ import useCheckInSocket from "@/hooks/modules/checkin/useCheckInSocket";
 import RegistrationModal from "@/components/modals/RegistrationModal";
 import WalkInModal from "@/components/modals/WalkInModal";
 import BulkEmailModal from "@/components/modals/BulkEmailModal";
+import SingleNotificationModal from "@/components/modals/SingleNotificationModal";
 import ShareLinkModal from "@/components/modals/ShareLinkModal";
 import { useMessage } from "@/contexts/MessageContext";
 import { formatDateTimeWithLocale } from "@/utils/dateUtils";
@@ -159,6 +160,11 @@ const translations = {
     sort: "Sort",
     mostRecent: "Most Recent",
     oldest: "Oldest",
+    notifyTitle: "Notify",
+    default: "Default",
+    custom: "Custom",
+    sendWhatsApp: "Send WhatsApp",
+    sendEmail: "Send Email",
   },
   ar: {
     title: "إدارة التسجيلات",
@@ -242,6 +248,11 @@ const translations = {
     sort: "ترتيب",
     mostRecent: "الأحدث أولاً",
     oldest: "الأقدم أولاً",
+    notifyTitle: "إرسال إشعار",
+    default: "الافتراضي",
+    custom: "مخصص",
+    sendWhatsApp: "إرسال عبر واتساب",
+    sendEmail: "إرسال بريد إلكتروني",
   },
 };
 
@@ -328,6 +339,8 @@ export default function ViewRegistrations() {
   const [sendingEmails, setSendingEmails] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [registrationToShare, setRegistrationToShare] = useState(null);
+  const [notifyModalOpen, setNotifyModalOpen] = useState(false);
+  const [registrationToNotify, setRegistrationToNotify] = useState(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -1454,7 +1467,7 @@ export default function ViewRegistrations() {
             }`,
           ]);
         }
-        
+
         if (filters.scannedAtFromMs || filters.scannedAtToMs) {
           activeFilterEntries.push([
             "Scanned At",
@@ -1467,7 +1480,7 @@ export default function ViewRegistrations() {
             }`,
           ]);
         }
-        
+
         if (filters.scannedAtFromMs || filters.scannedAtToMs) {
           activeFilterEntries.push([
             "Scanned At",
@@ -1591,178 +1604,178 @@ export default function ViewRegistrations() {
           >
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, justifyContent: "center" }}>
               {paginated.map((reg) => (
-                  <Card
-                    key={reg._id}
+                <Card
+                  key={reg._id}
+                  sx={{
+                    width: { xs: "100%", sm: 420 },
+                    maxWidth: 420,
+                    height: "100%",
+                    borderRadius: 4,
+                    overflow: "hidden",
+                    boxShadow: "0 6px 18px rgba(0,0,0,0.12)",
+                    display: "flex",
+                    flexDirection: "column",
+                    transition: "all 0.3s ease",
+                    "&:hover": {
+                      transform: "translateY(-2px)",
+                      boxShadow: "0 12px 28px rgba(0,0,0,0.25)",
+                    },
+                  }}
+                >
+                  <Box
                     sx={{
-                      width: { xs: "100%", sm: 420 },
-                      maxWidth: 420,
-                      height: "100%",
-                      borderRadius: 4,
-                      overflow: "hidden",
-                      boxShadow: "0 6px 18px rgba(0,0,0,0.12)",
-                      display: "flex",
-                      flexDirection: "column",
-                      transition: "all 0.3s ease",
-                      "&:hover": {
-                        transform: "translateY(-2px)",
-                        boxShadow: "0 12px 28px rgba(0,0,0,0.25)",
-                      },
+                      background: "linear-gradient(to right, #f5f5f5, #fafafa)",
+                      borderBottom: "1px solid",
+                      borderColor: "divider",
+                      p: 2,
                     }}
                   >
-                    <Box
-                      sx={{
-                        background: "linear-gradient(to right, #f5f5f5, #fafafa)",
-                        borderBottom: "1px solid",
-                        borderColor: "divider",
-                        p: 2,
-                      }}
-                    >
-                      <Stack spacing={0.6}>
-                        <Stack
-                          direction="row"
-                          sx={{
-                            alignItems: "center",
-                            gap: dir === "rtl" ? 1 : 1,
-                            width: "100%"
-                          }}>
-                          <ICONS.qrcode
-                            sx={{ fontSize: 28, color: "primary.main" }}
-                          />
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 1,
-                              bgcolor: "rgba(0,0,0,0.04)",
-                              px: 1.2,
-                              py: 0.5,
-                              borderRadius: 1.5,
-                              flexWrap: "wrap",
-                              flex: 1,
-                              minWidth: 0,
-                            }}
-                          >
-                            <Typography
-                              variant="subtitle2"
-                              sx={{ fontWeight: 600, color: "text.secondary" }}
-                            >
-                              {t.token}:
-                            </Typography>
-                            <Typography
-                              variant="subtitle1"
-                              sx={{
-                                fontWeight: "bold",
-                                fontFamily: "monospace",
-                                wordBreak: "break-all",
-                                color: "primary.main"
-                              }}>
-                              {reg.token}
-                            </Typography>
-                            <Tooltip title={copiedTokenId === reg._id ? t.tokenCopied : t.copyToken}>
-                              <IconButton
-                                size="small"
-                                onClick={() => {
-                                  navigator.clipboard.writeText(reg.token);
-                                  setCopiedTokenId(reg._id);
-                                  setTimeout(() => setCopiedTokenId(null), 2000);
-                                }}
-                                sx={{
-                                  p: 0.5,
-                                  color: copiedTokenId === reg._id ? "success.main" : "primary.main",
-                                  "&:hover": {
-                                    backgroundColor: "transparent",
-                                    opacity: 0.8,
-                                  },
-                                }}
-                              >
-                                {copiedTokenId === reg._id ? <ICONS.checkCircle fontSize="small" /> : <ICONS.copy fontSize="small" />}
-                              </IconButton>
-                            </Tooltip>
-                          </Box>
-                        </Stack>
-
-                        <Typography
-                          variant="caption"
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 0.5,
-                            color: "text.secondary",
-                          }}
-                        >
-                          <ICONS.time fontSize="inherit" sx={{ opacity: 0.7 }} />
-                          <Box
-                            component="span"
-                            sx={{ direction: "ltr", unicodeBidi: "embed" }}
-                          >
-                            {formatDateTimeWithLocale(reg.createdAt, language === "ar" ? "ar-SA" : "en-GB")}
-                          </Box>
-                        </Typography>
-
-                        <Stack
-                          direction="row"
-                          spacing={0.6}
-                          sx={{
-                            alignItems: "center",
-                            mt: 0.3
-                          }}>
-                          {renderInvitationStatus(reg)}
-                        </Stack>
-
-                        <Stack direction="row" spacing={0.6} sx={{
-                          alignItems: "center"
+                    <Stack spacing={0.6}>
+                      <Stack
+                        direction="row"
+                        sx={{
+                          alignItems: "center",
+                          gap: dir === "rtl" ? 1 : 1,
+                          width: "100%"
                         }}>
-                          {renderConfirmation(reg)}
-                        </Stack>
-
-                        {/* Print History - Always show */}
-                        <Typography
-                          variant="caption"
+                        <ICONS.qrcode
+                          sx={{ fontSize: 28, color: "primary.main" }}
+                        />
+                        <Box
                           sx={{
                             display: "flex",
                             alignItems: "center",
-                            gap: 0.5,
-                            mt: 0.3,
-                            color: reg.printCount > 0 ? "warning.dark" : "text.disabled",
+                            gap: 1,
+                            bgcolor: "rgba(0,0,0,0.04)",
+                            px: 1.2,
+                            py: 0.5,
+                            borderRadius: 1.5,
+                            flexWrap: "wrap",
+                            flex: 1,
+                            minWidth: 0,
                           }}
                         >
-                          <ICONS.print fontSize="small" sx={{ opacity: 0.7 }} />
-                          {reg.printCount > 0
-                            ? `${t.printedTimes.replace("{count}", toArabicDigits(reg.printCount, language))}${reg.printTimestamp ? ` · ${t.lastPrintedAt} ${formatDateTimeWithLocale(reg.printTimestamp, language === "ar" ? "ar-SA" : "en-GB")}` : ""}`
-                            : t.neverPrinted}
-                        </Typography>
+                          <Typography
+                            variant="subtitle2"
+                            sx={{ fontWeight: 600, color: "text.secondary" }}
+                          >
+                            {t.token}:
+                          </Typography>
+                          <Typography
+                            variant="subtitle1"
+                            sx={{
+                              fontWeight: "bold",
+                              fontFamily: "monospace",
+                              wordBreak: "break-all",
+                              color: "primary.main"
+                            }}>
+                            {reg.token}
+                          </Typography>
+                          <Tooltip title={copiedTokenId === reg._id ? t.tokenCopied : t.copyToken}>
+                            <IconButton
+                              size="small"
+                              onClick={() => {
+                                navigator.clipboard.writeText(reg.token);
+                                setCopiedTokenId(reg._id);
+                                setTimeout(() => setCopiedTokenId(null), 2000);
+                              }}
+                              sx={{
+                                p: 0.5,
+                                color: copiedTokenId === reg._id ? "success.main" : "primary.main",
+                                "&:hover": {
+                                  backgroundColor: "transparent",
+                                  opacity: 0.8,
+                                },
+                              }}
+                            >
+                              {copiedTokenId === reg._id ? <ICONS.checkCircle fontSize="small" /> : <ICONS.copy fontSize="small" />}
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
                       </Stack>
-                    </Box>
 
-                    <CardContent sx={{ flexGrow: 1, px: 2, py: 1.5 }}>
-                      {(() => {
-                        const regCustomFields = reg.customFields instanceof Map
-                          ? Object.fromEntries(reg.customFields)
-                          : (reg.customFields || {});
-                        const regCustomKeys = Object.keys(regCustomFields).filter(k => regCustomFields[k] && String(regCustomFields[k]).trim());
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 0.5,
+                          color: "text.secondary",
+                        }}
+                      >
+                        <ICONS.time fontSize="inherit" sx={{ opacity: 0.7 }} />
+                        <Box
+                          component="span"
+                          sx={{ direction: "ltr", unicodeBidi: "embed" }}
+                        >
+                          {formatDateTimeWithLocale(reg.createdAt, language === "ar" ? "ar-SA" : "en-GB")}
+                        </Box>
+                      </Typography>
 
-                        if (regCustomKeys.length > 0) {
-                          return regCustomKeys.map((key) => (
-                            <Box key={key} sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", py: 0.8, borderBottom: "1px solid", borderColor: "divider", "&:last-of-type": { borderBottom: "none" } }}>
-                              <Typography variant="body2" sx={{ display: "flex", alignItems: "center", gap: 0.6, color: "text.secondary" }}>
-                                <ICONS.personOutline fontSize="small" sx={{ opacity: 0.6 }} />
-                                {key}
-                              </Typography>
-                              <Typography variant="body2" sx={{ fontWeight: 500, ml: 2, textAlign: dir === "rtl" ? "left" : "right", flex: 1, color: "text.primary", ...wrapTextBox }}>
-                                {String(regCustomFields[key]) || "—"}
-                              </Typography>
-                            </Box>
-                          ));
-                        }
+                      <Stack
+                        direction="row"
+                        spacing={0.6}
+                        sx={{
+                          alignItems: "center",
+                          mt: 0.3
+                        }}>
+                        {renderInvitationStatus(reg)}
+                      </Stack>
 
-                        // Registration has no customFields — show its classic fields
-                        const classicFields = [
-                          { name: "fullName", label: "Full Name" },
-                          { name: "email", label: "Email" },
-                          { name: "phone", label: "Phone" },
-                          { name: "company", label: "Company" },
-                        ];
-                        return classicFields.map((f) => {
+                      <Stack direction="row" spacing={0.6} sx={{
+                        alignItems: "center"
+                      }}>
+                        {renderConfirmation(reg)}
+                      </Stack>
+
+                      {/* Print History - Always show */}
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 0.5,
+                          mt: 0.3,
+                          color: reg.printCount > 0 ? "warning.dark" : "text.disabled",
+                        }}
+                      >
+                        <ICONS.print fontSize="small" sx={{ opacity: 0.7 }} />
+                        {reg.printCount > 0
+                          ? `${t.printedTimes.replace("{count}", toArabicDigits(reg.printCount, language))}${reg.printTimestamp ? ` · ${t.lastPrintedAt} ${formatDateTimeWithLocale(reg.printTimestamp, language === "ar" ? "ar-SA" : "en-GB")}` : ""}`
+                          : t.neverPrinted}
+                      </Typography>
+                    </Stack>
+                  </Box>
+
+                  <CardContent sx={{ flexGrow: 1, px: 2, py: 1.5 }}>
+                    {(() => {
+                      const regCustomFields = reg.customFields instanceof Map
+                        ? Object.fromEntries(reg.customFields)
+                        : (reg.customFields || {});
+                      const regCustomKeys = Object.keys(regCustomFields).filter(k => regCustomFields[k] && String(regCustomFields[k]).trim());
+
+                      if (regCustomKeys.length > 0) {
+                        return regCustomKeys.map((key) => (
+                          <Box key={key} sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", py: 0.8, borderBottom: "1px solid", borderColor: "divider", "&:last-of-type": { borderBottom: "none" } }}>
+                            <Typography variant="body2" sx={{ display: "flex", alignItems: "center", gap: 0.6, color: "text.secondary" }}>
+                              <ICONS.personOutline fontSize="small" sx={{ opacity: 0.6 }} />
+                              {key}
+                            </Typography>
+                            <Typography variant="body2" sx={{ fontWeight: 500, ml: 2, textAlign: dir === "rtl" ? "left" : "right", flex: 1, color: "text.primary", ...wrapTextBox }}>
+                              {String(regCustomFields[key]) || "—"}
+                            </Typography>
+                          </Box>
+                        ));
+                      }
+
+                      // Registration has no customFields — show its classic fields
+                      const classicFields = [
+                        { name: "fullName", label: "Full Name" },
+                        { name: "email", label: "Email" },
+                        { name: "phone", label: "Phone" },
+                        { name: "company", label: "Company" },
+                      ];
+                      return classicFields.map((f) => {
                         const fieldValue = reg[f.name] ?? null;
                         if (fieldValue == null || String(fieldValue).trim() === "") return null;
                         let displayValue = String(fieldValue).trim();
@@ -1807,146 +1820,164 @@ export default function ViewRegistrations() {
                               }}>
                               {f.name === "phone"
                                 ? (() => {
-                                    const { formatPhoneNumberForDisplay } = require("@/utils/countryCodes");
-                                    return formatPhoneNumberForDisplay(displayValue, reg.isoCode);
-                                  })()
+                                  const { formatPhoneNumberForDisplay } = require("@/utils/countryCodes");
+                                  return formatPhoneNumberForDisplay(displayValue, reg.isoCode);
+                                })()
                                 : displayValue}
                             </Typography>
                           </Box>
                         );
                       }).filter(Boolean);
                     })()}
-                    </CardContent>
+                  </CardContent>
 
-                    <RecordMetadata
-                      createdByName={reg.createdBy}
-                      updatedByName={reg.updatedBy}
-                      createdAt={reg.createdAt}
-                      updatedAt={reg.updatedAt}
-                      createdByDisplayName={reg.createdBy == null ? (reg.fullName ?? pickFullName(reg.customFields)) : undefined}
-                      updatedByDisplayName={reg.updatedBy == null && reg.createdBy ? (typeof reg.createdBy === "object" ? reg.createdBy?.name : null) : undefined}
-                      updatedAtFallback={reg.updatedBy == null ? reg.createdAt : undefined}
-                      locale={language === "ar" ? "ar-SA" : "en-GB"}
-                    />
+                  <RecordMetadata
+                    createdByName={reg.createdBy}
+                    updatedByName={reg.updatedBy}
+                    createdAt={reg.createdAt}
+                    updatedAt={reg.updatedAt}
+                    createdByDisplayName={reg.createdBy == null ? (reg.fullName ?? pickFullName(reg.customFields)) : undefined}
+                    updatedByDisplayName={reg.updatedBy == null && reg.createdBy ? (typeof reg.createdBy === "object" ? reg.createdBy?.name : null) : undefined}
+                    updatedAtFallback={reg.updatedBy == null ? reg.createdAt : undefined}
+                    locale={language === "ar" ? "ar-SA" : "en-GB"}
+                  />
 
-                    <CardActions
+                  <CardActions
+                    sx={{
+                      justifyContent: "space-between",
+                      borderTop: "1px solid rgba(0,0,0,0.08)",
+                      bgcolor: "rgba(0,0,0,0.02)",
+                      py: 1,
+                      flexDirection: "column",
+                      gap: 1,
+                    }}
+                  >
+                    <Box
                       sx={{
+                        display: "flex",
+                        flexDirection: "row",
+                        alignItems: "center",
                         justifyContent: "space-between",
-                        borderTop: "1px solid rgba(0,0,0,0.08)",
-                        bgcolor: "rgba(0,0,0,0.02)",
-                        py: 1,
-                        flexDirection: "column",
-                        gap: 1,
+                        gap: 1.2,
+                        width: "100%",
+                        flexWrap: { xs: "wrap", sm: "nowrap" },
                       }}
                     >
-                      <Box
-                        sx={{
-                          display: "flex",
-                          flexDirection: "row",
-                          alignItems: "center",
-                          justifyContent: "space-between",
-                          gap: 1.2,
-                          width: "100%",
-                          flexWrap: { xs: "wrap", sm: "nowrap" },
-                        }}
-                      >
-                        <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 140 }, flexShrink: 0 }}>
-                          <Select
-                            value={reg.approvalStatus || "pending"}
-                            onChange={(e) =>
-                              handleApprovalChange(reg._id, e.target.value)
-                            }
-                            sx={{ fontSize: "0.9rem" }}
+                      <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 140 }, flexShrink: 0 }}>
+                        <Select
+                          value={reg.approvalStatus || "pending"}
+                          onChange={(e) =>
+                            handleApprovalChange(reg._id, e.target.value)
+                          }
+                          sx={{ fontSize: "0.9rem" }}
+                        >
+                          <MenuItem value="pending">{t.pending}</MenuItem>
+                          <MenuItem value="confirmed">{t.confirmed}</MenuItem>
+                          <MenuItem value="not_attending">
+                            {t.notConfirmed}
+                          </MenuItem>
+                        </Select>
+                      </FormControl>
+
+                      <Box sx={{ display: "flex", gap: 0.5, justifyContent: { xs: "center", sm: "flex-end" }, width: { xs: "100%", sm: "auto" } }}>
+                        <Tooltip title={t.printBadge}>
+                          <IconButton
+                            color="warning"
+                            onClick={() => handlePrintBadge(reg)}
+                            sx={{
+                              "&:hover": { transform: "scale(1.1)" },
+                              transition: "0.2s",
+                            }}
                           >
-                            <MenuItem value="pending">{t.pending}</MenuItem>
-                            <MenuItem value="confirmed">{t.confirmed}</MenuItem>
-                            <MenuItem value="not_attending">
-                              {t.notConfirmed}
-                            </MenuItem>
-                          </Select>
-                        </FormControl>
+                            <ICONS.print />
+                          </IconButton>
+                        </Tooltip>
 
-                        <Box sx={{ display: "flex", gap: 0.5, justifyContent: { xs: "center", sm: "flex-end" }, width: { xs: "100%", sm: "auto" } }}>
-                          <Tooltip title={t.printBadge}>
-                            <IconButton
-                              color="warning"
-                              onClick={() => handlePrintBadge(reg)}
-                              sx={{
-                                "&:hover": { transform: "scale(1.1)" },
-                                transition: "0.2s",
-                              }}
-                            >
-                              <ICONS.print />
-                            </IconButton>
-                          </Tooltip>
+                        <Tooltip title={t.viewWalkIns}>
+                          <IconButton
+                            color="info"
+                            onClick={() => {
+                              setSelectedRegistration(reg);
+                              setWalkInModalOpen(true);
+                            }}
+                            sx={{
+                              "&:hover": { transform: "scale(1.1)" },
+                              transition: "0.2s",
+                            }}
+                          >
+                            <ICONS.view />
+                          </IconButton>
+                        </Tooltip>
 
-                          <Tooltip title={t.viewWalkIns}>
-                            <IconButton
-                              color="info"
-                              onClick={() => {
-                                setSelectedRegistration(reg);
-                                setWalkInModalOpen(true);
-                              }}
-                              sx={{
-                                "&:hover": { transform: "scale(1.1)" },
-                                transition: "0.2s",
-                              }}
-                            >
-                              <ICONS.view />
-                            </IconButton>
-                          </Tooltip>
+                        <Tooltip title={t.editRegistration}>
+                          <IconButton
+                            color="warning"
+                            onClick={() => {
+                              setEditingReg(reg);
+                              setEditModalOpen(true);
+                            }}
+                            sx={{
+                              "&:hover": { transform: "scale(1.1)" },
+                              transition: "0.2s",
+                            }}
+                          >
+                            <ICONS.edit fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
 
-                          <Tooltip title={t.editRegistration}>
-                            <IconButton
-                              color="warning"
-                              onClick={() => {
-                                setEditingReg(reg);
-                                setEditModalOpen(true);
-                              }}
-                              sx={{
-                                "&:hover": { transform: "scale(1.1)" },
-                                transition: "0.2s",
-                              }}
-                            >
-                              <ICONS.edit fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
+                        <Tooltip title={t.deleteRecord}>
+                          <IconButton
+                            color="error"
+                            onClick={() => {
+                              setRegistrationToDelete(reg._id);
+                              setDeleteDialogOpen(true);
+                            }}
+                            sx={{
+                              "&:hover": { transform: "scale(1.1)" },
+                              transition: "0.2s",
+                            }}
+                          >
+                            <ICONS.delete />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title={t.shareLink}>
+                          <IconButton
+                            color="info"
+                            onClick={() => {
+                              setRegistrationToShare(reg);
+                              setShareModalOpen(true);
+                            }}
+                            sx={{
+                              "&:hover": { transform: "scale(1.1)" },
+                              transition: "0.2s",
+                            }}
+                          >
+                            <ICONS.share fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
 
-                          <Tooltip title={t.deleteRecord}>
-                            <IconButton
-                              color="error"
-                              onClick={() => {
-                                setRegistrationToDelete(reg._id);
-                                setDeleteDialogOpen(true);
-                              }}
-                              sx={{
-                                "&:hover": { transform: "scale(1.1)" },
-                                transition: "0.2s",
-                              }}
-                            >
-                              <ICONS.delete />
-                            </IconButton>
-                          </Tooltip>
+                        {/* NEW: Send single notification */}
+                        <Tooltip title={t.sendNotification || "Send Notification"}>
+                          <IconButton
+                            color="primary"
+                            onClick={() => {
+                              setRegistrationToNotify(reg);
+                              setNotifyModalOpen(true);
+                            }}
+                            sx={{
+                              "&:hover": { transform: "scale(1.1)" },
+                              transition: "0.2s",
+                            }}
+                          >
+                            <ICONS.send fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
 
-                          <Tooltip title={t.shareLink}>
-                            <IconButton
-                              color="info"
-                              onClick={() => {
-                                setRegistrationToShare(reg);
-                                setShareModalOpen(true);
-                              }}
-                              sx={{
-                                "&:hover": { transform: "scale(1.1)" },
-                                transition: "0.2s",
-                              }}
-                            >
-                              <ICONS.share fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        </Box>
+
                       </Box>
-                    </CardActions>
-                  </Card>
+                    </Box>
+                  </CardActions>
+                </Card>
               ))}
             </Box>
           </Box>
@@ -2540,6 +2571,15 @@ export default function ViewRegistrations() {
         }
         title={t.shareLink}
         customQrWrapper={eventDetails?.customQrWrapper}
+      />
+      <SingleNotificationModal
+        open={notifyModalOpen}
+        showReminderOption={true}
+        onClose={() => {
+          setNotifyModalOpen(false);
+          setRegistrationToNotify(null);
+        }}
+        registration={registrationToNotify}
       />
     </Container>
   );
