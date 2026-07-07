@@ -146,6 +146,7 @@ export default function RegistrationModal({
                 inputType: f.inputType || "text",
                 required: f.required || false,
                 values: f.values || [],
+                previousNames: f.previousNames || [],
             }));
     }, [selectedTicketTypeId, event, ticketTypes]);
 
@@ -306,7 +307,16 @@ export default function RegistrationModal({
             const next = { ...prev };
             ticketDependentFields.forEach(f => {
                 if (!(f.inputName in next) || next[f.inputName] === "") {
-                    next[f.inputName] = cf[f.inputName] ?? "";
+                    // The stored answer may still be under a name this field used to
+                    // have (renamed since submission) — try the current name first,
+                    // then any previous name, so an already-uploaded file still shows
+                    // up here instead of appearing to require a fresh upload.
+                    const candidates = [f.inputName, ...(f.previousNames || [])];
+                    const matchedKey = candidates.find((name) => {
+                        const v = cf[name];
+                        return v !== undefined && v !== null && String(v).trim() !== "";
+                    });
+                    next[f.inputName] = matchedKey !== undefined ? cf[matchedKey] : "";
                 }
             });
             return next;
