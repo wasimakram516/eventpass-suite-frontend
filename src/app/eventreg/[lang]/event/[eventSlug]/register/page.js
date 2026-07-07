@@ -31,6 +31,7 @@ import { createRegistration } from "@/services/eventreg/registrationService";
 import { initiatePayment } from "@/services/eventreg/paymentService";
 import { getPublicEventBySlug } from "@/services/eventreg/eventService";
 import ICONS from "@/utils/iconUtil";
+import resolveTicketDependentFields from "@/utils/resolveTicketDependentFields";
 import { translateTexts } from "@/services/translationService";
 import { applyTranslationOverridesToArray } from "@/utils/translationOverrides";
 import Background from "@/components/Background";
@@ -167,10 +168,9 @@ export default function Registration() {
       return [];
     }
     const selectedTt = event.ticketTypes?.find(tt => tt._id === selectedTicketTypeId);
-    if (!selectedTt?.name) return [];
-    const mappedFieldNames = event.globalDependentFieldMappings[selectedTt.name] || [];
-    return event.globalDependentFields
-      .filter(f => mappedFieldNames.includes(f.inputName) && f.inputName?.trim() && f.visible !== false)
+    if (!selectedTt) return [];
+    return resolveTicketDependentFields(event, selectedTt)
+      .filter(f => f.inputName?.trim() && f.visible !== false)
       .map(f => ({
         name: f.inputName,
         label: f.inputName,

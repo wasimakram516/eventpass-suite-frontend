@@ -388,6 +388,57 @@ function getSelectedFieldsFromWrapper(wrapper) {
   };
 }
 
+// Translates a stored globalDependentFieldMappings object into ID-keyed form
+// (ticketType._id -> [field._id, ...]). Events saved before ticket/field IDs
+// were used here still have this keyed by ticket NAME with field NAMES as
+// values — both are read here (ID entry preferred if somehow both exist),
+// so re-opening an old event's editor shows its real existing selections
+// instead of appearing empty, and a save upgrades the stored format.
+function migrateDependentFieldMappingsToIds(ticketTypes, globalDependentFields, mappings) {
+  if (!mappings || typeof mappings !== "object") return {};
+
+  const result = {};
+  for (const ticket of ticketTypes || []) {
+    if (!ticket?._id) continue;
+    const byId = mappings[String(ticket._id)];
+    const byName = ticket.name != null ? mappings[ticket.name] : undefined;
+    const rawList = byId ?? byName;
+    if (!rawList) continue;
+
+    const identifiers = new Set(rawList.map((v) => String(v).trim()));
+    const resolvedIds = (globalDependentFields || [])
+      .filter(
+        (f) =>
+          (f._id != null && identifiers.has(String(f._id))) ||
+          (f.inputName != null && identifiers.has(String(f.inputName).trim())),
+      )
+      .map((f) => String(f._id));
+
+    if (resolvedIds.length) result[String(ticket._id)] = resolvedIds;
+  }
+  return result;
+}
+
+// Compares the current dependent-field list against what was originally
+// loaded (matched by _id) and, for any field whose inputName changed,
+// records the old name into previousNames. Done once here at submit time —
+// not on every keystroke in the field's TextField onChange — so a rename
+// is captured exactly once as a real "before → after" transition instead of
+// every intermediate character typed while editing the label.
+function withDependentFieldRenameHistory(currentFields, initialFields) {
+  const initialById = new Map(
+    (initialFields || []).filter((f) => f._id).map((f) => [String(f._id), f]),
+  );
+  return (currentFields || []).map((f) => {
+    if (!f._id) return f; // brand-new field this session — nothing to compare against
+    const original = initialById.get(String(f._id));
+    if (!original || original.inputName === f.inputName) return f;
+    const previousNames = new Set(f.previousNames || original.previousNames || []);
+    previousNames.add(original.inputName);
+    return { ...f, previousNames: [...previousNames] };
+  });
+}
+
 const EventModal = ({
   open,
   onClose,
@@ -509,7 +560,16 @@ const EventModal = ({
         slug: initialValues.slug || "",
         dependentFieldsEnabled: !!(initialValues?.globalDependentFields?.length),
         globalDependentFields: initialValues?.globalDependentFields || [],
-        globalDependentFieldMappings: initialValues?.globalDependentFieldMappings || {},
+        // Events saved before ticket/field IDs were used here have this
+        // keyed by ticket NAME with field NAMES as values — translate that
+        // into ID-keyed form now, so the editor shows existing selections
+        // correctly (rather than appearing empty) and a save without further
+        // changes upgrades the stored format instead of silently wiping it.
+        globalDependentFieldMappings: migrateDependentFieldMappingsToIds(
+          initialValues?.ticketTypes || [],
+          initialValues?.globalDependentFields || [],
+          initialValues?.globalDependentFieldMappings || {},
+        ),
         startDate: initialValues.startDate
           ? new Date(initialValues.startDate).toISOString().split("T")[0]
           : "",
@@ -1504,7 +1564,10 @@ const EventModal = ({
         vatPercentage: formData.isPaid ? (parseFloat(formData.vatPercentage) || 0) : 0,
         dependentFieldsEnabled: formData.dependentFieldsEnabled || false,
         globalDependentFields: formData.dependentFieldsEnabled
-          ? (formData.globalDependentFields || []).filter(f => f.inputName?.trim())
+          ? withDependentFieldRenameHistory(
+            (formData.globalDependentFields || []).filter(f => f.inputName?.trim()),
+            initialValues?.globalDependentFields || [],
+          )
           : [],
         globalDependentFieldMappings: formData.dependentFieldsEnabled
           ? (formData.globalDependentFieldMappings || {})
@@ -2073,7 +2136,7 @@ const EventModal = ({
                         <Paper key={idx} variant="outlined" sx={{ p: 2, mb: 2, borderRadius: 2 }}>
                           <Stack direction="row" sx={{ mb: 1.5, justifyContent: "space-between", alignItems: "center" }}>
                             <Typography variant="body2" fontWeight={600}>#{idx + 1}</Typography>
-                            <Stack direction="row" spacing={0.5} alignItems="center">
+                            <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
                               <Tooltip title={t.moveUp}>
                                 <span>
                                   <IconButton
@@ -2133,13 +2196,19 @@ const EventModal = ({
                                 required
                                 value={tt.name}
                                 onChange={(e) => {
-                                  const oldName = formData.ticketTypes[idx].name;
+                                  const oldTicket = formData.ticketTypes[idx];
+                                  const oldName = oldTicket.name;
                                   const newName = e.target.value;
                                   setFormData((prev) => {
                                     const types = [...prev.ticketTypes];
                                     types[idx] = { ...types[idx], name: newName };
                                     const mappings = { ...(prev.globalDependentFieldMappings || {}) };
-                                    if (oldName && oldName !== newName && mappings[oldName] !== undefined) {
+                                    // Existing tickets are mapped by their stable _id, so
+                                    // renaming one doesn't touch its mapping at all. Only a
+                                    // brand-new, not-yet-saved ticket (no _id yet) is still
+                                    // keyed by its in-session name, so its mapping key needs
+                                    // to follow the rename until it's actually persisted.
+                                    if (!oldTicket._id && oldName && oldName !== newName && mappings[oldName] !== undefined) {
                                       mappings[newName] = mappings[oldName];
                                       delete mappings[oldName];
                                     }
@@ -2344,7 +2413,7 @@ const EventModal = ({
                                   }
                                   label={<Typography variant="caption">{t.depVisible}</Typography>} sx={{ ml: 0 }}
                                 />
-                                <Stack direction="row" spacing={0.5} alignItems="center" sx={{ ml: "auto" }}>
+                                <Stack direction="row" spacing={0.5} sx={{ alignItems: "center", ml: "auto" }}>
                                   <Tooltip title={t.moveUp}>
                                     <span>
                                       <IconButton
@@ -2386,15 +2455,21 @@ const EventModal = ({
                                       onClick={() =>
                                         setFormData((prev) => {
                                           const fields = [...(prev.globalDependentFields || [])];
-                                          const removedFieldName = fields[depIdx]?.inputName;
+                                          const removedField = fields[depIdx];
+                                          // A saved field is referenced by mappings via its
+                                          // _id; a brand-new, not-yet-saved field is still
+                                          // referenced by its in-session inputName.
+                                          const removedIdentifier = removedField?._id
+                                            ? String(removedField._id)
+                                            : removedField?.inputName;
                                           fields.splice(depIdx, 1);
 
-                                          // Prune the removed field name from all ticket mappings
+                                          // Prune the removed field from all ticket mappings
                                           const mappings = { ...(prev.globalDependentFieldMappings || {}) };
-                                          if (removedFieldName) {
-                                            Object.keys(mappings).forEach((ticketName) => {
-                                              mappings[ticketName] = mappings[ticketName].filter(
-                                                (f) => f !== removedFieldName
+                                          if (removedIdentifier) {
+                                            Object.keys(mappings).forEach((ticketKey) => {
+                                              mappings[ticketKey] = mappings[ticketKey].filter(
+                                                (f) => String(f) !== String(removedIdentifier)
                                               );
                                             });
                                           }
@@ -2447,12 +2522,20 @@ const EventModal = ({
                                 {formData.ticketTypes
                                   .filter(t => t.name?.trim())
                                   .map((ticketType, ticketIdx) => {
+                                    // A saved field is identified by its stable _id (immune
+                                    // to later label edits); a brand-new, not-yet-saved
+                                    // field falls back to its in-session inputName until
+                                    // it's persisted and gets a real _id.
                                     const availableFields = (formData.globalDependentFields || [])
                                       .filter(f => f.inputName?.trim())
-                                      .map(f => f.inputName);
+                                      .map(f => ({ id: f._id ? String(f._id) : f.inputName, label: f.inputName }));
 
-                                    const selectedForThisTicket =
-                                      (formData.globalDependentFieldMappings || {})[ticketType.name] || [];
+                                    // Likewise, an existing ticket is keyed by its stable
+                                    // _id; a brand-new ticket is keyed by its current name
+                                    // until saved (see the rename handler above).
+                                    const ticketKey = ticketType._id ? String(ticketType._id) : ticketType.name;
+                                    const selectedIds = (formData.globalDependentFieldMappings || {})[ticketKey] || [];
+                                    const selectedOptions = availableFields.filter((f) => selectedIds.includes(f.id));
 
                                     return (
                                       <Box key={ticketIdx} sx={{ mb: 1 }}>
@@ -2460,11 +2543,13 @@ const EventModal = ({
                                           multiple
                                           size="small"
                                           options={availableFields}
-                                          value={selectedForThisTicket.filter(v => availableFields.includes(v))}
+                                          getOptionLabel={(opt) => opt.label}
+                                          isOptionEqualToValue={(opt, val) => opt.id === val.id}
+                                          value={selectedOptions}
                                           onChange={(e, newVal) =>
                                             setFormData((prev) => {
                                               const mappings = { ...(prev.globalDependentFieldMappings || {}) };
-                                              mappings[ticketType.name] = newVal;
+                                              mappings[ticketKey] = newVal.map((opt) => opt.id);
                                               return { ...prev, globalDependentFieldMappings: mappings };
                                             })
                                           }
@@ -2500,7 +2585,7 @@ const EventModal = ({
                           <Paper key={idx} variant="outlined" sx={{ p: 2, mb: 2, borderRadius: 2 }}>
                             <Stack direction="row" sx={{ mb: 1.5, justifyContent: "space-between", alignItems: "center" }}>
                               <Typography variant="body2" fontWeight={600}>#{idx + 1}</Typography>
-                              <Stack direction="row" spacing={0.5} alignItems="center">
+                              <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
                                 <Tooltip title={t.moveUp}>
                                   <span>
                                     <IconButton
@@ -3672,7 +3757,7 @@ const EventModal = ({
                           label={t.visibleField}
                         />
 
-                        <Stack direction="row" spacing={0.5} alignItems="center" sx={{ ml: "auto" }}>
+                        <Stack direction="row" spacing={0.5} sx={{ alignItems: "center", ml: "auto" }}>
                           <Tooltip title={t.moveUp}>
                             <span>
                               <IconButton

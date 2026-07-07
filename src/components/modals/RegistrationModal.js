@@ -26,6 +26,7 @@ import {
 } from "@mui/material";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
+import resolveTicketDependentFields from "@/utils/resolveTicketDependentFields";
 import CountryCodeSelector from "@/components/CountryCodeSelector";
 import CountryPicker from "@/components/CountryPicker";
 import SearchableSelect from "@/components/SearchableSelect";
@@ -137,10 +138,9 @@ export default function RegistrationModal({
             return [];
         }
         const selectedTt = ticketTypes.find(tt => tt._id === selectedTicketTypeId);
-        if (!selectedTt?.name) return [];
-        const mappedFieldNames = event.globalDependentFieldMappings[selectedTt.name] || [];
-        return event.globalDependentFields
-            .filter(f => mappedFieldNames.includes(f.inputName) && f.inputName?.trim() && f.visible !== false)
+        if (!selectedTt) return [];
+        return resolveTicketDependentFields(event, selectedTt)
+            .filter(f => f.inputName?.trim() && f.visible !== false)
             .map(f => ({
                 inputName: f.inputName,
                 inputType: f.inputType || "text",
