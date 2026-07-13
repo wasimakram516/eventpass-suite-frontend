@@ -10,6 +10,7 @@ import {
   TextField,
   InputAdornment,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import { useMemo, useState } from "react";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import ICONS from "@/utils/iconUtil";
@@ -130,43 +131,60 @@ export default function BusinessDrawer({
         ) : filteredBusinesses.length === 0 ? (
           <NoDataAvailable />
         ) : (
-          filteredBusinesses.map((business) => (
-            <Button
-              key={business._id}
-              onClick={() => onSelect(business.slug)}
-              color="primary"
-              variant={
-                selectedBusinessSlug === business.slug
-                  ? "contained"
-                  : "outlined"
-              }
-              fullWidth
-              sx={{
-                ...getStartIconSpacing(dir),
-                mb: 1.25,
-                justifyContent: "flex-start",
-                borderRadius: 3,
-                boxShadow: (theme) =>
-                  selectedBusinessSlug === business.slug
-                    ? theme.palette.home.moduleCardShadow
-                    : "none",
-                transition: "all 0.2s ease-in-out",
-              }}
-              startIcon={<ICONS.business />}
-            >
-              <Box
+          filteredBusinesses.map((business) => {
+            const isSelected = selectedBusinessSlug === business.slug;
+            return (
+              <Button
+                key={business._id}
+                onClick={() => onSelect(business.slug)}
+                variant="text"
+                fullWidth
                 sx={{
-                  textAlign: align,
-                  flex: 1,
-                  whiteSpace: "normal",
-                  wordBreak: "break-word",
-                  fontSize: "0.9rem",
+                  ...getStartIconSpacing(dir),
+                  mb: 0.5,
+                  py: 1,
+                  justifyContent: "flex-start",
+                  borderRadius: 2,
+                  color: isSelected ? "primary.main" : "text.primary",
+                  fontWeight: isSelected ? 700 : 500,
+                  bgcolor: (theme) =>
+                    isSelected
+                      ? alpha(
+                          theme.palette.primary.main,
+                          theme.palette.mode === "dark" ? 0.18 : 0.08
+                        )
+                      : "transparent",
+                  borderInlineStart: (theme) =>
+                    isSelected
+                      ? `3px solid ${theme.palette.primary.main}`
+                      : "3px solid transparent",
+                  "&:hover": {
+                    bgcolor: (theme) =>
+                      isSelected
+                        ? alpha(
+                            theme.palette.primary.main,
+                            theme.palette.mode === "dark" ? 0.24 : 0.12
+                          )
+                        : "action.hover",
+                  },
+                  transition: "all 0.2s ease-in-out",
                 }}
+                startIcon={<ICONS.business />}
               >
-                {business.name}
-              </Box>
-            </Button>
-          ))
+                <Box
+                  sx={{
+                    textAlign: align,
+                    flex: 1,
+                    whiteSpace: "normal",
+                    wordBreak: "break-word",
+                    fontSize: "0.9rem",
+                  }}
+                >
+                  {business.name}
+                </Box>
+              </Button>
+            );
+          })
         )}
       </Box>
     </Drawer>
