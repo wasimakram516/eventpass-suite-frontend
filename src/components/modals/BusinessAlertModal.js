@@ -96,7 +96,6 @@ const BusinessAlertModal = ({ open, onNavigate }) => {
           sx={{
             px: 4,
             fontWeight: "bold",
-            borderRadius: 2,
             textTransform: "none",
             boxShadow: 3,
           }}

@@ -529,7 +529,6 @@ const SpinningPage = () => {
             left: { xs: 10, sm: 20 },
             zIndex: 9999,
             textTransform: "none",
-            borderRadius: 2,
           }}
           onClick={() => router.push(`/eventwheel/wheels/${shortName}`)}
         >
@@ -547,7 +546,6 @@ const SpinningPage = () => {
             right: { xs: 10, sm: 20 },
             zIndex: 9999,
             textTransform: "none",
-            borderRadius: 2,
           }}
           onClick={handleDrawerOpen}
         >

@@ -344,7 +344,6 @@ export default function EventDetails() {
               py: 1.5,
               fontSize: { xs: 16, md: 18 },
               fontWeight: 600,
-              borderRadius: 2,
               textTransform: "none",
               display: `${background === null || background.fileType !== "video"
                 ? "none"

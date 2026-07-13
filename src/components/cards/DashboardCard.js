@@ -77,13 +77,13 @@ const DashboardCard = ({
           <Button
             variant="contained"
             size="medium"
+            fullWidth
             sx={{
               backgroundColor: resolvedColor,
               color: theme.palette.getContrastText(resolvedColor),
               textTransform: "none",
               fontWeight: "bold",
               px: 3,
-              borderRadius: 2,
               "&:hover": {
                 backgroundColor: resolvedColor,
                 opacity: 0.9,

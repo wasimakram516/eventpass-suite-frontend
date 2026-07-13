@@ -258,7 +258,6 @@ export default function EventWelcomeCard({
               fontSize: { xs: 16, md: 18 },
               p: "12px",
               fontWeight: "bold",
-              borderRadius: 2,
               textTransform: "none",
               background: "primary.main",
               transition: "0.3s",

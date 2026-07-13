@@ -1384,7 +1384,7 @@ export default function Registration() {
             <>
               <Button
                 onClick={() => { setShowPaymentSummary(false); setDuplicateNotice(null); setConflictReason(null); }}
-                sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2.5, color: "text.secondary" }}
+                sx={{ textTransform: "none", fontWeight: 700, color: "text.secondary" }}
               >
                 {t.cancel}
               </Button>
@@ -1396,7 +1396,6 @@ export default function Registration() {
                   sx={{
                     textTransform: "none",
                     fontWeight: 700,
-                    borderRadius: 2.5,
                     px: 3,
                     py: 1.1,
                     boxShadow: (theme) => theme.palette.shadow.infoCard, ...getStartIconSpacing(dir),
@@ -1411,7 +1410,7 @@ export default function Registration() {
               <Button
                 onClick={() => setShowPaymentSummary(false)}
                 disabled={payProcessing}
-                sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2.5, color: "text.secondary" }}
+                sx={{ textTransform: "none", fontWeight: 700, color: "text.secondary" }}
               >
                 {t.cancel}
               </Button>

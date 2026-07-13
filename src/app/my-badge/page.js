@@ -603,7 +603,6 @@ export default function MyBadgePage() {
                     size="large"
                     sx={{
                       mt: 3,
-                      borderRadius: 2.5,
                       textTransform: "none",
                       fontWeight: 700,
                     }}
@@ -669,7 +668,6 @@ export default function MyBadgePage() {
                 onClick={handleSaveBadge}
                 sx={{
                   mt: 2,
-                  borderRadius: 2,
                   textTransform: "none",
                   fontWeight: 700,
                 }}
@@ -825,7 +823,7 @@ function BadgeEventCard({ event, t, onSelect, locale }) {
           size="small"
           startIcon={<ICONS.badge />}
           onClick={onSelect}
-          sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2, px: 3 }}
+          sx={{ textTransform: "none", fontWeight: 700, px: 3 }}
         >
           {t.findBadge}
         </Button>

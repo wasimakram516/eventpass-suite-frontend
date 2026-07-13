@@ -1087,7 +1087,7 @@ export default function RegistrationModal({
                         <>
                             <Button
                                 onClick={() => { setShowPaymentSummary(false); setDuplicateNotice(null); setConflictReason(null); }}
-                                sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2.5, color: "text.secondary" }}
+                                sx={{ textTransform: "none", fontWeight: 700, color: "text.secondary" }}
                             >
                                 {t.cancel}
                             </Button>
@@ -1097,7 +1097,7 @@ export default function RegistrationModal({
                                     onClick={() => window.open(duplicateNotice.sessionUrl, "_blank", "noopener,noreferrer")}
                                     startIcon={<ICONS.payment />}
                                     sx={{
-                                        textTransform: "none", fontWeight: 700, borderRadius: 2.5,
+                                        textTransform: "none", fontWeight: 700,
                                         px: 3, py: 1.1,
                                         boxShadow: (theme) => theme.palette.shadow.infoCard,
                                         ...getStartIconSpacing("ltr"),
@@ -1112,7 +1112,7 @@ export default function RegistrationModal({
                             <Button
                                 onClick={() => setShowPaymentSummary(false)}
                                 disabled={payProcessing}
-                                sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2.5, color: "text.secondary" }}
+                                sx={{ textTransform: "none", fontWeight: 700, color: "text.secondary" }}
                             >
                                 {t.cancel}
                             </Button>
@@ -1122,7 +1122,7 @@ export default function RegistrationModal({
                                 disabled={payProcessing || !paymentBreakdown}
                                 startIcon={!payProcessing ? <ICONS.payment /> : undefined}
                                 sx={{
-                                    textTransform: "none", fontWeight: 700, borderRadius: 2.5,
+                                    textTransform: "none", fontWeight: 700,
                                     px: 3, py: 1.1,
 
                                     boxShadow: (theme) => theme.palette.shadow.infoCard1,

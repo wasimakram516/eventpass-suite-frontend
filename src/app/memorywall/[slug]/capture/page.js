@@ -871,7 +871,6 @@ export default function UploadPage() {
               }
               sx={{
                 py: 1.5,
-                borderRadius: 2,
                 fontWeight: "bold",
                 width: { xs: "100%", sm: "auto" },
                 ...getStartIconSpacing(dir),
@@ -1022,7 +1021,6 @@ export default function UploadPage() {
               }
               sx={{
                 py: 1.5,
-                borderRadius: 2,
                 fontWeight: "bold",
                 ...getStartIconSpacing(dir),
               }}

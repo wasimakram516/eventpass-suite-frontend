@@ -221,7 +221,6 @@ export default function PaymentCancelPage() {
                   size="large"
                   startIcon={<ICONS.refresh />}
                   sx={{
-                    borderRadius: 2.5,
                     py: 1.5,
                     fontWeight: 700,
                     textTransform: "none",
@@ -242,7 +241,6 @@ export default function PaymentCancelPage() {
                   size="large"
                   startIcon={<ICONS.back />}
                   sx={{
-                    borderRadius: 2.5,
                     py: 1.5,
                     fontWeight: 600,
                     textTransform: "none",

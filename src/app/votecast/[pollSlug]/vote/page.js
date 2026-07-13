@@ -509,7 +509,7 @@ export default function PollVotingPage() {
                     size="large"
                     disabled={!textResponse.trim() || submitting}
                     onClick={() => handleVote(null, null, textResponse)}
-                    sx={{ borderRadius: 3, py: 1.5 }}
+                    sx={{ py: 1.5 }}
                   >
                     {submitting ? <CircularProgress size={24} color="inherit" /> : (currentLang === "ar" ? "إرسال" : "Submit")}
                   </Button>
@@ -583,7 +583,7 @@ export default function PollVotingPage() {
                     disabled={submitting || selectedOptions.length === 0}
                     onClick={handleMultiSubmit}
                     startIcon={submitting ? <CircularProgress size={18} color="inherit" thickness={5} /> : <ICONS.check />}
-                    sx={{ mt: 1, py: 1.5, fontWeight: "bold", fontSize: "1rem", borderRadius: 3 }}
+                    sx={{ mt: 1, py: 1.5, fontWeight: "bold", fontSize: "1rem" }}
                   >
                     {submitting ? t.processing : t.submit}
                   </Button>

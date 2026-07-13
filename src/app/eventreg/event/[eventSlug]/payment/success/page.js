@@ -233,7 +233,7 @@ export default function PaymentSuccessPage() {
                   startIcon={<ICONS.download />}
                   onClick={handleDownloadBadge}
                   sx={{
-                    borderRadius: 2.5, py: 1.5, fontWeight: 700,
+                    py: 1.5, fontWeight: 700,
                     textTransform: "none", fontSize: "0.95rem",
                     backgroundColor: "success.main", "&:hover": { backgroundColor: "success.dark" },
                     ...getStartIconSpacing(dir),
@@ -248,7 +248,7 @@ export default function PaymentSuccessPage() {
                   size="large"
                   startIcon={<ICONS.back />}
                   sx={{
-                    borderRadius: 2.5, py: 1.5, fontWeight: 700,
+                    py: 1.5, fontWeight: 700,
                     textTransform: "none", fontSize: "0.95rem",
                     borderColor: theme.palette.success.border, color: theme.palette.success.border,
                     "&:hover": { backgroundColor: theme.palette.success.light, borderColor: theme.palette.success.hover },
@@ -333,7 +333,7 @@ export default function PaymentSuccessPage() {
                   fullWidth
                   size="large"
                   startIcon={<ICONS.back />}
-                  sx={{ borderRadius: 2.5, py: 1.5, fontWeight: 700, textTransform: "none", fontSize: "0.95rem", ...getStartIconSpacing(dir) }}
+                  sx={{ py: 1.5, fontWeight: 700, textTransform: "none", fontSize: "0.95rem", ...getStartIconSpacing(dir) }}
                 >
                   {t.backAndRetry}
                 </Button>

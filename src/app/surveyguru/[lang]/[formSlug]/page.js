@@ -1206,7 +1206,6 @@ export default function PublicSurveyPage() {
                       borderColor: actionColor,
                       color: actionColor,
                       fontWeight: 700,
-                      borderRadius: 2,
                       ...getStartIconSpacing(dir),
                       "&:hover": {
                         borderColor: actionColor,
@@ -1234,7 +1233,6 @@ export default function PublicSurveyPage() {
                         bgcolor: actionColor,
                         "&:hover": { bgcolor: actionColor },
                         fontWeight: 800,
-                        borderRadius: 2,
                         ...getStartIconSpacing(dir),
                       }}
                     >
@@ -1250,7 +1248,6 @@ export default function PublicSurveyPage() {
                         width: "100%",
                         minWidth: 0,
                         fontWeight: 800,
-                        borderRadius: 2,
                         ...getStartIconSpacing(dir),
                       }}
                     >

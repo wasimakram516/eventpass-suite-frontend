@@ -217,7 +217,6 @@ const ParticipantsUserPage = () => {
               display: "flex",
               alignItems: "center",
               padding: "6px 12px",
-              borderRadius: 2,
               backgroundColor: "transparent",
               color: isDark ? "common.white" : "text.primary",
               "&:hover": { opacity: 0.8 },

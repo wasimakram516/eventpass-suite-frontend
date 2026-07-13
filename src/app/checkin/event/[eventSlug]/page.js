@@ -747,7 +747,6 @@ export default function EventDetails() {
                           fontSize: { xs: 16, md: 18 },
                           p: "12px 32px",
                           fontWeight: "bold",
-                          borderRadius: 2,
                           textTransform: "none",
                         }}
                       >
@@ -803,7 +802,6 @@ export default function EventDetails() {
                         fontSize: { xs: 16, md: 18 },
                         p: "12px 32px",
                         fontWeight: "bold",
-                        borderRadius: 2,
                         textTransform: "none",
                       }}
                     >
