@@ -12,14 +12,14 @@ const AppCard = ({ children, sx, ...props }) => {
         borderRadius: 4,
         overflow: "hidden",
         backgroundColor: theme.palette.background.paper,
-        boxShadow: theme.shadows[2],
+        boxShadow: theme.palette.shadow.cardSubtle,
         transition: "all 0.3s ease",
         display: "flex",
         flexDirection: "column",
         ...wrapTextBox,
         "&:hover": {
           transform: "translateY(-2px)",
-          boxShadow: theme.shadows[6],
+          boxShadow: theme.palette.shadow.card,
         },
         ...sx,
       })}

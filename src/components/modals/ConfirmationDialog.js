@@ -101,7 +101,7 @@ const ConfirmationDialog = ({
             backgroundColor: alpha(theme.palette.background.paper, theme.palette.mode === "dark" ? 0.92 : 0.98),
             border: "1px solid",
             borderColor: theme.palette.divider,
-            boxShadow: theme.palette.custom.shadow.shadow3,
+            boxShadow: theme.palette.shadow.shadow3,
           }),
         },
       }}

@@ -1080,7 +1080,7 @@ export default function BadgeCustomizationModal({
                             height: previewHeight,
                             bgcolor: "background.paper",
                             position: "relative",
-                            boxShadow: (theme) => theme.palette.custom.shadow.shadow1,
+                            boxShadow: (theme) => theme.palette.shadow.shadow1,
                             border: "1px solid",
                             borderColor: "divider",
                             overflow: "hidden",

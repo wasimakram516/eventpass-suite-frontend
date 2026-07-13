@@ -128,7 +128,7 @@ export default function LoadingState({
             WebkitBackdropFilter: "blur(18px) saturate(140%)",
             border: "1px solid",
             borderColor: "transparent",
-            boxShadow: theme.palette.loader.shadow,
+            boxShadow: theme.palette.shadow.elevated,
           }}
         >
           {/* Sweep bar at top */}

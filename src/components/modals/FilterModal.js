@@ -45,7 +45,7 @@ const FilterDialog = ({ open, onClose, title, children }) => {
             backgroundColor: (theme) => alpha(theme.palette.background.paper, theme.palette.mode === "dark" ? 0.92 : 0.98),
             border: "1px solid",
             borderColor: "divider",
-            boxShadow: (theme) => theme.palette.custom.shadow.shadow2,},
+            boxShadow: (theme) => theme.palette.shadow.shadow2,},
         }
       }}
     >
