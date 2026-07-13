@@ -761,15 +761,20 @@ export const getTheme = (mode = "light", direction = "ltr") => {
         sectionDivider: isDark ? "rgba(255,255,255,0.12)" : "#eee",
 
       },
-      themeSwitchOverlay: {
+      // Shared HUD-style overlay pill for transient mode-switch feedback
+      // (theme toggle, language toggle) — macOS-style frosted glass, swaps
+      // light/dark for real rather than staying dark in both modes.
+      switchOverlay: {
         backdropBg: isDark ? "rgba(0,0,0,0.35)" : "rgba(0,0,0,0.15)",
-        chipBg: isDark ? "rgba(26,34,38,0.92)" : "rgba(20,20,20,0.85)",
-        chipColor: "#ffffff",
+        chipBg: isDark ? "rgba(28,33,41,0.72)" : "rgba(255,255,255,0.72)",
+        chipBorder: isDark ? "rgba(255,255,255,0.14)" : "rgba(20,24,31,0.08)",
+        chipColor: isDark ? "#f2f5f7" : "#14181f",
         chipShadow: isDark
           ? "0 8px 30px rgba(0,0,0,0.6)"
-          : "0 8px 30px rgba(0,0,0,0.4)",
+          : "0 8px 30px rgba(20,24,31,0.18)",
         iconLight: "#ED6C02",
         iconDark: "#4fc3d9",
+        iconAccent: primaryMain,
       },
       chip: {
         inactiveText: isDark ? "#d1d5db" : "#374151",

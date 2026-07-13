@@ -34,7 +34,7 @@ export default function ThemeSwitchOverlay() {
           justifyContent: "center",
           backdropFilter: "blur(6px)",
           WebkitBackdropFilter: "blur(6px)",
-          bgcolor: (theme) => theme.palette.themeSwitchOverlay.backdropBg,
+          bgcolor: (theme) => theme.palette.switchOverlay.backdropBg,
           pointerEvents: "none",
         }}
       >
@@ -46,15 +46,19 @@ export default function ThemeSwitchOverlay() {
             py: 3,
             fontSize: "1rem",
             fontWeight: 600,
-            bgcolor: theme.palette.themeSwitchOverlay.chipBg,
-            color: theme.palette.themeSwitchOverlay.chipColor,
+            borderRadius: "999px",
+            bgcolor: theme.palette.switchOverlay.chipBg,
+            border: `1px solid ${theme.palette.switchOverlay.chipBorder}`,
+            color: theme.palette.switchOverlay.chipColor,
+            backdropFilter: "blur(20px) saturate(180%)",
+            WebkitBackdropFilter: "blur(20px) saturate(180%)",
             "& .MuiChip-icon": {
               color:
                 mode === "dark"
-                  ? theme.palette.themeSwitchOverlay.iconDark
-                  : theme.palette.themeSwitchOverlay.iconLight,
+                  ? theme.palette.switchOverlay.iconDark
+                  : theme.palette.switchOverlay.iconLight,
             },
-            boxShadow: theme.palette.themeSwitchOverlay.chipShadow,
+            boxShadow: theme.palette.switchOverlay.chipShadow,
           })}
         />
       </Box>
