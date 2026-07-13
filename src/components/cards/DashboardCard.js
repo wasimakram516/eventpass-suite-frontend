@@ -4,6 +4,7 @@ import React from "react";
 import { Typography, Button, Box, useTheme } from "@mui/material";
 import { useRouter } from "next/navigation";
 import AppCard from "@/components/cards/AppCard";
+import { resolveModuleColor } from "@/styles/theme";
 
 const DashboardCard = ({
   title,
@@ -16,7 +17,7 @@ const DashboardCard = ({
 }) => {
   const router = useRouter();
   const theme = useTheme();
-  const resolvedColor = color || theme.palette.primary.main;
+  const resolvedColor = resolveModuleColor(color, theme.palette.mode) || theme.palette.primary.main;
 
   return (
       <AppCard

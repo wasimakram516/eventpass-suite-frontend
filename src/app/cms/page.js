@@ -27,6 +27,7 @@ import LoadingState from "@/components/LoadingState";
 import { wrapTextBox } from "@/utils/wrapTextStyles";
 import { getModuleIcon } from "@/utils/iconMapper";
 import ICONS from "@/utils/iconUtil";
+import { resolveModuleColor } from "@/styles/theme";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { toArabicDigits } from "@/utils/arabicDigits";
 import { getAllBusinesses } from "@/services/businessService";
@@ -703,11 +704,11 @@ export default function HomePage() {
                         }}
                       >
                         {getModuleIcon(mod.icon, {
-                          sx: { fontSize: 40, color: mod.color },
+                          sx: { fontSize: 40, color: resolveModuleColor(mod.color, theme.palette.mode) },
                         })}
                         <Typography
                           variant="h6"
-                          sx={{ color: mod.color, ...wrapTextBox }}
+                          sx={{ color: resolveModuleColor(mod.color, theme.palette.mode), ...wrapTextBox }}
                         >
                           {mod.labels?.[language] ||
                             mod.labels?.en ||

@@ -187,6 +187,24 @@ export const getTheme = (mode = "light", direction = "ltr") => {
         black: "#000000",
       },
 
+      neutral: {
+        50: "#fafafa",
+        100: "#f4f4f5",
+        200: "#e4e4e7",
+        300: "#d4d4d8",
+        400: "#a1a1aa",
+        500: "#71717a",
+        600: "#52525b",
+        700: "#3f3f46",
+        800: "#27272a",
+        900: "#18181b",
+        950: "#09090b",
+        text: isDark ? "#d4d4d8" : "#52525b",
+        textStrong: isDark ? "#f4f4f5" : "#27272a",
+        border: isDark ? "#3f3f46" : "#e4e4e7",
+        surface: isDark ? "#27272a" : "#f4f4f5",
+      },
+
       success: {
         main: successMain,
         dark: "#00c853",
@@ -1121,6 +1139,20 @@ export const getTheme = (mode = "light", direction = "ltr") => {
     },
   });
 };
+export const resolveModuleColor = (color, mode) => {
+  if (!color) return undefined;
+  if (typeof color === "string") return color; // backward-compat fallback
+  return color[mode] || color.light;
+};
+
+// For decorative tile/icon accents that don't carry module identity or data
+// meaning: in light mode falls back to theme.palette.primary.main (no "light"
+// key here — DashboardCard's resolveModuleColor(...) || primary.main fallback
+// picks it up), since saturated color isn't the problem there. In dark mode
+// it resolves to a calm neutral (palette.neutral.textStrong) to avoid the
+// halation/glow saturated accents get against a near-black background.
+export const NEUTRAL_ACCENT = { dark: "#f4f4f5" };
+
 export const REPORT_COLORS = {
   brandGray: "#8c8c8c",
   primary: "#0077b6",
