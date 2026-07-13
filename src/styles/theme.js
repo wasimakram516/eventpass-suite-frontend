@@ -58,7 +58,7 @@ export const getTheme = (mode = "light", direction = "ltr") => {
         swatchShadow: isDark
           ? "0 2px 4px rgba(0,0,0,0.3)"
           : "0 2px 4px rgba(0,0,0,0.1)",
-        swatchHoverBorder: "#2196f3",
+        swatchHoverBorder: isDark ? "#71717a" : "#a1a1aa",
         cardBackground: isDark ? "#1a2226" : "#ffffff",
         text: isDark ? "#ffffff" : "#000000",
         signature: isDark ? "#ffffff" : "#000000",
@@ -817,7 +817,7 @@ export const getTheme = (mode = "light", direction = "ltr") => {
         moduleChipAvatarBg: isDark
           ? "rgba(0, 119, 182, 0.25)"
           : "rgba(0, 119, 182, 0.12)",
-        moduleChipIconColor: "#0077b6",
+        moduleChipIconColor: isDark ? "#d4d4d8" : "#52525b",
       },
       navbar: {
         appBarBg: isDark ? "rgba(26,34,38,0.6)" : "rgba(255,255,255,0.3)",
@@ -893,7 +893,7 @@ export const getTheme = (mode = "light", direction = "ltr") => {
       },
 
       whatsappDashboard: {
-        logsCardColor: "#42a5f5",
+        logsCardColor: isDark ? "#f4f4f5" : primaryMain,
       },
     },
 

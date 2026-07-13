@@ -1421,7 +1421,6 @@ const DigiPassEventModal = ({
                                                                         updated
                                                                     );
                                                                 }}
-                                                                color="primary"
                                                                 variant="outlined"
                                                             />
                                                         ))}

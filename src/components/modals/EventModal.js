@@ -3647,7 +3647,6 @@ const EventModal = ({
                                       updated
                                     );
                                   }}
-                                  color="primary"
                                   variant="outlined"
                                 />
                               ))}
