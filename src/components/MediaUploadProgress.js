@@ -94,7 +94,6 @@ const MediaUploadProgress = ({ open, uploads, onClose, allowClose = false }) => 
                 slotProps={{
                     paper: {
                         sx: {
-                            borderRadius: 3,
                             boxShadow: (theme) => theme.palette.shadow.dialog,
                             overflow: "hidden",
                         }

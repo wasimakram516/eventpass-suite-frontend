@@ -94,7 +94,6 @@ const ConfirmationDialog = ({
       slotProps={{
         paper: {
           sx: (theme) => ({
-            borderRadius: 2,
             padding: 2,
             maxWidth: "500px",
             width: "100%",

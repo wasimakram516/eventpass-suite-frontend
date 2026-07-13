@@ -46,7 +46,6 @@ const BusinessAlertModal = ({ open, onNavigate }) => {
       slotProps={{
         paper: {
           sx: {
-            borderRadius: 4,
             overflow: "hidden",
             boxShadow: 8,
           },

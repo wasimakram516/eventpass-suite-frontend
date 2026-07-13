@@ -897,7 +897,7 @@ export default function RegistrationModal({
                 slotProps={{
                     paper: {
                         sx: {
-                            borderRadius: 4, overflow: "hidden",
+                            overflow: "hidden",
                             boxShadow: (theme) => theme.palette.shadow.dialogLarge,
                         },
                     },

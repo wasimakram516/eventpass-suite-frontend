@@ -714,7 +714,6 @@ export default function PaymentsPage() {
           slotProps={{
             paper: {
               sx: {
-                borderRadius: 4,
                 overflow: "hidden",
                 border: "1px solid",
                 borderColor: "divider",

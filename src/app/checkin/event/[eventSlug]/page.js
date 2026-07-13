@@ -848,7 +848,6 @@ export default function EventDetails() {
         slotProps={{
           paper: {
             sx: {
-              borderRadius: 2,
               padding: 2,
               maxWidth: "500px",
               width: "100%",
@@ -963,7 +962,7 @@ export default function EventDetails() {
         slotProps={{
           paper: {
             sx: (theme) => ({
-              borderRadius: 2, padding: 0, maxWidth: "800px", width: "100%",
+              padding: 0, maxWidth: "800px", width: "100%",
               backgroundColor: theme.palette.background.paper,
               boxShadow: theme.palette.shadow.dialog,
             }),

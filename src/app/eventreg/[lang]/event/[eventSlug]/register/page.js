@@ -1161,7 +1161,6 @@ export default function Registration() {
         slotProps={{
           paper: {
             sx: {
-              borderRadius: 4,
               overflow: "hidden",
               boxShadow: theme.palette.shadow.dialogLarge,
             },

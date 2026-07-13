@@ -757,7 +757,6 @@ const SpinningPage = () => {
         slotProps={{
           paper: {
             sx: {
-              borderRadius: 3,
               background: (theme) => theme.palette.gradients.winnerDialog,
               color: "white",
             },

@@ -38,7 +38,6 @@ const FilterDialog = ({ open, onClose, title, children }) => {
       slotProps={{
         paper: {
           sx: {
-            borderRadius: 2,
             minHeight: "40vh",
             display: "flex",
             flexDirection: "column",

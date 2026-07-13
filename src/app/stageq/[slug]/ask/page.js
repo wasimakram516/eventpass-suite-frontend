@@ -386,7 +386,7 @@ export default function AskQuestionsPage() {
           maxWidth="sm"
           fullWidth
           slotProps={{
-            paper: { sx: { borderRadius: 3, boxShadow: 6 } }
+            paper: { sx: { boxShadow: 6 } }
           }}
         >
           <DialogTitle fontWeight="bold">{t.submitQuestion}</DialogTitle>

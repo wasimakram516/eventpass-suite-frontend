@@ -652,7 +652,7 @@ export default function PollVotingPage() {
         open={finished}
         onClose={handleRestart}
         slotProps={{
-          paper: { sx: { borderRadius: 4, p: 4, maxWidth: { xs: "90%", sm: 420 }, width: { xs: "90%", sm: "auto" }, mx: "auto", textAlign: "center", boxShadow: 6 } }
+          paper: { sx: { p: 4, maxWidth: { xs: "90%", sm: 420 }, width: { xs: "90%", sm: "auto" }, mx: "auto", textAlign: "center", boxShadow: 6 } }
         }}
       >
         <DialogTitle sx={{ fontSize: "2rem", fontWeight: "bold", color: "primary.main", textAlign: "center", pb: 1 }}>

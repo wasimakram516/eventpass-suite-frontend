@@ -1056,6 +1056,15 @@ export const getTheme = (mode = "light", direction = "ltr") => {
         ],
       },
 
+      // === Dialogs (same corner radius as AppCard) ===
+      MuiDialog: {
+        styleOverrides: {
+          paper: ({ theme }) => ({
+            borderRadius: theme.shape.borderRadius * 4,
+          }),
+        },
+      },
+
       // === Inputs Direction & Alignment ===
       MuiInputBase: {
         styleOverrides: {
