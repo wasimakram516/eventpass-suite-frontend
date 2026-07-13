@@ -13,8 +13,8 @@ const translations = {
   },
 };
 
-export default function NoDataAvailable({color = "#ccc"}) {
-  const { t } = useI18nLayout(translations);
+export default function NoDataAvailable({ color }) {
+    const { t } = useI18nLayout(translations);
 
   return (
     <Box
@@ -26,8 +26,8 @@ export default function NoDataAvailable({color = "#ccc"}) {
         alignItems: "center",
       }}
     >
-      <ICONS.empty sx={{ fontSize: 72, mb: 2, color }} />
-      <Typography sx={{ color }} variant="h6">
+      <ICONS.empty sx={{ fontSize: 72, mb: 2, color: color || "text.disabled" }} />
+      <Typography sx={{ color: color || "text.disabled" }} variant="h6">
         {t.noData}
       </Typography>
     </Box>

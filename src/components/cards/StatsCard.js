@@ -11,7 +11,7 @@ import {
 } from "@mui/material";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 
-const COLORS = ["#8884d8", "#82ca9d", "#ffc658", "#ff8042", "#8dd1e1"];
+import { VOTECAST_CHART_COLORS as COLORS } from "@/styles/theme";
 
 export default function StatCard({ title, subtitle, data = [], centerValue }) {
   const theme = useTheme();
@@ -94,12 +94,12 @@ export default function StatCard({ title, subtitle, data = [], centerValue }) {
             sx={{
               justifyContent: "space-between",
               alignItems: "center",
-              bgcolor: "grey.100",
+              bgcolor: "action.hover",
               borderRadius: 2,
               px: 1.5,
               py: 1,
               transition: "background 0.3s",
-              "&:hover": { bgcolor: "grey.200" }
+              "&:hover": { bgcolor: "action.selected" }
             }}>
             <Typography
               variant="body2"
@@ -114,7 +114,7 @@ export default function StatCard({ title, subtitle, data = [], centerValue }) {
               size="small"
               sx={{
                 bgcolor: COLORS[idx % COLORS.length],
-                color: "#fff",
+                color: "common.white",
                 fontWeight: "bold",
               }}
             />

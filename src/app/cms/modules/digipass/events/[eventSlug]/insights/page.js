@@ -10,6 +10,7 @@ import {
     Chip,
     Stack,
     Divider,
+    useTheme,
 } from "@mui/material";
 import {
     getAvailableFields,
@@ -129,8 +130,6 @@ const translations = {
     },
 };
 
-const FIELD_COLOR = "#0077b6";
-
 const hslToHex = (h, s, l) => {
     s /= 100;
     l /= 100;
@@ -166,16 +165,17 @@ const FieldChip = ({ field, isSelected, onClick }) => {
             label={field.label}
             onClick={onClick}
             sx={{
-                backgroundColor: isSelected ? field.color : "#ffffff",
-                color: isSelected ? "#ffffff" : "#374151",
+                backgroundColor: isSelected ? field.color : "background.paper",
+                color: isSelected ? theme.palette.common.white : "text.primary",
                 fontWeight: isSelected ? 600 : 500,
-                border: isSelected ? "none" : "2px solid #e5e7eb",
+                border: isSelected ? "none" : "2px solid",
+                borderColor: isSelected ? "transparent" : "divider",
                 cursor: "pointer",
                 transition: "all 0.3s ease-out",
                 "&:hover": {
                     transform: "scale(1.05)",
                     backgroundColor: isSelected ? field.color : `${field.color}15`,
-                    color: isSelected ? "#ffffff" : field.color,
+                    color: isSelected ? theme.palette.common.white : "text.primary",
                     borderColor: field.color,
                 },
             }}
@@ -184,6 +184,8 @@ const FieldChip = ({ field, isSelected, onClick }) => {
 };
 
 export default function AnalyticsDashboard() {
+    const theme = useTheme();
+    const FIELD_COLOR = theme.palette.primary.main;
     const { eventSlug } = useParams();
     const { t, dir, language } = useI18nLayout(translations);
     const [selectedFields, setSelectedFields] = useState([]);
@@ -237,7 +239,6 @@ export default function AnalyticsDashboard() {
                         venue: eventData.linkedEventRegId.venue
                     };
                 }
-                console.log("Event data structure:", eventData);
                 setEventInfo(eventData);
 
                 if (summaryResponse?.data) {
@@ -553,13 +554,13 @@ export default function AnalyticsDashboard() {
                 };
             });
 
-            const summaryCards = summary ? [
-                { label: t.totalParticipants, value: summary.totalParticipants, color: "#0077b6" },
-                { label: t.totalActivityCompletions, value: summary.totalActivityCompletions, color: "#f59e0b" },
-                { label: t.avgActivities, value: summary.avgActivitiesPerParticipant, color: "#8b5cf6" },
-                eventInfo?.linkedEventRegId ? { label: t.scanRate, value: `${summary.scanRate}%`, color: "#10b981" } : null,
-            ].filter(Boolean) : [];
 
+            const summaryCardsConfig = summary ? [
+                { label: t.totalParticipants, value: summary.totalParticipants, color: theme.palette.insights.digipassSummaryParticipants },
+                { label: t.totalActivityCompletions, value: summary.totalActivityCompletions, color: theme.palette.insights.digipassSummaryCompletions },
+                { label: t.avgActivities, value: summary.avgActivitiesPerParticipant, color: theme.palette.insights.digipassSummaryAvgActivities },
+                eventInfo?.linkedEventRegId ? { label: t.scanRate, value: `${summary.scanRate}%`, color: theme.palette.insights.digipassSummaryScanRate } : null,
+            ].filter(Boolean) : [];
             await exportChartsToPDF(
                 refs,
                 labels,
@@ -835,10 +836,10 @@ export default function AnalyticsDashboard() {
                 <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 1 }}>
                     <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, flex: "1 1 500px" }}>
                         {[
-                            { label: t.totalParticipants, value: toArabicDigits(summary.totalParticipants, language), color: "#0077b6" },
-                            { label: t.totalActivityCompletions, value: toArabicDigits(summary.totalActivityCompletions, language), color: "#f59e0b" },
-                            { label: t.avgActivities, value: toArabicDigits(summary.avgActivitiesPerParticipant, language), color: "#8b5cf6" },
-                            eventInfo?.linkedEventRegId ? { label: t.scanRate, value: `${toArabicDigits(summary.scanRate, language)}%`, color: "#10b981" } : null,
+                            { label: t.totalParticipants, value: toArabicDigits(summary.totalParticipants, language), color: theme.palette.insights.digipassSummaryParticipants },
+                            { label: t.totalActivityCompletions, value: toArabicDigits(summary.totalActivityCompletions, language), color: theme.palette.insights.digipassSummaryCompletions },
+                            { label: t.avgActivities, value: toArabicDigits(summary.avgActivitiesPerParticipant, language), color: theme.palette.insights.digipassSummaryAvgActivities },
+                            eventInfo?.linkedEventRegId ? { label: t.scanRate, value: `${toArabicDigits(summary.scanRate, language)}%`, color: theme.palette.insights.digipassSummaryScanRate } : null,
                         ].filter(Boolean).map(({ label, value, color }) => (
                             <AppCard
                                 key={label}
@@ -850,7 +851,8 @@ export default function AnalyticsDashboard() {
                                     display: 'flex',
                                     flexDirection: 'column',
                                     justifyContent: 'center',
-                                    border: "1px solid #f1f5f9"
+                                    border: "1px solid",
+                                    borderColor: "divider",
                                 }}
                             >
                                 <Typography
@@ -888,7 +890,7 @@ export default function AnalyticsDashboard() {
                     variant="subtitle1"
                     sx={{
                         fontWeight: 600,
-                        color: "#374151",
+                        color: "text.primary",
                         mb: 1,
                     }}
                 >
@@ -947,7 +949,7 @@ export default function AnalyticsDashboard() {
                         <Box sx={{
                             textAlign: "center"
                         }}>
-                            <BarChartIcon sx={{ fontSize: 48, color: "#d1d5db", mb: 2 }} />
+                            <BarChartIcon sx={{ fontSize: 48, color: "text.disabled", mb: 2 }} />
                             <Typography color="textSecondary">
                                 {t.selectFieldPrompt}
                             </Typography>

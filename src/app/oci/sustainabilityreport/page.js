@@ -17,7 +17,7 @@ export default function DownloadPage() {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        bgcolor: "#f9f9f9",
+       bgcolor: "background.default",
       }}
     >
       <Stack spacing={2} sx={{

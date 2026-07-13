@@ -5,6 +5,7 @@ import {
   IconButton,
   Slide,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import ICONS from "@/utils/iconUtil";
 import { forwardRef } from "react";
 import useI18nLayout from "@/hooks/useI18nLayout";
@@ -41,7 +42,10 @@ const FilterDialog = ({ open, onClose, title, children }) => {
             minHeight: "40vh",
             display: "flex",
             flexDirection: "column",
-          },
+            backgroundColor: (theme) => alpha(theme.palette.background.paper, theme.palette.mode === "dark" ? 0.92 : 0.98),
+            border: "1px solid",
+            borderColor: "divider",
+            boxShadow: (theme) => theme.palette.custom.shadow.shadow2,},
         }
       }}
     >

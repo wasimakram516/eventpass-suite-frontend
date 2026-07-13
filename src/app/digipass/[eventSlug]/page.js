@@ -17,7 +17,7 @@ import ICONS from "@/utils/iconUtil";
 import { useLanguage } from "@/contexts/LanguageContext";
 import LanguageSelector from "@/components/LanguageSelector";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
-
+import { alpha } from "@mui/material/styles";
 export default function DigiPassEventDetails() {
   const { eventSlug } = useParams();
   const router = useRouter();
@@ -242,8 +242,8 @@ export default function DigiPassEventDetails() {
             p: 4,
             textAlign: "center",
             backdropFilter: "blur(6px)",
-            backgroundColor: "rgba(255,255,255,0.9)",
-            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.15)",
+            backgroundColor: (theme) => theme.palette.overlay.cardTransparent,
+            boxShadow: (theme) => theme.palette.shadow.paper,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -309,7 +309,7 @@ export default function DigiPassEventDetails() {
                   ...getStartIconSpacing(dir),
                   "&:hover": {
                     borderColor: "primary.dark",
-                    backgroundColor: "rgba(25,118,210,0.04)",
+                    backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.08),
                   },
                 }}
               >
@@ -330,7 +330,7 @@ export default function DigiPassEventDetails() {
                 ...getStartIconSpacing(dir),
                 "&:hover": {
                   borderColor: "primary.dark",
-                  backgroundColor: "rgba(25,118,210,0.04)",
+                  backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.08),
                 },
               }}
             >

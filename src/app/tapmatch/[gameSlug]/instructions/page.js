@@ -46,18 +46,18 @@ export default function TapMatchInstructionsPage() {
   const [translatedTitle, setTranslatedTitle] = useState("");
 
   useEffect(() => {
-        const fetchTranslation = async () => {
-          if (!game?.title) return;
-           try {
-              const result = await translateTexts([game.title], language);
-              setTranslatedTitle(result[0] || game.title);
-            } catch (error) {
-              console.error("Translation failed:", error);
-              setTranslatedTitle(game.title);
-            }
-        };
-        fetchTranslation();
-      }, [game?.title, language]);
+    const fetchTranslation = async () => {
+      if (!game?.title) return;
+      try {
+        const result = await translateTexts([game.title], language);
+        setTranslatedTitle(result[0] || game.title);
+      } catch (error) {
+        console.error("Translation failed:", error);
+        setTranslatedTitle(game.title);
+      }
+    };
+    fetchTranslation();
+  }, [game?.title, language]);
 
   useEffect(() => {
     const stored = sessionStorage.getItem("playerInfo");
@@ -125,105 +125,76 @@ export default function TapMatchInstructionsPage() {
         <Paper
           elevation={8}
           dir={dir}
-          sx={{
+          sx={(theme) => ({
             p: { xs: 3, sm: 4 },
             maxWidth: 800,
             width: "100%",
             backdropFilter: "blur(16px)",
-            backgroundColor: "rgba(10,10,20,0.85)",
+            backgroundColor: theme.palette.quiznest.glassBg,
             borderRadius: 6,
-            border: "1px solid rgba(255,255,255,0.08)",
-            boxShadow: "0 8px 40px rgba(0,0,0,0.6)",
-          }}
+            border: `1px solid ${theme.palette.quiznest.glassBorder}`,
+            boxShadow: theme.palette.quiznest.dialogShadow,
+          })}
         >
           <Typography
             variant="h4"
             gutterBottom
-            sx={{
-              fontWeight: 800,
-              mb: 1,
-              color: "#fff",
-              textTransform: "capitalize",
-              textAlign: "center",
-              wordBreak: "break-word"
-            }}>
+            sx={(theme) => ({
+              fontWeight: 800, mb: 1, color: theme.palette.common.white,
+              textTransform: "capitalize", textAlign: "center", wordBreak: "break-word",
+            })}
+          >
             {translatedTitle}
           </Typography>
-
           <Typography
             variant="h6"
-            sx={{ mb: 4, fontWeight: 500, color: "rgba(255,255,255,0.75)", textAlign: "center" }}
+            sx={(theme) => ({ mb: 4, fontWeight: 500, color: theme.palette.crosszero.instructionText, textAlign: "center" })}
           >
             {t.welcome}{" "}
-            <Box
-              component="span"
-              sx={{
-                fontWeight: 700,
-                color: "#00e5ff"
-              }}>
+            <Box component="span" sx={(theme) => ({ fontWeight: 700, color: theme.palette.quiznest.accent })}>
               {playerInfo.name}
             </Box>
             , {t.instructionsTitle}
           </Typography>
 
-          <Stack
-            spacing={2}
-            sx={{
-              alignItems: align,
-              mb: 4
-            }}>
-            {/* Total pairs */}
+          <Stack spacing={2} sx={{ alignItems: align, mb: 4 }}>
             <Stack
               direction="row"
               spacing={2}
-              sx={{
-                alignItems: "center",
-                px: 2,
-                py: 1.5,
-                borderRadius: 3,
-                bgcolor: "rgba(0,229,255,0.08)",
-                border: "1px solid rgba(0,229,255,0.2)"
-              }}>
-              <ICONS.grid sx={{ color: "#00e5ff" }} />
-              <Typography variant="h6" sx={{ color: "#fff", textAlign: align, direction: dir }}>
+              sx={(theme) => ({
+                alignItems: "center", px: 2, py: 1.5, borderRadius: 3,
+                bgcolor: theme.palette.quiznest.accentBg,
+                border: `1px solid ${theme.palette.quiznest.accentBorder}`,
+              })}
+            >
+              <ICONS.grid sx={(theme) => ({ color: theme.palette.quiznest.accent })} />
+              <Typography variant="h6" sx={(theme) => ({ color: theme.palette.common.white, textAlign: align, direction: dir })}>
                 {t.pairsCount}{" "}
-                <Box
-                  component="span"
-                  sx={{
-                    fontWeight: 700,
-                    color: "#00e5ff"
-                  }}>
+                <Box component="span" sx={(theme) => ({ fontWeight: 700, color: theme.palette.quiznest.accent })}>
                   {game.memoryImages.length}
                 </Box>
               </Typography>
             </Stack>
-
             {/* Game time */}
             <Stack
               direction="row"
               spacing={2}
-              sx={{
-                alignItems: "center",
-                px: 2,
-                py: 1.5,
-                borderRadius: 3,
-                bgcolor: "rgba(0,229,255,0.08)",
-                border: "1px solid rgba(0,229,255,0.2)"
-              }}>
-              <ICONS.time sx={{ color: "#00e5ff" }} />
-              <Typography variant="h6" sx={{ color: "#fff", textAlign: align, direction: dir }}>
+              sx={(theme) => ({
+                alignItems: "center", px: 2, py: 1.5, borderRadius: 3,
+                bgcolor: theme.palette.quiznest.accentBg,
+                border: `1px solid ${theme.palette.quiznest.accentBorder}`,
+              })}
+            >
+              <ICONS.time sx={(theme) => ({ color: theme.palette.quiznest.accent })} />
+              <Typography variant="h6" sx={(theme) => ({ color: theme.palette.common.white, textAlign: align, direction: dir })}>
                 {t.gameDuration}{" "}
-                <Box
-                  component="span"
-                  sx={{
-                    fontWeight: 700,
-                    color: "#00e5ff"
-                  }}>
+                <Box component="span" sx={(theme) => ({ fontWeight: 700, color: theme.palette.quiznest.accent })}>
                   {game.gameSessionTimer} {t.seconds}
                 </Box>
               </Typography>
             </Stack>
           </Stack>
+
 
           {/* Start Button */}
           <Button
@@ -231,16 +202,13 @@ export default function TapMatchInstructionsPage() {
             size="large"
             fullWidth
             onClick={handleStart}
-            sx={{
-              py: 1.2,
-              borderRadius: 999,
-              fontWeight: 800,
-              bgcolor: "#00e5ff",
-              color: "#000",
-              "&:hover": { filter: "brightness(1.15)", bgcolor: "#00e5ff" },
-              display: "block",
-              mx: "auto",
-            }}
+            sx={(theme) => ({
+              py: 1.2, borderRadius: 999, fontWeight: 800,
+              bgcolor: theme.palette.quiznest.accent,
+              color: theme.palette.common.black,
+              "&:hover": { filter: "brightness(1.15)", bgcolor: theme.palette.quiznest.accent },
+              display: "block", mx: "auto",
+            })}
           >
             {t.startButton}
           </Button>

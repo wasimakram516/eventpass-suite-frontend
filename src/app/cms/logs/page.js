@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { alpha } from "@mui/material/styles";
 import {
   Box,
   Container,
@@ -140,25 +141,25 @@ export default function LogsPage() {
   const labels =
     language === "ar"
       ? {
-          user: "المستخدم",
-          logType: "نوع السجل",
-          itemType: "نوع العنصر",
-          itemName: "اسم العنصر",
-          business: "الشركة",
-          module: "الوحدة",
-          time: "الوقت",
-          actions: "الإجراءات",
-        }
+        user: "المستخدم",
+        logType: "نوع السجل",
+        itemType: "نوع العنصر",
+        itemName: "اسم العنصر",
+        business: "الشركة",
+        module: "الوحدة",
+        time: "الوقت",
+        actions: "الإجراءات",
+      }
       : {
-          user: "User",
-          logType: "Log Type",
-          itemType: "Item Type",
-          itemName: "Item Name",
-          business: "Business",
-          module: "Module",
-          time: "Time",
-          actions: "Actions",
-        };
+        user: "User",
+        logType: "Log Type",
+        itemType: "Item Type",
+        itemName: "Item Name",
+        business: "Business",
+        module: "Module",
+        time: "Time",
+        actions: "Actions",
+      };
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
@@ -446,8 +447,8 @@ export default function LogsPage() {
               eventType === "closed"
                 ? "checkin"
                 : eventType === "digipass"
-                ? "digipass"
-                : "eventreg";
+                  ? "digipass"
+                  : "eventreg";
             router.push(
               `/cms/modules/${basePath}/events/${eventSlug}/registrations${tokenSearch}`,
             );
@@ -476,8 +477,8 @@ export default function LogsPage() {
               moduleName === "Check-in"
                 ? "checkin"
                 : moduleName === "DigiPass"
-                ? "digipass"
-                : "eventreg";
+                  ? "digipass"
+                  : "eventreg";
             router.push(
               `/cms/modules/${basePath}/events/${registrationRow.eventSlug}/registrations${tokenSearch}`,
             );
@@ -502,8 +503,8 @@ export default function LogsPage() {
         moduleName === "CheckIn"
           ? "checkin"
           : moduleName === "DigiPass"
-          ? "digipass"
-          : "eventreg";
+            ? "digipass"
+            : "eventreg";
       router.push(`/cms/modules/${basePath}/events${searchQuery}`);
       return;
     }
@@ -628,7 +629,7 @@ export default function LogsPage() {
       if (dateRangePreset === "all") {
         // Export all time: do not send from/to
       } else {
-        
+
         const fromIso = fromMs
           ? new Date(fromMs).toISOString()
           : sevenDaysAgoIso;
@@ -700,7 +701,12 @@ export default function LogsPage() {
     if (isHardDelete) {
       return {
         ...base,
-        sx: { ...base.sx, bgcolor: "#4a0404", color: "#fff", minWidth: 130 },
+        sx: {
+          ...base.sx,
+          bgcolor: theme.palette.logs.hardDeleteBg,
+          color: theme.palette.logs.hardDeleteColor,
+          minWidth: 130,
+        },
         variant: "filled",
       };
     }
@@ -802,11 +808,11 @@ export default function LogsPage() {
             borderColor: "divider",
             borderRadius: 2.5,
             overflow: "hidden",
-            boxShadow: "0 6px 18px rgba(15,23,42,0.05)",
+            boxShadow: theme.palette.sharedUI.cardShadow,
             transition: "transform 0.2s ease, box-shadow 0.2s ease",
             "&:hover": {
               transform: "translateY(-1px)",
-              boxShadow: "0 10px 24px rgba(15,23,42,0.1)",
+              boxShadow: theme.palette.sharedUI.cardHoverShadow,
             },
           }}
         >
@@ -929,7 +935,7 @@ export default function LogsPage() {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            bgcolor: "rgba(255,255,255,0.7)",
+            bgcolor: (theme) => alpha(theme.palette.background.paper, 0.7),
           }}
         >
           <CircularProgress size={48} />

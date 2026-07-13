@@ -54,7 +54,7 @@ export default function DemoAgentPage() {
           borderRadius: 2,
           overflow: 'hidden',
           boxShadow: 3,
-          backgroundColor: '#fff',
+          backgroundColor: 'background.paper',
         }}
       />
     </Box>

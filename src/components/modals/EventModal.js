@@ -1870,7 +1870,7 @@ const EventModal = ({
                           top: -18,
                           right: 6,
                           bgcolor: "error.main",
-                          color: "#fff",
+                          color: "common.white",
                           "&:hover": { bgcolor: "error.dark" },
                         }}
                       >
@@ -1946,12 +1946,10 @@ const EventModal = ({
                     px: 1,
                     cursor: "pointer",
                     overflow: "hidden",
-                    boxShadow: `
-        2px 2px 6px rgba(0, 0, 0, 0.15),
-        -2px -2px 6px rgba(255, 255, 255, 0.5),
-        inset 2px 2px 5px rgba(0, 0, 0, 0.2),
-        inset -2px -2px 5px rgba(255, 255, 255, 0.7)
-      `,
+                    boxShadow: (theme) =>
+                      theme.palette.mode === "dark"
+                        ? theme.palette.custom.shadow.neumorphicDark1
+                        : theme.palette.custom.shadow.neumorphicLight1,
                     position: "relative",
                   }}
                 >
@@ -1959,10 +1957,7 @@ const EventModal = ({
                     variant="caption"
                     sx={{
                       fontWeight: 600,
-                      color:
-                        formData.defaultLanguage === "en"
-                          ? "#fff"
-                          : "text.secondary",
+                      color: formData.defaultLanguage === "en" ? "common.white" : "text.secondary",
                       zIndex: 2,
                       transition: "color 0.3s",
                     }}
@@ -1973,10 +1968,7 @@ const EventModal = ({
                     variant="caption"
                     sx={{
                       fontWeight: 600,
-                      color:
-                        formData.defaultLanguage === "ar"
-                          ? "#fff"
-                          : "text.secondary",
+                      color: formData.defaultLanguage === "ar" ? "common.white" : "text.secondary",
                       zIndex: 2,
                       transition: "color 0.3s",
                     }}
@@ -1991,11 +1983,9 @@ const EventModal = ({
                       borderRadius: 999,
                       top: 2,
                       left: formData.defaultLanguage === "ar" ? 34 : 2,
-                      backgroundColor: "#1976d2",
+                      backgroundColor: "primary.main",
                       zIndex: 1,
-                      boxShadow: "0 4px 8px rgba(0, 0, 0, 0.3)",
-                      transition:
-                        "left 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)",
+                      boxShadow: (theme) => theme.palette.shadow.shadow2,
                     }}
                   />
                 </Box>
@@ -2839,11 +2829,15 @@ const EventModal = ({
 
                   <Box>
                     <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
-                      {t.emailBody} {emailTemplateBodyError && <span style={{ color: "#d32f2f" }}>*</span>}
-                    </Typography>
+                      {t.emailBody} {emailTemplateBodyError && (
+                        <Typography component="span" sx={{ color: "error.main" }}>*</Typography>
+                      )}                    </Typography>
                     <Box
                       sx={{
-                        border: emailTemplateBodyError ? "1px solid #d32f2f" : "1px solid transparent",
+                        border: (theme) =>
+                          emailTemplateBodyError
+                            ? `1px solid ${theme.palette.error.main}`
+                            : "1px solid transparent",
                         borderRadius: 1,
                       }}
                     >
@@ -2863,8 +2857,7 @@ const EventModal = ({
                       />
                     </Box>
                     {emailTemplateBodyError && (
-                      <Typography variant="caption" sx={{ color: "#d32f2f", mt: 0.5, display: "block" }}>
-                        {t.emailBodyRequired}
+                      <Typography variant="caption" sx={{ color: "error.main", mt: 0.5, display: "block" }}>                        {t.emailBodyRequired}
                       </Typography>
                     )}
                   </Box>
@@ -3118,7 +3111,7 @@ const EventModal = ({
                           top: -18,
                           right: 6,
                           bgcolor: "error.main",
-                          color: "#fff",
+                          color: "common.white",
                           "&:hover": { bgcolor: "error.dark" },
                         }}
                       >
@@ -3178,7 +3171,7 @@ const EventModal = ({
                           top: -18,
                           right: 6,
                           bgcolor: "error.main",
-                          color: "#fff",
+                          color: "common.white",
                           "&:hover": { bgcolor: "error.dark" },
                         }}
                       >
@@ -3280,7 +3273,7 @@ const EventModal = ({
                             top: -18,
                             right: 6,
                             bgcolor: "error.main",
-                            color: "#fff",
+                            color: "common.white",
                             "&:hover": { bgcolor: "error.dark" },
                           }}
                         >
@@ -3369,7 +3362,7 @@ const EventModal = ({
                             top: -18,
                             right: 6,
                             bgcolor: "error.main",
-                            color: "#fff",
+                            color: "common.white",
                             "&:hover": { bgcolor: "error.dark" },
                           }}
                         >

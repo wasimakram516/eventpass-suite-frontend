@@ -20,6 +20,7 @@ import {
   Slider,
   Popover,
 } from "@mui/material";
+import { CARD_COLOR_SWATCHES, TEXT_COLOR_SWATCHES } from "@/styles/theme";
 import { useState, useEffect, useRef } from "react";
 import { HexColorPicker } from "react-colorful";
 import { useMessage } from "@/contexts/MessageContext";
@@ -30,7 +31,7 @@ import { uploadMediaFiles } from "@/utils/mediaUpload";
 import { deleteMedia } from "@/services/deleteMediaService";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
-
+import { WALL_CONFIG_DEFAULTS } from "@/styles/theme";
 const translations = {
   en: {
     dialogTitleUpdate: "Update Wall Configuration",
@@ -206,12 +207,12 @@ const WallConfigModal = ({
     logoOpacity: 100,
     stampOnImages: false,
     logoStampPosition: "bottom-right",
-    cardBackgroundColor: "#ffffff",
+    cardBackgroundColor: WALL_CONFIG_DEFAULTS.cardBackgroundColor,
     cardRandomColors: false,
     cardImageShape: "circle",
     cardMediaType: "type1",
-    mediaType2TextColor: "#000000",
-    mediaType2SignatureColor: "#000000",
+    mediaType2TextColor: WALL_CONFIG_DEFAULTS.mediaType2TextColor,
+    mediaType2SignatureColor: WALL_CONFIG_DEFAULTS.mediaType2SignatureColor,
   });
   const [colorAnchorEl, setColorAnchorEl] = useState(null);
   const [textColorAnchorEl, setTextColorAnchorEl] = useState(null);
@@ -268,12 +269,12 @@ const WallConfigModal = ({
         logoOpacity: 100,
         stampOnImages: false,
         logoStampPosition: "bottom-right",
-        cardBackgroundColor: "#ffffff",
+        cardBackgroundColor: WALL_CONFIG_DEFAULTS.cardBackgroundColor,
         cardRandomColors: false,
         cardImageShape: "circle",
         cardMediaType: "type1",
-        mediaType2TextColor: "#000000",
-        mediaType2SignatureColor: "#000000",
+        mediaType2TextColor: WALL_CONFIG_DEFAULTS.mediaType2TextColor,
+        mediaType2SignatureColor: WALL_CONFIG_DEFAULTS.mediaType2SignatureColor,
       });
     } else {
       const values = selectedWallConfig || initialValues;
@@ -296,12 +297,12 @@ const WallConfigModal = ({
         logoOpacity: values.backgroundLogo?.opacity ?? 100,
         stampOnImages: values.backgroundLogo?.stampOnImages || false,
         logoStampPosition: values.backgroundLogo?.stampPosition || "bottom-right",
-        cardBackgroundColor: values.cardSettings?.backgroundColor || "#ffffff",
+        cardBackgroundColor: values.cardSettings?.backgroundColor || WALL_CONFIG_DEFAULTS.cardBackgroundColor,
         cardRandomColors: values.cardSettings?.randomColors || false,
         cardImageShape: values.cardSettings?.imageShape || "circle",
         cardMediaType: values.cardSettings?.mediaType || "type1",
-        mediaType2TextColor: values.cardSettings?.mediaType2TextColor || "#000000",
-        mediaType2SignatureColor: values.cardSettings?.mediaType2SignatureColor || "#000000",
+        mediaType2TextColor: values.cardSettings?.mediaType2TextColor || WALL_CONFIG_DEFAULTS.mediaType2TextColor,
+        mediaType2SignatureColor: values.cardSettings?.mediaType2SignatureColor || WALL_CONFIG_DEFAULTS.mediaType2SignatureColor,
       });
     }
     setErrors({});
@@ -378,7 +379,7 @@ const WallConfigModal = ({
           [name]: file,
           [previewKey]: URL.createObjectURL(file),
         }));
-        
+
         setErrors((prev) => {
           const updated = { ...prev };
           delete updated[name];
@@ -386,7 +387,7 @@ const WallConfigModal = ({
         });
       } else {
         e.target.value = '';
-        
+
         setErrors((prev) => ({
           ...prev,
           [name]: t.errors.invalidImage,
@@ -552,12 +553,12 @@ const WallConfigModal = ({
         cardSettings: {
           order: form.mode === "card" ? form.cardOrder : "sequential",
           inputType: form.mode === "card" ? form.cardInputType : "text",
-          backgroundColor: form.cardBackgroundColor || "#ffffff",
+          backgroundColor: form.cardBackgroundColor || WALL_CONFIG_DEFAULTS.cardBackgroundColor,
           randomColors: form.cardRandomColors || false,
           imageShape: form.cardImageShape || "circle",
           mediaType: form.cardMediaType || "type1",
-          mediaType2TextColor: form.mediaType2TextColor || "#000000",
-          mediaType2SignatureColor: form.mediaType2SignatureColor || "#000000",
+          mediaType2TextColor: form.mediaType2TextColor || WALL_CONFIG_DEFAULTS.mediaType2TextColor,
+          mediaType2SignatureColor: form.mediaType2SignatureColor || WALL_CONFIG_DEFAULTS.mediaType2SignatureColor,
         },
       };
 
@@ -578,10 +579,10 @@ const WallConfigModal = ({
 
         uploadResults.forEach((url, index) => {
           const file = filesToUpload[index];
-          
+
           if (url) {
             const key = url.split('/').pop();
-            
+
             if (form.background && file === form.background) {
               formDataToSend.background = {
                 key: key,
@@ -597,7 +598,7 @@ const WallConfigModal = ({
                 stampPosition: form.logoStampPosition,
               };
             }
-          } 
+          }
         });
       }
 
@@ -610,7 +611,7 @@ const WallConfigModal = ({
       }
 
       if (!form.backgroundLogo && form.backgroundLogoPreview && !form.backgroundLogoPreview.startsWith('blob:')) {
-       const values = selectedWallConfig || initialValues;
+        const values = selectedWallConfig || initialValues;
         formDataToSend.backgroundLogo = {
           key: values.backgroundLogo?.key || "",
           url: form.backgroundLogoPreview,
@@ -806,7 +807,7 @@ const WallConfigModal = ({
               </Box>
 
               {form.backgroundLogoPreview && (
-                <Box sx={{ border: '1px solid #eee', p: 1.5, borderRadius: 1, backgroundColor: '#fafafa' }}>
+                <Box sx={{ border: '1px solid', borderColor: 'divider', p: 1.5, borderRadius: 1, backgroundColor: 'background.default' }}>
                   <Typography variant="subtitle2" gutterBottom sx={{
                     fontWeight: "bold"
                   }}>
@@ -973,12 +974,11 @@ const WallConfigModal = ({
                               height: 32,
                               borderRadius: '6px',
                               backgroundColor: form.cardBackgroundColor,
-                              border: '2px solid #ddd',
-                              cursor: loading ? 'default' : 'pointer',
-                              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                              border: (theme) => `2px solid ${theme.palette.wall.circleBorderBold}`,
+                              boxShadow: (theme) => theme.palette.wall.swatchShadow,
                               '&:hover': {
                                 transform: loading ? 'none' : 'scale(1.05)',
-                                borderColor: '#2196f3',
+                                borderColor: (theme) => theme.palette.wall.swatchHoverBorder,
                               },
                               transition: 'all 0.2s',
                               flexShrink: 0
@@ -991,13 +991,13 @@ const WallConfigModal = ({
                             disabled={loading}
                             sx={{ width: 90 }}
                             slotProps={{
-                              htmlInput: { 
-                                style: { 
-                                  fontFamily: 'monospace', 
+                              htmlInput: {
+                                style: {
+                                  fontFamily: 'monospace',
                                   textTransform: 'uppercase',
                                   fontSize: '0.75rem',
                                   padding: '4px 8px'
-                                } 
+                                }
                               }
                             }}
                           />
@@ -1011,12 +1011,12 @@ const WallConfigModal = ({
                             }}
                           >
                             <Box sx={{ "& .react-colorful": { width: '200px', height: '200px' } }}>
-                              <HexColorPicker 
-                                color={form.cardBackgroundColor} 
-                                onChange={(color) => handleInputChange({ target: { name: 'cardBackgroundColor', value: color } })} 
+                              <HexColorPicker
+                                color={form.cardBackgroundColor}
+                                onChange={(color) => handleInputChange({ target: { name: 'cardBackgroundColor', value: color } })}
                               />
                               <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 0.5, maxWidth: 200 }}>
-                                {["#f44336", "#e91e63", "#9c27b0", "#673ab7", "#3f51b5", "#2196f3", "#03a9f4", "#00bcd4", "#009688", "#4caf50"].map((pColor) => (
+                                {CARD_COLOR_SWATCHES.map((pColor) => (
                                   <Box
                                     key={pColor}
                                     onClick={() => handleInputChange({ target: { name: 'cardBackgroundColor', value: pColor } })}
@@ -1026,8 +1026,12 @@ const WallConfigModal = ({
                                       borderRadius: '4px',
                                       backgroundColor: pColor,
                                       cursor: 'pointer',
-                                      border: '1px solid #ddd',
-                                      '&:hover': { transform: 'scale(1.2)' }
+                                      border: (theme) => `2px solid ${theme.palette.wall.circleBorderBold}`,
+                                      boxShadow: (theme) => theme.palette.wall.swatchShadow,
+                                      '&:hover': {
+                                        transform: loading ? 'none' : 'scale(1.05)',
+                                        borderColor: (theme) => theme.palette.wall.swatchHoverBorder,
+                                      },
                                     }}
                                   />
                                 ))}
@@ -1119,12 +1123,12 @@ const WallConfigModal = ({
                           height: 32,
                           borderRadius: '6px',
                           backgroundColor: form.mediaType2TextColor,
-                          border: '2px solid #ddd',
+                          border: '1px solid',
+                          borderColor: 'divider',
                           cursor: loading ? 'default' : 'pointer',
-                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                          '&:hover': {
+                          boxShadow: (theme) => theme.palette.wall.swatchShadow, '&:hover': {
                             transform: loading ? 'none' : 'scale(1.05)',
-                            borderColor: '#2196f3',
+                            borderColor: 'primary.main',
                           },
                           transition: 'all 0.2s',
                           flexShrink: 0
@@ -1137,13 +1141,13 @@ const WallConfigModal = ({
                         disabled={loading}
                         sx={{ width: 90 }}
                         slotProps={{
-                          htmlInput: { 
-                            style: { 
-                              fontFamily: 'monospace', 
+                          htmlInput: {
+                            style: {
+                              fontFamily: 'monospace',
                               textTransform: 'uppercase',
                               fontSize: '0.75rem',
                               padding: '4px 8px'
-                            } 
+                            }
                           }
                         }}
                       />
@@ -1157,12 +1161,12 @@ const WallConfigModal = ({
                         }}
                       >
                         <Box sx={{ "& .react-colorful": { width: '200px', height: '200px' } }}>
-                          <HexColorPicker 
-                            color={form.mediaType2TextColor} 
-                            onChange={(color) => handleInputChange({ target: { name: 'mediaType2TextColor', value: color } })} 
+                          <HexColorPicker
+                            color={form.mediaType2TextColor}
+                            onChange={(color) => handleInputChange({ target: { name: 'mediaType2TextColor', value: color } })}
                           />
                           <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 0.5, maxWidth: 200 }}>
-                            {["#000000", "#ffffff", "#f44336", "#e91e63", "#9c27b0", "#673ab7", "#3f51b5", "#2196f3", "#03a9f4", "#00bcd4", "#009688", "#4caf50", "#ffeb3b", "#ff9800"].map((pColor) => (
+                            {TEXT_COLOR_SWATCHES.map((pColor) => (
                               <Box
                                 key={pColor}
                                 onClick={() => handleInputChange({ target: { name: 'mediaType2TextColor', value: pColor } })}
@@ -1172,7 +1176,8 @@ const WallConfigModal = ({
                                   borderRadius: '4px',
                                   backgroundColor: pColor,
                                   cursor: 'pointer',
-                                  border: '1px solid #ddd',
+                                  border: '1px solid',
+                                  borderColor: 'divider',
                                   '&:hover': { transform: 'scale(1.2)' }
                                 }}
                               />
@@ -1193,12 +1198,13 @@ const WallConfigModal = ({
                           height: 32,
                           borderRadius: '6px',
                           backgroundColor: form.mediaType2SignatureColor,
-                          border: '2px solid #ddd',
+                          border: '1px solid',
+                          borderColor: 'divider',
                           cursor: loading ? 'default' : 'pointer',
-                          boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                          boxShadow: (theme) => theme.palette.wall.swatchShadow,
                           '&:hover': {
                             transform: loading ? 'none' : 'scale(1.05)',
-                            borderColor: '#2196f3',
+                            borderColor: 'primary.main',
                           },
                           transition: 'all 0.2s',
                           flexShrink: 0
@@ -1211,13 +1217,13 @@ const WallConfigModal = ({
                         disabled={loading}
                         sx={{ width: 90 }}
                         slotProps={{
-                          htmlInput: { 
-                            style: { 
-                              fontFamily: 'monospace', 
+                          htmlInput: {
+                            style: {
+                              fontFamily: 'monospace',
                               textTransform: 'uppercase',
                               fontSize: '0.75rem',
                               padding: '4px 8px'
-                            } 
+                            }
                           }
                         }}
                       />
@@ -1231,12 +1237,12 @@ const WallConfigModal = ({
                         }}
                       >
                         <Box sx={{ "& .react-colorful": { width: '200px', height: '200px' } }}>
-                          <HexColorPicker 
-                            color={form.mediaType2SignatureColor} 
-                            onChange={(color) => handleInputChange({ target: { name: 'mediaType2SignatureColor', value: color } })} 
+                          <HexColorPicker
+                            color={form.mediaType2SignatureColor}
+                            onChange={(color) => handleInputChange({ target: { name: 'mediaType2SignatureColor', value: color } })}
                           />
                           <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 0.5, maxWidth: 200 }}>
-                            {["#000000", "#ffffff", "#f44336", "#e91e63", "#9c27b0", "#673ab7", "#3f51b5", "#2196f3", "#03a9f4", "#00bcd4", "#009688", "#4caf50", "#ffeb3b", "#ff9800"].map((pColor) => (
+                            {TEXT_COLOR_SWATCHES.map((pColor) => (
                               <Box
                                 key={pColor}
                                 onClick={() => handleInputChange({ target: { name: 'mediaType2SignatureColor', value: pColor } })}
@@ -1246,7 +1252,8 @@ const WallConfigModal = ({
                                   borderRadius: '4px',
                                   backgroundColor: pColor,
                                   cursor: 'pointer',
-                                  border: '1px solid #ddd',
+                                  border: '1px solid',
+                                  borderColor: 'divider',
                                   '&:hover': { transform: 'scale(1.2)' }
                                 }}
                               />
@@ -1277,7 +1284,7 @@ const WallConfigModal = ({
               startIcon={loading ? <CircularProgress size={16} /> : <ICONS.save fontSize="small" />}
               sx={getStartIconSpacing(dir)}
             >
-              {loading 
+              {loading
                 ? (editMode ? t.updating : t.creating)
                 : (editMode ? t.update : t.create)
               }

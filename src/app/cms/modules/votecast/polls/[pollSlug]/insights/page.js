@@ -13,6 +13,7 @@ import {
     CircularProgress,
     Grid,
     Collapse,
+    useTheme,
 } from "@mui/material";
 import { PieChart } from "@mui/x-charts/PieChart";
 import { LineChart } from "@mui/x-charts/LineChart";
@@ -158,7 +159,6 @@ const translations = {
     },
 };
 
-const FIELD_COLOR = "#0077b6";
 
 const hslToHex = (h, s, l) => {
     s /= 100;
@@ -186,7 +186,7 @@ const determineChartType = (field) => {
 };
 
 const KpiCard = ({ label, value }) => (
-    <AppCard sx={{ textAlign: "center", p: 2, display: "flex", flexDirection: "column", justifyContent: "center", border: "1px solid #f1f5f9" }}>
+    <AppCard sx={{ textAlign: "center", p: 2, display: "flex", flexDirection: "column", justifyContent: "center", border: "1px solid", borderColor: "divider" }}>
         <Typography
             variant="h4"
             sx={{
@@ -212,16 +212,17 @@ const FieldChip = ({ field, isSelected, onClick }) => (
         label={field.label.length > 30 ? `${field.label.slice(0, 30)}…` : field.label}
         onClick={onClick}
         sx={{
-            backgroundColor: isSelected ? field.color : "#ffffff",
-            color: isSelected ? "#ffffff" : "#374151",
+            backgroundColor: isSelected ? field.color : "background.paper",
+            color: isSelected ? "common.white" : "text.primary",
             fontWeight: isSelected ? 600 : 500,
-            border: isSelected ? "none" : "2px solid #e5e7eb",
+            border: isSelected ? "none" : "2px solid",
+            borderColor: isSelected ? "transparent" : "divider",
             cursor: "pointer",
             transition: "all 0.3s ease-out",
             "&:hover": {
                 transform: "scale(1.05)",
                 backgroundColor: isSelected ? field.color : `${field.color}15`,
-                color: isSelected ? "#ffffff" : field.color,
+                color: isSelected ? theme.palette.common.white : field.color,
                 borderColor: field.color,
             },
         }}
@@ -263,18 +264,18 @@ const ChartVisualization = ({
     const effectiveChartType = chartTypeOverride || field.chartType;
     const chartTypeChips = isCategorical
         ? [
-              { label: t.chartPie, value: "pie" },
-              { label: t.chartBar, value: "bar" },
-              { label: t.chartHorizontalBar, value: "horizontalBar" },
-          ]
+            { label: t.chartPie, value: "pie" },
+            { label: t.chartBar, value: "bar" },
+            { label: t.chartHorizontalBar, value: "horizontalBar" },
+        ]
         : isTimeBased
-        ? [
-              { label: t.chartLine, value: "line" },
-              { label: t.chartBar, value: "bar" },
-              { label: t.chartHorizontalBar, value: "horizontalBar" },
-              { label: t.chartHeatmap, value: "heatmap" },
-          ]
-        : null;
+            ? [
+                { label: t.chartLine, value: "line" },
+                { label: t.chartBar, value: "bar" },
+                { label: t.chartHorizontalBar, value: "horizontalBar" },
+                { label: t.chartHeatmap, value: "heatmap" },
+            ]
+            : null;
     const hasNoData = isCategorical && (!field.data || field.data.length === 0);
     const barData = isCategorical && field.data ? field.data.filter((d) => d.value > 0) : [];
     const barTotal = field.data ? field.data.reduce((sum, d) => sum + d.value, 0) : 0;
@@ -308,7 +309,7 @@ const ChartVisualization = ({
                         <ICONS.insights />
                     </Box>
                     <Box>
-                        <Typography variant="h6" sx={{ fontWeight: "bold", color: "#1f2937" }}>
+                        <Typography variant="h6" sx={{ fontWeight: "bold", color: "text.primary" }}>
                             {field.label}
                         </Typography>
                         <Typography variant="caption" color="textSecondary">
@@ -406,15 +407,15 @@ const ChartVisualization = ({
                                 fontWeight: effectiveChartType === chip.value ? 600 : 400,
                                 backgroundColor:
                                     effectiveChartType === chip.value ? field.color : "transparent",
-                                color: effectiveChartType === chip.value ? "#fff" : "#374151",
-                                border: `1.5px solid ${effectiveChartType === chip.value ? field.color : "#e5e7eb"}`,
+                                color: effectiveChartType === chip.value ? "primary.contrastText" : "text.primary",
+                                border: (theme) => `1.5px solid ${effectiveChartType === chip.value ? field.color : theme.palette.divider}`,
                                 "&:hover": {
                                     backgroundColor:
                                         effectiveChartType === chip.value
                                             ? field.color
                                             : `${field.color}15`,
                                     borderColor: field.color,
-                                    color: effectiveChartType === chip.value ? "#fff" : field.color,
+                                    color: effectiveChartType === chip.value ? theme.palette.common.white : field.color,
                                 },
                             }}
                         />
@@ -491,7 +492,7 @@ const ChartVisualization = ({
                                         <Box sx={{ width: 12, height: 12, borderRadius: "50%", backgroundColor: item.color, flexShrink: 0 }} />
                                         <Typography
                                             variant="body2"
-                                            sx={{ fontWeight: 500, color: "#1f2937", whiteSpace: "nowrap", fontSize: { xs: "0.875rem", md: "0.875rem" }, direction: "ltr", textAlign: "left",  }} >
+                                            sx={{ fontWeight: 500, color: "text.primary", whiteSpace: "nowrap", fontSize: { xs: "0.875rem", md: "0.875rem" }, direction: "ltr", textAlign: "left", }} >
                                             {displayLabel} {toArabicDigits(percentage, language)}% ({toArabicDigits(item.value, language)})
                                         </Typography>
                                     </Box>
@@ -531,12 +532,12 @@ const ChartVisualization = ({
                                     colorMap: { type: "ordinal", colors: barData.map((d) => d.color) },
                                 }]}
                                 yAxis={effectiveChartType === "horizontalBar" ? [{
-        scaleType: "band",
-        data: barData.map((d) => d.label === "Anonymous" ? (t.anonymous || "Anonymous") : d.label),
-        tickLabelStyle: { direction: "ltr", textAlign: "right", fontSize: 10 },
-        colorMap: { type: "ordinal", colors: barData.map((d) => d.color) },
-    }] : [{
-        label: t.count,
+                                    scaleType: "band",
+                                    data: barData.map((d) => d.label === "Anonymous" ? (t.anonymous || "Anonymous") : d.label),
+                                    tickLabelStyle: { direction: "ltr", textAlign: "right", fontSize: 10 },
+                                    colorMap: { type: "ordinal", colors: barData.map((d) => d.color) },
+                                }] : [{
+                                    label: t.count,
                                     min: 0,
                                     max: Math.max(0, ...barData.map((d) => d.value)) * 1.1,
                                     tickLabelStyle: { direction: "ltr", textAlign: "left" },
@@ -567,7 +568,7 @@ const ChartVisualization = ({
                                         <Box sx={{ width: 12, height: 12, borderRadius: "50%", backgroundColor: item.color, flexShrink: 0 }} />
                                         <Typography
                                             variant="body2"
-                                            sx={{ fontWeight: 500, color: "#1f2937", whiteSpace: "nowrap", fontSize: { xs: "0.875rem", md: "0.875rem" }, direction: "ltr", textAlign: "left",  }} >
+                                            sx={{ fontWeight: 500, color: "text.primary", whiteSpace: "nowrap", fontSize: { xs: "0.875rem", md: "0.875rem" }, direction: "ltr", textAlign: "left", }} >
                                             {displayLabel} {toArabicDigits(percentage, language)}% ({toArabicDigits(item.value, language)})
                                         </Typography>
                                     </Box>
@@ -628,7 +629,7 @@ const ChartVisualization = ({
                                     <Box sx={{ width: 12, height: 12, borderRadius: "50%", backgroundColor: field.color, flexShrink: 0 }} />
                                     <Typography
                                         variant="body2"
-                                        sx={{ fontWeight: 500, color: "#1f2937", whiteSpace: "nowrap", fontSize: "0.875rem", direction: "ltr", textAlign: "left" }}
+                                        sx={{ fontWeight: 500, color: "text.primary", whiteSpace: "nowrap", fontSize: "0.875rem", direction: "ltr", textAlign: "left" }}
                                     >
                                         {label} ({toArabicDigits(field.yData[idx], language)})
                                     </Typography>
@@ -700,7 +701,7 @@ const ChartVisualization = ({
                                     <Box sx={{ width: 12, height: 12, borderRadius: "50%", backgroundColor: field.color, flexShrink: 0 }} />
                                     <Typography
                                         variant="body2"
-                                        sx={{ fontWeight: 500, color: "#1f2937", whiteSpace: "nowrap", fontSize: "0.875rem", direction: "ltr", textAlign: "left" }}
+                                        sx={{ fontWeight: 500, color: "text.primary", whiteSpace: "nowrap", fontSize: "0.875rem", direction: "ltr", textAlign: "left" }}
                                     >
                                         {label} ({toArabicDigits(field.yData[idx], language)})
                                     </Typography>
@@ -748,8 +749,7 @@ const ChartVisualization = ({
                                                         sx={{
                                                             m: 0.1,
                                                             borderRadius: 0.5,
-                                                            backgroundColor: count > 0 ? field.color : "#f3f4f6",
-                                                            opacity: alpha,
+                                                            backgroundColor: count > 0 ? field.color : (theme) => theme.palette.action.disabledBackground, opacity: alpha,
                                                             aspectRatio: "1/1",
                                                             display: "flex",
                                                             alignItems: "center",
@@ -759,7 +759,7 @@ const ChartVisualization = ({
                                                         }}
                                                     >
                                                         {count > 0 && (
-                                                            <Typography sx={{ color: alpha > 0.6 ? "#fff" : "#000", fontSize: "8px", fontWeight: "bold" }}>
+                                                            <Typography sx={{ color: alpha > 0.6 ? theme.palette.common.white : theme.palette.common.black, fontSize: "8px", fontWeight: "bold" }}>
                                                                 {toArabicDigits(count, language)}
                                                             </Typography>
                                                         )}
@@ -787,7 +787,7 @@ const ResponsePatternSection = ({ questions, t, language }) => {
                 sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", p: { xs: 1.5, sm: 2 } }}
             >
                 <Box>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "#1f2937" }}>
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "text.primary" }}>
                         {t.responsePattern}
                     </Typography>
                     <Typography variant="body2" sx={{
@@ -813,7 +813,7 @@ const ResponsePatternSection = ({ questions, t, language }) => {
                             const total = (q.options || []).reduce((sum, o) => sum + (o.votes || 0), 0);
                             return (
                                 <Box key={String(q._id)}>
-                                    <Typography variant="body2" sx={{ fontWeight: 600, mb: 1.5, color: "#1f2937" }}>
+                                    <Typography variant="body2" sx={{ fontWeight: 600, mb: 1.5, color: "text.primary" }}>
                                         {q.question}
                                     </Typography>
                                     {type === "options" ? (
@@ -835,9 +835,9 @@ const ResponsePatternSection = ({ questions, t, language }) => {
                                                                     ml: 1
                                                                 }}>
                                                                 {toArabicDigits(opt.votes || 0, language)} ({toArabicDigits(pct.toFixed(1), language)}%)
-                                                             </Typography>
+                                                            </Typography>
                                                         </Box>
-                                                        <Box sx={{ height: 8, borderRadius: 4, backgroundColor: "#f3f4f6", overflow: "hidden" }}>
+                                                        <Box sx={{ height: 8, borderRadius: 4, backgroundColor: "action.hover", overflow: "hidden" }}>
                                                             <Box sx={{ height: "100%", width: `${pct}%`, backgroundColor: getPieSegmentColor(oi), borderRadius: 4, transition: "width 0.5s ease" }} />
                                                         </Box>
                                                     </Box>
@@ -845,7 +845,7 @@ const ResponsePatternSection = ({ questions, t, language }) => {
                                             })}
                                         </Stack>
                                     ) : (type === "rating" || type === "nps") ? (
-                                        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", bgcolor: "#f9fafb", p: 2, borderRadius: 2 }}>
+                                        <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", bgcolor: "background.default", p: 2, borderRadius: 2 }}>
                                             <Box>
                                                 <Typography variant="h4" color="primary" sx={{
                                                     fontWeight: "bold"
@@ -874,7 +874,7 @@ const ResponsePatternSection = ({ questions, t, language }) => {
                                             </Box>
                                         </Box>
                                     ) : type === "text" ? (
-                                        <Box sx={{ bgcolor: "#f9fafb", p: 2, borderRadius: 2 }}>
+                                        <Box sx={{ bgcolor: "background.default", p: 2, borderRadius: 2 }}>
                                             <Typography
                                                 variant="caption"
                                                 sx={{
@@ -886,7 +886,10 @@ const ResponsePatternSection = ({ questions, t, language }) => {
                                             </Typography>
                                             <Stack spacing={1}>
                                                 {(q.recentResponses || []).map((resp, ri) => (
-                                                    <Typography key={ri} variant="body2" sx={{ fontStyle: "italic", borderLeft: "2px solid #e5e7eb", pl: 1 }}>
+                                                    <Typography key={ri} variant="body2" sx={{
+                                                        fontStyle: "italic", borderLeft: "2px solid",
+                                                        borderColor: "divider", pl: 1
+                                                    }}>
                                                         "{resp}"
                                                     </Typography>
                                                 ))}
@@ -910,6 +913,9 @@ const ResponsePatternSection = ({ questions, t, language }) => {
 };
 
 export default function PollInsightsDashboard() {
+    const theme = useTheme();
+    const FIELD_COLOR = theme.palette.primary.main;
+
     const { pollSlug } = useParams();
     const { t, dir, language } = useI18nLayout(translations);
 
@@ -1398,8 +1404,7 @@ export default function PollInsightsDashboard() {
             )}
             {/* Field Chip Selector */}
             <AppCard sx={{ flex: "0 0 auto", p: { xs: 1, sm: 1.5, md: 2 }, width: "100%", boxSizing: "border-box" }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 600, color: "#374151", mb: 1 }}>
-                    {t.availableFields}
+                <Typography variant="subtitle1" sx={{ fontWeight: 600, color: "text.primary", mb: 1 }}>                    {t.availableFields}
                 </Typography>
                 <Typography
                     variant="caption"
@@ -1435,7 +1440,7 @@ export default function PollInsightsDashboard() {
                         <Box sx={{
                             textAlign: "center"
                         }}>
-                            <BarChartIcon sx={{ fontSize: 48, color: "#d1d5db", mb: 2 }} />
+                            <BarChartIcon sx={{ fontSize: 48, color: "text.disabled", mb: 2 }} />
                             <Typography color="textSecondary">{t.selectFieldPrompt}</Typography>
                         </Box>
                     </AppCard>

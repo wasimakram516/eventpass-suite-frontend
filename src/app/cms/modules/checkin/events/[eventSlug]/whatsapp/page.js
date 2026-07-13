@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { Box, Container, Typography, Stack, Divider } from "@mui/material";
+import { Box, Container, Typography, Stack, Divider, useTheme } from "@mui/material";
 import { useParams } from "next/navigation";
 import DashboardCard from "@/components/cards/DashboardCard";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
@@ -39,7 +39,7 @@ const translations = {
 export default function WhatsAppDashboard() {
   const { eventSlug } = useParams();
   const { t, dir } = useI18nLayout(translations);
-
+   const theme = useTheme();
   return (
     <Container dir={dir} maxWidth={false} disableGutters>
       <BreadcrumbsNav />
@@ -68,7 +68,7 @@ export default function WhatsAppDashboard() {
             description={t.logsDescription}
             buttonLabel={t.logsButton}
             icon={<ICONS.list />}
-            color="#42a5f5"
+            color={theme.palette.whatsappDashboard.logsCardColor}
             route={`/cms/modules/checkin/events/${eventSlug}/whatsapp/logs`}
           />
       </Box>

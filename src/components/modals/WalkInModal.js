@@ -19,6 +19,7 @@ import {
   IconButton,
   CircularProgress,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
@@ -111,13 +112,14 @@ const WalkInModal = ({ open, onClose, registration, onCheckInSuccess, createWalk
             left: dir === "rtl" ? 8 : "auto",
             top: "50%",
             transform: "translateY(-50%)",
-            bgcolor: "#ffffff",
-            color: "#0077b6",
-            border: "1px solid #0077b6",
+            bgcolor: "background.paper",
+            color: "primary.main",
+            border: "1px solid",
+            borderColor: "primary.main",
             "&:hover": {
-              bgcolor: "#0077b6",
-              color: "#ffffff",
-              borderColor: "#0077b6",
+              bgcolor: "primary.main",
+              color: "primary.contrastText",
+              borderColor: "primary.main",
             },
           }}
         >
@@ -170,11 +172,10 @@ const WalkInModal = ({ open, onClose, registration, onCheckInSuccess, createWalk
                               label={label}
                               size="small"
                               sx={{
-                                bgcolor:
-                                  staffType === "door" ? "#e1bee7" : "#4fc3f7",
-                                color: "#000000",
+                                bgcolor: (theme) => alpha(theme.palette[staffType === "door" ? "secondary" : "primary"].main, theme.palette.mode === "dark" ? 0.22 : 0.12),
+                                color: "text.primary",
                                 "& .MuiChip-icon": {
-                                  color: "#000000",
+                                  color: "text.primary",
                                   ...(dir === "rtl" && {
                                     marginRight: "5px",
                                     marginLeft: "8px",
@@ -226,15 +227,10 @@ const WalkInModal = ({ open, onClose, registration, onCheckInSuccess, createWalk
             }
             sx={{
               ...getStartIconSpacing(dir),
-              bgcolor: "#2e7d32",
-              color: "#ffffff",
-              "&:hover": {
-                bgcolor: "#1b5e20",
-              },
-              "&:disabled": {
-                bgcolor: "#66bb6a",
-                color: "#ffffff",
-              },
+              bgcolor: "success.main",
+              color: "success.contrastText",
+              "&:hover": { bgcolor: "success.dark" },
+              "&:disabled": { bgcolor: "success.light", color: "success.contrastText" },
             }}
             variant="contained"
           >

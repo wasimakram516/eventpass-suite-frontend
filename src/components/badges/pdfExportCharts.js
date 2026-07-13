@@ -2,6 +2,7 @@ import html2canvas from "html2canvas";
 import { PDFDocument, rgb } from "pdf-lib";
 import fontkit from "@pdf-lib/fontkit";
 import { formatDateTimeWithLocale, formatDate } from "@/utils/dateUtils";
+import { REPORT_COLORS } from "@/styles/theme";
 
 const getTimezoneLabel = (timezone) => {
   try {
@@ -39,21 +40,38 @@ const PAGE_HEIGHT = 842;
 const LINE_HEIGHT = 14.17;
 const CHART_MAX_HEIGHT = 283.47;
 const SPACING = 22.68;
-const COLOR_PRIMARY = rgb(0, 0.467, 0.714); // #0077b6
-const COLOR_TEXT_MAIN = rgb(0.12, 0.16, 0.22); // #1f2937
-const COLOR_TEXT_SECONDARY = rgb(0.42, 0.46, 0.53); // #6b7280
-const COLOR_BORDER = rgb(0.9, 0.9, 0.9);
-const COLOR_BG_LIGHT = rgb(0.97, 0.98, 1);
 
-// Helper to convert hex to pdf-lib RGB
+// Helper to convert hex to pdf-lib RGB (defined before use below)
 const hexToPdfRgb = (hex) => {
-  if (!hex || typeof hex !== "string") return COLOR_PRIMARY;
+  if (!hex || typeof hex !== "string") return rgb(0, 0.467, 0.714);
   const cleanHex = hex.replace("#", "");
   const r = parseInt(cleanHex.substring(0, 2), 16) / 255;
   const g = parseInt(cleanHex.substring(2, 4), 16) / 255;
   const b = parseInt(cleanHex.substring(4, 6), 16) / 255;
   return rgb(r || 0, g || 0, b || 0);
 };
+
+// All colors now sourced from theme.js REPORT_COLORS — zero hardcoded hex here
+const COLOR_PRIMARY = hexToPdfRgb(REPORT_COLORS.primary);
+const COLOR_TEXT_MAIN = hexToPdfRgb(REPORT_COLORS.textMain);
+const COLOR_TEXT_SECONDARY = hexToPdfRgb(REPORT_COLORS.textSecondary);
+const COLOR_BORDER = hexToPdfRgb(REPORT_COLORS.border);
+const COLOR_BG_LIGHT = hexToPdfRgb(REPORT_COLORS.bgLight);
+const COLOR_WHITE = hexToPdfRgb(REPORT_COLORS.white);
+const COLOR_HIGHLIGHT_INDIGO = hexToPdfRgb(REPORT_COLORS.highlightIndigo);
+const COLOR_CARD_BORDER = hexToPdfRgb(REPORT_COLORS.cardBorder);
+const COLOR_LABEL_GRAY = hexToPdfRgb(REPORT_COLORS.labelGray);
+const COLOR_PROGRESS_TRACK = hexToPdfRgb(REPORT_COLORS.progressTrack);
+const COLOR_REGISTERED_VOTERS = hexToPdfRgb(REPORT_COLORS.registeredVoters);
+const COLOR_BADGE_NO_PRINT = hexToPdfRgb(REPORT_COLORS.badgeNoPrint);
+const COLOR_BADGE_ONE_PRINT = hexToPdfRgb(REPORT_COLORS.badgeOnePrint);
+const COLOR_BADGE_MULTI_PRINT = hexToPdfRgb(REPORT_COLORS.badgeMultiPrint);
+const COLOR_DIGIPASS_AVG_ACTIVITIES = hexToPdfRgb(REPORT_COLORS.digipassAvgActivities);
+const COLOR_SUMMARY_CARD_2 = hexToPdfRgb(REPORT_COLORS.summaryCard2);
+const COLOR_SUMMARY_CARD_3 = hexToPdfRgb(REPORT_COLORS.summaryCard3);
+const COLOR_SUMMARY_CARD_4 = hexToPdfRgb(REPORT_COLORS.summaryCard4);
+const COLOR_SUMMARY_CARD_5 = hexToPdfRgb(REPORT_COLORS.summaryCard5);
+const COLOR_BRAND_GRAY = hexToPdfRgb(REPORT_COLORS.brandGray);
 
 // Convert any image URL (JPEG, PNG, WebP, SVG…) to PNG bytes via canvas
 const fetchImageAsPngBytes = (url) =>
@@ -153,14 +171,14 @@ const drawKpiCards = async (page, cards, y, pageWidth, margin, font, boldFont, l
         y: y - cardHeight,
         width: cWidth,
         height: cardHeight,
-        color: rgb(0.97, 0.98, 1),
+        color: COLOR_BG_LIGHT,
       });
       page.drawRectangle({
         x: isRTL ? drawX + cWidth - sideBarWidth : drawX,
         y: y - cardHeight,
         width: sideBarWidth,
         height: cardHeight,
-        color: rgb(0.39, 0.4, 0.95),
+        color: COLOR_HIGHLIGHT_INDIGO,
       });
 
       const labelSize = 6;
@@ -173,7 +191,7 @@ const drawKpiCards = async (page, cards, y, pageWidth, margin, font, boldFont, l
         y: y - 15,
         size: labelSize,
         font: boldFont,
-        color: rgb(0.39, 0.4, 0.95),
+        color: COLOR_HIGHLIGHT_INDIGO,
       });
 
       const questionText = `"${card.value}"`;
@@ -202,7 +220,7 @@ const drawKpiCards = async (page, cards, y, pageWidth, margin, font, boldFont, l
 
       if (card.subValue) {
         const subX = isRTL ? drawX + cWidth - padding - sideBarWidth - font.widthOfTextAtSize(String(card.subValue), 7) : innerX;
-        page.drawText(String(card.subValue), { x: subX, y: y - 60, size: 7, font: boldFont, color: rgb(0.39, 0.4, 0.95) });
+        page.drawText(String(card.subValue), { x: subX, y: y - 60, size: 7, font: boldFont, color: COLOR_HIGHLIGHT_INDIGO });
       }
     } else {
       // Draw Normal Card
@@ -211,7 +229,7 @@ const drawKpiCards = async (page, cards, y, pageWidth, margin, font, boldFont, l
         y: y - cardHeight,
         width: cWidth,
         height: cardHeight,
-        color: rgb(1, 1, 1),
+        color: COLOR_WHITE,
         borderColor: COLOR_BORDER,
         borderWidth: 1,
       });
@@ -296,7 +314,7 @@ const addEventHeader = async (
     y: currentY,
     size: FONT_TITLE,
     font: boldFont,
-    color: rgb(0.12, 0.16, 0.22),
+    color: COLOR_TEXT_MAIN,
   });
   currentY -= 14.17;
 
@@ -456,9 +474,9 @@ const addEventHeader = async (
     const BRAND_SIZE = 8;
     const presentedBy = translations.presentedBy || "Presented by";
     const poweredBy = translations.poweredBy || "Powered by";
-    const grayColor = rgb(0.55, 0.55, 0.55);
-    const darkColor = rgb(0.12, 0.16, 0.22);
-    const blueColor = rgb(0, 0.467, 0.714);
+    const grayColor = COLOR_BRAND_GRAY;
+    const darkColor = COLOR_TEXT_MAIN;
+    const blueColor = COLOR_PRIMARY;
 
     // Build pieces: ["Presented by ", "WhiteWall", "   |   ", "Powered by ", "Event", "Pass"]
     const pieces = isRTL
@@ -517,8 +535,8 @@ const drawSimpleKpiCards = (page, cards, yPosition, pageWidth, margin, font, bol
 
     page.drawRectangle({
       x: cardX, y: cardY, width: cardWidth, height: cardHeight,
-      color: rgb(1, 1, 1),
-      borderColor: rgb(0.878, 0.878, 0.878),
+      color: COLOR_WHITE,
+      borderColor: COLOR_CARD_BORDER,
       borderWidth: 0.75,
     });
 
@@ -558,7 +576,7 @@ const drawSimpleKpiCards = (page, cards, yPosition, pageWidth, margin, font, bol
       page.drawText(line, {
         x: Math.max(cardX + 2, cardX + (cardWidth - lw) / 2),
         y: labelStartY - li * labelLineHeight,
-        size: labelSize, font, color: rgb(0.459, 0.459, 0.459),
+        size: labelSize, font, color: COLOR_LABEL_GRAY,
       });
     });
   });
@@ -568,11 +586,11 @@ const drawSimpleKpiCards = (page, cards, yPosition, pageWidth, margin, font, bol
 
 const drawPrintStatsKpiCards = (page, eventInfo, yPosition, pageWidth, margin, font, boldFont, translations, isRTL = false) => {
   const cards = [
-    { label: fixParens(translations.totalBadgePrints || "Total Badge Prints", isRTL),     value: String(eventInfo.totalPrints    ?? 0), rgbColor: rgb(0,      0.467, 0.714) },
-    { label: fixParens(translations.noPrints        || "0 Prints (Never Printed)", isRTL), value: String(eventInfo.noPrintCount   ?? 0), rgbColor: rgb(0.937, 0.267, 0.267) },
-    { label: fixParens(translations.onePrint        || "1 Print", isRTL),                  value: String(eventInfo.onePrintCount  ?? 0), rgbColor: rgb(0.961, 0.620, 0.043) },
-    { label: fixParens(translations.multiPrint      || "Multi-Print", isRTL),         value: String(eventInfo.multiPrintCount ?? 0), rgbColor: rgb(0.063, 0.725, 0.506) },
-    { label: fixParens(translations.multiPrintRate  || "Multi-Print Rate", isRTL),         value: `${eventInfo.multiPrintRate ?? "0.00"}%`, rgbColor: rgb(0.545, 0.361, 0.965) },
+    { label: fixParens(translations.totalBadgePrints || "Total Badge Prints", isRTL),     value: String(eventInfo.totalPrints    ?? 0), rgbColor: COLOR_PRIMARY },
+    { label: fixParens(translations.noPrints        || "0 Prints (Never Printed)", isRTL), value: String(eventInfo.noPrintCount   ?? 0), rgbColor: COLOR_BADGE_NO_PRINT },
+    { label: fixParens(translations.onePrint        || "1 Print", isRTL),                  value: String(eventInfo.onePrintCount  ?? 0), rgbColor: COLOR_BADGE_ONE_PRINT },
+    { label: fixParens(translations.multiPrint      || "Multi-Print", isRTL),         value: String(eventInfo.multiPrintCount ?? 0), rgbColor: COLOR_BADGE_MULTI_PRINT },
+    { label: fixParens(translations.multiPrintRate  || "Multi-Print Rate", isRTL),         value: `${eventInfo.multiPrintRate ?? "0.00"}%`, rgbColor: COLOR_DIGIPASS_AVG_ACTIVITIES },
   ];
   return drawSimpleKpiCards(page, cards, yPosition, pageWidth, margin, font, boldFont, isRTL);
 };
@@ -682,15 +700,15 @@ export const exportChartsToPDF = async (
     // EventReg / CheckIn
     const secLabel = translations.registrationAttendance || "Registration & Attendance";
     const secX = getTextX(secLabel, margin, pageWidth, margin, isRTL, "left", boldFont, FONT_SECTION);
-    page.drawText(secLabel, { x: secX, y: yPosition, size: FONT_SECTION, font: boldFont, color: rgb(0.12, 0.16, 0.22) });
+    page.drawText(secLabel, { x: secX, y: yPosition, size: FONT_SECTION, font: boldFont, color: COLOR_TEXT_MAIN });
     yPosition -= 20;
 
     const regCards = [
-      { label: fixParens(translations.totalRegistrations || "Total Registrations", isRTL), value: String(eventInfo.totalRegistrations ?? 0),       rgbColor: rgb(0, 0.467, 0.714) },
-      { label: fixParens(translations.totalScanned || "Total Scanned", isRTL),             value: String(eventInfo.uniqueScanned ?? 0),            rgbColor: rgb(0.008, 0.518, 0.780) },
-      { label: fixParens(translations.scanRate || "Scan Rate", isRTL),                     value: `${eventInfo.scanRate ?? "0.00"}%`,               rgbColor: rgb(0.024, 0.714, 0.831) },
-      { label: fixParens(translations.totalBadgePrints || "Total Badge Prints", isRTL),    value: String(eventInfo.totalPrints ?? 0),              rgbColor: rgb(0.486, 0.227, 0.929) },
-      { label: fixParens(translations.multiPrintRate || "Multi-Print Rate", isRTL),        value: `${eventInfo.multiPrintRate ?? "0.00"}%`,         rgbColor: rgb(0.055, 0.647, 0.914) },
+      { label: fixParens(translations.totalRegistrations || "Total Registrations", isRTL), value: String(eventInfo.totalRegistrations ?? 0),       rgbColor: COLOR_PRIMARY },
+      { label: fixParens(translations.totalScanned || "Total Scanned", isRTL),             value: String(eventInfo.uniqueScanned ?? 0),            rgbColor: COLOR_SUMMARY_CARD_2 },
+      { label: fixParens(translations.scanRate || "Scan Rate", isRTL),                     value: `${eventInfo.scanRate ?? "0.00"}%`,               rgbColor: COLOR_SUMMARY_CARD_3 },
+      { label: fixParens(translations.totalBadgePrints || "Total Badge Prints", isRTL),    value: String(eventInfo.totalPrints ?? 0),              rgbColor: COLOR_SUMMARY_CARD_4 },
+      { label: fixParens(translations.multiPrintRate || "Multi-Print Rate", isRTL),        value: `${eventInfo.multiPrintRate ?? "0.00"}%`,         rgbColor: COLOR_SUMMARY_CARD_5 },
     ];
     yPosition = drawSimpleKpiCards(page, regCards, yPosition, pageWidth, margin, font, boldFont, isRTL);
     yPosition -= spacing;
@@ -699,17 +717,17 @@ export const exportChartsToPDF = async (
     // VoteCast
     const secLabel = translations.pollOverview || "Poll Overview";
     const secX = getTextX(secLabel, margin, pageWidth, margin, isRTL, "left", boldFont, FONT_SECTION);
-    page.drawText(secLabel, { x: secX, y: yPosition, size: FONT_SECTION, font: boldFont, color: rgb(0.12, 0.16, 0.22) });
+    page.drawText(secLabel, { x: secX, y: yPosition, size: FONT_SECTION, font: boldFont, color: COLOR_TEXT_MAIN });
     yPosition -= 20;
 
     const hasParticipationRate = eventInfo.participationRate !== undefined && eventInfo.participationRate !== null;
     const voteCards = [
-      { label: fixParens(translations.totalVotes || "Total Votes Cast", isRTL),         value: String(eventInfo.totalVotes ?? 0),    rgbColor: rgb(0, 0.467, 0.714) },
-      { label: fixParens(translations.uniqueVoters || "Unique Voters", isRTL),         value: String(eventInfo.uniqueVoters ?? 0),   rgbColor: rgb(0.008, 0.518, 0.780) },
-      ...(eventInfo.registeredVoters !== undefined ? [{ label: fixParens(translations.registeredVoters || "Registered Voters", isRTL), value: String(eventInfo.registeredVoters), rgbColor: rgb(0.015, 0.616, 0.805) }] : []),
-      ...(eventInfo.guestVoters !== undefined ? [{ label: fixParens(translations.guestVoters || "Guest Voters", isRTL), value: String(eventInfo.guestVoters), rgbColor: rgb(0.024, 0.714, 0.831) }] : []),
-      ...(hasParticipationRate ? [{ label: fixParens(translations.participationRate || "Participation Rate", isRTL), value: `${eventInfo.participationRate}%`, rgbColor: rgb(0.486, 0.227, 0.929) }] : []),
-      { label: fixParens(translations.questionCount || "Question Count", isRTL),        value: String(eventInfo.questionCount ?? 0), rgbColor: rgb(0.055, 0.647, 0.914) },
+      { label: fixParens(translations.totalVotes || "Total Votes Cast", isRTL),         value: String(eventInfo.totalVotes ?? 0),    rgbColor: COLOR_PRIMARY },
+      { label: fixParens(translations.uniqueVoters || "Unique Voters", isRTL),         value: String(eventInfo.uniqueVoters ?? 0),   rgbColor: COLOR_SUMMARY_CARD_2 },
+      ...(eventInfo.registeredVoters !== undefined ? [{ label: fixParens(translations.registeredVoters || "Registered Voters", isRTL), value: String(eventInfo.registeredVoters), rgbColor: COLOR_REGISTERED_VOTERS }] : []),
+      ...(eventInfo.guestVoters !== undefined ? [{ label: fixParens(translations.guestVoters || "Guest Voters", isRTL), value: String(eventInfo.guestVoters), rgbColor: COLOR_SUMMARY_CARD_3 }] : []),
+      ...(hasParticipationRate ? [{ label: fixParens(translations.participationRate || "Participation Rate", isRTL), value: `${eventInfo.participationRate}%`, rgbColor: COLOR_SUMMARY_CARD_4 }] : []),
+      { label: fixParens(translations.questionCount || "Question Count", isRTL),        value: String(eventInfo.questionCount ?? 0), rgbColor: COLOR_SUMMARY_CARD_5 },
     ];
     yPosition = drawSimpleKpiCards(page, voteCards, yPosition, pageWidth, margin, font, boldFont, isRTL);
     yPosition -= spacing;
@@ -739,7 +757,7 @@ export const exportChartsToPDF = async (
 
       const canvas = await html2canvas(chartElement, {
         scale: 2,
-        backgroundColor: "#ffffff",
+        backgroundColor: REPORT_COLORS.white,
         logging: false,
         useCORS: true,
         allowTaint: true,
@@ -783,7 +801,7 @@ export const exportChartsToPDF = async (
         y: yPosition,
         size: FONT_SECTION,
         font: boldFont,
-        color: rgb(0.12, 0.16, 0.22),
+        color: COLOR_TEXT_MAIN,
       });
       yPosition -= 20;
 
@@ -892,7 +910,7 @@ export const exportChartsToPDF = async (
     for (const q of eventInfo.responsePatternQuestions) {
       const type = q.type || "options";
       const total = (q.options || []).reduce((sum, o) => sum + (o.votes || 0), 0);
-      
+
       let neededH = qFontSize + 8 + 12;
       if (type === "options") {
         neededH += (q.options?.length || 0) * rowHeight;
@@ -934,7 +952,7 @@ export const exportChartsToPDF = async (
           page.drawText(pctText, { x: pctX, y: yPosition, size: optFontSize, font: boldFont, color: COLOR_TEXT_SECONDARY });
 
           const barY = yPosition - optFontSize - 4;
-          page.drawRectangle({ x: margin, y: barY, width: contentWidth, height: barH, color: rgb(0.92, 0.92, 0.92) });
+          page.drawRectangle({ x: margin, y: barY, width: contentWidth, height: barH, color: COLOR_PROGRESS_TRACK });
 
           if (fillW > 0) {
             page.drawRectangle({
@@ -951,13 +969,13 @@ export const exportChartsToPDF = async (
         const avg = q.average || 0;
         const avgText = `${activeTranslations.average || "Average"}: ${avg.toFixed(1)}`;
         const votesText = `${q.totalVotes || 0} ${activeTranslations.votesTitle || "votes"}`;
-        
+
         const avgX = isRTL ? pageWidth - margin - font.widthOfTextAtSize(avgText, 12) : margin;
         page.drawText(avgText, { x: avgX, y: yPosition - 5, size: 12, font: boldFont, color: COLOR_PRIMARY });
-        
+
         const votesX = isRTL ? margin : pageWidth - margin - font.widthOfTextAtSize(votesText, optFontSize);
         page.drawText(votesText, { x: votesX, y: yPosition - 5, size: optFontSize, font, color: COLOR_TEXT_SECONDARY });
-        
+
         yPosition -= 35;
       } else if (type === "text") {
         const responses = (q.recentResponses || []).slice(0, 5);
@@ -968,7 +986,7 @@ export const exportChartsToPDF = async (
           if (font.widthOfTextAtSize(displayR, optFontSize) > maxW) {
              displayR = displayR.slice(0, 50) + "...";
           }
-          
+
           const rX = isRTL ? pageWidth - margin - font.widthOfTextAtSize(displayR, optFontSize) : margin + 10;
           page.drawText(displayR, { x: rX, y: yPosition, size: optFontSize, font, color: COLOR_TEXT_SECONDARY });
           yPosition -= 15;

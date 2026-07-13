@@ -13,6 +13,7 @@ import {
   FormControlLabel,
   Checkbox,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
@@ -92,14 +93,16 @@ const ConfirmationDialog = ({
       disableScrollLock={true}
       slotProps={{
         paper: {
-          sx: {
+          sx: (theme) => ({
             borderRadius: 2,
             padding: 2,
             maxWidth: "500px",
             width: "100%",
-            backgroundColor: "#f9fafb",
-            boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
-          },
+            backgroundColor: alpha(theme.palette.background.paper, theme.palette.mode === "dark" ? 0.92 : 0.98),
+            border: "1px solid",
+            borderColor: theme.palette.divider,
+            boxShadow: theme.palette.custom.shadow.shadow3,
+          }),
         },
       }}
     >
@@ -107,7 +110,7 @@ const ConfirmationDialog = ({
         sx={{
           fontWeight: "bold",
           fontSize: "1.5rem",
-          color: "#333",
+          color: "text.primary",
           textAlign: "center",
         }}
       >
@@ -123,7 +126,7 @@ const ConfirmationDialog = ({
           <DialogContentText
             sx={{
               fontSize: "1rem",
-              color: "#555",
+              color: "text.secondary",
               lineHeight: 1.6,
             }}
           >

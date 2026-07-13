@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
-import { Box, Typography } from "@mui/material";
+import { Box, Typography, useTheme } from "@mui/material";
 import { motion } from "framer-motion";
 import { Shift } from "ambient-cbg";
 
@@ -44,25 +44,25 @@ function FloatingBubble({ item, isNew, version, position, size, backgroundLogo }
       transition={
         isNew
           ? {
-              scale: { type: "spring", stiffness: 200, damping: 15 },
-              opacity: { duration: 0.35 },
-              x: {
-                duration: 8,
-                repeat: Infinity,
-                ease: "easeInOut",
-                delay: 0.15 + floatDelay,
-              },
-              y: {
-                duration: 6,
-                repeat: Infinity,
-                ease: "easeInOut",
-                delay: 0.15 + floatDelay,
-              },
-            }
+            scale: { type: "spring", stiffness: 200, damping: 15 },
+            opacity: { duration: 0.35 },
+            x: {
+              duration: 8,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: 0.15 + floatDelay,
+            },
+            y: {
+              duration: 6,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: 0.15 + floatDelay,
+            },
+          }
           : {
-              x: { duration: 8, repeat: Infinity, ease: "easeInOut", delay: floatDelay },
-              y: { duration: 6, repeat: Infinity, ease: "easeInOut", delay: floatDelay },
-            }
+            x: { duration: 8, repeat: Infinity, ease: "easeInOut", delay: floatDelay },
+            y: { duration: 6, repeat: Infinity, ease: "easeInOut", delay: floatDelay },
+          }
       }
       style={{
         position: "absolute",
@@ -86,8 +86,8 @@ function FloatingBubble({ item, isNew, version, position, size, backgroundLogo }
               height: "100%",
               objectFit: "cover",
               borderRadius: "50%",
-              border: "3px solid rgba(255, 255, 255, 0.3)",
-              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
+              border: `3px solid ${theme.palette.overlay.whiteGlassBorderLight}`,
+              boxShadow: theme.palette.wall.bubbleShadow,
             }}
             whileHover={{ rotate: [0, -5, 5, -5, 0] }}
             transition={{ rotate: { duration: 0.6 } }}
@@ -100,10 +100,10 @@ function FloatingBubble({ item, isNew, version, position, size, backgroundLogo }
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              bgcolor: 'rgba(255,255,255,0.95)',
+              bgcolor: theme.palette.wall.bubbleBg,
               borderRadius: '50%',
-              border: "3px solid rgba(255, 255, 255, 0.3)",
-              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
+              border: `3px solid ${theme.palette.overlay.whiteGlassBorderLight}`,
+              boxShadow: theme.palette.wall.bubbleShadow,
             }}
           >
             <img
@@ -121,10 +121,10 @@ function FloatingBubble({ item, isNew, version, position, size, backgroundLogo }
               alignItems: 'center',
               justifyContent: 'center',
               bgcolor: 'primary.main',
-              color: 'white',
+              color: theme.palette.wall.whiteText,
               borderRadius: '50%',
-              border: "3px solid rgba(255, 255, 255, 0.3)",
-              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
+              border: `3px solid ${theme.palette.overlay.whiteGlassBorderLight}`,
+              boxShadow: theme.palette.wall.bubbleShadow,
               p: 2
             }}
           >
@@ -157,7 +157,7 @@ function FloatingBubble({ item, isNew, version, position, size, backgroundLogo }
             height: 'auto',
             zIndex: 5,
             opacity: 0.9,
-            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.4))',
+            filter: theme.palette.wall.stampShadow,
             pointerEvents: 'none',
             ...getStampStyles()
           }}
@@ -170,8 +170,7 @@ function FloatingBubble({ item, isNew, version, position, size, backgroundLogo }
           position: "absolute",
           inset: 0,
           borderRadius: "50%",
-          background:
-            "linear-gradient(135deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0) 50%, rgba(0,0,0,0.1) 100%)",
+          background: theme.palette.wall.bubbleGlassOverlay,
           pointerEvents: "none",
         }}
       />
@@ -195,6 +194,7 @@ export default function BubbleGrid({
   const prevRef = useRef([]);
   const initRef = useRef(false);
   const animTimerRef = useRef(null);
+  const theme = useTheme();
 
   const getRandomSize = useCallback(() => {
     if (randomSizes && minSize != null && maxSize != null) {
@@ -214,7 +214,7 @@ export default function BubbleGrid({
   const clearanceAt = useCallback((cx, cy, existingBubbles, screenW, screenH) => {
     // Distance to each edge
     let r = Math.min(cx - EDGE_MARGIN, cy - EDGE_MARGIN,
-                     screenW - EDGE_MARGIN - cx, screenH - EDGE_MARGIN - cy);
+      screenW - EDGE_MARGIN - cx, screenH - EDGE_MARGIN - cy);
 
     for (const { position: pos, size: es } of existingBubbles) {
       if (!pos) continue;
@@ -423,7 +423,7 @@ export default function BubbleGrid({
 
       <Box sx={{
         position: "absolute", inset: 0,
-        background: "radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.05) 100%)",
+        background: theme.palette.wall.bubbleVignette,
         pointerEvents: "none", zIndex: 2,
       }} />
     </Box>

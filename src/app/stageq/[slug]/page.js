@@ -163,7 +163,15 @@ export default function PublicSessionPage() {
       {background?.fileType === "video" && (
         <IconButton
           onClick={() => { setIsMuted(!isMuted); if (videoRef.current) videoRef.current.muted = !isMuted; }}
-          sx={{ position: "fixed", bottom: 20, right: 20, bgcolor: "rgba(0,0,0,0.5)", color: "white", zIndex: 1000, "&:hover": { bgcolor: "rgba(0,0,0,0.7)" } }}
+          sx={(theme) => ({
+            position: "fixed",
+            bottom: 20,
+            right: 20,
+            bgcolor: theme.palette.overlay.scrim,
+            color: theme.palette.common.white,
+            zIndex: 1000,
+            "&:hover": { bgcolor: theme.palette.overlay.scrimHover },
+          })}
         >
           {isMuted ? <VolumeOffIcon /> : <VolumeUpIcon />}
         </IconButton>
@@ -385,7 +393,7 @@ export default function PublicSessionPage() {
                     ) : null,
                     sx: {
                       borderRadius: 999,
-                      backgroundColor: "rgba(255,255,255,0.9)",
+                      backgroundColor: (theme) => theme.palette.input.background,
                     }
                   },
 

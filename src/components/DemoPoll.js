@@ -151,7 +151,7 @@ export default function DemoPoll() {
   const handleOptionSelect = (idx) => {
     if (highlightedOption === null) {
       setHighlightedOption(idx);
-      setTimeout(() => handleNext(), 800); // auto move after slight delay
+      setTimeout(() => handleNext(), 800);
     }
   };
 
@@ -192,7 +192,6 @@ export default function DemoPoll() {
           }}>
             Results for Demo Poll
           </Typography>
-          {/* Restart Icon */}
           <IconButton onClick={handleRestart} color="primary">
             <ReplayIcon fontSize="large" />
           </IconButton>
@@ -245,7 +244,6 @@ export default function DemoPoll() {
           </Typography>
         </Box>
 
-        {/* Restart Icon */}
         <IconButton onClick={handleRestart} color="primary">
           <ReplayIcon fontSize="large" />
         </IconButton>
@@ -276,7 +274,7 @@ export default function DemoPoll() {
               fontSize: "1.4rem",
               textAlign: "center",
             }}
-            sx={{ bgcolor: "primary.main", color: "white", py: 3 }}
+            sx={{ bgcolor: "primary.main", color: "primary.contrastText", py: 3 }}
           />
           <CardContent>
             {currentPoll.type === "options" ? (
@@ -289,14 +287,14 @@ export default function DemoPoll() {
                       p: 2,
                       border: "2px solid",
                       borderColor:
-                        highlightedOption === idx ? "primary.main" : "grey.300",
+                        highlightedOption === idx ? "primary.main" : "divider",
                       borderRadius: 3,
                       cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "space-between",
                       transition: "all 0.3s",
-                      "&:hover": { bgcolor: "grey.100" },
+                      "&:hover": { bgcolor: "action.hover" },
                     }}
                   >
                     <Stack direction="row" spacing={2} sx={{
@@ -351,11 +349,10 @@ export default function DemoPoll() {
                         borderColor:
                           highlightedOption === idx
                             ? "primary.main"
-                            : "grey.300",
+                            : "divider",
 
                         cursor: "pointer"
                       }}>
-                      {/* Number */}
                       <Typography
                         variant="caption"
                         color={
@@ -370,7 +367,6 @@ export default function DemoPoll() {
                         {idx + 1}
                       </Typography>
 
-                      {/* Image */}
                       {option.imageUrl && (
                         <Avatar
                           src={option.imageUrl}
@@ -388,7 +384,6 @@ export default function DemoPoll() {
                         />
                       )}
 
-                      {/* Text */}
                       {option.text && (
                         <Typography
                           variant="caption"
@@ -431,12 +426,12 @@ export default function DemoPoll() {
                       "& .MuiSlider-thumb": {
                         width: 24,
                         height: 24,
-                        bgcolor: "white",
+                        bgcolor: "background.paper",
                         border: "2px solid",
                         borderColor: "primary.main",
                       },
                       "& .MuiSlider-track": { height: 8 },
-                      "& .MuiSlider-rail": { height: 8, bgcolor: "grey.300" },
+                      "& .MuiSlider-rail": { height: 8, bgcolor: "action.disabledBackground" },
                     }}
                   />
                 </Box>

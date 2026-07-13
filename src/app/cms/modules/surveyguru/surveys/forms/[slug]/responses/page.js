@@ -13,7 +13,7 @@ import {
   Select,
   InputLabel,
   FormControl,
-  Divider,  
+  Divider,
   Container,
   Stack,
   Chip,
@@ -423,7 +423,7 @@ function ResponseCard({ resp, t, dir, language, formDetails, align }) {
                 ? t.anonymous
                 : name || registrationName || t.unknownName}
             </Typography>
-            
+
             {!isAnonymous && (
               <Stack direction="column" spacing={0.25} sx={{ mt: 0.5 }}>
                 {(email || recEmail) && (

@@ -781,11 +781,36 @@ const GameFormModal = ({
       onClose={onClose}
       maxWidth="sm"
       fullWidth
+      PaperProps={{
+        sx: {
+          bgcolor: "background.paper",
+        },
+      }}
     >
       <DialogTitle>
         {editMode ? t.dialogTitleUpdate : t.dialogTitleCreate}
       </DialogTitle>
-      <DialogContent>
+      <DialogContent
+        sx={{
+          bgcolor: "background.paper",
+
+          "&::-webkit-scrollbar": {
+            width: 8,
+          },
+          "&::-webkit-scrollbar-track": {
+            background: "transparent",
+          },
+          "&::-webkit-scrollbar-thumb": {
+            backgroundColor: (theme) => theme.palette.sharedUI.scrollbarThumb,
+            borderRadius: "8px",
+          },
+          "&::-webkit-scrollbar-thumb:hover": {
+            backgroundColor: (theme) => theme.palette.sharedUI.scrollbarThumbHover,
+          },
+          scrollbarColor: (theme) =>
+            `${theme.palette.sharedUI.scrollbarThumb} transparent`,
+        }}
+      >
         <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 2 }}>
           <TextField
             label={t.gameTitle}
@@ -864,17 +889,48 @@ const GameFormModal = ({
               <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
                 {/* O Image (Player 1) */}
                 <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", flex: 1, minWidth: 140 }}>
-                  <Button component="label" variant="outlined" size="small"
-                    sx={{ borderColor: "#ff6b6b", color: "#ff6b6b", "&:hover": { borderColor: "#e53935", bgcolor: "rgba(255,107,107,0.06)" } }}>
+                  <Button
+                    component="label"
+                    variant="outlined"
+                    size="small"
+                    sx={{
+                      borderColor: (theme) => theme.palette.crosszero.markO,
+                      color: (theme) => theme.palette.crosszero.markO,
+                      "&:hover": {
+                        borderColor: (theme) => theme.palette.crosszero.oButtonHoverBorder,
+                        bgcolor: (theme) => theme.palette.crosszero.oButtonHoverBg,
+                      },
+                    }}
+                  >
                     Player 1 ○ Image <Typography component="span" variant="caption" sx={{ ml: 0.5, opacity: 0.6 }}>(optional)</Typography>
                     <input hidden type="file" accept="image/*" onChange={(e) => handleFileChange(e, "oImage")} />
                   </Button>
                   {form.oImagePreview && (
                     <Box sx={{ mt: 1, position: "relative", display: "inline-block" }}>
-                      <img src={form.oImagePreview} alt="O preview"
-                        style={{ width: 64, height: 64, borderRadius: 8, objectFit: "cover", border: "2px solid #ff6b6b" }} />
-                      <IconButton size="small" onClick={() => setForm((p) => ({ ...p, oImage: null, oImagePreview: "" }))}
-                        sx={{ position: "absolute", top: -8, right: -8, bgcolor: "background.paper", border: "1px solid #ccc", p: 0.3 }}>
+                      <Box
+                        component="img"
+                        src={form.oImagePreview}
+                        alt="O preview"
+                        sx={{
+                          width: 64,
+                          height: 64,
+                          borderRadius: 1,
+                          objectFit: "cover",
+                          border: (theme) => `2px solid ${theme.palette.crosszero.markO}`,
+                        }}
+                      />
+                      <IconButton
+                        size="small"
+                        onClick={() => setForm((p) => ({ ...p, oImage: null, oImagePreview: "" }))}
+                        sx={{
+                          position: "absolute",
+                          top: -8,
+                          right: -8,
+                          bgcolor: "background.paper",
+                          border: (theme) => `1px solid ${theme.palette.wall.circleBorderThin}`,
+                          p: 0.3,
+                        }}
+                      >
                         <ICONS.close sx={{ fontSize: 14 }} />
                       </IconButton>
                     </Box>
@@ -883,17 +939,48 @@ const GameFormModal = ({
 
                 {/* X Image (Player 2) */}
                 <Box sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start", flex: 1, minWidth: 140 }}>
-                  <Button component="label" variant="outlined" size="small"
-                    sx={{ borderColor: "#00e5ff", color: "#00e5ff", "&:hover": { borderColor: "#00b8d4", bgcolor: "rgba(0,229,255,0.06)" } }}>
+                  <Button
+                    component="label"
+                    variant="outlined"
+                    size="small"
+                    sx={{
+                      borderColor: (theme) => theme.palette.crosszero.markX,
+                      color: (theme) => theme.palette.crosszero.markX,
+                      "&:hover": {
+                        borderColor: (theme) => theme.palette.crosszero.xButtonHoverBorder,
+                        bgcolor: (theme) => theme.palette.crosszero.xButtonHoverBg,
+                      },
+                    }}
+                  >
                     Player 2 ✕ Image <Typography component="span" variant="caption" sx={{ ml: 0.5, opacity: 0.6 }}>(optional)</Typography>
                     <input hidden type="file" accept="image/*" onChange={(e) => handleFileChange(e, "xImage")} />
                   </Button>
                   {form.xImagePreview && (
                     <Box sx={{ mt: 1, position: "relative", display: "inline-block" }}>
-                      <img src={form.xImagePreview} alt="X preview"
-                        style={{ width: 64, height: 64, borderRadius: 8, objectFit: "cover", border: "2px solid #00e5ff" }} />
-                      <IconButton size="small" onClick={() => setForm((p) => ({ ...p, xImage: null, xImagePreview: "" }))}
-                        sx={{ position: "absolute", top: -8, right: -8, bgcolor: "background.paper", border: "1px solid #ccc", p: 0.3 }}>
+                      <Box
+                        component="img"
+                        src={form.xImagePreview}
+                        alt="X preview"
+                        sx={{
+                          width: 64,
+                          height: 64,
+                          borderRadius: 1,
+                          objectFit: "cover",
+                          border: (theme) => `2px solid ${theme.palette.crosszero.markX}`,
+                        }}
+                      />
+                      <IconButton
+                        size="small"
+                        onClick={() => setForm((p) => ({ ...p, xImage: null, xImagePreview: "" }))}
+                        sx={{
+                          position: "absolute",
+                          top: -8,
+                          right: -8,
+                          bgcolor: "background.paper",
+                          border: (theme) => `1px solid ${theme.palette.wall.circleBorderThin}`,
+                          p: 0.3,
+                        }}
+                      >
                         <ICONS.close sx={{ fontSize: 14 }} />
                       </IconButton>
                     </Box>
@@ -923,7 +1010,12 @@ const GameFormModal = ({
 
           {/* 🧩 Team Mode Section (unchanged) */}
           {module === "eventduel" && (
-            <Box sx={{ borderTop: "1px solid #eee", pt: 2 }}>
+            <Box
+              sx={{
+                borderTop: (theme) => `1px solid ${theme.palette.sharedUI.sectionDivider}`,
+                pt: 2,
+              }}
+            >
               <FormControlLabel
                 control={
                   <Switch

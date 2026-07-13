@@ -16,6 +16,7 @@ import {
   DialogContentText,
   DialogActions,
   IconButton,
+  alpha,
 } from "@mui/material";
 import VolumeUpIcon from "@mui/icons-material/VolumeUp";
 import VolumeOffIcon from "@mui/icons-material/VolumeOff";
@@ -122,7 +123,7 @@ export default function EventDetails() {
         setNotConfirmed(status === "not_attending");
         if (status === "confirmed") {
           setJustConfirmed(true);
-        setShowSuccessDialog(true);
+          setShowSuccessDialog(true);
           if (event?.showBadgeCardAfterAttendanceConfirmation) {
             setShowBadgeCardModal(true);
           }
@@ -407,15 +408,13 @@ export default function EventDetails() {
               videoRef.current.muted = !isMuted;
             }
           }}
-          sx={{
-            position: "fixed",
-            bottom: 20,
-            right: 20,
-            bgcolor: "rgba(0,0,0,0.5)",
-            color: "white",
+          sx={(theme) => ({
+            position: "fixed", bottom: 20, right: 20,
+            bgcolor: theme.palette.overlay.scrim,
+            color: theme.palette.common.white,
             zIndex: 1000,
-            "&:hover": { bgcolor: "rgba(0,0,0,0.7)" },
-          }}
+            "&:hover": { bgcolor: theme.palette.overlay.scrimHover },
+          })}
         >
           {isMuted ? <VolumeOffIcon /> : <VolumeUpIcon />}
         </IconButton>
@@ -477,7 +476,7 @@ export default function EventDetails() {
             ) : registration ? (
               <Box
                 sx={{
-                  backgroundColor: "rgba(255, 255, 255, 0.85)", // semi-transparent white
+                  backgroundColor: theme.palette.overlay.card,
                   borderRadius: 3,
                   p: 4,
                   boxShadow: 3,
@@ -611,9 +610,9 @@ export default function EventDetails() {
                       mt: 3,
                       mb: 2,
                       p: 2,
-                      backgroundColor: "rgba(0, 74, 173, 0.05)",
+                      backgroundColor: alpha(theme.palette.primary.main, 0.05),
                       borderRadius: 2,
-                      border: "1px solid rgba(0, 74, 173, 0.1)",
+                      border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
                     }}
                   >
                     <Typography
@@ -702,7 +701,7 @@ export default function EventDetails() {
                       id="qr-code-checkin"
                       value={registration.token}
                       size={180}
-                      bgColor="#ffffff"
+                      bgColor={theme.palette.qr.background}
                       includeMargin
                     />
                   </Box>
@@ -853,8 +852,8 @@ export default function EventDetails() {
               padding: 2,
               maxWidth: "500px",
               width: "100%",
-              backgroundColor: "#f9fafb",
-              boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
+              backgroundColor: theme.palette.background.default,
+              boxShadow: theme.palette.shadow.dialog,
             },
           }
         }}
@@ -862,8 +861,8 @@ export default function EventDetails() {
         <DialogTitle
           sx={{
             fontWeight: "bold",
-            fontSize: "1.5rem",
-            color: "#333",
+            color: theme.palette.text.primary,
+
             textAlign: "center",
             position: "relative",
             pb: 1,
@@ -898,7 +897,7 @@ export default function EventDetails() {
             <DialogContentText
               sx={{
                 fontSize: "1rem",
-                color: "#555",
+                color: theme.palette.text.secondary,
                 lineHeight: 1.6,
               }}
             >
@@ -952,7 +951,7 @@ export default function EventDetails() {
             {t.confirmButton}
           </Button>
         </DialogActions>
-        </Dialog>
+      </Dialog>
       <Dialog
         open={showBadgeCardModal}
         onClose={() => {
@@ -963,35 +962,28 @@ export default function EventDetails() {
         disableScrollLock={true}
         slotProps={{
           paper: {
-            sx: {
-              borderRadius: 2,
-              padding: 0,
-              maxWidth: "800px",
-              width: "100%",
-              backgroundColor: "#ffffff",
-              boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
-            },
-          }
+            sx: (theme) => ({
+              borderRadius: 2, padding: 0, maxWidth: "800px", width: "100%",
+              backgroundColor: theme.palette.background.paper,
+              boxShadow: theme.palette.shadow.dialog,
+            }),
+          },
         }}
       >
-        <DialogContent sx={{ p: 0, bgcolor: '#ffffff', textAlign: 'center', position: 'relative' }}>
+        <DialogContent sx={{ p: 0, bgcolor: theme.palette.background.paper, textAlign: 'center', position: 'relative' }}>
           <Button
             onClick={() => {
               setShowBadgeCardModal(false);
               setShowSuccessDialog(false);
             }}
-            sx={{
-              position: "absolute",
-              top: 12,
-              right: 24,
-              zIndex: 10,
-              minWidth: 0,
-              p: 1,
-              bgcolor: "rgba(255,255,255,0.8)",
+            sx={(theme) => ({
+              position: "absolute", top: 12, right: 24, zIndex: 10,
+              minWidth: 0, p: 1,
+              bgcolor: theme.palette.overlay.chip,
               borderRadius: "50%",
-              color: "#000",
-              "&:hover": { bgcolor: "#fff" }
-            }}
+              color: theme.palette.overlay.chipIcon,
+              "&:hover": { bgcolor: theme.palette.overlay.chipHover },
+            })}
           >
             <ICONS.close />
           </Button>
@@ -1004,20 +996,20 @@ export default function EventDetails() {
             </Typography>
           </Box>
 
-            {registration && event?.showBadgeCardAfterAttendanceConfirmation && (
-              <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', transform: 'scale(0.9)', transformOrigin: 'top center', mt: 1, mb: 0 }}>
-                <Box ref={badgePreviewRef} sx={{ display: 'inline-block', mt: 0 }}>
-                  <BadgeCard
-                    registration={registration}
-                    event={translatedEvent || event}
-                    module="checkin"
-                    qrRef={qrCodeRef}
-                    t={t}
-                    compact={true}
-                  />
-                </Box>
+          {registration && event?.showBadgeCardAfterAttendanceConfirmation && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', transform: 'scale(0.9)', transformOrigin: 'top center', mt: 1, mb: 0 }}>
+              <Box ref={badgePreviewRef} sx={{ display: 'inline-block', mt: 0 }}>
+                <BadgeCard
+                  registration={registration}
+                  event={translatedEvent || event}
+                  module="checkin"
+                  qrRef={qrCodeRef}
+                  t={t}
+                  compact={true}
+                />
               </Box>
-            )}
+            </Box>
+          )}
 
         </DialogContent>
         <DialogActions sx={{ justifyContent: "center", pb: 2, pt: 1, bgcolor: "transparent" }}>

@@ -39,8 +39,8 @@ import { DEFAULT_ISO_CODE } from "@/utils/countryCodes";
 import { formatDate, formatDateWithTime } from "@/utils/dateUtils";
 import ICONS from "@/utils/iconUtil";
 import { validatePhoneNumber } from "@/utils/phoneValidation";
-import BadgeCard, { BADGE_COLORS, MODULE_CHECKIN, MODULE_EVENTREG, getEventDateLabel, getModuleLabel } from "@/components/badges/BadgeCard";
-
+import BadgeCard, { getBadgeColors, MODULE_CHECKIN, MODULE_EVENTREG, getEventDateLabel, getModuleLabel } from "@/components/badges/BadgeCard";
+import { useTheme } from "@mui/material";
 const translations = {
   en: {
     title: "View Your Badge",
@@ -109,6 +109,8 @@ export default function MyBadgePage() {
   const [errors, setErrors] = useState({});
   const [lookupLoading, setLookupLoading] = useState(false);
   const [registration, setRegistration] = useState(null);
+  const theme = useTheme();
+  const BADGE_COLORS = getBadgeColors(theme);
 
   const qrRef = useRef(null);
   const badgePreviewRef = useRef(null);
@@ -345,7 +347,7 @@ export default function MyBadgePage() {
                     px: { xs: 2.25, sm: 3 },
                     py: { xs: 2.25, sm: 2.75 },
                     overflow: "hidden",
-                    background: `linear-gradient(135deg, ${BADGE_COLORS.primaryDeep} 0%, ${BADGE_COLORS.primary} 58%, #40c0d5 100%)`,
+                    background: (theme) => theme.palette.gradients.badge,
                   }}
                 >
                   <Box
@@ -687,35 +689,35 @@ function BadgeEventCard({ event, t, onSelect, locale }) {
   const timezone = event.timezone || null;
   const dateLabel = event.startDate
     ? (() => {
-        if (event.endDate && event.endDate !== event.startDate) {
-          const start = event.startTime
-            ? formatDateWithTime(
-                event.startDate,
-                event.startTime,
-                locale,
-                timezone
-              )
-            : formatDate(event.startDate, locale);
-          const end = event.endTime
-            ? formatDateWithTime(
-                event.endDate,
-                event.endTime,
-                locale,
-                timezone
-              )
-            : formatDate(event.endDate, locale);
-          return `${start} - ${end}`;
-        }
-
-        return event.startTime
+      if (event.endDate && event.endDate !== event.startDate) {
+        const start = event.startTime
           ? formatDateWithTime(
-              event.startDate,
-              event.startTime,
-              locale,
-              timezone
-            )
+            event.startDate,
+            event.startTime,
+            locale,
+            timezone
+          )
           : formatDate(event.startDate, locale);
-      })()
+        const end = event.endTime
+          ? formatDateWithTime(
+            event.endDate,
+            event.endTime,
+            locale,
+            timezone
+          )
+          : formatDate(event.endDate, locale);
+        return `${start} - ${end}`;
+      }
+
+      return event.startTime
+        ? formatDateWithTime(
+          event.startDate,
+          event.startTime,
+          locale,
+          timezone
+        )
+        : formatDate(event.startDate, locale);
+    })()
     : null;
 
   return (
@@ -743,8 +745,7 @@ function BadgeEventCard({ event, t, onSelect, locale }) {
             bottom: 0,
             left: 0,
             width: "100%",
-            background:
-              "linear-gradient(to top, rgba(0,0,0,0.75) 20%, rgba(0,0,0,0) 90%)",
+            background: (theme) => theme.palette.overlay.imageGradient,
             p: 2,
             color: "white",
           }}
@@ -813,9 +814,10 @@ function BadgeEventCard({ event, t, onSelect, locale }) {
       <CardActions
         sx={{
           justifyContent: "center",
-          borderTop: "1px solid rgba(0,0,0,0.06)",
+          borderTop: "1px solid",
+          borderColor: "divider",
           p: 1,
-          bgcolor: "rgba(0,0,0,0.02)",
+          bgcolor: "action.hover",
         }}
       >
         <Button

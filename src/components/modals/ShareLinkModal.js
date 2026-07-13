@@ -13,6 +13,7 @@ import {
   Button,
   Stack,
 } from "@mui/material";
+import { alpha, useTheme } from "@mui/material/styles";
 import { QRCodeCanvas } from "qrcode.react";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import CloseIcon from "@mui/icons-material/Close";
@@ -60,6 +61,7 @@ export default function ShareLinkModal({
   const { showMessage } = useMessage();
   const { t, dir } = useI18nLayout(translations);
   const { globalConfig } = useGlobalConfig();
+  const theme = useTheme();
 
   const downloadName = `${slugify(name)}.png`;
   const qrValue = qrUrl || url;
@@ -133,7 +135,7 @@ export default function ShareLinkModal({
           <CloseIcon />
         </IconButton>
       </Stack>
-      <DialogContent sx={{ backgroundColor: "#fff", textAlign: "center" }}>
+      <DialogContent sx={{ backgroundColor: "background.paper", textAlign: "center" }}>
         <Typography
           variant="body2"
           sx={{
@@ -146,8 +148,9 @@ export default function ShareLinkModal({
         {/* Shareable Link */}
         <Box
           sx={{
-            backgroundColor: "#f9f9f9",
-            border: "1px solid #ddd",
+            backgroundColor: "background.default",
+            border: "1px solid",
+            borderColor: "divider",
             borderRadius: "8px",
             padding: 2,
             mb: 3,
@@ -181,8 +184,9 @@ export default function ShareLinkModal({
         <Box
           ref={qrCodeRef}
           sx={{
-            backgroundColor: "#f9f9f9",
-            border: "1px solid #ddd",
+            backgroundColor: "background.default",
+            border: "1px solid",
+            borderColor: "divider",
             borderRadius: "8px",
             padding: 2,
             display: "flex",
@@ -194,11 +198,11 @@ export default function ShareLinkModal({
           <QRCodeCanvas
             value={qrValue}
             size={180}
-            bgColor="#ffffff"
+            bgColor={theme.palette.background.paper}
             includeMargin={true}
             style={{
               padding: "12px",
-              background: "#ffffff",
+              background: theme.palette.background.paper,
               borderRadius: "8px",
             }}
           />

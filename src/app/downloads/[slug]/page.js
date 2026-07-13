@@ -155,7 +155,7 @@ export default function FileDownloadPage() {
             width: "100%",
             height: "100%",
             borderRadius: "10px",
-            background: "#000",
+            background: "background.default",
           }}
           src={file.fileUrl}
         />
@@ -219,7 +219,7 @@ export default function FileDownloadPage() {
         display: "flex",
         flexDirection: "column",
         height: "calc(90vh - 40px)",
-        backgroundColor: "#fafafa",
+        backgroundColor: "background.default",
       }}
       dir={dir}
     >
@@ -232,7 +232,7 @@ export default function FileDownloadPage() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: "#00000005",
+          backgroundColor: "background.paper",
         }}
       >
         {preview}
@@ -240,9 +240,10 @@ export default function FileDownloadPage() {
       {/* ===== Footer Section ===== */}
       <Box
         sx={{
-          borderTop: "1px solid #ddd",
           p: 1,
-          backgroundColor: "#fff",
+          borderTop: "1px solid",
+          borderColor: "divider",
+          backgroundColor: "background.paper",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",

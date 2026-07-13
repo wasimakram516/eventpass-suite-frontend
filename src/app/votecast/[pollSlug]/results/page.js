@@ -22,26 +22,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import AppCard from "@/components/cards/AppCard";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import { toArabicDigits } from "@/utils/arabicDigits";
-
-const COLORS = [
-  "#8884d8",
-  "#82ca9d",
-  "#ffc658",
-  "#ff8042",
-  "#8dd1e1",
-  "#a4de6c",
-  "#d0ed57",
-  "#9e9e9e",
-  "#ba68c8",
-  "#4dd0e1",
-  "#f06292",
-];
-
-const NPS_GROUP_COLORS = {
-  detractors: "#ef5350",
-  passives: "#ffc107",
-  promoters: "#66bb6a",
-};
+import { VOTECAST_CHART_COLORS, VOTECAST_NPS_GROUP_COLORS } from "@/styles/theme";
 
 const translations = {
   en: {
@@ -120,7 +101,7 @@ function RatingCard({ question, dir, t, language }) {
               style={{ fontSize: "14px", fontWeight: 600 }}
             >
               {data.map((_, i) => (
-                <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                <Cell key={i} fill={VOTECAST_CHART_COLORS[i % VOTECAST_CHART_COLORS.length]} />
               ))}
             </Pie>
             <Tooltip formatter={(value, name) => [`${toArabicDigits(value, language)} votes`, `Rating ${toArabicDigits(name, language)}`]} />
@@ -134,7 +115,7 @@ function RatingCard({ question, dir, t, language }) {
         {data.map((d, i) => (
           <LegendDot
             key={d.value}
-            color={COLORS[i % COLORS.length]}
+            color={VOTECAST_CHART_COLORS[i % VOTECAST_CHART_COLORS.length]}
             label={`${toArabicDigits(d.value, language)} / ${toArabicDigits(scale?.max || 5, language)}`}
             count={d.count}
             total={totalVotes}
@@ -163,9 +144,9 @@ function NpsCard({ question, dir, t, language }) {
     const passives = distribution.filter((d) => d.value >= 7 && d.value <= 8).reduce((s, d) => s + d.count, 0);
     const promoters = distribution.filter((d) => d.value >= 9 && d.value <= 10).reduce((s, d) => s + d.count, 0);
     const result = [];
-    if (detractors > 0) result.push({ name: t.detractors, value: detractors, color: NPS_GROUP_COLORS.detractors });
-    if (passives > 0) result.push({ name: t.passives, value: passives, color: NPS_GROUP_COLORS.passives });
-    if (promoters > 0) result.push({ name: t.promoters, value: promoters, color: NPS_GROUP_COLORS.promoters });
+    if (detractors > 0) result.push({ name: t.detractors, value: detractors, color: VOTECAST_NPS_GROUP_COLORS.detractors });
+    if (passives > 0) result.push({ name: t.passives, value: passives, color: VOTECAST_NPS_GROUP_COLORS.passives });
+    if (promoters > 0) result.push({ name: t.promoters, value: promoters, color: VOTECAST_NPS_GROUP_COLORS.promoters });
     return result;
   }, [distribution, totalVotes, t]);
 
@@ -266,7 +247,7 @@ function OptionCard({ question, dir, t, language }) {
               style={{ fontSize: "14px", fontWeight: 600 }}
             >
               {data.map((_, i) => (
-                <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                <Cell key={i} fill={VOTECAST_CHART_COLORS[i % VOTECAST_CHART_COLORS.length]} />
               ))}
             </Pie>
             <Tooltip formatter={(value, name) => [`${toArabicDigits(value, language)} votes`, name]} />
@@ -280,7 +261,7 @@ function OptionCard({ question, dir, t, language }) {
         {data.map((o, i) => (
           <LegendDot
             key={i}
-            color={COLORS[i % COLORS.length]}
+            color={VOTECAST_CHART_COLORS[i % VOTECAST_CHART_COLORS.length]}
             label={o.text || `Option ${toArabicDigits(i + 1, language)}`}
             count={o.votes}
             total={totalVotes}
@@ -351,7 +332,7 @@ export default function FullScreenResultsPage() {
         dir={dir}
         sx={{
           minHeight: "100vh",
-          backgroundColor: "#f9f9f9",
+          backgroundColor: "background.default",
           pt: { xs: 3, md: 4 },
           px: { xs: 1.5, md: 4 },
           pb: 4,

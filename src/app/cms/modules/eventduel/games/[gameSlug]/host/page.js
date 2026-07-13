@@ -14,6 +14,7 @@ import {
   Grid,
   Avatar,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 
 import ICONS from "@/utils/iconUtil";
 import useWebSocketData from "@/hooks/modules/eventduel/useEventDuelWebSocketData";
@@ -124,6 +125,8 @@ export default function HostDashboard() {
   const router = useRouter();
   const { gameSlug } = useParams();
   const { t, dir, align } = useI18nLayout(translations);
+  const theme = useTheme();
+  const cz = theme.palette.crosszero;
 
   const { sessions, currentSession, requestAllSessions } =
     useWebSocketData(gameSlug);
@@ -422,8 +425,8 @@ export default function HostDashboard() {
               px: 4,
               py: 5,
               borderRadius: 4,
-              background: "linear-gradient(135deg, #e1f5fe, #ffffff)",
-              boxShadow: "0 12px 35px rgba(0,0,0,0.15)",
+              background: cz.activeSessionGradient,
+              boxShadow: cz.activeSessionShadow,
               backdropFilter: "blur(4px)",
               textAlign: "center",
               position: "relative",
@@ -440,11 +443,11 @@ export default function HostDashboard() {
                 gap: 1,
                 px: 2,
                 py: 0.5,
-                bgcolor: "#4CAF50",
+                bgcolor: cz.win,
                 borderRadius: 999,
-                color: "#fff",
+                color: "common.white",
                 fontWeight: "bold",
-                boxShadow: "0 0 8px 2px rgba(76, 175, 80, 0.4)",
+                boxShadow: cz.liveChipShadow,
                 textTransform: "uppercase",
                 fontSize: 12,
                 letterSpacing: 0.5,
@@ -494,12 +497,12 @@ export default function HostDashboard() {
                       <Box
                         key={tObj.teamId?._id || index}
                         sx={{
-                          border: "2px solid #90caf9",
+                          border: cz.teamBoxBorder,
                           borderRadius: 3,
                           px: 2,
                           py: 1,
                           minWidth: 120,
-                          bgcolor: "#e3f2fd",
+                          bgcolor: cz.teamBoxBg,
                         }}
                       >
                         <Typography
@@ -653,9 +656,9 @@ export default function HostDashboard() {
                   width: "100%",
                   maxWidth: 700,
                   mx: "auto",
-                  background: "linear-gradient(135deg, #1e3c72, #2a5298)",
+                  background: cz.pendingCardGradient,
                   borderRadius: 6,
-                  color: "#fff",
+                  color: "common.white",
                   textAlign: "center",
                 }}
               >
@@ -665,8 +668,8 @@ export default function HostDashboard() {
                   sx={{
                     fontWeight: "bold",
                     mb: 3,
-                    color: "white",
-                    textShadow: "0 0 10px rgba(255,255,255,0.3)"
+                    color: "common.white",
+                    textShadow: cz.pendingTextShadow
                   }}>
                   {isTeamMode
                     ? t.waitingForPlayers || t.waitingPlayers
@@ -685,10 +688,10 @@ export default function HostDashboard() {
                           key={idx}
                           sx={{
                             backgroundColor: player?.playerId
-                              ? "#4CAF50"
-                              : "#ffffff11",
+                              ? cz.playerSlotFilled
+                              : cz.playerSlotEmpty,
                             border: `2px solid ${
-                              player?.playerId ? "#4caf50" : "#ffffff44"
+                              player?.playerId ? cz.playerSlotBorderFilled : cz.playerSlotBorderEmpty
                             }`,
                             borderRadius: 4,
                             p: 2.5,
@@ -717,7 +720,7 @@ export default function HostDashboard() {
                           </Avatar>
                           <Typography
                             variant="caption"
-                            sx={{ color: "#e0f2f1" }}
+                            sx={{ color: cz.pendingSecondaryText }}
                           >
                             {label}
                           </Typography>
@@ -725,7 +728,7 @@ export default function HostDashboard() {
                             variant="subtitle1"
                             sx={{
                               fontWeight: "bold",
-                              color: "#fff",
+                              color: "common.white",
                               wordWrap: "break-word"
                             }}>
                             {player?.playerId?.name || ""}
@@ -741,7 +744,7 @@ export default function HostDashboard() {
                             <ICONS.business sx={{ fontSize: 18 }} />
                             <Typography
                               variant="caption"
-                              sx={{ color: "#e0f2f1", wordBreak: "break-word" }}
+                              sx={{ color: cz.pendingSecondaryText, wordBreak: "break-word" }}
                             >
                               {player?.playerId?.company || "N/A"}
                             </Typography>
@@ -764,12 +767,12 @@ export default function HostDashboard() {
                             sx={{
                               backgroundColor:
                                 joined >= totalRequired
-                                  ? "#4CAF50"
-                                  : "#ffffff11",
+                                  ? cz.playerSlotFilled
+                                  : cz.playerSlotEmpty,
                               border: `2px solid ${
                                 joined >= totalRequired
-                                  ? "#4caf50"
-                                  : "#ffffff44"
+                                  ? cz.playerSlotBorderFilled
+                                  : cz.playerSlotBorderEmpty
                               }`,
                               borderRadius: 4,
                               p: 2.5,
@@ -802,13 +805,13 @@ export default function HostDashboard() {
                               variant="subtitle1"
                               sx={{
                                 fontWeight: "bold",
-                                color: "#fff"
+                                color: "common.white"
                               }}>
                               {team.teamId?.name || `${t.teamMode} ${idx + 1}`}
                             </Typography>
                             <Typography
                               variant="body2"
-                              sx={{ color: "#e0f2f1" }}
+                              sx={{ color: cz.pendingSecondaryText }}
                             >
                               {t.joined}: {joined} {t.of} {totalRequired}{" "}
                               {t.players}
@@ -821,7 +824,7 @@ export default function HostDashboard() {
                                 variant="caption"
                                 sx={{
                                   display: "block",
-                                  color: "#e0f2f1",
+                                  color: cz.pendingSecondaryText,
                                   opacity: 0.9,
                                 }}
                               >
@@ -904,17 +907,16 @@ export default function HostDashboard() {
                         overflow: "hidden",
                         borderRadius: 4,
                         my: 3,
-                        background:
-                          "linear-gradient(to bottom, #f7f7f7, #ffffff)",
-                        boxShadow: "0px 6px 20px rgba(0,0,0,0.1)",
+                        background: cz.previousSessionGradient,
+                        boxShadow: cz.previousSessionShadow,
                       }}
                     >
                       {/* Winner Banner */}
                       <Box
                         sx={{
                           background: session.winner
-                            ? "linear-gradient(to right, #4CAF50, #81C784)"
-                            : "linear-gradient(to right, #9E9E9E, #BDBDBD)",
+                            ? cz.winnerBannerGradient
+                            : cz.tieBannerGradient,
                           px: 3,
                           py: 1.5,
                           display: "flex",
@@ -924,12 +926,12 @@ export default function HostDashboard() {
                         }}
                       >
                         {session?.winner && (
-                          <ICONS.trophy sx={{ color: "#fff" }} />
+                          <ICONS.trophy sx={{ color: "common.white" }} />
                         )}
                         <Typography
                           variant="h6"
                           sx={{
-                            color: "#fff",
+                            color: "common.white",
                             fontWeight: "bold"
                           }}>
                           {session.winner ? session.winner.name : t.tie}
@@ -961,8 +963,8 @@ export default function HostDashboard() {
                             <Box
                               sx={{
                                 background: isPlayer1Winner
-                                  ? "linear-gradient(135deg, #A5D6A7, #C8E6C9)"
-                                  : "grey.100",
+                                  ? cz.winnerCellGradient
+                                  : cz.loserCellBg,
                                 borderRadius: 3,
                                 p: 3,
                                 height: "100%",
@@ -1062,8 +1064,8 @@ export default function HostDashboard() {
                                 xs: "none",
                                 sm: "translate(-50%, -50%)",
                               },
-                              background: "#fff",
-                              border: "2px solid #ccc",
+                              background: cz.vsBadgeBg,
+                              border: cz.vsBadgeBorder,
                               px: 2,
                               py: 0.5,
                               borderRadius: "50px",
@@ -1086,8 +1088,8 @@ export default function HostDashboard() {
                             <Box
                               sx={{
                                 background: isPlayer2Winner
-                                  ? "linear-gradient(135deg, #A5D6A7, #C8E6C9)"
-                                  : "grey.100",
+                                  ? cz.winnerCellGradient
+                                  : cz.loserCellBg,
                                 borderRadius: 3,
                                 p: 3,
                                 height: "100%",
@@ -1192,9 +1194,8 @@ export default function HostDashboard() {
                     sx={{
                       borderRadius: 4,
                       my: 3,
-                      background:
-                        "linear-gradient(to bottom, #f7f7f7, #ffffff)",
-                      boxShadow: "0px 6px 20px rgba(0,0,0,0.08)",
+                      background: cz.previousSessionGradient,
+                      boxShadow: cz.previousSessionShadow,
                       p: { xs: 2, sm: 3 },
                     }}
                   >
@@ -1202,8 +1203,8 @@ export default function HostDashboard() {
                     <Box
                       sx={{
                         background: session.winnerTeamId
-                          ? "linear-gradient(to right, #4CAF50, #81C784)"
-                          : "linear-gradient(to right, #9E9E9E, #BDBDBD)",
+                          ? cz.winnerBannerGradient
+                          : cz.tieBannerGradient,
                         px: 3,
                         py: 1.5,
                         borderRadius: 2,
@@ -1214,11 +1215,11 @@ export default function HostDashboard() {
                         gap: 1,
                       }}
                     >
-                      <ICONS.trophy sx={{ color: "#fff" }} />
+                      <ICONS.trophy sx={{ color: "common.white" }} />
                       <Typography
                         variant="h6"
                         sx={{
-                          color: "#fff",
+                          color: "common.white",
                           fontWeight: "bold",
                           textAlign: "center"
                         }}>
@@ -1253,8 +1254,8 @@ export default function HostDashboard() {
                                 borderRadius: 3,
                                 p: { xs: 2, sm: 2.5 },
                                 background: isWinner
-                                  ? "linear-gradient(135deg,#A5D6A7,#C8E6C9)"
-                                  : "#fafafa",
+                                  ? cz.winnerCellGradient
+                                  : cz.teamCardBg,
                                 display: "flex",
                                 flexDirection: "column",
                                 gap: 1.5,
@@ -1284,7 +1285,7 @@ export default function HostDashboard() {
                                   justifyContent: "center",
                                   alignItems: "center",
                                   flexWrap: "wrap",
-                                  bgcolor: "white",
+                                  bgcolor: "common.white",
                                   borderRadius: 2,
                                   py: 0.7,
                                   px: 1.5
@@ -1359,7 +1360,7 @@ export default function HostDashboard() {
                                     sx={{
                                       p: 1.2,
                                       borderRadius: 2,
-                                      bgcolor: "#fff",
+                                      bgcolor: cz.teamPlayerCardBg,
                                       display: "flex",
                                       flexDirection: {
                                         xs: "column",
@@ -1370,7 +1371,7 @@ export default function HostDashboard() {
                                         xs: "flex-start",
                                         sm: "center",
                                       },
-                                      boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
+                                      boxShadow: cz.teamPlayerCardShadow,
                                       gap: { xs: 0.5, sm: 0 },
                                     }}
                                   >
@@ -1460,13 +1461,13 @@ export default function HostDashboard() {
                             top: "50%",
                             left: "50%",
                             transform: "translate(-50%, -50%)",
-                            background: "#fff",
-                            border: "2px solid #ccc",
+                            background: cz.vsBadgeBg,
+                            border: cz.vsBadgeBorder,
                             px: 2.5,
                             py: 0.5,
                             borderRadius: "50px",
                             fontWeight: "bold",
-                            boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+                            boxShadow: cz.vsBadgeShadow,
                             zIndex: 2,
                             fontSize: "1rem",
                           }}

@@ -17,6 +17,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import BusinessAlertModal from "@/components/modals/BusinessAlertModal";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { useTheme } from "@mui/material/styles";
 import {
   getDashboardInsights,
   refreshDashboardInsights,
@@ -68,6 +69,8 @@ export default function HomePage() {
   const { user } = useAuth();
   const { dir, align, language, t } = useI18nLayout(translations);
   const router = useRouter();
+  const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
   const [showBusinessModal, setShowBusinessModal] = useState(false);
   const [insights, setInsights] = useState(null);
   const [modules, setModules] = useState([]);
@@ -238,14 +241,14 @@ export default function HomePage() {
         variant="body2"
         sx={{
           textAlign: align,
-          color: "rgba(255,255,255,0.9)"
+          color: theme.palette.home.heroTextSecondary
         }}>
         {formattedDate}· {formattedTime}
       </Typography>
     );
   };
 
-  const donutColors = ["#1f77b4", "#ff7f0e", "#2ca02c", "#9467bd", "#8c564b"];
+  const donutColors = theme.palette.home.donutColors;
   const sumValues = (obj = {}) =>
     Object.values(obj).reduce((sum, val) => sum + (Number(val) || 0), 0);
 
@@ -266,7 +269,7 @@ export default function HomePage() {
             id: 0,
             label: emptyLabel,
             value: 1,
-            color: "rgba(0,0,0,0.08)",
+            color: theme.palette.home.donutEmpty,
             isEmpty: true,
           },
         ],
@@ -282,7 +285,7 @@ export default function HomePage() {
       })),
       total,
     };
-  }; 
+  };
 
   const buildTrashBreakdown = (trash = {}) => {
     const entries = Object.entries(trash).map(([key, val]) => {
@@ -368,18 +371,16 @@ export default function HomePage() {
             p: 4,
             mb: 4,
             borderRadius: 3,
-            color: "#fff",
+            color: "common.white",
             position: "relative",
             overflow: "hidden",
-            background:
-              "linear-gradient(135deg, #1b3a7a 0%, #3843b2 45%, #6a2ea0 100%)",
-            boxShadow: "0 18px 40px rgba(27,58,122,0.25)",
+            background: theme.palette.home.heroGradient,
+            boxShadow: theme.palette.home.heroShadow,
             "&::before": {
               content: '""',
               position: "absolute",
               inset: 0,
-              background:
-                "radial-gradient(circle at 20% 20%, rgba(255,255,255,0.18), transparent 45%), radial-gradient(circle at 80% 30%, rgba(255,255,255,0.14), transparent 40%)",
+              background: theme.palette.home.heroOverlayBefore,
               pointerEvents: "none",
             },
             "&::after": {
@@ -390,8 +391,7 @@ export default function HomePage() {
               width: 320,
               height: 320,
               borderRadius: "50%",
-              background:
-                "radial-gradient(circle, rgba(255,255,255,0.18), rgba(255,255,255,0) 60%)",
+              background: theme.palette.home.heroOverlayAfter,
               pointerEvents: "none",
             },
           }}
@@ -414,9 +414,9 @@ export default function HomePage() {
                 gutterBottom
                 sx={{
                   textAlign: align,
-                  color: "#fff",
+                  color: "common.white",
                   letterSpacing: "0.3px",
-                  textShadow: "0 2px 12px rgba(0,0,0,0.28)",
+                  textShadow: theme.palette.home.heroTextShadow,
                   fontWeight: 600,
                   lineHeight: 1.15
                 }}>
@@ -439,7 +439,7 @@ export default function HomePage() {
                 sx={{
                   textAlign: align,
                   mt: 2,
-                  color: "rgba(255,255,255,0.9)"
+                  color: theme.palette.home.heroTextSecondary
                 }}>
                 {t.overviewIntro}
               </Typography>
@@ -498,7 +498,7 @@ export default function HomePage() {
                 <Typography
                   variant="caption"
                   sx={{
-                    color: "rgba(255,255,255,0.85)",
+                    color: theme.palette.home.heroTextTertiary,
                     textAlign: { xs: "left", sm: "right" },
                     mt: 1,
                   }}
@@ -519,7 +519,7 @@ export default function HomePage() {
             {moduleStats.global && (
               <AppCard sx={{ p: 3, mt: 2, mb: 3, borderRadius: 3 }}>
                 <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-                  <Avatar sx={{ bgcolor: "#1976d2", mx: 1 }}>
+                  <Avatar sx={{ bgcolor: "info.main", mx: 1 }}>
                     <ICONS.business />
                   </Avatar>
                   <Typography variant="h6">{t.globalOverview}</Typography>
@@ -600,9 +600,8 @@ export default function HomePage() {
                             {roleKeys.map((role) => (
                               <RenderTruncatedChip
                                 key={role}
-                                label={toArabicDigits(`${roleLabel(role)}: ${
-                                  Number(userTotals?.[role] || 0)
-                                }`, language)}
+                                label={toArabicDigits(`${roleLabel(role)}: ${Number(userTotals?.[role] || 0)
+                                  }`, language)}
                               />
                             ))}
                           </Stack>
@@ -680,112 +679,69 @@ export default function HomePage() {
                 );
 
                 return (
-                    <AppCard
-                      key={mod.key}
-                      sx={{
-                        p: 3,
-                        borderRadius: 3,
-                        boxShadow: "0 6px 12px rgba(0,0,0,0.1)",
-                        width: { xs: "100%", sm: 350 },
-                        display: "flex",
-                        flexDirection: "column",
-                        justifyContent: "space-between",
-                        ...wrapTextBox,
-                      }}
-                    >
-                      <Box sx={{ ...wrapTextBox }}>
-                        {/* Title + Icon */}
-                        <Box
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 1,
-                            mb: 1,
-                          }}
-                        >
-                          {getModuleIcon(mod.icon, {
-                            sx: { fontSize: 40, color: mod.color },
-                          })}
-                          <Typography
-                            variant="h6"
-                            sx={{ color: mod.color, ...wrapTextBox }}
-                          >
-                            {mod.labels?.[language] ||
-                              mod.labels?.en ||
-                              mod.key}
-                          </Typography>
-                        </Box>
-
+                  <AppCard
+                    key={mod.key}
+                    sx={{
+                      p: 3,
+                      borderRadius: 3,
+                      boxShadow: theme.palette.home.moduleCardShadow,
+                      width: { xs: "100%", sm: 350 },
+                      display: "flex",
+                      flexDirection: "column",
+                      justifyContent: "space-between",
+                      ...wrapTextBox,
+                    }}
+                  >
+                    <Box sx={{ ...wrapTextBox }}>
+                      {/* Title + Icon */}
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 1,
+                          mb: 1,
+                        }}
+                      >
+                        {getModuleIcon(mod.icon, {
+                          sx: { fontSize: 40, color: mod.color },
+                        })}
                         <Typography
-                          variant="body2"
-                          gutterBottom
-                          sx={{
-                            color: "text.secondary",
-                            ...wrapTextBox,
-                            minHeight: 44
-                          }}>
-                          {mod.descriptions?.[language] || mod.descriptions?.en}
+                          variant="h6"
+                          sx={{ color: mod.color, ...wrapTextBox }}
+                        >
+                          {mod.labels?.[language] ||
+                            mod.labels?.en ||
+                            mod.key}
                         </Typography>
-                        <Box sx={{ mt: 2 }}>
-                          <DonutStat
-                            data={donutData}
-                            centerLabel={toArabicDigits(donutTotal, language)}
-                            height={160}
-                          />
-                        </Box>
                       </Box>
-                      <Box>
-                        <Divider sx={{ my: 2 }} />
 
-                        {/* Totals */}
-                        {totalEntries.length > 0 ? (
-                          <Stack direction="row" spacing={1} sx={{
-                            flexWrap: "wrap"
-                          }}>
-                            {totalEntries.map(([k, v]) => (
-                              <RenderTruncatedChip
-                                key={k}
-                                label={toArabicDigits(`${k
-                                  .replace(/([A-Z])/g, " $1")
-                                  .replace(/^./, (c) => c.toUpperCase())}: ${v}`, language)}
-                              />
-                            ))}
-                          </Stack>
-                        ) : (
-                          <Typography variant="body2" sx={{
-                            color: "text.secondary"
-                          }}>
-                            {t.noTotals}
-                          </Typography>
-                        )}
+                      <Typography
+                        variant="body2"
+                        gutterBottom
+                        sx={{
+                          color: "text.secondary",
+                          ...wrapTextBox,
+                          minHeight: 44
+                        }}>
+                        {mod.descriptions?.[language] || mod.descriptions?.en}
+                      </Typography>
+                      <Box sx={{ mt: 2 }}>
+                        <DonutStat
+                          data={donutData}
+                          centerLabel={toArabicDigits(donutTotal, language)}
+                          height={160}
+                        />
+                      </Box>
+                    </Box>
+                    <Box>
+                      <Divider sx={{ my: 2 }} />
 
-                        {/* Trash */}
-                        {trashEntries.length > 0 && (
-                          <>
-                            <Divider sx={{ my: 2 }} />
-                            {/* Trash title row */}
-                            <Box
-                              sx={{
-                                display: "flex",
-                                gap: 1,
-                                mb: 1,
-                              }}
-                            >
-                              <ICONS.delete fontSize="small" color="error" />
-                              <Typography variant="subtitle2" gutterBottom>
-                                {t.trash}
-                              </Typography>
-                            </Box>
-
-                            <Box
-                              sx={{
-                                display: "flex",
-                                flexWrap: "wrap",
-                                gap: 1,
-                                justifyContent: "flex-start",
-                              }}
-                            >
-                          {trashEntries.map(([k, v]) => (
+                      {/* Totals */}
+                      {totalEntries.length > 0 ? (
+                        <Stack direction="row" spacing={1} sx={{
+                          flexWrap: "wrap"
+                        }}>
+                          {totalEntries.map(([k, v]) => (
                             <RenderTruncatedChip
                               key={k}
                               label={toArabicDigits(`${k
@@ -793,11 +749,54 @@ export default function HomePage() {
                                 .replace(/^./, (c) => c.toUpperCase())}: ${v}`, language)}
                             />
                           ))}
-                            </Box>
-                          </>
-                        )}
-                      </Box>
-                    </AppCard>
+                        </Stack>
+                      ) : (
+                        <Typography variant="body2" sx={{
+                          color: "text.secondary"
+                        }}>
+                          {t.noTotals}
+                        </Typography>
+                      )}
+
+                      {/* Trash */}
+                      {trashEntries.length > 0 && (
+                        <>
+                          <Divider sx={{ my: 2 }} />
+                          {/* Trash title row */}
+                          <Box
+                            sx={{
+                              display: "flex",
+                              gap: 1,
+                              mb: 1,
+                            }}
+                          >
+                            <ICONS.delete fontSize="small" color="error" />
+                            <Typography variant="subtitle2" gutterBottom>
+                              {t.trash}
+                            </Typography>
+                          </Box>
+
+                          <Box
+                            sx={{
+                              display: "flex",
+                              flexWrap: "wrap",
+                              gap: 1,
+                              justifyContent: "flex-start",
+                            }}
+                          >
+                            {trashEntries.map(([k, v]) => (
+                              <RenderTruncatedChip
+                                key={k}
+                                label={toArabicDigits(`${k
+                                  .replace(/([A-Z])/g, " $1")
+                                  .replace(/^./, (c) => c.toUpperCase())}: ${v}`, language)}
+                              />
+                            ))}
+                          </Box>
+                        </>
+                      )}
+                    </Box>
+                  </AppCard>
                 );
               })}
             </Box>

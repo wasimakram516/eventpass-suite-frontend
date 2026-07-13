@@ -155,7 +155,7 @@ export default function DigiPassRegistration() {
               dependentsOf[childName].push({ parentName: f.name, option });
             });
           });
-        } catch {}
+        } catch { }
       }
     });
 
@@ -171,16 +171,16 @@ export default function DigiPassRegistration() {
 
     const fields = event.formFields?.length
       ? event.formFields
-          .filter((f) => f.visible !== false)
-          .map((f) => ({
-            name: f.inputName,
-            label: f.inputName,
-            type: f.inputType,
-            options: f.values || [],
-            required: f.required,
-            placeholder: f.placeholder || "",
-            dependents: f.dependents,
-          }))
+        .filter((f) => f.visible !== false)
+        .map((f) => ({
+          name: f.inputName,
+          label: f.inputName,
+          type: f.inputType,
+          options: f.values || [],
+          required: f.required,
+          placeholder: f.placeholder || "",
+          dependents: f.dependents,
+        }))
       : [];
 
     const initial = {};
@@ -278,7 +278,7 @@ export default function DigiPassRegistration() {
             });
             return { ...prev, [name]: value, ...cleared };
           }
-        } catch {}
+        } catch { }
       }
       return { ...prev, [name]: value };
     });
@@ -465,7 +465,7 @@ export default function DigiPassRegistration() {
       sx: {
         "& .MuiOutlinedInput-root": {
           borderRadius: 999,
-          backgroundColor: "rgba(255,255,255,0.9)",
+          backgroundColor: (theme) => theme.palette.overlay.cardHeavy,
         },
       },
     };
@@ -476,7 +476,7 @@ export default function DigiPassRegistration() {
           <Typography sx={{ mb: 1 }}>
             {fieldLabel}
             {field.required && (
-              <span style={{ color: "rgba(255, 255, 255, 0.8)" }}> *</span>
+              <Typography component="span" sx={{ color: "error.main" }}> *</Typography>
             )}
           </Typography>
           <RadioGroup
@@ -511,7 +511,7 @@ export default function DigiPassRegistration() {
           sx={{
             "& .MuiOutlinedInput-root": {
               borderRadius: 999,
-              backgroundColor: "rgba(255,255,255,0.9)",
+              backgroundColor: (theme) => theme.palette.overlay.cardHeavy,
             },
           }}
           required={field.required}
@@ -526,12 +526,10 @@ export default function DigiPassRegistration() {
               slotProps: {
                 paper: {
                   sx: {
-                    backgroundColor: "#f5f5f5",
+                    backgroundColor: "background.paper",
                     "& .MuiMenuItem-root": {
-                      color: "#333",
-                      "&:hover": {
-                        backgroundColor: "#e0e0e0",
-                      },
+                      color: "text.primary",
+                      "&:hover": { backgroundColor: "action.hover" },
                     },
                   },
                 },
@@ -593,26 +591,26 @@ export default function DigiPassRegistration() {
       const isoCode = countryIsoCodes[field.name] || DEFAULT_ISO_CODE;
       const phoneValue = formData[field.name] || "";
 
-          return (
-            <TextField
-              key={field.name}
-              {...commonProps}
-              value={phoneValue}
-              onChange={(e) => handlePhoneChange(field.name, e.target.value)}
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <CountryCodeSelector
-                      value={isoCode}
-                      onChange={(iso) => handleCountryCodeChange(field.name, iso)}
-                      disabled={event?.linkedEventRegId ? !event.linkedEventRegId.useInternationalNumbers : false}
-                      dir={dir}
-                    />
-                  ),
-                }
-              }}
-            />
-          );
+      return (
+        <TextField
+          key={field.name}
+          {...commonProps}
+          value={phoneValue}
+          onChange={(e) => handlePhoneChange(field.name, e.target.value)}
+          slotProps={{
+            input: {
+              startAdornment: (
+                <CountryCodeSelector
+                  value={isoCode}
+                  onChange={(iso) => handleCountryCodeChange(field.name, iso)}
+                  disabled={event?.linkedEventRegId ? !event.linkedEventRegId.useInternationalNumbers : false}
+                  dir={dir}
+                />
+              ),
+            }
+          }}
+        />
+      );
     }
 
     return (
@@ -703,7 +701,7 @@ export default function DigiPassRegistration() {
           top: { xs: 10, sm: 20 },
           left: { xs: 10, sm: 20 },
           backgroundColor: "primary.main",
-          color: "white",
+          color: "primary.contrastText",
           zIndex: 9999,
         }}
       >
@@ -731,8 +729,7 @@ export default function DigiPassRegistration() {
             p: 4,
             textAlign: "center",
             backdropFilter: "blur(6px)",
-            backgroundColor: "rgba(255,255,255,0.95)",
-            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.15)",
+            backgroundColor: (theme) => theme.palette.overlay.cardHeavy, boxShadow: (theme) => theme.palette.shadow.dialog,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -777,40 +774,40 @@ export default function DigiPassRegistration() {
             </Alert>
           )}
 
-      {/* Form Fields + Register Button with consistent gap */}
-      <Box
-        sx={{
-          width: "100%",
-          display: "flex",
-          flexDirection: "column",
-          gap: 2,
-        }}
-      >
-        {visibleFields.map((f) => renderField(f))}
+          {/* Form Fields + Register Button with consistent gap */}
+          <Box
+            sx={{
+              width: "100%",
+              display: "flex",
+              flexDirection: "column",
+              gap: 2,
+            }}
+          >
+            {visibleFields.map((f) => renderField(f))}
 
-        <Button
-          variant="contained"
-          size="large"
-          fullWidth
-          disabled={submitting}
-          onClick={handleSubmit}
-          startIcon={
-            submitting ? (
-              <CircularProgress size={20} color="inherit" />
-            ) : (
-              <ICONS.register />
-            )
-          }
-          sx={{
-            borderRadius: 999,
-            textTransform: "none",
-            fontWeight: 600,
-            ...getStartIconSpacing(dir),
-          }}
-        >
-          {t.register}
-        </Button>
-      </Box>
+            <Button
+              variant="contained"
+              size="large"
+              fullWidth
+              disabled={submitting}
+              onClick={handleSubmit}
+              startIcon={
+                submitting ? (
+                  <CircularProgress size={20} color="inherit" />
+                ) : (
+                  <ICONS.register />
+                )
+              }
+              sx={{
+                borderRadius: 999,
+                textTransform: "none",
+                fontWeight: 600,
+                ...getStartIconSpacing(dir),
+              }}
+            >
+              {t.register}
+            </Button>
+          </Box>
         </Card>
       </Container>
       {/* Force LanguageSelector subtree to LTR so EN/AR toggle behaves correctly in Arabic */}
@@ -827,21 +824,34 @@ function DigiPassFileUploadField({ field, fd, fieldLabel, errorMsg, isArabic, on
     <Box sx={{ mb: 2, textAlign: isArabic ? "right" : "left" }}>
       <Typography variant="body2" sx={{ mb: 0.5, fontWeight: 500, textAlign: "start" }}>
         {fieldLabel}
-        {field.required && <span style={{ color: "red" }}> *</span>}
+        {field.required && <Typography component="span" sx={{ color: "error.main" }}> *</Typography>}
       </Typography>
       {fd ? (
-        <Box sx={{ display: "inline-flex", alignItems: "center", gap: 1.5, p: 1, pr: 2, border: "1px solid", borderColor: "divider", borderRadius: 3, bgcolor: "background.paper", textAlign: "left" }}>
+        <Box
+          sx={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 1.5,
+            p: 1,
+            pr: 2,
+            border: "1px solid",
+            borderColor: "divider",
+            borderRadius: 3,
+            bgcolor: (theme) => theme.palette.overlay.card,
+            textAlign: "left",
+          }}
+        >
           {fd.file.type.startsWith("image/") ? (
-            <Box component="img" src={fd.preview} alt="Preview" sx={{ width: 48, height: 48, borderRadius: 1.5, objectFit: "contain", bgcolor: "grey.100" }} />
+            <Box component="img" src={fd.preview} alt="Preview" sx={{ width: 48, height: 48, borderRadius: 1.5, objectFit: "contain", bgcolor: "background.paper" }} />
           ) : fd.file.type.startsWith("video/") ? (
-            <Box component="video" src={fd.preview} sx={{ width: 48, height: 48, borderRadius: 1.5, objectFit: "contain", bgcolor: "grey.100" }} />
+            <Box component="video" src={fd.preview} sx={{ width: 48, height: 48, borderRadius: 1.5, objectFit: "contain", bgcolor: "background.paper" }} />
           ) : (
             <ICONS.upload sx={{ fontSize: 28, color: "text.secondary", mx: 0.5 }} />
           )}
           <Typography variant="body2" sx={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {fd.file.name}
           </Typography>
-          <IconButton onClick={onFileRemove} size="small" sx={{ bgcolor: "error.main", color: "#fff", "&:hover": { bgcolor: "error.dark" }, width: 28, height: 28, flexShrink: 0 }}>
+          <IconButton onClick={onFileRemove} size="small" sx={{ bgcolor: "error.main", color: "error.contrastText", "&:hover": { bgcolor: "error.dark" }, width: 28, height: 28, flexShrink: 0 }}>
             <ICONS.delete sx={{ fontSize: 16 }} />
           </IconButton>
         </Box>

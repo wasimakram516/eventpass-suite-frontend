@@ -42,18 +42,18 @@ export default function TapMatchNamePage() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-      const fetchTranslation = async () => {
-        if (!game?.title) return;
-         try {
-            const result = await translateTexts([game.title], language);
-            setTranslatedTitle(result[0] || game.title);
-          } catch (error) {
-            console.error("Translation failed:", error);
-            setTranslatedTitle(game.title);
-          }
-      };
-      fetchTranslation();
-    }, [game?.title, language]);
+    const fetchTranslation = async () => {
+      if (!game?.title) return;
+      try {
+        const result = await translateTexts([game.title], language);
+        setTranslatedTitle(result[0] || game.title);
+      } catch (error) {
+        console.error("Translation failed:", error);
+        setTranslatedTitle(game.title);
+      }
+    };
+    fetchTranslation();
+  }, [game?.title, language]);
 
   const handleSubmit = async () => {
     if (!form.name.trim() || submitting) return;
@@ -80,7 +80,7 @@ export default function TapMatchNamePage() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: "#f0f0f0",
+          bgcolor: "background.default",
         }}
       >
         <CircularProgress />
@@ -126,28 +126,23 @@ export default function TapMatchNamePage() {
         <Paper
           dir={dir}
           elevation={8}
-          sx={{
+          sx={(theme) => ({
             p: { xs: 3, sm: 4 },
             width: "100%",
             maxWidth: 800,
             textAlign: "center",
             backdropFilter: "blur(16px)",
-            backgroundColor: "rgba(10,10,20,0.85)",
+            backgroundColor: theme.palette.quiznest.glassBg,
             borderRadius: 6,
-            border: "1px solid rgba(255,255,255,0.08)",
-            boxShadow: "0 8px 40px rgba(0,0,0,0.6)",
-          }}
+            border: `1px solid ${theme.palette.quiznest.glassBorder}`,
+            boxShadow: theme.palette.quiznest.dialogShadow,
+          })}
         >
           <Typography
             variant="h4"
             gutterBottom
-            sx={{
-              fontWeight: 800,
-              mb: 3,
-              color: "#fff",
-              textTransform: "capitalize",
-              wordBreak: "break-word"
-            }}>
+            sx={(theme) => ({ fontWeight: 800, mb: 3, color: theme.palette.common.white, textTransform: "capitalize", wordBreak: "break-word" })}
+          >
             {translatedTitle}
           </Typography>
 
@@ -161,9 +156,16 @@ export default function TapMatchNamePage() {
             onChange={(e) => setForm({ ...form, name: e.target.value })}
             onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
             slotProps={{
-              input: { sx: { backgroundColor: "rgba(255,255,255,0.1)", color: "#fff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.25)" } } },
-              inputLabel: { sx: { color: "rgba(255,255,255,0.6)" } }
-            }} />
+              input: {
+                sx: (theme) => ({
+                  backgroundColor: theme.palette.quiznest.inputBg,
+                  color: theme.palette.common.white,
+                  "& .MuiOutlinedInput-notchedOutline": { borderColor: theme.palette.quiznest.inputBorder },
+                }),
+              },
+              inputLabel: { sx: (theme) => ({ color: theme.palette.quiznest.labelText }) },
+            }}
+          />
 
           {/* Phone */}
           {/* <TextField
@@ -183,7 +185,7 @@ export default function TapMatchNamePage() {
             value={form.company}
             onChange={(e) => setForm({ ...form, company: e.target.value })}
           /> */}
- 
+
           {/* Start Button */}
           <Button
             variant="contained"
@@ -191,21 +193,16 @@ export default function TapMatchNamePage() {
             fullWidth
             onClick={handleSubmit}
             disabled={submitting || !form.name.trim()}
-            sx={{
-              py: 1.2,
-              borderRadius: 999,
-              fontWeight: 800,
-              bgcolor: "#00e5ff",
-              color: "#000",
-              "&:hover": { filter: "brightness(1.15)", bgcolor: "#00e5ff" },
+            sx={(theme) => ({
+              py: 1.2, borderRadius: 999, fontWeight: 800,
+              bgcolor: theme.palette.quiznest.accent,
+              color: theme.palette.common.black,
+              "&:hover": { filter: "brightness(1.15)", bgcolor: theme.palette.quiznest.accent },
               "&:disabled": { opacity: 0.5 },
-            }}
+            })}
           >
-            {submitting ? (
-              <CircularProgress size={24} sx={{ color: "#000" }} />
-            ) : (
-              t.startButton
-            )}
+            {submitting ? <CircularProgress size={24} sx={(theme) => ({ color: theme.palette.common.black })} /> : t.startButton}
+
           </Button>
         </Paper>
       </Box>

@@ -19,6 +19,7 @@ import {
   Divider,
   CircularProgress,
   Chip,
+  useTheme,
 } from "@mui/material";
 import { useEffect, useState } from "react";
 import LoadingState from "@/components/LoadingState";
@@ -113,6 +114,7 @@ const translations = {
 export default function BusinessDetailsPage() {
   const { user, setUser } = useAuth();
   const { dir, align, language, t } = useI18nLayout(translations);
+  const theme = useTheme();
   const [loading, setLoading] = useState(false);
   const [businesses, setBusinesses] = useState([]);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -613,7 +615,24 @@ export default function BusinessDetailsPage() {
       {/* MODAL FORM */}
       <Dialog open={formOpen} onClose={handleClose} fullWidth dir={dir}>
         <DialogTitle>{editingBiz ? t.edit : t.createNewBusiness}</DialogTitle>
-        <DialogContent sx={{ pt: 1 }}>
+        <DialogContent sx={{
+          "&::-webkit-scrollbar": {
+            width: 8,
+          },
+          "&::-webkit-scrollbar-track": {
+            background: "transparent",
+          },
+          "&::-webkit-scrollbar-thumb": {
+            backgroundColor: theme.palette.sharedUI.scrollbarThumb,
+            borderRadius: 8,
+          },
+          "&::-webkit-scrollbar-thumb:hover": {
+            backgroundColor: theme.palette.sharedUI.scrollbarThumbHover,
+          },
+
+          /* Firefox */
+          scrollbarColor: `${theme.palette.sharedUI.scrollbarThumb} transparent`,
+        }}>
           <TextField
             label={t.name}
             name="name"

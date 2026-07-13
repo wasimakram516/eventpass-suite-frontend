@@ -85,8 +85,8 @@ export default function PublicQrPage() {
             sx={{
               p: 3,
               borderRadius: 2,
-              backgroundColor: "#fff",
-              boxShadow: 3,
+              backgroundColor: "qr.background",
+              boxShadow: (theme) => theme.palette.shadow.card,
               width: "100%",
               maxWidth: 300,
             }}
@@ -94,8 +94,8 @@ export default function PublicQrPage() {
             <QRCodeCanvas
               value={capturePageUrl}
               size={256}
-              bgColor="#ffffff"
-              fgColor="#000000"
+              bgColor={theme.palette.qr.background}
+              fgColor={theme.palette.qr.foreground}
               level="H"
               includeMargin={false}
             />

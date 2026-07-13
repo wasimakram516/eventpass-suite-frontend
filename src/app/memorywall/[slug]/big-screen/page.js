@@ -111,7 +111,7 @@ const BigScreenPage = () => {
           sx={{
             textAlign: align,
             mt: 4,
-            color: "#fff",
+color: theme.palette.wall.whiteText,
             zIndex: 1
           }}>
           {t.noMediaAvailable}
@@ -182,11 +182,20 @@ const BigScreenPage = () => {
           min: wallConfig.randomSizes?.min || 150,
           max: wallConfig.randomSizes?.max || 300
         }}
-        backgroundColor={wallConfig.cardSettings?.backgroundColor || "#ffffff"}
+       backgroundColor={
+  wallConfig.cardSettings?.backgroundColor ??
+  theme.palette.wall.cardBackground
+}
         randomColors={wallConfig.cardSettings?.randomColors || false}
         imageShape={wallConfig.cardSettings?.imageShape || "circle"}
-        mediaType2TextColor={wallConfig.cardSettings?.mediaType2TextColor || "#000000"}
-        mediaType2SignatureColor={wallConfig.cardSettings?.mediaType2SignatureColor || "#000000"}
+       mediaType2TextColor={
+  wallConfig.cardSettings?.mediaType2TextColor ??
+  theme.palette.wall.text
+}
+       mediaType2SignatureColor={
+  wallConfig.cardSettings?.mediaType2SignatureColor ??
+  theme.palette.wall.signature
+}
       />
     );
   }

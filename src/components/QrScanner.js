@@ -225,6 +225,7 @@ const buildCameraStartCandidates = (
 
 export default function QRScanner({ onScanSuccess, onError, onCancel }) {
   const { t, dir } = useI18nLayout(translations);
+  const theme = useTheme();
   const scannerElementId = useId().replace(/:/g, "_");
 
   const scannerHostRef = useRef(null);
@@ -489,7 +490,7 @@ export default function QRScanner({ onScanSuccess, onError, onCancel }) {
         width: "100vw",
         height: "100vh",
         zIndex: 9999,
-        backgroundColor: "#000",
+        backgroundColor: theme.palette.mode === "dark" ? theme.palette.background.default : theme.palette.common.black,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -502,8 +503,8 @@ export default function QRScanner({ onScanSuccess, onError, onCancel }) {
             position: "absolute",
             top: 16,
             [dir === "rtl" ? "left" : "right"]: 16,
-            color: "#fff",
-            backgroundColor: "rgba(0,0,0,0.5)",
+            color: "common.white",
+            backgroundColor: alpha(theme.palette.common.black, 0.5),
           }}
         >
           <ICONS.close />
@@ -517,7 +518,7 @@ export default function QRScanner({ onScanSuccess, onError, onCancel }) {
           borderRadius: 2,
           overflow: "hidden",
           boxShadow: 5,
-          bgcolor: "#000",
+          bgcolor: theme.palette.background.paper,
         }}
       >
         <Box
@@ -547,7 +548,7 @@ export default function QRScanner({ onScanSuccess, onError, onCancel }) {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              backgroundColor: "rgba(0,0,0,0.6)",
+              backgroundColor: alpha(theme.palette.common.black, 0.6),
               flexDirection: "row",
               zIndex: 2,
             }}
@@ -556,7 +557,7 @@ export default function QRScanner({ onScanSuccess, onError, onCancel }) {
             <Typography
               sx={{
                 ml: 2,
-                color: "#fff"
+                color: "common.white"
               }}>
               {t.initializing}
             </Typography>
@@ -568,7 +569,7 @@ export default function QRScanner({ onScanSuccess, onError, onCancel }) {
             sx={{
               position: "absolute",
               inset: 0,
-              border: "2px dashed #00e676",
+              border: `2px dashed ${theme.palette.success.main}`,
               pointerEvents: "none",
               boxSizing: "border-box",
               zIndex: 1,
@@ -593,7 +594,7 @@ export default function QRScanner({ onScanSuccess, onError, onCancel }) {
                 sx={{
                   display: "block",
                   mb: 1,
-                  color: "#ff8a80",
+                  color: "error.light",
                   textAlign: "center",
                 }}
               >
@@ -606,7 +607,7 @@ export default function QRScanner({ onScanSuccess, onError, onCancel }) {
               sx={{
                 display: "block",
                 mb: 1,
-                color: "rgba(255,255,255,0.85)",
+                color: alpha(theme.palette.common.white, 0.85),
                 textAlign: "center",
               }}
             >
@@ -638,14 +639,14 @@ export default function QRScanner({ onScanSuccess, onError, onCancel }) {
                     sx={{
                       flexShrink: 0,
                       minWidth: 140,
-                      color: isSelected ? "#000" : "#fff",
-                      backgroundColor: isSelected ? "#fff" : "rgba(0,0,0,0.65)",
-                      borderColor: "rgba(255,255,255,0.35)",
+                      color: isSelected ? theme.palette.common.black : theme.palette.common.white,
+                      backgroundColor: isSelected ? theme.palette.common.white : alpha(theme.palette.common.black, 0.65),
+                      borderColor: alpha(theme.palette.common.white, 0.35),
                       "&:hover": {
-                        borderColor: "#fff",
+                        borderColor: theme.palette.common.white,
                         backgroundColor: isSelected
-                          ? "#f2f2f2"
-                          : "rgba(255,255,255,0.12)",
+                          ? alpha(theme.palette.common.white, 0.95)
+                          : alpha(theme.palette.common.white, 0.12),
                       },
                     }}
                   >

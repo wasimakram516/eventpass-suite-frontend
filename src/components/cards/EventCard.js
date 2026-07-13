@@ -8,6 +8,7 @@ import {
   CardActions,
   Tooltip,
   IconButton,
+  useTheme,
 } from "@mui/material";
 import AppCard from "@/components/cards/AppCard";
 import InitialsPlaceholder from "@/components/InitialsPlaceholder";
@@ -36,6 +37,8 @@ export default function EventCardBase({
   onViewResults,
   onViewFullScreen,
 }) {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
   const language = locale === "ar-SA" ? "ar" : "en";
   return (
     <AppCard sx={{ width: { xs: "100%", sm: 360 } }}>
@@ -63,10 +66,9 @@ export default function EventCardBase({
             bottom: 0,
             left: 0,
             width: "100%",
-            background:
-              "linear-gradient(to top, rgba(0,0,0,0.75) 20%, rgba(0,0,0,0) 90%)",
+            background: (theme) => theme.palette.overlay.cardImageOverlayGradient,
             p: 2,
-            color: "white",
+            color: "common.white",
           }}
         >
           {status && (
@@ -89,13 +91,13 @@ export default function EventCardBase({
                     : status === "Current"
                       ? "primary.main"
                       : "success.main",
-                color: "white",
+                color: "primary.contrastText",
                 fontWeight: "bold",
                 textTransform: "uppercase",
                 mb: 1,
                 borderRadius: 1.5,
                 px: 1,
-                "& .MuiChip-icon": { color: "white", ml: 0.5 },
+                "& .MuiChip-icon": { color: "primary.contrastText", ml: 0.5 },
               }}
             />
           )}
@@ -238,9 +240,9 @@ export default function EventCardBase({
       <CardActions
         sx={{
           justifyContent: "space-around",
-          borderTop: "1px solid rgba(0,0,0,0.06)",
+          borderTop: (theme) => `1px solid ${theme.palette.divider}`,
+          bgcolor: "action.hover",
           p: 1,
-          bgcolor: "rgba(0,0,0,0.02)",
         }}
       >
         {onView && (
@@ -276,10 +278,10 @@ export default function EventCardBase({
             <IconButton
               onClick={onViewWhatsAppLogs}
               sx={{
-                color: "#25D366", // WhatsApp green
+                color: "success.main",
                 "&:hover": {
                   transform: "scale(1.1)",
-                  backgroundColor: "rgba(37, 211, 102, 0.12)",
+                  backgroundColor: "action.hover",
                 },
                 transition: "0.2s",
               }}

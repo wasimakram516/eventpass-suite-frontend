@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Typography, Button, Box } from "@mui/material";
+import { Typography, Button, Box, useTheme } from "@mui/material";
 import { useRouter } from "next/navigation";
 import AppCard from "@/components/cards/AppCard";
 
@@ -10,11 +10,13 @@ const DashboardCard = ({
   description,
   buttonLabel,
   icon,
-  color = "#1976d2",
+  color,
   route,
   actions,
 }) => {
   const router = useRouter();
+  const theme = useTheme();
+  const resolvedColor = color || theme.palette.primary.main;
 
   return (
       <AppCard
@@ -28,14 +30,13 @@ const DashboardCard = ({
           width: { xs: "100%", sm: 300 },
         }}
       >
-        {/* Icon with highlight */}
         {icon && (
           <Box
             sx={{
               width: 72,
               height: 72,
               borderRadius: "50%",
-              bgcolor: `${color}1A`, // soft tinted bg
+              bgcolor: `${resolvedColor}1A`,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -43,24 +44,22 @@ const DashboardCard = ({
             }}
           >
             {React.cloneElement(icon, {
-              sx: { fontSize: 36, color },
+              sx: { fontSize: 36, color: resolvedColor },
             })}
           </Box>
         )}
 
-        {/* Title */}
         <Typography
           variant="h6"
           sx={{
             fontWeight: "bold",
-            color,
+            color: resolvedColor,
             mb: 1,
             lineHeight: 1.3
           }}>
           {title}
         </Typography>
 
-        {/* Description */}
         <Typography
           variant="body2"
           sx={{
@@ -73,20 +72,19 @@ const DashboardCard = ({
           {description}
         </Typography>
 
-        {/* Primary Button */}
         {buttonLabel && (
           <Button
             variant="contained"
             size="medium"
             sx={{
-              backgroundColor: color,
-              color: "#fff",
+              backgroundColor: resolvedColor,
+              color: theme.palette.getContrastText(resolvedColor),
               textTransform: "none",
               fontWeight: "bold",
               px: 3,
               borderRadius: 2,
               "&:hover": {
-                backgroundColor: color,
+                backgroundColor: resolvedColor,
                 opacity: 0.9,
               },
             }}
@@ -96,7 +94,6 @@ const DashboardCard = ({
           </Button>
         )}
 
-        {/* Extra Actions */}
         {actions && (
           <Box
             sx={{

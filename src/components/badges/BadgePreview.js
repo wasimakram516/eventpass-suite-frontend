@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { Box, Typography, Paper } from "@mui/material";
+import { Box, Typography, Paper, useTheme } from "@mui/material";
 import { QRCodeCanvas } from "qrcode.react";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { translateTexts } from "@/services/translationService";
@@ -27,11 +27,12 @@ const BadgePreview = ({
       preview: "معاينة"
     }
   });
+  const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
 
   const [translatedLabels, setTranslatedLabels] = useState({});
   const [translatedCountries, setTranslatedCountries] = useState({});
 
-  // Helper to get all relevant fields from registration dynamically
   const getDisplayFields = () => {
     let sourceData = registration;
 
@@ -51,7 +52,6 @@ const BadgePreview = ({
       "whatsappsent", "__v", "pushedtounity", "unitystatus"
     ]);
 
-    // Pre-normalize badgeFields keys once (handles "Full Name" matching "fullName", etc.)
     const allowedNorms = Array.isArray(badgeFields)
       ? new Set(badgeFields.map(f => f.toLowerCase().replace(/[^a-z0-9]/g, "")))
       : null;
@@ -69,7 +69,6 @@ const BadgePreview = ({
 
       if (processedKeys.has(norm)) return;
 
-      // Clean up common technical keys to readable labels
       let displayLabel = label;
       if (lowerLabel === "fullname") displayLabel = "Full Name";
       else if (lowerLabel === "email") displayLabel = "Email";
@@ -78,7 +77,6 @@ const BadgePreview = ({
       else if (lowerLabel === "position") displayLabel = "Position";
       else if (lowerLabel === "country") displayLabel = "Country";
       else {
-        // Convert camelCase or snake_case to Space Case
         displayLabel = label
           .replace(/_/g, ' ')
           .replace(/([A-Z])/g, ' $1')
@@ -90,14 +88,12 @@ const BadgePreview = ({
       processedKeys.add(norm);
     };
 
-    // Process customFields first (if they exist)
     const cf = sourceData.customFields || {};
     if (cf && typeof cf === 'object') {
       const cfEntries = (cf instanceof Map) ? Array.from(cf.entries()) : Object.entries(cf);
       cfEntries.forEach(([k, v]) => addField(k, v));
     }
 
-    // Process all top-level fields
     Object.entries(sourceData).forEach(([k, v]) => addField(k, v));
 
     return fields;
@@ -105,7 +101,6 @@ const BadgePreview = ({
 
   const displayFields = useMemo(() => getDisplayFields(), [registration, badgeFields]);
 
-  // Extract metadata for the badge body
   let sourceData = registration;
   if (typeof registration === "string") {
     try { sourceData = JSON.parse(registration); } catch (e) { sourceData = {}; }
@@ -124,7 +119,6 @@ const BadgePreview = ({
     }
 
     const labels = displayFields.map(f => f.label);
-    // Collect country names from display fields where label is Country
     const countryNames = displayFields
       .filter(f => f.label.toLowerCase() === "country")
       .map(f => {
@@ -154,7 +148,6 @@ const BadgePreview = ({
       });
   }, [displayFields, language, category]);
 
-  // QR Visibility: Always show if preview=true (UI mockup), otherwise check toggle.
   const shouldShowQr = preview || (event?.showQrAfterRegistration !== false && !!token);
 
   return (
@@ -187,31 +180,46 @@ const BadgePreview = ({
             sx={{
               width: 130,
               height: 45,
-              bgcolor: "#f8fafc",
+              bgcolor: theme.palette.badgePreview.clipBg,
               borderRadius: "16px 16px 4px 4px",
-              border: "1px solid #e2e8f0",
+              border: `1px solid ${theme.palette.divider}`,
               display: "flex",
               justifyContent: "center",
               alignItems: "center",
             }}
           >
-            <Box sx={{ width: 44, height: 14, bgcolor: "#cbd5e0", borderRadius: 7 }} />
+            <Box sx={{
+              width: 44,
+              height: 14,
+              bgcolor: isDark
+                ? theme.palette.grey[600]
+                : theme.palette.badgePreview.clipBarBg,
+              borderRadius: 7
+            }} />
           </Box>
           <Box
             sx={{
               width: 36,
               height: 54,
-              bgcolor: "#64748b",
+              bgcolor: isDark
+                ? theme.palette.grey[700]
+                : theme.palette.badgePreview.clipBumpBg,
               position: "absolute",
               top: -28,
               left: "50%",
               transform: "translateX(-50%)",
               borderRadius: "8px 8px 3px 3px",
-              boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
+              boxShadow: theme.palette.badgePreview.shadowClipBump,
               display: "flex",
               justifyContent: "center",
               pt: 1.5,
-              "&::after": { content: '""', width: 14, height: 14, bgcolor: "#475569", borderRadius: "50%" }
+              "&::after": {
+                content: '""',
+                width: 14,
+                height: 14,
+                bgcolor: theme.palette.badgePreview.clipBumpDot,
+                borderRadius: "50%"
+              }
             }}
           />
         </Box>
@@ -222,14 +230,16 @@ const BadgePreview = ({
           sx={{
             width: BADGE_WIDTH,
             minHeight: BADGE_HEIGHT,
-            bgcolor: "#fff",
+            bgcolor: isDark
+              ? theme.palette.background.paper
+              : theme.palette.common.white,
             borderRadius: "32px",
             position: "relative",
             p: 4,
             display: "flex",
             flexDirection: "column",
-            boxShadow: "0 25px 50px -12px rgba(0,0,0,0.15)",
-            border: "1px solid #e2e8f0",
+            boxShadow: theme.palette.badgePreview.shadowPaper,
+            border: `1px solid ${theme.palette.divider}`,
           }}
         >
           {/* Logo Section */}
@@ -241,7 +251,7 @@ const BadgePreview = ({
                 variant="h6"
                 sx={{
                   fontWeight: 900,
-                  color: "#1e293b",
+                  color: theme.palette.text.primary,
                   textAlign: "center",
                   display: "flex",
                   alignItems: "center",
@@ -258,12 +268,12 @@ const BadgePreview = ({
           <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column", gap: 1.5, mb: 2 }}>
             {displayFields.length > 0 ? (
               displayFields.map((f, i) => (
-                <Box key={i} sx={{ display: "flex", flexDirection: "column", gap: 0.1, borderBottom: "1px dotted #e2e8f0", pb: 0.5 }}>
+                <Box key={i} sx={{ display: "flex", flexDirection: "column", gap: 0.1, borderBottom: `1px dotted ${theme.palette.divider}`, pb: 0.5 }}>
                   <Typography
                     sx={{
                       fontSize: "11px",
                       fontWeight: 800,
-                      color: "#64748b",
+                      color: theme.palette.text.secondary,
                       textTransform: "uppercase",
                       letterSpacing: "0.5px",
                       textAlign: language === "ar" ? "right" : "left"
@@ -271,61 +281,68 @@ const BadgePreview = ({
                   >
                     {translatedLabels[f.label] || f.label}
                   </Typography>
-                    <Typography
-                      sx={{
-                        fontSize: "15px",
-                        fontWeight: 700,
-                        color: "#1e293b",
-                        wordBreak: "break-word",
-                        lineHeight: 1.1,
-                        textAlign: language === "ar" ? "right" : "left",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 0.5,
-                      }}
-                    >
-                      {(() => {
-                        const lowerLabel = f.label.toLowerCase();
-                        if (lowerLabel === "country") {
-                          const country = COUNTRY_CODES.find(c => c.isoCode === f.value.toLowerCase());
-                          if (country) {
-                            const countryName = translatedCountries[country.country] || country.country;
-                            return (
-                              <>
-                                <Box component="img" src={getFlagImageUrl(country.isoCode)} alt={country.country} sx={{ width: 20, height: 14, objectFit: "cover", borderRadius: 0.5, flexShrink: 0 }} />
-                                <span>{countryName}</span>
-                              </>
-                            );
-                          }
+                  <Typography
+                    sx={{
+                      fontSize: "15px",
+                      fontWeight: 700,
+                      color: theme.palette.text.primary,
+                      wordBreak: "break-word",
+                      lineHeight: 1.1,
+                      textAlign: language === "ar" ? "right" : "left",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 0.5,
+                    }}
+                  >
+                    {(() => {
+                      const lowerLabel = f.label.toLowerCase();
+                      if (lowerLabel === "country") {
+                        const country = COUNTRY_CODES.find(c => c.isoCode === f.value.toLowerCase());
+                        if (country) {
+                          const countryName = translatedCountries[country.country] || country.country;
+                          return (
+                            <>
+                              <Box component="img" src={getFlagImageUrl(country.isoCode)} alt={country.country} sx={{ width: 20, height: 14, objectFit: "cover", borderRadius: 0.5, flexShrink: 0 }} />
+                              <span>{countryName}</span>
+                            </>
+                          );
                         }
-                        if (lowerLabel === "phone") {
-                          const iso = phoneIsoCodes?.[f.key] || Object.keys(phoneIsoCodes || {}).find(k => phoneIsoCodes[k] && f.value.startsWith(k.replace(/[^0-9]/g, '')));
-                          if (iso) {
-                            return formatPhoneNumberForDisplay(f.value, iso);
-                          }
-                          if (f.value.startsWith("+")) {
-                            const cc = COUNTRY_CODES.find(c => f.value.startsWith(c.code));
-                            if (cc) return formatPhoneNumberForDisplay(f.value, cc.isoCode);
-                          }
+                      }
+                      if (lowerLabel === "phone") {
+                        const iso = phoneIsoCodes?.[f.key] || Object.keys(phoneIsoCodes || {}).find(k => phoneIsoCodes[k] && f.value.startsWith(k.replace(/[^0-9]/g, '')));
+                        if (iso) {
+                          return formatPhoneNumberForDisplay(f.value, iso);
                         }
-                        // File type: show thumbnail from filePreviews or uploaded URL
-                        if (filePreviews[f.key]) {
-                          const fp = filePreviews[f.key];
-                          const previewUrl = fp.preview || fp;
-                          const fileType = fp.fileType || "";
-                          const isImage = fileType.startsWith("image/") || previewUrl.match(/\.(jpg|jpeg|png|gif|webp|svg)(\?|$)/i);
-                          const isVideo = fileType.startsWith("video/") || previewUrl.match(/\.(mp4|webm|mov)(\?|$)/i);
-                          if (isImage) {
-                            return <Box component="img" src={previewUrl} alt="" sx={{ width: 28, height: 28, objectFit: "contain", borderRadius: 1, bgcolor: "grey.100" }} />;
-                          }
-                          if (isVideo) {
-                            return <ICONS.play sx={{ fontSize: 20, color: "text.secondary" }} />;
-                          }
-                          return <ICONS.files sx={{ fontSize: 18, color: "text.secondary" }} />;
+                        if (f.value.startsWith("+")) {
+                          const cc = COUNTRY_CODES.find(c => f.value.startsWith(c.code));
+                          if (cc) return formatPhoneNumberForDisplay(f.value, cc.isoCode);
                         }
-                        return f.value;
-                      })()}
-                    </Typography>
+                      }
+                      if (filePreviews[f.key]) {
+                        const fp = filePreviews[f.key];
+                        const previewUrl = fp.preview || fp;
+                        const fileType = fp.fileType || "";
+                        const isImage = fileType.startsWith("image/") || previewUrl.match(/\.(jpg|jpeg|png|gif|webp|svg)(\?|$)/i);
+                        const isVideo = fileType.startsWith("video/") || previewUrl.match(/\.(mp4|webm|mov)(\?|$)/i);
+                        if (isImage) {
+                          return <Box component="img" src={previewUrl} alt="" sx={{
+                            width: 28,
+                            height: 28,
+                            objectFit: "contain",
+                            borderRadius: 1,
+                            bgcolor: isDark
+                              ? theme.palette.grey[800]
+                              : theme.palette.grey[100]
+                          }} />;
+                        }
+                        if (isVideo) {
+                          return <ICONS.play sx={{ fontSize: 20, color: "text.secondary" }} />;
+                        }
+                        return <ICONS.files sx={{ fontSize: 18, color: "text.secondary" }} />;
+                      }
+                      return f.value;
+                    })()}
+                  </Typography>
                 </Box>
               ))
             ) : (
@@ -353,15 +370,15 @@ const BadgePreview = ({
             {/* Category Tag */}
             <Box
               sx={{
-                border: "2.5px solid #0f172a",
+                border: `2.5px solid ${theme.palette.text.primary}`,
                 borderRadius: "8px",
                 px: 3,
                 py: 0.8,
-                bgcolor: "#fff",
-                boxShadow: "0 4px 6px -1px rgba(0,0,0,0.1)"
+                bgcolor: theme.palette.background.paper,
+                boxShadow: theme.palette.badgePreview.shadowCategoryTag
               }}
             >
-              <Typography sx={{ fontSize: "20px", fontWeight: 900, color: "#0f172a", letterSpacing: "1.5px" }}>
+              <Typography sx={{ fontSize: "20px", fontWeight: 900, color: theme.palette.text.primary, letterSpacing: "1.5px" }}>
                 {(translatedLabels[category] || category).toUpperCase()}
               </Typography>
             </Box>
@@ -369,8 +386,24 @@ const BadgePreview = ({
             {/* QR Code */}
             {shouldShowQr && (
               <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
-                <Box sx={{ p: 0.5, bgcolor: "#fff", border: "1px solid #f1f5f9", borderRadius: "8px", position: "relative", overflow: "hidden", display: "flex", justifyContent: "center", alignItems: "center" }}>
-                  <QRCodeCanvas id="qr-code-preview" value={token} size={80} level="M" fgColor="#cbd5e0" />
+                <Box sx={{
+                  p: 0.5,
+                  bgcolor: theme.palette.background.paper,
+                  border: `1px solid ${theme.palette.divider}`,
+                  borderRadius: "8px",
+                  position: "relative",
+                  overflow: "hidden",
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center"
+                }}>
+                  <QRCodeCanvas
+                    id="qr-code-preview"
+                    value={token}
+                    size={80}
+                    level="M"
+                    fgColor={isDark ? theme.palette.text.primary : theme.palette.badgePreview.clipBarBg}
+                  />
                   <Box
                     sx={{
                       position: "absolute",
@@ -383,12 +416,16 @@ const BadgePreview = ({
                   >
                     <Typography
                       sx={{
-                        color: "#cbd5e0",
+                        color: isDark
+                          ? theme.palette.grey[600]
+                          : theme.palette.badgePreview.clipBarBg,
                         fontWeight: 900,
                         fontSize: "15px",
                         letterSpacing: "2px",
                         textTransform: "uppercase",
-                        textShadow: "-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000",
+                        textShadow: isDark
+                          ? theme.palette.badgePreview.watermarkGlowDark
+                          : `-1px -1px 0 ${theme.palette.common.black}, 1px -1px 0 ${theme.palette.common.black}, -1px 1px 0 ${theme.palette.common.black}, 1px 1px 0 ${theme.palette.common.black}`,
                       }}
                     >
                       {t.preview}
@@ -405,4 +442,3 @@ const BadgePreview = ({
 };
 
 export default BadgePreview;
-

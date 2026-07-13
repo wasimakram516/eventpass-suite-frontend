@@ -115,7 +115,7 @@ function MediaUploadField({ label, preview, fileType, onFileSelect, onRemove, ac
             ) : (
               <Box component="img" src={preview} alt={label} sx={{ maxWidth: 280, maxHeight: 100, height: "auto", borderRadius: "6px", objectFit: "cover", display: "block" }} />
             )}
-            <IconButton size="small" onClick={onRemove} sx={{ position: "absolute", top: -18, right: 6, bgcolor: "error.main", color: "#fff", "&:hover": { bgcolor: "error.dark" } }}>
+            <IconButton size="small" onClick={onRemove} sx={{ position: "absolute", top: -18, right: 6, bgcolor: "error.main", color: "error.contrastText", "&:hover": { bgcolor: "error.dark" } }}>
               <ICONS.delete sx={{ fontSize: 18 }} />
             </IconButton>
           </Box>

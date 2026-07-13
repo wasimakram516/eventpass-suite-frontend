@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { alpha } from "@mui/material/styles";
 import {
   Typography,
   Divider,
@@ -143,6 +144,7 @@ const translations = {
 };
 
 export default function GlobalConfigPage() {
+
   const { showMessage } = useMessage();
   const { refetchConfig, globalConfig } = useGlobalConfig();
   const { dir, align, t } = useI18nLayout(translations);
@@ -523,8 +525,8 @@ export default function GlobalConfigPage() {
         sx={{
           width: 36,
           height: 36,
-          bgcolor: "rgba(0, 119, 182, 0.12)",
-          color: "#0077b6",
+          bgcolor: alpha(theme.palette.primary.main, 0.12),
+          color: "primary.main",
         }}
       >
         {icon}
@@ -643,7 +645,7 @@ export default function GlobalConfigPage() {
               <Stack direction="row" spacing={1.5} sx={{
                 alignItems: "center"
               }}>
-                <ICONS.settings sx={{ color: "#0077b6" }} />
+                <ICONS.settings sx={{ color: "primary.main"  }} />
                 <Typography variant="h6">{t.appName}</Typography>
               </Stack>
               <Divider sx={{ my: 2 }} />
@@ -668,7 +670,7 @@ export default function GlobalConfigPage() {
               <Stack direction="row" spacing={1.5} sx={{
                 alignItems: "center"
               }}>
-                <ICONS.email sx={{ color: "#0077b6" }} />
+                <ICONS.email sx={{ color: "primary.main"  }} />
                 <Typography variant="h6">
                   {t.contact} & {t.support}
                 </Typography>
@@ -709,7 +711,7 @@ export default function GlobalConfigPage() {
               <Stack direction="row" spacing={1.5} sx={{
                 alignItems: "center"
               }}>
-                <ICONS.image sx={{ color: "#0077b6" }} />
+                <ICONS.image sx={{ color: "primary.main"  }} />
                 <Typography variant="h6">{t.mediaUploadsSection}</Typography>
               </Stack>
               <Divider sx={{ my: 2 }} />
@@ -793,7 +795,7 @@ export default function GlobalConfigPage() {
               <Stack direction="row" spacing={1.5} sx={{
                 alignItems: "center"
               }}>
-                <ICONS.business sx={{ color: "#0077b6" }} />
+                <ICONS.business sx={{ color: "primary.main" }} />
                 <Typography variant="h6">
                   {t.clientLogosSection || "Client Logos"}
                 </Typography>
@@ -806,71 +808,71 @@ export default function GlobalConfigPage() {
               ) : (
                 <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, justifyContent: "center" }}>
                   {config.clientLogos.map((cl, idx) => (
-                      <Stack key={cl._id || idx} spacing={0.75} sx={{
-                        alignItems: "center",
-                        width: { xs: "100%", sm: 120 },
-                      }}>
+                    <Stack key={cl._id || idx} spacing={0.75} sx={{
+                      alignItems: "center",
+                      width: { xs: "100%", sm: 120 },
+                    }}>
+                      <Box
+                        sx={{
+                          width: "100%",
+                          height: 90,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          p: 1,
+                          border: "1px solid",
+                          borderColor: "divider",
+                          borderRadius: 2,
+                          bgcolor: "background.default",
+                        }}
+                      >
                         <Box
+                          component="img"
+                          src={cl.logoUrl}
+                          alt={cl.name || "logo"}
                           sx={{
-                            width: "100%",
-                            height: 90,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            p: 1,
-                            border: "1px solid",
-                            borderColor: "divider",
-                            borderRadius: 2,
-                            bgcolor: "background.default",
+                            maxWidth: "100%",
+                            maxHeight: "100%",
+                            objectFit: "contain",
                           }}
-                        >
-                          <Box
-                            component="img"
-                            src={cl.logoUrl}
-                            alt={cl.name || "logo"}
-                            sx={{
-                              maxWidth: "100%",
-                              maxHeight: "100%",
-                              objectFit: "contain",
-                            }}
-                          />
-                        </Box>
+                        />
+                      </Box>
 
-                        {(cl.name || cl.website) && (
-                          <Stack spacing={0} sx={{ width: "100%" }}>
-                            {cl.name ? (
-                              <Typography
-                                variant="caption"
-                                noWrap
-                                title={cl.name}
-                                sx={{ textAlign: align }}
-                              >
-                                {cl.name}
-                              </Typography>
-                            ) : null}
+                      {(cl.name || cl.website) && (
+                        <Stack spacing={0} sx={{ width: "100%" }}>
+                          {cl.name ? (
+                            <Typography
+                              variant="caption"
+                              noWrap
+                              title={cl.name}
+                              sx={{ textAlign: align }}
+                            >
+                              {cl.name}
+                            </Typography>
+                          ) : null}
 
-                            {cl.website ? (
-                              <Typography
-                                component="a"
-                                href={normalizeUrl(cl.website)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                noWrap
-                                sx={{
-                                  textDecoration: "underline",
-                                  color: "blue",
-                                  textAlign: align,
-                                  cursor: "pointer",
-                                  fontSize: "0.75rem",
-                                  display: "inline-block",
-                                }}
-                              >
-                                {cl.website}
-                              </Typography>
-                            ) : null}
-                          </Stack>
-                        )}
-                      </Stack>
+                          {cl.website ? (
+                            <Typography
+                              component="a"
+                              href={normalizeUrl(cl.website)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              noWrap
+                              sx={{
+                                textDecoration: "underline",
+                               color: "primary.main",
+                                textAlign: align,
+                                cursor: "pointer",
+                                fontSize: "0.75rem",
+                                display: "inline-block",
+                              }}
+                            >
+                              {cl.website}
+                            </Typography>
+                          ) : null}
+                        </Stack>
+                      )}
+                    </Stack>
                   ))}
                 </Box>
               )}
@@ -887,7 +889,7 @@ export default function GlobalConfigPage() {
               <Stack direction="row" spacing={1.5} sx={{
                 alignItems: "center"
               }}>
-                <ICONS.qrcode sx={{ color: "#0077b6" }} />
+                <ICONS.qrcode sx={{ color: "primary.main" }} />
                 <Typography variant="h6">{t.defaultQrWrapper}</Typography>
               </Stack>
               <Divider sx={{ my: 2 }} />
@@ -915,14 +917,14 @@ export default function GlobalConfigPage() {
               <Stack direction="row" spacing={1.5} sx={{
                 alignItems: "center"
               }}>
-                <LanguageIcon sx={{ color: "#0077b6" }} />
+               <LanguageIcon sx={{ color: "primary.main" }} />
                 <Typography variant="h6">{t.socialLinks}</Typography>
               </Stack>
               <Divider sx={{ my: 2 }} />
               {config?.socialLinks &&
-              ["facebook", "instagram", "linkedin", "website"].some(
-                (key) => !!config.socialLinks?.[key]
-              ) ? (
+                ["facebook", "instagram", "linkedin", "website"].some(
+                  (key) => !!config.socialLinks?.[key]
+                ) ? (
                 <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, justifyContent: "center" }}>
                   {[
                     { key: "facebook", icon: <FacebookIcon /> },

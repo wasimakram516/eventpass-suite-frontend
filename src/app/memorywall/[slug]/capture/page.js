@@ -162,7 +162,7 @@ export default function UploadPage() {
           if (permission === 'granted') {
             window.addEventListener('deviceorientation', handleDeviceOrientation);
           }
-        } catch (error) {}
+        } catch (error) { }
       } else {
         if (window.DeviceOrientationEvent && typeof window.DeviceOrientationEvent.requestPermission !== 'function') {
           window.addEventListener('deviceorientation', handleDeviceOrientation);
@@ -200,7 +200,7 @@ export default function UploadPage() {
           facingMode,
           width: { ideal: 1920, min: 1280 },
           height: { ideal: 1080, min: 720 },
-          aspectRatio: { ideal: 16/9 }
+          aspectRatio: { ideal: 16 / 9 }
         },
       });
 
@@ -696,7 +696,7 @@ export default function UploadPage() {
             sx={{
               position: "fixed",
               inset: 0,
-              bgcolor: "#000",
+              bgcolor: "background.black",
               zIndex: 1300,
               display: "flex",
               flexDirection: "column",
@@ -709,9 +709,12 @@ export default function UploadPage() {
                 top: 16,
                 right: 16,
                 zIndex: 10,
-                bgcolor: "rgba(0,0,0,0.6)",
-                color: "white",
-                "&:hover": { bgcolor: "rgba(0,0,0,0.9)" },
+                bgcolor: "overlay.black60",
+                color: "text.white",
+
+                "&:hover": {
+                  bgcolor: "overlay.black90",
+                },
               }}
             >
               <ICONS.close fontSize="large" />
@@ -728,9 +731,12 @@ export default function UploadPage() {
                 top: 16,
                 left: 16,
                 zIndex: 10,
-                bgcolor: "rgba(0,0,0,0.6)",
-                color: "white",
-                "&:hover": { bgcolor: "rgba(0,0,0,0.8)" },
+                bgcolor: "overlay.black60",
+                color: "text.white",
+
+                "&:hover": {
+                  bgcolor: "overlay.black80",
+                },
               }}
             >
               {t.switchCamera}
@@ -766,11 +772,11 @@ export default function UploadPage() {
                   width: 72,
                   height: 72,
                   borderRadius: "50%",
-                  bgcolor: "white",
-                  color: "black",
+                  bgcolor: "background.white",
+                  color: "text.black",
                   boxShadow: 6,
                   "&:hover": {
-                    bgcolor: "#f5f5f5",
+                    bgcolor: theme.palette.canvas.light,
                   },
                 }}
               >
@@ -818,7 +824,7 @@ export default function UploadPage() {
                 alignItems: "center",
                 borderRadius: "12px",
                 overflow: "hidden",
-                bgcolor: "#f5f5f5",
+                bgcolor: "background.default",
               }}
             >
               <img
@@ -939,16 +945,17 @@ export default function UploadPage() {
                     maxWidth: 280,
                     aspectRatio: "1.5 / 1",
                     mx: "auto",
-                    border: "1px solid #ccc",
+                    border: "1px solid",
+                    borderColor: "divider",
                     borderRadius: 2,
                     overflow: "hidden",
-                    bgcolor: "#fff",
+                    bgcolor: "background.white",
                     mb: 1.5,
                   }}
                 >
                   <SignatureCanvas
                     ref={signaturePadRef}
-                    penColor="#111"
+                    penColor={theme.palette.signature.pen}
                     canvasProps={{
                       width: 280,
                       height: 180,
@@ -1020,7 +1027,7 @@ export default function UploadPage() {
             >
               {isSubmitting
                 ? t.uploading
-                : mediaType === "type2" 
+                : mediaType === "type2"
                   ? "Submit Message & Signature"
                   : t.submitPhotoMessage}
             </Button>
@@ -1046,7 +1053,7 @@ export default function UploadPage() {
           sx={{
             p: 2,
             mt: 3,
-            bgcolor: "grey.50",
+            bgcolor: "background.default",
             mb: { xs: 8, sm: 8 },
             width: "100%",
             maxWidth: "800px",

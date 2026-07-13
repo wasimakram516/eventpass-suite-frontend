@@ -1,16 +1,15 @@
 "use client";
 
-import { Box, Typography, useTheme } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 
 export default function InitialsPlaceholder({
   name = "Placeholder",
-  size = 160, 
+  size = 160,
   variant = "rounded", // "circle" | "rounded"
   fontSize,
   bgColor,
 }) {
 
-  // Extract initials (max 2 letters)
   const initials = name
     .split(" ")
     .map((word) => word[0]?.toUpperCase())
@@ -20,13 +19,13 @@ export default function InitialsPlaceholder({
   return (
     <Box
       sx={{
-        width: "100%", 
+        width: "100%",
         height: size,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        bgcolor: bgColor || "background",
-        color: "primary",
+        bgcolor: bgColor || "background.default",
+        color: "primary.main",
         fontWeight: "bold",
         borderRadius: variant === "circle" ? "50%" : 2,
         userSelect: "none",

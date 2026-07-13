@@ -9,6 +9,7 @@ import {
     Chip,
     Stack,
     Divider,
+    useTheme,
 } from "@mui/material";
 import { PieChart } from "@mui/x-charts/PieChart";
 import { LineChart } from "@mui/x-charts/LineChart";
@@ -150,7 +151,6 @@ const translations = {
     },
 };
 
-const FIELD_COLOR = "#0077b6";
 
 const hslToHex = (h, s, l) => {
     s /= 100;
@@ -187,10 +187,11 @@ const FieldChip = ({ field, isSelected, onClick }) => {
             label={field.label}
             onClick={onClick}
             sx={{
-                backgroundColor: isSelected ? field.color : "#ffffff",
-                color: isSelected ? "#ffffff" : "#374151",
+                backgroundColor: isSelected ? field.color : "background.paper",
+                color: isSelected ? "#ffffff" : "text.primary",
                 fontWeight: isSelected ? 600 : 500,
-                border: isSelected ? "none" : "2px solid #e5e7eb",
+                border: isSelected ? "none" : "2px solid",
+                borderColor: isSelected ? "transparent" : "divider",
                 cursor: "pointer",
                 transition: "all 0.3s ease-out",
                 "&:hover": {
@@ -203,7 +204,6 @@ const FieldChip = ({ field, isSelected, onClick }) => {
         />
     );
 };
-
 const ChartVisualization = ({
     selectedField,
     chartData,
@@ -243,18 +243,18 @@ const ChartVisualization = ({
     const effectiveChartType = chartTypeOverride || field.chartType;
     const chartTypeChips = isCategorical
         ? [
-              { label: t.chartPie, value: "pie" },
-              { label: t.chartBar, value: "bar" },
-              { label: t.chartHorizontalBar, value: "horizontalBar" },
-          ]
+            { label: t.chartPie, value: "pie" },
+            { label: t.chartBar, value: "bar" },
+            { label: t.chartHorizontalBar, value: "horizontalBar" },
+        ]
         : isTimeBased
-        ? [
-              { label: t.chartLine, value: "line" },
-              { label: t.chartBar, value: "bar" },
-              { label: t.chartHorizontalBar, value: "horizontalBar" },
-              { label: t.chartHeatmap, value: "heatmap" },
-          ]
-        : null;
+            ? [
+                { label: t.chartLine, value: "line" },
+                { label: t.chartBar, value: "bar" },
+                { label: t.chartHorizontalBar, value: "horizontalBar" },
+                { label: t.chartHeatmap, value: "heatmap" },
+            ]
+            : null;
     const hasNoData = isCategorical && (!field.data || field.data.length === 0);
     const barData = isCategorical && field.data ? field.data.filter((d) => d.value > 0) : [];
     const barTotal = field.data ? field.data.reduce((sum, d) => sum + d.value, 0) : 0;
@@ -298,7 +298,7 @@ const ChartVisualization = ({
                     <Box>
                         <Typography
                             variant="h6"
-                            sx={{ fontWeight: "bold", color: "#1f2937" }}
+                            sx={{ fontWeight: "bold", color: "text.primary" }}
                         >
                             {field.label}
                         </Typography>
@@ -428,8 +428,9 @@ const ChartVisualization = ({
                                 fontWeight: effectiveChartType === chip.value ? 600 : 400,
                                 backgroundColor:
                                     effectiveChartType === chip.value ? field.color : "transparent",
-                                color: effectiveChartType === chip.value ? "#fff" : "#374151",
-                                border: `1.5px solid ${effectiveChartType === chip.value ? field.color : "#e5e7eb"}`,
+                                color: effectiveChartType === chip.value ? "#fff" : "text.primary",
+                                border: "1.5px solid",
+                                borderColor: effectiveChartType === chip.value ? field.color : "divider",
                                 "&:hover": {
                                     backgroundColor:
                                         effectiveChartType === chip.value
@@ -561,7 +562,7 @@ const ChartVisualization = ({
                                                 variant="body2"
                                                 sx={{
                                                     fontWeight: 500,
-                                                    color: "#1f2937",
+                                                    color: "text.primary",
                                                     whiteSpace: "nowrap",
                                                     fontSize: { xs: "0.875rem", md: "0.875rem" },
                                                     direction: "ltr",
@@ -665,7 +666,7 @@ const ChartVisualization = ({
                                             variant="body2"
                                             sx={{
                                                 fontWeight: 500,
-                                                color: "#1f2937",
+                                                color: "text.primary",
                                                 whiteSpace: "nowrap",
                                                 fontSize: { xs: "0.875rem", md: "0.875rem" },
                                                 direction: "ltr",
@@ -747,7 +748,7 @@ const ChartVisualization = ({
                             {field.xData.map((label, idx) => (
                                 <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5, direction: 'ltr' }}>
                                     <Box sx={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: field.color, flexShrink: 0 }} />
-                                    <Typography variant="body2" sx={{ fontWeight: 500, color: '#1f2937', whiteSpace: 'nowrap', fontSize: { xs: '0.875rem', md: '0.875rem' }, direction: 'ltr', textAlign: 'left' }}>
+                                    <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.primary', whiteSpace: 'nowrap', fontSize: { xs: '0.875rem', md: '0.875rem' }, direction: 'ltr', textAlign: 'left' }}>
                                         {label} · {toArabicDigits(field.yData[idx], language)}
                                     </Typography>
                                 </Box>
@@ -812,7 +813,7 @@ const ChartVisualization = ({
                             {field.xData.map((label, idx) => (
                                 <Box key={idx} sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5, direction: 'ltr' }}>
                                     <Box sx={{ width: 12, height: 12, borderRadius: '50%', backgroundColor: field.color, flexShrink: 0 }} />
-                                    <Typography variant="body2" sx={{ fontWeight: 500, color: '#1f2937', whiteSpace: 'nowrap', fontSize: { xs: '0.875rem', md: '0.875rem' }, direction: 'ltr', textAlign: 'left' }}>
+                                    <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.primary', whiteSpace: 'nowrap', fontSize: { xs: '0.875rem', md: '0.875rem' }, direction: 'ltr', textAlign: 'left' }}>
                                         {label} · {toArabicDigits(field.yData[idx], language)}
                                     </Typography>
                                 </Box>
@@ -826,10 +827,10 @@ const ChartVisualization = ({
                                 <Box />
                                 {Array.from({ length: 24 }).map((_, h) => (
                                     <Typography key={h} variant="caption" sx={{ textAlign: "center", color: "text.secondary", fontSize: "9px" }}>
-                                                {toArabicDigits(h, language)}h
-                                                    </Typography>
-                                                ))}
-                                                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((dayName, dIdx) => {
+                                        {toArabicDigits(h, language)}h
+                                    </Typography>
+                                ))}
+                                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((dayName, dIdx) => {
                                     const dayNum = dIdx;
                                     const start = startDateTime ? new Date(startDateTime) : null;
                                     const end = endDateTime ? new Date(endDateTime) : null;
@@ -859,7 +860,7 @@ const ChartVisualization = ({
                                                         sx={{
                                                             m: 0.1,
                                                             borderRadius: 0.5,
-                                                            backgroundColor: count > 0 ? field.color : "#f3f4f6",
+                                                            backgroundColor: count > 0 ? field.color : theme.palette.insights.heatmapEmptyCell,
                                                             opacity: alpha,
                                                             aspectRatio: "1/1",
                                                             display: "flex",
@@ -870,7 +871,7 @@ const ChartVisualization = ({
                                                         }}
                                                     >
                                                         {count > 0 && (
-                                                            <Typography sx={{ color: alpha > 0.6 ? "#fff" : "#000", fontSize: "8px", fontWeight: "bold" }}>
+                                                            <Typography sx={{ color: alpha > 0.6 ? "#fff" : "text.primary", fontSize: "8px", fontWeight: "bold" }}>
                                                                 {toArabicDigits(count, language)}
                                                             </Typography>
                                                         )}
@@ -890,7 +891,10 @@ const ChartVisualization = ({
 };
 
 export default function AnalyticsDashboard() {
+
     const { eventSlug } = useParams();
+    const theme = useTheme();
+    const FIELD_COLOR = theme.palette.primary.main;
     const { t, dir, language } = useI18nLayout(translations);
     const [selectedFields, setSelectedFields] = useState([]);
     const [chartData, setChartData] = useState({});
@@ -1204,9 +1208,9 @@ export default function AnalyticsDashboard() {
     useEffect(() => {
         if (!summary || !selectedFields.includes("badgePrintStats")) return;
         const data = [
-            { id: 0, value: summary.noPrintCount ?? 0, label: t.noPrints || "0 Prints", color: "#ef4444" },
-            { id: 1, value: summary.onePrintCount ?? 0, label: t.onePrint || "1 Print", color: "#f59e0b" },
-            { id: 2, value: summary.multiPrintCount ?? 0, label: t.multiPrint || "Multi-Print", color: "#10b981" },
+            { id: 0, value: summary.noPrintCount ?? 0, label: t.noPrints || "0 Prints", color: theme.palette.insights.badgeNoPrint },
+            { id: 1, value: summary.onePrintCount ?? 0, label: t.onePrint || "1 Print", color: theme.palette.insights.badgeOnePrint },
+            { id: 2, value: summary.multiPrintCount ?? 0, label: t.multiPrint || "Multi-Print", color: theme.palette.insights.badgeMultiPrint },
         ];
         setChartData((prev) => ({
             ...prev,
@@ -1219,7 +1223,7 @@ export default function AnalyticsDashboard() {
                 data,
             },
         }));
-    }, [summary, selectedFields, t]);
+    }, [summary, selectedFields, t, theme]);
 
 
     const handleExportPDF = async () => {
@@ -1541,11 +1545,11 @@ export default function AnalyticsDashboard() {
             {summary && (
                 <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
                     {[
-                        { label: t.totalRegistrations, value: toArabicDigits(summary.totalRegistrations, language), color: "#0077b6" },
-                        { label: t.totalScanned, value: toArabicDigits(summary.uniqueScanned, language), color: "#0284c7" },
-                        { label: t.scanRate, value: `${toArabicDigits(summary.scanRate, language)}%`, color: "#06b6d4" },
-                        { label: t.totalBadgePrints, value: toArabicDigits(summary.totalPrints ?? 0, language), color: "#7c3aed" },
-                        { label: t.multiPrintRate, value: `${toArabicDigits(summary.multiPrintRate ?? "0.00", language)}%`, color: "#0ea5e9" },
+                        { label: t.totalRegistrations, value: toArabicDigits(summary.totalRegistrations, language), color: theme.palette.primary.main },
+                        { label: t.totalScanned, value: toArabicDigits(summary.uniqueScanned, language), color: theme.palette.insights.summaryCard2 },
+                        { label: t.scanRate, value: `${toArabicDigits(summary.scanRate, language)}%`, color: theme.palette.insights.summaryCard3 },
+                        { label: t.totalBadgePrints, value: toArabicDigits(summary.totalPrints ?? 0, language), color: theme.palette.insights.summaryCard4 },
+                        { label: t.multiPrintRate, value: `${toArabicDigits(summary.multiPrintRate ?? "0.00", language)}%`, color: theme.palette.insights.summaryCard5 },
                     ].map(({ label, value, color }) => (
                         <AppCard
                             key={label}
@@ -1557,7 +1561,8 @@ export default function AnalyticsDashboard() {
                                 display: "flex",
                                 flexDirection: "column",
                                 justifyContent: "center",
-                                border: "1px solid #f1f5f9",
+                                border: "1px solid",
+                                borderColor: "divider"
                             }}
                         >
                             <Typography
@@ -1594,7 +1599,7 @@ export default function AnalyticsDashboard() {
                     variant="subtitle1"
                     sx={{
                         fontWeight: 600,
-                        color: "#374151",
+                        color: "text.primary",
                         mb: 1,
                     }}
                 >
@@ -1652,7 +1657,7 @@ export default function AnalyticsDashboard() {
                         <Box sx={{
                             textAlign: "center"
                         }}>
-                            <BarChartIcon sx={{ fontSize: 48, color: "#d1d5db", mb: 2 }} />
+                            <BarChartIcon sx={{ fontSize: 48, color: "text.disabled", mb: 2 }} />
                             <Typography color="textSecondary">
                                 {t.selectFieldPrompt}
                             </Typography>

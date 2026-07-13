@@ -22,6 +22,7 @@ import {
   FormControl,
   IconButton,
   ListSubheader,
+  alpha,
   InputAdornment,
 } from "@mui/material";
 import { QRCodeCanvas } from "qrcode.react";
@@ -51,7 +52,7 @@ import { downloadDefaultQrWrapperAsImage, hasDefaultQrWrapperDesign, hasWrapperD
 import BadgePreview from "@/components/badges/BadgePreview";
 import BadgeCard from "@/components/badges/BadgeCard";
 import html2canvas from "html2canvas";
-
+import { alpha } from "@mui/material/styles";
 export default function Registration() {
   const { eventSlug, lang } = useParams();
   const isArabic = lang === "ar";
@@ -699,7 +700,7 @@ export default function Registration() {
         <Box key={field.name} sx={{ mb: 2, textAlign: "center" }}>
           <Typography sx={{ mb: 1 }}>
             {fieldLabel}
-            {field.required && <span style={{ color: "red" }}> *</span>}
+            {field.required && <Typography component="span" sx={{ color: "error.main" }}> *</Typography>}
           </Typography>
           <RadioGroup
             row
@@ -893,7 +894,7 @@ export default function Registration() {
             p: { xs: 2, sm: 4 },
             textAlign: "center",
             backdropFilter: "blur(6px)",
-            backgroundColor: "rgba(255,255,255,0.9)",
+            backgroundColor: (theme) => theme.palette.overlay.cardTransparent,
           }}
         >
           <Typography
@@ -1125,7 +1126,7 @@ export default function Registration() {
             sx: {
               borderRadius: 4,
               overflow: "hidden",
-              boxShadow: "0 24px 60px rgba(0,0,0,0.22)",
+              boxShadow: theme.palette.shadow.dialogLarge,
             },
           },
         }}
@@ -1133,8 +1134,7 @@ export default function Registration() {
         {/* Header band */}
         <Box
           sx={{
-            background: "linear-gradient(135deg, #0f3d57 0%, #14708a 100%)",
-            color: "#fff",
+            background: (theme) => theme.palette.gradients.infoCard, color: "common.white",
             px: 3,
             pt: 3,
             pb: 2.5,
@@ -1149,13 +1149,13 @@ export default function Registration() {
               height: 44,
               borderRadius: 2,
               flexShrink: 0,
-              backgroundColor: "rgba(255,255,255,0.16)",
+              backgroundColor: theme.palette.overlay.glassLight,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
             }}
           >
-            <ICONS.list sx={{ fontSize: 24, color: "#fff" }} />
+            <ICONS.list sx={{ fontSize: 24, color: theme.palette.common.white }} />
           </Box>
           <Box sx={{ minWidth: 0 }}>
             <Typography variant="h6" fontWeight={800} sx={{ lineHeight: 1.2 }}>
@@ -1226,8 +1226,10 @@ export default function Registration() {
                   px: 2,
                   py: 1.5,
                   borderRadius: 2.5,
-                  backgroundColor: "rgba(20,112,138,0.08)",
-                  border: "1px solid rgba(20,112,138,0.2)",
+                  backgroundColor: (theme) => theme.palette.overlay.infoCard,
+
+                  border: (theme) =>
+                    `1px solid ${theme.palette.overlay.infoCardBorder}`,
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
@@ -1257,10 +1259,17 @@ export default function Registration() {
           {duplicateNotice ? (
             <Box
               sx={{
-                backgroundColor: "#e3f2fd",
-                borderLeft: dir === "rtl" ? "none" : "4px solid #1976d2",
-                borderRight: dir === "rtl" ? "4px solid #1976d2" : "none",
-                borderRadius: 1,
+                backgroundColor: (theme) => alpha(theme.palette.info.main, 0.12),
+
+                borderLeft:
+                  dir === "rtl"
+                    ? "none"
+                    : (theme) => `4px solid ${theme.palette.info.main}`,
+
+                borderRight:
+                  dir === "rtl"
+                    ? (theme) => `4px solid ${theme.palette.info.main}`
+                    : "none", borderRadius: 1,
                 p: 2,
                 mt: 2,
                 textAlign: dir === "rtl" ? "right" : "left",
@@ -1287,7 +1296,7 @@ export default function Registration() {
                   {t.duplicateSupportLine}{" "}
                   <a
                     href={`mailto:${globalConfig?.support?.email || globalConfig?.contact?.email}`}
-                    style={{ color: "#1976d2", fontWeight: 600, textDecoration: "none" }}
+                    style={{ color: theme.palette.info.main, fontWeight: 600, textDecoration: "none" }}
                   >
                     {globalConfig?.support?.email || globalConfig?.contact?.email}
                   </a>
@@ -1318,8 +1327,7 @@ export default function Registration() {
                     borderRadius: 2.5,
                     px: 3,
                     py: 1.1,
-                    boxShadow: "0 8px 20px rgba(20,112,138,0.3)",
-                    ...getStartIconSpacing(dir),
+                    boxShadow: (theme) => theme.palette.shadow.infoCard, ...getStartIconSpacing(dir),
                   }}
                 >
                   {t.resumePaymentNow}
@@ -1346,8 +1354,7 @@ export default function Registration() {
                   borderRadius: 2.5,
                   px: 3,
                   py: 1.1,
-                  boxShadow: "0 8px 20px rgba(20,112,138,0.3)",
-                  ...getStartIconSpacing(dir),
+                  boxShadow: (theme) => theme.palette.shadow.infoCard, ...getStartIconSpacing(dir),
                 }}
               >
                 {payProcessing ? <CircularProgress size={22} color="inherit" /> : t.confirmAndPay}
@@ -1376,7 +1383,7 @@ export default function Registration() {
               width: 36,
               height: 36,
               bgcolor: "error.main",
-              color: "#fff",
+              color: "common.white",
               boxShadow: 2,
               "&:hover": {
                 bgcolor: "error.dark",
@@ -1393,7 +1400,7 @@ export default function Registration() {
               alignItems: "center",
               mt: 1
             }}>
-            <ICONS.checkCircle sx={{ fontSize: 44, color: "#28a745", mb: 0.5 }} />
+            <ICONS.checkCircle sx={{ fontSize: 44, color: "success.main", mb: 0.5 }} />
             <Typography
               variant="h6"
               sx={{
@@ -1413,7 +1420,7 @@ export default function Registration() {
                 id="qr-code-download-hidden"
                 value={qrToken}
                 size={180}
-                bgColor="#ffffff"
+                bgColor="background.paper"
                 includeMargin
               />
             </Box>
@@ -1442,9 +1449,17 @@ export default function Registration() {
               {event?.requiresApproval && (
                 <Box
                   sx={{
-                    backgroundColor: "#fff3e0",
-                    borderLeft: dir === "rtl" ? "none" : "4px solid #ff6f00",
-                    borderRight: dir === "rtl" ? "4px solid #ff6f00" : "none",
+                    backgroundColor: (theme) => theme.palette.overlay.warningCard,
+
+                    borderLeft: (theme) =>
+                      dir === "rtl"
+                        ? "none"
+                        : `4px solid ${theme.palette.overlay.warningCardBorder}`,
+
+                    borderRight: (theme) =>
+                      dir === "rtl"
+                        ? `4px solid ${theme.palette.overlay.warningCardBorder}`
+                        : "none",
                     borderRadius: 1,
                     p: 2,
                     mb: 3,
@@ -1473,7 +1488,7 @@ export default function Registration() {
                         px: 2,
                         py: 0.5,
                         backgroundColor: "primary.main",
-                        color: "#fff",
+                        color: "common.white",
                         borderRadius: "20px",
                         fontWeight: 600,
                         fontFamily: "monospace",
@@ -1497,7 +1512,7 @@ export default function Registration() {
                       sx={{
                         p: 2,
                         borderRadius: 2,
-                        backgroundColor: "#fff",
+                        backgroundColor: (theme) => theme.palette.background.paper,
                         display: "inline-block",
                       }}
                     >
@@ -1505,11 +1520,11 @@ export default function Registration() {
                         id="qr-code"
                         value={qrToken}
                         size={180}
-                        bgColor="#ffffff"
+                        bgColor={(theme) => theme.palette.background.paper}
                         includeMargin
                         style={{
                           padding: "12px",
-                          background: "#ffffff",
+                          background: (theme) => theme.palette.background.paper,
                           borderRadius: "8px",
                         }}
                       />
@@ -1606,7 +1621,7 @@ function FileUploadField({ field, fd, fieldLabel, errorMsg, isArabic, chooseFile
     <Box sx={{ mb: 2, textAlign: isArabic ? "right" : "left" }}>
       <Typography variant="body2" sx={{ mb: 0.5, fontWeight: 500, textAlign: "start" }}>
         {fieldLabel}
-        {field.required && <span style={{ color: "red" }}> *</span>}
+        {field.required && <Typography component="span" sx={{ color: "error.main" }}> *</Typography>}
       </Typography>
       {fd ? (
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, p: 1, pr: 2, border: "1px solid", borderColor: "divider", borderRadius: 3, bgcolor: "background.paper", textAlign: "left", width: "100%", maxWidth: "100%", boxSizing: "border-box" }}>
@@ -1620,7 +1635,7 @@ function FileUploadField({ field, fd, fieldLabel, errorMsg, isArabic, chooseFile
           <Typography variant="body2" sx={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {fd.file.name}
           </Typography>
-          <IconButton onClick={onFileRemove} size="small" sx={{ bgcolor: "error.main", color: "#fff", "&:hover": { bgcolor: "error.dark" }, width: 28, height: 28, flexShrink: 0 }}>
+          <IconButton onClick={onFileRemove} size="small" sx={{ bgcolor: "error.main",  color: "error.contrastText", "&:hover": { bgcolor: "error.dark" }, width: 28, height: 28, flexShrink: 0 }}>
             <ICONS.delete sx={{ fontSize: 16 }} />
           </IconButton>
         </Box>

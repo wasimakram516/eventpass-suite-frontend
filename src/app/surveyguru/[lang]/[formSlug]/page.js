@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useMemo } from "react";
+import { SURVEY_PALETTES } from "@/styles/theme";
 import {
   Box,
   Button,
@@ -26,35 +27,6 @@ import LanguageSelector from "@/components/LanguageSelector";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 
 const guessType = (q) => (q?.type || q?.questionType || "").toLowerCase();
-
-// ---- Color palettes ----
-const BASE_PALETTES = [
-  {
-    base: "#a7d8f0",
-    action: "#1e3a8a",
-    gradient: "linear-gradient(135deg, #a7d8f0 0%, #7dd3fc 50%, #38bdf8 100%)",
-  },
-  {
-    base: "#c7f9cc",
-    action: "#166534",
-    gradient: "linear-gradient(135deg, #c7f9cc 0%, #86efac 50%, #4ade80 100%)",
-  },
-  {
-    base: "#fde68a",
-    action: "#b45309",
-    gradient: "linear-gradient(135deg, #fde68a 0%, #fcd34d 50%, #f59e0b 100%)",
-  },
-  {
-    base: "#e9d5ff",
-    action: "#6b21a8",
-    gradient: "linear-gradient(135deg, #e9d5ff 0%, #d8b4fe 50%, #c084fc 100%)",
-  },
-  {
-    base: "#c8e6e0",
-    action: "#0f766e",
-    gradient: "linear-gradient(135deg, #c8e6e0 0%, #7dd3fc 50%, #06b6d4 100%)",
-  },
-];
 
 export const surveyTranslations = {
   en: {
@@ -155,7 +127,7 @@ export default function PublicSurveyPage() {
   const [form, setForm] = useState(null);
   const [tForm, setTForm] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [phase, setPhase] = useState("attendee"); // "attendee" | "survey" | "submitted"s
+  const [phase, setPhase] = useState("attendee"); // "attendee" | "survey" | "submitted"
   const [attendee, setAttendee] = useState({
     name: "",
     email: "",
@@ -174,7 +146,7 @@ export default function PublicSurveyPage() {
       return seed / 2 ** 32;
     };
 
-    const shuffled = [...BASE_PALETTES];
+    const shuffled = [...SURVEY_PALETTES];
     for (let i = shuffled.length - 1; i > 0; i--) {
       const j = Math.floor(rng() * (i + 1));
       [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
@@ -187,7 +159,7 @@ export default function PublicSurveyPage() {
     );
   }, [slug, totalQ]);
 
-  const palette = palettes[currentIdx % palettes.length] || BASE_PALETTES[0];
+  const palette = palettes[currentIdx % palettes.length] || SURVEY_PALETTES[0];
   const actionColor = palette.action;
   const rightGradient = palette.gradient;
 
@@ -420,18 +392,10 @@ export default function PublicSurveyPage() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: `
-        radial-gradient(800px 600px at 8% 12%, rgba(99,102,241,0.28) 0%, transparent 60%),
-        radial-gradient(720px 540px at 92% 16%, rgba(236,72,153,0.24) 0%, transparent 60%),
-        radial-gradient(700px 520px at 18% 86%, rgba(34,197,94,0.20) 0%, transparent 60%),
-        radial-gradient(680px 520px at 84% 84%, rgba(59,130,246,0.20) 0%, transparent 60%),
-        linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)
-      `,
-          filter: "saturate(1.05)",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
+          position: "relative",
         }}
       >
+        <Background />
         <LanguageSelector top={20} right={20} />
         <Container dir={dir} maxWidth="sm" sx={{ py: 6, zIndex: 1 }}>
           <Typography variant="h6">{trans.loading}</Typography>
@@ -449,18 +413,10 @@ export default function PublicSurveyPage() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: `
-        radial-gradient(800px 600px at 8% 12%, rgba(99,102,241,0.28) 0%, transparent 60%),
-        radial-gradient(720px 540px at 92% 16%, rgba(236,72,153,0.24) 0%, transparent 60%),
-        radial-gradient(700px 520px at 18% 86%, rgba(34,197,94,0.20) 0%, transparent 60%),
-        radial-gradient(680px 520px at 84% 84%, rgba(59,130,246,0.20) 0%, transparent 60%),
-        linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)
-      `,
-          filter: "saturate(1.05)",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
+          position: "relative",
         }}
       >
+        <Background />
         <LanguageSelector top={20} right={20} />
         <Container dir={dir} maxWidth="sm" sx={{ py: 8, zIndex: 1 }}>
           <Typography variant="h5" gutterBottom sx={{
@@ -484,24 +440,16 @@ export default function PublicSurveyPage() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: `
-          radial-gradient(800px 600px at 8% 12%, rgba(99,102,241,0.28) 0%, transparent 60%),
-          radial-gradient(720px 540px at 92% 16%, rgba(236,72,153,0.24) 0%, transparent 60%),
-          radial-gradient(700px 520px at 18% 86%, rgba(34,197,94,0.20) 0%, transparent 60%),
-          radial-gradient(680px 520px at 84% 84%, rgba(59,130,246,0.20) 0%, transparent 60%),
-          linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)
-        `,
-          filter: "saturate(1.05)",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
+          position: "relative",
           p: { xs: 2.5, sm: 4 },
         }}
       >
+        <Background />
         <LanguageSelector top={20} right={20} />
         <Container dir={dir} maxWidth="sm" sx={{ position: "relative" }}>
           {/* subtle ambient blobs */}
           <Box
-            sx={{
+            sx={(theme) => ({
               position: "absolute",
               inset: 0,
               pointerEvents: "none",
@@ -513,71 +461,55 @@ export default function PublicSurveyPage() {
                 opacity: 0.5,
               },
               "&::before": {
-                width: 220,
-                height: 220,
-                top: -40,
-                right: -40,
-                background:
-                  "radial-gradient(closest-side, rgba(99,102,241,.35), transparent)",
+                width: 220, height: 220, top: -40, right: -40,
+                background: theme.palette.surveyguru.ambientBlobIndigo,
               },
               "&::after": {
-                width: 240,
-                height: 240,
-                left: -50,
-                bottom: -50,
-                background:
-                  "radial-gradient(closest-side, rgba(16,185,129,.35), transparent)",
+                width: 240, height: 240, left: -50, bottom: -50,
+                background: theme.palette.surveyguru.ambientBlobGreen,
               },
-            }}
+            })}
           />
 
           <AppCard
             elevation={0}
-            sx={{
+            sx={(theme) => ({
               p: { xs: 3, sm: 5 },
               borderRadius: 4,
               textAlign: "center",
-              bgcolor: "rgba(255,255,255,0.85)",
+              bgcolor: theme.palette.overlay.card,
               backdropFilter: "blur(10px)",
               border: "1px solid",
-              borderColor: "rgba(148,163,184,0.35)",
-              boxShadow:
-                "0 10px 30px rgba(2,6,23,0.08), inset 0 0 0 1px rgba(255,255,255,0.4)",
-            }}
+              borderColor: "divider",
+              boxShadow: theme.palette.surveyguru.successCardShadow,
+            })}
           >
             {/* success badge */}
             <Box
-              sx={{
-                mx: "auto",
-                mb: 2.5,
-                width: 88,
-                height: 88,
-                borderRadius: "999px",
-                position: "relative",
-                background:
-                  "linear-gradient(135deg, #34d399 0%, #10b981 60%, #059669 100%)",
-                boxShadow:
-                  "0 12px 28px rgba(16,185,129,.35), inset 0 0 0 6px rgba(255,255,255,.35)",
+              sx={(theme) => ({
+                mx: "auto", mb: 2.5, width: 88, height: 88,
+                borderRadius: "999px", position: "relative",
+                background: theme.palette.surveyguru.successBadgeGradient,
+                boxShadow: theme.palette.surveyguru.successBadgeShadow,
                 display: "grid",
                 placeItems: "center",
-              }}
+              })}
             >
               {/* inner ring */}
               <Box
-                sx={{
+                sx={(theme) => ({
                   position: "absolute",
                   inset: -8,
                   borderRadius: "inherit",
-                  background:
-                    "conic-gradient(from 180deg at 50% 50%, rgba(16,185,129,.18), transparent 40% 60%, rgba(16,185,129,.18))",
+                  background: theme.palette.surveyguru.successBadgeRing,
                   filter: "blur(8px)",
-                }}
+                })}
               />
               {/* check mark (inline SVG) */}
               <Box
                 component="svg"
                 viewBox="0 0 24 24"
-                sx={{ width: 44, height: 44, color: "#fff" }}
+                sx={(theme) => ({ width: 44, height: 44, color: theme.palette.common.white })}
               >
                 <path
                   fill="currentColor"
@@ -589,16 +521,15 @@ export default function PublicSurveyPage() {
             {/* title */}
             <Typography
               variant="h4"
-              sx={{
+              sx={(theme) => ({
                 fontWeight: 900,
                 letterSpacing: "-0.02em",
                 mb: 1,
-                background:
-                  "linear-gradient(90deg, #0f172a 0%, #2563eb 45%, #0ea5e9 100%)",
+                background: theme.palette.surveyguru.titleGradient,
                 WebkitBackgroundClip: "text",
                 backgroundClip: "text",
                 color: "transparent",
-              }}
+              })}
             >
               {trans.thankYouTitle}
             </Typography>
@@ -642,35 +573,28 @@ export default function PublicSurveyPage() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: `
-          radial-gradient(800px 600px at 8% 12%, rgba(99,102,241,0.28) 0%, transparent 60%),
-          radial-gradient(720px 540px at 92% 16%, rgba(236,72,153,0.24) 0%, transparent 60%),
-          radial-gradient(700px 520px at 18% 86%, rgba(34,197,94,0.20) 0%, transparent 60%),
-          radial-gradient(680px 520px at 84% 84%, rgba(59,130,246,0.20) 0%, transparent 60%),
-          linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)
-        `,
-          filter: "saturate(1.05)",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
+          position: "relative",
           p: { xs: 1.5, sm: 2.5 },
         }}
       >
+        <Background />
         <LanguageSelector top={20} right={20} />
         <AppCard
           elevation={3}
-          sx={{
+          sx={(theme) => ({
             width: "100%",
             maxWidth: { xs: 360, sm: 520, md: 600 },
             borderRadius: { xs: 2, sm: 3 },
             p: { xs: 2, sm: 3.5 },
             ...(isAnonymousMode
               ? {
-                border: "1px solid rgba(245, 158, 11, 0.35)",
-                background:
-                    "linear-gradient(180deg, rgba(255,251,235,0.92) 0%, rgba(255,255,255,0.96) 100%)",
+                border: `1px solid ${theme.palette.surveyguru.anonymousBorder}`,
+                background: theme.palette.mode === "dark"
+                  ? theme.palette.surveyguru.anonymousBgDark
+                  : theme.palette.surveyguru.anonymousBgLight,
               }
               : {}),
-          }}
+          })}
         >
           <Box
             sx={{
@@ -698,16 +622,12 @@ export default function PublicSurveyPage() {
                 mb: 1.5
               }}>
               <Box
-                sx={{
-                  px: 1.25,
-                  py: 0.4,
-                  borderRadius: 10,
+                sx={(theme) => ({
+                  px: 1.25, py: 0.4, borderRadius: 10,
                   bgcolor: "warning.main",
-                  color: "#fff",
-                  fontSize: 12,
-                  fontWeight: 700,
-                  letterSpacing: 0.2,
-                }}
+                  color: theme.palette.common.white,
+                  fontSize: 12, fontWeight: 700, letterSpacing: 0.2,
+                })}
               >
                 {trans.anonymousNoticeTitle}
               </Box>
@@ -726,33 +646,22 @@ export default function PublicSurveyPage() {
           )}
           {isAnonymousMode && (
             <Box
-              sx={{
-                mb: 2.5,
-                p: 1.5,
-                borderRadius: 1.5,
-                bgcolor: "rgba(245, 158, 11, 0.08)",
-                border: "1px solid rgba(245, 158, 11, 0.28)",
+              sx={(theme) => ({
+                mb: 2.5, p: 1.5, borderRadius: 1.5,
+                bgcolor: theme.palette.surveyguru.anonymousNoticeBg,
+                border: `1px solid ${theme.palette.surveyguru.anonymousNoticeBorder}`,
                 ...(dir === "rtl"
-                  ? { borderRight: "6px solid #b45309" }
-                  : { borderLeft: "6px solid #b45309" }),
-              }}
+                  ? { borderRight: `6px solid ${theme.palette.surveyguru.anonymousAccent}` }
+                  : { borderLeft: `6px solid ${theme.palette.surveyguru.anonymousAccent}` }),
+              })}
             >
-              <Stack
-                direction={dir === "rtl" ? "row-reverse" : "row"}
-                spacing={1}
-                sx={{
-                  alignItems: "flex-start"
-                }}
-              >
-                <ICONS.info sx={{ color: "#92400e", fontSize: 20, mt: 0.2 }} />
+              <Stack direction={dir === "rtl" ? "row-reverse" : "row"} spacing={1} sx={{ alignItems: "flex-start" }}>
+                <ICONS.info sx={(theme) => ({ color: theme.palette.surveyguru.anonymousIconColor, fontSize: 20, mt: 0.2 })} />
                 <Box>
-                  <Typography
-                    variant="subtitle2"
-                    sx={{ color: "#78350f", fontWeight: 800, mb: 0.25 }}
-                  >
+                  <Typography variant="subtitle2" sx={(theme) => ({ color: theme.palette.surveyguru.anonymousTitleColor, fontWeight: 800, mb: 0.25 })}>
                     {trans.anonymousNoticeTitle}
                   </Typography>
-                  <Typography variant="body2" sx={{ color: "#92400e" }}>
+                  <Typography variant="body2" sx={(theme) => ({ color: theme.palette.surveyguru.anonymousIconColor })}>
                     {trans.anonymousNoticeBody}
                   </Typography>
                 </Box>
@@ -876,18 +785,10 @@ export default function PublicSurveyPage() {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            background: `
-        radial-gradient(800px 600px at 8% 12%, rgba(99,102,241,0.28) 0%, transparent 60%),
-        radial-gradient(720px 540px at 92% 16%, rgba(236,72,153,0.24) 0%, transparent 60%),
-        radial-gradient(700px 520px at 18% 86%, rgba(34,197,94,0.20) 0%, transparent 60%),
-        radial-gradient(680px 520px at 84% 84%, rgba(59,130,246,0.20) 0%, transparent 60%),
-        linear-gradient(180deg, #f8fafc 0%, #ffffff 100%)
-      `,
-            filter: "saturate(1.05)",
-            backgroundSize: "cover",
-            backgroundPosition: "center",
+            position: "relative",
           }}
         >
+          <Background />
           <LanguageSelector top={20} right={20} />
           <Container dir={dir} maxWidth="sm" sx={{ py: 8, zIndex: 1 }}>
             <Typography variant="h5" gutterBottom sx={{
@@ -970,13 +871,12 @@ export default function PublicSurveyPage() {
           >
             {/* overlay */}
             <Box
-              sx={{
+              sx={(theme) => ({
                 position: "absolute",
                 inset: 0,
-                background:
-                  "radial-gradient(800px 600px at 90% 10%, rgba(255,255,255,0.18) 0%, transparent 60%)",
+                background: theme.palette.surveyguru.panelOverlay,
                 pointerEvents: "none",
-              }}
+              })}
             />
 
             {/* Card */}
@@ -985,7 +885,7 @@ export default function PublicSurveyPage() {
                 position: "relative",
                 flex: 1,
                 width: "100%",
-                bgcolor: "#fff",
+                bgcolor: "background.paper",
                 borderRadius: 3,
                 p: 2.5,
                 display: "grid",
@@ -999,20 +899,14 @@ export default function PublicSurveyPage() {
               {(() => {
                 const DotIcon = ({ active, completed, icon }) => (
                   <Box
-                    sx={{
-                      width: 24,
-                      height: 24,
-                      borderRadius: "50%",
-                      display: "grid",
-                      placeItems: "center",
-                      boxSizing: "border-box",
+                    sx={(theme) => ({
+                      width: 24, height: 24, borderRadius: "50%",
+                      display: "grid", placeItems: "center", boxSizing: "border-box",
                       border: `2px solid ${actionColor}`,
-                      bgcolor: active || completed ? actionColor : "#fff",
-                      color: active || completed ? "#fff" : actionColor,
-                      fontSize: 12,
-                      fontWeight: 700,
-                      userSelect: "none",
-                    }}
+                      bgcolor: active || completed ? actionColor : theme.palette.common.white,
+                      color: active || completed ? theme.palette.common.white : actionColor,
+                      fontSize: 12, fontWeight: 700, userSelect: "none",
+                    })}
                   >
                     {icon}
                   </Box>
@@ -1111,12 +1005,12 @@ export default function PublicSurveyPage() {
                             minHeight: 40,
                             fontWeight: 700,
                             borderRadius: 2,
-                            borderColor: active ? actionColor : "#d6dbe3",
-                            bgcolor: active ? actionColor : "#fff",
-                            color: active ? "#fff" : "#1f2937",
+                            borderColor: active ? actionColor : "divider",
+                            bgcolor: active ? actionColor : "background.paper",
+                            color: active ? "primary.contrastText" : "text.primary",
                             "&:hover": {
-                              bgcolor: active ? actionColor : "#f3f4f6",
-                              borderColor: active ? actionColor : "#cfd5df",
+                              bgcolor: active ? actionColor : "action.hover",
+                              borderColor: active ? actionColor : "divider",
                             },
                           }}
                         >
@@ -1157,8 +1051,8 @@ export default function PublicSurveyPage() {
                             height: "auto",
                             borderRadius: 3,
                             borderWidth: selected ? 2.5 : 1,
-                            borderColor: selected ? actionColor : "#e5e7eb",
-                            bgcolor: selected ? "rgba(0,0,0,0.02)" : "#fff",
+                            borderColor: selected ? actionColor : "divider",
+                            bgcolor: selected ? "action.selected" : "background.paper",
                             display: "grid",
                             placeItems: "center",
                             px: 1,
@@ -1166,7 +1060,7 @@ export default function PublicSurveyPage() {
                             textTransform: "none",
                             "&:hover": {
                               borderColor: actionColor,
-                              bgcolor: "#fafafa",
+                              bgcolor: "action.hover",
                             },
                           }}
                         >
@@ -1184,7 +1078,7 @@ export default function PublicSurveyPage() {
                               />
                             ) : (
                               <ICONS.image
-                                sx={{ fontSize: 56, color: "#6b7280" }}
+                                sx={{ fontSize: 56, color: "text.disabled" }}
                               />
                             )}
                             <Typography
@@ -1192,7 +1086,7 @@ export default function PublicSurveyPage() {
                               sx={{
                                 mt: 0.75,
                                 fontWeight: 600,
-                                color: "#334155",
+                                color: "text.primary",
                                 fontSize: 12.5,
                                 maxWidth: 120,
                                 mx: "auto",
@@ -1240,12 +1134,12 @@ export default function PublicSurveyPage() {
                             px: 1.25,
                             fontWeight: 700,
                             fontSize: 13.5,
-                            bgcolor: selected ? actionColor : "#fff",
-                            borderColor: selected ? actionColor : "#e5e7eb",
-                            color: selected ? "#fff" : "#1f2937",
+                            bgcolor: selected ? actionColor : "background.paper",
+                            borderColor: selected ? actionColor : "divider",
+                            color: selected ? "primary.contrastText" : "text.primary",
                             "&:hover": {
-                              bgcolor: selected ? actionColor : "#f9fafb",
-                              borderColor: selected ? actionColor : "#d1d5db",
+                              bgcolor: selected ? actionColor : "action.hover",
+                              borderColor: selected ? actionColor : "divider",
                             },
                           }}
                         >
@@ -1272,7 +1166,7 @@ export default function PublicSurveyPage() {
                       maxWidth: 720,
                       mx: "auto",
                       "& .MuiOutlinedInput-root": {
-                        bgcolor: "#f8fafc",
+                        bgcolor: "background.default",
                         borderRadius: 3,
                       },
                     }}
@@ -1282,17 +1176,13 @@ export default function PublicSurveyPage() {
 
               {/* Footer */}
               <Box
-                sx={{
-                  position: "sticky",
-                  bottom: 0,
-                  left: 0,
-                  right: 0,
-                  background: "#fff",
+                sx={(theme) => ({
+                  position: "sticky", bottom: 0, left: 0, right: 0,
+                  background: theme.palette.common.white,
                   borderTop: "1px solid",
                   borderColor: "divider",
-                  pt: 1,
-                  zIndex: 2,
-                }}
+                  pt: 1, zIndex: 2,
+                })}
               >
                 <Box
                   sx={{
@@ -1320,7 +1210,7 @@ export default function PublicSurveyPage() {
                       ...getStartIconSpacing(dir),
                       "&:hover": {
                         borderColor: actionColor,
-                        bgcolor: "rgba(0,0,0,0.02)",
+                        bgcolor: "action.hover",
                       },
                     }}
                   >
@@ -1377,7 +1267,7 @@ export default function PublicSurveyPage() {
           dir={dir}
           sx={{
             display: { xs: "none", md: "flex" },
-            bgcolor: "#fff",
+            bgcolor: "background.paper",
             overflow: "hidden",
             flexDirection: "row",
             borderRadius: 3,
@@ -1416,57 +1306,43 @@ export default function PublicSurveyPage() {
               {questions.map((q, idx) => (
                 <Box
                   key={q._id}
-                  onClick={() => {
-                    setCurrentIdx(idx);
-                    setProgressStep(0);
-                  }}
-                  sx={{
-                    py: 2,
-                    px: 0,
-                    borderBottom: "1px solid #eee",
-                    color: idx === currentIdx ? "#2563eb" : "#222",
+                  onClick={() => { setCurrentIdx(idx); setProgressStep(0); }}
+                  sx={(theme) => ({
+                    py: 2, px: 0,
+                    borderBottom: "1px solid",
+                    borderColor: "divider",
+                    color: idx === currentIdx ? theme.palette.surveyguru.sidebarActiveColor : "text.primary",
                     fontWeight: idx === currentIdx ? 600 : 400,
                     cursor: "pointer",
                     fontSize: 18,
                     transition: "color 0.2s, background 0.2s",
                     mb: 0.5,
-                    background:
-                      idx === currentIdx ? "rgba(37,99,235,0.07)" : "none",
-                    borderLeft:
-                      idx === currentIdx
-                        ? "3px solid #2563eb"
-                        : "3px solid transparent",
+                    background: idx === currentIdx ? theme.palette.surveyguru.sidebarActiveBg : "none",
+                    borderLeft: idx === currentIdx
+                      ? `3px solid ${theme.palette.surveyguru.sidebarActiveColor}`
+                      : "3px solid transparent",
                     pl: 2,
                     position: "relative",
-                  }}
+                  })}
                 >
                   {q.label}
                   {idx === currentIdx && (
                     <>
                       <Box
-                        sx={{
-                          position: "absolute",
-                          bottom: -1,
-                          left: 0,
-                          right: 0,
-                          height: 3,
-                          bgcolor: "rgba(37,99,235,0.12)",
+                        sx={(theme) => ({
+                          position: "absolute", bottom: -1, left: 0, right: 0, height: 3,
+                          bgcolor: theme.palette.surveyguru.sidebarProgressTrack,
                           zIndex: 1,
-                        }}
+                        })}
                       />
                       <Box
-                        sx={{
-                          position: "absolute",
-                          bottom: -1,
-                          left: 0,
-                          height: 3,
-                          width: `${
-                            (progressStep / STEPS_PER_QUESTION) * 100
-                          }%`,
-                          bgcolor: "#2563eb",
+                        sx={(theme) => ({
+                          position: "absolute", bottom: -1, left: 0, height: 3,
+                          width: `${(progressStep / STEPS_PER_QUESTION) * 100}%`,
+                          bgcolor: theme.palette.surveyguru.sidebarActiveColor,
                           transition: "width 160ms linear",
                           zIndex: 2,
-                        }}
+                        })}
                       />
                     </>
                   )}
@@ -1493,13 +1369,12 @@ export default function PublicSurveyPage() {
           >
             {/* overlay */}
             <Box
-              sx={{
+              sx={(theme) => ({
                 position: "absolute",
                 inset: 0,
-                background:
-                  "radial-gradient(800px 600px at 90% 10%, rgba(255,255,255,0.18) 0%, transparent 60%)",
+                background: theme.palette.surveyguru.panelOverlay,
                 pointerEvents: "none",
-              }}
+              })}
             />
             {/* Card */}
             <Box
@@ -1508,7 +1383,7 @@ export default function PublicSurveyPage() {
                 flex: 1,
                 width: "100%",
                 maxWidth: 760,
-                bgcolor: "#fff",
+                bgcolor: "background.paper",
                 borderRadius: "0px 20px 20px 0px",
                 p: 4,
                 display: "grid",
@@ -1580,12 +1455,12 @@ export default function PublicSurveyPage() {
                             minHeight: 48,
                             fontWeight: 700,
                             borderRadius: 2,
-                            borderColor: active ? actionColor : "#d6dbe3",
-                            bgcolor: active ? actionColor : "#fff",
-                            color: active ? "#fff" : "#1f2937",
+                            borderColor: active ? actionColor : "divider",
+                            bgcolor: active ? actionColor : "background.paper",
+                            color: active ? "primary.contrastText" : "text.primary",
                             "&:hover": {
-                              bgcolor: active ? actionColor : "#f3f4f6",
-                              borderColor: active ? actionColor : "#cfd5df",
+                              bgcolor: active ? actionColor : "action.hover",
+                              borderColor: active ? actionColor : "divider",
                             },
                           }}
                         >
@@ -1624,8 +1499,8 @@ export default function PublicSurveyPage() {
                             height: 104,
                             borderRadius: 3,
                             borderWidth: selected ? 2.5 : 1,
-                            borderColor: selected ? actionColor : "#e5e7eb",
-                            bgcolor: selected ? "rgba(0,0,0,0.02)" : "#fff",
+                            borderColor: selected ? actionColor : "divider",
+                            bgcolor: selected ? "action.selected" : "background.paper",
                             display: "grid",
                             placeItems: "center",
                             px: 1,
@@ -1633,7 +1508,7 @@ export default function PublicSurveyPage() {
                             textTransform: "none",
                             "&:hover": {
                               borderColor: actionColor,
-                              bgcolor: "#fafafa",
+                              bgcolor: "action.hover",
                             },
                           }}
                         >
@@ -1650,7 +1525,7 @@ export default function PublicSurveyPage() {
                               />
                             ) : (
                               <ICONS.image
-                                sx={{ fontSize: 56, color: "#6b7280" }}
+                                sx={{ fontSize: 56, color: "text.disabled" }}
                               />
                             )}
                             <Typography
@@ -1658,7 +1533,7 @@ export default function PublicSurveyPage() {
                               sx={{
                                 mt: 0.75,
                                 fontWeight: 600,
-                                color: "#334155",
+                                color: "text.primary",
                                 fontSize: 13.5,
                                 maxWidth: 120,
                                 mx: "auto",
@@ -1704,12 +1579,12 @@ export default function PublicSurveyPage() {
                             px: 1.75,
                             fontWeight: 700,
                             fontSize: 14.5,
-                            bgcolor: selected ? actionColor : "#fff",
-                            borderColor: selected ? actionColor : "#e5e7eb",
-                            color: selected ? "#fff" : "#1f2937",
+                            bgcolor: selected ? actionColor : "background.paper",
+                            borderColor: selected ? actionColor : "divider",
+                            color: selected ? "primary.contrastText" : "text.primary",
                             "&:hover": {
-                              bgcolor: selected ? actionColor : "#f9fafb",
-                              borderColor: selected ? actionColor : "#d1d5db",
+                              bgcolor: selected ? actionColor : "action.hover",
+                              borderColor: selected ? actionColor : "divider",
                             },
                           }}
                         >
@@ -1736,7 +1611,7 @@ export default function PublicSurveyPage() {
                       maxWidth: 720,
                       mx: "auto",
                       "& .MuiOutlinedInput-root": {
-                        bgcolor: "#f8fafc",
+                        bgcolor: "background.default",
                         borderRadius: 3,
                       },
                     }}
@@ -1770,7 +1645,7 @@ export default function PublicSurveyPage() {
                     fontWeight: 700,
                     "&:hover": {
                       borderColor: actionColor,
-                      bgcolor: "rgba(0,0,0,0.02)",
+                      bgcolor: "action.hover",
                     },
                     ...getStartIconSpacing(dir),
                   }}

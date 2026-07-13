@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { alpha } from "@mui/material/styles";
 import {
   Box,
   Button,
@@ -492,7 +493,7 @@ export default function PaymentsPage() {
           borderColor: "divider",
           borderRadius: 2.5,
           overflow: "hidden",
-          boxShadow: "0 4px 14px rgba(15,23,42,0.05)",
+         boxShadow: theme.palette.payments.cardShadow,
         }}
       >
         <CardContent sx={{ py: 1.5, px: 2, "&:last-child": { pb: 1.5 } }}>
@@ -715,9 +716,11 @@ export default function PaymentsPage() {
               sx: {
                 borderRadius: 4,
                 overflow: "hidden",
-                border: "1px solid rgba(15,23,42,0.08)",
-                boxShadow: "0 28px 80px rgba(15,23,42,0.22)",
-                backgroundImage: "linear-gradient(180deg, rgba(247,250,252,0.98) 0%, rgba(255,255,255,1) 28%)",
+                border: "1px solid",
+                borderColor: "divider",
+                 boxShadow: theme.palette.payments.dialogPaperShadow,
+                backgroundImage: (theme) =>
+                  `linear-gradient(180deg, ${alpha(theme.palette.background.paper, 0.98)} 0%, ${theme.palette.background.paper} 28%)`,
               },
             },
           }}
@@ -756,9 +759,9 @@ export default function PaymentsPage() {
               const sectionCardSx = {
                 borderRadius: 3,
                 border: "1px solid",
-                borderColor: "rgba(15,23,42,0.08)",
-                bgcolor: "rgba(255,255,255,0.82)",
-                boxShadow: "0 12px 32px rgba(15,23,42,0.06)",
+                borderColor: "divider",
+                bgcolor: alpha(theme.palette.background.paper, 0.82),
+                boxShadow: theme.palette.payments.sectionCardShadow,
                 p: 2,
               };
               const sectionTitle = (icon, title) => (
@@ -770,7 +773,7 @@ export default function PaymentsPage() {
                       borderRadius: 2,
                       display: "grid",
                       placeItems: "center",
-                      bgcolor: "rgba(10,101,122,0.10)",
+                      bgcolor: alpha(theme.palette.primary.main, 0.10),
                       color: "primary.main",
                     }}
                   >
@@ -801,7 +804,7 @@ export default function PaymentsPage() {
                         width: 120,
                         height: 120,
                         borderRadius: "50%",
-                        bgcolor: "rgba(255,255,255,0.32)",
+                        bgcolor: theme.palette.payments.heroCircleOverlay,
                       }}
                     />
                     <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ justifyContent: "space-between", alignItems: { xs: "flex-start", sm: "center" }, position: "relative" }}>
@@ -857,7 +860,7 @@ export default function PaymentsPage() {
                               borderRadius: 2,
                               display: "grid",
                               placeItems: "center",
-                              bgcolor: "rgba(10,101,122,0.10)",
+                              bgcolor: alpha(theme.palette.primary.main, 0.10),
                               color: "primary.main",
                             }}
                           >

@@ -10,6 +10,7 @@ import {
   Divider,
   IconButton,
   Tooltip,
+  useTheme
 } from "@mui/material";
 
 import { Dialog, DialogContent } from "@mui/material";
@@ -84,7 +85,7 @@ const translations = {
 export default function FileStorePage() {
   const { user } = useAuth();
   const { t, dir, language } = useI18nLayout(translations);
-
+  const theme = useTheme();
   const [allBusinesses, setAllBusinesses] = useState([]);
   const [selectedBusiness, setSelectedBusiness] = useState(null);
   const [previewFile, setPreviewFile] = useState(null);
@@ -395,7 +396,7 @@ export default function FileStorePage() {
               paper: {
                 sx: {
                   height: "80vh",
-                  backgroundColor: "#fff",
+                  backgroundColor: "background.paper",
                   position: "relative",
                 },
               }
@@ -408,7 +409,7 @@ export default function FileStorePage() {
                 top: 10,
                 right: 10,
                 zIndex: 10,
-                backgroundColor: "#fff",
+                backgroundColor: "background.paper",
               }}
             >
               <ICONS.close />
@@ -430,7 +431,7 @@ export default function FileStorePage() {
                     width: "100%",
                     height: "100%",
                     borderRadius: "10px",
-                    background: "#000",
+                     background: theme.palette.common.black,
                   }}
                 />
               ) : previewFile.contentType === "application/pdf" ? (

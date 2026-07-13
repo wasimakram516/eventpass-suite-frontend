@@ -21,6 +21,7 @@ import {
     CircularProgress,
     IconButton,
     Alert,
+
     ListSubheader,
     InputAdornment,
 } from "@mui/material";
@@ -167,7 +168,7 @@ export default function RegistrationModal({
         ],
         []
     );
-    
+
 
 
     const fieldsToRender = useMemo(
@@ -617,7 +618,8 @@ export default function RegistrationModal({
             return (
                 <Box key={f.inputName} sx={{ mb: 2 }}>
                     <Typography variant="body2" sx={{ mb: 1 }}>
-                        {f.inputName}{required && <span style={{ color: "red" }}> *</span>}
+                        {f.inputName}
+                        {required && <Typography component="span" sx={{ color: "error.main" }}> *</Typography>}
                     </Typography>
                     <RadioGroup row name={f.inputName} value={value} onChange={(e) => handleChange(f.inputName, e.target.value)}>
                         {f.values?.map((opt) => (
@@ -854,22 +856,25 @@ export default function RegistrationModal({
                 fullWidth
                 slotProps={{
                     paper: {
-                        sx: { borderRadius: 4, overflow: "hidden", boxShadow: "0 24px 60px rgba(0,0,0,0.22)" },
+                        sx: {
+                            borderRadius: 4, overflow: "hidden",
+                            boxShadow: (theme) => theme.palette.shadow.dialogLarge,
+                        },
                     },
                 }}
             >
                 {/* Header band */}
                 <Box sx={{
-                    background: "linear-gradient(135deg, #0f3d57 0%, #14708a 100%)",
-                    color: "#fff", px: 3, pt: 3, pb: 2.5,
+                    background: (theme) => theme.palette.gradients.infoCard,
+                    color: "primary.contrastText", px: 3, pt: 3, pb: 2.5,
                     display: "flex", alignItems: "center", gap: 1.5,
                 }}>
                     <Box sx={{
                         width: 44, height: 44, borderRadius: 2, flexShrink: 0,
-                        backgroundColor: "rgba(255,255,255,0.16)",
+                        backgroundColor: (theme) => theme.palette.overlay.glassLight,
                         display: "flex", alignItems: "center", justifyContent: "center",
                     }}>
-                        <ICONS.list sx={{ fontSize: 24, color: "#fff" }} />
+                        <ICONS.list sx={{ fontSize: 24, color: "primary.contrastText" }} />
                     </Box>
                     <Box sx={{ minWidth: 0 }}>
                         <Typography variant="h6" fontWeight={800} sx={{ lineHeight: 1.2 }}>
@@ -934,8 +939,9 @@ export default function RegistrationModal({
                             {/* Total */}
                             <Box sx={{
                                 mt: 1.5, px: 2, py: 1.5, borderRadius: 2.5,
-                                backgroundColor: "rgba(20,112,138,0.08)",
-                                border: "1px solid rgba(20,112,138,0.2)",
+                                backgroundColor: (theme) => theme.palette.overlay.infoCard,
+                                border: "1px solid",
+                                border: (theme) => `1px solid ${theme.palette.overlay.infoCardBorder}`,
                                 display: "flex", justifyContent: "space-between", alignItems: "center",
                             }}>
                                 <Box>
@@ -962,9 +968,10 @@ export default function RegistrationModal({
                     {duplicateNotice ? (
                         <Box
                             sx={{
-                                backgroundColor: "#e3f2fd",
-                                borderLeft: dir === "rtl" ? "none" : "4px solid #1976d2",
-                                borderRight: dir === "rtl" ? "4px solid #1976d2" : "none",
+                                backgroundColor: (theme) => theme.palette.infoBox.background,
+                                borderLeft: dir === "rtl" ? "none" : "4px solid",
+                                borderRight: dir === "rtl" ? "4px solid" : "none",
+                                borderColor: (theme) => theme.palette.infoBox.border,
                                 borderRadius: 1,
                                 p: 2,
                                 mt: 2,
@@ -1010,7 +1017,7 @@ export default function RegistrationModal({
                                     sx={{
                                         textTransform: "none", fontWeight: 700, borderRadius: 2.5,
                                         px: 3, py: 1.1,
-                                        boxShadow: "0 8px 20px rgba(20,112,138,0.3)",
+                                        boxShadow: (theme) => theme.palette.shadow.infoCard,
                                         ...getStartIconSpacing("ltr"),
                                     }}
                                 >
@@ -1035,7 +1042,8 @@ export default function RegistrationModal({
                                 sx={{
                                     textTransform: "none", fontWeight: 700, borderRadius: 2.5,
                                     px: 3, py: 1.1,
-                                    boxShadow: "0 8px 20px rgba(20,112,138,0.3)",
+
+                                    boxShadow: (theme) => theme.palette.shadow.infoCard1,
                                     ...getStartIconSpacing("ltr"),
                                 }}
                             >
@@ -1066,7 +1074,7 @@ function ModalFileUploadField({ field, fd, fieldLabel, errorMsg, required, curre
                         <ICONS.upload sx={{ fontSize: 28, mx: 0.5, color: "text.secondary" }} />
                     )}
                     <Typography variant="body2" sx={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{fd.file.name}</Typography>
-                    <IconButton onClick={onFileRemove} size="small" sx={{ bgcolor: "error.main", color: "#fff", "&:hover": { bgcolor: "error.dark" }, width: 28, height: 28, flexShrink: 0 }}>
+                    <IconButton onClick={onFileRemove} size="small" sx={{ bgcolor: "error.main", color: "error.contrastText", "&:hover": { bgcolor: "error.dark" }, width: 28, height: 28, flexShrink: 0 }}>
                         <ICONS.delete sx={{ fontSize: 16 }} />
                     </IconButton>
                 </Box>

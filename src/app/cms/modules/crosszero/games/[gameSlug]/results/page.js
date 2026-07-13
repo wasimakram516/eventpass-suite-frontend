@@ -16,6 +16,7 @@ import {
   Pagination,
   Select,
   Typography,
+  useTheme,
 } from "@mui/material";
 import ArabicPagination from "@/components/ArabicPagination";
 import {
@@ -74,25 +75,6 @@ const translations = {
     noData: "لا توجد نتائج حتى الآن.",
   },
 };
-
-const RESULT_STYLE = {
-  O_wins: {
-    color: "#c0392b",
-    bg: "rgba(255,107,107,0.1)",
-    mark: "O",
-    symbolColor: "#ff6b6b",
-    icon: <EmojiEvents fontSize="small" sx={{ color: "#c0392b" }} />,
-  },
-  X_wins: {
-    color: "#0096c7",
-    bg: "rgba(0,180,216,0.1)",
-    mark: "X",
-    symbolColor: "#00e5ff",
-    icon: null,
-  },
-  draw: { color: "#777", bg: "rgba(0,0,0,0.05)", mark: null, symbolColor: null, icon: null },
-};
-
 const DIFFICULTY_COLOR = {
   easy: "success",
   medium: "warning",
@@ -121,7 +103,30 @@ const mapSessionToRecord = (session) => {
 export default function CrossZeroAIResultsPage() {
   const { gameSlug } = useParams();
   const { t, dir, language } = useI18nLayout(translations);
-
+  const theme = useTheme();
+  const RESULT_STYLE = {
+    O_wins: {
+      color: theme.palette.crosszero.resultCardO.color,
+      bg: theme.palette.crosszero.resultCardO.bg,
+      mark: "O",
+      symbolColor: theme.palette.crosszero.resultCardO.symbolColor,
+      icon: <EmojiEvents fontSize="small" sx={{ color: theme.palette.crosszero.resultCardO.color }} />,
+    },
+    X_wins: {
+      color: theme.palette.crosszero.resultCardX.color,
+      bg: theme.palette.crosszero.resultCardX.bg,
+      mark: "X",
+      symbolColor: theme.palette.crosszero.resultCardX.symbolColor,
+      icon: null,
+    },
+    draw: {
+      color: theme.palette.crosszero.resultCardDraw.color,
+      bg: theme.palette.crosszero.resultCardDraw.bg,
+      mark: null,
+      symbolColor: null,
+      icon: null,
+    },
+  };
   const [game, setGame] = useState(null);
   const [records, setRecords] = useState([]);
   const [totalPages, setTotalPages] = useState(0);

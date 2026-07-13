@@ -344,145 +344,145 @@ export default function WallConfigsPage() {
       ) : (
         <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, justifyContent: "center" }}>
           {filteredWallConfigs.map((config) => (
-              <Card
-                key={config._id}
-                elevation={3}
+            <Card
+              key={config._id}
+              elevation={3}
+              sx={{
+                position: "relative",
+                width: { xs: "100%", sm: 340 },
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                borderRadius: 2,
+                boxShadow: (theme) => theme.palette.shadow.wheelCard,
+                transition: "transform 0.2s, box-shadow 0.2s",
+              }}
+            >
+              {/* Chip at top-right */}
+              <Chip
+                label={t[config.mode] || config.mode}
+                color={config.mode === "mosaic" ? "primary" : "secondary"}
+                size="small"
                 sx={{
-                  position: "relative",
-                  width: { xs: "100%", sm: 340 },
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "space-between",
-                  borderRadius: 2,
-                  boxShadow: "0 2px 10px rgba(0,0,0,0.06)",
-                  transition: "transform 0.2s, box-shadow 0.2s",
+                  position: "absolute",
+                  top: 12,
+                  [dir === "rtl" ? "left" : "right"]: 12,
+                  fontWeight: 500,
+                  fontSize: "0.75rem",
+                  textTransform: "capitalize",
+                  zIndex: 2,
                 }}
-              >
-                {/* Chip at top-right */}
-                <Chip
-                  label={t[config.mode] || config.mode}
-                  color={config.mode === "mosaic" ? "primary" : "secondary"}
-                  size="small"
+              />
+
+              <CardContent sx={{ flexGrow: 1, pt: 4 }}>
+                <Typography variant="h6" gutterBottom sx={{
+                  fontWeight: "bold"
+                }}>
+                  {config.name}
+                </Typography>
+
+                <Typography
+                  variant="body2"
                   sx={{
-                    position: "absolute",
-                    top: 12,
-                    [dir === "rtl" ? "left" : "right"]: 12,
-                    fontWeight: 500,
-                    fontSize: "0.75rem",
-                    textTransform: "capitalize",
-                    zIndex: 2,
-                  }}
-                />
-
-                <CardContent sx={{ flexGrow: 1, pt: 4 }}>
-                  <Typography variant="h6" gutterBottom sx={{
-                    fontWeight: "bold"
+                    color: "text.secondary",
+                    mb: 2,
+                    wordBreak: "break-word"
                   }}>
-                    {config.name}
-                  </Typography>
+                  <strong>{t.slugLabel}</strong> {config.slug}
+                </Typography>
 
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: "text.secondary",
-                      mb: 2,
-                      wordBreak: "break-word"
-                    }}>
-                    <strong>{t.slugLabel}</strong> {config.slug}
-                  </Typography>
-
-                  <Typography variant="caption" sx={{
-                    color: "text.secondary"
-                  }}>
-                    {t.createdLabel}{" "}
-                    {(() => {
-                      try {
-                        if (!config.createdAt) return t.notAvailable;
-                        const testDate = new Date(config.createdAt);
-                        if (isNaN(testDate.getTime())) return t.invalidDate;
-                        return formatDate(config.createdAt, language === "ar" ? "ar-SA" : "en-GB");
-                      } catch (error) {
-                        console.error(
-                          "Error formatting date:",
-                          error,
-                          config.createdAt
-                        );
-                        return t.invalidDate;
+                <Typography variant="caption" sx={{
+                  color: "text.secondary"
+                }}>
+                  {t.createdLabel}{" "}
+                  {(() => {
+                    try {
+                      if (!config.createdAt) return t.notAvailable;
+                      const testDate = new Date(config.createdAt);
+                      if (isNaN(testDate.getTime())) return t.invalidDate;
+                      return formatDate(config.createdAt, language === "ar" ? "ar-SA" : "en-GB");
+                    } catch (error) {
+                      console.error(
+                        "Error formatting date:",
+                        error,
+                        config.createdAt
+                      );
+                      return t.invalidDate;
+                    }
+                  })()}
+                </Typography>
+              </CardContent>
+              <RecordMetadata
+                createdByName={config.createdBy}
+                updatedByName={config.updatedBy}
+                createdAt={config.createdAt}
+                updatedAt={config.updatedAt}
+                locale={language === "ar" ? "ar-SA" : "en-GB"}
+              />
+              <Divider />
+              <CardActions sx={{ justifyContent: "space-between", p: 1.5 }}>
+                <Box>
+                  <Tooltip title={t.showQRCode}>
+                    <IconButton
+                      size="small"
+                      onClick={() => showQRCode(config.slug)}
+                      aria-label="QR Code"
+                    >
+                      <ICONS.share fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title={t.openBigScreen}>
+                    <IconButton
+                      size="small"
+                      onClick={() =>
+                        window.open(
+                          `/memorywall/${config.slug}/big-screen`,
+                          "_blank"
+                        )
                       }
-                    })()}
-                  </Typography>
-                </CardContent>
-                <RecordMetadata
-                  createdByName={config.createdBy}
-                  updatedByName={config.updatedBy}
-                  createdAt={config.createdAt}
-                  updatedAt={config.updatedAt}
-                  locale={language === "ar" ? "ar-SA" : "en-GB"}
-                />
-                <Divider />
-                <CardActions sx={{ justifyContent: "space-between", p: 1.5 }}>
-                  <Box>
-                    <Tooltip title={t.showQRCode}>
-                      <IconButton
-                        size="small"
-                        onClick={() => showQRCode(config.slug)}
-                        aria-label="QR Code"
-                      >
-                        <ICONS.share fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title={t.openBigScreen}>
-                      <IconButton
-                        size="small"
-                        onClick={() =>
-                          window.open(
-                            `/memorywall/${config.slug}/big-screen`,
-                            "_blank"
-                          )
-                        }
-                        aria-label="Big Screen"
-                      >
-                        <ICONS.cast fontSize="small" color="primary" />
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
-                  <Box>
-                    <Tooltip title={t.viewUploads}>
-                      <IconButton
-                        size="small"
-                        onClick={() =>
-                          router.replace(
-                            `/cms/modules/memorywall/walls/${config.slug}/uploads`)
-                        }
-                        aria-label="View Uploads"
-                      >
-                        <ICONS.view fontSize="small" color="primary" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title={t.edit}>
-                      <IconButton
-                        size="small"
-                        onClick={() => handleEdit(config)}
-                        aria-label="Edit"
-                      >
-                        <ICONS.edit fontSize="small" color="primary" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title={t.delete}>
-                      <IconButton
-                        size="small"
-                        onClick={() => {
-                          setWallToDelete(config);
-                          setDeleteDialogOpen(true);
-                        }}
-                        aria-label="Delete"
-                      >
-                        <ICONS.delete fontSize="small" color="error" />
-                      </IconButton>
-                    </Tooltip>
-                  </Box>
-                </CardActions>
-              </Card>
+                      aria-label="Big Screen"
+                    >
+                      <ICONS.cast fontSize="small" color="primary" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+                <Box>
+                  <Tooltip title={t.viewUploads}>
+                    <IconButton
+                      size="small"
+                      onClick={() =>
+                        router.replace(
+                          `/cms/modules/memorywall/walls/${config.slug}/uploads`)
+                      }
+                      aria-label="View Uploads"
+                    >
+                      <ICONS.view fontSize="small" color="primary" />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title={t.edit}>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleEdit(config)}
+                      aria-label="Edit"
+                    >
+                      <ICONS.edit fontSize="small" color="primary" />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title={t.delete}>
+                    <IconButton
+                      size="small"
+                      onClick={() => {
+                        setWallToDelete(config);
+                        setDeleteDialogOpen(true);
+                      }}
+                      aria-label="Delete"
+                    >
+                      <ICONS.delete fontSize="small" color="error" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+              </CardActions>
+            </Card>
           ))}
         </Box>
       )}

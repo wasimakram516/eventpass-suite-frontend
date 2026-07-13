@@ -1,14 +1,34 @@
-"use client"; 
+"use client";
 
-import { ThemeProvider } from "@mui/material/styles";
+import { useEffect } from "react";
 import CssBaseline from "@mui/material/CssBaseline";
-import theme from "./theme"; 
+import { ThemeProvider } from "@mui/material/styles";
+import { ColorModeProvider, useColorMode } from "@/contexts/ThemeContext";
+import ThemeSwitchOverlay from "@/components/ThemeSwitchOverlay";
+function InnerThemeProvider({ children }) {
+  const { theme } = useColorMode();
 
-export default function ThemeRegistry({ children }) {
+  useEffect(() => {
+    if (theme?.palette?.mode) {
+      document.documentElement.setAttribute("data-theme", theme.palette.mode);
+    }
+  }, [theme?.palette?.mode]);
+
+  if (!theme) return null;
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
+      <ThemeSwitchOverlay />
       {children}
     </ThemeProvider>
+  );
+}
+
+export default function ThemeRegistry({ children }) {
+  return (
+    <ColorModeProvider>
+      <InnerThemeProvider>{children}</InnerThemeProvider>
+    </ColorModeProvider>
   );
 }

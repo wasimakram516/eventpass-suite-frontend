@@ -9,7 +9,7 @@ import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import useI18nLayout from "@/hooks/useI18nLayout";
-
+import { useTheme } from "@mui/material/styles";
 const WEBSITE_URL =
   process.env.NEXT_PUBLIC_WEBSITE_URL || "https://eventpass.whitewall.solutions";
 
@@ -35,15 +35,16 @@ export default function LandingPage() {
   const router = useRouter();
   const { user } = useAuth();
   const { t } = useI18nLayout(translations);
-
+  const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
   return (
     <Box
       sx={{
         position: "fixed",
         inset: 0,
         overflow: "hidden",
-        bgcolor: "#000",
-        color: "#fff",
+        bgcolor: "background.default",
+        color: theme.palette.common.white,
         zIndex: 0,
       }}
     >
@@ -130,7 +131,7 @@ export default function LandingPage() {
             sx={{
               maxWidth: 580,
               mx: "auto",
-              color: "rgba(255,255,255,0.62)",
+              color: theme.palette.landing.subtitleText,
               fontSize: { xs: "0.7rem", sm: "0.82rem", md: "0.88rem" },
               lineHeight: 1.55,
               mb: { xs: 2.5, md: 3 },
@@ -161,21 +162,18 @@ export default function LandingPage() {
                 px: { xs: 2, md: 3 },
                 py: { xs: 0.9, md: 1.15 },
                 borderRadius: "100px",
-                background:
-                  "linear-gradient(180deg, rgba(27,77,126,0.98) 0%, rgba(18,49,89,0.98) 100%)",
-                color: "#fff",
-                border: "1px solid rgba(63,169,255,0.95)",
-                boxShadow:
-                  "0 0 0 1px rgba(0,0,0,0.35), 0 10px 26px rgba(0,120,255,0.22)",
+                background: theme.palette.landing.dashboardButton.background,
+                color: theme.palette.common.white,
+                border: `1px solid ${theme.palette.landing.dashboardButton.border}`,
+                boxShadow: theme.palette.landing.dashboardButton.boxShadow,
                 fontSize: { xs: "0.68rem", md: "0.76rem" },
                 fontWeight: 800,
                 letterSpacing: "0.14em",
                 textTransform: "uppercase",
                 "& .MuiButton-startIcon": { marginRight: "10px", marginLeft: 0 },
                 "&:hover": {
-                  background:
-                    "linear-gradient(180deg, rgba(35,91,145,1) 0%, rgba(24,63,111,1) 100%)",
-                  borderColor: "rgba(84,195,255,1)",
+                  background: theme.palette.landing.dashboardButton.hoverBackground,
+                  borderColor: theme.palette.landing.dashboardButton.hoverBorder,
                 },
               }}
             >
@@ -191,21 +189,18 @@ export default function LandingPage() {
                 px: { xs: 2, md: 3 },
                 py: { xs: 0.9, md: 1.15 },
                 borderRadius: "100px",
-                background:
-                  "linear-gradient(180deg, rgba(36,133,90,0.98) 0%, rgba(28,104,72,0.98) 100%)",
-                color: "#fff",
-                border: "1px solid rgba(86,224,160,0.85)",
-                boxShadow:
-                  "0 0 0 1px rgba(0,0,0,0.35), 0 10px 26px rgba(23,190,114,0.22)",
+                background: theme.palette.landing.badgeButton.background,
+                color: theme.palette.common.white,
+                border: `1px solid ${theme.palette.landing.badgeButton.border}`,
+                boxShadow: theme.palette.landing.badgeButton.boxShadow,
                 fontSize: { xs: "0.68rem", md: "0.76rem" },
                 fontWeight: 800,
                 letterSpacing: "0.14em",
                 textTransform: "uppercase",
                 "& .MuiButton-startIcon": { marginRight: "10px", marginLeft: 0 },
                 "&:hover": {
-                  background:
-                    "linear-gradient(180deg, rgba(42,155,105,1) 0%, rgba(33,124,85,1) 100%)",
-                  borderColor: "rgba(112,255,182,1)",
+                  background: theme.palette.landing.badgeButton.hoverBackground,
+                  borderColor: theme.palette.landing.badgeButton.hoverBorder,
                 },
               }}
             >
@@ -224,21 +219,18 @@ export default function LandingPage() {
                 px: { xs: 2, md: 3 },
                 py: { xs: 0.9, md: 1.15 },
                 borderRadius: "100px",
-                background:
-                  "linear-gradient(180deg, rgba(33,33,38,0.98) 0%, rgba(27,27,31,0.98) 100%)",
-                color: "#fff",
-                border: "1px solid rgba(232,232,232,0.88)",
-                boxShadow:
-                  "0 0 0 1px rgba(0,0,0,0.35), 0 10px 26px rgba(0,0,0,0.38)",
+                background: theme.palette.landing.learnMoreButton.background,
+                color: theme.palette.common.white,
+                border: `1px solid ${theme.palette.landing.learnMoreButton.border}`,
+                boxShadow: theme.palette.landing.learnMoreButton.boxShadow,
                 fontSize: { xs: "0.68rem", md: "0.76rem" },
                 fontWeight: 800,
                 letterSpacing: "0.14em",
                 textTransform: "uppercase",
                 "& .MuiButton-startIcon": { marginRight: "10px", marginLeft: 0 },
                 "&:hover": {
-                  background:
-                    "linear-gradient(180deg, rgba(42,42,48,1) 0%, rgba(34,34,39,1) 100%)",
-                  borderColor: "rgba(255,255,255,1)",
+                  background: theme.palette.landing.learnMoreButton.hoverBackground,
+                  borderColor: theme.palette.landing.learnMoreButton.hoverBorder,
                 },
               }}
             >

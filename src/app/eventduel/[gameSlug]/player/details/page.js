@@ -93,7 +93,7 @@ export default function NamePage() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: "#f0f0f0",
+          backgroundColor: "background.default",
         }}
       >
         <CircularProgress />

@@ -816,7 +816,7 @@ const DigiPassEventModal = ({
                         <ICONS.close />
                     </IconButton>
                 </DialogTitle>
-                <DialogContent>
+                <DialogContent >
                     <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 2 }}>
                         <TextField
                             label={`${t.name} *`}
@@ -924,8 +924,8 @@ const DigiPassEventModal = ({
                                                             const current = Array.isArray(prev.primaryField) ? prev.primaryField : [];
                                                             return {
                                                                 ...prev,
-                                                                primaryField: e.target.checked 
-                                                                    ? [...current, f.name] 
+                                                                primaryField: e.target.checked
+                                                                    ? [...current, f.name]
                                                                     : current.filter(name => name !== f.name),
                                                             };
                                                         });
@@ -942,134 +942,233 @@ const DigiPassEventModal = ({
                         {/* Default Language Selector - Hidden if Linked */}
                         {!formData.linkedEventRegId && (
                             <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                            <Box
-                                onClick={() =>
-                                    setFormData((prev) => ({
-                                        ...prev,
-                                        defaultLanguage: prev.defaultLanguage === "en" ? "ar" : "en",
-                                    }))
-                                }
-                                sx={{
-                                    width: 64,
-                                    height: 32,
-                                    borderRadius: 32,
-                                    backgroundColor: "background.paper",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "space-between",
-                                    px: 1,
-                                    cursor: "pointer",
-                                    overflow: "hidden",
-                                    boxShadow: `
-        2px 2px 6px rgba(0, 0, 0, 0.15),
-        -2px -2px 6px rgba(255, 255, 255, 0.5),
-        inset 2px 2px 5px rgba(0, 0, 0, 0.2),
-        inset -2px -2px 5px rgba(255, 255, 255, 0.7)
-      `,
-                                    position: "relative",
-                                }}
-                            >
-                                <Typography
-                                    variant="caption"
-                                    sx={{
-                                        fontWeight: 600,
-                                        color:
-                                            formData.defaultLanguage === "en"
-                                                ? "#fff"
-                                                : "text.secondary",
-                                        zIndex: 2,
-                                        transition: "color 0.3s",
-                                    }}
-                                >
-                                    EN
-                                </Typography>
-                                <Typography
-                                    variant="caption"
-                                    sx={{
-                                        fontWeight: 600,
-                                        color:
-                                            formData.defaultLanguage === "ar"
-                                                ? "#fff"
-                                                : "text.secondary",
-                                        zIndex: 2,
-                                        transition: "color 0.3s",
-                                    }}
-                                >
-                                    AR
-                                </Typography>
                                 <Box
-                                    sx={{
-                                        position: "absolute",
-                                        width: 28,
-                                        height: 28,
-                                        borderRadius: 999,
-                                        top: 2,
-                                        left: formData.defaultLanguage === "ar" ? 34 : 2,
-                                        backgroundColor: "#1976d2",
-                                        zIndex: 1,
-                                        boxShadow: "0 4px 8px rgba(0, 0, 0, 0.3)",
-                                        transition:
-                                            "left 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)",
-                                    }}
-                                />
+                                    onClick={() =>
+                                        setFormData((prev) => ({
+                                            ...prev,
+                                            defaultLanguage: prev.defaultLanguage === "en" ? "ar" : "en",
+                                        }))
+                                    }
+                                    sx={(theme) => ({
+                                        width: 64,
+                                        height: 32,
+                                        borderRadius: 32,
+                                        backgroundColor: "background.paper",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "space-between",
+                                        px: 1,
+                                        cursor: "pointer",
+                                        overflow: "hidden",
+                                        boxShadow:
+                                            theme.palette.mode === "dark"
+                                                ? theme.palette.custom.shadow.neumorphicDark
+                                                : theme.palette.custom.shadow.neumorphicLight,
+                                        position: "relative",
+                                    })}
+                                >
+                                    <Typography
+                                        variant="caption"
+                                        sx={{
+                                            fontWeight: 600,
+                                            color:
+                                                formData.defaultLanguage === "en"
+                                                    ? "common.white"
+                                                    : "text.secondary",
+                                            zIndex: 2,
+                                            transition: "color 0.3s",
+                                        }}
+                                    >
+                                        EN
+                                    </Typography>
+                                    <Typography
+                                        variant="caption"
+                                        sx={{
+                                            fontWeight: 600,
+                                            color:
+                                                formData.defaultLanguage === "ar"
+                                                    ? "common.white"
+                                                    : "text.secondary",
+                                            zIndex: 2,
+                                            transition: "color 0.3s",
+                                        }}
+                                    >
+                                        AR
+                                    </Typography>
+                                    <Box
+                                        sx={(theme) => ({
+                                            position: "absolute",
+                                            width: 28,
+                                            height: 28,
+                                            borderRadius: 999,
+                                            top: 2,
+                                            left: formData.defaultLanguage === "ar" ? 34 : 2,
+                                            backgroundColor: "primary.main",
+                                            zIndex: 1,
+                                            boxShadow: theme.palette.shadow.shadow3,
+                                            transition:
+                                                "left 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)",
+                                        })}
+                                    />
+                                </Box>
                             </Box>
-                        </Box>
                         )}
 
                         {/* Logo Upload */}
                         <Box
+                            sx={{
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "flex-start",
+                            }}
+                        >
+                            <Button
+                                ref={logoButtonRef}
+                                component="label"
+                                variant="outlined"
+                            >
+                                {t.logo}
+                                <input
+                                    hidden
+                                    name="logo"
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleInputChange}
+                                />
+                            </Button>
+
+                            {formData.logoPreview && !formData.removeLogo && (
+                                <Box sx={{ mt: 1.5 }}>
+                                    <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                                        {initialValues && !formData.logo ? t.currentImage : t.preview}
+                                    </Typography>
+
+                                    <Box sx={{ position: "relative", display: "inline-block", width: buttonWidths.logo || "auto" }}>
+                                        <img
+                                            src={formData.logoPreview}
+                                            alt="Logo preview"
+                                            style={{
+                                                width: buttonWidths.logo ? `${buttonWidths.logo}px` : "auto",
+                                                maxHeight: 100,
+                                                height: "auto",
+                                                borderRadius: 6,
+                                                objectFit: "cover",
+                                            }}
+                                        />
+
+                                        <IconButton
+                                            size="small"
+                                            onClick={() => {
+                                                const fileUrl = initialValues?.logoUrl || formData.logoPreview;
+                                                handleDeleteMedia("logo", fileUrl);
+                                            }}
+                                            sx={{
+                                                position: "absolute",
+                                                top: -18,
+                                                right: 6,
+                                                bgcolor: "error.main",
+                                                color: "common.white",
+                                                "&:hover": { bgcolor: "error.dark" },
+                                            }}
+                                        >
+                                            <ICONS.delete sx={{ fontSize: 18 }} />
+                                        </IconButton>
+                                    </Box>
+                                </Box>
+                            )}
+                        </Box>
+
+                        {/* Background Upload */}
+                        <Box
+                            sx={{
+                                display: "flex",
+                                flexDirection: "column",
+                                alignItems: "flex-start",
+                                gap: 2,
+                                width: "100%",
+                            }}
+                        >
+                            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                                {t.uploadBackground}
+                            </Typography>
+
+                            {/* English Background Upload */}
+                            <Box
                                 sx={{
                                     display: "flex",
                                     flexDirection: "column",
                                     alignItems: "flex-start",
+                                    width: "100%",
                                 }}
                             >
                                 <Button
-                                    ref={logoButtonRef}
+                                    ref={backgroundEnButtonRef}
                                     component="label"
                                     variant="outlined"
+                                    size="small"
                                 >
-                                    {t.logo}
+                                    {t.uploadBackgroundEn}
                                     <input
                                         hidden
-                                        name="logo"
+                                        name="backgroundEn"
                                         type="file"
-                                        accept="image/*"
+                                        accept="image/*,video/*"
                                         onChange={handleInputChange}
                                     />
                                 </Button>
 
-                                {formData.logoPreview && !formData.removeLogo && (
+                                {formData.backgroundEnPreview && !formData.removeBackgroundEn && (
                                     <Box sx={{ mt: 1.5 }}>
                                         <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
-                                            {initialValues && !formData.logo ? t.currentImage : t.preview}
+                                            {initialValues && !formData.backgroundEn
+                                                ? t.currentBackground + " (EN)"
+                                                : t.preview + " (EN)"}
                                         </Typography>
 
-                                        <Box sx={{ position: "relative", display: "inline-block", width: buttonWidths.logo || "auto" }}>
-                                            <img
-                                                src={formData.logoPreview}
-                                                alt="Logo preview"
-                                                style={{
-                                                    width: buttonWidths.logo ? `${buttonWidths.logo}px` : "auto",
-                                                    maxHeight: 100,
-                                                    height: "auto",
-                                                    borderRadius: 6,
-                                                    objectFit: "cover",
-                                                }}
-                                            />
+                                        <Box sx={{ position: "relative", display: "inline-block", width: buttonWidths.backgroundEn || "auto" }}>
+                                            {formData.backgroundEn?.type?.startsWith("video/") ||
+                                                formData.backgroundEnFileType === "video" ||
+                                                (formData.backgroundEnPreview &&
+                                                    !formData.backgroundEnPreview.startsWith("blob:") &&
+                                                    (formData.backgroundEnPreview.includes("video") ||
+                                                        formData.backgroundEnPreview.match(/\.(mp4|webm|ogg)$/i))) ? (
+                                                <video
+                                                    src={formData.backgroundEnPreview}
+                                                    controls
+                                                    style={{
+                                                        width: buttonWidths.backgroundEn ? `${buttonWidths.backgroundEn}px` : "auto",
+                                                        maxHeight: 200,
+                                                        height: "auto",
+                                                        borderRadius: 6,
+                                                        objectFit: "cover",
+                                                    }}
+                                                />
+                                            ) : (
+                                                <img
+                                                    src={formData.backgroundEnPreview}
+                                                    alt="Background EN preview"
+                                                    style={{
+                                                        width: buttonWidths.backgroundEn ? `${buttonWidths.backgroundEn}px` : "auto",
+                                                        maxHeight: 120,
+                                                        height: "auto",
+                                                        borderRadius: 6,
+                                                        objectFit: "cover",
+                                                    }}
+                                                />
+                                            )}
 
                                             <IconButton
                                                 size="small"
                                                 onClick={() => {
-                                                    const fileUrl = initialValues?.logoUrl || formData.logoPreview;
-                                                    handleDeleteMedia("logo", fileUrl);
+                                                    const fileUrl = initialValues?.background?.en?.url || formData.backgroundEnPreview;
+                                                    handleDeleteMedia("backgroundEn", fileUrl);
                                                 }}
                                                 sx={{
                                                     position: "absolute",
                                                     top: -18,
                                                     right: 6,
                                                     bgcolor: "error.main",
-                                                    color: "#fff",
+                                                    color: "common.white",
                                                     "&:hover": { bgcolor: "error.dark" },
                                                 }}
                                             >
@@ -1080,194 +1179,93 @@ const DigiPassEventModal = ({
                                 )}
                             </Box>
 
-                        {/* Background Upload */}
-                        <Box
+                            {/* Arabic Background Upload */}
+                            <Box
                                 sx={{
                                     display: "flex",
                                     flexDirection: "column",
                                     alignItems: "flex-start",
-                                    gap: 2,
                                     width: "100%",
                                 }}
                             >
-                                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                                    {t.uploadBackground}
-                                </Typography>
-
-                                {/* English Background Upload */}
-                                <Box
-                                    sx={{
-                                        display: "flex",
-                                        flexDirection: "column",
-                                        alignItems: "flex-start",
-                                        width: "100%",
-                                    }}
+                                <Button
+                                    ref={backgroundArButtonRef}
+                                    component="label"
+                                    variant="outlined"
+                                    size="small"
                                 >
-                                    <Button
-                                        ref={backgroundEnButtonRef}
-                                        component="label"
-                                        variant="outlined"
-                                        size="small"
-                                    >
-                                        {t.uploadBackgroundEn}
-                                        <input
-                                            hidden
-                                            name="backgroundEn"
-                                            type="file"
-                                            accept="image/*,video/*"
-                                            onChange={handleInputChange}
-                                        />
-                                    </Button>
+                                    {t.uploadBackgroundAr}
+                                    <input
+                                        hidden
+                                        name="backgroundAr"
+                                        type="file"
+                                        accept="image/*,video/*"
+                                        onChange={handleInputChange}
+                                    />
+                                </Button>
 
-                                    {formData.backgroundEnPreview && !formData.removeBackgroundEn && (
-                                        <Box sx={{ mt: 1.5 }}>
-                                            <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
-                                                {initialValues && !formData.backgroundEn
-                                                    ? t.currentBackground + " (EN)"
-                                                    : t.preview + " (EN)"}
-                                            </Typography>
+                                {formData.backgroundArPreview && !formData.removeBackgroundAr && (
+                                    <Box sx={{ mt: 1.5 }}>
+                                        <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                                            {initialValues && !formData.backgroundAr
+                                                ? t.currentBackground + " (AR)"
+                                                : t.preview + " (AR)"}
+                                        </Typography>
 
-                                            <Box sx={{ position: "relative", display: "inline-block", width: buttonWidths.backgroundEn || "auto" }}>
-                                                {formData.backgroundEn?.type?.startsWith("video/") ||
-                                                    formData.backgroundEnFileType === "video" ||
-                                                    (formData.backgroundEnPreview &&
-                                                        !formData.backgroundEnPreview.startsWith("blob:") &&
-                                                        (formData.backgroundEnPreview.includes("video") ||
-                                                            formData.backgroundEnPreview.match(/\.(mp4|webm|ogg)$/i))) ? (
-                                                    <video
-                                                        src={formData.backgroundEnPreview}
-                                                        controls
-                                                        style={{
-                                                            width: buttonWidths.backgroundEn ? `${buttonWidths.backgroundEn}px` : "auto",
-                                                            maxHeight: 200,
-                                                            height: "auto",
-                                                            borderRadius: 6,
-                                                            objectFit: "cover",
-                                                        }}
-                                                    />
-                                                ) : (
-                                                    <img
-                                                        src={formData.backgroundEnPreview}
-                                                        alt="Background EN preview"
-                                                        style={{
-                                                            width: buttonWidths.backgroundEn ? `${buttonWidths.backgroundEn}px` : "auto",
-                                                            maxHeight: 120,
-                                                            height: "auto",
-                                                            borderRadius: 6,
-                                                            objectFit: "cover",
-                                                        }}
-                                                    />
-                                                )}
-
-                                                <IconButton
-                                                    size="small"
-                                                    onClick={() => {
-                                                        const fileUrl = initialValues?.background?.en?.url || formData.backgroundEnPreview;
-                                                        handleDeleteMedia("backgroundEn", fileUrl);
+                                        <Box sx={{ position: "relative", display: "inline-block", width: buttonWidths.backgroundAr || "auto" }}>
+                                            {formData.backgroundAr?.type?.startsWith("video/") ||
+                                                formData.backgroundArFileType === "video" ||
+                                                (formData.backgroundArPreview &&
+                                                    !formData.backgroundArPreview.startsWith("blob:") &&
+                                                    (formData.backgroundArPreview.includes("video") ||
+                                                        formData.backgroundArPreview.match(/\.(mp4|webm|ogg)$/i))) ? (
+                                                <video
+                                                    src={formData.backgroundArPreview}
+                                                    controls
+                                                    style={{
+                                                        width: buttonWidths.backgroundAr ? `${buttonWidths.backgroundAr}px` : "auto",
+                                                        maxHeight: 200,
+                                                        height: "auto",
+                                                        borderRadius: 6,
+                                                        objectFit: "cover",
                                                     }}
-                                                    sx={{
-                                                        position: "absolute",
-                                                        top: -18,
-                                                        right: 6,
-                                                        bgcolor: "error.main",
-                                                        color: "#fff",
-                                                        "&:hover": { bgcolor: "error.dark" },
+                                                />
+                                            ) : (
+                                                <img
+                                                    src={formData.backgroundArPreview}
+                                                    alt="Background AR preview"
+                                                    style={{
+                                                        width: buttonWidths.backgroundAr ? `${buttonWidths.backgroundAr}px` : "auto",
+                                                        maxHeight: 120,
+                                                        height: "auto",
+                                                        borderRadius: 6,
+                                                        objectFit: "cover",
                                                     }}
-                                                >
-                                                    <ICONS.delete sx={{ fontSize: 18 }} />
-                                                </IconButton>
-                                            </Box>
+                                                />
+                                            )}
+
+                                            <IconButton
+                                                size="small"
+                                                onClick={() => {
+                                                    const fileUrl = initialValues?.background?.ar?.url || formData.backgroundArPreview;
+                                                    handleDeleteMedia("backgroundAr", fileUrl);
+                                                }}
+                                                sx={{
+                                                    position: "absolute",
+                                                    top: -18,
+                                                    right: 6,
+                                                    bgcolor: "error.main",
+                                                    color: "common.white",
+                                                    "&:hover": { bgcolor: "error.dark" },
+                                                }}
+                                            >
+                                                <ICONS.delete sx={{ fontSize: 18 }} />
+                                            </IconButton>
                                         </Box>
-                                    )}
-                                </Box>
-
-                                {/* Arabic Background Upload */}
-                                <Box
-                                    sx={{
-                                        display: "flex",
-                                        flexDirection: "column",
-                                        alignItems: "flex-start",
-                                        width: "100%",
-                                    }}
-                                >
-                                    <Button
-                                        ref={backgroundArButtonRef}
-                                        component="label"
-                                        variant="outlined"
-                                        size="small"
-                                    >
-                                        {t.uploadBackgroundAr}
-                                        <input
-                                            hidden
-                                            name="backgroundAr"
-                                            type="file"
-                                            accept="image/*,video/*"
-                                            onChange={handleInputChange}
-                                        />
-                                    </Button>
-
-                                    {formData.backgroundArPreview && !formData.removeBackgroundAr && (
-                                        <Box sx={{ mt: 1.5 }}>
-                                            <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
-                                                {initialValues && !formData.backgroundAr
-                                                    ? t.currentBackground + " (AR)"
-                                                    : t.preview + " (AR)"}
-                                            </Typography>
-
-                                            <Box sx={{ position: "relative", display: "inline-block", width: buttonWidths.backgroundAr || "auto" }}>
-                                                {formData.backgroundAr?.type?.startsWith("video/") ||
-                                                    formData.backgroundArFileType === "video" ||
-                                                    (formData.backgroundArPreview &&
-                                                        !formData.backgroundArPreview.startsWith("blob:") &&
-                                                        (formData.backgroundArPreview.includes("video") ||
-                                                            formData.backgroundArPreview.match(/\.(mp4|webm|ogg)$/i))) ? (
-                                                    <video
-                                                        src={formData.backgroundArPreview}
-                                                        controls
-                                                        style={{
-                                                            width: buttonWidths.backgroundAr ? `${buttonWidths.backgroundAr}px` : "auto",
-                                                            maxHeight: 200,
-                                                            height: "auto",
-                                                            borderRadius: 6,
-                                                            objectFit: "cover",
-                                                        }}
-                                                    />
-                                                ) : (
-                                                    <img
-                                                        src={formData.backgroundArPreview}
-                                                        alt="Background AR preview"
-                                                        style={{
-                                                            width: buttonWidths.backgroundAr ? `${buttonWidths.backgroundAr}px` : "auto",
-                                                            maxHeight: 120,
-                                                            height: "auto",
-                                                            borderRadius: 6,
-                                                            objectFit: "cover",
-                                                        }}
-                                                    />
-                                                )}
-
-                                                <IconButton
-                                                    size="small"
-                                                    onClick={() => {
-                                                        const fileUrl = initialValues?.background?.ar?.url || formData.backgroundArPreview;
-                                                        handleDeleteMedia("backgroundAr", fileUrl);
-                                                    }}
-                                                    sx={{
-                                                        position: "absolute",
-                                                        top: -18,
-                                                        right: 6,
-                                                        bgcolor: "error.main",
-                                                        color: "#fff",
-                                                        "&:hover": { bgcolor: "error.dark" },
-                                                    }}
-                                                >
-                                                    <ICONS.delete sx={{ fontSize: 18 }} />
-                                                </IconButton>
-                                            </Box>
-                                        </Box>
-                                    )}
-                                </Box>
+                                    </Box>
+                                )}
                             </Box>
+                        </Box>
 
                         {/* Dashboard Progress Image */}
                         <Box
@@ -1327,7 +1325,7 @@ const DigiPassEventModal = ({
                                                 top: -18,
                                                 right: 6,
                                                 bgcolor: "error.main",
-                                                color: "#fff",
+                                                color: "common.white",
                                                 "&:hover": { bgcolor: "error.dark" },
                                             }}
                                         >

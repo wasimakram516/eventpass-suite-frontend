@@ -19,6 +19,7 @@ import {
   FormControl,
   CircularProgress,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import ArabicPagination from "@/components/ArabicPagination";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 
@@ -125,6 +126,8 @@ export default function PvPSessions() {
   const { gameSlug } = useParams();
   const searchParams = useSearchParams();
   const { t, dir, align, language } = useI18nLayout(translations);
+  const theme = useTheme();
+  const cz = theme.palette.crosszero;
   const [sessions, setSessions] = useState([]);
   const [totalSessions, setTotalSessions] = useState(0);
   const [page, setPage] = useState(1);
@@ -331,17 +334,16 @@ export default function PvPSessions() {
                             overflow: "hidden",
                             borderRadius: 4,
                             my: 3,
-                            background:
-                              "linear-gradient(to bottom, #f7f7f7, #ffffff)",
-                            boxShadow: "0px 6px 20px rgba(0,0,0,0.1)",
+                            background: cz.previousSessionGradient,
+                            boxShadow: cz.previousSessionShadow,
                           }}
                         >
                           {/* Winner Banner */}
                           <Box
                             sx={{
                               background: session.winner
-                                ? "linear-gradient(to right, #4CAF50, #81C784)"
-                                : "linear-gradient(to right, #9E9E9E, #BDBDBD)",
+                                ? cz.winnerBannerGradient
+                                : cz.tieBannerGradient,
                               px: 3,
                               py: 1.5,
                               display: "flex",
@@ -351,12 +353,12 @@ export default function PvPSessions() {
                             }}
                           >
                             {session?.winner && (
-                              <ICONS.trophy sx={{ color: "#fff" }} />
+                              <ICONS.trophy sx={{ color: "common.white" }} />
                             )}
                             <Typography
                               variant="h6"
                               sx={{
-                                color: "#fff",
+                                color: "common.white",
                                 fontWeight: "bold"
                               }}>
                               {session.winner ? session.winner.name : t.tie}
@@ -388,8 +390,8 @@ export default function PvPSessions() {
                                 <Box
                                   sx={{
                                     background: isPlayer1Winner
-                                      ? "linear-gradient(135deg, #A5D6A7, #C8E6C9)"
-                                      : "grey.100",
+                                      ? cz.winnerCellGradient
+                                      : cz.loserCellBg,
                                     borderRadius: 3,
                                     p: 3,
                                     height: "100%",
@@ -490,8 +492,8 @@ export default function PvPSessions() {
                                     xs: "none",
                                     sm: "translate(-50%, -50%)",
                                   },
-                                  background: "#fff",
-                                  border: "2px solid #ccc",
+                                  background: cz.vsBadgeBg,
+                                  border: cz.vsBadgeBorder,
                                   px: 2,
                                   py: 0.5,
                                   borderRadius: "50px",
@@ -514,8 +516,8 @@ export default function PvPSessions() {
                                 <Box
                                   sx={{
                                     background: isPlayer2Winner
-                                      ? "linear-gradient(135deg, #A5D6A7, #C8E6C9)"
-                                      : "grey.100",
+                                      ? cz.winnerCellGradient
+                                      : cz.loserCellBg,
                                     borderRadius: 3,
                                     p: 3,
                                     height: "100%",
@@ -620,9 +622,8 @@ export default function PvPSessions() {
                         sx={{
                           borderRadius: 4,
                           my: 3,
-                          background:
-                            "linear-gradient(to bottom, #f7f7f7, #ffffff)",
-                          boxShadow: "0px 6px 20px rgba(0,0,0,0.08)",
+                          background: cz.previousSessionGradient,
+                          boxShadow: cz.previousSessionShadow,
                           p: { xs: 2, sm: 3 },
                         }}
                       >
@@ -630,8 +631,8 @@ export default function PvPSessions() {
                         <Box
                           sx={{
                             background: session.winnerTeamId
-                              ? "linear-gradient(to right, #4CAF50, #81C784)"
-                              : "linear-gradient(to right, #9E9E9E, #BDBDBD)",
+                              ? cz.winnerBannerGradient
+                              : cz.tieBannerGradient,
                             px: 3,
                             py: 1.5,
                             borderRadius: 2,
@@ -642,11 +643,11 @@ export default function PvPSessions() {
                             gap: 1,
                           }}
                         >
-                          <ICONS.trophy sx={{ color: "#fff" }} />
+                          <ICONS.trophy sx={{ color: "common.white" }} />
                           <Typography
                             variant="h6"
                             sx={{
-                              color: "#fff",
+                              color: "common.white",
                               fontWeight: "bold",
                               textAlign: "center"
                             }}>
@@ -681,8 +682,8 @@ export default function PvPSessions() {
                                     borderRadius: 3,
                                     p: { xs: 2, sm: 2.5 },
                                     background: isWinner
-                                      ? "linear-gradient(135deg,#A5D6A7,#C8E6C9)"
-                                      : "#fafafa",
+                                      ? cz.winnerCellGradient
+                                      : cz.teamCardBg,
                                     display: "flex",
                                     flexDirection: "column",
                                     gap: 1.5,
@@ -717,7 +718,7 @@ export default function PvPSessions() {
                                       justifyContent: "center",
                                       alignItems: "center",
                                       flexWrap: "wrap",
-                                      bgcolor: "white",
+                                      bgcolor: "common.white",
                                       borderRadius: 2,
                                       py: 0.7,
                                       px: 1.5
@@ -795,7 +796,7 @@ export default function PvPSessions() {
                                         sx={{
                                           p: 1.2,
                                           borderRadius: 2,
-                                          bgcolor: "#fff",
+                                          bgcolor: cz.teamPlayerCardBg,
                                           display: "flex",
                                           flexDirection: {
                                             xs: "column",
@@ -806,8 +807,7 @@ export default function PvPSessions() {
                                             xs: "flex-start",
                                             sm: "center",
                                           },
-                                          boxShadow:
-                                            "0 1px 3px rgba(0,0,0,0.05)",
+                                          boxShadow: cz.teamPlayerCardShadow,
                                           gap: { xs: 0.5, sm: 0 },
                                         }}
                                       >
@@ -901,13 +901,13 @@ export default function PvPSessions() {
                                 top: "50%",
                                 left: "50%",
                                 transform: "translate(-50%, -50%)",
-                                background: "#fff",
-                                border: "2px solid #ccc",
+                                background: cz.vsBadgeBg,
+                                border: cz.vsBadgeBorder,
                                 px: 2.5,
                                 py: 0.5,
                                 borderRadius: "50px",
                                 fontWeight: "bold",
-                                boxShadow: "0 2px 6px rgba(0,0,0,0.1)",
+                                boxShadow: cz.vsBadgeShadow,
                                 zIndex: 2,
                                 fontSize: "1rem",
                               }}

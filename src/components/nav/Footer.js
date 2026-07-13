@@ -1,11 +1,12 @@
 "use client";
 
 import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
-import { Box, Divider, Typography } from "@mui/material";
+import { Box, Divider, Typography, useTheme } from "@mui/material";
 import Image from "next/image";
 
 export default function Footer() {
   const appName = useGlobalConfig()?.globalConfig?.appName;
+  const theme = useTheme();
 
   return (
     <Box
@@ -15,7 +16,7 @@ export default function Footer() {
         bottom: 0,
         left: 0,
         right: 0,
-        bgcolor: "rgba(255, 255, 255, 0.3)",
+        bgcolor: (theme) => theme.palette.navbar.appBarBg,
         backdropFilter: "blur(8px)",
         WebkitBackdropFilter: "blur(8px)",
         zIndex: 10,
@@ -51,7 +52,7 @@ export default function Footer() {
           <Divider
             orientation="vertical"
             flexItem
-            sx={{ mx: 2, height: 30, bgcolor: "grey.400" }}
+            sx={{ mx: 2, height: 30, bgcolor: "divider" }}
           />
           <Typography
             variant="body1"
@@ -62,6 +63,7 @@ export default function Footer() {
               display: "flex",
               alignItems: "center",
               height: 30,
+              color: "text.primary",
             }}
           >
             {appName}

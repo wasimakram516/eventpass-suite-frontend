@@ -375,7 +375,7 @@ export default function ViewRegistrations() {
         setAllRegistrations((prev) => {
             const exists = prev.some((r) => r._id === processed._id);
             if (exists) return prev;
-            
+
             if (sortOrder === -1) {
                 return [processed, ...prev];
             } else {
@@ -1192,249 +1192,259 @@ export default function ViewRegistrations() {
                     <Box sx={{ display: "flex", flexWrap: "wrap", gap: 4, justifyContent: "center" }}>
                         {paginatedRegistrations.map((reg) => {
                             return (
-                                    <Card
-                                        key={reg._id}
+                                <Card
+                                    key={reg._id}
+                                    sx={{
+                                        width: { xs: "100%", sm: 360 },
+                                        maxWidth: 360,
+                                        borderRadius: 4,
+                                        overflow: "hidden",
+                                        boxShadow: (theme) => theme.palette.registrations.regCardShadow,
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        transition: "all 0.3s ease",
+
+                                        "&:hover": {
+                                            transform: "translateY(-2px)",
+                                            boxShadow: (theme) => theme.palette.registrations.regCardHoverShadow,
+                                        },
+                                    }}
+                                >
+                                    <Box
                                         sx={{
-                                            width: { xs: "100%", sm: 360 },
-                                            maxWidth: 360,
-                                            borderRadius: 4,
-                                            overflow: "hidden",
-                                            boxShadow: "0 6px 18px rgba(0,0,0,0.12)",
-                                            display: "flex",
+                                            background: (theme) =>
+                                                theme.palette.mode === "dark"
+                                                    ? theme.palette.registrations.regCardHeaderGradientDark
+                                                    : theme.palette.registrations.regCardHeaderGradientLight,
+                                            borderBottom: "1px solid",
+                                            borderColor: "divider",
+                                            p: 2,
+                                        }}
+                                    >
+                                        <Stack spacing={0.6}>
+                                            <Stack
+                                                direction="row"
+                                                sx={{
+                                                    alignItems: "center",
+                                                    gap: dir === "rtl" ? 1 : 1
+                                                }}>
+                                                <ICONS.qrcode
+                                                    sx={{ fontSize: 28, color: "primary.main" }}
+                                                />
+
+                                                <Box
+                                                    sx={{
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        gap: 1,
+                                                        bgcolor: (theme) =>
+                                                            theme.palette.mode === "dark"
+                                                                ? theme.palette.registrations.regTokenBadgeBgDark
+                                                                : theme.palette.registrations.regTokenBadgeBgLight,
+                                                        px: 1.2,
+                                                        py: 0.5,
+                                                        borderRadius: 1.5,
+                                                        flexWrap: "wrap",
+                                                        flex: 1,
+                                                    }}
+                                                >
+                                                    <Typography
+                                                        variant="subtitle2"
+                                                        sx={{ fontWeight: 600, color: "text.secondary" }}
+                                                    >
+                                                        {t.token}:
+                                                    </Typography>
+
+                                                    <Typography
+                                                        variant="subtitle1"
+                                                        sx={{
+                                                            fontWeight: "bold",
+                                                            fontFamily: "monospace",
+                                                            wordBreak: "break-all",
+                                                            color: "primary.main"
+                                                        }}>
+                                                        {reg.token}
+                                                    </Typography>
+
+                                                    <Tooltip title={t.copyToken}>
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={() => {
+                                                                navigator.clipboard.writeText(reg.token);
+                                                            }}
+                                                            sx={{
+                                                                p: 0.5,
+                                                                color: "primary.main",
+                                                                "&:hover": {
+                                                                    backgroundColor: "transparent",
+                                                                    opacity: 0.8,
+                                                                },
+                                                            }}
+                                                        >
+                                                            <ICONS.copy fontSize="small" />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                </Box>
+                                            </Stack>
+
+                                            <Typography
+                                                variant="caption"
+                                                sx={{
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    gap: 0.5,
+                                                    color: "text.secondary",
+                                                }}
+                                            >
+                                                <ICONS.time fontSize="inherit" sx={{ opacity: 0.7 }} />
+                                                <Box
+                                                    component="span"
+                                                    sx={{ direction: "ltr", unicodeBidi: "embed" }}
+                                                >
+                                                    {formatDateTimeWithLocale(reg.createdAt, language === "ar" ? "ar-SA" : "en-GB")}
+                                                </Box>
+                                            </Typography>
+                                        </Stack>
+                                    </Box>
+
+                                    <CardContent sx={{ flexGrow: 1, px: 2, py: 1.5 }}>
+                                        {(() => {
+                                            const regCustomFields = reg.customFields instanceof Map
+                                                ? Object.fromEntries(reg.customFields)
+                                                : (reg.customFields || {});
+                                            const regCustomKeys = Object.keys(regCustomFields).filter(k => regCustomFields[k] && String(regCustomFields[k]).trim());
+
+                                            if (regCustomKeys.length > 0) {
+                                                return regCustomKeys.map((key) => (
+                                                    <Box key={key} sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", py: 0.8, borderBottom: "1px solid", borderColor: "divider", "&:last-of-type": { borderBottom: "none" } }}>
+                                                        <Typography variant="body2" sx={{ display: "flex", alignItems: "center", gap: 0.6, color: "text.secondary" }}>
+                                                            <ICONS.personOutline fontSize="small" sx={{ opacity: 0.6 }} />
+                                                            {key}
+                                                        </Typography>
+                                                        <Typography variant="body2" sx={{ fontWeight: 500, ml: 2, textAlign: dir === "rtl" ? "left" : "right", flex: 1, color: "text.primary", ...wrapTextBox }}>
+                                                            {String(regCustomFields[key]) || "—"}
+                                                        </Typography>
+                                                    </Box>
+                                                ));
+                                            }
+
+                                            // Registration has no customFields — show its classic fields
+                                            const fallbackFields = [
+                                                { name: "fullName", label: t.fullName },
+                                                { name: "email", label: t.emailLabel },
+                                                { name: "phone", label: t.phoneLabel },
+                                                { name: "company", label: t.companyLabel },
+                                            ];
+                                            return fallbackFields.map((f) => {
+                                                const fieldValue = reg[f.name] ?? null;
+                                                if (fieldValue == null || String(fieldValue).trim() === "") return null;
+                                                const displayValue = String(fieldValue).trim();
+                                                return (
+                                                    <Box key={f.name} sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", py: 0.8, borderBottom: "1px solid", borderColor: "divider", "&:last-of-type": { borderBottom: "none" } }}>
+                                                        <Typography variant="body2" sx={{ display: "flex", alignItems: "center", gap: 0.6, color: "text.secondary" }}>
+                                                            <ICONS.personOutline fontSize="small" sx={{ opacity: 0.6 }} />
+                                                            {f.label}
+                                                        </Typography>
+                                                        <Typography variant="body2" sx={{ fontWeight: 500, ml: 2, textAlign: dir === "rtl" ? "left" : "right", flex: 1, color: "text.primary", ...wrapTextBox }}>
+                                                            {f.name === "phone"
+                                                                ? (() => {
+                                                                    const { formatPhoneNumberForDisplay } = require("@/utils/countryCodes");
+                                                                    return formatPhoneNumberForDisplay(displayValue, reg.isoCode);
+                                                                })()
+                                                                : displayValue}
+                                                        </Typography>
+                                                    </Box>
+                                                );
+                                            });
+                                        })()}
+                                    </CardContent>
+
+                                    <RecordMetadata
+                                        createdByName={reg.createdBy}
+                                        updatedByName={reg.updatedBy}
+                                        createdAt={reg.createdAt}
+                                        updatedAt={reg.updatedAt}
+                                        createdByDisplayName={reg.createdBy == null ? pickFullName(reg.customFields) : undefined}
+                                        updatedByDisplayName={reg.updatedBy == null && reg.createdBy ? (typeof reg.createdBy === "object" ? reg.createdBy?.name : null) : undefined}
+                                        updatedAtFallback={reg.updatedBy == null ? reg.createdAt : undefined}
+                                        locale={language === "ar" ? "ar-SA" : "en-GB"}
+                                    />
+
+                                    <CardActions
+                                        sx={{
+                                            justifyContent: "center",
+                                            borderTop: (theme) => `1px solid ${theme.palette.divider}`,
+                                            bgcolor: (theme) =>
+                                                theme.palette.mode === "dark"
+                                                    ? theme.palette.registrations.cardHeaderBgDark
+                                                    : theme.palette.registrations.regCardActionsBgLight,
+                                            py: 1,
                                             flexDirection: "column",
-                                            transition: "all 0.3s ease",
-                                            "&:hover": {
-                                                transform: "translateY(-2px)",
-                                                boxShadow: "0 12px 28px rgba(0,0,0,0.25)",
-                                            },
+                                            gap: 1,
                                         }}
                                     >
                                         <Box
                                             sx={{
-                                                background: "linear-gradient(to right, #f5f5f5, #fafafa)",
-                                                borderBottom: "1px solid",
-                                                borderColor: "divider",
-                                                p: 2,
+                                                display: "flex",
+                                                flexDirection: "row",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                gap: 1.2,
+                                                width: "100%",
                                             }}
                                         >
-                                            <Stack spacing={0.6}>
-                                                <Stack
-                                                    direction="row"
-                                                    sx={{
-                                                        alignItems: "center",
-                                                        gap: dir === "rtl" ? 1 : 1
-                                                    }}>
-                                                    <ICONS.qrcode
-                                                        sx={{ fontSize: 28, color: "primary.main" }}
-                                                    />
-
-                                                    <Box
+                                            <Box sx={{ display: "flex", gap: 0.5 }}>
+                                                <Tooltip title={t.viewWalkIns}>
+                                                    <IconButton
+                                                        color="info"
+                                                        onClick={() => {
+                                                            setSelectedRegistration(reg);
+                                                            setWalkInModalOpen(true);
+                                                        }}
                                                         sx={{
-                                                            display: "flex",
-                                                            alignItems: "center",
-                                                            gap: 1,
-                                                            bgcolor: "rgba(0,0,0,0.04)",
-                                                            px: 1.2,
-                                                            py: 0.5,
-                                                            borderRadius: 1.5,
-                                                            flexWrap: "wrap",
-                                                            flex: 1,
+                                                            "&:hover": { transform: "scale(1.1)" },
+                                                            transition: "0.2s",
                                                         }}
                                                     >
-                                                        <Typography
-                                                            variant="subtitle2"
-                                                            sx={{ fontWeight: 600, color: "text.secondary" }}
-                                                        >
-                                                            {t.token}:
-                                                        </Typography>
+                                                        <ICONS.view />
+                                                    </IconButton>
+                                                </Tooltip>
 
-                                                        <Typography
-                                                            variant="subtitle1"
-                                                            sx={{
-                                                                fontWeight: "bold",
-                                                                fontFamily: "monospace",
-                                                                wordBreak: "break-all",
-                                                                color: "primary.main"
-                                                            }}>
-                                                            {reg.token}
-                                                        </Typography>
-
-                                                        <Tooltip title={t.copyToken}>
+                                                {!eventDetails?.linkedEventRegId && (
+                                                    <>
+                                                        <Tooltip title={t.editRegistration}>
                                                             <IconButton
-                                                                size="small"
+                                                                color="primary"
                                                                 onClick={() => {
-                                                                    navigator.clipboard.writeText(reg.token);
-                                                                }}
-                                                                sx={{
-                                                                    p: 0.5,
-                                                                    color: "primary.main",
-                                                                    "&:hover": {
-                                                                        backgroundColor: "transparent",
-                                                                        opacity: 0.8,
-                                                                    },
+                                                                    setEditingReg(reg);
+                                                                    setEditModalOpen(true);
                                                                 }}
                                                             >
-                                                                <ICONS.copy fontSize="small" />
+                                                                <ICONS.edit fontSize="small" />
                                                             </IconButton>
                                                         </Tooltip>
-                                                    </Box>
-                                                </Stack>
 
-                                                <Typography
-                                                    variant="caption"
-                                                    sx={{
-                                                        display: "flex",
-                                                        alignItems: "center",
-                                                        gap: 0.5,
-                                                        color: "text.secondary",
-                                                    }}
-                                                >
-                                                    <ICONS.time fontSize="inherit" sx={{ opacity: 0.7 }} />
-                                                    <Box
-                                                        component="span"
-                                                        sx={{ direction: "ltr", unicodeBidi: "embed" }}
-                                                    >
-                                                        {formatDateTimeWithLocale(reg.createdAt, language === "ar" ? "ar-SA" : "en-GB")}
-                                                    </Box>
-                                                </Typography>
-                                            </Stack>
-                                        </Box>
-
-                                        <CardContent sx={{ flexGrow: 1, px: 2, py: 1.5 }}>
-                                            {(() => {
-                                                const regCustomFields = reg.customFields instanceof Map
-                                                    ? Object.fromEntries(reg.customFields)
-                                                    : (reg.customFields || {});
-                                                const regCustomKeys = Object.keys(regCustomFields).filter(k => regCustomFields[k] && String(regCustomFields[k]).trim());
-
-                                                if (regCustomKeys.length > 0) {
-                                                    return regCustomKeys.map((key) => (
-                                                        <Box key={key} sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", py: 0.8, borderBottom: "1px solid", borderColor: "divider", "&:last-of-type": { borderBottom: "none" } }}>
-                                                            <Typography variant="body2" sx={{ display: "flex", alignItems: "center", gap: 0.6, color: "text.secondary" }}>
-                                                                <ICONS.personOutline fontSize="small" sx={{ opacity: 0.6 }} />
-                                                                {key}
-                                                            </Typography>
-                                                            <Typography variant="body2" sx={{ fontWeight: 500, ml: 2, textAlign: dir === "rtl" ? "left" : "right", flex: 1, color: "text.primary", ...wrapTextBox }}>
-                                                                {String(regCustomFields[key]) || "—"}
-                                                            </Typography>
-                                                        </Box>
-                                                    ));
-                                                }
-
-                                                // Registration has no customFields — show its classic fields
-                                                const fallbackFields = [
-                                                    { name: "fullName", label: t.fullName },
-                                                    { name: "email", label: t.emailLabel },
-                                                    { name: "phone", label: t.phoneLabel },
-                                                    { name: "company", label: t.companyLabel },
-                                                ];
-                                                return fallbackFields.map((f) => {
-                                                    const fieldValue = reg[f.name] ?? null;
-                                                    if (fieldValue == null || String(fieldValue).trim() === "") return null;
-                                                    const displayValue = String(fieldValue).trim();
-                                                    return (
-                                                        <Box key={f.name} sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", py: 0.8, borderBottom: "1px solid", borderColor: "divider", "&:last-of-type": { borderBottom: "none" } }}>
-                                                            <Typography variant="body2" sx={{ display: "flex", alignItems: "center", gap: 0.6, color: "text.secondary" }}>
-                                                                <ICONS.personOutline fontSize="small" sx={{ opacity: 0.6 }} />
-                                                                {f.label}
-                                                            </Typography>
-                                                            <Typography variant="body2" sx={{ fontWeight: 500, ml: 2, textAlign: dir === "rtl" ? "left" : "right", flex: 1, color: "text.primary", ...wrapTextBox }}>
-                                                                {f.name === "phone"
-                                                                    ? (() => {
-                                                                        const { formatPhoneNumberForDisplay } = require("@/utils/countryCodes");
-                                                                        return formatPhoneNumberForDisplay(displayValue, reg.isoCode);
-                                                                    })()
-                                                                    : displayValue}
-                                                            </Typography>
-                                                        </Box>
-                                                    );
-                                                });
-                                            })()}
-                                        </CardContent>
-
-                                        <RecordMetadata
-                                            createdByName={reg.createdBy}
-                                            updatedByName={reg.updatedBy}
-                                            createdAt={reg.createdAt}
-                                            updatedAt={reg.updatedAt}
-                                            createdByDisplayName={reg.createdBy == null ? pickFullName(reg.customFields) : undefined}
-                                            updatedByDisplayName={reg.updatedBy == null && reg.createdBy ? (typeof reg.createdBy === "object" ? reg.createdBy?.name : null) : undefined}
-                                            updatedAtFallback={reg.updatedBy == null ? reg.createdAt : undefined}
-                                            locale={language === "ar" ? "ar-SA" : "en-GB"}
-                                        />
-
-                                        <CardActions
-                                            sx={{
-                                                justifyContent: "center",
-                                                borderTop: "1px solid rgba(0,0,0,0.08)",
-                                                bgcolor: "rgba(0,0,0,0.02)",
-                                                py: 1,
-                                                flexDirection: "column",
-                                                gap: 1,
-                                            }}
-                                        >
-                                            <Box
-                                                sx={{
-                                                    display: "flex",
-                                                    flexDirection: "row",
-                                                    alignItems: "center",
-                                                    justifyContent: "center",
-                                                    gap: 1.2,
-                                                    width: "100%",
-                                                }}
-                                            >
-                                                <Box sx={{ display: "flex", gap: 0.5 }}>
-                                                    <Tooltip title={t.viewWalkIns}>
-                                                        <IconButton
-                                                            color="info"
-                                                            onClick={() => {
-                                                                setSelectedRegistration(reg);
-                                                                setWalkInModalOpen(true);
-                                                            }}
-                                                            sx={{
-                                                                "&:hover": { transform: "scale(1.1)" },
-                                                                transition: "0.2s",
-                                                            }}
-                                                        >
-                                                            <ICONS.view />
-                                                        </IconButton>
-                                                    </Tooltip>
-
-                                                    {!eventDetails?.linkedEventRegId && (
-                                                        <>
-                                                            <Tooltip title={t.editRegistration}>
-                                                                <IconButton
-                                                                    color="primary"
-                                                                    onClick={() => {
-                                                                        setEditingReg(reg);
-                                                                        setEditModalOpen(true);
-                                                                    }}
-                                                                >
-                                                                    <ICONS.edit fontSize="small" />
-                                                                </IconButton>
-                                                            </Tooltip>
-
-                                                            <Tooltip title={t.deleteRecord}>
-                                                                <IconButton
-                                                                    color="error"
-                                                                    onClick={() => {
-                                                                        setRegistrationToDelete(reg._id);
-                                                                        setDeleteDialogOpen(true);
-                                                                    }}
-                                                                    sx={{
-                                                                        "&:hover": { transform: "scale(1.1)" },
-                                                                        transition: "0.2s",
-                                                                    }}
-                                                                >
-                                                                    <ICONS.delete />
-                                                                </IconButton>
-                                                            </Tooltip>
-                                                        </>
-                                                    )}
-                                                </Box>
+                                                        <Tooltip title={t.deleteRecord}>
+                                                            <IconButton
+                                                                color="error"
+                                                                onClick={() => {
+                                                                    setRegistrationToDelete(reg._id);
+                                                                    setDeleteDialogOpen(true);
+                                                                }}
+                                                                sx={{
+                                                                    "&:hover": { transform: "scale(1.1)" },
+                                                                    transition: "0.2s",
+                                                                }}
+                                                            >
+                                                                <ICONS.delete />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                    </>
+                                                )}
                                             </Box>
-                                        </CardActions>
-                                    </Card>
+                                        </Box>
+                                    </CardActions>
+                                </Card>
                             );
                         })}
                     </Box>

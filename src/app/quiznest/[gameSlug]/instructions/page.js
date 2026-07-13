@@ -114,10 +114,10 @@ export default function InstructionsPage() {
             width: "100%",
             textAlign: "center",
             backdropFilter: "blur(16px)",
-            backgroundColor: "rgba(10,10,20,0.85)",
+            backgroundColor: theme.palette.quiznest.glassBg,
             borderRadius: 6,
-            border: "1px solid rgba(255,255,255,0.08)",
-            boxShadow: "0 8px 40px rgba(0,0,0,0.6)",
+            border: `1px solid ${theme.palette.loader.skeleton}`,
+            boxShadow: theme.palette.quiznest.dialogShadow,
           }}
         >
           <Typography
@@ -125,21 +125,17 @@ export default function InstructionsPage() {
             sx={{
               fontWeight: 800,
               mb: 0.5,
-              color: "#fff",
+              color: theme.palette.common.white,
               textTransform: "capitalize",
               wordBreak: "break-word"
             }}>
             {game.title}
           </Typography>
 
-          <Typography sx={{ color: "rgba(255,255,255,0.75)", mb: 4, fontSize: "1rem" }}>
+          <Typography sx={(theme) => ({ color: theme.palette.crosszero.instructionText, mb: 4, fontSize: "1rem" })}>
             {gameInstructionsTranslations[language].welcome}{" "}
-            <Box
-              component="span"
-              sx={{
-                fontWeight: 700,
-                color: "#00e5ff"
-              }}>
+            <Box component="span" sx={(theme) => ({ fontWeight: 700, color: theme.palette.quiznest.accent })}>
+
               {playerInfo.name}
             </Box>
             {" — "}{gameInstructionsTranslations[language].instructionsTitle}
@@ -159,19 +155,16 @@ export default function InstructionsPage() {
                 px: 2,
                 py: 1.5,
                 borderRadius: 3,
-                bgcolor: "rgba(0,229,255,0.08)",
-                border: "1px solid rgba(0,229,255,0.2)",
+                bgcolor: theme.palette.quiznest.accentBg,
+                border: `1px solid ${theme.palette.quiznest.accentBorder}`,
                 width: "100%"
               }}>
-              <TimerIcon sx={{ color: "#00e5ff" }} />
-              <Typography sx={{ color: "#fff", fontSize: "1rem", textAlign: align, direction: dir }}>
+              <TimerIcon sx={(theme) => ({ color: theme.palette.quiznest.accent })} />
+              <Typography sx={(theme) => ({ color: theme.palette.quiznest.titleText, fontSize: "1rem", textAlign: align, direction: dir })}>
                 {gameInstructionsTranslations[language].quizDuration}{" "}
                 <Box
                   component="span"
-                  sx={{
-                    fontWeight: 700,
-                    color: "#00e5ff"
-                  }}>
+                  sx={(theme) => ({ fontWeight: 700, color: theme.palette.quiznest.accent })}>
                   {game.gameSessionTimer}{" "}
                   {gameInstructionsTranslations[language].seconds}
                 </Box>
@@ -184,14 +177,14 @@ export default function InstructionsPage() {
             size="large"
             fullWidth
             onClick={handleStart}
-            sx={{
+            sx={(theme) => ({
               py: 1.2,
               borderRadius: 999,
               fontWeight: 800,
-              bgcolor: "#00e5ff",
-              color: "#000",
-              "&:hover": { filter: "brightness(1.15)", bgcolor: "#00e5ff" },
-            }}
+              bgcolor: theme.palette.quiznest.accent,
+              color: theme.palette.common.black,
+              "&:hover": { filter: "brightness(1.15)", bgcolor: theme.palette.quiznest.accent },
+            })}
           >
             {gameInstructionsTranslations[language].startButton}
           </Button>

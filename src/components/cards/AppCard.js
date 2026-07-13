@@ -8,21 +8,21 @@ const AppCard = ({ children, sx, ...props }) => {
   return (
     <Paper
       elevation={0}
-      sx={{
+      sx={(theme) => ({
         borderRadius: 4,
         overflow: "hidden",
-        backgroundColor: "#fff",
-        boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+        backgroundColor: theme.palette.background.paper,
+        boxShadow: theme.shadows[2],
         transition: "all 0.3s ease",
         display: "flex",
         flexDirection: "column",
         ...wrapTextBox,
         "&:hover": {
           transform: "translateY(-2px)",
-          boxShadow: "0 12px 28px rgba(0,0,0,0.15)",
+          boxShadow: theme.shadows[6],
         },
         ...sx,
-      }}
+      })}
       {...props}
     >
       {children}

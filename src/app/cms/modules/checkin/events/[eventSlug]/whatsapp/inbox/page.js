@@ -16,6 +16,7 @@ import {
   IconButton,
   Avatar,
   useMediaQuery,
+  useTheme,
 } from "@mui/material";
 import LoadingState from "@/components/LoadingState";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";

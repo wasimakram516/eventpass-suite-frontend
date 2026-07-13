@@ -1,5 +1,5 @@
 "use client";
-
+import { useTheme } from "@mui/material/styles";
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import {
   Box,
@@ -42,7 +42,8 @@ export default function DigiPassSignIn() {
   const { language } = useLanguage();
   const isArabic = language === "ar";
   const dir = isArabic ? "rtl" : "ltr";
-
+  const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
   const t = {
     signIn: isArabic ? "تسجيل الدخول" : "Sign In",
     signInSuccess: isArabic ? "تم تسجيل الدخول بنجاح!" : "Sign In Successful!",
@@ -136,7 +137,7 @@ export default function DigiPassSignIn() {
 
     if (event.linkedEventRegId) {
       const primaryFieldNames = Array.isArray(event.primaryField) ? event.primaryField : (event.primaryField ? [event.primaryField] : []);
-      
+
       const fieldsSource = allFields.length > 0 ? allFields : [
         { inputName: 'fullName', inputType: 'text' },
         { inputName: 'email', inputType: 'email' },
@@ -375,7 +376,7 @@ export default function DigiPassSignIn() {
           justifyContent: "center",
         }}
       >
-        <CircularProgress />
+        <CircularProgress color="primary" />
       </Box>
     );
   }
@@ -396,9 +397,9 @@ export default function DigiPassSignIn() {
       sx: {
         "& .MuiOutlinedInput-root": {
           borderRadius: 999,
-          backgroundColor: "rgba(255,255,255,0.9)",
+          backgroundColor: theme.palette.input.background,
         },
-      },
+      }
     };
 
     if (field.type === "radio")
@@ -407,7 +408,7 @@ export default function DigiPassSignIn() {
           <Typography sx={{ mb: 1 }}>
             {fieldLabel}
             {field.required && (
-              <span style={{ color: "rgba(255, 255, 255, 0.8)" }}> *</span>
+              <Typography component="span" sx={{ color: "error.main" }}> *</Typography>
             )}
           </Typography>
           <RadioGroup
@@ -442,12 +443,14 @@ export default function DigiPassSignIn() {
           sx={{
             "& .MuiOutlinedInput-root": {
               borderRadius: 999,
-              backgroundColor: "rgba(255,255,255,0.9)",
+              backgroundColor: theme.palette.input.background,
             },
           }}
           required={field.required}
         >
-          <InputLabel>{fieldLabel}</InputLabel>
+          <InputLabel sx={{ color: "text.secondary" }}>
+            {fieldLabel}
+          </InputLabel>
           <Select
             name={field.name}
             value={formData[field.name]}
@@ -457,11 +460,11 @@ export default function DigiPassSignIn() {
               slotProps: {
                 paper: {
                   sx: {
-                    backgroundColor: "#f5f5f5",
+                    backgroundColor: "background.paper",
                     "& .MuiMenuItem-root": {
-                      color: "#333",
+                      color: "text.primary",
                       "&:hover": {
-                        backgroundColor: "#e0e0e0",
+                        backgroundColor: "action.hover",
                       },
                     },
                   },
@@ -601,7 +604,7 @@ export default function DigiPassSignIn() {
           top: { xs: 10, sm: 20 },
           left: { xs: 10, sm: 20 },
           backgroundColor: "primary.main",
-          color: "white",
+          color: "primary.contrastText",
           zIndex: 9999,
         }}
       >
@@ -629,8 +632,8 @@ export default function DigiPassSignIn() {
             p: 4,
             textAlign: "center",
             backdropFilter: "blur(6px)",
-            backgroundColor: "rgba(255,255,255,0.95)",
-            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.15)",
+            backgroundColor: theme.palette.overlay.cardHeavy,
+            boxShadow: theme.palette.shadow.card,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",

@@ -1,14 +1,10 @@
 "use client";
 
 import React, { useRef, useState, useEffect, useMemo } from "react";
-import { Box, Card, CardContent, Typography } from "@mui/material";
+import { Box, Card, CardContent, Typography, useTheme } from "@mui/material";
 import { motion } from "framer-motion";
 import { Shift } from "ambient-cbg";
 
-const COLOR_PALETTE = [
-  "#f44336", "#e91e63", "#9c27b0", "#673ab7", "#3f51b5", 
-  "#2196f3", "#03a9f4", "#00bcd4", "#009688", "#4caf50"
-];
 
 function hashString(value) {
   const text = String(value || "");
@@ -101,14 +97,14 @@ function getOldestSlotIndex(slotMedia, usedInBatch) {
   return oldestIdx >= 0 ? oldestIdx : 0;
 }
 
-function MediaCard({ 
-  item, 
-  isSignatureMode, 
-  imageSize, 
-  randomSizes, 
-  backgroundLogo, 
-  backgroundColor, 
-  randomColors, 
+function MediaCard({
+  item,
+  isSignatureMode,
+  imageSize,
+  randomSizes,
+  backgroundLogo,
+  backgroundColor,
+  randomColors,
   imageShape = "circle",
   mediaType2TextColor,
   mediaType2SignatureColor
@@ -118,7 +114,7 @@ function MediaCard({
       const hue = hashString(item._id) % 360;
       return `hsl(${hue}, 80%, 75%)`;
     }
-    return backgroundColor || "#ffffff";
+    return backgroundColor || theme.palette.common.white;
   }, [item._id, randomColors, backgroundColor]);
 
   const isFull = imageShape === "full";
@@ -144,11 +140,13 @@ function MediaCard({
         alignItems: "center",
         p: isCircle ? 1.0 : 0,
         backgroundColor: cardBgColor,
-        background: !item.imageUrl 
-          ? `linear-gradient(135deg, ${cardBgColor} 0%, rgba(255,255,255,0.95) 100%)` 
+        background: !item.imageUrl
+          ? `linear-gradient(135deg, ${cardBgColor} 0%, ${theme.palette.wall.cardFallbackBg} 100%)`
           : cardBgColor,
-        boxShadow: !item.imageUrl ? "0 10px 30px rgba(0,0,0,0.15)" : (randomSizes?.enabled ? 6 : 4),
-        border: !item.imageUrl ? "2px solid rgba(255,255,255,0.5)" : "1px solid rgba(0,0,0,0.15)",
+        boxShadow: !item.imageUrl ? theme.palette.wall.cardShadow : (randomSizes?.enabled ? 6 : 4),
+        border: !item.imageUrl
+          ? `2px solid ${theme.palette.wall.cardBorderLight}`
+          : `1px solid ${theme.palette.wall.cardBorderDark}`,
         transition: "all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
         position: 'relative',
         overflow: 'hidden',
@@ -162,27 +160,32 @@ function MediaCard({
       }}
     >
       {(item.imageUrl || item.signatureUrl) && (
-        <Box 
-          sx={{ 
-            position: isFull ? 'absolute' : 'relative', 
+        <Box
+          sx={{
+            position: isFull ? 'absolute' : 'relative',
             top: 0,
             left: 0,
             right: 0,
             bottom: 0,
-            width: isCircle ? imageSize * 0.9 : '100%', 
-            height: isCircle ? imageSize * 0.9 : (isTop70 ? imageSize : (isFull ? '100%' : '100%')), 
+            width: isCircle ? imageSize * 0.9 : '100%',
+            height: isCircle ? imageSize * 0.9 : (isTop70 ? imageSize : (isFull ? '100%' : '100%')),
             flexShrink: 0,
             mt: isCircle ? 0.5 : 0,
             mb: isCircle ? 0.8 : (isTop70 ? 0.5 : 0),
             borderRadius: isCircle ? "50%" : 0,
             overflow: "hidden",
-            border: isCircle ? (randomSizes?.enabled ? "6px solid #ddd" : "4px solid #ccc") : "none",
-            boxShadow: isCircle ? "0 4px 12px rgba(0,0,0,0.1)" : "none",
+            border: isCircle
+              ? `${randomSizes?.enabled ? "6px" : "4px"} solid ${theme.palette.mode === "dark"
+                ? theme.palette.wall.circleBorderDarkMode
+                : (randomSizes?.enabled ? theme.palette.wall.circleBorderBold : theme.palette.wall.circleBorderThin)
+              }`
+              : "none",
+            boxShadow: isCircle ? theme.palette.wall.circleShadow : "none",
             zIndex: 1,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            backgroundColor: !item.imageUrl ? "rgba(255,255,255,0.95)" : "transparent",
+            backgroundColor: !item.imageUrl ? theme.palette.wall.cardFallbackBg : "transparent",
           }}
         >
           {item.imageUrl ? (
@@ -199,7 +202,7 @@ function MediaCard({
                   "&:hover": { transform: "scale(1.05)" },
                 }}
               />
-              
+
               {backgroundLogo?.stampOnImages && backgroundLogo.imageUrl && (
                 <Box
                   component="img"
@@ -211,7 +214,7 @@ function MediaCard({
                     height: 'auto',
                     zIndex: 5,
                     opacity: 0.9,
-                    filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.4))',
+                    filter: theme.palette.wall.stampShadow,
                     pointerEvents: 'none',
                     ...getStampStyles()
                   }}
@@ -224,7 +227,7 @@ function MediaCard({
                 sx={{
                   width: "85%",
                   height: "80%",
-                  backgroundColor: mediaType2SignatureColor || '#000000',
+                  backgroundColor: mediaType2SignatureColor || theme.palette.common.black,
                   maskImage: `url(${item.signatureUrl})`,
                   maskSize: "contain",
                   maskRepeat: "no-repeat",
@@ -233,7 +236,7 @@ function MediaCard({
                   WebkitMaskSize: "contain",
                   WebkitMaskRepeat: "no-repeat",
                   WebkitMaskPosition: "center",
-                  filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))',
+                  filter: theme.palette.wall.signatureShadow,
                 }}
               />
             ) : (
@@ -245,7 +248,7 @@ function MediaCard({
                   width: "85%",
                   maxHeight: "80%",
                   objectFit: "contain",
-                  filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))',
+                  filter: theme.palette.wall.signatureShadow,
                 }}
               />
             )
@@ -260,26 +263,15 @@ function MediaCard({
             left: 0,
             right: 0,
             height: '30%',
-            background: `linear-gradient(to top,
-              rgba(0,0,0,0.76) 0%,
-              rgba(0,0,0,0.71) 8%,
-              rgba(0,0,0,0.63) 17%,
-              rgba(0,0,0,0.52) 27%,
-              rgba(0,0,0,0.40) 38%,
-              rgba(0,0,0,0.28) 50%,
-              rgba(0,0,0,0.17) 63%,
-              rgba(0,0,0,0.08) 76%,
-              rgba(0,0,0,0.02) 88%,
-              transparent 100%
-            )`,
+            background: theme.palette.wall.fullOverlayGradient,
             zIndex: 2,
             pointerEvents: 'none',
           }}
         />
       )}
-      <Box sx={{ 
-        width: '100%', 
-        zIndex: 3, 
+      <Box sx={{
+        width: '100%',
+        zIndex: 3,
         ...(isFull && (isSignatureMode ? (item.imageUrl || item.signatureUrl) : (item.imageUrl && item.text)) ? {
           position: 'absolute',
           bottom: 0,
@@ -298,7 +290,7 @@ function MediaCard({
           flex: 1,
           background: 'transparent',
         }),
-        color: (isFull && (isSignatureMode ? (item.imageUrl || item.signatureUrl) : (item.imageUrl && item.text))) ? '#fff' : 'inherit',
+        color: (isFull && (item.imageUrl || item.signatureUrl)) ? theme.palette.common.white : 'inherit',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: (isFull && (isSignatureMode ? (item.imageUrl || item.signatureUrl) : (item.imageUrl && item.text))) ? 'flex-end' : 'center',
@@ -307,10 +299,10 @@ function MediaCard({
         overflow: 'hidden',
       }}>
         {(item.signatureUrl && item.imageUrl) && (
-          <Box sx={{ 
-            width: "100%", 
-            display: 'flex', 
-            justifyContent: 'center', 
+          <Box sx={{
+            width: "100%",
+            display: 'flex',
+            justifyContent: 'center',
             mb: item.text ? (isFull ? 0.5 : 2) : 0,
             filter: 'none'
           }}>
@@ -320,7 +312,7 @@ function MediaCard({
                   width: "82%",
                   maxWidth: 140,
                   height: 30,
-                  backgroundColor: isFull ? '#ffffff' : (mediaType2SignatureColor || '#000000'),
+                  backgroundColor: isFull ? theme.palette.common.white : (mediaType2SignatureColor || theme.palette.common.black),
                   maskImage: `url(${item.signatureUrl})`,
                   maskSize: "contain",
                   maskRepeat: "no-repeat",
@@ -389,11 +381,10 @@ function MediaCard({
               overflow: 'hidden',
 
               color: (isFull && (item.imageUrl || item.signatureUrl))
-                ? (isSignatureMode ? (mediaType2TextColor || '#ffffff') : '#ffffff')
+                ? (isSignatureMode ? (mediaType2TextColor || theme.palette.common.white) : theme.palette.common.white)
                 : (isSignatureMode
-                   ? (mediaType2TextColor || '#000000')
-                   : ((!item.imageUrl && !isFull) ? 'rgba(0,0,0,0.85)' : 'inherit')),
-
+                  ? (mediaType2TextColor || theme.palette.common.black)
+                  : ((!item.imageUrl && !isFull) ? theme.palette.wall.textOnLightCard : 'inherit')),
               letterSpacing: !item.imageUrl ? '0.01em' : 'normal'
             }}>
             {item.text}
@@ -411,7 +402,7 @@ export default function CardsGrid({
   background,
   backgroundLogo,
   randomSizes,
-  backgroundColor = "#ffffff",
+  backgroundColor = theme.palette.background.white,
   randomColors = false,
   imageShape = "circle",
   mediaType2TextColor,
@@ -419,6 +410,7 @@ export default function CardsGrid({
 }) {
   const containerRef = useRef(null);
   const prevMediaIdsRef = useRef([]);
+  const theme = useTheme();
 
   const normalizedCardOrder = String(cardOrder || "sequential").toLowerCase();
   const isRandomLayout = normalizedCardOrder === "random";

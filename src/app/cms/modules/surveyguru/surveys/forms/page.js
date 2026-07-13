@@ -691,7 +691,7 @@ export default function SurveyFormsManagePage() {
         options: (q.options || []).map((o, oi) => {
           const key = `${qi}:${oi}`;
           let imageUrl = o.imageUrl || null;
-          
+
           if (uploadedUrls[key]) {
             imageUrl = uploadedUrls[key];
           } else if (o.imageRemove) {
@@ -912,198 +912,198 @@ export default function SurveyFormsManagePage() {
                 return titleVal.includes(term) || slugVal.includes(term);
               })
               .map((f) => (
-              <Grid
-                key={f._id}
-                size={{
-                  xs: 12,
-                  sm: 6,
-                  md: 4,
-                  lg: 3
-                }}>
-                <AppCard
-                  sx={{
-                    width: "100%",
-                    maxWidth: 420,
-                    height: "100%",
-                    display: "flex",
-                    flexDirection: "column",
-                    p: 1,
-                  }}
-                >
-                  <CardContent sx={{ flexGrow: 1 }}>
-                    <Stack
-                      direction="row"
-                      spacing={dir === "rtl" ? 1.5 : 1}
-                      sx={{
-                        alignItems: "center",
-                        mb: 1
-                      }}>
-                      <Avatar
-                        sx={{
-                          bgcolor: f.isActive ? "success.main" : "grey.500",
-                        }}
-                      >
-                        <ICONS.form fontSize="small" />
-                      </Avatar>
-                      <Box sx={dir === "rtl" ? { mr: 1.5 } : { ml: 1 }} />
+                <Grid
+                  key={f._id}
+                  size={{
+                    xs: 12,
+                    sm: 6,
+                    md: 4,
+                    lg: 3
+                  }}>
+                  <AppCard
+                    sx={{
+                      width: "100%",
+                      maxWidth: 420,
+                      height: "100%",
+                      display: "flex",
+                      flexDirection: "column",
+                      p: 1,
+                    }}
+                  >
+                    <CardContent sx={{ flexGrow: 1 }}>
                       <Stack
+                        direction="row"
+                        spacing={dir === "rtl" ? 1.5 : 1}
                         sx={{
-                          flex: 1,
-                          overflow: "hidden"
+                          alignItems: "center",
+                          mb: 1
                         }}>
-                        <Typography variant="subtitle1" noWrap sx={{
-                          fontWeight: 600
-                        }}>
-                          {f.title}
-                        </Typography>
-                        <Typography
-                          variant="caption"
-                          noWrap
+                        <Avatar
                           sx={{
-                            color: "text.secondary"
+                            bgcolor: f.isActive ? "success.main" : "grey.500",
                           }}
                         >
-                          {f.slug}
-                        </Typography>
-                      </Stack>
-                      <Chip
-                        label={f.isActive ? "Active" : "Inactive"}
-                        size="small"
-                        color={f.isActive ? "success" : "default"}
-                      />
-                      {f.isAnonymous && (
-                        <Chip
-                          label="Anonymous"
-                          size="small"
-                          color="warning"
+                          <ICONS.form fontSize="small" />
+                        </Avatar>
+                        <Box sx={dir === "rtl" ? { mr: 1.5 } : { ml: 1 }} />
+                        <Stack
                           sx={{
-                            ml: dir === "rtl" ? 0 : 1,
-                            mr: dir === "rtl" ? 1 : 0,
-                          }}
+                            flex: 1,
+                            overflow: "hidden"
+                          }}>
+                          <Typography variant="subtitle1" noWrap sx={{
+                            fontWeight: 600
+                          }}>
+                            {f.title}
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            noWrap
+                            sx={{
+                              color: "text.secondary"
+                            }}
+                          >
+                            {f.slug}
+                          </Typography>
+                        </Stack>
+                        <Chip
+                          label={f.isActive ? "Active" : "Inactive"}
+                          size="small"
+                          color={f.isActive ? "success" : "default"}
                         />
-                      )}
-                    </Stack>
-
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: "text.secondary",
-                        mt: 1
-                      }}>
-                      {f.description || "—"}
-                    </Typography>
-                    <Stack spacing={0.5} sx={{ mt: 1 }}>
-                      <Stack direction="row" sx={{
-                        alignItems: "center"
-                      }}>
-                        <ICONS.help fontSize="inherit" />
-                        <Typography
-                          variant="caption"
-                          sx={[{
-                            color: "text.secondary"
-                          }, dir === "rtl" ? { mr: 1 } : { ml: 1 }]}>
-                          {toArabicDigits(f.questions?.length || 0, language)} {t.questions}
-                        </Typography>
+                        {f.isAnonymous && (
+                          <Chip
+                            label="Anonymous"
+                            size="small"
+                            color="warning"
+                            sx={{
+                              ml: dir === "rtl" ? 0 : 1,
+                              mr: dir === "rtl" ? 1 : 0,
+                            }}
+                          />
+                        )}
                       </Stack>
-                      <Stack direction="row" sx={{
-                        alignItems: "center"
-                      }}>
-                        <ICONS.people fontSize="inherit" />
-                        <Typography
-                          variant="caption"
-                          sx={[{
-                            color: "text.secondary"
-                          }, dir === "rtl" ? { mr: 1 } : { ml: 1 }]}>
-                          {toArabicDigits(f.recipientCount ?? 0, language)} {t.recipients}
-                        </Typography>
+
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: "text.secondary",
+                          mt: 1
+                        }}>
+                        {f.description || "—"}
+                      </Typography>
+                      <Stack spacing={0.5} sx={{ mt: 1 }}>
+                        <Stack direction="row" sx={{
+                          alignItems: "center"
+                        }}>
+                          <ICONS.help fontSize="inherit" />
+                          <Typography
+                            variant="caption"
+                            sx={[{
+                              color: "text.secondary"
+                            }, dir === "rtl" ? { mr: 1 } : { ml: 1 }]}>
+                            {toArabicDigits(f.questions?.length || 0, language)} {t.questions}
+                          </Typography>
+                        </Stack>
+                        <Stack direction="row" sx={{
+                          alignItems: "center"
+                        }}>
+                          <ICONS.people fontSize="inherit" />
+                          <Typography
+                            variant="caption"
+                            sx={[{
+                              color: "text.secondary"
+                            }, dir === "rtl" ? { mr: 1 } : { ml: 1 }]}>
+                            {toArabicDigits(f.recipientCount ?? 0, language)} {t.recipients}
+                          </Typography>
+                        </Stack>
+                        <Stack direction="row" sx={{
+                          alignItems: "center"
+                        }}>
+                          <ICONS.results fontSize="inherit" />
+                          <Typography
+                            variant="caption"
+                            sx={[{
+                              color: "text.secondary"
+                            }, dir === "rtl" ? { mr: 1 } : { ml: 1 }]}>
+                            {toArabicDigits(f.responseCount ?? 0, language)} {t.responses}
+                          </Typography>
+                        </Stack>
                       </Stack>
-                      <Stack direction="row" sx={{
-                        alignItems: "center"
-                      }}>
-                        <ICONS.results fontSize="inherit" />
-                        <Typography
-                          variant="caption"
-                          sx={[{
-                            color: "text.secondary"
-                          }, dir === "rtl" ? { mr: 1 } : { ml: 1 }]}>
-                          {toArabicDigits(f.responseCount ?? 0, language)} {t.responses}
-                        </Typography>
-                      </Stack>
-                    </Stack>
-                  </CardContent>
+                    </CardContent>
 
-                  <RecordMetadata
-                    createdByName={f.createdBy}
-                    updatedByName={f.updatedBy}
-                    createdAt={f.createdAt}
-                    updatedAt={f.updatedAt}
-                    locale={language === "ar" ? "ar-SA" : "en-GB"}
-                  />
+                    <RecordMetadata
+                      createdByName={f.createdBy}
+                      updatedByName={f.updatedBy}
+                      createdAt={f.createdAt}
+                      updatedAt={f.updatedAt}
+                      locale={language === "ar" ? "ar-SA" : "en-GB"}
+                    />
 
-                  <CardActions sx={{ justifyContent: "center" }}>
-                    <Tooltip title={t.copyLink}>
-                      <IconButton
-                        onClick={() => {
-                          setFormToShare(f);
-                          setShareModalOpen(true);
-                        }}
-                      >
-                        <ICONS.share />
-                      </IconButton>
-                    </Tooltip>
+                    <CardActions sx={{ justifyContent: "center" }}>
+                      <Tooltip title={t.copyLink}>
+                        <IconButton
+                          onClick={() => {
+                            setFormToShare(f);
+                            setShareModalOpen(true);
+                          }}
+                        >
+                          <ICONS.share />
+                        </IconButton>
+                      </Tooltip>
 
-                    <Tooltip title="View responses">
-                      <IconButton
-                        onClick={() =>
-                          router.push(
-                            `/cms/modules/surveyguru/surveys/forms/${f.slug}/responses`
-                          )
-                        }
-                      >
-                        <ICONS.results fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title={t.insights || "Insights"}>
-                      <IconButton
-                        color="info"
-                        onClick={() =>
-                          router.push(
-                            `/cms/modules/surveyguru/surveys/forms/${f.slug}/insights`
-                          )
-                        }
-                      >
-                        <ICONS.insights fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title={t.editForm}>
-                      <IconButton color="primary" onClick={() => openEdit(f)}>
-                        <ICONS.edit fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title={t.cloneForm}>
-                      <IconButton
-                        color="secondary"
-                        onClick={() =>
-                          setConfirmClone({ open: true, id: f._id })
-                        }
-                      >
-                        <ICONS.copy fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title={t.delete}>
-                      <IconButton
-                        color="error"
-                        onClick={() =>
-                          setConfirmDelete({ open: true, id: f._id })
-                        }
-                      >
-                        <ICONS.delete fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-                  </CardActions>
-                </AppCard>
-              </Grid>
-            ))}
+                      <Tooltip title="View responses">
+                        <IconButton
+                          onClick={() =>
+                            router.push(
+                              `/cms/modules/surveyguru/surveys/forms/${f.slug}/responses`
+                            )
+                          }
+                        >
+                          <ICONS.results fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title={t.insights || "Insights"}>
+                        <IconButton
+                          color="info"
+                          onClick={() =>
+                            router.push(
+                              `/cms/modules/surveyguru/surveys/forms/${f.slug}/insights`
+                            )
+                          }
+                        >
+                          <ICONS.insights fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title={t.editForm}>
+                        <IconButton color="primary" onClick={() => openEdit(f)}>
+                          <ICONS.edit fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title={t.cloneForm}>
+                        <IconButton
+                          color="secondary"
+                          onClick={() =>
+                            setConfirmClone({ open: true, id: f._id })
+                          }
+                        >
+                          <ICONS.copy fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title={t.delete}>
+                        <IconButton
+                          color="error"
+                          onClick={() =>
+                            setConfirmDelete({ open: true, id: f._id })
+                          }
+                        >
+                          <ICONS.delete fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </CardActions>
+                  </AppCard>
+                </Grid>
+              ))}
           </Grid>
         )}
 
@@ -1207,12 +1207,7 @@ export default function SurveyFormsManagePage() {
                   px: 1,
                   cursor: "pointer",
                   overflow: "hidden",
-                  boxShadow: `
-        2px 2px 6px rgba(0, 0, 0, 0.15),
-        -2px -2px 6px rgba(255, 255, 255, 0.5),
-        inset 2px 2px 5px rgba(0, 0, 0, 0.2),
-        inset -2px -2px 5px rgba(255, 255, 255, 0.7)
-      `,
+                  boxShadow: (theme) => theme.palette.shadow.neumorphicToggle,
                   position: "relative",
                 }}
               >
@@ -1220,7 +1215,7 @@ export default function SurveyFormsManagePage() {
                   variant="caption"
                   sx={{
                     fontWeight: 600,
-                    color: defaultLanguage === "en" ? "#fff" : "text.secondary",
+                    color: defaultLanguage === "en" ? "primary.contrastText" : "text.secondary",
                     zIndex: 2,
                     transition: "color 0.3s",
                   }}
@@ -1231,7 +1226,7 @@ export default function SurveyFormsManagePage() {
                   variant="caption"
                   sx={{
                     fontWeight: 600,
-                    color: defaultLanguage === "ar" ? "#fff" : "text.secondary",
+                    color: defaultLanguage === "ar" ? "primary.contrastText" : "text.secondary",
                     zIndex: 2,
                     transition: "color 0.3s",
                   }}
@@ -1247,9 +1242,9 @@ export default function SurveyFormsManagePage() {
                     borderRadius: "50%",
                     top: 2,
                     left: defaultLanguage === "ar" ? 34 : 2,
-                    backgroundColor: "#1976d2",
+                    backgroundColor: (theme) => theme.palette.primary.main,
                     zIndex: 1,
-                    boxShadow: "0 4px 8px rgba(0, 0, 0, 0.3)",
+                    boxShadow: (theme) => theme.palette.shadow.toggleKnob,
                     transition:
                       "left 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)",
                   }}

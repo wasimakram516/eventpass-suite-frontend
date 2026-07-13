@@ -13,18 +13,22 @@ import {
     Alert,
     Chip,
     Paper,
+    useTheme,
 } from "@mui/material";
 import ICONS from "@/utils/iconUtil";
 
 const MediaUploadProgress = ({ open, uploads, onClose, allowClose = false }) => {
+    const theme = useTheme();
+    const isDark = theme.palette.mode === "dark";
+
     const allComplete = uploads.every((u) => u.percent === 100 || u.error);
     const hasErrors = uploads.some((u) => u.error);
     const uploadingCount = uploads.filter((u) => u.percent < 100 && !u.error).length;
 
     const getStatusColor = (upload) => {
-        if (upload.error) return "#d32f2f";
-        if (upload.percent === 100) return "#2e7d32";
-        return "#128199"; // Primary color
+        if (upload.error) return theme.palette.error.main;
+        if (upload.percent === 100) return theme.palette.success.main;
+        return theme.palette.primary.main;
     };
 
     const getStatusIcon = (upload) => {
@@ -32,7 +36,7 @@ const MediaUploadProgress = ({ open, uploads, onClose, allowClose = false }) => 
             return (
                 <ICONS.errorOutline
                     sx={{
-                        color: "#d32f2f",
+                        color: "error.main",
                         fontSize: 22,
                         animation: upload.error ? "pulse 0.5s ease-in-out" : "none"
                     }}
@@ -43,7 +47,7 @@ const MediaUploadProgress = ({ open, uploads, onClose, allowClose = false }) => 
             return (
                 <ICONS.checkCircle
                     sx={{
-                        color: "#2e7d32",
+                        color: "success.main",
                         fontSize: 22,
                         animation: "scaleIn 0.3s ease-out"
                     }}
@@ -56,12 +60,25 @@ const MediaUploadProgress = ({ open, uploads, onClose, allowClose = false }) => 
                     width: 20,
                     height: 20,
                     borderRadius: "50%",
-                    border: "2px solid #128199",
+                    border: "2px solid",
+                    borderColor: "primary.main",
                     borderTopColor: "transparent",
                     animation: "spin 0.8s linear infinite",
                 }}
             />
         );
+    };
+
+    const getUploadBg = (upload) => {
+        if (upload.error) return theme.palette.mediaUpload.status.error.bg;
+        if (upload.percent === 100) return theme.palette.mediaUpload.status.success.bg;
+        return theme.palette.mediaUpload.status.uploading.bg;
+    };
+
+    const getUploadBorder = (upload) => {
+        if (upload.error) return theme.palette.mediaUpload.status.error.border;
+        if (upload.percent === 100) return theme.palette.mediaUpload.status.success.border;
+        return theme.palette.mediaUpload.status.uploading.border;
     };
 
     return (
@@ -78,7 +95,7 @@ const MediaUploadProgress = ({ open, uploads, onClose, allowClose = false }) => 
                     paper: {
                         sx: {
                             borderRadius: 3,
-                            boxShadow: "0px 10px 32px rgba(0,0,0,0.15)",
+                            boxShadow: (theme) => theme.palette.shadow.dialog,
                             overflow: "hidden",
                         }
                     }
@@ -90,9 +107,9 @@ const MediaUploadProgress = ({ open, uploads, onClose, allowClose = false }) => 
                         justifyContent: "space-between",
                         alignItems: "center",
                         background: allComplete
-                            ? "linear-gradient(135deg, #2e7d32 0%, #4caf50 100%)"
-                            : "linear-gradient(135deg, #128199 0%, #0077b6 100%)",
-                        color: "#ffffff",
+                            ? (theme) => `linear-gradient(135deg, ${theme.palette.success.dark} 0%, ${theme.palette.success.main} 100%)`
+                            : (theme) => `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.primary.main} 100%)`,
+                        color: "primary.contrastText",
                         py: 2.5,
                         px: 3,
                     }}
@@ -104,13 +121,13 @@ const MediaUploadProgress = ({ open, uploads, onClose, allowClose = false }) => 
                                     width: 32,
                                     height: 32,
                                     borderRadius: "50%",
-                                    bgcolor: "rgba(255,255,255,0.2)",
+                                    bgcolor: (theme) => theme.palette.mediaUpload.iconCircleBg,
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "center",
                                 }}
                             >
-                                <ICONS.cloud sx={{ color: "#ffffff", fontSize: 18 }} />
+                                <ICONS.cloud sx={{ color: "primary.contrastText", fontSize: 18 }} />
                             </Box>
                         )}
                         {allComplete && (
@@ -119,13 +136,13 @@ const MediaUploadProgress = ({ open, uploads, onClose, allowClose = false }) => 
                                     width: 32,
                                     height: 32,
                                     borderRadius: "50%",
-                                    bgcolor: "rgba(255,255,255,0.2)",
+                                    bgcolor: (theme) => theme.palette.mediaUpload.iconCircleBg,
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "center",
                                 }}
                             >
-                                <ICONS.checkCircle sx={{ color: "#ffffff", fontSize: 18 }} />
+                                <ICONS.checkCircle sx={{ color: "primary.contrastText", fontSize: 18 }} />
                             </Box>
                         )}
                         <Box>
@@ -133,12 +150,18 @@ const MediaUploadProgress = ({ open, uploads, onClose, allowClose = false }) => 
                                 sx={{
                                     fontWeight: 700,
                                     fontSize: "1.1rem",
-                                    color: "#ffffff"
+                                    color: "primary.contrastText"
                                 }}>
                                 {allComplete ? "Upload Complete" : "Uploading Media"}
                             </Typography>
                             {!allComplete && uploadingCount > 0 && (
-                                <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.9)", fontSize: "0.75rem" }}>
+                                <Typography
+                                    variant="caption"
+                                    sx={{
+                                        color: (theme) => theme.palette.landing.subtitleText,
+                                        fontSize: "0.75rem"
+                                    }}
+                                >
                                     {uploadingCount} {uploadingCount === 1 ? "file" : "files"} uploading...
                                 </Typography>
                             )}
@@ -149,9 +172,9 @@ const MediaUploadProgress = ({ open, uploads, onClose, allowClose = false }) => 
                             onClick={onClose}
                             size="small"
                             sx={{
-                                color: "#ffffff",
+                                color: "primary.contrastText",
                                 "&:hover": {
-                                    bgcolor: "rgba(255,255,255,0.15)",
+                                    bgcolor: (theme) => theme.palette.overlay.whiteGlassLight,
                                 }
                             }}
                         >
@@ -159,14 +182,14 @@ const MediaUploadProgress = ({ open, uploads, onClose, allowClose = false }) => 
                         </IconButton>
                     )}
                 </DialogTitle>
-                <DialogContent sx={{ px: 3, py: 3, bgcolor: "#f9f9f9" }}>
+                <DialogContent sx={{ px: 3, py: 3, bgcolor: "background.default" }}>
                     {hasErrors && (
                         <Alert
                             severity="error"
                             sx={{
                                 mb: 2.5,
                                 borderRadius: 2,
-                                boxShadow: "0px 2px 8px rgba(211, 47, 47, 0.15)",
+                                boxShadow: (theme) => theme.palette.mediaUpload.alertShadow,
                             }}
                             icon={<ICONS.errorOutline />}
                         >
@@ -181,12 +204,13 @@ const MediaUploadProgress = ({ open, uploads, onClose, allowClose = false }) => 
                                 sx={{
                                     p: 2.5,
                                     borderRadius: 2,
-                                    bgcolor: "#ffffff",
-                                    border: `1px solid ${upload.error ? "#ffebee" : upload.percent === 100 ? "#e8f5e9" : "#e3f2fd"}`,
-                                    boxShadow: "0px 2px 8px rgba(0,0,0,0.06)",
+                                    bgcolor: "background.paper",
+                                    border: "1px solid",
+                                    borderColor: getUploadBorder(upload),
+                                    boxShadow: (theme) => theme.palette.mediaUpload.cardShadow,
                                     transition: "all 0.3s ease",
                                     "&:hover": {
-                                        boxShadow: "0px 4px 12px rgba(0,0,0,0.1)",
+                                        boxShadow: (theme) => theme.palette.mediaUpload.cardHoverShadow,
                                         transform: "translateY(-1px)",
                                     }
                                 }}
@@ -197,7 +221,7 @@ const MediaUploadProgress = ({ open, uploads, onClose, allowClose = false }) => 
                                             variant="body2"
                                             sx={{
                                                 fontWeight: 600,
-                                                color: "#033649",
+                                                color: "text.primary",
                                                 mb: 0.5,
                                                 fontSize: "0.95rem"
                                             }}>
@@ -207,7 +231,7 @@ const MediaUploadProgress = ({ open, uploads, onClose, allowClose = false }) => 
                                             <Typography
                                                 variant="caption"
                                                 sx={{
-                                                    color: "#555",
+                                                    color: "text.secondary",
                                                     fontSize: "0.8rem",
                                                     display: "block",
                                                 }}
@@ -221,11 +245,7 @@ const MediaUploadProgress = ({ open, uploads, onClose, allowClose = false }) => 
                                             label={`${upload.percent}%`}
                                             size="small"
                                             sx={{
-                                                bgcolor: upload.error
-                                                    ? "#ffebee"
-                                                    : upload.percent === 100
-                                                        ? "#e8f5e9"
-                                                        : "#e3f2fd",
+                                                bgcolor: getUploadBg(upload),
                                                 color: getStatusColor(upload),
                                                 fontWeight: 600,
                                                 fontSize: "0.75rem",
@@ -243,18 +263,14 @@ const MediaUploadProgress = ({ open, uploads, onClose, allowClose = false }) => 
                                         sx={{
                                             height: 8,
                                             borderRadius: 4,
-                                            bgcolor: upload.error
-                                                ? "#ffebee"
-                                                : upload.percent === 100
-                                                    ? "#e8f5e9"
-                                                    : "#e3f2fd",
+                                            bgcolor: getUploadBg(upload),
                                             "& .MuiLinearProgress-bar": {
                                                 borderRadius: 4,
                                                 bgcolor: getStatusColor(upload),
                                                 transition: "all 0.3s ease",
-                                                boxShadow: upload.percent === 100
-                                                    ? "0px 2px 8px rgba(46, 125, 50, 0.3)"
-                                                    : "0px 2px 4px rgba(18, 129, 153, 0.2)",
+                                                boxShadow: (theme) => upload.percent === 100
+                                                    ? theme.palette.mediaUpload.progressBarShadow.success
+                                                    : theme.palette.mediaUpload.progressBarShadow.default,
                                             }
                                         }}
                                     />
@@ -263,7 +279,7 @@ const MediaUploadProgress = ({ open, uploads, onClose, allowClose = false }) => 
                                     <Typography
                                         variant="caption"
                                         sx={{
-                                            color: "#d32f2f",
+                                            color: "error.main",
                                             fontSize: "0.8rem",
                                             mt: 1,
                                             display: "block",
@@ -310,4 +326,3 @@ const MediaUploadProgress = ({ open, uploads, onClose, allowClose = false }) => 
 };
 
 export default MediaUploadProgress;
-

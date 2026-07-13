@@ -86,8 +86,8 @@ export default function BusinessDrawer({
           <IconButton
             onClick={onClose}
             sx={{
-              bgcolor: "grey.100",
-              "&:hover": { bgcolor: "grey.200" },
+              bgcolor: "action.hover",
+              "&:hover": { bgcolor: "action.selected" },
             }}
           >
             <ICONS.close />
@@ -146,9 +146,9 @@ export default function BusinessDrawer({
                 mb: 1.25,
                 justifyContent: "flex-start",
                 borderRadius: 3,
-                boxShadow:
+                boxShadow: (theme) =>
                   selectedBusinessSlug === business.slug
-                    ? "0px 6px 12px rgba(0,0,0,0.1)"
+                    ? theme.palette.home.moduleCardShadow
                     : "none",
                 transition: "all 0.2s ease-in-out",
               }}

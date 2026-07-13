@@ -12,6 +12,7 @@ import {
     CircularProgress,
     Paper,
     Button,
+    useTheme,
 } from "@mui/material";
 import { PieChart } from "@mui/x-charts/PieChart";
 import { LineChart } from "@mui/x-charts/LineChart";
@@ -142,7 +143,6 @@ const translations = {
     },
 };
 
-const FIELD_COLOR = "#0077b6";
 
 // Format percentage with % sign on the right (even in RTL)
 const formatPercentage = (value, language) => {
@@ -221,16 +221,23 @@ const QuestionChip = ({ field, translatedLabel, isSelected, onClick }) => {
             label={translatedLabel || field.label}
             onClick={onClick}
             sx={{
-                backgroundColor: isSelected ? field.color : "#ffffff",
-                color: isSelected ? "#ffffff" : "#374151",
+                backgroundColor: isSelected ? field.color : "background.paper",
+                color: (theme) =>
+                    isSelected
+                        ? theme.palette.common.white
+                        : theme.palette.text.primary,
                 fontWeight: isSelected ? 600 : 500,
-                border: isSelected ? "none" : "2px solid #e5e7eb",
+                border: isSelected ? "none" : "2px solid",
+                borderColor: isSelected ? "transparent" : "divider",
                 cursor: "pointer",
                 transition: "all 0.3s ease-out",
                 "&:hover": {
                     transform: "scale(1.05)",
                     backgroundColor: isSelected ? field.color : `${field.color}15`,
-                    color: isSelected ? "#ffffff" : field.color,
+                    color: (theme) =>
+                        isSelected
+                            ? theme.palette.common.white
+                            : theme.palette.text.primary,
                     borderColor: field.color,
                 },
             }}
@@ -240,6 +247,9 @@ const QuestionChip = ({ field, translatedLabel, isSelected, onClick }) => {
 
 
 export default function SurveyGuruInsightsPage() {
+    const theme = useTheme();
+    const FIELD_COLOR = theme.palette.primary.main;
+
     const { slug } = useParams();
     const { t, dir, language } = useI18nLayout(translations);
 
@@ -620,15 +630,15 @@ export default function SurveyGuruInsightsPage() {
                             const results = response.data.data;
                             let segmentedData;
                             const xAxis = results.map(r => r.segment);
-                            
+
                             // Extract all possible answer labels across all segments
                             const allLabelsSet = new Set();
                             results.forEach(r => {
                                 (r.distribution || []).forEach(d => allLabelsSet.add(d.label));
                             });
-                            
+
                             let allLabels = Array.from(allLabelsSet);
-                            
+
                             // For numeric questions (rating/nps), sort labels numerically
                             if (field.type === "rating" || field.type === "nps") {
                                 allLabels.sort((a, b) => parseFloat(a) - parseFloat(b));
@@ -659,8 +669,8 @@ export default function SurveyGuruInsightsPage() {
 
                             setChartData((prev) => ({
                                 ...prev,
-                                [questionId]: { 
-                                    ...field, 
+                                [questionId]: {
+                                    ...field,
                                     isSegmented: true,
                                     segmentedBy: selectedRegFieldLabel,
                                     segmentedData,
@@ -671,8 +681,8 @@ export default function SurveyGuruInsightsPage() {
 
                             setTranslatedChartData((prev) => ({
                                 ...prev,
-                                [questionId]: { 
-                                    ...field, 
+                                [questionId]: {
+                                    ...field,
                                     isSegmented: true,
                                     segmentedBy: selectedRegFieldLabel,
                                     segmentedData,
@@ -680,11 +690,11 @@ export default function SurveyGuruInsightsPage() {
                                 },
                             }));
                         } else {
-                             response = await getQuestionDistribution(
-                                 slug,
-                                 questionId,
-                                 field.isRegistrationField
-                             );
+                            response = await getQuestionDistribution(
+                                slug,
+                                questionId,
+                                field.isRegistrationField
+                            );
 
                             if (response?.error || !response?.data?.data) {
                                 console.error(`Error loading distribution data for ${questionId}:`, response?.message);
@@ -787,7 +797,7 @@ export default function SurveyGuruInsightsPage() {
             const chartDataArray = selectedQuestions.map((questionId) => {
                 const data = chartDataToUse[questionId] || chartData[questionId];
                 const activeType = getFieldParam(questionId, "chartType", data.type === "time" ? "line" : "pie");
-                
+
                 return {
                     ...data,
                     chartType: activeType,
@@ -808,13 +818,13 @@ export default function SurveyGuruInsightsPage() {
                 endDateFormatted: currentEventInfo?.endDate ? dayjs(currentEventInfo.endDate).format("DD-MMM-YY, hh:mm a") : undefined,
                 venue: currentEventInfo?.venue || "N/A",
                 summaryCards: [
-                    { label: t.totalResponses, value: toArabicDigits(totalResponses, language), color: "#0077b6" },
+                    { label: t.totalResponses, value: toArabicDigits(totalResponses, language), color: (theme) => theme.palette.primary.main },
                     formInfo?.isAnonymous === false && eventInfo?.registrations ? {
                         label: t.responseRate,
                         value: toArabicDigits(`${((totalResponses / eventInfo.registrations) * 100).toFixed(1)}%`, language),
-                        color: "#10b981"
+                        color: (theme) => theme.palette.insights.badgeMultiPrint
                     } : null,
-                    { label: t.questions, value: toArabicDigits(totalQuestions || availableQuestions.filter(q => q.isSurveyQuestion).length, language), color: "#f59e0b" },
+                    { label: t.questions, value: toArabicDigits(totalQuestions || availableQuestions.filter(q => q.isSurveyQuestion).length, language), color: (theme) => theme.palette.insights.badgeOnePrint },
                 ].filter(Boolean)
             };
 
@@ -1104,13 +1114,13 @@ export default function SurveyGuruInsightsPage() {
             <Divider />
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 2 }}>
                 {[
-                    { label: t.totalResponses, value: toArabicDigits(totalResponses, language), color: "#0077b6" },
+                    { label: t.totalResponses, value: toArabicDigits(totalResponses, language), color: theme.palette.primary.main },
                     formInfo?.isAnonymous === false && eventInfo?.registrations ? {
                         label: t.responseRate,
                         value: toArabicDigits(`${((totalResponses / eventInfo.registrations) * 100).toFixed(1)}%`, language),
-                        color: "#10b981"
+                        color: theme.palette.insights.badgeMultiPrint
                     } : null,
-                    { label: t.questions, value: toArabicDigits(totalQuestions || availableQuestions.filter(q => q.isSurveyQuestion).length, language), color: "#f59e0b" },
+                    { label: t.questions, value: toArabicDigits(totalQuestions || availableQuestions.filter(q => q.isSurveyQuestion).length, language), color: theme.palette.insights.badgeOnePrint },
                 ].filter(Boolean).map(({ label, value, color }) => (
                     <AppCard
                         key={label}
@@ -1122,7 +1132,8 @@ export default function SurveyGuruInsightsPage() {
                             display: 'flex',
                             flexDirection: 'column',
                             justifyContent: 'center',
-                            border: "1px solid #f1f5f9"
+                            border: "1px solid",
+                            borderColor: "divider",
                         }}
                     >
                         <Typography
@@ -1149,12 +1160,13 @@ export default function SurveyGuruInsightsPage() {
                 sx={{
                     p: { xs: 2, md: 3 },
                     borderRadius: 3,
-                    boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
-                    border: "1px solid #f1f5f9",
+                    boxShadow: (theme) => theme.palette.shadow.cardSubtle,
+                    border: "1px solid",
+                    borderColor: "divider",
                     mb: 1,
                 }}
             >
-                <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "#1e293b", mb: 1 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "text.primary", mb: 1 }}>
                     {language === "ar" ? "أسئلة الاستطلاع" : "Survey Questions"}
                 </Typography>
                 <Typography
@@ -1193,42 +1205,41 @@ export default function SurveyGuruInsightsPage() {
                     sx={{
                         p: { xs: 2, md: 3 },
                         borderRadius: 3,
-                        boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
-                        border: selectedRegistrationField ? "1.5px solid #0077b6" : "1px solid #f1f5f9",
-                        transition: "border-color 0.2s",
+                        boxShadow: (theme) => theme.palette.shadow.cardSubtle,
+                        border: selectedRegistrationField ? `1.5px solid ${theme.palette.primary.main}` : "1px solid",
+                        borderColor: selectedRegistrationField ? "transparent" : "divider", transition: "border-color 0.2s",
                         mb: 1,
                     }}
                 >
                     <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "#1e293b" }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 700, color: "text.primary" }}>
                             {language === "ar" ? "تقسيم حسب حقل التسجيل" : "Segment By Registration Field"}
                         </Typography>
                         {selectedRegistrationField && (
                             <Typography
                                 variant="caption"
-                                sx={{ color: "#6b7280", ml: "auto", cursor: "pointer", "&:hover": { color: "#0077b6" } }}
-                                onClick={() => setSelectedRegistrationField(null)}
+                                sx={{ color: "text.secondary", ml: "auto", cursor: "pointer", "&:hover": { color: "primary.main" } }} onClick={() => setSelectedRegistrationField(null)}
                             >
                                 {language === "ar" ? "مسح" : "Clear"}
                             </Typography>
                         )}
                     </Box>
-                    
+
                     {selectedQuestions.some(qId => {
                         const q = availableQuestions.find(f => f.name === qId);
                         return q?.type === "text";
                     }) && (
-                        <Typography
-                            variant="caption"
-                            sx={{
-                                color: "warning.main",
-                                display: 'block',
-                                mb: 1,
-                                fontWeight: 500
-                            }}>
-                            {language === "ar" ? "ملاحظة: لا يمكن تقسيم الأسئلة النصية" : "Note: Text-based questions cannot be segmented"}
-                        </Typography>
-                    )}
+                            <Typography
+                                variant="caption"
+                                sx={{
+                                    color: "warning.main",
+                                    display: 'block',
+                                    mb: 1,
+                                    fontWeight: 500
+                                }}>
+                                {language === "ar" ? "ملاحظة: لا يمكن تقسيم الأسئلة النصية" : "Note: Text-based questions cannot be segmented"}
+                            </Typography>
+                        )}
 
                     <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 1.5 }}>
                         {availableQuestions
@@ -1278,7 +1289,7 @@ export default function SurveyGuruInsightsPage() {
                         <Box sx={{
                             textAlign: "center"
                         }}>
-                            <BarChartIcon sx={{ fontSize: 48, color: "#d1d5db", mb: 2 }} />
+                            <BarChartIcon sx={{ fontSize: 48, color: "text.disabled", mb: 2 }} />
                             <Typography color="textSecondary">
                                 {t.selectQuestionPrompt}
                             </Typography>
@@ -1294,12 +1305,13 @@ export default function SurveyGuruInsightsPage() {
                         return (
                             <AppCard
                                 key={questionId}
-                                sx={{ 
-                                    borderRadius: 3, 
-                                    boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)", 
-                                    minHeight: "450px", 
-                                    border: isSegmented ? "1.5px solid #0077b6" : "1px solid #f1f5f9",
-                                    mb: 3 
+                                sx={{
+                                    borderRadius: 3,
+                                    boxShadow: (theme) => theme.palette.shadow.cardSubtle,
+                                    minHeight: "450px",
+                                    border: isSegmented ? `1.5px solid ${theme.palette.primary.main}` : "1px solid",
+                                    borderColor: isSegmented ? "transparent" : "divider",
+                                    mb: 3
                                 }}
                             >
                                 <ChartVisualization
@@ -1308,13 +1320,13 @@ export default function SurveyGuruInsightsPage() {
                                     chartType={getFieldParam(questionId, "chartType", determineChartType(chartData[questionId]))}
                                     onChartTypeChange={(val) => updateFieldParam(questionId, "chartType", val)}
                                     intervalMinutes={getFieldParam(questionId, "intervalMinutes", 60)}
-                                startDateTime={getFieldParam(questionId, "startDateTime", dayjs().subtract(30, "day").startOf("day"))}
-                                endDateTime={getFieldParam(questionId, "endDateTime", dayjs().endOf("day"))}
-                                onIntervalChange={(val) => updateFieldParam(questionId, "intervalMinutes", val)}
-                                onStartDateTimeChange={(val) => updateFieldParam(questionId, "startDateTime", val ? dayjs(val) : dayjs().subtract(30, "day").startOf("day"))}
-                                onEndDateTimeChange={(val) => updateFieldParam(questionId, "endDateTime", val ? dayjs(val) : dayjs().endOf("day"))}
-                                onGenerate={() => handleGenerate(questionId)}
-                                isGenerating={generatingFields[questionId] || false}
+                                    startDateTime={getFieldParam(questionId, "startDateTime", dayjs().subtract(30, "day").startOf("day"))}
+                                    endDateTime={getFieldParam(questionId, "endDateTime", dayjs().endOf("day"))}
+                                    onIntervalChange={(val) => updateFieldParam(questionId, "intervalMinutes", val)}
+                                    onStartDateTimeChange={(val) => updateFieldParam(questionId, "startDateTime", val ? dayjs(val) : dayjs().subtract(30, "day").startOf("day"))}
+                                    onEndDateTimeChange={(val) => updateFieldParam(questionId, "endDateTime", val ? dayjs(val) : dayjs().endOf("day"))}
+                                    onGenerate={() => handleGenerate(questionId)}
+                                    isGenerating={generatingFields[questionId] || false}
                                     onRefReady={(el) => {
                                         if (el) {
                                             chartRefs.current[questionId] = el;

@@ -23,6 +23,7 @@ import {
   TextField,
   Chip,
   Alert,
+  useTheme,
 } from "@mui/material";
 import ArabicPagination from "@/components/ArabicPagination";
 import { DateTimePicker } from "@mui/x-date-pickers";
@@ -300,10 +301,12 @@ const translations = {
 };
 
 export default function ViewRegistrations() {
+  const theme = useTheme();
   const { eventSlug } = useParams();
   const searchParams = useSearchParams();
   const { dir, t, language } = useI18nLayout(translations);
   const { showMessage } = useMessage();
+
 
   const BASE_DATE_FILTERS = {
     createdAtFromMs: null,
@@ -1015,7 +1018,7 @@ export default function ViewRegistrations() {
           fontWeight: 500,
         }}
       >
-        <ICONS.whatsapp fontSize="small" sx={{ color: "#25D366" }} />
+        <ICONS.whatsapp fontSize="small" sx={{ color: theme.palette.registrations.whatsappGreen }} />
         {reg.whatsappSent && (
           <ICONS.checkCircle fontSize="small" sx={{ color: "success.main" }} />
         )}
@@ -1967,13 +1970,15 @@ export default function ViewRegistrations() {
                     maxWidth: 360,
                     borderRadius: 4,
                     overflow: "hidden",
-                    boxShadow: "0 6px 18px rgba(0,0,0,0.12)",
-                    display: "flex",
+                    border: "1px solid",        // ADD this
+                    borderColor: "divider",
+                    boxShadow: (theme) => theme.palette.registrations.cardShadow,
+                    display: "flex",            // keep only ONE
                     flexDirection: "column",
                     transition: "all 0.3s ease",
                     "&:hover": {
                       transform: "translateY(-2px)",
-                      boxShadow: "0 12px 28px rgba(0,0,0,0.25)",
+                      boxShadow: (theme) => theme.palette.registrations.cardHoverShadow,
                     },
                   }}
                 >
@@ -1981,7 +1986,10 @@ export default function ViewRegistrations() {
 
                   <Box
                     sx={{
-                      background: "linear-gradient(to right, #f5f5f5, #fafafa)",
+                      bgcolor: (theme) =>
+                        theme.palette.mode === "dark"
+                          ? theme.palette.registrations.cardHeaderBgDark
+                          : theme.palette.background.default,
                       borderBottom: "1px solid",
                       borderColor: "divider",
                       p: 2,
@@ -2004,7 +2012,7 @@ export default function ViewRegistrations() {
                             display: "flex",
                             alignItems: "center",
                             gap: 1,
-                            bgcolor: "rgba(0,0,0,0.04)",
+                            bgcolor: "action.hover",
                             px: 1.2,
                             py: 0.5,
                             borderRadius: 1.5,
@@ -2333,8 +2341,9 @@ export default function ViewRegistrations() {
                   <CardActions
                     sx={{
                       justifyContent: "center",
-                      borderTop: "1px solid rgba(0,0,0,0.08)",
-                      bgcolor: "rgba(0,0,0,0.02)",
+                      borderTop: "1px solid",
+                      borderColor: "divider",
+                      bgcolor: "action.hover",
                       py: 1,
                       flexDirection: "column",
                       gap: 1,

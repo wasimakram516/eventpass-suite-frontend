@@ -167,6 +167,7 @@ export default function TrashPage() {
   const searchParams = useSearchParams();
   const { user: currentUser } = useAuth();
   const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
   const urlParamsApplied = useRef(false);
 
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -555,7 +556,7 @@ export default function TrashPage() {
         }
       }
       setUserMap(map);
-    } catch {}
+    } catch { }
   };
 
   const handleLimitChange = (newLimit) => {
@@ -955,7 +956,7 @@ export default function TrashPage() {
                     py: 0.15,
                     borderRadius: 999,
                     fontSize: "0.75rem",
-                    bgcolor: "rgba(255,255,255,0.2)",
+                    bgcolor: theme.palette.trash.filterBadgeBg,
                   }}
                 >
                   {activeFilterCount}
@@ -998,10 +999,10 @@ export default function TrashPage() {
             sx={{
               ...(selectedModule === "__ALL__"
                 ? {
-                    bgcolor: "primary.main",
-                    color: "primary.contrastText",
-                    "& .MuiChip-label": { fontWeight: 600 },
-                  }
+                  bgcolor: "primary.main",
+                  color: "primary.contrastText",
+                  "& .MuiChip-label": { fontWeight: 600 },
+                }
                 : {}),
               "&.MuiChip-clickable:hover, &.MuiChip-clickable:active": {
                 bgcolor: selectedModule === "__ALL__" ? "primary.main" : "transparent",
@@ -1023,8 +1024,8 @@ export default function TrashPage() {
                       sx={{
                         width: 24,
                         height: 24,
-                        bgcolor: "rgba(0, 119, 182, 0.12)",
-                        color: "#0077b6",
+                        bgcolor: theme.palette.trash.moduleChipAvatarBg,
+                        color: theme.palette.trash.moduleChipIconColor,
                         fontSize: "0.75rem",
                       }}
                     >
@@ -1038,38 +1039,38 @@ export default function TrashPage() {
                   sx={
                     selectedModule === module
                       ? {
-                          height: 32,
-                          maxWidth: "100%",
+                        height: 32,
+                        maxWidth: "100%",
+                        bgcolor: "primary.main",
+                        color: "primary.contrastText",
+                        "& .MuiChip-label": {
+                          fontWeight: 600,
+                          display: "block",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          maxWidth: { xs: 220, sm: 260, md: 320 },
+                        },
+                        "&.MuiChip-clickable:hover, &.MuiChip-clickable:active": {
                           bgcolor: "primary.main",
-                          color: "primary.contrastText",
-                          "& .MuiChip-label": {
-                            fontWeight: 600,
-                            display: "block",
-                            whiteSpace: "nowrap",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            maxWidth: { xs: 220, sm: 260, md: 320 },
-                          },
-                          "&.MuiChip-clickable:hover, &.MuiChip-clickable:active": {
-                            bgcolor: "primary.main",
-                            boxShadow: "none",
-                          },
-                        }
+                          boxShadow: "none",
+                        },
+                      }
                       : {
-                          height: 32,
-                          maxWidth: "100%",
-                          "& .MuiChip-label": {
-                            display: "block",
-                            whiteSpace: "nowrap",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            maxWidth: { xs: 220, sm: 260, md: 320 },
-                          },
-                          "&.MuiChip-clickable:hover, &.MuiChip-clickable:active": {
-                            bgcolor: "transparent",
-                            boxShadow: "none",
-                          },
-                        }
+                        height: 32,
+                        maxWidth: "100%",
+                        "& .MuiChip-label": {
+                          display: "block",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          maxWidth: { xs: 220, sm: 260, md: 320 },
+                        },
+                        "&.MuiChip-clickable:hover, &.MuiChip-clickable:active": {
+                          bgcolor: "transparent",
+                          boxShadow: "none",
+                        },
+                      }
                   }
                 />
               );
@@ -1292,9 +1293,9 @@ export default function TrashPage() {
                                   }}
                                 >
                                   {t.deletedAt}:{" "}
-                  {item.deletedAt
-                    ? formatDateTimeWithLocale(item.deletedAt, locale)
-                    : "-"}
+                                  {item.deletedAt
+                                    ? formatDateTimeWithLocale(item.deletedAt, locale)
+                                    : "-"}
                                 </Typography>
                               </Box>
                               <Box
@@ -1376,22 +1377,22 @@ export default function TrashPage() {
         <Stack spacing={2}>
           {(currentUser?.role === "admin" ||
             currentUser?.role === "superadmin") && (
-            <TextField
-              select
-              label={t.deletedByLabel}
-              value={deletedByFilter}
-              onChange={(e) => setDeletedByFilter(e.target.value)}
-            >
-              <MenuItem value="__ALL__">{t.all}</MenuItem>
-              {deletedByOptions.map((id) =>
-                id === "__ALL__" ? null : (
-                  <MenuItem key={id} value={id}>
-                    {userMap[id] || id}
-                  </MenuItem>
-                ),
-              )}
-            </TextField>
-          )}
+              <TextField
+                select
+                label={t.deletedByLabel}
+                value={deletedByFilter}
+                onChange={(e) => setDeletedByFilter(e.target.value)}
+              >
+                <MenuItem value="__ALL__">{t.all}</MenuItem>
+                {deletedByOptions.map((id) =>
+                  id === "__ALL__" ? null : (
+                    <MenuItem key={id} value={id}>
+                      {userMap[id] || id}
+                    </MenuItem>
+                  ),
+                )}
+              </TextField>
+            )}
 
           <TextField
             select
@@ -1458,7 +1459,7 @@ export default function TrashPage() {
             disabled={
               !search &&
               (currentUser?.role === "admin" ||
-              currentUser?.role === "superadmin"
+                currentUser?.role === "superadmin"
                 ? deletedByFilter === "__ALL__"
                 : true) &&
               moduleFilter === "__ALL__" &&
