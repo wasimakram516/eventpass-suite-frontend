@@ -3,7 +3,7 @@ import { createTheme } from "@mui/material/styles";
 export const getTheme = (mode = "light", direction = "ltr") => {
   const isDark = mode === "dark";
   const primaryMain = isDark ? "#2DD4BF" : "#0F766E";
-  const secondaryMain = isDark ? "#FFD966" : "#C98A0A";
+  const secondaryMain = isDark ? "#FFE14D" : "#F5C518";
 
   const successMain = "#2e7d32";
   const warningMain = "#ED6C02";
@@ -159,8 +159,8 @@ export const getTheme = (mode = "light", direction = "ltr") => {
         main: secondaryMain,
         // Gold is a light-ish color in both modes (unlike primary, which
         // flips dark<->light), so it always needs dark text - white would
-        // fail contrast badly here (2.95:1 light, 1.37:1 dark). Near-black
-        // instead of a mid-gray for a stronger, comfortably-AA-passing read.
+        // fail contrast badly against a lemon yellow (1.63:1 light, 1.30:1
+        // dark). Near-black passes comfortably instead (10.92:1 / 13.67:1).
         contrastText: "#14181f",
       },
       customBackground: {
@@ -1016,8 +1016,8 @@ export const getTheme = (mode = "light", direction = "ltr") => {
             borderColor: theme.palette.secondary.main,
             "&:hover": {
               backgroundColor: isDark
-                ? "rgba(255, 217, 102, 0.14)"
-                : "rgba(201, 138, 10, 0.08)",
+                ? "rgba(255, 225, 77, 0.14)"
+                : "rgba(245, 197, 24, 0.08)",
               transform: "scale(1.03)",
             },
           }),
