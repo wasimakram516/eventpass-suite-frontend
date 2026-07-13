@@ -157,7 +157,11 @@ export const getTheme = (mode = "light", direction = "ltr") => {
       },
       secondary: {
         main: secondaryMain,
-        contrastText: "#333333",
+        // Gold is a light-ish color in both modes (unlike primary, which
+        // flips dark<->light), so it always needs dark text - white would
+        // fail contrast badly here (2.95:1 light, 1.37:1 dark). Near-black
+        // instead of a mid-gray for a stronger, comfortably-AA-passing read.
+        contrastText: "#14181f",
       },
       customBackground: {
         background: isDark ? "#0f1417" : "#ffffff",
