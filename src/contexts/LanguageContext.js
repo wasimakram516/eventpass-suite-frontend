@@ -1,14 +1,23 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 
 const LanguageContext = createContext();
+const TRANSITION_DURATION = 500; // ms — matches ThemeContext's overlay timing
 
 export const LanguageProvider = ({ children }) => {
   const router = useRouter();
   const pathname = usePathname();
   const [language, setLanguage] = useState("en");
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const timeoutRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
 
   // Load initial language (from URL or localStorage)
   useEffect(() => {
@@ -43,14 +52,23 @@ export const LanguageProvider = ({ children }) => {
   };
 
   const toggleLanguage = () => {
+    setIsTransitioning(true);
+
     const newLang = language === "en" ? "ar" : "en";
     setLanguage(newLang);
     localStorage.setItem("language", newLang);
     switchLanguageInUrl(newLang);
+
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    timeoutRef.current = setTimeout(() => {
+      setIsTransitioning(false);
+    }, TRANSITION_DURATION);
   };
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, toggleLanguage }}>
+    <LanguageContext.Provider
+      value={{ language, setLanguage, toggleLanguage, isTransitioning }}
+    >
       {children}
     </LanguageContext.Provider>
   );

@@ -5,6 +5,7 @@ import CssBaseline from "@mui/material/CssBaseline";
 import { ThemeProvider } from "@mui/material/styles";
 import { ColorModeProvider, useColorMode } from "@/contexts/ThemeContext";
 import ThemeSwitchOverlay from "@/components/ThemeSwitchOverlay";
+import LanguageSwitchOverlay from "@/components/LanguageSwitchOverlay";
 function InnerThemeProvider({ children }) {
   const { theme } = useColorMode();
 
@@ -20,6 +21,7 @@ function InnerThemeProvider({ children }) {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <ThemeSwitchOverlay />
+      <LanguageSwitchOverlay />
       {children}
     </ThemeProvider>
   );
