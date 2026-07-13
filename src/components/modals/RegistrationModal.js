@@ -38,6 +38,7 @@ import { uploadSingleFile } from "@/utils/mediaUpload";
 import { initiatePayment } from "@/services/eventreg/paymentService";
 import { computePaymentBreakdown, formatOmr } from "@/utils/paymentBreakdown";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
 
 const translations = {
     en: {
@@ -64,6 +65,13 @@ const translations = {
         duplicatePendingExpiry: "This link will expire on:",
         duplicatePendingAutoDelete: "If payment isn't completed before then, this registration will be automatically removed and can be created again.",
         resumePaymentNow: "Open Payment Link",
+        duplicateSupportLine: "If you think this is a mistake, please contact our support team at",
+        conflictGenericTitle: "Registration already exists",
+        conflictGenericMessage: "A registration already exists for this event. Please contact our support team for help.",
+        conflictEmailOnlyTitle: "Email already registered",
+        conflictEmailOnlyMessage: "A registration with this email already exists, but with a different phone number. If this isn't the same attendee, please contact support, or use a different email address (make sure it's active, since the registration will be sent there).",
+        conflictPhoneOnlyTitle: "Phone number already registered",
+        conflictPhoneOnlyMessage: "A registration with this phone number already exists, but with a different email address. If this isn't the same attendee, please contact support, or use a different phone number (make sure it's active, since the attendee may be contacted about their registration).",
     },
     ar: {
         createTitle: "إنشاء تسجيل",
@@ -89,6 +97,13 @@ const translations = {
         duplicatePendingExpiry: "ستنتهي صلاحية الرابط في:",
         duplicatePendingAutoDelete: "إذا لم تكتمل عملية الدفع قبل ذلك، ستتم إزالة هذا التسجيل تلقائيًا، ويمكن إنشاؤه مرة أخرى.",
         resumePaymentNow: "فتح رابط الدفع",
+        duplicateSupportLine: "إذا كنت تعتقد أن هذا خطأ، يرجى التواصل مع فريق الدعم لدينا على",
+        conflictGenericTitle: "التسجيل موجود بالفعل",
+        conflictGenericMessage: "يوجد بالفعل تسجيل لهذه الفعالية. يرجى التواصل مع فريق الدعم للمساعدة.",
+        conflictEmailOnlyTitle: "البريد الإلكتروني مسجل بالفعل",
+        conflictEmailOnlyMessage: "يوجد تسجيل بهذا البريد الإلكتروني ولكن برقم هاتف مختلف. إذا لم يكن هذا نفس الحاضر، يرجى التواصل مع الدعم، أو استخدام عنوان بريد إلكتروني آخر (تأكد من أنه نشط، حيث سيُرسل التسجيل إليه).",
+        conflictPhoneOnlyTitle: "رقم الهاتف مسجل بالفعل",
+        conflictPhoneOnlyMessage: "يوجد تسجيل بهذا الرقم ولكن ببريد إلكتروني مختلف. إذا لم يكن هذا نفس الحاضر، يرجى التواصل مع الدعم، أو استخدام رقم هاتف آخر (تأكد من أنه نشط، حيث قد يتم التواصل مع الحاضر بخصوص تسجيله).",
     },
 };
 
@@ -123,6 +138,12 @@ export default function RegistrationModal({
     // Set when initiatePayment reports an existing registration (paid or
     // still-pending) for the same email/phone, instead of creating a new one.
     const [duplicateNotice, setDuplicateNotice] = useState(null);
+    // Set when initiatePayment blocks the attempt because only one identity
+    // field (email XOR phone) matched a different registration — likely a
+    // different attendee, not the same one retrying, so nothing is
+    // created/resumed/resent.
+    const [conflictReason, setConflictReason] = useState(null);
+    const { globalConfig } = useGlobalConfig();
 
     const isPaidEvent = !!event?.isPaid;
     const ticketTypes = event?.ticketTypes || [];
@@ -564,6 +585,7 @@ export default function RegistrationModal({
         setPayProcessing(true);
         setPaymentError("");
         setDuplicateNotice(null);
+        setConflictReason(null);
         const result = await initiatePayment(paymentPayload);
 
         setPayProcessing(false);
@@ -585,8 +607,26 @@ export default function RegistrationModal({
             setShowPaymentSummary(false);
             onPaymentInitiated?.();
         } else {
-            setPaymentError(result?.message || t.registrationFailed);
+            const conflict = result?.conflictReason || result?.data?.conflictReason;
+            if (conflict) {
+                setConflictReason(conflict);
+            } else {
+                setPaymentError(result?.message || t.registrationFailed);
+            }
         }
+    };
+
+    const conflictCopy = (reason) => {
+        if (reason === "EMAIL_ONLY_PENDING") {
+            return { title: t.conflictEmailOnlyTitle, message: t.conflictEmailOnlyMessage };
+        }
+        if (reason === "PHONE_ONLY_PENDING") {
+            return { title: t.conflictPhoneOnlyTitle, message: t.conflictPhoneOnlyMessage };
+        }
+        // EMAIL_ONLY_PAID, PHONE_ONLY_PAID, SPLIT all share the same generic
+        // wording — the backend never reveals which field mismatched once a
+        // paid registration is involved.
+        return { title: t.conflictGenericTitle, message: t.conflictGenericMessage };
     };
 
     // Formats a payment-link expiry using the staff member's own browser
@@ -851,7 +891,7 @@ export default function RegistrationModal({
             {/* ── Payment summary dialog (mirrors public registration page) ── */}
             <Dialog
                 open={showPaymentSummary}
-                onClose={() => { if (!payProcessing) { setShowPaymentSummary(false); setDuplicateNotice(null); } }}
+                onClose={() => { if (!payProcessing) { setShowPaymentSummary(false); setDuplicateNotice(null); setConflictReason(null); } }}
                 maxWidth="xs"
                 fullWidth
                 slotProps={{
@@ -965,7 +1005,38 @@ export default function RegistrationModal({
                         </Box>
                     )}
 
-                    {duplicateNotice ? (
+                    {conflictReason ? (
+                        <Box
+                            sx={{
+                                backgroundColor: (theme) => theme.palette.error.light + "22",
+                                borderLeft: dir === "rtl" ? "none" : "4px solid",
+                                borderRight: dir === "rtl" ? "4px solid" : "none",
+                                borderColor: (theme) => theme.palette.error.main,
+                                borderRadius: 1,
+                                p: 2,
+                                mt: 2,
+                                textAlign: dir === "rtl" ? "right" : "left",
+                            }}
+                        >
+                            <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 0.5 }}>
+                                {conflictCopy(conflictReason).title}
+                            </Typography>
+                            <Typography variant="body2">
+                                {conflictCopy(conflictReason).message}
+                            </Typography>
+                            {(globalConfig?.support?.email || globalConfig?.contact?.email) && (
+                                <Typography variant="body2" sx={{ mt: 1.5 }}>
+                                    {t.duplicateSupportLine}{" "}
+                                    <a
+                                        href={`mailto:${globalConfig?.support?.email || globalConfig?.contact?.email}`}
+                                        style={{ color: "inherit", fontWeight: 600 }}
+                                    >
+                                        {globalConfig?.support?.email || globalConfig?.contact?.email}
+                                    </a>
+                                </Typography>
+                            )}
+                        </Box>
+                    ) : duplicateNotice ? (
                         <Box
                             sx={{
                                 backgroundColor: (theme) => theme.palette.infoBox.background,
@@ -994,6 +1065,17 @@ export default function RegistrationModal({
                                     {t.duplicatePendingAutoDelete}
                                 </Typography>
                             )}
+                            {(globalConfig?.support?.email || globalConfig?.contact?.email) && (
+                                <Typography variant="body2" sx={{ mt: 1.5 }}>
+                                    {t.duplicateSupportLine}{" "}
+                                    <a
+                                        href={`mailto:${globalConfig?.support?.email || globalConfig?.contact?.email}`}
+                                        style={{ color: "inherit", fontWeight: 600 }}
+                                    >
+                                        {globalConfig?.support?.email || globalConfig?.contact?.email}
+                                    </a>
+                                </Typography>
+                            )}
                         </Box>
                     ) : (
                         paymentError && <Alert severity="error" sx={{ mt: 2 }}>{paymentError}</Alert>
@@ -1001,15 +1083,15 @@ export default function RegistrationModal({
                 </DialogContent>
 
                 <DialogActions sx={{ px: 3, pb: 3, pt: 0, gap: 1 }}>
-                    {duplicateNotice ? (
+                    {conflictReason || duplicateNotice ? (
                         <>
                             <Button
-                                onClick={() => { setShowPaymentSummary(false); setDuplicateNotice(null); }}
+                                onClick={() => { setShowPaymentSummary(false); setDuplicateNotice(null); setConflictReason(null); }}
                                 sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2.5, color: "text.secondary" }}
                             >
                                 {t.cancel}
                             </Button>
-                            {duplicateNotice.status === "pending" && duplicateNotice.sessionUrl && (
+                            {duplicateNotice?.status === "pending" && duplicateNotice?.sessionUrl && (
                                 <Button
                                     variant="contained"
                                     onClick={() => window.open(duplicateNotice.sessionUrl, "_blank", "noopener,noreferrer")}

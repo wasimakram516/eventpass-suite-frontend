@@ -108,6 +108,18 @@ export default function Registration() {
     duplicateSupportLine: isArabic
       ? "إذا واجهت أي إزعاج أو اعتقدت أن هذا خطأ، يرجى التواصل مع فريق الدعم لدينا على"
       : "If you're experiencing any inconvenience, or think this is a mistake, please contact our support team at",
+    conflictGenericTitle: isArabic ? "التسجيل موجود بالفعل" : "Registration already exists",
+    conflictGenericMessage: isArabic
+      ? "يوجد بالفعل تسجيل لهذه الفعالية. يرجى التواصل مع فريق الدعم للمساعدة."
+      : "A registration already exists for this event. Please contact our support team for help.",
+    conflictEmailOnlyTitle: isArabic ? "البريد الإلكتروني مسجل بالفعل" : "Email already registered",
+    conflictEmailOnlyMessage: isArabic
+      ? "يوجد تسجيل بهذا البريد الإلكتروني ولكن برقم هاتف مختلف. إذا لم يكن هذا أنت، يرجى التواصل مع الدعم، أو يمكنك استخدام عنوان بريد إلكتروني آخر (تأكد من أنه نشط، حيث سيُرسل تسجيلك إليه)."
+      : "A registration with this email already exists, but with a different phone number. If this isn't you, please contact support, or you can use a different email address (make sure it's active, since your registration will be sent there).",
+    conflictPhoneOnlyTitle: isArabic ? "رقم الهاتف مسجل بالفعل" : "Phone number already registered",
+    conflictPhoneOnlyMessage: isArabic
+      ? "يوجد تسجيل بهذا الرقم ولكن ببريد إلكتروني مختلف. إذا لم يكن هذا أنت، يرجى التواصل مع الدعم، أو يمكنك استخدام رقم هاتف آخر (تأكد من أنه نشط، حيث قد يتم التواصل معك بخصوص تسجيلك)."
+      : "A registration with this phone number already exists, but with a different email address. If this isn't you, please contact support, or you can use a different phone number (make sure it's active, since you may be contacted about your registration).",
     selectTicket: isArabic ? "اختر نوع التذكرة" : "Select a Ticket",
     ticketSoldOut: isArabic ? "نفدت التذاكر" : "Sold Out",
     ticketRequired: isArabic ? "يرجى اختيار نوع التذكرة." : "Please select a ticket type.",
@@ -159,6 +171,11 @@ export default function Registration() {
   // Set when initiatePayment reports an existing registration (paid or still-
   // pending) for the same email/phone, instead of creating a new checkout.
   const [duplicateNotice, setDuplicateNotice] = useState(null);
+  // Set when initiatePayment blocks the attempt because only one identity
+  // field (email XOR phone) matched a different registration — a likely
+  // different person, not the same registrant retrying, so no checkout is
+  // created/resumed and nothing is resent.
+  const [conflictReason, setConflictReason] = useState(null);
   const qrCodeRef = useRef(null);
   const badgePreviewRef = useRef(null);
   const { globalConfig } = useGlobalConfig();
@@ -584,6 +601,7 @@ export default function Registration() {
     setPayProcessing(true);
     setPaymentError("");
     setDuplicateNotice(null);
+    setConflictReason(null);
     const result = await initiatePayment(paymentPayload);
     const duplicateStatus = result?.duplicateStatus || result?.data?.duplicateStatus;
 
@@ -605,8 +623,26 @@ export default function Registration() {
       window.location.href = sessionUrl;
     } else {
       setPayProcessing(false);
-      setPaymentError(result?.message || t.registrationFailed);
+      const conflict = result?.conflictReason || result?.data?.conflictReason;
+      if (conflict) {
+        setConflictReason(conflict);
+      } else {
+        setPaymentError(result?.message || t.registrationFailed);
+      }
     }
+  };
+
+  const conflictCopy = (reason) => {
+    if (reason === "EMAIL_ONLY_PENDING") {
+      return { title: t.conflictEmailOnlyTitle, message: t.conflictEmailOnlyMessage };
+    }
+    if (reason === "PHONE_ONLY_PENDING") {
+      return { title: t.conflictPhoneOnlyTitle, message: t.conflictPhoneOnlyMessage };
+    }
+    // EMAIL_ONLY_PAID, PHONE_ONLY_PAID, SPLIT all share the same generic
+    // wording — the backend never reveals which field mismatched once a paid
+    // registration is involved.
+    return { title: t.conflictGenericTitle, message: t.conflictGenericMessage };
   };
 
   // Formats a payment-link expiry in the visitor's own browser timezone,
@@ -1116,7 +1152,7 @@ export default function Registration() {
       {/* Payment summary dialog (paid events) */}
       <Dialog
         open={showPaymentSummary}
-        onClose={() => { if (!payProcessing) { setShowPaymentSummary(false); setDuplicateNotice(null); } }}
+        onClose={() => { if (!payProcessing) { setShowPaymentSummary(false); setDuplicateNotice(null); setConflictReason(null); } }}
         maxWidth="xs"
         fullWidth
         dir={dir}
@@ -1255,7 +1291,42 @@ export default function Registration() {
             </Box>
           )}
 
-          {duplicateNotice ? (
+          {conflictReason ? (
+            <Box
+              sx={{
+                backgroundColor: (theme) => alpha(theme.palette.error.main, 0.12),
+                borderLeft:
+                  dir === "rtl"
+                    ? "none"
+                    : (theme) => `4px solid ${theme.palette.error.main}`,
+                borderRight:
+                  dir === "rtl"
+                    ? (theme) => `4px solid ${theme.palette.error.main}`
+                    : "none", borderRadius: 1,
+                p: 2,
+                mt: 2,
+                textAlign: dir === "rtl" ? "right" : "left",
+              }}
+            >
+              <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 0.5 }}>
+                {conflictCopy(conflictReason).title}
+              </Typography>
+              <Typography variant="body2">
+                {conflictCopy(conflictReason).message}
+              </Typography>
+              {(globalConfig?.support?.email || globalConfig?.contact?.email) && (
+                <Typography variant="body2" sx={{ mt: 1.5 }}>
+                  {t.duplicateSupportLine}{" "}
+                  <a
+                    href={`mailto:${globalConfig?.support?.email || globalConfig?.contact?.email}`}
+                    style={{ color: theme.palette.error.main, fontWeight: 600, textDecoration: "none" }}
+                  >
+                    {globalConfig?.support?.email || globalConfig?.contact?.email}
+                  </a>
+                </Typography>
+              )}
+            </Box>
+          ) : duplicateNotice ? (
             <Box
               sx={{
                 backgroundColor: (theme) => alpha(theme.palette.info.main, 0.12),
@@ -1307,15 +1378,15 @@ export default function Registration() {
           )}
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 3, pt: 0, gap: 1 }}>
-          {duplicateNotice ? (
+          {conflictReason || duplicateNotice ? (
             <>
               <Button
-                onClick={() => { setShowPaymentSummary(false); setDuplicateNotice(null); }}
+                onClick={() => { setShowPaymentSummary(false); setDuplicateNotice(null); setConflictReason(null); }}
                 sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2.5, color: "text.secondary" }}
               >
                 {t.cancel}
               </Button>
-              {duplicateNotice.status === "pending" && duplicateNotice.sessionUrl && (
+              {duplicateNotice?.status === "pending" && duplicateNotice?.sessionUrl && (
                 <Button
                   variant="contained"
                   onClick={() => { window.location.href = duplicateNotice.sessionUrl; }}
