@@ -52,7 +52,6 @@ import { downloadDefaultQrWrapperAsImage, hasDefaultQrWrapperDesign, hasWrapperD
 import BadgePreview from "@/components/badges/BadgePreview";
 import BadgeCard from "@/components/badges/BadgeCard";
 import html2canvas from "html2canvas";
-import { alpha } from "@mui/material/styles";
 export default function Registration() {
   const { eventSlug, lang } = useParams();
   const isArabic = lang === "ar";
