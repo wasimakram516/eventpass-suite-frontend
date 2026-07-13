@@ -2,8 +2,8 @@ import { createTheme } from "@mui/material/styles";
 
 export const getTheme = (mode = "light", direction = "ltr") => {
   const isDark = mode === "dark";
-  const primaryMain = isDark ? "#128199" : "#128199";
-  const secondaryMain = "#ffcc00";
+  const primaryMain = isDark ? "#2DD4BF" : "#0F766E";
+  const secondaryMain = isDark ? "#FFD966" : "#C98A0A";
 
   const successMain = "#2e7d32";
   const warningMain = "#ED6C02";
@@ -15,7 +15,10 @@ export const getTheme = (mode = "light", direction = "ltr") => {
       mode,
       primary: {
         main: primaryMain,
-        contrastText: "#ffffff",
+        // dark-mode primary is a light mint tint (for contrast against the
+        // dark background), so it needs dark text; light-mode primary stays
+        // dark enough for white text.
+        contrastText: isDark ? "#0f1417" : "#ffffff",
       },
       common: {
         white: "#ffffff",
@@ -961,7 +964,7 @@ export const getTheme = (mode = "light", direction = "ltr") => {
 
           containedPrimary: ({ theme }) => ({
             backgroundColor: theme.palette.primary.main,
-            color: "#ffffff",
+            color: theme.palette.primary.contrastText,
             boxShadow: isDark
               ? "0px 10px 32px rgba(0,0,0,0.5)"
               : "0px 10px 32px rgba(0,0,0,0.1)",
@@ -974,7 +977,7 @@ export const getTheme = (mode = "light", direction = "ltr") => {
           }),
           containedSecondary: ({ theme }) => ({
             backgroundColor: theme.palette.secondary.main,
-            color: "#333333",
+            color: theme.palette.secondary.contrastText,
             boxShadow: isDark
               ? "0px 10px 32px rgba(0,0,0,0.5)"
               : "0px 10px 32px rgba(0,0,0,0.1)",
@@ -994,8 +997,8 @@ export const getTheme = (mode = "light", direction = "ltr") => {
             borderColor: theme.palette.primary.main,
             "&:hover": {
               backgroundColor: isDark
-                ? "rgba(79, 195, 217, 0.12)"
-                : "rgba(0, 119, 182, 0.08)",
+                ? "rgba(45, 212, 191, 0.14)"
+                : "rgba(15, 118, 110, 0.08)",
               transform: "scale(1.03)",
             },
           }),
@@ -1003,7 +1006,9 @@ export const getTheme = (mode = "light", direction = "ltr") => {
             color: theme.palette.secondary.main,
             borderColor: theme.palette.secondary.main,
             "&:hover": {
-              backgroundColor: "rgba(255, 204, 0, 0.08)",
+              backgroundColor: isDark
+                ? "rgba(255, 217, 102, 0.14)"
+                : "rgba(201, 138, 10, 0.08)",
               transform: "scale(1.03)",
             },
           }),
@@ -1108,11 +1113,11 @@ export const getTheme = (mode = "light", direction = "ltr") => {
             },
 
             "&:hover .MuiOutlinedInput-notchedOutline": {
-              borderColor: isDark ? "#66d9f0" : "#005f8f",
+              borderColor: isDark ? "#5eead4" : "#0b5c56",
             },
 
             "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
-              borderColor: isDark ? "#66d9f0" : "#005f8f",
+              borderColor: isDark ? "#5eead4" : "#0b5c56",
             },
           }),
         },
