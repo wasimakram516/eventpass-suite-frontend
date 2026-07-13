@@ -160,6 +160,7 @@ const determineChartType = (field) => {
 };
 dayjs.extend(utc);
 const FieldChip = ({ field, isSelected, onClick }) => {
+    const theme = useTheme();
     return (
         <Chip
             label={field.label}

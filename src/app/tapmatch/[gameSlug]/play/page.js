@@ -8,6 +8,7 @@ import {
   Paper,
   Grid,
   Fade,
+  useTheme,
 } from "@mui/material";
 import { useGame } from "@/contexts/GameContext";
 import { useEffect, useState, useRef } from "react";
@@ -64,6 +65,7 @@ const translations = {
 };
 
 export default function TapMatchPlayPage() {
+  const theme = useTheme();
   const { game, loading } = useGame();
   const router = useRouter();
   const { t, dir, language } = useI18nLayout(translations);

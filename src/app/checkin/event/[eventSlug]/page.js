@@ -17,6 +17,7 @@ import {
   DialogActions,
   IconButton,
   alpha,
+  useTheme,
 } from "@mui/material";
 import VolumeUpIcon from "@mui/icons-material/VolumeUp";
 import VolumeOffIcon from "@mui/icons-material/VolumeOff";
@@ -47,6 +48,7 @@ export default function EventDetails() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams?.get("token");
+  const theme = useTheme();
 
   const { t, dir, language } = useI18nLayout({
     en: {

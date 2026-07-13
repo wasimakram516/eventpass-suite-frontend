@@ -15,6 +15,7 @@ function MosaicCell({
   version,
   backgroundLogo
 }) {
+  const theme = useTheme();
   if (!item) return (
     <Box
       sx={{

@@ -9,6 +9,7 @@ import { Shift } from "ambient-cbg";
 // A single floating bubble
 // ─────────────────────────────────────────────────────────────────────────────
 function FloatingBubble({ item, isNew, version, position, size, backgroundLogo }) {
+  const theme = useTheme();
   const key = item ? `${item._id}-${version}` : null;
 
   const { offsetX, offsetY, floatDelay } = useMemo(() => ({

@@ -8,6 +8,7 @@ import {
   CircularProgress,
   IconButton,
   Stack,
+  useTheme,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import QuizIcon from "@mui/icons-material/Quiz";
@@ -38,6 +39,7 @@ const gameInstructionsTranslations = {
   },
 };
 export default function InstructionsPage() {
+  const theme = useTheme();
   const router = useRouter();
   const { game, loading } = useGame();
   const [playerInfo, setPlayerInfo] = useState(null);

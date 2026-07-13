@@ -71,6 +71,7 @@ const translations = {
 };
 
 const FullScreenPreview = ({ open, media, wallConfig, onClose, t, language }) => {
+  const theme = useTheme();
   const wallMode = media?.wall?.mode || wallConfig?.mode;
   const wallName = media?.wall?.name || wallConfig?.name;
   const inputType = media?.wall?.cardSettings?.inputType || wallConfig?.cardSettings?.inputType;

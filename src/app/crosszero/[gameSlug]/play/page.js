@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Box, Typography, Button, CircularProgress, Paper, Stack, IconButton, LinearProgress, Fade, TextField } from "@mui/material";
+import { Box, Typography, Button, CircularProgress, Paper, Stack, IconButton, LinearProgress, Fade, TextField, useTheme } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import Confetti from "react-confetti";
 import { useGame } from "@/contexts/GameContext";
@@ -199,6 +199,7 @@ function getAIMove(board, difficulty) {
 
 // â”€â”€â”€ Cell Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function Cell({ value, index, onClick, isWinning, disabled, xImage, oImage }) {
+  const theme = useTheme();
   const isX = value === "X";
   const isO = value === "O";
   const color = isX
@@ -253,6 +254,7 @@ function Cell({ value, index, onClick, isWinning, disabled, xImage, oImage }) {
 
 // â”€â”€â”€ Move Timer Bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function MoveTimerBar({ seconds, maxSeconds, isMyTurn }) {
+  const theme = useTheme();
   const pct = (seconds / maxSeconds) * 100;
   const color =
     pct > 50
@@ -277,6 +279,7 @@ function MoveTimerBar({ seconds, maxSeconds, isMyTurn }) {
 
 // ─── Single-Screen Onboarding Form (isolated to prevent re-render focus loss) ──
 function SingleOnboardingForm({ game, singleStep, singleP1, singleSubmitting, onSubmit, t, dir }) {
+  const theme = useTheme();
   const [form, setForm] = useState({ name: "" });
 
   const isStep1 = singleStep === 1;
@@ -387,6 +390,7 @@ function SingleOnboardingForm({ game, singleStep, singleP1, singleSubmitting, on
 
 // â”€â”€â”€ Main Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 export default function CrossZeroPlayPage() {
+  const theme = useTheme();
   const { game, loading } = useGame();
   const router = useRouter();
   const { t, dir, language } = useI18nLayout(translations);

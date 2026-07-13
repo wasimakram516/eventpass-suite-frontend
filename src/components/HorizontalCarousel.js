@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Container } from "@mui/material";
+import { Box, Container, useTheme } from "@mui/material";
 import { keyframes } from "@mui/system";
 
 const marqueeMany = keyframes`
@@ -30,6 +30,7 @@ function HorizontalCarousel({
   pauseOnHover = true,
   reducedMotionSupport = true,
 }) {
+  const theme = useTheme();
   // Filter items to only include those with logoUrl
   const validItems = Array.isArray(items)
     ? items.filter((item) => !!item?.logoUrl)

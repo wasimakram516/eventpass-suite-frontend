@@ -222,7 +222,7 @@ const FieldChip = ({ field, isSelected, onClick }) => (
             "&:hover": {
                 transform: "scale(1.05)",
                 backgroundColor: isSelected ? field.color : `${field.color}15`,
-                color: isSelected ? theme.palette.common.white : field.color,
+                color: isSelected ? "#ffffff" : field.color,
                 borderColor: field.color,
             },
         }}
@@ -248,6 +248,7 @@ const ChartVisualization = ({
     onChartTypeChange,
     language,
 }) => {
+    const theme = useTheme();
     const { dir } = useI18nLayout();
     if (!selectedField || !chartData[selectedField]) return null;
     const field = chartData[selectedField];

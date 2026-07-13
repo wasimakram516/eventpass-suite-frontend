@@ -276,14 +276,14 @@ function WidthHeightField({ width, height, onWidthChange, onHeightChange, widthL
 
 function extractFormattingFromHtml(html) {
   if (!html) {
-    return { text: "", fontSize: 14, color: theme.palette.common.black, isBold: false, isItalic: false, isUnderline: false, fontFamily: "Arial", alignment: "left" };
+    return { text: "", fontSize: 14, color: "#000000", isBold: false, isItalic: false, isUnderline: false, fontFamily: "Arial", alignment: "left" };
   }
   const text = html.replace(/<[^>]+>/g, "").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").trim();
   const isBold = /<(strong|b)>/i.test(html) || /font-weight:\s*(bold|700|800|900)/i.test(html);
   const isItalic = /<(em|i)>/i.test(html) || /font-style:\s*italic/i.test(html);
   const isUnderline = /<u>/i.test(html) || /text-decoration:\s*underline/i.test(html);
   const colorMatch = html.match(/color:\s*([^;'"]+)/i) || html.match(/color="([^"]+)"/i);
-  const color = colorMatch ? colorMatch[1].trim() : theme.palette.common.black;
+  const color = colorMatch ? colorMatch[1].trim() : "#000000";
   let fontSize = 14;
   const fontSizeMatch = html.match(/font-size:\s*([^;'"]+)/i);
   if (fontSizeMatch) {
@@ -309,7 +309,7 @@ function buildHtmlFromFormatting(textValue, fontSizeValue, colorValue, isBoldVal
   if (isBoldValue) html = `<strong>${html}</strong>`;
   const styles = [];
   if (fontSizeValue && fontSizeValue !== 14) styles.push(`font-size: ${fontSizeValue}px`);
-  if (colorValue && colorValue !== theme.palette.common.black) styles.push(`color: ${colorValue}`);
+  if (colorValue && colorValue !== "#000000") styles.push(`color: ${colorValue}`);
   if (fontFamilyValue && fontFamilyValue !== "Arial") {
     const escaped = String(fontFamilyValue).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
     styles.push(`font-family: "${escaped}"`);
@@ -324,7 +324,7 @@ function getContentFromField(f) {
   return buildHtmlFromFormatting(
     f.text ?? "",
     num(f.fontSize, 14),
-    f.color ?? theme.palette.common.black,
+    f.color ?? "#000000",
     f.isBold ?? false,
     f.isItalic ?? false,
     f.isUnderline ?? false,

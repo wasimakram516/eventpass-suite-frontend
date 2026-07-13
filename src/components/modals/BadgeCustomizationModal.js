@@ -99,6 +99,7 @@ const BadgeRichTextEditor = ({
     t,
     availableFonts = []
 }) => {
+    const theme = useTheme();
     const editorContainerRef = useRef(null);
     const inputsContainerRef = useRef(null);
     const xInputRef = useRef(null);

@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import useMediaSocket from "@/hooks/modules/memorywall/useMemoryWallMediaSocket";
-import { Box, Typography, Container } from "@mui/material";
+import { Box, Typography, Container, useTheme } from "@mui/material";
 import { getWallConfigBySlug } from "@/services/memorywall/wallConfigService";
 import MosaicGrid from "@/components/memorywall/MosaicGrid";
 import CardsGrid from "@/components/memorywall/CardsGrid";
@@ -23,6 +23,7 @@ const translations = {
   },
 };
 const BigScreenPage = () => {
+  const theme = useTheme();
   const { slug } = useParams();
   const [media, setMedia] = useState([]);
   const [loading, setLoading] = useState(true);

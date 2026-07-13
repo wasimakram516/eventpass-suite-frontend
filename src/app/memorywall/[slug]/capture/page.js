@@ -11,6 +11,7 @@ import {
   Paper,
   Chip,
   IconButton,
+  useTheme,
 } from "@mui/material";
 import { createDisplayMedia } from "@/services/memorywall/displayMediaService";
 import { getWallConfigBySlug } from "@/services/memorywall/wallConfigService";
@@ -82,6 +83,7 @@ const translations = {
 };
 
 export default function UploadPage() {
+  const theme = useTheme();
   const { slug } = useParams();
   const { t, dir, align, language } = useI18nLayout(translations);
   const { showMessage } = useMessage();

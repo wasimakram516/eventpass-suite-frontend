@@ -24,6 +24,7 @@ import {
   ListSubheader,
   alpha,
   InputAdornment,
+  useTheme,
 } from "@mui/material";
 import { QRCodeCanvas } from "qrcode.react";
 import { useParams, useRouter } from "next/navigation";
@@ -57,6 +58,7 @@ export default function Registration() {
   const isArabic = lang === "ar";
   const router = useRouter();
   const dir = isArabic ? "rtl" : "ltr";
+  const theme = useTheme();
 
   const t = {
     registerForEvent: isArabic

@@ -109,6 +109,7 @@ function MediaCard({
   mediaType2TextColor,
   mediaType2SignatureColor
 }) {
+  const theme = useTheme();
   const cardBgColor = useMemo(() => {
     if (randomColors) {
       const hue = hashString(item._id) % 360;

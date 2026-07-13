@@ -222,6 +222,7 @@ const ChartVisualization = ({
     chartTypeOverride,
     onChartTypeChange,
 }) => {
+    const theme = useTheme();
     if (!selectedField || !chartData[selectedField]) {
         return null;
     }

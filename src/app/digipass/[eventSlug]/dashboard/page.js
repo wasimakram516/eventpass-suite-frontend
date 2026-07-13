@@ -22,6 +22,7 @@ import LanguageSelector from "@/components/LanguageSelector";
 import { toArabicDigits } from "@/utils/arabicDigits";
 
 export default function DigiPassDashboard() {
+  const theme = useTheme();
   const { eventSlug } = useParams();
   const router = useRouter();
   const { language } = useLanguage();

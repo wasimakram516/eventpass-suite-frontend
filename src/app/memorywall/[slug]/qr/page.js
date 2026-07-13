@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { Box, Container, Typography } from "@mui/material";
+import { Box, Container, Typography, useTheme } from "@mui/material";
 import { QRCodeCanvas } from "qrcode.react";
 import { getWallConfigBySlug } from "@/services/memorywall/wallConfigService";
 import useI18nLayout from "@/hooks/useI18nLayout";
@@ -25,6 +25,7 @@ const translations = {
   },
 };
 export default function PublicQrPage() {
+  const theme = useTheme();
   const { slug } = useParams();
   const [capturePageUrl, setCapturePageUrl] = useState("");
   const { t, dir, align } = useI18nLayout(translations);
