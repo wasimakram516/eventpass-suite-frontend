@@ -402,7 +402,8 @@ const BadgePreview = ({
                     value={token}
                     size={80}
                     level="M"
-                    fgColor={isDark ? theme.palette.text.primary : theme.palette.badgePreview.clipBarBg}
+                    bgColor={theme.palette.qr.background}
+                    fgColor={theme.palette.qr.foreground}
                   />
                   <Box
                     sx={{

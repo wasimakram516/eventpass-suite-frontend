@@ -1490,7 +1490,8 @@ export default function Registration() {
                 id="qr-code-download-hidden"
                 value={qrToken}
                 size={180}
-                bgColor="background.paper"
+                bgColor={theme.palette.qr.background}
+                fgColor={theme.palette.qr.foreground}
                 includeMargin
               />
             </Box>
@@ -1590,11 +1591,12 @@ export default function Registration() {
                         id="qr-code"
                         value={qrToken}
                         size={180}
-                        bgColor={(theme) => theme.palette.background.paper}
+                        bgColor={theme.palette.qr.background}
+                        fgColor={theme.palette.qr.foreground}
                         includeMargin
                         style={{
                           padding: "12px",
-                          background: (theme) => theme.palette.background.paper,
+                          background: theme.palette.qr.background,
                           borderRadius: "8px",
                         }}
                       />

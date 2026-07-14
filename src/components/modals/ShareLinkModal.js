@@ -198,11 +198,12 @@ export default function ShareLinkModal({
           <QRCodeCanvas
             value={qrValue}
             size={180}
-            bgColor={theme.palette.background.paper}
+            bgColor={theme.palette.qr.background}
+            fgColor={theme.palette.qr.foreground}
             includeMargin={true}
             style={{
               padding: "12px",
-              background: theme.palette.background.paper,
+              background: theme.palette.qr.background,
               borderRadius: "8px",
             }}
           />
