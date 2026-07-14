@@ -51,6 +51,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import RecordMetadata from "@/components/RecordMetadata";
+import RegistrationFieldList from "@/components/cards/RegistrationFieldList";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import useCheckInSocket from "@/hooks/modules/checkin/useCheckInSocket";
@@ -1760,24 +1761,21 @@ export default function ViewRegistrations() {
                   </Box>
 
                   <CardContent sx={{ flexGrow: 1, px: 2, py: 1.5 }}>
-                    {(() => {
+                    <RegistrationFieldList
+                      dir={dir}
+                      language={language}
+                      fields={(() => {
                       const regCustomFields = reg.customFields instanceof Map
                         ? Object.fromEntries(reg.customFields)
                         : (reg.customFields || {});
                       const regCustomKeys = Object.keys(regCustomFields).filter(k => regCustomFields[k] && String(regCustomFields[k]).trim());
 
                       if (regCustomKeys.length > 0) {
-                        return regCustomKeys.map((key) => (
-                          <Box key={key} sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", py: 0.8, borderBottom: "1px solid", borderColor: "divider", "&:last-of-type": { borderBottom: "none" } }}>
-                            <Typography variant="body2" sx={{ display: "flex", alignItems: "center", gap: 0.6, color: "text.secondary" }}>
-                              <ICONS.personOutline fontSize="small" sx={{ opacity: 0.6 }} />
-                              {key}
-                            </Typography>
-                            <Typography variant="body2" sx={{ fontWeight: 500, ml: 2, textAlign: dir === "rtl" ? "left" : "right", flex: 1, color: "text.primary", ...wrapTextBox }}>
-                              {String(regCustomFields[key]) || "—"}
-                            </Typography>
-                          </Box>
-                        ));
+                        return regCustomKeys.map((key) => ({
+                          key,
+                          label: key,
+                          value: String(regCustomFields[key]) || "—",
+                        }));
                       }
 
                       // Registration has no customFields — show its classic fields
@@ -1792,55 +1790,20 @@ export default function ViewRegistrations() {
                         if (fieldValue == null || String(fieldValue).trim() === "") return null;
                         let displayValue = String(fieldValue).trim();
 
-                        return (
-                          <Box
-                            key={f.name}
-                            sx={{
-                              display: "flex",
-                              justifyContent: "space-between",
-                              alignItems: "flex-start",
-                              py: 0.8,
-                              borderBottom: "1px solid",
-                              borderColor: "divider",
-                              "&:last-of-type": { borderBottom: "none" },
-                            }}
-                          >
-                            <Typography
-                              variant="body2"
-                              sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 0.6,
-                                color: "text.secondary",
-                              }}
-                            >
-                              <ICONS.personOutline
-                                fontSize="small"
-                                sx={{ opacity: 0.6 }}
-                              />
-                              {f.label}
-                            </Typography>
-                            <Typography
-                              variant="body2"
-                              sx={{
-                                fontWeight: 500,
-                                ml: 2,
-                                textAlign: dir === "rtl" ? "left" : "right",
-                                flex: 1,
-                                color: "text.primary",
-                                ...wrapTextBox
-                              }}>
-                              {f.name === "phone"
-                                ? (() => {
-                                  const { formatPhoneNumberForDisplay } = require("@/utils/countryCodes");
-                                  return formatPhoneNumberForDisplay(displayValue, reg.isoCode);
-                                })()
-                                : displayValue}
-                            </Typography>
-                          </Box>
-                        );
+                        return {
+                          key: f.name,
+                          label: f.label,
+                          value:
+                            f.name === "phone"
+                              ? (() => {
+                                const { formatPhoneNumberForDisplay } = require("@/utils/countryCodes");
+                                return formatPhoneNumberForDisplay(displayValue, reg.isoCode);
+                              })()
+                              : displayValue,
+                        };
                       }).filter(Boolean);
-                    })()}
+                      })()}
+                    />
                   </CardContent>
 
                   <RecordMetadata

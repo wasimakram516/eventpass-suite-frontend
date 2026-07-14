@@ -65,6 +65,7 @@ import WalkInModal from "@/components/modals/WalkInModal";
 import BulkEmailModal from "@/components/modals/BulkEmailModal";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import RecordMetadata from "@/components/RecordMetadata";
+import RegistrationFieldList from "@/components/cards/RegistrationFieldList";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import { wrapTextBox } from "@/utils/wrapTextStyles";
@@ -2206,124 +2207,77 @@ export default function ViewRegistrations() {
 
                   {/* Dynamic Fields — show registration's own format */}
                   <CardContent sx={{ flexGrow: 1, px: 2, py: 1.5 }}>
-                    {/* {dynamicFields.map((f) => ( */}
-                    {getDisplayFieldsForRegistration(reg).map((f) => (
-                      <Box
-                        key={f.name}
-                        sx={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "flex-start",
-                          py: 0.8,
-                          borderBottom: "1px solid",
-                          borderColor: "divider",
-                          "&:last-of-type": { borderBottom: "none" },
-                        }}
-                      >
-                        {/* Field Label */}
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 0.6,
-                            color: "text.secondary",
-                            // A long custom-field name (e.g. an admin-entered
-                            // instructional label) must wrap within its own
-                            // share of the row instead of growing wide first —
-                            // without a width cap here it can wrap onto two
-                            // lines and still claim nearly the full row,
-                            // squeezing the value/button column beside it
-                            // down to a sliver.
-                            flex: "0 1 55%",
-                            minWidth: 0,
-                            ...wrapTextBox,
-                          }}
-                        >
-                          <ICONS.personOutline
-                            fontSize="small"
-                            sx={{ opacity: 0.6, flexShrink: 0 }}
-                          />
-                          {getFieldLabel(f.name)}
-                        </Typography>
+                    <RegistrationFieldList
+                      dir={dir}
+                      language={language}
+                      fields={getDisplayFieldsForRegistration(reg).map((f) => {
+                      const fieldValue = getFieldValue(reg, f.valueKey || f.name);
+                      const fieldType = fieldMetaMap[f.name]?.type || (f.type || "text").toLowerCase();
 
-                        {/* Field Value */}
-                        <Typography
-                          component="div"
-                          variant="body2"
-                          sx={{
-                            fontWeight: 500,
-                            ml: 2,
-                            textAlign: dir === "rtl" ? "left" : "right",
-                            flex: 1,
-                            color: "text.primary",
-                            ...wrapTextBox
-                          }}>
-                          {(() => {
-                            const fieldValue = getFieldValue(reg, f.valueKey || f.name);
-                            if (!fieldValue) return "—";
+                      const renderValue = () => {
+                        if (!fieldValue) return "—";
 
-                            // Use fieldMetaMap as primary type source, fall back to f.type
-                            const fieldType = fieldMetaMap[f.name]?.type || (f.type || "text").toLowerCase();
+                        if (
+                          f.type === "phone" ||
+                          (!eventDetails?.formFields?.length &&
+                            f.name === "phone")
+                        ) {
+                          const {
+                            formatPhoneNumberForDisplay,
+                          } = require("@/utils/countryCodes");
+                          return formatPhoneNumberForDisplay(
+                            fieldValue,
+                            reg.isoCode,
+                          );
+                        }
 
-                            if (
-                              f.type === "phone" ||
-                              (!eventDetails?.formFields?.length &&
-                                f.name === "phone")
-                            ) {
-                              const {
-                                formatPhoneNumberForDisplay,
-                              } = require("@/utils/countryCodes");
-                              return formatPhoneNumberForDisplay(
-                                fieldValue,
-                                reg.isoCode,
-                              );
-                            }
+                        if (f.type === "country") {
+                          const { COUNTRY_CODES, getFlagImageUrl } = require("@/utils/countryCodes");
+                          const country = COUNTRY_CODES.find(c => c.isoCode === fieldValue.toLowerCase());
+                          if (!country) return fieldValue;
+                          return (
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+                              <img
+                                src={getFlagImageUrl(country.isoCode)}
+                                alt={country.country}
+                                style={{ width: 20, height: 14, objectFit: "cover", borderRadius: 2, flexShrink: 0 }}
+                              />
+                              <span style={{ marginLeft: 4 }}>{country.country}</span>
+                            </span>
+                          );
+                        }
 
-                            if (f.type === "country") {
-                              const { COUNTRY_CODES, getFlagImageUrl } = require("@/utils/countryCodes");
-                              const country = COUNTRY_CODES.find(c => c.isoCode === fieldValue.toLowerCase());
-                              if (!country) return fieldValue;
-                              return (
-                                <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-                                  <img
-                                    src={getFlagImageUrl(country.isoCode)}
-                                    alt={country.country}
-                                    style={{ width: 20, height: 14, objectFit: "cover", borderRadius: 2, flexShrink: 0 }}
-                                  />
-                                  <span style={{ marginLeft: 4 }}>{country.country}</span>
-                                </span>
-                              );
-                            }
+                        // File check: use fieldMetaMap type OR looksLikeFileUrl as fallback
+                        if ((fieldType === "file" || looksLikeFileUrl(fieldValue)) && fieldValue) {
+                          return (
+                            <Button
+                              size="small"
+                              variant="text"
+                              startIcon={<ICONS.files sx={{ fontSize: 18 }} />}
+                              onClick={() => window.open(fieldValue, "_blank")}
+                              sx={{
+                                minWidth: 0,
+                                p: 0,
+                                textTransform: "none",
+                                fontWeight: 600,
+                                ...getStartIconSpacing(dir),
+                              }}
+                            >
+                              {t.viewUploadedFile}
+                            </Button>
+                          );
+                        }
 
-                            // File check: use fieldMetaMap type OR looksLikeFileUrl as fallback
-                            if ((fieldType === "file" || looksLikeFileUrl(fieldValue)) && fieldValue) {
-                              return (
-                                <Button
-                                  size="small"
-                                  variant="text"
-                                  startIcon={<ICONS.files sx={{ fontSize: 18 }} />}
-                                  onClick={() => window.open(fieldValue, "_blank")}
-                                  sx={{
-                                    minWidth: 0,
-                                    p: 0,
-                                    textTransform: "none",
-                                    fontWeight: 600,
-                                    ...getStartIconSpacing(dir),
-                                  }}
-                                >
-                                  {t.viewUploadedFile}
-                                </Button>
-                              );
-                            }
+                        return fieldValue;
+                      };
 
-                            return fieldValue;
-                          })()}
-
-
-                        </Typography>
-                      </Box>
-                    ))}
+                      return {
+                        key: f.name,
+                        label: getFieldLabel(f.name),
+                        value: renderValue(),
+                      };
+                      })}
+                    />
                   </CardContent>
 
                   <RecordMetadata
