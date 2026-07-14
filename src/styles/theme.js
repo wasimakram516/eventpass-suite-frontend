@@ -943,6 +943,7 @@ export const getTheme = (mode = "light", direction = "ltr") => {
       body2: { fontSize: "0.95rem", fontFamily: "'Poppins', sans-serif" },
       subtitle1: { fontSize: "0.9rem", fontWeight: "600" },
       subtitle2: { fontSize: "0.8rem", fontWeight: "500" },
+      caption: { fontSize: "0.68rem" },
       button: { textTransform: "uppercase", fontWeight: "bold" },
     },
 
