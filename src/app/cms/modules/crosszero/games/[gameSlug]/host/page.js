@@ -13,6 +13,7 @@ import {
   Stack,
   Typography,
   Paper,
+  useTheme,
 } from "@mui/material";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import CrossZeroMarkVisual from "@/components/crosszero/CrossZeroMarkVisual";
@@ -79,9 +80,9 @@ const translations = {
 };
 
 const WINNING_LINES = [
-  [0,1,2],[3,4,5],[6,7,8],
-  [0,3,6],[1,4,7],[2,5,8],
-  [0,4,8],[2,4,6],
+  [0, 1, 2], [3, 4, 5], [6, 7, 8],
+  [0, 3, 6], [1, 4, 7], [2, 5, 8],
+  [0, 4, 8], [2, 4, 6],
 ];
 
 function getWinningLine(board) {
@@ -95,7 +96,7 @@ function getWinningLine(board) {
 
 function SpectatorBoard({ board = [], xImage, oImage }) {
   const winLine = getWinningLine(board);
-
+  const theme = useTheme();
   return (
     <Box
       sx={{
@@ -112,8 +113,8 @@ function SpectatorBoard({ board = [], xImage, oImage }) {
         .map((_, i) => {
           const cell = board[i] || null;
           const isWinning = winLine?.includes(i);
-          const color = cell === "X" ? "#00e5ff" : cell === "O" ? "#ff6b6b" : "transparent";
-          const glow = cell === "X" ? "0 0 24px #00e5ff" : cell === "O" ? "0 0 24px #ff6b6b" : "none";
+          const color = cell === "X" ? theme.palette.crosszero.markX : cell === "O" ? theme.palette.crosszero.markO : "transparent";
+          const glow = cell === "X" ? theme.palette.crosszero.markXGlowShadow : cell === "O" ? theme.palette.crosszero.markOGlowShadow : "none";
           const customImage = cell === "X" ? xImage : cell === "O" ? oImage : null;
 
           return (
@@ -124,9 +125,9 @@ function SpectatorBoard({ board = [], xImage, oImage }) {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                border: "1.5px solid rgba(255,255,255,0.12)",
+                border: theme.palette.crosszero.boardCellBorder,
                 borderRadius: 3,
-                bgcolor: isWinning ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.04)",
+                bgcolor: isWinning ? theme.palette.crosszero.boardCellBgWinning : theme.palette.crosszero.boardCellBg,
                 boxShadow: isWinning ? `inset 0 0 20px ${color}40` : "none",
                 transition: "all 0.3s",
               }}
@@ -160,6 +161,7 @@ export default function CrossZeroHostPage() {
   const { t, dir, language } = useI18nLayout(translations);
   const { sessions, currentSession, requestAllSessions, connected } =
     useCrossZeroWebSocketData(gameSlug);
+  const theme = useTheme();
 
   const [starting, setStarting] = useState(false);
   const [activating, setActivating] = useState(false);
@@ -206,7 +208,7 @@ export default function CrossZeroHostPage() {
           if (!cancelled) {
             abandonGameSession(pendingSession._id)
               .then(() => requestAllSessions())
-              .catch(() => {});
+              .catch(() => { });
           }
         }
         return Math.max(next, 0);
@@ -354,11 +356,11 @@ export default function CrossZeroHostPage() {
               px: { xs: 3, sm: 5 },
               py: { xs: 4, sm: 5 },
               borderRadius: 4,
-              background: "linear-gradient(135deg, #0f172a, #1e293b)",
-              boxShadow: "0 16px 48px rgba(0,0,0,0.35)",
+              background: theme.palette.crosszero.hostCardGradient,
+              boxShadow: theme.palette.crosszero.hostCardShadow,
               textAlign: "center",
               position: "relative",
-              color: "#fff",
+              color: theme.palette.common.white,
             }}
           >
             {/* LIVE chip */}
@@ -372,10 +374,11 @@ export default function CrossZeroHostPage() {
                 gap: 0.8,
                 px: 1.5,
                 py: 0.4,
-                bgcolor: "#4CAF50",
+
                 borderRadius: 999,
                 fontWeight: "bold",
-                boxShadow: "0 0 10px 2px rgba(76,175,80,0.5)",
+                bgcolor: theme.palette.crosszero.win,
+                boxShadow: theme.palette.crosszero.liveChipShadow,
                 fontSize: 11,
                 letterSpacing: 0.5,
                 textTransform: "uppercase",
@@ -390,7 +393,7 @@ export default function CrossZeroHostPage() {
               sx={{
                 fontWeight: 800,
                 mb: 1,
-                color: "#4CAF50",
+                color: theme.palette.crosszero.win,
                 letterSpacing: 1
               }}>
               {t.activeSession}
@@ -412,7 +415,7 @@ export default function CrossZeroHostPage() {
                 size={26}
                 fallbackSize="1.6rem"
               />
-              <Typography sx={{ color: "rgba(255,255,255,0.45)", fontSize: "0.85rem" }}>
+              <Typography sx={{ color: theme.palette.crosszero.sessionTextTertiary, fontSize: "0.85rem" }}>
                 vs
               </Typography>
               <CrossZeroMarkVisual
@@ -436,7 +439,7 @@ export default function CrossZeroHostPage() {
                 alignItems: "center",
                 mt: 2
               }}>
-              <Typography sx={{ color: "rgba(255,255,255,0.65)", fontSize: "0.9rem" }}>
+              <Typography sx={{ color: theme.palette.crosszero.sessionTextPrimary, fontSize: "0.9rem" }}>
                 {t.currentTurn}:
               </Typography>
               <CrossZeroMarkVisual
@@ -445,7 +448,7 @@ export default function CrossZeroHostPage() {
                 oImage={activeSession?.gameId?.oImage}
                 size={18}
                 fallbackSize="1rem"
-                color={activeSession?.xoStats?.currentTurn === "X" ? "#00e5ff" : "#ff6b6b"}
+                color={activeSession?.xoStats?.currentTurn === "X" ? theme.palette.crosszero.markX : theme.palette.crosszero.markO}
               />
             </Stack>
 
@@ -461,7 +464,7 @@ export default function CrossZeroHostPage() {
                 {
                   label: t.player1,
                   mark: "O",
-                  color: "#ff6b6b",
+                  color: theme.palette.crosszero.markO,
                   player: activeSession.players?.find(
                     (p) => p.playerType === "p1"
                   ),
@@ -469,7 +472,7 @@ export default function CrossZeroHostPage() {
                 {
                   label: t.player2,
                   mark: "X",
-                  color: "#00e5ff",
+                  color: theme.palette.crosszero.markX,
                   player: activeSession.players?.find(
                     (p) => p.playerType === "p2"
                   ),
@@ -483,7 +486,7 @@ export default function CrossZeroHostPage() {
                   }}>
                   <Box
                     sx={{
-                      bgcolor: "rgba(255,255,255,0.06)",
+                      bgcolor: theme.palette.crosszero.playerCardBg,
                       border: `1.5px solid ${color}44`,
                       borderRadius: 3,
                       p: 2,
@@ -504,7 +507,7 @@ export default function CrossZeroHostPage() {
                     />
                     <Typography
                       variant="caption"
-                      sx={{ color: "rgba(255,255,255,0.55)" }}
+                      sx={{ color: theme.palette.crosszero.sessionTextSecondary }}
                     >
                       {label}
                     </Typography>
@@ -514,10 +517,8 @@ export default function CrossZeroHostPage() {
                       {player?.playerId?.name || "—"}
                     </Typography>
                     {player?.playerId?.company && (
-                      <Typography
-                        variant="caption"
-                        sx={{ color: "rgba(255,255,255,0.45)" }}
-                      >
+                      <Typography sx={{ color: theme.palette.crosszero.sessionTextTertiary, fontSize: "0.85rem" }}>
+
                         {player.playerId.company}
                       </Typography>
                     )}
@@ -538,9 +539,9 @@ export default function CrossZeroHostPage() {
               width: "100%",
               maxWidth: 700,
               mx: "auto",
-              background: "linear-gradient(135deg, #1e3c72, #2a5298)",
+              background: theme.palette.crosszero.pendingCardGradient,
               borderRadius: 6,
-              color: "#fff",
+              color: theme.palette.common.white,
               textAlign: "center",
             }}
           >
@@ -549,8 +550,8 @@ export default function CrossZeroHostPage() {
               sx={{
                 fontWeight: "bold",
                 mb: 3,
-                color: "white",
-                textShadow: "0 0 10px rgba(255,255,255,0.3)"
+                color: theme.palette.common.white,
+                textShadow: theme.palette.crosszero.pendingTextShadow
               }}>
               {bothPlayersJoined ? t.bothPlayersJoined : t.waitingForPlayers}
             </Typography>
@@ -560,65 +561,70 @@ export default function CrossZeroHostPage() {
                 { label: t.player1, mark: "O", player: pendingP1 },
                 { label: t.player2, mark: "X", player: pendingP2 },
               ].map(({ label, mark, player }) => (
-                  <Box
-                    key={label}
+                <Box
+                  key={label}
+                  sx={{
+                    backgroundColor: player?.playerId
+                      ? theme.palette.crosszero.playerSlotFilled
+                      : theme.palette.crosszero.playerSlotEmpty,
+                    border: `2px solid ${player?.playerId
+                      ? theme.palette.crosszero.playerSlotBorderFilled
+                      : theme.palette.crosszero.playerSlotBorderEmpty
+                      }`,
+                    borderRadius: 4,
+                    p: 2.5,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: 1,
+                    width: { xs: "100%", sm: 220 },
+                    textAlign: "center",
+                    animation: !player?.playerId
+                      ? "waitingPulse 1.2s ease-in-out infinite"
+                      : "none",
+                  }}
+                >
+                  <Avatar
                     sx={{
-                      backgroundColor: player?.playerId ? "#4CAF50" : "#ffffff11",
-                      border: `2px solid ${player?.playerId ? "#4caf50" : "#ffffff44"}`,
-                      borderRadius: 4,
-                      p: 2.5,
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      gap: 1,
-                      width: { xs: "100%", sm: 220 },
-                      textAlign: "center",
-                      animation: !player?.playerId
-                        ? "waitingPulse 1.2s ease-in-out infinite"
-                        : "none",
+                      bgcolor: player?.playerId ? "success.dark" : "grey.700",
+                      width: 48,
+                      height: 48,
                     }}
                   >
-                    <Avatar
-                      sx={{
-                        bgcolor: player?.playerId ? "success.dark" : "grey.700",
-                        width: 48,
-                        height: 48,
-                      }}
-                    >
-                      <CrossZeroMarkVisual
-                        mark={mark}
-                        xImage={pendingSession?.gameId?.xImage}
-                        oImage={pendingSession?.gameId?.oImage}
-                        size={22}
-                        fallbackSize="1.2rem"
-                        color="#fff"
-                        shadow="none"
-                      />
-                    </Avatar>
-                    <Typography variant="caption" sx={{ color: "#e0f2f1" }}>
-                      {label}
+                    <CrossZeroMarkVisual
+                      mark={mark}
+                      xImage={pendingSession?.gameId?.xImage}
+                      oImage={pendingSession?.gameId?.oImage}
+                      size={22}
+                      fallbackSize="1.2rem"
+                      color={theme.palette.common.white}
+                      shadow="none"
+                    />
+                  </Avatar>
+                  <Typography variant="caption" sx={{ color: theme.palette.crosszero.pendingSecondaryText }}>
+                    {label}
+                  </Typography>
+                  <Typography
+                    variant="subtitle1"
+                    sx={{
+                      fontWeight: "bold",
+                      color: theme.palette.common.white,
+                      wordWrap: "break-word"
+                    }}>
+                    {player?.playerId?.name || ""}
+                  </Typography>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 0.5
+                    }}>
+                    <ICONS.business sx={{ fontSize: 18 }} />
+                    <Typography variant="caption" sx={{ color: theme.palette.crosszero.pendingSecondaryText }}>
+                      {player?.playerId?.company || "N/A"}
                     </Typography>
-                    <Typography
-                      variant="subtitle1"
-                      sx={{
-                        fontWeight: "bold",
-                        color: "#fff",
-                        wordWrap: "break-word"
-                      }}>
-                      {player?.playerId?.name || ""}
-                    </Typography>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 0.5
-                      }}>
-                      <ICONS.business sx={{ fontSize: 18 }} />
-                      <Typography variant="caption" sx={{ color: "#e0f2f1" }}>
-                        {player?.playerId?.company || "N/A"}
-                      </Typography>
-                    </Box>
                   </Box>
+                </Box>
               ))}
             </Box>
 
@@ -633,7 +639,7 @@ export default function CrossZeroHostPage() {
 
             <style jsx>{`
               @keyframes waitingPulse {
-                0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.25); }
+               0% { box-shadow: 0 0 0 0 ${theme.palette.crosszero.waitingPulseGlow}; }
                 70% { box-shadow: 0 0 0 10px rgba(255, 255, 255, 0); }
                 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
               }
@@ -665,8 +671,8 @@ export default function CrossZeroHostPage() {
               const winnerName = isP1Winner
                 ? p1?.playerId?.name
                 : isP2Winner
-                ? p2?.playerId?.name
-                : null;
+                  ? p2?.playerId?.name
+                  : null;
 
               return (
                 <Fade in timeout={500} key={session._id}>
@@ -676,16 +682,16 @@ export default function CrossZeroHostPage() {
                       overflow: "hidden",
                       borderRadius: 4,
                       my: 3,
-                      background: "linear-gradient(to bottom, #f7f7f7, #ffffff)",
-                      boxShadow: "0px 6px 20px rgba(0,0,0,0.1)",
+                      background: theme.palette.crosszero.previousSessionGradient,
+                      boxShadow: theme.palette.crosszero.previousSessionShadow,
                     }}
                   >
                     {/* Winner banner */}
                     <Box
                       sx={{
                         background: winnerName
-                          ? "linear-gradient(to right, #4CAF50, #81C784)"
-                          : "linear-gradient(to right, #9E9E9E, #BDBDBD)",
+                          ? theme.palette.crosszero.winnerBannerGradient
+                          : theme.palette.crosszero.tieBannerGradient,
                         px: 3,
                         py: 1.5,
                         display: "flex",
@@ -694,11 +700,12 @@ export default function CrossZeroHostPage() {
                         gap: 1,
                       }}
                     >
-                      {winnerName && <ICONS.trophy sx={{ color: "#fff" }} />}
+                      {winnerName && <ICONS.trophy sx={{ color: theme.palette.common.white }} />}
                       <Typography
                         variant="h6"
                         sx={{
-                          color: "#fff",
+                          color: theme.palette.common.white,
+
                           fontWeight: "bold"
                         }}>
                         {winnerName || t.tie}
@@ -724,8 +731,8 @@ export default function CrossZeroHostPage() {
                           <Box
                             sx={{
                               background: isP1Winner
-                                ? "linear-gradient(135deg, #A5D6A7, #C8E6C9)"
-                                : "#f5f5f5",
+                                ? theme.palette.crosszero.winnerCellGradient
+                                : theme.palette.crosszero.loserCellBg,
                               borderRadius: 3,
                               p: 3,
                               height: "100%",
@@ -807,8 +814,8 @@ export default function CrossZeroHostPage() {
                             top: "50%",
                             left: "50%",
                             transform: { xs: "none", sm: "translate(-50%, -50%)" },
-                            background: "#fff",
-                            border: "2px solid #ccc",
+                            bgcolor: theme.palette.crosszero.vsBadgeBg,
+                            border: theme.palette.crosszero.vsBadgeBorder,
                             px: 2,
                             py: 0.5,
                             borderRadius: "50px",
@@ -831,8 +838,8 @@ export default function CrossZeroHostPage() {
                           <Box
                             sx={{
                               background: isP2Winner
-                                ? "linear-gradient(135deg, #A5D6A7, #C8E6C9)"
-                                : "#f5f5f5",
+                                ? theme.palette.crosszero.winnerCellGradient
+                                : theme.palette.crosszero.loserCellBg,
                               borderRadius: 3,
                               p: 3,
                               height: "100%",

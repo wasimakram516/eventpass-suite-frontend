@@ -362,154 +362,156 @@ export default function QuestionsPage() {
         ) : (
           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, justifyContent: "center" }}>
             {filteredQuestions?.map((q, idx) => (
-                <AppCard
-                  key={q._id || idx}
-                  sx={{
-                    width: { xs: "100%", sm: 360 },
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <CardContent>
+              <AppCard
+                key={q._id || idx}
+                sx={{
+                  width: { xs: "100%", sm: 360 },
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                }}
+              >
+                <CardContent>
+                  <Typography
+                    variant="subtitle1"
+                    gutterBottom
+                    sx={{
+                      fontWeight: "bold"
+                    }}
+                  >
+                    Q{idx + 1}
+                  </Typography>
+
+                  <Box>
                     <Typography
-                      variant="subtitle1"
-                      gutterBottom
+                      variant="body1"
                       sx={{
-                        fontWeight: "bold"
+                        fontWeight: "bold",
+                        mb: 1
+                      }}>
+                      <strong>{t.questionLabel}</strong> {q.question}
+                    </Typography>
+                    {q.questionImage && (
+                      <Box
+                        component="img"
+                        src={q.questionImage}
+                        alt="Question"
+                        sx={{
+                          width: 100,
+                          height: { xs: 70, sm: 80 },
+                          objectFit: "cover",
+                          borderRadius: 1,
+                          border: "1px solid",
+                          borderColor: "divider",
+                          mb: 1,
+                        }}
+                      />
+                    )}
+                  </Box>
+
+                  <Box>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontWeight: "bold",
+                        mb: 0.5
+                      }}>
+                      {t.optionsLabel}
+                    </Typography>
+                    <Box
+                      sx={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(2, 1fr)",
+                        gap: 1,
                       }}
                     >
-                      Q{idx + 1}
-                    </Typography>
-
-                    <Box>
-                      <Typography
-                        variant="body1"
-                        sx={{
-                          fontWeight: "bold",
-                          mb: 1
-                        }}>
-                        <strong>{t.questionLabel}</strong> {q.question}
-                      </Typography>
-                      {q.questionImage && (
-                        <Box
-                          component="img"
-                          src={q.questionImage}
-                          alt="Question"
-                          sx={{
-                            width: 100,
-                            height: { xs: 70, sm: 80 },
-                            objectFit: "cover",
-                            borderRadius: 1,
-                            border: "1px solid #eee",
-                            mb: 1,
-                          }}
-                        />
-                      )}
-                    </Box>
-
-                    <Box>
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          fontWeight: "bold",
-                          mb: 0.5
-                        }}>
-                        {t.optionsLabel}
-                      </Typography>
-                      <Box
-                        sx={{
-                          display: "grid",
-                          gridTemplateColumns: "repeat(2, 1fr)",
-                          gap: 1,
-                        }}
-                      >
-                        {q.answers.map((a, i) => (
-                          <Box key={i}>
-                            <Typography
-                              variant="body2"
+                      {q.answers.map((a, i) => (
+                        <Box key={i}>
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              color:
+                                i === q.correctAnswerIndex
+                                  ? "success.main"
+                                  : "text.secondary",
+                            }}
+                          >
+                            {String.fromCharCode(65 + i)}. {a}
+                          </Typography>
+                          {q.answerImages?.[i] && (
+                            <Box
+                              component="img"
+                              src={q.answerImages[i]}
+                              alt={`Option ${String.fromCharCode(65 + i)}`}
                               sx={{
-                                color:
-                                  i === q.correctAnswerIndex
-                                    ? "green"
-                                    : "text.secondary",
+                                width: 100,
+                                height: { xs: 70, sm: 80 },
+                                objectFit: "cover",
+                                borderRadius: 1,
+                                border: "1px solid",
+                                borderColor: "divider",
+                                mt: 0.5,
                               }}
-                            >
-                              {String.fromCharCode(65 + i)}. {a}
-                            </Typography>
-                            {q.answerImages?.[i] && (
-                              <Box
-                                component="img"
-                                src={q.answerImages[i]}
-                                alt={`Option ${String.fromCharCode(65 + i)}`}
-                                sx={{
-                                  width: 100,
-                                  height: { xs: 70, sm: 80 },
-                                  objectFit: "cover",
-                                  borderRadius: 1,
-                                  border: "1px solid #eee",
-                                  mt: 0.5,
-                                }}
-                              />
-                            )}
-                          </Box>
-                        ))}
-                      </Box>
+                            />
+                          )}
+                        </Box>
+                      ))}
                     </Box>
+                  </Box>
 
-                    <Typography variant="body2" sx={{ mt: 1 }}>
-                      <strong>{t.correctAnswerLabel}</strong>{" "}
-                      <span style={{ color: "green" }}>
-                        {String.fromCharCode(65 + q.correctAnswerIndex)}.{" "}
-                        {q.answers[q.correctAnswerIndex]}
-                      </span>
+                  <Typography variant="body2" sx={{ mt: 1 }}>
+                    <strong>{t.correctAnswerLabel}</strong>{" "}
+                    <span style={{ color:"success.main" }}>
+                      {String.fromCharCode(65 + q.correctAnswerIndex)}.{" "}
+                      {q.answers[q.correctAnswerIndex]}
+                    </span>
+                  </Typography>
+
+                  {q.hint && (
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: "text.secondary",
+                        mt: 1,
+                        display: "block"
+                      }}>
+                      <strong>{t.hintLabel}</strong> {q.hint}
                     </Typography>
-
-                    {q.hint && (
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          color: "text.secondary",
-                          mt: 1,
-                          display: "block"
-                        }}>
-                        <strong>{t.hintLabel}</strong> {q.hint}
-                      </Typography>
-                    )}
-                  </CardContent>
-                  <RecordMetadata
-                    createdByName={q.createdBy}
-                    updatedByName={q.updatedBy}
-                    createdAt={q.createdAt}
-                    updatedAt={q.updatedAt}
-                    locale={language === "ar" ? "ar-SA" : "en-GB"}
-                  />
-                  <CardActions sx={{ justifyContent: "center" }}>
-                    <Tooltip title={t.editTooltip}>
-                      <IconButton
-                        color="secondary"
-                        onClick={() => {
-                          setSelectedQuestion(q);
-                          setEditMode(true);
-                          setOpenModal(true);
-                        }}
-                      >
-                        <EditIcon />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title={t.deleteTooltip}>
-                      <IconButton
-                        color="error"
-                        onClick={() => {
-                          setSelectedQuestion(q);
-                          setConfirmOpen(true);
-                        }}
-                      >
-                        <DeleteIcon />
-                      </IconButton>
-                    </Tooltip>
-                  </CardActions>
-                </AppCard>
+                  )}
+                </CardContent>
+                <RecordMetadata
+                  createdByName={q.createdBy}
+                  updatedByName={q.updatedBy}
+                  createdAt={q.createdAt}
+                  updatedAt={q.updatedAt}
+                  locale={language === "ar" ? "ar-SA" : "en-GB"}
+                />
+                <CardActions sx={{ justifyContent: "center" }}>
+                  <Tooltip title={t.editTooltip}>
+                    <IconButton
+                      color="secondary"
+                      onClick={() => {
+                        setSelectedQuestion(q);
+                        setEditMode(true);
+                        setOpenModal(true);
+                      }}
+                    >
+                      <EditIcon />
+                    </IconButton>
+                  </Tooltip>
+                  <Tooltip title={t.deleteTooltip}>
+                    <IconButton
+                      color="error"
+                      onClick={() => {
+                        setSelectedQuestion(q);
+                        setConfirmOpen(true);
+                      }}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </Tooltip>
+                </CardActions>
+              </AppCard>
             ))}
           </Box>
         )}

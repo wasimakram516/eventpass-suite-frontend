@@ -31,6 +31,7 @@ import {
   AccordionSummary,
   AccordionDetails,
   InputAdornment,
+  useTheme,
 } from "@mui/material";
 
 import { useEffect, useState, useMemo, useRef } from "react";
@@ -220,6 +221,8 @@ export default function UsersPage() {
   );
   const { dir, align, language, t } = useI18nLayout(translations);
   const { showMessage } = useMessage();
+  const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
   const [groupedUsers, setGroupedUsers] = useState({});
   const [businesses, setBusinesses] = useState([]);
   const [availableModules, setAvailableModules] = useState([]);
@@ -744,10 +747,12 @@ export default function UsersPage() {
                       }
                       sx={{
                         bgcolor:
-                          user.staffType === "door" ? "#e1bee7" : "#4fc3f7",
-                        color: "#000000",
+                          user.staffType === "door"
+                            ? theme.palette.users.staffDoorBg
+                            : theme.palette.users.staffDeskBg,
+                        color: isDark ? "common.white" : "common.black",
                         "& .MuiChip-icon": {
-                          color: "#000000",
+                          color: isDark ? "common.white" : "common.black",
                           ...(dir === "rtl" && {
                             marginRight: "5px",
                             marginLeft: "8px",
@@ -1016,10 +1021,9 @@ export default function UsersPage() {
                   borderColor: "divider",
                   overflow: "hidden",
                   bgcolor: "background.paper",
-                  boxShadow: "0 6px 18px rgba(0,0,0,0.06)",
-                  "&:before": { display: "none" },
+                  boxShadow: theme.palette.users.accordionShadow, "&:before": { display: "none" },
                   "&.Mui-expanded": {
-                    boxShadow: "0 10px 26px rgba(0,0,0,0.10)",
+                    boxShadow: theme.palette.users.accordionShadowExpanded,
                   },
                 }}
               >
@@ -1028,7 +1032,7 @@ export default function UsersPage() {
                   sx={{
                     px: 2.5,
                     py: 0.75,
-                    bgcolor: "rgba(0, 119, 182, 0.06)",
+                    bgcolor: theme.palette.users.accordionSummaryBg,
                     "&.Mui-expanded": { minHeight: 52 },
                     "& .MuiAccordionSummary-content": {
                       my: 1,
@@ -1165,10 +1169,11 @@ export default function UsersPage() {
               top: 8,
               color: "text.secondary",
               border: "1px solid",
-              borderColor: "#0077b6",
+              borderColor: "primary.main",
               "&:hover": {
-                bgcolor: "#0077b6",
+                bgcolor: "primary.main",
                 color: "primary.contrastText",
+
               },
             }}
           >
@@ -1176,7 +1181,24 @@ export default function UsersPage() {
           </IconButton>
         </DialogTitle>
 
-        <DialogContent>
+        <DialogContent sx={{
+          "&::-webkit-scrollbar": {
+            width: 8,
+          },
+          "&::-webkit-scrollbar-track": {
+            background: "transparent",
+          },
+          "&::-webkit-scrollbar-thumb": {
+           backgroundColor: theme.palette.sharedUI.scrollbarThumb,
+            borderRadius: 8,
+          },
+          "&::-webkit-scrollbar-thumb:hover": {
+            backgroundColor: theme.palette.sharedUI.scrollbarThumbHover,
+          },
+
+          /* Firefox */
+          scrollbarColor: `${theme.palette.sharedUI.scrollbarThumb} transparent`,
+        }}>
           {isAdminOrSuperAdmin && !isEditMode && (
             <FormControl fullWidth margin="normal">
               <InputLabel id="user-type-label">{t.userTypeLabel}</InputLabel>

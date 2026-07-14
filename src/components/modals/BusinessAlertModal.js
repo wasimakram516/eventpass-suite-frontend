@@ -46,7 +46,6 @@ const BusinessAlertModal = ({ open, onNavigate }) => {
       slotProps={{
         paper: {
           sx: {
-            borderRadius: 4,
             overflow: "hidden",
             boxShadow: 8,
           },
@@ -55,7 +54,7 @@ const BusinessAlertModal = ({ open, onNavigate }) => {
     >
       <Box
         sx={{
-          backgroundColor: orange[50],
+          backgroundColor: "action.selected",
           display: "flex",
           justifyContent: "center",
           alignItems: "center",
@@ -64,12 +63,12 @@ const BusinessAlertModal = ({ open, onNavigate }) => {
       >
         <Avatar
           sx={{
-            bgcolor: orange[100],
+            bgcolor: "action.focus",
             width: 72,
             height: 72,
           }}
         >
-          <WarningAmberIcon sx={{ fontSize: 40, color: orange[700] }} />
+          <WarningAmberIcon sx={{ fontSize: 40, color: "warning.main" }} />
         </Avatar>
       </Box>
       <DialogTitle sx={{ textAlign: "center", fontWeight: "bold", mt: 1 }}>
@@ -96,7 +95,6 @@ const BusinessAlertModal = ({ open, onNavigate }) => {
           sx={{
             px: 4,
             fontWeight: "bold",
-            borderRadius: 2,
             textTransform: "none",
             boxShadow: 3,
           }}

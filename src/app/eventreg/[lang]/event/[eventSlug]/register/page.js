@@ -22,7 +22,9 @@ import {
   FormControl,
   IconButton,
   ListSubheader,
+  alpha,
   InputAdornment,
+  useTheme,
 } from "@mui/material";
 import { QRCodeCanvas } from "qrcode.react";
 import { useParams, useRouter } from "next/navigation";
@@ -31,6 +33,7 @@ import { createRegistration } from "@/services/eventreg/registrationService";
 import { initiatePayment } from "@/services/eventreg/paymentService";
 import { getPublicEventBySlug } from "@/services/eventreg/eventService";
 import ICONS from "@/utils/iconUtil";
+import resolveTicketDependentFields from "@/utils/resolveTicketDependentFields";
 import { translateTexts } from "@/services/translationService";
 import { applyTranslationOverridesToArray } from "@/utils/translationOverrides";
 import Background from "@/components/Background";
@@ -50,12 +53,12 @@ import { downloadDefaultQrWrapperAsImage, hasDefaultQrWrapperDesign, hasWrapperD
 import BadgePreview from "@/components/badges/BadgePreview";
 import BadgeCard from "@/components/badges/BadgeCard";
 import html2canvas from "html2canvas";
-
 export default function Registration() {
   const { eventSlug, lang } = useParams();
   const isArabic = lang === "ar";
   const router = useRouter();
   const dir = isArabic ? "rtl" : "ltr";
+  const theme = useTheme();
 
   const t = {
     registerForEvent: isArabic
@@ -91,6 +94,34 @@ export default function Registration() {
     approvalPendingMessage: isArabic
       ? "يرجى الانتظار حتى يوافق المسؤول على تسجيلك."
       : "Please wait for the admin to approve your registration.",
+    duplicatePaidTitle: isArabic ? "أنت مسجَّل بالفعل" : "You're already registered",
+    duplicatePaidMessage: isArabic
+      ? "يوجد بالفعل تسجيل مؤكد لهذه الفعالية بهذا البريد الإلكتروني أو رقم الهاتف. لقد أعدنا إرسال تذكرتك وتأكيد التسجيل إلى بريدك الإلكتروني، يرجى التحقق من صندوق الوارد (ومجلد الرسائل غير المرغوب فيها)."
+      : "This email or phone number already has a confirmed registration for this event. We've re-sent your ticket and confirmation to your email — please check your inbox (and spam folder).",
+    duplicatePendingTitle: isArabic ? "الدفع لم يكتمل بعد" : "Payment outstanding",
+    duplicatePendingMessage: isArabic
+      ? "يوجد بالفعل تسجيل قيد الإجراء لهذه الفعالية بهذا البريد الإلكتروني أو رقم الهاتف، ولم تكتمل عملية الدفع بعد. لقد أعدنا إرسال رابط الدفع الآمن إلى بريدك الإلكتروني."
+      : "This email or phone number already has a registration in progress for this event, and payment hasn't been completed yet. We've re-sent the secure payment link to your email.",
+    duplicatePendingExpiry: isArabic ? "ستنتهي صلاحية الرابط في:" : "This link will expire on:",
+    duplicatePendingAutoDelete: isArabic
+      ? "إذا تعذر عليك إتمام الدفع قبل ذلك، ستتم إزالة هذا التسجيل تلقائيًا، ويمكنك حينها التسجيل مرة أخرى."
+      : "If you're unable to complete payment before then, this registration will be automatically removed and you can register again.",
+    resumePaymentNow: isArabic ? "استئناف الدفع الآن" : "Resume Payment Now",
+    duplicateSupportLine: isArabic
+      ? "إذا واجهت أي إزعاج أو اعتقدت أن هذا خطأ، يرجى التواصل مع فريق الدعم لدينا على"
+      : "If you're experiencing any inconvenience, or think this is a mistake, please contact our support team at",
+    conflictGenericTitle: isArabic ? "التسجيل موجود بالفعل" : "Registration already exists",
+    conflictGenericMessage: isArabic
+      ? "يوجد بالفعل تسجيل لهذه الفعالية. يرجى التواصل مع فريق الدعم للمساعدة."
+      : "A registration already exists for this event. Please contact our support team for help.",
+    conflictEmailOnlyTitle: isArabic ? "البريد الإلكتروني مسجل بالفعل" : "Email already registered",
+    conflictEmailOnlyMessage: isArabic
+      ? "يوجد تسجيل بهذا البريد الإلكتروني ولكن برقم هاتف مختلف. إذا لم يكن هذا أنت، يرجى التواصل مع الدعم، أو يمكنك استخدام عنوان بريد إلكتروني آخر (تأكد من أنه نشط، حيث سيُرسل تسجيلك إليه)."
+      : "A registration with this email already exists, but with a different phone number. If this isn't you, please contact support, or you can use a different email address (make sure it's active, since your registration will be sent there).",
+    conflictPhoneOnlyTitle: isArabic ? "رقم الهاتف مسجل بالفعل" : "Phone number already registered",
+    conflictPhoneOnlyMessage: isArabic
+      ? "يوجد تسجيل بهذا الرقم ولكن ببريد إلكتروني مختلف. إذا لم يكن هذا أنت، يرجى التواصل مع الدعم، أو يمكنك استخدام رقم هاتف آخر (تأكد من أنه نشط، حيث قد يتم التواصل معك بخصوص تسجيلك)."
+      : "A registration with this phone number already exists, but with a different email address. If this isn't you, please contact support, or you can use a different phone number (make sure it's active, since you may be contacted about your registration).",
     selectTicket: isArabic ? "اختر نوع التذكرة" : "Select a Ticket",
     ticketSoldOut: isArabic ? "نفدت التذاكر" : "Sold Out",
     ticketRequired: isArabic ? "يرجى اختيار نوع التذكرة." : "Please select a ticket type.",
@@ -139,6 +170,14 @@ export default function Registration() {
   const [paymentPayload, setPaymentPayload] = useState(null);
   const [payProcessing, setPayProcessing] = useState(false);
   const [paymentError, setPaymentError] = useState("");
+  // Set when initiatePayment reports an existing registration (paid or still-
+  // pending) for the same email/phone, instead of creating a new checkout.
+  const [duplicateNotice, setDuplicateNotice] = useState(null);
+  // Set when initiatePayment blocks the attempt because only one identity
+  // field (email XOR phone) matched a different registration — a likely
+  // different person, not the same registrant retrying, so no checkout is
+  // created/resumed and nothing is resent.
+  const [conflictReason, setConflictReason] = useState(null);
   const qrCodeRef = useRef(null);
   const badgePreviewRef = useRef(null);
   const { globalConfig } = useGlobalConfig();
@@ -148,10 +187,9 @@ export default function Registration() {
       return [];
     }
     const selectedTt = event.ticketTypes?.find(tt => tt._id === selectedTicketTypeId);
-    if (!selectedTt?.name) return [];
-    const mappedFieldNames = event.globalDependentFieldMappings[selectedTt.name] || [];
-    return event.globalDependentFields
-      .filter(f => mappedFieldNames.includes(f.inputName) && f.inputName?.trim() && f.visible !== false)
+    if (!selectedTt) return [];
+    return resolveTicketDependentFields(event, selectedTt)
+      .filter(f => f.inputName?.trim() && f.visible !== false)
       .map(f => ({
         name: f.inputName,
         label: f.inputName,
@@ -503,12 +541,20 @@ export default function Registration() {
         })
       );
 
+      let timezone = null;
+      try {
+        timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || null;
+      } catch {
+        timezone = null;
+      }
+
       setPaymentPayload({
         eventSlug,
         ticketTypeId: selectedTicketTypeId,
         lang,
         ...prunedFormData,
         isoCode: phoneIsoCode,
+        timezone,
       });
       setPaymentError("");
       setSubmitting(false);
@@ -556,14 +602,68 @@ export default function Registration() {
     if (!paymentPayload) return;
     setPayProcessing(true);
     setPaymentError("");
+    setDuplicateNotice(null);
+    setConflictReason(null);
     const result = await initiatePayment(paymentPayload);
-    const sessionUrl = result?.sessionUrl || result?.data?.sessionUrl;
+    const duplicateStatus = result?.duplicateStatus || result?.data?.duplicateStatus;
 
+    if (!result?.error && duplicateStatus) {
+      // An existing registration already covers this email/phone — show a
+      // clear info message (the backend already re-sent the relevant email)
+      // instead of silently redirecting to a fresh/resumed checkout.
+      setPayProcessing(false);
+      setDuplicateNotice({
+        status: duplicateStatus,
+        expiresAt: result?.expiresAt || result?.data?.expiresAt || null,
+        sessionUrl: result?.sessionUrl || result?.data?.sessionUrl || null,
+      });
+      return;
+    }
+
+    const sessionUrl = result?.sessionUrl || result?.data?.sessionUrl;
     if (!result?.error && sessionUrl) {
       window.location.href = sessionUrl;
     } else {
       setPayProcessing(false);
-      setPaymentError(result?.message || t.registrationFailed);
+      const conflict = result?.conflictReason || result?.data?.conflictReason;
+      if (conflict) {
+        setConflictReason(conflict);
+      } else {
+        setPaymentError(result?.message || t.registrationFailed);
+      }
+    }
+  };
+
+  const conflictCopy = (reason) => {
+    if (reason === "EMAIL_ONLY_PENDING") {
+      return { title: t.conflictEmailOnlyTitle, message: t.conflictEmailOnlyMessage };
+    }
+    if (reason === "PHONE_ONLY_PENDING") {
+      return { title: t.conflictPhoneOnlyTitle, message: t.conflictPhoneOnlyMessage };
+    }
+    // EMAIL_ONLY_PAID, PHONE_ONLY_PAID, SPLIT all share the same generic
+    // wording — the backend never reveals which field mismatched once a paid
+    // registration is involved.
+    return { title: t.conflictGenericTitle, message: t.conflictGenericMessage };
+  };
+
+  // Formats a payment-link expiry in the visitor's own browser timezone,
+  // e.g. "Friday, 10 July 2026, 02:30 PM GMT+5" — no server-side timezone
+  // detection needed since this renders live in the visitor's own browser.
+  const formatExpiryLocal = (expiresAt) => {
+    if (!expiresAt) return "";
+    try {
+      return new Intl.DateTimeFormat(isArabic ? "ar-EG" : "en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZoneName: "shortOffset",
+      }).format(new Date(expiresAt));
+    } catch {
+      return new Date(expiresAt).toLocaleString();
     }
   };
 
@@ -637,7 +737,7 @@ export default function Registration() {
         <Box key={field.name} sx={{ mb: 2, textAlign: "center" }}>
           <Typography sx={{ mb: 1 }}>
             {fieldLabel}
-            {field.required && <span style={{ color: "red" }}> *</span>}
+            {field.required && <Typography component="span" sx={{ color: "error.main" }}> *</Typography>}
           </Typography>
           <RadioGroup
             row
@@ -831,7 +931,7 @@ export default function Registration() {
             p: { xs: 2, sm: 4 },
             textAlign: "center",
             backdropFilter: "blur(6px)",
-            backgroundColor: "rgba(255,255,255,0.9)",
+            backgroundColor: (theme) => theme.palette.overlay.cardTransparent,
           }}
         >
           <Typography
@@ -1054,16 +1154,15 @@ export default function Registration() {
       {/* Payment summary dialog (paid events) */}
       <Dialog
         open={showPaymentSummary}
-        onClose={() => !payProcessing && setShowPaymentSummary(false)}
+        onClose={() => { if (!payProcessing) { setShowPaymentSummary(false); setDuplicateNotice(null); setConflictReason(null); } }}
         maxWidth="xs"
         fullWidth
         dir={dir}
         slotProps={{
           paper: {
             sx: {
-              borderRadius: 4,
               overflow: "hidden",
-              boxShadow: "0 24px 60px rgba(0,0,0,0.22)",
+              boxShadow: theme.palette.shadow.dialogLarge,
             },
           },
         }}
@@ -1071,8 +1170,7 @@ export default function Registration() {
         {/* Header band */}
         <Box
           sx={{
-            background: "linear-gradient(135deg, #0f3d57 0%, #14708a 100%)",
-            color: "#fff",
+            background: (theme) => theme.palette.gradients.infoCard, color: "common.white",
             px: 3,
             pt: 3,
             pb: 2.5,
@@ -1087,13 +1185,13 @@ export default function Registration() {
               height: 44,
               borderRadius: 2,
               flexShrink: 0,
-              backgroundColor: "rgba(255,255,255,0.16)",
+              backgroundColor: theme.palette.overlay.glassLight,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
             }}
           >
-            <ICONS.list sx={{ fontSize: 24, color: "#fff" }} />
+            <ICONS.list sx={{ fontSize: 24, color: theme.palette.common.white }} />
           </Box>
           <Box sx={{ minWidth: 0 }}>
             <Typography variant="h6" fontWeight={800} sx={{ lineHeight: 1.2 }}>
@@ -1164,8 +1262,10 @@ export default function Registration() {
                   px: 2,
                   py: 1.5,
                   borderRadius: 2.5,
-                  backgroundColor: "rgba(20,112,138,0.08)",
-                  border: "1px solid rgba(20,112,138,0.2)",
+                  backgroundColor: (theme) => theme.palette.overlay.infoCard,
+
+                  border: (theme) =>
+                    `1px solid ${theme.palette.overlay.infoCardBorder}`,
                   display: "flex",
                   justifyContent: "space-between",
                   alignItems: "center",
@@ -1192,35 +1292,145 @@ export default function Registration() {
             </Box>
           )}
 
-          {paymentError && (
-            <Alert severity="error" sx={{ mt: 2 }}>{paymentError}</Alert>
+          {conflictReason ? (
+            <Box
+              sx={{
+                backgroundColor: (theme) => alpha(theme.palette.error.main, 0.12),
+                borderLeft:
+                  dir === "rtl"
+                    ? "none"
+                    : (theme) => `4px solid ${theme.palette.error.main}`,
+                borderRight:
+                  dir === "rtl"
+                    ? (theme) => `4px solid ${theme.palette.error.main}`
+                    : "none", borderRadius: 1,
+                p: 2,
+                mt: 2,
+                textAlign: dir === "rtl" ? "right" : "left",
+              }}
+            >
+              <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 0.5 }}>
+                {conflictCopy(conflictReason).title}
+              </Typography>
+              <Typography variant="body2">
+                {conflictCopy(conflictReason).message}
+              </Typography>
+              {(globalConfig?.support?.email || globalConfig?.contact?.email) && (
+                <Typography variant="body2" sx={{ mt: 1.5 }}>
+                  {t.duplicateSupportLine}{" "}
+                  <a
+                    href={`mailto:${globalConfig?.support?.email || globalConfig?.contact?.email}`}
+                    style={{ color: theme.palette.error.main, fontWeight: 600, textDecoration: "none" }}
+                  >
+                    {globalConfig?.support?.email || globalConfig?.contact?.email}
+                  </a>
+                </Typography>
+              )}
+            </Box>
+          ) : duplicateNotice ? (
+            <Box
+              sx={{
+                backgroundColor: (theme) => alpha(theme.palette.info.main, 0.12),
+
+                borderLeft:
+                  dir === "rtl"
+                    ? "none"
+                    : (theme) => `4px solid ${theme.palette.info.main}`,
+
+                borderRight:
+                  dir === "rtl"
+                    ? (theme) => `4px solid ${theme.palette.info.main}`
+                    : "none", borderRadius: 1,
+                p: 2,
+                mt: 2,
+                textAlign: dir === "rtl" ? "right" : "left",
+              }}
+            >
+              <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 0.5 }}>
+                {duplicateNotice.status === "paid" ? t.duplicatePaidTitle : t.duplicatePendingTitle}
+              </Typography>
+              <Typography variant="body2">
+                {duplicateNotice.status === "paid" ? t.duplicatePaidMessage : t.duplicatePendingMessage}
+              </Typography>
+              {duplicateNotice.status === "pending" && duplicateNotice.expiresAt && (
+                <Typography variant="body2" sx={{ mt: 1 }}>
+                  <strong>{t.duplicatePendingExpiry}</strong> {formatExpiryLocal(duplicateNotice.expiresAt)}
+                </Typography>
+              )}
+              {duplicateNotice.status === "pending" && (
+                <Typography variant="body2" sx={{ mt: 1 }}>
+                  {t.duplicatePendingAutoDelete}
+                </Typography>
+              )}
+              {(globalConfig?.support?.email || globalConfig?.contact?.email) && (
+                <Typography variant="body2" sx={{ mt: 1.5 }}>
+                  {t.duplicateSupportLine}{" "}
+                  <a
+                    href={`mailto:${globalConfig?.support?.email || globalConfig?.contact?.email}`}
+                    style={{ color: theme.palette.info.main, fontWeight: 600, textDecoration: "none" }}
+                  >
+                    {globalConfig?.support?.email || globalConfig?.contact?.email}
+                  </a>
+                </Typography>
+              )}
+            </Box>
+          ) : (
+            paymentError && <Alert severity="error" sx={{ mt: 2 }}>{paymentError}</Alert>
           )}
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 3, pt: 0, gap: 1 }}>
-          <Button
-            onClick={() => setShowPaymentSummary(false)}
-            disabled={payProcessing}
-            sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2.5, color: "text.secondary" }}
-          >
-            {t.cancel}
-          </Button>
-          <Button
-            variant="contained"
-            onClick={handleConfirmPayment}
-            disabled={payProcessing || !paymentBreakdown}
-            startIcon={!payProcessing ? <ICONS.payment /> : undefined}
-            sx={{
-              textTransform: "none",
-              fontWeight: 700,
-              borderRadius: 2.5,
-              px: 3,
-              py: 1.1,
-              boxShadow: "0 8px 20px rgba(20,112,138,0.3)",
-              ...getStartIconSpacing(dir),
-            }}
-          >
-            {payProcessing ? <CircularProgress size={22} color="inherit" /> : t.confirmAndPay}
-          </Button>
+          {conflictReason || duplicateNotice ? (
+            <>
+              <Button
+                onClick={() => { setShowPaymentSummary(false); setDuplicateNotice(null); setConflictReason(null); }}
+                sx={{ textTransform: "none", fontWeight: 700, color: "text.secondary" }}
+              >
+                {t.cancel}
+              </Button>
+              {duplicateNotice?.status === "pending" && duplicateNotice?.sessionUrl && (
+                <Button
+                  variant="contained"
+                  onClick={() => { window.location.href = duplicateNotice.sessionUrl; }}
+                  startIcon={<ICONS.payment />}
+                  sx={{
+                    textTransform: "none",
+                    fontWeight: 700,
+                    px: 3,
+                    py: 1.1,
+                    boxShadow: (theme) => theme.palette.shadow.infoCard, ...getStartIconSpacing(dir),
+                  }}
+                >
+                  {t.resumePaymentNow}
+                </Button>
+              )}
+            </>
+          ) : (
+            <>
+              <Button
+                onClick={() => setShowPaymentSummary(false)}
+                disabled={payProcessing}
+                sx={{ textTransform: "none", fontWeight: 700, color: "text.secondary" }}
+              >
+                {t.cancel}
+              </Button>
+              <Button
+                variant="contained"
+                onClick={handleConfirmPayment}
+                disabled={payProcessing || !paymentBreakdown}
+                startIcon={!payProcessing ? <ICONS.payment /> : undefined}
+                sx={{
+                  textTransform: "none",
+                  fontWeight: 700,
+                  borderRadius: 2.5,
+                  px: 3,
+                  py: 1.1,
+                  boxShadow: (theme) => theme.palette.shadow.infoCard, ...getStartIconSpacing(dir),
+                }}
+              >
+                {payProcessing ? <CircularProgress size={22} color="inherit" /> : t.confirmAndPay}
+              </Button>
+            </>
+          )}
         </DialogActions>
       </Dialog>
 
@@ -1243,7 +1453,7 @@ export default function Registration() {
               width: 36,
               height: 36,
               bgcolor: "error.main",
-              color: "#fff",
+              color: "common.white",
               boxShadow: 2,
               "&:hover": {
                 bgcolor: "error.dark",
@@ -1260,7 +1470,7 @@ export default function Registration() {
               alignItems: "center",
               mt: 1
             }}>
-            <ICONS.checkCircle sx={{ fontSize: 44, color: "#28a745", mb: 0.5 }} />
+            <ICONS.checkCircle sx={{ fontSize: 44, color: "success.main", mb: 0.5 }} />
             <Typography
               variant="h6"
               sx={{
@@ -1280,7 +1490,8 @@ export default function Registration() {
                 id="qr-code-download-hidden"
                 value={qrToken}
                 size={180}
-                bgColor="#ffffff"
+                bgColor={theme.palette.qr.background}
+                fgColor={theme.palette.qr.foreground}
                 includeMargin
               />
             </Box>
@@ -1309,9 +1520,17 @@ export default function Registration() {
               {event?.requiresApproval && (
                 <Box
                   sx={{
-                    backgroundColor: "#fff3e0",
-                    borderLeft: dir === "rtl" ? "none" : "4px solid #ff6f00",
-                    borderRight: dir === "rtl" ? "4px solid #ff6f00" : "none",
+                    backgroundColor: (theme) => theme.palette.overlay.warningCard,
+
+                    borderLeft: (theme) =>
+                      dir === "rtl"
+                        ? "none"
+                        : `4px solid ${theme.palette.overlay.warningCardBorder}`,
+
+                    borderRight: (theme) =>
+                      dir === "rtl"
+                        ? `4px solid ${theme.palette.overlay.warningCardBorder}`
+                        : "none",
                     borderRadius: 1,
                     p: 2,
                     mb: 3,
@@ -1340,7 +1559,7 @@ export default function Registration() {
                         px: 2,
                         py: 0.5,
                         backgroundColor: "primary.main",
-                        color: "#fff",
+                        color: "common.white",
                         borderRadius: "20px",
                         fontWeight: 600,
                         fontFamily: "monospace",
@@ -1364,7 +1583,7 @@ export default function Registration() {
                       sx={{
                         p: 2,
                         borderRadius: 2,
-                        backgroundColor: "#fff",
+                        backgroundColor: (theme) => theme.palette.background.paper,
                         display: "inline-block",
                       }}
                     >
@@ -1372,11 +1591,12 @@ export default function Registration() {
                         id="qr-code"
                         value={qrToken}
                         size={180}
-                        bgColor="#ffffff"
+                        bgColor={theme.palette.qr.background}
+                        fgColor={theme.palette.qr.foreground}
                         includeMargin
                         style={{
                           padding: "12px",
-                          background: "#ffffff",
+                          background: theme.palette.qr.background,
                           borderRadius: "8px",
                         }}
                       />
@@ -1473,7 +1693,7 @@ function FileUploadField({ field, fd, fieldLabel, errorMsg, isArabic, chooseFile
     <Box sx={{ mb: 2, textAlign: isArabic ? "right" : "left" }}>
       <Typography variant="body2" sx={{ mb: 0.5, fontWeight: 500, textAlign: "start" }}>
         {fieldLabel}
-        {field.required && <span style={{ color: "red" }}> *</span>}
+        {field.required && <Typography component="span" sx={{ color: "error.main" }}> *</Typography>}
       </Typography>
       {fd ? (
         <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, p: 1, pr: 2, border: "1px solid", borderColor: "divider", borderRadius: 3, bgcolor: "background.paper", textAlign: "left", width: "100%", maxWidth: "100%", boxSizing: "border-box" }}>
@@ -1487,7 +1707,7 @@ function FileUploadField({ field, fd, fieldLabel, errorMsg, isArabic, chooseFile
           <Typography variant="body2" sx={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
             {fd.file.name}
           </Typography>
-          <IconButton onClick={onFileRemove} size="small" sx={{ bgcolor: "error.main", color: "#fff", "&:hover": { bgcolor: "error.dark" }, width: 28, height: 28, flexShrink: 0 }}>
+          <IconButton onClick={onFileRemove} size="small" sx={{ bgcolor: "error.main",  color: "error.contrastText", "&:hover": { bgcolor: "error.dark" }, width: 28, height: 28, flexShrink: 0 }}>
             <ICONS.delete sx={{ fontSize: 16 }} />
           </IconButton>
         </Box>

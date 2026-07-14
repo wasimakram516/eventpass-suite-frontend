@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Container } from "@mui/material";
+import { Box, Container, useTheme } from "@mui/material";
 import { keyframes } from "@mui/system";
 
 const marqueeMany = keyframes`
@@ -30,6 +30,7 @@ function HorizontalCarousel({
   pauseOnHover = true,
   reducedMotionSupport = true,
 }) {
+  const theme = useTheme();
   // Filter items to only include those with logoUrl
   const validItems = Array.isArray(items)
     ? items.filter((item) => !!item?.logoUrl)
@@ -85,12 +86,11 @@ function HorizontalCarousel({
         sx={{
           overflow: "hidden",
           position: "relative",
-          WebkitMaskImage:
-            "linear-gradient(to right, rgba(0,0,0,0), rgba(0,0,0,1) 20%, rgba(0,0,0,1) 80%, rgba(0,0,0,0))",
+          WebkitMaskImage: theme.palette.carousel.fadeMask,
+          maskImage: theme.palette.carousel.fadeMask,
           WebkitMaskRepeat: "no-repeat",
           WebkitMaskSize: "100% 100%",
-          maskImage:
-            "linear-gradient(to right, rgba(0,0,0,0), rgba(0,0,0,1) 20%, rgba(0,0,0,1) 80%, rgba(0,0,0,0))",
+
           maskRepeat: "no-repeat",
           maskSize: "100% 100%",
           width: "95vw",

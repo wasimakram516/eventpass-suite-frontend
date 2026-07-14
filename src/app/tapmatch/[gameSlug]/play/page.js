@@ -8,6 +8,7 @@ import {
   Paper,
   Grid,
   Fade,
+  useTheme,
 } from "@mui/material";
 import { useGame } from "@/contexts/GameContext";
 import { useEffect, useState, useRef } from "react";
@@ -64,6 +65,7 @@ const translations = {
 };
 
 export default function TapMatchPlayPage() {
+  const theme = useTheme();
   const { game, loading } = useGame();
   const router = useRouter();
   const { t, dir, language } = useI18nLayout(translations);
@@ -292,7 +294,7 @@ export default function TapMatchPlayPage() {
           sx={{
             position: "absolute",
             inset: 0,
-            backgroundColor: "rgba(0,0,0,0.65)",
+            backgroundColor: theme.palette.quiznest.countdownOverlay,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -300,13 +302,12 @@ export default function TapMatchPlayPage() {
         >
           <Typography
             variant="h1"
-            sx={{
+            sx={(theme) => ({
               fontWeight: "bold",
               fontSize: { xs: "25vw", md: "40vw" },
-              color: "#FFD700",
-              textShadow:
-                "0 0 20px rgba(255,215,0,0.9), 0 0 40px rgba(255,215,0,0.7)",
-            }}
+              color: theme.palette.trophy.gold,
+              textShadow: theme.palette.tapmatch.goldTextGlow,
+            })}
           >
             {toArabicDigits(delay, language)}
           </Typography>
@@ -340,10 +341,9 @@ export default function TapMatchPlayPage() {
     const accuracy = moves > 0 ? ((matchesCount / moves) * 100).toFixed(1) : 0;
 
     const headlineText = won ? t.thankYou : t.timesUp;
-    const backgroundGradient = won
-      ? "linear-gradient(135deg, #4CAF50CC, #388E3CCC)"
-      : "linear-gradient(135deg, #F44336CC, #E53935CC)";
-
+    const backgroundGradient = (theme) => won
+      ? theme.palette.tapmatch.winGradient
+      : theme.palette.tapmatch.loseGradient;
     return (
       <Box
         sx={{
@@ -361,129 +361,83 @@ export default function TapMatchPlayPage() {
           sx={{
             position: "absolute",
             inset: 0,
-            backgroundColor: "rgba(0,0,0,0.65)",
+            backgroundColor: theme.palette.quiznest.countdownOverlay,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             p: 2,
           }}
         >
-        {won && (
-          <Confetti
-            recycle={false}
-            numberOfPieces={300}
-            gravity={0.2}
-            style={{ position: "absolute", top: 0, left: 0 }}
-          />
-        )}
-        <LanguageSelector top={20} right={20} />
-        <Fade in timeout={800}>
-          <Paper
-            dir={dir}
-            elevation={8}
-            sx={{
-              width: { xs: "80%", sm: "50%" },
-              p: 4,
-              borderRadius: 3,
-              background: backgroundGradient,
-              color: "#fff",
-              textAlign: "center",
-              boxShadow: "0 0 30px rgba(0,0,0,0.6)",
-              backdropFilter: "blur(5px)",
-            }}
-          >
-            {/* Player Name */}
-            <Typography
-              variant="h3"
-              sx={{
-                fontWeight: 700,
-                mb: 1,
-                textShadow: "0 0 15px rgba(255,255,255,0.8)",
-                fontSize: { xs: "1.5rem", sm: "2rem", md: "2.5rem" }
-              }}>
-              {playerInfo?.name}
-            </Typography>
-
-            {/* Headline */}
-            <Typography
-              variant="h1"
-              sx={{
-                my: 2,
-                textShadow: "0 0 15px rgba(255,255,255,0.8)",
-                fontSize: { xs: "2rem", sm: "3rem", md: "4rem" },
-                fontWeight: 900,
-              }}
+          {won && (
+            <Confetti
+              recycle={false}
+              numberOfPieces={300}
+              gravity={0.2}
+              style={{ position: "absolute", top: 0, left: 0 }}
+            />
+          )}
+          <LanguageSelector top={20} right={20} />
+          <Fade in timeout={800}>
+            <Paper
+              dir={dir}
+              elevation={8}
+              sx={(theme) => ({
+                width: { xs: "80%", sm: "50%" },
+                p: 4,
+                borderRadius: 3,
+                background: won ? theme.palette.tapmatch.winGradient : theme.palette.tapmatch.loseGradient,
+                color: theme.palette.common.white,
+                textAlign: "center",
+                boxShadow: theme.palette.quiznest.countdownOverlay ? theme.palette.shadow.glow : undefined,
+                backdropFilter: "blur(5px)",
+              })}
             >
-              {headlineText}
-            </Typography>
+              <Typography
+                variant="h4"
+                gutterBottom
+                sx={(theme) => ({ fontWeight: 800, mb: 3, color: theme.palette.common.white, textTransform: "capitalize", wordBreak: "break-word" })}
+              >
+                {translatedTitle}
+              </Typography>
 
-            {/* Subtitle */}
-            <Typography variant="body1" sx={{ mb: 3, opacity: 0.9 }}>
-              {won ? t.allMatched : t.notAllMatched}
-            </Typography>
+              <TextField
+                label={t.nameLabel}
+                fullWidth
+                required
+                sx={{ mb: 3 }}
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
+                slotProps={{
+                  input: {
+                    sx: (theme) => ({
+                      backgroundColor: theme.palette.quiznest.inputBg,
+                      color: theme.palette.common.white,
+                      "& .MuiOutlinedInput-notchedOutline": { borderColor: theme.palette.quiznest.inputBorder },
+                    }),
+                  },
+                  inputLabel: { sx: (theme) => ({ color: theme.palette.quiznest.labelText }) },
+                }}
+              />
 
-            {/* Stats */}
-            <Box
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "flex-start",
-                gap: 1.5,
-                px: 2,
-                mb: 4,
-              }}
-            >
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <Shuffle fontSize="small" sx={{ color: "#fff" }} />
-                <Typography variant="body1" sx={{ color: "#fff" }}>
-                  <strong>{t.moves}:</strong> {toArabicDigits(moves, language)}
-                </Typography>
-              </Box>
-
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <CheckCircle fontSize="small" sx={{ color: "#fff" }} />
-                <Typography variant="body1" sx={{ color: "#fff" }}>
-                  <strong>{t.matches}:</strong> {toArabicDigits(matchesCount, language)}
-                </Typography>
-              </Box>
-
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <HighlightOff fontSize="small" sx={{ color: "#fff" }} />
-                <Typography variant="body1" sx={{ color: "#fff" }}>
-                  <strong>{t.misses}:</strong> {toArabicDigits(misses, language)}
-                </Typography>
-              </Box>
-
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <Speed fontSize="small" sx={{ color: "#fff" }} />
-                <Typography variant="body1" sx={{ color: "#fff" }}>
-                  <strong>{t.accuracy}:</strong> {toArabicDigits(accuracy, language)}%
-                </Typography>
-              </Box>
-
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <AccessTime fontSize="small" sx={{ color: "#fff" }} />
-                <Typography variant="body1" sx={{ color: "#fff" }}>
-                  <strong>{t.timeTaken}:</strong> {toArabicDigits(timeTaken, language)} {t.countdown}
-                </Typography>
-              </Box>
-            </Box>
-
-            {/* Button */}
-            <Button
-              variant="contained"
-              color="secondary"
-              startIcon={<Replay />}
-              size="large"
-              onClick={() => router.push(`/tapmatch/${game.slug}/name`)}
-              sx={{
-                ...getStartIconSpacing(dir),
-              }}
-            >
-              {t.playAgain}
-            </Button>
-          </Paper>
-        </Fade>
+              <Button
+                variant="contained"
+                size="large"
+                fullWidth
+                onClick={handleSubmit}
+                disabled={submitting || !form.name.trim()}
+                sx={(theme) => ({
+                  py: 1.2, borderRadius: 999, fontWeight: 800,
+                  bgcolor: theme.palette.quiznest.accent,
+                  color: theme.palette.common.black,
+                  "&:hover": { filter: "brightness(1.15)", bgcolor: theme.palette.quiznest.accent },
+                  "&:disabled": { opacity: 0.5 },
+                })}
+              >
+                {submitting ? <CircularProgress size={24} sx={(theme) => ({ color: theme.palette.common.black })} /> : t.startButton}
+              </Button>
+            </Paper>
+          </Fade>
         </Box>
       </Box>
     );
@@ -522,24 +476,15 @@ export default function TapMatchPlayPage() {
         >
           <Typography
             variant="h2"
-            sx={{
-              color: "#FFD700",
+            sx={(theme) => ({
+              color: theme.palette.trophy.gold,
               fontWeight: "bold",
               fontSize: "clamp(5rem, 18vw, 14rem)",
-              textShadow:
-                "0 0 15px rgba(255,215,0,0.9), 0 0 30px rgba(255,215,0,0.6)",
-            }}
+              textShadow: theme.palette.tapmatch.goldTextGlow,
+            })}
           >
             {toArabicDigits(timeLeft, language)}
-            <Typography
-              component="span"
-              sx={{
-                fontSize: "clamp(0.8rem, 2vw, 1.5rem)",
-                ml: 1,
-                color: "#FFD700",
-                opacity: 0.8,
-              }}
-            >
+            <Typography component="span" sx={(theme) => ({ fontSize: "clamp(0.8rem, 2vw, 1.5rem)", ml: 1, color: theme.palette.trophy.gold, opacity: 0.8 })}>
               {t.countdown}
             </Typography>
           </Typography>
@@ -597,22 +542,17 @@ export default function TapMatchPlayPage() {
                   >
                     {/* Front Face */}
                     <Box
-                      sx={{
-                        position: "absolute",
-                        inset: 0,
-                        backfaceVisibility: "hidden",
-                        transform: "rotateY(0deg)",
-                        borderRadius: 2,
-                        background: "linear-gradient(145deg, #1976d2, #42a5f5)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        color: "#fff",
-                        fontWeight: "bold",
-                        fontSize: "clamp(1rem, 4vw, 5rem)",
-                        boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
-                      }}
+                      sx={(theme) => ({
+                        position: "absolute", inset: 0, backfaceVisibility: "hidden",
+                        transform: "rotateY(0deg)", borderRadius: 2,
+                        background: theme.palette.tapmatch.cardFrontGradient,
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        color: theme.palette.common.white,
+                        fontWeight: "bold", fontSize: "clamp(1rem, 4vw, 5rem)",
+                        boxShadow: theme.palette.tapmatch.cardShadow,
+                      })}
                     >
+
                       {t.tap}
                     </Box>
 
@@ -640,23 +580,21 @@ export default function TapMatchPlayPage() {
 
                       {isMatched && (
                         <Box
-                          sx={{
-                            position: "absolute",
-                            inset: 0,
-                            backgroundColor: "rgba(0,255,0,0.3)",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            borderRadius: 2,
-                            transition: "opacity 0.3s ease-in-out",
-                          }}
+                          sx={(theme) => ({
+                            position: "absolute", inset: 0,
+                            backgroundColor: theme.palette.tapmatch.matchedOverlay,
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            borderRadius: 2, transition: "opacity 0.3s ease-in-out",
+                          })}
                         >
                           <CheckCircle
-                            sx={{
+                            sx={(theme) => ({
                               fontSize: 60,
-                              color: "rgba(255,255,255,0.9)",
-                              textShadow: "0 0 10px rgba(0,128,0,0.8)",
-                            }}
+                              color: theme.palette.tapmatch.checkIconColor,
+
+                              textShadow: theme.palette.tapmatch.matchedCheckGlow,
+                            })}
+
                           />
                         </Box>
                       )}

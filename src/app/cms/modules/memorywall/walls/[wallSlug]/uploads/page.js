@@ -15,6 +15,7 @@ import {
   Tooltip,
   Zoom,
   Skeleton,
+  useTheme,
 } from "@mui/material";
 import {
   getDisplayMedia,
@@ -30,6 +31,7 @@ import useI18nLayout from "@/hooks/useI18nLayout";
 import { toArabicDigits } from "@/utils/arabicDigits";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import useMediaSocket from "@/hooks/modules/memorywall/useMemoryWallMediaSocket";
+import { common } from "@mui/material/colors";
 
 const translations = {
   en: {
@@ -69,6 +71,7 @@ const translations = {
 };
 
 const FullScreenPreview = ({ open, media, wallConfig, onClose, t, language }) => {
+  const theme = useTheme();
   const wallMode = media?.wall?.mode || wallConfig?.mode;
   const wallName = media?.wall?.name || wallConfig?.name;
   const inputType = media?.wall?.cardSettings?.inputType || wallConfig?.cardSettings?.inputType;
@@ -78,7 +81,7 @@ const FullScreenPreview = ({ open, media, wallConfig, onClose, t, language }) =>
       open={open}
       onClose={onClose}
       fullScreen
-      sx={{ "& .MuiDialog-paper": { backgroundColor: "#000" } }}
+      sx={{ "& .MuiDialog-paper": { backgroundColor: common.black } }}
       slots={{
         transition: Zoom
       }}
@@ -98,9 +101,9 @@ const FullScreenPreview = ({ open, media, wallConfig, onClose, t, language }) =>
               top: 16,
               right: 16,
               zIndex: 10,
-              color: "white",
-              backgroundColor: "rgba(0,0,0,0.5)",
-              "&:hover": { backgroundColor: "rgba(0,0,0,0.8)" },
+              color: "common.white",
+              backgroundColor: (theme) => theme.palette.overlay.scrim,
+              "&:hover": { backgroundColor: (theme) => theme.palette.overlay.black80 },
             }}
           >
             <ICONS.close />
@@ -153,8 +156,8 @@ const FullScreenPreview = ({ open, media, wallConfig, onClose, t, language }) =>
               right: 0,
               px: 4,
               py: 3,
-              background: "linear-gradient(to top, rgba(0,0,0,0.9), rgba(0,0,0,0.6), transparent)",
-              color: "white",
+              background: (theme) => theme.palette.overlay.fullscreenPreviewGradient,
+              color: "common.white",
             }}
           >
             <Typography variant="subtitle2" gutterBottom sx={{
@@ -187,7 +190,7 @@ const FullScreenPreview = ({ open, media, wallConfig, onClose, t, language }) =>
                     component="img"
                     src={media.signatureUrl}
                     alt="Signature"
-                    sx={{ width: 120, height: 120, objectFit: "contain", bgcolor: "#fff", borderRadius: 1, p: 0.5 }}
+                    sx={{ width: 120, height: 120, objectFit: "contain", bgcolor: theme.palette.crosszero.vsBadgeBg, borderRadius: 1, p: 0.5 }}
                   />
                 )}
                 {!media.text && !media.signatureUrl && (
@@ -220,9 +223,11 @@ const FullScreenPreview = ({ open, media, wallConfig, onClose, t, language }) =>
         </Box>
       )}
     </Dialog>
-  );};
+  );
+};
 
 const CMSUploadsPage = () => {
+  const theme = useTheme();
   const { wallSlug } = useParams();
   const [media, setMedia] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -397,122 +402,127 @@ const CMSUploadsPage = () => {
             const displayTag = (!item.imageUrl && wallMode !== "card") ? "card" : wallMode;
 
             return (
-                <Card key={item._id} elevation={2} sx={{ width: { xs: "100%", sm: 300 }, position: "relative" }}>
-                  {item.imageUrl ? (
-                    <CardMedia
-                      component="img"
-                      height="200"
-                      image={item.imageUrl}
-                      alt="Media"
-                      sx={{ objectFit: "cover", cursor: "pointer" }}
-                      onClick={() => handlePreview(item)}
-                    />
-                  ) : (
-                    <Box
-                      onClick={() => handlePreview(item)}
-                      sx={{
-                        height: 200,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        bgcolor: "grey.100",
-                        cursor: "pointer",
-                        borderBottom: "1px solid #eee"
-                      }}>
-                      <Typography
-                        variant="h6"
-                        sx={{
-                          color: "text.secondary",
-                          textTransform: "capitalize"
-                        }}>
-                        No Image
-                      </Typography>
-                    </Box>
-                  )}
-                  {displayTag && (
-                    <Chip
-                      label={displayTag.toUpperCase()}
-                      size="small"
-                      color={displayTag === "card" ? "primary" : "secondary"}
-                      sx={{ position: "absolute", top: 8, right: 8, zIndex: 2 }}
-                    />
-                  )}
-
-                  <CardContent sx={{ p: 2 }}>
-                    <Typography variant="h6" sx={{
-                      fontWeight: "bold"
+              <Card key={item._id} elevation={2} sx={{ width: { xs: "100%", sm: 300 }, position: "relative" }}>
+                {item.imageUrl ? (
+                  <CardMedia
+                    component="img"
+                    height="200"
+                    image={item.imageUrl}
+                    alt="Media"
+                    sx={{ objectFit: "cover", cursor: "pointer" }}
+                    onClick={() => handlePreview(item)}
+                  />
+                ) : (
+                  <Box
+                    onClick={() => handlePreview(item)}
+                    sx={{
+                      height: 200,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      bgcolor: "action.hover",
+                      cursor: "pointer",
+                      borderBottom: "1px solid",
+                      borderColor: "divider",
                     }}>
-                      {wallName}
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        color: "text.secondary",
+                        textTransform: "capitalize"
+                      }}>
+                      No Image
                     </Typography>
+                  </Box>
+                )}
+                {displayTag && (
+                  <Chip
+                    label={displayTag.toUpperCase()}
+                    size="small"
+                    color={displayTag === "card" ? "primary" : "secondary"}
+                    sx={{ position: "absolute", top: 8, right: 8, zIndex: 2 }}
+                  />
+                )}
 
-                    {wallMode === "card" && (
-                      <Box sx={{ mt: 1, mb: 1 }}>
-                        {item.text && (
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              color: "text.secondary",
-                              mb: item.signatureUrl ? 1 : 0,
-                              whiteSpace: "pre-wrap",
-                              wordBreak: "break-word"
-                            }}>
-                            {item.text}
-                          </Typography>
-                        )}
-                        {item.signatureUrl && (
-                          <Box
-                            component="img"
-                            src={item.signatureUrl}
-                            alt="Signature"
-                            sx={{ width: 96, height: 96, objectFit: "contain", bgcolor: "#fafafa", borderRadius: 1, border: "1px solid #eee", p: 0.5 }}
-                          />
-                        )}
-                        {!item.text && !item.signatureUrl && (
-                          <Typography variant="body2" sx={{
-                            color: "text.secondary"
+                <CardContent sx={{ p: 2 }}>
+                  <Typography variant="h6" sx={{
+                    fontWeight: "bold"
+                  }}>
+                    {wallName}
+                  </Typography>
+
+                  {wallMode === "card" && (
+                    <Box sx={{ mt: 1, mb: 1 }}>
+                      {item.text && (
+                        <Typography
+                          variant="body2"
+                          sx={{
+                            color: "text.secondary",
+                            mb: item.signatureUrl ? 1 : 0,
+                            whiteSpace: "pre-wrap",
+                            wordBreak: "break-word"
                           }}>
-                            <em>{t.noMessage}</em>
-                          </Typography>
-                        )}
-                      </Box>
-                    )}
+                          {item.text}
+                        </Typography>
+                      )}
+                      {item.signatureUrl && (
+                        <Box
+                          component="img"
+                          src={item.signatureUrl}
+                          alt="Signature"
+                          sx={{
+                            width: 96, height: 96, objectFit: "contain", borderRadius: 1, bgcolor: "background.default",
+                            border: "1px solid",
+                            borderColor: "divider", p: 0.5
+                          }}
+                        />
+                      )}
+                      {!item.text && !item.signatureUrl && (
+                        <Typography variant="body2" sx={{
+                          color: "text.secondary"
+                        }}>
+                          <em>{t.noMessage}</em>
+                        </Typography>
+                      )}
+                    </Box>
+                  )}
 
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 1,
-                        mb: 1
-                      }}>
-                      <ICONS.time fontSize="small" color="action" />
-                      <Typography variant="caption" sx={{
-                        color: "text.secondary"
-                      }}>
-                        {formatDateTimeWithLocale(item.createdAt, language === "ar" ? "ar-SA" : "en-GB")}
-                      </Typography>
-                    </Box>
-                    <Divider sx={{ my: 2 }} />
-                    <Box
-                      sx={{
-                        display: "flex",
-                        justifyContent: "center",
-                        gap: 1
-                      }}>
-                      <Tooltip title={t.viewDetails}>
-                        <IconButton color="primary" size="small" onClick={() => handlePreview(item)}>
-                          <ICONS.view fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title={t.delete}>
-                        <IconButton color="error" size="small" onClick={() => handleDeleteClick(item)}>
-                          <ICONS.delete fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </Box>
-                  </CardContent>
-                </Card>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 1,
+                      mb: 1
+                    }}>
+                    <ICONS.time fontSize="small" color="action" />
+                    <Typography variant="caption" sx={{
+                      color: "text.secondary"
+                    }}>
+                      {formatDateTimeWithLocale(item.createdAt, language === "ar" ? "ar-SA" : "en-GB")}
+                    </Typography>
+                  </Box>
+                  <Divider sx={{ my: 2 }} />
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "center",
+                      gap: 1
+                    }}>
+                    <Tooltip title={t.viewDetails}>
+                      <IconButton color="primary" size="small" onClick={() => handlePreview(item)}>
+                        <ICONS.view fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title={t.delete}>
+                      <IconButton color="error" size="small" onClick={() => handleDeleteClick(item)}>
+                        <ICONS.delete fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
+                </CardContent>
+              </Card>
             );
-        })}
+          })}
         </Box>
       )}
       <FullScreenPreview

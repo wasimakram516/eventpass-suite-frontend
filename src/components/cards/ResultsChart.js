@@ -3,7 +3,7 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { Box, Stack, Typography, Divider, Chip } from "@mui/material";
 import useI18nLayout from "@/hooks/useI18nLayout";
-
+import { VOTECAST_CHART_COLORS as COLORS } from "@/styles/theme";
 const translations = {
   en: {
     totalVotesCasted: "Total Votes Casted:",
@@ -12,19 +12,10 @@ const translations = {
     totalVotesCasted: "إجمالي الأصوات المدلى بها:",
   },
 };
-const COLORS = [
-  "#8884d8",
-  "#82ca9d",
-  "#ffc658",
-  "#ff8042",
-  "#8dd1e1",
-  "#a4de6c",
-  "#d0ed57",
-];
 
 export default function ResultsChart({ poll }) {
   const { t, dir } = useI18nLayout(translations);
-  
+
   if (!poll) return null;
 
   const totalVotes = poll.options.reduce(
@@ -119,59 +110,59 @@ export default function ResultsChart({ poll }) {
               justifyContent: "space-between",
               p: 1.5,
               borderRadius: 2,
-              bgcolor: "grey.100",
+              bgcolor: "action.hover",
               transition: "all 0.3s",
-              "&:hover": { bgcolor: "grey.200" },
+              "&:hover": { bgcolor: "action.selected" },
               gap: 1.5
             }}>
-  {/* Image + Text */}
-  <Stack
-    direction="row"
-    spacing={1.5}
-    sx={{
-      alignItems: "center",
-      minWidth: 0
-    }}>
-    {option.imageUrl && (
-      <Box
-        component="img"
-        src={option.imageUrl}
-        alt={option.text}
-        sx={{
-          width: 36,
-          height: 36,
-          borderRadius: 1.5,
-          objectFit: "cover",
-          flexShrink: 0,
-        }}
-      />
-    )}
+            {/* Image + Text */}
+            <Stack
+              direction="row"
+              spacing={1.5}
+              sx={{
+                alignItems: "center",
+                minWidth: 0
+              }}>
+              {option.imageUrl && (
+                <Box
+                  component="img"
+                  src={option.imageUrl}
+                  alt={option.text}
+                  sx={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 1.5,
+                    objectFit: "cover",
+                    flexShrink: 0,
+                  }}
+                />
+              )}
 
-    {option.text && (
-      <Typography
-        variant="body2"
-        sx={{
-          fontWeight: "bold",
-          color: COLORS[idx % COLORS.length],
-          wordBreak: "break-word"
-        }}>
-        {option.text}
-      </Typography>
-    )}
-  </Stack>
+              {option.text && (
+                <Typography
+                  variant="body2"
+                  sx={{
+                    fontWeight: "bold",
+                    color: COLORS[idx % COLORS.length],
+                    wordBreak: "break-word"
+                  }}>
+                  {option.text}
+                </Typography>
+              )}
+            </Stack>
 
-  {/* Percentage */}
-  <Chip
-    label={`${option.percentage}%`}
-    size="small"
-    sx={{
-      bgcolor: COLORS[idx % COLORS.length],
-      color: "white",
-      fontWeight: "bold",
-      flexShrink: 0,
-    }}
-  />
-</Stack>
+            {/* Percentage */}
+            <Chip
+              label={`${option.percentage}%`}
+              size="small"
+              sx={{
+                bgcolor: COLORS[idx % COLORS.length],
+                color: "common.white",
+                fontWeight: "bold",
+                flexShrink: 0,
+              }}
+            />
+          </Stack>
 
         ))}
       </Stack>

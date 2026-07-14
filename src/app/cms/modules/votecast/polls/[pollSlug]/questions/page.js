@@ -237,139 +237,142 @@ export default function QuestionsPage() {
                 ) : (
                     <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, justifyContent: "center" }}>
                         {questions.map((q, idx) => (
-                                <AppCard
-                                    key={q._id}
-                                    sx={{
-                                        width: { xs: "100%", sm: 420 },
-                                        maxWidth: { xs: "100%", sm: 420 },
-                                        display: "flex", flexDirection: "column",
-                                        position: "relative", p: 0, overflow: "hidden",
-                                    }}
-                                >
-                                    <Box sx={{ px: 2, pt: 2, flexGrow: 1 }}>
-                                        <Stack
-                                            direction="row"
-                                            spacing={1}
-                                            sx={{
-                                                alignItems: "center",
-                                                mb: 1
-                                            }}>
-                                            <Avatar sx={{ bgcolor: "primary.main" }}>
-                                                <ICONS.poll fontSize="small" />
-                                            </Avatar>
-                                            <Box sx={{
-                                                flexGrow: 1
-                                            }}>
-                                                <Typography
-                                                    variant="subtitle2"
-                                                    sx={{
-                                                        fontWeight: 600,
-                                                        overflow: "hidden",
-                                                        textOverflow: "ellipsis",
-                                                        display: "-webkit-box",
-                                                        WebkitLineClamp: 2,
-                                                        WebkitBoxOrient: "vertical"
-                                                    }}>
-                                                    {q.question}
+                            <AppCard
+                                key={q._id}
+                                sx={{
+                                    width: { xs: "100%", sm: 420 },
+                                    maxWidth: { xs: "100%", sm: 420 },
+                                    display: "flex", flexDirection: "column",
+                                    position: "relative", p: 0, overflow: "hidden",
+                                }}
+                            >
+                                <Box sx={{ px: 2, pt: 2, flexGrow: 1 }}>
+                                    <Stack
+                                        direction="row"
+                                        spacing={1}
+                                        sx={{
+                                            alignItems: "center",
+                                            mb: 1
+                                        }}>
+                                        <Avatar sx={{ bgcolor: "primary.main" }}>
+                                            <ICONS.poll fontSize="small" />
+                                        </Avatar>
+                                        <Box sx={{
+                                            flexGrow: 1
+                                        }}>
+                                            <Typography
+                                                variant="subtitle2"
+                                                sx={{
+                                                    fontWeight: 600,
+                                                    overflow: "hidden",
+                                                    textOverflow: "ellipsis",
+                                                    display: "-webkit-box",
+                                                    WebkitLineClamp: 2,
+                                                    WebkitBoxOrient: "vertical"
+                                                }}>
+                                                {q.question}
+                                            </Typography>
+                                            <Box sx={{ mt: 0.5 }}>
+                                                <Typography variant="caption" color="primary" sx={{
+                                                    fontWeight: "bold"
+                                                }}>
+                                                    {q.type === 'rating' ? t.typeRating :
+                                                        q.type === 'nps' ? t.typeNps :
+                                                            q.type === 'text' ? t.typeText : t.typeOptions}
                                                 </Typography>
-                                                <Box sx={{ mt: 0.5 }}>
-                                                    <Typography variant="caption" color="primary" sx={{
-                                                        fontWeight: "bold"
-                                                    }}>
-                                                        {q.type === 'rating' ? t.typeRating : 
-                                                        q.type === 'nps' ? t.typeNps : 
-                                                        q.type === 'text' ? t.typeText : t.typeOptions}
+                                                {(q.type === 'rating' || q.type === 'nps') && (
+                                                    <Typography variant="caption" sx={{ ml: 1, opacity: 0.8 }}>
+                                                        ({q.scale?.min ?? 1}-{q.scale?.max ?? (q.type === 'rating' ? 5 : 10)})
                                                     </Typography>
-                                                    {(q.type === 'rating' || q.type === 'nps') && (
-                                                        <Typography variant="caption" sx={{ ml: 1, opacity: 0.8 }}>
-                                                            ({q.scale?.min ?? 1}-{q.scale?.max ?? (q.type === 'rating' ? 5 : 10)})
+                                                )}
+                                            </Box>
+                                        </Box>
+                                    </Stack>
+
+                                    <CardContent sx={{ flexGrow: 1, pt: 1, px: 0, pb: 0 }}>
+                                        <Stack spacing={1}>
+                                            {(q.options || []).map((opt, optIdx) => (
+                                                <Stack
+                                                    key={optIdx}
+                                                    direction="row"
+                                                    spacing={1}
+                                                    sx={{
+                                                        alignItems: "center",
+                                                        overflow: "hidden",
+                                                        gap: dir === "rtl" ? 1 : 0
+                                                    }}>
+                                                    {opt.imageUrl && (
+                                                        <Avatar
+                                                            src={opt.imageUrl}
+                                                            alt={`Option ${optIdx + 1}`}
+                                                            variant="rounded"
+                                                            sx={{ width: 40, height: 40 }}
+                                                        />
+                                                    )}
+                                                    {opt.text && (
+                                                        <Typography
+                                                            variant="body2"
+                                                            noWrap
+                                                            sx={{
+                                                                color: "text.secondary",
+                                                                flexGrow: 1
+                                                            }}>
+                                                            {opt.text}
                                                         </Typography>
                                                     )}
-                                                </Box>
-                                            </Box>
+                                                </Stack>
+                                            ))}
                                         </Stack>
+                                    </CardContent>
+                                </Box>
 
-                                        <CardContent sx={{ flexGrow: 1, pt: 1, px: 0, pb: 0 }}>
-                                            <Stack spacing={1}>
-                                                {(q.options || []).map((opt, optIdx) => (
-                                                    <Stack
-                                                        key={optIdx}
-                                                        direction="row"
-                                                        spacing={1}
-                                                        sx={{
-                                                            alignItems: "center",
-                                                            overflow: "hidden",
-                                                            gap: dir === "rtl" ? 1 : 0
-                                                        }}>
-                                                        {opt.imageUrl && (
-                                                            <Avatar
-                                                                src={opt.imageUrl}
-                                                                alt={`Option ${optIdx + 1}`}
-                                                                variant="rounded"
-                                                                sx={{ width: 40, height: 40 }}
-                                                            />
-                                                        )}
-                                                        {opt.text && (
-                                                            <Typography
-                                                                variant="body2"
-                                                                noWrap
-                                                                sx={{
-                                                                    color: "text.secondary",
-                                                                    flexGrow: 1
-                                                                }}>
-                                                                {opt.text}
-                                                            </Typography>
-                                                        )}
-                                                    </Stack>
-                                                ))}
-                                            </Stack>
-                                        </CardContent>
-                                    </Box>
+                                <RecordMetadata
+                                    createdByName={q?.createdBy?.name}
+                                    updatedByName={q?.updatedBy?.name}
+                                    createdAt={q?.createdAt}
+                                    updatedAt={q?.updatedAt}
+                                    locale={language === "ar" ? "ar-SA" : "en-GB"}
+                                />
 
-                                    <RecordMetadata
-                                        createdByName={q?.createdBy?.name}
-                                        updatedByName={q?.updatedBy?.name}
-                                        createdAt={q?.createdAt}
-                                        updatedAt={q?.updatedAt}
-                                        locale={language === "ar" ? "ar-SA" : "en-GB"}
-                                    />
-
-                                    <CardActions
-                                        sx={{
-                                            justifyContent: "space-around",
-                                            borderTop: "1px solid rgba(0,0,0,0.06)",
-                                            p: 1, bgcolor: "rgba(0,0,0,0.02)", m: 0,
-                                        }}
-                                    >
-                                        <Tooltip title={t.clone}>
-                                            <IconButton
-                                                color="warning"
-                                                onClick={() => handleClone(q._id)}
-                                                sx={{ "&:hover": { transform: "scale(1.1)" }, transition: "0.2s" }}
-                                            >
-                                                <ICONS.copy />
-                                            </IconButton>
-                                        </Tooltip>
-                                        <Tooltip title={t.edit}>
-                                            <IconButton
-                                                color="warning"
-                                                onClick={() => { setEditQuestion(q); setDrawerOpen(true); }}
-                                                sx={{ "&:hover": { transform: "scale(1.1)" }, transition: "0.2s" }}
-                                            >
-                                                <ICONS.edit />
-                                            </IconButton>
-                                        </Tooltip>
-                                        <Tooltip title={t.delete}>
-                                            <IconButton
-                                                color="error"
-                                                onClick={() => setConfirmDelete({ open: true, id: q._id })}
-                                                sx={{ "&:hover": { transform: "scale(1.1)" }, transition: "0.2s" }}
-                                            >
-                                                <ICONS.delete />
-                                            </IconButton>
-                                        </Tooltip>
-                                    </CardActions>
-                                </AppCard>
+                                <CardActions
+                                    sx={{
+                                        justifyContent: "space-around",
+                                        borderTop: "1px solid",
+                                        borderColor: "divider",
+                                        p: 1,
+                                        bgcolor: "action.hover",
+                                        m: 0,
+                                    }}
+                                >
+                                    <Tooltip title={t.clone}>
+                                        <IconButton
+                                            color="warning"
+                                            onClick={() => handleClone(q._id)}
+                                            sx={{ "&:hover": { transform: "scale(1.1)" }, transition: "0.2s" }}
+                                        >
+                                            <ICONS.copy />
+                                        </IconButton>
+                                    </Tooltip>
+                                    <Tooltip title={t.edit}>
+                                        <IconButton
+                                            color="warning"
+                                            onClick={() => { setEditQuestion(q); setDrawerOpen(true); }}
+                                            sx={{ "&:hover": { transform: "scale(1.1)" }, transition: "0.2s" }}
+                                        >
+                                            <ICONS.edit />
+                                        </IconButton>
+                                    </Tooltip>
+                                    <Tooltip title={t.delete}>
+                                        <IconButton
+                                            color="error"
+                                            onClick={() => setConfirmDelete({ open: true, id: q._id })}
+                                            sx={{ "&:hover": { transform: "scale(1.1)" }, transition: "0.2s" }}
+                                        >
+                                            <ICONS.delete />
+                                        </IconButton>
+                                    </Tooltip>
+                                </CardActions>
+                            </AppCard>
                         ))}
                     </Box>
                 )}

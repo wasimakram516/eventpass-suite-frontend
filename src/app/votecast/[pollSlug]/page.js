@@ -206,7 +206,13 @@ export default function PublicPollPage() {
       {background?.fileType === "video" && (
         <IconButton
           onClick={() => { setIsMuted(!isMuted); if (videoRef.current) videoRef.current.muted = !isMuted; }}
-          sx={{ position: "fixed", bottom: 20, right: 20, bgcolor: "rgba(0,0,0,0.5)", color: "white", zIndex: 1000, "&:hover": { bgcolor: "rgba(0,0,0,0.7)" } }}
+          sx={(theme) => ({
+            position: "fixed", bottom: 20, right: 20,
+            bgcolor: theme.palette.overlay.scrim,
+            color: theme.palette.common.white,
+            zIndex: 1000,
+            "&:hover": { bgcolor: theme.palette.overlay.scrimHover },
+          })}
         >
           {isMuted ? <VolumeOffIcon /> : <VolumeUpIcon />}
         </IconButton>
@@ -333,16 +339,16 @@ export default function PublicPollPage() {
                 variant="contained"
                 size="large"
                 onClick={() => {
-                if (needsVerification) {
-                  setStep("verify");
-                } else {
-                  const token = typeof crypto !== "undefined" && crypto.randomUUID
-                    ? crypto.randomUUID()
-                    : Math.random().toString(36).slice(2) + Date.now().toString(36);
-                  sessionStorage.setItem(`votecast_session_${pollSlug}`, token);
-                  router.push(`/votecast/${pollSlug}/vote`);
-                }
-              }}
+                  if (needsVerification) {
+                    setStep("verify");
+                  } else {
+                    const token = typeof crypto !== "undefined" && crypto.randomUUID
+                      ? crypto.randomUUID()
+                      : Math.random().toString(36).slice(2) + Date.now().toString(36);
+                    sessionStorage.setItem(`votecast_session_${pollSlug}`, token);
+                    router.push(`/votecast/${pollSlug}/vote`);
+                  }
+                }}
                 startIcon={needsVerification ? <ICONS.checkCircle /> : <ICONS.poll />}
                 sx={{ ...getStartIconSpacing(dir) }}
               >
@@ -457,7 +463,7 @@ export default function PublicPollPage() {
                     ) : null,
                     sx: {
                       borderRadius: 999,
-                      backgroundColor: "rgba(255,255,255,0.9)",
+                      backgroundColor: (theme) => theme.palette.input.background,
                     }
                   },
 

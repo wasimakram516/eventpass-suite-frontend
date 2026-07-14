@@ -17,6 +17,7 @@ import {
     MenuItem,
     FormControl,
     InputLabel,
+    useTheme,
 } from "@mui/material";
 import RichTextEditor from "@/components/RichTextEditor";
 import QRCode from "qrcode";
@@ -98,6 +99,7 @@ const BadgeRichTextEditor = ({
     t,
     availableFonts = []
 }) => {
+    const theme = useTheme();
     const editorContainerRef = useRef(null);
     const inputsContainerRef = useRef(null);
     const xInputRef = useRef(null);
@@ -110,7 +112,7 @@ const BadgeRichTextEditor = ({
             return {
                 text: "",
                 fontSize: 14,
-                color: "#000000",
+                color: theme.palette.common.black,
                 isBold: false,
                 isItalic: false,
                 isUnderline: false,
@@ -133,7 +135,7 @@ const BadgeRichTextEditor = ({
         const isUnderline = /<u>/i.test(html) || /text-decoration:\s*underline/i.test(html);
 
         const colorMatch = html.match(/color:\s*([^;'"]+)/i) || html.match(/color="([^"]+)"/i);
-        const extractedColor = colorMatch ? colorMatch[1].trim() : "#000000";
+        const extractedColor = colorMatch ? colorMatch[1].trim() : theme.palette.text.primary;
 
         let extractedFontSize = 14;
         const fontSizeMatch = html.match(/font-size:\s*([^;'"]+)/i);
@@ -170,7 +172,7 @@ const BadgeRichTextEditor = ({
         if (fontSizeValue && fontSizeValue !== 14) {
             styles.push(`font-size: ${fontSizeValue}px`);
         }
-        if (colorValue && colorValue !== "#000000") {
+        if (colorValue && colorValue !== theme.palette.text.primary) {
             styles.push(`color: ${colorValue}`);
         }
         if (fontFamilyValue && fontFamilyValue !== "Arial") {
@@ -295,7 +297,7 @@ const BadgeRichTextEditor = ({
                 inputsBox.style.paddingTop = '8px';
                 inputsBox.style.paddingBottom = '8px';
                 inputsBox.style.borderLeft = '1px solid';
-                inputsBox.style.borderColor = 'rgba(0, 0, 0, 0.12)';
+                inputsBox.style.borderColor = theme.palette.divider;
                 inputsBox.style.marginLeft = '8px';
                 inputsBox.style.marginTop = '8px';
 
@@ -307,7 +309,7 @@ const BadgeRichTextEditor = ({
                 const xLabel = document.createElement('label');
                 xLabel.textContent = t.xAxis;
                 xLabel.style.fontSize = '0.875rem';
-                xLabel.style.color = 'rgba(0, 0, 0, 0.6)';
+                xLabel.style.color = theme.palette.text.secondary;
                 xLabel.style.fontWeight = '400';
                 xLabel.style.whiteSpace = 'nowrap';
 
@@ -320,7 +322,7 @@ const BadgeRichTextEditor = ({
                 xInput.style.width = '80px';
                 xInput.style.height = '32px';
                 xInput.style.padding = '4px 8px';
-                xInput.style.border = '1px solid rgba(0, 0, 0, 0.23)';
+                xInput.style.border = `1px solid ${theme.palette.divider}`;
                 xInput.style.borderRadius = '4px';
                 xInput.style.fontSize = '0.875rem';
                 xInput.value = x;
@@ -343,7 +345,7 @@ const BadgeRichTextEditor = ({
                 const yLabel = document.createElement('label');
                 yLabel.textContent = t.yAxis;
                 yLabel.style.fontSize = '0.875rem';
-                yLabel.style.color = 'rgba(0, 0, 0, 0.6)';
+                yLabel.style.color = theme.palette.text.secondary;
                 yLabel.style.fontWeight = '400';
                 yLabel.style.whiteSpace = 'nowrap';
 
@@ -356,7 +358,7 @@ const BadgeRichTextEditor = ({
                 yInput.style.width = '80px';
                 yInput.style.height = '32px';
                 yInput.style.padding = '4px 8px';
-                yInput.style.border = '1px solid rgba(0, 0, 0, 0.23)';
+                yInput.style.border = `1px solid ${theme.palette.divider}`;
                 yInput.style.borderRadius = '4px';
                 yInput.style.fontSize = '0.875rem';
                 yInput.value = y;
@@ -381,7 +383,7 @@ const BadgeRichTextEditor = ({
                 const fontLabel = document.createElement('label');
                 fontLabel.textContent = 'Font';
                 fontLabel.style.fontSize = '0.875rem';
-                fontLabel.style.color = 'rgba(0, 0, 0, 0.6)';
+                fontLabel.style.color = theme.palette.text.secondary;
                 fontLabel.style.fontWeight = '400';
                 fontLabel.style.whiteSpace = 'nowrap';
                 fontLabel.style.minWidth = 'auto';
@@ -391,11 +393,12 @@ const BadgeRichTextEditor = ({
                 fontSelect.style.width = '80px';
                 fontSelect.style.height = '32px';
                 fontSelect.style.padding = '4px 4px';
-                fontSelect.style.border = '1px solid rgba(0, 0, 0, 0.23)';
+                fontSelect.style.border = `1px solid ${theme.palette.divider}`;
                 fontSelect.style.borderRadius = '4px';
                 fontSelect.style.fontSize = '0.75rem';
-                fontSelect.style.backgroundColor = 'white';
+                fontSelect.style.backgroundColor = theme.palette.background.paper;
                 fontSelect.value = fontFamily || 'Arial';
+                fontSelect.style.color = theme.palette.text.primary;
 
                 const fontsToUse = availableFonts && availableFonts.length > 0 ? availableFonts : [
                     { name: "Arial", family: "Arial" },
@@ -447,7 +450,7 @@ const BadgeRichTextEditor = ({
         }
     }, [y]);
 
-    const htmlValue = buildHTML(text || "", fontSize || 14, color || "#000000", isBold || false, isItalic || false, isUnderline || false, alignment || "left", fontFamily || "Arial");
+    const htmlValue = buildHTML(text || "", fontSize || 14, color || theme.palette.text.primary, isBold || false, isItalic || false, isUnderline || false, alignment || "left", fontFamily || "Arial");
 
     const isUpdatingFromPropsRef = useRef(false);
 
@@ -455,14 +458,14 @@ const BadgeRichTextEditor = ({
         if (editorContainerRef.current && !isUpdatingFromPropsRef.current) {
             const editor = editorContainerRef.current.querySelector('[contenteditable="true"]');
             if (editor) {
-                const expectedHTML = buildHTML(text || "", fontSize || 14, color || "#000000", isBold || false, isItalic || false, isUnderline || false, alignment || "left", fontFamily || "Arial");
+                const expectedHTML = buildHTML(text || "", fontSize || 14, color || theme.palette.text.primary, isBold || false, isItalic || false, isUnderline || false, alignment || "left", fontFamily || "Arial");
                 if (editor.innerHTML !== expectedHTML) {
                     isUpdatingFromPropsRef.current = true;
                     editor.innerHTML = expectedHTML;
                     lastFormattingRef.current = {
                         text: text || "",
                         fontSize: fontSize || 14,
-                        color: color || "#000000",
+                        color: color || theme.palette.text.primary,
                         isBold: isBold || false,
                         isItalic: isItalic || false,
                         isUnderline: isUnderline || false,
@@ -517,7 +520,7 @@ export default function BadgeCustomizationModal({
     const [customizations, setCustomizations] = useState({});
     const [qrCodeDataUrl, setQrCodeDataUrl] = useState("");
     const scrollableContainerRef = useRef(null);
-
+    const theme = useTheme();
     const setScrollableContainerRef = (node) => {
         if (scrollableContainerRef.current !== node) {
             scrollableContainerRef.current = node;
@@ -538,7 +541,7 @@ export default function BadgeCustomizationModal({
                         const fontSizeMatch = html.match(/font-size:\s*([^;'"]+)/i);
                         const fontSize = fontSizeMatch ? parseFloat(fontSizeMatch[1]) : 14;
                         const colorMatch = html.match(/color:\s*([^;'"]+)/i);
-                        const color = colorMatch ? colorMatch[1].trim() : "#000000";
+                        const color = colorMatch ? colorMatch[1].trim() : theme.palette.text.primary;
                         const isBold = /<(strong|b)>/i.test(html);
                         const isItalic = /<(em|i)>/i.test(html);
                         const isUnderline = /<u>/i.test(html);
@@ -549,7 +552,7 @@ export default function BadgeCustomizationModal({
                         initialCustomizations[fieldName] = {
                             text: text || `Sample ${fieldName}`,
                             fontSize: fontSize || 14,
-                            color: color || "#000000",
+                            color: color || theme.palette.text.primary,
                             isBold: !!isBold,
                             isItalic: !!isItalic,
                             isUnderline: !!isUnderline,
@@ -562,7 +565,7 @@ export default function BadgeCustomizationModal({
                         initialCustomizations[fieldName] = {
                             text: existing?.text || `Sample ${fieldName}`,
                             fontSize: existing?.fontSize !== undefined ? existing.fontSize : 14,
-                            color: existing?.color || "#000000",
+                            color: existing?.color || theme.palette.text.primary,
                             isBold: existing?.isBold !== undefined ? existing.isBold : false,
                             isItalic: existing?.isItalic !== undefined ? existing.isItalic : false,
                             isUnderline: existing?.isUnderline !== undefined ? existing.isUnderline : false,
@@ -598,7 +601,7 @@ export default function BadgeCustomizationModal({
             const dataUrl = await QRCode.toDataURL("SAMPLE_TOKEN", {
                 width: qrWidth,
                 margin: 1,
-                color: { dark: "#000000", light: "#ffffff" },
+                color: { dark: theme.palette.common.black, light: theme.palette.common.white },
             });
             setQrCodeDataUrl(dataUrl);
         } catch (error) {
@@ -921,7 +924,7 @@ export default function BadgeCustomizationModal({
                                     <BadgeRichTextEditor
                                         text={customization.text || `Sample ${fieldName}`}
                                         fontSize={customization.fontSize || 14}
-                                        color={customization.color || "#000000"}
+                                        color={customization.color || theme.palette.text.primary}
                                         isBold={customization.isBold || false}
                                         isItalic={customization.isItalic || false}
                                         isUnderline={customization.isUnderline || false}
@@ -1062,7 +1065,7 @@ export default function BadgeCustomizationModal({
                 <Box
                     sx={{
                         width: "50%",
-                        bgcolor: "grey.100",
+                        bgcolor: "action.hover",
                         display: "flex",
                         justifyContent: "center",
                         alignItems: "center",
@@ -1075,10 +1078,11 @@ export default function BadgeCustomizationModal({
                         sx={{
                             width: previewWidth,
                             height: previewHeight,
-                            bgcolor: "white",
+                            bgcolor: "background.paper",
                             position: "relative",
-                            boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
-                            border: "1px solid #ddd",
+                            boxShadow: (theme) => theme.palette.shadow.shadow1,
+                            border: "1px solid",
+                            borderColor: "divider",
                             overflow: "hidden",
                             m: 0,
                         }}
@@ -1087,118 +1091,118 @@ export default function BadgeCustomizationModal({
                             sx={{
                                 width: badgeWidthPx,
                                 height: badgeHeightPx,
-                                bgcolor: "white",
+                                bgcolor: "background.paper",
                                 position: "relative",
                                 transform: `scale(${previewScale})`,
                                 transformOrigin: "top left",
                             }}
                         >
-                          <Box
-                            sx={{
-                                width: "100%",
-                                height: "100%",
-                                position: "relative",
-                                transform: rotated180 ? "rotate(180deg)" : "none",
-                                transformOrigin: "center",
-                            }}
-                          >
-                            {selectedFields.map((fieldName) => {
-                                const customization = customizations[fieldName];
-                                if (!customization) return null;
+                            <Box
+                                sx={{
+                                    width: "100%",
+                                    height: "100%",
+                                    position: "relative",
+                                    transform: rotated180 ? "rotate(180deg)" : "none",
+                                    transformOrigin: "center",
+                                }}
+                            >
+                                {selectedFields.map((fieldName) => {
+                                    const customization = customizations[fieldName];
+                                    if (!customization) return null;
 
-                                const yPercent = customization.y || 0;
-                                const alignment = customization.alignment || "left";
-                                const text = customization.text || `Sample ${fieldName}`;
-                                const fontSize = customization.fontSize || 14;
-                                const color = customization.color || "#000000";
-                                const isBold = customization.isBold || false;
-                                const isItalic = customization.isItalic || false;
-                                const isUnderline = customization.isUnderline || false;
-                                const fontFamily = customization.fontFamily || "Arial";
+                                    const yPercent = customization.y || 0;
+                                    const alignment = customization.alignment || "left";
+                                    const text = customization.text || `Sample ${fieldName}`;
+                                    const fontSize = customization.fontSize || 14;
+                                    const color = customization.color || theme.palette.text.primary;
+                                    const isBold = customization.isBold || false;
+                                    const isItalic = customization.isItalic || false;
+                                    const isUnderline = customization.isUnderline || false;
+                                    const fontFamily = customization.fontFamily || "Arial";
 
-                                let leftStyle = {};
-                                let textAlignStyle = {};
-                                let widthStyle = {};
+                                    let leftStyle = {};
+                                    let textAlignStyle = {};
+                                    let widthStyle = {};
 
-                                if (alignment === "center") {
+                                    if (alignment === "center") {
 
-                                    leftStyle = { left: "5%" };
-                                    textAlignStyle = { textAlign: "center" };
-                                    widthStyle = { width: "90%", maxWidth: "90%" };
-                                } else if (alignment === "right") {
-                                    leftStyle = { right: "0%" };
-                                    textAlignStyle = { textAlign: "right" };
-                                    widthStyle = { maxWidth: "90%" };
-                                } else {
-                                    leftStyle = { left: `${customization.x || 0}%` };
-                                    textAlignStyle = { textAlign: "left" };
-                                    widthStyle = { maxWidth: "90%" };
-                                }
+                                        leftStyle = { left: "5%" };
+                                        textAlignStyle = { textAlign: "center" };
+                                        widthStyle = { width: "90%", maxWidth: "90%" };
+                                    } else if (alignment === "right") {
+                                        leftStyle = { right: "0%" };
+                                        textAlignStyle = { textAlign: "right" };
+                                        widthStyle = { maxWidth: "90%" };
+                                    } else {
+                                        leftStyle = { left: `${customization.x || 0}%` };
+                                        textAlignStyle = { textAlign: "left" };
+                                        widthStyle = { maxWidth: "90%" };
+                                    }
 
-                                return (
+                                    return (
+                                        <Box
+                                            key={fieldName}
+                                            sx={{
+                                                position: "absolute",
+                                                top: `${yPercent}%`,
+                                                fontSize: `${fontSize}px`,
+                                                fontFamily: `"${fontFamily}", sans-serif`,
+                                                lineHeight: 1.0,
+                                                color: color,
+                                                fontWeight: isBold ? "bold" : "normal",
+                                                fontStyle: isItalic ? "italic" : "normal",
+                                                textDecoration: isUnderline ? "underline" : "none",
+                                                margin: 0,
+                                                padding: 0,
+                                                display: "block",
+                                                boxSizing: "border-box",
+                                                height: "auto",
+                                                minHeight: 0,
+                                                ...leftStyle,
+                                                ...textAlignStyle,
+                                                ...widthStyle,
+                                            }}
+                                        >
+                                            {text}
+                                        </Box>
+                                    );
+                                })}
+
+                                {showQrOnBadge && qrCodeDataUrl && customizations._qrCode && (
                                     <Box
-                                        key={fieldName}
                                         sx={{
                                             position: "absolute",
-                                            top: `${yPercent}%`,
-                                            fontSize: `${fontSize}px`,
-                                            fontFamily: `"${fontFamily}", sans-serif`,
-                                            lineHeight: 1.0,
-                                            color: color,
-                                            fontWeight: isBold ? "bold" : "normal",
-                                            fontStyle: isItalic ? "italic" : "normal",
-                                            textDecoration: isUnderline ? "underline" : "none",
-                                            margin: 0,
-                                            padding: 0,
-                                            display: "block",
-                                            boxSizing: "border-box",
-                                            height: "auto",
-                                            minHeight: 0,
-                                            ...leftStyle,
-                                            ...textAlignStyle,
-                                            ...widthStyle,
+                                            left: `${customizations._qrCode.x ?? 5}%`,
+                                            top: `${customizations._qrCode.y ?? 85}%`,
+                                            display: "flex",
+                                            flexDirection: "column",
+                                            alignItems: "center",
                                         }}
                                     >
-                                        {text}
+                                        <Box
+                                            component="img"
+                                            src={qrCodeDataUrl}
+                                            alt="QR Code"
+                                            sx={{
+                                                width: `${customizations._qrCode.size ?? 70}px`,
+                                                height: `${customizations._qrCode.size ?? 70}px`,
+                                            }}
+                                        />
+                                        <Typography
+                                            variant="caption"
+                                            sx={{
+                                                fontSize: `${((customizations._qrCode.size ?? 70) / 70) * 9}px`,
+                                                fontWeight: "bold",
+                                                color: (theme) => theme.palette.primary.main,
+                                                letterSpacing: 0.7,
+                                                marginTop: "2px",
+                                            }}
+                                        >
+                                            SAMPLE_TOKEN
+                                        </Typography>
                                     </Box>
-                                );
-                            })}
-
-                            {showQrOnBadge && qrCodeDataUrl && customizations._qrCode && (
-                                <Box
-                                    sx={{
-                                        position: "absolute",
-                                        left: `${customizations._qrCode.x ?? 5}%`,
-                                        top: `${customizations._qrCode.y ?? 85}%`,
-                                        display: "flex",
-                                        flexDirection: "column",
-                                        alignItems: "center",
-                                    }}
-                                >
-                                    <Box
-                                        component="img"
-                                        src={qrCodeDataUrl}
-                                        alt="QR Code"
-                                        sx={{
-                                            width: `${customizations._qrCode.size ?? 70}px`,
-                                            height: `${customizations._qrCode.size ?? 70}px`,
-                                        }}
-                                    />
-                                    <Typography
-                                        variant="caption"
-                                        sx={{
-                                            fontSize: `${((customizations._qrCode.size ?? 70) / 70) * 9}px`,
-                                            fontWeight: "bold",
-                                            color: "#0077b6",
-                                            letterSpacing: 0.7,
-                                            marginTop: "2px",
-                                        }}
-                                    >
-                                        SAMPLE_TOKEN
-                                    </Typography>
-                                </Box>
-                            )}
-                          </Box>
+                                )}
+                            </Box>
                         </Box>
                     </Box>
                 </Box>

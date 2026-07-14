@@ -10,10 +10,11 @@ import {
   IconButton,
   Stack,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import { useGame } from "@/contexts/GameContext";
 import { useRouter } from "next/navigation";
-import LanguageSelector from "@/components/LanguageSelector";
 import CrossZeroMarkVisual from "@/components/crosszero/CrossZeroMarkVisual";
+import CrossZeroFloatingControls from "@/components/crosszero/CrossZeroFloatingControls";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
@@ -103,7 +104,7 @@ export default function CrossZeroInstructionsPage() {
 
   return (
     <Box sx={{ position: "relative" }}>
-      <LanguageSelector top={20} right={20} />
+      <CrossZeroFloatingControls top={20} right={20} />
       <Box
         sx={{
           display: "flex",
@@ -122,7 +123,14 @@ export default function CrossZeroInstructionsPage() {
         <IconButton
           size="small"
           onClick={() => router.replace(backTarget)}
-          sx={{ position: "fixed", top: 20, left: 20, bgcolor: "primary.main", color: "white" }}
+          sx={{
+            position: "fixed",
+            top: 20,
+            left: 20,
+            bgcolor: "primary.main",
+            color: "primary.contrastText",
+            boxShadow: (theme) => theme.palette.shadow.floatingButton,
+          }}
         >
           <ICONS.back />
         </IconButton>
@@ -135,10 +143,12 @@ export default function CrossZeroInstructionsPage() {
             width: "100%",
             maxWidth: 560,
             backdropFilter: "blur(16px)",
-            backgroundColor: "rgba(10,10,20,0.85)",
+            backgroundColor: (theme) =>
+              alpha(theme.palette.background.paper, theme.palette.mode === "dark" ? 0.88 : 0.92),
             borderRadius: 6,
-            border: "1px solid rgba(255,255,255,0.08)",
-            boxShadow: "0 8px 40px rgba(0,0,0,0.6)",
+            border: "1px solid",
+            borderColor: "divider",
+           boxShadow: (theme) => theme.palette.shadow.paper,
           }}
         >
           <Stack
@@ -156,7 +166,7 @@ export default function CrossZeroInstructionsPage() {
             variant="h4"
             sx={{
               fontWeight: 800,
-              color: "#fff",
+              color: "text.primary",
               textAlign: "center",
               mb: 0.5
             }}>
@@ -166,7 +176,7 @@ export default function CrossZeroInstructionsPage() {
           {playerInfo?.name ? (
             <Typography
               sx={{
-                color: "rgba(255,255,255,0.9)",
+                color: "text.primary",
                 textAlign: "center",
                 mb: 0.5,
                 fontWeight: 800,
@@ -179,7 +189,7 @@ export default function CrossZeroInstructionsPage() {
 
           <Typography
             sx={{
-              color: "rgba(255,255,255,0.5)",
+              color: "text.secondary",
               textAlign: "center",
               mb: 1,
               fontSize: "0.9rem",
@@ -200,12 +210,13 @@ export default function CrossZeroInstructionsPage() {
               mx: "auto",
               width: "fit-content",
               borderRadius: 999,
-              bgcolor: "rgba(255,255,255,0.08)",
-              border: "1px solid rgba(255,255,255,0.15)"
+              bgcolor: (theme) => alpha(theme.palette.primary.main, theme.palette.mode === "dark" ? 0.16 : 0.08),
+              border: "1px solid",
+              borderColor: "divider"
             }}>
             <Typography
               sx={{
-                color: "rgba(255,255,255,0.75)",
+                color: "text.primary",
                 fontWeight: 700,
                 fontSize: "0.88rem",
               }}
@@ -219,7 +230,7 @@ export default function CrossZeroInstructionsPage() {
             variant="h6"
             sx={{
               fontWeight: 700,
-              color: "rgba(255,255,255,0.55)",
+              color: "text.secondary",
               textAlign: "center",
               mb: 3,
               fontSize: "1rem"
@@ -238,15 +249,16 @@ export default function CrossZeroInstructionsPage() {
                   px: 1.5,
                   py: 1.25,
                   borderRadius: 3,
-                  bgcolor: "rgba(255,255,255,0.06)",
-                  border: "1px solid rgba(255,255,255,0.1)"
+                  bgcolor: (theme) => alpha(theme.palette.action.hover, theme.palette.mode === "dark" ? 0.35 : 0.65),
+                  border: "1px solid",
+                  borderColor: "divider"
                 }}>
                 <Box
                   sx={{
                     minWidth: 28,
                     height: 28,
                     borderRadius: "50%",
-                    bgcolor: "rgba(255,255,255,0.1)",
+                    bgcolor: (theme) => alpha(theme.palette.primary.main, theme.palette.mode === "dark" ? 0.2 : 0.1),
                     color: "primary.main",
                     display: "flex",
                     alignItems: "center",
@@ -260,7 +272,7 @@ export default function CrossZeroInstructionsPage() {
                 </Box>
                 <Typography
                   sx={{
-                    color: "rgba(255,255,255,0.82)",
+                    color: "text.primary",
                     fontSize: "0.95rem",
                     lineHeight: 1.6,
                   }}
@@ -275,10 +287,10 @@ export default function CrossZeroInstructionsPage() {
             variant="h6"
             sx={{
               fontWeight: 700,
-              color: "#00e5ff",
+              color: "secondary.main",
               textAlign: "center",
               mb: 3,
-              textShadow: "0 0 12px rgba(0,229,255,0.4)"
+              textShadow: (theme) => `0 0 12px ${alpha(theme.palette.secondary.main, 0.35)}`
             }}>
             {t.goodLuck}
           </Typography>
@@ -294,8 +306,12 @@ export default function CrossZeroInstructionsPage() {
               py: 1.2,
               borderRadius: 999,
               fontWeight: 800,
-              bgcolor: playerMark === "O" ? "#ff6b6b" : "#00e5ff",
-              "&:hover": { filter: "brightness(1.15)", bgcolor: playerMark === "O" ? "#ff6b6b" : "#00e5ff" },
+              bgcolor: playerMark === "O" ? "error.main" : "primary.main",
+              color: playerMark === "O" ? "error.contrastText" : "primary.contrastText",
+              "&:hover": {
+                filter: "brightness(1.08)",
+                bgcolor: playerMark === "O" ? "error.main" : "primary.main",
+              },
             }}
           >
             {t.start}

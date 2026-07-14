@@ -9,13 +9,13 @@ import { cancelPayment } from "@/services/eventreg/paymentService";
 import LanguageSelector from "@/components/LanguageSelector";
 import { useLanguage } from "@/contexts/LanguageContext";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
-
+import { alpha, useTheme } from "@mui/material/styles";
 export default function PaymentCancelPage() {
   const { eventSlug } = useParams();
   const searchParams = useSearchParams();
   const registrationId = searchParams.get("registration_id");
   const urlLang = searchParams.get("lang") || "en";
-
+  const theme = useTheme();
   const { language, setLanguage } = useLanguage();
 
   // Seed context from URL param on first load
@@ -74,190 +74,191 @@ export default function PaymentCancelPage() {
       >
         <Background />
 
-      <Box sx={{ maxWidth: 460, width: "100%", position: "relative", zIndex: 1 }}>
+        <Box sx={{ maxWidth: 460, width: "100%", position: "relative", zIndex: 1 }}>
 
-        {/* ── Loading ── */}
-        {status === "loading" && (
-          <Paper
-            elevation={6}
-            sx={{
-              borderRadius: 4,
-              p: 6,
-              textAlign: "center",
-              backgroundColor: "rgba(255,255,255,0.96)",
-            }}
-          >
-            <Box
+          {/* ── Loading ── */}
+          {status === "loading" && (
+            <Paper
+              elevation={6}
               sx={{
-                width: 80,
-                height: 80,
-                borderRadius: "50%",
-                backgroundColor: "#fff3e0",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                mx: "auto",
-                mb: 3,
-              }}
-            >
-              <CircularProgress size={40} thickness={4} color="warning" />
-            </Box>
-            <Typography variant="h6" fontWeight={700} sx={{ mb: 0.5 }}>
-              {t.cancelling}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              {t.cancellingNote}
-            </Typography>
-          </Paper>
-        )}
-
-        {/* ── Cancelled ── */}
-        {status === "cancelled" && (
-          <Paper
-            elevation={6}
-            sx={{ borderRadius: 4, overflow: "hidden", backgroundColor: "rgba(255,255,255,0.97)" }}
-          >
-            {/* Amber header */}
-            <Box
-              sx={{
-                background: "linear-gradient(135deg, #e65100 0%, #ef6c00 55%, #f57c00 100%)",
-                px: 4,
-                pt: 4.5,
-                pb: 5,
+                borderRadius: 4,
+                p: 6,
                 textAlign: "center",
-                color: "#fff",
+                backgroundColor: (theme) => theme.palette.overlay.cardExtraHeavy,
               }}
             >
               <Box
                 sx={{
-                  width: 84,
-                  height: 84,
+                  width: 80,
+                  height: 80,
                   borderRadius: "50%",
-                  backgroundColor: "rgba(255,255,255,0.18)",
-                  border: "2.5px solid rgba(255,255,255,0.4)",
+                  backgroundColor: (theme) => alpha(theme.palette.warning.main, 0.1),
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   mx: "auto",
-                  mb: 2.5,
+                  mb: 3,
                 }}
               >
-                <ICONS.cancel sx={{ fontSize: 50, color: "#fff" }} />
+                <CircularProgress size={40} thickness={4} color="warning" />
               </Box>
-              <Typography variant="h5" fontWeight={800} sx={{ mb: 1, letterSpacing: -0.5 }}>
-                {t.cancelledTitle}
+              <Typography variant="h6" fontWeight={700} sx={{ mb: 0.5 }}>
+                {t.cancelling}
               </Typography>
-              <Typography variant="body2" sx={{ opacity: 0.88, lineHeight: 1.6, maxWidth: 300, mx: "auto" }}>
-                {t.cancelledMessage}
+              <Typography variant="body2" color="text.secondary">
+                {t.cancellingNote}
               </Typography>
-            </Box>
+            </Paper>
+          )}
 
-            {/* Ticket-stub separator */}
-            <Box sx={{ position: "relative", height: 2, mx: 0, overflow: "visible" }}>
+          {/* ── Cancelled ── */}
+          {status === "cancelled" && (
+            <Paper
+              elevation={6}
+              sx={{
+                borderRadius: 4, overflow: "hidden",
+                backgroundColor: (theme) => theme.palette.overlay.cardOpaque,
+              }}
+            >
+              {/* Amber header */}
               <Box
                 sx={{
-                  position: "absolute",
-                  top: 0,
-                  left: "7%",
-                  right: "7%",
-                  borderTop: "2px dashed #e0e0e0",
-                }}
-              />
-              <Box
-                sx={{
-                  position: "absolute",
-                  top: -14,
-                  left: -14,
-                  width: 28,
-                  height: 28,
-                  borderRadius: "50%",
-                  backgroundColor: "#f0f2f5",
-                  boxShadow: "inset 0 0 6px rgba(0,0,0,0.08)",
-                }}
-              />
-              <Box
-                sx={{
-                  position: "absolute",
-                  top: -14,
-                  right: -14,
-                  width: 28,
-                  height: 28,
-                  borderRadius: "50%",
-                  backgroundColor: "#f0f2f5",
-                  boxShadow: "inset 0 0 6px rgba(0,0,0,0.08)",
-                }}
-              />
-            </Box>
-
-            {/* Body */}
-            <Box sx={{ px: 4, pt: 4, pb: 4 }}>
-              {/* Safe note */}
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "flex-start",
-                  gap: 1.5,
-                  backgroundColor: "#fff8e1",
-                  border: "1px solid #ffe082",
-                  borderRadius: 2,
-                  px: 2,
-                  py: 1.5,
-                  mb: 3.5,
+                  background: (theme) => theme.palette.gradients.warningHeader, px: 4,
+                  pt: 4.5,
+                  pb: 5,
+                  textAlign: "center",
+                  color: "common.white",
                 }}
               >
-                <ICONS.help sx={{ fontSize: 19, color: "#f57f17", flexShrink: 0, mt: 0.1 }} />
-                <Typography variant="caption" color="#5d4037" sx={{ lineHeight: 1.6 }}>
-                  {t.safeNote}
+                <Box
+                  sx={{
+                    width: 84,
+                    height: 84,
+                    borderRadius: "50%",
+                    backgroundColor: (theme) => theme.palette.overlay.whiteGlass,
+                    border: (theme) =>
+                      `2.5px solid ${theme.palette.overlay.whiteGlassBorder}`,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    mx: "auto",
+                    mb: 2.5,
+                  }}
+                >
+                  <ICONS.cancel sx={{ fontSize: 50, color: "common.white" }} />
+                </Box>
+                <Typography variant="h5" fontWeight={800} sx={{ mb: 1, letterSpacing: -0.5 }}>
+                  {t.cancelledTitle}
+                </Typography>
+                <Typography variant="body2" sx={{ opacity: 0.88, lineHeight: 1.6, maxWidth: 300, mx: "auto" }}>
+                  {t.cancelledMessage}
                 </Typography>
               </Box>
 
-              <Button
-                variant="contained"
-                href={`/eventreg/${lang}/event/${eventSlug}/register`}
-                fullWidth
-                size="large"
-                startIcon={<ICONS.refresh />}
-                sx={{
-                  borderRadius: 2.5,
-                  py: 1.5,
-                  fontWeight: 700,
-                  textTransform: "none",
-                  fontSize: "0.95rem",
-                  mb: 1.5,
-                  backgroundColor: "#ef6c00",
-                  "&:hover": { backgroundColor: "#e65100" },
-                  ...getStartIconSpacing(dir),
-                }}
-              >
-                {t.tryAgain}
-              </Button>
+              {/* Ticket-stub separator */}
+              <Box sx={{ position: "relative", height: 2, mx: 0, overflow: "visible" }}>
+                <Box
+                  sx={{
+                    position: "absolute",
+                    top: 0,
+                    left: "7%",
+                    right: "7%",
+                    borderTop: "2px dashed",
+                    borderColor: "divider",
+                  }}
+                />
+                <Box
+                  sx={{
+                    position: "absolute",
+                    top: -14,
+                    left: -14,
+                    width: 28,
+                    height: 28,
+                    borderRadius: "50%",
+                    backgroundColor: "background.default",
+                    boxShadow: (theme) => theme.palette.shadow.insetSm,
+                  }}
+                />
+                <Box
+                  sx={{
+                    position: "absolute",
+                    top: -14,
+                    right: -14,
+                    width: 28,
+                    height: 28,
+                    borderRadius: "50%",
+                    backgroundColor: "background.default",
+                    boxShadow: (theme) => theme.palette.shadow.insetSm,
+                  }}
+                />
+              </Box>
 
-              <Button
-                variant="outlined"
-                href={`/eventreg/${lang}/event/${eventSlug}`}
-                fullWidth
-                size="large"
-                startIcon={<ICONS.back />}
-                sx={{
-                  borderRadius: 2.5,
-                  py: 1.5,
-                  fontWeight: 600,
-                  textTransform: "none",
-                  fontSize: "0.95rem",
-                  borderColor: "grey.300",
-                  color: "text.secondary",
-                  "&:hover": { borderColor: "grey.500", backgroundColor: "grey.50" },
-                  ...getStartIconSpacing(dir),
-                }}
-              >
-                {t.backToEvent}
-              </Button>
-            </Box>
-          </Paper>
-        )}
+              {/* Body */}
+              <Box sx={{ px: 4, pt: 4, pb: 4 }}>
+                {/* Safe note */}
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: 1.5,
+                    backgroundColor: (theme) => theme.palette.overlay.warningCard, border: (theme) => `1px solid ${alpha(theme.palette.warning.main, 0.3)}`,
+                    borderRadius: 2,
+                    px: 2,
+                    py: 1.5,
+                    mb: 3.5,
+                  }}
+                >
+                  <ICONS.help sx={{ fontSize: 19, color: "warning.main", flexShrink: 0, mt: 0.1 }} />
+                  <Typography variant="caption" color="text.primary" sx={{ lineHeight: 1.6 }}>
+                    {t.safeNote}
+                  </Typography>
+                </Box>
 
+                <Button
+                  variant="contained"
+                  href={`/eventreg/${lang}/event/${eventSlug}/register`}
+                  fullWidth
+                  size="large"
+                  startIcon={<ICONS.refresh />}
+                  sx={{
+                    py: 1.5,
+                    fontWeight: 700,
+                    textTransform: "none",
+                    fontSize: "0.95rem",
+                    mb: 1.5,
+                    backgroundColor: "warning.main",
+                    "&:hover": { backgroundColor: "warning.dark" },
+                    ...getStartIconSpacing(dir),
+                  }}
+                >
+                  {t.tryAgain}
+                </Button>
+
+                <Button
+                  variant="outlined"
+                  href={`/eventreg/${lang}/event/${eventSlug}`}
+                  fullWidth
+                  size="large"
+                  startIcon={<ICONS.back />}
+                  sx={{
+                    py: 1.5,
+                    fontWeight: 600,
+                    textTransform: "none",
+                    fontSize: "0.95rem",
+                    borderColor: "divider",
+                    color: "text.secondary",
+                    "&:hover": { borderColor: "text.secondary", backgroundColor: "action.hover" },
+                    ...getStartIconSpacing(dir),
+                  }}
+                >
+                  {t.backToEvent}
+                </Button>
+              </Box>
+            </Paper>
+          )}
+
+        </Box>
       </Box>
-    </Box>
     </>
   );
 }

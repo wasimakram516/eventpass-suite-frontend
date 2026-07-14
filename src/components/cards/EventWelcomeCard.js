@@ -145,15 +145,15 @@ export default function EventWelcomeCard({
       {/* Organizer Contact Details */}
       {(organizerName || organizerEmail || organizerPhone) && (
         <Box
-          sx={{
+          sx={(theme) => ({
             width: "100%",
             mt: 3,
             mb: 2,
             p: 2,
-            backgroundColor: "rgba(0, 74, 173, 0.05)",
+            backgroundColor: alpha(theme.palette.primary.main, theme.palette.mode === "dark" ? 0.12 : 0.05),
             borderRadius: 2,
-            border: "1px solid rgba(0, 74, 173, 0.1)",
-          }}
+            border: `1px solid ${alpha(theme.palette.primary.main, theme.palette.mode === "dark" ? 0.2 : 0.1)}`,
+          })}
         >
           <Typography
             variant="body2"
@@ -258,7 +258,6 @@ export default function EventWelcomeCard({
               fontSize: { xs: 16, md: 18 },
               p: "12px",
               fontWeight: "bold",
-              borderRadius: 2,
               textTransform: "none",
               background: "primary.main",
               transition: "0.3s",

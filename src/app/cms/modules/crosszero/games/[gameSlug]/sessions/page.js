@@ -6,6 +6,7 @@ import {
   Box, Container, Typography, Stack, Divider, Paper, Grid, Fade,
   Button, CircularProgress, Pagination, FormControl, InputLabel, Select, MenuItem,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import ArabicPagination from "@/components/ArabicPagination";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
@@ -55,16 +56,17 @@ const translations = {
   },
 };
 
-const RESULT_MAP = {
-  X_wins: { mark: "X", symbolColor: "#00e5ff", bg: "linear-gradient(to right, #00b4d8, #0077b6)" },
-  O_wins: { mark: "O", symbolColor: "#ff6b6b", bg: "linear-gradient(to right, #ff6b6b, #c0392b)" },
-  draw:   { mark: null, symbolColor: null, bg: "linear-gradient(to right, #9E9E9E, #BDBDBD)" },
-};
+
 
 export default function CrossZeroPvPSessionsPage() {
   const { gameSlug } = useParams();
   const { t, dir, language } = useI18nLayout(translations);
-
+  const theme = useTheme();
+   const RESULT_MAP = {
+     X_wins: { mark: "X", ...theme.palette.crosszero.pvpResultMapX },
+     O_wins: { mark: "O", ...theme.palette.crosszero.pvpResultMapO },
+     draw: { mark: null, symbolColor: null, ...theme.palette.crosszero.pvpResultMapDraw },
+  };
   const [sessions, setSessions] = useState([]);
   const [totalSessions, setTotalSessions] = useState(0);
   const [page, setPage] = useState(1);
@@ -145,14 +147,14 @@ export default function CrossZeroPvPSessionsPage() {
               const p2 = session.players?.find((p) => p.playerType === "p2");
               const xoStats = session.xoStats || {};
               const game = session.gameId || {};
-              const resultInfo = RESULT_MAP[xoStats.result] || { mark: null, bg: "linear-gradient(to right, #9E9E9E, #BDBDBD)" };
+            const resultInfo = RESULT_MAP[xoStats.result] || { mark: null, ...theme.palette.crosszero.pvpResultMapDraw };
 
               return (
                 <Fade in timeout={400} key={session._id}>
-                  <Paper elevation={5} sx={{ borderRadius: 4, my: 2.5, overflow: "hidden", boxShadow: "0 4px 16px rgba(0,0,0,0.08)" }}>
+               <Paper elevation={5} sx={{ borderRadius: 4, my: 2.5, overflow: "hidden", boxShadow: theme.palette.crosszero.pvpSessionCardShadow }}>
                     {/* Result banner */}
                     <Box sx={{ background: resultInfo.bg, px: 3, py: 1.2, display: "flex", alignItems: "center", justifyContent: "center", gap: 1 }}>
-                      {xoStats.result && xoStats.result !== "draw" && <ICONS.trophy sx={{ color: "#fff" }} />}
+                      {xoStats.result && xoStats.result !== "draw" && <ICONS.trophy sx={{ color: theme.palette.common.white }} />}
                       {resultInfo.mark && (
                         <CrossZeroMarkVisual
                           mark={resultInfo.mark}
@@ -167,7 +169,7 @@ export default function CrossZeroPvPSessionsPage() {
                       <Typography
                         variant="h6"
                         sx={{
-                          color: "#fff",
+                         color: theme.palette.common.white,
                           fontWeight: "bold"
                         }}>
                         {xoStats.result === "draw" ? t.tie : t.wins}
@@ -189,7 +191,7 @@ export default function CrossZeroPvPSessionsPage() {
                             xs: 12,
                             sm: 5.5
                           }}>
-                          <Box sx={{ bgcolor: xoStats.result === "O_wins" ? "rgba(255,107,107,0.08)" : "grey.50", borderRadius: 3, p: 2.5, height: "100%", display: "flex", flexDirection: "column", gap: 1 }}>
+                          <Box sx={{ bgcolor: xoStats.result === "O_wins" ? theme.palette.crosszero.pvpWinnerBgO  : "grey.50", borderRadius: 3, p: 2.5, height: "100%", display: "flex", flexDirection: "column", gap: 1 }}>
                             <Box sx={{ display: "flex", alignItems: "center", gap: 0.8 }}>
                               <CrossZeroMarkVisual
                                 mark="O"
@@ -220,7 +222,7 @@ export default function CrossZeroPvPSessionsPage() {
                         </Grid>
 
                         {/* VS */}
-                        <Box sx={{ position: { xs: "static", sm: "absolute" }, top: "50%", left: "50%", transform: { xs: "none", sm: "translate(-50%, -50%)" }, bgcolor: "#fff", border: "2px solid #eee", px: 2, py: 0.5, borderRadius: "50px", fontWeight: "bold", width: "fit-content", mx: "auto", my: { xs: 1, sm: 0 }, zIndex: 2 }}>
+                        <Box sx={{ position: { xs: "static", sm: "absolute" }, top: "50%", left: "50%", transform: { xs: "none", sm: "translate(-50%, -50%)" },  bgcolor: theme.palette.crosszero.vsBadgeBg, border: theme.palette.crosszero.pvpVsBadgeBorder, px: 2, py: 0.5, borderRadius: "50px", fontWeight: "bold", width: "fit-content", mx: "auto", my: { xs: 1, sm: 0 }, zIndex: 2 }}>
                           VS
                         </Box>
 
@@ -230,7 +232,7 @@ export default function CrossZeroPvPSessionsPage() {
                             xs: 12,
                             sm: 5.5
                           }}>
-                          <Box sx={{ bgcolor: xoStats.result === "X_wins" ? "rgba(0,180,216,0.08)" : "grey.50", borderRadius: 3, p: 2.5, height: "100%", display: "flex", flexDirection: "column", gap: 1, textAlign: { xs: "left", sm: "right" }, alignItems: { xs: "flex-start", sm: "flex-end" } }}>
+                          <Box sx={{ bgcolor: xoStats.result === "X_wins" ?  theme.palette.crosszero.pvpWinnerBgX  : "grey.50", borderRadius: 3, p: 2.5, height: "100%", display: "flex", flexDirection: "column", gap: 1, textAlign: { xs: "left", sm: "right" }, alignItems: { xs: "flex-start", sm: "flex-end" } }}>
                             <Box sx={{ display: "flex", alignItems: "center", gap: 0.8 }}>
                               <CrossZeroMarkVisual
                                 mark="X"
@@ -258,7 +260,7 @@ export default function CrossZeroPvPSessionsPage() {
 
                       {/* Stats bar */}
                       {xoStats.moves > 0 && (
-                        <Box sx={{ mt: 2, pt: 1.5, borderTop: "1px solid #f0f0f0", display: "flex", justifyContent: "center" }}>
+                       <Box sx={{ mt: 2, pt: 1.5, borderTop: theme.palette.crosszero.pvpStatsBorderTop, display: "flex", justifyContent: "center" }}>
                           <Typography variant="caption" sx={{
                             color: "text.secondary"
                           }}>{t.moves}: <strong>{toArabicDigits(xoStats.moves, language)}</strong></Typography>

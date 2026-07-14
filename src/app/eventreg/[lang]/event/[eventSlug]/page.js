@@ -7,6 +7,7 @@ import {
   Typography,
   IconButton,
   Button,
+  useTheme,
 } from "@mui/material";
 import LoadingState from "@/components/LoadingState";
 import VolumeUpIcon from "@mui/icons-material/VolumeUp";
@@ -24,7 +25,7 @@ export default function EventDetails() {
   const { eventSlug, lang } = useParams();
 
   useEffect(() => {
-  if (eventSlug === "omnex-b2b") {
+    if (eventSlug === "omnex-b2b") {
       window.location.href = "https://whitewall.simplybook.me/v2/#book";
     }
   }, [eventSlug]);
@@ -32,7 +33,7 @@ export default function EventDetails() {
   const router = useRouter();
   const isArabic = lang === "ar";
   const dir = isArabic ? "rtl" : "ltr";
-
+  const theme = useTheme();
   const t = {
     welcome: isArabic ? "مرحبًا في" : "Welcome to",
     thankYou: isArabic
@@ -264,10 +265,11 @@ export default function EventDetails() {
             position: "fixed",
             bottom: 20,
             right: 20,
-            bgcolor: "rgba(0,0,0,0.5)",
-            color: "white",
-            zIndex: 1000,
-            "&:hover": { bgcolor: "rgba(0,0,0,0.7)" },
+            bgcolor: theme.palette.overlay.scrim,
+            color: theme.palette.common.white,
+            "&:hover": {
+              bgcolor: theme.palette.overlay.scrimHover,
+            },
           }}
         >
           {isMuted ? <VolumeOffIcon /> : <VolumeUpIcon />}
@@ -342,7 +344,6 @@ export default function EventDetails() {
               py: 1.5,
               fontSize: { xs: 16, md: 18 },
               fontWeight: 600,
-              borderRadius: 2,
               textTransform: "none",
               display: `${background === null || background.fileType !== "video"
                 ? "none"

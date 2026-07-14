@@ -28,6 +28,7 @@ import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import { deleteMedia } from "@/services/deleteMediaService";
 import { useMessage } from "@/contexts/MessageContext";
 import ICONS from "@/utils/iconUtil";
+import { common } from "@mui/material/colors";
 
 const translations = {
   en: {
@@ -461,7 +462,7 @@ export default function QuestionFormDrawer({
                           <IconButton
                             size="small"
                             onClick={() => handleDeleteOptionImage(index)}
-                            sx={{ position: "absolute", top: -18, right: 6, bgcolor: "error.main", color: "#fff", "&:hover": { bgcolor: "error.dark" } }}
+                            sx={{ position: "absolute", top: -18, right: 6, bgcolor: "error.main", color: common.white, "&:hover": { bgcolor: "error.dark" } }}
                           >
                             <ICONS.delete sx={{ fontSize: 18 }} />
                           </IconButton>

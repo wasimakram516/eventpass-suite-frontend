@@ -158,10 +158,11 @@ export default function InstructionsPage() {
             width: "100%",
             textAlign: "center",
             backdropFilter: "blur(16px)",
-            backgroundColor: "rgba(10,10,20,0.85)",
+
             borderRadius: 6,
-            border: "1px solid rgba(255,255,255,0.08)",
-            boxShadow: "0 8px 40px rgba(0,0,0,0.6)",
+            backgroundColor: "overlay.cardTransparent",
+            border: (theme) => `1px solid ${theme.palette.crosszero.instructionBorder}`,
+            boxShadow: "shadow.card",
           }}
         >
           <Typography
@@ -169,7 +170,7 @@ export default function InstructionsPage() {
             sx={{
               fontWeight: 800,
               mb: 0.5,
-              color: "#fff",
+             color: "text.primary",
               textTransform: "capitalize",
               lineHeight: { xs: 1.2, sm: 1.3 },
               wordBreak: "break-word",
@@ -178,13 +179,13 @@ export default function InstructionsPage() {
             {game.title}
           </Typography>
 
-          <Typography sx={{ color: "rgba(255,255,255,0.5)", mb: 3, fontSize: "0.9rem", fontWeight: 600 }}>
+          <Typography sx={{ color: "crosszero.waitingText", mb: 3, fontSize: "0.9rem", fontWeight: 600 }}>
             {playerInfo.mode === "team" || game.isTeamMode
               ? `${t.yourTeam} ${playerInfo.teamName || "—"}`
               : playerInfo.selectedPlayer === "p1" ? t.player1 : t.player2}
           </Typography>
 
-          <Typography sx={{ color: "rgba(255,255,255,0.75)", mb: 4, fontSize: "1rem" }}>
+          <Typography sx={{ color: "crosszero.instructionText", mb: 4, fontSize: "1rem" }}>
             {t.instructionsTitle}
           </Typography>
 
@@ -202,18 +203,18 @@ export default function InstructionsPage() {
                 px: 2,
                 py: 1.5,
                 borderRadius: 3,
-                bgcolor: "rgba(0,229,255,0.08)",
-                border: "1px solid rgba(0,229,255,0.2)",
+               bgcolor: "crosszero.infoCard",
+border: (theme) => `1px solid ${theme.palette.crosszero.infoCardBorder}`,
                 width: "100%"
               }}>
-              <TimerIcon sx={{ color: "#00e5ff" }} />
-              <Typography sx={{ color: "#fff", fontSize: "1rem" }}>
+              <TimerIcon sx={{ color: "primary.main" }} />
+              <Typography sx={{ color: "text.primary", fontSize: "1rem" }}>
                 {t.quizDuration}{" "}
                 <Box
                   component="span"
                   sx={{
                     fontWeight: 700,
-                    color: "#00e5ff"
+                   color: "primary.main"
                   }}>
                   {game.gameSessionTimer} {t.seconds}
                 </Box>
@@ -232,9 +233,9 @@ export default function InstructionsPage() {
               py: 1.2,
               borderRadius: 999,
               fontWeight: 800,
-              bgcolor: "#00e5ff",
-              color: "#000",
-              "&:hover": { filter: "brightness(1.15)", bgcolor: "#00e5ff" },
+             bgcolor: "primary.main",
+             color: "primary.contrastText",
+              "&:hover": { filter: "brightness(1.15)",  bgcolor: "primary.main", },
             }}
           >
             {t.startButton}

@@ -408,7 +408,7 @@ const RichTextEditor = ({ value, onChange, placeholder, dir, minHeight, maxHeigh
                     borderBottom: "1px solid",
                     borderColor: "divider",
                     minHeight: "40px !important",
-                    bgcolor: "grey.50",
+                    bgcolor: "action.hover",
                     gap: 0.5,
                     flexWrap: "wrap",
                     "& .MuiIconButton-root": {
@@ -492,7 +492,10 @@ const RichTextEditor = ({ value, onChange, placeholder, dir, minHeight, maxHeigh
                                         width: 24,
                                         height: 24,
                                         bgcolor: color,
-                                        border: color === "#FFFFFF" ? "1px solid #999" : "1px solid #ccc",
+                                        border: (theme) =>
+                                            color === "#FFFFFF"
+                                                ? `1px solid ${theme.palette.mode === "dark" ? "#666" : "#999"}`
+                                                : `1px solid ${theme.palette.divider}`,
                                         cursor: "pointer",
                                         "&:hover": { border: "2px solid #000" },
                                     }}
@@ -619,7 +622,7 @@ const RichTextEditor = ({ value, onChange, placeholder, dir, minHeight, maxHeigh
                     outline: "none",
                     fontSize: "14px",
                     lineHeight: 1.6,
-                    color: "#333",
+                    color: "text.primary",
                     "&:empty:before": {
                         content: `"${placeholder}"`,
                         color: "text.disabled",

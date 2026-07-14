@@ -18,7 +18,7 @@ import useI18nLayout from "@/hooks/useI18nLayout";
 import { toArabicDigits } from "@/utils/arabicDigits";
 import { translateTexts } from "@/services/translationService";
 import QuizOutlinedIcon from "@mui/icons-material/QuizOutlined";
-
+import { useTheme } from "@mui/material/styles";
 const gameTranslations = {
   en: {
     countdown: "sec",
@@ -50,6 +50,7 @@ const gameTranslations = {
   },
 };
 export default function PlayPage() {
+  const theme = useTheme();
   const { game, loading } = useGame();
   const router = useRouter();
   const { t, dir, align, language } = useI18nLayout(gameTranslations);
@@ -315,7 +316,7 @@ export default function PlayPage() {
               p: 4,
               textAlign: align,
               backdropFilter: "blur(6px)",
-              backgroundColor: "rgba(255,255,255,0.6)",
+              backgroundColor: theme.palette.quiznest.lightGlassBg,
               borderRadius: 4,
             }}
           >
@@ -351,25 +352,24 @@ export default function PlayPage() {
         }}
       >
         <Box
-          sx={{
+          sx={(theme) => ({
             position: "absolute",
             inset: 0,
-            backgroundColor: "rgba(0,0,0,0.65)",
+            backgroundColor: theme.palette.quiznest.countdownOverlay,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-          }}
+          })}
         >
           <Typography
             variant="h1"
-            sx={{
+            sx={(theme) => ({
               fontWeight: "bold",
               fontSize: "10rem",
               color: "warning.light",
-              textShadow:
-                "0 0 15px rgba(255,215,0,0.8), 0 0 30px rgba(255,165,0,0.6)",
+              textShadow: theme.palette.quiznest.countdownGlow,
               animation: "pulse 1s infinite alternate",
-            }}
+            })}
           >
             {toArabicDigits(delay, language)}
           </Typography>
@@ -394,31 +394,30 @@ export default function PlayPage() {
         <LanguageSelector top={20} right={20} />
         <Box
           dir={dir}
-          sx={{
+          sx={(theme) => ({
             position: "absolute",
             inset: 0,
-            backgroundColor: "rgba(0,0,0,0.65)",
+            backgroundColor: theme.palette.quiznest.countdownOverlay,
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             p: 2,
             textAlign: "center",
-          }}
+          })}
         >
           <Fade in timeout={800}>
             <Paper
               elevation={8}
-              sx={{
+              sx={(theme) => ({
                 width: { xs: "90%", sm: "60%", md: "40%" },
                 p: { xs: 3, sm: 4 },
                 borderRadius: 3,
-                background:
-                  "linear-gradient(135deg, rgba(76,175,80,0.9), rgba(56,142,60,0.9))",
-                color: "#fff",
-                boxShadow: "0 0 30px rgba(0,0,0,0.6)",
+                background: theme.palette.quiznest.successGradient,
+                color: theme.palette.common.white,
+                boxShadow: theme.palette.shadow.glow,
                 backdropFilter: "blur(5px)",
                 textAlign: "center",
-              }}
+              })}
             >
               <Typography
                 variant="h3"
@@ -496,7 +495,7 @@ export default function PlayPage() {
               fontSize: { xs: "4rem", sm: "6rem", md: "8rem" },
               fontWeight: "bold",
               color: "secondary.main",
-              textShadow: "0 0 15px rgba(255,255,255,0.6)",
+              textShadow: theme.palette.shadow.textGlowMd,
               lineHeight: 1,
             }}
           >
@@ -506,7 +505,7 @@ export default function PlayPage() {
             variant="h6"
             sx={{
               fontSize: { xs: "1rem", sm: "1.5rem" },
-              color: "#000",
+              color: theme.palette.common.black,
               fontStyle: "italic",
               opacity: 0.7,
               mb: { xs: "0.4rem", sm: "0.6rem" },
@@ -537,27 +536,27 @@ export default function PlayPage() {
               p: { xs: 3, sm: 4 },
               textAlign: align,
               backdropFilter: "blur(16px)",
-              backgroundColor: "rgba(10,10,20,0.85)",
-              border: "1px solid rgba(255,255,255,0.08)",
+              backgroundColor: theme.palette.quiznest.glassBg,
+              border: `1px solid ${theme.palette.quiznest.glassBorder}`,
               borderRadius: 4,
               marginTop: "10vh",
               overflow: "hidden",
               wordBreak: "break-word",
               boxSizing: "border-box",
-              boxShadow: "0 8px 40px rgba(0,0,0,0.6)",
+              boxShadow: theme.palette.quiznest.dialogShadow,
             }}
           >
             {/* Question label — small secondary badge */}
             <Typography
               gutterBottom
-              sx={{
+              sx={(theme) => ({
                 fontSize: { xs: "0.75rem", sm: "0.85rem", md: "1rem" },
                 fontWeight: 600,
-                color: "#00e5ff",
+                color: theme.palette.quiznest.accent,
                 textTransform: "uppercase",
                 letterSpacing: 1,
                 lineHeight: 1.3,
-              }}
+              })}
             >
               {translatedContent.uiLabels?.questionLabel || "Question"} #{toArabicDigits(questionIndex + 1, language)}
             </Typography>
@@ -573,7 +572,7 @@ export default function PlayPage() {
                   return { xs: "0.8rem", sm: "1rem", md: "1.15rem" };
                 })(),
                 fontWeight: 700,
-                color: "#fff",
+                color: theme.palette.common.white,
                 lineHeight: { xs: 1.4, sm: 1.5 },
                 wordBreak: "break-word",
                 overflowWrap: "break-word",
@@ -626,14 +625,26 @@ export default function PlayPage() {
                 translatedContent.answers.map((opt, i) => {
                   const isSelected = selected === i;
                   const isCorrect = i === currentQuestion.correctAnswerIndex;
+                  // Answer option colors — inside the .map()
                   const { bg, borderColor, borderWidth } = (() => {
                     if (isSelected && isCorrect)
-                      return { bg: "rgba(76,175,80,0.35)", borderColor: "#81c784", borderWidth: 2 };
+                      return {
+                        bg: theme.palette.crosszero.answerCorrectBg,
+                        borderColor: theme.palette.crosszero.answerCorrectBorder,
+                        borderWidth: 2,
+                      };
                     if (isSelected && !isCorrect)
-                      return { bg: "rgba(244,67,54,0.35)", borderColor: "#e57373", borderWidth: 2 };
-                    return { bg: "rgba(255,255,255,0.08)", borderColor: "rgba(255,255,255,0.18)", borderWidth: 1.5 };
+                      return {
+                        bg: theme.palette.crosszero.answerWrongBg,
+                        borderColor: theme.palette.crosszero.answerWrongBorder,
+                        borderWidth: 2,
+                      };
+                    return {
+                      bg: theme.palette.quiznest.answerDefaultBg,
+                      borderColor: theme.palette.quiznest.answerDefaultBorder,
+                      borderWidth: 1.5,
+                    };
                   })();
-
                   return (
                     <Grid
                       key={i}
@@ -680,7 +691,7 @@ export default function PlayPage() {
                             "border-color 0.2s ease, border-width 0.2s ease",
                           "&:hover": { backgroundColor: bg, borderColor },
                           "&:active": { backgroundColor: bg, borderColor },
-                          color: "#fff",
+                          color: theme.palette.common.white,
                           fontSize: (() => {
                             const len = opt.length;
                             if (len <= 15) return { xs: "1rem", sm: "1.1rem", md: "1.2rem" };

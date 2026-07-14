@@ -1,9 +1,9 @@
 "use client";
 
 import { AnimatePresence, motion } from "framer-motion";
-import { Box, CircularProgress, Skeleton, Typography } from "@mui/material";
+import { Box, CircularProgress, Skeleton, Typography, useTheme } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import { useLanguage } from "@/contexts/LanguageContext";
-
 const MotionBox = motion(Box);
 
 const translations = {
@@ -23,6 +23,9 @@ export default function LoadingState({
   const t = translations[lang] || {};
   const displayText = text ?? t.text ?? "Loading EventPass";
   const displayDescription = description ?? t.description ?? "Preparing your experience...";
+  const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
+
   if (size) {
     return <CircularProgress size={size} color="inherit" />;
   }
@@ -38,7 +41,7 @@ export default function LoadingState({
         sx={{
           position: "fixed",
           inset: 0,
-          bgcolor: "rgba(240, 245, 255, 0.6)",
+          bgcolor: theme.palette.loader.overlay,
           backdropFilter: "blur(18px) saturate(140%)",
           WebkitBackdropFilter: "blur(18px) saturate(140%)",
           zIndex: 9999,
@@ -90,8 +93,7 @@ export default function LoadingState({
             borderRadius: "50%",
             top: { xs: "8%", sm: "12%" },
             left: { xs: "-10%", sm: "6%" },
-            background:
-              "radial-gradient(circle, rgba(0,200,255,0.08) 0%, transparent 72%)",
+            background: `radial-gradient(circle, ${alpha(theme.palette.primary.main, 0.08)} 0%, transparent 72%)`,
             filter: "blur(12px)",
             pointerEvents: "none",
           }}
@@ -105,8 +107,7 @@ export default function LoadingState({
             borderRadius: "50%",
             right: { xs: "-18%", sm: "4%" },
             bottom: { xs: "-4%", sm: "8%" },
-            background:
-              "radial-gradient(circle, rgba(108,99,255,0.08) 0%, transparent 74%)",
+            background: `radial-gradient(circle, ${alpha(theme.palette.secondary.main, 0.08)} 0%, transparent 74%)`,
             filter: "blur(18px)",
             pointerEvents: "none",
           }}
@@ -122,12 +123,12 @@ export default function LoadingState({
             position: "relative",
             overflow: "hidden",
             borderRadius: "20px",
-            bgcolor: "rgba(255, 255, 255, 0.92)",
+            bgcolor: theme.palette.loader.card,
             backdropFilter: "blur(18px) saturate(140%)",
             WebkitBackdropFilter: "blur(18px) saturate(140%)",
-            border: "1px solid rgba(0,0,0,0.07)",
-            boxShadow: "0 24px 54px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.9)",
-            animation: "ep-panel-in 0.3s ease-out",
+            border: "1px solid",
+            borderColor: "transparent",
+            boxShadow: theme.palette.shadow.elevated,
           }}
         >
           {/* Sweep bar at top */}
@@ -140,7 +141,7 @@ export default function LoadingState({
               width: "40%",
               height: 3,
               background:
-                "linear-gradient(90deg, transparent 0%, rgba(0,200,255,0.5) 55%, rgba(0,200,255,0.1) 100%)",
+                `linear-gradient(90deg, transparent 0%, ${alpha(theme.palette.primary.main, 0.55)} 55%, ${alpha(theme.palette.primary.main, 0.12)} 100%)`,
               animation: "ep-sweep 2.6s linear infinite",
               pointerEvents: "none",
             }}
@@ -169,7 +170,7 @@ export default function LoadingState({
                   inset: 18,
                   borderRadius: "999px",
                   background:
-                    "radial-gradient(circle, rgba(0,200,255,0.18) 0%, rgba(0,200,255,0.05) 62%, transparent 100%)",
+                    `radial-gradient(circle, ${alpha(theme.palette.primary.main, 0.2)} 0%, ${alpha(theme.palette.primary.main, 0.06)} 62%, transparent 100%)`,
                   animation: "ep-pulse 2.6s ease-in-out infinite",
                 },
               }}
@@ -181,9 +182,9 @@ export default function LoadingState({
                   position: "absolute",
                   inset: 0,
                   borderRadius: "50%",
-                  border: "2px solid rgba(0,200,255,0.18)",
-                  borderTopColor: "#00C8FF",
-                  borderRightColor: "rgba(0,200,255,0.5)",
+                  border: `2px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+                  borderTopColor: theme.palette.primary.main,
+                  borderRightColor: alpha(theme.palette.primary.main, 0.55),
                   animation: "ep-spin 1.1s linear infinite",
                   zIndex: 0,
                 }}
@@ -195,7 +196,7 @@ export default function LoadingState({
                   position: "absolute",
                   inset: 12,
                   borderRadius: "50%",
-                  border: "1.5px dashed rgba(0,200,255,0.2)",
+                  border: `1.5px dashed ${alpha(theme.palette.primary.main, 0.22)}`,
                   animation: "ep-spin-reverse 1.65s linear infinite",
                   zIndex: 0,
                 }}
@@ -215,7 +216,7 @@ export default function LoadingState({
                   position: "relative",
                   zIndex: 2,
                   animation: "ep-float 2.8s ease-in-out infinite",
-                  filter: "drop-shadow(0 8px 16px rgba(0,200,255,0.2))",
+                  filter: `drop-shadow(0 8px 16px ${alpha(theme.palette.primary.main, 0.22)})`,
                 }}
               />
             </Box>
@@ -226,7 +227,7 @@ export default function LoadingState({
                 sx={{
                   fontWeight: 800,
                   fontSize: { xs: "1.05rem", sm: "1.2rem" },
-                  color: "rgba(10, 20, 50, 0.9)",
+                  color: "text.primary",
                   lineHeight: 1.3,
                 }}
               >
@@ -235,7 +236,7 @@ export default function LoadingState({
               <Typography
                 sx={{
                   fontSize: "0.85rem",
-                  color: "rgba(10, 20, 50, 0.45)",
+                  color: "text.secondary",
                   mt: 0.75,
                   lineHeight: 1.65,
                   maxWidth: 320,
@@ -261,9 +262,9 @@ export default function LoadingState({
                 sx={{
                   height: 10,
                   borderRadius: "999px",
-                  border: "1px solid rgba(0,0,0,0.08)",
-                  background:
-                    "linear-gradient(90deg, rgba(0,0,0,0.04) 0%, rgba(0,0,0,0.02) 48%, rgba(0,0,0,0.04) 100%)",
+                  background: isDark
+                    ? `linear-gradient(90deg, ${alpha(theme.palette.common.white, 0.05)} 0%, ${alpha(theme.palette.common.white, 0.02)} 48%, ${alpha(theme.palette.common.white, 0.05)} 100%)`
+                    : `linear-gradient(90deg, ${alpha(theme.palette.common.black, 0.04)} 0%, ${alpha(theme.palette.common.black, 0.02)} 48%, ${alpha(theme.palette.common.black, 0.04)} 100%)`,
                   backgroundSize: "220% 100%",
                   animation: "ep-shimmer 1.9s linear infinite",
                   position: "relative",
@@ -278,7 +279,7 @@ export default function LoadingState({
                     height: "calc(100% - 2px)",
                     borderRadius: "inherit",
                     background:
-                      "linear-gradient(90deg, rgba(255,255,255,0.02) 0%, rgba(0,200,255,0.14) 50%, rgba(255,255,255,0.02) 100%)",
+                      `linear-gradient(90deg, ${alpha(theme.palette.common.white, 0.02)} 0%, ${alpha(theme.palette.primary.main, 0.14)} 50%, ${alpha(theme.palette.common.white, 0.02)} 100%)`,
                     animation: "ep-bar-run 1.9s ease-in-out infinite",
                   },
                 }}
@@ -293,7 +294,7 @@ export default function LoadingState({
                   sx={{
                     mx: "auto",
                     borderRadius: "999px",
-                    bgcolor: "rgba(0,0,0,0.07)",
+                    bgcolor: isDark ? alpha(theme.palette.common.white, 0.1) : alpha(theme.palette.common.black, 0.07),
                   }}
                 />
               ))}

@@ -257,7 +257,7 @@ export default function PaymentsPage() {
       )}
 
       {/* Filter */}
-      <Stack direction="row" justifyContent="flex-end" sx={{ mb: 2 }}>
+      <Stack direction="row" sx={{ justifyContent: "flex-end", mb: 2 }}>
         <FormControl size="small" sx={{ minWidth: 160 }}>
           <InputLabel>{t.filterStatus}</InputLabel>
           <Select

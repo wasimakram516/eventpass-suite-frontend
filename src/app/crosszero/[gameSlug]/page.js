@@ -1,9 +1,10 @@
 "use client";
 
 import { Box, Typography, Button, CircularProgress, Paper, Stack } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import { useRouter } from "next/navigation";
 import { useGame } from "@/contexts/GameContext";
-import LanguageSelector from "@/components/LanguageSelector";
+import CrossZeroFloatingControls from "@/components/crosszero/CrossZeroFloatingControls";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
@@ -74,7 +75,7 @@ export default function CrossZeroLobby() {
 
   return (
     <>
-      <LanguageSelector top={20} right={20} />
+      <CrossZeroFloatingControls top={20} right={20} />
       <Box
         dir={dir}
         sx={{
@@ -98,10 +99,12 @@ export default function CrossZeroLobby() {
             maxWidth: 480,
             width: "100%",
             backdropFilter: "blur(16px)",
-            backgroundColor: "rgba(10,10,20,0.85)",
+            backgroundColor: (theme) =>
+              alpha(theme.palette.background.paper, theme.palette.mode === "dark" ? 0.88 : 0.92),
             borderRadius: 6,
-            border: "1px solid rgba(255,255,255,0.08)",
-            boxShadow: "0 8px 40px rgba(0,0,0,0.6)",
+            border: "1px solid",
+            borderColor: "divider",
+           boxShadow: (theme) => theme.palette.shadow.paper,
           }}
         >
           {/* X O decorative */}
@@ -113,14 +116,14 @@ export default function CrossZeroLobby() {
               mb: 2
             }}>
             {game.xImage ? (
-              <Box component="img" src={game.xImage} alt="X" sx={{ width: 48, height: 48, objectFit: "contain", filter: "drop-shadow(0 0 10px #00e5ff)" }} />
+              <Box component="img" src={game.xImage} alt="X" sx={{ width: 48, height: 48, objectFit: "contain", filter: (theme) => `drop-shadow(0 0 10px ${alpha(theme.palette.primary.main, 0.7)})` }} />
             ) : (
-              <Typography sx={{ fontSize: "2.5rem", fontWeight: 900, color: "#00e5ff", textShadow: "0 0 20px #00e5ff", lineHeight: 1 }}>✕</Typography>
+              <Typography sx={{ fontSize: "2.5rem", fontWeight: 900, color: "primary.main", textShadow: (theme) => `0 0 20px ${alpha(theme.palette.primary.main, 0.8)}`, lineHeight: 1 }}>✕</Typography>
             )}
             {game.oImage ? (
-              <Box component="img" src={game.oImage} alt="O" sx={{ width: 48, height: 48, objectFit: "contain", filter: "drop-shadow(0 0 10px #ff6b6b)" }} />
+              <Box component="img" src={game.oImage} alt="O" sx={{ width: 48, height: 48, objectFit: "contain", filter: (theme) => `drop-shadow(0 0 10px ${alpha(theme.palette.error.main, 0.7)})` }} />
             ) : (
-              <Typography sx={{ fontSize: "2.5rem", fontWeight: 900, color: "#ff6b6b", textShadow: "0 0 20px #ff6b6b", lineHeight: 1 }}>○</Typography>
+              <Typography sx={{ fontSize: "2.5rem", fontWeight: 900, color: "error.main", textShadow: (theme) => `0 0 20px ${alpha(theme.palette.error.main, 0.8)}`, lineHeight: 1 }}>○</Typography>
             )}
           </Stack>
 
@@ -128,14 +131,14 @@ export default function CrossZeroLobby() {
             variant="h4"
             sx={{
               fontWeight: 800,
-              color: "#fff",
+              color: "text.primary",
               mb: 0.5,
               letterSpacing: 1
             }}>
             {game.title}
           </Typography>
 
-          <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.5)", mb: 4 }}>
+          <Typography variant="body2" sx={{ color: "text.secondary", mb: 4 }}>
             {game.mode === "solo" ? t.aiMode : t.pvpMode}
           </Typography>
 
@@ -151,9 +154,8 @@ export default function CrossZeroLobby() {
                 py: 1.5,
                 fontSize: "1rem",
                 fontWeight: 700,
-                background: "linear-gradient(135deg, #00b4d8, #0077b6)",
-                boxShadow: "0 4px 20px rgba(0,180,216,0.4)",
-                "&:hover": { background: "linear-gradient(135deg, #0096c7, #005f8a)" },
+                bgcolor: "primary.main",
+                boxShadow: (theme) => theme.palette.shadow.button,
               }}
             >
               {t.playAI}
@@ -171,12 +173,12 @@ export default function CrossZeroLobby() {
                 py: 1.5,
                 fontSize: "1rem",
                 fontWeight: 700,
-                background: "linear-gradient(135deg, #7b2ff7, #4a00e0)",
-                boxShadow: "0 4px 20px rgba(123,47,247,0.4)",
-                "&:hover": { background: "linear-gradient(135deg, #6a1fd6, #3900c0)" },
+                bgcolor: "error.main",
+                boxShadow: (theme) => theme.palette.shadow.button,
+                "&:hover": { bgcolor: "error.dark" },
               }}
             >
-              {starting ? <CircularProgress size={22} sx={{ color: "#fff" }} /> : t.startPvP}
+              {starting ? <CircularProgress size={22} color="inherit" /> : t.startPvP}
             </Button>
           )}
         </Paper>

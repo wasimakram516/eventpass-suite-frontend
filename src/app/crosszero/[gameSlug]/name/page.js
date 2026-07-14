@@ -10,11 +10,12 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import { useGame } from "@/contexts/GameContext";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { joinGame } from "@/services/crosszero/playerService";
-import LanguageSelector from "@/components/LanguageSelector";
+import CrossZeroFloatingControls from "@/components/crosszero/CrossZeroFloatingControls";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
@@ -84,7 +85,7 @@ export default function CrossZeroNamePage() {
 
   return (
     <>
-      <LanguageSelector top={20} right={20} />
+      <CrossZeroFloatingControls top={20} right={20} />
       <Box
         dir={dir}
         sx={{
@@ -105,7 +106,14 @@ export default function CrossZeroNamePage() {
         <IconButton
           size="small"
           onClick={() => router.replace(`/crosszero/${game.slug}`)}
-          sx={{ position: "fixed", top: 20, left: 20, bgcolor: "primary.main", color: "white" }}
+          sx={{
+            position: "fixed",
+            top: 20,
+            left: 20,
+            bgcolor: "primary.main",
+            color: "primary.contrastText",
+            boxShadow: (theme) => theme.palette.shadow.floatingButton,
+          }}
         >
           <ICONS.back />
         </IconButton>
@@ -119,10 +127,12 @@ export default function CrossZeroNamePage() {
             maxWidth: 520,
             textAlign: "center",
             backdropFilter: "blur(16px)",
-            backgroundColor: "rgba(10,10,20,0.85)",
+            backgroundColor: (theme) =>
+              alpha(theme.palette.background.paper, theme.palette.mode === "dark" ? 0.88 : 0.92),
             borderRadius: 6,
-            border: "1px solid rgba(255,255,255,0.08)",
-            boxShadow: "0 8px 40px rgba(0,0,0,0.6)",
+            border: "1px solid",
+            borderColor: "divider",
+           boxShadow: (theme) => theme.palette.shadow.paper,
           }}
         >
           {/* Mode header icons */}
@@ -136,12 +146,12 @@ export default function CrossZeroNamePage() {
             {game.xImage ? (
               <Box component="img" src={game.xImage} alt="X" sx={{ width: 44, height: 44, objectFit: "contain" }} />
             ) : (
-              <Typography sx={{ fontSize: "2.2rem", fontWeight: 900, color: "#00e5ff", textShadow: "0 0 20px #00e5ff", lineHeight: 1 }}>✕</Typography>
+              <Typography sx={{ fontSize: "2.2rem", fontWeight: 900, color: "primary.main", textShadow: (theme) => `0 0 20px ${alpha(theme.palette.primary.main, 0.8)}`, lineHeight: 1 }}>✕</Typography>
             )}
             {game.oImage ? (
               <Box component="img" src={game.oImage} alt="O" sx={{ width: 44, height: 44, objectFit: "contain" }} />
             ) : (
-              <Typography sx={{ fontSize: "2.2rem", fontWeight: 900, color: "#ff6b6b", textShadow: "0 0 20px #ff6b6b", lineHeight: 1 }}>○</Typography>
+              <Typography sx={{ fontSize: "2.2rem", fontWeight: 900, color: "error.main", textShadow: (theme) => `0 0 20px ${alpha(theme.palette.error.main, 0.8)}`, lineHeight: 1 }}>○</Typography>
             )}
           </Stack>
 
@@ -149,12 +159,12 @@ export default function CrossZeroNamePage() {
             variant="h4"
             sx={{
               fontWeight: 800,
-              color: "#fff",
+              color: "text.primary",
               mb: 0.5
             }}>
             {game.title}
           </Typography>
-          <Typography sx={{ color: "rgba(255,255,255,0.5)", mb: 3, fontSize: "0.9rem", fontWeight: 600 }}>
+          <Typography sx={{ color: "text.secondary", mb: 3, fontSize: "0.9rem", fontWeight: 600 }}>
             {t.aiMode}
           </Typography>
 
@@ -165,20 +175,21 @@ export default function CrossZeroNamePage() {
               px: 2.5,
               py: 1,
               borderRadius: 3,
-              border: "1.5px solid rgba(255,107,107,0.4)",
-              bgcolor: "rgba(255,107,107,0.12)",
+              border: "1px solid",
+              borderColor: "divider",
+              bgcolor: (theme) => alpha(theme.palette.error.main, theme.palette.mode === "dark" ? 0.14 : 0.08),
               display: "inline-flex",
               alignItems: "center",
               gap: 1,
             }}
           >
-            <Typography sx={{ color: "#ff6b6b", fontWeight: 700, fontSize: "0.9rem" }}>
+            <Typography sx={{ color: "error.main", fontWeight: 700, fontSize: "0.9rem" }}>
               {t.youPlayAs}:
             </Typography>
             {game.oImage ? (
               <Box component="img" src={game.oImage} alt="O" sx={{ width: 28, height: 28, objectFit: "contain" }} />
             ) : (
-              <Typography sx={{ fontSize: "1.4rem", fontWeight: 900, color: "#ff6b6b", textShadow: "0 0 12px rgba(255,107,107,0.6)", lineHeight: 1 }}>
+              <Typography sx={{ fontSize: "1.4rem", fontWeight: 900, color: "error.main", textShadow: (theme) => `0 0 12px ${alpha(theme.palette.error.main, 0.6)}`, lineHeight: 1 }}>
                 ○
               </Typography>
             )}
@@ -193,8 +204,8 @@ export default function CrossZeroNamePage() {
             onChange={(e) => setForm({ ...form, name: e.target.value })}
             onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
             slotProps={{
-              input: { sx: { backgroundColor: "rgba(255,255,255,0.1)", color: "#fff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.25)" } } },
-              inputLabel: { sx: { color: "rgba(255,255,255,0.6)" } }
+              input: { sx: { backgroundColor: (theme) => alpha(theme.palette.action.hover, theme.palette.mode === "dark" ? 0.32 : 0.6), color: "text.primary", "& .MuiOutlinedInput-notchedOutline": { borderColor: "divider" } } },
+              inputLabel: { sx: { color: "text.secondary" } }
             }} />
           {/* <TextField
             label={t.companyLabel}
@@ -238,8 +249,9 @@ export default function CrossZeroNamePage() {
               py: 1.2,
               borderRadius: 999,
               fontWeight: 800,
-              bgcolor: "#ff6b6b",
-              "&:hover": { filter: "brightness(1.15)", bgcolor: "#ff6b6b" },
+              bgcolor: "error.main",
+              color: "error.contrastText",
+              "&:hover": { filter: "brightness(1.08)", bgcolor: "error.main" },
               "&:disabled": { opacity: 0.5 },
             }}
           >

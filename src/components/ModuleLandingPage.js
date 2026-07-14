@@ -42,7 +42,9 @@ export default function ModuleLandingPage({
           position: "absolute",
           inset: 0,
           backgroundImage:
-            "linear-gradient(0deg, rgba(255, 255, 255, 0.65), rgba(255, 255, 255, 0.65))",
+            theme.palette.mode === "dark"
+              ? `linear-gradient(0deg, ${theme.palette.background.default}A6, ${theme.palette.background.default}A6)`
+              : `linear-gradient(0deg, ${theme.palette.background.paper}A6, ${theme.palette.background.paper}A6)`,
           pointerEvents: "none",
           zIndex: 0,
         },

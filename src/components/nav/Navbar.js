@@ -15,15 +15,19 @@ import {
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useColorMode } from "@/contexts/ThemeContext";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import LanguageSelector from "../LanguageSelector";
 import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import LightModeIcon from "@mui/icons-material/LightMode";
+import DarkModeIcon from "@mui/icons-material/DarkMode";
 
 export default function Navbar() {
   const { user, logout } = useAuth();
   const { globalConfig } = useGlobalConfig();
+  const { mode, toggleColorMode } = useColorMode();
   const [anchorEl, setAnchorEl] = useState(null);
   const [confirmLogout, setConfirmLogout] = useState(false);
   const { t } = useI18nLayout({
@@ -34,6 +38,8 @@ export default function Navbar() {
       confirmLogoutMsg: "Are you sure you want to log out of your account?",
       loggedInAs: "Logged in as",
       viewProfile: "View profile",
+      switchToDark: "Switch to dark mode",
+      switchToLight: "Switch to light mode",
     },
     ar: {
       signIn: "تسجيل الدخول",
@@ -42,6 +48,8 @@ export default function Navbar() {
       confirmLogoutMsg: "هل أنت متأكد أنك تريد تسجيل الخروج؟",
       loggedInAs: "تم تسجيل الدخول كـ",
       viewProfile: "عرض الملف الشخصي",
+      switchToDark: "التبديل إلى الوضع الداكن",
+      switchToLight: "التبديل إلى الوضع الفاتح",
     },
   });
 
@@ -59,20 +67,22 @@ export default function Navbar() {
     height: 30,
     backgroundColor: "background.paper",
     transition: "box-shadow 0.3s ease",
-    boxShadow: `
-    2px 2px 6px rgba(0, 0, 0, 0.15),
-    -2px -2px 6px rgba(255, 255, 255, 0.5),
-    inset 2px 2px 5px rgba(0, 0, 0, 0.2),
-    inset -2px -2px 5px rgba(255, 255, 255, 0.7)
-  `,
+    boxShadow: (theme) =>
+      theme.palette.mode === "dark"
+        ? theme.palette.custom.shadow.neumorphicDark1
+        : theme.palette.custom.shadow.neumorphicLight1,
     "&:hover": {
-      boxShadow: `
-      3px 3px 8px rgba(0, 0, 0, 0.2),
-      -3px -3px 8px rgba(255, 255, 255, 0.6),
-      inset 2px 2px 5px rgba(0, 0, 0, 0.2),
-      inset -2px -2px 5px rgba(255, 255, 255, 0.7)
-    `,
+      boxShadow: (theme) => theme.palette.navbar.avatarButtonHoverShadow,
     },
+  };
+
+  // Slightly larger than the other toolbar icon buttons — the profile
+  // avatar sits at the end of the toolbar and should read as the primary
+  // action, not blend in with the theme toggle.
+  const profileButtonStyle = {
+    ...avatarButtonStyle,
+    width: 40,
+    height: 40,
   };
 
   const handleOpen = (event) => setAnchorEl(event.currentTarget);
@@ -92,9 +102,10 @@ export default function Navbar() {
       <AppBar
         position="fixed"
         sx={{
-          backgroundColor: "rgba(255, 255, 255, 0.3)",
+          backgroundColor: (theme) => theme.palette.navbar.appBarBg,
           boxShadow: "none",
-          borderBottom: "1px solid rgba(0, 0, 0, 0.1)",
+          borderBottom: (theme) =>
+            `1px solid ${theme.palette.divider}`,
           height: "64px",
         }}
       >
@@ -109,10 +120,23 @@ export default function Navbar() {
           </Link>
 
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            {/* Dark/Light Mode Toggle */}
+            <Tooltip title={mode === "dark" ? t.switchToLight : t.switchToDark}>
+              <IconButton onClick={toggleColorMode} sx={avatarButtonStyle}>
+                {mode === "dark" ? (
+                  <LightModeIcon fontSize="small" sx={{ color: "secondary.main" }} />
+                ) : (
+                  <DarkModeIcon fontSize="small" sx={{ color: "primary.main" }} />
+                )}
+              </IconButton>
+            </Tooltip>
+
+            <LanguageSelector />
+
             {!user ? (
               <Link href="/auth/login">
                 <Tooltip title={t.signIn}>
-                  <IconButton color="primary" sx={avatarButtonStyle}>
+                  <IconButton color="primary" sx={profileButtonStyle}>
                     <ICONS.login fontSize="small" />
                   </IconButton>
                 </Tooltip>
@@ -120,15 +144,15 @@ export default function Navbar() {
             ) : (
               <>
                 <Tooltip title={t.viewProfile}>
-                  <IconButton onClick={handleOpen} sx={avatarButtonStyle}>
+                  <IconButton onClick={handleOpen} sx={profileButtonStyle}>
                     <Avatar
                       sx={{
-                        bgcolor: "white",
-                        width: 30,
-                        height: 30,
-                        color: "#033649",
+                        bgcolor: "background.paper",
+                        width: 38,
+                        height: 38,
+                        color: "text.primary",
                         fontWeight: "bold",
-                        fontSize: "0.8rem",
+                        fontSize: "0.9rem",
                       }}
                     >
                       {user.name
@@ -151,10 +175,7 @@ export default function Navbar() {
                         mt: 1,
                         borderRadius: 2,
                         minWidth: 200,
-                        boxShadow: `
-            2px 2px 6px rgba(0, 0, 0, 0.1),
-            -2px -2px 6px rgba(255, 255, 255, 0.4)
-          `,
+                        boxShadow: (theme) => theme.palette.navbar.menuPaperShadow,
                       },
                     },
                   }}
@@ -184,8 +205,6 @@ export default function Navbar() {
                 </Menu>
               </>
             )}
-
-            <LanguageSelector />
           </Box>
         </Toolbar>
       </AppBar>

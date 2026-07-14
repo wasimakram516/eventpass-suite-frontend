@@ -5,6 +5,7 @@ import DashboardCard from "@/components/cards/DashboardCard";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import ICONS from "@/utils/iconUtil";
+import { NEUTRAL_ACCENT } from "@/styles/theme";
 
 const translations = {
   en: {
@@ -69,7 +70,7 @@ export default function SurveyGuruDashboard() {
             description={t.formDesc}
             buttonLabel={t.formBtn}
             icon={<ICONS.description />}
-            color="#1976d2"
+            color={NEUTRAL_ACCENT}
             route="/cms/modules/surveyguru/surveys/forms"
           />
           <DashboardCard
@@ -77,7 +78,7 @@ export default function SurveyGuruDashboard() {
             description={t.recDesc}
             buttonLabel={t.recBtn}
             icon={<ICONS.group />}
-            color="#8e24aa"
+            color={NEUTRAL_ACCENT}
             route="/cms/modules/surveyguru/surveys/recipients"
           />
       </Box>

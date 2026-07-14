@@ -21,6 +21,7 @@ import VolumeUpIcon from "@mui/icons-material/VolumeUp";
 import VolumeOffIcon from "@mui/icons-material/VolumeOff";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import ICONS from "@/utils/iconUtil";
+import { alpha } from "@mui/material/styles";
 import {
   getPublicPollBySlug,
   voteOnPoll,
@@ -251,7 +252,13 @@ export default function PollVotingPage() {
       {background?.fileType === "video" && (
         <IconButton
           onClick={() => { setIsMuted(!isMuted); if (videoRef.current) videoRef.current.muted = !isMuted; }}
-          sx={{ position: "fixed", bottom: 20, right: 20, bgcolor: "rgba(0,0,0,0.5)", color: "white", zIndex: 1000, "&:hover": { bgcolor: "rgba(0,0,0,0.7)" } }}
+          sx={(theme) => ({
+            position: "fixed", bottom: 20, right: 20,
+            bgcolor: theme.palette.overlay.scrim,
+            color: theme.palette.common.white,
+            zIndex: 1000,
+            "&:hover": { bgcolor: theme.palette.overlay.scrimHover },
+          })}
         >
           {isMuted ? <VolumeOffIcon /> : <VolumeUpIcon />}
         </IconButton>
@@ -378,17 +385,21 @@ export default function PollVotingPage() {
         >
           <Card
             elevation={0}
-            sx={{
+            sx={(theme) => ({
               width: "100%",
               maxWidth: "95%",
               borderRadius: 4,
               overflow: "hidden",
-              background: "rgba(255, 255, 255, 0.65)",
               backdropFilter: "blur(14px)",
               WebkitBackdropFilter: "blur(14px)",
-              border: "1px solid rgba(255, 255, 255, 0.35)",
-              boxShadow: "0 8px 32px rgba(0, 0, 0, 0.15)",
-            }}
+              background: theme.palette.mode === "dark"
+                ? theme.palette.votecast.cardBgDark
+                : theme.palette.votecast.cardBgLight,
+              border: `1px solid ${theme.palette.mode === "dark"
+                ? theme.palette.votecast.cardBorderDark
+                : theme.palette.votecast.cardBorderLight}`,
+              boxShadow: theme.palette.shadow.card,
+            })}
           >
             <CardContent sx={{ p: 4, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
               <Typography
@@ -415,8 +426,7 @@ export default function PollVotingPage() {
                         key={val}
                         onClick={() => handleVote(null, val)}
                         sx={{
-                          color: highlightedOption >= val ? "primary.main" : "grey.400",
-                          transition: "transform 0.2s",
+                          color: highlightedOption >= val ? "primary.main" : "text.disabled", transition: "transform 0.2s",
                           "&:hover": { transform: "scale(1.2)" },
                           display: "flex",
                           flexDirection: "column",
@@ -462,8 +472,7 @@ export default function PollVotingPage() {
                           justifyContent: "center",
                           cursor: "pointer",
                           border: "2px solid",
-                          borderColor: highlightedOption === val ? "primary.main" : "grey.300",
-                          bgcolor: highlightedOption === val ? "primary.main" : "transparent",
+                          borderColor: highlightedOption === val ? "primary.main" : "divider", bgcolor: highlightedOption === val ? "primary.main" : "transparent",
                           color: highlightedOption === val ? "white" : "text.primary",
                           fontWeight: "bold",
                           transition: "all 0.2s",
@@ -491,7 +500,7 @@ export default function PollVotingPage() {
                     sx={{
                       "& .MuiOutlinedInput-root": {
                         borderRadius: 3,
-                        bgcolor: "white",
+                        bgcolor: "background.paper",
                       },
                     }}
                   />
@@ -500,7 +509,7 @@ export default function PollVotingPage() {
                     size="large"
                     disabled={!textResponse.trim() || submitting}
                     onClick={() => handleVote(null, null, textResponse)}
-                    sx={{ borderRadius: 3, py: 1.5 }}
+                    sx={{ py: 1.5 }}
                   >
                     {submitting ? <CircularProgress size={24} color="inherit" /> : (currentLang === "ar" ? "إرسال" : "Submit")}
                   </Button>
@@ -528,13 +537,15 @@ export default function PollVotingPage() {
                           onClick={() => !submitting && toggleMultiOption(idx)}
                           sx={{
                             p: 2, border: "2px solid",
-                            borderColor: isSelected ? "primary.main" : "grey.300",
+                            borderColor: isSelected ? "primary.main" : "divider",
                             borderRadius: 3,
                             cursor: submitting ? "default" : "pointer",
                             display: "flex", alignItems: "center", justifyContent: "space-between",
                             transition: "all 0.3s",
-                            bgcolor: isSelected ? "rgba(25,118,210,0.06)" : "transparent",
-                            "&:hover": !submitting ? { bgcolor: isSelected ? "rgba(25,118,210,0.1)" : "rgba(0,0,0,0.05)" } : {},
+                            bgcolor: (theme) => isSelected ? alpha(theme.palette.primary.main, 0.06) : "transparent",
+                            "&:hover": !submitting
+                              ? { bgcolor: (theme) => isSelected ? alpha(theme.palette.primary.main, 0.1) : theme.palette.action.hover }
+                              : {},
                           }}
                         >
                           <Stack
@@ -572,7 +583,7 @@ export default function PollVotingPage() {
                     disabled={submitting || selectedOptions.length === 0}
                     onClick={handleMultiSubmit}
                     startIcon={submitting ? <CircularProgress size={18} color="inherit" thickness={5} /> : <ICONS.check />}
-                    sx={{ mt: 1, py: 1.5, fontWeight: "bold", fontSize: "1rem", borderRadius: 3 }}
+                    sx={{ mt: 1, py: 1.5, fontWeight: "bold", fontSize: "1rem" }}
                   >
                     {submitting ? t.processing : t.submit}
                   </Button>
@@ -594,12 +605,12 @@ export default function PollVotingPage() {
                         }}
                         sx={{
                           p: 2, border: "2px solid",
-                          borderColor: isSelected ? "primary.main" : "grey.300",
+                          borderColor: isSelected ? "primary.main" : "divider",
                           borderRadius: 3,
                           cursor: canSelect ? "pointer" : "default",
                           display: "flex", alignItems: "center", justifyContent: "space-between",
                           transition: "all 0.3s",
-                          "&:hover": canSelect ? { bgcolor: "rgba(0,0,0,0.05)" } : {},
+                          "&:hover": canSelect ? { bgcolor: "action.hover" } : {},
                         }}
                       >
                         <Stack
@@ -641,7 +652,7 @@ export default function PollVotingPage() {
         open={finished}
         onClose={handleRestart}
         slotProps={{
-          paper: { sx: { borderRadius: 4, p: 4, maxWidth: { xs: "90%", sm: 420 }, width: { xs: "90%", sm: "auto" }, mx: "auto", textAlign: "center", boxShadow: 6 } }
+          paper: { sx: { p: 4, maxWidth: { xs: "90%", sm: 420 }, width: { xs: "90%", sm: "auto" }, mx: "auto", textAlign: "center", boxShadow: 6 } }
         }}
       >
         <DialogTitle sx={{ fontSize: "2rem", fontWeight: "bold", color: "primary.main", textAlign: "center", pb: 1 }}>

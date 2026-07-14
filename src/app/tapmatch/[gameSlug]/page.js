@@ -37,13 +37,13 @@ export default function TapMatchHomePage() {
   useEffect(() => {
     const fetchTranslation = async () => {
       if (!game?.title) return;
-       try {
-          const result = await translateTexts([game.title], language);
-          setTranslatedTitle(result[0] || game.title);
-        } catch (error) {
-          console.error("Translation failed:", error);
-          setTranslatedTitle(game.title);
-        }
+      try {
+        const result = await translateTexts([game.title], language);
+        setTranslatedTitle(result[0] || game.title);
+      } catch (error) {
+        console.error("Translation failed:", error);
+        setTranslatedTitle(game.title);
+      }
     };
     fetchTranslation();
   }, [game?.title, language]);
@@ -57,7 +57,7 @@ export default function TapMatchHomePage() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: "#f0f0f0",
+          bgcolor: "background.default",
         }}
       >
         <CircularProgress />
@@ -85,28 +85,23 @@ export default function TapMatchHomePage() {
         <Paper
           elevation={8}
           dir={dir}
-          sx={{
+          sx={(theme) => ({
             textAlign: "center",
             p: { xs: 3, sm: 4 },
             maxWidth: 800,
             width: "100%",
             backdropFilter: "blur(16px)",
-            backgroundColor: "rgba(10,10,20,0.85)",
+            backgroundColor: theme.palette.quiznest.glassBg,
             borderRadius: 6,
-            border: "1px solid rgba(255,255,255,0.08)",
-            boxShadow: "0 8px 40px rgba(0,0,0,0.6)",
-          }}
+            border: `1px solid ${theme.palette.quiznest.glassBorder}`,
+            boxShadow: theme.palette.quiznest.dialogShadow,
+          })}
         >
           <Typography
             variant="h3"
             gutterBottom
-            sx={{
-              fontWeight: 800,
-              mb: 3,
-              color: "#fff",
-              textTransform: "capitalize",
-              wordBreak: "break-word"
-            }}>
+            sx={(theme) => ({ fontWeight: 800, mb: 3, color: theme.palette.common.white, textTransform: "capitalize", wordBreak: "break-word" })}
+          >
             {translatedTitle || game.title}
           </Typography>
 
@@ -115,14 +110,12 @@ export default function TapMatchHomePage() {
             size="large"
             fullWidth
             onClick={handleStart}
-            sx={{
-              py: 1.2,
-              borderRadius: 999,
-              fontWeight: 800,
-              bgcolor: "#00e5ff",
-              color: "#000",
-              "&:hover": { filter: "brightness(1.15)", bgcolor: "#00e5ff" },
-            }}
+            sx={(theme) => ({
+              py: 1.2, borderRadius: 999, fontWeight: 800,
+              bgcolor: theme.palette.quiznest.accent,
+              color: theme.palette.common.black,
+              "&:hover": { filter: "brightness(1.15)", bgcolor: theme.palette.quiznest.accent },
+            })}
           >
             {t.startButton}
           </Button>

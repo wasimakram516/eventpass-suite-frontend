@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Box, Container, Typography, Button, CircularProgress,
-  IconButton, Divider, Stack, Tooltip, Chip,
+  IconButton, Divider, Stack, Tooltip, Chip,useTheme
 } from "@mui/material";
 
 import GameFormModal from "@/components/modals/GameFormModal";
@@ -92,7 +92,7 @@ export default function CrossZeroGamesPage() {
   const searchParams = useSearchParams();
   const { user, selectedBusiness, setSelectedBusiness } = useAuth();
   const { t, dir, language } = useI18nLayout(translations);
-
+  const theme = useTheme();
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -232,14 +232,14 @@ export default function CrossZeroGamesPage() {
                         sx={{
                           bgcolor: g.mode === "pvp"
                             ? g.pvpScreenMode === "single"
-                              ? "rgba(0,200,150,0.1)"
-                              : "rgba(123,47,247,0.1)"
-                            : "rgba(0,180,216,0.1)",
+                               ? theme.palette.crosszero.modeChipPvpSingle.bg
+                             : theme.palette.crosszero.modeChipPvpDual.bg
+                           : theme.palette.crosszero.modeChipSolo.bg,
                           color: g.mode === "pvp"
                             ? g.pvpScreenMode === "single"
-                              ? "#00a878"
-                              : "#7b2ff7"
-                            : "#0077b6",
+                               ? theme.palette.crosszero.modeChipPvpSingle.color
+                            : theme.palette.crosszero.modeChipPvpDual.color
+                          : theme.palette.crosszero.modeChipSolo.color,
                           fontWeight: 700, fontSize: "0.7rem",
                         }}
                       />
@@ -266,7 +266,7 @@ export default function CrossZeroGamesPage() {
                             }}>
                             {t[`${imgKey}Label`]}
                           </Typography>
-                          <Box component="img" src={g[imgKey]} alt={imgKey} sx={{ width: "100%", height: { xs: 70, sm: 80 }, objectFit: "cover", borderRadius: 1, border: "1px solid #eee" }} />
+                          <Box component="img" src={g[imgKey]} alt={imgKey} sx={{ width: "100%", height: { xs: 70, sm: 80 }, objectFit: "cover", borderRadius: 1, border: theme.palette.crosszero.gameCardBorder }} />
                         </Box>
                       ))}
                     </Box>

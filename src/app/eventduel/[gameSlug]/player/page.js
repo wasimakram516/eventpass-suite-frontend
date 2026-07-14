@@ -241,7 +241,7 @@ export default function PlayerSelection() {
             sx={{
               width: "100%",
               maxWidth: 600,
-              backgroundColor: "rgba(255,255,255,0.75)",
+            backgroundColor: (theme) => theme.palette.mode === "dark" ? "rgba(26,34,38,0.75)" : "rgba(255,255,255,0.75)",
               borderRadius: 3,
               p: 3,
               mt: 5,
@@ -282,9 +282,9 @@ export default function PlayerSelection() {
                           minHeight: 150,
                           cursor: "pointer",
                           transition: "0.3s",
-                          background: isSelected
-                            ? "linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)"
-                            : "white",
+                        background: (theme) => isSelected
+  ? "linear-gradient(135deg, #1976d2 0%, #42a5f5 100%)"
+  : theme.palette.background.paper,
                           color: isSelected ? "white" : "text.primary",
                           "&:hover": {
                             transform: "translateY(-1px)",

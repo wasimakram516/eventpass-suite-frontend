@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState, useMemo } from "react";
 import { useParams } from "next/navigation";
-import { Box, CircularProgress, Typography } from "@mui/material";
+import { Box, CircularProgress, Typography, useTheme } from "@mui/material";
 import { getQuestionsBySession, getPublicSessionBySlug } from "@/services/stageq/stageqSessionService";
 import useStageQSocket from "@/hooks/modules/stageq/useStageQSocket";
 import Footer from "@/components/nav/Footer";
@@ -26,6 +26,7 @@ const translations = {
 };
 
 export default function SessionLiveDisplay() {
+  const theme = useTheme();
   const { slug } = useParams();
   const { globalConfig } = useGlobalConfig();
   const { t, dir, align, language } = useI18nLayout(translations);
@@ -213,8 +214,8 @@ export default function SessionLiveDisplay() {
                         position: "absolute",
                         top: -12,
                         right: -12,
-                        background: "#d32f2f",
-                        color: "white",
+                        background: theme.palette.stageq.voteBadgeBg,
+                        color: theme.palette.common.white,
                         fontWeight: "bold",
                         borderRadius: "50%",
                         width: 36,
@@ -222,7 +223,7 @@ export default function SessionLiveDisplay() {
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        boxShadow: "0 0 8px rgba(0,0,0,0.3)",
+                        boxShadow: theme.palette.stageq.voteBadgeShadow,
                         fontSize: "1rem",
                       }}
                     >

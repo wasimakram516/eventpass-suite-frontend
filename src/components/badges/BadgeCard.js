@@ -1,22 +1,22 @@
 import React from "react";
-import { Box, Divider, Paper, Typography, alpha } from "@mui/material";
+import { Box, Divider, Paper, Typography, alpha, useTheme } from "@mui/material";
 import { QRCodeCanvas } from "qrcode.react";
 import { formatDate } from "@/utils/dateUtils";
 
 export const MODULE_EVENTREG = "eventreg";
 export const MODULE_CHECKIN = "checkin";
 
-export const BADGE_COLORS = {
-  primary: "#128199",
-  primaryDark: "#0a5e71",
-  primaryDeep: "#083b4f",
-  accent: "#ffcc00",
-  ink: "#073642",
-  inkSoft: "#58707a",
-  line: "#dbe8ec",
-  surface: "#f7fbfc",
-  white: "#ffffff",
-};
+export const getBadgeColors = (theme) => ({
+  primary: theme.palette.badge.primary,
+  primaryDark: theme.palette.badge.primaryDark,
+  primaryDeep: theme.palette.badge.primaryDeep,
+  accent: theme.palette.secondary.main,
+  ink: theme.palette.badge.ink,
+  inkSoft: theme.palette.badge.inkSoft,
+  line: theme.palette.badge.line,
+  surface: theme.palette.badge.surface,
+  white: theme.palette.common.white,
+});
 
 export function pickFullName(registration) {
   if (registration?.fullName) return registration.fullName;
@@ -76,8 +76,8 @@ export function getEventDateLabel(event, locale = "en-GB") {
   if (!event?.startDate) return "";
 
   return `${formatDate(event.startDate, locale)}${event.endDate && event.endDate !== event.startDate
-      ? ` - ${formatDate(event.endDate, locale)}`
-      : ""
+    ? ` - ${formatDate(event.endDate, locale)}`
+    : ""
     }`;
 }
 
@@ -101,7 +101,9 @@ export function getBadgeDetailRows(event, registration, t, locale = "en-GB") {
 export default function BadgeCard({ event, module, registration, qrRef, t, compact = false, locale = "en-GB" }) {
   const attendeeName = pickFullName(registration) || (t?.noName || "Attendee");
   const detailRows = getBadgeDetailRows(event, registration, t, locale);
-
+  const theme = useTheme();
+  const isDark = theme.palette.mode === "dark";
+  const BADGE_COLORS = getBadgeColors(theme);
   return (
     <Paper
       elevation={0}
@@ -111,8 +113,13 @@ export default function BadgeCard({ event, module, registration, qrRef, t, compa
         mx: "auto",
         overflow: "hidden",
         borderRadius: "30px",
-        background: `linear-gradient(180deg, ${BADGE_COLORS.white} 0%, ${BADGE_COLORS.surface} 100%)`,
-        border: `1px solid ${alpha(BADGE_COLORS.primary, 0.14)}`,
+        background: isDark
+          ? theme.palette.background.paper
+          : `linear-gradient(180deg, ${BADGE_COLORS.white} 0%, ${BADGE_COLORS.surface} 100%)`,
+        border: `1px solid ${isDark
+          ? theme.palette.divider
+          : alpha(BADGE_COLORS.primary, 0.14)
+          }`,
         boxShadow: `0 28px 70px ${alpha(BADGE_COLORS.primaryDeep, 0.24)}`,
       }}
     >
@@ -175,7 +182,7 @@ export default function BadgeCard({ event, module, registration, qrRef, t, compa
         <Typography
           variant="caption"
           sx={{
-            color: BADGE_COLORS.inkSoft,
+            color: theme.palette.text.secondary,
             textTransform: "uppercase",
             letterSpacing: 1.4,
           }}
@@ -183,16 +190,16 @@ export default function BadgeCard({ event, module, registration, qrRef, t, compa
           {t?.attendee || "Attendee"}
         </Typography>
 
-            <Typography
-              variant="h4"
-              sx={{
-                fontWeight: 800,
-                color: BADGE_COLORS.ink,
-                lineHeight: 1.05,
-                mt: 0.5,
-                mb: compact ? 1 : 2.25,
-                wordBreak: "break-word"
-              }}>
+        <Typography
+          variant="h4"
+          sx={{
+            fontWeight: 800,
+            color: theme.palette.text.primary,
+            lineHeight: 1.05,
+            mt: 0.5,
+            mb: compact ? 1 : 2.25,
+            wordBreak: "break-word"
+          }}>
           {attendeeName}
         </Typography>
 
@@ -201,8 +208,13 @@ export default function BadgeCard({ event, module, registration, qrRef, t, compa
             mb: compact ? 1 : 2.25,
             borderRadius: 4,
             overflow: "hidden",
-            bgcolor: alpha(BADGE_COLORS.white, 0.88),
-            border: `1px solid ${alpha(BADGE_COLORS.primary, 0.12)}`,
+            bgcolor: isDark
+              ? theme.palette.background.paper
+              : alpha(BADGE_COLORS.white, 0.88),
+            border: `1px solid ${isDark
+              ? theme.palette.divider
+              : alpha(BADGE_COLORS.primary, 0.12)
+              }`,
           }}
         >
           {detailRows.map((row, index) => (
@@ -213,7 +225,10 @@ export default function BadgeCard({ event, module, registration, qrRef, t, compa
                 py: 1.5,
                 borderBottom:
                   index < detailRows.length - 1
-                    ? `1px solid ${alpha(BADGE_COLORS.primary, 0.1)}`
+                    ? `1px solid ${isDark
+                      ? theme.palette.divider
+                      : alpha(BADGE_COLORS.primary, 0.1)
+                    }`
                     : "none",
                 bgcolor:
                   index % 2 === 0
@@ -225,7 +240,7 @@ export default function BadgeCard({ event, module, registration, qrRef, t, compa
               <Typography
                 variant="caption"
                 sx={{
-                  color: BADGE_COLORS.inkSoft,
+                  color: theme.palette.text.secondary,
                   textTransform: "uppercase",
                   letterSpacing: 1.1,
                 }}
@@ -236,7 +251,7 @@ export default function BadgeCard({ event, module, registration, qrRef, t, compa
                 variant="body1"
                 sx={{
                   fontWeight: 700,
-                  color: BADGE_COLORS.ink,
+                  color: theme.palette.text.primary,
                   lineHeight: 1.45,
                   mt: 0.45,
                   wordBreak: "break-word"
@@ -251,8 +266,13 @@ export default function BadgeCard({ event, module, registration, qrRef, t, compa
           sx={{
             p: compact ? 1.25 : 2,
             borderRadius: "26px",
-            background: alpha(BADGE_COLORS.white, 0.92),
-            border: `1px solid ${alpha(BADGE_COLORS.primary, 0.12)}`,
+            background: isDark
+              ? theme.palette.background.paper
+              : alpha(BADGE_COLORS.white, 0.92),
+            border: `1px solid ${isDark
+              ? theme.palette.divider
+              : alpha(BADGE_COLORS.primary, 0.12)
+              }`,
             boxShadow: `0 14px 30px ${alpha(BADGE_COLORS.primaryDeep, 0.08)}`,
             mb: compact ? 0.75 : 1.5,
           }}
@@ -269,8 +289,8 @@ export default function BadgeCard({ event, module, registration, qrRef, t, compa
               sx={{
                 p: 1.5,
                 borderRadius: 3,
-                bgcolor: BADGE_COLORS.white,
-                border: "1px solid #e4eef1",
+                bgcolor: theme.palette.background.paper,
+                border: `1px solid ${theme.palette.divider}`,
               }}
             >
               <QRCodeCanvas
@@ -298,7 +318,9 @@ export default function BadgeCard({ event, module, registration, qrRef, t, compa
                 variant="caption"
                 sx={{
                   fontWeight: 700,
-                  color: BADGE_COLORS.primaryDark,
+                  color: isDark
+                    ? theme.palette.primary.light
+                    : BADGE_COLORS.primaryDark,
                   letterSpacing: 0.8,
                   wordBreak: "break-all"
                 }}>
@@ -314,7 +336,7 @@ export default function BadgeCard({ event, module, registration, qrRef, t, compa
           sx={{
             display: "block",
             textAlign: "center",
-            color: BADGE_COLORS.inkSoft
+            color: theme.palette.text.secondary
           }}>
           {t?.poweredBy || "Powered by"} eventPass
         </Typography>

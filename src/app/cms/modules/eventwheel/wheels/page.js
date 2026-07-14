@@ -778,155 +778,155 @@ const Dashboard = () => {
             {filteredSpinWheels.map((wheel) => {
               const typeConfig = typeMap[wheel.type] || {};
               return (
-                  <Card
-                    key={wheel._id}
-                    elevation={3}
+                <Card
+                  key={wheel._id}
+                  elevation={3}
+                  sx={{
+                    position: "relative",
+                    width: { xs: "100%", sm: 340 },
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    borderRadius: 2,
+                    boxShadow: (theme) => theme.palette.shadow.wheelCard,
+                    transition: "transform 0.2s, box-shadow 0.2s",
+                  }}
+                >
+                  <Chip
+                    label={typeConfig.chipText}
+                    color={typeConfig.color}
+                    size="small"
                     sx={{
-                      position: "relative",
-                      width: { xs: "100%", sm: 340 },
-                      display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "space-between",
-                      borderRadius: 2,
-                      boxShadow: "0 2px 10px rgba(0,0,0,0.06)",
-                      transition: "transform 0.2s, box-shadow 0.2s",
+                      position: "absolute",
+                      top: 12,
+                      right: 12,
+                      fontWeight: 500,
+                      fontSize: "0.75rem",
+                      textTransform: "capitalize",
+                      zIndex: 2,
                     }}
-                  >
-                    <Chip
-                      label={typeConfig.chipText}
-                      color={typeConfig.color}
-                      size="small"
+                  />
+
+                  <CardContent sx={{ flexGrow: 1, pt: 4 }}>
+                    <Typography variant="h6" gutterBottom sx={{
+                      fontWeight: "bold"
+                    }}>
+                      {wheel.title}
+                    </Typography>
+
+                    <Typography
+                      variant="body2"
                       sx={{
-                        position: "absolute",
-                        top: 12,
-                        right: 12,
-                        fontWeight: 500,
-                        fontSize: "0.75rem",
-                        textTransform: "capitalize",
-                        zIndex: 2,
-                      }}
-                    />
-
-                    <CardContent sx={{ flexGrow: 1, pt: 4 }}>
-                      <Typography variant="h6" gutterBottom sx={{
-                        fontWeight: "bold"
+                        color: "text.secondary",
+                        mb: 2,
+                        wordBreak: "break-word"
                       }}>
-                        {wheel.title}
-                      </Typography>
+                      <strong>{t.slug}:</strong> {wheel.slug}
+                    </Typography>
 
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          color: "text.secondary",
-                          mb: 2,
-                          wordBreak: "break-word"
-                        }}>
-                        <strong>{t.slug}:</strong> {wheel.slug}
-                      </Typography>
-
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          color: "text.secondary",
-                          mb: 2,
-                          wordBreak: "break-word"
-                        }}>
-                        <strong>{t.business}:</strong>{" "}
-                        {wheel.business?.name || t.noBusiness}
-                      </Typography>
-
-                      <Typography
-                        variant="body2"
-                        sx={{
-                          color: "text.secondary",
-                          mb: 2
-                        }}>
-                        <strong>{t.participants}:</strong> {toArabicDigits(wheel.participantCount || 0, language)}
-                      </Typography>
-
-                      <Typography variant="caption" sx={{
-                        color: "text.secondary"
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: "text.secondary",
+                        mb: 2,
+                        wordBreak: "break-word"
                       }}>
-                        {t.created}:{" "}
-                        {(() => {
-                          try {
-                            if (!wheel.createdAt) return t.notAvailable;
-                            const testDate = new Date(wheel.createdAt);
-                            if (isNaN(testDate.getTime())) return t.invalidDate;
-                            return formatDateTimeWithLocale(
-                              wheel.createdAt,
-                              language === "ar" ? "ar-SA" : "en-GB"
-                            );
-                          } catch (error) {
-                            console.error(
-                              "Error formatting date:",
-                              error,
-                              wheel.createdAt
-                            );
-                            return t.invalidDate;
+                      <strong>{t.business}:</strong>{" "}
+                      {wheel.business?.name || t.noBusiness}
+                    </Typography>
+
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: "text.secondary",
+                        mb: 2
+                      }}>
+                      <strong>{t.participants}:</strong> {toArabicDigits(wheel.participantCount || 0, language)}
+                    </Typography>
+
+                    <Typography variant="caption" sx={{
+                      color: "text.secondary"
+                    }}>
+                      {t.created}:{" "}
+                      {(() => {
+                        try {
+                          if (!wheel.createdAt) return t.notAvailable;
+                          const testDate = new Date(wheel.createdAt);
+                          if (isNaN(testDate.getTime())) return t.invalidDate;
+                          return formatDateTimeWithLocale(
+                            wheel.createdAt,
+                            language === "ar" ? "ar-SA" : "en-GB"
+                          );
+                        } catch (error) {
+                          console.error(
+                            "Error formatting date:",
+                            error,
+                            wheel.createdAt
+                          );
+                          return t.invalidDate;
+                        }
+                      })()}
+                    </Typography>
+                  </CardContent>
+                  <RecordMetadata
+                    createdByName={wheel.createdBy}
+                    updatedByName={wheel.updatedBy}
+                    createdAt={wheel.createdAt}
+                    updatedAt={wheel.updatedAt}
+                    locale={language === "ar" ? "ar-SA" : "en-GB"}
+                  />
+                  <Divider />
+                  <CardActions
+                    sx={{ justifyContent: "space-between", p: 1.5 }}
+                  >
+                    <Box>
+                      <Tooltip title={t.shareSpinWheel}>
+                        <IconButton
+                          size="small"
+                          onClick={() =>
+                            handleOpenShareModal(wheel.slug, wheel.type)
                           }
-                        })()}
-                      </Typography>
-                    </CardContent>
-                    <RecordMetadata
-                      createdByName={wheel.createdBy}
-                      updatedByName={wheel.updatedBy}
-                      createdAt={wheel.createdAt}
-                      updatedAt={wheel.updatedAt}
-                      locale={language === "ar" ? "ar-SA" : "en-GB"}
-                    />
-                    <Divider />
-                    <CardActions
-                      sx={{ justifyContent: "space-between", p: 1.5 }}
-                    >
-                      <Box>
-                        <Tooltip title={t.shareSpinWheel}>
+                          aria-label="Share"
+                        >
+                          <ICONS.share fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      {["admin", "onspot", "synced"].includes(wheel.type) && (
+                        <Tooltip title={t.manageParticipants}>
                           <IconButton
                             size="small"
                             onClick={() =>
-                              handleOpenShareModal(wheel.slug, wheel.type)
+                              handleNavigateToParticipants(wheel.slug)
                             }
-                            aria-label="Share"
+                            aria-label="Manage Participants"
                           >
-                            <ICONS.share fontSize="small" />
+                            <ICONS.people fontSize="small" color="primary" />
                           </IconButton>
                         </Tooltip>
-                        {["admin", "onspot", "synced"].includes(wheel.type) && (
-                          <Tooltip title={t.manageParticipants}>
-                            <IconButton
-                              size="small"
-                              onClick={() =>
-                                handleNavigateToParticipants(wheel.slug)
-                              }
-                              aria-label="Manage Participants"
-                            >
-                              <ICONS.people fontSize="small" color="primary" />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                      </Box>
-                      <Box>
-                        <Tooltip title={t.editSpinWheel}>
-                          <IconButton
-                            size="small"
-                            onClick={() => handleOpenModal(wheel)}
-                            aria-label={t.edit}
-                          >
-                            <ICONS.edit fontSize="small" color="primary" />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title={t.deleteSpinWheel}>
-                          <IconButton
-                            size="small"
-                            onClick={() => handleDeleteEvent(wheel)}
-                            aria-label={t.delete}
-                          >
-                            <ICONS.delete fontSize="small" color="error" />
-                          </IconButton>
-                        </Tooltip>
-                      </Box>
-                    </CardActions>
-                  </Card>
+                      )}
+                    </Box>
+                    <Box>
+                      <Tooltip title={t.editSpinWheel}>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleOpenModal(wheel)}
+                          aria-label={t.edit}
+                        >
+                          <ICONS.edit fontSize="small" color="primary" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title={t.deleteSpinWheel}>
+                        <IconButton
+                          size="small"
+                          onClick={() => handleDeleteEvent(wheel)}
+                          aria-label={t.delete}
+                        >
+                          <ICONS.delete fontSize="small" color="error" />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
+                  </CardActions>
+                </Card>
               );
             })}
           </Box>
@@ -1079,7 +1079,7 @@ const Dashboard = () => {
                         top: -18,
                         right: 6,
                         bgcolor: "error.main",
-                        color: "#fff",
+                        color: "common.white",
                         "&:hover": { bgcolor: "error.dark" },
                       }}
                     >
@@ -1163,7 +1163,7 @@ const Dashboard = () => {
                         top: -18,
                         right: 6,
                         bgcolor: "error.main",
-                        color: "#fff",
+                        color: "common.white",
                         "&:hover": { bgcolor: "error.dark" },
                       }}
                     >

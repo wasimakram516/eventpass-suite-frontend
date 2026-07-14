@@ -6,6 +6,7 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import BusinessIcon from "@mui/icons-material/Business";
 import { useAuth } from "@/contexts/AuthContext";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { NEUTRAL_ACCENT } from "@/styles/theme";
 
 const translations = {
   en: {
@@ -19,7 +20,7 @@ const translations = {
         route: "/cms/settings/configs",
         icon: <SettingsIcon />,
         buttonLabel: "Open Settings",
-        color: "#ef6c00",
+        color: NEUTRAL_ACCENT,
         roles: ["admin", "superadmin"],
       },
       {
@@ -28,7 +29,7 @@ const translations = {
         route: "/cms/settings/business",
         icon: <BusinessIcon />,
         buttonLabel: "Edit Business",
-        color: "#0277bd",
+        color: NEUTRAL_ACCENT,
         roles: ["admin", "superadmin", "business"],
       },
     ],
@@ -43,7 +44,7 @@ const translations = {
         route: "/cms/settings/configs",
         icon: <SettingsIcon />,
         buttonLabel: "فتح الإعدادات",
-        color: "#ef6c00",
+        color: NEUTRAL_ACCENT,
         roles: ["admin", "superadmin"],
       },
       {
@@ -52,7 +53,7 @@ const translations = {
         route: "/cms/settings/business",
         icon: <BusinessIcon />,
         buttonLabel: "تعديل التفاصيل",
-        color: "#0277bd",
+        color: NEUTRAL_ACCENT,
         roles: ["admin", "superadmin", "business"],
       },
     ],

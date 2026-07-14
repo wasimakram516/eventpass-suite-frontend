@@ -21,11 +21,13 @@ import {
     CircularProgress,
     IconButton,
     Alert,
+
     ListSubheader,
     InputAdornment,
 } from "@mui/material";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
+import resolveTicketDependentFields from "@/utils/resolveTicketDependentFields";
 import CountryCodeSelector from "@/components/CountryCodeSelector";
 import CountryPicker from "@/components/CountryPicker";
 import SearchableSelect from "@/components/SearchableSelect";
@@ -36,6 +38,7 @@ import { uploadSingleFile } from "@/utils/mediaUpload";
 import { initiatePayment } from "@/services/eventreg/paymentService";
 import { computePaymentBreakdown, formatOmr } from "@/utils/paymentBreakdown";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
 
 const translations = {
     en: {
@@ -55,6 +58,20 @@ const translations = {
         proceedToPayment: "Proceed to Payment",
         saveChanges: "Save Changes",
         registrationFailed: "Registration failed.",
+        duplicatePaidTitle: "Already registered",
+        duplicatePaidMessage: "This attendee already has a confirmed registration for this event with the same email or phone number. We've re-sent their ticket and confirmation email.",
+        duplicatePendingTitle: "Payment outstanding",
+        duplicatePendingMessage: "This attendee already has a registration in progress for this event, and payment hasn't been completed yet. We've re-sent the secure payment link to their email.",
+        duplicatePendingExpiry: "This link will expire on:",
+        duplicatePendingAutoDelete: "If payment isn't completed before then, this registration will be automatically removed and can be created again.",
+        resumePaymentNow: "Open Payment Link",
+        duplicateSupportLine: "If you think this is a mistake, please contact our support team at",
+        conflictGenericTitle: "Registration already exists",
+        conflictGenericMessage: "A registration already exists for this event. Please contact our support team for help.",
+        conflictEmailOnlyTitle: "Email already registered",
+        conflictEmailOnlyMessage: "A registration with this email already exists, but with a different phone number. If this isn't the same attendee, please contact support, or use a different email address (make sure it's active, since the registration will be sent there).",
+        conflictPhoneOnlyTitle: "Phone number already registered",
+        conflictPhoneOnlyMessage: "A registration with this phone number already exists, but with a different email address. If this isn't the same attendee, please contact support, or use a different phone number (make sure it's active, since the attendee may be contacted about their registration).",
     },
     ar: {
         createTitle: "إنشاء تسجيل",
@@ -73,6 +90,20 @@ const translations = {
         proceedToPayment: "المتابعة للدفع",
         saveChanges: "حفظ التغييرات",
         registrationFailed: "فشل التسجيل.",
+        duplicatePaidTitle: "مسجَّل بالفعل",
+        duplicatePaidMessage: "يوجد بالفعل تسجيل مؤكد لهذا الحاضر لهذه الفعالية بنفس البريد الإلكتروني أو رقم الهاتف. لقد أعدنا إرسال التذكرة وتأكيد التسجيل إلى بريده الإلكتروني.",
+        duplicatePendingTitle: "الدفع لم يكتمل بعد",
+        duplicatePendingMessage: "يوجد بالفعل تسجيل قيد الإجراء لهذا الحاضر لهذه الفعالية، ولم تكتمل عملية الدفع بعد. لقد أعدنا إرسال رابط الدفع الآمن إلى بريده الإلكتروني.",
+        duplicatePendingExpiry: "ستنتهي صلاحية الرابط في:",
+        duplicatePendingAutoDelete: "إذا لم تكتمل عملية الدفع قبل ذلك، ستتم إزالة هذا التسجيل تلقائيًا، ويمكن إنشاؤه مرة أخرى.",
+        resumePaymentNow: "فتح رابط الدفع",
+        duplicateSupportLine: "إذا كنت تعتقد أن هذا خطأ، يرجى التواصل مع فريق الدعم لدينا على",
+        conflictGenericTitle: "التسجيل موجود بالفعل",
+        conflictGenericMessage: "يوجد بالفعل تسجيل لهذه الفعالية. يرجى التواصل مع فريق الدعم للمساعدة.",
+        conflictEmailOnlyTitle: "البريد الإلكتروني مسجل بالفعل",
+        conflictEmailOnlyMessage: "يوجد تسجيل بهذا البريد الإلكتروني ولكن برقم هاتف مختلف. إذا لم يكن هذا نفس الحاضر، يرجى التواصل مع الدعم، أو استخدام عنوان بريد إلكتروني آخر (تأكد من أنه نشط، حيث سيُرسل التسجيل إليه).",
+        conflictPhoneOnlyTitle: "رقم الهاتف مسجل بالفعل",
+        conflictPhoneOnlyMessage: "يوجد تسجيل بهذا الرقم ولكن ببريد إلكتروني مختلف. إذا لم يكن هذا نفس الحاضر، يرجى التواصل مع الدعم، أو استخدام رقم هاتف آخر (تأكد من أنه نشط، حيث قد يتم التواصل مع الحاضر بخصوص تسجيله).",
     },
 };
 
@@ -104,6 +135,15 @@ export default function RegistrationModal({
     const [paymentPayload, setPaymentPayload] = useState(null);
     const [payProcessing, setPayProcessing] = useState(false);
     const [paymentError, setPaymentError] = useState("");
+    // Set when initiatePayment reports an existing registration (paid or
+    // still-pending) for the same email/phone, instead of creating a new one.
+    const [duplicateNotice, setDuplicateNotice] = useState(null);
+    // Set when initiatePayment blocks the attempt because only one identity
+    // field (email XOR phone) matched a different registration — likely a
+    // different attendee, not the same one retrying, so nothing is
+    // created/resumed/resent.
+    const [conflictReason, setConflictReason] = useState(null);
+    const { globalConfig } = useGlobalConfig();
 
     const isPaidEvent = !!event?.isPaid;
     const ticketTypes = event?.ticketTypes || [];
@@ -120,15 +160,15 @@ export default function RegistrationModal({
             return [];
         }
         const selectedTt = ticketTypes.find(tt => tt._id === selectedTicketTypeId);
-        if (!selectedTt?.name) return [];
-        const mappedFieldNames = event.globalDependentFieldMappings[selectedTt.name] || [];
-        return event.globalDependentFields
-            .filter(f => mappedFieldNames.includes(f.inputName) && f.inputName?.trim() && f.visible !== false)
+        if (!selectedTt) return [];
+        return resolveTicketDependentFields(event, selectedTt)
+            .filter(f => f.inputName?.trim() && f.visible !== false)
             .map(f => ({
                 inputName: f.inputName,
                 inputType: f.inputType || "text",
                 required: f.required || false,
                 values: f.values || [],
+                previousNames: f.previousNames || [],
             }));
     }, [selectedTicketTypeId, event, ticketTypes]);
 
@@ -149,7 +189,7 @@ export default function RegistrationModal({
         ],
         []
     );
-    
+
 
 
     const fieldsToRender = useMemo(
@@ -289,7 +329,16 @@ export default function RegistrationModal({
             const next = { ...prev };
             ticketDependentFields.forEach(f => {
                 if (!(f.inputName in next) || next[f.inputName] === "") {
-                    next[f.inputName] = cf[f.inputName] ?? "";
+                    // The stored answer may still be under a name this field used to
+                    // have (renamed since submission) — try the current name first,
+                    // then any previous name, so an already-uploaded file still shows
+                    // up here instead of appearing to require a fresh upload.
+                    const candidates = [f.inputName, ...(f.previousNames || [])];
+                    const matchedKey = candidates.find((name) => {
+                        const v = cf[name];
+                        return v !== undefined && v !== null && String(v).trim() !== "";
+                    });
+                    next[f.inputName] = matchedKey !== undefined ? cf[matchedKey] : "";
                 }
             });
             return next;
@@ -534,15 +583,68 @@ export default function RegistrationModal({
     const handleConfirmPayment = async () => {
         if (!paymentPayload) return;
         setPayProcessing(true);
+        setPaymentError("");
+        setDuplicateNotice(null);
+        setConflictReason(null);
         const result = await initiatePayment(paymentPayload);
 
         setPayProcessing(false);
+
+        const duplicateStatus = result?.duplicateStatus || result?.data?.duplicateStatus;
+        if (!result?.error && duplicateStatus) {
+            // An existing registration already covers this email/phone — show a
+            // clear info message (the backend already re-sent the relevant email)
+            // instead of treating it like a failed attempt.
+            setDuplicateNotice({
+                status: duplicateStatus,
+                expiresAt: result?.expiresAt || result?.data?.expiresAt || null,
+                sessionUrl: result?.sessionUrl || result?.data?.sessionUrl || null,
+            });
+            return;
+        }
 
         if (result?.created) {
             setShowPaymentSummary(false);
             onPaymentInitiated?.();
         } else {
-            setPaymentError(result?.message || t.registrationFailed);
+            const conflict = result?.conflictReason || result?.data?.conflictReason;
+            if (conflict) {
+                setConflictReason(conflict);
+            } else {
+                setPaymentError(result?.message || t.registrationFailed);
+            }
+        }
+    };
+
+    const conflictCopy = (reason) => {
+        if (reason === "EMAIL_ONLY_PENDING") {
+            return { title: t.conflictEmailOnlyTitle, message: t.conflictEmailOnlyMessage };
+        }
+        if (reason === "PHONE_ONLY_PENDING") {
+            return { title: t.conflictPhoneOnlyTitle, message: t.conflictPhoneOnlyMessage };
+        }
+        // EMAIL_ONLY_PAID, PHONE_ONLY_PAID, SPLIT all share the same generic
+        // wording — the backend never reveals which field mismatched once a
+        // paid registration is involved.
+        return { title: t.conflictGenericTitle, message: t.conflictGenericMessage };
+    };
+
+    // Formats a payment-link expiry using the staff member's own browser
+    // timezone (display only — no server-side timezone detection needed).
+    const formatExpiryLocal = (expiresAt) => {
+        if (!expiresAt) return "";
+        try {
+            return new Intl.DateTimeFormat(dir === "rtl" ? "ar-EG" : "en-US", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+                timeZoneName: "shortOffset",
+            }).format(new Date(expiresAt));
+        } catch {
+            return new Date(expiresAt).toLocaleString();
         }
     };
 
@@ -556,7 +658,8 @@ export default function RegistrationModal({
             return (
                 <Box key={f.inputName} sx={{ mb: 2 }}>
                     <Typography variant="body2" sx={{ mb: 1 }}>
-                        {f.inputName}{required && <span style={{ color: "red" }}> *</span>}
+                        {f.inputName}
+                        {required && <Typography component="span" sx={{ color: "error.main" }}> *</Typography>}
                     </Typography>
                     <RadioGroup row name={f.inputName} value={value} onChange={(e) => handleChange(f.inputName, e.target.value)}>
                         {f.values?.map((opt) => (
@@ -788,27 +891,30 @@ export default function RegistrationModal({
             {/* ── Payment summary dialog (mirrors public registration page) ── */}
             <Dialog
                 open={showPaymentSummary}
-                onClose={() => !payProcessing && setShowPaymentSummary(false)}
+                onClose={() => { if (!payProcessing) { setShowPaymentSummary(false); setDuplicateNotice(null); setConflictReason(null); } }}
                 maxWidth="xs"
                 fullWidth
                 slotProps={{
                     paper: {
-                        sx: { borderRadius: 4, overflow: "hidden", boxShadow: "0 24px 60px rgba(0,0,0,0.22)" },
+                        sx: {
+                            overflow: "hidden",
+                            boxShadow: (theme) => theme.palette.shadow.dialogLarge,
+                        },
                     },
                 }}
             >
                 {/* Header band */}
                 <Box sx={{
-                    background: "linear-gradient(135deg, #0f3d57 0%, #14708a 100%)",
-                    color: "#fff", px: 3, pt: 3, pb: 2.5,
+                    background: (theme) => theme.palette.gradients.infoCard,
+                    color: "primary.contrastText", px: 3, pt: 3, pb: 2.5,
                     display: "flex", alignItems: "center", gap: 1.5,
                 }}>
                     <Box sx={{
                         width: 44, height: 44, borderRadius: 2, flexShrink: 0,
-                        backgroundColor: "rgba(255,255,255,0.16)",
+                        backgroundColor: (theme) => theme.palette.overlay.glassLight,
                         display: "flex", alignItems: "center", justifyContent: "center",
                     }}>
-                        <ICONS.list sx={{ fontSize: 24, color: "#fff" }} />
+                        <ICONS.list sx={{ fontSize: 24, color: "primary.contrastText" }} />
                     </Box>
                     <Box sx={{ minWidth: 0 }}>
                         <Typography variant="h6" fontWeight={800} sx={{ lineHeight: 1.2 }}>
@@ -873,8 +979,9 @@ export default function RegistrationModal({
                             {/* Total */}
                             <Box sx={{
                                 mt: 1.5, px: 2, py: 1.5, borderRadius: 2.5,
-                                backgroundColor: "rgba(20,112,138,0.08)",
-                                border: "1px solid rgba(20,112,138,0.2)",
+                                backgroundColor: (theme) => theme.palette.overlay.infoCard,
+                                border: "1px solid",
+                                border: (theme) => `1px solid ${theme.palette.overlay.infoCardBorder}`,
                                 display: "flex", justifyContent: "space-between", alignItems: "center",
                             }}>
                                 <Box>
@@ -898,31 +1005,134 @@ export default function RegistrationModal({
                         </Box>
                     )}
 
-                    {paymentError && <Alert severity="error" sx={{ mt: 2 }}>{paymentError}</Alert>}
+                    {conflictReason ? (
+                        <Box
+                            sx={{
+                                backgroundColor: (theme) => theme.palette.error.light + "22",
+                                borderLeft: dir === "rtl" ? "none" : "4px solid",
+                                borderRight: dir === "rtl" ? "4px solid" : "none",
+                                borderColor: (theme) => theme.palette.error.main,
+                                borderRadius: 1,
+                                p: 2,
+                                mt: 2,
+                                textAlign: dir === "rtl" ? "right" : "left",
+                            }}
+                        >
+                            <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 0.5 }}>
+                                {conflictCopy(conflictReason).title}
+                            </Typography>
+                            <Typography variant="body2">
+                                {conflictCopy(conflictReason).message}
+                            </Typography>
+                            {(globalConfig?.support?.email || globalConfig?.contact?.email) && (
+                                <Typography variant="body2" sx={{ mt: 1.5 }}>
+                                    {t.duplicateSupportLine}{" "}
+                                    <a
+                                        href={`mailto:${globalConfig?.support?.email || globalConfig?.contact?.email}`}
+                                        style={{ color: "inherit", fontWeight: 600 }}
+                                    >
+                                        {globalConfig?.support?.email || globalConfig?.contact?.email}
+                                    </a>
+                                </Typography>
+                            )}
+                        </Box>
+                    ) : duplicateNotice ? (
+                        <Box
+                            sx={{
+                                backgroundColor: (theme) => theme.palette.infoBox.background,
+                                borderLeft: dir === "rtl" ? "none" : "4px solid",
+                                borderRight: dir === "rtl" ? "4px solid" : "none",
+                                borderColor: (theme) => theme.palette.infoBox.border,
+                                borderRadius: 1,
+                                p: 2,
+                                mt: 2,
+                                textAlign: dir === "rtl" ? "right" : "left",
+                            }}
+                        >
+                            <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 0.5 }}>
+                                {duplicateNotice.status === "paid" ? t.duplicatePaidTitle : t.duplicatePendingTitle}
+                            </Typography>
+                            <Typography variant="body2">
+                                {duplicateNotice.status === "paid" ? t.duplicatePaidMessage : t.duplicatePendingMessage}
+                            </Typography>
+                            {duplicateNotice.status === "pending" && duplicateNotice.expiresAt && (
+                                <Typography variant="body2" sx={{ mt: 1 }}>
+                                    <strong>{t.duplicatePendingExpiry}</strong> {formatExpiryLocal(duplicateNotice.expiresAt)}
+                                </Typography>
+                            )}
+                            {duplicateNotice.status === "pending" && (
+                                <Typography variant="body2" sx={{ mt: 1 }}>
+                                    {t.duplicatePendingAutoDelete}
+                                </Typography>
+                            )}
+                            {(globalConfig?.support?.email || globalConfig?.contact?.email) && (
+                                <Typography variant="body2" sx={{ mt: 1.5 }}>
+                                    {t.duplicateSupportLine}{" "}
+                                    <a
+                                        href={`mailto:${globalConfig?.support?.email || globalConfig?.contact?.email}`}
+                                        style={{ color: "inherit", fontWeight: 600 }}
+                                    >
+                                        {globalConfig?.support?.email || globalConfig?.contact?.email}
+                                    </a>
+                                </Typography>
+                            )}
+                        </Box>
+                    ) : (
+                        paymentError && <Alert severity="error" sx={{ mt: 2 }}>{paymentError}</Alert>
+                    )}
                 </DialogContent>
 
                 <DialogActions sx={{ px: 3, pb: 3, pt: 0, gap: 1 }}>
-                    <Button
-                        onClick={() => setShowPaymentSummary(false)}
-                        disabled={payProcessing}
-                        sx={{ textTransform: "none", fontWeight: 700, borderRadius: 2.5, color: "text.secondary" }}
-                    >
-                        {t.cancel}
-                    </Button>
-                    <Button
-                        variant="contained"
-                        onClick={handleConfirmPayment}
-                        disabled={payProcessing || !paymentBreakdown}
-                        startIcon={!payProcessing ? <ICONS.payment /> : undefined}
-                        sx={{
-                            textTransform: "none", fontWeight: 700, borderRadius: 2.5,
-                            px: 3, py: 1.1,
-                            boxShadow: "0 8px 20px rgba(20,112,138,0.3)",
-                            ...getStartIconSpacing("ltr"),
-                        }}
-                    >
-                        {payProcessing ? <CircularProgress size={22} color="inherit" /> : "Confirm & Pay"}
-                    </Button>
+                    {conflictReason || duplicateNotice ? (
+                        <>
+                            <Button
+                                onClick={() => { setShowPaymentSummary(false); setDuplicateNotice(null); setConflictReason(null); }}
+                                sx={{ textTransform: "none", fontWeight: 700, color: "text.secondary" }}
+                            >
+                                {t.cancel}
+                            </Button>
+                            {duplicateNotice?.status === "pending" && duplicateNotice?.sessionUrl && (
+                                <Button
+                                    variant="contained"
+                                    onClick={() => window.open(duplicateNotice.sessionUrl, "_blank", "noopener,noreferrer")}
+                                    startIcon={<ICONS.payment />}
+                                    sx={{
+                                        textTransform: "none", fontWeight: 700,
+                                        px: 3, py: 1.1,
+                                        boxShadow: (theme) => theme.palette.shadow.infoCard,
+                                        ...getStartIconSpacing("ltr"),
+                                    }}
+                                >
+                                    {t.resumePaymentNow}
+                                </Button>
+                            )}
+                        </>
+                    ) : (
+                        <>
+                            <Button
+                                onClick={() => setShowPaymentSummary(false)}
+                                disabled={payProcessing}
+                                sx={{ textTransform: "none", fontWeight: 700, color: "text.secondary" }}
+                            >
+                                {t.cancel}
+                            </Button>
+                            <Button
+                                variant="contained"
+                                onClick={handleConfirmPayment}
+                                disabled={payProcessing || !paymentBreakdown}
+                                startIcon={!payProcessing ? <ICONS.payment /> : undefined}
+                                sx={{
+                                    textTransform: "none", fontWeight: 700,
+                                    px: 3, py: 1.1,
+
+                                    boxShadow: (theme) => theme.palette.shadow.infoCard1,
+                                    ...getStartIconSpacing("ltr"),
+                                }}
+                            >
+                                {payProcessing ? <CircularProgress size={22} color="inherit" /> : "Confirm & Pay"}
+                            </Button>
+                        </>
+                    )}
                 </DialogActions>
             </Dialog>
         </>
@@ -946,7 +1156,7 @@ function ModalFileUploadField({ field, fd, fieldLabel, errorMsg, required, curre
                         <ICONS.upload sx={{ fontSize: 28, mx: 0.5, color: "text.secondary" }} />
                     )}
                     <Typography variant="body2" sx={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{fd.file.name}</Typography>
-                    <IconButton onClick={onFileRemove} size="small" sx={{ bgcolor: "error.main", color: "#fff", "&:hover": { bgcolor: "error.dark" }, width: 28, height: 28, flexShrink: 0 }}>
+                    <IconButton onClick={onFileRemove} size="small" sx={{ bgcolor: "error.main", color: "error.contrastText", "&:hover": { bgcolor: "error.dark" }, width: 28, height: 28, flexShrink: 0 }}>
                         <ICONS.delete sx={{ fontSize: 16 }} />
                     </IconButton>
                 </Box>

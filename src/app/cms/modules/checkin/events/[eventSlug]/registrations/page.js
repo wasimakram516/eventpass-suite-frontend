@@ -21,6 +21,7 @@ import {
   CardActions,
   IconButton,
   Tooltip,
+  useTheme,
 } from "@mui/material";
 import ArabicPagination from "@/components/ArabicPagination";
 import { DateTimePicker } from "@mui/x-date-pickers";
@@ -297,6 +298,7 @@ export default function ViewRegistrations() {
   const searchParams = useSearchParams();
   const { t, dir, language } = useI18nLayout(translations);
   const { showMessage } = useMessage();
+  const theme = useTheme();
 
   const dynamicFieldsRef = useRef([]);
   const lastLoadedRef = useRef(null);
@@ -959,7 +961,10 @@ export default function ViewRegistrations() {
         qrCodeDataUrl = await QRCode.toDataURL(registration.token, {
           width: 300,
           margin: 1,
-          color: { dark: "#000000", light: "#ffffff" },
+          color: {
+            dark: theme.palette.qr.foreground,
+            light: theme.palette.qr.background,
+          },
         });
       } catch {
         // ignore minor QR errors
@@ -1089,7 +1094,7 @@ export default function ViewRegistrations() {
           fontWeight: 500,
         }}
       >
-        <ICONS.whatsapp fontSize="small" sx={{ color: "#25D366" }} />
+        <ICONS.whatsapp fontSize="small" sx={{ color: theme.palette.registrations.whatsappGreen }} />
         {reg.whatsappSent && (
           <ICONS.checkCircle fontSize="small" sx={{ color: "success.main" }} />
         )}
@@ -1612,19 +1617,26 @@ export default function ViewRegistrations() {
                     height: "100%",
                     borderRadius: 4,
                     overflow: "hidden",
-                    boxShadow: "0 6px 18px rgba(0,0,0,0.12)",
+                    border: "1px solid",
+                    borderColor: "divider",
+                    boxShadow: (theme) =>
+                      theme.palette.registrations.cardShadow,
                     display: "flex",
                     flexDirection: "column",
                     transition: "all 0.3s ease",
                     "&:hover": {
                       transform: "translateY(-2px)",
-                      boxShadow: "0 12px 28px rgba(0,0,0,0.25)",
+                      boxShadow: (theme) =>
+                        theme.palette.registrations.cardHoverShadow,
                     },
                   }}
                 >
                   <Box
                     sx={{
-                      background: "linear-gradient(to right, #f5f5f5, #fafafa)",
+                      bgcolor: (theme) =>
+                        theme.palette.mode === "dark"
+                          ? theme.palette.registrations.cardHeaderBgDark
+                          : "background.default",
                       borderBottom: "1px solid",
                       borderColor: "divider",
                       p: 2,
@@ -1646,7 +1658,7 @@ export default function ViewRegistrations() {
                             display: "flex",
                             alignItems: "center",
                             gap: 1,
-                            bgcolor: "rgba(0,0,0,0.04)",
+                            bgcolor: "action.hover",
                             px: 1.2,
                             py: 0.5,
                             borderRadius: 1.5,
@@ -1845,8 +1857,9 @@ export default function ViewRegistrations() {
                   <CardActions
                     sx={{
                       justifyContent: "space-between",
-                      borderTop: "1px solid rgba(0,0,0,0.08)",
-                      bgcolor: "rgba(0,0,0,0.02)",
+                      borderTop: "1px solid",
+                      borderColor: "divider",
+                      bgcolor: "action.hover",
                       py: 1,
                       flexDirection: "column",
                       gap: 1,

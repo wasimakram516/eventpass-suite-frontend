@@ -27,7 +27,7 @@ export default function EmptyBusinessState() {
         color: "text.secondary",
       }}
     >
-      <ICONS.business sx={{ fontSize: 72, mb: 2, color: "#ccc" }} />
+      <ICONS.business sx={{ fontSize: 72, mb: 2, color: "text.disabled" }} />
       <Typography variant="h6">{t.selectBusiness}</Typography>
     </Box>
   );

@@ -305,7 +305,7 @@ export default function TapMatchResultsPage() {
                     sx={{
                       p: 3,
                       borderRadius: 3,
-                      background: "#fff",
+                      bgcolor: "background.paper",
                       boxShadow: 2,
                       transition: "0.3s",
                       "&:hover": { boxShadow: 4 },

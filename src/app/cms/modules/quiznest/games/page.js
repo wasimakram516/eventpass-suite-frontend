@@ -332,193 +332,194 @@ export default function GamesPage() {
         ) : (
           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, justifyContent: "center" }}>
             {filteredGames.map((g) => (
-                <AppCard
-                  key={g._id}
-                  sx={{
-                    p: 2,
-                    width: { xs: "100%", sm: 340 },
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <Box>
-                    <Typography variant="h6" gutterBottom sx={{
-                      fontWeight: "bold"
-                    }}>
-                      {g.title}
-                    </Typography>
+              <AppCard
+                key={g._id}
+                sx={{
+                  p: 2,
+                  width: { xs: "100%", sm: 340 },
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Box>
+                  <Typography variant="h6" gutterBottom sx={{
+                    fontWeight: "bold"
+                  }}>
+                    {g.title}
+                  </Typography>
 
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        color: "text.secondary",
-                        wordBreak: "break-word"
-                      }}>
-                      <strong>{t.slugLabel}</strong> {g.slug}
-                    </Typography>
-                    <Typography variant="body2" sx={{
-                      color: "text.secondary"
+                  <Typography
+                    variant="body2"
+                    sx={{
+                      color: "text.secondary",
+                      wordBreak: "break-word"
                     }}>
-                      <strong>{t.optionCountLabel}</strong> {toArabicDigits(g.choicesCount, language)}
-                    </Typography>
-                    <Typography variant="body2" sx={{
-                      color: "text.secondary"
-                    }}>
-                      <strong>{t.countdownTimerLabel}</strong>{" "}
-                      {toArabicDigits(g.countdownTimer, language)} sec
-                    </Typography>
-                    <Typography variant="body2" sx={{
-                      color: "text.secondary"
-                    }}>
-                      <strong>{t.quizTimeLabel}</strong> {toArabicDigits(g.gameSessionTimer, language)}{" "}
-                      sec
-                    </Typography>
-
-                    <Box
-                      sx={{
-                        display: "grid",
-                        gridTemplateColumns: "repeat(3, 1fr)",
-                        gap: 1,
-                        mt: 2,
-                      }}
-                    >
-                      {["coverImage", "nameImage", "backgroundImage"].map(
-                        (imgKey) => (
-                          <Box key={imgKey}>
-                            <Typography
-                              variant="caption"
-                              sx={{
-                                color: "text.secondary",
-                                display: "block",
-                                mb: 0.5,
-                                fontSize: "0.7rem"
-                              }}>
-                              {t[`${imgKey}Label`]}
-                            </Typography>
-                            <Box
-                              component="img"
-                              src={g[imgKey]}
-                              alt={imgKey}
-                              sx={{
-                                width: "100%",
-                                height: { xs: 70, sm: 80 },
-                                objectFit: "cover",
-                                borderRadius: 1,
-                                border: "1px solid #eee",
-                              }}
-                            />
-                          </Box>
-                        )
-                      )}
-                    </Box>
-                  </Box>
+                    <strong>{t.slugLabel}</strong> {g.slug}
+                  </Typography>
+                  <Typography variant="body2" sx={{
+                    color: "text.secondary"
+                  }}>
+                    <strong>{t.optionCountLabel}</strong> {toArabicDigits(g.choicesCount, language)}
+                  </Typography>
+                  <Typography variant="body2" sx={{
+                    color: "text.secondary"
+                  }}>
+                    <strong>{t.countdownTimerLabel}</strong>{" "}
+                    {toArabicDigits(g.countdownTimer, language)} sec
+                  </Typography>
+                  <Typography variant="body2" sx={{
+                    color: "text.secondary"
+                  }}>
+                    <strong>{t.quizTimeLabel}</strong> {toArabicDigits(g.gameSessionTimer, language)}{" "}
+                    sec
+                  </Typography>
 
                   <Box
                     sx={{
-                      mt: 2,
-                      display: "flex",
-                      flexDirection: "column",
+                      display: "grid",
+                      gridTemplateColumns: "repeat(3, 1fr)",
                       gap: 1,
-                      width: "100%",
+                      mt: 2,
                     }}
                   >
-                    {/* Row for the two main buttons */}
-                    <Box
-                      sx={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        flexWrap: "wrap",
-                        gap: 2,
-                      }}
-                    >
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        color="primary"
-                        startIcon={<ICONS.quiz />}
-                        onClick={() =>
-                          router.push(
-                            `/cms/modules/quiznest/games/${g.slug}/questions`
-                          )
-                        }
-                        sx={{
-                          ...getStartIconSpacing(dir),
-                          width: { xs: "100%", sm: "auto" },
-                        }}
-                      >
-                        {t.questionsButton}
-                      </Button>
-
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        color="primary"
-                        startIcon={<ICONS.leaderboard />}
-                        onClick={() =>
-                          router.push(
-                            `/cms/modules/quiznest/games/${g.slug}/results`
-                          )
-                        }
-                        sx={{
-                          ...getStartIconSpacing(dir),
-                          width: { xs: "100%", sm: "auto" },
-                        }}
-                      >
-                        {t.resultsButton}
-                      </Button>
-                    </Box>
-
-                    <RecordMetadata
-                      createdByName={g.createdBy}
-                      updatedByName={g.updatedBy}
-                      createdAt={g.createdAt}
-                      updatedAt={g.updatedAt}
-                      locale={language === "ar" ? "ar-SA" : "en-GB"}
-                    />
-
-                    <Box
-                      sx={{
-                        display: "flex",
-                        justifyContent: "flex-end",
-                        gap: 1,
-                      }}
-                    >
-                      <Tooltip title={t.editTooltip}>
-                        <IconButton
-                          color="info"
-                          onClick={() => handleOpenEdit(g)}
-                        >
-                          <ICONS.edit fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-
-                      <Tooltip title={t.deleteTooltip}>
-                        <IconButton
-                          color="error"
-                          onClick={() => {
-                            setGameToDelete(g);
-                            setConfirmOpen(true);
-                          }}
-                        >
-                          <ICONS.delete fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-
-                      <Tooltip title={t.shareTooltip}>
-                        <IconButton
-                          color="primary"
-                          onClick={() => {
-                            setGameToShare(g);
-                            setShareModalOpen(true);
-                          }}
-                        >
-                          <ICONS.share fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    </Box>
+                    {["coverImage", "nameImage", "backgroundImage"].map(
+                      (imgKey) => (
+                        <Box key={imgKey}>
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: "text.secondary",
+                              display: "block",
+                              mb: 0.5,
+                              fontSize: "0.7rem"
+                            }}>
+                            {t[`${imgKey}Label`]}
+                          </Typography>
+                          <Box
+                            component="img"
+                            src={g[imgKey]}
+                            alt={imgKey}
+                            sx={{
+                              width: "100%",
+                              height: { xs: 70, sm: 80 },
+                              objectFit: "cover",
+                              borderRadius: 1,
+                              border: "1px solid",
+                              borderColor: "divider",
+                            }}
+                          />
+                        </Box>
+                      )
+                    )}
                   </Box>
-                </AppCard>
+                </Box>
+
+                <Box
+                  sx={{
+                    mt: 2,
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 1,
+                    width: "100%",
+                  }}
+                >
+                  {/* Row for the two main buttons */}
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      flexWrap: "wrap",
+                      gap: 2,
+                    }}
+                  >
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      color="primary"
+                      startIcon={<ICONS.quiz />}
+                      onClick={() =>
+                        router.push(
+                          `/cms/modules/quiznest/games/${g.slug}/questions`
+                        )
+                      }
+                      sx={{
+                        ...getStartIconSpacing(dir),
+                        width: { xs: "100%", sm: "auto" },
+                      }}
+                    >
+                      {t.questionsButton}
+                    </Button>
+
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      color="primary"
+                      startIcon={<ICONS.leaderboard />}
+                      onClick={() =>
+                        router.push(
+                          `/cms/modules/quiznest/games/${g.slug}/results`
+                        )
+                      }
+                      sx={{
+                        ...getStartIconSpacing(dir),
+                        width: { xs: "100%", sm: "auto" },
+                      }}
+                    >
+                      {t.resultsButton}
+                    </Button>
+                  </Box>
+
+                  <RecordMetadata
+                    createdByName={g.createdBy}
+                    updatedByName={g.updatedBy}
+                    createdAt={g.createdAt}
+                    updatedAt={g.updatedAt}
+                    locale={language === "ar" ? "ar-SA" : "en-GB"}
+                  />
+
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "flex-end",
+                      gap: 1,
+                    }}
+                  >
+                    <Tooltip title={t.editTooltip}>
+                      <IconButton
+                        color="info"
+                        onClick={() => handleOpenEdit(g)}
+                      >
+                        <ICONS.edit fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+
+                    <Tooltip title={t.deleteTooltip}>
+                      <IconButton
+                        color="error"
+                        onClick={() => {
+                          setGameToDelete(g);
+                          setConfirmOpen(true);
+                        }}
+                      >
+                        <ICONS.delete fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+
+                    <Tooltip title={t.shareTooltip}>
+                      <IconButton
+                        color="primary"
+                        onClick={() => {
+                          setGameToShare(g);
+                          setShareModalOpen(true);
+                        }}
+                      >
+                        <ICONS.share fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </Box>
+                </Box>
+              </AppCard>
             ))}
           </Box>
         )}

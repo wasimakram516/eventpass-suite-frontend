@@ -8,6 +8,7 @@ import {
   LinearProgress,
   IconButton,
   Card,
+  useTheme,
 } from "@mui/material";
 import LoadingState from "@/components/LoadingState";
 import { useParams, useRouter } from "next/navigation";
@@ -21,6 +22,7 @@ import LanguageSelector from "@/components/LanguageSelector";
 import { toArabicDigits } from "@/utils/arabicDigits";
 
 export default function DigiPassDashboard() {
+  const theme = useTheme();
   const { eventSlug } = useParams();
   const router = useRouter();
   const { language } = useLanguage();
@@ -153,8 +155,8 @@ export default function DigiPassDashboard() {
   const userName = registration?.fullName
     ? registration.fullName
     : registration?.customFields
-    ? pickFullName(registration.customFields)
-    : null;
+      ? pickFullName(registration.customFields)
+      : null;
   const token = registration?.token || "";
   const completedCounterRaw = `${tasksCompleted}/${maxTasksPerUser ?? 0}`;
   const completedCounter = isArabic
@@ -211,7 +213,7 @@ export default function DigiPassDashboard() {
           top: { xs: 10, sm: 20 },
           left: { xs: 10, sm: 20 },
           backgroundColor: "primary.main",
-          color: "white",
+          color: "primary.contrastText",
           zIndex: 9999,
         }}
       >
@@ -243,7 +245,7 @@ export default function DigiPassDashboard() {
           sx={{
             flexShrink: 0,
             textAlign: "center",
-            backgroundColor: "rgba(0,0,0,0.35)",
+            backgroundColor: (theme) => theme.palette.overlay.darkGlass,
             borderRadius: "12px",
             px: { xs: "4vw", sm: "3vw", md: "2vw" },
             py: { xs: "1vw", sm: "0.8vw" },
@@ -253,11 +255,11 @@ export default function DigiPassDashboard() {
         >
           <Typography
             sx={{
-              color: "white",
+              color: (theme) => theme.palette.common.white,
               fontSize: "clamp(0.85rem, 4vw, 1.5rem)",
               fontWeight: 500,
               lineHeight: 1.2,
-              textShadow: "0 1px 6px rgba(0,0,0,0.7)",
+              textShadow: (theme) => theme.palette.shadow.textGlow,
             }}
           >
             {t.welcome}
@@ -265,11 +267,11 @@ export default function DigiPassDashboard() {
           {userName && (
             <Typography
               sx={{
-                color: "white",
+                color: (theme) => theme.palette.common.white,
                 fontSize: "clamp(1rem, 5.5vw, 2rem)",
                 fontWeight: "bold",
                 lineHeight: 1.2,
-                textShadow: "0 1px 6px rgba(0,0,0,0.7)",
+                textShadow: theme.palette.shadow.textGlow,
               }}
             >
               {userName}
@@ -341,14 +343,14 @@ export default function DigiPassDashboard() {
           right: 0,
           zIndex: 2,
           borderRadius: "24px 24px 0 0",
-          backgroundColor: "white",
+          backgroundColor: "background.paper",
           px: { xs: 2, sm: 3 },
           pt: { xs: 1, sm: 1.5 },
           pb: { xs: 22, sm: 26 },
           display: "flex",
           flexDirection: "column",
           gap: { xs: 1.5, sm: 2 },
-          boxShadow: "0 -4px 24px rgba(0,0,0,0.18)",
+          boxShadow: (theme) => theme.palette.shadow.bottomSheet,
         }}
       >
         {/* QR Code */}
@@ -365,8 +367,8 @@ export default function DigiPassDashboard() {
               <QRCodeCanvas
                 value={token}
                 size={220}
-                bgColor="#ffffff"
-                fgColor="#000000"
+                bgColor={theme.palette.qr.background}
+                fgColor={theme.palette.qr.foreground}
                 marginSize={4}
               />
             </Box>
@@ -400,7 +402,7 @@ export default function DigiPassDashboard() {
               alignItems: "center",
               justifyContent: "center",
               p: 0.75,
-              backgroundColor: "white",
+              backgroundColor: "background.paper",
               flexShrink: 0,
             }}
           >
@@ -417,8 +419,8 @@ export default function DigiPassDashboard() {
             {maxTasksPerUser !== null &&
               (tasksCompleted >= maxTasksPerUser ? (
                 <Box sx={{ display: "flex", alignItems: "center", gap: 0.75 }}>
-                  <ICONS.checkCircle sx={{ fontSize: "clamp(1rem, 4vw, 1.4rem)", color: "#2E7D32" }} />
-                  <Typography sx={{ fontSize: "clamp(0.8rem, 3.5vw, 1rem)", fontWeight: 700, color: "#FF6B35" }}>
+                  <ICONS.checkCircle sx={{ fontSize: "clamp(1rem, 4vw, 1.4rem)", color: theme.palette.success.main }} />
+                  <Typography sx={{ fontSize: "clamp(0.8rem, 3.5vw, 1rem)", fontWeight: 700, color: theme.palette.crosszero.completed }}>
                     <Box component="span" sx={{ display: "inline-flex", alignItems: "center", gap: 0.5 }}>
                       <Box component="span" sx={{ unicodeBidi: "isolate" }}>{t.completed}</Box>
                       <Box component="span" dir={isArabic ? "rtl" : "ltr"} sx={{ unicodeBidi: "isolate" }}>
@@ -428,7 +430,7 @@ export default function DigiPassDashboard() {
                   </Typography>
                 </Box>
               ) : (
-                <Typography sx={{ fontSize: "clamp(0.8rem, 3.5vw, 1rem)", fontWeight: 600, color: "primary.main" }}>
+                <Typography sx={{ fontSize: "clamp(0.8rem, 3.5vw, 1rem)", fontWeight: 600, color: theme.palette.primary.main }}>
                   {tasksCompleted} {t.completedOutOf} {maxTasksPerUser}
                 </Typography>
               ))}
@@ -440,17 +442,17 @@ export default function DigiPassDashboard() {
                 sx={{
                   height: 8,
                   borderRadius: "8px",
-                  bgcolor: "#E0E0E0",
+                  bgcolor: theme.palette.action.disabledBackground,
                   "& .MuiLinearProgress-bar": {
                     borderRadius: "8px",
-                    bgcolor: "primary.main",
+                    bgcolor: theme.palette.primary.main,
                     transition: "transform 0.4s linear",
                   },
                 }}
               />
             )}
 
-            <Typography sx={{ fontSize: "clamp(0.7rem, 3vw, 0.875rem)", color: "#666" }}>
+            <Typography sx={{ fontSize: "clamp(0.7rem, 3vw, 0.875rem)", color: theme.palette.text.secondary }}>
               {t.soFar}
             </Typography>
           </Box>

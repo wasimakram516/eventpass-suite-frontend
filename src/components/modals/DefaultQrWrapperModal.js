@@ -20,6 +20,7 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
+  useTheme,
 } from "@mui/material";
 import QRCode from "qrcode";
 import useI18nLayout from "@/hooks/useI18nLayout";
@@ -356,6 +357,7 @@ function QrWrapperFieldEditor({
   const fontSelectRef = useRef(null);
   const lastFormattingRef = useRef({});
   const isUpdatingFromPropsRef = useRef(false);
+  const theme = useTheme();
   const onXChangeRef = useRef(onXChange);
   const onYChangeRef = useRef(onYChange);
   const onFontFamilyChangeRef = useRef(onFontFamilyChange);
@@ -507,15 +509,13 @@ function QrWrapperFieldEditor({
 
       const inputsBox = document.createElement("div");
       inputsBox.className = "qr-wrapper-position-inputs";
-      inputsBox.style.cssText = "display:flex;gap:12px;align-items:center;padding-left:8px;padding-top:8px;padding-bottom:8px;border-left:1px solid rgba(0,0,0,0.12);margin-left:8px;margin-top:8px;";
-
+      inputsBox.style.cssText = `display:flex;gap:12px;align-items:center;padding-left:8px;padding-top:8px;padding-bottom:8px;border-left:1px solid ${theme.palette.divider};margin-left:8px;margin-top:8px;`;
       const makeInputRow = (labelText, inputEl) => {
         const container = document.createElement("div");
         container.style.cssText = "display:flex;align-items:center;gap:6px;";
         const label = document.createElement("label");
         label.textContent = labelText;
-        label.style.cssText = "font-size:0.875rem;color:rgba(0,0,0,0.6);white-space:nowrap;";
-        container.appendChild(label);
+        label.style.cssText = `font-size:0.875rem;color:${theme.palette.text.secondary};white-space:nowrap;`; container.appendChild(label);
         container.appendChild(inputEl);
         return container;
       };
@@ -524,8 +524,7 @@ function QrWrapperFieldEditor({
         const input = document.createElement("input");
         input.type = "number";
         input.min = 0; input.max = 100; input.step = 1;
-        input.style.cssText = "width:80px;height:32px;padding:4px 8px;border:1px solid rgba(0,0,0,0.23);border-radius:4px;font-size:0.875rem;";
-        input.value = initialValue ?? 0;
+        input.style.cssText = `width:80px;height:32px;padding:4px 8px;border:1px solid ${theme.palette.divider};border-radius:4px;font-size:0.875rem;`; input.value = initialValue ?? 0;
         input.oninput = (e) => {
           const val = parseFloat(e.target.value);
           if (!Number.isNaN(val) && val >= 0 && val <= 100) onInput(val);
@@ -539,8 +538,7 @@ function QrWrapperFieldEditor({
       yInputRef.current = yInput;
 
       const fontSelect = document.createElement("select");
-      fontSelect.style.cssText = "width:80px;height:32px;padding:4px;border:1px solid rgba(0,0,0,0.23);border-radius:4px;font-size:0.75rem;background-color:white;";
-      fontSelectRef.current = fontSelect;
+      fontSelect.style.cssText = `width:80px;height:32px;padding:4px;border:1px solid ${theme.palette.divider};border-radius:4px;font-size:0.75rem;background-color:${theme.palette.background.paper};color:${theme.palette.text.primary};`; fontSelectRef.current = fontSelect;
 
       const fontsToUse = availableFonts?.length > 0 ? availableFonts : [
         { name: "Arial", family: "Arial" },
@@ -650,6 +648,7 @@ export default function DefaultQrWrapperModal({
   includeBrandingMedia = false,
   includeBackground = false,
 }) {
+  const theme = useTheme();
   const { t, dir } = useI18nLayout(translations);
   const { showMessage } = useMessage();
   const { refetchConfig } = useGlobalConfig();
@@ -702,7 +701,7 @@ export default function DefaultQrWrapperModal({
     fontSize: num(f.fontSize, 14),
     fontFamily: f.fontFamily ?? "Arial",
     text: f.text ?? "",
-    color: f.color ?? "#000000",
+    color: f.color ?? theme.palette.common.black,
     isBold: f.isBold ?? false,
     isItalic: f.isItalic ?? false,
     isUnderline: f.isUnderline ?? false,
@@ -733,7 +732,7 @@ export default function DefaultQrWrapperModal({
         x: num(existing?.x, 0), y: num(existing?.y, out.length * 8),
         fontSize: num(existing?.fontSize, 14),
         fontFamily: existing?.fontFamily ?? "Arial",
-        text, color: existing?.color ?? "#000000",
+        text, color: existing?.color ?? theme.palette.common.black,
         isBold: existing?.isBold ?? false,
         isItalic: existing?.isItalic ?? false,
         isUnderline: existing?.isUnderline ?? false,
@@ -824,9 +823,9 @@ export default function DefaultQrWrapperModal({
 
   useEffect(() => {
     if (!open) return;
-    QRCode.toDataURL("SAMPLE_TOKEN", { width: qr.size, margin: 1, color: { dark: "#000000", light: "#ffffff" } })
+    QRCode.toDataURL("SAMPLE_TOKEN", { width: qr.size, margin: 1, color: { dark: theme.palette.qr.foreground, light: theme.palette.qr.background } })
       .then(setQrCodeDataUrl).catch(() => setQrCodeDataUrl(""));
-  }, [open, qr.size]);
+  }, [open, qr.size, theme]);
 
   useEffect(() => {
     if (!open || !availableFonts || availableFonts.length === 0) return;
@@ -867,7 +866,7 @@ export default function DefaultQrWrapperModal({
         id: `f-${Date.now()}-${Math.random().toString(36).slice(2)}`,
         label: nextName, x: 0, y: 5 + prev.length * 8,
         fontSize: 14, fontFamily: "Arial", text: "",
-        color: "#000000", isBold: false, isItalic: false, isUnderline: false, alignment: "left",
+        color: theme.palette.common.black, isBold: false, isItalic: false, isUnderline: false, alignment: "left",
       }];
     });
   };
@@ -968,7 +967,7 @@ export default function DefaultQrWrapperModal({
           fontSize: num(fontSize, 14),
           fontFamily: fontFamily ?? "Arial",
           text: text ?? "",
-          color: color ?? "#000000",
+          color: color ?? theme.palette.common.black,
           isBold: !!isBold, isItalic: !!isItalic, isUnderline: !!isUnderline,
           alignment: alignment ?? "left",
         })
@@ -1314,8 +1313,8 @@ export default function DefaultQrWrapperModal({
               color: "text.secondary",
               mb: 1
             }}>{t.preview}</Typography>
-          <Box sx={{ width: PREVIEW_WIDTH, height: PREVIEW_HEIGHT, position: "relative", bgcolor: "#f5f5f5", borderRadius: 1, overflow: "hidden", border: "1px solid", borderColor: "divider" }}>
-            <Box sx={{ position: "absolute", left: 0, top: 0, width: TEMPLATE_WIDTH, height: TEMPLATE_HEIGHT, transform: `scale(${PREVIEW_SCALE})`, transformOrigin: "0 0", bgcolor: "#f5f5f5" }}>
+          <Box sx={{ width: PREVIEW_WIDTH, height: PREVIEW_HEIGHT, position: "relative", bgcolor: "background.default", borderRadius: 1, overflow: "hidden", border: "1px solid", borderColor: "divider" }}>
+            <Box sx={{ position: "absolute", left: 0, top: 0, width: TEMPLATE_WIDTH, height: TEMPLATE_HEIGHT, transform: `scale(${PREVIEW_SCALE})`, transformOrigin: "0 0", bgcolor: "background.default" }}>
               {backgroundPreview && (!isEventMode || includeBackground) && (
                 <Box component="img" src={backgroundPreview} alt="" sx={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover" }} />
               )}
@@ -1352,7 +1351,7 @@ export default function DefaultQrWrapperModal({
                     fontWeight: f.isBold ? "bold" : "normal",
                     fontStyle: f.isItalic ? "italic" : "normal",
                     textDecoration: f.isUnderline ? "underline" : "none",
-                    color: f.color || "#000000",
+                    color: f.color ||theme.palette.common.black,
                     textAlign: f.alignment || "left",
                     // Use minWidth so justify has space to spread — nowrap prevented it
                     minWidth: (f.alignment === "justify") ? "300px" : "auto",

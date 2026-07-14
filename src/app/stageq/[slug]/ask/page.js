@@ -313,8 +313,14 @@ export default function AskQuestionsPage() {
               const displayCompany = q.submitterCompany || q.visitor?.company || t.notProvided;
 
               return (
-                <Card key={q._id} variant="outlined" sx={{ background: "rgba(255,255,255,0.85)", backdropFilter: "blur(8px)" }}>
-                  <CardContent>
+                <Card
+                  key={q._id}
+                  variant="outlined"
+                  sx={{
+                    background: (theme) => theme.palette.overlay.card,
+                    backdropFilter: "blur(8px)",
+                  }}
+                >                 <CardContent>
                     {/* Question text */}
                     <Typography gutterBottom sx={{
                       fontWeight: "bold"
@@ -380,7 +386,7 @@ export default function AskQuestionsPage() {
           maxWidth="sm"
           fullWidth
           slotProps={{
-            paper: { sx: { borderRadius: 3, boxShadow: 6 } }
+            paper: { sx: { boxShadow: 6 } }
           }}
         >
           <DialogTitle fontWeight="bold">{t.submitQuestion}</DialogTitle>

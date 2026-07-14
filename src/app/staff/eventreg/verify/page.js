@@ -14,6 +14,7 @@ import {
   ListItemText,
   ListItemIcon,
   Container,
+  useTheme,
 } from "@mui/material";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 
@@ -114,7 +115,8 @@ const translations = {
   },
 };
 
-export default function VerifyPage() {
+export default function VerifyPage() { 
+  const theme = useTheme();
   const { t, dir } = useI18nLayout(translations);
   const { showMessage } = useMessage();
   const { user } = useAuth();
@@ -281,7 +283,7 @@ export default function VerifyPage() {
         qrCodeDataUrl = await QRCode.toDataURL(result.token, {
           width: 300,
           margin: 1,
-          color: { dark: "#000000", light: "#ffffff" },
+          color: { dark: theme.palette.qr.foreground, light: theme.palette.qr.background },
         });
       } catch {
         // ignore minor QR errors (badge can still print)
@@ -340,7 +342,7 @@ export default function VerifyPage() {
               padding: 0;
               height: 100%;
               overflow: hidden;
-              background: #fff;
+             background: ${theme.palette.qr.background};
             }
             iframe {
               width: 100%;

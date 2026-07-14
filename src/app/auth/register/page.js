@@ -21,7 +21,7 @@ import { useMessage } from "@/contexts/MessageContext";
 import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import Background from "@/components/Background";
-
+import { alpha } from "@mui/material/styles";
 const translations = {
   en: {
     title: "Register for",
@@ -109,8 +109,8 @@ export default function RegisterPage() {
     } catch (err) {
       showMessage(
         err?.response?.data?.message ||
-          err?.response?.data?.error ||
-          "Registration failed",
+        err?.response?.data?.error ||
+        "Registration failed",
         "error"
       );
     } finally {
@@ -128,7 +128,7 @@ export default function RegisterPage() {
       }}
       dir={dir}
     >
-      <Background/>
+      <Background />
       <Container maxWidth="md">
         <Paper
           elevation={6}
@@ -136,12 +136,10 @@ export default function RegisterPage() {
             p: { xs: 2, md: 3 },
             mt: { xs: 2, md: 4 },
             borderRadius: 4,
-            background:
-              theme.palette.mode === "dark"
-                ? "rgba(18, 18, 18, 0.9)"
-                : "rgba(255, 255, 255, 0.92)",
+            backgroundColor: (theme) =>
+              alpha(theme.palette.background.paper, 0.92),
             backdropFilter: "blur(10px)",
-            boxShadow: "0 20px 60px rgba(0,0,0,0.18)",
+            boxShadow: theme.palette.shadow.elevated,
           })}
         >
           <Stack direction={{ xs: "column", md: "row" }} spacing={3}>
@@ -151,11 +149,10 @@ export default function RegisterPage() {
                 p: { xs: 3, md: 4 },
                 borderRadius: 3,
                 color: theme.palette.primary.contrastText,
-                background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${
-                  theme.palette.secondary
+                background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary
                     ? theme.palette.secondary.main
                     : theme.palette.primary.dark
-                } 100%)`,
+                  } 100%)`,
                 minHeight: { xs: "auto", md: 420 },
                 display: "flex",
                 flexDirection: "column",
@@ -234,66 +231,66 @@ export default function RegisterPage() {
                 globalConfig?.contact?.phone ||
                 globalConfig?.support?.email ||
                 globalConfig?.support?.phone) && (
-                <Stack spacing={0.75} sx={{ mt: 2.5, opacity: 0.9 }}>
-                  {(globalConfig?.contact?.email ||
-                    globalConfig?.contact?.phone) && (
-                    <Stack spacing={0.35}>
-                      <Typography variant="caption" sx={{ opacity: 0.75 }}>
-                        {t.contact}
-                      </Typography>
-                      {globalConfig?.contact?.email && (
-                        <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
-                          <ICONS.email fontSize="inherit" sx={{ fontSize: 14 }} />
-                          <Typography variant="body2" sx={{
-                            fontSize: "0.75rem"
-                          }}>
-                            {globalConfig.contact.email}
+                  <Stack spacing={0.75} sx={{ mt: 2.5, opacity: 0.9 }}>
+                    {(globalConfig?.contact?.email ||
+                      globalConfig?.contact?.phone) && (
+                        <Stack spacing={0.35}>
+                          <Typography variant="caption" sx={{ opacity: 0.75 }}>
+                            {t.contact}
                           </Typography>
+                          {globalConfig?.contact?.email && (
+                            <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
+                              <ICONS.email fontSize="inherit" sx={{ fontSize: 14 }} />
+                              <Typography variant="body2" sx={{
+                                fontSize: "0.75rem"
+                              }}>
+                                {globalConfig.contact.email}
+                              </Typography>
+                            </Stack>
+                          )}
+                          {globalConfig?.contact?.phone && (
+                            <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
+                              <ICONS.phone fontSize="inherit" sx={{ fontSize: 14 }} />
+                              <Typography variant="body2" sx={{
+                                fontSize: "0.75rem"
+                              }}>
+                                {globalConfig.contact.phone}
+                              </Typography>
+                            </Stack>
+                          )}
                         </Stack>
                       )}
-                      {globalConfig?.contact?.phone && (
-                        <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
-                          <ICONS.phone fontSize="inherit" sx={{ fontSize: 14 }} />
-                          <Typography variant="body2" sx={{
-                            fontSize: "0.75rem"
-                          }}>
-                            {globalConfig.contact.phone}
-                          </Typography>
-                        </Stack>
-                      )}
-                    </Stack>
-                  )}
 
-                  {(globalConfig?.support?.email ||
-                    globalConfig?.support?.phone) && (
-                    <Stack spacing={0.35}>
-                      <Typography variant="caption" sx={{ opacity: 0.75 }}>
-                        {t.support}
-                      </Typography>
-                      {globalConfig?.support?.email && (
-                        <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
-                          <ICONS.email fontSize="inherit" sx={{ fontSize: 14 }} />
-                          <Typography variant="body2" sx={{
-                            fontSize: "0.75rem"
-                          }}>
-                            {globalConfig.support.email}
+                    {(globalConfig?.support?.email ||
+                      globalConfig?.support?.phone) && (
+                        <Stack spacing={0.35}>
+                          <Typography variant="caption" sx={{ opacity: 0.75 }}>
+                            {t.support}
                           </Typography>
+                          {globalConfig?.support?.email && (
+                            <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
+                              <ICONS.email fontSize="inherit" sx={{ fontSize: 14 }} />
+                              <Typography variant="body2" sx={{
+                                fontSize: "0.75rem"
+                              }}>
+                                {globalConfig.support.email}
+                              </Typography>
+                            </Stack>
+                          )}
+                          {globalConfig?.support?.phone && (
+                            <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
+                              <ICONS.phone fontSize="inherit" sx={{ fontSize: 14 }} />
+                              <Typography variant="body2" sx={{
+                                fontSize: "0.75rem"
+                              }}>
+                                {globalConfig.support.phone}
+                              </Typography>
+                            </Stack>
+                          )}
                         </Stack>
                       )}
-                      {globalConfig?.support?.phone && (
-                        <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
-                          <ICONS.phone fontSize="inherit" sx={{ fontSize: 14 }} />
-                          <Typography variant="body2" sx={{
-                            fontSize: "0.75rem"
-                          }}>
-                            {globalConfig.support.phone}
-                          </Typography>
-                        </Stack>
-                      )}
-                    </Stack>
-                  )}
-                </Stack>
-              )}
+                  </Stack>
+                )}
             </Box>
 
             <Box sx={{ flex: 1, p: { xs: 2, md: 3 } }}>

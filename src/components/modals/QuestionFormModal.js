@@ -447,7 +447,7 @@ const QuestionFormModal = ({
                     top: -18,
                     right: 6,
                     bgcolor: "error.main",
-                    color: "#fff",
+                    color: "common.white",
                     "&:hover": { bgcolor: "error.dark" },
                   }}
                 >
@@ -522,7 +522,7 @@ const QuestionFormModal = ({
                         top: -18,
                         right: 6,
                         bgcolor: "error.main",
-                        color: "#fff",
+                        color: "common.white",
                         "&:hover": { bgcolor: "error.dark" },
                       }}
                     >

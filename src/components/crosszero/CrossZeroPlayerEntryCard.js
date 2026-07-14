@@ -8,6 +8,7 @@ import {
   CircularProgress,
   Box,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 
@@ -37,9 +38,11 @@ export default function CrossZeroPlayerEntryCard({
         maxWidth: 500,
         textAlign: align,
         backdropFilter: "blur(10px)",
-        backgroundColor: "rgba(255,255,255,0.6)",
         borderRadius: 6,
-        boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
+        backgroundColor: (theme) => alpha(theme.palette.background.paper, theme.palette.mode === "dark" ? 0.88 : 0.92),
+        border: "1px solid",
+        borderColor: "divider",
+        boxShadow: (theme) => theme.palette.shadow.paper,
       }}
     >
       <Typography
@@ -55,7 +58,7 @@ export default function CrossZeroPlayerEntryCard({
       {badge ? <Box sx={{ display: "flex", justifyContent: "center", mb: 2 }}>{badge}</Box> : null}
       <Typography
         sx={{
-          color: "rgba(15,23,42,0.62)",
+          color: "text.secondary",
           mb: 3,
           textAlign: "center",
           fontSize: "0.9rem",
@@ -72,7 +75,8 @@ export default function CrossZeroPlayerEntryCard({
         onChange={(event) => onChange({ ...form, name: event.target.value })}
         onKeyDown={(event) => event.key === "Enter" && onSubmit()}
         slotProps={{
-          input: { sx: { backgroundColor: "rgba(255,255,255,0.75)" } }
+          input: { sx: { backgroundColor: (theme) => alpha(theme.palette.action.hover, theme.palette.mode === "dark" ? 0.32 : 0.6), color: "text.primary", "& .MuiOutlinedInput-notchedOutline": { borderColor: "divider" } } },
+          inputLabel: { sx: { color: "text.secondary" } },
         }}
       />
       <TextField
@@ -82,7 +86,8 @@ export default function CrossZeroPlayerEntryCard({
         value={form.company}
         onChange={(event) => onChange({ ...form, company: event.target.value })}
         slotProps={{
-          input: { sx: { backgroundColor: "rgba(255,255,255,0.75)" } }
+          input: { sx: { backgroundColor: (theme) => alpha(theme.palette.action.hover, theme.palette.mode === "dark" ? 0.32 : 0.6), color: "text.primary", "& .MuiOutlinedInput-notchedOutline": { borderColor: "divider" } } },
+          inputLabel: { sx: { color: "text.secondary" } },
         }}
       />
       <TextField
@@ -92,7 +97,8 @@ export default function CrossZeroPlayerEntryCard({
         value={form.department}
         onChange={(event) => onChange({ ...form, department: event.target.value })}
         slotProps={{
-          input: { sx: { backgroundColor: "rgba(255,255,255,0.75)" } }
+          input: { sx: { backgroundColor: (theme) => alpha(theme.palette.action.hover, theme.palette.mode === "dark" ? 0.32 : 0.6), color: "text.primary", "& .MuiOutlinedInput-notchedOutline": { borderColor: "divider" } } },
+          inputLabel: { sx: { color: "text.secondary" } },
         }}
       />
       <Button

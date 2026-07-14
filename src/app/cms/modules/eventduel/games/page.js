@@ -14,6 +14,7 @@ import {
   Stack,
   Tooltip,
 } from "@mui/material";
+import { useTheme } from "@mui/material/styles";
 import GameFormModal from "@/components/modals/GameFormModal";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
@@ -122,6 +123,8 @@ export default function GamesPage() {
   const searchParams = useSearchParams();
   const { user, selectedBusiness, setSelectedBusiness } = useAuth();
   const { t, dir, align, language } = useI18nLayout(translations);
+  const theme = useTheme();
+  const cz = theme.palette.crosszero;
 
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -403,7 +406,7 @@ export default function GamesPage() {
                             height: { xs: 70, sm: 80 },
                             objectFit: "cover",
                             borderRadius: 1,
-                            border: "1px solid #eee",
+                            border: cz.gameCardBorder,
                           }}
                         />
                       )

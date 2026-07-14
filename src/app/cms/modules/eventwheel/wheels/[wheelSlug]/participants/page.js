@@ -560,86 +560,86 @@ const ParticipantsAdminPage = () => {
           ) : (
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, justifyContent: "center" }}>
               {visibleParticipants.map((participant) => (
-                  <Card
-                    key={participant._id}
-                    elevation={3}
-                    sx={{
-                      position: "relative",
-                      width: { xs: "100%", sm: 340 },
-                      display: "flex",
-                      flexDirection: "column",
-                      justifyContent: "space-between",
-                      borderRadius: 2,
-                      boxShadow: "0 2px 10px rgba(0,0,0,0.06)",
-                      transition: "transform 0.2s, box-shadow 0.2s",
-                    }}
-                  >
-                    <CardHeader
-                      title={
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                          <Typography variant="h6">{participant.name}</Typography>
-                          {participant.isWinner && (
-                            <Chip
-                              label={t.winner}
-                              color="success"
-                              size="small"
-                              sx={{ fontWeight: "bold" }}
-                            />
-                          )}
-                        </Box>
-                      }
-                      sx={{ pb: 0 }}
-                    />
-                    <CardContent sx={{ flexGrow: 1 }}>
-                      {participant.phone && (
-                        <Typography variant="body2" sx={{
-                          color: "text.secondary"
+                <Card
+                  key={participant._id}
+                  elevation={3}
+                  sx={{
+                    position: "relative",
+                    width: { xs: "100%", sm: 340 },
+                    display: "flex",
+                    flexDirection: "column",
+                    justifyContent: "space-between",
+                    borderRadius: 2,
+                    boxShadow: (theme) => theme.palette.shadow.wheelCard,
+                    transition: "transform 0.2s, box-shadow 0.2s",
+                  }}
+                >
+                  <CardHeader
+                    title={
+                      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                        <Typography variant="h6">{participant.name}</Typography>
+                        {participant.isWinner && (
+                          <Chip
+                            label={t.winner}
+                            color="success"
+                            size="small"
+                            sx={{ fontWeight: "bold" }}
+                          />
+                        )}
+                      </Box>
+                    }
+                    sx={{ pb: 0 }}
+                  />
+                  <CardContent sx={{ flexGrow: 1 }}>
+                    {participant.phone && (
+                      <Typography variant="body2" sx={{
+                        color: "text.secondary"
+                      }}>
+                        <strong>{t.phone}:</strong> {formatPhoneNumberForDisplay(participant.phone, participant.isoCode)}
+                      </Typography>
+                    )}
+                    {participant.company && (
+                      <Typography variant="body2" sx={{
+                        color: "text.secondary"
+                      }}>
+                        <strong>{t.company}:</strong> {participant.company}
+                      </Typography>
+                    )}
+                    {participant.visible === false && (
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: "warning.main",
+                          mt: 1
                         }}>
-                          <strong>{t.phone}:</strong> {formatPhoneNumberForDisplay(participant.phone, participant.isoCode)}
-                        </Typography>
-                      )}
-                      {participant.company && (
-                        <Typography variant="body2" sx={{
-                          color: "text.secondary"
-                        }}>
-                          <strong>{t.company}:</strong> {participant.company}
-                        </Typography>
-                      )}
-                      {participant.visible === false && (
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            color: "warning.main",
-                            mt: 1
-                          }}>
-                          <strong>Removed from wheel</strong>
-                        </Typography>
-                      )}
-                    </CardContent>
-                    <RecordMetadata
-                      createdByName={participant.createdBy}
-                      updatedByName={participant.updatedBy}
-                      createdAt={participant.createdAt}
-                      updatedAt={participant.updatedAt}
-                      createdByDisplayName={participant.name}
-                      updatedByDisplayName={participant.name}
-                      locale={language === "ar" ? "ar-SA" : "en-GB"}
-                    />
-                    <Divider />
-                    <CardActions sx={{ justifyContent: "flex-end", p: 1.5 }}>
-                      <Tooltip title={t.deleteParticipant}>
-                        <IconButton
-                          onClick={() => {
-                            setSelectedParticipant(participant._id);
-                            setConfirmDelete(true);
-                          }}
-                          color="error"
-                        >
-                          <ICONS.delete />
-                        </IconButton>
-                      </Tooltip>
-                    </CardActions>
-                  </Card>
+                        <strong>Removed from wheel</strong>
+                      </Typography>
+                    )}
+                  </CardContent>
+                  <RecordMetadata
+                    createdByName={participant.createdBy}
+                    updatedByName={participant.updatedBy}
+                    createdAt={participant.createdAt}
+                    updatedAt={participant.updatedAt}
+                    createdByDisplayName={participant.name}
+                    updatedByDisplayName={participant.name}
+                    locale={language === "ar" ? "ar-SA" : "en-GB"}
+                  />
+                  <Divider />
+                  <CardActions sx={{ justifyContent: "flex-end", p: 1.5 }}>
+                    <Tooltip title={t.deleteParticipant}>
+                      <IconButton
+                        onClick={() => {
+                          setSelectedParticipant(participant._id);
+                          setConfirmDelete(true);
+                        }}
+                        color="error"
+                      >
+                        <ICONS.delete />
+                      </IconButton>
+                    </Tooltip>
+                  </CardActions>
+                </Card>
               ))}
             </Box>
           )}

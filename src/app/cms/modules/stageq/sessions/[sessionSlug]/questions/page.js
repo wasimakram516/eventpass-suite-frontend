@@ -237,53 +237,71 @@ export default function SessionQuestionsPage() {
         ) : (
           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, justifyContent: "center" }}>
             {questions.map((q) => (
-                <AppCard
-                  key={q._id}
-                  sx={{
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "space-between",
-                    width: { xs: "100%", sm: "360px" },
-                  }}
-                >
-                  {countdowns[q._id] > 0 && (
-                    <Box sx={{ px: 2, pt: 1.5 }}>
-                      <Stack
-                        direction="row"
-                        spacing={1}
-                        sx={{
-                          alignItems: "center",
-                          mb: 0.5
-                        }}>
-                        <Chip
-                          label={`On screen in ${toArabicDigits(countdowns[q._id], language)}s`}
-                          size="small"
-                          color="warning"
-                          variant="outlined"
-                        />
-                      </Stack>
-                      <LinearProgress
-                        variant="determinate"
-                        value={100 - (countdowns[q._id] / (q.visibleAt ? Math.ceil((new Date(q.visibleAt).getTime() - new Date(q.createdAt).getTime()) / 1000) : 30)) * 100}
-                        color="warning"
-                        sx={{ borderRadius: 1, height: 4 }}
-                      />
-                    </Box>
-                  )}
-                  <Box sx={{ px: 2, pt: 2 }}>
-                    <Typography
+              <AppCard
+                key={q._id}
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                  width: { xs: "100%", sm: "360px" },
+                }}
+              >
+                {countdowns[q._id] > 0 && (
+                  <Box sx={{ px: 2, pt: 1.5 }}>
+                    <Stack
+                      direction="row"
+                      spacing={1}
                       sx={{
-                        fontWeight: "bold",
-                        fontSize: "1.05rem",
-                        color: "text.primary",
-                        lineHeight: 1.4
+                        alignItems: "center",
+                        mb: 0.5
                       }}>
-                      {q.text}
-                    </Typography>
+                      <Chip
+                        label={`On screen in ${toArabicDigits(countdowns[q._id], language)}s`}
+                        size="small"
+                        color="warning"
+                        variant="outlined"
+                      />
+                    </Stack>
+                    <LinearProgress
+                      variant="determinate"
+                      value={100 - (countdowns[q._id] / (q.visibleAt ? Math.ceil((new Date(q.visibleAt).getTime() - new Date(q.createdAt).getTime()) / 1000) : 30)) * 100}
+                      color="warning"
+                      sx={{ borderRadius: 1, height: 4 }}
+                    />
                   </Box>
+                )}
+                <Box sx={{ px: 2, pt: 2 }}>
+                  <Typography
+                    sx={{
+                      fontWeight: "bold",
+                      fontSize: "1.05rem",
+                      color: "text.primary",
+                      lineHeight: 1.4
+                    }}>
+                    {q.text}
+                  </Typography>
+                </Box>
 
-                  <Box sx={{ px: 2, pt: 1, pb: 1, display: "flex", flexDirection: "column", gap: 1 }}>
-                    {/* Votes */}
+                <Box sx={{ px: 2, pt: 1, pb: 1, display: "flex", flexDirection: "column", gap: 1 }}>
+                  {/* Votes */}
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    sx={{
+                      alignItems: "center",
+                      gap: dir === "rtl" ? 1 : 0
+                    }}>
+                    {<ICONS.thumb fontSize="small" />}
+                    <Typography variant="body2" sx={{
+                      color: "text.secondary"
+                    }}>
+                      {toArabicDigits(q.votes, language)} {q.votes === 1 ? t.vote : t.votes}
+                    </Typography>
+                  </Stack>
+                  <Divider sx={{ my: 1 }} />
+
+                  {/* Submitter Info */}
+                  <Stack spacing={0.5}>
                     <Stack
                       direction="row"
                       spacing={1}
@@ -291,17 +309,12 @@ export default function SessionQuestionsPage() {
                         alignItems: "center",
                         gap: dir === "rtl" ? 1 : 0
                       }}>
-                      {<ICONS.thumb fontSize="small" />}
-                      <Typography variant="body2" sx={{
-                        color: "text.secondary"
-                      }}>
-                        {toArabicDigits(q.votes, language)} {q.votes === 1 ? t.vote : t.votes}
+                      <ICONS.person fontSize="small" />
+                      <Typography variant="body2">
+                        {q.submitterName || q.visitor?.name || t.anonymous}
                       </Typography>
                     </Stack>
-                    <Divider sx={{ my: 1 }} />
-
-                    {/* Submitter Info */}
-                    <Stack spacing={0.5}>
+                    {(q.submitterPhone || q.visitor?.phone) && (
                       <Stack
                         direction="row"
                         spacing={1}
@@ -309,103 +322,92 @@ export default function SessionQuestionsPage() {
                           alignItems: "center",
                           gap: dir === "rtl" ? 1 : 0
                         }}>
-                        <ICONS.person fontSize="small" />
+                        <ICONS.phone fontSize="small" />
                         <Typography variant="body2">
-                          {q.submitterName || q.visitor?.name || t.anonymous}
+                          {(() => {
+                            const phone = q.submitterPhone || q.visitor?.phone;
+                            const iso = q.submitterIsoCode;
+                            const dialCode = iso ? COUNTRY_CODES.find(c => c.isoCode === iso.toLowerCase())?.code : null;
+                            return dialCode ? `${dialCode}${phone}` : phone;
+                          })()}
                         </Typography>
                       </Stack>
-                      {(q.submitterPhone || q.visitor?.phone) && (
-                        <Stack
-                          direction="row"
-                          spacing={1}
-                          sx={{
-                            alignItems: "center",
-                            gap: dir === "rtl" ? 1 : 0
-                          }}>
-                          <ICONS.phone fontSize="small" />
-                          <Typography variant="body2">
-                            {(() => {
-                              const phone = q.submitterPhone || q.visitor?.phone;
-                              const iso = q.submitterIsoCode;
-                              const dialCode = iso ? COUNTRY_CODES.find(c => c.isoCode === iso.toLowerCase())?.code : null;
-                              return dialCode ? `${dialCode}${phone}` : phone;
-                            })()}
-                          </Typography>
-                        </Stack>
-                      )}
-                      <Stack
-                        direction="row"
-                        spacing={1}
-                        sx={{
-                          alignItems: "center",
-                          gap: dir === "rtl" ? 1 : 0
-                        }}>
-                        <ICONS.business fontSize="small" />
-                        <Typography variant="body2">
-                          {q.submitterCompany || q.visitor?.company || t.notProvided}
-                        </Typography>
-                      </Stack>
+                    )}
+                    <Stack
+                      direction="row"
+                      spacing={1}
+                      sx={{
+                        alignItems: "center",
+                        gap: dir === "rtl" ? 1 : 0
+                      }}>
+                      <ICONS.business fontSize="small" />
+                      <Typography variant="body2">
+                        {q.submitterCompany || q.visitor?.company || t.notProvided}
+                      </Typography>
                     </Stack>
+                  </Stack>
 
-                  </Box>
+                </Box>
 
-                  <RecordMetadata
-                    createdByName={q.createdBy}
-                    updatedByName={q.updatedBy}
-                    createdAt={q.createdAt}
-                    updatedAt={q.updatedAt}
-                    createdByDisplayName={q.createdBy == null ? (q.submitterName || q.visitor?.name) : undefined}
-                    locale={language === "ar" ? "ar-SA" : "en-GB"}
-                    sx={{ mt: 0, px: 2, width: "100%" }}
-                  />
+                <RecordMetadata
+                  createdByName={q.createdBy}
+                  updatedByName={q.updatedBy}
+                  createdAt={q.createdAt}
+                  updatedAt={q.updatedAt}
+                  createdByDisplayName={q.createdBy == null ? (q.submitterName || q.visitor?.name) : undefined}
+                  locale={language === "ar" ? "ar-SA" : "en-GB"}
+                  sx={{ mt: 0, px: 2, width: "100%" }}
+                />
 
-                  <CardActions
-                    sx={{
-                      justifyContent: "space-between",
-                      borderTop: "1px solid rgba(0,0,0,0.06)",
-                      px: 1,
-                      py: 0.5,
-                      bgcolor: "rgba(0,0,0,0.02)",
-                    }}
-                  >
-                    <FormControl size="small" sx={{ minWidth: 140, ml: 1 }}>
-                      <Select
-                        value={q.answered ? "answered" : "unanswered"}
-                        onChange={async (e) => {
-                          try {
-                            await updateQuestion(q._id, { answered: e.target.value === "answered" });
-                          } catch {
-                            showMessage(t.failedToUpdateAnsweredStatus, "error");
-                          }
-                        }}
-                        sx={{ fontSize: "0.875rem" }}
+                <CardActions
+                  sx={{
+                    justifyContent: "space-between",
+                    borderTop: "1px solid",
+                    borderColor: "divider",
+                    bgcolor: "action.hover",
+                    px: 1,
+                    py: 0.5,
+
+                  }}
+                >
+                  <FormControl size="small" sx={{ minWidth: 140, ml: 1 }}>
+                    <Select
+                      value={q.answered ? "answered" : "unanswered"}
+                      onChange={async (e) => {
+                        try {
+                          await updateQuestion(q._id, { answered: e.target.value === "answered" });
+                        } catch {
+                          showMessage(t.failedToUpdateAnsweredStatus, "error");
+                        }
+                      }}
+                      sx={{ fontSize: "0.875rem" }}
+                    >
+                      <MenuItem value="answered">{t.answered}</MenuItem>
+                      <MenuItem value="unanswered">{t.notAnswered}</MenuItem>
+                    </Select>
+                  </FormControl>
+                  <Stack direction="row">
+                    <Tooltip title={t.editQuestionTooltip}>
+                      <IconButton
+                        onClick={() => { setEditData(q); setEditDialogOpen(true); }}
+                        color="warning"
+                        sx={{ "&:hover": { transform: "scale(1.1)" }, transition: "0.2s" }}
                       >
-                        <MenuItem value="answered">{t.answered}</MenuItem>
-                        <MenuItem value="unanswered">{t.notAnswered}</MenuItem>
-                      </Select>
-                    </FormControl>
-                    <Stack direction="row">
-                      <Tooltip title={t.editQuestionTooltip}>
-                        <IconButton
-                          onClick={() => { setEditData(q); setEditDialogOpen(true); }}
-                          color="warning"
-                          sx={{ "&:hover": { transform: "scale(1.1)" }, transition: "0.2s" }}
-                        >
-                          <ICONS.edit />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title={t.deleteQuestionTooltip}>
-                        <IconButton
-                          onClick={() => setConfirmDelete({ open: true, id: q._id })}
-                          color="error"
-                          sx={{ "&:hover": { transform: "scale(1.1)" }, transition: "0.2s" }}
-                        >
-                          <ICONS.delete />
-                        </IconButton>
-                      </Tooltip>
-                    </Stack>
-                  </CardActions>
-                </AppCard>
+                        <ICONS.edit />
+                      </IconButton>
+                    </Tooltip>
+                    <Tooltip title={t.deleteQuestionTooltip}>
+                      <IconButton
+                        onClick={() => setConfirmDelete({ open: true, id: q._id })}
+                        color="error"
+                        sx={{ "&:hover": { transform: "scale(1.1)" }, transition: "0.2s" }}
+                      >
+                        <ICONS.delete />
+                      </IconButton>
+                    </Tooltip>
+                  </Stack>
+                </CardActions>
+              </AppCard>
             ))}
           </Box>
         )}

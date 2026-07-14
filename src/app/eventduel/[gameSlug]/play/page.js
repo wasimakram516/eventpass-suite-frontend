@@ -12,6 +12,7 @@ import {
   Card,
   CardContent,
   IconButton,
+  useTheme,
 } from "@mui/material";
 import Confetti from "react-confetti";
 import { useGame } from "@/contexts/GameContext";
@@ -136,7 +137,7 @@ export default function PlayPage() {
   const { game } = useGame();
   const router = useRouter();
   const { t, dir, language } = useI18nLayout(gameTranslations);
-
+  const theme = useTheme();
   // ─── 2. SOCKET DATA ────────────────────────────────────────────────────
   const {
     sessions = [],
@@ -321,7 +322,7 @@ export default function PlayPage() {
             endOnceRef.current = true;
             submitFinalResult(sessionDuration);
             if (activeSession?._id) {
-              endGameSession(activeSession._id).catch(() => {});
+              endGameSession(activeSession._id).catch(() => { });
               requestAllSessions?.(game?.slug);
             }
           }
@@ -367,10 +368,10 @@ export default function PlayPage() {
 
     const allTeamsReady = isTeamMode
       ? pendingSession.teams?.every(
-          (t) =>
-            (t.players?.length || 0) >=
-            (pendingSession.gameId?.playersPerTeam || 0)
-        )
+        (t) =>
+          (t.players?.length || 0) >=
+          (pendingSession.gameId?.playersPerTeam || 0)
+      )
       : false;
 
     const sessionReady = isTeamMode ? allTeamsReady : bothJoined;
@@ -443,10 +444,10 @@ export default function PlayPage() {
 
     if (isWinner) {
       celebrationPlayedRef.current = true;
-      celebrateSoundRef.current?.play().catch(() => {});
+      celebrateSoundRef.current?.play().catch(() => { });
     } else if (!celebrationPlayedRef.current) {
       celebrationPlayedRef.current = true;
-      wrongSoundRef.current?.play().catch(() => {});
+      wrongSoundRef.current?.play().catch(() => { });
     }
   }, [recentlyCompleted]);
 
@@ -539,9 +540,9 @@ export default function PlayPage() {
 
     if (isCorrect) {
       scoreRef.current++;
-      correctSoundRef.current?.play().catch(() => {});
+      correctSoundRef.current?.play().catch(() => { });
     } else {
-      wrongSoundRef.current?.play().catch(() => {});
+      wrongSoundRef.current?.play().catch(() => { });
       if (currentQuestion.hint) setShowHint(true);
     }
 
@@ -554,7 +555,7 @@ export default function PlayPage() {
       if (isLast) {
         if (localTime > 0) {
           setHasFinishedEarly(true);
-          celebrateSoundRef.current?.play().catch(() => {});
+          celebrateSoundRef.current?.play().catch(() => { });
           celebrationPlayedRef.current = true;
         }
         submitFinalResult();
@@ -616,10 +617,10 @@ export default function PlayPage() {
     // For Team Mode:
     const allTeamsReady = isTeamMode
       ? pendingSession.teams?.every(
-          (t) =>
-            (t.players?.length || 0) >=
-            (pendingSession.gameId?.playersPerTeam || 0)
-        )
+        (t) =>
+          (t.players?.length || 0) >=
+          (pendingSession.gameId?.playersPerTeam || 0)
+      )
       : false;
 
     const sessionReady = isTeamMode ? allTeamsReady : bothPlayersJoined;
@@ -639,10 +640,10 @@ export default function PlayPage() {
             backgroundAttachment: "fixed",
           }}
         >
-        <Box sx={{
+          <Box sx={{
             position: "absolute", inset: 0,
-            backgroundColor: "rgba(0,0,0,0.72)",
-            color: "#fff",
+            backgroundColor: "overlay.pageOverlay",
+            color: "text.primary",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -652,138 +653,136 @@ export default function PlayPage() {
             animation: "fadeIn 1s ease-in-out",
             px: 3,
           }}
-        >
-          {/* Back Button */}
-          <IconButton
-            size="small"
-            onClick={() => router.replace(`/eventduel/${game.slug}`)}
-            sx={{
-              position: "fixed",
-              top: 20,
-              left: 20,
-              bgcolor: "primary.main",
-              color: "white",
-            }}
           >
-            <ICONS.back />
-          </IconButton>
+            {/* Back Button */}
+            <IconButton
+              size="small"
+              onClick={() => router.replace(`/eventduel/${game.slug}`)}
+              sx={{
+                position: "fixed",
+                top: 20,
+                left: 20,
+                bgcolor: "primary.main",
+                color: "white",
+              }}
+            >
+              <ICONS.back />
+            </IconButton>
 
-          {!sessionReady ? (
-            <>
-              <CircularProgress />
-              <Typography
-                variant="h3"
-                sx={{
-                  my: 6,
-                  fontWeight: "bold",
-                  textShadow:
-                    "0 0 10px rgba(255,255,255,0.8), 0 0 20px rgba(0,255,255,0.6)",
-                  letterSpacing: "2px",
-                  animation: "pulseText 2s infinite",
-                  fontSize: (() => {
-                    const L = (
-                      isTeamMode
-                        ? t.waitingTeamsTitle
-                        : t.waitingTitle || t.pendingTitle
-                    )?.length;
-                    if (L <= 25) return { xs: "1.5rem", sm: "2.5rem" };
-                    if (L <= 40) return { xs: "1.25rem", sm: "2rem" };
-                    return { xs: "1rem", sm: "1.75rem" };
-                  })(),
-                  lineHeight: { xs: 1.2, sm: 1.3 },
-                  wordBreak: "break-word",
-                  overflowWrap: "break-word",
-                }}
-              >
-                {isTeamMode
-                  ? t.waitingTeamsTitle
-                  : t.waitingTitle || t.pendingTitle}
-              </Typography>
-
-              <Typography
-                variant="h6"
-                sx={{
-                  mt: 2,
-                  opacity: 0.6,
-                  fontStyle: "italic",
-                  animation: "blink 1.5s infinite",
-                  fontSize: (() => {
-                    const L = (
-                      isTeamMode
-                        ? t.waitingTeamsMessage
-                        : t.waitingForBoth || t.pendingMessage
-                    )?.length;
-                    if (L <= 30) return { xs: "0.9rem", sm: "1.1rem" };
-                    if (L <= 50) return { xs: "0.8rem", sm: "1rem" };
-                    return { xs: "0.7rem", sm: "0.9rem" };
-                  })(),
-                }}
-              >
-                {isTeamMode
-                  ? t.waitingTeamsMessage
-                  : t.waitingForBoth || t.pendingMessage}
-              </Typography>
-
-              <Box sx={{ mt: 3 }}>
-                <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                  {t.autoCloseNotice} <b>{toArabicDigits(abandonRemaining, language)}</b> {t.seconds}.
+            {!sessionReady ? (
+              <>
+                <CircularProgress />
+                <Typography
+                  variant="h3"
+                  sx={{
+                    my: 6,
+                    fontWeight: "bold",
+                    textShadow: "shadow.neonTextGlow",
+                    letterSpacing: "2px",
+                    animation: "pulseText 2s infinite",
+                    fontSize: (() => {
+                      const L = (
+                        isTeamMode
+                          ? t.waitingTeamsTitle
+                          : t.waitingTitle || t.pendingTitle
+                      )?.length;
+                      if (L <= 25) return { xs: "1.5rem", sm: "2.5rem" };
+                      if (L <= 40) return { xs: "1.25rem", sm: "2rem" };
+                      return { xs: "1rem", sm: "1.75rem" };
+                    })(),
+                    lineHeight: { xs: 1.2, sm: 1.3 },
+                    wordBreak: "break-word",
+                    overflowWrap: "break-word",
+                  }}
+                >
+                  {isTeamMode
+                    ? t.waitingTeamsTitle
+                    : t.waitingTitle || t.pendingTitle}
                 </Typography>
-              </Box>
-            </>
-          ) : (
-            <>
-              <Typography
-                variant="h3"
-                sx={{
-                  mb: 4,
-                  fontWeight: "bold",
-                  textShadow:
-                    "0 0 10px rgba(255,255,255,0.8), 0 0 20px rgba(0,255,255,0.6)",
-                  letterSpacing: "2px",
-                  animation: "pulseText 2s infinite",
-                  fontSize: (() => {
-                    const L = (isTeamMode ? t.allTeamsJoined : t.bothJoined)
-                      ?.length;
-                    if (L <= 20) return { xs: "1.5rem", sm: "2.5rem" };
-                    if (L <= 35) return { xs: "1.25rem", sm: "2rem" };
-                    return { xs: "1rem", sm: "1.75rem" };
-                  })(),
-                }}
-              >
-                {isTeamMode ? t.allTeamsJoined : t.bothJoined}
-              </Typography>
 
-              <Button
-                variant="contained"
-                size="large"
-                onClick={handlePlayerActivate}
-                disabled={starting}
-                startIcon={<ICONS.play />}
-                sx={{
-                  px: 4,
-                  py: 1.25,
-                  borderRadius: 999,
-                  fontWeight: "bold",
-                  textTransform: "none",
-                  ...getStartIconSpacing(dir),
-                }}
-              >
-                {starting ? (
-                  <CircularProgress size={22} sx={{ color: "#fff" }} />
-                ) : (
-                  t.startNow
-                )}
-              </Button>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    mt: 2,
+                    opacity: 0.6,
+                    fontStyle: "italic",
+                    animation: "blink 1.5s infinite",
+                    fontSize: (() => {
+                      const L = (
+                        isTeamMode
+                          ? t.waitingTeamsMessage
+                          : t.waitingForBoth || t.pendingMessage
+                      )?.length;
+                      if (L <= 30) return { xs: "0.9rem", sm: "1.1rem" };
+                      if (L <= 50) return { xs: "0.8rem", sm: "1rem" };
+                      return { xs: "0.7rem", sm: "0.9rem" };
+                    })(),
+                  }}
+                >
+                  {isTeamMode
+                    ? t.waitingTeamsMessage
+                    : t.waitingForBoth || t.pendingMessage}
+                </Typography>
 
-              <Typography
-                variant="body2"
-                sx={{ mt: 4, opacity: 0.7, fontStyle: "italic" }}
-              >
-                {isTeamMode ? t.anyTeamCanStart : t.anyPlayerCanStart}
-              </Typography>
-            </>
-          )}
-        </Box>
+                <Box sx={{ mt: 3 }}>
+                  <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                    {t.autoCloseNotice} <b>{toArabicDigits(abandonRemaining, language)}</b> {t.seconds}.
+                  </Typography>
+                </Box>
+              </>
+            ) : (
+              <>
+                <Typography
+                  variant="h3"
+                  sx={{
+                    mb: 4,
+                    fontWeight: "bold",
+                    textShadow: "shadow.neonTextGlow",
+                    letterSpacing: "2px",
+                    animation: "pulseText 2s infinite",
+                    fontSize: (() => {
+                      const L = (isTeamMode ? t.allTeamsJoined : t.bothJoined)
+                        ?.length;
+                      if (L <= 20) return { xs: "1.5rem", sm: "2.5rem" };
+                      if (L <= 35) return { xs: "1.25rem", sm: "2rem" };
+                      return { xs: "1rem", sm: "1.75rem" };
+                    })(),
+                  }}
+                >
+                  {isTeamMode ? t.allTeamsJoined : t.bothJoined}
+                </Typography>
+
+                <Button
+                  variant="contained"
+                  size="large"
+                  onClick={handlePlayerActivate}
+                  disabled={starting}
+                  startIcon={<ICONS.play />}
+                  sx={{
+                    px: 4,
+                    py: 1.25,
+                    borderRadius: 999,
+                    fontWeight: "bold",
+                    textTransform: "none",
+                    ...getStartIconSpacing(dir),
+                  }}
+                >
+                  {starting ? (
+                    <CircularProgress size={22} sx={{ color: "text.primary", }} />
+                  ) : (
+                    t.startNow
+                  )}
+                </Button>
+
+                <Typography
+                  variant="body2"
+                  sx={{ mt: 4, opacity: 0.7, fontStyle: "italic" }}
+                >
+                  {isTeamMode ? t.anyTeamCanStart : t.anyPlayerCanStart}
+                </Typography>
+              </>
+            )}
+          </Box>
         </Box>
       </>
     );
@@ -809,10 +808,10 @@ export default function PlayPage() {
             overflow: "hidden",
           }}
         >
-        <Box sx={{
+          <Box sx={{
             position: "absolute", inset: 0,
-            backgroundColor: "rgba(0,0,0,0.72)",
-            color: "#fff",
+            backgroundColor: "overlay.pageOverlay",
+            color: "text.primary",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -822,73 +821,72 @@ export default function PlayPage() {
             animation: "fadeIn 1s ease-in-out",
             px: 3,
           }}
-        >
-          {/* Title */}
-          <Typography
-            variant="h3"
-            sx={{
-              mb: 4,
-              fontWeight: "bold",
-              textShadow:
-                "0 0 10px rgba(255,255,255,0.8), 0 0 20px rgba(0,255,255,0.6)",
-              letterSpacing: "2px",
-              animation: "pulseText 2s infinite",
-              fontSize: (() => {
-                const title = isTeamMode
-                  ? t.teamCountdownTitle
-                  : t.waitingTitle;
-                const titleLength = title?.length || 0;
-                if (titleLength <= 15) return { xs: "1.5rem", sm: "3rem" };
-                if (titleLength <= 25) return { xs: "1.25rem", sm: "2.5rem" };
-                return { xs: "1rem", sm: "2rem" };
-              })(),
-              lineHeight: { xs: 1.2, sm: 1.3 },
-              wordBreak: "break-word",
-              overflowWrap: "break-word",
-            }}
           >
-            {isTeamMode ? t.teamCountdownTitle : t.waitingTitle}
-          </Typography>
+            {/* Title */}
+            <Typography
+              variant="h3"
+              sx={{
+                mb: 4,
+                fontWeight: "bold",
+                textShadow: "shadow.neonTextGlow",
+                letterSpacing: "2px",
+                animation: "pulseText 2s infinite",
+                fontSize: (() => {
+                  const title = isTeamMode
+                    ? t.teamCountdownTitle
+                    : t.waitingTitle;
+                  const titleLength = title?.length || 0;
+                  if (titleLength <= 15) return { xs: "1.5rem", sm: "3rem" };
+                  if (titleLength <= 25) return { xs: "1.25rem", sm: "2.5rem" };
+                  return { xs: "1rem", sm: "2rem" };
+                })(),
+                lineHeight: { xs: 1.2, sm: 1.3 },
+                wordBreak: "break-word",
+                overflowWrap: "break-word",
+              }}
+            >
+              {isTeamMode ? t.teamCountdownTitle : t.waitingTitle}
+            </Typography>
 
-          {/* Countdown number */}
-          <Typography
-            variant="h1"
-            sx={{
-              fontWeight: "bold",
-              fontSize: { xs: "8rem", sm: "10rem" },
-              color: "warning.light",
-              textShadow: "0 0 20px rgba(255,215,0,0.9)",
-              animation: "pulse 1s infinite alternate",
-            }}
-          >
-            {toArabicDigits(localDelay, language)}
-          </Typography>
+            {/* Countdown number */}
+            <Typography
+              variant="h1"
+              sx={{
+                fontWeight: "bold",
+                fontSize: { xs: "8rem", sm: "10rem" },
+                color: "warning.light",
+                textShadow: "shadow.goldTextGlow",
+                animation: "pulse 1s infinite alternate",
+              }}
+            >
+              {toArabicDigits(localDelay, language)}
+            </Typography>
 
-          {/* Subtext */}
-          <Typography
-            variant="h6"
-            sx={{
-              mt: 2,
-              opacity: 0.5,
-              fontStyle: "italic",
-              animation: "blink 1.5s infinite",
-              fontSize: (() => {
-                const msg = isTeamMode
-                  ? t.teamCountdownMessage
-                  : t.waitingMessage;
-                const L = msg?.length || 0;
-                if (L <= 25) return { xs: "0.9rem", sm: "1.2rem" };
-                if (L <= 40) return { xs: "0.8rem", sm: "1.1rem" };
-                return { xs: "0.7rem", sm: "1rem" };
-              })(),
-              lineHeight: { xs: 1.2, sm: 1.3 },
-              wordBreak: "break-word",
-              overflowWrap: "break-word",
-            }}
-          >
-            {isTeamMode ? t.teamCountdownMessage : t.waitingMessage}
-          </Typography>
-        </Box>
+            {/* Subtext */}
+            <Typography
+              variant="h6"
+              sx={{
+                mt: 2,
+                opacity: 0.5,
+                fontStyle: "italic",
+                animation: "blink 1.5s infinite",
+                fontSize: (() => {
+                  const msg = isTeamMode
+                    ? t.teamCountdownMessage
+                    : t.waitingMessage;
+                  const L = msg?.length || 0;
+                  if (L <= 25) return { xs: "0.9rem", sm: "1.2rem" };
+                  if (L <= 40) return { xs: "0.8rem", sm: "1.1rem" };
+                  return { xs: "0.7rem", sm: "1rem" };
+                })(),
+                lineHeight: { xs: 1.2, sm: 1.3 },
+                wordBreak: "break-word",
+                overflowWrap: "break-word",
+              }}
+            >
+              {isTeamMode ? t.teamCountdownMessage : t.waitingMessage}
+            </Typography>
+          </Box>
         </Box>
       </>
     );
@@ -916,7 +914,7 @@ export default function PlayPage() {
               sx={{
                 position: "absolute",
                 inset: 0,
-                backgroundColor: "rgba(0,0,0,0.65)",
+                backgroundColor: "overlay.modalOverlay",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -924,102 +922,102 @@ export default function PlayPage() {
                 textAlign: "center",
               }}
             >
-            <LanguageSelector top={20} right={20} />
-            <Confetti
-              recycle={false}
-              numberOfPieces={300}
-              gravity={0.2}
-              style={{ position: "fixed", top: 0, left: 0, zIndex: 9999 }}
-            />
+              <LanguageSelector top={20} right={20} />
+              <Confetti
+                recycle={false}
+                numberOfPieces={300}
+                gravity={0.2}
+                style={{ position: "fixed", top: 0, left: 0, zIndex: 9999 }}
+              />
 
-            <Container maxWidth="sm" sx={{ position: "relative", zIndex: 1 }}>
-              <Card elevation={8} sx={{ borderRadius: 3 }}>
-                <CardContent sx={{ py: 4, px: 3 }}>
-                  <Typography
-                    variant="h3"
-                    gutterBottom
-                    sx={{
-                      fontWeight: 700,
-                      color: "primary.main",
-                      letterSpacing: 1,
-                      fontSize: (() => {
-                        const titleLength = t.finishedEarlyTitle?.length || 0;
-                        if (titleLength <= 15) {
-                          return { xs: "1.5rem", sm: "2rem", md: "2.5rem" };
-                        } else if (titleLength <= 25) {
-                          return { xs: "1.25rem", sm: "1.75rem", md: "2rem" };
-                        } else {
-                          return { xs: "1rem", sm: "1.5rem", md: "1.75rem" };
-                        }
-                      })(),
-                      lineHeight: { xs: 1.2, sm: 1.3, md: 1.4 },
-                      wordBreak: "break-word",
-                      overflowWrap: "break-word",
-                    }}
-                  >
-                    🎉 {t.finishedEarlyTitle}
-                  </Typography>
+              <Container maxWidth="sm" sx={{ position: "relative", zIndex: 1 }}>
+                <Card elevation={8} sx={{ borderRadius: 3 }}>
+                  <CardContent sx={{ py: 4, px: 3 }}>
+                    <Typography
+                      variant="h3"
+                      gutterBottom
+                      sx={{
+                        fontWeight: 700,
+                        color: "primary.main",
+                        letterSpacing: 1,
+                        fontSize: (() => {
+                          const titleLength = t.finishedEarlyTitle?.length || 0;
+                          if (titleLength <= 15) {
+                            return { xs: "1.5rem", sm: "2rem", md: "2.5rem" };
+                          } else if (titleLength <= 25) {
+                            return { xs: "1.25rem", sm: "1.75rem", md: "2rem" };
+                          } else {
+                            return { xs: "1rem", sm: "1.5rem", md: "1.75rem" };
+                          }
+                        })(),
+                        lineHeight: { xs: 1.2, sm: 1.3, md: 1.4 },
+                        wordBreak: "break-word",
+                        overflowWrap: "break-word",
+                      }}
+                    >
+                      🎉 {t.finishedEarlyTitle}
+                    </Typography>
 
-                  <Typography
-                    variant="h6"
-                    sx={{
-                      mt: 2,
-                      color: "text.primary",
-                      fontSize: (() => {
-                        const messageLength =
-                          t.finishedEarlyMessage?.length || 0;
-                        if (messageLength <= 50) {
-                          return { xs: "1rem", sm: "1.25rem", md: "1.5rem" };
-                        } else if (messageLength <= 80) {
-                          return {
-                            xs: "0.875rem",
-                            sm: "1.125rem",
-                            md: "1.25rem",
-                          };
-                        } else {
-                          return { xs: "0.75rem", sm: "1rem", md: "1.125rem" };
-                        }
-                      })(),
-                      lineHeight: { xs: 1.2, sm: 1.3, md: 1.4 },
-                      wordBreak: "break-word",
-                      overflowWrap: "break-word",
-                    }}
-                  >
-                    {t.finishedEarlyMessage}
-                  </Typography>
+                    <Typography
+                      variant="h6"
+                      sx={{
+                        mt: 2,
+                        color: "text.primary",
+                        fontSize: (() => {
+                          const messageLength =
+                            t.finishedEarlyMessage?.length || 0;
+                          if (messageLength <= 50) {
+                            return { xs: "1rem", sm: "1.25rem", md: "1.5rem" };
+                          } else if (messageLength <= 80) {
+                            return {
+                              xs: "0.875rem",
+                              sm: "1.125rem",
+                              md: "1.25rem",
+                            };
+                          } else {
+                            return { xs: "0.75rem", sm: "1rem", md: "1.125rem" };
+                          }
+                        })(),
+                        lineHeight: { xs: 1.2, sm: 1.3, md: 1.4 },
+                        wordBreak: "break-word",
+                        overflowWrap: "break-word",
+                      }}
+                    >
+                      {t.finishedEarlyMessage}
+                    </Typography>
 
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      mt: 3,
-                      fontStyle: "italic",
-                      color: "text.secondary",
-                      lineHeight: 1.6,
-                      fontSize: (() => {
-                        const waitMessageLength =
-                          t.finishedEarlyWaitMessage?.length || 0;
-                        if (waitMessageLength <= 60) {
-                          return { xs: "0.875rem", sm: "1rem", md: "1.125rem" };
-                        } else if (waitMessageLength <= 100) {
-                          return { xs: "0.75rem", sm: "0.875rem", md: "1rem" };
-                        } else {
-                          return {
-                            xs: "0.625rem",
-                            sm: "0.75rem",
-                            md: "0.875rem",
-                          };
-                        }
-                      })(),
-                      lineHeight: { xs: 1.2, sm: 1.3, md: 1.4 },
-                      wordBreak: "break-word",
-                      overflowWrap: "break-word",
-                    }}
-                  >
-                    {t.finishedEarlyWaitMessage}
-                  </Typography>
-                </CardContent>
-              </Card>
-            </Container>
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        mt: 3,
+                        fontStyle: "italic",
+                        color: "text.secondary",
+                        lineHeight: 1.6,
+                        fontSize: (() => {
+                          const waitMessageLength =
+                            t.finishedEarlyWaitMessage?.length || 0;
+                          if (waitMessageLength <= 60) {
+                            return { xs: "0.875rem", sm: "1rem", md: "1.125rem" };
+                          } else if (waitMessageLength <= 100) {
+                            return { xs: "0.75rem", sm: "0.875rem", md: "1rem" };
+                          } else {
+                            return {
+                              xs: "0.625rem",
+                              sm: "0.75rem",
+                              md: "0.875rem",
+                            };
+                          }
+                        })(),
+                        lineHeight: { xs: 1.2, sm: 1.3, md: 1.4 },
+                        wordBreak: "break-word",
+                        overflowWrap: "break-word",
+                      }}
+                    >
+                      {t.finishedEarlyWaitMessage}
+                    </Typography>
+                  </CardContent>
+                </Card>
+              </Container>
             </Box>
           </Box>
         </>
@@ -1061,7 +1059,7 @@ export default function PlayPage() {
                 fontSize: { xs: "4rem", sm: "6rem", md: "8rem" },
                 fontWeight: "bold",
                 color: "secondary.main",
-                textShadow: "0 0 15px rgba(255,255,255,0.6)",
+                textShadow: "shadow.textGlowMd",
                 lineHeight: 1,
               }}
             >
@@ -1071,7 +1069,7 @@ export default function PlayPage() {
               variant="h6"
               sx={{
                 fontSize: { xs: "1rem", sm: "1.5rem" },
-                color: "#000",
+                color: "text.primary",
                 fontStyle: "italic",
                 opacity: 0.7,
                 mb: { xs: "0.4rem", sm: "0.6rem" },
@@ -1103,11 +1101,12 @@ export default function PlayPage() {
                 p: { xs: 3, md: 4 },
                 textAlign: "center",
                 backdropFilter: "blur(16px)",
-                backgroundColor: "rgba(10,10,20,0.85)",
-                border: "1px solid rgba(255,255,255,0.08)",
+                backgroundColor: "overlay.cardTransparent",
+                border: (theme) =>
+                  `1px solid ${theme.palette.crosszero.instructionBorder}`,
                 borderRadius: 4,
                 my: { xs: 2, md: 3 },
-                boxShadow: "0 8px 40px rgba(0,0,0,0.6)",
+                boxShadow: "shadow.glow",
               }}
             >
               {/* Question label — small secondary badge */}
@@ -1116,7 +1115,7 @@ export default function PlayPage() {
                 sx={{
                   fontSize: { xs: "0.75rem", sm: "0.85rem", md: "1rem" },
                   fontWeight: 600,
-                  color: "#00e5ff",
+                  color: "primary.main",
                   textTransform: "uppercase",
                   letterSpacing: 1,
                   lineHeight: 1.3,
@@ -1136,7 +1135,7 @@ export default function PlayPage() {
                     return { xs: "0.8rem", sm: "1rem", md: "1.15rem" };
                   })(),
                   fontWeight: 700,
-                  color: "#fff",
+                  color: "text.primary",
                   lineHeight: { xs: 1.4, sm: 1.5 },
                   wordBreak: "break-word",
                   overflowWrap: "break-word",
@@ -1190,10 +1189,13 @@ export default function PlayPage() {
                     const isCorrect = i === currentQuestion.correctAnswerIndex;
                     const { bg, borderColor, borderWidth } = (() => {
                       if (isSelected && isCorrect)
-                        return { bg: "rgba(76,175,80,0.35)", borderColor: "#81c784", borderWidth: 2 };
-                      if (isSelected && !isCorrect)
-                        return { bg: "rgba(244,67,54,0.35)", borderColor: "#e57373", borderWidth: 2 };
-                      return { bg: "rgba(255,255,255,0.08)", borderColor: "rgba(255,255,255,0.18)", borderWidth: 1.5 };
+                        return {
+                          bg: theme.palette.crosszero.answerCorrectBg,
+                          borderColor: theme.palette.crosszero.answerCorrectBorder,
+                          borderWidth: 2,
+                        }; if (isSelected && !isCorrect)
+                        return { bg: theme.palette.crosszero.answerWrongBg, borderColor: theme.palette.crosszero.answerWrongBorder, borderWidth: 2 };
+                      return { bg: theme.palette.crosszero.answerDefaultBg, borderColor: theme.palette.crosszero.answerDefaultBorder, borderWidth: 1.5 };
                     })();
                     return (
                       <Grid
@@ -1240,7 +1242,7 @@ export default function PlayPage() {
                             transition: "border 0.2s ease",
                             "&:hover": { backgroundColor: bg, borderColor },
                             "&:active": { backgroundColor: bg, borderColor },
-                            color: "#fff",
+                            color: "text.primary",
                             fontSize: (() => {
                               const len = opt.length;
                               if (len <= 15) return { xs: "1rem", sm: "1.1rem", md: "1.2rem" };
@@ -1360,11 +1362,10 @@ export default function PlayPage() {
       const headlineText = isTie ? t.tie : isWinner ? t.teamWin : t.teamLose;
 
       const backgroundGradient = isTie
-        ? "linear-gradient(135deg, #FFC107CC, #FF9800CC)"
+        ? theme.palette.crosszero.drawGradient
         : isWinner
-        ? "linear-gradient(135deg, #4CAF50CC, #388E3CCC)"
-        : "linear-gradient(135deg, #F44336CC, #E53935CC)";
-
+          ? theme.palette.crosszero.winGradient
+          : theme.palette.crosszero.loseGradient;
       return (
         <Box
           sx={{
@@ -1379,7 +1380,7 @@ export default function PlayPage() {
         >
           <Box sx={{
             position: "absolute", inset: 0,
-            backgroundColor: "rgba(0,0,0,0.72)",
+            backgroundColor: "overlay.pageOverlay",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -1387,130 +1388,130 @@ export default function PlayPage() {
             backdropFilter: "blur(4px)",
             p: 2,
           }}>
-          {isWinner && (
-            <Confetti
-              recycle={false}
-              numberOfPieces={300}
-              gravity={0.2}
-              style={{ position: "fixed", top: 0, left: 0, zIndex: 9999 }}
-            />
-          )}
-          <LanguageSelector top={20} right={20} />
-          <Fade in timeout={800}>
-            <Paper
-              dir={dir}
-              elevation={8}
-              sx={{
-                width: { xs: "85%", sm: "60%" },
-                p: 4,
-                borderRadius: 3,
-                background: backgroundGradient,
-                color: "#fff",
-                textAlign: "center",
-                boxShadow: "0 0 30px rgba(0,0,0,0.6)",
-                backdropFilter: "blur(5px)",
-              }}
-            >
-              {/* Team Name */}
-              <Typography
-                variant="h3"
+            {isWinner && (
+              <Confetti
+                recycle={false}
+                numberOfPieces={300}
+                gravity={0.2}
+                style={{ position: "fixed", top: 0, left: 0, zIndex: 9999 }}
+              />
+            )}
+            <LanguageSelector top={20} right={20} />
+            <Fade in timeout={800}>
+              <Paper
+                dir={dir}
+                elevation={8}
                 sx={{
-                  fontWeight: 700,
-                  mb: 1,
-                  textShadow: "0 0 15px rgba(255,255,255,0.8)",
-
-                  fontSize: (() => {
-                    const nameLen = teamName?.length || 0;
-                    if (nameLen <= 20)
-                      return { xs: "1.5rem", sm: "2rem", md: "2.5rem" };
-                    if (nameLen <= 35)
-                      return { xs: "1.25rem", sm: "1.75rem", md: "2rem" };
-                    return { xs: "1rem", sm: "1.5rem", md: "1.75rem" };
-                  })()
-                }}>
-                {teamName}
-              </Typography>
-
-              {/* Headline */}
-              <Typography
-                variant="h1"
-                sx={{
-                  my: 3,
-                  fontWeight: "bold",
-                  textShadow: "0 0 15px rgba(255,255,255,0.8)",
-                  fontSize: { xs: "2.5rem", sm: "3.5rem", md: "4rem" },
+                  width: { xs: "85%", sm: "60%" },
+                  p: 4,
+                  borderRadius: 3,
+                  background: backgroundGradient,
+                  color: "text.primary",
+                  textAlign: "center",
+                  boxShadow: "shadow.glow",
+                  backdropFilter: "blur(5px)",
                 }}
               >
-                {headlineText}
-              </Typography>
-
-              {/* Team Stats */}
-              <Typography
-                variant="h3"
-                sx={{
-                  my: 2,
-                  textShadow: "0 0 10px rgba(255,255,255,0.6)",
-                }}
-              >
-                {t.totalScore}: {toArabicDigits(playerTeam?.totalScore ?? 0, language)}
-              </Typography>
-
-              <Typography variant="body1" sx={{ mb: 3 }}>
-                {t.averageTime}: {toArabicDigits(playerTeam?.avgTimeTaken ?? 0, language)}s{" "}
-                <Box component="span" sx={{ mx: 1, color: "text.secondary" }}>
-                  |
-                </Box>{" "}
-                {t.averageAttempted}: {toArabicDigits(playerTeam?.avgAttemptedQuestions ?? 0, language)}
-              </Typography>
-
-              {/* Opponent Teams */}
-              {opponentTeams.length > 0 && (
-                <Box
+                {/* Team Name */}
+                <Typography
+                  variant="h3"
                   sx={{
-                    background: "#ffffffaa",
-                    backdropFilter: "blur(4px)",
-                    p: 2,
-                    borderRadius: 2,
-                    color: "#000",
-                    mb: 3,
+                    fontWeight: 700,
+                    mb: 1,
+                    textShadow: "shadow.lightTextGlow",
+
+                    fontSize: (() => {
+                      const nameLen = teamName?.length || 0;
+                      if (nameLen <= 20)
+                        return { xs: "1.5rem", sm: "2rem", md: "2.5rem" };
+                      if (nameLen <= 35)
+                        return { xs: "1.25rem", sm: "1.75rem", md: "2rem" };
+                      return { xs: "1rem", sm: "1.5rem", md: "1.75rem" };
+                    })()
+                  }}>
+                  {teamName}
+                </Typography>
+
+                {/* Headline */}
+                <Typography
+                  variant="h1"
+                  sx={{
+                    my: 3,
+                    fontWeight: "bold",
+                    textShadow: "shadow.lightTextGlow",
+                    fontSize: { xs: "2.5rem", sm: "3.5rem", md: "4rem" },
                   }}
                 >
-                  <Typography variant="h6" sx={{ mb: 1 }}>
-                    {t.opponentTeams}
-                  </Typography>
-                  {opponentTeams.map((opp, idx) => (
-                    <Box key={idx} sx={{ mb: 1 }}>
-                      <Typography variant="h5" sx={{
-                        fontWeight: "bold"
-                      }}>
-                        {opp.teamId?.name || opp.teamName || `Team ${toArabicDigits(idx + 1, language)}`}
-                      </Typography>
-                      <Typography variant="body2">
-                        {t.totalScore}: {toArabicDigits(opp.totalScore ?? 0, language)}
-                      </Typography>
-                      <Typography variant="body2">
-                        {t.averageTime}: {toArabicDigits(opp.avgTimeTaken ?? 0, language)}s
-                      </Typography>
-                      <Typography variant="body2">
-                        {t.averageAttempted}: {toArabicDigits(opp.avgAttemptedQuestions ?? 0, language)}
-                      </Typography>
-                    </Box>
-                  ))}
-                </Box>
-              )}
+                  {headlineText}
+                </Typography>
 
-              <Button
-                variant="contained"
-                color="secondary"
-                size="large"
-                onClick={handlePlayAgain}
-                startIcon={<ICONS.replay />}
-                sx={getStartIconSpacing(dir)}
-              >
-                {t.playAgain}
-              </Button>
-            </Paper>
-          </Fade>
+                {/* Team Stats */}
+                <Typography
+                  variant="h3"
+                  sx={{
+                    my: 2,
+                    textShadow: "shadow.textGlowSm"
+                  }}
+                >
+                  {t.totalScore}: {toArabicDigits(playerTeam?.totalScore ?? 0, language)}
+                </Typography>
+
+                <Typography variant="body1" sx={{ mb: 3 }}>
+                  {t.averageTime}: {toArabicDigits(playerTeam?.avgTimeTaken ?? 0, language)}s{" "}
+                  <Box component="span" sx={{ mx: 1, color: "text.secondary" }}>
+                    |
+                  </Box>{" "}
+                  {t.averageAttempted}: {toArabicDigits(playerTeam?.avgAttemptedQuestions ?? 0, language)}
+                </Typography>
+
+                {/* Opponent Teams */}
+                {opponentTeams.length > 0 && (
+                  <Box
+                    sx={{
+                      backgroundColor: "crosszero.resultCard",
+                      backdropFilter: "blur(4px)",
+                      p: 2,
+                      borderRadius: 2,
+                      color: "text.primary",
+                      mb: 3,
+                    }}
+                  >
+                    <Typography variant="h6" sx={{ mb: 1 }}>
+                      {t.opponentTeams}
+                    </Typography>
+                    {opponentTeams.map((opp, idx) => (
+                      <Box key={idx} sx={{ mb: 1 }}>
+                        <Typography variant="h5" sx={{
+                          fontWeight: "bold"
+                        }}>
+                          {opp.teamId?.name || opp.teamName || `Team ${toArabicDigits(idx + 1, language)}`}
+                        </Typography>
+                        <Typography variant="body2">
+                          {t.totalScore}: {toArabicDigits(opp.totalScore ?? 0, language)}
+                        </Typography>
+                        <Typography variant="body2">
+                          {t.averageTime}: {toArabicDigits(opp.avgTimeTaken ?? 0, language)}s
+                        </Typography>
+                        <Typography variant="body2">
+                          {t.averageAttempted}: {toArabicDigits(opp.avgAttemptedQuestions ?? 0, language)}
+                        </Typography>
+                      </Box>
+                    ))}
+                  </Box>
+                )}
+
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  size="large"
+                  onClick={handlePlayAgain}
+                  startIcon={<ICONS.replay />}
+                  sx={getStartIconSpacing(dir)}
+                >
+                  {t.playAgain}
+                </Button>
+              </Paper>
+            </Fade>
           </Box>
         </Box>
       );
@@ -1537,11 +1538,10 @@ export default function PlayPage() {
 
     const headlineText = isTie ? t.tie : isWinner ? t.win : t.lose;
     const backgroundGradient = isTie
-      ? "linear-gradient(135deg, #FFC107CC, #FF9800CC)"
+      ? theme.palette.crosszero.drawGradient
       : isWinner
-      ? "linear-gradient(135deg, #4CAF50CC, #388E3CCC)"
-      : "linear-gradient(135deg, #F44336CC, #E53935CC)";
-
+        ? theme.palette.crosszero.winGradient
+        : theme.palette.crosszero.loseGradient;
     return (
       <Box
         sx={{
@@ -1555,15 +1555,15 @@ export default function PlayPage() {
         }}
       >
         <Box sx={{
-            position: "absolute", inset: 0,
-            backgroundColor: "rgba(0,0,0,0.72)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            textAlign: "center",
-            backdropFilter: "blur(4px)",
-            p: 2,
-          }}>
+          position: "absolute", inset: 0,
+          backgroundColor: "overlay.pageOverlay",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          textAlign: "center",
+          backdropFilter: "blur(4px)",
+          p: 2,
+        }}>
           {isWinner && (
             <Confetti
               recycle={false}
@@ -1582,9 +1582,9 @@ export default function PlayPage() {
                 p: 4,
                 borderRadius: 3,
                 background: backgroundGradient,
-                color: "#fff",
+                color: "text.primary",
                 textAlign: "center",
-                boxShadow: "0 0 30px rgba(0,0,0,0.6)",
+                boxShadow: "shadow.glow",
                 backdropFilter: "blur(5px)",
               }}
             >
@@ -1594,7 +1594,7 @@ export default function PlayPage() {
                 sx={{
                   fontWeight: 700,
                   mb: 1,
-                  textShadow: "0 0 15px rgba(255,255,255,0.8)",
+                  textShadow: "shadow.lightTextGlow",
 
                   fontSize: (() => {
                     const playerNameLength =
@@ -1620,7 +1620,7 @@ export default function PlayPage() {
                 variant="h1"
                 sx={{
                   my: 2,
-                  textShadow: "0 0 15px rgba(255,255,255,0.8)",
+                  textShadow: "shadow.lightTextGlow",
                   fontSize: (() => {
                     const headlineLength = headlineText?.length || 0;
                     if (headlineLength <= 15) {
@@ -1646,7 +1646,7 @@ export default function PlayPage() {
                 sx={{
                   fontWeight: "bold",
                   fontSize: { xs: "4rem", sm: "6rem" },
-                  textShadow: "0 0 20px rgba(255,255,255,0.6)",
+                  textShadow: "shadow.textGlowLg"
                 }}
               >
                 {toArabicDigits(playerScore, language)}
@@ -1681,11 +1681,11 @@ export default function PlayPage() {
               {/* Opponent Box */}
               <Box
                 sx={{
-                  background: "#ffffffaa",
+                  backgroundColor: "crosszero.resultCard",
                   backdropFilter: "blur(4px)",
                   p: 2,
                   borderRadius: 2,
-                  color: "#000",
+                  color: "text.primary",
                   mb: 3,
                 }}
               >
@@ -1797,7 +1797,7 @@ export default function PlayPage() {
               </Button>
             </Paper>
           </Fade>
-          </Box>
+        </Box>
       </Box>
     );
   }

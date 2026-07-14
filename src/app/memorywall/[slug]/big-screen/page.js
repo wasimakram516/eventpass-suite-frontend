@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import useMediaSocket from "@/hooks/modules/memorywall/useMemoryWallMediaSocket";
-import { Box, Typography, Container } from "@mui/material";
+import { Box, Typography, Container, useTheme } from "@mui/material";
 import { getWallConfigBySlug } from "@/services/memorywall/wallConfigService";
 import MosaicGrid from "@/components/memorywall/MosaicGrid";
 import CardsGrid from "@/components/memorywall/CardsGrid";
@@ -23,6 +23,7 @@ const translations = {
   },
 };
 const BigScreenPage = () => {
+  const theme = useTheme();
   const { slug } = useParams();
   const [media, setMedia] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -111,7 +112,7 @@ const BigScreenPage = () => {
           sx={{
             textAlign: align,
             mt: 4,
-            color: "#fff",
+color: theme.palette.wall.whiteText,
             zIndex: 1
           }}>
           {t.noMediaAvailable}
@@ -182,11 +183,20 @@ const BigScreenPage = () => {
           min: wallConfig.randomSizes?.min || 150,
           max: wallConfig.randomSizes?.max || 300
         }}
-        backgroundColor={wallConfig.cardSettings?.backgroundColor || "#ffffff"}
+       backgroundColor={
+  wallConfig.cardSettings?.backgroundColor ??
+  theme.palette.wall.cardBackground
+}
         randomColors={wallConfig.cardSettings?.randomColors || false}
         imageShape={wallConfig.cardSettings?.imageShape || "circle"}
-        mediaType2TextColor={wallConfig.cardSettings?.mediaType2TextColor || "#000000"}
-        mediaType2SignatureColor={wallConfig.cardSettings?.mediaType2SignatureColor || "#000000"}
+       mediaType2TextColor={
+  wallConfig.cardSettings?.mediaType2TextColor ??
+  theme.palette.wall.text
+}
+       mediaType2SignatureColor={
+  wallConfig.cardSettings?.mediaType2SignatureColor ??
+  theme.palette.wall.signature
+}
       />
     );
   }

@@ -23,6 +23,7 @@ import {
   ListItem,
   ListItemText,
   TextField,
+  useTheme,
 } from "@mui/material";
 import {
   Shuffle as ShuffleIcon,
@@ -91,6 +92,7 @@ const EASING = "cubic-bezier(0.17, 0.67, 0.32, 1)";
 const normalizeDeg = (deg) => ((deg % 360) + 360) % 360;
 
 const SpinningPage = () => {
+  const theme = useTheme();
   const params = useParams();
   const router = useRouter();
   const shortName = params.slug;
@@ -238,7 +240,7 @@ const SpinningPage = () => {
   }, [count, slice, participants]);
 
   const wheelBg = useMemo(() => {
-    if (!count) return "conic-gradient(#666 0deg 360deg)";
+    if (!count) return theme.palette.gradients.wheelEmpty;
 
     const baseColorGradients = [
       {
@@ -500,6 +502,7 @@ const SpinningPage = () => {
         flexDirection: "column",
         justifyContent: "center",
         alignItems: "center",
+        bgcolor: "background.default",
         backgroundSize: "cover",
         backgroundImage: eventData?.backgroundUrl
           ? `url(${eventData.backgroundUrl})`
@@ -526,7 +529,6 @@ const SpinningPage = () => {
             left: { xs: 10, sm: 20 },
             zIndex: 9999,
             textTransform: "none",
-            borderRadius: 2,
           }}
           onClick={() => router.push(`/eventwheel/wheels/${shortName}`)}
         >
@@ -544,7 +546,6 @@ const SpinningPage = () => {
             right: { xs: 10, sm: 20 },
             zIndex: 9999,
             textTransform: "none",
-            borderRadius: 2,
           }}
           onClick={handleDrawerOpen}
         >
@@ -627,7 +628,7 @@ const SpinningPage = () => {
           backgroundColor: "primary.main",
           clipPath: "polygon(50% 0%, 100% 100%, 0% 100%)",
           zIndex: 10,
-          boxShadow: "0px 6px 15px rgba(0, 0, 0, 0.9)",
+          boxShadow: (theme) => theme.palette.shadow.wheelPointer,
         }}
       />
       {/* Wheel */}
@@ -639,8 +640,8 @@ const SpinningPage = () => {
             width: size,
             height: size,
             borderRadius: "50%",
-            border: "6px solid #fff",
-            boxShadow: "0px 6px 15px rgba(0, 0, 0, 0.6)",
+            border: (theme) => `6px solid ${theme.palette.common.white}`,
+            boxShadow: (theme) => theme.palette.shadow.wheel,
             background: wheelBg,
             position: "relative",
             willChange: "transform",
@@ -695,14 +696,14 @@ const SpinningPage = () => {
         <ICONS.trophy
           sx={{
             fontSize: trophySize,
-            color: "gold",
+            color: (theme) => theme.palette.trophy.gold,
             position: "absolute",
             top: "50%",
             left: "50%",
             transform: "translate(-50%, -50%)",
             zIndex: 11,
             pointerEvents: "none",
-            textShadow: "0px 6px 12px rgba(0, 0, 0, 0.6)",
+            textShadow: (theme) => theme.palette.shadow.textHeavy,
           }}
         />
       </Box>
@@ -756,8 +757,7 @@ const SpinningPage = () => {
         slotProps={{
           paper: {
             sx: {
-              borderRadius: 3,
-              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+              background: (theme) => theme.palette.gradients.winnerDialog,
               color: "white",
             },
           }
@@ -779,9 +779,9 @@ const SpinningPage = () => {
               position: "absolute",
               right: 8,
               top: 8,
-              color: "white",
+              color: (theme) => theme.palette.primary.contrastText,
               "&:hover": {
-                backgroundColor: "rgba(255,255,255,0.1)",
+                backgroundColor: (theme) => theme.palette.action.hover,
               },
             }}
           >
@@ -793,9 +793,8 @@ const SpinningPage = () => {
             <ICONS.trophy
               sx={{
                 fontSize: 80,
-                color: "gold",
-                mb: 2,
-                filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.3))",
+                color: (theme) => theme.palette.trophy.gold,
+                filter: (theme) => theme.palette.shadow.trophy,
               }}
             />
           </Box>
@@ -805,7 +804,7 @@ const SpinningPage = () => {
             sx={{
               fontWeight: 700,
               mb: 2,
-              textShadow: "0 2px 4px rgba(0,0,0,0.2)",
+              textShadow: (theme) => theme.palette.shadow.textGlow,
             }}
           >
             {selectedWinner?.name}
@@ -827,7 +826,7 @@ const SpinningPage = () => {
               color: "white",
               "&:hover": {
                 borderColor: "white",
-                backgroundColor: "rgba(255,255,255,0.1)",
+                backgroundColor: (theme) => theme.palette.action.hover,
               },
             }}
           >
@@ -845,7 +844,7 @@ const SpinningPage = () => {
             paper: {
               sx: {
                 width: { xs: "90%", sm: 400 },
-                backgroundColor: "white",
+                backgroundColor: "background.paper",
                 color: "text.primary",
                 zIndex: 10001,
               },
@@ -881,7 +880,7 @@ const SpinningPage = () => {
                 sx={{
                   pl: 6,
                   "& .MuiTab-root": {
-                    color: "rgba(0, 0, 0, 0.7)",
+                    color: "text.secondary",
                     "&.Mui-selected": {
                       color: "primary.main",
                     },
@@ -982,11 +981,11 @@ const SpinningPage = () => {
                         <ListItem
                           key={index}
                           sx={{
-                            backgroundColor: "rgba(0, 0, 0, 0.02)",
+                            backgroundColor: "action.hover",
                             mb: 1,
                             borderRadius: 1,
                             "&:hover": {
-                              backgroundColor: "rgba(0, 0, 0, 0.05)",
+                              backgroundColor: "action.selected"
                             },
                           }}
                         >

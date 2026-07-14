@@ -371,7 +371,7 @@ export default function DigiPassVerifyPage() {
               sx={{
                 width: "100%",
                 maxWidth: 400,
-                bgcolor: "grey.100",
+               bgcolor: "background.default",
                 border: "1px solid",
                 borderColor: "divider",
                 borderRadius: 2,

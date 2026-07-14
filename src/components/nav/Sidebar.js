@@ -64,10 +64,10 @@ export default function Sidebar() {
     { label: t.trash, icon: ICONS.delete, path: "/cms/trash" },
     ...(user?.role === "superadmin"
       ? [
-          { label: "Global Search", icon: ICONS.search, path: "/cms/global-search" },
-          { label: "Logs", icon: ICONS.history, path: "/cms/logs" },
-          { label: "Payments", icon: ICONS.payment, path: "/cms/payments" },
-        ]
+        { label: "Global Search", icon: ICONS.search, path: "/cms/global-search" },
+        { label: "Logs", icon: ICONS.history, path: "/cms/logs" },
+        { label: "Payments", icon: ICONS.payment, path: "/cms/payments" },
+      ]
       : []),
   ];
 
@@ -140,7 +140,7 @@ export default function Sidebar() {
                   <IconButton
                     size="large"
                     sx={{
-                      color: isActive(path) ? "white" : "text.secondary",
+                      color: isActive(path) ? "primary.contrastText" : "text.secondary", 
                       bgcolor: isActive(path) ? "primary.light" : "transparent",
                       ":hover": {
                         bgcolor: "action.hover",

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { alpha } from "@mui/material/styles";
 import {
   Box,
   Container,
@@ -74,25 +75,25 @@ export default function GlobalSearchPage() {
   const labels =
     language === "ar"
       ? {
-          fullName: "الاسم الكامل",
-          company: "الشركة",
-          phone: "الهاتف",
-          email: "البريد الإلكتروني",
-          itemType: "نوع العنصر",
-          module: "الوحدة",
-          eventName: "اسم الفعالية",
-          time: "الوقت",
-        }
+        fullName: "الاسم الكامل",
+        company: "الشركة",
+        phone: "الهاتف",
+        email: "البريد الإلكتروني",
+        itemType: "نوع العنصر",
+        module: "الوحدة",
+        eventName: "اسم الفعالية",
+        time: "الوقت",
+      }
       : {
-          fullName: "Full Name",
-          company: "Company",
-          phone: "Phone",
-          email: "Email",
-          itemType: "Item Type",
-          module: "Module",
-          eventName: "Event Name",
-          time: "Time",
-        };
+        fullName: "Full Name",
+        company: "Company",
+        phone: "Phone",
+        email: "Email",
+        itemType: "Item Type",
+        module: "Module",
+        eventName: "Event Name",
+        time: "Time",
+      };
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -366,11 +367,11 @@ export default function GlobalSearchPage() {
           borderColor: "divider",
           borderRadius: 2.5,
           overflow: "hidden",
-          boxShadow: "0 6px 18px rgba(15,23,42,0.05)",
+          boxShadow: theme.palette.sharedUI.cardShadow,
           transition: "transform 0.2s ease, box-shadow 0.2s ease",
           "&:hover": {
             transform: "translateY(-1px)",
-            boxShadow: "0 10px 24px rgba(15,23,42,0.1)",
+            boxShadow: theme.palette.sharedUI.cardHoverShadow,
           },
         }}
       >
@@ -483,7 +484,7 @@ export default function GlobalSearchPage() {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            bgcolor: "rgba(255,255,255,0.7)",
+            bgcolor: (theme) => alpha(theme.palette.background.paper, 0.7),
           }}
         >
           <CircularProgress size={48} />

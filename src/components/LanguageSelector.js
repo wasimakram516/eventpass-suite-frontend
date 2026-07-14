@@ -1,6 +1,6 @@
 "use client";
 
-import { Box, Typography, Tooltip } from "@mui/material";
+import { Box, Typography, Tooltip, useTheme } from "@mui/material";
 import { motion } from "framer-motion";
 import { useLanguage } from "@/contexts/LanguageContext";
 import useI18nLayout from "@/hooks/useI18nLayout";
@@ -15,6 +15,7 @@ const LanguageSelector = ({ top, right }) => {
   const { language, toggleLanguage } = useLanguage();
   const isArabic = language === "ar";
   const isFloating = typeof top !== "undefined" && typeof right !== "undefined";
+  const theme = useTheme();
 
   const { t } = useI18nLayout({
     en: {
@@ -46,21 +47,14 @@ const LanguageSelector = ({ top, right }) => {
           cursor: "pointer",
           overflow: "hidden",
           zIndex: 999,
-          // Inner + Outer Neumorphic Shadows
-          boxShadow: `
-            2px 2px 6px rgba(0, 0, 0, 0.15),
-            -2px -2px 6px rgba(255, 255, 255, 0.5),
-            inset 2px 2px 5px rgba(0, 0, 0, 0.2),
-            inset -2px -2px 5px rgba(255, 255, 255, 0.7)
-          `,
+          boxShadow: (theme) => theme.palette.shadow.neumorphicToggle,
         }}
       >
-        {/* Labels */}
         <Typography
           variant="caption"
           sx={{
             fontWeight: 600,
-            color: !isArabic ? "#fff" : "text.secondary",
+            color: !isArabic ? "primary.contrastText" : "text.secondary",
             zIndex: 2,
             transition: "color 0.3s",
           }}
@@ -71,7 +65,7 @@ const LanguageSelector = ({ top, right }) => {
           variant="caption"
           sx={{
             fontWeight: 600,
-            color: isArabic ? "#fff" : "text.secondary",
+            color: isArabic ? "primary.contrastText" : "text.secondary",
             zIndex: 2,
             transition: "color 0.3s",
           }}
@@ -79,7 +73,6 @@ const LanguageSelector = ({ top, right }) => {
           AR
         </Typography>
 
-        {/* Animated Thumb */}
         <motion.div
           layout
           transition={spring}
@@ -90,9 +83,9 @@ const LanguageSelector = ({ top, right }) => {
             borderRadius: 999,
             top: 2,
             left: isArabic ? 34 : 2,
-            backgroundColor: "#1976d2",
+            backgroundColor: theme.palette.primary.main,
             zIndex: 1,
-            boxShadow: "0 4px 8px rgba(0, 0, 0, 0.3)", 
+            boxShadow: theme.palette.shadow.toggleKnob,
           }}
         />
       </Box>

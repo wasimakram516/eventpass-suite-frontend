@@ -1,6 +1,7 @@
 "use client";
 
 import Navbar from "@/components/nav/Navbar";
+import FloatingColorModeToggle from "@/components/nav/FloatingColorModeToggle";
 import { Box } from "@mui/material";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -40,6 +41,7 @@ export default function ClientLayout({ children }) {
   return (
     <>
       {!hideNavbar && <Navbar />}
+      {hideNavbar && <FloatingColorModeToggle />}
       <Box sx={{ pt: hideNavbar ? 0 : 5 }}>{children}</Box>
     </>
   );

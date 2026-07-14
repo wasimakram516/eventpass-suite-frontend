@@ -6,6 +6,7 @@ import {
   Button,
   CircularProgress,
   Paper,
+  useTheme
 } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { useGame } from "@/contexts/GameContext";
@@ -27,7 +28,7 @@ export default function GameHomePage() {
   const { game, loading } = useGame();
   const router = useRouter();
   const { t, dir } = useI18nLayout(gameStartTranslations);
-
+  const theme = useTheme();
   // Grab sessions so we can detect an existing pending one
   const { sessions, requestAllSessions } = useWebSocketData(game?.slug);
 
@@ -63,7 +64,7 @@ export default function GameHomePage() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: "#f0f0f0",
+          backgroundColor: theme.palette.background.default,
         }}
       >
         <CircularProgress />
@@ -97,10 +98,11 @@ export default function GameHomePage() {
               maxWidth: 800,
               width: "100%",
               backdropFilter: "blur(16px)",
-              backgroundColor: "rgba(10,10,20,0.85)",
+
               borderRadius: 6,
-              border: "1px solid rgba(255,255,255,0.08)",
-              boxShadow: "0 8px 40px rgba(0,0,0,0.6)",
+              backgroundColor: theme.palette.overlay.cardTransparent,
+              border: `1px solid ${theme.palette.divider}`,
+              boxShadow: theme.palette.shadow.card,
             }}
           >
             <Typography
@@ -109,7 +111,7 @@ export default function GameHomePage() {
               sx={{
                 fontWeight: 800,
                 mb: 3,
-                color: "#fff",
+                color: theme.palette.text.primary,
                 textTransform: "capitalize",
                 wordBreak: "break-word"
               }}>
@@ -128,12 +130,15 @@ export default function GameHomePage() {
                 py: 1.2,
                 borderRadius: 999,
                 fontWeight: 800,
-                bgcolor: "#00e5ff",
-                color: "#000",
-                "&:hover": { filter: "brightness(1.15)", bgcolor: "#00e5ff" },
+                bgcolor: theme.palette.primary.main,
+                color: theme.palette.primary.contrastText,
+                "&:hover": {
+                  filter: "brightness(1.15)",
+                  bgcolor: theme.palette.primary.main,
+                },
               }}
             >
-              {starting ? <CircularProgress size={22} sx={{ color: "#000" }} /> : t.startButton}
+              {starting ? <CircularProgress size={22} sx={{ color: theme.palette.primary.contrastText }} /> : t.startButton}
             </Button>
           </Paper>
         </Box>

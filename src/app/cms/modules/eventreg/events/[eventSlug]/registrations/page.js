@@ -23,6 +23,7 @@ import {
   TextField,
   Chip,
   Alert,
+  useTheme,
 } from "@mui/material";
 import ArabicPagination from "@/components/ArabicPagination";
 import { DateTimePicker } from "@mui/x-date-pickers";
@@ -67,6 +68,7 @@ import RecordMetadata from "@/components/RecordMetadata";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import { wrapTextBox } from "@/utils/wrapTextStyles";
+import resolveTicketDependentFields from "@/utils/resolveTicketDependentFields";
 import { pickFullName } from "@/utils/customFieldUtils";
 import useEventRegSocket from "@/hooks/modules/eventReg/useEventRegSocket";
 import { exportAllBadges } from "@/utils/exportBadges";
@@ -299,10 +301,12 @@ const translations = {
 };
 
 export default function ViewRegistrations() {
+  const theme = useTheme();
   const { eventSlug } = useParams();
   const searchParams = useSearchParams();
   const { dir, t, language } = useI18nLayout(translations);
   const { showMessage } = useMessage();
+
 
   const BASE_DATE_FILTERS = {
     createdAtFromMs: null,
@@ -516,6 +520,16 @@ export default function ViewRegistrations() {
         const map = new Map(prev.map((r) => [r._id, r]));
         processed.forEach((r) => {
           const existing = map.get(r._id) || {};
+          // This background stream can still be delivering earlier batches
+          // after a registration was just edited (e.g. a save triggered a
+          // fresh fetchData() while an older stream for the same event was
+          // still trickling in). Without this guard, a late, stale batch
+          // would silently overwrite the just-saved edit in local state —
+          // reverting the UI to older data even though the database itself
+          // already has the correct, newer record.
+          const existingUpdatedAtMs = existing.updatedAt ? Date.parse(existing.updatedAt) : -Infinity;
+          const incomingUpdatedAtMs = r.updatedAt ? Date.parse(r.updatedAt) : -Infinity;
+          if (incomingUpdatedAtMs < existingUpdatedAtMs) return;
           map.set(r._id, { ...existing, ...r });
         });
         return Array.from(map.values());
@@ -1004,7 +1018,7 @@ export default function ViewRegistrations() {
           fontWeight: 500,
         }}
       >
-        <ICONS.whatsapp fontSize="small" sx={{ color: "#25D366" }} />
+        <ICONS.whatsapp fontSize="small" sx={{ color: theme.palette.registrations.whatsappGreen }} />
         {reg.whatsappSent && (
           <ICONS.checkCircle fontSize="small" sx={{ color: "success.main" }} />
         )}
@@ -1372,21 +1386,15 @@ export default function ViewRegistrations() {
     return false;
   };
 
-  // Names of ticket dependent fields (global + per-ticket sources), so they can
-  // be surfaced before the other registration fields on each card.
-  const getDependentFieldNames = () => {
-    const names = new Set();
-    (eventDetails?.globalDependentFields || []).forEach((f) => {
-      const n = f.inputName || f.name;
-      if (n) names.add(n);
-    });
-    (eventDetails?.ticketTypes || []).forEach((ticket) => {
-      (ticket.dependentFields || ticket.fields || ticket.formFields || []).forEach((f) => {
-        const n = f.inputName || f.name;
-        if (n) names.add(n);
-      });
-    });
-    return names;
+  // This registration's own ticket's CURRENT dependent-field definitions,
+  // resolved via the ticket→field ID mapping (immune to renames of either
+  // the ticket or the field — see resolveTicketDependentFields).
+  const getDependentFieldDefsForRegistration = (reg) => {
+    const ticket = (eventDetails?.ticketTypes || []).find(
+      (t) => String(t._id) === String(reg?.ticketTypeId),
+    );
+    if (!ticket) return [];
+    return resolveTicketDependentFields(eventDetails, ticket);
   };
 
   const getDisplayFieldsForRegistration = (reg) => {
@@ -1403,42 +1411,65 @@ export default function ViewRegistrations() {
     const baseFields = hasCustomData
       ? (eventDetails?.formFields || []).map((f) => ({
         name: f.inputName,
+        valueKey: f.inputName,
         type: (f.inputType || "text").toLowerCase(),
         values: Array.isArray(f.values) ? f.values : [],
       }))
       : [
-        { name: "fullName", type: "text", values: [] },
-        { name: "email", type: "text", values: [] },
-        { name: "phone", type: "text", values: [] },
-        { name: "company", type: "text", values: [] },
+        { name: "fullName", valueKey: "fullName", type: "text", values: [] },
+        { name: "email", valueKey: "email", type: "text", values: [] },
+        { name: "phone", valueKey: "phone", type: "text", values: [] },
+        { name: "company", valueKey: "company", type: "text", values: [] },
       ];
 
     const fieldMap = new Map(baseFields.map((f) => [f.name, f]));
+    const dependentFieldNamesResolved = new Set();
 
-    // Surface any customFields keys not covered by the form definition
-    // (ticket-dependent or legacy fields) — custom records only.
+    // This ticket's dependent fields, resolved by ID so a rename of the
+    // field's label never detaches it — but the actual answer may still be
+    // stored under whatever name was current at submission time. Try the
+    // field's current name first, then any name it used to have, so a
+    // rename doesn't make an already-submitted answer appear missing.
+    getDependentFieldDefsForRegistration(reg).forEach((f) => {
+      const candidates = [f.inputName, ...(f.previousNames || [])];
+      const matchedKey = candidates.find((name) => {
+        const v = customFields[name];
+        return v !== undefined && v !== null && String(v).trim() !== "";
+      });
+      if (matchedKey === undefined) return;
+      fieldMap.set(f.inputName, {
+        name: f.inputName,
+        valueKey: matchedKey,
+        type: (f.inputType || "text").toLowerCase(),
+        values: f.values || [],
+      });
+      dependentFieldNamesResolved.add(f.inputName);
+    });
+
+    // Surface any OTHER customFields keys not covered by the form definition
+    // or this ticket's dependent fields (legacy/stray data) — custom records only.
     if (hasCustomData) {
+      const claimedStorageKeys = new Set(Array.from(fieldMap.values()).map((f) => f.valueKey));
       Object.entries(customFields).forEach(([key, value]) => {
-        if (!fieldMap.has(key)) {
-          const metaType = fieldMetaMap[key]?.type;
-          fieldMap.set(key, {
-            name: key,
-            type: metaType || (looksLikeFileUrl(value) ? "file" : "text"),
-            values: [],
-          });
-        }
+        if (fieldMap.has(key) || claimedStorageKeys.has(key)) return;
+        const metaType = fieldMetaMap[key]?.type;
+        fieldMap.set(key, {
+          name: key,
+          valueKey: key,
+          type: metaType || (looksLikeFileUrl(value) ? "file" : "text"),
+          values: [],
+        });
       });
     }
 
     const displayFields = Array.from(fieldMap.values()).filter((f) => {
-      const value = getFieldValue(reg, f.name);
+      const value = getFieldValue(reg, f.valueKey);
       return value !== undefined && value !== null && value !== "";
     });
 
     // Show this ticket's dependent fields before any other registration field.
-    const dependentNames = getDependentFieldNames();
-    const dependentFields = displayFields.filter((f) => dependentNames.has(f.name));
-    const otherFields = displayFields.filter((f) => !dependentNames.has(f.name));
+    const dependentFields = displayFields.filter((f) => dependentFieldNamesResolved.has(f.name));
+    const otherFields = displayFields.filter((f) => !dependentFieldNamesResolved.has(f.name));
     return [...dependentFields, ...otherFields];
   };
 
@@ -1939,13 +1970,15 @@ export default function ViewRegistrations() {
                     maxWidth: 360,
                     borderRadius: 4,
                     overflow: "hidden",
-                    boxShadow: "0 6px 18px rgba(0,0,0,0.12)",
-                    display: "flex",
+                    border: "1px solid",        // ADD this
+                    borderColor: "divider",
+                    boxShadow: (theme) => theme.palette.registrations.cardShadow,
+                    display: "flex",            // keep only ONE
                     flexDirection: "column",
                     transition: "all 0.3s ease",
                     "&:hover": {
                       transform: "translateY(-2px)",
-                      boxShadow: "0 12px 28px rgba(0,0,0,0.25)",
+                      boxShadow: (theme) => theme.palette.registrations.cardHoverShadow,
                     },
                   }}
                 >
@@ -1953,7 +1986,10 @@ export default function ViewRegistrations() {
 
                   <Box
                     sx={{
-                      background: "linear-gradient(to right, #f5f5f5, #fafafa)",
+                      bgcolor: (theme) =>
+                        theme.palette.mode === "dark"
+                          ? theme.palette.registrations.cardHeaderBgDark
+                          : theme.palette.background.default,
                       borderBottom: "1px solid",
                       borderColor: "divider",
                       p: 2,
@@ -1976,7 +2012,7 @@ export default function ViewRegistrations() {
                             display: "flex",
                             alignItems: "center",
                             gap: 1,
-                            bgcolor: "rgba(0,0,0,0.04)",
+                            bgcolor: "action.hover",
                             px: 1.2,
                             py: 0.5,
                             borderRadius: 1.5,
@@ -2192,11 +2228,21 @@ export default function ViewRegistrations() {
                             alignItems: "center",
                             gap: 0.6,
                             color: "text.secondary",
+                            // A long custom-field name (e.g. an admin-entered
+                            // instructional label) must wrap within its own
+                            // share of the row instead of growing wide first —
+                            // without a width cap here it can wrap onto two
+                            // lines and still claim nearly the full row,
+                            // squeezing the value/button column beside it
+                            // down to a sliver.
+                            flex: "0 1 55%",
+                            minWidth: 0,
+                            ...wrapTextBox,
                           }}
                         >
                           <ICONS.personOutline
                             fontSize="small"
-                            sx={{ opacity: 0.6 }}
+                            sx={{ opacity: 0.6, flexShrink: 0 }}
                           />
                           {getFieldLabel(f.name)}
                         </Typography>
@@ -2214,7 +2260,7 @@ export default function ViewRegistrations() {
                             ...wrapTextBox
                           }}>
                           {(() => {
-                            const fieldValue = getFieldValue(reg, f.name);
+                            const fieldValue = getFieldValue(reg, f.valueKey || f.name);
                             if (!fieldValue) return "—";
 
                             // Use fieldMetaMap as primary type source, fall back to f.type
@@ -2295,8 +2341,9 @@ export default function ViewRegistrations() {
                   <CardActions
                     sx={{
                       justifyContent: "center",
-                      borderTop: "1px solid rgba(0,0,0,0.08)",
-                      bgcolor: "rgba(0,0,0,0.02)",
+                      borderTop: "1px solid",
+                      borderColor: "divider",
+                      bgcolor: "action.hover",
                       py: 1,
                       flexDirection: "column",
                       gap: 1,

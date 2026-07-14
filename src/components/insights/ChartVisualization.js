@@ -10,6 +10,7 @@ import {
     Button,
     CircularProgress,
     Divider,
+    useTheme,
 } from "@mui/material";
 import { PieChart } from "@mui/x-charts/PieChart";
 import { LineChart } from "@mui/x-charts/LineChart";
@@ -67,6 +68,7 @@ const ChartVisualization = ({
     onSegmentChange = null,
 }) => {
     const { dir } = useI18nLayout();
+    const theme = useTheme();
 
     useEffect(() => {
         if (language === "ar") {
@@ -106,7 +108,7 @@ const ChartVisualization = ({
         (chartType === "pie" || chartType === "donut") && (!field.data || field.data.length === 0);
 
     return (
-        <Box 
+        <Box
             id={`chart-container-${selectedField}`}
             ref={containerRef}
             sx={{ display: "flex", flexDirection: "column", height: "100%", p: 2, width: "100%" }}
@@ -117,8 +119,7 @@ const ChartVisualization = ({
                         <ICONS.insights />
                     </Box>
                     <Box>
-                        <Typography variant="h6" sx={{ fontWeight: "bold", color: "#1f2937" }}>
-                            {field.label}
+                        <Typography variant="h6" sx={{ fontWeight: "bold", color: "text.primary" }}>                            {field.label}
                         </Typography>
                         <Typography variant="caption" color="textSecondary">
                             {selectedSegment ? (t.totalCompletions || "Total Completions") : (chartType === "line" ? (t.historicalTrend || "Historical Trend") : (t.chartDistribution || "Distribution Overview"))}
@@ -226,124 +227,124 @@ const ChartVisualization = ({
                                             cursor: "pointer",
                                             fontWeight: selectedSegment === f.name ? 600 : 400,
                                             backgroundColor: selectedSegment === f.name ? field.color : "transparent",
-                                            color: selectedSegment === f.name ? "#fff" : "#374151",
-                                            border: `1.5px solid ${selectedSegment === f.name ? field.color : "#e5e7eb"}`,
+                                            color: selectedSegment === f.name ? "common.white" : "text.primary",
+                                            border: (theme) => `1.5px solid ${selectedSegment === f.name ? field.color : theme.palette.divider}`,
                                             "&:hover": {
                                                 backgroundColor: selectedSegment === f.name ? field.color : `${field.color}15`,
                                                 borderColor: field.color,
-                                                color: selectedSegment === f.name ? "#fff" : field.color,
+                                                color: selectedSegment === f.name ? "common.white" : field.color,
                                             },
                                         }}
                                     />
                                 ))}
                             </Stack>
                         )}
-                        
+
                         <Stack direction="row" spacing={1} sx={{
                             flexWrap: "wrap"
                         }}>
                             {field.isSegmented && (field.type === "rating" || field.type === "nps") ? (
                                 ["bar", "average"].map((type) => (
-                                <Chip
-                                    key={type}
-                                    label={type === "bar" ? (t.chartDistribution || "Distribution") : (t.chartAverage || "Average")}
-                                    size="small"
-                                    onClick={() => onChartTypeChange(type)}
-                                    sx={{
-                                        cursor: "pointer",
-                                        fontWeight: chartType === type ? 600 : 400,
-                                        backgroundColor: chartType === type ? field.color : "transparent",
-                                        color: chartType === type ? "#fff" : "#374151",
-                                        border: `1.5px solid ${chartType === type ? field.color : "#e5e7eb"}`,
-                                        "&:hover": {
-                                            backgroundColor: chartType === type ? field.color : `${field.color}15`,
-                                            borderColor: field.color,
-                                            color: chartType === type ? "#fff" : field.color,
-                                        },
-                                    }}
-                                />
-                            ))
-                        ) : field.type === "time" ? (
-                            ["line", "bar", "horizontalBar", "heatmap"].map((type) => (
-                                <Chip
-                                    key={type}
-                                    label={
-                                        type === "line" ? (t.chartLine || "Line") : 
-                                        type === "bar" ? (t.chartBar || "Vertical Bar") : 
-                                        type === "horizontalBar" ? (t.chartHorizontalBar || "Horizontal Bar") :
-                                        (t.chartHeatmap || "Heatmap")
-                                    }
-                                    size="small"
-                                    onClick={() => onChartTypeChange(type)}
-                                    sx={{
-                                        cursor: "pointer",
-                                        fontWeight: chartType === type ? 600 : 400,
-                                        backgroundColor: chartType === type ? field.color : "transparent",
-                                        color: chartType === type ? "#fff" : "#374151",
-                                        border: `1.5px solid ${chartType === type ? field.color : "#e5e7eb"}`,
-                                        "&:hover": {
-                                            backgroundColor: chartType === type ? field.color : `${field.color}15`,
-                                            borderColor: field.color,
-                                            color: chartType === type ? "#fff" : field.color,
-                                        },
-                                    }}
-                                />
-                            ))
-                        ) : field.allowedChartTypes ? (
-                            [[...field.allowedChartTypes, "horizontalBar"].filter((t, i, a) => t !== "donut" && a.indexOf(t) === i)].flat().map((type) => (
-                                <Chip
-                                    key={type}
-                                    label={
-                                        type === "bar" ? (t.chartBar || "Vertical Bar") :
-                                        type === "horizontalBar" ? (t.chartHorizontalBar || "Horizontal Bar") :
-                                        type === "pie" ? (t.chartPie || "Pie") :
-                                        type.charAt(0).toUpperCase() + type.slice(1)
-                                    }
-                                    size="small"
-                                    onClick={() => onChartTypeChange(type)}
-                                    sx={{
-                                        cursor: "pointer",
-                                        fontWeight: chartType === type ? 600 : 400,
-                                        backgroundColor: chartType === type ? field.color : "transparent",
-                                        color: chartType === type ? "#fff" : "#374151",
-                                        border: `1.5px solid ${chartType === type ? field.color : "#e5e7eb"}`,
-                                        "&:hover": {
-                                            backgroundColor: chartType === type ? field.color : `${field.color}15`,
-                                            borderColor: field.color,
-                                            color: chartType === type ? "#fff" : field.color,
-                                        },
-                                    }}
-                                />
-                            ))
-                        ) : (
-                            ["pie", "bar", "horizontalBar"].map((type) => (
-                                <Chip
-                                    key={type}
-                                    label={
-                                        type === "pie" ? (t.chartPie || "Pie") : 
-                                        type === "bar" ? (t.chartBar || "Vertical Bar") : 
-                                        (t.chartHorizontalBar || "Horizontal Bar")
-                                    }
-                                    size="small"
-                                    onClick={() => onChartTypeChange(type)}
-                                    sx={{
-                                        cursor: "pointer",
-                                        fontWeight: chartType === type ? 600 : 400,
-                                        backgroundColor: chartType === type ? field.color : "transparent",
-                                        color: chartType === type ? "#fff" : "#374151",
-                                        border: `1.5px solid ${chartType === type ? field.color : "#e5e7eb"}`,
-                                        "&:hover": {
-                                            backgroundColor: chartType === type ? field.color : `${field.color}15`,
-                                            borderColor: field.color,
-                                            color: chartType === type ? "#fff" : field.color,
-                                        },
-                                    }}
-                                />
-                            ))
-                        )}
+                                    <Chip
+                                        key={type}
+                                        label={type === "bar" ? (t.chartDistribution || "Distribution") : (t.chartAverage || "Average")}
+                                        size="small"
+                                        onClick={() => onChartTypeChange(type)}
+                                        sx={{
+                                            cursor: "pointer",
+                                            fontWeight: chartType === type ? 600 : 400,
+                                            backgroundColor: chartType === type ? field.color : "transparent",
+                                            color: chartType === type ? theme.palette.common.white : theme.palette.chip.inactiveText,
+                                            border: `1.5px solid ${chartType === type ? field.color : theme.palette.chip.inactiveBorder}`,
+                                            "&:hover": {
+                                                backgroundColor: chartType === type ? field.color : `${field.color}15`,
+                                                borderColor: field.color,
+                                                color: chartType === type ? theme.palette.common.white : field.color,
+                                            },
+                                        }}
+                                    />
+                                ))
+                            ) : field.type === "time" ? (
+                                ["line", "bar", "horizontalBar", "heatmap"].map((type) => (
+                                    <Chip
+                                        key={type}
+                                        label={
+                                            type === "line" ? (t.chartLine || "Line") :
+                                                type === "bar" ? (t.chartBar || "Vertical Bar") :
+                                                    type === "horizontalBar" ? (t.chartHorizontalBar || "Horizontal Bar") :
+                                                        (t.chartHeatmap || "Heatmap")
+                                        }
+                                        size="small"
+                                        onClick={() => onChartTypeChange(type)}
+                                        sx={{
+                                            cursor: "pointer",
+                                            fontWeight: chartType === type ? 600 : 400,
+                                            backgroundColor: chartType === type ? field.color : "transparent",
+                                            color: chartType === type ? "#fff" : "#374151",
+                                            border: `1.5px solid ${chartType === type ? field.color : "#e5e7eb"}`,
+                                            "&:hover": {
+                                                backgroundColor: chartType === type ? field.color : `${field.color}15`,
+                                                borderColor: field.color,
+                                                color: chartType === type ? "#fff" : field.color,
+                                            },
+                                        }}
+                                    />
+                                ))
+                            ) : field.allowedChartTypes ? (
+                                [[...field.allowedChartTypes, "horizontalBar"].filter((t, i, a) => t !== "donut" && a.indexOf(t) === i)].flat().map((type) => (
+                                    <Chip
+                                        key={type}
+                                        label={
+                                            type === "bar" ? (t.chartBar || "Vertical Bar") :
+                                                type === "horizontalBar" ? (t.chartHorizontalBar || "Horizontal Bar") :
+                                                    type === "pie" ? (t.chartPie || "Pie") :
+                                                        type.charAt(0).toUpperCase() + type.slice(1)
+                                        }
+                                        size="small"
+                                        onClick={() => onChartTypeChange(type)}
+                                        sx={{
+                                            cursor: "pointer",
+                                            fontWeight: chartType === type ? 600 : 400,
+                                            backgroundColor: chartType === type ? field.color : "transparent",
+                                            color: chartType === type ? "#fff" : "#374151",
+                                            border: `1.5px solid ${chartType === type ? field.color : "#e5e7eb"}`,
+                                            "&:hover": {
+                                                backgroundColor: chartType === type ? field.color : `${field.color}15`,
+                                                borderColor: field.color,
+                                                color: chartType === type ? "#fff" : field.color,
+                                            },
+                                        }}
+                                    />
+                                ))
+                            ) : (
+                                ["pie", "bar", "horizontalBar"].map((type) => (
+                                    <Chip
+                                        key={type}
+                                        label={
+                                            type === "pie" ? (t.chartPie || "Pie") :
+                                                type === "bar" ? (t.chartBar || "Vertical Bar") :
+                                                    (t.chartHorizontalBar || "Horizontal Bar")
+                                        }
+                                        size="small"
+                                        onClick={() => onChartTypeChange(type)}
+                                        sx={{
+                                            cursor: "pointer",
+                                            fontWeight: chartType === type ? 600 : 400,
+                                            backgroundColor: chartType === type ? field.color : "transparent",
+                                            color: chartType === type ? "#fff" : "#374151",
+                                            border: `1.5px solid ${chartType === type ? field.color : "#e5e7eb"}`,
+                                            "&:hover": {
+                                                backgroundColor: chartType === type ? field.color : `${field.color}15`,
+                                                borderColor: field.color,
+                                                color: chartType === type ? "common.white" : field.color,
+                                            },
+                                        }}
+                                    />
+                                ))
+                            )}
+                        </Stack>
                     </Stack>
-                </Stack>
-            </Box>
+                </Box>
             )}
             <Box sx={{ flex: 1, minHeight: 0, width: "100%", display: "flex", flexDirection: "column" }}>
                 {hasNoData ? (
@@ -365,10 +366,10 @@ const ChartVisualization = ({
                                     }) : field.data.map(d => ({ ...d, label: d.label === "Anonymous" ? (t.anonymous || "Anonymous") : d.label })),
                                     innerRadius: chartType === "donut" ? 60 : 0,
                                     highlightScope: { faded: "global", highlighted: "item" },
-                                    faded: { innerRadius: 30, additionalRadius: -30, color: "gray" },
+                                    faded: { innerRadius: 30, additionalRadius: -30, color: theme.palette.chip.fadedSlice },
                                     arcLabel: () => "",
                                     valueFormatter: (item) => {
-                                        const dataToSum = field.isSegmented ? field.segmentedData.xAxis.map((_, xIdx) => 
+                                        const dataToSum = field.isSegmented ? field.segmentedData.xAxis.map((_, xIdx) =>
                                             field.segmentedData.series.reduce((sum, s) => sum + (s.data[xIdx] || 0), 0)
                                         ) : field.data.map(d => d.value);
                                         const total = dataToSum.reduce((sum, v) => sum + v, 0);
@@ -386,12 +387,12 @@ const ChartVisualization = ({
                             {field.isSegmented ? (
                                 field.segmentedData.xAxis.map((label, xIdx) => {
                                     const val = field.segmentedData.series.reduce((sum, s) => sum + (s.data[xIdx] || 0), 0);
-                                    const total = field.segmentedData.xAxis.reduce((tSum, _, idx) => 
+                                    const total = field.segmentedData.xAxis.reduce((tSum, _, idx) =>
                                         tSum + field.segmentedData.series.reduce((sSum, s) => sSum + (s.data[idx] || 0), 0), 0);
                                     const percentage = total > 0 ? String(parseFloat(((val / total) * 100).toFixed(1))) : "0";
                                     return (
                                         <Box key={xIdx} sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5, direction: "ltr", ml: { xs: 0, md: 1 } }}>
-                                            <Typography variant="body2" sx={{ fontWeight: 500, color: "#1f2937", whiteSpace: "nowrap", fontSize: "0.875rem", direction: "ltr", textAlign: "left" }}>
+                                            <Typography variant="body2" sx={{ fontWeight: 500, color: "text.primary", whiteSpace: "nowrap", fontSize: "0.875rem", direction: "ltr", textAlign: "left" }}>
                                                 {label === "Anonymous" ? (t.anonymous || "Anonymous") : label} {language === "ar" ? toArabicDigits(percentage, language) : percentage}% ({language === "ar" ? toArabicDigits(val, language) : val})
                                             </Typography>
                                         </Box>
@@ -404,7 +405,7 @@ const ChartVisualization = ({
                                     return (
                                         <Box key={idx} sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5, direction: "ltr", ml: { xs: 0, md: 1 } }}>
                                             <Box sx={{ width: 12, height: 12, borderRadius: "50%", backgroundColor: item.color, flexShrink: 0 }} />
-                                            <Typography variant="body2" sx={{ fontWeight: 500, color: "#1f2937", whiteSpace: "nowrap", fontSize: "0.875rem", direction: "ltr", textAlign: "left" }}>
+                                            <Typography variant="body2" sx={{ fontWeight: 500, color: "text.primary", whiteSpace: "nowrap", fontSize: "0.875rem", direction: "ltr", textAlign: "left" }}>
                                                 {item.label === "Anonymous" ? (t.anonymous || "Anonymous") : item.label} {language === "ar" ? toArabicDigits(percentage, language) : percentage}% ({language === "ar" ? toArabicDigits(item.value, language) : item.value})
                                             </Typography>
                                         </Box>
@@ -431,7 +432,7 @@ const ChartVisualization = ({
                                 {field.xData.map((label, idx) => (
                                     <Box key={idx} sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5, direction: "ltr" }}>
                                         <Box sx={{ width: 12, height: 12, borderRadius: "50%", backgroundColor: field.color, flexShrink: 0 }} />
-                                        <Typography variant="body2" sx={{ fontWeight: 500, color: "#1f2937", whiteSpace: "nowrap", fontSize: "0.875rem", direction: "ltr", textAlign: "left" }}>
+                                        <Typography variant="body2" sx={{ fontWeight: 500, color: "text.primary", whiteSpace: "nowrap", fontSize: "0.875rem", direction: "ltr", textAlign: "left" }}>
                                             {label} ({field.yData[idx]})
                                         </Typography>
                                     </Box>
@@ -448,11 +449,11 @@ const ChartVisualization = ({
                                 <BarChart
                                     key={`segmented-${chartType}-${selectedField}`}
                                     layout={chartType === "horizontalBar" ? "horizontal" : "vertical"}
-                                    xAxis={chartType === "horizontalBar" ? [{ 
+                                    xAxis={chartType === "horizontalBar" ? [{
                                         label: t.count || "Count",
-                                        tickLabelStyle: { direction: "ltr", textAlign: "left", fontSize: 10 } 
-                                    }] : [{ 
-                                        scaleType: "band", 
+                                        tickLabelStyle: { direction: "ltr", textAlign: "left", fontSize: 10 }
+                                    }] : [{
+                                        scaleType: "band",
                                         data: (chartType === "average" ? (field.averages?.map(a => a.segment) || []) : (field.segmentedData?.xAxis || [])).map(label => label === "Anonymous" ? (t.anonymous || "Anonymous") : label),
                                         tickLabelStyle: { direction: "ltr", textAlign: "left", fontSize: 10 },
                                         colorMap: chartType === "average" ? {
@@ -461,17 +462,17 @@ const ChartVisualization = ({
                                             values: field.averages?.map(a => a.segment === "Anonymous" ? (t.anonymous || "Anonymous") : a.segment) || []
                                         } : undefined
                                     }]}
-                                    yAxis={chartType === "horizontalBar" ? [{ 
-                                        scaleType: "band", 
+                                    yAxis={chartType === "horizontalBar" ? [{
+                                        scaleType: "band",
                                         data: (field.segmentedData?.xAxis || []).map(label => label === "Anonymous" ? (t.anonymous || "Anonymous") : label),
                                         tickLabelStyle: { direction: "ltr", textAlign: "right", fontSize: 10 }
-                                    }] : [{ 
+                                    }] : [{
                                         label: chartType === "average" ? (t.averageRating || "Average Rating") : (t.count || "Count"),
-                                        tickLabelStyle: { direction: "ltr", textAlign: "left" } 
+                                        tickLabelStyle: { direction: "ltr", textAlign: "left" }
                                     }]}
-                                    series={chartType === "average" ? [{ 
-                                        label: "Average Rating", 
-                                        data: field.averages?.map(a => a.average) || [], 
+                                    series={chartType === "average" ? [{
+                                        label: "Average Rating",
+                                        data: field.averages?.map(a => a.average) || [],
                                         color: field.color,
                                     }] : (field.segmentedData?.series || []).map(s => ({ data: s.data || [], color: s.color, label: s.label === "Anonymous" ? (t.anonymous || "Anonymous") : s.label }))}
                                     height={400}
@@ -481,11 +482,11 @@ const ChartVisualization = ({
                                 <BarChart
                                     key={`standard-${chartType}-${selectedField}`}
                                     layout={chartType === "horizontalBar" ? "horizontal" : "vertical"}
-                                    xAxis={chartType === "horizontalBar" ? [{ 
+                                    xAxis={chartType === "horizontalBar" ? [{
                                         label: t.count || "Count",
-                                        tickLabelStyle: { direction: "ltr", textAlign: "left", fontSize: 10 } 
-                                    }] : [{ 
-                                        scaleType: "band", 
+                                        tickLabelStyle: { direction: "ltr", textAlign: "left", fontSize: 10 }
+                                    }] : [{
+                                        scaleType: "band",
                                         data: field.type === "time" ? (field.xData || []) : (field.data?.map(d => d.label === "Anonymous" ? (t.anonymous || "Anonymous") : d.label) || []),
                                         tickLabelStyle: { direction: "ltr", textAlign: "left", fontSize: 10 },
                                         colorMap: (field.type !== "time" && !field.isSegmented) ? {
@@ -498,8 +499,8 @@ const ChartVisualization = ({
                                             values: field.xData || []
                                         } : undefined)
                                     }]}
-                                    yAxis={chartType === "horizontalBar" ? [{ 
-                                        scaleType: "band", 
+                                    yAxis={chartType === "horizontalBar" ? [{
+                                        scaleType: "band",
                                         data: field.type === "time" ? (field.xData || []) : (field.data?.map(d => d.label === "Anonymous" ? (t.anonymous || "Anonymous") : d.label) || []),
                                         tickLabelStyle: { direction: "ltr", textAlign: "right", fontSize: 10 },
                                         colorMap: (field.type !== "time" && !field.isSegmented) ? {
@@ -511,14 +512,14 @@ const ChartVisualization = ({
                                             colors: field.xData?.map((_, i) => getPieSegmentColor(i)) || [field.color],
                                             values: field.xData || []
                                         } : undefined)
-                                    }] : [{ 
+                                    }] : [{
                                         label: t.count || "Count",
-                                        min: 0, 
+                                        min: 0,
                                         max: (Math.max(0, ...(field.type === "time" ? (field.yData?.length ? field.yData : [0]) : (field.data?.length ? field.data.map(d => d.value) : [0])))) * 1.1,
-                                        tickLabelStyle: { direction: "ltr", textAlign: "left" } 
+                                        tickLabelStyle: { direction: "ltr", textAlign: "left" }
                                     }]}
-                                    series={[{ 
-                                        data: field.type === "time" ? (field.yData || []) : (field.data?.map(d => d.value) || []), 
+                                    series={[{
+                                        data: field.type === "time" ? (field.yData || []) : (field.data?.map(d => d.value) || []),
                                         color: field.color,
                                     }]}
                                     height={400}
@@ -535,7 +536,7 @@ const ChartVisualization = ({
                                     return (
                                         <Box key={idx} sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1.5, direction: "ltr", ml: { xs: 0, md: 1 } }}>
                                             <Box sx={{ width: 12, height: 12, borderRadius: "50%", backgroundColor: item.color, flexShrink: 0 }} />
-                                            <Typography variant="body2" sx={{ fontWeight: 500, color: "#1f2937", whiteSpace: "nowrap", fontSize: "0.875rem", direction: "ltr", textAlign: "left" }}>
+                                            <Typography variant="body2" sx={{ fontWeight: 500, color: "text.primary", whiteSpace: "nowrap", fontSize: "0.875rem", direction: "ltr", textAlign: "left" }}>
                                                 {item.label === "Anonymous" ? (t.anonymous || "Anonymous") : item.label} {language === "ar" ? toArabicDigits(percentage, language) : percentage}% ({language === "ar" ? toArabicDigits(item.value, language) : item.value})
                                             </Typography>
                                         </Box>
@@ -571,17 +572,17 @@ const ChartVisualization = ({
                                                         const date = new Date(ts);
                                                         if (start && date < start) return;
                                                         if (end && date > end) return;
-                                                        
+
                                                         if (!isNaN(date.getTime()) && date.getDay() === dayNum && date.getHours() === h) {
                                                             count += (field.yData[idx] || 0);
                                                         }
                                                     });
                                                 }
 
-                                                const maxVal = field.type === "time" && field.yData 
-                                                    ? Math.max(...field.yData, 1) 
+                                                const maxVal = field.type === "time" && field.yData
+                                                    ? Math.max(...field.yData, 1)
                                                     : 1;
-                                                
+
                                                 const alpha = count > 0 ? 0.2 + (count / maxVal) * 0.8 : 0.05;
 
                                                 return (
@@ -591,8 +592,7 @@ const ChartVisualization = ({
                                                         sx={{
                                                             m: 0.1,
                                                             borderRadius: 0.5,
-                                                            backgroundColor: count > 0 ? field.color : "#f3f4f6",
-                                                            opacity: alpha,
+                                                            backgroundColor: (theme) => count > 0 ? field.color : theme.palette.insights.heatmapEmptyCell, opacity: alpha,
                                                             aspectRatio: "1/1",
                                                             display: "flex",
                                                             alignItems: "center",
@@ -602,7 +602,7 @@ const ChartVisualization = ({
                                                         }}
                                                     >
                                                         {count > 0 && (
-                                                            <Typography sx={{ color: alpha > 0.6 ? "#fff" : "#000", fontSize: "8px", fontWeight: "bold" }}>
+                                                            <Typography sx={{ color: alpha > 0.6 ? "common.white" : "common.black", fontSize: "8px", fontWeight: "bold" }}>
                                                                 {count}
                                                             </Typography>
                                                         )}

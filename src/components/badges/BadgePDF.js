@@ -9,10 +9,13 @@ import {
   Font,
 } from "@react-pdf/renderer";
 import { resolveBadgeDimensions } from "@/utils/badgeSize";
-
+import { getTheme } from "@/styles/theme";
 
 
 // --------------------------------------------------------------
+
+
+
 
 
 
@@ -107,11 +110,20 @@ const AVAILABLE_COMPANY_WIDTH = A6_WIDTH * COMPANY_WIDTH_PERCENT;
 const TITLE_WIDTH_PERCENT = 0.75;
 const AVAILABLE_TITLE_WIDTH = A6_WIDTH * TITLE_WIDTH_PERCENT;
 
+// PDF badges are always rendered in light theme, regardless of the app's
+// current dark/light mode — printed/exported output shouldn't follow dark mode.
+const pdfTheme = getTheme("light", "ltr");
+const PDF_COLORS = {
+  white: pdfTheme.palette.common.white,
+  black: pdfTheme.palette.common.black,
+  brand: pdfTheme.palette.primary.main,
+  titleGray: pdfTheme.palette.badge.titleGray,
+};
 const styles = StyleSheet.create({
   page: {
     width: A6_WIDTH,
     height: A6_HEIGHT,
-    backgroundColor: "#ffffff",
+     backgroundColor: PDF_COLORS.white,
     position: "relative",
     paddingTop: 120,
     paddingBottom: 10,
@@ -124,7 +136,7 @@ const styles = StyleSheet.create({
   pageCustomized: {
     width: A6_WIDTH,
     height: A6_HEIGHT,
-    backgroundColor: "#ffffff",
+    backgroundColor: PDF_COLORS.white,
     position: "relative",
     paddingTop: 0,
     paddingBottom: 0,
@@ -151,20 +163,20 @@ const styles = StyleSheet.create({
   token: {
     fontSize: 9,
     fontWeight: "bold",
-    color: "#0077b6",
+    color: PDF_COLORS.brand,
     letterSpacing: 0.7,
     textAlign: "center",
   },
   name: {
     fontWeight: "bold",
-    color: "#000",
+    color:PDF_COLORS.black,
     width: `${NAME_WIDTH_PERCENT * 100}%`,
     lineHeight: 1.2,
     textAlign: "center",
     alignSelf: "center",
   },
   company: {
-    color: "#000",
+    color: PDF_COLORS.black,
     marginTop: 1,
     width: `${COMPANY_WIDTH_PERCENT * 100}%`,
     lineHeight: 1.2,
@@ -173,7 +185,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 14,
-    color: "#444",
+    color: PDF_COLORS.titleGray,
     marginTop: 4,
     maxWidth: "80%",
     lineHeight: 1.2,
@@ -184,7 +196,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "bold",
     textTransform: "uppercase",
-    color: "#0077b6",
+    color: PDF_COLORS.brand,
     marginTop: 10,
     maxWidth: "80%",
     lineHeight: 1.2,
@@ -300,7 +312,7 @@ function parseHTMLToText(html) {
     isBold: false,
     isItalic: false,
     isUnderline: false,
-    color: "#000000",
+    color: PDF_COLORS.black,
     fontSize: null
   };
 
@@ -319,7 +331,7 @@ function parseHTMLToText(html) {
   const isUnderline = /<u>/i.test(html) || /text-decoration:\s*underline/i.test(html);
 
   const colorMatch = html.match(/color:\s*([^;'"]+)/i) || html.match(/color="([^"]+)"/i);
-  const color = colorMatch ? colorMatch[1].trim() : "#000000";
+  const color = colorMatch ? colorMatch[1].trim() : PDF_COLORS.black;
 
   let fontFamily = null;
   const fontFamilyMatch = html.match(/font-family:\s*([^;]+)/i);
@@ -403,8 +415,8 @@ export default function BadgePDF({ data, qrCodeDataUrl, customizations, single =
 
   const customizationFieldKeys = customizations
     ? Object.keys(customizations).filter(
-        (key) => key !== "_qrCode" && key !== "_badgeSize"
-      )
+      (key) => key !== "_qrCode" && key !== "_badgeSize"
+    )
     : [];
 
   const hasCustomizations = customizationFieldKeys.length > 0;
@@ -426,7 +438,7 @@ export default function BadgePDF({ data, qrCodeDataUrl, customizations, single =
           if (customization.content && typeof customization.content === 'string' && customization.content.includes('<')) {
             const parsed = parseHTMLToText(customization.content);
             fontSize = parsed.fontSize || 14;
-            color = parsed.color || "#000000";
+            color = parsed.color || PDF_COLORS.black;
             isBold = parsed.isBold || false;
             isItalic = parsed.isItalic || false;
             isUnderline = parsed.isUnderline || false;
@@ -453,7 +465,7 @@ export default function BadgePDF({ data, qrCodeDataUrl, customizations, single =
             }
           } else {
             fontSize = customization.fontSize !== undefined ? customization.fontSize : 14;
-            color = customization.color || "#000000";
+            color = customization.color || PDF_COLORS.black;
             isBold = customization.isBold || false;
             isItalic = customization.isItalic || false;
             isUnderline = customization.isUnderline || false;
@@ -589,7 +601,7 @@ export default function BadgePDF({ data, qrCodeDataUrl, customizations, single =
               style={{
                 fontSize: ((customizations._qrCode.size || 70) / 70) * 9 * (72 / 96),
                 fontWeight: "bold",
-                color: "#0077b6",
+                color: PDF_COLORS.brand,
                 letterSpacing: 0.7,
                 marginTop: 2,
               }}
@@ -619,7 +631,7 @@ export default function BadgePDF({ data, qrCodeDataUrl, customizations, single =
   const nameFontSize = calculateNameFontSize(data?.fullName);
   const nameStyle = {
     fontWeight: "bold",
-    color: "#000",
+    color: PDF_COLORS.black,
     lineHeight: 1.2,
     textAlign: "center",
     fontSize: nameFontSize,
@@ -629,7 +641,7 @@ export default function BadgePDF({ data, qrCodeDataUrl, customizations, single =
   const maxCompanyFontSize = nameFontSize * 0.85;
   companyFontSize = Math.min(companyFontSize, maxCompanyFontSize);
   const companyStyle = {
-    color: "#000",
+    color: PDF_COLORS.black,
     marginTop: 1,
     lineHeight: 1.2,
     textAlign: "center",

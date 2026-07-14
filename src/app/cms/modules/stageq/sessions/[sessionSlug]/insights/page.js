@@ -12,6 +12,7 @@ import {
     Divider,
     Button,
     CircularProgress,
+    useTheme,
 } from "@mui/material";
 import { PieChart } from "@mui/x-charts/PieChart";
 import { LineChart } from "@mui/x-charts/LineChart";
@@ -131,7 +132,7 @@ const translations = {
     },
 };
 
-const FIELD_COLOR = "#0077b6";
+
 
 const hslToHex = (h, s, l) => {
     s /= 100;
@@ -156,10 +157,11 @@ const FieldChip = ({ field, isSelected, onClick }) => (
         label={field.label.length > 30 ? `${field.label.slice(0, 30)}…` : field.label}
         onClick={onClick}
         sx={{
-            backgroundColor: isSelected ? field.color : "#ffffff",
-            color: isSelected ? "#ffffff" : "#374151",
+            backgroundColor: isSelected ? field.color : "background.paper",
+            color: isSelected ? "common.white" : "text.primary",
+            border: isSelected ? "none" : (theme) => `2px solid ${theme.palette.divider}`,
             fontWeight: isSelected ? 600 : 500,
-            border: isSelected ? "none" : "2px solid #e5e7eb",
+
             cursor: "pointer",
             transition: "all 0.3s ease-out",
             "&:hover": {
@@ -174,6 +176,9 @@ const FieldChip = ({ field, isSelected, onClick }) => (
 
 
 export default function SessionInsightsDashboard() {
+    
+    const theme = useTheme();
+    const FIELD_COLOR = theme.palette.primary.main;
     const { sessionSlug } = useParams();
     const { t, dir, language } = useI18nLayout(translations);
 
@@ -361,14 +366,14 @@ export default function SessionInsightsDashboard() {
                 endDateFormatted: formatPdfDate(linkedEvent?.endDate),
                 venue: linkedEvent?.venue || "N/A",
                 summaryCards: summary ? [
-                    { label: t.totalQuestions, value: toArabicDigits(summary.totalQuestions, language), color: "#0077b6" },
-                    { label: t.uniqueSubmitters, value: toArabicDigits(summary.uniqueSubmitters, language), color: "#f59e0b" },
-                    { label: t.participationRate, value: `${toArabicDigits(summary.participationRate, language)}%`, color: "#10b981" },
-                    summary.topQuestion ? { 
-                        label: t.topVotedQuestion, 
-                        value: summary.topQuestion.text, 
+                    { label: t.totalQuestions, value: toArabicDigits(summary.totalQuestions, language), color: theme.palette.primary.main },
+                    { label: t.uniqueSubmitters, value: toArabicDigits(summary.uniqueSubmitters, language), color: theme.palette.insights.badgeOnePrint },
+                    { label: t.participationRate, value: `${toArabicDigits(summary.participationRate, language)}%`, color: theme.palette.insights.badgeMultiPrint },
+                    summary.topQuestion ? {
+                        label: t.topVotedQuestion,
+                        value: summary.topQuestion.text,
                         subValue: `${toArabicDigits(summary.topQuestion.voteCount, language)} ${t.votes}`,
-                        isHighlight: true 
+                        isHighlight: true
                     } : null,
                 ].filter(Boolean) : []
             };
@@ -574,9 +579,9 @@ export default function SessionInsightsDashboard() {
                 <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 1 }}>
                     <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, flex: "1 1 500px" }}>
                         {[
-                            { label: t.totalQuestions, value: toArabicDigits(summary.totalQuestions, language), color: "#0077b6" },
-                            { label: t.uniqueSubmitters, value: toArabicDigits(summary.uniqueSubmitters, language), color: "#f59e0b" },
-                            { label: t.participationRate, value: `${toArabicDigits(summary.participationRate, language)}%`, color: "#10b981" },
+                            { label: t.totalQuestions, value: toArabicDigits(summary.totalQuestions, language), color: theme.palette.primary.main },
+                            { label: t.uniqueSubmitters, value: toArabicDigits(summary.uniqueSubmitters, language), color: theme.palette.insights.badgeOnePrint },
+                            { label: t.participationRate, value: `${toArabicDigits(summary.participationRate, language)}%`, color: theme.palette.insights.badgeMultiPrint },
                         ].map(({ label, value, color }) => (
                             <AppCard
                                 key={label}
@@ -588,7 +593,8 @@ export default function SessionInsightsDashboard() {
                                     display: 'flex',
                                     flexDirection: 'column',
                                     justifyContent: 'center',
-                                    border: "1px solid #f1f5f9"
+                                    border: "1px solid",
+                                    borderColor: "divider",
                                 }}
                             >
                                 <Typography
@@ -623,18 +629,18 @@ export default function SessionInsightsDashboard() {
                                 justifyContent: "center",
                                 position: "relative",
                                 overflow: "hidden",
-                                borderLeft: `6px solid #6366f1`,
-                                backgroundColor: "#f8faff"
+                                borderLeft: (theme) => `6px solid ${theme.palette.insights.topQuestionAccent}`,
+                                backgroundColor: (theme) => theme.palette.insights.topQuestionAccentBg,
                             }}
                         >
-                            <Typography variant="caption" sx={{ color: "#6366f1", fontWeight: 700, textTransform: "uppercase", mb: 1, letterSpacing: 1 }}>
+                            <Typography variant="caption" sx={{ color: (theme) => theme.palette.insights.topQuestionAccent, fontWeight: 700, textTransform: "uppercase", mb: 1, letterSpacing: 1 }}>
                                 {t.topVotedQuestion}
                             </Typography>
-                            <Typography 
-                                variant="h6" 
-                                sx={{ 
-                                    fontWeight: 600, 
-                                    color: "#1e293b", 
+                            <Typography
+                                variant="h6"
+                                sx={{
+                                    fontWeight: 600,
+                                    color: "text.primary",
                                     fontStyle: "italic",
                                     lineHeight: 1.4,
                                     mb: 1,
@@ -647,10 +653,10 @@ export default function SessionInsightsDashboard() {
                                 "{summary.topQuestion.text}"
                             </Typography>
                             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                <Chip 
-                                    size="small" 
-                                    label={`${toArabicDigits(summary.topQuestion.voteCount, language)} ${t.votes}`} 
-                                    sx={{ backgroundColor: "#6366f1", color: "white", fontWeight: 600 }} 
+                                <Chip
+                                    size="small"
+                                    label={`${toArabicDigits(summary.topQuestion.voteCount, language)} ${t.votes}`}
+                                    sx={{ backgroundColor: theme.palette.insights.topQuestionAccent, color: theme.palette.common.white, fontWeight: 600 }}
                                 />
                             </Box>
                         </AppCard>
@@ -659,7 +665,7 @@ export default function SessionInsightsDashboard() {
             )}
             {/* Field Chip Selector */}
             <AppCard sx={{ flex: "0 0 auto", p: { xs: 1, sm: 1.5, md: 2 }, width: "100%", boxSizing: "border-box" }}>
-                <Typography variant="subtitle1" sx={{ fontWeight: 600, color: "#374151", mb: 1 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600, color: "text.primary", mb: 1 }}>
                     {t.availableFields}
                 </Typography>
                 <Typography
@@ -696,7 +702,7 @@ export default function SessionInsightsDashboard() {
                         <Box sx={{
                             textAlign: "center"
                         }}>
-                            <BarChartIcon sx={{ fontSize: 48, color: "#d1d5db", mb: 2 }} />
+                            <BarChartIcon sx={{ fontSize: 48, color: "text.disabled", mb: 2 }} />
                             <Typography color="textSecondary">{t.selectFieldPrompt}</Typography>
                         </Box>
                     </AppCard>

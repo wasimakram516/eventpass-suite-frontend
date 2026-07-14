@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState, useMemo, useCallback } from "react";
-import { Box, Typography } from "@mui/material";
+import { Box, Typography,useTheme } from "@mui/material";
 import { motion } from "framer-motion";
 import { Shift } from "ambient-cbg";
 
@@ -9,20 +9,21 @@ import { Shift } from "ambient-cbg";
 // ─────────────────────────────────────────────────────────────────────────────
 // A single cell in the mosaic grid
 // ─────────────────────────────────────────────────────────────────────────────
-function MosaicCell({ 
-  item, 
-  isNew, 
-  version, 
-  backgroundLogo 
+function MosaicCell({
+  item,
+  isNew,
+  version,
+  backgroundLogo
 }) {
+  const theme = useTheme();
   if (!item) return (
-    <Box 
-      sx={{ 
-        width: "100%", 
-        height: "100%", 
-        border: "1px solid #222",
-        backgroundColor: "transparent"
-      }} 
+    <Box
+      sx={{
+        width: "100%",
+        height: "100%",
+        border: "1px solid",
+        borderColor: "divider",
+      }}
     />
   );
 
@@ -46,7 +47,7 @@ function MosaicCell({
         height: "100%",
         position: "relative",
         overflow: "hidden",
-        border: "1px solid #222",
+        border: `1px solid ${theme.palette.wall.cellBorder}`,
         backgroundColor: "transparent",
       }}
     >
@@ -75,7 +76,7 @@ function MosaicCell({
             />
           )
         ) : item.signatureUrl ? (
-          <Box sx={{ width: "100%", height: "100%", display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'rgba(255,255,255,0.9)' }}>
+          <Box sx={{ width: "100%", height: "100%", display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: theme.palette.wall.signatureBgSubtle }}>
             <img
               src={item.signatureUrl}
               alt="Signature"
@@ -83,21 +84,21 @@ function MosaicCell({
             />
           </Box>
         ) : (
-          <Box sx={{ 
-            width: "100%", 
-            height: "100%", 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            bgcolor: 'primary.main',
-            color: 'white',
+          <Box sx={{
+            width: "100%",
+            height: "100%",
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            bgcolor: theme.palette.wall.signatureBgSubtle,
+            color: theme.palette.wall.whiteText,
             p: 0.5
           }}>
-            <Typography 
-              variant="caption" 
-              sx={{ 
-                fontSize: '0.6rem', 
-                lineHeight: 1, 
+            <Typography
+              variant="caption"
+              sx={{
+                fontSize: '0.6rem',
+                lineHeight: 1,
                 textAlign: 'center',
                 overflow: 'hidden',
                 display: '-webkit-box',
@@ -122,7 +123,7 @@ function MosaicCell({
             height: 'auto',
             zIndex: 5,
             opacity: 0.8,
-            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))',
+            filter: theme.palette.wall.stampShadowSoft,
             pointerEvents: 'none',
             ...getStampStyles()
           }}
@@ -139,7 +140,7 @@ export default function MosaicGrid({ media, background, backgroundLogo, rows = 1
   const safeRows = useMemo(() => Math.max(1, Math.trunc(Number(rows) || 10)), [rows]);
   const safeCols = useMemo(() => Math.max(1, Math.trunc(Number(cols) || 15)), [cols]);
   const totalBoxes = safeRows * safeCols;
-
+  const theme = useTheme();
   const [gridState, setGridState] = useState([]);
   const [boxVersions, setBoxVersions] = useState([]);
   const [animatingIndex, setAnimatingIndex] = useState(null);

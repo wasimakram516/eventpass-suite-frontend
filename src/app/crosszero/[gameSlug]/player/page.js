@@ -12,15 +12,16 @@ import {
   Stack,
   TextField,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import { useGame } from "@/contexts/GameContext";
 import { useMessage } from "@/contexts/MessageContext";
 import useCrossZeroWebSocketData from "@/hooks/modules/crosszero/useCrossZeroWebSocketData";
 import { joinGameSession } from "@/services/crosszero/gameSessionService";
-import LanguageSelector from "@/components/LanguageSelector";
+import CrossZeroFloatingControls from "@/components/crosszero/CrossZeroFloatingControls";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
-
+import { useTheme } from "@mui/material/styles";
 const translations = {
   en: {
     pvpMode: "Player vs Player · 1v1",
@@ -54,26 +55,7 @@ const translations = {
   },
 };
 
-const PLAYER_OPTIONS = [
-  {
-    id: "p1",
-    labelKey: "player1",
-    helperKey: "markO",
-    symbol: "○",
-    mark: "O",
-    color: "#ff6b6b",
-    glow: "rgba(255,107,107,0.5)",
-  },
-  {
-    id: "p2",
-    labelKey: "player2",
-    helperKey: "markX",
-    symbol: "✕",
-    mark: "X",
-    color: "#00e5ff",
-    glow: "rgba(0,229,255,0.5)",
-  },
-];
+
 
 const MARK_MAP = { p1: "O", p2: "X" };
 
@@ -89,7 +71,27 @@ export default function CrossZeroPlayerPage() {
   const [form, setForm] = useState({ name: "" });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-
+  const theme = useTheme();
+  const PLAYER_OPTIONS = [
+    {
+      id: "p1",
+      labelKey: "player1",
+      helperKey: "markO",
+      symbol: "○",
+      mark: "O",
+      color: theme.palette.crosszero.o,
+      glow: theme.palette.crosszero.oGlow,
+    },
+    {
+      id: "p2",
+      labelKey: "player2",
+      helperKey: "markX",
+      symbol: "✕",
+      mark: "X",
+      color: theme.palette.crosszero.x,
+      glow: theme.palette.crosszero.xGlow,
+    },
+  ];
   // Clear stale session data from any previous game
   useEffect(() => {
     sessionStorage.removeItem("sessionId");
@@ -162,7 +164,7 @@ export default function CrossZeroPlayerPage() {
 
   return (
     <>
-      <LanguageSelector top={20} right={20} />
+      <CrossZeroFloatingControls top={20} right={20} />
       <Box
         dir={dir}
         sx={{
@@ -184,7 +186,14 @@ export default function CrossZeroPlayerPage() {
         <IconButton
           size="small"
           onClick={() => router.replace(`/crosszero/${game.slug}`)}
-          sx={{ position: "fixed", top: 20, left: 20, bgcolor: "primary.main", color: "white" }}
+          sx={{
+            position: "fixed",
+            top: 20,
+            left: 20,
+            bgcolor: "primary.main",
+            color: "primary.contrastText",
+            boxShadow: (theme) => theme.palette.shadow.floatingButton,
+          }}
         >
           <ICONS.back />
         </IconButton>
@@ -198,10 +207,12 @@ export default function CrossZeroPlayerPage() {
             maxWidth: 520,
             textAlign: "center",
             backdropFilter: "blur(16px)",
-            backgroundColor: "rgba(10,10,20,0.85)",
+            backgroundColor: (theme) =>
+              alpha(theme.palette.background.paper, theme.palette.mode === "dark" ? 0.88 : 0.92),
             borderRadius: 6,
-            border: "1px solid rgba(255,255,255,0.08)",
-            boxShadow: "0 8px 40px rgba(0,0,0,0.6)",
+            border: "1px solid",
+            borderColor: "divider",
+            boxShadow: (theme) => theme.palette.shadow.paper,
           }}
         >
           {/* Mode header icons */}
@@ -215,12 +226,12 @@ export default function CrossZeroPlayerPage() {
             {game.xImage ? (
               <Box component="img" src={game.xImage} alt="X" sx={{ width: 44, height: 44, objectFit: "contain" }} />
             ) : (
-              <Typography sx={{ fontSize: "2.2rem", fontWeight: 900, color: "#00e5ff", textShadow: "0 0 20px #00e5ff", lineHeight: 1 }}>✕</Typography>
+              <Typography sx={{ fontSize: "2.2rem", fontWeight: 900, color: "primary.main", textShadow: (theme) => `0 0 20px ${alpha(theme.palette.primary.main, 0.8)}`, lineHeight: 1 }}>✕</Typography>
             )}
             {game.oImage ? (
               <Box component="img" src={game.oImage} alt="O" sx={{ width: 44, height: 44, objectFit: "contain" }} />
             ) : (
-              <Typography sx={{ fontSize: "2.2rem", fontWeight: 900, color: "#ff6b6b", textShadow: "0 0 20px #ff6b6b", lineHeight: 1 }}>○</Typography>
+              <Typography sx={{ fontSize: "2.2rem", fontWeight: 900, color: "error.main", textShadow: (theme) => `0 0 20px ${alpha(theme.palette.error.main, 0.8)}`, lineHeight: 1 }}>○</Typography>
             )}
           </Stack>
 
@@ -228,17 +239,17 @@ export default function CrossZeroPlayerPage() {
             variant="h4"
             sx={{
               fontWeight: 800,
-              color: "#fff",
+              color: "text.primary",
               mb: 0.5
             }}>
             {game.title}
           </Typography>
-          <Typography sx={{ color: "rgba(255,255,255,0.5)", mb: 3, fontSize: "0.9rem", fontWeight: 600 }}>
+          <Typography sx={{ color: "text.secondary", mb: 3, fontSize: "0.9rem", fontWeight: 600 }}>
             {t.pvpMode}
           </Typography>
 
           {/* Side selector */}
-          <Typography sx={{ color: "rgba(255,255,255,0.7)", mb: 1.5, fontWeight: 700 }}>
+          <Typography sx={{ color: "text.primary", mb: 1.5, fontWeight: 700 }}>
             {t.chooseSide}
           </Typography>
           <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ mb: 3 }}>
@@ -261,10 +272,11 @@ export default function CrossZeroPlayerPage() {
                     borderRadius: 4,
                     border: isSelected
                       ? `2px solid ${option.color}`
-                      : "1px solid rgba(255,255,255,0.1)",
+                      : "1px solid",
+                    borderColor: isSelected ? option.color : "divider",
                     background: isSelected
-                      ? "linear-gradient(135deg, rgba(15,23,42,0.96), rgba(15,23,42,0.84))"
-                      : "rgba(255,255,255,0.06)",
+                      ? (theme) => alpha(theme.palette.background.paper, theme.palette.mode === "dark" ? 0.98 : 0.96)
+                      : (theme) => alpha(theme.palette.action.hover, theme.palette.mode === "dark" ? 0.28 : 0.55),
                     transition: "all 0.25s ease",
                     "&:hover": { transform: "translateY(-3px)" },
                   }}
@@ -288,7 +300,7 @@ export default function CrossZeroPlayerPage() {
                   <Typography
                     sx={{
                       mt: 0.8,
-                      color: isSelected ? "#fff" : "rgba(255,255,255,0.85)",
+                      color: "text.primary",
                       fontWeight: 800,
                       fontSize: "0.9rem",
                     }}
@@ -297,7 +309,7 @@ export default function CrossZeroPlayerPage() {
                   </Typography>
                   <Typography
                     sx={{
-                      color: isSelected ? "rgba(255,255,255,0.72)" : "rgba(255,255,255,0.45)",
+                      color: "text.secondary",
                       fontSize: "0.76rem",
                     }}
                   >
@@ -318,8 +330,8 @@ export default function CrossZeroPlayerPage() {
             onChange={(e) => setForm({ ...form, name: e.target.value })}
             onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
             slotProps={{
-              input: { sx: { backgroundColor: "rgba(255,255,255,0.1)", color: "#fff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.25)" } } },
-              inputLabel: { sx: { color: "rgba(255,255,255,0.6)" } }
+              input: { sx: { backgroundColor: (theme) => alpha(theme.palette.action.hover, theme.palette.mode === "dark" ? 0.32 : 0.6), color: "text.primary", "& .MuiOutlinedInput-notchedOutline": { borderColor: "divider" } } },
+              inputLabel: { sx: { color: "text.secondary" } }
             }} />
           {/* <TextField
             label={t.companyLabel}
@@ -362,8 +374,9 @@ export default function CrossZeroPlayerPage() {
               py: 1.2,
               borderRadius: 999,
               fontWeight: 800,
-              bgcolor: selected ? PLAYER_OPTIONS.find((o) => o.id === selected)?.color ?? "#00e5ff" : "#00e5ff",
-              "&:hover": { filter: "brightness(1.15)", bgcolor: selected ? PLAYER_OPTIONS.find((o) => o.id === selected)?.color ?? "#00e5ff" : "#00e5ff" },
+              bgcolor: selected ? PLAYER_OPTIONS.find((o) => o.id === selected)?.color ?? "primary.main" : "primary.main",
+              color: "primary.contrastText",
+              "&:hover": { filter: "brightness(1.08)", bgcolor: selected ? PLAYER_OPTIONS.find((o) => o.id === selected)?.color ?? "primary.main" : "primary.main" },
               "&:disabled": { opacity: 0.5 },
             }}
           >
@@ -377,7 +390,7 @@ export default function CrossZeroPlayerPage() {
           ) : null}
 
           {!pendingSession ? (
-            <Typography sx={{ color: "rgba(255,255,255,0.45)", mt: 2, fontSize: "0.85rem" }}>
+            <Typography sx={{ color: theme.palette.crosszero.waitingText, mt: 2, fontSize: "0.85rem" }}>
               {t.waitingSession}
             </Typography>
           ) : null}

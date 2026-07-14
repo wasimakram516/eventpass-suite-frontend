@@ -313,147 +313,148 @@ export default function TapMatchGamesPage() {
         ) : (
           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, justifyContent: "center" }}>
             {filteredGames.map((g) => (
-                <AppCard
-                  key={g._id}
-                  sx={{
-                    p: 2,
-                    width: { xs: "100%", sm: 340 },
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <Box>
-                    <Typography variant="h6" gutterBottom sx={{
-                      fontWeight: "bold"
-                    }}>
-                      {g.title}
-                    </Typography>
-                    <Typography variant="body2" sx={{
-                      color: "text.secondary"
-                    }}>
-                      <strong>{t.slugLabel}</strong> {g.slug}
-                    </Typography>
-                    <Typography variant="body2" sx={{
-                      color: "text.secondary"
-                    }}>
-                      <strong>{t.countdownTimerLabel}</strong>{" "}
-                      {toArabicDigits(g.countdownTimer, language)}s
-                    </Typography>
-                    <Typography variant="body2" sx={{
-                      color: "text.secondary"
-                    }}>
-                      <strong>{t.gameTimeLabel}</strong> {toArabicDigits(g.gameSessionTimer, language)}s
-                    </Typography>
+              <AppCard
+                key={g._id}
+                sx={{
+                  p: 2,
+                  width: { xs: "100%", sm: 340 },
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Box>
+                  <Typography variant="h6" gutterBottom sx={{
+                    fontWeight: "bold"
+                  }}>
+                    {g.title}
+                  </Typography>
+                  <Typography variant="body2" sx={{
+                    color: "text.secondary"
+                  }}>
+                    <strong>{t.slugLabel}</strong> {g.slug}
+                  </Typography>
+                  <Typography variant="body2" sx={{
+                    color: "text.secondary"
+                  }}>
+                    <strong>{t.countdownTimerLabel}</strong>{" "}
+                    {toArabicDigits(g.countdownTimer, language)}s
+                  </Typography>
+                  <Typography variant="body2" sx={{
+                    color: "text.secondary"
+                  }}>
+                    <strong>{t.gameTimeLabel}</strong> {toArabicDigits(g.gameSessionTimer, language)}s
+                  </Typography>
 
-                    {/* Preview core images */}
-                    <Box
-                      sx={{
-                        display: "grid",
-                        gridTemplateColumns: "repeat(3, 1fr)",
-                        gap: 1,
-                        mt: 2,
-                      }}
-                    >
-                      {["coverImage", "nameImage", "backgroundImage"].map(
-                        (imgKey) => (
-                          <Box key={imgKey}>
-                            <Typography
-                              variant="caption"
-                              sx={{
-                                color: "text.secondary",
-                                display: "block",
-                                mb: 0.5,
-                                fontSize: "0.7rem"
-                              }}>
-                              {t[`${imgKey}Label`]}
-                            </Typography>
-                            <Box
-                              component="img"
-                              src={g[imgKey]}
-                              alt={imgKey}
-                              sx={{
-                                width: "100%",
-                                height: { xs: 70, sm: 80 },
-                                objectFit: "cover",
-                                borderRadius: 1,
-                                border: "1px solid #eee",
-                              }}
-                            />
-                          </Box>
+                  {/* Preview core images */}
+                  <Box
+                    sx={{
+                      display: "grid",
+                      gridTemplateColumns: "repeat(3, 1fr)",
+                      gap: 1,
+                      mt: 2,
+                    }}
+                  >
+                    {["coverImage", "nameImage", "backgroundImage"].map(
+                      (imgKey) => (
+                        <Box key={imgKey}>
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: "text.secondary",
+                              display: "block",
+                              mb: 0.5,
+                              fontSize: "0.7rem"
+                            }}>
+                            {t[`${imgKey}Label`]}
+                          </Typography>
+                          <Box
+                            component="img"
+                            src={g[imgKey]}
+                            alt={imgKey}
+                            sx={{
+                              width: "100%",
+                              height: { xs: 70, sm: 80 },
+                              objectFit: "cover",
+                              borderRadius: 1,
+                              border: "1px solid",
+                              borderColor: "divider",
+                            }}
+                          />
+                        </Box>
+                      )
+                    )}
+                  </Box>
+                </Box>
+
+                <RecordMetadata
+                  createdByName={g.createdBy}
+                  updatedByName={g.updatedBy}
+                  createdAt={g.createdAt}
+                  updatedAt={g.updatedAt}
+                  locale={language === "ar" ? "ar-SA" : "en-GB"}
+                />
+
+                <Box sx={{ mt: 2 }}>
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    sx={{
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      flexWrap: "wrap"
+                    }}>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      startIcon={<ICONS.leaderboard />}
+                      onClick={() =>
+                        router.push(
+                          `/cms/modules/tapmatch/games/${g.slug}/results`
                         )
-                      )}
+                      }
+                      sx={getStartIconSpacing(dir)}
+                    >
+                      {t.resultsButton}
+                    </Button>
+
+                    <Box sx={{ display: "flex", gap: 1 }}>
+                      <Tooltip title={t.editTooltip}>
+                        <IconButton
+                          color="info"
+                          onClick={() => handleOpenEdit(g)}
+                        >
+                          <ICONS.edit fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+
+                      <Tooltip title={t.deleteTooltip}>
+                        <IconButton
+                          color="error"
+                          onClick={() => {
+                            setGameToDelete(g);
+                            setConfirmOpen(true);
+                          }}
+                        >
+                          <ICONS.delete fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+
+                      <Tooltip title={t.shareTooltip}>
+                        <IconButton
+                          color="primary"
+                          onClick={() => {
+                            setGameToShare(g);
+                            setShareModalOpen(true);
+                          }}
+                        >
+                          <ICONS.share fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
                     </Box>
-                  </Box>
-
-                  <RecordMetadata
-                    createdByName={g.createdBy}
-                    updatedByName={g.updatedBy}
-                    createdAt={g.createdAt}
-                    updatedAt={g.updatedAt}
-                    locale={language === "ar" ? "ar-SA" : "en-GB"}
-                  />
-
-                  <Box sx={{ mt: 2 }}>
-                    <Stack
-                      direction="row"
-                      spacing={1}
-                      sx={{
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        flexWrap: "wrap"
-                      }}>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        startIcon={<ICONS.leaderboard />}
-                        onClick={() =>
-                          router.push(
-                            `/cms/modules/tapmatch/games/${g.slug}/results`
-                          )
-                        }
-                        sx={getStartIconSpacing(dir)}
-                      >
-                        {t.resultsButton}
-                      </Button>
-
-                      <Box sx={{ display: "flex", gap: 1 }}>
-                        <Tooltip title={t.editTooltip}>
-                          <IconButton
-                            color="info"
-                            onClick={() => handleOpenEdit(g)}
-                          >
-                            <ICONS.edit fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-
-                        <Tooltip title={t.deleteTooltip}>
-                          <IconButton
-                            color="error"
-                            onClick={() => {
-                              setGameToDelete(g);
-                              setConfirmOpen(true);
-                            }}
-                          >
-                            <ICONS.delete fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-
-                        <Tooltip title={t.shareTooltip}>
-                          <IconButton
-                            color="primary"
-                            onClick={() => {
-                              setGameToShare(g);
-                              setShareModalOpen(true);
-                            }}
-                          >
-                            <ICONS.share fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      </Box>
-                    </Stack>
-                  </Box>
-                </AppCard>
+                  </Stack>
+                </Box>
+              </AppCard>
             ))}
           </Box>
         )}

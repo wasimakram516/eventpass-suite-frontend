@@ -219,7 +219,7 @@ export default function ResultsPage() {
                     height: "100%",
                     p: 3,
                     borderRadius: 3,
-                    background: "#fdfefe",
+                   bgcolor: "background.paper",
                     boxShadow: 2,
                     display: "flex",
                     flexDirection: "column",

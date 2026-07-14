@@ -2,6 +2,7 @@ import "../styles/globals.css";
 import ClientRoot from "./ClientRoot";
 
 export const metadata = {
+  metadataBase: new URL("https://eventpass.whitewall.solutions"),
   title: "EventPass – WhiteWall",
   description:
     "EventPass by WhiteWall is a unified platform for live event engagement, including interactive quizzes, polls, audience questions, photo walls, registration, and check-in tools.",

@@ -1,19 +1,7 @@
 "use client";
 
 import { Box, Typography } from "@mui/material";
-
-const MARK_STYLES = {
-  X: {
-    fallback: "✕",
-    color: "#00e5ff",
-    shadow: "0 0 16px rgba(0,229,255,0.75)",
-  },
-  O: {
-    fallback: "○",
-    color: "#ff6b6b",
-    shadow: "0 0 16px rgba(255,107,107,0.75)",
-  },
-};
+import { useTheme } from "@mui/material/styles";
 
 export default function CrossZeroMarkVisual({
   mark = "X",
@@ -26,9 +14,26 @@ export default function CrossZeroMarkVisual({
   alt,
   sx,
 }) {
+  const theme = useTheme();
+
+  const MARK_STYLES = {
+    X: {
+      fallback: "✕",
+      color: theme.palette.crosszero.markX,
+      shadow: theme.palette.crosszero.markXFallbackGlow,
+    },
+    O: {
+      fallback: "○",
+      color: theme.palette.crosszero.markO,
+      shadow: theme.palette.crosszero.markOFallbackGlow,
+    },
+  };
+
   const resolvedMark = mark === "O" ? "O" : "X";
   const config = MARK_STYLES[resolvedMark];
   const imageSrc = resolvedMark === "X" ? xImage : oImage;
+  const resolvedColor = color || config.color;
+  const resolvedShadow = shadow || config.shadow;
 
   if (imageSrc) {
     return (
@@ -59,8 +64,8 @@ export default function CrossZeroMarkVisual({
         userSelect: "none",
         fontWeight: 900,
         fontSize: fallbackSize || size,
-        color: color || config.color,
-        textShadow: shadow || config.shadow,
+        color: resolvedColor,
+        textShadow: resolvedShadow,
         ...sx,
       }}
     >

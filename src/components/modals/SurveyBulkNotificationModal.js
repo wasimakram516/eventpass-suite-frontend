@@ -89,7 +89,7 @@ const SurveyBulkNotificationModal = ({
       maxWidth="md"
       fullWidth
       slotProps={{
-        paper: { sx: { borderRadius: 2 } }
+        paper: {}
       }}
     >
       <DialogTitle
