@@ -76,6 +76,15 @@ export default function Navbar() {
     },
   };
 
+  // Slightly larger than the other toolbar icon buttons — the profile
+  // avatar sits at the end of the toolbar and should read as the primary
+  // action, not blend in with the theme toggle.
+  const profileButtonStyle = {
+    ...avatarButtonStyle,
+    width: 40,
+    height: 40,
+  };
+
   const handleOpen = (event) => setAnchorEl(event.currentTarget);
   const handleClose = () => setAnchorEl(null);
   const openLogoutConfirm = () => {
@@ -122,10 +131,12 @@ export default function Navbar() {
               </IconButton>
             </Tooltip>
 
+            <LanguageSelector />
+
             {!user ? (
               <Link href="/auth/login">
                 <Tooltip title={t.signIn}>
-                  <IconButton color="primary" sx={avatarButtonStyle}>
+                  <IconButton color="primary" sx={profileButtonStyle}>
                     <ICONS.login fontSize="small" />
                   </IconButton>
                 </Tooltip>
@@ -133,15 +144,15 @@ export default function Navbar() {
             ) : (
               <>
                 <Tooltip title={t.viewProfile}>
-                  <IconButton onClick={handleOpen} sx={avatarButtonStyle}>
+                  <IconButton onClick={handleOpen} sx={profileButtonStyle}>
                     <Avatar
                       sx={{
                         bgcolor: "background.paper",
-                        width: 30,
-                        height: 30,
+                        width: 38,
+                        height: 38,
                         color: "text.primary",
                         fontWeight: "bold",
-                        fontSize: "0.8rem",
+                        fontSize: "0.9rem",
                       }}
                     >
                       {user.name
@@ -194,8 +205,6 @@ export default function Navbar() {
                 </Menu>
               </>
             )}
-
-            <LanguageSelector />
           </Box>
         </Toolbar>
       </AppBar>
