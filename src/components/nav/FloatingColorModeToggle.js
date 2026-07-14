@@ -15,7 +15,11 @@ export default function FloatingColorModeToggle() {
                 sx={{
                     position: "fixed",
                     top: { xs: 16, sm: 20 },
-                    right: { xs: 16, sm: 100 },
+                    // On mobile, public-page LanguageSelectors tend to float
+                    // at the same top-right corner - sit on the opposite
+                    // side there instead of overlapping it.
+                    left: { xs: 16, sm: "auto" },
+                    right: { xs: "auto", sm: 100 },
                     zIndex: 9999,
                     bgcolor: "background.paper",
                     color: "text.primary",
