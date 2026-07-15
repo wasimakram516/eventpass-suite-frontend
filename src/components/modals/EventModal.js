@@ -439,6 +439,24 @@ function withDependentFieldRenameHistory(currentFields, initialFields) {
   });
 }
 
+// Same rename-history capture as withDependentFieldRenameHistory above, for
+// the plain custom formFields array — a registration's answer is stored
+// keyed by whatever inputName was current at submission time, so this is
+// what lets a later rename keep finding it instead of it appearing missing.
+function withFormFieldRenameHistory(currentFields, initialFields) {
+  const initialById = new Map(
+    (initialFields || []).filter((f) => f._id).map((f) => [String(f._id), f]),
+  );
+  return (currentFields || []).map((f) => {
+    if (!f._id) return f; // brand-new field this session — nothing to compare against
+    const original = initialById.get(String(f._id));
+    if (!original || original.inputName === f.inputName) return f;
+    const previousNames = new Set(f.previousNames || original.previousNames || []);
+    previousNames.add(original.inputName);
+    return { ...f, previousNames: [...previousNames] };
+  });
+}
+
 const EventModal = ({
   open,
   onClose,
@@ -1512,7 +1530,10 @@ const EventModal = ({
           : {}),
         ...(formData.useCustomFields
           ? {
-            formFields: formData.formFields,
+            formFields: withFormFieldRenameHistory(
+              (formData.formFields || []).filter(f => f.inputName?.trim()),
+              initialValues?.formFields || [],
+            ),
           }
           : {}),
         useCustomFields: formData.useCustomFields,

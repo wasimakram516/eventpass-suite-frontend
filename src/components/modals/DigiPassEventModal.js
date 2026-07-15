@@ -165,6 +165,27 @@ const translations = {
     },
 };
 
+// Compares the current formFields list against what was originally loaded
+// (matched by _id) and, for any field whose inputName changed, records the
+// old name into previousNames. Mirrors withDependentFieldRenameHistory /
+// withFormFieldRenameHistory in EventModal.js — a registration's answer is
+// stored keyed by whatever inputName was current at submission time, so
+// this is what lets a later rename keep finding it instead of it appearing
+// missing.
+function withFormFieldRenameHistory(currentFields, initialFields) {
+    const initialById = new Map(
+        (initialFields || []).filter((f) => f._id).map((f) => [String(f._id), f]),
+    );
+    return (currentFields || []).map((f) => {
+        if (!f._id) return f; // brand-new field this session — nothing to compare against
+        const original = initialById.get(String(f._id));
+        if (!original || original.inputName === f.inputName) return f;
+        const previousNames = new Set(f.previousNames || original.previousNames || []);
+        previousNames.add(original.inputName);
+        return { ...f, previousNames: [...previousNames] };
+    });
+}
+
 const DigiPassEventModal = ({
     open,
     onClose,
@@ -569,7 +590,13 @@ const DigiPassEventModal = ({
             return;
         }
 
-        if (!initialValues?._id && !formData.linkedEventRegId) {
+        // DigiPass has no classic-fields mode — a standalone event (not
+        // linked to an EventReg event) must always have at least one custom
+        // field, on every save, not just the first one. Registration
+        // creation silently stops storing identity data (fullName/email/
+        // phone) once formFields is empty, so this can't be allowed to slip
+        // through by editing an existing event down to zero fields either.
+        if (!formData.linkedEventRegId) {
             const hasCustomFields = (formData.formFields || []).some(
                 (field) => field.inputName && field.inputName.trim().length > 0
             );
@@ -624,12 +651,21 @@ const DigiPassEventModal = ({
             let backgroundEn = null;
             let backgroundAr = null;
             let progressImageUrl = formData.removeProgressImage ? null : (formData.progressImage ? null : (formData.progressImagePreview || null));
-            let formFields = formData.formFields;
+            // Captures a rename into previousNames before submit, so an
+            // already-submitted registration's answer (stored under the old
+            // field name) can still be found after the rename — see
+            // withFormFieldRenameHistory above.
+            let formFields = withFormFieldRenameHistory(
+                (formData.formFields || []).filter((f) => f.inputName?.trim()),
+                initialValues?.formFields || [],
+            );
             let defaultLanguage = formData.defaultLanguage;
 
             if (formData.linkedEventRegId && formData.linkedEventData) {
                 // Only inherit form fields and language from linked event.
                 // Logo and background can be overridden by the user's own uploads.
+                // The linked EventReg event's own fields already carry their
+                // own previousNames, managed on that event's own modal.
                 formFields = formData.linkedEventData.formFields || [];
                 defaultLanguage = formData.linkedEventData.defaultLanguage || "en";
             }

@@ -243,9 +243,21 @@ export default function RegistrationModal({
                         "Phone": cf["Phone"] ?? cf["phone"] ?? registration.phone ?? "",
                         "Company": cf["Company"] ?? cf["company"] ?? registration.company ?? "",
                     };
-                    init[f.inputName] = (f.inputName in identityMap)
-                        ? identityMap[f.inputName]
-                        : (cf[f.inputName] ?? "");
+                    if (f.inputName in identityMap) {
+                        init[f.inputName] = identityMap[f.inputName];
+                    } else {
+                        // The stored answer may still be under a name this field
+                        // used to have (renamed since submission) — try the
+                        // current name first, then any previous name, so a
+                        // rename doesn't make an already-submitted answer
+                        // appear blank here.
+                        const candidates = [f.inputName, ...(f.previousNames || [])];
+                        const matchedKey = candidates.find((name) => {
+                            const v = cf[name];
+                            return v !== undefined && v !== null && String(v).trim() !== "";
+                        });
+                        init[f.inputName] = matchedKey !== undefined ? cf[matchedKey] : "";
+                    }
 
                     if (isPhoneField(f)) {
                         const phoneValue = init[f.inputName] || "";
