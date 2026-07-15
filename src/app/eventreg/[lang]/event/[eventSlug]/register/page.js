@@ -305,6 +305,9 @@ export default function Registration() {
       fields.forEach((f) => {
         if (f.label) textsToTranslate.add(f.label);
         if (f.placeholder) textsToTranslate.add(f.placeholder);
+        (f.options || []).forEach((o) => {
+          if (o) textsToTranslate.add(o);
+        });
       });
 
       const textArray = Array.from(textsToTranslate).filter(
@@ -900,7 +903,7 @@ export default function Registration() {
         <Box
           sx={{
             width: "100%",
-            maxWidth: 1040,
+            maxWidth: 800,
             borderRadius: 3,
             overflow: "hidden",
             boxShadow: 3,
