@@ -33,7 +33,7 @@ const LanguageSelector = ({ top, right }) => {
       <Box
         onClick={toggleLanguage}
         sx={{
-          position: isFloating ? "absolute" : "relative",
+          position: isFloating ? "fixed" : "relative",
           top: isFloating ? top : "auto",
           right: isFloating ? right : "auto",
           width: 64,
