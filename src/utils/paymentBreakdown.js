@@ -15,14 +15,21 @@ export function round3(value) {
 /**
  * Compute the full price breakdown for a single ticket.
  *
+ * A promo code discount is applied to the base ticket price FIRST, before
+ * fees and VAT — fees and VAT are then computed on the discounted base.
+ *
  * @param {number} basePrice
  * @param {Array<{name:string, percentage:number}>} [fees=[]]
  * @param {number} [vatPercentage=0]
- * @returns {{ base, feeLines, feesTotal, subtotal, vatPercentage, vatAmount, total }}
+ * @param {number} [discountPercentage=0]
+ * @returns {{ base, discountPercentage, discountAmount, discountedBase, feeLines, feesTotal, subtotal, vatPercentage, vatAmount, total }}
  */
-export function computePaymentBreakdown(basePrice, fees = [], vatPercentage = 0) {
+export function computePaymentBreakdown(basePrice, fees = [], vatPercentage = 0, discountPercentage = 0) {
   const base = round3(Number(basePrice) || 0);
   const vatPct = Number(vatPercentage) || 0;
+  const discountPct = Number(discountPercentage) || 0;
+  const discountAmount = round3(base * (discountPct / 100));
+  const discountedBase = round3(base - discountAmount);
 
   const feeLines = (Array.isArray(fees) ? fees : [])
     .filter((f) => f && f.name != null && Number(f.percentage) > 0)
@@ -31,16 +38,27 @@ export function computePaymentBreakdown(basePrice, fees = [], vatPercentage = 0)
       return {
         name: String(f.name),
         percentage,
-        amount: round3(base * (percentage / 100)),
+        amount: round3(discountedBase * (percentage / 100)),
       };
     });
 
   const feesTotal = round3(feeLines.reduce((sum, f) => sum + f.amount, 0));
-  const subtotal = round3(base + feesTotal);
+  const subtotal = round3(discountedBase + feesTotal);
   const vatAmount = round3(subtotal * (vatPct / 100));
   const total = round3(subtotal + vatAmount);
 
-  return { base, feeLines, feesTotal, subtotal, vatPercentage: vatPct, vatAmount, total };
+  return {
+    base,
+    discountPercentage: discountPct,
+    discountAmount,
+    discountedBase,
+    feeLines,
+    feesTotal,
+    subtotal,
+    vatPercentage: vatPct,
+    vatAmount,
+    total,
+  };
 }
 
 /** Format an OMR amount with 3 decimals + currency suffix. */

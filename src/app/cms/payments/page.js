@@ -97,6 +97,7 @@ const translations = {
     event: "Event",
     ticket: "Ticket",
     basePrice: "Base Price",
+    promoLabel: "Promo",
     fees: "Fees",
     feesTotal: "Fees Total",
     subtotal: "Subtotal",
@@ -144,6 +145,7 @@ const translations = {
     event: "الفعالية",
     ticket: "التذكرة",
     basePrice: "السعر الأساسي",
+    promoLabel: "الخصم",
     fees: "الرسوم",
     feesTotal: "إجمالي الرسوم",
     subtotal: "المجموع الفرعي",
@@ -454,6 +456,11 @@ export default function PaymentsPage() {
     base: p.priceBreakdown?.base ?? null,
     total: p.priceBreakdown?.total ?? p.amount ?? null,
   });
+  const getPromo = (p) => (
+    p.promoCode && p.priceBreakdown?.discountAmount > 0
+      ? { code: p.promoCode, discountAmount: p.priceBreakdown.discountAmount }
+      : null
+  );
   const getStatusTone = (status) => {
     switch (status) {
       case "paid":
@@ -553,12 +560,20 @@ export default function PaymentsPage() {
               {getItemLabel(p).value || "—"}
             </Typography>
             {(() => {
-              const { base, total } = getBaseTotal(p); return (
+              const { base, total } = getBaseTotal(p);
+              const promo = getPromo(p);
+              return (
                 <Typography variant="body2" color="text.secondary" sx={{ textAlign: align }}>
                   <Box component="span" fontWeight={600} color="text.primary" sx={{ marginInlineEnd: 0.5 }}>{labels.amount}:</Box>
                   {fmtAmt(total)}
                   {base != null && base !== total && (
                     <Box component="span" sx={{ color: "text.disabled", marginInlineStart: 0.75 }}>({t.basePrice}: {fmtAmt(base)})</Box>
+                  )}
+                  {promo && (
+                    <Box component="span" sx={{ color: "secondary.main", marginInlineStart: 0.75, display: "inline-flex", alignItems: "center", gap: 0.3 }}>
+                      <ICONS.promoCode sx={{ fontSize: "0.85rem", color: "secondary.main" }} />
+                      {promo.code} (-{fmtAmt(promo.discountAmount)})
+                    </Box>
                   )}
                 </Typography>
               );
@@ -597,11 +612,19 @@ export default function PaymentsPage() {
       </TableCell>
       <TableCell sx={{ py: 1.5, textAlign: align }}>
         {(() => {
-          const { base, total } = getBaseTotal(p); return (
+          const { base, total } = getBaseTotal(p);
+          const promo = getPromo(p);
+          return (
             <>
               <Typography variant="body2" fontWeight={600}>{fmtAmt(total)}</Typography>
               {base != null && base !== total && (
-                <Typography variant="caption" color="text.secondary">{t.basePrice}: {fmtAmt(base)}</Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>{t.basePrice}: {fmtAmt(base)}</Typography>
+              )}
+              {promo && (
+                <Typography variant="caption" color="secondary.main" sx={{ display: "flex", alignItems: "center", gap: 0.3 }}>
+                  <ICONS.promoCode sx={{ fontSize: "0.85rem", color: "secondary.main" }} />
+                  {promo.code} (-{fmtAmt(promo.discountAmount)})
+                </Typography>
               )}
             </>
           );
@@ -873,6 +896,13 @@ export default function PaymentsPage() {
                       {showPaymentBreakdown && (
                         <Box sx={{ mt: 1.5 }}>
                           {row(t.basePrice, fmtAmt(base))}
+                          {viewPayment.promoCode && pb.discountAmount > 0 && row(
+                            <Box component="span" sx={{ display: "inline-flex", alignItems: "center", gap: 0.4 }}>
+                              <ICONS.promoCode sx={{ fontSize: "0.9rem", color: "secondary.main" }} />
+                              {t.promoLabel} ({viewPayment.promoCode}{pb.discountPercentage != null ? ` · ${pb.discountPercentage}%` : ""})
+                            </Box>,
+                            <Typography variant="body2" fontWeight={600} color="secondary.main">-{fmtAmt(pb.discountAmount)}</Typography>
+                          )}
                           {feeLines.map((f, i) => (
                             <Box key={i}>{row(`${f.name}${f.percentage != null ? ` (${f.percentage}%)` : ""}`, fmtAmt(f.amount))}</Box>
                           ))}

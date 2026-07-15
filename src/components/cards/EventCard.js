@@ -34,6 +34,7 @@ export default function EventCardBase({
   onShare,
   onClone,
   onInsights,
+  onPromoCodes,
   onViewResults,
   onViewFullScreen,
 }) {
@@ -256,6 +257,20 @@ export default function EventCardBase({
               }}
             >
               <ICONS.view />
+            </IconButton>
+          </Tooltip>
+        )}
+        {onPromoCodes && (
+          <Tooltip title={t.promoCodes || "Promo Codes"}>
+            <IconButton
+              color="secondary"
+              onClick={onPromoCodes}
+              sx={{
+                "&:hover": { transform: "scale(1.1)" },
+                transition: "0.2s",
+              }}
+            >
+              <ICONS.promoCode />
             </IconButton>
           </Tooltip>
         )}

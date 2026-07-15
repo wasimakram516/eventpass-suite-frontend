@@ -36,6 +36,7 @@ import { normalizePhone } from "@/utils/phoneUtils";
 import { validatePhoneNumber } from "@/utils/phoneValidation";
 import { uploadSingleFile } from "@/utils/mediaUpload";
 import { initiatePayment } from "@/services/eventreg/paymentService";
+import { validatePromoCode } from "@/services/eventreg/promoCodeService";
 import { computePaymentBreakdown, formatOmr } from "@/utils/paymentBreakdown";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
@@ -72,6 +73,11 @@ const translations = {
         conflictEmailOnlyMessage: "A registration with this email already exists, but with a different phone number. If this isn't the same attendee, please contact support, or use a different email address (make sure it's active, since the registration will be sent there).",
         conflictPhoneOnlyTitle: "Phone number already registered",
         conflictPhoneOnlyMessage: "A registration with this phone number already exists, but with a different email address. If this isn't the same attendee, please contact support, or use a different phone number (make sure it's active, since the attendee may be contacted about their registration).",
+        promoCodeLabel: "Promo Code",
+        promoCodeApply: "Apply",
+        promoCodeApplied: "Code applied",
+        promoCodeRemove: "Remove",
+        promoCodeDiscountLine: "Discount",
     },
     ar: {
         createTitle: "إنشاء تسجيل",
@@ -104,6 +110,11 @@ const translations = {
         conflictEmailOnlyMessage: "يوجد تسجيل بهذا البريد الإلكتروني ولكن برقم هاتف مختلف. إذا لم يكن هذا نفس الحاضر، يرجى التواصل مع الدعم، أو استخدام عنوان بريد إلكتروني آخر (تأكد من أنه نشط، حيث سيُرسل التسجيل إليه).",
         conflictPhoneOnlyTitle: "رقم الهاتف مسجل بالفعل",
         conflictPhoneOnlyMessage: "يوجد تسجيل بهذا الرقم ولكن ببريد إلكتروني مختلف. إذا لم يكن هذا نفس الحاضر، يرجى التواصل مع الدعم، أو استخدام رقم هاتف آخر (تأكد من أنه نشط، حيث قد يتم التواصل مع الحاضر بخصوص تسجيله).",
+        promoCodeLabel: "رمز الخصم",
+        promoCodeApply: "تطبيق",
+        promoCodeApplied: "تم تطبيق الرمز",
+        promoCodeRemove: "إزالة",
+        promoCodeDiscountLine: "خصم",
     },
 };
 
@@ -145,13 +156,19 @@ export default function RegistrationModal({
     const [conflictReason, setConflictReason] = useState(null);
     const { globalConfig } = useGlobalConfig();
 
+    // ── Paid-event: promo code (create mode only, mirrors the public page) ────
+    const [promoCodeInput, setPromoCodeInput] = useState("");
+    const [appliedPromoCode, setAppliedPromoCode] = useState(null);
+    const [promoCodeError, setPromoCodeError] = useState("");
+    const [promoCodeValidating, setPromoCodeValidating] = useState(false);
+
     const isPaidEvent = !!event?.isPaid;
     const ticketTypes = event?.ticketTypes || [];
 
     // Selected ticket + breakdown (live, mirrors public page)
     const selectedTicket = ticketTypes.find(tt => tt._id === selectedTicketTypeId) || null;
     const paymentBreakdown = selectedTicket
-        ? computePaymentBreakdown(selectedTicket.price, event?.fees || [], event?.vatPercentage ?? 0)
+        ? computePaymentBreakdown(selectedTicket.price, event?.fees || [], event?.vatPercentage ?? 0, appliedPromoCode?.discountPercentage || 0)
         : null;
 
     // ── Ticket-dependent fields ───────────────────────────────────────────────
@@ -325,6 +342,9 @@ export default function RegistrationModal({
         setShowPaymentSummary(false);
         setPaymentPayload(null);
         setPaymentError("");
+        setPromoCodeInput("");
+        setAppliedPromoCode(null);
+        setPromoCodeError("");
     }, [registration, fieldsToRender, hasCustomFields, mode, open, registration?.isoCode]);
 
     // Init dependent field values when ticket changes. In edit mode, seed them from
@@ -385,6 +405,35 @@ export default function RegistrationModal({
                 return next;
             });
         }
+    };
+
+    // Informational only — confirms the code and shows the discount live in
+    // the summary. The backend re-validates and is the only place a use is
+    // actually consumed (see handleConfirmPayment / initiatePayment).
+    const handleApplyPromoCode = async () => {
+        const code = promoCodeInput.trim();
+        if (!code) return;
+        setPromoCodeValidating(true);
+        setPromoCodeError("");
+        const result = await validatePromoCode({
+            eventSlug: event?.slug,
+            code,
+            ticketTypeId: selectedTicketTypeId,
+        });
+        setPromoCodeValidating(false);
+        const data = result?.data || result;
+        if (!result?.error && data?.valid) {
+            setAppliedPromoCode({ code, discountPercentage: data.discountPercentage });
+        } else {
+            setAppliedPromoCode(null);
+            setPromoCodeError(data?.message || t.registrationFailed);
+        }
+    };
+
+    const handleRemovePromoCode = () => {
+        setAppliedPromoCode(null);
+        setPromoCodeInput("");
+        setPromoCodeError("");
     };
 
     const handleCountryCodeChange = (fieldName, isoCode) => {
@@ -598,7 +647,10 @@ export default function RegistrationModal({
         setPaymentError("");
         setDuplicateNotice(null);
         setConflictReason(null);
-        const result = await initiatePayment(paymentPayload);
+        const result = await initiatePayment({
+            ...paymentPayload,
+            ...(appliedPromoCode?.code ? { promoCode: appliedPromoCode.code } : {}),
+        });
 
         setPayProcessing(false);
 
@@ -915,10 +967,14 @@ export default function RegistrationModal({
                     },
                 }}
             >
-                {/* Header band */}
+                {/* Header band — gradients.infoCard is a dark navy/teal gradient in
+                    both themes, so its text must stay a fixed white, not
+                    primary.contrastText (which flips to near-black in dark mode
+                    since dark-mode's primary.main is a light accent color meant
+                    for buttons, unrelated to this background). */}
                 <Box sx={{
                     background: (theme) => theme.palette.gradients.infoCard,
-                    color: "primary.contrastText", px: 3, pt: 3, pb: 2.5,
+                    color: "common.white", px: 3, pt: 3, pb: 2.5,
                     display: "flex", alignItems: "center", gap: 1.5,
                 }}>
                     <Box sx={{
@@ -926,7 +982,7 @@ export default function RegistrationModal({
                         backgroundColor: (theme) => theme.palette.overlay.glassLight,
                         display: "flex", alignItems: "center", justifyContent: "center",
                     }}>
-                        <ICONS.list sx={{ fontSize: 24, color: "primary.contrastText" }} />
+                        <ICONS.list sx={{ fontSize: 24, color: "common.white" }} />
                     </Box>
                     <Box sx={{ minWidth: 0 }}>
                         <Typography variant="h6" fontWeight={800} sx={{ lineHeight: 1.2 }}>
@@ -941,6 +997,40 @@ export default function RegistrationModal({
                 <DialogContent sx={{ px: 3, pt: 2.5, pb: 2 }}>
                     {paymentBreakdown && (
                         <Box>
+                            {/* Promo code */}
+                            <Box sx={{ mb: 2 }}>
+                                {appliedPromoCode ? (
+                                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                                        <Typography variant="body2" color="success.main" fontWeight={600}>
+                                            {t.promoCodeApplied}: {appliedPromoCode.code}
+                                        </Typography>
+                                        <Button size="small" onClick={handleRemovePromoCode} sx={{ textTransform: "none" }}>
+                                            {t.promoCodeRemove}
+                                        </Button>
+                                    </Box>
+                                ) : (
+                                    <Box sx={{ display: "flex", gap: 1, alignItems: "flex-start" }}>
+                                        <TextField
+                                            size="small"
+                                            fullWidth
+                                            label={t.promoCodeLabel}
+                                            value={promoCodeInput}
+                                            onChange={(e) => { setPromoCodeInput(e.target.value); setPromoCodeError(""); }}
+                                            error={!!promoCodeError}
+                                            helperText={promoCodeError || ""}
+                                        />
+                                        <Button
+                                            variant="outlined"
+                                            onClick={handleApplyPromoCode}
+                                            disabled={!promoCodeInput.trim() || promoCodeValidating}
+                                            sx={{ textTransform: "none", flexShrink: 0, height: 40 }}
+                                        >
+                                            {promoCodeValidating ? <CircularProgress size={18} /> : t.promoCodeApply}
+                                        </Button>
+                                    </Box>
+                                )}
+                            </Box>
+
                             {/* Ticket base */}
                             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", py: 1 }}>
                                 <Box sx={{ minWidth: 0 }}>
@@ -953,6 +1043,18 @@ export default function RegistrationModal({
                                     {formatOmr(paymentBreakdown.base, "OMR")}
                                 </Typography>
                             </Box>
+
+                            {/* Promo discount */}
+                            {paymentBreakdown.discountAmount > 0 && (
+                                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", py: 0.6 }}>
+                                    <Typography variant="body2" color="success.main">
+                                        {t.promoCodeDiscountLine} ({appliedPromoCode?.code}) <Box component="span" sx={{ opacity: 0.7 }}>· {paymentBreakdown.discountPercentage}%</Box>
+                                    </Typography>
+                                    <Typography variant="body2" color="success.main" sx={{ whiteSpace: "nowrap", pl: 1 }}>
+                                        -{formatOmr(paymentBreakdown.discountAmount, "OMR")}
+                                    </Typography>
+                                </Box>
+                            )}
 
                             {/* Fees */}
                             {paymentBreakdown.feeLines.map((fee, i) => (

@@ -10,6 +10,7 @@ export default function useEventRegSocket({
   onRegistrationRemoved,
   onBadgePrinted,
   onWalkinCreated,
+  onPromoCodeUpdated,
 }) {
   const handlersRef = useRef({
     onLoadingProgress,
@@ -19,6 +20,7 @@ export default function useEventRegSocket({
     onRegistrationRemoved,
     onBadgePrinted,
     onWalkinCreated,
+    onPromoCodeUpdated,
   });
 
   const [uploadProgress, setUploadProgress] = useState(null);
@@ -35,8 +37,9 @@ export default function useEventRegSocket({
       onRegistrationRemoved,
       onBadgePrinted,
       onWalkinCreated,
+      onPromoCodeUpdated,
     };
-  }, [onLoadingProgress, onUploadProgress, onEmailProgress, onNewRegistration, onRegistrationRemoved, onBadgePrinted, onWalkinCreated]);
+  }, [onLoadingProgress, onUploadProgress, onEmailProgress, onNewRegistration, onRegistrationRemoved, onBadgePrinted, onWalkinCreated, onPromoCodeUpdated]);
 
   // STABLE events (critical)
   const events = useMemo(
@@ -87,6 +90,12 @@ export default function useEventRegSocket({
           if (data.eventId?.toString() !== eventIdStr) return;
 
           handlersRef.current.onWalkinCreated?.(data);
+        },
+
+        promoCodeUpdated: (data) => {
+          if (data.eventId?.toString() !== eventIdStr) return;
+
+          handlersRef.current.onPromoCodeUpdated?.(data.promoCode);
         },
       };
     },

@@ -31,6 +31,7 @@ import { useParams, useRouter } from "next/navigation";
 import LanguageSelector from "@/components/LanguageSelector";
 import { createRegistration } from "@/services/eventreg/registrationService";
 import { initiatePayment } from "@/services/eventreg/paymentService";
+import { validatePromoCode } from "@/services/eventreg/promoCodeService";
 import { getPublicEventBySlug } from "@/services/eventreg/eventService";
 import ICONS from "@/utils/iconUtil";
 import resolveTicketDependentFields from "@/utils/resolveTicketDependentFields";
@@ -134,6 +135,11 @@ export default function Registration() {
       ? "يرجى مراجعة التفاصيل أدناه قبل المتابعة إلى بوابة الدفع."
       : "Please review the details below before proceeding to the payment gateway.",
     ticketLabel: isArabic ? "التذكرة" : "Ticket",
+    promoCodeLabel: isArabic ? "رمز الخصم" : "Promo Code",
+    promoCodeApply: isArabic ? "تطبيق" : "Apply",
+    promoCodeApplied: isArabic ? "تم تطبيق الرمز" : "Code applied",
+    promoCodeRemove: isArabic ? "إزالة" : "Remove",
+    promoCodeDiscountLine: isArabic ? "خصم" : "Discount",
     subtotal: isArabic ? "المجموع الفرعي" : "Subtotal",
     vatLabel: isArabic ? "ضريبة القيمة المضافة" : "VAT",
     totalLabel: isArabic ? "الإجمالي" : "Total",
@@ -170,6 +176,14 @@ export default function Registration() {
   const [paymentPayload, setPaymentPayload] = useState(null);
   const [payProcessing, setPayProcessing] = useState(false);
   const [paymentError, setPaymentError] = useState("");
+  // Promo code entered in the payment summary dialog. `appliedPromoCode` is
+  // only set once /validate confirms it — the backend re-validates and
+  // atomically consumes it again at actual checkout time, this is purely for
+  // showing the discount live before the user confirms payment.
+  const [promoCodeInput, setPromoCodeInput] = useState("");
+  const [appliedPromoCode, setAppliedPromoCode] = useState(null);
+  const [promoCodeError, setPromoCodeError] = useState("");
+  const [promoCodeValidating, setPromoCodeValidating] = useState(false);
   // Set when initiatePayment reports an existing registration (paid or still-
   // pending) for the same email/phone, instead of creating a new checkout.
   const [duplicateNotice, setDuplicateNotice] = useState(null);
@@ -600,6 +614,35 @@ export default function Registration() {
     router.replace(`/eventreg/${lang}/event/${eventSlug}`);
   };
 
+  // Informational only — confirms the code and shows the discount live in
+  // the summary. The backend re-validates and is the only place a use is
+  // actually consumed (see handleConfirmPayment / initiatePayment).
+  const handleApplyPromoCode = async () => {
+    const code = promoCodeInput.trim();
+    if (!code) return;
+    setPromoCodeValidating(true);
+    setPromoCodeError("");
+    const result = await validatePromoCode({
+      eventSlug,
+      code,
+      ticketTypeId: selectedTicketTypeId,
+    });
+    setPromoCodeValidating(false);
+    const data = result?.data || result;
+    if (!result?.error && data?.valid) {
+      setAppliedPromoCode({ code, discountPercentage: data.discountPercentage });
+    } else {
+      setAppliedPromoCode(null);
+      setPromoCodeError(data?.message || t.registrationFailed);
+    }
+  };
+
+  const handleRemovePromoCode = () => {
+    setAppliedPromoCode(null);
+    setPromoCodeInput("");
+    setPromoCodeError("");
+  };
+
   // Fires from the payment-summary dialog — creates the Thawani session and
   const handleConfirmPayment = async () => {
     if (!paymentPayload) return;
@@ -607,7 +650,10 @@ export default function Registration() {
     setPaymentError("");
     setDuplicateNotice(null);
     setConflictReason(null);
-    const result = await initiatePayment(paymentPayload);
+    const result = await initiatePayment({
+      ...paymentPayload,
+      ...(appliedPromoCode?.code ? { promoCode: appliedPromoCode.code } : {}),
+    });
     const duplicateStatus = result?.duplicateStatus || result?.data?.duplicateStatus;
 
     if (!result?.error && duplicateStatus) {
@@ -670,10 +716,15 @@ export default function Registration() {
     }
   };
 
-  // Live breakdown for the selected ticket (base + event fees + VAT).
+  // Live breakdown for the selected ticket (base + event fees + VAT + promo discount).
   const selectedTicket = event?.ticketTypes?.find((tt) => tt._id === selectedTicketTypeId) || null;
   const paymentBreakdown = selectedTicket
-    ? computePaymentBreakdown(selectedTicket.price, event?.fees || [], event?.vatPercentage ?? 0)
+    ? computePaymentBreakdown(
+      selectedTicket.price,
+      event?.fees || [],
+      event?.vatPercentage ?? 0,
+      appliedPromoCode?.discountPercentage || 0,
+    )
     : null;
 
   // image background only (no videos on registration page)
@@ -1209,6 +1260,40 @@ export default function Registration() {
         <DialogContent sx={{ px: 3, pt: 2.5, pb: 2 }}>
           {paymentBreakdown && (
             <Box>
+              {/* Promo code */}
+              <Box sx={{ mb: 2 }}>
+                {appliedPromoCode ? (
+                  <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <Typography variant="body2" color="success.main" fontWeight={600}>
+                      {t.promoCodeApplied}: {appliedPromoCode.code}
+                    </Typography>
+                    <Button size="small" onClick={handleRemovePromoCode} sx={{ textTransform: "none" }}>
+                      {t.promoCodeRemove}
+                    </Button>
+                  </Box>
+                ) : (
+                  <Box sx={{ display: "flex", gap: 1, alignItems: "flex-start" }}>
+                    <TextField
+                      size="small"
+                      fullWidth
+                      label={t.promoCodeLabel}
+                      value={promoCodeInput}
+                      onChange={(e) => { setPromoCodeInput(e.target.value); setPromoCodeError(""); }}
+                      error={!!promoCodeError}
+                      helperText={promoCodeError || ""}
+                    />
+                    <Button
+                      variant="outlined"
+                      onClick={handleApplyPromoCode}
+                      disabled={!promoCodeInput.trim() || promoCodeValidating}
+                      sx={{ textTransform: "none", flexShrink: 0, height: 40 }}
+                    >
+                      {promoCodeValidating ? <CircularProgress size={18} /> : t.promoCodeApply}
+                    </Button>
+                  </Box>
+                )}
+              </Box>
+
               {/* Ticket base — emphasized line */}
               <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", py: 1 }}>
                 <Box sx={{ minWidth: 0 }}>
@@ -1223,6 +1308,18 @@ export default function Registration() {
                   {formatOmr(paymentBreakdown.base, t.omr)}
                 </Typography>
               </Box>
+
+              {/* Promo discount */}
+              {paymentBreakdown.discountAmount > 0 && (
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", py: 0.6 }}>
+                  <Typography variant="body2" color="success.main">
+                    {t.promoCodeDiscountLine} ({appliedPromoCode?.code}) <Box component="span" sx={{ opacity: 0.7 }}>· {paymentBreakdown.discountPercentage}%</Box>
+                  </Typography>
+                  <Typography variant="body2" color="success.main" sx={{ whiteSpace: "nowrap", pl: 1 }}>
+                    -{formatOmr(paymentBreakdown.discountAmount, t.omr)}
+                  </Typography>
+                </Box>
+              )}
 
               {/* Fees */}
               {paymentBreakdown.feeLines.map((fee, i) => (

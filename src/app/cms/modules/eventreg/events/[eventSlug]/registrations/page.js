@@ -188,7 +188,7 @@ const translations = {
     viewUploadedFile: "View file",
     totalLabel: "Total",
     viewInvoice: "View Invoice",
-    invoiceFailed: "Failed to load invoice"
+    invoiceFailed: "Failed to load invoice",
   },
   ar: {
     title: "تفاصيل الحدث",
@@ -2122,49 +2122,60 @@ export default function ViewRegistrations() {
                         failed: { label: t.paymentFailed, color: "error.main", icon: <ICONS.payment fontSize="small" sx={{ color: "error.main" }} />, statusIcon: <ICONS.errorOutline fontSize="small" sx={{ color: "error.main" }} /> },
                       };
                       const entry = paymentStatusMap[ps] || paymentStatusMap.pending;
+                      // Base = the ticket's own price (pre-discount); Total = what was
+                      // actually charged (discounted base + fees + VAT). Both come from
+                      // priceBreakdown, which is included on the registration by API and
+                      // sockets alike. discountAmount is surfaced explicitly — without it,
+                      // a discounted Total next to the undiscounted base reads like
+                      // unexplained math.
+                      const base = reg.priceBreakdown?.base ?? reg.ticketPrice;
+                      const total = reg.priceBreakdown?.total;
+                      const discountAmount = reg.priceBreakdown?.discountAmount;
                       return (
-                        <Typography
-                          variant="caption"
-                          sx={{ display: "flex", alignItems: "center", gap: 0.6, fontWeight: 500, flexWrap: "wrap", mt: 0.3 }}
-                        >
-                          {entry.icon}
-                          {entry.statusIcon}
-                          <Box component="span" sx={{ color: entry.color }}>{entry.label}</Box>
-                          {reg.ticketTypeName && (() => {
-                            // Base = the ticket's own price; Total = what was actually
-                            // charged (base + fees + VAT). Both come from priceBreakdown,
-                            // which is included on the registration by API and sockets alike.
-                            const base = reg.priceBreakdown?.base ?? reg.ticketPrice;
-                            const total = reg.priceBreakdown?.total;
-                            return (
-                              <Box component="span" sx={{ color: "text.secondary" }}>
-                                {` · ${reg.ticketTypeName}`}
-                                {base != null ? ` · ${base} OMR` : ""}
-                                {total != null && total !== base ? ` · ${t.totalLabel}: ${total} OMR` : ""}
-                              </Box>
-                            );
-                          })()}
-                          {ps === "pending" && (
-                            <Tooltip title={copiedPaymentLinkId === reg._id ? t.paymentLinkCopied : t.copyPaymentLink}>
-                              <IconButton
-                                size="small"
-                                onClick={async () => {
-                                  const result = await getPaymentLink(reg._id);
-                                  if (!result?.error && result?.paymentUrl) {
-                                    await navigator.clipboard.writeText(result.paymentUrl);
-                                    setCopiedPaymentLinkId(reg._id);
-                                    setTimeout(() => setCopiedPaymentLinkId((prev) => prev === reg._id ? null : prev), 2000);
-                                  }
-                                }}
-                                sx={{ p: 0.3, color: copiedPaymentLinkId === reg._id ? "success.main" : "warning.main", "&:hover": { backgroundColor: "transparent", opacity: 0.7 } }}
-                              >
-                                {copiedPaymentLinkId === reg._id
-                                  ? <ICONS.checkCircle sx={{ fontSize: "0.85rem" }} />
-                                  : <ICONS.copy sx={{ fontSize: "0.85rem" }} />}
-                              </IconButton>
-                            </Tooltip>
+                        <Box sx={{ mt: 0.3 }}>
+                          <Typography
+                            variant="caption"
+                            sx={{ display: "flex", alignItems: "center", gap: 0.6, fontWeight: 500 }}
+                          >
+                            {entry.icon}
+                            {entry.statusIcon}
+                            <Box component="span" sx={{ color: entry.color }}>{entry.label}</Box>
+                            {ps === "pending" && (
+                              <Tooltip title={copiedPaymentLinkId === reg._id ? t.paymentLinkCopied : t.copyPaymentLink}>
+                                <IconButton
+                                  size="small"
+                                  onClick={async () => {
+                                    const result = await getPaymentLink(reg._id);
+                                    if (!result?.error && result?.paymentUrl) {
+                                      await navigator.clipboard.writeText(result.paymentUrl);
+                                      setCopiedPaymentLinkId(reg._id);
+                                      setTimeout(() => setCopiedPaymentLinkId((prev) => prev === reg._id ? null : prev), 2000);
+                                    }
+                                  }}
+                                  sx={{ p: 0.3, color: copiedPaymentLinkId === reg._id ? "success.main" : "warning.main", "&:hover": { backgroundColor: "transparent", opacity: 0.7 } }}
+                                >
+                                  {copiedPaymentLinkId === reg._id
+                                    ? <ICONS.checkCircle sx={{ fontSize: "0.85rem" }} />
+                                    : <ICONS.copy sx={{ fontSize: "0.85rem" }} />}
+                                </IconButton>
+                              </Tooltip>
+                            )}
+                          </Typography>
+                          {reg.ticketTypeName && (
+                            <Typography variant="caption" sx={{ color: "text.secondary", display: "block", mt: 0.2 }}>
+                              {reg.ticketTypeName}
+                              {base != null ? ` · ${base} OMR` : ""}
+                              {reg.promoCode && discountAmount > 0 && (
+                                <Box component="span">
+                                  {" · "}
+                                  <ICONS.promoCode sx={{ fontSize: "0.85rem", verticalAlign: "text-bottom", mr: 0.2, color: "secondary.main" }} />
+                                  {`${reg.promoCode} (-${discountAmount} OMR)`}
+                                </Box>
+                              )}
+                              {total != null && total !== base ? ` · ${t.totalLabel}: ${total} OMR` : ""}
+                            </Typography>
                           )}
-                        </Typography>
+                        </Box>
                       );
                     })()}
 
