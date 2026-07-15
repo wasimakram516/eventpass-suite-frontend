@@ -275,7 +275,14 @@ const buildFilterState = (fieldsLocal, prev = {}) => {
 };
 
 const buildHaystack = (reg, fieldsLocal) => {
-  const dyn = fieldsLocal.map((f) => reg.customFields?.[f.name] ?? reg[f.name]);
+  const dyn = fieldsLocal.map((f) => {
+    // The answer may still be stored under a name this field used to have
+    // (renamed since submission) — try the current name first, then any
+    // previous name, so a rename doesn't drop it from search.
+    const candidates = [f.name, ...(f.previousNames || [])];
+    const matchedKey = candidates.find((name) => reg.customFields?.[name] !== undefined);
+    return matchedKey !== undefined ? reg.customFields?.[matchedKey] : reg[f.name];
+  });
   const walk = (reg.walkIns || []).flatMap((w) => [
     w.scannedBy?.name,
     w.scannedBy?.email,
@@ -358,6 +365,7 @@ export default function ViewRegistrations() {
           name: f.inputName,
           type: (f.inputType || "text").toLowerCase(),
           values: Array.isArray(f.values) ? f.values : [],
+          previousNames: Array.isArray(f.previousNames) ? f.previousNames : [],
         }))
         : [
           { name: "fullName", type: "text", values: [] },
@@ -374,7 +382,7 @@ export default function ViewRegistrations() {
     dynamicFieldsRef.current = fieldsLocal;
     setFieldMetaMap(
       Object.fromEntries(
-        fieldsLocal.map((f) => [f.name, { type: f.type, values: f.values }])
+        fieldsLocal.map((f) => [f.name, { type: f.type, values: f.values, previousNames: f.previousNames || [] }])
       )
     );
     setFilters((prev) => buildFilterState(fieldsLocal, prev));
@@ -645,7 +653,9 @@ export default function ViewRegistrations() {
         }
 
         const meta = fieldMetaMap[key];
-        const regValue = reg.customFields?.[key] ?? reg[key] ?? "";
+        const candidates = [key, ...(meta?.previousNames || [])];
+        const matchedKey = candidates.find((name) => reg.customFields?.[name] !== undefined);
+        const regValue = (matchedKey !== undefined ? reg.customFields?.[matchedKey] : reg[key]) ?? "";
 
         const v = String(regValue ?? "").toLowerCase();
         const f = String(rawValue).toLowerCase();

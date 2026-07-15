@@ -1410,12 +1410,23 @@ export default function ViewRegistrations() {
     );
 
     const baseFields = hasCustomData
-      ? (eventDetails?.formFields || []).map((f) => ({
-        name: f.inputName,
-        valueKey: f.inputName,
-        type: (f.inputType || "text").toLowerCase(),
-        values: Array.isArray(f.values) ? f.values : [],
-      }))
+      ? (eventDetails?.formFields || []).map((f) => {
+        // Same rename-safe lookup as the dependent-fields block below: try
+        // the field's current name first, then any name it used to have,
+        // so renaming a custom field doesn't make an already-submitted
+        // answer appear missing.
+        const candidates = [f.inputName, ...(f.previousNames || [])];
+        const matchedKey = candidates.find((name) => {
+          const v = customFields[name];
+          return v !== undefined && v !== null && String(v).trim() !== "";
+        });
+        return {
+          name: f.inputName,
+          valueKey: matchedKey !== undefined ? matchedKey : f.inputName,
+          type: (f.inputType || "text").toLowerCase(),
+          values: Array.isArray(f.values) ? f.values : [],
+        };
+      })
       : [
         { name: "fullName", valueKey: "fullName", type: "text", values: [] },
         { name: "email", valueKey: "email", type: "text", values: [] },
