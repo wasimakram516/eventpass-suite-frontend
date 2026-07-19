@@ -52,16 +52,22 @@ export const validatePromoCode = withApiHandler(async (payload) => {
   return data;
 });
 
-// CSV export of an event's promo codes, to share status with organizers.
-// Native axios (not withApiHandler) — withApiHandler breaks blob downloads.
-export const exportPromoCodes = async (slug) => {
+// CSV export of an event's promo codes (with per-redemption registrant
+// details), to share status with organizers. Accepts the same filter params
+// as getPromoCodesByEvent, so "export filtered" and "export all" are just
+// whether the caller passes any. Native axios (not withApiHandler) —
+// withApiHandler breaks blob downloads.
+export const exportPromoCodes = async (slug, params = {}) => {
   let timezone = null;
   try {
     timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || null;
   } catch {
     timezone = null;
   }
-  const qs = timezone ? `?timezone=${encodeURIComponent(timezone)}` : "";
-  const response = await api.get(`/eventreg/promo-codes/event/${slug}/export${qs}`, { responseType: "blob" });
+  const qs = new URLSearchParams({
+    ...params,
+    ...(timezone ? { timezone } : {}),
+  }).toString();
+  const response = await api.get(`/eventreg/promo-codes/event/${slug}/export${qs ? `?${qs}` : ""}`, { responseType: "blob" });
   return response.data;
 };

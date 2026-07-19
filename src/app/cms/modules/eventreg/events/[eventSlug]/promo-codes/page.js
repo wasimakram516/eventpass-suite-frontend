@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Box,
   Typography,
@@ -30,14 +30,20 @@ import {
   Tabs,
   Tab,
 } from "@mui/material";
-import { useParams } from "next/navigation";
+import { DateTimePicker } from "@mui/x-date-pickers";
+import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+dayjs.extend(utc);
+import { useParams, useRouter } from "next/navigation";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import AppCard from "@/components/cards/AppCard";
 import RecordMetadata from "@/components/RecordMetadata";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
+import FilterDialog from "@/components/modals/FilterModal";
 import ArabicPagination from "@/components/ArabicPagination";
 import { toArabicDigits } from "@/utils/arabicDigits";
+import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import useEventRegSocket from "@/hooks/modules/eventReg/useEventRegSocket";
 import { getPublicEventBySlug } from "@/services/eventreg/eventService";
@@ -50,13 +56,14 @@ import {
   deletePromoCode,
   exportPromoCodes,
 } from "@/services/eventreg/promoCodeService";
-import { formatDate } from "@/utils/dateUtils";
+import { formatDate, formatDateTimeWithLocale } from "@/utils/dateUtils";
 import ICONS from "@/utils/iconUtil";
 
 const translations = {
   en: {
     title: "Promo Codes",
     description: "Create discount codes for this paid event, and track how many times each has been used.",
+    registrations: "Registrations",
     createCode: "Create Code",
     exportCodes: "Export",
     noCodes: "No promo codes yet.",
@@ -105,6 +112,8 @@ const translations = {
     close: "Close",
     statusPaid: "Paid",
     statusPending: "Payment pending",
+    statusDeleted: "Deleted",
+    deletedRedemptionTooltip: "This registration was deleted, but its discount was already paid and redeemed — it still counts toward this code's usage.",
     // Delete confirm
     deleteConfirmTitle: "Delete this promo code?",
     deleteConfirmMessage: "This code will stop working immediately. Its redemption history is kept.",
@@ -114,10 +123,37 @@ const translations = {
     invalidMaxUses: "Must be at least 1",
     invalidBatchSize: "Must be between 1 and 1000",
     invalidCodeLength: "Must be longer than the prefix",
+    // Search / filter / export
+    searchPlaceholder: "Search code or institution...",
+    exportAll: "Export All",
+    exportFiltered: "Export filtered",
+    exporting: "Exporting...",
+    filters: "Filters",
+    filterPromoCodes: "Filter Promo Codes",
+    applyFilters: "Apply",
+    clearFilters: "Clear",
+    activeFilters: "Active Filters",
+    filterBy: "Filter by",
+    all: "All",
+    available: "Available",
+    exhausted: "Fully redeemed",
+    usageStatus: "Usage",
+    institutionLabel: "Institution / Batch Label",
+    discountMinLabel: "Min Discount %",
+    discountMaxLabel: "Max Discount %",
+    discountRange: "Discount Range",
+    ticketTypeFilterLabel: "Ticket Type",
+    createdRange: "Created At",
+    from: "From",
+    to: "To",
+    matchingRecords: "{count} matching code found",
+    matchingRecordsPlural: "{count} matching codes found",
+    found: "",
   },
   ar: {
     title: "رموز الخصم",
     description: "أنشئ رموز خصم لهذه الفعالية المدفوعة، وتتبع عدد مرات استخدام كل رمز.",
+    registrations: "التسجيلات",
     createCode: "إنشاء رمز",
     exportCodes: "تصدير",
     noCodes: "لا توجد رموز خصم بعد.",
@@ -163,6 +199,8 @@ const translations = {
     close: "إغلاق",
     statusPaid: "مدفوع",
     statusPending: "الدفع لم يكتمل",
+    statusDeleted: "محذوف",
+    deletedRedemptionTooltip: "تم حذف هذا التسجيل، لكن خصمه تم دفعه واستخدامه بالفعل — لا يزال يُحتسب ضمن استخدام هذا الرمز.",
     deleteConfirmTitle: "حذف رمز الخصم هذا؟",
     deleteConfirmMessage: "سيتوقف هذا الرمز عن العمل فورًا. يتم الاحتفاظ بسجل استخداماته.",
     required: "مطلوب",
@@ -170,6 +208,31 @@ const translations = {
     invalidMaxUses: "يجب أن يكون 1 على الأقل",
     invalidBatchSize: "يجب أن يكون بين 1 و 1000",
     invalidCodeLength: "يجب أن يكون أطول من البادئة",
+    searchPlaceholder: "بحث عن رمز أو مؤسسة...",
+    exportAll: "تصدير الكل",
+    exportFiltered: "تصدير المصفى",
+    exporting: "جاري التصدير...",
+    filters: "تصفية",
+    filterPromoCodes: "تصفية رموز الخصم",
+    applyFilters: "تطبيق",
+    clearFilters: "مسح",
+    activeFilters: "الفلاتر النشطة",
+    filterBy: "تصفية حسب",
+    all: "الكل",
+    available: "متاح",
+    exhausted: "مستنفد بالكامل",
+    usageStatus: "الاستخدام",
+    institutionLabel: "المؤسسة / اسم الدفعة",
+    discountMinLabel: "الحد الأدنى للخصم %",
+    discountMaxLabel: "الحد الأقصى للخصم %",
+    discountRange: "نطاق الخصم",
+    ticketTypeFilterLabel: "نوع التذكرة",
+    createdRange: "تاريخ الإنشاء",
+    from: "من",
+    to: "إلى",
+    matchingRecords: "تم العثور على {count} رمز مطابق",
+    matchingRecordsPlural: "تم العثور على {count} رموز مطابقة",
+    found: "",
   },
 };
 
@@ -192,6 +255,7 @@ function TicketTypePicker({ ticketTypes, value, onChange, label }) {
 }
 
 export default function PromoCodesPage() {
+  const router = useRouter();
   const { eventSlug } = useParams();
   const { t, dir, language } = useI18nLayout(translations);
 
@@ -201,6 +265,7 @@ export default function PromoCodesPage() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [loading, setLoading] = useState(true);
+  const [exportLoading, setExportLoading] = useState(false);
 
   const [formOpen, setFormOpen] = useState(false);
   const [formMode, setFormMode] = useState("single"); // "single" | "batch"
@@ -208,6 +273,60 @@ export default function PromoCodesPage() {
   const [redemptionsData, setRedemptionsData] = useState(null);
   const [copiedCodeId, setCopiedCodeId] = useState(null);
   const [deleteTarget, setDeleteTarget] = useState(null);
+
+  // Filtering — mirrors the registrations page: a quick top-bar search plus
+  // a dedicated filter dialog for every other field, and export reuses
+  // whatever query the list is currently showing (filtered or not).
+  const emptyFilters = {
+    isActive: "all",
+    usageStatus: "all",
+    ticketTypeId: "",
+    batchLabel: "",
+    discountMin: "",
+    discountMax: "",
+    createdFromMs: null,
+    createdToMs: null,
+  };
+  const [rawSearch, setRawSearch] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filters, setFilters] = useState(emptyFilters);
+  const [filterModalOpen, setFilterModalOpen] = useState(false);
+
+  useEffect(() => {
+    const id = setTimeout(() => {
+      setSearchTerm(rawSearch.trim());
+      setPage(1);
+    }, 300);
+    return () => clearTimeout(id);
+  }, [rawSearch]);
+
+  const hasActiveFilters = useMemo(() => {
+    if (searchTerm) return true;
+    return Object.entries(filters).some(([key, val]) => {
+      if (key.endsWith("Ms")) return !!val;
+      return val && val !== "all";
+    });
+  }, [filters, searchTerm]);
+
+  // Shared by the list fetch and the export — "export filtered" is
+  // literally the same query as whatever's currently on screen.
+  const buildQuery = useCallback(() => {
+    const query = {};
+    if (searchTerm) query.search = searchTerm;
+    if (filters.isActive !== "all") query.isActive = filters.isActive;
+    if (filters.usageStatus !== "all") query.usageStatus = filters.usageStatus;
+    if (filters.ticketTypeId) query.ticketTypeId = filters.ticketTypeId;
+    if (filters.batchLabel) query.batchLabel = filters.batchLabel;
+    if (filters.discountMin !== "") query.discountMin = filters.discountMin;
+    if (filters.discountMax !== "") query.discountMax = filters.discountMax;
+    if (filters.createdFromMs) query.createdFrom = filters.createdFromMs;
+    if (filters.createdToMs) query.createdTo = filters.createdToMs;
+    return query;
+  }, [searchTerm, filters]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [filters]);
 
   const emptyForm = {
     code: "",
@@ -231,13 +350,13 @@ export default function PromoCodesPage() {
 
   const fetchPromoCodes = useCallback(async () => {
     setLoading(true);
-    const res = await getPromoCodesByEvent(eventSlug, { page, limit });
+    const res = await getPromoCodesByEvent(eventSlug, { page, limit, ...buildQuery() });
     if (!res?.error) {
       setPromoCodes(res.promoCodes || []);
       setTotal(res.total || 0);
     }
     setLoading(false);
-  }, [eventSlug, page, limit]);
+  }, [eventSlug, page, limit, buildQuery]);
 
   useEffect(() => {
     fetchPromoCodes();
@@ -297,7 +416,9 @@ export default function PromoCodesPage() {
   };
 
   const handleExport = async () => {
-    const blob = await exportPromoCodes(eventSlug);
+    setExportLoading(true);
+    const blob = await exportPromoCodes(eventSlug, buildQuery());
+    setExportLoading(false);
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -392,8 +513,23 @@ export default function PromoCodesPage() {
           <Typography variant="body2" color="text.secondary">{t.description}</Typography>
         </Box>
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ width: { xs: "100%", sm: "auto" } }}>
-          <Button variant="outlined" startIcon={<ICONS.download />} onClick={handleExport}>
-            {t.exportCodes}
+          <Button
+            variant="outlined"
+            startIcon={<ICONS.people />}
+            onClick={() => router.push(`/cms/modules/eventreg/events/${eventSlug}/registrations`)}
+            sx={getStartIconSpacing(dir)}
+          >
+            {t.registrations}
+          </Button>
+          <Button
+            variant="outlined"
+            color="success"
+            onClick={handleExport}
+            disabled={exportLoading}
+            startIcon={exportLoading ? <CircularProgress size={18} color="inherit" /> : <ICONS.download />}
+            sx={getStartIconSpacing(dir)}
+          >
+            {exportLoading ? t.exporting : hasActiveFilters ? t.exportFiltered : t.exportAll}
           </Button>
           <Button variant="contained" startIcon={<ICONS.add />} onClick={handleOpenForm}>
             {t.createCode}
@@ -401,16 +537,61 @@ export default function PromoCodesPage() {
         </Stack>
       </Stack>
 
-      {!loading && promoCodes.length > 0 && (
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", md: "row" },
+          justifyContent: "space-between",
+          alignItems: { xs: "flex-start", md: "center" },
+          gap: 2,
+          mb: 2,
+        }}
+      >
+        <Box>
+          <Typography variant="body2" color="text.secondary">
+            {t.showing} {total === 0 ? 0 : (page - 1) * limit + 1}-
+            {Math.min(page * limit, total)} {t.of} {total} {t.records}
+          </Typography>
+          {hasActiveFilters && (
+            <Typography
+              variant="body2"
+              color="primary"
+              sx={{ fontWeight: 500, mt: 0.5, display: "flex", alignItems: "center", gap: 0.5 }}
+            >
+              <ICONS.search fontSize="small" sx={{ opacity: 0.7 }} />
+              {total === 1
+                ? t.matchingRecords.replace("{count}", total)
+                : t.matchingRecordsPlural.replace("{count}", total)}
+            </Typography>
+          )}
+        </Box>
+
         <Stack
           direction={{ xs: "column", sm: "row" }}
           spacing={1.5}
-          sx={{ justifyContent: "space-between", alignItems: { xs: "flex-start", sm: "center" }, mb: 2 }}
+          sx={{ alignItems: { xs: "stretch", sm: "center" }, justifyContent: "flex-end", width: { xs: "100%", md: "auto" } }}
         >
-          <Typography variant="body2" color="text.secondary">
-            {t.showing} {(page - 1) * limit + 1}-
-            {Math.min(page * limit, total)} {t.of} {total} {t.records}
-          </Typography>
+          <TextField
+            size="small"
+            variant="outlined"
+            placeholder={t.searchPlaceholder}
+            value={rawSearch}
+            onChange={(e) => setRawSearch(e.target.value)}
+            sx={{ flex: 1, minWidth: { xs: "100%", sm: 220 } }}
+            slotProps={{
+              input: {
+                startAdornment: <ICONS.search fontSize="small" sx={{ mr: 1, opacity: 0.6 }} />,
+              },
+            }}
+          />
+          <Button
+            variant="outlined"
+            startIcon={<ICONS.filter />}
+            onClick={() => setFilterModalOpen(true)}
+            sx={{ width: { xs: "100%", sm: "auto" }, ...getStartIconSpacing(dir) }}
+          >
+            {t.filters}
+          </Button>
           <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 150 } }}>
             <InputLabel>{t.recordsPerPage}</InputLabel>
             <Select value={limit} onChange={handleLimitChange} label={t.recordsPerPage}>
@@ -422,6 +603,62 @@ export default function PromoCodesPage() {
             </Select>
           </FormControl>
         </Stack>
+      </Box>
+
+      {/* Active filters summary */}
+      {hasActiveFilters && (
+        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, alignItems: "center", mb: 2 }}>
+          <Typography variant="body2" sx={{ fontWeight: 500, color: "text.secondary" }}>
+            {t.activeFilters}:
+          </Typography>
+          {searchTerm && (
+            <Chip label={`${t.searchPlaceholder.replace("...", "")}: ${searchTerm}`} onDelete={() => setRawSearch("")} />
+          )}
+          {filters.isActive !== "all" && (
+            <Chip
+              label={`${t.status}: ${filters.isActive === "true" ? t.active : t.inactive}`}
+              onDelete={() => setFilters((p) => ({ ...p, isActive: "all" }))}
+            />
+          )}
+          {filters.usageStatus !== "all" && (
+            <Chip
+              label={`${t.usageStatus}: ${filters.usageStatus === "available" ? t.available : t.exhausted}`}
+              onDelete={() => setFilters((p) => ({ ...p, usageStatus: "all" }))}
+            />
+          )}
+          {filters.ticketTypeId && (
+            <Chip
+              label={`${t.ticketTypeFilterLabel}: ${ticketTypeName(filters.ticketTypeId)}`}
+              onDelete={() => setFilters((p) => ({ ...p, ticketTypeId: "" }))}
+            />
+          )}
+          {filters.batchLabel && (
+            <Chip
+              label={`${t.institutionLabel}: ${filters.batchLabel}`}
+              onDelete={() => setFilters((p) => ({ ...p, batchLabel: "" }))}
+            />
+          )}
+          {(filters.discountMin !== "" || filters.discountMax !== "") && (
+            <Chip
+              label={`${t.discountRange}: ${filters.discountMin || 0}% - ${filters.discountMax || 100}%`}
+              onDelete={() => setFilters((p) => ({ ...p, discountMin: "", discountMax: "" }))}
+            />
+          )}
+          {(filters.createdFromMs || filters.createdToMs) && (
+            <Chip
+              label={`${t.createdRange}: ${filters.createdFromMs ? formatDateTimeWithLocale(filters.createdFromMs, language === "ar" ? "ar-SA" : "en-GB") : "—"} → ${filters.createdToMs ? formatDateTimeWithLocale(filters.createdToMs, language === "ar" ? "ar-SA" : "en-GB") : "—"}`}
+              onDelete={() => setFilters((p) => ({ ...p, createdFromMs: null, createdToMs: null }))}
+            />
+          )}
+          <Chip
+            label={t.clearFilters}
+            variant="outlined"
+            onClick={() => {
+              setRawSearch("");
+              setFilters(emptyFilters);
+            }}
+          />
+        </Box>
       )}
 
       {loading ? (
@@ -629,6 +866,139 @@ export default function PromoCodesPage() {
         </DialogActions>
       </Dialog>
 
+      {/* Filter dialog — every field is filterable, mirroring the
+          registrations page, and export reuses this exact same query. */}
+      <FilterDialog
+        open={filterModalOpen}
+        onClose={() => setFilterModalOpen(false)}
+        title={t.filterPromoCodes}
+      >
+        <Stack spacing={2}>
+          <Box>
+            <Typography variant="subtitle2" gutterBottom>{t.status}</Typography>
+            <FormControl fullWidth size="small">
+              <InputLabel>{`${t.filterBy} ${t.status}`}</InputLabel>
+              <Select
+                label={`${t.filterBy} ${t.status}`}
+                value={filters.isActive}
+                onChange={(e) => setFilters((p) => ({ ...p, isActive: e.target.value }))}
+              >
+                <MenuItem value="all"><em>{t.all}</em></MenuItem>
+                <MenuItem value="true">{t.active}</MenuItem>
+                <MenuItem value="false">{t.inactive}</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
+
+          <Box>
+            <Typography variant="subtitle2" gutterBottom>{t.usageStatus}</Typography>
+            <FormControl fullWidth size="small">
+              <InputLabel>{`${t.filterBy} ${t.usageStatus}`}</InputLabel>
+              <Select
+                label={`${t.filterBy} ${t.usageStatus}`}
+                value={filters.usageStatus}
+                onChange={(e) => setFilters((p) => ({ ...p, usageStatus: e.target.value }))}
+              >
+                <MenuItem value="all"><em>{t.all}</em></MenuItem>
+                <MenuItem value="available">{t.available}</MenuItem>
+                <MenuItem value="exhausted">{t.exhausted}</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
+
+          <Box>
+            <Typography variant="subtitle2" gutterBottom>{t.ticketTypeFilterLabel}</Typography>
+            <FormControl fullWidth size="small">
+              <InputLabel>{`${t.filterBy} ${t.ticketTypeFilterLabel}`}</InputLabel>
+              <Select
+                label={`${t.filterBy} ${t.ticketTypeFilterLabel}`}
+                value={filters.ticketTypeId}
+                onChange={(e) => setFilters((p) => ({ ...p, ticketTypeId: e.target.value }))}
+              >
+                <MenuItem value=""><em>{t.all}</em></MenuItem>
+                {(event?.ticketTypes || []).map((tt) => (
+                  <MenuItem key={tt._id} value={tt._id}>{tt.name}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Box>
+
+          <Box>
+            <Typography variant="subtitle2" gutterBottom>{t.institutionLabel}</Typography>
+            <TextField
+              size="small"
+              placeholder={`${t.filterBy} ${t.institutionLabel}`}
+              value={filters.batchLabel}
+              onChange={(e) => setFilters((p) => ({ ...p, batchLabel: e.target.value }))}
+              fullWidth
+            />
+          </Box>
+
+          <Box>
+            <Typography variant="subtitle2" gutterBottom>{t.discountRange}</Typography>
+            <Stack direction="row" spacing={1}>
+              <TextField
+                size="small"
+                type="number"
+                label={t.discountMinLabel}
+                value={filters.discountMin}
+                onChange={(e) => setFilters((p) => ({ ...p, discountMin: e.target.value }))}
+                fullWidth
+              />
+              <TextField
+                size="small"
+                type="number"
+                label={t.discountMaxLabel}
+                value={filters.discountMax}
+                onChange={(e) => setFilters((p) => ({ ...p, discountMax: e.target.value }))}
+                fullWidth
+              />
+            </Stack>
+          </Box>
+
+          <Box>
+            <Typography variant="subtitle2" gutterBottom>{t.createdRange}</Typography>
+            <Stack direction="row" spacing={1} sx={{ width: "100%", gap: dir === "rtl" ? 1 : 0 }}>
+              <DateTimePicker
+                label={t.from}
+                value={filters.createdFromMs ? dayjs(filters.createdFromMs) : null}
+                onChange={(val) => setFilters((p) => ({ ...p, createdFromMs: val ? dayjs(val).utc().valueOf() : null }))}
+                slotProps={{ textField: { size: "small", fullWidth: true } }}
+              />
+              <DateTimePicker
+                label={t.to}
+                value={filters.createdToMs ? dayjs(filters.createdToMs) : null}
+                onChange={(val) => setFilters((p) => ({ ...p, createdToMs: val ? dayjs(val).utc().valueOf() : null }))}
+                slotProps={{ textField: { size: "small", fullWidth: true } }}
+              />
+            </Stack>
+          </Box>
+
+          <Stack direction="row" spacing={2} sx={[{ justifyContent: "flex-end", mt: 2 }, dir === "rtl" ? { gap: 2 } : {}]}>
+            <Button
+              variant="outlined"
+              color="secondary"
+              startIcon={<ICONS.clear />}
+              onClick={() => {
+                setRawSearch("");
+                setFilters(emptyFilters);
+              }}
+              sx={getStartIconSpacing(dir)}
+            >
+              {t.clearFilters}
+            </Button>
+            <Button
+              variant="contained"
+              onClick={() => setFilterModalOpen(false)}
+              startIcon={<ICONS.check />}
+              sx={getStartIconSpacing(dir)}
+            >
+              {t.applyFilters}
+            </Button>
+          </Stack>
+        </Stack>
+      </FilterDialog>
+
       {/* Redemptions dialog */}
       <Dialog open={redemptionsOpen} onClose={() => setRedemptionsOpen(false)} maxWidth="sm" fullWidth dir={dir}>
         <DialogTitle>
@@ -651,6 +1021,11 @@ export default function PromoCodesPage() {
                             color={r.paymentStatus === "paid" ? "success" : "warning"}
                             size="small"
                           />
+                          {r.isDeleted && (
+                            <Tooltip title={t.deletedRedemptionTooltip}>
+                              <Chip label={t.statusDeleted} color="default" size="small" variant="outlined" />
+                            </Tooltip>
+                          )}
                         </Stack>
                         <Typography variant="caption" color="text.secondary">{r.email || "—"}</Typography>
                       </Box>
