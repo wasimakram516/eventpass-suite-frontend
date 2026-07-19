@@ -59,7 +59,7 @@ import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import { formatDate, formatDateTimeWithLocale } from "@/utils/dateUtils";
 import { toArabicDigits } from "@/utils/arabicDigits";
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams, useSearchParams, useRouter } from "next/navigation";
 import ICONS from "@/utils/iconUtil";
 import WalkInModal from "@/components/modals/WalkInModal";
 import BulkEmailModal from "@/components/modals/BulkEmailModal";
@@ -86,6 +86,7 @@ const translations = {
       "View event details and manage registrations for this event. Export registration data or delete entries as needed.",
     export: "Export to CSV",
     exporting: "Exporting...",
+    promoCodes: "Promo Codes",
     downloadSample: "Download Sample",
     uploadFile: "Upload File",
     uploading: "Uploading...",
@@ -196,6 +197,7 @@ const translations = {
       "اعرض تفاصيل الحدث وقم بإدارة التسجيلات. يمكنك تصدير البيانات أو حذف السجلات.",
     export: "تصدير إلى CSV",
     exporting: "جاري التصدير...",
+    promoCodes: "رموز الخصم",
     downloadSample: "تنزيل نموذج",
     uploadFile: "رفع ملف",
     uploading: "جاري الرفع...",
@@ -303,6 +305,7 @@ const translations = {
 
 export default function ViewRegistrations() {
   const theme = useTheme();
+  const router = useRouter();
   const { eventSlug } = useParams();
   const searchParams = useSearchParams();
   const { dir, t, language } = useI18nLayout(translations);
@@ -1528,6 +1531,17 @@ export default function ViewRegistrations() {
         >
           {t.createRegistration}
         </Button>
+
+        {eventDetails?.isPaid && (
+          <Button
+            variant="outlined"
+            startIcon={<ICONS.promoCode />}
+            onClick={() => router.push(`/cms/modules/eventreg/events/${eventSlug}/promo-codes`)}
+            sx={getStartIconSpacing(dir)}
+          >
+            {t.promoCodes}
+          </Button>
+        )}
 
         <Button
           variant="outlined"
