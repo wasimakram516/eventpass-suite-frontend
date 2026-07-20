@@ -403,7 +403,7 @@ export default function CardsGrid({
   background,
   backgroundLogo,
   randomSizes,
-  backgroundColor = theme.palette.background.white,
+  backgroundColor,
   randomColors = false,
   imageShape = "circle",
   mediaType2TextColor,
@@ -412,6 +412,7 @@ export default function CardsGrid({
   const containerRef = useRef(null);
   const prevMediaIdsRef = useRef([]);
   const theme = useTheme();
+  backgroundColor = backgroundColor ?? theme.palette.background.white;
 
   const normalizedCardOrder = String(cardOrder || "sequential").toLowerCase();
   const isRandomLayout = normalizedCardOrder === "random";

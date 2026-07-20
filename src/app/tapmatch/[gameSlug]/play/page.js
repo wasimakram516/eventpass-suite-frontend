@@ -392,49 +392,96 @@ export default function TapMatchPlayPage() {
                 backdropFilter: "blur(5px)",
               })}
             >
+              {/* Player Name */}
               <Typography
-                variant="h4"
-                gutterBottom
-                sx={(theme) => ({ fontWeight: 800, mb: 3, color: theme.palette.common.white, textTransform: "capitalize", wordBreak: "break-word" })}
-              >
-                {translatedTitle}
-              </Typography>
-
-              <TextField
-                label={t.nameLabel}
-                fullWidth
-                required
-                sx={{ mb: 3 }}
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-                slotProps={{
-                  input: {
-                    sx: (theme) => ({
-                      backgroundColor: theme.palette.quiznest.inputBg,
-                      color: theme.palette.common.white,
-                      "& .MuiOutlinedInput-notchedOutline": { borderColor: theme.palette.quiznest.inputBorder },
-                    }),
-                  },
-                  inputLabel: { sx: (theme) => ({ color: theme.palette.quiznest.labelText }) },
-                }}
-              />
-
-              <Button
-                variant="contained"
-                size="large"
-                fullWidth
-                onClick={handleSubmit}
-                disabled={submitting || !form.name.trim()}
+                variant="h3"
+                fontWeight={700}
                 sx={(theme) => ({
-                  py: 1.2, borderRadius: 999, fontWeight: 800,
-                  bgcolor: theme.palette.quiznest.accent,
-                  color: theme.palette.common.black,
-                  "&:hover": { filter: "brightness(1.15)", bgcolor: theme.palette.quiznest.accent },
-                  "&:disabled": { opacity: 0.5 },
+                  mb: 1,
+                  textShadow: theme.palette.tapmatch.goldTextGlow,
+                  fontSize: { xs: "1.5rem", sm: "2rem", md: "2.5rem" },
                 })}
               >
-                {submitting ? <CircularProgress size={24} sx={(theme) => ({ color: theme.palette.common.black })} /> : t.startButton}
+                {playerInfo?.name}
+              </Typography>
+
+              {/* Headline */}
+              <Typography
+                variant="h1"
+                sx={(theme) => ({
+                  my: 2,
+                  textShadow: theme.palette.tapmatch.goldTextGlow,
+                  fontSize: { xs: "2rem", sm: "3rem", md: "4rem" },
+                  fontWeight: 900,
+                })}
+              >
+                {headlineText}
+              </Typography>
+
+              {/* Subtitle */}
+              <Typography variant="body1" sx={{ mb: 3, opacity: 0.9 }}>
+                {won ? t.allMatched : t.notAllMatched}
+              </Typography>
+
+              {/* Stats */}
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "flex-start",
+                  gap: 1.5,
+                  px: 2,
+                  mb: 4,
+                }}
+              >
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Shuffle fontSize="small" sx={{ color: theme.palette.common.white }} />
+                  <Typography variant="body1" sx={{ color: theme.palette.common.white }}>
+                    <strong>{t.moves}:</strong> {toArabicDigits(moves, language)}
+                  </Typography>
+                </Box>
+
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <CheckCircle fontSize="small" sx={{ color: theme.palette.common.white }} />
+                  <Typography variant="body1" sx={{ color: theme.palette.common.white }}>
+                    <strong>{t.matches}:</strong> {toArabicDigits(matchesCount, language)}
+                  </Typography>
+                </Box>
+
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <HighlightOff fontSize="small" sx={{ color: theme.palette.common.white }} />
+                  <Typography variant="body1" sx={{ color: theme.palette.common.white }}>
+                    <strong>{t.misses}:</strong> {toArabicDigits(misses, language)}
+                  </Typography>
+                </Box>
+
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Speed fontSize="small" sx={{ color: theme.palette.common.white }} />
+                  <Typography variant="body1" sx={{ color: theme.palette.common.white }}>
+                    <strong>{t.accuracy}:</strong> {toArabicDigits(accuracy, language)}%
+                  </Typography>
+                </Box>
+
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <AccessTime fontSize="small" sx={{ color: theme.palette.common.white }} />
+                  <Typography variant="body1" sx={{ color: theme.palette.common.white }}>
+                    <strong>{t.timeTaken}:</strong> {toArabicDigits(timeTaken, language)} {t.countdown}
+                  </Typography>
+                </Box>
+              </Box>
+
+              {/* Button */}
+              <Button
+                variant="contained"
+                color="secondary"
+                startIcon={<Replay />}
+                size="large"
+                onClick={() => router.push(`/tapmatch/${game.slug}/name`)}
+                sx={{
+                  ...getStartIconSpacing(dir),
+                }}
+              >
+                {t.playAgain}
               </Button>
             </Paper>
           </Fade>

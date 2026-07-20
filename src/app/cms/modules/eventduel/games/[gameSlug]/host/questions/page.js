@@ -50,6 +50,7 @@ import RecordMetadata from "@/components/RecordMetadata";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import AppCard from "@/components/cards/AppCard";
+import { useMessage } from "@/contexts/MessageContext";
 
 const translations = {
   en: {
@@ -128,6 +129,7 @@ const translations = {
 
 export default function QuestionsPage() {
   const { t, dir, language } = useI18nLayout(translations);
+  const { showMessage } = useMessage();
   const { gameSlug } = useParams();
   const searchParams = useSearchParams();
   const [game, setGame] = useState(null);

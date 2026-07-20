@@ -8,6 +8,8 @@ import {
   Stack,
   Divider,
   Chip,
+  Card,
+  CardContent,
   Table,
   TableBody,
   TableCell,

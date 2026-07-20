@@ -566,7 +566,7 @@ export default function AnalyticsDashboard() {
                 refs,
                 labels,
                 chartDataArray,
-                { ...eventInfo, summaryCards },
+                { ...eventInfo, summaryCards: summaryCardsConfig },
                 null,
                 language,
                 dir,
