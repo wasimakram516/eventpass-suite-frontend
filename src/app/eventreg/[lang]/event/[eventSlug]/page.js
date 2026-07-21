@@ -59,6 +59,21 @@ export default function EventDetails() {
       const result = await getPublicEventBySlug(eventSlug);
       if (!result?.error) {
         setEvent(result);
+
+        // Redirect to the event's default language on first landing this
+        // session only — once a visitor has been redirected (or switches
+        // language themselves), leave their choice alone for the rest of
+        // the session.
+        const visitedKey = `eventreg_lang_visited_${eventSlug}`;
+        const defaultLang = result.defaultLanguage === "ar" ? "ar" : "en";
+        if (!sessionStorage.getItem(visitedKey)) {
+          sessionStorage.setItem(visitedKey, "1");
+          if (lang !== defaultLang) {
+            router.replace(`/${defaultLang}/event/${eventSlug}`);
+            return;
+          }
+        }
+
         await translateEventData(result, lang);
       } else {
         setError(result.message || "Event not found.");
