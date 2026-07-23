@@ -40,6 +40,7 @@ import { formatDateWithTime, formatTime } from "@/utils/dateUtils";
 import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
 import { useMessage } from "@/contexts/MessageContext";
 import { downloadDefaultQrWrapperAsImage, hasDefaultQrWrapperDesign, hasWrapperDesign } from "@/utils/defaultQrWrapperDownload";
+import { downloadImage } from "@/utils/downloadImage";
 import BadgeCard from "@/components/badges/BadgeCard";
 import html2canvas from "html2canvas";
 
@@ -803,11 +804,7 @@ export default function EventDetails() {
                           pCtx.fillRect(0, 0, paddedCanvas.width, paddedCanvas.height);
                           pCtx.drawImage(canvas, padding, padding);
                         }
-                        const qrDataURL = (pCtx ? paddedCanvas : canvas).toDataURL("image/png");
-                        const link = document.createElement("a");
-                        link.href = qrDataURL;
-                        link.download = downloadName;
-                        link.click();
+                        await downloadImage(pCtx ? paddedCanvas : canvas, downloadName);
                       }}
                       sx={{
                         fontSize: { xs: 16, md: 18 },
@@ -1038,10 +1035,7 @@ export default function EventDetails() {
                     scale: Math.max(window.devicePixelRatio || 1, 2),
                     logging: false,
                   });
-                  const link = document.createElement("a");
-                  link.href = canvas.toDataURL("image/png");
-                  link.download = `badge-${registration.token || "download"}.png`;
-                  link.click();
+                  await downloadImage(canvas, `badge-${registration.token || "download"}.png`);
                 } catch (err) {
                   console.error(err);
                   showMessage(t.qrError, "error");

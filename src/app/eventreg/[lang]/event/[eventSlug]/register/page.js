@@ -51,6 +51,7 @@ import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
 import { RESERVED_CUSTOMIZATION_KEYS } from "@/utils/badgeSize";
 import { useMessage } from "@/contexts/MessageContext";
 import { downloadDefaultQrWrapperAsImage, hasDefaultQrWrapperDesign, hasWrapperDesign } from "@/utils/defaultQrWrapperDownload";
+import { downloadImage } from "@/utils/downloadImage";
 import BadgePreview from "@/components/badges/BadgePreview";
 import BadgeCard from "@/components/badges/BadgeCard";
 import html2canvas from "html2canvas";
@@ -1708,12 +1709,13 @@ export default function Registration() {
           )}
         </DialogContent>
 
-        <DialogActions sx={{ justifyContent: "center", pb: 2 }}>
+        <DialogActions sx={{ flexDirection: "column", gap: 1.5, px: 3, pb: 2 }}>
           {/* Download BadgeCard button */}
           {event?.showBadgeCardAfterRegistration && registrationData && (
             <Button
               variant="contained"
               color="primary"
+              fullWidth
               onClick={async () => {
                 const badgeElement = badgePreviewRef.current;
                 if (!badgeElement) return;
@@ -1725,24 +1727,23 @@ export default function Registration() {
                     scale: Math.max(window.devicePixelRatio || 1, 2),
                     logging: false,
                   });
-                  const link = document.createElement("a");
-                  link.href = canvas.toDataURL("image/png");
-                  link.download = `badge-${qrToken || "download"}.png`;
-                  link.click();
+                  await downloadImage(canvas, `badge-${qrToken || "download"}.png`);
                 } catch (err) {
                   console.error(err);
                   showMessage(t.qrError, "error");
                 }
               }}
             >
-              {t.downloadBadge}            </Button>
+              {t.downloadBadge}
+            </Button>
           )}
 
           {/* Download QR button (only when QR is shown) */}
           {event?.showQrAfterRegistration && qrToken && (
             <Button
-              variant="contained"
+              variant="outlined"
               color="primary"
+              fullWidth
               onClick={async () => {
                 const downloadName = `qr-${qrToken}.png`;
                 if (hasCustomDesign) {
@@ -1780,11 +1781,7 @@ export default function Registration() {
                   pCtx.fillRect(0, 0, paddedCanvas.width, paddedCanvas.height);
                   pCtx.drawImage(canvas, padding, padding);
                 }
-                const qrDataURL = (pCtx ? paddedCanvas : canvas).toDataURL("image/png");
-                const link = document.createElement("a");
-                link.href = qrDataURL;
-                link.download = downloadName;
-                link.click();
+                await downloadImage(pCtx ? paddedCanvas : canvas, downloadName);
               }}
             >
               {t.downloadQr}
