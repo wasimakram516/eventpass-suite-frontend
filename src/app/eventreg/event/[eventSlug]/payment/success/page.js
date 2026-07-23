@@ -271,7 +271,7 @@ export default function PaymentSuccessPage() {
               {/* Hidden QR for download */}
               <Box sx={{ display: "none" }} ref={qrRef}>
                 {token && (
-                  <QRCodeCanvas value={token} size={180} bgColor={theme.palette.qr.background} includeMargin />
+                  <QRCodeCanvas value={token} size={180} bgColor={theme.palette.qr.background} fgColor={theme.palette.qr.foreground} includeMargin />
                 )}
               </Box>
 

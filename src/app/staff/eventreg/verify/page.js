@@ -554,7 +554,7 @@ export default function VerifyPage() {
                   <ListItemText
                     primary={t.token}
                     secondary={result.token}
-                    primaryTypographyProps={{ fontWeight: 500 }}
+                    slotProps={{ primary: { fontWeight: 500 } }}
                   />
                 </ListItem>
                 {result.badgeIdentifier && (
@@ -565,7 +565,7 @@ export default function VerifyPage() {
                     <ListItemText
                       primary={t.badgeIdentifier}
                       secondary={result.badgeIdentifier}
-                      primaryTypographyProps={{ fontWeight: 500 }}
+                      slotProps={{ primary: { fontWeight: 500 } }}
                     />
                   </ListItem>
                 )}
@@ -576,7 +576,7 @@ export default function VerifyPage() {
                   <ListItemText
                     primary={t.name}
                     secondary={result.fullName || "—"}
-                    primaryTypographyProps={{ fontWeight: 500 }}
+                    slotProps={{ primary: { fontWeight: 500 } }}
                   />
                 </ListItem>
 
@@ -588,7 +588,7 @@ export default function VerifyPage() {
                     <ListItemText
                       primary={t.registrationType}
                       secondary={result.registrationType}
-                      primaryTypographyProps={{ fontWeight: 500 }}
+                      slotProps={{ primary: { fontWeight: 500 } }}
                     />
                   </ListItem>
                 )}
@@ -601,7 +601,7 @@ export default function VerifyPage() {
                     <ListItemText
                       primary={t.title}
                       secondary={result.title}
-                      primaryTypographyProps={{ fontWeight: 500 }}
+                      slotProps={{ primary: { fontWeight: 500 } }}
                     />
                   </ListItem>
                 )}
@@ -614,7 +614,7 @@ export default function VerifyPage() {
                     <ListItemText
                       primary={t.company}
                       secondary={result.company}
-                      primaryTypographyProps={{ fontWeight: 500 }}
+                      slotProps={{ primary: { fontWeight: 500 } }}
                     />
                   </ListItem>
                 )}
@@ -627,7 +627,7 @@ export default function VerifyPage() {
                     <ListItemText
                       primary={t.wing}
                       secondary={result.wing}
-                      primaryTypographyProps={{ fontWeight: 500 }}
+                      slotProps={{ primary: { fontWeight: 500 } }}
                     />
                   </ListItem>
                 )}
@@ -639,7 +639,7 @@ export default function VerifyPage() {
                   <ListItemText
                     primary={t.event}
                     secondary={result.eventName}
-                    primaryTypographyProps={{ fontWeight: 500 }}
+                    slotProps={{ primary: { fontWeight: 500 } }}
                   />
                 </ListItem>
               </List>

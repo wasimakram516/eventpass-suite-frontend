@@ -704,6 +704,7 @@ export default function EventDetails() {
                       value={registration.token}
                       size={180}
                       bgColor={theme.palette.qr.background}
+                      fgColor={theme.palette.qr.foreground}
                       includeMargin
                     />
                   </Box>
@@ -792,7 +793,17 @@ export default function EventDetails() {
                           showMessage(t.qrError, "error");
                           return;
                         }
-                        const qrDataURL = canvas.toDataURL("image/png");
+                        const padding = 5;
+                        const paddedCanvas = document.createElement("canvas");
+                        paddedCanvas.width = canvas.width + padding * 2;
+                        paddedCanvas.height = canvas.height + padding * 2;
+                        const pCtx = paddedCanvas.getContext("2d");
+                        if (pCtx) {
+                          pCtx.fillStyle = "#ffffff";
+                          pCtx.fillRect(0, 0, paddedCanvas.width, paddedCanvas.height);
+                          pCtx.drawImage(canvas, padding, padding);
+                        }
+                        const qrDataURL = (pCtx ? paddedCanvas : canvas).toDataURL("image/png");
                         const link = document.createElement("a");
                         link.href = qrDataURL;
                         link.download = downloadName;
