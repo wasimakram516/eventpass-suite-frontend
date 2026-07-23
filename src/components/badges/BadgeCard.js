@@ -282,25 +282,29 @@ export default function BadgeCard({ event, module, registration, qrRef, t, compa
             sx={{
               display: "flex",
               justifyContent: "center",
+              alignItems: "center",
               mb: registration?.token ? 1.5 : 0,
             }}
           >
-            <Box
-              sx={{
-                p: 1.5,
-                borderRadius: 3,
-                bgcolor: theme.palette.background.paper,
-                border: `1px solid ${theme.palette.divider}`,
-              }}
-            >
-              <QRCodeCanvas
-                value={registration?.token || registration?._id || "preview-qr"}
-                size={170}
-                bgColor={BADGE_COLORS.white}
-                fgColor={BADGE_COLORS.primaryDark}
-                includeMargin={false}
-              />
-            </Box>
+              <Box
+                sx={{
+                  p: 2.25,
+                  borderRadius: 3,
+                  bgcolor: BADGE_COLORS.white,
+                  border: `1px solid ${alpha(BADGE_COLORS.primary, 0.12)}`,
+                  display: "flex",
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <QRCodeCanvas
+                  value={registration?.token || registration?._id || "preview-qr"}
+                  size={170}
+                  bgColor={theme.palette.qr.background}
+                  fgColor={theme.palette.qr.foreground}
+                  includeMargin={false}
+                />
+              </Box>
           </Box>
 
           {registration?.token && (
