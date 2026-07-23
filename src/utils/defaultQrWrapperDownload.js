@@ -1,3 +1,4 @@
+import { downloadImage } from "@/utils/downloadImage";
 import html2canvas from "html2canvas";
 
 const TEMPLATE_WIDTH = 1280;
@@ -321,13 +322,9 @@ export async function downloadDefaultQrWrapperAsImage(defaultQrWrapper, qrValue,
     drawImageContain(ctx, logoImage, qrCenterX - logoSize / 2, qrCenterY - logoSize / 2, logoSize, logoSize);
   }
 
-  const dataURL = canvas.toDataURL("image/png");
-  const link = document.createElement("a");
-  link.href = dataURL;
-  link.download = filename || "qr-wrapper.png";
-  link.click();
-
   blobUrlsToRevoke.forEach((url) => { try { URL.revokeObjectURL(url); } catch (_) { } });
+
+  await downloadImage(canvas, filename || "qr-wrapper.png");
 }
 
 /** Returns true if the given wrapper object has any design (logo, background, branding, or custom fields). */

@@ -39,6 +39,7 @@ import { DEFAULT_ISO_CODE } from "@/utils/countryCodes";
 import { formatDate, formatDateWithTime } from "@/utils/dateUtils";
 import ICONS from "@/utils/iconUtil";
 import { validatePhoneNumber } from "@/utils/phoneValidation";
+import { downloadImage } from "@/utils/downloadImage";
 import BadgeCard, { getBadgeColors, MODULE_CHECKIN, MODULE_EVENTREG, getEventDateLabel, getModuleLabel } from "@/components/badges/BadgeCard";
 import { useTheme } from "@mui/material";
 const translations = {
@@ -245,10 +246,7 @@ export default function MyBadgePage() {
       logging: false,
     });
 
-    const link = document.createElement("a");
-    link.href = canvas.toDataURL("image/png");
-    link.download = `badge-${registration?.token || "download"}.png`;
-    link.click();
+    await downloadImage(canvas, `badge-${registration?.token || "download"}.png`);
   };
 
   const handleReset = () => {
