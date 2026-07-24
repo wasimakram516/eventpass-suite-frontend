@@ -4,7 +4,7 @@ import { QRCodeCanvas } from "qrcode.react";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { translateTexts } from "@/services/translationService";
 import ICONS from "@/utils/iconUtil";
-import { COUNTRY_CODES, getFlagImageUrl, formatPhoneNumberForDisplay } from "@/utils/countryCodes";
+import { COUNTRY_CODES, getFlagImageUrl, formatPhoneNumberForDisplay, getLocalizedCountryName } from "@/utils/countryCodes";
 
 const BADGE_WIDTH = 380;
 const BADGE_HEIGHT = 480;
@@ -31,7 +31,6 @@ const BadgePreview = ({
   const isDark = theme.palette.mode === "dark";
 
   const [translatedLabels, setTranslatedLabels] = useState({});
-  const [translatedCountries, setTranslatedCountries] = useState({});
 
   const getDisplayFields = () => {
     let sourceData = registration;
@@ -114,34 +113,25 @@ const BadgePreview = ({
   useEffect(() => {
     if (language === "en" || (!displayFields.length && !category)) {
       setTranslatedLabels({});
-      setTranslatedCountries({});
       return;
     }
 
+    // Country VALUES are never sent to Google — they resolve from the static
+    // AR name map at render time (see below). Machine-translating a country's
+    // English name auto-detects per string and non-deterministically returns
+    // the wrong word (e.g. "Oman" -> "الحصان"/horse), which is exactly the
+    // "correct flag, wrong name, only sometimes" bug. Only free-text labels
+    // (which have no authoritative translation) go through the API.
     const labels = displayFields.map(f => f.label);
-    const countryNames = displayFields
-      .filter(f => f.label.toLowerCase() === "country")
-      .map(f => {
-        const country = COUNTRY_CODES.find(c => c.isoCode === f.value.toLowerCase());
-        return country ? country.country : null;
-      })
-      .filter(Boolean);
-
-    const toTranslate = Array.from(new Set([...labels, ...countryNames, category]));
+    const toTranslate = Array.from(new Set([...labels, category]));
 
     translateTexts(toTranslate, language)
       .then(results => {
         const labelMap = {};
-        const countryMap = {};
         toTranslate.forEach((text, i) => {
-          const translated = results[i] || text;
-          labelMap[text] = translated;
-          if (countryNames.includes(text)) {
-            countryMap[text] = translated;
-          }
+          labelMap[text] = results[i] || text;
         });
         setTranslatedLabels(labelMap);
-        setTranslatedCountries(countryMap);
       })
       .catch(err => {
         console.error("Translation failed:", err);
@@ -299,7 +289,7 @@ const BadgePreview = ({
                       if (lowerLabel === "country") {
                         const country = COUNTRY_CODES.find(c => c.isoCode === f.value.toLowerCase());
                         if (country) {
-                          const countryName = translatedCountries[country.country] || country.country;
+                          const countryName = getLocalizedCountryName(country.isoCode, language) || country.country;
                           return (
                             <>
                               <Box component="img" src={getFlagImageUrl(country.isoCode)} alt={country.country} sx={{ width: 20, height: 14, objectFit: "cover", borderRadius: 0.5, flexShrink: 0 }} />

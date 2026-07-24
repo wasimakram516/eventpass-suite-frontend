@@ -35,7 +35,7 @@ import { getPublicEventBySlug } from "@/services/eventreg/eventService";
 import ICONS from "@/utils/iconUtil";
 import resolveTicketDependentFields from "@/utils/resolveTicketDependentFields";
 import { translateTexts } from "@/services/translationService";
-import { applyTranslationOverridesToArray } from "@/utils/translationOverrides";
+import { applyTranslationOverridesToArray, resolveGlossaryTerm } from "@/utils/translationOverrides";
 import Background from "@/components/Background";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import { computePaymentBreakdown, formatOmr } from "@/utils/paymentBreakdown";
@@ -324,7 +324,9 @@ export default function Registration() {
         const rawResults = await translateTexts(textArray, lang);
         const results = applyTranslationOverridesToArray(rawResults, lang);
         const map = {};
-        textArray.forEach((txt, i) => (map[txt] = results[i] || txt));
+        // Prefer the fixed glossary for known form terms (labels/options) so
+        // they're always correct; fall back to the API result otherwise.
+        textArray.forEach((txt, i) => (map[txt] = resolveGlossaryTerm(txt, lang) || results[i] || txt));
 
         const translatedEvent = {
           ...event,
