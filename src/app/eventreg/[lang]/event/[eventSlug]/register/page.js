@@ -930,7 +930,7 @@ export default function Registration() {
           sx={{
             flex: 1,
             width: "100%",
-            maxWidth: 600,
+            maxWidth: 800,
             borderRadius: 3,
             p: { xs: 2, sm: 4 },
             textAlign: "center",
