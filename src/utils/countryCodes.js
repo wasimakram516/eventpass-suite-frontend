@@ -257,6 +257,96 @@ export const getCountryCodeByIsoCode = (isoCode) => {
     return COUNTRY_CODES.find((cc) => cc.isoCode === isoCode.toLowerCase()) || null;
 };
 
+// Arabic country names, stored plain (no tashkeel/diacritics) so a typed search
+// query matches directly — Intl.DisplayNames returns diacritics (e.g. "عُمان" for
+// Oman) that users don't type, which made search silently fail in Arabic.
+const AR_COUNTRY_NAMES = {
+    af: "أفغانستان", al: "ألبانيا", dz: "الجزائر", ad: "أندورا", ao: "أنغولا",
+    ai: "أنغويلا", ac: "جزيرة أسينشن", as: "ساموا الأمريكية", ag: "أنتيغوا وباربودا",
+    ar: "الأرجنتين", am: "أرمينيا", aw: "أروبا", au: "أستراليا", at: "النمسا",
+    az: "أذربيجان", bs: "باهاماس", bh: "البحرين", vg: "جزر العذراء البريطانية",
+    bd: "بنغلاديش", bb: "باربادوس", by: "بيلاروسيا", be: "بلجيكا", bz: "بليز",
+    bj: "بنين", bt: "بوتان", bo: "بوليفيا", ba: "البوسنة والهرسك", bw: "بوتسوانا",
+    br: "البرازيل", bn: "بروناي", bg: "بلغاريا", bf: "بوركينا فاسو", bi: "بوروندي",
+    kh: "كمبوديا", cm: "الكاميرون", ca: "كندا", cv: "الرأس الأخضر", ky: "جزر كايمان",
+    cf: "جمهورية أفريقيا الوسطى", td: "تشاد", cl: "تشيلي", cn: "الصين",
+    cx: "جزيرة الكريسماس", cc: "جزر كوكوس", ck: "جزر كوك", co: "كولومبيا",
+    km: "جزر القمر", cg: "الكونغو", cd: "الكونغو الديمقراطية", cr: "كوستاريكا",
+    ci: "ساحل العاج", hr: "كرواتيا", cu: "كوبا", cy: "قبرص", cz: "التشيك",
+    dk: "الدنمارك", dg: "دييغو غارسيا", dj: "جيبوتي", dm: "دومينيكا",
+    do: "جمهورية الدومينيكان", ec: "الإكوادور", eg: "مصر", sv: "السلفادور",
+    gq: "غينيا الاستوائية", er: "إريتريا", ee: "إستونيا", sz: "إسواتيني",
+    et: "إثيوبيا", fk: "جزر فوكلاند", fo: "جزر فارو", fj: "فيجي", fi: "فنلندا",
+    fr: "فرنسا", gf: "غويانا الفرنسية", pf: "بولينيزيا الفرنسية", ga: "الغابون",
+    gm: "غامبيا", ge: "جورجيا", de: "ألمانيا", gh: "غانا", gi: "جبل طارق",
+    gr: "اليونان", gl: "غرينلاند", gp: "غوادلوب", gd: "غرينادا", gu: "غوام",
+    gt: "غواتيمالا", gn: "غينيا", gw: "غينيا بيساو", gy: "غيانا", ht: "هايتي",
+    hn: "هندوراس", hk: "هونغ كونغ", hu: "المجر", is: "آيسلندا", in: "الهند",
+    id: "إندونيسيا", ir: "إيران", iq: "العراق", ie: "أيرلندا", im: "جزيرة مان",
+    il: "إسرائيل", it: "إيطاليا", jm: "جامايكا", jp: "اليابان", je: "جيرسي",
+    jo: "الأردن", kz: "كازاخستان", ke: "كينيا", ki: "كيريباتي", kw: "الكويت",
+    kg: "قيرغيزستان", la: "لاوس", lv: "لاتفيا", lb: "لبنان", ls: "ليسوتو",
+    lr: "ليبيريا", ly: "ليبيا", li: "ليختنشتاين", lt: "ليتوانيا", lu: "لوكسمبورغ",
+    mo: "ماكاو", mg: "مدغشقر", mw: "مالاوي", my: "ماليزيا", mv: "جزر المالديف",
+    ml: "مالي", mt: "مالطا", mh: "جزر مارشال", mq: "مارتينيك", mr: "موريتانيا",
+    mu: "موريشيوس", yt: "مايوت", mx: "المكسيك", fm: "ميكرونيزيا", md: "مولدوفا",
+    mc: "موناكو", mn: "منغوليا", me: "الجبل الأسود", ms: "مونتسرات", ma: "المغرب",
+    mz: "موزمبيق", mm: "ميانمار", na: "ناميبيا", nr: "ناورو", np: "نيبال",
+    nl: "هولندا", an: "جزر الأنتيل الهولندية", nc: "كاليدونيا الجديدة",
+    nz: "نيوزيلندا", ni: "نيكاراغوا", ne: "النيجر", ng: "نيجيريا", nu: "نييوي",
+    nf: "جزيرة نورفولك", kp: "كوريا الشمالية", mp: "جزر ماريانا الشمالية",
+    mk: "مقدونيا الشمالية", no: "النرويج", om: "عمان", pk: "باكستان", pw: "بالاو",
+    ps: "فلسطين", pa: "بنما", pg: "بابوا غينيا الجديدة", py: "باراغواي", pe: "بيرو",
+    ph: "الفلبين", pn: "جزر بيتكيرن", pl: "بولندا", pt: "البرتغال", pr: "بورتوريكو",
+    qa: "قطر", ro: "رومانيا", re: "جزيرة ريونيون", ru: "روسيا", rw: "رواندا",
+    bl: "سان بارتيلمي", sh: "سانت هيلينا", kn: "سانت كيتس ونيفيس", lc: "سانت لوسيا",
+    mf: "سانت مارتن", pm: "سان بيير وميكلون", vc: "سانت فينسنت والغرينادين",
+    ws: "ساموا", sm: "سان مارينو", st: "ساو تومي وبرينسيبي", sa: "السعودية",
+    sn: "السنغال", rs: "صربيا", sc: "سيشل", sl: "سيراليون", sg: "سنغافورة",
+    sk: "سلوفاكيا", si: "سلوفينيا", sb: "جزر سليمان", so: "الصومال",
+    za: "جنوب أفريقيا", kr: "كوريا الجنوبية", ss: "جنوب السودان", es: "إسبانيا",
+    lk: "سريلانكا", sd: "السودان", sr: "سورينام", sx: "سينت مارتن", se: "السويد",
+    sj: "سفالبارد", ch: "سويسرا", sy: "سوريا", tw: "تايوان", tj: "طاجيكستان",
+    tz: "تنزانيا", th: "تايلاند", tl: "تيمور الشرقية", tg: "توغو", tk: "توكيلاو",
+    to: "تونغا", tt: "ترينيداد وتوباغو", tn: "تونس", tr: "تركيا", tm: "تركمانستان",
+    tc: "جزر توركس وكايكوس", tv: "توفالو", ug: "أوغندا", ua: "أوكرانيا",
+    ae: "الإمارات العربية المتحدة", gb: "المملكة المتحدة", us: "الولايات المتحدة",
+    vi: "جزر العذراء الأمريكية", uy: "أوروغواي", uz: "أوزبكستان", vu: "فانواتو",
+    va: "الفاتيكان", ve: "فنزويلا", vn: "فيتنام", wf: "واليس وفوتونا",
+    eh: "الصحراء الغربية", ye: "اليمن", zm: "زامبيا", zw: "زيمبابوي",
+};
+
+// Localized country name for a given isoCode/lang, or null if none is stored for it
+export const getLocalizedCountryName = (isoCode, lang) => {
+    if (lang !== "ar") return null;
+    return AR_COUNTRY_NAMES[isoCode.toLowerCase()] || null;
+};
+
+// Strips Arabic diacritics/tatweel/zero-width joiners some keyboards and IMEs
+// insert invisibly, then folds every Arabic letter onto its canonical form
+// across the Arabic/Farsi/Urdu keyboard variants users actually type it with
+// — so search isn't defeated by a spelling a human would consider identical:
+//   ا  <- أ إ آ ٱ           (hamzated alef forms)
+//   ه  <- ة ہ ۀ             (ta marbuta + Urdu heh variants)
+//   ي  <- ى ی ئ             (alef maksura, Farsi yeh, yeh-hamza)
+//   ك  <- ک                (Farsi/Urdu keheh)
+//   غ  <- گ                (Farsi/Urdu gaf, typed for the "g" sound in e.g. Uganda/Congo)
+//   ب  <- پ                (Farsi/Urdu peh, typed for "p" — Urdu spells Pakistan with it)
+export const normalizeForMatch = (text) => {
+    if (!text) return "";
+    return text
+        .toLowerCase()
+        .replace(/[ؐ-ًؚ-ٰٟۖ-ۭ]/g, "") // diacritics
+        .replace(/[​-‍]/g, "") // zero-width space/ZWNJ/ZWJ
+        .replace(/ـ/g, "") // tatweel
+        .replace(/[أإآٱ]/g, "ا")
+        .replace(/[ةہۀ]/g, "ه")
+        .replace(/[ىیئ]/g, "ي")
+        .replace(/ک/g, "ك")
+        .replace(/گ/g, "غ")
+        .replace(/پ/g, "ب");
+};
+
 export const formatPhoneNumberForDisplay = (phone, isoCode) => {
     if (!phone) return phone || "";
 

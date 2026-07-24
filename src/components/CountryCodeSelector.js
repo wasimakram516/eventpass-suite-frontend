@@ -12,7 +12,7 @@ import {
     ListSubheader,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
-import { COUNTRY_CODES, DEFAULT_COUNTRY_CODE, DEFAULT_ISO_CODE, getFlagImageUrl, getCountryCodeByIsoCode, getCountryCodeByCode } from "@/utils/countryCodes";
+import { COUNTRY_CODES, DEFAULT_COUNTRY_CODE, DEFAULT_ISO_CODE, getFlagImageUrl, getCountryCodeByIsoCode, getCountryCodeByCode, getLocalizedCountryName, normalizeForMatch } from "@/utils/countryCodes";
 
 const CountryCodeSelector = ({
     value,
@@ -21,6 +21,7 @@ const CountryCodeSelector = ({
     dir = "ltr",
 }) => {
     const [searchQuery, setSearchQuery] = useState("");
+    const lang = dir === "rtl" ? "ar" : "en";
 
     let selectedIsoCode = null;
     if (value) {
@@ -37,18 +38,26 @@ const CountryCodeSelector = ({
     const selectedCountry = COUNTRY_CODES.find((cc) => cc.isoCode === selectedIsoCode) ||
         COUNTRY_CODES.find((cc) => cc.isoCode === DEFAULT_ISO_CODE);
 
+    const localizedCountries = useMemo(() => {
+        return COUNTRY_CODES.map((cc) => ({
+            ...cc,
+            displayName: getLocalizedCountryName(cc.isoCode, lang) || cc.country,
+        }));
+    }, [lang]);
+
     const filteredCountries = useMemo(() => {
         if (!searchQuery.trim()) {
-            return COUNTRY_CODES;
+            return localizedCountries;
         }
-        const query = searchQuery.toLowerCase();
-        return COUNTRY_CODES.filter(
+        const query = normalizeForMatch(searchQuery);
+        return localizedCountries.filter(
             (country) =>
-                country.country.toLowerCase().includes(query) ||
+                normalizeForMatch(country.displayName).includes(query) ||
+                normalizeForMatch(country.country).includes(query) ||
                 country.code.includes(query) ||
                 country.isoCode.toLowerCase().includes(query)
         );
-    }, [searchQuery]);
+    }, [localizedCountries, searchQuery]);
 
     return (
         <InputAdornment position="start" sx={{ m: 0 }}>
@@ -59,6 +68,7 @@ const CountryCodeSelector = ({
                     onChange(isoCode);
                 }}
                 disabled={disabled}
+                dir={dir}
                 renderValue={(selected) => {
                     const country = COUNTRY_CODES.find((cc) => cc.isoCode === selected);
                     return (
@@ -134,7 +144,8 @@ const CountryCodeSelector = ({
                         <TextField
                             fullWidth
                             size="small"
-                            placeholder="Search country..."
+                            dir={dir}
+                            placeholder={lang === "ar" ? "ابحث عن دولة…" : "Search country..."}
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             onClick={(e) => e.stopPropagation()}
@@ -145,6 +156,7 @@ const CountryCodeSelector = ({
                                 },
                             }}
                             slotProps={{
+                                htmlInput: { dir },
                                 input: {
                                     startAdornment: (
                                         <InputAdornment position="start">
@@ -158,12 +170,12 @@ const CountryCodeSelector = ({
                 </ListSubheader>
                 {filteredCountries.length > 0 ? (
                     filteredCountries.map((country) => (
-                        <MenuItem key={country.isoCode} value={country.isoCode}>
+                        <MenuItem key={country.isoCode} value={country.isoCode} dir={dir}>
                             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                                 {country.isoCode && (
                                     <img
                                         src={getFlagImageUrl(country.isoCode)}
-                                        alt={country.country}
+                                        alt={country.displayName}
                                         style={{
                                             width: "24px",
                                             height: "18px",
@@ -173,7 +185,7 @@ const CountryCodeSelector = ({
                                     />
                                 )}
                                 <Typography variant="body2">
-                                    {country.country} ({country.code})
+                                    {country.displayName} ({country.code})
                                 </Typography>
                             </Box>
                         </MenuItem>
@@ -183,7 +195,7 @@ const CountryCodeSelector = ({
                         <Typography variant="body2" sx={{
                             color: "text.secondary"
                         }}>
-                            No countries found
+                            {lang === "ar" ? "لا توجد دول" : "No countries found"}
                         </Typography>
                     </MenuItem>
                 )}

@@ -1157,7 +1157,12 @@ export const getTheme = (mode = "light", direction = "ltr") => {
                 : "rgba(255,255,255,0.9)",
             },
           },
-          icon: ({ theme }) => ({ color: theme.palette.primary.main, right: 16 }),
+          icon: ({ theme }) => ({
+            color: theme.palette.primary.main,
+            ...(theme.direction === "rtl"
+              ? { left: 16, right: "auto" }
+              : { right: 16, left: "auto" }),
+          }),
         },
       },
     },

@@ -13,38 +13,12 @@ import {
   ListSubheader,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
-import { COUNTRY_CODES, getFlagImageUrl } from "@/utils/countryCodes";
+import { COUNTRY_CODES, getFlagImageUrl, getLocalizedCountryName, normalizeForMatch } from "@/utils/countryCodes";
 
 // Deduplicate by isoCode — COUNTRY_CODES may have entries with the same country listed multiple times
 const BASE_COUNTRIES = Object.values(
   Object.fromEntries(COUNTRY_CODES.map((cc) => [cc.isoCode, cc]))
 );
-
-// Manual Arabic names for codes Intl.DisplayNames doesn't cover
-const AR_OVERRIDES = {
-  DG: "دييغو غارسيا",
-  EH: "الصحراء الغربية",
-  AC: "جزيرة أسينشن",
-  TA: "تريستان دا كونا",
-  BQ: "جزر الكاريبي الهولندية",
-  XK: "كوسوفو",
-  CP: "جزيرة كليبرتون",
-  EA: "سبتة ومليلية",
-};
-
-function getDisplayName(isoCode, lang) {
-  if (lang === "en") return null;
-  const upper = isoCode.toUpperCase();
-  if (lang === "ar" && AR_OVERRIDES[upper]) return AR_OVERRIDES[upper];
-  try {
-    const name = new Intl.DisplayNames([lang], { type: "region" }).of(upper);
-    // Intl returns the code itself when no translation exists — treat that as a miss
-    if (!name || name.toUpperCase() === upper) return null;
-    return name;
-  } catch {
-    return null;
-  }
-}
 
 export default function CountryPicker({
   label = "Country",
@@ -61,14 +35,14 @@ export default function CountryPicker({
 
   const UNIQUE_COUNTRIES = useMemo(() => {
     return BASE_COUNTRIES
-      .map((cc) => ({ ...cc, displayName: getDisplayName(cc.isoCode, lang) || cc.country }))
+      .map((cc) => ({ ...cc, displayName: getLocalizedCountryName(cc.isoCode, lang) || cc.country }))
       .sort((a, b) => a.displayName.localeCompare(b.displayName, lang));
   }, [lang]);
 
   const selected = UNIQUE_COUNTRIES.find((cc) => cc.isoCode === value?.toLowerCase());
-  const q = search.toLowerCase().trim();
+  const q = normalizeForMatch(search.trim());
   const hasNoMatch = !!q && !UNIQUE_COUNTRIES.some(cc =>
-    cc.displayName.toLowerCase().includes(q) || cc.country.toLowerCase().includes(q)
+    normalizeForMatch(cc.displayName).includes(q) || normalizeForMatch(cc.country).includes(q)
   );
 
   return (
@@ -103,12 +77,14 @@ export default function CountryPicker({
           <TextField
             size="small"
             fullWidth
+            dir={dir}
             placeholder={lang === "ar" ? "ابحث عن دولة…" : "Search country…"}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onKeyDown={(e) => e.stopPropagation()}
             autoFocus
             slotProps={{
+              htmlInput: { dir },
               input: {
                 startAdornment: (
                   <InputAdornment position="start">
@@ -121,19 +97,20 @@ export default function CountryPicker({
         </ListSubheader>
 
         {hasNoMatch && (
-          <MenuItem disabled>
+          <MenuItem disabled dir={dir}>
             <Typography variant="body2" color="text.secondary">{lang === "ar" ? "لا توجد دول" : "No countries found"}</Typography>
           </MenuItem>
         )}
 
         {UNIQUE_COUNTRIES.map((cc) => {
           const matches = !q ||
-            cc.displayName.toLowerCase().includes(q) ||
-            cc.country.toLowerCase().includes(q);
+            normalizeForMatch(cc.displayName).includes(q) ||
+            normalizeForMatch(cc.country).includes(q);
           return (
             <MenuItem
               key={cc.isoCode}
               value={cc.isoCode}
+              dir={dir}
               style={{ display: matches ? "flex" : "none" }}
               sx={{ "&:not(:last-of-type)": { borderBottom: "1px solid", borderColor: "divider" } }}
             >
