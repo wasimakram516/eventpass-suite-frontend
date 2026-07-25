@@ -42,7 +42,7 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import ICONS from "@/utils/iconUtil";
 import { useAuth } from "@/contexts/AuthContext";
-import { getAllPayments, getPaymentLink, exportPayments } from "@/services/eventreg/paymentService";
+import { getAllPayments, getPaymentLink, exportPayments, exportInvoices } from "@/services/eventreg/paymentService";
 import usePaymentsSocket from "@/hooks/usePaymentsSocket";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { formatDateTimeWithLocale } from "@/utils/dateUtils";
@@ -84,9 +84,17 @@ const translations = {
     copyLink: "Copy Payment Link",
     linkCopied: "Link Copied!",
     loadError: "Failed to load payments.",
-    export: "Export",
+    export: "Export Spreadsheet",
     exporting: "Exporting…",
     exportFailed: "Export failed.",
+    downloadInvoices: "Download Invoices",
+    downloadingInvoices: "Preparing…",
+    noInvoices: "No paid invoices match the current filters.",
+    invoicesTooMany: "Too many invoices. Narrow the filters and try again.",
+    revenuePaid: "Total Revenue",
+    revenuePending: "Total Pending",
+    revenueCancelled: "Total Cancelled",
+    revenueFailed: "Total Failed",
     viewDetails: "View Details",
     paymentDetails: "Payment Details",
     customerDetails: "Customer Details",
@@ -135,9 +143,17 @@ const translations = {
     copyLink: "نسخ رابط الدفع",
     linkCopied: "تم النسخ!",
     loadError: "تعذر تحميل المدفوعات.",
-    export: "تصدير",
+    export: "تصدير جدول البيانات",
     exporting: "جاري التصدير…",
     exportFailed: "فشل التصدير.",
+    downloadInvoices: "تنزيل الفواتير",
+    downloadingInvoices: "جاري التحضير…",
+    noInvoices: "لا توجد فواتير مدفوعة مطابقة للفلاتر الحالية.",
+    invoicesTooMany: "عدد الفواتير كبير جدًا. يرجى تضييق الفلاتر والمحاولة مرة أخرى.",
+    revenuePaid: "إجمالي الإيرادات",
+    revenuePending: "إجمالي المعلّق",
+    revenueCancelled: "إجمالي الملغى",
+    revenueFailed: "إجمالي الفاشل",
     viewDetails: "عرض التفاصيل",
     paymentDetails: "تفاصيل الدفع",
     customer: "العميل",
@@ -232,6 +248,7 @@ export default function PaymentsPage() {
     }
   };
   const [exporting, setExporting] = useState(false);
+  const [downloadingInvoices, setDownloadingInvoices] = useState(false);
   const [viewPayment, setViewPayment] = useState(null);
   const [showPaymentBreakdown, setShowPaymentBreakdown] = useState(false);
 
@@ -327,6 +344,28 @@ export default function PaymentsPage() {
 
   useEffect(() => { fetchPayments(); }, [fetchPayments]);
 
+  // Compose a self-describing download name from the active filters, e.g.
+  // invoices_royal-hospital_paid_2026-07-01_to_2026-07-25.zip — so a filtered
+  // download says what it contains instead of a bare timestamp.
+  const buildFilterFileName = (base, ext) => {
+    const slug = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+    const parts = [base];
+    if (filterBusinessId) {
+      const biz = businessesList.find((b) => String(b._id) === String(filterBusinessId));
+      if (biz?.name) parts.push(slug(biz.name));
+    }
+    if (filterStatus) parts.push(slug(filterStatus));
+    if (debouncedSearch) parts.push(`search-${slug(debouncedSearch)}`);
+    if (fromMs || toMs) {
+      const f = fromMs ? dayjs(fromMs).format("YYYY-MM-DD") : "start";
+      const tt = toMs ? dayjs(toMs).format("YYYY-MM-DD") : "now";
+      parts.push(`${f}_to_${tt}`);
+    } else {
+      parts.push(dayjs().format("YYYY-MM-DD"));
+    }
+    return `${parts.filter(Boolean).join("_")}.${ext}`;
+  };
+
   // Export the current filtered result set to Excel (no pagination).
   const handleExport = async () => {
     setExporting(true);
@@ -343,7 +382,7 @@ export default function PaymentsPage() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `payments_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      a.download = buildFilterFileName("payments", "xlsx");
       document.body.appendChild(a);
       a.click();
       a.remove();
@@ -355,7 +394,51 @@ export default function PaymentsPage() {
     }
   };
 
+  // Bulk-download every invoice PDF matching the current filters as one ZIP
+  // (paid registrations only — the backend enforces that and caps the count).
+  const handleDownloadInvoices = async () => {
+    setDownloadingInvoices(true);
+    setLoadError("");
+    try {
+      const params = {};
+      if (debouncedSearch) params.search = debouncedSearch;
+      if (filterStatus) params.status = filterStatus;
+      if (filterBusinessId) params.businessId = filterBusinessId;
+      if (fromMs) params.from = new Date(fromMs).toISOString();
+      if (toMs) params.to = new Date(toMs).toISOString();
+
+      const blob = await exportInvoices(params);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = buildFilterFileName("invoices", "zip");
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      // A non-2xx (404 no invoices / 400 too many) comes back as a Blob because
+      // of responseType:"blob" — read it to surface the right message.
+      const status = err?.response?.status;
+      if (status === 400) setLoadError(t.invoicesTooMany);
+      else if (status === 404) setLoadError(t.noInvoices);
+      else setLoadError(t.exportFailed);
+    } finally {
+      setDownloadingInvoices(false);
+    }
+  };
+
   const totalPages = Math.max(1, Math.ceil(total / limit));
+
+  // Header total label adapts to the active status filter: with a status chosen
+  // the number is that status's total (see backend getAllPayments); with none
+  // it is paid revenue. Keeps the label honest about what the figure means.
+  const revenueLabel = {
+    paid: t.revenuePaid,
+    pending: t.revenuePending,
+    cancelled: t.revenueCancelled,
+    failed: t.revenueFailed,
+  }[filterStatus] || t.revenuePaid;
 
   // Revenue: sum of paid TOTALS (base + fees + VAT) in current result set.
   // Use priceBreakdown.total — the charged amount — falling back to `amount` for
@@ -904,11 +987,15 @@ export default function PaymentsPage() {
             <Typography variant="body2" color="text.secondary" sx={{ textAlign: align, mt: 0.5 }}>{t.subtitle}</Typography>
           </Box>
 
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ alignItems: { xs: "stretch", sm: "center" } }}>
+          <Stack
+            direction="column"
+            spacing={1.5}
+            sx={{ alignItems: { xs: "stretch", md: "flex-end" }, width: { xs: "100%", md: "auto" } }}
+          >
             {/* Revenue stat */}
-            <Box sx={{ textAlign: { xs: "left", sm: "right" } }}>
+            <Box sx={{ textAlign: { xs: "left", md: "right" } }}>
               <Typography variant="caption" color="text.secondary" sx={{ display: "block", lineHeight: 1.4, textTransform: "uppercase", letterSpacing: 0.5, fontSize: "0.68rem" }}>
-                {t.revenue}
+                {revenueLabel}
               </Typography>
               <Typography variant="h6" fontWeight={800} sx={{ lineHeight: 1.2 }}>
                 {fmtRevenue(totalRevenue)}{" "}
@@ -916,24 +1003,45 @@ export default function PaymentsPage() {
               </Typography>
             </Box>
 
-            <Button
-              variant="outlined"
-              startIcon={exporting ? <CircularProgress size={16} /> : <ICONS.download />}
-              onClick={handleExport}
-              disabled={exporting || payments.length === 0}
-              sx={{ borderRadius: 999, px: 2.5, textTransform: "none", fontWeight: 600 }}
+            {/* Action buttons — below the revenue stat, not inline with it.
+                Full-width stacked column on mobile/tablet; a row only once the
+                header itself goes horizontal (md+). */}
+            <Stack
+              direction={{ xs: "column", md: "row" }}
+              spacing={1}
+              sx={{ alignItems: { xs: "stretch", md: "center" }, width: { xs: "100%", md: "auto" } }}
             >
-              {exporting ? t.exporting : t.export}
-            </Button>
+              <Button
+                variant="outlined"
+                startIcon={exporting ? <CircularProgress size={16} /> : <ICONS.download />}
+                onClick={handleExport}
+                disabled={exporting || total === 0}
+                sx={{ borderRadius: 999, px: 2.5, textTransform: "none", fontWeight: 600, width: { xs: "100%", md: "auto" } }}
+              >
+                {exporting ? t.exporting : t.export}
+              </Button>
 
-            <Button
-              variant="outlined"
-              startIcon={<ICONS.filter />}
-              onClick={openFilters}
-              sx={{ borderRadius: 999, px: 2.5, textTransform: "none", fontWeight: 600 }}
-            >
-              {t.filters}
-            </Button>
+              <Button
+                variant="outlined"
+                startIcon={downloadingInvoices ? <CircularProgress size={16} /> : <ICONS.receipt />}
+                onClick={handleDownloadInvoices}
+                // Invoices exist only for paid rows, so also disable when the
+                // active status filter can't contain any (pending/cancelled/failed).
+                disabled={downloadingInvoices || total === 0 || (!!filterStatus && filterStatus !== "paid")}
+                sx={{ borderRadius: 999, px: 2.5, textTransform: "none", fontWeight: 600, width: { xs: "100%", md: "auto" } }}
+              >
+                {downloadingInvoices ? t.downloadingInvoices : t.downloadInvoices}
+              </Button>
+
+              <Button
+                variant="outlined"
+                startIcon={<ICONS.filter />}
+                onClick={openFilters}
+                sx={{ borderRadius: 999, px: 2.5, textTransform: "none", fontWeight: 600, width: { xs: "100%", md: "auto" } }}
+              >
+                {t.filters}
+              </Button>
+            </Stack>
           </Stack>
         </Stack>
 

@@ -53,3 +53,12 @@ export const exportPayments = async (params = {}) => {
   const response = await api.get(url, { responseType: "blob" });
   return response.data;
 };
+
+// Bulk invoice download — ZIP of invoice PDFs for the paid payments matching the
+// same filters. Returns a Blob (native axios, same reason as exportPayments).
+export const exportInvoices = async (params = {}) => {
+  const qs = new URLSearchParams(params).toString();
+  const url = `/eventreg/payments/invoices${qs ? `?${qs}` : ""}`;
+  const response = await api.get(url, { responseType: "blob" });
+  return response.data;
+};
