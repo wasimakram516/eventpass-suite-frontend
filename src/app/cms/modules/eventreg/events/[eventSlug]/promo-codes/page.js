@@ -21,6 +21,7 @@ import {
   DialogActions,
   TextField,
   Switch,
+  Checkbox,
   FormControlLabel,
   Autocomplete,
   FormControl,
@@ -91,6 +92,9 @@ const translations = {
     modeBatch: "Batch",
     codeLabel: "Code (leave blank to auto-generate)",
     discountLabel: "Discount %",
+    fullDiscountLabel: "Full free (100% off, skips payment)",
+    fullDiscountHint: "The registrant pays nothing and is confirmed without going to the payment gateway.",
+    freeChip: "Free",
     maxUsesLabel: "Max Uses",
     codeLengthLabel: "Code Length (total, prefix included)",
     prefixLabel: "Prefix (optional)",
@@ -119,7 +123,7 @@ const translations = {
     deleteConfirmMessage: "This code will stop working immediately. Its redemption history is kept.",
     // Errors / validation
     required: "Required",
-    invalidDiscount: "Must be between 1 and 100",
+    invalidDiscount: "Must be a whole number between 1 and 99",
     invalidMaxUses: "Must be at least 1",
     invalidBatchSize: "Must be between 1 and 1000",
     invalidCodeLength: "Must be longer than the prefix",
@@ -180,6 +184,9 @@ const translations = {
     modeBatch: "دفعة",
     codeLabel: "الرمز (اتركه فارغًا للإنشاء التلقائي)",
     discountLabel: "نسبة الخصم %",
+    fullDiscountLabel: "مجاني بالكامل (خصم 100٪، يتخطى الدفع)",
+    fullDiscountHint: "لن يدفع المسجّل شيئًا وسيتم تأكيده دون الانتقال إلى بوابة الدفع.",
+    freeChip: "مجاني",
     maxUsesLabel: "الحد الأقصى للاستخدام",
     codeLengthLabel: "طول الرمز (الإجمالي، شامل البادئة)",
     prefixLabel: "البادئة (اختياري)",
@@ -204,7 +211,7 @@ const translations = {
     deleteConfirmTitle: "حذف رمز الخصم هذا؟",
     deleteConfirmMessage: "سيتوقف هذا الرمز عن العمل فورًا. يتم الاحتفاظ بسجل استخداماته.",
     required: "مطلوب",
-    invalidDiscount: "يجب أن يكون بين 1 و 100",
+    invalidDiscount: "يجب أن يكون رقمًا صحيحًا بين 1 و 99",
     invalidMaxUses: "يجب أن يكون 1 على الأقل",
     invalidBatchSize: "يجب أن يكون بين 1 و 1000",
     invalidCodeLength: "يجب أن يكون أطول من البادئة",
@@ -331,6 +338,7 @@ export default function PromoCodesPage() {
   const emptyForm = {
     code: "",
     discountPercentage: "",
+    isFullDiscount: false,
     maxUses: "",
     batchSize: "",
     batchLabel: "",
@@ -436,8 +444,12 @@ export default function PromoCodesPage() {
 
   const validateSharedFields = () => {
     const errors = {};
-    const discount = Number(form.discountPercentage);
-    if (!Number.isFinite(discount) || discount <= 0 || discount > 100) errors.discountPercentage = t.invalidDiscount;
+    // A full-free code is fixed at 100% server-side, so the percentage field is
+    // disabled and not validated. Otherwise it must be a whole number 1–99.
+    if (!form.isFullDiscount) {
+      const discount = Number(form.discountPercentage);
+      if (!Number.isInteger(discount) || discount < 1 || discount > 99) errors.discountPercentage = t.invalidDiscount;
+    }
     if (formMode === "single" && form.code?.trim()) {
       // explicit code — no length/prefix validation needed
     } else {
@@ -462,7 +474,8 @@ export default function PromoCodesPage() {
       const res = await createPromoCode({
         eventSlug,
         code: form.code?.trim() || undefined,
-        discountPercentage: Number(form.discountPercentage),
+        discountPercentage: form.isFullDiscount ? 100 : Number(form.discountPercentage),
+        isFullDiscount: form.isFullDiscount,
         maxUses,
         codeLength: Number(form.codeLength),
         prefix: form.prefix?.trim() || "",
@@ -487,7 +500,8 @@ export default function PromoCodesPage() {
     setSubmitting(true);
     const res = await createPromoCodeBatch({
       eventSlug,
-      discountPercentage: Number(form.discountPercentage),
+      discountPercentage: form.isFullDiscount ? 100 : Number(form.discountPercentage),
+      isFullDiscount: form.isFullDiscount,
       batchSize,
       codeLength: Number(form.codeLength),
       prefix: form.prefix?.trim() || "",
@@ -714,7 +728,11 @@ export default function PromoCodesPage() {
                   <Stack spacing={1}>
                     <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                       <Typography variant="caption" color="text.secondary">{t.discount}</Typography>
-                      <Typography variant="body2">{pc.discountPercentage}%</Typography>
+                      {pc.isFullDiscount ? (
+                        <Chip label={t.freeChip} color="secondary" size="small" />
+                      ) : (
+                        <Typography variant="body2">{pc.discountPercentage}%</Typography>
+                      )}
                     </Box>
                     <Box sx={{ display: "flex", justifyContent: "space-between" }}>
                       <Typography variant="caption" color="text.secondary">{t.usage}</Typography>
@@ -801,10 +819,11 @@ export default function PromoCodesPage() {
               <TextField
                 label={t.discountLabel}
                 type="number"
-                value={form.discountPercentage}
+                value={form.isFullDiscount ? 100 : form.discountPercentage}
                 onChange={(e) => setForm((p) => ({ ...p, discountPercentage: e.target.value }))}
                 error={!!formErrors.discountPercentage}
                 helperText={formErrors.discountPercentage}
+                disabled={form.isFullDiscount}
                 fullWidth
               />
               {formMode === "single" ? (
@@ -829,6 +848,29 @@ export default function PromoCodesPage() {
                 />
               )}
             </Stack>
+
+            <Box>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={form.isFullDiscount}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      setForm((p) => ({ ...p, isFullDiscount: checked }));
+                      // Clear any stale percentage error the moment full-free is
+                      // enabled, since that field is no longer validated.
+                      if (checked) setFormErrors((prev) => ({ ...prev, discountPercentage: undefined }));
+                    }}
+                  />
+                }
+                label={t.fullDiscountLabel}
+              />
+              {form.isFullDiscount && (
+                <Typography variant="caption" color="text.secondary" sx={{ display: "block", ml: 4 }}>
+                  {t.fullDiscountHint}
+                </Typography>
+              )}
+            </Box>
 
             {(formMode === "batch" || !form.code?.trim()) && (
               <Stack direction="row" spacing={2}>

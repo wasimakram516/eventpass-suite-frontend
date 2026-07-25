@@ -57,6 +57,8 @@ const translations = {
         cancel: "Cancel",
         create: "Create",
         proceedToPayment: "Proceed to Payment",
+        confirmAndPay: "Confirm & Pay",
+        confirmFree: "Confirm Registration",
         saveChanges: "Save Changes",
         registrationFailed: "Registration failed.",
         duplicatePaidTitle: "Already registered",
@@ -94,6 +96,8 @@ const translations = {
         cancel: "إلغاء",
         create: "إنشاء",
         proceedToPayment: "المتابعة للدفع",
+        confirmAndPay: "تأكيد والدفع",
+        confirmFree: "تأكيد التسجيل",
         saveChanges: "حفظ التغييرات",
         registrationFailed: "فشل التسجيل.",
         duplicatePaidTitle: "مسجَّل بالفعل",
@@ -653,6 +657,17 @@ export default function RegistrationModal({
         });
 
         setPayProcessing(false);
+
+        // A full-free (100%) promo code confirms the registration as paid
+        // server-side with no gateway link — nothing to copy or redirect to,
+        // just refresh the list (the new/updated row shows as paid). Checked
+        // before the duplicate branch because a free RESUBMIT carries both
+        // skipPayment and duplicateStatus.
+        if (!result?.error && result?.skipPayment) {
+            setShowPaymentSummary(false);
+            onPaymentInitiated?.();
+            return;
+        }
 
         const duplicateStatus = result?.duplicateStatus || result?.data?.duplicateStatus;
         if (!result?.error && duplicateStatus) {
@@ -1243,7 +1258,7 @@ export default function RegistrationModal({
                                     ...getStartIconSpacing("ltr"),
                                 }}
                             >
-                                {payProcessing ? <CircularProgress size={22} color="inherit" /> : "Confirm & Pay"}
+                                {payProcessing ? <CircularProgress size={22} color="inherit" /> : (paymentBreakdown?.total <= 0 ? t.confirmFree : t.confirmAndPay)}
                             </Button>
                         </>
                     )}

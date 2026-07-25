@@ -145,6 +145,8 @@ export default function Registration() {
     vatLabel: isArabic ? "ضريبة القيمة المضافة" : "VAT",
     totalLabel: isArabic ? "الإجمالي" : "Total",
     confirmAndPay: isArabic ? "تأكيد والدفع" : "Confirm & Pay",
+    confirmFree: isArabic ? "تأكيد التسجيل" : "Confirm Registration",
+    freeNote: isArabic ? "لا يلزم الدفع لهذا التسجيل" : "No payment required for this registration",
     cancel: isArabic ? "إلغاء" : "Cancel",
     securePayment: isArabic ? "دفع آمن عبر ثواني" : "Secure payment via Thawani",
     ticketCaption: isArabic ? "تذكرة" : "Ticket",
@@ -657,6 +659,19 @@ export default function Registration() {
       ...paymentPayload,
       ...(appliedPromoCode?.code ? { promoCode: appliedPromoCode.code } : {}),
     });
+    const data = result?.data || result;
+
+    // A full-free (100%) promo code confirms the registration server-side
+    // without a payment gateway (no sessionUrl). Go straight to the success
+    // page, which verifies the already-paid registration and shows the ticket.
+    // Checked before the duplicate branch below because a free RESUBMIT carries
+    // both skipPayment and duplicateStatus.
+    if (!result?.error && data?.skipPayment) {
+      const registrationId = data?.registrationId;
+      window.location.href = `/eventreg/event/${eventSlug}/payment/success?registration_id=${registrationId}&lang=${lang}`;
+      return;
+    }
+
     const duplicateStatus = result?.duplicateStatus || result?.data?.duplicateStatus;
 
     if (!result?.error && duplicateStatus) {
@@ -1389,7 +1404,7 @@ export default function Registration() {
               <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0.75, mt: 2 }}>
                 <ICONS.verified sx={{ fontSize: 16, color: "success.main" }} />
                 <Typography variant="caption" color="text.secondary">
-                  {t.securePayment}
+                  {paymentBreakdown?.total <= 0 ? t.freeNote : t.securePayment}
                 </Typography>
               </Box>
             </Box>
@@ -1530,7 +1545,7 @@ export default function Registration() {
                   boxShadow: (theme) => theme.palette.shadow.infoCard, ...getStartIconSpacing(dir),
                 }}
               >
-                {payProcessing ? <CircularProgress size={22} color="inherit" /> : t.confirmAndPay}
+                {payProcessing ? <CircularProgress size={22} color="inherit" /> : (paymentBreakdown?.total <= 0 ? t.confirmFree : t.confirmAndPay)}
               </Button>
             </>
           )}
