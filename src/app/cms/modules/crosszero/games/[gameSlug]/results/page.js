@@ -30,6 +30,7 @@ import AppCard from "@/components/cards/AppCard";
 import CrossZeroMarkVisual from "@/components/crosszero/CrossZeroMarkVisual";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { useHasPermission } from "@/hooks/usePermission";
 import { toArabicDigits } from "@/utils/arabicDigits";
 import { getGameBySlug } from "@/services/crosszero/gameService";
 import {
@@ -104,6 +105,7 @@ export default function CrossZeroAIResultsPage() {
   const { gameSlug } = useParams();
   const { t, dir, language } = useI18nLayout(translations);
   const theme = useTheme();
+  const canExport = useHasPermission("crosszero", "export");
   const RESULT_STYLE = {
     O_wins: {
       color: theme.palette.crosszero.resultCardO.color,
@@ -207,21 +209,23 @@ export default function CrossZeroAIResultsPage() {
                 {t.totalRecords} <strong>{toArabicDigits(totalRecords, language)}</strong>
               </Typography>
             </Box>
-            <Button
-              variant="contained"
-              startIcon={
-                exportLoading ? (
-                  <CircularProgress size={20} color="inherit" />
-                ) : (
-                  <Download />
-                )
-              }
-              onClick={handleExport}
-              disabled={exportLoading}
-              sx={getStartIconSpacing(dir)}
-            >
-              {exportLoading ? t.exporting : t.exportResults}
-            </Button>
+            {canExport && (
+              <Button
+                variant="contained"
+                startIcon={
+                  exportLoading ? (
+                    <CircularProgress size={20} color="inherit" />
+                  ) : (
+                    <Download />
+                  )
+                }
+                onClick={handleExport}
+                disabled={exportLoading}
+                sx={getStartIconSpacing(dir)}
+              >
+                {exportLoading ? t.exporting : t.exportResults}
+              </Button>
+            )}
           </Box>
           <Divider sx={{ mt: 2 }} />
           <Box

@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect } from "react";
-import { logoutUser, refreshToken } from "@/services/authService";
+import { logoutUser, refreshToken, fetchMe } from "@/services/authService";
 
 const AuthContext = createContext();
 
@@ -31,6 +31,13 @@ export const AuthProvider = ({ children }) => {
       setSelectedBusiness(storedBusiness);
     }
     setLoading(false);
+
+    // Refresh permissions in the background: role/permission grants are
+    // never baked into the access token, so a change an admin made since the
+    // last login/refresh only surfaces once this completes.
+    if (storedUser) {
+      fetchMe().then(setUser).catch(() => {});
+    }
   }, []);
 
   // 1. Proactive refresh loop (runs every 30s)
@@ -42,6 +49,7 @@ export const AuthProvider = ({ children }) => {
       const msLeft = getMsLeft(token);
       if (msLeft !== null && msLeft < 120000) {
         await refreshToken();
+        await fetchMe().then(setUser).catch(() => {});
       }
     }, 30000);
 
@@ -53,6 +61,11 @@ export const AuthProvider = ({ children }) => {
     const onResume = async () => {
       const token = sessionStorage.getItem("accessToken");
       if (!token) return;
+
+      // Resuming from background/sleep is exactly when a permission change
+      // made elsewhere is most likely to have happened — refresh regardless
+      // of whether the access token itself also needs refreshing.
+      await fetchMe().then(setUser).catch(() => {});
 
       const msLeft = getMsLeft(token);
       if (msLeft !== null && msLeft < 120000) {

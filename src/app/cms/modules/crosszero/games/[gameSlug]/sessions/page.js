@@ -16,6 +16,7 @@ import LoadingState from "@/components/LoadingState";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { useHasPermission } from "@/hooks/usePermission";
 import { toArabicDigits } from "@/utils/arabicDigits";
 import { getAllSessions, resetSessions, exportResults } from "@/services/crosszero/gameSessionService";
 
@@ -62,6 +63,8 @@ export default function CrossZeroPvPSessionsPage() {
   const { gameSlug } = useParams();
   const { t, dir, language } = useI18nLayout(translations);
   const theme = useTheme();
+  const canReset = useHasPermission("crosszero", "delete");
+  const canExport = useHasPermission("crosszero", "export");
    const RESULT_MAP = {
      X_wins: { mark: "X", ...theme.palette.crosszero.pvpResultMapX },
      O_wins: { mark: "O", ...theme.palette.crosszero.pvpResultMapO },
@@ -113,10 +116,12 @@ export default function CrossZeroPvPSessionsPage() {
           }}>{t.description}</Typography>
         </Box>
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ width: { xs: "100%", sm: "auto" } }}>
-          <Button variant="contained" color="error" startIcon={<ICONS.delete />} onClick={() => setShowConfirm(true)} sx={getStartIconSpacing(dir)}>
-            {t.resetSessions}
-          </Button>
-          {sessions.length > 0 && (
+          {canReset && (
+            <Button variant="contained" color="error" startIcon={<ICONS.delete />} onClick={() => setShowConfirm(true)} sx={getStartIconSpacing(dir)}>
+              {t.resetSessions}
+            </Button>
+          )}
+          {sessions.length > 0 && canExport && (
             <Button variant="contained" startIcon={exportLoading ? <CircularProgress size={18} color="inherit" /> : <ICONS.download />} onClick={handleExport} disabled={exportLoading} sx={getStartIconSpacing(dir)}>
               {exportLoading ? t.exporting : t.exportResults}
             </Button>

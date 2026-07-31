@@ -26,6 +26,7 @@ import {
   deleteGame,
 } from "@/services/tapmatch/gameService";
 import { useAuth } from "@/contexts/AuthContext";
+import { useHasPermission } from "@/hooks/usePermission";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { getAllBusinesses } from "@/services/businessService";
 import BusinessDrawer from "@/components/drawers/BusinessDrawer";
@@ -100,6 +101,11 @@ export default function TapMatchGamesPage() {
   const searchParams = useSearchParams();
   const { user, selectedBusiness, setSelectedBusiness } = useAuth();
   const { t, dir, language } = useI18nLayout(translations);
+  const canCreate = useHasPermission("tapmatch", "create");
+  const canEdit = useHasPermission("tapmatch", "edit");
+  const canDelete = useHasPermission("tapmatch", "delete");
+  const canShare = useHasPermission("tapmatch", "share");
+  const canDownload = useHasPermission("tapmatch", "download");
 
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -283,7 +289,7 @@ export default function TapMatchGamesPage() {
                   {t.selectBusiness}
                 </Button>
               )}
-              {selectedBusiness && (
+              {selectedBusiness && canCreate && (
                 <Button
                   variant="contained"
                   startIcon={<ICONS.add />}
@@ -419,27 +425,32 @@ export default function TapMatchGamesPage() {
                     </Button>
 
                     <Box sx={{ display: "flex", gap: 1 }}>
-                      <Tooltip title={t.editTooltip}>
-                        <IconButton
-                          color="info"
-                          onClick={() => handleOpenEdit(g)}
-                        >
-                          <ICONS.edit fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
+                      {canEdit && (
+                        <Tooltip title={t.editTooltip}>
+                          <IconButton
+                            color="info"
+                            onClick={() => handleOpenEdit(g)}
+                          >
+                            <ICONS.edit fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      )}
 
-                      <Tooltip title={t.deleteTooltip}>
-                        <IconButton
-                          color="error"
-                          onClick={() => {
-                            setGameToDelete(g);
-                            setConfirmOpen(true);
-                          }}
-                        >
-                          <ICONS.delete fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
+                      {canDelete && (
+                        <Tooltip title={t.deleteTooltip}>
+                          <IconButton
+                            color="error"
+                            onClick={() => {
+                              setGameToDelete(g);
+                              setConfirmOpen(true);
+                            }}
+                          >
+                            <ICONS.delete fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      )}
 
+                      {canShare && (
                       <Tooltip title={t.shareTooltip}>
                         <IconButton
                           color="primary"
@@ -451,6 +462,7 @@ export default function TapMatchGamesPage() {
                           <ICONS.share fontSize="small" />
                         </IconButton>
                       </Tooltip>
+                      )}
                     </Box>
                   </Stack>
                 </Box>
@@ -465,6 +477,7 @@ export default function TapMatchGamesPage() {
           url={`${typeof window !== "undefined" ? window.location.origin : ""
             }/tapmatch/${gameToShare?.slug}`}
           name={gameToShare?.title}
+          canDownloadQr={canDownload}
         />
 
         <GameFormModal

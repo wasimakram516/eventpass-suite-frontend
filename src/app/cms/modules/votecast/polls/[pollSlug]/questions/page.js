@@ -33,6 +33,7 @@ import {
     exportQuestionsToExcel,
 } from "@/services/votecast/pollService";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { useHasPermission } from "@/hooks/usePermission";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import RecordMetadata from "@/components/RecordMetadata";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
@@ -85,6 +86,10 @@ export default function QuestionsPage() {
     const { pollSlug } = useParams();
     const { user, selectedBusiness } = useAuth();
     const { t, dir, language } = useI18nLayout(translations);
+    const canCreate = useHasPermission("votecast", "create");
+    const canEdit = useHasPermission("votecast", "edit");
+    const canDelete = useHasPermission("votecast", "delete");
+    const canExport = useHasPermission("votecast", "export");
 
     const [poll, setPoll] = useState(null);
     const [questions, setQuestions] = useState([]);
@@ -210,23 +215,27 @@ export default function QuestionsPage() {
                     <Stack direction="row" spacing={1} sx={{
                         flexWrap: "wrap"
                     }}>
-                        <Button
-                            variant="contained"
-                            startIcon={<ICONS.add />}
-                            onClick={() => { setEditQuestion(null); setDrawerOpen(true); }}
-                            sx={getStartIconSpacing(dir)}
-                        >
-                            {t.createQuestion}
-                        </Button>
-                        <Button
-                            variant="outlined"
-                            startIcon={exportLoading ? <CircularProgress size={18} color="inherit" /> : <ICONS.download />}
-                            onClick={handleExport}
-                            disabled={exportLoading || questions.length === 0}
-                            sx={getStartIconSpacing(dir)}
-                        >
-                            {t.exportQuestions}
-                        </Button>
+                        {canCreate && (
+                            <Button
+                                variant="contained"
+                                startIcon={<ICONS.add />}
+                                onClick={() => { setEditQuestion(null); setDrawerOpen(true); }}
+                                sx={getStartIconSpacing(dir)}
+                            >
+                                {t.createQuestion}
+                            </Button>
+                        )}
+                        {canExport && (
+                            <Button
+                                variant="outlined"
+                                startIcon={exportLoading ? <CircularProgress size={18} color="inherit" /> : <ICONS.download />}
+                                onClick={handleExport}
+                                disabled={exportLoading || questions.length === 0}
+                                sx={getStartIconSpacing(dir)}
+                            >
+                                {t.exportQuestions}
+                            </Button>
+                        )}
                     </Stack>
                 </Box>
 
@@ -344,33 +353,39 @@ export default function QuestionsPage() {
                                         m: 0,
                                     }}
                                 >
-                                    <Tooltip title={t.clone}>
-                                        <IconButton
-                                            color="warning"
-                                            onClick={() => handleClone(q._id)}
-                                            sx={{ "&:hover": { transform: "scale(1.1)" }, transition: "0.2s" }}
-                                        >
-                                            <ICONS.copy />
-                                        </IconButton>
-                                    </Tooltip>
-                                    <Tooltip title={t.edit}>
-                                        <IconButton
-                                            color="warning"
-                                            onClick={() => { setEditQuestion(q); setDrawerOpen(true); }}
-                                            sx={{ "&:hover": { transform: "scale(1.1)" }, transition: "0.2s" }}
-                                        >
-                                            <ICONS.edit />
-                                        </IconButton>
-                                    </Tooltip>
-                                    <Tooltip title={t.delete}>
-                                        <IconButton
-                                            color="error"
-                                            onClick={() => setConfirmDelete({ open: true, id: q._id })}
-                                            sx={{ "&:hover": { transform: "scale(1.1)" }, transition: "0.2s" }}
-                                        >
-                                            <ICONS.delete />
-                                        </IconButton>
-                                    </Tooltip>
+                                    {canCreate && (
+                                        <Tooltip title={t.clone}>
+                                            <IconButton
+                                                color="warning"
+                                                onClick={() => handleClone(q._id)}
+                                                sx={{ "&:hover": { transform: "scale(1.1)" }, transition: "0.2s" }}
+                                            >
+                                                <ICONS.copy />
+                                            </IconButton>
+                                        </Tooltip>
+                                    )}
+                                    {canEdit && (
+                                        <Tooltip title={t.edit}>
+                                            <IconButton
+                                                color="warning"
+                                                onClick={() => { setEditQuestion(q); setDrawerOpen(true); }}
+                                                sx={{ "&:hover": { transform: "scale(1.1)" }, transition: "0.2s" }}
+                                            >
+                                                <ICONS.edit />
+                                            </IconButton>
+                                        </Tooltip>
+                                    )}
+                                    {canDelete && (
+                                        <Tooltip title={t.delete}>
+                                            <IconButton
+                                                color="error"
+                                                onClick={() => setConfirmDelete({ open: true, id: q._id })}
+                                                sx={{ "&:hover": { transform: "scale(1.1)" }, transition: "0.2s" }}
+                                            >
+                                                <ICONS.delete />
+                                            </IconButton>
+                                        </Tooltip>
+                                    )}
                                 </CardActions>
                             </AppCard>
                         ))}

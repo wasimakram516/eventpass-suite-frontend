@@ -17,6 +17,7 @@ import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import EventFormModal from "@/components/modals/EventModal";
 import ShareLinkModal from "@/components/modals/ShareLinkModal";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { useHasPermission } from "@/hooks/usePermission";
 import ICONS from "@/utils/iconUtil";
 import { getEventStatus, formatDate } from "@/utils/dateUtils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -110,6 +111,12 @@ export default function EventsPage() {
   const searchParams = useSearchParams();
   const { user, selectedBusiness, setSelectedBusiness } = useAuth();
   const { t, dir, align, language } = useI18nLayout(translations);
+  const canCreate = useHasPermission("checkin", "create");
+  const canEdit = useHasPermission("checkin", "edit");
+  const canDelete = useHasPermission("checkin", "delete");
+  const canShare = useHasPermission("checkin", "share");
+  const canDownload = useHasPermission("checkin", "download");
+  const canSendWhatsapp = useHasPermission("checkin", "send_whatsapp");
 
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -305,7 +312,7 @@ export default function EventsPage() {
                   {t.selectBusiness}
                 </Button>
               )}
-              {selectedBusiness && (
+              {selectedBusiness && canCreate && (
                 <Button
                   variant="contained"
                   startIcon={<ICONS.add />}
@@ -362,26 +369,26 @@ export default function EventsPage() {
                       : undefined
                   }
                   onViewWhatsAppLogs={
-                    event.slug
+                    event.slug && canSendWhatsapp
                       ? () =>
                         router.push(
                           `/cms/modules/checkin/events/${event.slug}/whatsapp`
                         )
                       : undefined
                   }
-                  onEdit={() => handleOpenEdit(event)}
-                  onDelete={() => {
+                  onEdit={canEdit ? () => handleOpenEdit(event) : undefined}
+                  onDelete={canDelete ? () => {
                     setEventToDelete(event);
                     setConfirmOpen(true);
-                  }}
-                  onClone={() => {
+                  } : undefined}
+                  onClone={canCreate ? () => {
                     setEventToClone(event);
                     setCloneConfirmOpen(true);
-                  }}
-                  onShare={() => {
+                  } : undefined}
+                  onShare={canShare ? () => {
                     setEventToShare(event);
                     setShareModalOpen(true);
-                  }}
+                  } : undefined}
                 />
               );
             })}
@@ -434,6 +441,7 @@ export default function EventsPage() {
           title={t.shareTitle}
           description={t.description}
           customQrWrapper={eventToShare?.customQrWrapper}
+          canDownloadQr={canDownload}
         />
       </Container>
     </Box>

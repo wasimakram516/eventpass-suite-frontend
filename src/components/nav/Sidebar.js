@@ -30,7 +30,8 @@ export default function Sidebar() {
       users: "Users",
       settings: "Settings",
       trash: "Recycle Bin",
-      files: "Manage Files",
+      files: "Manage Downloadable Files",
+      accessControl: "Access Control",
       menu: "Menu",
       close: "Close",
     },
@@ -41,7 +42,8 @@ export default function Sidebar() {
       users: "المستخدمون",
       settings: "الإعدادات",
       trash: "سلة المحذوفات",
-      files: "إدارة الملفات",
+      files: "إدارة الملفات القابلة للتنزيل",
+      accessControl: "التحكم بالصلاحيات",
       menu: "القائمة",
       close: "إغلاق",
     },
@@ -51,24 +53,36 @@ export default function Sidebar() {
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  // Grouped semantically rather than in whatever order features were added:
+  // overview & quick-lookup (Home, Global Search — both "get me somewhere
+  // fast", not audit tools) -> core product work -> people & access (kept
+  // adjacent, since Access Control manages the roles Users assigns) ->
+  // content -> superadmin audit/financial oversight -> maintenance ->
+  // system config (last, matching the near-universal convention of
+  // Settings sitting at the bottom).
   const navItems = [
     { label: t.home, icon: ICONS.home, path: "/cms" },
+    ...(user?.role === "superadmin"
+      ? [{ label: "Global Search", icon: ICONS.search, path: "/cms/global-search" }]
+      : []),
     { label: t.modules, icon: ICONS.module, path: "/cms/modules" },
+    ...(user?.role === "superadmin"
+      ? [{ label: t.accessControl, icon: ICONS.adminPanel, path: "/cms/access-control/roles" }]
+      : []),
     {
       label: user?.role === "business" ? t.staff : t.users,
       icon: ICONS.peopleAlt,
       path: "/cms/users",
     },
-    { label: t.settings, icon: ICONS.settings, path: "/cms/settings" },
     { label: t.files, icon: ICONS.cloud, path: "/cms/downloads" },
-    { label: t.trash, icon: ICONS.delete, path: "/cms/trash" },
     ...(user?.role === "superadmin"
       ? [
-        { label: "Global Search", icon: ICONS.search, path: "/cms/global-search" },
         { label: "Logs", icon: ICONS.history, path: "/cms/logs" },
         { label: "Payments", icon: ICONS.payment, path: "/cms/payments" },
       ]
       : []),
+    { label: t.trash, icon: ICONS.delete, path: "/cms/trash" },
+    { label: t.settings, icon: ICONS.settings, path: "/cms/settings" },
   ];
 
   const isActive = (path) =>

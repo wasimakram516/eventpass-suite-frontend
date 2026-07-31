@@ -29,6 +29,7 @@ import { useParams, useSearchParams } from "next/navigation";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import { useMessage } from "@/contexts/MessageContext";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { useHasPermission } from "@/hooks/usePermission";
 import { getGameBySlug } from "@/services/tapmatch/gameService";
 import {
   getLeaderboard,
@@ -91,6 +92,7 @@ export default function TapMatchResultsPage() {
   const searchParams = useSearchParams();
   const { showMessage } = useMessage();
   const { t, dir, language } = useI18nLayout(translations);
+  const canExport = useHasPermission("tapmatch", "export");
   const [game, setGame] = useState(null);
   const [players, setPlayers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -216,23 +218,25 @@ export default function TapMatchResultsPage() {
                 width: { xs: "100%", sm: "auto" },
               }}
             >
-              <Tooltip title={t.exportTooltip}>
-                <Button
-                  variant="contained"
-                  startIcon={
-                    exporting ? (
-                      <CircularProgress size={20} color="inherit" />
-                    ) : (
-                      <Download />
-                    )
-                  }
-                  onClick={handleExport}
-                  disabled={exporting}
-                  sx={getStartIconSpacing(dir)}
-                >
-                  {t.exportResults}
-                </Button>
-              </Tooltip>
+              {canExport && (
+                <Tooltip title={t.exportTooltip}>
+                  <Button
+                    variant="contained"
+                    startIcon={
+                      exporting ? (
+                        <CircularProgress size={20} color="inherit" />
+                      ) : (
+                        <Download />
+                      )
+                    }
+                    onClick={handleExport}
+                    disabled={exporting}
+                    sx={getStartIconSpacing(dir)}
+                  >
+                    {t.exportResults}
+                  </Button>
+                </Tooltip>
+              )}
             </Box>
           </Box>
 

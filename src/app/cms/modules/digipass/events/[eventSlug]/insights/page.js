@@ -22,6 +22,7 @@ import {
     getActivitiesPerParticipantDistribution,
 } from "@/services/digipass/insightsService";
 import { getDigipassEventBySlug } from "@/services/digipass/digipassEventService";
+import { useHasPermission } from "@/hooks/usePermission";
 import ICONS from "@/utils/iconUtil";
 import ChartVisualization from "@/components/insights/ChartVisualization";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
@@ -189,6 +190,7 @@ export default function AnalyticsDashboard() {
     const FIELD_COLOR = theme.palette.primary.main;
     const { eventSlug } = useParams();
     const { t, dir, language } = useI18nLayout(translations);
+    const canExport = useHasPermission("digipass", "export");
     const [selectedFields, setSelectedFields] = useState([]);
     const [chartData, setChartData] = useState({});
     const [fieldParams, setFieldParams] = useState({});
@@ -781,7 +783,7 @@ export default function AnalyticsDashboard() {
                             width: { xs: "100%", sm: "auto" },
                             gap: { xs: 1, sm: 2 }
                         }}>
-                        {selectedFields.length > 0 && (
+                        {canExport && selectedFields.length > 0 && (
                             <>
                                 <Button
                                     variant="outlined"

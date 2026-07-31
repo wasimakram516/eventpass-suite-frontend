@@ -27,6 +27,7 @@ import {
     getPollInsights,
 } from "@/services/votecast/pollInsightsService";
 import { getPublicPollBySlug } from "@/services/votecast/pollService";
+import { useHasPermission } from "@/hooks/usePermission";
 import useVotecastSocket from "@/hooks/modules/votecast/useVotecastSocket";
 import ICONS from "@/utils/iconUtil";
 import AppCard from "@/components/cards/AppCard";
@@ -919,6 +920,7 @@ export default function PollInsightsDashboard() {
 
     const { pollSlug } = useParams();
     const { t, dir, language } = useI18nLayout(translations);
+    const canExport = useHasPermission("votecast", "export");
 
     const [selectedFields, setSelectedFields] = useState([]);
     const [chartData, setChartData] = useState({});
@@ -1345,7 +1347,7 @@ export default function PollInsightsDashboard() {
                         width: { xs: "100%", sm: "auto" },
                         gap: { xs: 1, sm: 2 }
                     }}>
-                    {selectedFields.length > 0 && (
+                    {canExport && selectedFields.length > 0 && (
                         <>
                             <Button
                                 variant="outlined"

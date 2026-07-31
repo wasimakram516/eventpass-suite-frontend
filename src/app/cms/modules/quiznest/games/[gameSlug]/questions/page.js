@@ -37,6 +37,7 @@ import { useEffect, useRef, useState, useMemo } from "react";
 import QuestionFormModal from "@/components/modals/QuestionFormModal";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import { useMessage } from "@/contexts/MessageContext";
+import { useHasPermission } from "@/hooks/usePermission";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import {
   getQuestions,
@@ -131,6 +132,10 @@ export default function QuestionsPage() {
   const { gameSlug } = useParams();
   const searchParams = useSearchParams();
   const { showMessage } = useMessage();
+  const canCreate = useHasPermission("quiznest", "create");
+  const canEdit = useHasPermission("quiznest", "edit");
+  const canDelete = useHasPermission("quiznest", "delete");
+  const canBulkImport = useHasPermission("quiznest", "bulk_import");
   const [game, setGame] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -295,58 +300,64 @@ export default function QuestionsPage() {
               }}
             >
               {/* Add Question */}
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={() => {
-                  setEditMode(false);
-                  setSelectedQuestion(null);
-                  setOpenModal(true);
-                }}
-                sx={getStartIconSpacing(dir)}
-              >
-                {t.addQuestion}
-              </Button>
+              {canCreate && (
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={() => {
+                    setEditMode(false);
+                    setSelectedQuestion(null);
+                    setOpenModal(true);
+                  }}
+                  sx={getStartIconSpacing(dir)}
+                >
+                  {t.addQuestion}
+                </Button>
+              )}
 
               {/* More Menu (Download + Upload) */}
-              <Button
-                variant="outlined"
-                startIcon={<MoreVertIcon />}
-                onClick={handleMenuOpen}
-                sx={getStartIconSpacing(dir)}
-              >
-                {t.moreOptions}
-              </Button>
-              <Menu
-                anchorEl={anchorEl}
-                open={openMenu}
-                onClose={handleMenuClose}
-              >
-                <MenuItem
-                  onClick={() => {
-                    setDownloadModalOpen(true);
-                    handleMenuClose();
-                  }}
-                >
-                  <DownloadIcon fontSize="small" sx={{ mr: 1 }} />
-                  {t.downloadTemplate}
-                </MenuItem>
-                <MenuItem>
-                  <UploadFileIcon fontSize="small" sx={{ mr: 1 }} />
-                  <label style={{ cursor: "pointer" }}>
-                    {t.uploadQuestions}
-                    <input
-                      type="file"
-                      hidden
-                      accept=".xlsx"
-                      onChange={(e) => {
-                        handleUpload(e);
+              {canBulkImport && (
+                <>
+                  <Button
+                    variant="outlined"
+                    startIcon={<MoreVertIcon />}
+                    onClick={handleMenuOpen}
+                    sx={getStartIconSpacing(dir)}
+                  >
+                    {t.moreOptions}
+                  </Button>
+                  <Menu
+                    anchorEl={anchorEl}
+                    open={openMenu}
+                    onClose={handleMenuClose}
+                  >
+                    <MenuItem
+                      onClick={() => {
+                        setDownloadModalOpen(true);
                         handleMenuClose();
                       }}
-                    />
-                  </label>
-                </MenuItem>
-              </Menu>
+                    >
+                      <DownloadIcon fontSize="small" sx={{ mr: 1 }} />
+                      {t.downloadTemplate}
+                    </MenuItem>
+                    <MenuItem>
+                      <UploadFileIcon fontSize="small" sx={{ mr: 1 }} />
+                      <label style={{ cursor: "pointer" }}>
+                        {t.uploadQuestions}
+                        <input
+                          type="file"
+                          hidden
+                          accept=".xlsx"
+                          onChange={(e) => {
+                            handleUpload(e);
+                            handleMenuClose();
+                          }}
+                        />
+                      </label>
+                    </MenuItem>
+                  </Menu>
+                </>
+              )}
             </Box>
           </Box>
 
@@ -487,29 +498,33 @@ export default function QuestionsPage() {
                   locale={language === "ar" ? "ar-SA" : "en-GB"}
                 />
                 <CardActions sx={{ justifyContent: "center" }}>
-                  <Tooltip title={t.editTooltip}>
-                    <IconButton
-                      color="secondary"
-                      onClick={() => {
-                        setSelectedQuestion(q);
-                        setEditMode(true);
-                        setOpenModal(true);
-                      }}
-                    >
-                      <EditIcon />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title={t.deleteTooltip}>
-                    <IconButton
-                      color="error"
-                      onClick={() => {
-                        setSelectedQuestion(q);
-                        setConfirmOpen(true);
-                      }}
-                    >
-                      <DeleteIcon />
-                    </IconButton>
-                  </Tooltip>
+                  {canEdit && (
+                    <Tooltip title={t.editTooltip}>
+                      <IconButton
+                        color="secondary"
+                        onClick={() => {
+                          setSelectedQuestion(q);
+                          setEditMode(true);
+                          setOpenModal(true);
+                        }}
+                      >
+                        <EditIcon />
+                      </IconButton>
+                    </Tooltip>
+                  )}
+                  {canDelete && (
+                    <Tooltip title={t.deleteTooltip}>
+                      <IconButton
+                        color="error"
+                        onClick={() => {
+                          setSelectedQuestion(q);
+                          setConfirmOpen(true);
+                        }}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </Tooltip>
+                  )}
                 </CardActions>
               </AppCard>
             ))}

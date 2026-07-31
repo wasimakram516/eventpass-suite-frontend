@@ -57,6 +57,7 @@ import NoDataAvailable from "@/components/NoDataAvailable";
 import { wrapTextBox } from "@/utils/wrapTextStyles";
 import RegistrationModal from "@/components/modals/RegistrationModal";
 import { useMessage } from "@/contexts/MessageContext";
+import { useHasPermission } from "@/hooks/usePermission";
 import { pickFullName, pickEmail } from "@/utils/customFieldUtils";
 import useDigiPassSocket from "@/hooks/modules/digipass/useDigiPassSocket";
 import useSocket from "@/utils/useSocket";
@@ -219,6 +220,13 @@ export default function ViewRegistrations() {
     const searchParams = useSearchParams();
     const { dir, t, language } = useI18nLayout(translations);
     const { showMessage } = useMessage();
+
+    // Per-action gating (UX only — backend guards are the real enforcement).
+    const canCreate = useHasPermission("digipass", "create");
+    const canEdit = useHasPermission("digipass", "edit");
+    const canDelete = useHasPermission("digipass", "delete");
+    const canExport = useHasPermission("digipass", "export");
+    const canBulkImport = useHasPermission("digipass", "bulk_import");
 
     const dynamicFieldsRef = useRef([]);
     const lastLoadedRef = useRef(null);
@@ -852,69 +860,77 @@ export default function ViewRegistrations() {
             >
                 {!eventDetails?.linkedEventRegId && (
                     <>
-                        <Button
-                            variant="contained"
-                            color="primary"
-                            startIcon={<ICONS.add />}
-                            onClick={() => setCreateModalOpen(true)}
-                            sx={getStartIconSpacing(dir)}
-                        >
-                            {t.createRegistration}
-                        </Button>
+                        {canCreate && (
+                            <Button
+                                variant="contained"
+                                color="primary"
+                                startIcon={<ICONS.add />}
+                                onClick={() => setCreateModalOpen(true)}
+                                sx={getStartIconSpacing(dir)}
+                            >
+                                {t.createRegistration}
+                            </Button>
+                        )}
 
-                        <Button
-                            variant="outlined"
-                            startIcon={<ICONS.download />}
-                            onClick={handleDownloadSample}
-                            sx={getStartIconSpacing(dir)}
-                        >
-                            {t.downloadSample}
-                        </Button>
+                        {canBulkImport && (
+                            <Button
+                                variant="outlined"
+                                startIcon={<ICONS.download />}
+                                onClick={handleDownloadSample}
+                                sx={getStartIconSpacing(dir)}
+                            >
+                                {t.downloadSample}
+                            </Button>
+                        )}
 
-                        <Button
-                            variant="outlined"
-                            component="label"
-                            startIcon={
-                                uploading ? <CircularProgress size={20} /> : <ICONS.upload />
-                            }
-                            disabled={uploading}
-                            sx={getStartIconSpacing(dir)}
-                        >
-                            {uploading && uploadProgress?.total
-                                ? `${t.uploading} ${uploadProgress.uploaded}/${uploadProgress.total}`
-                                : uploading
-                                    ? t.uploading
-                                    : t.uploadFile}
-                            <input
-                                type="file"
-                                hidden
-                                accept=".xlsx,.xls"
-                                onChange={handleUpload}
-                            />
-                        </Button>
+                        {canBulkImport && (
+                            <Button
+                                variant="outlined"
+                                component="label"
+                                startIcon={
+                                    uploading ? <CircularProgress size={20} /> : <ICONS.upload />
+                                }
+                                disabled={uploading}
+                                sx={getStartIconSpacing(dir)}
+                            >
+                                {uploading && uploadProgress?.total
+                                    ? `${t.uploading} ${uploadProgress.uploaded}/${uploadProgress.total}`
+                                    : uploading
+                                        ? t.uploading
+                                        : t.uploadFile}
+                                <input
+                                    type="file"
+                                    hidden
+                                    accept=".xlsx,.xls"
+                                    onChange={handleUpload}
+                                />
+                            </Button>
+                        )}
                     </>
                 )}
 
-                <Button
-                    variant="outlined"
-                    color="success"
-                    onClick={handleExportRegs}
-                    disabled={exportLoading}
-                    startIcon={
-                        exportLoading ? (
-                            <CircularProgress size={20} color="inherit" />
-                        ) : (
-                            <ICONS.description />
-                        )
-                    }
-                    sx={getStartIconSpacing(dir)}
-                >
-                    {exportLoading
-                        ? t.exporting
-                        : searchTerm || Object.keys(filters).some((k) => filters[k])
-                            ? t.exportFiltered
-                            : t.exportAll}
-                </Button>
+                {canExport && (
+                    <Button
+                        variant="outlined"
+                        color="success"
+                        onClick={handleExportRegs}
+                        disabled={exportLoading}
+                        startIcon={
+                            exportLoading ? (
+                                <CircularProgress size={20} color="inherit" />
+                            ) : (
+                                <ICONS.description />
+                            )
+                        }
+                        sx={getStartIconSpacing(dir)}
+                    >
+                        {exportLoading
+                            ? t.exporting
+                            : searchTerm || Object.keys(filters).some((k) => filters[k])
+                                ? t.exportFiltered
+                                : t.exportAll}
+                    </Button>
+                )}
             </Stack>
             <Divider sx={{ my: 3 }} />
             <Box
@@ -1416,33 +1432,37 @@ export default function ViewRegistrations() {
 
                                                 {!eventDetails?.linkedEventRegId && (
                                                     <>
-                                                        <Tooltip title={t.editRegistration}>
-                                                            <IconButton
-                                                                color="primary"
-                                                                onClick={() => {
-                                                                    setEditingReg(reg);
-                                                                    setEditModalOpen(true);
-                                                                }}
-                                                            >
-                                                                <ICONS.edit fontSize="small" />
-                                                            </IconButton>
-                                                        </Tooltip>
+                                                        {canEdit && (
+                                                            <Tooltip title={t.editRegistration}>
+                                                                <IconButton
+                                                                    color="primary"
+                                                                    onClick={() => {
+                                                                        setEditingReg(reg);
+                                                                        setEditModalOpen(true);
+                                                                    }}
+                                                                >
+                                                                    <ICONS.edit fontSize="small" />
+                                                                </IconButton>
+                                                            </Tooltip>
+                                                        )}
 
-                                                        <Tooltip title={t.deleteRecord}>
-                                                            <IconButton
-                                                                color="error"
-                                                                onClick={() => {
-                                                                    setRegistrationToDelete(reg._id);
-                                                                    setDeleteDialogOpen(true);
-                                                                }}
-                                                                sx={{
-                                                                    "&:hover": { transform: "scale(1.1)" },
-                                                                    transition: "0.2s",
-                                                                }}
-                                                            >
-                                                                <ICONS.delete />
-                                                            </IconButton>
-                                                        </Tooltip>
+                                                        {canDelete && (
+                                                            <Tooltip title={t.deleteRecord}>
+                                                                <IconButton
+                                                                    color="error"
+                                                                    onClick={() => {
+                                                                        setRegistrationToDelete(reg._id);
+                                                                        setDeleteDialogOpen(true);
+                                                                    }}
+                                                                    sx={{
+                                                                        "&:hover": { transform: "scale(1.1)" },
+                                                                        transition: "0.2s",
+                                                                    }}
+                                                                >
+                                                                    <ICONS.delete />
+                                                                </IconButton>
+                                                            </Tooltip>
+                                                        )}
                                                     </>
                                                 )}
                                             </Box>
@@ -1501,6 +1521,7 @@ export default function ViewRegistrations() {
                 onClose={() => setWalkInModalOpen(false)}
                 registration={selectedRegistration}
                 isDigiPass={true}
+                module="digipass"
             />
             <FilterDialog
                 open={filterModalOpen}

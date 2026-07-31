@@ -20,6 +20,7 @@ import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 
 import { useMessage } from "@/contexts/MessageContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useHasPermission } from "@/hooks/usePermission";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { getGameBySlug } from "@/services/quiznest/gameService";
 import {
@@ -77,6 +78,7 @@ export default function ResultsPage() {
   const [searchInitialized, setSearchInitialized] = useState(false);
   const { user } = useAuth();
   const { t, dir, language } = useI18nLayout(translations);
+  const canExport = useHasPermission("quiznest", "export");
 
   useEffect(() => {
     if (!searchInitialized) {
@@ -171,16 +173,18 @@ export default function ResultsPage() {
                 minWidth: { xs: 0, sm: "auto" },
               }}
             >
-              <Tooltip title={t.exportResults}>
-                <Button
-                  variant="outlined"
-                  startIcon={<DownloadIcon />}
-                  onClick={handleExport}
-                  sx={getStartIconSpacing(dir)}
-                >
-                  {t.exportResults}
-                </Button>
-              </Tooltip>
+              {canExport && (
+                <Tooltip title={t.exportResults}>
+                  <Button
+                    variant="outlined"
+                    startIcon={<DownloadIcon />}
+                    onClick={handleExport}
+                    sx={getStartIconSpacing(dir)}
+                  >
+                    {t.exportResults}
+                  </Button>
+                </Tooltip>
+              )}
             </Box>
           </Box>
 

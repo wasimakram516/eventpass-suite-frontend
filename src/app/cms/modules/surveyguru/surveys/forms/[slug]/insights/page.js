@@ -26,6 +26,7 @@ import {
 } from "@/services/surveyguru/insightsService";
 import { getPublicFormBySlug } from "@/services/surveyguru/surveyFormService";
 import { getPublicEventById } from "@/services/eventreg/eventService";
+import { useHasPermission } from "@/hooks/usePermission";
 import ICONS from "@/utils/iconUtil";
 import ChartVisualization from "@/components/insights/ChartVisualization";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
@@ -252,6 +253,7 @@ export default function SurveyGuruInsightsPage() {
 
     const { slug } = useParams();
     const { t, dir, language } = useI18nLayout(translations);
+    const canExport = useHasPermission("surveyguru", "export");
 
     useEffect(() => {
         if (language === "ar") {
@@ -1087,7 +1089,7 @@ export default function SurveyGuruInsightsPage() {
                         alignItems: { xs: "stretch", sm: "center" },
                         width: { xs: "100%", sm: "auto" }
                     }}>
-                    {selectedQuestions.length > 0 && (
+                    {canExport && selectedQuestions.length > 0 && (
                         <>
                             <Button
                                 variant="outlined"

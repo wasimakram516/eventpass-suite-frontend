@@ -36,6 +36,7 @@ import NoDataAvailable from "@/components/NoDataAvailable";
 import ICONS from "@/utils/iconUtil";
 import AppCard from "@/components/cards/AppCard";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { useHasPermission } from "@/hooks/usePermission";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import { pickFullName } from "@/utils/customFieldUtils";
 
@@ -688,6 +689,7 @@ export default function ViewSurveyResponses() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(12);
   const [loading, setLoading] = useState(true);
+  const canExport = useHasPermission("surveyguru", "export");
   const [exportLoading, setExportLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchInitialized, setSearchInitialized] = useState(false);
@@ -783,7 +785,7 @@ export default function ViewSurveyResponses() {
           )}
         </Box>
 
-        {displayTotal > 0 && (
+        {displayTotal > 0 && canExport && (
           <Button
             variant="contained"
             onClick={exportToCSV}

@@ -40,34 +40,6 @@ export const deleteGame = withApiHandler(
   { showSuccess: true }
 );
 
-export const restoreGame = withApiHandler(
-  async (id) => {
-    const { data } = await api.patch(`/crosszero/games/${id}/restore`);
-    return data;
-  },
-  { showSuccess: true }
-);
-
-export const permanentDeleteGame = withApiHandler(
-  async (id) => {
-    const { data } = await api.delete(`/crosszero/games/${id}/permanent`);
-    return data;
-  },
-  { showSuccess: true }
-);
-
-export const restoreAllGames = withApiHandler(
-  async () => {
-    const { data } = await api.patch("/crosszero/games/restore/all");
-    return data;
-  },
-  { showSuccess: true }
-);
-
-export const permanentDeleteAllGames = withApiHandler(
-  async () => {
-    const { data } = await api.delete("/crosszero/games/permanent/all");
-    return data;
-  },
-  { showSuccess: true }
-);
+// Restore/permanent-delete for crosszero games go exclusively through the
+// generic Recycle Bin API (src/services/trashService.js) — same as every
+// other module — so no module-specific functions live here.

@@ -28,6 +28,7 @@ import ArabicPagination from "@/components/ArabicPagination";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useMessage } from "@/contexts/MessageContext";
+import { useHasPermission } from "@/hooks/usePermission";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import BusinessDrawer from "@/components/drawers/BusinessDrawer";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
@@ -580,6 +581,11 @@ export default function RecipientsManagePage() {
   const canSync = Boolean(
     formId && (eventId || selectedForm?.eventId?._id || selectedForm?.eventId)
   );
+  const canBulkImport = useHasPermission("surveyguru", "bulk_import");
+  const canSendEmail = useHasPermission("surveyguru", "send_email");
+  const canExport = useHasPermission("surveyguru", "export");
+  const canDelete = useHasPermission("surveyguru", "delete");
+  const canShare = useHasPermission("surveyguru", "share");
   const isWorkflowComplete = Boolean(selectedBusiness?._id && eventId && formId);
 
   const onWorkflowEventChange = (nextEventId) => {
@@ -727,6 +733,7 @@ export default function RecipientsManagePage() {
           locale={language === "ar" ? "ar-SA" : "en-GB"}
         />
         <CardActions sx={{ justifyContent: "flex-end", pt: 0 }}>
+          {canShare && (
           <Tooltip title={t.copyLink}>
             <IconButton
               onClick={() => onCopySurveyLink(r)}
@@ -736,15 +743,18 @@ export default function RecipientsManagePage() {
               <ICONS.copy fontSize="small" />
             </IconButton>
           </Tooltip>
+          )}
 
-          <Tooltip title={t.delete}>
-            <IconButton
-              color="error"
-              onClick={() => setConfirmDelete({ open: true, id: r._id })}
-            >
-              <ICONS.delete fontSize="small" />
-            </IconButton>
-          </Tooltip>
+          {canDelete && (
+            <Tooltip title={t.delete}>
+              <IconButton
+                color="error"
+                onClick={() => setConfirmDelete({ open: true, id: r._id })}
+              >
+                <ICONS.delete fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
         </CardActions>
       </AppCard>
     );
@@ -936,46 +946,50 @@ export default function RecipientsManagePage() {
                     </Select>
                   </FormControl>
 
-                  <Button
-                    variant="contained"
-                    startIcon={
-                      syncLoading ? (
-                        <CircularProgress size={20} color="inherit" />
-                      ) : (
-                        <ICONS.refresh fontSize="small" />
-                      )
-                    }
-                    disabled={!canSync || syncLoading}
-                    onClick={handleSync}
-                    sx={{ whiteSpace: "nowrap", ...getStartIconSpacing(dir) }}
-                  >
-                    {syncLoading && syncProgress.total
-                      ? `${t.sync} ${syncProgress.synced}/${syncProgress.total}`
-                      : syncLoading
-                        ? `${t.sync}...`
-                        : t.sync}
-                  </Button>
+                  {canBulkImport && (
+                    <Button
+                      variant="contained"
+                      startIcon={
+                        syncLoading ? (
+                          <CircularProgress size={20} color="inherit" />
+                        ) : (
+                          <ICONS.refresh fontSize="small" />
+                        )
+                      }
+                      disabled={!canSync || syncLoading}
+                      onClick={handleSync}
+                      sx={{ whiteSpace: "nowrap", ...getStartIconSpacing(dir) }}
+                    >
+                      {syncLoading && syncProgress.total
+                        ? `${t.sync} ${syncProgress.synced}/${syncProgress.total}`
+                        : syncLoading
+                          ? `${t.sync}...`
+                          : t.sync}
+                    </Button>
+                  )}
 
-                  <Button
-                    variant="contained"
-                    color="secondary"
-                    disabled={sendingEmails || !formId}
-                    startIcon={
-                      sendingEmails ? (
-                        <CircularProgress size={20} color="inherit" />
-                      ) : (
-                        <ICONS.email fontSize="small" />
-                      )
-                    }
-                    onClick={() => setBulkEmailModalOpen(true)}
-                    sx={{ whiteSpace: "nowrap", ...getStartIconSpacing(dir) }}
-                  >
-                    {sendingEmails && emailProgress.total
-                      ? `${t.sendingEmails} ${emailProgress.processed}/${emailProgress.total}`
-                      : sendingEmails
-                        ? t.sendingEmails
-                        : t.bulkEmail}
-                  </Button>
+                  {canSendEmail && (
+                    <Button
+                      variant="contained"
+                      color="secondary"
+                      disabled={sendingEmails || !formId}
+                      startIcon={
+                        sendingEmails ? (
+                          <CircularProgress size={20} color="inherit" />
+                        ) : (
+                          <ICONS.email fontSize="small" />
+                        )
+                      }
+                      onClick={() => setBulkEmailModalOpen(true)}
+                      sx={{ whiteSpace: "nowrap", ...getStartIconSpacing(dir) }}
+                    >
+                      {sendingEmails && emailProgress.total
+                        ? `${t.sendingEmails} ${emailProgress.processed}/${emailProgress.total}`
+                        : sendingEmails
+                          ? t.sendingEmails
+                          : t.bulkEmail}
+                    </Button>
+                  )}
 
                   <Button
                     variant="outlined"
@@ -1107,46 +1121,50 @@ export default function RecipientsManagePage() {
                 <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{
                   mt: 1.25
                 }}>
-                  <Button
-                    variant="contained"
-                    startIcon={
-                      syncLoading ? (
-                        <CircularProgress size={20} color="inherit" />
-                      ) : (
-                        <ICONS.refresh fontSize="small" />
-                      )
-                    }
-                    disabled={!canSync || syncLoading}
-                    onClick={handleSync}
-                    sx={getStartIconSpacing(dir)}
-                  >
-                    {syncLoading && syncProgress.total
-                      ? `${t.sync} ${syncProgress.synced}/${syncProgress.total}`
-                      : syncLoading
-                        ? `${t.sync}...`
-                        : t.sync}
-                  </Button>
+                  {canBulkImport && (
+                    <Button
+                      variant="contained"
+                      startIcon={
+                        syncLoading ? (
+                          <CircularProgress size={20} color="inherit" />
+                        ) : (
+                          <ICONS.refresh fontSize="small" />
+                        )
+                      }
+                      disabled={!canSync || syncLoading}
+                      onClick={handleSync}
+                      sx={getStartIconSpacing(dir)}
+                    >
+                      {syncLoading && syncProgress.total
+                        ? `${t.sync} ${syncProgress.synced}/${syncProgress.total}`
+                        : syncLoading
+                          ? `${t.sync}...`
+                          : t.sync}
+                    </Button>
+                  )}
 
-                  <Button
-                    variant="contained"
-                    color="secondary"
-                    disabled={sendingEmails || !formId}
-                    startIcon={
-                      sendingEmails ? (
-                        <CircularProgress size={20} color="inherit" />
-                      ) : (
-                        <ICONS.email fontSize="small" />
-                      )
-                    }
-                    onClick={() => setBulkEmailModalOpen(true)}
-                    sx={getStartIconSpacing(dir)}
-                  >
-                    {sendingEmails && emailProgress.total
-                      ? `${t.sendingEmails} ${emailProgress.processed}/${emailProgress.total}`
-                      : sendingEmails
-                        ? t.sendingEmails
-                        : t.bulkEmail}
-                  </Button>
+                  {canSendEmail && (
+                    <Button
+                      variant="contained"
+                      color="secondary"
+                      disabled={sendingEmails || !formId}
+                      startIcon={
+                        sendingEmails ? (
+                          <CircularProgress size={20} color="inherit" />
+                        ) : (
+                          <ICONS.email fontSize="small" />
+                        )
+                      }
+                      onClick={() => setBulkEmailModalOpen(true)}
+                      sx={getStartIconSpacing(dir)}
+                    >
+                      {sendingEmails && emailProgress.total
+                        ? `${t.sendingEmails} ${emailProgress.processed}/${emailProgress.total}`
+                        : sendingEmails
+                          ? t.sendingEmails
+                          : t.bulkEmail}
+                    </Button>
+                  )}
 
                   <Button
                     variant="outlined"
@@ -1353,23 +1371,26 @@ export default function RecipientsManagePage() {
           </Stack>
           <Divider />
           <Stack spacing={1.5}>
-          <Button
-            fullWidth
-            variant="outlined"
-            startIcon={
-              exportLoading ? (
-                <CircularProgress size={20} color="inherit" />
-              ) : (
-                <ICONS.download fontSize="small" />
-              )
-            }
-            disabled={!formId || exportLoading}
-            onClick={handleExport}
-            sx={getStartIconSpacing(dir)}
-          >
-            {t.export}
-          </Button>
+          {canExport && (
+            <Button
+              fullWidth
+              variant="outlined"
+              startIcon={
+                exportLoading ? (
+                  <CircularProgress size={20} color="inherit" />
+                ) : (
+                  <ICONS.download fontSize="small" />
+                )
+              }
+              disabled={!formId || exportLoading}
+              onClick={handleExport}
+              sx={getStartIconSpacing(dir)}
+            >
+              {t.export}
+            </Button>
+          )}
 
+          {canDelete && (
           <Button
             fullWidth
             color="error"
@@ -1390,6 +1411,7 @@ export default function RecipientsManagePage() {
           >
             {t.clearAll}
           </Button>
+          )}
           </Stack>
         </Stack>
       </FilterDialog>

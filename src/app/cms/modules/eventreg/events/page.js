@@ -18,6 +18,7 @@ import EventFormModal from "@/components/modals/EventModal";
 import ShareLinkModal from "@/components/modals/ShareLinkModal";
 
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { useHasPermission } from "@/hooks/usePermission";
 import ICONS from "@/utils/iconUtil";
 import { getEventStatus, formatDate } from "@/utils/dateUtils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -109,6 +110,12 @@ export default function EventsPage() {
   const searchParams = useSearchParams();
   const { user, selectedBusiness, setSelectedBusiness } = useAuth();
   const { t, dir, align, language } = useI18nLayout(translations);
+  const canCreate = useHasPermission("eventreg", "create");
+  const canEdit = useHasPermission("eventreg", "edit");
+  const canDelete = useHasPermission("eventreg", "delete");
+  const canShare = useHasPermission("eventreg", "share");
+  const canDownload = useHasPermission("eventreg", "download");
+  const canViewPromoCodes = useHasPermission("eventreg", "view_promo_codes");
 
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -310,7 +317,7 @@ export default function EventsPage() {
                 {t.selectBusiness}
               </Button>
             )}
-            {selectedBusiness && (
+            {selectedBusiness && canCreate && (
               <Button
                 variant="contained"
                 startIcon={<ICONS.add />}
@@ -354,26 +361,26 @@ export default function EventsPage() {
                       `/cms/modules/eventreg/events/${ev.slug}/registrations`
                     )
                   }
-                  onClone={() => {
+                  onClone={canCreate ? () => {
                     setEventToClone(ev);
                     setCloneConfirmOpen(true);
-                  }}
-                  onEdit={() => handleOpenEdit(ev)}
-                  onDelete={() => {
+                  } : undefined}
+                  onEdit={canEdit ? () => handleOpenEdit(ev) : undefined}
+                  onDelete={canDelete ? () => {
                     setEventToDelete(ev);
                     setConfirmOpen(true);
-                  }}
-                  onShare={() => {
+                  } : undefined}
+                  onShare={canShare ? () => {
                     setEventToShare(ev);
                     setShareModalOpen(true);
-                  }}
+                  } : undefined}
                   onInsights={() =>
                     router.push(
                       `/cms/modules/eventreg/events/${ev.slug}/insights`
                     )
                   }
                   onPromoCodes={
-                    ev.isPaid
+                    ev.isPaid && canViewPromoCodes
                       ? () =>
                         router.push(
                           `/cms/modules/eventreg/events/${ev.slug}/promo-codes`
@@ -432,6 +439,7 @@ export default function EventsPage() {
           description={t.pageDescription}
           customQrWrapper={eventToShare?.customQrWrapper}
           useCustomQrCode={eventToShare?.useCustomQrCode ?? false}
+          canDownloadQr={canDownload}
         />
       </Container>
     </Box>

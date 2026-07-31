@@ -27,6 +27,7 @@ import { getTheme } from "@/styles/theme";
 
 
 
+
 // --------------------------------------------------------------
 // STATIC FONT REGISTRATION (AUTO-GENERATED)
 // --------------------------------------------------------------
@@ -100,11 +101,6 @@ Font.register({
     { src: "/fonts/welcome/Welcome September.ttf", fontWeight: 400, fontStyle: 'normal' }
   ],
 });
-
-// react-pdf hyphenates long words with a "-" by default when they don't fit
-// the line width. Disable that so a word that doesn't fit wraps whole to the
-// next line instead of being split mid-word.
-Font.registerHyphenationCallback((word) => [word]);
 
 const A6_WIDTH = 297.6;
 const A6_HEIGHT = 419.5;

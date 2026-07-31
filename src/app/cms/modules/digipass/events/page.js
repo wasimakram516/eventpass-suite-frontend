@@ -17,6 +17,7 @@ import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import DigiPassEventModal from "@/components/modals/DigiPassEventModal";
 import ShareLinkModal from "@/components/modals/ShareLinkModal";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { useHasPermission } from "@/hooks/usePermission";
 import ICONS from "@/utils/iconUtil";
 import { useAuth } from "@/contexts/AuthContext";
 import { getAllBusinesses } from "@/services/businessService";
@@ -95,6 +96,11 @@ export default function EventsPage() {
   const searchParams = useSearchParams();
   const { user, selectedBusiness, setSelectedBusiness } = useAuth();
   const { t, dir, align, language } = useI18nLayout(translations);
+  const canCreate = useHasPermission("digipass", "create");
+  const canEdit = useHasPermission("digipass", "edit");
+  const canDelete = useHasPermission("digipass", "delete");
+  const canShare = useHasPermission("digipass", "share");
+  const canDownload = useHasPermission("digipass", "download");
 
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -260,7 +266,7 @@ export default function EventsPage() {
                 {t.selectBusiness}
               </Button>
             )}
-            {selectedBusiness && (
+            {selectedBusiness && canCreate && (
               <Button
                 variant="contained"
                 startIcon={<ICONS.add />}
@@ -302,15 +308,15 @@ export default function EventsPage() {
                       `/cms/modules/digipass/events/${ev.slug}/registrations`
                     )
                   }
-                  onEdit={() => handleOpenEdit(ev)}
-                  onDelete={() => {
+                  onEdit={canEdit ? () => handleOpenEdit(ev) : undefined}
+                  onDelete={canDelete ? () => {
                     setEventToDelete(ev);
                     setConfirmOpen(true);
-                  }}
-                  onShare={() => {
+                  } : undefined}
+                  onShare={canShare ? () => {
                     setEventToShare(ev);
                     setShareModalOpen(true);
-                  }}
+                  } : undefined}
                   onInsights={() =>
                     router.push(
                       `/cms/modules/digipass/events/${ev.slug}/insights`
@@ -351,6 +357,7 @@ export default function EventsPage() {
           name={eventToShare?.name}
           title={t.shareTitle}
           description={t.pageDescription}
+          canDownloadQr={canDownload}
         />
       </Container>
     </Box>

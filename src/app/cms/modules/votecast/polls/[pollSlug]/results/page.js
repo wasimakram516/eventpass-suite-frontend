@@ -36,6 +36,7 @@ import {
   getPollVoterResults,
 } from "@/services/votecast/pollService";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { useHasPermission } from "@/hooks/usePermission";
 import ICONS from "@/utils/iconUtil";
 import { getFieldIcon } from "@/utils/iconMapper";
 import NoDataAvailable from "@/components/NoDataAvailable";
@@ -502,6 +503,7 @@ export default function PollResultsPage() {
   const { pollSlug } = useParams();
   const { showMessage } = useMessage();
   const { t, dir, align, language } = useI18nLayout(translations);
+  const canExport = useHasPermission("votecast", "export");
 
   const [poll, setPoll] = useState(null);
   const [results, setResults] = useState([]);
@@ -785,22 +787,24 @@ export default function PollResultsPage() {
                     </Select>
                   </FormControl>
 
-                  <Button
-                    variant="outlined"
-                    color="success"
-                    onClick={handleExportVoters}
-                    disabled={exportLoading}
-                    startIcon={
-                      exportLoading ? (
-                        <CircularProgress size={20} color="inherit" />
-                      ) : (
-                        <ICONS.description fontSize="small" />
-                      )
-                    }
-                    sx={{ ...getStartIconSpacing(dir), width: { xs: "100%", md: "auto" } }}
-                  >
-                    {exportLoading ? t.exporting : t.exportAll}
-                  </Button>
+                  {canExport && (
+                    <Button
+                      variant="outlined"
+                      color="success"
+                      onClick={handleExportVoters}
+                      disabled={exportLoading}
+                      startIcon={
+                        exportLoading ? (
+                          <CircularProgress size={20} color="inherit" />
+                        ) : (
+                          <ICONS.description fontSize="small" />
+                        )
+                      }
+                      sx={{ ...getStartIconSpacing(dir), width: { xs: "100%", md: "auto" } }}
+                    >
+                      {exportLoading ? t.exporting : t.exportAll}
+                    </Button>
+                  )}
                 </>
               )}
               {poll && (

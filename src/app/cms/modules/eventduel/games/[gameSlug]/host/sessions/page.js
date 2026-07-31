@@ -31,6 +31,7 @@ import {
 } from "@/services/eventduel/gameSessionService";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { useHasPermission } from "@/hooks/usePermission";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import LoadingState from "@/components/LoadingState";
@@ -128,6 +129,8 @@ export default function PvPSessions() {
   const { t, dir, align, language } = useI18nLayout(translations);
   const theme = useTheme();
   const cz = theme.palette.crosszero;
+  const canReset = useHasPermission("eventduel", "delete");
+  const canExport = useHasPermission("eventduel", "export");
   const [sessions, setSessions] = useState([]);
   const [totalSessions, setTotalSessions] = useState(0);
   const [page, setPage] = useState(1);
@@ -232,19 +235,21 @@ export default function PvPSessions() {
               gap: dir === "rtl" ? 2 : 1,
             }}
           >
-            <Button
-              variant="contained"
-              color="error"
-              startIcon={<ICONS.delete />}
-              onClick={() => setShowConfirm(true)}
-              sx={{
-                ...getStartIconSpacing(dir),
-                width: { xs: "100%", sm: "auto" },
-              }}
-            >
-              {t.allSessions}
-            </Button>
-            {displaySessions.length > 0 && (
+            {canReset && (
+              <Button
+                variant="contained"
+                color="error"
+                startIcon={<ICONS.delete />}
+                onClick={() => setShowConfirm(true)}
+                sx={{
+                  ...getStartIconSpacing(dir),
+                  width: { xs: "100%", sm: "auto" },
+                }}
+              >
+                {t.allSessions}
+              </Button>
+            )}
+            {displaySessions.length > 0 && canExport && (
               <Button
                 variant="contained"
                 color="primary"

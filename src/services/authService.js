@@ -50,6 +50,16 @@ export const refreshToken = withApiHandler(async () => {
   return data.data.accessToken;
 });
 
+// **Fetch current user + resolved granular permissions.** Permissions are
+// never baked into the access token (see backend permissionResolver.js), so
+// this is how the frontend picks up a role/permission change an admin made
+// mid-session without forcing the user to log out and back in.
+export const fetchMe = async () => {
+  const { data } = await api.get("/auth/me");
+  setUser(data.data.user);
+  return data.data.user;
+};
+
 // **Logout API Call**
 export const logoutUser = async () => {
   await api.post("/auth/logout");

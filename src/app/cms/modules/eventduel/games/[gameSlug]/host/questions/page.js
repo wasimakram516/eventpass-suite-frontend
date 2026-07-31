@@ -36,6 +36,7 @@ import { useEffect, useRef, useState, useMemo } from "react";
 import QuestionFormModal from "@/components/modals/QuestionFormModal";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { useHasPermission } from "@/hooks/usePermission";
 import {
   getQuestions,
   addQuestion,
@@ -130,6 +131,10 @@ const translations = {
 export default function QuestionsPage() {
   const { t, dir, language } = useI18nLayout(translations);
   const { showMessage } = useMessage();
+  const canCreate = useHasPermission("eventduel", "create");
+  const canEdit = useHasPermission("eventduel", "edit");
+  const canDelete = useHasPermission("eventduel", "delete");
+  const canBulkImport = useHasPermission("eventduel", "bulk_import");
   const { gameSlug } = useParams();
   const searchParams = useSearchParams();
   const [game, setGame] = useState(null);
@@ -293,62 +298,68 @@ export default function QuestionsPage() {
               }}
             >
               {/* Add Question */}
-              <Button
-                variant="contained"
-                startIcon={<AddIcon />}
-                onClick={() => {
-                  if (!game || !game.businessId) {
-                    showMessage("Game information is not loaded yet. Please wait.", "error");
-                    return;
-                  }
-                  setEditMode(false);
-                  setSelectedQuestion(null);
-                  setOpenModal(true);
-                }}
-                sx={getStartIconSpacing(dir)}
-              >
-                {t.addQuestion}
-              </Button>
+              {canCreate && (
+                <Button
+                  variant="contained"
+                  startIcon={<AddIcon />}
+                  onClick={() => {
+                    if (!game || !game.businessId) {
+                      showMessage("Game information is not loaded yet. Please wait.", "error");
+                      return;
+                    }
+                    setEditMode(false);
+                    setSelectedQuestion(null);
+                    setOpenModal(true);
+                  }}
+                  sx={getStartIconSpacing(dir)}
+                >
+                  {t.addQuestion}
+                </Button>
+              )}
 
               {/* More Menu (Download + Upload) */}
-              <Button
-                variant="outlined"
-                startIcon={<MoreVertIcon />}
-                onClick={handleMenuOpen}
-                sx={getStartIconSpacing(dir)}
-              >
-                {t.moreOptions}
-              </Button>
-              <Menu
-                anchorEl={anchorEl}
-                open={openMenu}
-                onClose={handleMenuClose}
-              >
-                <MenuItem
-                  onClick={() => {
-                    setDownloadModalOpen(true);
-                    handleMenuClose();
-                  }}
-                >
-                  <DownloadIcon fontSize="small" sx={{ mr: 1 }} />
-                  {t.downloadTemplate}
-                </MenuItem>
-                <MenuItem>
-                  <UploadFileIcon fontSize="small" sx={{ mr: 1 }} />
-                  <label style={{ cursor: "pointer" }}>
-                    {t.uploadQuestions}
-                    <input
-                      type="file"
-                      hidden
-                      accept=".xlsx"
-                      onChange={(e) => {
-                        handleUpload(e);
+              {canBulkImport && (
+                <>
+                  <Button
+                    variant="outlined"
+                    startIcon={<MoreVertIcon />}
+                    onClick={handleMenuOpen}
+                    sx={getStartIconSpacing(dir)}
+                  >
+                    {t.moreOptions}
+                  </Button>
+                  <Menu
+                    anchorEl={anchorEl}
+                    open={openMenu}
+                    onClose={handleMenuClose}
+                  >
+                    <MenuItem
+                      onClick={() => {
+                        setDownloadModalOpen(true);
                         handleMenuClose();
                       }}
-                    />
-                  </label>
-                </MenuItem>
-              </Menu>
+                    >
+                      <DownloadIcon fontSize="small" sx={{ mr: 1 }} />
+                      {t.downloadTemplate}
+                    </MenuItem>
+                    <MenuItem>
+                      <UploadFileIcon fontSize="small" sx={{ mr: 1 }} />
+                      <label style={{ cursor: "pointer" }}>
+                        {t.uploadQuestions}
+                        <input
+                          type="file"
+                          hidden
+                          accept=".xlsx"
+                          onChange={(e) => {
+                            handleUpload(e);
+                            handleMenuClose();
+                          }}
+                        />
+                      </label>
+                    </MenuItem>
+                  </Menu>
+                </>
+              )}
             </Box>
           </Box>
           <Divider sx={{ mt: 2 }} />
@@ -491,33 +502,37 @@ export default function QuestionsPage() {
                       locale={language === "ar" ? "ar-SA" : "en-GB"}
                     />
                     <CardActions sx={{ justifyContent: "center" }}>
-                      <Tooltip title={t.editTooltip}>
-                        <IconButton
-                          color="secondary"
-                          onClick={() => {
-                            if (!game || !game.businessId) {
-                              showMessage("Game information is not loaded yet. Please wait.", "error");
-                              return;
-                            }
-                            setSelectedQuestion(q);
-                            setEditMode(true);
-                            setOpenModal(true);
-                          }}
-                        >
-                          <EditIcon />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title={t.deleteTooltip}>
-                        <IconButton
-                          color="error"
-                          onClick={() => {
-                            setSelectedQuestion(q);
-                            setConfirmOpen(true);
-                          }}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
-                      </Tooltip>
+                      {canEdit && (
+                        <Tooltip title={t.editTooltip}>
+                          <IconButton
+                            color="secondary"
+                            onClick={() => {
+                              if (!game || !game.businessId) {
+                                showMessage("Game information is not loaded yet. Please wait.", "error");
+                                return;
+                              }
+                              setSelectedQuestion(q);
+                              setEditMode(true);
+                              setOpenModal(true);
+                            }}
+                          >
+                            <EditIcon />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                      {canDelete && (
+                        <Tooltip title={t.deleteTooltip}>
+                          <IconButton
+                            color="error"
+                            onClick={() => {
+                              setSelectedQuestion(q);
+                              setConfirmOpen(true);
+                            }}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </Tooltip>
+                      )}
                     </CardActions>
                   </AppCard>
               );

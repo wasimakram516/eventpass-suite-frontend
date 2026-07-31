@@ -24,6 +24,7 @@ import {
     getScannedByUserDistribution,
 } from "@/services/eventreg/insightsService";
 import { getPublicEventBySlug } from "@/services/eventreg/eventService";
+import { useHasPermission } from "@/hooks/usePermission";
 import useEventRegSocket from "@/hooks/modules/eventReg/useEventRegSocket";
 import ICONS from "@/utils/iconUtil";
 import AppCard from "@/components/cards/AppCard";
@@ -897,6 +898,7 @@ export default function AnalyticsDashboard() {
     const theme = useTheme();
     const FIELD_COLOR = theme.palette.primary.main;
     const { t, dir, language } = useI18nLayout(translations);
+    const canExport = useHasPermission("eventreg", "export");
     const [selectedFields, setSelectedFields] = useState([]);
     const [chartData, setChartData] = useState({});
     const [fieldParams, setFieldParams] = useState({});
@@ -1491,7 +1493,7 @@ export default function AnalyticsDashboard() {
                             width: { xs: "100%", sm: "auto" },
                             gap: { xs: 1, sm: 2 }
                         }}>
-                        {selectedFields.length > 0 && (
+                        {canExport && selectedFields.length > 0 && (
                             <>
                                 <Button
                                     variant="outlined"
