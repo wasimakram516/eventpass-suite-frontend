@@ -167,6 +167,9 @@ const translations = {
     status: "Status",
     emailStatus: "Email Status",
     whatsappStatus: "WhatsApp Status",
+    paymentStatus: "Payment Status",
+    ticketType: "Ticket Type",
+    promoCode: "Promo Code",
     all: "All",
     sent: "Sent",
     notSent: "Not Sent",
@@ -277,6 +280,9 @@ const translations = {
     status: "الحالة",
     emailStatus: "حالة البريد الإلكتروني",
     whatsappStatus: "حالة واتساب",
+    paymentStatus: "حالة الدفع",
+    ticketType: "نوع التذكرة",
+    promoCode: "رمز الخصم",
     all: "الكل",
     sent: "تم الإرسال",
     notSent: "لم يتم الإرسال",
@@ -322,6 +328,9 @@ export default function ViewRegistrations() {
     status: "",
     emailSent: "",
     whatsappSent: "",
+    paymentStatus: "",
+    ticketTypeId: "",
+    promoCode: "",
   };
 
   function buildFilterState(fieldsLocal, prev = {}) {
@@ -762,6 +771,18 @@ export default function ViewRegistrations() {
       query.whatsappSent = filters.whatsappSent;
     }
 
+    if (filters.paymentStatus && filters.paymentStatus !== "all") {
+      query.paymentStatus = filters.paymentStatus;
+    }
+
+    if (filters.ticketTypeId && filters.ticketTypeId !== "all") {
+      query.ticketTypeId = filters.ticketTypeId;
+    }
+
+    if (filters.promoCode && filters.promoCode !== "all") {
+      query.promoCode = filters.promoCode;
+    }
+
     dynamicFields.forEach((f) => {
       if (filters[f.name]) {
         query[`field_${f.name}`] = filters[f.name];
@@ -773,6 +794,14 @@ export default function ViewRegistrations() {
     return query;
   };
 
+  const availablePromoCodes = React.useMemo(() => {
+    const codes = new Set();
+    allRegistrations.forEach((reg) => {
+      if (reg.promoCode) codes.add(reg.promoCode);
+    });
+    return Array.from(codes).sort();
+  }, [allRegistrations]);
+
   const filteredRegistrations = React.useMemo(() => {
     const {
       createdAtFromMs,
@@ -782,6 +811,9 @@ export default function ViewRegistrations() {
       status,
       emailSent,
       whatsappSent,
+      paymentStatus,
+      ticketTypeId,
+      promoCode,
       ...restFilters
     } = filters;
 
@@ -802,6 +834,18 @@ export default function ViewRegistrations() {
         const isSent = !!reg.whatsappSent;
         if (whatsappSent === "sent" && !isSent) return false;
         if (whatsappSent === "not_sent" && isSent) return false;
+      }
+
+      if (paymentStatus && paymentStatus !== "all") {
+        if ((reg.paymentStatus || "pending") !== paymentStatus) return false;
+      }
+
+      if (ticketTypeId && ticketTypeId !== "all") {
+        if (String(reg.ticketTypeId || "") !== String(ticketTypeId)) return false;
+      }
+
+      if (promoCode && promoCode !== "all") {
+        if ((reg.promoCode || "") !== promoCode) return false;
       }
 
       // Date: createdAt (UTC ms bounds)
@@ -1910,7 +1954,13 @@ export default function ViewRegistrations() {
                             ? t.emailStatus
                             : key === "whatsappSent"
                               ? t.whatsappStatus
-                              : getFieldLabel(key);
+                              : key === "paymentStatus"
+                                ? t.paymentStatus
+                                : key === "ticketTypeId"
+                                  ? t.ticketType
+                                  : key === "promoCode"
+                                    ? t.promoCode
+                                    : getFieldLabel(key);
 
               let displayValue = val;
               if (key === "status") {
@@ -1920,6 +1970,19 @@ export default function ViewRegistrations() {
               } else if (key === "emailSent" || key === "whatsappSent") {
                 if (val === "sent") displayValue = t.sent;
                 else if (val === "not_sent") displayValue = t.notSent;
+              } else if (key === "paymentStatus") {
+                const paymentLabels = {
+                  paid: t.paymentPaid,
+                  pending: t.paymentPending,
+                  cancelled: t.paymentCancelled,
+                  failed: t.paymentFailed,
+                };
+                displayValue = paymentLabels[val] || val;
+              } else if (key === "ticketTypeId") {
+                const ticket = (eventDetails?.ticketTypes || []).find(
+                  (tk) => String(tk._id) === String(val),
+                );
+                displayValue = ticket?.name || val;
               }
 
               return (
@@ -2743,6 +2806,98 @@ export default function ViewRegistrations() {
               </Select>
             </FormControl>
           </Box>
+
+          {/* --- Paid-event-only filters --- */}
+          {eventDetails?.isPaid && (
+            <>
+              <Box>
+                <Typography variant="subtitle2" gutterBottom>
+                  {t.paymentStatus}
+                </Typography>
+                <FormControl fullWidth size="small">
+                  <InputLabel>{`${t.filterBy} ${t.paymentStatus}`}</InputLabel>
+                  <Select
+                    label={`${t.filterBy} ${t.paymentStatus}`}
+                    value={filters.paymentStatus || "all"}
+                    onChange={(e) =>
+                      setFilters((prev) => ({
+                        ...prev,
+                        paymentStatus: e.target.value,
+                      }))
+                    }
+                  >
+                    <MenuItem value="all">
+                      <em>{t.all}</em>
+                    </MenuItem>
+                    <MenuItem value="paid">{t.paymentPaid}</MenuItem>
+                    <MenuItem value="pending">{t.paymentPending}</MenuItem>
+                    <MenuItem value="cancelled">{t.paymentCancelled}</MenuItem>
+                    <MenuItem value="failed">{t.paymentFailed}</MenuItem>
+                  </Select>
+                </FormControl>
+              </Box>
+
+              {(eventDetails?.ticketTypes || []).length > 0 && (
+                <Box>
+                  <Typography variant="subtitle2" gutterBottom>
+                    {t.ticketType}
+                  </Typography>
+                  <FormControl fullWidth size="small">
+                    <InputLabel>{`${t.filterBy} ${t.ticketType}`}</InputLabel>
+                    <Select
+                      label={`${t.filterBy} ${t.ticketType}`}
+                      value={filters.ticketTypeId || "all"}
+                      onChange={(e) =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          ticketTypeId: e.target.value,
+                        }))
+                      }
+                    >
+                      <MenuItem value="all">
+                        <em>{t.all}</em>
+                      </MenuItem>
+                      {eventDetails.ticketTypes.map((ticket) => (
+                        <MenuItem key={ticket._id} value={ticket._id}>
+                          {ticket.name}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Box>
+              )}
+
+              {availablePromoCodes.length > 0 && (
+                <Box>
+                  <Typography variant="subtitle2" gutterBottom>
+                    {t.promoCode}
+                  </Typography>
+                  <FormControl fullWidth size="small">
+                    <InputLabel>{`${t.filterBy} ${t.promoCode}`}</InputLabel>
+                    <Select
+                      label={`${t.filterBy} ${t.promoCode}`}
+                      value={filters.promoCode || "all"}
+                      onChange={(e) =>
+                        setFilters((prev) => ({
+                          ...prev,
+                          promoCode: e.target.value,
+                        }))
+                      }
+                    >
+                      <MenuItem value="all">
+                        <em>{t.all}</em>
+                      </MenuItem>
+                      {availablePromoCodes.map((code) => (
+                        <MenuItem key={code} value={code}>
+                          {code}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Box>
+              )}
+            </>
+          )}
 
           {/* --- Dynamic Custom / Classic Fields (use dynamicFields) --- */}
           {dynamicFields.map((f) => (
