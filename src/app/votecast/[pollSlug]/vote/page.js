@@ -319,13 +319,13 @@ export default function PollVotingPage() {
       <Box
         dir={dir}
         sx={{
-          height: "100vh",
+          minHeight: "100vh",
           position: "relative",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
-          overflow: "hidden",
           px: 2,
+          pb: 4,
         }}
       >
         {renderBackground()}
