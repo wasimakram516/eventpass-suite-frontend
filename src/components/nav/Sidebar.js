@@ -82,7 +82,14 @@ export default function Sidebar() {
       ]
       : []),
     { label: t.trash, icon: ICONS.delete, path: "/cms/trash" },
-    { label: t.settings, icon: ICONS.settings, path: "/cms/settings" },
+    // A business-tier user can never edit their business info once it
+    // exists (see businessController.updateBusiness) — Settings is their
+    // only entry point to it, so it's hidden entirely once they have a
+    // business. It stays visible pre-business, since that's also where
+    // they self-service create their first (and only) one.
+    ...(user?.role !== "business" || !user?.business?._id
+      ? [{ label: t.settings, icon: ICONS.settings, path: "/cms/settings" }]
+      : []),
   ];
 
   const isActive = (path) =>
