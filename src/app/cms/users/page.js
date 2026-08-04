@@ -85,9 +85,6 @@ const translations = {
     businessRequired: "Please select a business",
     selectAll: "Select All",
     unselectAll: "Unselect All",
-    staffTypeLabel: "Staff Type",
-    deskStaff: "Desk",
-    doorStaff: "Door",
     createdBy: "Created:",
     updatedBy: "Updated:",
     createdAt: "Created At:",
@@ -126,6 +123,9 @@ const translations = {
     businessLabel: "Business",
     roleLabel: "Role",
     noRole: "No role assigned",
+    roleRequired: "Please select a role for this user",
+    notAuthorizedToCreateUser:
+      "You are not authorized to create users. Access Control is not enabled for your account.",
     roleOverridesTitle: "Permission Overrides",
     roleOverridesHint:
       "Checked = currently granted. Click a cell to override the role's default for that action.",
@@ -133,10 +133,12 @@ const translations = {
     allow: "Allow",
     deny: "Deny",
     accessControlDisabled:
-      "Access Control is not enabled for your business. Contact your administrator to assign staff roles.",
-    canManageAccessControl: "Enable Access Control for this business",
+      "Access Control is not enabled for your account, so you cannot assign a role or manage module/permission access for this user. Contact your administrator to have it enabled.",
+    canManageAccessControl: "Enable Access Control management for this user",
     canManageAccessControlHint:
-      "When enabled, this business's own owner can assign roles and permission overrides to their own staff members from this same screen. When disabled, only a superadmin can manage this business's staff permissions.",
+      "When enabled, this business owner can assign roles and permission overrides to their own staff members from this same screen. When disabled, only a superadmin can manage this business's staff permissions.",
+    canManageAccessControlHintAdmin:
+      "When enabled, this admin can assign roles and permission overrides to business and staff users from this same screen. When disabled, only a superadmin can manage those users' permissions.",
   },
   ar: {
     title: "المستخدمون",
@@ -181,9 +183,6 @@ const translations = {
     businessRequired: "يرجى اختيار الشركة",
     selectAll: "تحديد الكل",
     unselectAll: "إلغاء تحديد الكل",
-    staffTypeLabel: "نوع الموظف",
-    deskStaff: " مكتب",
-    doorStaff: " باب",
     businessDetails: "تفاصيل الشركة",
     businessName: "اسم الشركة",
     businessSlug: "معرف الشركة",
@@ -222,6 +221,9 @@ const translations = {
     businessLabel: "شركة",
     roleLabel: "الدور",
     noRole: "لم يتم تعيين دور",
+    roleRequired: "يرجى اختيار دور لهذا المستخدم",
+    notAuthorizedToCreateUser:
+      "غير مصرح لك بإنشاء مستخدمين. لم يتم تفعيل التحكم بالصلاحيات لحسابك.",
     roleOverridesTitle: "استثناءات الصلاحيات",
     roleOverridesHint:
       "محدد = ممنوح حاليًا. انقر على الخلية لتجاوز الإعداد الافتراضي للدور لهذا الإجراء.",
@@ -229,10 +231,12 @@ const translations = {
     allow: "سماح",
     deny: "رفض",
     accessControlDisabled:
-      "التحكم بالصلاحيات غير مفعل لهذا العمل. تواصل مع المشرف لتعيين أدوار الموظفين.",
-    canManageAccessControl: "تفعيل التحكم بالصلاحيات لهذا العمل",
+      "التحكم بالصلاحيات غير مفعل لحسابك، لذا لا يمكنك تعيين دور أو إدارة الوحدات/الصلاحيات لهذا المستخدم. تواصل مع المشرف لتفعيله.",
+    canManageAccessControl: "تفعيل إدارة التحكم بالصلاحيات لهذا المستخدم",
     canManageAccessControlHint:
       "عند التفعيل، يمكن لمالك هذا العمل تعيين الأدوار وتجاوزات الصلاحيات لموظفيه من هذه الشاشة نفسها. عند التعطيل، يمكن فقط للمشرف العام إدارة صلاحيات موظفي هذا العمل.",
+    canManageAccessControlHintAdmin:
+      "عند التفعيل، يمكن لهذا المشرف تعيين الأدوار وتجاوزات الصلاحيات لمستخدمي الأعمال والموظفين من هذه الشاشة نفسها. عند التعطيل، يمكن فقط للمشرف العام إدارة صلاحيات هؤلاء المستخدمين.",
   },
 };
 
@@ -241,9 +245,19 @@ export default function UsersPage() {
   const searchParams = useSearchParams();
   const urlSearchApplied = useRef(false);
   const isBusinessUser = currentUser?.role === "business";
+  const isSuperAdmin = currentUser?.role === "superadmin";
   const isAdminOrSuperAdmin = ["admin", "superadmin"].includes(
     currentUser?.role || ""
   );
+  // Whether this actor may create ANY user at all — a business/admin actor
+  // without canManageAccessControl is blocked from creating users entirely
+  // now that role selection is mandatory (see UserFormModal.js's
+  // isAuthorizedToCreate, which applies the same rule once a specific
+  // userType is chosen inside the modal).
+  const canCreateAnyUser =
+    isSuperAdmin ||
+    (["business", "admin"].includes(currentUser?.role || "") &&
+      !!currentUser?.canManageAccessControl);
   const { dir, align, language, t } = useI18nLayout(translations);
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
@@ -431,6 +445,17 @@ export default function UsersPage() {
       staff: "secondary",
     })[role] || "default";
 
+  // Desk/Door is now derived from the user's current Role name rather than
+  // the removed staffType field — a live lookup (reflects the role they
+  // hold right now), same semantics as before since staffType was never a
+  // per-scan snapshot either.
+  const getStaffScannerType = (user) => {
+    const roleName = user.roleId?.name;
+    if (roleName === "Desk Staff") return "desk";
+    if (roleName === "Door Staff") return "door";
+    return null;
+  };
+
   const handleOpenEdit = (user) => {
     setSelectedUser(user);
     setIsEditMode(true);
@@ -522,22 +547,22 @@ export default function UsersPage() {
                       }),
                     }}
                   />
-                  {user.role === "staff" && user.staffType && (
+                  {user.role === "staff" && getStaffScannerType(user) && (
                     <Chip
                       icon={
-                        user.staffType === "door" ? (
+                        getStaffScannerType(user) === "door" ? (
                           <ICONS.door />
                         ) : (
                           <ICONS.desk />
                         )
                       }
                       label={
-                        user.staffType.charAt(0).toUpperCase() +
-                        user.staffType.slice(1)
+                        getStaffScannerType(user).charAt(0).toUpperCase() +
+                        getStaffScannerType(user).slice(1)
                       }
                       sx={{
                         bgcolor:
-                          user.staffType === "door"
+                          getStaffScannerType(user) === "door"
                             ? theme.palette.users.staffDoorBg
                             : theme.palette.users.staffDeskBg,
                         color: isDark ? "common.white" : "common.black",
@@ -605,7 +630,7 @@ export default function UsersPage() {
               user.name,
               user.email,
               user.role,
-              user.staffType,
+              getStaffScannerType(user),
               user.business?.name,
             ]
               .filter(Boolean)
@@ -804,20 +829,30 @@ export default function UsersPage() {
                 )}
               />
             )}
-            <Button
-              variant="contained"
-              fullWidth
-              sx={{
-                ...getStartIconSpacing(dir),
-                width: { xs: "100%", sm: "auto" },
-                flexShrink: 0,
-                whiteSpace: "nowrap",
-              }}
-              startIcon={<ICONS.add />}
-              onClick={handleOpenCreate}
-            >
-              {t.createUser}
-            </Button>
+            <Tooltip title={canCreateAnyUser ? "" : t.notAuthorizedToCreateUser}>
+              <Box
+                component="span"
+                sx={{
+                  display: "inline-block",
+                  width: { xs: "100%", sm: "auto" },
+                  flexShrink: 0,
+                }}
+              >
+                <Button
+                  variant="contained"
+                  fullWidth
+                  disabled={!canCreateAnyUser}
+                  sx={{
+                    ...getStartIconSpacing(dir),
+                    whiteSpace: "nowrap",
+                  }}
+                  startIcon={<ICONS.add />}
+                  onClick={handleOpenCreate}
+                >
+                  {t.createUser}
+                </Button>
+              </Box>
+            </Tooltip>
           </Stack>
         </Stack>
       </Box>
@@ -840,10 +875,10 @@ export default function UsersPage() {
 
           if (isBusinessGroup) {
             const deskCount = users.filter(
-              (u) => u.role === "staff" && u.staffType === "desk",
+              (u) => u.role === "staff" && getStaffScannerType(u) === "desk",
             ).length;
             const doorCount = users.filter(
-              (u) => u.role === "staff" && u.staffType === "door",
+              (u) => u.role === "staff" && getStaffScannerType(u) === "door",
             ).length;
             const businessCount = users.filter((u) => u.role === "business")
               .length;

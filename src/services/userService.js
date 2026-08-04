@@ -9,7 +9,7 @@ export const getAllStaffUsers = withApiHandler(async (businessId) => {
 
 // Create a new staff user
 export const createStaffUser = withApiHandler(
-  async (name, email, password, role, business, modulePermissions = [], staffType) => {
+  async (name, email, password, role, business, modulePermissions = [], roleId) => {
     const { data } = await api.post("/users/register/staff", {
       name,
       email,
@@ -17,7 +17,7 @@ export const createStaffUser = withApiHandler(
       role,
       business,
       modulePermissions,
-      staffType,
+      roleId,
     });
     return data;
   },
@@ -28,13 +28,23 @@ export const createStaffUser = withApiHandler(
 // another superadmin instead of a regular admin — the backend only allows
 // this for callers who are already superadmin (route is superAdminOnly).
 export const createAdminUser = withApiHandler(
-  async ({ name, email, password, modulePermissions = [], role = "admin" }) => {
+  async ({
+    name,
+    email,
+    password,
+    modulePermissions = [],
+    role = "admin",
+    canManageAccessControl,
+    roleId,
+  }) => {
     const { data } = await api.post("/users/register/admin", {
       name,
       email,
       password,
       modulePermissions,
       role,
+      canManageAccessControl,
+      roleId,
     });
     return data;
   },
@@ -51,6 +61,8 @@ export const createBusinessUser = withApiHandler(
     attachToExistingBusiness,
     businessId,
     business, // object when creating new business
+    canManageAccessControl,
+    roleId,
   }) => {
     const { data } = await api.post("/users/register/business", {
       name,
@@ -60,6 +72,8 @@ export const createBusinessUser = withApiHandler(
       attachToExistingBusiness,
       businessId,
       business,
+      canManageAccessControl,
+      roleId,
     });
 
     return data;

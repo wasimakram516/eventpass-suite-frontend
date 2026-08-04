@@ -213,7 +213,6 @@ const defaultForm = {
   roleId: null,
   businessId: "",
   userType: "staff",
-  staffType: "desk",
   attachToExistingBusiness: false,
   businessName: "",
   businessSlug: "",
@@ -260,16 +259,49 @@ function UserFormModal({
   const isEditingSuperAdmin = isEditMode && selectedUser?.role === "superadmin";
 
   // Per the access-control design: only superadmin may assign dynamic
-  // Roles/overrides to admin/business-tier accounts; a business owner may
-  // only do so for their own staff, and only once their business has
-  // Access Control enabled (Business.canManageAccessControl).
+  // Roles/overrides to admin/business-tier accounts by default; a business
+  // owner may only do so for their own staff, and an admin may only do so
+  // for business/staff users (never another admin/superadmin) — both only
+  // once THEIR OWN canManageAccessControl is enabled (User.js — a per-user
+  // flag, not per-business, so one business owner or admin can be trusted
+  // with this without automatically extending it to a co-owner/peer admin).
+  const currentUserRole = (currentUser?.role || "").toLowerCase();
   const canManageDynamicRoles =
     !isEditingSuperAdmin &&
     form.userType !== "superadmin" &&
     (isSuperAdmin ||
-      (isBusinessUser &&
+      (currentUserRole === "business" &&
         form.userType === "staff" &&
-        !!currentUser?.business?.canManageAccessControl));
+        !!currentUser?.canManageAccessControl) ||
+      (currentUserRole === "admin" &&
+        ["business", "staff"].includes(form.userType) &&
+        !!currentUser?.canManageAccessControl));
+
+  // Whether this actor may create a user of the selected type AT ALL — same
+  // shape as canManageDynamicRoles but without the superadmin-target-type
+  // carve-out (creating a superadmin doesn't need a role picked, but the
+  // actor still needs to BE a superadmin to reach that option — see the
+  // userType Select's own isSuperAdmin gate). A business/admin actor
+  // without canManageAccessControl is blocked from creating users
+  // entirely, not silently given a default role.
+  const isAuthorizedToCreate =
+    isSuperAdmin ||
+    (currentUserRole === "business" &&
+      form.userType === "staff" &&
+      !!currentUser?.canManageAccessControl) ||
+    (currentUserRole === "admin" &&
+      ["business", "staff"].includes(form.userType) &&
+      !!currentUser?.canManageAccessControl);
+
+  // Neither a business nor an admin actor may grant a module they don't
+  // hold themselves — same ceiling rule the granular Role/override system
+  // already enforces (see roleAssignmentAuthz.js's
+  // assertModulePermissionsWithinCeiling, the backend authority here; this
+  // is UX only). Superadmin is unrestricted.
+  const moduleCeilingActive = !isSuperAdmin && ["business", "admin"].includes(currentUserRole);
+  const ceilingFilteredModules = moduleCeilingActive
+    ? availableModules.filter((m) => currentUser?.modulePermissions?.includes(m.key))
+    : availableModules;
 
   // Populate the form whenever the modal opens — mirrors this codebase's
   // existing BusinessFormModal/GameFormModal convention (form population
@@ -294,7 +326,6 @@ function UserFormModal({
               : "staff",
         attachToExistingBusiness: true,
         businessId: selectedUser.business?._id || "",
-        staffType: selectedUser.staffType || "desk",
         businessName: selectedUser.business?.name || "",
         businessSlug: selectedUser.business?.slug || "",
         businessEmail: businessContact.email || "",
@@ -302,13 +333,12 @@ function UserFormModal({
         businessAddress: selectedUser.business?.address || "",
         logoPreview: selectedUser.business?.logoUrl || "",
         logoFile: null,
-        canManageAccessControl: !!selectedUser.business?.canManageAccessControl,
+        canManageAccessControl: !!selectedUser.canManageAccessControl,
       });
     } else {
       setForm({
         ...defaultForm,
         userType: isAdminOrSuperAdmin ? "business" : "staff",
-        staffType: "desk",
       });
     }
     setErrors({});
@@ -399,12 +429,13 @@ function UserFormModal({
     if (form.userType === "business") list.push("businessProfile");
     if (
       !isEditingSuperAdmin &&
+      canManageDynamicRoles &&
       (form.userType === "staff" ||
         form.userType === "admin" ||
         form.userType === "business")
     ) {
       list.push("modules");
-      if (canManageDynamicRoles) list.push("permissions");
+      list.push("permissions");
     }
     return list;
   }, [form.userType, isEditingSuperAdmin, canManageDynamicRoles]);
@@ -498,6 +529,22 @@ function UserFormModal({
       return;
     }
 
+    // Creation requires an authorized actor and (except for a superadmin
+    // target, which bypasses roles entirely) an explicitly picked role —
+    // no more silent default. Checked here rather than folded into
+    // newErrors since it's a whole-form authorization gate, not a specific
+    // field's validation message.
+    if (!isEditMode) {
+      if (!isAuthorizedToCreate) {
+        showMessage(t.notAuthorizedToCreateUser, "error");
+        return;
+      }
+      if (form.userType !== "superadmin" && !form.roleId) {
+        showMessage(t.roleRequired, "error");
+        return;
+      }
+    }
+
     setLoading(true);
 
     // ===================== EDIT MODE =====================
@@ -508,6 +555,11 @@ function UserFormModal({
       // otherwise every save (even ones that never touched the Role select)
       // would attempt a role reassignment and could be rejected outright.
       if (!canManageDynamicRoles) delete payload.roleId;
+      // Same reasoning for canManageAccessControl — it's superadmin-only on
+      // the backend, so a non-superadmin editing their own/another user
+      // would otherwise get the whole save rejected just for carrying this
+      // field's current (unchanged) value along.
+      if (!isSuperAdmin) delete payload.canManageAccessControl;
 
       const userRes = await updateUser(selectedUser._id, payload);
       if (userRes?.error) {
@@ -550,32 +602,6 @@ function UserFormModal({
           return;
         }
       }
-
-      // Access Control availability is superadmin-only and independent of
-      // the business profile fields above — send it regardless of
-      // attachToExistingBusiness, and only when it actually changed.
-      if (
-        isSuperAdmin &&
-        form.userType === "business" &&
-        selectedUser.business?._id &&
-        form.canManageAccessControl !== !!selectedUser.business?.canManageAccessControl
-      ) {
-        const accessControlPayload = new FormData();
-        accessControlPayload.append(
-          "canManageAccessControl",
-          form.canManageAccessControl ? "true" : "false",
-        );
-
-        const accessControlRes = await updateBusiness(
-          selectedUser.business._id,
-          accessControlPayload,
-        );
-
-        if (accessControlRes?.error) {
-          setLoading(false);
-          return;
-        }
-      }
     }
 
     // ===================== CREATE MODE =====================
@@ -589,6 +615,12 @@ function UserFormModal({
           password: form.password,
           modulePermissions: form.modulePermissions || [],
           role: form.userType,
+          // Superadmin-only on the backend too; harmless to always include
+          // here since this whole branch already requires isSuperAdmin.
+          canManageAccessControl: form.canManageAccessControl,
+          // Mandatory except for a superadmin target, which bypasses roles
+          // entirely (see permissionResolver.js's isSuper).
+          roleId: form.userType === "superadmin" ? undefined : form.roleId,
         });
         if (res?.error) {
           setLoading(false);
@@ -615,10 +647,15 @@ function UserFormModal({
               email: form.businessEmail,
               phone: form.businessPhone,
               address: form.businessAddress,
-              ...(isSuperAdmin
-                ? { canManageAccessControl: form.canManageAccessControl }
-                : {}),
             },
+
+          // Applies to the new owner User being created, regardless of
+          // whether they're attaching to an existing business or a brand
+          // new one — this flag lives on the user, not the business.
+          ...(isSuperAdmin
+            ? { canManageAccessControl: form.canManageAccessControl }
+            : {}),
+          roleId: form.roleId,
         });
 
         if (res?.error) {
@@ -626,25 +663,6 @@ function UserFormModal({
           return;
         }
         createdUserId = res?.user?.id || res?.user?._id || null;
-
-        // Access Control availability on an existing business being attached
-        // to — superadmin-only, independent of user creation, and only sent
-        // when it actually differs from the business's current value.
-        if (isSuperAdmin && form.attachToExistingBusiness && form.businessId) {
-          const originalBusiness = businesses.find((biz) => biz._id === form.businessId);
-          if (form.canManageAccessControl !== !!originalBusiness?.canManageAccessControl) {
-            const accessControlPayload = new FormData();
-            accessControlPayload.append(
-              "canManageAccessControl",
-              form.canManageAccessControl ? "true" : "false",
-            );
-            const accessControlRes = await updateBusiness(form.businessId, accessControlPayload);
-            if (accessControlRes?.error) {
-              setLoading(false);
-              return;
-            }
-          }
-        }
       } else {
         // Staff creation
         const userRes = await createStaffUser(
@@ -654,7 +672,7 @@ function UserFormModal({
           "staff",
           isAdminOrSuperAdmin ? form.businessId : currentUser.business._id,
           form.modulePermissions,
-          form.staffType,
+          form.roleId,
         );
 
         if (userRes?.error) {
@@ -664,16 +682,11 @@ function UserFormModal({
         createdUserId = userRes?.user?.id || userRes?.user?._id || null;
       }
 
-      // Role/override assignment is a separate follow-up call, since the
-      // register/* endpoints don't accept roleId directly — updateUser does.
+      // Overrides are still a separate follow-up call — role assignment is
+      // now atomic with creation itself (see the roleId passed above),
+      // since the backend requires it at creation time, not as a later
+      // update.
       if (canManageDynamicRoles && createdUserId) {
-        if (form.roleId) {
-          const roleRes = await updateUser(createdUserId, { roleId: form.roleId });
-          if (roleRes?.error) {
-            setLoading(false);
-            return;
-          }
-        }
         const overridesPayload = buildOverridesPayload();
         if (overridesPayload.length) {
           const overridesRes = await setUserPermissionOverrides(createdUserId, overridesPayload);
@@ -812,25 +825,6 @@ function UserFormModal({
 
         {currentTabKey === "details" && (
           <Box sx={{ mt: 2 }}>
-            {form.userType === "staff" &&
-              isEditMode &&
-              selectedUser?.role === "staff" && (
-                <FormControl fullWidth margin="normal">
-                  <InputLabel id="staff-type-label">{t.staffTypeLabel}</InputLabel>
-                  <Select
-                    labelId="staff-type-label"
-                    value={form.staffType || "desk"}
-                    label={t.staffTypeLabel}
-                    onChange={(e) =>
-                      setForm((prev) => ({ ...prev, staffType: e.target.value }))
-                    }
-                  >
-                    <MenuItem value="desk">{t.deskStaff}</MenuItem>
-                    <MenuItem value="door">{t.doorStaff}</MenuItem>
-                  </Select>
-                </FormControl>
-              )}
-
             {["name", "email", "password"].map((field) => (
               <TextField
                 key={field}
@@ -917,9 +911,12 @@ function UserFormModal({
                 </Select>
               </FormControl>
             )}
-            {isBusinessUser &&
-              form.userType === "staff" &&
-              !currentUser?.business?.canManageAccessControl && (
+            {!isSuperAdmin &&
+              !canManageDynamicRoles &&
+              !!currentUser &&
+              ((isBusinessUser && form.userType === "staff") ||
+                (currentUserRole === "admin" &&
+                  ["business", "staff"].includes(form.userType))) && (
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>
                   {t.accessControlDisabled}
                 </Typography>
@@ -953,14 +950,9 @@ function UserFormModal({
                 <Select
                   value={form.businessId}
                   label="Select Business"
-                  onChange={(e) => {
-                    const selected = businesses.find((biz) => biz._id === e.target.value);
-                    setForm((prev) => ({
-                      ...prev,
-                      businessId: e.target.value,
-                      canManageAccessControl: !!selected?.canManageAccessControl,
-                    }));
-                  }}
+                  onChange={(e) =>
+                    setForm((prev) => ({ ...prev, businessId: e.target.value }))
+                  }
                 >
                   {businesses.map((biz) => (
                     <MenuItem key={biz._id} value={biz._id}>
@@ -1074,29 +1066,15 @@ function UserFormModal({
               control={
                 <Checkbox
                   checked={
-                    form.modulePermissions.length ===
-                    (isBusinessUser
-                      ? availableModules.filter((m) =>
-                        currentUser.modulePermissions?.includes(m.key),
-                      ).length
-                      : availableModules.length)
+                    form.modulePermissions.length === ceilingFilteredModules.length
                   }
                   indeterminate={
                     form.modulePermissions.length > 0 &&
-                    form.modulePermissions.length !==
-                    (isBusinessUser
-                      ? availableModules.filter((m) =>
-                        currentUser.modulePermissions?.includes(m.key),
-                      ).length
-                      : availableModules.length)
+                    form.modulePermissions.length !== ceilingFilteredModules.length
                   }
                   onChange={(e) => {
                     if (e.target.checked) {
-                      const allKeys = isBusinessUser
-                        ? availableModules
-                          .filter((m) => currentUser.modulePermissions?.includes(m.key))
-                          .map((m) => m.key)
-                        : availableModules.map((m) => m.key);
+                      const allKeys = ceilingFilteredModules.map((m) => m.key);
                       setForm((prev) => ({ ...prev, modulePermissions: allKeys }));
                     } else {
                       setForm((prev) => ({ ...prev, modulePermissions: [] }));
@@ -1108,12 +1086,7 @@ function UserFormModal({
             />
 
             <FormGroup>
-              {(isBusinessUser
-                ? availableModules.filter((m) =>
-                  currentUser.modulePermissions?.includes(m.key),
-                )
-                : availableModules
-              ).map((mod) => (
+              {ceilingFilteredModules.map((mod) => (
                 <FormControlLabel
                   key={mod.key}
                   control={
@@ -1139,7 +1112,7 @@ function UserFormModal({
 
         {currentTabKey === "permissions" && (
           <Box sx={{ mt: 2 }}>
-            {isSuperAdmin && form.userType === "business" && (
+            {isSuperAdmin && ["business", "admin"].includes(form.userType) && (
               <>
                 <Box sx={{ pb: 2 }}>
                   <FormControlLabel
@@ -1158,7 +1131,9 @@ function UserFormModal({
                     label={t.canManageAccessControl}
                   />
                   <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5 }}>
-                    {t.canManageAccessControlHint}
+                    {form.userType === "admin"
+                      ? t.canManageAccessControlHintAdmin
+                      : t.canManageAccessControlHint}
                   </Typography>
                 </Box>
                 <Divider sx={{ mb: 3 }} />
