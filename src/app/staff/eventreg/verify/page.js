@@ -28,8 +28,8 @@ import { useMessage } from "@/contexts/MessageContext";
 import { pdf } from "@react-pdf/renderer";
 import QRCode from "qrcode";
 import BadgePDF from "@/components/badges/BadgePDF";
-import { useAuth } from "@/contexts/AuthContext";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
+import { useHasPermission } from "@/hooks/usePermission";
 
 const translations = {
   en: {
@@ -119,7 +119,7 @@ export default function VerifyPage() {
   const theme = useTheme();
   const { t, dir } = useI18nLayout(translations);
   const { showMessage } = useMessage();
-  const { user } = useAuth();
+  const canPrint = useHasPermission("eventreg", "print");
 
   const [showScanner, setShowScanner] = useState(false);
   const [manualMode, setManualMode] = useState(false);
@@ -542,7 +542,7 @@ export default function VerifyPage() {
               {t.verified}
             </Typography>
 
-            {result.requiresApproval && user?.staffType === "door" ? (
+            {result.requiresApproval && !canPrint ? (
               null
             ) : (
 
@@ -648,7 +648,7 @@ export default function VerifyPage() {
             <Stack direction="column" spacing={2} sx={{
               mt: 2
             }}>
-              {user?.staffType === "desk" && (
+              {canPrint && (
                 <Tooltip title={t.tooltip.print}>
                   <Button
                     variant="contained"
