@@ -25,6 +25,12 @@ export default function Background({ type = "static" }) {
 
         filter: theme.palette.ambient.saturate,
         filter: "saturate(1.05)",
+        // Forces its own GPU compositing layer — a fixed, filtered background
+        // behind scrollable content otherwise fails to repaint newly
+        // scrolled-into-view regions on some mobile browsers (iOS Safari,
+        // some Android WebViews) until scrolling back up and down again.
+        transform: "translateZ(0)",
+        willChange: "transform",
       }}
     />
   );
