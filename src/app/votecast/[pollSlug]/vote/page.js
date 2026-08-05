@@ -234,11 +234,25 @@ export default function PollVotingPage() {
           component="img"
           src={background.url}
           alt="background"
-          sx={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", objectFit: "cover", zIndex: -1, pointerEvents: "none" }}
+          sx={{
+            position: "fixed", top: 0, left: 0, width: "100%", height: "100%", objectFit: "cover", zIndex: -1, pointerEvents: "none",
+            // Forces its own GPU compositing layer — a fixed background behind
+            // backdrop-filter blur content otherwise fails to repaint newly
+            // scrolled-into-view regions on some mobile browsers (iOS Safari,
+            // some Android WebViews) until scrolling back up and down again.
+            transform: "translateZ(0)",
+            willChange: "transform",
+          }}
         />
       )}
       {background?.fileType === "video" && background.url && (
-        <Box sx={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", zIndex: -1, overflow: "hidden" }}>
+        <Box
+          sx={{
+            position: "fixed", top: 0, left: 0, width: "100%", height: "100%", zIndex: -1, overflow: "hidden",
+            transform: "translateZ(0)",
+            willChange: "transform",
+          }}
+        >
           <video
             key={`bg-video-${currentLang}-${background.url}`}
             ref={videoRef}
@@ -392,6 +406,10 @@ export default function PollVotingPage() {
               overflow: "hidden",
               backdropFilter: "blur(14px)",
               WebkitBackdropFilter: "blur(14px)",
+              // Own compositing layer, same reasoning as the fixed background
+              // above — a blurred element over a fixed background otherwise
+              // fails to repaint correctly on scroll on some mobile browsers.
+              transform: "translateZ(0)",
               background: theme.palette.mode === "dark"
                 ? theme.palette.votecast.cardBgDark
                 : theme.palette.votecast.cardBgLight,
