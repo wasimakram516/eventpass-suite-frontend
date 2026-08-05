@@ -77,6 +77,7 @@ const translations = {
     updating: "Saving...",
     required: "Please fill all required fields.",
     invalidCapacity: "Capacity must be a positive number.",
+    invalidTicketPrice: "Ticket price cannot be negative.",
     useCustomFields: "Use custom registration fields?",
     switchToClassic: "Switch to Classic Fields",
     switchToCustom: "Switch to Custom Fields",
@@ -240,6 +241,7 @@ const translations = {
     updating: "جارٍ الحفظ...",
     required: "يرجى تعبئة جميع الحقول المطلوبة.",
     invalidCapacity: "يجب أن تكون السعة رقماً موجباً.",
+    invalidTicketPrice: "لا يمكن أن يكون سعر التذكرة سالباً.",
     useCustomFields: "استخدم حقول التسجيل المخصصة؟",
     switchToClassic: "التحويل إلى الحقول الكلاسيكية",
     switchToCustom: "التحويل إلى الحقول المخصصة",
@@ -1258,6 +1260,16 @@ const EventModal = ({
       (isNaN(formData.capacity) || formData.capacity <= 0)
     ) {
       showMessage(t.invalidCapacity, "error");
+      return;
+    }
+
+    if (
+      formData.isPaid &&
+      formData.ticketTypes.some(
+        (tt) => isNaN(parseFloat(tt.price)) || parseFloat(tt.price) < 0,
+      )
+    ) {
+      showMessage(t.invalidTicketPrice, "error");
       return;
     }
 
