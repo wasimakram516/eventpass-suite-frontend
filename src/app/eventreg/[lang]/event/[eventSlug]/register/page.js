@@ -53,6 +53,7 @@ import { useMessage } from "@/contexts/MessageContext";
 import { downloadDefaultQrWrapperAsImage, hasDefaultQrWrapperDesign, hasWrapperDesign } from "@/utils/defaultQrWrapperDownload";
 import { downloadImage } from "@/utils/downloadImage";
 import BadgePreview from "@/components/badges/BadgePreview";
+import useSocket from "@/utils/useSocket";
 import BadgeCard from "@/components/badges/BadgeCard";
 import html2canvas from "html2canvas";
 export default function Registration() {
@@ -267,6 +268,29 @@ export default function Registration() {
     };
     fetchEvent();
   }, [eventSlug, lang]);
+
+  // Live ticket availability — this page otherwise only fetches once on
+  // load, so "X available" (and sold-out state) would silently go stale as
+  // other people check out. Patches only the capacity-related fields in
+  // place; ignored if it's for a different event or arrives before the
+  // initial fetch completes.
+  const handleCapacityUpdate = useCallback((payload) => {
+    if (!payload?.eventId) return;
+    setEvent((prev) => {
+      if (!prev || String(prev._id) !== String(payload.eventId)) return prev;
+      return {
+        ...prev,
+        registrations: payload.registrations,
+        capacity: payload.capacity,
+        ticketTypes: payload.ticketTypes,
+      };
+    });
+  }, []);
+  const socketEvents = useMemo(
+    () => ({ eventCapacityUpdated: handleCapacityUpdate }),
+    [handleCapacityUpdate],
+  );
+  useSocket(socketEvents);
 
   // Prepare dynamic fields + batch translation for event & form fields
   useEffect(() => {
