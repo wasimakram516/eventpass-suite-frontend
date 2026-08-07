@@ -402,6 +402,7 @@ const ParticipantsAdminPage = () => {
         <Box
           sx={{
             display: "flex",
+            flexDirection: { xs: "column", md: "row" },
             justifyContent: "space-between",
             alignItems: { xs: "flex-start", md: "center" },
             flexWrap: "wrap",
@@ -424,7 +425,16 @@ const ParticipantsAdminPage = () => {
               {t.manageParticipants} {event.title}
             </Typography>
           </Box>
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            sx={{
+              width: { xs: "100%", md: "auto" },
+              flexWrap: "wrap",
+              columnGap: 2,
+              rowGap: 1,
+              "& > *": { flexShrink: 0 },
+            }}
+          >
             {event.type === "admin" && (
               <>
                 {canCreate && (

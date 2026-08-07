@@ -898,13 +898,14 @@ export default function RecipientsManagePage() {
 
                 <Stack
                   direction="row"
-                  spacing={1}
                   sx={{
                     alignItems: "center",
-                    overflowX: "auto",
                     pb: 0.5,
-                    flexWrap: "nowrap",
-                    mt: 0.5
+                    flexWrap: "wrap",
+                    mt: 0.5,
+                    columnGap: 1,
+                    rowGap: 1,
+                    "& > *": { flexShrink: 0 },
                   }}>
                   <Button
                     variant="outlined"
@@ -1074,8 +1075,12 @@ export default function RecipientsManagePage() {
                   </Stack>
                 </Stack>
 
-                <Stack direction={{ xs: "column", md: "row" }} spacing={1.25} sx={{
-                  mt: 1.25
+                <Stack direction={{ xs: "column", md: "row" }} sx={{
+                  mt: 1.25,
+                  flexWrap: "wrap",
+                  columnGap: 1.25,
+                  rowGap: 1,
+                  "& > *": { flexShrink: 0 },
                 }}>
                   <Button
                     variant="outlined"
@@ -1118,8 +1123,12 @@ export default function RecipientsManagePage() {
                   </FormControl>
                 </Stack>
 
-                <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{
-                  mt: 1.25
+                <Stack direction={{ xs: "column", sm: "row" }} sx={{
+                  mt: 1.25,
+                  flexWrap: "wrap",
+                  columnGap: 1,
+                  rowGap: 1,
+                  "& > *": { flexShrink: 0 },
                 }}>
                   {canBulkImport && (
                     <Button

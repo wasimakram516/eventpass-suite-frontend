@@ -852,10 +852,12 @@ export default function ViewRegistrations() {
             </Stack>
             <Stack
                 direction={{ xs: "column", sm: "row" }}
-                spacing={2}
                 sx={{
                     width: { xs: "100%", sm: "auto" },
-                    gap: dir === "rtl" ? 1 : 0,
+                    flexWrap: "wrap",
+                    columnGap: 2,
+                    rowGap: { xs: 2, sm: 1 },
+                    "& > *": { flexShrink: 0 },
                 }}
             >
                 {!eventDetails?.linkedEventRegId && (
@@ -933,160 +935,161 @@ export default function ViewRegistrations() {
                 )}
             </Stack>
             <Divider sx={{ my: 3 }} />
-            <Box
-                sx={{
-                    display: "flex",
-                    flexDirection: { xs: "column", md: "row" },
-                    justifyContent: "space-between",
-                    alignItems: { xs: "flex-start", md: "center" },
-                    gap: 2,
-                    mb: 3,
-                    px: { xs: 1, sm: 2 }
-                }}>
+                {/* Search, Filter, and Info Toolbar */}
                 <Box
                     sx={{
-                        width: "100%",
-                        maxWidth: { xs: "100%", md: "50%" }
+                        display: "flex",
+                        flexDirection: { xs: "column", lg: "row" },
+                        justifyContent: "space-between",
+                        alignItems: { xs: "flex-start", lg: "center" },
+                        gap: 2,
+                        mb: 3,
+                        px: { xs: 1, sm: 2 }
                     }}>
-                    {isLoadingMore && (
-                        <Typography
-                            variant="body2"
-                            sx={{
-                                color: "info.main",
-                                fontWeight: "500",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 0.5,
-                                mb: 0.5
-                            }}>
-                            <CircularProgress size={14} thickness={5} sx={{ mr: 0.5 }} />
-                            Loading {allRegistrations.length} of {totalRegistrations} records
+                    {/* Left: Record info with loading progress */}
+                    <Box
+                        sx={{
+                            width: "100%",
+                            maxWidth: { xs: "100%", lg: "50%" }
+                        }}>
+                        {isLoadingMore && (
+                            <Typography
+                                variant="body2"
+                                sx={{
+                                    color: "info.main",
+                                    fontWeight: "500",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 0.5,
+                                    mb: 0.5
+                                }}>
+                                <CircularProgress size={14} thickness={5} sx={{ mr: 0.5 }} />
+                                Loading {allRegistrations.length} of {totalRegistrations} records
+                            </Typography>
+                        )}
+                        <Typography variant="body2" sx={{
+                            color: "text.secondary"
+                        }}>
+                            {t.showing} {(page - 1) * limit + 1}-
+                            {Math.min(page * limit, filteredRegistrations.length)} {t.of}{" "}
+                            {filteredRegistrations.length} {t.records}
                         </Typography>
-                    )}
-                    <Typography variant="body2" sx={{
-                        color: "text.secondary"
-                    }}>
-                        {t.showing} {(page - 1) * limit + 1}-
-                        {Math.min(page * limit, filteredRegistrations.length)} {t.of}{" "}
-                        {filteredRegistrations.length} {t.records}
-                    </Typography>
 
-                    {(searchTerm || Object.keys(filters).some((k) => filters[k])) && (
-                        <Typography
-                            variant="body2"
-                            color="primary"
-                            sx={{
-                                fontWeight: "500",
-                                mt: 0.5,
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 0.5
-                            }}>
-                            <ICONS.search fontSize="small" sx={{ opacity: 0.7 }} />
-                            {filteredRegistrations.length === 1
-                                ? t.matchingRecords.replace(
-                                    "{count}",
-                                    filteredRegistrations.length
-                                )
-                                : t.matchingRecordsPlural.replace(
-                                    "{count}",
-                                    filteredRegistrations.length
-                                )}{" "}
-                            {t.found}
-                        </Typography>
-                    )}
-                </Box>
+                        {/* Matching results counter */}
+                        {(searchTerm || Object.keys(filters).some((k) => filters[k])) && (
+                            <Typography
+                                variant="body2"
+                                color="primary"
+                                sx={{
+                                    fontWeight: "500",
+                                    mt: 0.5,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 0.5
+                                }}>
+                                <ICONS.search fontSize="small" sx={{ opacity: 0.7 }} />
+                                {filteredRegistrations.length === 1
+                                    ? t.matchingRecords.replace(
+                                        "{count}",
+                                        filteredRegistrations.length
+                                    )
+                                    : t.matchingRecordsPlural.replace(
+                                        "{count}",
+                                        filteredRegistrations.length
+                                    )}{" "}
+                                {t.found}
+                            </Typography>
+                        )}
+                    </Box>
 
-                <Stack
-                    direction={{ xs: "column", sm: "row" }}
-                    spacing={1.5}
-                    sx={[{
-                        alignItems: { xs: "stretch", sm: "center" },
-                        justifyContent: "flex-end",
-                        width: "100%"
-                    }, dir === "rtl"
-                        ? {
+                    <Stack
+                        direction={{ xs: "column", sm: "row" }}
+                        sx={[{
+                            alignItems: { xs: "stretch", sm: "center" },
+                            justifyContent: { xs: "flex-start", lg: "flex-end" },
+                            width: "100%",
+                            flexWrap: "wrap",
                             columnGap: 1.5,
-                            rowGap: 1.5,
-                        }
-                        : {}]}>
-                    <TextField
-                        size="small"
-                        variant="outlined"
-                        placeholder={t.searchPlaceholder}
-                        value={rawSearch}
-                        onChange={(e) => setRawSearch(e.target.value)}
-                        sx={{
-                            flex: 1,
-                            minWidth: { xs: "100%", sm: 220 },
-                        }}
-                        slotProps={{
-                            input: {
-                                startAdornment: (
-                                    <ICONS.search
-                                        fontSize="small"
-                                        sx={{
-                                            mr: dir === "rtl" ? 0 : 1,
-                                            ml: dir === "rtl" ? 1 : 0,
-                                            opacity: 0.6,
-                                        }}
-                                    />
-                                ),
-                                sx:
-                                    dir === "rtl"
-                                        ? {
-                                            paddingRight: 2,
-                                        }
-                                        : {},
-                            }
-                        }}
-                    />
+                            rowGap: 1.5
+                        }]}>
+                        <TextField
+                            size="small"
+                            variant="outlined"
+                            placeholder={t.searchPlaceholder}
+                            value={rawSearch}
+                            onChange={(e) => setRawSearch(e.target.value)}
+                            sx={{
+                                flex: 1,
+                                minWidth: { xs: "100%", sm: "100%", lg: 220 },
+                            }}
+                            slotProps={{
+                                input: {
+                                    startAdornment: (
+                                        <ICONS.search
+                                            fontSize="small"
+                                            sx={{
+                                                mr: dir === "rtl" ? 0 : 1,
+                                                ml: dir === "rtl" ? 1 : 0,
+                                                opacity: 0.6,
+                                            }}
+                                        />
+                                    ),
+                                    sx:
+                                        dir === "rtl"
+                                            ? {
+                                                paddingRight: 2,
+                                            }
+                                            : {},
+                                }
+                            }}
+                        />
 
-                    <FormControl size="small" sx={{ minWidth: 170 }}>
-                        <InputLabel id="sort-label">{t.sort}</InputLabel>
-                        <Select
-                            labelId="sort-label"
-                            value={sortOrder}
-                            label={t.sort}
-                            onChange={(e) => setSortOrder(Number(e.target.value))}
+                        <FormControl size="small" sx={{ minWidth: 170 }}>
+                            <InputLabel id="sort-label">{t.sort}</InputLabel>
+                            <Select
+                                labelId="sort-label"
+                                value={sortOrder}
+                                label={t.sort}
+                                onChange={(e) => setSortOrder(Number(e.target.value))}
+                            >
+                                <MenuItem value={-1}>{t.mostRecent}</MenuItem>
+                                <MenuItem value={1}>{t.oldest}</MenuItem>
+                            </Select>
+                        </FormControl>
+                        <Button
+                            variant="outlined"
+                            startIcon={<ICONS.filter />}
+                            onClick={() => setFilterModalOpen(true)}
+                            sx={{
+                                width: { xs: "100%", sm: "auto" },
+                                ...getStartIconSpacing(dir),
+                            }}
                         >
-                            <MenuItem value={-1}>{t.mostRecent}</MenuItem>
-                            <MenuItem value={1}>{t.oldest}</MenuItem>
-                        </Select>
-                    </FormControl>
-                    <Button
-                        variant="outlined"
-                        startIcon={<ICONS.filter />}
-                        onClick={() => setFilterModalOpen(true)}
-                        sx={{
-                            width: { xs: "100%", sm: "auto" },
-                            ...getStartIconSpacing(dir),
-                        }}
-                    >
-                        {t.filters}
-                    </Button>
+                            {t.filters}
+                        </Button>
 
-                    <FormControl
-                        size="small"
-                        sx={{
-                            minWidth: { xs: "100%", sm: 150 },
-                        }}
-                    >
-                        <InputLabel>{t.recordsPerPage}</InputLabel>
-                        <Select
-                            value={limit}
-                            onChange={handleLimitChange}
-                            label={t.recordsPerPage}
+                        {/* Records per page */}
+                        <FormControl
+                            size="small"
+                            sx={{
+                                minWidth: { xs: "100%", sm: 150 },
+                            }}
                         >
-                            {[5, 10, 20, 50, 100, 250, 500].map((n) => (
-                                <MenuItem key={n} value={n}>
-                                    {toArabicDigits(n, language)}
-                                </MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
-                </Stack>
-            </Box>
+                            <InputLabel>{t.recordsPerPage}</InputLabel>
+                            <Select
+                                value={limit}
+                                onChange={handleLimitChange}
+                                label={t.recordsPerPage}
+                            >
+                                {[5, 10, 20, 50, 100, 250, 500].map((n) => (
+                                    <MenuItem key={n} value={n}>
+                                        {toArabicDigits(n, language)}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    </Stack>
+                </Box>
             {(() => {
                 const activeFilterEntries = [];
 

@@ -1217,8 +1217,14 @@ export default function ViewRegistrations() {
       </Stack>
       <Stack
         direction={{ xs: "column", sm: "row" }}
-        spacing={2}
-        sx={{ mb: 2, width: { xs: "100%", sm: "auto" } }}
+        sx={{
+          mb: 2,
+          width: { xs: "100%", sm: "auto" },
+          flexWrap: "wrap",
+          columnGap: 2,
+          rowGap: { xs: 2, sm: 1 },
+          "& > *": { flexShrink: 0 },
+        }}
       >
         {canCreate && (
           <Button
@@ -1336,17 +1342,18 @@ export default function ViewRegistrations() {
       <Box
         sx={{
           display: "flex",
-          flexDirection: { xs: "column", md: "row" },
+          flexDirection: { xs: "column", lg: "row" },
           justifyContent: "space-between",
-          alignItems: { xs: "flex-start", md: "center" },
+          alignItems: { xs: "flex-start", lg: "center" },
           gap: 2,
           mb: 3,
           px: { xs: 1, sm: 2 }
         }}>
+        {/* Left: Record info with loading progress */}
         <Box
           sx={{
             width: "100%",
-            maxWidth: { xs: "100%", md: "50%" }
+            maxWidth: { xs: "100%", lg: "50%" }
           }}>
           {isLoadingMore && (
             <Typography
@@ -1371,6 +1378,7 @@ export default function ViewRegistrations() {
             {totalRegistrations} {t.records}
           </Typography>
 
+          {/* Matching results counter */}
           {(searchTerm || Object.keys(filters).some((k) => filters[k])) && (
             <Typography
               variant="body2"
@@ -1386,11 +1394,11 @@ export default function ViewRegistrations() {
               {filteredRegistrations.length === 1
                 ? t.matchingRecords.replace(
                   "{count}",
-                  filteredRegistrations.length
+                  filteredRegistrations.length,
                 )
                 : t.matchingRecordsPlural.replace(
                   "{count}",
-                  filteredRegistrations.length
+                  filteredRegistrations.length,
                 )}{" "}
               {t.found}
             </Typography>
@@ -1399,12 +1407,14 @@ export default function ViewRegistrations() {
 
         <Stack
           direction={{ xs: "column", sm: "row" }}
-          spacing={1.5}
           sx={[{
             alignItems: { xs: "stretch", sm: "center" },
-            justifyContent: "flex-end",
-            width: "100%"
-          }, dir === "rtl" ? { columnGap: 1.5, rowGap: 1.5 } : {}]}>
+            justifyContent: { xs: "flex-start", lg: "flex-end" },
+            width: "100%",
+            flexWrap: "wrap",
+            columnGap: 1.5,
+            rowGap: 1.5
+          }]}>
           <TextField
             size="small"
             variant="outlined"
@@ -1413,9 +1423,7 @@ export default function ViewRegistrations() {
             onChange={(e) => setRawSearch(e.target.value)}
             sx={{
               flex: 1,
-              minWidth: { xs: "100%", sm: 220 },
-              mr: dir === "rtl" ? 0 : 1.5,
-              ml: dir === "rtl" ? 1.5 : 0,
+              minWidth: { xs: "100%", sm: "100%", lg: 220 },
             }}
             slotProps={{
               input: {
@@ -1429,7 +1437,12 @@ export default function ViewRegistrations() {
                     }}
                   />
                 ),
-                sx: dir === "rtl" ? { paddingRight: 2 } : {},
+                sx:
+                  dir === "rtl"
+                    ? {
+                      paddingRight: 2,
+                    }
+                    : {},
               }
             }}
           />
@@ -1458,6 +1471,7 @@ export default function ViewRegistrations() {
             {t.filters}
           </Button>
 
+          {/* Records per page */}
           <FormControl
             size="small"
             sx={{
