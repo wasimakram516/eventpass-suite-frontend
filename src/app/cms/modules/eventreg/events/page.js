@@ -59,6 +59,7 @@ const translations = {
     shareTitle: "Share",
     viewRegs: "View Registrations",
     insights: "Intelligent Insights",
+    promoCodes: "Promo Codes",
     createdBy: "Created:",
     updatedBy: "Updated:",
     createdAt: "Created At:",
@@ -93,6 +94,7 @@ const translations = {
     shareTitle: "مشاركة",
     viewRegs: "عرض التسجيلات",
     insights: "تحليلات ذكية",
+    promoCodes: "رموز الخصم",
     cloneEventTitle: "استنساخ الفعالية؟",
     cloneEventMessage: "هل تريد إنشاء نسخة من هذه الفعالية؟",
     clone: "استنساخ",
@@ -369,6 +371,14 @@ export default function EventsPage() {
                     router.push(
                       `/cms/modules/eventreg/events/${ev.slug}/insights`
                     )
+                  }
+                  onPromoCodes={
+                    ev.isPaid
+                      ? () =>
+                        router.push(
+                          `/cms/modules/eventreg/events/${ev.slug}/promo-codes`
+                        )
+                      : undefined
                   }
                 />
               );

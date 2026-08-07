@@ -118,6 +118,7 @@ import {
   Key as KeyIcon,
   GridView as GridViewIcon,
   Insights as InsightsIcon,
+  LocalOffer as LocalOfferIcon,
 } from "@mui/icons-material";
 
 // Screen Sharing / Devices
@@ -247,6 +248,7 @@ const ICONS = {
   games: SportsEsportsIcon,
   grid: GridViewIcon,
   insights: InsightsIcon,
+  promoCode: LocalOfferIcon,
   key: KeyIcon,
   payment: MonetizationOnIcon,
   peopleAlt: PeopleAltIcon,

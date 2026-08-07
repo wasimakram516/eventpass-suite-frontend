@@ -56,6 +56,7 @@ import useLogsSocket from "@/hooks/useLogsSocket";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import LogSnapshotModal from "@/components/modals/LogSnapshotModal";
 import { getRegistrationMeta } from "@/services/eventreg/registrationService";
+import { getPromoCodeMeta } from "@/services/eventreg/promoCodeService";
 import { getPollMeta } from "@/services/votecast/pollService";
 import { getQuestionMeta as getQuiznestQuestionMeta } from "@/services/quiznest/questionService";
 import { getQuestionMeta as getEventduelQuestionMeta } from "@/services/eventduel/questionService";
@@ -433,6 +434,20 @@ export default function LogsPage() {
     }
 
     const searchQuery = searchValue ? `?search=${encodeURIComponent(searchValue)}` : "";
+
+    if (itemType === "PromoCode" && log.itemId) {
+      try {
+        const meta = await getPromoCodeMeta(log.itemId);
+        if (meta && !meta.error && meta.eventSlug) {
+          router.push(`/cms/modules/eventreg/events/${meta.eventSlug}/promo-codes${searchQuery}`);
+          return;
+        }
+      } catch {
+        // fall through to legacy navigation below
+      }
+      router.push(`/cms/modules/eventreg/events${searchQuery}`);
+      return;
+    }
 
     if (itemType === "Registration") {
       try {

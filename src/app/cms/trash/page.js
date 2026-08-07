@@ -433,6 +433,7 @@ export default function TrashPage() {
       "registration-checkin": "Registration (CheckIn)",
       "event-eventreg": "Event (EventReg)",
       "event-checkin": "Event (CheckIn)",
+      "promocode-eventreg": "Promo Code (EventReg)",
       "game-quiznest": "Game (QuizNest)",
       "game-tapmatch": "Game (TapMatch)",
       "game-eventduel": "Game (EventDuel)",
@@ -490,6 +491,7 @@ export default function TrashPage() {
       item.slug ||
       item.text ||
       item.question ||
+      item.code ||
       null;
     if (!name && isDisplayMedia && (item.imageUrl || item.signatureUrl)) {
       name = "Image";
@@ -1107,6 +1109,7 @@ export default function TrashPage() {
                   item.imageUrl ||
                   item.signatureUrl ||
                   item.token ||
+                  item.code ||
                   ""
                 ).toLowerCase();
 
