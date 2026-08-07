@@ -1576,10 +1576,12 @@ export default function ViewRegistrations() {
       {/* Right side: action buttons */}
       <Stack
         direction={{ xs: "column", sm: "row" }}
-        spacing={2}
         sx={{
           width: { xs: "100%", sm: "auto" },
-          gap: dir === "rtl" ? 1 : 0,
+          flexWrap: "wrap",
+          columnGap: 2,
+          rowGap: { xs: 2, sm: 1 },
+          "& > *": { flexShrink: 0 },
         }}
       >
         {canCreate && (
@@ -1752,9 +1754,9 @@ export default function ViewRegistrations() {
       <Box
         sx={{
           display: "flex",
-          flexDirection: { xs: "column", md: "row" },
+          flexDirection: { xs: "column", lg: "row" },
           justifyContent: "space-between",
-          alignItems: { xs: "flex-start", md: "center" },
+          alignItems: { xs: "flex-start", lg: "center" },
           gap: 2,
           mb: 3,
           px: { xs: 1, sm: 2 }
@@ -1763,7 +1765,7 @@ export default function ViewRegistrations() {
         <Box
           sx={{
             width: "100%",
-            maxWidth: { xs: "100%", md: "50%" }
+            maxWidth: { xs: "100%", lg: "50%" }
           }}>
           {isLoadingMore && (
             <Typography
@@ -1817,17 +1819,14 @@ export default function ViewRegistrations() {
 
         <Stack
           direction={{ xs: "column", sm: "row" }}
-          spacing={1.5}
           sx={[{
             alignItems: { xs: "stretch", sm: "center" },
-            justifyContent: "flex-end",
-            width: "100%"
-          }, dir === "rtl"
-            ? {
-              columnGap: 1.5,
-              rowGap: 1.5,
-            }
-            : {}]}>
+            justifyContent: { xs: "flex-start", lg: "flex-end" },
+            width: "100%",
+            flexWrap: "wrap",
+            columnGap: 1.5,
+            rowGap: 1.5
+          }]}>
           <TextField
             size="small"
             variant="outlined"
@@ -1836,7 +1835,7 @@ export default function ViewRegistrations() {
             onChange={(e) => setRawSearch(e.target.value)}
             sx={{
               flex: 1,
-              minWidth: { xs: "100%", sm: 220 },
+              minWidth: { xs: "100%", sm: "100%", lg: 220 },
             }}
             slotProps={{
               input: {

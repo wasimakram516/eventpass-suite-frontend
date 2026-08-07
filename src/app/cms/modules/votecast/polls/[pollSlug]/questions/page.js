@@ -212,9 +212,16 @@ export default function QuestionsPage() {
                         </Typography>
                     </Box>
 
-                    <Stack direction="row" spacing={1} sx={{
-                        flexWrap: "wrap"
-                    }}>
+                    <Stack
+                        direction={{ xs: "column", sm: "row" }}
+                        sx={{
+                            width: { xs: "100%", sm: "auto" },
+                            flexWrap: "wrap",
+                            columnGap: 1,
+                            rowGap: 1,
+                            "& > *": { flexShrink: 0 },
+                        }}
+                    >
                         {canCreate && (
                             <Button
                                 variant="contained"
