@@ -31,6 +31,7 @@ import {
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useMessage } from "@/contexts/MessageContext";
+import { fetchMe } from "@/services/authService";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import { getModuleIcon } from "@/utils/iconMapper";
@@ -42,6 +43,7 @@ import {
   createAdminUser,
 } from "@/services/userService";
 import { updateBusiness } from "@/services/businessService";
+import { getModules } from "@/services/moduleService";
 import {
   getRoles,
   getRolePermissions,
@@ -222,6 +224,11 @@ const defaultForm = {
   logoPreview: "",
   logoFile: null,
   canManageAccessControl: false,
+  // undefined = unrestricted (unset, the backward-compatible default — see
+  // User.js). An explicit array (even []) means "exactly these staff roles
+  // and nothing else." Only ever set by the restrictStaffRoles toggle below.
+  allowedStaffRoleIds: undefined,
+  isActive: true,
 };
 
 function UserFormModal({
@@ -231,13 +238,12 @@ function UserFormModal({
   isEditMode,
   selectedUser,
   businesses,
-  availableModules,
   t,
   dir,
   align,
   language,
 }) {
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, setUser: setCurrentUser } = useAuth();
   const { showMessage } = useMessage();
   const theme = useTheme();
 
@@ -252,11 +258,27 @@ function UserFormModal({
   const [loading, setLoading] = useState(false);
 
   const [roles, setRoles] = useState([]);
+  const [staffRoleCatalog, setStaffRoleCatalog] = useState([]);
+  // Local UI-only toggle, not itself sent to the backend — mirrors
+  // attachToExistingBusiness's pattern. OFF keeps form.allowedStaffRoleIds
+  // undefined (unrestricted); ON reveals the checklist and turns it into an
+  // explicit array. Distinguishes "never configured" from "explicitly
+  // restricted to nothing," which an empty checklist alone can't.
+  const [restrictStaffRoles, setRestrictStaffRoles] = useState(false);
+  const [availableModules, setAvailableModules] = useState([]);
   const [rolePermissionRows, setRolePermissionRows] = useState([]);
   const [overridesWorking, setOverridesWorking] = useState({});
   const [actionLabels, setActionLabels] = useState({});
 
   const isEditingSuperAdmin = isEditMode && selectedUser?.role === "superadmin";
+  // Same currentUser id-shape caveat as users/page.js's self-card
+  // normalization — AuthContext's currentUser carries `.id` (from
+  // authController's hand-built /auth/me response), not `._id` like every
+  // other user record.
+  const isEditingSelf =
+    isEditMode &&
+    selectedUser &&
+    String(selectedUser._id) === String(currentUser?._id || currentUser?.id);
 
   // Per the access-control design: only superadmin may assign dynamic
   // Roles/overrides to admin/business-tier accounts by default; a business
@@ -303,6 +325,22 @@ function UserFormModal({
     ? availableModules.filter((m) => currentUser?.modulePermissions?.includes(m.key))
     : availableModules;
 
+  // The Role select was only ever scoped to userType (staff/business/admin),
+  // never to a business actor's OWN allowedStaffRoleIds whitelist — so a
+  // business owner restricted to just "Desk Staff" still saw "Door Staff" as
+  // a pickable option in Create/Edit, even though assertCanAssignRole would
+  // reject it server-side. Mirrors the backend check: only applies when the
+  // actor is business, the target is staff, and a whitelist is actually set
+  // (unset means unrestricted, per User.js).
+  const roleOptions =
+    currentUserRole === "business" &&
+      form.userType === "staff" &&
+      Array.isArray(currentUser?.allowedStaffRoleIds)
+      ? roles.filter((r) =>
+        currentUser.allowedStaffRoleIds.some((id) => String(id?._id || id) === String(r._id)),
+      )
+      : roles;
+
   // Populate the form whenever the modal opens — mirrors this codebase's
   // existing BusinessFormModal/GameFormModal convention (form population
   // via an effect keyed on `open`, not a synchronous setForm from the
@@ -334,12 +372,18 @@ function UserFormModal({
         logoPreview: selectedUser.business?.logoUrl || "",
         logoFile: null,
         canManageAccessControl: !!selectedUser.canManageAccessControl,
+        allowedStaffRoleIds: Array.isArray(selectedUser.allowedStaffRoleIds)
+          ? selectedUser.allowedStaffRoleIds.map((r) => r?._id || r)
+          : undefined,
+        isActive: selectedUser.isActive !== false,
       });
+      setRestrictStaffRoles(Array.isArray(selectedUser.allowedStaffRoleIds));
     } else {
       setForm({
         ...defaultForm,
         userType: isAdminOrSuperAdmin ? "business" : "staff",
       });
+      setRestrictStaffRoles(false);
     }
     setErrors({});
     setActiveTab(0);
@@ -349,9 +393,27 @@ function UserFormModal({
 
   useEffect(() => {
     if (!open || !canManageDynamicRoles) return;
-    getRoles().then((res) => {
+    // Scoped to the TARGET being created/edited (form.userType), not the
+    // current actor's own role — a staff target can only ever use
+    // eventreg/checkin/digipass (see getModulesForRole("staff") on the
+    // backend), so offering the actor's own full module set here (e.g. all
+    // 13, if the actor is a business owner) let a business owner create
+    // staff with access to modules staff can never actually route into.
+    getRoles(form.userType).then((res) => {
       if (!res?.error) setRoles(Array.isArray(res) ? res : res?.data || []);
     });
+    getModules(form.userType).then((res) => {
+      if (!res?.error) setAvailableModules(Array.isArray(res) ? res : res?.data || []);
+    });
+    // The new "Roles" tab (business target only) whitelists which STAFF
+    // roles this business owner may hand to their own staff later — always
+    // the staff catalog, regardless of form.userType (which is "business"
+    // whenever this tab is even visible).
+    if (form.userType === "business") {
+      getRoles("staff").then((res) => {
+        if (!res?.error) setStaffRoleCatalog(Array.isArray(res) ? res : res?.data || []);
+      });
+    }
     getActions().then((res) => {
       if (res?.error) return;
       const list = Array.isArray(res) ? res : res?.data || [];
@@ -360,7 +422,7 @@ function UserFormModal({
       setActionLabels(labels);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, canManageDynamicRoles]);
+  }, [open, canManageDynamicRoles, form.userType]);
 
   useEffect(() => {
     if (!form.roleId) {
@@ -426,7 +488,11 @@ function UserFormModal({
   // — Modules/Permissions are just new keys appended at the end.
   const tabsList = useMemo(() => {
     const list = ["details"];
-    if (form.userType === "business") list.push("businessProfile");
+    // A business owner can never edit their own business info (see
+    // businessController.updateBusiness / Settings being hidden for them
+    // entirely) — this tab is admin/superadmin-only for the same reason,
+    // not just the "select business" dropdown inside it.
+    if (form.userType === "business" && isAdminOrSuperAdmin) list.push("businessProfile");
     if (
       !isEditingSuperAdmin &&
       canManageDynamicRoles &&
@@ -435,6 +501,11 @@ function UserFormModal({
         form.userType === "business")
     ) {
       list.push("modules");
+      // Only meaningful for a business target — restricts which staff-typed
+      // roles THAT owner may later hand to their own staff (see
+      // allowedStaffRoleIds on User.js). Staff/admin targets don't create
+      // staff of their own, so there's nothing to whitelist for them.
+      if (form.userType === "business") list.push("staffRoles");
       list.push("permissions");
     }
     return list;
@@ -467,14 +538,25 @@ function UserFormModal({
         newErrors.businessId = t.businessRequired;
       }
     } else if (key === "businessProfile") {
-      if (!form.businessName.trim())
-        newErrors.businessName = t.businessNameRequired;
-      if (!form.businessSlug.trim())
-        newErrors.businessSlug = t.businessSlugRequired;
-      if (!form.businessEmail.trim()) {
-        newErrors.businessEmail = t.businessEmailRequired;
-      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.businessEmail)) {
-        newErrors.businessEmail = t.emailInvalid;
+      // Mirrors handleModalSave's own branching below — attaching to an
+      // existing business only needs businessId; the name/slug/email
+      // fields are for the "create a new business" path and stay empty
+      // when attaching, so requiring them here blocked Next from ever
+      // advancing past this tab while attached.
+      if (form.attachToExistingBusiness) {
+        if (!form.businessId) {
+          newErrors.businessId = t.businessRequired;
+        }
+      } else {
+        if (!form.businessName.trim())
+          newErrors.businessName = t.businessNameRequired;
+        if (!form.businessSlug.trim())
+          newErrors.businessSlug = t.businessSlugRequired;
+        if (!form.businessEmail.trim()) {
+          newErrors.businessEmail = t.businessEmailRequired;
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.businessEmail)) {
+          newErrors.businessEmail = t.emailInvalid;
+        }
       }
     }
 
@@ -529,20 +611,35 @@ function UserFormModal({
       return;
     }
 
-    // Creation requires an authorized actor and (except for a superadmin
-    // target, which bypasses roles entirely) an explicitly picked role —
-    // no more silent default. Checked here rather than folded into
-    // newErrors since it's a whole-form authorization gate, not a specific
-    // field's validation message.
-    if (!isEditMode) {
-      if (!isAuthorizedToCreate) {
-        showMessage(t.notAuthorizedToCreateUser, "error");
-        return;
-      }
-      if (form.userType !== "superadmin" && !form.roleId) {
-        showMessage(t.roleRequired, "error");
-        return;
-      }
+    // Creation requires an authorized actor — no such check applies to
+    // editing an existing user (canEditUser upstream already gated whether
+    // this modal could even open).
+    if (!isEditMode && !isAuthorizedToCreate) {
+      showMessage(t.notAuthorizedToCreateUser, "error");
+      return;
+    }
+
+    // A role can be CHANGED but never REMOVED, in both create and edit —
+    // every non-superadmin user needs a roleId to have any effective
+    // permission at all (see permissionResolver.js). Only checked when the
+    // Role select is actually visible (canManageDynamicRoles) — if it's
+    // hidden, roleId is stripped from the payload entirely below and the
+    // user's existing role is left untouched, not cleared.
+    if (
+      (canManageDynamicRoles || !isEditMode) &&
+      form.userType !== "superadmin" &&
+      !form.roleId
+    ) {
+      showMessage(t.roleRequired, "error");
+      return;
+    }
+
+    if (canManageDynamicRoles && roleCeilingViolation) {
+      showMessage(
+        `Cannot assign this role: it grants ${roleCeilingViolation}, which you do not have.`,
+        "error",
+      );
+      return;
     }
 
     setLoading(true);
@@ -555,16 +652,62 @@ function UserFormModal({
       // otherwise every save (even ones that never touched the Role select)
       // would attempt a role reassignment and could be rejected outright.
       if (!canManageDynamicRoles) delete payload.roleId;
+      // Same reasoning for modulePermissions — the backend treats it as an
+      // access-control act requiring the ACTOR's own canManageAccessControl
+      // (see usersController.updateUser), same as roleId. This field was
+      // missing from this guard entirely, so every edit save — even a plain
+      // name change on yourself or your own staff — always carried the
+      // form's current modulePermissions array along and got rejected
+      // outright for any actor whose own flag is off, regardless of
+      // whether modules were ever touched.
+      if (!canManageDynamicRoles) delete payload.modulePermissions;
+      // Same reasoning again for isActive — deactivation blocks login
+      // entirely, so it's gated the same as modulePermissions/roleId, and
+      // every edit form carries the target's CURRENT isActive along
+      // regardless of whether the (self-edit-hidden) toggle was ever shown.
+      if (!canManageDynamicRoles) delete payload.isActive;
       // Same reasoning for canManageAccessControl — it's superadmin-only on
       // the backend, so a non-superadmin editing their own/another user
       // would otherwise get the whole save rejected just for carrying this
       // field's current (unchanged) value along.
       if (!isSuperAdmin) delete payload.canManageAccessControl;
+      // Same reasoning again for businessId — it's superadmin-only on the
+      // backend (reassigning a user's business crosses a tenant boundary),
+      // but every edit form for a business-type target carries the
+      // target's CURRENT businessId along regardless of which tab was
+      // touched. Without this, a non-superadmin fixing a typo in their own
+      // name would get the whole save rejected just for carrying that
+      // field's unchanged value.
+      if (!isSuperAdmin) delete payload.businessId;
+      // Only meaningful for a business target, and only touched at all if
+      // this actor could even see the Roles tab (canManageDynamicRoles).
+      // restrictStaffRoles OFF after previously being ON means "clear this
+      // restriction" — sent as an explicit null (backend: superadmin-only,
+      // since un-restricting widens what the business can do). OFF and
+      // never was restricted just omits the key (a true no-op, preserves
+      // undefined either side).
+      if (form.userType !== "business" || !canManageDynamicRoles) {
+        delete payload.allowedStaffRoleIds;
+      } else if (!restrictStaffRoles) {
+        payload.allowedStaffRoleIds = Array.isArray(selectedUser?.allowedStaffRoleIds) ? null : undefined;
+        if (payload.allowedStaffRoleIds === undefined) delete payload.allowedStaffRoleIds;
+      }
 
       const userRes = await updateUser(selectedUser._id, payload);
       if (userRes?.error) {
         setLoading(false);
         return;
+      }
+
+      // The "self" card (renderUserCard(currentUser, true) in users/page.js)
+      // renders from AuthContext's `currentUser`, not from the regular user
+      // list — so a successful self-edit updates the DB but leaves the
+      // displayed card, sidebar, and anywhere else currentUser is read
+      // showing stale data until AuthContext's next periodic refresh (up to
+      // 30s later, or a resume/focus event). Refresh it immediately instead
+      // of waiting on that.
+      if (String(selectedUser._id) === String(currentUser?._id || currentUser?.id)) {
+        fetchMe().then(setCurrentUser).catch(() => {});
       }
 
       if (canManageDynamicRoles) {
@@ -656,6 +799,10 @@ function UserFormModal({
             ? { canManageAccessControl: form.canManageAccessControl }
             : {}),
           roleId: form.roleId,
+          // Omitted entirely unless the actor actually turned the
+          // restriction on — leaves the new owner unrestricted by default
+          // (see User.js), same as an untouched pre-existing owner.
+          ...(restrictStaffRoles ? { allowedStaffRoleIds: form.allowedStaffRoleIds || [] } : {}),
         });
 
         if (res?.error) {
@@ -714,6 +861,26 @@ function UserFormModal({
       return form.modulePermissions.includes(perm.module);
     });
   }, [rolePermissionRows, availableModules, form.modulePermissions]);
+
+  // Mirrors the backend's assertCanAssignRole ceiling check (roleAssignmentAuthz.js)
+  // using data already on hand — rolePermissionRows loads as soon as a role is
+  // picked, and currentUser.permissions is the same ceiling set already used
+  // for the Permissions tab's per-checkbox disabling above. Surfaced right
+  // under the Role select, immediately on selection, instead of only
+  // discovering it from a generic backend error banner after Save — and for
+  // the same reason the granted-but-ceiling-exceeding action wasn't otherwise
+  // visually distinguishable from an ordinary disabled override in that tab.
+  const roleCeilingViolation = useMemo(() => {
+    if (isSuperAdmin || !form.roleId || rolePermissionRows.length === 0) return null;
+    for (const perm of rolePermissionRows) {
+      for (const action of perm.grantedActions || []) {
+        if (!currentUser?.permissions?.includes(`${perm.module}:${action}`)) {
+          return `${perm.module}:${action}`;
+        }
+      }
+    }
+    return null;
+  }, [isSuperAdmin, form.roleId, rolePermissionRows, currentUser]);
 
   const dialogTitle = isEditMode
     ? selectedUser?.role === "admin" || selectedUser?.role === "superadmin"
@@ -815,7 +982,9 @@ function UserFormModal({
                           ? t.businessProfileTab
                           : key === "modules"
                             ? t.modulesTab
-                            : t.permissionsTab
+                            : key === "staffRoles"
+                              ? t.staffRolesTab
+                              : t.permissionsTab
                     }
                   />
                 ))}
@@ -861,6 +1030,30 @@ function UserFormModal({
               />
             ))}
 
+            {/* Never shown for self-edit (see updateUser's self-lockout
+                guard) — same access-control-act gate as modulePermissions/
+                roleId (canManageDynamicRoles), since deactivation blocks
+                login entirely. */}
+            {isEditMode && !isEditingSelf && canManageDynamicRoles && (
+              <Box sx={{ mt: 1 }}>
+                <FormControlLabel
+                  sx={{ display: "flex", m: 0 }}
+                  control={
+                    <Switch
+                      checked={form.isActive}
+                      onChange={(e) =>
+                        setForm((prev) => ({ ...prev, isActive: e.target.checked }))
+                      }
+                    />
+                  }
+                  label={form.isActive ? t.active : t.inactive}
+                />
+                <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5 }}>
+                  {t.accountActiveHint}
+                </Typography>
+              </Box>
+            )}
+
             {isAdminOrSuperAdmin && !isEditMode && form.userType === "staff" && (
               <FormControl fullWidth margin="normal" error={!!errors.businessId}>
                 <InputLabel id="business-select-label">{t.selectBusinessLabel}</InputLabel>
@@ -902,13 +1095,17 @@ function UserFormModal({
                     setForm((prev) => ({ ...prev, roleId: e.target.value || null }))
                   }
                 >
-                  <MenuItem value="">{t.noRole}</MenuItem>
-                  {roles.map((role) => (
-                    <MenuItem key={role._id} value={role._id}>
-                      {role.name}
+                  {roleOptions.map((role) => (
+                    <MenuItem key={role._id} value={role._id} disabled={role.isActive === false}>
+                      {role.isActive === false ? `${role.name} (${t.roleInactiveShort})` : role.name}
                     </MenuItem>
                   ))}
                 </Select>
+                {roleCeilingViolation && (
+                  <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
+                    {`Cannot assign this role: it grants ${roleCeilingViolation}, which you do not have. Choose a different role, or ask a superadmin to grant your business that access first.`}
+                  </Typography>
+                )}
               </FormControl>
             )}
             {!isSuperAdmin &&
@@ -944,7 +1141,7 @@ function UserFormModal({
                 label="Attach to existing business"
               />
             )}
-            {form.attachToExistingBusiness && (
+            {isAdminOrSuperAdmin && form.attachToExistingBusiness && (
               <FormControl fullWidth margin="normal">
                 <InputLabel>Select Business</InputLabel>
                 <Select
@@ -1086,27 +1283,98 @@ function UserFormModal({
             />
 
             <FormGroup>
-              {ceilingFilteredModules.map((mod) => (
-                <FormControlLabel
-                  key={mod.key}
-                  control={
-                    <Checkbox
-                      checked={form.modulePermissions.includes(mod.key)}
-                      onChange={() => {
-                        const exists = form.modulePermissions.includes(mod.key);
-                        setForm((prev) => ({
-                          ...prev,
-                          modulePermissions: exists
-                            ? prev.modulePermissions.filter((k) => k !== mod.key)
-                            : [...prev.modulePermissions, mod.key],
-                        }));
-                      }}
+              {availableModules.map((mod) => {
+                // Shown but disabled, not hidden, for modules outside the
+                // actor's own ceiling — same "Your business does not have
+                // this permission" treatment as the granular Permissions
+                // tab (PermissionModuleCard above), so a business owner can
+                // see the full catalog and understand why a module can't be
+                // granted, rather than it silently not being there.
+                const ceilingOk = !moduleCeilingActive || ceilingFilteredModules.some((m) => m.key === mod.key);
+                return (
+                  <Tooltip
+                    key={mod.key}
+                    title={!ceilingOk ? "Your business does not have this permission" : ""}
+                  >
+                    <FormControlLabel
+                      disabled={!ceilingOk}
+                      control={
+                        <Checkbox
+                          checked={form.modulePermissions.includes(mod.key)}
+                          onChange={() => {
+                            if (!ceilingOk) return;
+                            const exists = form.modulePermissions.includes(mod.key);
+                            setForm((prev) => ({
+                              ...prev,
+                              modulePermissions: exists
+                                ? prev.modulePermissions.filter((k) => k !== mod.key)
+                                : [...prev.modulePermissions, mod.key],
+                            }));
+                          }}
+                        />
+                      }
+                      label={mod.labels?.[language] || mod.key}
                     />
-                  }
-                  label={mod.labels?.[language] || mod.key}
-                />
-              ))}
+                  </Tooltip>
+                );
+              })}
             </FormGroup>
+          </Box>
+        )}
+
+        {currentTabKey === "staffRoles" && (
+          <Box sx={{ mt: 2 }}>
+            <FormControlLabel
+              sx={{ display: "flex", m: 0 }}
+              control={
+                <Switch
+                  checked={restrictStaffRoles}
+                  onChange={(e) => {
+                    const checked = e.target.checked;
+                    setRestrictStaffRoles(checked);
+                    setForm((prev) => ({
+                      ...prev,
+                      allowedStaffRoleIds: checked ? (prev.allowedStaffRoleIds || []) : undefined,
+                    }));
+                  }}
+                />
+              }
+              label={t.restrictStaffRoles}
+            />
+            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5, mb: 2 }}>
+              {t.restrictStaffRolesHint}
+            </Typography>
+
+            {restrictStaffRoles && (
+              staffRoleCatalog.length === 0 ? (
+                <Typography variant="body2" color="text.secondary">
+                  {t.noStaffRolesAvailable}
+                </Typography>
+              ) : (
+                <FormGroup>
+                  {staffRoleCatalog.map((role) => (
+                    <FormControlLabel
+                      key={role._id}
+                      control={
+                        <Checkbox
+                          checked={(form.allowedStaffRoleIds || []).includes(role._id)}
+                          onChange={() => {
+                            const exists = (form.allowedStaffRoleIds || []).includes(role._id);
+                            setForm((prev) => ({
+                              ...prev,
+                              allowedStaffRoleIds: exists
+                                ? (prev.allowedStaffRoleIds || []).filter((id) => id !== role._id)
+                                : [...(prev.allowedStaffRoleIds || []), role._id],
+                            }));
+                          }}
+                        />
+                      }
+                      label={role.name}
+                    />
+                  ))}
+                </FormGroup>
+              )
+            )}
           </Box>
         )}
 

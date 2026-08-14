@@ -28,6 +28,7 @@ const ConfirmationDialog = ({
   confirmButtonText,
   confirmButtonIcon,
   confirmButtonColor = "error",
+  confirmButtonDisabled = false,
   checkboxOptions,
 }) => {
   const [loading, setLoading] = useState(false);
@@ -194,7 +195,7 @@ const ConfirmationDialog = ({
           onClick={handleConfirm}
           variant="contained"
           color={confirmButtonColor}
-          disabled={loading}
+          disabled={loading || confirmButtonDisabled}
           startIcon={
             loading ? (
               <CircularProgress size={20} color="inherit" />

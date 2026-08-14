@@ -31,7 +31,7 @@ import {
   getAllStaffUsers,
 } from "@/services/userService";
 import { getAllBusinesses } from "@/services/businessService";
-import { getModules } from "@/services/moduleService";
+import { getRoles } from "@/services/roleService";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import ICONS from "@/utils/iconUtil";
@@ -70,6 +70,9 @@ const translations = {
       "Are you sure you want to move this item to the Recycle Bin?",
     role: "Role",
     edit: "Edit",
+    editDisabledAccessControlOff: "Access Control is not enabled for this business owner. Ask a superadmin to enable it — only a superadmin can.",
+    editDisabledOwnAccessControlOff: "Your Access Control is not enabled, so you can't edit your own profile or your staff. Ask a superadmin to enable it — only a superadmin can.",
+    editDisabledOtherBusinessUser: "You can't edit other business users.",
     delete: "Delete",
     userTypeLabel: "User Type",
     superAdminUser: "Super Admin",
@@ -103,6 +106,11 @@ const translations = {
     userDetailsTab: "User Details",
     businessProfileTab: "Business Profile",
     modulesTab: "Modules",
+    staffRolesTab: "Staff Roles",
+    restrictStaffRoles: "Restrict which staff roles this business can use",
+    restrictStaffRolesHint:
+      "When off, this business owner can assign any staff role within their own permission ceiling. When on, they can only assign the roles checked below.",
+    noStaffRolesAvailable: "No staff-typed roles exist yet.",
     next: "Next",
     back: "Back",
     permissionsTab: "Permissions",
@@ -114,6 +122,8 @@ const translations = {
     filterByBusinessLabel: "Filter by Business",
     allBusinesses: "All businesses",
     noBusinessesFound: "No businesses found",
+    filterByRoleLabel: "Filter by Role",
+    noRolesFound: "No roles found",
     superAdmins: "Super Admins",
     admins: "Admins",
     businesses: "Businesses",
@@ -124,6 +134,11 @@ const translations = {
     roleLabel: "Role",
     noRole: "No role assigned",
     roleRequired: "Please select a role for this user",
+    roleInactiveShort: "inactive",
+    active: "Active",
+    inactive: "Inactive",
+    accountActiveHint:
+      "When off, this user cannot log in at all until reactivated. Doesn't affect their data or history.",
     notAuthorizedToCreateUser:
       "You are not authorized to create users. Access Control is not enabled for your account.",
     roleOverridesTitle: "Permission Overrides",
@@ -168,6 +183,9 @@ const translations = {
       "هل أنت متأكد أنك تريد نقل هذا العنصر إلى سلة المحذوفات؟",
     role: "الدور",
     edit: "تعديل",
+    editDisabledAccessControlOff: "التحكم بالصلاحيات غير مفعّل لصاحب هذه الشركة. يرجى طلب تفعيله من مشرف عام — فقط المشرف العام يمكنه ذلك.",
+    editDisabledOwnAccessControlOff: "التحكم بالصلاحيات غير مفعّل لحسابك، لذلك لا يمكنك تعديل ملفك الشخصي أو موظفيك. يرجى طلب تفعيله من مشرف عام — فقط المشرف العام يمكنه ذلك.",
+    editDisabledOtherBusinessUser: "لا يمكنك تعديل مستخدمي شركات آخرين.",
     delete: "حذف",
     userTypeLabel: "نوع المستخدم",
     superAdminUser: "مشرف عام",
@@ -201,6 +219,11 @@ const translations = {
     userDetailsTab: "تفاصيل المستخدم",
     businessProfileTab: "ملف الشركة",
     modulesTab: "الوحدات",
+    staffRolesTab: "أدوار الموظفين",
+    restrictStaffRoles: "تقييد أدوار الموظفين التي يمكن لهذه الشركة استخدامها",
+    restrictStaffRolesHint:
+      "عند الإيقاف، يمكن لصاحب هذه الشركة تعيين أي دور موظف ضمن سقف صلاحياته الخاص. عند التفعيل، يمكنه فقط تعيين الأدوار المحددة أدناه.",
+    noStaffRolesAvailable: "لا توجد أدوار موظفين معرّفة بعد.",
     next: "التالي",
     back: "رجوع",
     permissionsTab: "الصلاحيات",
@@ -212,6 +235,8 @@ const translations = {
     filterByBusinessLabel: "تصفية حسب الشركة",
     allBusinesses: "كل الشركات",
     noBusinessesFound: "لم يتم العثور على شركات",
+    filterByRoleLabel: "تصفية حسب الدور",
+    noRolesFound: "لم يتم العثور على أدوار",
     superAdmins: "المشرفون العامون",
     admins: "المسؤولون",
     businesses: "الشركات",
@@ -222,6 +247,11 @@ const translations = {
     roleLabel: "الدور",
     noRole: "لم يتم تعيين دور",
     roleRequired: "يرجى اختيار دور لهذا المستخدم",
+    roleInactiveShort: "غير مفعل",
+    active: "مفعّل",
+    inactive: "غير مفعل",
+    accountActiveHint:
+      "عند الإيقاف، لن يتمكن هذا المستخدم من تسجيل الدخول إطلاقًا حتى يُعاد تفعيله. لا يؤثر هذا على بياناته أو سجله.",
     notAuthorizedToCreateUser:
       "غير مصرح لك بإنشاء مستخدمين. لم يتم تفعيل التحكم بالصلاحيات لحسابك.",
     roleOverridesTitle: "استثناءات الصلاحيات",
@@ -263,7 +293,8 @@ export default function UsersPage() {
   const isDark = theme.palette.mode === "dark";
   const [groupedUsers, setGroupedUsers] = useState({});
   const [businesses, setBusinesses] = useState([]);
-  const [availableModules, setAvailableModules] = useState([]);
+  const [roles, setRoles] = useState([]);
+  const [selectedRoleFilter, setSelectedRoleFilter] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -283,7 +314,6 @@ export default function UsersPage() {
 
   useEffect(() => {
     fetchUsers();
-    fetchModules();
 
     if (isAdminOrSuperAdmin) {
       getAllBusinesses().then((res) => {
@@ -296,6 +326,14 @@ export default function UsersPage() {
         } else {
           setBusinesses([]); // fail-safe
         }
+      });
+      // Unfiltered by userType — this filter spans every group on the page
+      // (super admins, admins, and every business's staff/owners), not one
+      // specific create/edit target's role select.
+      getRoles().then((res) => {
+        if (Array.isArray(res)) setRoles(res);
+        else if (Array.isArray(res?.data)) setRoles(res.data);
+        else setRoles([]);
       });
     }
   }, []);
@@ -359,11 +397,6 @@ export default function UsersPage() {
     setGroupedUsers(orderedGroups);
     setIsPageLoading(false);
   }, [isBusinessUser, currentUser]);
-
-  const fetchModules = async () => {
-    const allModules = await getModules(currentUser?.role);
-    setAvailableModules(allModules || []);
-  };
 
   // Loads one business's users on demand instead of eagerly loading every
   // business up front — the previously-loaded business (if any) is dropped
@@ -477,9 +510,17 @@ export default function UsersPage() {
   const renderUserCard = (user, isSelf = false) => {
     const canEditUser =
       currentUser?.role === "superadmin" ||
-      isSelf ||
+      // A business owner can't edit anything — including their own card —
+      // while their own canManageAccessControl is off. Superadmin stays
+      // unrestricted (they're the only one who can toggle the flag at all).
+      (isSelf && (currentUser?.role !== "business" || !!currentUser?.canManageAccessControl)) ||
       (currentUser?.role === "admin" &&
-        (user.role === "business" || user.role === "staff"));
+        ((user.role === "business" && !!user.canManageAccessControl) ||
+          user.role === "staff")) ||
+      (currentUser?.role === "business" &&
+        user.role === "staff" &&
+        user.business?._id === currentUser?.business?._id &&
+        !!currentUser?.canManageAccessControl);
     const canDeleteUser =
       currentUser?.role === "superadmin" &&
       !isSelf &&
@@ -577,6 +618,13 @@ export default function UsersPage() {
                       size="small"
                     />
                   )}
+                  <Tooltip title={user.isActive === false ? t.inactive : t.active}>
+                    {user.isActive === false ? (
+                      <ICONS.cancel fontSize="small" sx={{ color: "warning.main", cursor: "default", alignSelf: "center" }} />
+                    ) : (
+                      <ICONS.checkCircle fontSize="small" sx={{ color: "success.main", cursor: "default", alignSelf: "center" }} />
+                    )}
+                  </Tooltip>
                 </Stack>
               </Box>
             </Stack>
@@ -591,14 +639,35 @@ export default function UsersPage() {
           <CardActions
             sx={{ px: 2, pb: 2, pt: 0, justifyContent: "flex-end", mt: "auto" }}
           >
-            <Tooltip title={t.edit}>
-              <IconButton
-                color="primary"
-                onClick={() => handleOpenEdit(user)}
-                disabled={!canEditUser}
-              >
-                <ICONS.edit />
-              </IconButton>
+            <Tooltip
+              title={
+                // Ownership-absolute: a business actor can never edit ANOTHER
+                // business user (co-owner) regardless of anyone's
+                // canManageAccessControl flag — assertCanManageTargetOwnership
+                // only ever lets a business actor manage staff. Checked first
+                // so this never gets shadowed by a flag-related message that
+                // isn't actually why the button is disabled here.
+                !canEditUser && currentUser?.role === "business" && user.role === "business" && !isSelf
+                  ? t.editDisabledOtherBusinessUser
+                  : !canEditUser &&
+                    currentUser?.role === "business" &&
+                    !currentUser?.canManageAccessControl &&
+                    (isSelf || user.role === "staff")
+                    ? t.editDisabledOwnAccessControlOff
+                    : !canEditUser && user.role === "business" && !isSelf && !user.canManageAccessControl
+                      ? t.editDisabledAccessControlOff
+                      : t.edit
+              }
+            >
+              <span>
+                <IconButton
+                  color="primary"
+                  onClick={() => handleOpenEdit(user)}
+                  disabled={!canEditUser}
+                >
+                  <ICONS.edit />
+                </IconButton>
+              </span>
             </Tooltip>
             {canDeleteUser && (
               <Tooltip title={t.delete}>
@@ -621,11 +690,18 @@ export default function UsersPage() {
 
   const normalizedSearch = searchQuery.trim().toLowerCase();
   const filteredGroupedUsers = useMemo(() => {
-    if (!normalizedSearch) return groupedUsers;
+    if (!normalizedSearch && !selectedRoleFilter) return groupedUsers;
     return Object.fromEntries(
       Object.entries(groupedUsers)
         .map(([group, users]) => {
           const filteredUsers = users.filter((user) => {
+            if (
+              selectedRoleFilter &&
+              String(user.roleId?._id || user.roleId || "") !== String(selectedRoleFilter._id)
+            ) {
+              return false;
+            }
+            if (!normalizedSearch) return true;
             const fields = [
               user.name,
               user.email,
@@ -642,7 +718,7 @@ export default function UsersPage() {
         })
         .filter(([, users]) => users.length > 0),
     );
-  }, [groupedUsers, normalizedSearch]);
+  }, [groupedUsers, normalizedSearch, selectedRoleFilter]);
 
   const getGroupCount = (name) => filteredGroupedUsers?.[name]?.length || 0;
   // Total businesses in the system (always loaded, lightweight) — not
@@ -829,6 +905,40 @@ export default function UsersPage() {
                 )}
               />
             )}
+            {!isBusinessUser && (
+              <Autocomplete
+                size="small"
+                options={roles}
+                getOptionLabel={(role) => role.name || ""}
+                isOptionEqualToValue={(opt, val) => opt._id === val._id}
+                value={selectedRoleFilter}
+                onChange={(_event, role) => setSelectedRoleFilter(role)}
+                noOptionsText={t.noRolesFound}
+                sx={{
+                  width: { xs: "100%", sm: "auto" },
+                  maxWidth: "100%",
+                  minWidth: { sm: 220, md: 260 },
+                  flexShrink: 0,
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    placeholder={t.filterByRoleLabel}
+                    slotProps={{
+                      ...params.slotProps,
+                      input: {
+                        ...params.slotProps?.input,
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <ICONS.adminPanel sx={{ opacity: 0.7 }} />
+                          </InputAdornment>
+                        ),
+                      },
+                    }}
+                  />
+                )}
+              />
+            )}
             <Tooltip title={canCreateAnyUser ? "" : t.notAuthorizedToCreateUser}>
               <Box
                 component="span"
@@ -868,7 +978,14 @@ export default function UsersPage() {
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, justifyContent: "center" }}>
               {isBusinessUser &&
                 group === currentUser.business.name &&
-                renderUserCard(currentUser, true)}
+                // /auth/me (authController.js) returns the current user
+                // shaped with `id`, not `_id` — every other user record in
+                // this app (from getAllUsers/getAllStaffUsers) uses
+                // Mongoose's native `_id`. renderUserCard and everything
+                // downstream of it (handleOpenEdit, updateUser(selectedUser._id, ...))
+                // assumes `_id`, so without this normalization the self-card's
+                // edit save hit PUT /api/users/undefined.
+                renderUserCard({ ...currentUser, _id: currentUser._id || currentUser.id }, true)}
               {users.map((user) => renderUserCard(user))}
             </Box>
           );
@@ -940,7 +1057,6 @@ export default function UsersPage() {
         isEditMode={isEditMode}
         selectedUser={selectedUser}
         businesses={businesses}
-        availableModules={availableModules}
         t={t}
         dir={dir}
         align={align}

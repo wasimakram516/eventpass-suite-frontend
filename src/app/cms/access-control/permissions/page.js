@@ -6,7 +6,6 @@ import {
   Container,
   List,
   ListItemButton,
-  ListItemText,
   Checkbox,
   FormControlLabel,
   Switch,
@@ -14,11 +13,14 @@ import {
   Stack,
   Divider,
   Avatar,
+  Tooltip,
 } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
+import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import LoadingState from "@/components/LoadingState";
+import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import AppCard from "@/components/cards/AppCard";
@@ -54,6 +56,18 @@ const translations = {
     noRoles: "No roles yet.",
     selectRole: "Select a role to edit its permissions",
     saved: "Permissions saved",
+    userTypeAdmin: "Admin",
+    userTypeBusiness: "Business",
+    userTypeStaff: "Staff",
+    userTypeUntyped: "Untyped",
+    active: "Active",
+    inactive: "Inactive",
+    usersCount: "{count} user",
+    usersCountPlural: "{count} users",
+    saveConfirmTitle: "Save Permission Changes",
+    saveConfirmMessage:
+      "This role is currently assigned to {count} user(s). Saving will change their access immediately. Continue?",
+    scanQrLabel: "Scan QR",
   },
   ar: {
     title: "التحكم بالصلاحيات — الصلاحيات",
@@ -64,8 +78,27 @@ const translations = {
     noRoles: "لا توجد أدوار بعد.",
     selectRole: "اختر دورًا لتعديل صلاحياته",
     saved: "تم حفظ الصلاحيات",
+    userTypeAdmin: "مسؤول",
+    userTypeBusiness: "شركة",
+    userTypeStaff: "موظف",
+    userTypeUntyped: "غير مصنف",
+    active: "مفعّل",
+    inactive: "غير مفعل",
+    usersCount: "{count} مستخدم",
+    usersCountPlural: "{count} مستخدمين",
+    saveConfirmTitle: "حفظ تغييرات الصلاحيات",
+    saveConfirmMessage:
+      "هذا الدور مسند حاليًا إلى {count} مستخدم. الحفظ سيغيّر صلاحياتهم فورًا. هل تريد المتابعة؟",
+    scanQrLabel: "مسح رمز QR",
   },
 };
+
+// For a staff-typed role, "create" on eventreg/checkin/digipass IS the scan
+// action — see STAFF_MAX_ACTIONS_BY_MODULE in roleController.js, the only
+// thing a staff route ever checks besides "print". The generic "Create"
+// label (shared by every other module's create action) is misleading here,
+// so relabel it for this specific role-type + module combination only.
+const STAFF_SCAN_MODULES = new Set(["eventreg", "checkin", "digipass"]);
 
 export default function PermissionsMatrixPage() {
   const { user } = useAuth();
@@ -81,6 +114,7 @@ export default function PermissionsMatrixPage() {
   const [assignments, setAssignments] = useState({}); // permissionId -> Set(actions)
   const [savedAssignments, setSavedAssignments] = useState({});
   const [saving, setSaving] = useState(false);
+  const [saveConfirmOpen, setSaveConfirmOpen] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -158,8 +192,15 @@ export default function PermissionsMatrixPage() {
     }));
   };
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!selectedRoleId) return;
+    // Roles are global — a change here takes effect for every user currently
+    // holding this role, immediately. Confirm before applying rather than
+    // saving straight away; the actual save happens in handleConfirmedSave.
+    setSaveConfirmOpen(true);
+  };
+
+  const handleConfirmedSave = async () => {
     setSaving(true);
     const payload = Object.entries(assignments).map(([permissionId, actions]) => ({
       permissionId,
@@ -167,6 +208,7 @@ export default function PermissionsMatrixPage() {
     }));
     const res = await setRolePermissions(selectedRoleId, payload);
     setSaving(false);
+    setSaveConfirmOpen(false);
     if (!res?.error) {
       setSavedAssignments(
         Object.fromEntries(Object.entries(assignments).map(([k, v]) => [k, new Set(v)]))
@@ -212,7 +254,53 @@ export default function PermissionsMatrixPage() {
                   selected={role._id === selectedRoleId}
                   onClick={() => setSelectedRoleId(role._id)}
                 >
-                  <ListItemText primary={role.name} />
+                  <Stack
+                    direction="row"
+                    spacing={1}
+                    sx={{ alignItems: "center", justifyContent: "space-between", width: "100%", minWidth: 0 }}
+                  >
+                    <Typography variant="body1" noWrap title={role.name} sx={{ minWidth: 0 }}>
+                      {role.name}
+                    </Typography>
+                    <Stack direction="row" spacing={1} sx={{ flexShrink: 0, alignItems: "center" }}>
+                      <Tooltip
+                        title={
+                          role.userType === "admin"
+                            ? t.userTypeAdmin
+                            : role.userType === "business"
+                              ? t.userTypeBusiness
+                              : role.userType === "staff"
+                                ? t.userTypeStaff
+                                : t.userTypeUntyped
+                        }
+                      >
+                        {role.userType === "business" ? (
+                          <ICONS.business fontSize="small" sx={{ color: "primary.main", cursor: "default" }} />
+                        ) : role.userType === "admin" ? (
+                          <ICONS.adminPanel fontSize="small" sx={{ color: "primary.main", cursor: "default" }} />
+                        ) : role.userType === "staff" ? (
+                          <ICONS.badge fontSize="small" sx={{ color: "primary.main", cursor: "default" }} />
+                        ) : (
+                          <ICONS.badge fontSize="small" sx={{ color: "text.disabled", cursor: "default" }} />
+                        )}
+                      </Tooltip>
+                      <Tooltip
+                        title={(role.userCount === 1 ? t.usersCount : t.usersCountPlural).replace(
+                          "{count}",
+                          role.userCount ?? 0,
+                        )}
+                      >
+                        <ICONS.people fontSize="small" sx={{ color: "text.secondary", cursor: "default" }} />
+                      </Tooltip>
+                      <Tooltip title={role.isActive ? t.active : t.inactive}>
+                        {role.isActive ? (
+                          <ICONS.checkCircle fontSize="small" sx={{ color: "success.main", cursor: "default" }} />
+                        ) : (
+                          <ICONS.cancel fontSize="small" sx={{ color: "warning.main", cursor: "default" }} />
+                        )}
+                      </Tooltip>
+                    </Stack>
+                  </Stack>
                 </ListItemButton>
               ))}
             </List>
@@ -226,10 +314,38 @@ export default function PermissionsMatrixPage() {
             <>
               <Stack
                 direction="row"
-                sx={{ justifyContent: "space-between", alignItems: "center", p: 2, pb: 1.5 }}
+                sx={{ justifyContent: "space-between", alignItems: "center", p: 2, pb: 1.5, gap: 1 }}
               >
-                <Typography variant="subtitle1" fontWeight="bold">{selectedRole?.name}</Typography>
-                <Stack direction="row" spacing={1}>
+                <Stack direction="row" spacing={1} sx={{ alignItems: "center", minWidth: 0 }}>
+                  <Typography
+                    variant="subtitle1"
+                    fontWeight="bold"
+                    noWrap
+                    title={selectedRole?.name}
+                    sx={{ minWidth: 0 }}
+                  >
+                    {selectedRole?.name}
+                  </Typography>
+                  <Tooltip
+                    title={(selectedRole?.userCount === 1 ? t.usersCount : t.usersCountPlural).replace(
+                      "{count}",
+                      selectedRole?.userCount ?? 0,
+                    )}
+                  >
+                    <ICONS.people
+                      fontSize="small"
+                      sx={{ color: "text.secondary", cursor: "default", flexShrink: 0 }}
+                    />
+                  </Tooltip>
+                  <Tooltip title={selectedRole?.isActive ? t.active : t.inactive}>
+                    {selectedRole?.isActive ? (
+                      <ICONS.checkCircle fontSize="small" sx={{ color: "success.main", cursor: "default", flexShrink: 0 }} />
+                    ) : (
+                      <ICONS.cancel fontSize="small" sx={{ color: "warning.main", cursor: "default", flexShrink: 0 }} />
+                    )}
+                  </Tooltip>
+                </Stack>
+                <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
                   <Button disabled={!isDirty || saving} onClick={handleReset}>{t.reset}</Button>
                   <Button variant="contained" disabled={!isDirty || saving} onClick={handleSave}>
                     {t.save}
@@ -293,24 +409,32 @@ export default function PermissionsMatrixPage() {
                             rowGap: 1.5,
                           }}
                         >
-                          {perm.allowedActions.map((action) => (
-                            <FormControlLabel
-                              key={action}
-                              sx={{ mr: 0, minWidth: 0 }}
-                              control={
-                                <Checkbox
-                                  size="small"
-                                  checked={granted.has(action)}
-                                  onChange={() => toggleAction(perm.permissionId, action)}
-                                />
-                              }
-                              label={
-                                <Typography variant="body2" noWrap>
-                                  {actionLabels[action]?.[language] || action}
-                                </Typography>
-                              }
-                            />
-                          ))}
+                          {perm.allowedActions.map((action) => {
+                            const label =
+                              action === "create" &&
+                              selectedRole?.userType === "staff" &&
+                              STAFF_SCAN_MODULES.has(perm.module)
+                                ? t.scanQrLabel
+                                : actionLabels[action]?.[language] || action;
+                            return (
+                              <FormControlLabel
+                                key={action}
+                                sx={{ mr: 0, minWidth: 0 }}
+                                control={
+                                  <Checkbox
+                                    size="small"
+                                    checked={granted.has(action)}
+                                    onChange={() => toggleAction(perm.permissionId, action)}
+                                  />
+                                }
+                                label={
+                                  <Typography variant="body2" noWrap>
+                                    {label}
+                                  </Typography>
+                                }
+                              />
+                            );
+                          })}
                         </Box>
                       </Box>
                     );
@@ -321,6 +445,17 @@ export default function PermissionsMatrixPage() {
           )}
         </AppCard>
       </Box>
+
+      <ConfirmationDialog
+        open={saveConfirmOpen}
+        onClose={() => setSaveConfirmOpen(false)}
+        onConfirm={handleConfirmedSave}
+        title={t.saveConfirmTitle}
+        message={t.saveConfirmMessage.replace("{count}", selectedRole?.userCount ?? 0)}
+        confirmButtonText={t.save}
+        confirmButtonIcon={<ICONS.save />}
+        confirmButtonColor="warning"
+      />
     </Container>
   );
 }
