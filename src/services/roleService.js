@@ -4,8 +4,13 @@ import withApiHandler from "@/utils/withApiHandler";
 // ---- Roles ----
 
 // Roles are global — assignable to any user regardless of business.
-export const getRoles = withApiHandler(async () => {
-  const { data } = await api.get("/roles");
+// Optional userType narrows to roles meant for that tier (admin/business/
+// staff) — an untyped legacy role is included in every filtered result too
+// (see roleController.listRoles), so this never hides a role nobody has
+// gotten around to typing yet.
+export const getRoles = withApiHandler(async (userType) => {
+  const url = userType ? `/roles?userType=${encodeURIComponent(userType)}` : "/roles";
+  const { data } = await api.get(url);
   return data;
 });
 
@@ -15,8 +20,8 @@ export const getRoleById = withApiHandler(async (id) => {
 });
 
 export const createRole = withApiHandler(
-  async ({ name, description }) => {
-    const { data } = await api.post("/roles", { name, description });
+  async ({ name, description, userType }) => {
+    const { data } = await api.post("/roles", { name, description, userType });
     return data;
   },
   { showSuccess: true }

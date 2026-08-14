@@ -476,6 +476,7 @@ export default function TrashPage() {
       pvpquestion: "Questions (EventDuel)",
       user: "User",
       business: "Business",
+      role: "Role",
       poll: "Poll",
       spinwheel: "SpinWheel",
       spinwheelparticipant: "SpinWheel Participant",

@@ -63,6 +63,7 @@ export const createBusinessUser = withApiHandler(
     business, // object when creating new business
     canManageAccessControl,
     roleId,
+    allowedStaffRoleIds,
   }) => {
     const { data } = await api.post("/users/register/business", {
       name,
@@ -74,6 +75,7 @@ export const createBusinessUser = withApiHandler(
       business,
       canManageAccessControl,
       roleId,
+      allowedStaffRoleIds,
     });
 
     return data;
