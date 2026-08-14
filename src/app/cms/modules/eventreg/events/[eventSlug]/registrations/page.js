@@ -165,6 +165,7 @@ const translations = {
     approved: "Approved",
     rejected: "Rejected",
     pending: "Pending",
+    noAccessShort: "no access",
     status: "Status",
     emailStatus: "Email Status",
     whatsappStatus: "WhatsApp Status",
@@ -278,6 +279,7 @@ const translations = {
     approved: "موافق عليه",
     rejected: "مرفوض",
     pending: "قيد الانتظار",
+    noAccessShort: "لا تملك صلاحية",
     status: "الحالة",
     emailStatus: "حالة البريد الإلكتروني",
     whatsappStatus: "حالة واتساب",
@@ -2439,8 +2441,12 @@ export default function ViewRegistrations() {
                         width: "100%",
                       }}
                     >
-                      {/* Approval Dropdown - Only show if event requires approval */}
-                      {eventDetails?.requiresApproval && (canApprove || canReject) && (
+                      {/* Approval Dropdown - shown whenever the event requires
+                          approval, regardless of whether this user holds
+                          approve/reject — Pending always stays selectable,
+                          the other two disable individually (see MenuItems
+                          below) rather than the whole control disappearing. */}
+                      {eventDetails?.requiresApproval && (
                         <FormControl size="small" sx={{ minWidth: 120, ml: 1 }}>
                           <Select
                             value={reg.approvalStatus || "pending"}
@@ -2449,9 +2455,21 @@ export default function ViewRegistrations() {
                             }
                             sx={{ fontSize: "0.875rem" }}
                           >
-                            <MenuItem value="pending">{t.pending}</MenuItem>
-                            {canApprove && <MenuItem value="approved">{t.approved}</MenuItem>}
-                            {canReject && <MenuItem value="rejected">{t.rejected}</MenuItem>}
+                            {/* Reverting an already-approved/rejected registration back to
+                                pending is effectively an "un-approve"/"un-reject" — the
+                                backend's checkApprovalPermission requires approve OR reject
+                                for this exact reason (an unrecognized/pending status needs
+                                at least one of the two), so this must match, not stay
+                                universally clickable. */}
+                            <MenuItem value="pending" disabled={!canApprove && !canReject}>
+                              {canApprove || canReject ? t.pending : `${t.pending} (${t.noAccessShort})`}
+                            </MenuItem>
+                            <MenuItem value="approved" disabled={!canApprove}>
+                              {canApprove ? t.approved : `${t.approved} (${t.noAccessShort})`}
+                            </MenuItem>
+                            <MenuItem value="rejected" disabled={!canReject}>
+                              {canReject ? t.rejected : `${t.rejected} (${t.noAccessShort})`}
+                            </MenuItem>
                           </Select>
                         </FormControl>
                       )}
