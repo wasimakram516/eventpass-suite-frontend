@@ -101,6 +101,17 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const response = await login(form.email, form.password);
+      // login() is withApiHandler-wrapped — it never throws on failure, it
+      // resolves with { error: true, message } like every other service in
+      // this app. Without this check, a failed login fell through to
+      // response.user being undefined, threw a plain TypeError reading
+      // .role off it, and that TypeError (not the real backend message) is
+      // what the catch block below actually saw — always showing the
+      // generic fallback regardless of why login actually failed.
+      if (response?.error) {
+        showMessage(response.message || "Login failed. Please try again.", "error");
+        return;
+      }
       setUser(response.user);
       if (response.user.role === "staff") {
         router.push("/staff");
