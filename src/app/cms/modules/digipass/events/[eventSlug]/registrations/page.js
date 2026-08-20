@@ -57,6 +57,7 @@ import NoDataAvailable from "@/components/NoDataAvailable";
 import { wrapTextBox } from "@/utils/wrapTextStyles";
 import RegistrationModal from "@/components/modals/RegistrationModal";
 import { useMessage } from "@/contexts/MessageContext";
+import { useHasPermission } from "@/hooks/usePermission";
 import { pickFullName, pickEmail } from "@/utils/customFieldUtils";
 import useDigiPassSocket from "@/hooks/modules/digipass/useDigiPassSocket";
 import useSocket from "@/utils/useSocket";
@@ -219,6 +220,13 @@ export default function ViewRegistrations() {
     const searchParams = useSearchParams();
     const { dir, t, language } = useI18nLayout(translations);
     const { showMessage } = useMessage();
+
+    // Per-action gating (UX only — backend guards are the real enforcement).
+    const canCreate = useHasPermission("digipass", "create");
+    const canEdit = useHasPermission("digipass", "edit");
+    const canDelete = useHasPermission("digipass", "delete");
+    const canExport = useHasPermission("digipass", "export");
+    const canBulkImport = useHasPermission("digipass", "bulk_import");
 
     const dynamicFieldsRef = useRef([]);
     const lastLoadedRef = useRef(null);
@@ -844,233 +852,244 @@ export default function ViewRegistrations() {
             </Stack>
             <Stack
                 direction={{ xs: "column", sm: "row" }}
-                spacing={2}
                 sx={{
                     width: { xs: "100%", sm: "auto" },
-                    gap: dir === "rtl" ? 1 : 0,
+                    flexWrap: "wrap",
+                    columnGap: 2,
+                    rowGap: { xs: 2, sm: 1 },
+                    "& > *": { flexShrink: 0 },
                 }}
             >
                 {!eventDetails?.linkedEventRegId && (
                     <>
-                        <Button
-                            variant="contained"
-                            color="primary"
-                            startIcon={<ICONS.add />}
-                            onClick={() => setCreateModalOpen(true)}
-                            sx={getStartIconSpacing(dir)}
-                        >
-                            {t.createRegistration}
-                        </Button>
+                        {canCreate && (
+                            <Button
+                                variant="contained"
+                                color="primary"
+                                startIcon={<ICONS.add />}
+                                onClick={() => setCreateModalOpen(true)}
+                                sx={getStartIconSpacing(dir)}
+                            >
+                                {t.createRegistration}
+                            </Button>
+                        )}
 
-                        <Button
-                            variant="outlined"
-                            startIcon={<ICONS.download />}
-                            onClick={handleDownloadSample}
-                            sx={getStartIconSpacing(dir)}
-                        >
-                            {t.downloadSample}
-                        </Button>
+                        {canBulkImport && (
+                            <Button
+                                variant="outlined"
+                                startIcon={<ICONS.download />}
+                                onClick={handleDownloadSample}
+                                sx={getStartIconSpacing(dir)}
+                            >
+                                {t.downloadSample}
+                            </Button>
+                        )}
 
-                        <Button
-                            variant="outlined"
-                            component="label"
-                            startIcon={
-                                uploading ? <CircularProgress size={20} /> : <ICONS.upload />
-                            }
-                            disabled={uploading}
-                            sx={getStartIconSpacing(dir)}
-                        >
-                            {uploading && uploadProgress?.total
-                                ? `${t.uploading} ${uploadProgress.uploaded}/${uploadProgress.total}`
-                                : uploading
-                                    ? t.uploading
-                                    : t.uploadFile}
-                            <input
-                                type="file"
-                                hidden
-                                accept=".xlsx,.xls"
-                                onChange={handleUpload}
-                            />
-                        </Button>
+                        {canBulkImport && (
+                            <Button
+                                variant="outlined"
+                                component="label"
+                                startIcon={
+                                    uploading ? <CircularProgress size={20} /> : <ICONS.upload />
+                                }
+                                disabled={uploading}
+                                sx={getStartIconSpacing(dir)}
+                            >
+                                {uploading && uploadProgress?.total
+                                    ? `${t.uploading} ${uploadProgress.uploaded}/${uploadProgress.total}`
+                                    : uploading
+                                        ? t.uploading
+                                        : t.uploadFile}
+                                <input
+                                    type="file"
+                                    hidden
+                                    accept=".xlsx,.xls"
+                                    onChange={handleUpload}
+                                />
+                            </Button>
+                        )}
                     </>
                 )}
 
-                <Button
-                    variant="outlined"
-                    color="success"
-                    onClick={handleExportRegs}
-                    disabled={exportLoading}
-                    startIcon={
-                        exportLoading ? (
-                            <CircularProgress size={20} color="inherit" />
-                        ) : (
-                            <ICONS.description />
-                        )
-                    }
-                    sx={getStartIconSpacing(dir)}
-                >
-                    {exportLoading
-                        ? t.exporting
-                        : searchTerm || Object.keys(filters).some((k) => filters[k])
-                            ? t.exportFiltered
-                            : t.exportAll}
-                </Button>
-            </Stack>
-            <Divider sx={{ my: 3 }} />
-            <Box
-                sx={{
-                    display: "flex",
-                    flexDirection: { xs: "column", md: "row" },
-                    justifyContent: "space-between",
-                    alignItems: { xs: "flex-start", md: "center" },
-                    gap: 2,
-                    mb: 3,
-                    px: { xs: 1, sm: 2 }
-                }}>
-                <Box
-                    sx={{
-                        width: "100%",
-                        maxWidth: { xs: "100%", md: "50%" }
-                    }}>
-                    {isLoadingMore && (
-                        <Typography
-                            variant="body2"
-                            sx={{
-                                color: "info.main",
-                                fontWeight: "500",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 0.5,
-                                mb: 0.5
-                            }}>
-                            <CircularProgress size={14} thickness={5} sx={{ mr: 0.5 }} />
-                            Loading {allRegistrations.length} of {totalRegistrations} records
-                        </Typography>
-                    )}
-                    <Typography variant="body2" sx={{
-                        color: "text.secondary"
-                    }}>
-                        {t.showing} {(page - 1) * limit + 1}-
-                        {Math.min(page * limit, filteredRegistrations.length)} {t.of}{" "}
-                        {filteredRegistrations.length} {t.records}
-                    </Typography>
-
-                    {(searchTerm || Object.keys(filters).some((k) => filters[k])) && (
-                        <Typography
-                            variant="body2"
-                            color="primary"
-                            sx={{
-                                fontWeight: "500",
-                                mt: 0.5,
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 0.5
-                            }}>
-                            <ICONS.search fontSize="small" sx={{ opacity: 0.7 }} />
-                            {filteredRegistrations.length === 1
-                                ? t.matchingRecords.replace(
-                                    "{count}",
-                                    filteredRegistrations.length
-                                )
-                                : t.matchingRecordsPlural.replace(
-                                    "{count}",
-                                    filteredRegistrations.length
-                                )}{" "}
-                            {t.found}
-                        </Typography>
-                    )}
-                </Box>
-
-                <Stack
-                    direction={{ xs: "column", sm: "row" }}
-                    spacing={1.5}
-                    sx={[{
-                        alignItems: { xs: "stretch", sm: "center" },
-                        justifyContent: "flex-end",
-                        width: "100%"
-                    }, dir === "rtl"
-                        ? {
-                            columnGap: 1.5,
-                            rowGap: 1.5,
-                        }
-                        : {}]}>
-                    <TextField
-                        size="small"
-                        variant="outlined"
-                        placeholder={t.searchPlaceholder}
-                        value={rawSearch}
-                        onChange={(e) => setRawSearch(e.target.value)}
-                        sx={{
-                            flex: 1,
-                            minWidth: { xs: "100%", sm: 220 },
-                        }}
-                        slotProps={{
-                            input: {
-                                startAdornment: (
-                                    <ICONS.search
-                                        fontSize="small"
-                                        sx={{
-                                            mr: dir === "rtl" ? 0 : 1,
-                                            ml: dir === "rtl" ? 1 : 0,
-                                            opacity: 0.6,
-                                        }}
-                                    />
-                                ),
-                                sx:
-                                    dir === "rtl"
-                                        ? {
-                                            paddingRight: 2,
-                                        }
-                                        : {},
-                            }
-                        }}
-                    />
-
-                    <FormControl size="small" sx={{ minWidth: 170 }}>
-                        <InputLabel id="sort-label">{t.sort}</InputLabel>
-                        <Select
-                            labelId="sort-label"
-                            value={sortOrder}
-                            label={t.sort}
-                            onChange={(e) => setSortOrder(Number(e.target.value))}
-                        >
-                            <MenuItem value={-1}>{t.mostRecent}</MenuItem>
-                            <MenuItem value={1}>{t.oldest}</MenuItem>
-                        </Select>
-                    </FormControl>
+                {canExport && (
                     <Button
                         variant="outlined"
-                        startIcon={<ICONS.filter />}
-                        onClick={() => setFilterModalOpen(true)}
-                        sx={{
-                            width: { xs: "100%", sm: "auto" },
-                            ...getStartIconSpacing(dir),
-                        }}
+                        color="success"
+                        onClick={handleExportRegs}
+                        disabled={exportLoading}
+                        startIcon={
+                            exportLoading ? (
+                                <CircularProgress size={20} color="inherit" />
+                            ) : (
+                                <ICONS.description />
+                            )
+                        }
+                        sx={getStartIconSpacing(dir)}
                     >
-                        {t.filters}
+                        {exportLoading
+                            ? t.exporting
+                            : searchTerm || Object.keys(filters).some((k) => filters[k])
+                                ? t.exportFiltered
+                                : t.exportAll}
                     </Button>
-
-                    <FormControl
-                        size="small"
+                )}
+            </Stack>
+            <Divider sx={{ my: 3 }} />
+                {/* Search, Filter, and Info Toolbar */}
+                <Box
+                    sx={{
+                        display: "flex",
+                        flexDirection: { xs: "column", lg: "row" },
+                        justifyContent: "space-between",
+                        alignItems: { xs: "flex-start", lg: "center" },
+                        gap: 2,
+                        mb: 3,
+                        px: { xs: 1, sm: 2 }
+                    }}>
+                    {/* Left: Record info with loading progress */}
+                    <Box
                         sx={{
-                            minWidth: { xs: "100%", sm: 150 },
-                        }}
-                    >
-                        <InputLabel>{t.recordsPerPage}</InputLabel>
-                        <Select
-                            value={limit}
-                            onChange={handleLimitChange}
-                            label={t.recordsPerPage}
+                            width: "100%",
+                            maxWidth: { xs: "100%", lg: "50%" }
+                        }}>
+                        {isLoadingMore && (
+                            <Typography
+                                variant="body2"
+                                sx={{
+                                    color: "info.main",
+                                    fontWeight: "500",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 0.5,
+                                    mb: 0.5
+                                }}>
+                                <CircularProgress size={14} thickness={5} sx={{ mr: 0.5 }} />
+                                Loading {allRegistrations.length} of {totalRegistrations} records
+                            </Typography>
+                        )}
+                        <Typography variant="body2" sx={{
+                            color: "text.secondary"
+                        }}>
+                            {t.showing} {(page - 1) * limit + 1}-
+                            {Math.min(page * limit, filteredRegistrations.length)} {t.of}{" "}
+                            {filteredRegistrations.length} {t.records}
+                        </Typography>
+
+                        {/* Matching results counter */}
+                        {(searchTerm || Object.keys(filters).some((k) => filters[k])) && (
+                            <Typography
+                                variant="body2"
+                                color="primary"
+                                sx={{
+                                    fontWeight: "500",
+                                    mt: 0.5,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 0.5
+                                }}>
+                                <ICONS.search fontSize="small" sx={{ opacity: 0.7 }} />
+                                {filteredRegistrations.length === 1
+                                    ? t.matchingRecords.replace(
+                                        "{count}",
+                                        filteredRegistrations.length
+                                    )
+                                    : t.matchingRecordsPlural.replace(
+                                        "{count}",
+                                        filteredRegistrations.length
+                                    )}{" "}
+                                {t.found}
+                            </Typography>
+                        )}
+                    </Box>
+
+                    <Stack
+                        direction={{ xs: "column", sm: "row" }}
+                        sx={[{
+                            alignItems: { xs: "stretch", sm: "center" },
+                            justifyContent: { xs: "flex-start", lg: "flex-end" },
+                            width: "100%",
+                            flexWrap: "wrap",
+                            columnGap: 1.5,
+                            rowGap: 1.5
+                        }]}>
+                        <TextField
+                            size="small"
+                            variant="outlined"
+                            placeholder={t.searchPlaceholder}
+                            value={rawSearch}
+                            onChange={(e) => setRawSearch(e.target.value)}
+                            sx={{
+                                flex: 1,
+                                minWidth: { xs: "100%", sm: "100%", lg: 220 },
+                            }}
+                            slotProps={{
+                                input: {
+                                    startAdornment: (
+                                        <ICONS.search
+                                            fontSize="small"
+                                            sx={{
+                                                mr: dir === "rtl" ? 0 : 1,
+                                                ml: dir === "rtl" ? 1 : 0,
+                                                opacity: 0.6,
+                                            }}
+                                        />
+                                    ),
+                                    sx:
+                                        dir === "rtl"
+                                            ? {
+                                                paddingRight: 2,
+                                            }
+                                            : {},
+                                }
+                            }}
+                        />
+
+                        <FormControl size="small" sx={{ minWidth: 170 }}>
+                            <InputLabel id="sort-label">{t.sort}</InputLabel>
+                            <Select
+                                labelId="sort-label"
+                                value={sortOrder}
+                                label={t.sort}
+                                onChange={(e) => setSortOrder(Number(e.target.value))}
+                            >
+                                <MenuItem value={-1}>{t.mostRecent}</MenuItem>
+                                <MenuItem value={1}>{t.oldest}</MenuItem>
+                            </Select>
+                        </FormControl>
+                        <Button
+                            variant="outlined"
+                            startIcon={<ICONS.filter />}
+                            onClick={() => setFilterModalOpen(true)}
+                            sx={{
+                                width: { xs: "100%", sm: "auto" },
+                                ...getStartIconSpacing(dir),
+                            }}
                         >
-                            {[5, 10, 20, 50, 100, 250, 500].map((n) => (
-                                <MenuItem key={n} value={n}>
-                                    {toArabicDigits(n, language)}
-                                </MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
-                </Stack>
-            </Box>
+                            {t.filters}
+                        </Button>
+
+                        {/* Records per page */}
+                        <FormControl
+                            size="small"
+                            sx={{
+                                minWidth: { xs: "100%", sm: 150 },
+                            }}
+                        >
+                            <InputLabel>{t.recordsPerPage}</InputLabel>
+                            <Select
+                                value={limit}
+                                onChange={handleLimitChange}
+                                label={t.recordsPerPage}
+                            >
+                                {[5, 10, 20, 50, 100, 250, 500].map((n) => (
+                                    <MenuItem key={n} value={n}>
+                                        {toArabicDigits(n, language)}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    </Stack>
+                </Box>
             {(() => {
                 const activeFilterEntries = [];
 
@@ -1416,33 +1435,37 @@ export default function ViewRegistrations() {
 
                                                 {!eventDetails?.linkedEventRegId && (
                                                     <>
-                                                        <Tooltip title={t.editRegistration}>
-                                                            <IconButton
-                                                                color="primary"
-                                                                onClick={() => {
-                                                                    setEditingReg(reg);
-                                                                    setEditModalOpen(true);
-                                                                }}
-                                                            >
-                                                                <ICONS.edit fontSize="small" />
-                                                            </IconButton>
-                                                        </Tooltip>
+                                                        {canEdit && (
+                                                            <Tooltip title={t.editRegistration}>
+                                                                <IconButton
+                                                                    color="primary"
+                                                                    onClick={() => {
+                                                                        setEditingReg(reg);
+                                                                        setEditModalOpen(true);
+                                                                    }}
+                                                                >
+                                                                    <ICONS.edit fontSize="small" />
+                                                                </IconButton>
+                                                            </Tooltip>
+                                                        )}
 
-                                                        <Tooltip title={t.deleteRecord}>
-                                                            <IconButton
-                                                                color="error"
-                                                                onClick={() => {
-                                                                    setRegistrationToDelete(reg._id);
-                                                                    setDeleteDialogOpen(true);
-                                                                }}
-                                                                sx={{
-                                                                    "&:hover": { transform: "scale(1.1)" },
-                                                                    transition: "0.2s",
-                                                                }}
-                                                            >
-                                                                <ICONS.delete />
-                                                            </IconButton>
-                                                        </Tooltip>
+                                                        {canDelete && (
+                                                            <Tooltip title={t.deleteRecord}>
+                                                                <IconButton
+                                                                    color="error"
+                                                                    onClick={() => {
+                                                                        setRegistrationToDelete(reg._id);
+                                                                        setDeleteDialogOpen(true);
+                                                                    }}
+                                                                    sx={{
+                                                                        "&:hover": { transform: "scale(1.1)" },
+                                                                        transition: "0.2s",
+                                                                    }}
+                                                                >
+                                                                    <ICONS.delete />
+                                                                </IconButton>
+                                                            </Tooltip>
+                                                        )}
                                                     </>
                                                 )}
                                             </Box>
@@ -1501,6 +1524,7 @@ export default function ViewRegistrations() {
                 onClose={() => setWalkInModalOpen(false)}
                 registration={selectedRegistration}
                 isDigiPass={true}
+                module="digipass"
             />
             <FilterDialog
                 open={filterModalOpen}

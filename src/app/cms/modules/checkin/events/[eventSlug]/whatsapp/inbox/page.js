@@ -24,6 +24,7 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { useHasPermission } from "@/hooks/usePermission";
 
 import {
   getWhatsAppInbox,
@@ -54,6 +55,7 @@ export default function WhatsAppInboxPage() {
   const { eventSlug } = useParams();
   const { t, dir, language } = useI18nLayout(translations);
   const isMobile = useMediaQuery("(max-width:900px)");
+  const canSendWhatsapp = useHasPermission("checkin", "send_whatsapp");
 
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -397,6 +399,7 @@ export default function WhatsAppInboxPage() {
                     borderColor: "divider",
                   }}
                 >
+                  {canSendWhatsapp && (
                   <Box
                     sx={{
                       display: "flex",
@@ -443,6 +446,7 @@ export default function WhatsAppInboxPage() {
                       <ICONS.send />
                     </IconButton>
                   </Box>
+                  )}
                 </Box>
               </>
             )}

@@ -75,6 +75,7 @@ import useEventRegSocket from "@/hooks/modules/eventReg/useEventRegSocket";
 import { exportAllBadges } from "@/utils/exportBadges";
 import RegistrationModal from "@/components/modals/RegistrationModal";
 import { useMessage } from "@/contexts/MessageContext";
+import { useHasPermission } from "@/hooks/usePermission";
 import { pdf } from "@react-pdf/renderer";
 import QRCode from "qrcode";
 import BadgePDF from "@/components/badges/BadgePDF";
@@ -164,6 +165,7 @@ const translations = {
     approved: "Approved",
     rejected: "Rejected",
     pending: "Pending",
+    noAccessShort: "no access",
     status: "Status",
     emailStatus: "Email Status",
     whatsappStatus: "WhatsApp Status",
@@ -277,6 +279,7 @@ const translations = {
     approved: "موافق عليه",
     rejected: "مرفوض",
     pending: "قيد الانتظار",
+    noAccessShort: "لا تملك صلاحية",
     status: "الحالة",
     emailStatus: "حالة البريد الإلكتروني",
     whatsappStatus: "حالة واتساب",
@@ -316,6 +319,21 @@ export default function ViewRegistrations() {
   const searchParams = useSearchParams();
   const { dir, t, language } = useI18nLayout(translations);
   const { showMessage } = useMessage();
+
+  // Per-action gating (UX only — the backend guards are the real
+  // enforcement). See PermissionGuard/usePermission for the resolved
+  // "eventreg:action" allow-list this reads from.
+  const canCreate = useHasPermission("eventreg", "create");
+  const canEdit = useHasPermission("eventreg", "edit");
+  const canDelete = useHasPermission("eventreg", "delete");
+  const canPrint = useHasPermission("eventreg", "print");
+  const canExport = useHasPermission("eventreg", "export");
+  const canBulkImport = useHasPermission("eventreg", "bulk_import");
+  const canSendEmail = useHasPermission("eventreg", "send_email");
+  const canSendWhatsapp = useHasPermission("eventreg", "send_whatsapp");
+  const canApprove = useHasPermission("eventreg", "approve");
+  const canReject = useHasPermission("eventreg", "reject");
+  const canViewPromoCodes = useHasPermission("eventreg", "view_promo_codes");
 
 
   const BASE_DATE_FILTERS = {
@@ -1560,23 +1578,27 @@ export default function ViewRegistrations() {
       {/* Right side: action buttons */}
       <Stack
         direction={{ xs: "column", sm: "row" }}
-        spacing={2}
         sx={{
           width: { xs: "100%", sm: "auto" },
-          gap: dir === "rtl" ? 1 : 0,
+          flexWrap: "wrap",
+          columnGap: 2,
+          rowGap: { xs: 2, sm: 1 },
+          "& > *": { flexShrink: 0 },
         }}
       >
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<ICONS.add />}
-          onClick={() => setCreateModalOpen(true)}
-          sx={getStartIconSpacing(dir)}
-        >
-          {t.createRegistration}
-        </Button>
+        {canCreate && (
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<ICONS.add />}
+            onClick={() => setCreateModalOpen(true)}
+            sx={getStartIconSpacing(dir)}
+          >
+            {t.createRegistration}
+          </Button>
+        )}
 
-        {eventDetails?.isPaid && (
+        {eventDetails?.isPaid && canViewPromoCodes && (
           <Button
             variant="outlined"
             startIcon={<ICONS.promoCode />}
@@ -1587,39 +1609,43 @@ export default function ViewRegistrations() {
           </Button>
         )}
 
-        <Button
-          variant="outlined"
-          startIcon={<ICONS.download />}
-          onClick={handleDownloadSample}
-          sx={getStartIconSpacing(dir)}
-        >
-          {t.downloadSample}
-        </Button>
+        {canBulkImport && (
+          <Button
+            variant="outlined"
+            startIcon={<ICONS.download />}
+            onClick={handleDownloadSample}
+            sx={getStartIconSpacing(dir)}
+          >
+            {t.downloadSample}
+          </Button>
+        )}
 
-        <Button
-          variant="outlined"
-          component="label"
-          startIcon={
-            uploading ? <CircularProgress size={20} /> : <ICONS.upload />
-          }
-          disabled={uploading}
-          sx={getStartIconSpacing(dir)}
-        >
-          {uploading && uploadProgress?.total
-            ? `${t.uploading} ${uploadProgress.uploaded}/${uploadProgress.total}`
-            : uploading
-              ? t.uploading
-              : t.uploadFile}
+        {canBulkImport && (
+          <Button
+            variant="outlined"
+            component="label"
+            startIcon={
+              uploading ? <CircularProgress size={20} /> : <ICONS.upload />
+            }
+            disabled={uploading}
+            sx={getStartIconSpacing(dir)}
+          >
+            {uploading && uploadProgress?.total
+              ? `${t.uploading} ${uploadProgress.uploaded}/${uploadProgress.total}`
+              : uploading
+                ? t.uploading
+                : t.uploadFile}
 
-          <input
-            type="file"
-            hidden
-            accept=".xlsx,.xls"
-            onChange={handleUpload}
-          />
-        </Button>
+            <input
+              type="file"
+              hidden
+              accept=".xlsx,.xls"
+              onChange={handleUpload}
+            />
+          </Button>
+        )}
 
-        {totalRegistrations > 0 && (
+        {totalRegistrations > 0 && (canSendEmail || canSendWhatsapp) && (
           <Button
             variant="contained"
             color="secondary"
@@ -1642,7 +1668,7 @@ export default function ViewRegistrations() {
           </Button>
         )}
 
-        {totalRegistrations > 0 && (
+        {totalRegistrations > 0 && canExport && (
           <Button
             variant="outlined"
             color="success"
@@ -1665,7 +1691,7 @@ export default function ViewRegistrations() {
           </Button>
         )}
 
-        {totalRegistrations > 0 && (
+        {totalRegistrations > 0 && canPrint && (
           <Button
             variant="outlined"
             color="primary"
@@ -1698,26 +1724,30 @@ export default function ViewRegistrations() {
             spacing={1.5}
             sx={dir === "rtl" ? { gap: 1.5 } : {}}
           >
-            <Button
-              variant="outlined"
-              color="success"
-              onClick={() => openBulkApprovalDialog("approved")}
-              disabled={!paginatedRegistrations?.length || bulkApprovalLoading}
-              startIcon={<ICONS.check sx={{ color: "success.main" }} />}
-              sx={getStartIconSpacing(dir)}
-            >
-              {t.bulkApprove}
-            </Button>
-            <Button
-              variant="outlined"
-              color="error"
-              onClick={() => openBulkApprovalDialog("rejected")}
-              disabled={!paginatedRegistrations?.length || bulkApprovalLoading}
-              startIcon={<ICONS.close sx={{ color: "error.main" }} />}
-              sx={getStartIconSpacing(dir)}
-            >
-              {t.bulkReject}
-            </Button>
+            {canApprove && (
+              <Button
+                variant="outlined"
+                color="success"
+                onClick={() => openBulkApprovalDialog("approved")}
+                disabled={!paginatedRegistrations?.length || bulkApprovalLoading}
+                startIcon={<ICONS.check sx={{ color: "success.main" }} />}
+                sx={getStartIconSpacing(dir)}
+              >
+                {t.bulkApprove}
+              </Button>
+            )}
+            {canReject && (
+              <Button
+                variant="outlined"
+                color="error"
+                onClick={() => openBulkApprovalDialog("rejected")}
+                disabled={!paginatedRegistrations?.length || bulkApprovalLoading}
+                startIcon={<ICONS.close sx={{ color: "error.main" }} />}
+                sx={getStartIconSpacing(dir)}
+              >
+                {t.bulkReject}
+              </Button>
+            )}
           </Stack>
         </Box>
       )}
@@ -1726,9 +1756,9 @@ export default function ViewRegistrations() {
       <Box
         sx={{
           display: "flex",
-          flexDirection: { xs: "column", md: "row" },
+          flexDirection: { xs: "column", lg: "row" },
           justifyContent: "space-between",
-          alignItems: { xs: "flex-start", md: "center" },
+          alignItems: { xs: "flex-start", lg: "center" },
           gap: 2,
           mb: 3,
           px: { xs: 1, sm: 2 }
@@ -1737,7 +1767,7 @@ export default function ViewRegistrations() {
         <Box
           sx={{
             width: "100%",
-            maxWidth: { xs: "100%", md: "50%" }
+            maxWidth: { xs: "100%", lg: "50%" }
           }}>
           {isLoadingMore && (
             <Typography
@@ -1791,17 +1821,14 @@ export default function ViewRegistrations() {
 
         <Stack
           direction={{ xs: "column", sm: "row" }}
-          spacing={1.5}
           sx={[{
             alignItems: { xs: "stretch", sm: "center" },
-            justifyContent: "flex-end",
-            width: "100%"
-          }, dir === "rtl"
-            ? {
-              columnGap: 1.5,
-              rowGap: 1.5,
-            }
-            : {}]}>
+            justifyContent: { xs: "flex-start", lg: "flex-end" },
+            width: "100%",
+            flexWrap: "wrap",
+            columnGap: 1.5,
+            rowGap: 1.5
+          }]}>
           <TextField
             size="small"
             variant="outlined"
@@ -1810,7 +1837,7 @@ export default function ViewRegistrations() {
             onChange={(e) => setRawSearch(e.target.value)}
             sx={{
               flex: 1,
-              minWidth: { xs: "100%", sm: 220 },
+              minWidth: { xs: "100%", sm: "100%", lg: 220 },
             }}
             slotProps={{
               input: {
@@ -2414,7 +2441,11 @@ export default function ViewRegistrations() {
                         width: "100%",
                       }}
                     >
-                      {/* Approval Dropdown - Only show if event requires approval */}
+                      {/* Approval Dropdown - shown whenever the event requires
+                          approval, regardless of whether this user holds
+                          approve/reject — Pending always stays selectable,
+                          the other two disable individually (see MenuItems
+                          below) rather than the whole control disappearing. */}
                       {eventDetails?.requiresApproval && (
                         <FormControl size="small" sx={{ minWidth: 120, ml: 1 }}>
                           <Select
@@ -2424,26 +2455,40 @@ export default function ViewRegistrations() {
                             }
                             sx={{ fontSize: "0.875rem" }}
                           >
-                            <MenuItem value="pending">{t.pending}</MenuItem>
-                            <MenuItem value="approved">{t.approved}</MenuItem>
-                            <MenuItem value="rejected">{t.rejected}</MenuItem>
+                            {/* Reverting an already-approved/rejected registration back to
+                                pending is effectively an "un-approve"/"un-reject" — the
+                                backend's checkApprovalPermission requires approve OR reject
+                                for this exact reason (an unrecognized/pending status needs
+                                at least one of the two), so this must match, not stay
+                                universally clickable. */}
+                            <MenuItem value="pending" disabled={!canApprove && !canReject}>
+                              {canApprove || canReject ? t.pending : `${t.pending} (${t.noAccessShort})`}
+                            </MenuItem>
+                            <MenuItem value="approved" disabled={!canApprove}>
+                              {canApprove ? t.approved : `${t.approved} (${t.noAccessShort})`}
+                            </MenuItem>
+                            <MenuItem value="rejected" disabled={!canReject}>
+                              {canReject ? t.rejected : `${t.rejected} (${t.noAccessShort})`}
+                            </MenuItem>
                           </Select>
                         </FormControl>
                       )}
 
                       <Box sx={{ display: "flex", gap: 0.5 }}>
-                        <Tooltip title={t.printBadge}>
-                          <IconButton
-                            color="warning"
-                            onClick={() => handlePrintBadge(reg)}
-                            sx={{
-                              "&:hover": { transform: "scale(1.1)" },
-                              transition: "0.2s",
-                            }}
-                          >
-                            <ICONS.print />
-                          </IconButton>
-                        </Tooltip>
+                        {canPrint && (
+                          <Tooltip title={t.printBadge}>
+                            <IconButton
+                              color="warning"
+                              onClick={() => handlePrintBadge(reg)}
+                              sx={{
+                                "&:hover": { transform: "scale(1.1)" },
+                                transition: "0.2s",
+                              }}
+                            >
+                              <ICONS.print />
+                            </IconButton>
+                          </Tooltip>
+                        )}
 
                         <Tooltip title={t.viewWalkIns}>
                           <IconButton
@@ -2461,33 +2506,37 @@ export default function ViewRegistrations() {
                           </IconButton>
                         </Tooltip>
 
-                        <Tooltip title={t.editRegistration}>
-                          <IconButton
-                            color="primary"
-                            onClick={() => {
-                              setEditingReg(reg);
-                              setEditModalOpen(true);
-                            }}
-                          >
-                            <ICONS.edit fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
+                        {canEdit && (
+                          <Tooltip title={t.editRegistration}>
+                            <IconButton
+                              color="primary"
+                              onClick={() => {
+                                setEditingReg(reg);
+                                setEditModalOpen(true);
+                              }}
+                            >
+                              <ICONS.edit fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        )}
 
-                        <Tooltip title={t.deleteRecord}>
-                          <IconButton
-                            color="error"
-                            onClick={() => {
-                              setRegistrationToDelete(reg._id);
-                              setDeleteDialogOpen(true);
-                            }}
-                            sx={{
-                              "&:hover": { transform: "scale(1.1)" },
-                              transition: "0.2s",
-                            }}
-                          >
-                            <ICONS.delete />
-                          </IconButton>
-                        </Tooltip>
+                        {canDelete && (
+                          <Tooltip title={t.deleteRecord}>
+                            <IconButton
+                              color="error"
+                              onClick={() => {
+                                setRegistrationToDelete(reg._id);
+                                setDeleteDialogOpen(true);
+                              }}
+                              sx={{
+                                "&:hover": { transform: "scale(1.1)" },
+                                transition: "0.2s",
+                              }}
+                            >
+                              <ICONS.delete />
+                            </IconButton>
+                          </Tooltip>
+                        )}
                       </Box>
 
                     </Box>
@@ -2604,6 +2653,8 @@ export default function ViewRegistrations() {
         open={bulkEmailModalOpen}
         isApprovalBased={eventDetails?.requiresApproval}
         useApprovedRejected={true}
+        canSendEmail={canSendEmail}
+        canSendWhatsapp={canSendWhatsapp}
         onClose={() => {
           if (!sendingEmails) {
             setBulkEmailModalOpen(false);
@@ -2693,6 +2744,7 @@ export default function ViewRegistrations() {
         open={walkInModalOpen}
         onClose={() => setWalkInModalOpen(false)}
         registration={selectedRegistration}
+        module="eventreg"
         onCheckInSuccess={async () => {
           if (selectedRegistration?._id) {
             const regsRes = await getInitialRegistrations(eventSlug, sortOrder);

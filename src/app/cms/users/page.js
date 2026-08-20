@@ -10,54 +10,34 @@ import {
   Tooltip,
   Divider,
   Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  TextField,
   Stack,
   Container,
-  Checkbox,
-  FormControlLabel,
-  FormGroup,
   Chip,
-  Select,
-  MenuItem,
-  InputLabel,
-  FormControl,
-  Tabs,
-  Tab,
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
   InputAdornment,
+  TextField,
+  Autocomplete,
+  CircularProgress,
   useTheme,
 } from "@mui/material";
 
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useCallback, useEffect, useState, useMemo, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
+import UserFormModal from "@/components/modals/UserFormModal";
 import {
   getAllUsers,
-  updateUser,
   deleteUser,
-  createStaffUser,
   getAllStaffUsers,
-  createBusinessUser,
-  createAdminUser,
 } from "@/services/userService";
 import { getAllBusinesses } from "@/services/businessService";
-import { getModules } from "@/services/moduleService";
+import { getRoles } from "@/services/roleService";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { useAuth } from "@/contexts/AuthContext";
-import { useMessage } from "@/contexts/MessageContext";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import { wrapTextBox } from "@/utils/wrapTextStyles";
 import LoadingState from "@/components/LoadingState";
-import { updateBusiness } from "@/services/businessService";
-import slugify from "@/utils/slugify";
 import AppCard from "@/components/cards/AppCard";
 import RecordMetadata from "@/components/RecordMetadata";
 
@@ -71,6 +51,7 @@ const translations = {
     createBusinessUser: "Create Business User",
     editBusinessUser: "Edit Business User",
     createAdminUser: "Create Admin User",
+    createSuperAdminUser: "Create Super Admin User",
     createStaffUser: "Create Staff User",
     editStaffUser: "Edit Staff User",
     name: "Name",
@@ -89,8 +70,12 @@ const translations = {
       "Are you sure you want to move this item to the Recycle Bin?",
     role: "Role",
     edit: "Edit",
+    editDisabledAccessControlOff: "Access Control is not enabled for this business owner. Ask a superadmin to enable it — only a superadmin can.",
+    editDisabledOwnAccessControlOff: "Your Access Control is not enabled, so you can't edit your own profile or your staff. Ask a superadmin to enable it — only a superadmin can.",
+    editDisabledOtherBusinessUser: "You can't edit other business users.",
     delete: "Delete",
     userTypeLabel: "User Type",
+    superAdminUser: "Super Admin",
     adminUser: "Admin",
     businessUser: "Business user",
     staffUser: "Staff user",
@@ -103,9 +88,6 @@ const translations = {
     businessRequired: "Please select a business",
     selectAll: "Select All",
     unselectAll: "Unselect All",
-    staffTypeLabel: "Staff Type",
-    deskStaff: "Desk",
-    doorStaff: "Door",
     createdBy: "Created:",
     updatedBy: "Updated:",
     createdAt: "Created At:",
@@ -123,10 +105,25 @@ const translations = {
     businessEmailRequired: "Business email is required",
     userDetailsTab: "User Details",
     businessProfileTab: "Business Profile",
+    modulesTab: "Modules",
+    staffRolesTab: "Staff Roles",
+    restrictStaffRoles: "Restrict which staff roles this business can use",
+    restrictStaffRolesHint:
+      "When off, this business owner can assign any staff role within their own permission ceiling. When on, they can only assign the roles checked below.",
+    noStaffRolesAvailable: "No staff-typed roles exist yet.",
     next: "Next",
     back: "Back",
     permissionsTab: "Permissions",
+    legendInherited: "Inherited from role",
+    legendAllow: "Allow override",
+    legendDeny: "Deny override",
+    selectModulesFirstHint: "Select at least one module on the Modules tab first.",
     searchUsers: "Search users...",
+    filterByBusinessLabel: "Filter by Business",
+    allBusinesses: "All businesses",
+    noBusinessesFound: "No businesses found",
+    filterByRoleLabel: "Filter by Role",
+    noRolesFound: "No roles found",
     superAdmins: "Super Admins",
     admins: "Admins",
     businesses: "Businesses",
@@ -134,6 +131,29 @@ const translations = {
     desk: "Desk",
     door: "Door",
     businessLabel: "Business",
+    roleLabel: "Role",
+    noRole: "No role assigned",
+    roleRequired: "Please select a role for this user",
+    roleInactiveShort: "inactive",
+    active: "Active",
+    inactive: "Inactive",
+    accountActiveHint:
+      "When off, this user cannot log in at all until reactivated. Doesn't affect their data or history.",
+    notAuthorizedToCreateUser:
+      "You are not authorized to create users. Access Control is not enabled for your account.",
+    roleOverridesTitle: "Permission Overrides",
+    roleOverridesHint:
+      "Checked = currently granted. Click a cell to override the role's default for that action.",
+    inherited: "inherited",
+    allow: "Allow",
+    deny: "Deny",
+    accessControlDisabled:
+      "Access Control is not enabled for your account, so you cannot assign a role or manage module/permission access for this user. Contact your administrator to have it enabled.",
+    canManageAccessControl: "Enable Access Control management for this user",
+    canManageAccessControlHint:
+      "When enabled, this business owner can assign roles and permission overrides to their own staff members from this same screen. When disabled, only a superadmin can manage this business's staff permissions.",
+    canManageAccessControlHintAdmin:
+      "When enabled, this admin can assign roles and permission overrides to business and staff users from this same screen. When disabled, only a superadmin can manage those users' permissions.",
   },
   ar: {
     title: "المستخدمون",
@@ -144,6 +164,7 @@ const translations = {
     createBusinessUser: "إنشاء مستخدم شركة",
     editBusinessUser: "تعديل مستخدم شركة",
     createAdminUser: "إنشاء مستخدم مسؤول",
+    createSuperAdminUser: "إنشاء مستخدم مشرف عام",
     createStaffUser: "إنشاء مستخدم موظف",
     editStaffUser: "تعديل مستخدم موظف",
     name: "الاسم",
@@ -162,8 +183,12 @@ const translations = {
       "هل أنت متأكد أنك تريد نقل هذا العنصر إلى سلة المحذوفات؟",
     role: "الدور",
     edit: "تعديل",
+    editDisabledAccessControlOff: "التحكم بالصلاحيات غير مفعّل لصاحب هذه الشركة. يرجى طلب تفعيله من مشرف عام — فقط المشرف العام يمكنه ذلك.",
+    editDisabledOwnAccessControlOff: "التحكم بالصلاحيات غير مفعّل لحسابك، لذلك لا يمكنك تعديل ملفك الشخصي أو موظفيك. يرجى طلب تفعيله من مشرف عام — فقط المشرف العام يمكنه ذلك.",
+    editDisabledOtherBusinessUser: "لا يمكنك تعديل مستخدمي شركات آخرين.",
     delete: "حذف",
     userTypeLabel: "نوع المستخدم",
+    superAdminUser: "مشرف عام",
     adminUser: "مسؤول",
     businessUser: "مستخدم شركة",
     staffUser: "مستخدم موظف",
@@ -176,9 +201,6 @@ const translations = {
     businessRequired: "يرجى اختيار الشركة",
     selectAll: "تحديد الكل",
     unselectAll: "إلغاء تحديد الكل",
-    staffTypeLabel: "نوع الموظف",
-    deskStaff: " مكتب",
-    doorStaff: " باب",
     businessDetails: "تفاصيل الشركة",
     businessName: "اسم الشركة",
     businessSlug: "معرف الشركة",
@@ -196,10 +218,25 @@ const translations = {
     updatedAt: "تاريخ التحديث:",
     userDetailsTab: "تفاصيل المستخدم",
     businessProfileTab: "ملف الشركة",
+    modulesTab: "الوحدات",
+    staffRolesTab: "أدوار الموظفين",
+    restrictStaffRoles: "تقييد أدوار الموظفين التي يمكن لهذه الشركة استخدامها",
+    restrictStaffRolesHint:
+      "عند الإيقاف، يمكن لصاحب هذه الشركة تعيين أي دور موظف ضمن سقف صلاحياته الخاص. عند التفعيل، يمكنه فقط تعيين الأدوار المحددة أدناه.",
+    noStaffRolesAvailable: "لا توجد أدوار موظفين معرّفة بعد.",
     next: "التالي",
     back: "رجوع",
     permissionsTab: "الصلاحيات",
+    legendInherited: "موروث من الدور",
+    legendAllow: "استثناء بالسماح",
+    legendDeny: "استثناء بالرفض",
+    selectModulesFirstHint: "يرجى اختيار وحدة واحدة على الأقل من تبويب الوحدات أولاً.",
     searchUsers: "ابحث عن المستخدمين...",
+    filterByBusinessLabel: "تصفية حسب الشركة",
+    allBusinesses: "كل الشركات",
+    noBusinessesFound: "لم يتم العثور على شركات",
+    filterByRoleLabel: "تصفية حسب الدور",
+    noRolesFound: "لم يتم العثور على أدوار",
     superAdmins: "المشرفون العامون",
     admins: "المسؤولون",
     businesses: "الشركات",
@@ -207,6 +244,29 @@ const translations = {
     desk: "مكتب",
     door: "باب",
     businessLabel: "شركة",
+    roleLabel: "الدور",
+    noRole: "لم يتم تعيين دور",
+    roleRequired: "يرجى اختيار دور لهذا المستخدم",
+    roleInactiveShort: "غير مفعل",
+    active: "مفعّل",
+    inactive: "غير مفعل",
+    accountActiveHint:
+      "عند الإيقاف، لن يتمكن هذا المستخدم من تسجيل الدخول إطلاقًا حتى يُعاد تفعيله. لا يؤثر هذا على بياناته أو سجله.",
+    notAuthorizedToCreateUser:
+      "غير مصرح لك بإنشاء مستخدمين. لم يتم تفعيل التحكم بالصلاحيات لحسابك.",
+    roleOverridesTitle: "استثناءات الصلاحيات",
+    roleOverridesHint:
+      "محدد = ممنوح حاليًا. انقر على الخلية لتجاوز الإعداد الافتراضي للدور لهذا الإجراء.",
+    inherited: "موروث",
+    allow: "سماح",
+    deny: "رفض",
+    accessControlDisabled:
+      "التحكم بالصلاحيات غير مفعل لحسابك، لذا لا يمكنك تعيين دور أو إدارة الوحدات/الصلاحيات لهذا المستخدم. تواصل مع المشرف لتفعيله.",
+    canManageAccessControl: "تفعيل إدارة التحكم بالصلاحيات لهذا المستخدم",
+    canManageAccessControlHint:
+      "عند التفعيل، يمكن لمالك هذا العمل تعيين الأدوار وتجاوزات الصلاحيات لموظفيه من هذه الشاشة نفسها. عند التعطيل، يمكن فقط للمشرف العام إدارة صلاحيات موظفي هذا العمل.",
+    canManageAccessControlHintAdmin:
+      "عند التفعيل، يمكن لهذا المشرف تعيين الأدوار وتجاوزات الصلاحيات لمستخدمي الأعمال والموظفين من هذه الشاشة نفسها. عند التعطيل، يمكن فقط للمشرف العام إدارة صلاحيات هؤلاء المستخدمين.",
   },
 };
 
@@ -219,41 +279,27 @@ export default function UsersPage() {
   const isAdminOrSuperAdmin = ["admin", "superadmin"].includes(
     currentUser?.role || ""
   );
+  // Whether this actor may create ANY user at all — a business/admin actor
+  // without canManageAccessControl is blocked from creating users entirely
+  // now that role selection is mandatory (see UserFormModal.js's
+  // isAuthorizedToCreate, which applies the same rule once a specific
+  // userType is chosen inside the modal).
+  const canCreateAnyUser =
+    isSuperAdmin ||
+    (["business", "admin"].includes(currentUser?.role || "") &&
+      !!currentUser?.canManageAccessControl);
   const { dir, align, language, t } = useI18nLayout(translations);
-  const { showMessage } = useMessage();
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
   const [groupedUsers, setGroupedUsers] = useState({});
   const [businesses, setBusinesses] = useState([]);
-  const [availableModules, setAvailableModules] = useState([]);
+  const [roles, setRoles] = useState([]);
+  const [selectedRoleFilter, setSelectedRoleFilter] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [isPageLoading, setIsPageLoading] = useState(true);
-  const [showPassword, setShowPassword] = useState(false);
-  const defaultForm = {
-    name: "",
-    email: "",
-    password: "",
-    modulePermissions: [],
-    businessId: "",
-    userType: "staff",
-    staffType: "desk",
-    attachToExistingBusiness: false,
-    businessName: "",
-    businessSlug: "",
-    businessEmail: "",
-    businessPhone: "",
-    businessAddress: "",
-    logoPreview: "",
-    logoFile: null,
-  };
-
-  const [form, setForm] = useState(defaultForm);
-  const [errors, setErrors] = useState({});
-  const [activeTab, setActiveTab] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   useEffect(() => {
     if (urlSearchApplied.current) return;
@@ -263,31 +309,11 @@ export default function UsersPage() {
     }
     urlSearchApplied.current = true;
   }, [searchParams]);
-  const isEditingSuperAdmin =
-    isEditMode && selectedUser?.role === "superadmin";
-  const maxTabIndex = useMemo(() => {
-    let tabs = 1;
-    if (form.userType === "business") tabs += 1;
-    if (
-      !isEditingSuperAdmin &&
-      (form.userType === "staff" ||
-        form.userType === "admin" ||
-        form.userType === "business")
-    ) {
-      tabs += 1;
-    }
-    return Math.max(tabs - 1, 0);
-  }, [form.userType, isEditingSuperAdmin]);
 
-  useEffect(() => {
-    if (activeTab > maxTabIndex) {
-      setActiveTab(maxTabIndex);
-    }
-  }, [activeTab, maxTabIndex]);
+  const handleModalClose = useCallback(() => setModalOpen(false), []);
 
   useEffect(() => {
     fetchUsers();
-    fetchModules();
 
     if (isAdminOrSuperAdmin) {
       getAllBusinesses().then((res) => {
@@ -301,15 +327,23 @@ export default function UsersPage() {
           setBusinesses([]); // fail-safe
         }
       });
+      // Unfiltered by userType — this filter spans every group on the page
+      // (super admins, admins, and every business's staff/owners), not one
+      // specific create/edit target's role select.
+      getRoles().then((res) => {
+        if (Array.isArray(res)) setRoles(res);
+        else if (Array.isArray(res?.data)) setRoles(res.data);
+        else setRoles([]);
+      });
     }
   }, []);
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setIsPageLoading(true);
 
     const rawUsers = isBusinessUser
       ? await getAllStaffUsers(currentUser?.business?._id)
-      : await getAllUsers();
+      : await getAllUsers({ scope: "admins" });
 
     if (isBusinessUser) {
       setGroupedUsers({ [currentUser.business.name]: rawUsers });
@@ -362,12 +396,79 @@ export default function UsersPage() {
 
     setGroupedUsers(orderedGroups);
     setIsPageLoading(false);
-  };
+  }, [isBusinessUser, currentUser]);
 
-  const fetchModules = async () => {
-    const allModules = await getModules(currentUser?.role);
-    setAvailableModules(allModules || []);
-  };
+  // Loads one business's users on demand instead of eagerly loading every
+  // business up front — the previously-loaded business (if any) is dropped
+  // from groupedUsers when the selection changes so stale data never lingers.
+  const loadedBusinessNameRef = useRef(null);
+  // Tracks the most recently *requested* businessId so a slower, older
+  // in-flight fetch can detect it's been superseded and discard its own
+  // result instead of clobbering whatever the latest selection already
+  // loaded (two fetches racing when the filter is changed quickly).
+  const requestedBusinessIdRef = useRef(null);
+  const [selectedBusiness, setSelectedBusiness] = useState(null);
+  const [businessUsersLoading, setBusinessUsersLoading] = useState(false);
+
+  // Shared by the filter dropdown itself and by refreshUsers() below (so a
+  // save/delete while a business is selected re-loads that business's users
+  // instead of losing them — fetchUsers() alone only ever returns the
+  // lightweight admins/superadmins scope and would otherwise wipe this
+  // group out of groupedUsers entirely).
+  const loadBusinessUsers = useCallback(async (business) => {
+    setBusinessUsersLoading(true);
+    const res = await getAllUsers({ businessId: business._id });
+
+    // A newer selection may have started (and possibly already resolved)
+    // while this request was in flight — discard this stale response.
+    if (requestedBusinessIdRef.current !== business._id) return;
+
+    const users = Array.isArray(res) ? res : res?.data || [];
+    setGroupedUsers((prev) => {
+      const next = { ...prev };
+      if (loadedBusinessNameRef.current && loadedBusinessNameRef.current !== business.name) {
+        delete next[loadedBusinessNameRef.current];
+      }
+      next[business.name] = users;
+      return next;
+    });
+    loadedBusinessNameRef.current = business.name;
+    setBusinessUsersLoading(false);
+  }, []);
+
+  const handleBusinessFilterChange = useCallback(async (_event, business) => {
+    setSelectedBusiness(business);
+    requestedBusinessIdRef.current = business?._id || null;
+
+    if (!business) {
+      // Mutate the ref outside the updater — React (Strict Mode, dev only)
+      // can invoke a state updater twice to detect impurity, and mutating
+      // loadedBusinessNameRef *inside* it meant the second invocation saw
+      // the ref already cleared and bailed out, silently keeping the
+      // stale business group.
+      const previouslyLoadedName = loadedBusinessNameRef.current;
+      loadedBusinessNameRef.current = null;
+      if (previouslyLoadedName) {
+        setGroupedUsers((prev) => {
+          const next = { ...prev };
+          delete next[previouslyLoadedName];
+          return next;
+        });
+      }
+      return;
+    }
+
+    await loadBusinessUsers(business);
+  }, [loadBusinessUsers]);
+
+  // fetchUsers() only ever returns the lightweight admins/superadmins scope,
+  // so calling it alone after a save/delete would silently wipe out whatever
+  // business group the filter dropdown had loaded. This re-applies that
+  // group afterwards so the currently-filtered business's users don't vanish.
+  const refreshUsers = useCallback(async () => {
+    await fetchUsers();
+    if (selectedBusiness) await loadBusinessUsers(selectedBusiness);
+  }, [fetchUsers, selectedBusiness, loadBusinessUsers]);
 
   const getRoleColor = (role) =>
     ({
@@ -377,294 +478,49 @@ export default function UsersPage() {
       staff: "secondary",
     })[role] || "default";
 
+  // Desk/Door is now derived from the user's current Role name rather than
+  // the removed staffType field — a live lookup (reflects the role they
+  // hold right now), same semantics as before since staffType was never a
+  // per-scan snapshot either.
+  const getStaffScannerType = (user) => {
+    const roleName = user.roleId?.name;
+    if (roleName === "Desk Staff") return "desk";
+    if (roleName === "Door Staff") return "door";
+    return null;
+  };
+
   const handleOpenEdit = (user) => {
     setSelectedUser(user);
-    const businessContact = user.business?.contact || {};
-
-    setForm({
-      name: user.name,
-      email: user.email,
-      password: "",
-      modulePermissions: user.modulePermissions || [],
-      userType:
-        user.role === "admin"
-          ? "admin"
-          : user.role === "business"
-            ? "business"
-            : "staff",
-      attachToExistingBusiness: true,
-      businessId: user.business?._id || "",
-      staffType: user.staffType || "desk",
-      businessName: user.business?.name || "",
-      businessSlug: user.business?.slug || "",
-      businessEmail: businessContact.email || "",
-      businessPhone: businessContact.phone || "",
-      businessAddress: user.business?.address || "",
-      logoPreview: user.business?.logoUrl || "",
-      logoFile: null,
-    });
-    setErrors({});
-    setActiveTab(0);
     setIsEditMode(true);
     setModalOpen(true);
   };
 
   const handleOpenCreate = () => {
     setSelectedUser(null);
-    setForm({
-      ...defaultForm,
-      userType: isAdminOrSuperAdmin ? "business" : "staff",
-      staffType: "desk",
-    });
-    setErrors({});
-    setActiveTab(0);
     setIsEditMode(false);
     setModalOpen(true);
-  };
-  const validateTabByIndex = (tabIndex) => {
-    const newErrors = {};
-
-    if (tabIndex === 0) {
-      // User Details validation
-      if (!form.name.trim()) newErrors.name = t.nameRequired;
-      if (!form.email.trim()) newErrors.email = t.emailRequired;
-      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
-        newErrors.email = t.emailInvalid;
-      if (!isEditMode && !form.password.trim())
-        newErrors.password = t.passwordRequired;
-
-      if (
-        !isEditMode &&
-        isAdminOrSuperAdmin &&
-        form.userType === "staff" &&
-        !form.businessId
-      ) {
-        newErrors.businessId = t.businessRequired;
-      }
-    } else if (tabIndex === 1 && form.userType === "business") {
-      // Business Profile validation
-      if (!form.businessName.trim())
-        newErrors.businessName = t.businessNameRequired;
-      if (!form.businessSlug.trim())
-        newErrors.businessSlug = t.businessSlugRequired;
-      if (!form.businessEmail.trim()) {
-        newErrors.businessEmail = t.businessEmailRequired;
-      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.businessEmail)) {
-        newErrors.businessEmail = t.emailInvalid;
-      }
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-  const validateCurrentTab = () => {
-    return validateTabByIndex(activeTab);
-  };
-
-  const validateForm = () => {
-    const newErrors = {};
-    if (!form.name.trim()) newErrors.name = t.nameRequired;
-    if (!form.email.trim()) newErrors.email = t.emailRequired;
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
-      newErrors.email = t.emailInvalid;
-    if (!isEditMode && !form.password.trim())
-      newErrors.password = t.passwordRequired;
-
-    if (
-      !isEditMode &&
-      isAdminOrSuperAdmin &&
-      form.userType === "staff" &&
-      !form.businessId
-    ) {
-      newErrors.businessId = t.businessRequired;
-    }
-
-    // Business validations
-    if (form.userType === "business") {
-      if (form.attachToExistingBusiness) {
-        if (!form.businessId) {
-          newErrors.businessId = t.businessRequired;
-        }
-      } else {
-        if (!form.businessName.trim())
-          newErrors.businessName = t.businessNameRequired;
-        if (!form.businessSlug.trim())
-          newErrors.businessSlug = t.businessSlugRequired;
-        if (!form.businessEmail.trim()) {
-          newErrors.businessEmail = t.businessEmailRequired;
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.businessEmail)) {
-          newErrors.businessEmail = t.emailInvalid;
-        }
-      }
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleModalSave = async () => {
-    const newErrors = {};
-
-    // ---------- User validation ----------
-    if (!form.name.trim()) newErrors.name = t.nameRequired;
-    if (!form.email.trim()) newErrors.email = t.emailRequired;
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
-      newErrors.email = t.emailInvalid;
-
-    if (!isEditMode && !form.password.trim())
-      newErrors.password = t.passwordRequired;
-
-    // ---------- Staff validation ----------
-    if (
-      !isEditMode &&
-      isAdminOrSuperAdmin &&
-      form.userType === "staff" &&
-      !form.businessId
-    ) {
-      newErrors.businessId = t.businessRequired;
-    }
-
-    // ---------- Business validation (IMPORTANT FIX) ----------
-    if (form.userType === "business") {
-      if (form.attachToExistingBusiness) {
-        if (!form.businessId) {
-          newErrors.businessId = t.businessRequired;
-        }
-      } else {
-        if (!form.businessName.trim())
-          newErrors.businessName = t.businessNameRequired;
-        if (!form.businessSlug.trim())
-          newErrors.businessSlug = t.businessSlugRequired;
-        if (!form.businessEmail.trim()) {
-          newErrors.businessEmail = t.businessEmailRequired;
-        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.businessEmail)) {
-          newErrors.businessEmail = t.emailInvalid;
-        }
-      }
-    }
-
-    setErrors(newErrors);
-
-    if (Object.keys(newErrors).length > 0) {
-      showMessage(Object.values(newErrors).join(", "), "error");
-      return;
-    }
-
-    setLoading(true);
-
-    // ===================== EDIT MODE =====================
-    if (isEditMode) {
-      const payload = { ...form };
-      if (!form.password) delete payload.password;
-
-      const userRes = await updateUser(selectedUser._id, payload);
-      if (userRes?.error) {
-        setLoading(false);
-        return;
-      }
-
-      // ONLY update business if NOT attaching
-      if (
-        form.userType === "business" &&
-        !form.attachToExistingBusiness &&
-        selectedUser.business?._id
-      ) {
-        const businessPayload = new FormData();
-        businessPayload.append("name", form.businessName);
-        businessPayload.append("slug", form.businessSlug);
-        businessPayload.append("email", form.businessEmail);
-        businessPayload.append("phone", form.businessPhone);
-        businessPayload.append("address", form.businessAddress);
-        if (form.logoFile) businessPayload.append("file", form.logoFile);
-
-        const businessRes = await updateBusiness(
-          selectedUser.business._id,
-          businessPayload,
-        );
-
-        if (businessRes?.error) {
-          setLoading(false);
-          return;
-        }
-      }
-    }
-
-    // ===================== CREATE MODE =====================
-    else {
-      if (isSuperAdmin && form.userType === "admin") {
-        const res = await createAdminUser({
-          name: form.name,
-          email: form.email,
-          password: form.password,
-          modulePermissions: form.modulePermissions || [],
-        });
-        if (res?.error) {
-          setLoading(false);
-          return;
-        }
-      } else if (isAdminOrSuperAdmin && form.userType === "business") {
-        const res = await createBusinessUser({
-          name: form.name,
-          email: form.email,
-          password: form.password,
-          modulePermissions: form.modulePermissions,
-
-          attachToExistingBusiness: form.attachToExistingBusiness,
-          businessId: form.attachToExistingBusiness
-            ? form.businessId
-            : undefined,
-
-          business: form.attachToExistingBusiness
-            ? undefined
-            : {
-              name: form.businessName,
-              slug: form.businessSlug,
-              email: form.businessEmail,
-              phone: form.businessPhone,
-              address: form.businessAddress,
-            },
-        });
-
-        if (res?.error) {
-          setLoading(false);
-          return;
-        }
-      } else {
-        // Staff creation
-        const userRes = await createStaffUser(
-          form.name,
-          form.email,
-          form.password,
-          "staff",
-          isAdminOrSuperAdmin ? form.businessId : currentUser.business._id,
-          form.modulePermissions,
-          form.staffType,
-        );
-
-        if (userRes?.error) {
-          setLoading(false);
-          return;
-        }
-      }
-    }
-
-    await fetchUsers();
-    setModalOpen(false);
-    setLoading(false);
   };
 
   const handleDelete = async () => {
     const res = await deleteUser(selectedUser._id);
-    if (!res.error) await fetchUsers();
+    if (!res.error) await refreshUsers();
     setDeleteConfirm(false);
   };
 
   const renderUserCard = (user, isSelf = false) => {
     const canEditUser =
       currentUser?.role === "superadmin" ||
-      isSelf ||
+      // A business owner can't edit anything — including their own card —
+      // while their own canManageAccessControl is off. Superadmin stays
+      // unrestricted (they're the only one who can toggle the flag at all).
+      (isSelf && (currentUser?.role !== "business" || !!currentUser?.canManageAccessControl)) ||
       (currentUser?.role === "admin" &&
-        (user.role === "business" || user.role === "staff"));
+        ((user.role === "business" && !!user.canManageAccessControl) ||
+          user.role === "staff")) ||
+      (currentUser?.role === "business" &&
+        user.role === "staff" &&
+        user.business?._id === currentUser?.business?._id &&
+        !!currentUser?.canManageAccessControl);
     const canDeleteUser =
       currentUser?.role === "superadmin" &&
       !isSelf &&
@@ -732,22 +588,22 @@ export default function UsersPage() {
                       }),
                     }}
                   />
-                  {user.role === "staff" && user.staffType && (
+                  {user.role === "staff" && getStaffScannerType(user) && (
                     <Chip
                       icon={
-                        user.staffType === "door" ? (
+                        getStaffScannerType(user) === "door" ? (
                           <ICONS.door />
                         ) : (
                           <ICONS.desk />
                         )
                       }
                       label={
-                        user.staffType.charAt(0).toUpperCase() +
-                        user.staffType.slice(1)
+                        getStaffScannerType(user).charAt(0).toUpperCase() +
+                        getStaffScannerType(user).slice(1)
                       }
                       sx={{
                         bgcolor:
-                          user.staffType === "door"
+                          getStaffScannerType(user) === "door"
                             ? theme.palette.users.staffDoorBg
                             : theme.palette.users.staffDeskBg,
                         color: isDark ? "common.white" : "common.black",
@@ -762,6 +618,13 @@ export default function UsersPage() {
                       size="small"
                     />
                   )}
+                  <Tooltip title={user.isActive === false ? t.inactive : t.active}>
+                    {user.isActive === false ? (
+                      <ICONS.cancel fontSize="small" sx={{ color: "warning.main", cursor: "default", alignSelf: "center" }} />
+                    ) : (
+                      <ICONS.checkCircle fontSize="small" sx={{ color: "success.main", cursor: "default", alignSelf: "center" }} />
+                    )}
+                  </Tooltip>
                 </Stack>
               </Box>
             </Stack>
@@ -776,14 +639,35 @@ export default function UsersPage() {
           <CardActions
             sx={{ px: 2, pb: 2, pt: 0, justifyContent: "flex-end", mt: "auto" }}
           >
-            <Tooltip title={t.edit}>
-              <IconButton
-                color="primary"
-                onClick={() => handleOpenEdit(user)}
-                disabled={!canEditUser}
-              >
-                <ICONS.edit />
-              </IconButton>
+            <Tooltip
+              title={
+                // Ownership-absolute: a business actor can never edit ANOTHER
+                // business user (co-owner) regardless of anyone's
+                // canManageAccessControl flag — assertCanManageTargetOwnership
+                // only ever lets a business actor manage staff. Checked first
+                // so this never gets shadowed by a flag-related message that
+                // isn't actually why the button is disabled here.
+                !canEditUser && currentUser?.role === "business" && user.role === "business" && !isSelf
+                  ? t.editDisabledOtherBusinessUser
+                  : !canEditUser &&
+                    currentUser?.role === "business" &&
+                    !currentUser?.canManageAccessControl &&
+                    (isSelf || user.role === "staff")
+                    ? t.editDisabledOwnAccessControlOff
+                    : !canEditUser && user.role === "business" && !isSelf && !user.canManageAccessControl
+                      ? t.editDisabledAccessControlOff
+                      : t.edit
+              }
+            >
+              <span>
+                <IconButton
+                  color="primary"
+                  onClick={() => handleOpenEdit(user)}
+                  disabled={!canEditUser}
+                >
+                  <ICONS.edit />
+                </IconButton>
+              </span>
             </Tooltip>
             {canDeleteUser && (
               <Tooltip title={t.delete}>
@@ -805,16 +689,24 @@ export default function UsersPage() {
   };
 
   const normalizedSearch = searchQuery.trim().toLowerCase();
-  const filteredGroupedUsers = normalizedSearch
-    ? Object.fromEntries(
+  const filteredGroupedUsers = useMemo(() => {
+    if (!normalizedSearch && !selectedRoleFilter) return groupedUsers;
+    return Object.fromEntries(
       Object.entries(groupedUsers)
         .map(([group, users]) => {
           const filteredUsers = users.filter((user) => {
+            if (
+              selectedRoleFilter &&
+              String(user.roleId?._id || user.roleId || "") !== String(selectedRoleFilter._id)
+            ) {
+              return false;
+            }
+            if (!normalizedSearch) return true;
             const fields = [
               user.name,
               user.email,
               user.role,
-              user.staffType,
+              getStaffScannerType(user),
               user.business?.name,
             ]
               .filter(Boolean)
@@ -825,14 +717,14 @@ export default function UsersPage() {
           return [group, filteredUsers];
         })
         .filter(([, users]) => users.length > 0),
-    )
-    : groupedUsers;
+    );
+  }, [groupedUsers, normalizedSearch, selectedRoleFilter]);
 
   const getGroupCount = (name) => filteredGroupedUsers?.[name]?.length || 0;
-  const businessGroupNames = Object.keys(filteredGroupedUsers || {}).filter(
-    (group) => !["Super Admins", "Admins", "Unassigned"].includes(group),
-  );
-  const businessGroupsCount = businessGroupNames.length;
+  // Total businesses in the system (always loaded, lightweight) — not
+  // "how many business groups happen to be loaded right now", since only
+  // the one selected via the business filter is ever fetched.
+  const businessGroupsCount = businesses.length;
   const getGroupLabel = (group) => {
     if (group === "Super Admins") return t.superAdmins;
     if (group === "Admins") return t.admins;
@@ -849,9 +741,11 @@ export default function UsersPage() {
       <BreadcrumbsNav />
       <Box
         sx={{
-          display: "grid",
-          gridTemplateColumns: { xs: "1fr", md: "1fr auto" },
-          alignItems: "center",
+          display: "flex",
+          flexDirection: { xs: "column", md: "row" },
+          flexWrap: "wrap",
+          alignItems: { xs: "stretch", md: "center" },
+          justifyContent: "space-between",
           gap: 2,
           mb: 1,
           width: "100%",
@@ -880,8 +774,9 @@ export default function UsersPage() {
         <Stack
           spacing={1.5}
           sx={{
-            width: "100%",
+            width: { xs: "100%", md: "auto" },
             maxWidth: "100%",
+            flexShrink: 0,
             alignItems: { xs: "stretch", md: "flex-end" },
           }}
         >
@@ -938,6 +833,8 @@ export default function UsersPage() {
               width: "100%",
               maxWidth: "100%",
               minWidth: 0,
+              flexWrap: "wrap",
+              rowGap: 1,
               justifyContent: { xs: "flex-start", md: "flex-end" },
               alignItems: { xs: "stretch", sm: "center" },
             }}
@@ -949,8 +846,8 @@ export default function UsersPage() {
               onChange={(e) => setSearchQuery(e.target.value)}
               fullWidth
               sx={{
-                flex: 1,
-                width: "100%",
+                flex: { xs: "1 1 100%", sm: "1 1 auto" },
+                width: { xs: "100%", sm: "auto" },
                 maxWidth: "100%",
                 minWidth: { sm: 220, md: 280 },
               }}
@@ -965,20 +862,107 @@ export default function UsersPage() {
                 }
               }}
             />
-            <Button
-              variant="contained"
-              fullWidth
-              sx={{
-                ...getStartIconSpacing(dir),
-                width: { xs: "100%", sm: "auto" },
-                maxWidth: "100%",
-                minWidth: 0,
-              }}
-              startIcon={<ICONS.add />}
-              onClick={handleOpenCreate}
-            >
-              {t.createUser}
-            </Button>
+            {!isBusinessUser && (
+              <Autocomplete
+                size="small"
+                options={businesses}
+                getOptionLabel={(biz) => biz.name || ""}
+                isOptionEqualToValue={(opt, val) => opt._id === val._id}
+                value={selectedBusiness}
+                onChange={handleBusinessFilterChange}
+                loading={businessUsersLoading}
+                noOptionsText={t.noBusinessesFound}
+                sx={{
+                  width: { xs: "100%", sm: "auto" },
+                  maxWidth: "100%",
+                  minWidth: { sm: 220, md: 260 },
+                  flexShrink: 0,
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    placeholder={t.filterByBusinessLabel}
+                    slotProps={{
+                      ...params.slotProps,
+                      input: {
+                        ...params.slotProps?.input,
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <ICONS.business sx={{ opacity: 0.7 }} />
+                          </InputAdornment>
+                        ),
+                        endAdornment: (
+                          <>
+                            {businessUsersLoading && (
+                              <CircularProgress color="inherit" size={16} />
+                            )}
+                            {params.slotProps?.input?.endAdornment}
+                          </>
+                        ),
+                      },
+                    }}
+                  />
+                )}
+              />
+            )}
+            {!isBusinessUser && (
+              <Autocomplete
+                size="small"
+                options={roles}
+                getOptionLabel={(role) => role.name || ""}
+                isOptionEqualToValue={(opt, val) => opt._id === val._id}
+                value={selectedRoleFilter}
+                onChange={(_event, role) => setSelectedRoleFilter(role)}
+                noOptionsText={t.noRolesFound}
+                sx={{
+                  width: { xs: "100%", sm: "auto" },
+                  maxWidth: "100%",
+                  minWidth: { sm: 220, md: 260 },
+                  flexShrink: 0,
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    placeholder={t.filterByRoleLabel}
+                    slotProps={{
+                      ...params.slotProps,
+                      input: {
+                        ...params.slotProps?.input,
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <ICONS.adminPanel sx={{ opacity: 0.7 }} />
+                          </InputAdornment>
+                        ),
+                      },
+                    }}
+                  />
+                )}
+              />
+            )}
+            <Tooltip title={canCreateAnyUser ? "" : t.notAuthorizedToCreateUser}>
+              <Box
+                component="span"
+                sx={{
+                  display: "inline-block",
+                  width: { xs: "100%", sm: "auto" },
+                  flexShrink: 0,
+                }}
+              >
+                <Button
+                  variant="contained"
+                  fullWidth
+                  disabled={!canCreateAnyUser}
+                  sx={{
+                    ...getStartIconSpacing(dir),
+                    whiteSpace: "nowrap",
+                  }}
+                  startIcon={<ICONS.add />}
+                  onClick={handleOpenCreate}
+                >
+                  {t.createUser}
+                </Button>
+              </Box>
+            </Tooltip>
           </Stack>
         </Stack>
       </Box>
@@ -994,130 +978,54 @@ export default function UsersPage() {
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, justifyContent: "center" }}>
               {isBusinessUser &&
                 group === currentUser.business.name &&
-                renderUserCard(currentUser, true)}
+                // /auth/me (authController.js) returns the current user
+                // shaped with `id`, not `_id` — every other user record in
+                // this app (from getAllUsers/getAllStaffUsers) uses
+                // Mongoose's native `_id`. renderUserCard and everything
+                // downstream of it (handleOpenEdit, updateUser(selectedUser._id, ...))
+                // assumes `_id`, so without this normalization the self-card's
+                // edit save hit PUT /api/users/undefined.
+                renderUserCard({ ...currentUser, _id: currentUser._id || currentUser.id }, true)}
               {users.map((user) => renderUserCard(user))}
             </Box>
           );
 
           if (isBusinessGroup) {
-            const staffCount = users.filter((u) => u.role === "staff").length;
             const deskCount = users.filter(
-              (u) => u.role === "staff" && u.staffType === "desk",
+              (u) => u.role === "staff" && getStaffScannerType(u) === "desk",
             ).length;
             const doorCount = users.filter(
-              (u) => u.role === "staff" && u.staffType === "door",
+              (u) => u.role === "staff" && getStaffScannerType(u) === "door",
             ).length;
             const businessCount = users.filter((u) => u.role === "business")
               .length;
             return (
-              <Accordion
-                key={group}
-                disableGutters
-                elevation={0}
-                sx={{
-                  mb: 2,
-                  borderRadius: 3,
-                  border: "1px solid",
-                  borderColor: "divider",
-                  overflow: "hidden",
-                  bgcolor: "background.paper",
-                  boxShadow: theme.palette.users.accordionShadow, "&:before": { display: "none" },
-                  "&.Mui-expanded": {
-                    boxShadow: theme.palette.users.accordionShadowExpanded,
-                  },
-                }}
-              >
-                <AccordionSummary
-                  expandIcon={<ICONS.down />}
+              <Box key={group} sx={{ mb: 4 }}>
+                <Stack
+                  direction={{ xs: "column", sm: "row" }}
+                  spacing={1}
                   sx={{
-                    px: 2.5,
-                    py: 0.75,
-                    bgcolor: theme.palette.users.accordionSummaryBg,
-                    "&.Mui-expanded": { minHeight: 52 },
-                    "& .MuiAccordionSummary-content": {
-                      my: 1,
-                      gap: 0.75,
-                      justifyContent: { xs: "flex-start", sm: "space-between" },
-                      width: "100%",
-                      flexDirection: { xs: "column", sm: "row" },
-                      alignItems: { xs: "flex-start", sm: "center" },
-                    },
-                    "& .MuiAccordionSummary-expandIconWrapper": {
-                      alignSelf: { xs: "flex-start", sm: "center" },
-                      mt: { xs: 0.5, sm: 0 },
-                    },
+                    alignItems: { xs: "flex-start", sm: "center" },
+                    justifyContent: "space-between",
+                    flexWrap: "wrap",
+                    rowGap: 0.5,
+                    mb: 1,
                   }}
                 >
-                  <Stack
-                    direction="row"
-                    spacing={1}
-                    sx={{
-                      alignItems: "center",
-                      minWidth: 0,
-                      flexWrap: "wrap",
-                      rowGap: 0.5
-                    }}>
-                    <Typography
-                      variant="h6"
-                      sx={{ fontWeight: 600, wordBreak: "break-word" }}
-                    >
+                  <Stack direction="row" spacing={1} sx={{ alignItems: "center", flexWrap: "wrap", rowGap: 0.5 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 600, wordBreak: "break-word" }}>
                       {group}
                     </Typography>
-                    <Chip
-                      label={`${users.length}`}
-                      size="small"
-                      variant="outlined"
-                      sx={{
-                        ml: dir === "rtl" ? 0.75 : 0,
-                        mr: dir === "rtl" ? 0 : 0.75,
-                      }}
-                    />
+                    <Chip label={`${users.length}`} size="small" variant="outlined" />
                   </Stack>
-                  <Stack
-                    direction="row"
-                    spacing={1}
-                    sx={{
-                      alignItems: "center",
-                      width: { xs: "100%", sm: "auto" },
-                      flexWrap: "wrap",
-                      rowGap: 0.5
-                    }}>
-                    <Chip
-                      label={`${t.desk}: ${deskCount}`}
-                      size="small"
-                      variant="outlined"
-                      color="info"
-                      sx={{
-                        ml: dir === "rtl" ? 0.75 : 0,
-                        mr: dir === "rtl" ? 0 : 0.75,
-                      }}
-                    />
-                    <Chip
-                      label={`${t.door}: ${doorCount}`}
-                      size="small"
-                      variant="outlined"
-                      color="warning"
-                      sx={{
-                        ml: dir === "rtl" ? 0.75 : 0,
-                        mr: dir === "rtl" ? 0 : 0.75,
-                      }}
-                    />
-                    <Chip
-                      label={`${t.businessLabel}: ${businessCount}`}
-                      size="small"
-                      variant="outlined"
-                      color="success"
-                      sx={{
-                        ml: dir === "rtl" ? 0.75 : 0,
-                        mr: dir === "rtl" ? 0 : 0.75,
-                      }}
-                    />
+                  <Stack direction="row" spacing={1} sx={{ alignItems: "center", flexWrap: "wrap", rowGap: 0.5 }}>
+                    <Chip label={`${t.desk}: ${deskCount}`} size="small" variant="outlined" color="info" />
+                    <Chip label={`${t.door}: ${doorCount}`} size="small" variant="outlined" color="warning" />
+                    <Chip label={`${t.businessLabel}: ${businessCount}`} size="small" variant="outlined" color="success" />
                   </Stack>
-                </AccordionSummary>
-                <AccordionDetails sx={{ px: 2.5, pb: 2.5, pt: 1.5 }}>
-                  {groupContent}
-                </AccordionDetails>
-              </Accordion>
+                </Stack>
+                {groupContent}
+              </Box>
             );
           }
 
@@ -1142,544 +1050,18 @@ export default function UsersPage() {
           );
         })
       )}
-      <Dialog
+      <UserFormModal
         open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        fullWidth
-        maxWidth="md"
+        onClose={handleModalClose}
+        onSaved={refreshUsers}
+        isEditMode={isEditMode}
+        selectedUser={selectedUser}
+        businesses={businesses}
+        t={t}
         dir={dir}
-      >
-        <DialogTitle sx={{ pr: 6 }}>
-          {isEditMode
-            ? selectedUser?.role === "admin" || selectedUser?.role === "superadmin"
-              ? t.editAdminUser
-              : selectedUser?.role === "business"
-                ? t.editBusinessUser
-                : t.editStaffUser
-            : form.userType === "admin"
-              ? t.createAdminUser
-              : form.userType === "business"
-                ? t.createBusinessUser
-                : t.createStaffUser}
-          <IconButton
-            onClick={() => setModalOpen(false)}
-            sx={{
-              position: "absolute",
-              ...(dir === "rtl" ? { left: 8 } : { right: 8 }),
-              top: 8,
-              color: "text.secondary",
-              border: "1px solid",
-              borderColor: "primary.main",
-              "&:hover": {
-                bgcolor: "primary.main",
-                color: "primary.contrastText",
-
-              },
-            }}
-          >
-            <ICONS.close />
-          </IconButton>
-        </DialogTitle>
-
-        <DialogContent sx={{
-          "&::-webkit-scrollbar": {
-            width: 8,
-          },
-          "&::-webkit-scrollbar-track": {
-            background: "transparent",
-          },
-          "&::-webkit-scrollbar-thumb": {
-           backgroundColor: theme.palette.sharedUI.scrollbarThumb,
-            borderRadius: 8,
-          },
-          "&::-webkit-scrollbar-thumb:hover": {
-            backgroundColor: theme.palette.sharedUI.scrollbarThumbHover,
-          },
-
-          /* Firefox */
-          scrollbarColor: `${theme.palette.sharedUI.scrollbarThumb} transparent`,
-        }}>
-          {isAdminOrSuperAdmin && !isEditMode && (
-            <FormControl fullWidth margin="normal">
-              <InputLabel id="user-type-label">{t.userTypeLabel}</InputLabel>
-              <Select
-                labelId="user-type-label"
-                value={form.userType}
-                label={t.userTypeLabel}
-                onChange={(e) => {
-                  setForm((prev) => ({ ...prev, userType: e.target.value }));
-                  setActiveTab(0);
-                }}
-                sx={{
-                  ...(dir === "rtl" && {
-                    "& .MuiSelect-select": {
-                      textAlign: "left",
-                      paddingRight: "32px",
-                    },
-                  }),
-                }}
-              >
-                {isSuperAdmin && (
-                  <MenuItem value="admin">{t.adminUser}</MenuItem>
-                )}
-                <MenuItem value="staff">{t.staffUser}</MenuItem>
-                <MenuItem value="business">{t.businessUser}</MenuItem>
-              </Select>
-            </FormControl>
-          )}
-
-          {(form.userType === "business" ||
-            form.userType === "admin" ||
-            !isEditMode ||
-            selectedUser?.role !== "admin") && (
-              <Box
-                sx={{ borderBottom: 1, borderColor: "divider", mt: 2, mx: -3 }}
-              >
-                <Tabs
-                  value={Math.min(activeTab, maxTabIndex)}
-                  onChange={(e, newValue) => setActiveTab(newValue)}
-                  aria-label="user tabs"
-                  sx={{ px: 3 }}
-                >
-                  <Tab label={t.userDetailsTab} />
-                  {form.userType === "business" && (
-                    <Tab label={t.businessProfileTab} />
-                  )}
-                  {(form.userType === "staff" ||
-                    form.userType === "admin" ||
-                    form.userType === "business") &&
-                    !isEditingSuperAdmin && (
-                      <Tab label={t.permissionsTab} />
-                    )}
-                </Tabs>
-              </Box>
-            )}
-
-          {activeTab === 0 && (
-            <Box sx={{ mt: 2 }}>
-              {(form.userType === "staff" &&
-                (!isEditMode || selectedUser?.role === "staff")) && (
-                  <FormControl fullWidth margin="normal">
-                    <InputLabel id="staff-type-label">
-                      {t.staffTypeLabel}
-                    </InputLabel>
-                    <Select
-                      labelId="staff-type-label"
-                      value={form.staffType || "desk"}
-                      label={t.staffTypeLabel}
-                      onChange={(e) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          staffType: e.target.value,
-                        }))
-                      }
-                    >
-                      <MenuItem value="desk">{t.deskStaff}</MenuItem>
-                      <MenuItem value="door">{t.doorStaff}</MenuItem>
-                    </Select>
-                  </FormControl>
-                )}
-
-              {["name", "email", "password"].map((field) => (
-                <TextField
-                  key={field}
-                  label={t[field]}
-                  name={field}
-                  value={form[field]}
-                  onChange={(e) => {
-                    setForm((prev) => ({ ...prev, [field]: e.target.value }));
-                    if (errors[field]) {
-                      setErrors((prev) => ({ ...prev, [field]: "" }));
-                    }
-                  }}
-                  fullWidth
-                  margin="normal"
-                  type={
-                    field === "password"
-                      ? showPassword
-                        ? "text"
-                        : "password"
-                      : "text"
-                  }
-                  error={!!errors[field]}
-                  helperText={errors[field] || ""}
-                  slotProps={{
-                    input: field === "password"
-                      ? {
-                        endAdornment: (
-                          <IconButton
-                            onClick={() => setShowPassword((prev) => !prev)}
-                            edge="end"
-                          >
-                            {showPassword ? <ICONS.hide /> : <ICONS.view />}
-                          </IconButton>
-                        ),
-                      }
-                      : {}
-                  }}
-                />
-              ))}
-
-              {isAdminOrSuperAdmin &&
-                !isEditMode &&
-                form.userType === "staff" && (
-                  <FormControl
-                    fullWidth
-                    margin="normal"
-                    error={!!errors.businessId}
-                  >
-                    <InputLabel id="business-select-label">
-                      {t.selectBusinessLabel}
-                    </InputLabel>
-                    <Select
-                      labelId="business-select-label"
-                      value={form.businessId || ""}
-                      label={t.selectBusinessLabel}
-                      onChange={(e) => {
-                        setForm((prev) => ({
-                          ...prev,
-                          businessId: e.target.value,
-                        }));
-                        if (errors.businessId) {
-                          setErrors((prev) => ({ ...prev, businessId: "" }));
-                        }
-                      }}
-                    >
-                      <MenuItem value="">
-                        <em>{t.selectPlaceholder}</em>
-                      </MenuItem>
-                      {businesses.map((biz) => (
-                        <MenuItem key={biz._id} value={biz._id}>
-                          {biz.name}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                    {errors.businessId && (
-                      <Typography variant="caption" color="error">
-                        {errors.businessId}
-                      </Typography>
-                    )}
-                  </FormControl>
-                )}
-            </Box>
-          )}
-
-          {form.userType === "business" && activeTab === 1 && (
-            <Box sx={{ mt: 2 }}>
-              {isAdminOrSuperAdmin && (
-                <FormControlLabel
-                  sx={{ mb: 2 }}
-                  control={
-                    <Checkbox
-                      checked={form.attachToExistingBusiness}
-                      onChange={(e) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          attachToExistingBusiness: e.target.checked,
-                          businessId: "",
-                        }))
-                      }
-                    />
-                  }
-                  label="Attach to existing business"
-                />
-              )}
-              {form.attachToExistingBusiness && (
-                <FormControl fullWidth margin="normal">
-                  <InputLabel>Select Business</InputLabel>
-                  <Select
-                    value={form.businessId}
-                    label="Select Business"
-                    onChange={(e) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        businessId: e.target.value,
-                      }))
-                    }
-                  >
-                    {businesses.map((biz) => (
-                      <MenuItem key={biz._id} value={biz._id}>
-                        {biz.name}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              )}
-              {!form.attachToExistingBusiness && (
-                <>
-                  <TextField
-                    label={t.businessName}
-                    value={form.businessName}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      setForm((prev) => ({
-                        ...prev,
-                        businessName: value,
-                        businessSlug: !isEditMode
-                          ? slugify(value, { lower: true })
-                          : prev.businessSlug,
-                      }));
-                    }}
-                    fullWidth
-                    margin="normal"
-                  />
-
-                  <TextField
-                    label={t.businessSlug}
-                    value={form.businessSlug}
-                    onChange={(e) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        businessSlug: e.target.value,
-                      }))
-                    }
-                    fullWidth
-                    margin="normal"
-                  />
-
-                  <TextField
-                    label={t.businessEmail}
-                    value={form.businessEmail}
-                    onChange={(e) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        businessEmail: e.target.value,
-                      }))
-                    }
-                    fullWidth
-                    margin="normal"
-                  />
-
-                  <TextField
-                    label={t.businessPhone}
-                    value={form.businessPhone}
-                    onChange={(e) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        businessPhone: e.target.value,
-                      }))
-                    }
-                    fullWidth
-                    margin="normal"
-                  />
-
-                  <TextField
-                    label={t.businessAddress}
-                    value={form.businessAddress}
-                    onChange={(e) =>
-                      setForm((prev) => ({
-                        ...prev,
-                        businessAddress: e.target.value,
-                      }))
-                    }
-                    multiline
-                    rows={2}
-                    fullWidth
-                    margin="normal"
-                  />
-                  <Box sx={{ mt: 2 }}>
-                    <Typography variant="body2" sx={{ mb: 1 }}>
-                      {t.businessLogo}
-                    </Typography>
-                    <Stack
-                      direction="row"
-                      spacing={2}
-                      sx={{
-                        alignItems: "center",
-                        gap: dir === "rtl" ? "16px" : ""
-                      }}>
-                      <Avatar
-                        src={form.logoPreview}
-                        alt="Preview"
-                        sx={{ width: 64, height: 64 }}
-                      />
-                      <Button variant="outlined" component="label" size="small">
-                        {t.uploadLogo}
-                        <input
-                          type="file"
-                          hidden
-                          accept="image/*"
-                          onChange={(e) => {
-                            const file = e.target.files[0];
-                            if (!file) return;
-                            const reader = new FileReader();
-                            reader.onloadend = () => {
-                              setForm((prev) => ({
-                                ...prev,
-                                logoPreview: reader.result,
-                                logoFile: file,
-                              }));
-                            };
-                            reader.readAsDataURL(file);
-                          }}
-                        />
-                      </Button>
-                    </Stack>
-                  </Box>
-                </>
-              )}
-            </Box>
-          )}
-
-          {!isEditingSuperAdmin &&
-            ((form.userType === "staff" && activeTab === 1) ||
-              (form.userType === "admin" && activeTab === 1) ||
-              (form.userType === "business" && activeTab === 2)) && (
-              <Box sx={{ mt: 2 }}>
-                <Typography variant="subtitle1" gutterBottom sx={{
-                  textAlign: align
-                }}>
-                  {t.permissions}
-                </Typography>
-
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={
-                        form.modulePermissions.length ===
-                        (isBusinessUser
-                          ? availableModules.filter((m) =>
-                            currentUser.modulePermissions?.includes(m.key),
-                          ).length
-                          : availableModules.length)
-                      }
-                      indeterminate={
-                        form.modulePermissions.length > 0 &&
-                        form.modulePermissions.length !==
-                        (isBusinessUser
-                          ? availableModules.filter((m) =>
-                            currentUser.modulePermissions?.includes(m.key),
-                          ).length
-                          : availableModules.length)
-                      }
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          const allKeys = isBusinessUser
-                            ? availableModules
-                              .filter((m) =>
-                                currentUser.modulePermissions?.includes(m.key),
-                              )
-                              .map((m) => m.key)
-                            : availableModules.map((m) => m.key);
-                          setForm((prev) => ({
-                            ...prev,
-                            modulePermissions: allKeys,
-                          }));
-                        } else {
-                          setForm((prev) => ({
-                            ...prev,
-                            modulePermissions: [],
-                          }));
-                        }
-                      }}
-                    />
-                  }
-                  label={
-                    form.modulePermissions.length ? t.unselectAll : t.selectAll
-                  }
-                />
-
-                <FormGroup>
-                  {(isBusinessUser
-                    ? availableModules.filter((m) =>
-                      currentUser.modulePermissions?.includes(m.key),
-                    )
-                    : availableModules
-                  ).map((mod) => (
-                    <FormControlLabel
-                      key={mod.key}
-                      control={
-                        <Checkbox
-                          checked={form.modulePermissions.includes(mod.key)}
-                          onChange={() => {
-                            const exists = form.modulePermissions.includes(
-                              mod.key,
-                            );
-                            setForm((prev) => ({
-                              ...prev,
-                              modulePermissions: exists
-                                ? prev.modulePermissions.filter(
-                                  (k) => k !== mod.key,
-                                )
-                                : [...prev.modulePermissions, mod.key],
-                            }));
-                          }}
-                        />
-                      }
-                      label={mod.labels?.[language] || mod.key}
-                    />
-                  ))}
-                </FormGroup>
-              </Box>
-            )}
-        </DialogContent>
-
-        <DialogActions sx={{ px: 3, pb: 3 }}>
-          <Stack
-            direction="row"
-            spacing={2}
-            sx={{ width: "100%", justifyContent: "flex-end" }}
-          >
-            <Stack
-              direction="row"
-              spacing={2}
-              sx={{
-                width: { xs: "100%", sm: "auto" },
-                gap: dir === "rtl" ? "16px" : "",
-              }}
-            >
-              {activeTab > 0 && (
-                <Button
-                  variant="outlined"
-                  onClick={() => setActiveTab((prev) => prev - 1)}
-                  disabled={loading}
-                  startIcon={dir === "rtl" ? <ICONS.next /> : <ICONS.back />}
-                  sx={{
-                    ...getStartIconSpacing(dir),
-                    flex: { xs: 1, sm: "initial" },
-                  }}
-                >
-                  {t.back}
-                </Button>
-              )}
-
-              {activeTab < maxTabIndex ? (
-                <Button
-                  variant="contained"
-                  onClick={() => {
-                    if (validateCurrentTab()) {
-                      setActiveTab((prev) =>
-                        Math.min(prev + 1, maxTabIndex),
-                      );
-                    }
-                  }}
-                  disabled={loading}
-                  startIcon={dir === "rtl" ? <ICONS.back /> : <ICONS.next />}
-                  sx={{
-                    ...getStartIconSpacing(dir),
-                    flex: { xs: 1, sm: "initial" },
-                  }}
-                >
-                  {t.next}
-                </Button>
-              ) : (
-                <Button
-                  variant="contained"
-                  onClick={handleModalSave}
-                  disabled={loading}
-                  startIcon={<ICONS.save />}
-                  sx={{
-                    ...getStartIconSpacing(dir),
-                    flex: { xs: 1, sm: "initial" },
-                  }}
-                >
-                  {loading ? (isEditMode ? t.saving : t.creating) : t.save}
-                </Button>
-              )}
-            </Stack>
-          </Stack>
-        </DialogActions>
-      </Dialog>
+        align={align}
+        language={language}
+      />
       <ConfirmationDialog
         open={deleteConfirm}
         title={t.deleteConfirm}

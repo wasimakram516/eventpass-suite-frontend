@@ -268,11 +268,14 @@ export default function WhatsAppLogsPage() {
       <Divider sx={{ mb: 2 }} />
       {/* FILTER BAR */}
       <Stack
-        direction={{ xs: "column", md: "row" }}
-        spacing={2}
+        direction={{ xs: "column", sm: "row" }}
         sx={{
           alignItems: "stretch",
-          mb: 2
+          mb: 2,
+          flexWrap: "wrap",
+          columnGap: 2,
+          rowGap: 1,
+          "& > *": { flexShrink: 0 },
         }}>
         {/* SEARCH */}
         <TextField
@@ -283,11 +286,15 @@ export default function WhatsAppLogsPage() {
             setFilters((f) => ({ ...f, search: e.target.value }));
             setPage(1);
           }}
-          sx={{ minWidth: 260, maxWidth: 420, flex: 1 }}
+          sx={{
+            flex: { sm: "1 1 100%", lg: "1 1 auto" },
+            minWidth: { xs: "100%", sm: 260 },
+            maxWidth: { xs: "none", lg: 420 },
+          }}
         />
 
         {/* DIRECTION */}
-        <FormControl size="small" sx={{ minWidth: 160 }}>
+        <FormControl size="small" sx={{ minWidth: 160, flexGrow: { sm: 1, lg: 0 } }}>
           <InputLabel id="direction-label">{t.direction}</InputLabel>
           <Select
             labelId="direction-label"
@@ -305,7 +312,7 @@ export default function WhatsAppLogsPage() {
         </FormControl>
 
         {/* STATUS */}
-        <FormControl size="small" sx={{ minWidth: 160 }}>
+        <FormControl size="small" sx={{ minWidth: 160, flexGrow: { sm: 1, lg: 0 } }}>
           <InputLabel id="status-label">{t.status}</InputLabel>
           <Select
             labelId="status-label"

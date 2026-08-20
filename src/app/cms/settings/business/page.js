@@ -585,15 +585,17 @@ export default function BusinessDetailsPage() {
                     pt: 1,
                   }}
                 >
-                  <Tooltip title={t.edit}>
-                    <IconButton
-                      color="primary"
-                      onClick={() => handleOpen(biz)}
-                      size="small"
-                    >
-                      <ICONS.edit fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
+                  {user.role !== "business" && (
+                    <Tooltip title={t.edit}>
+                      <IconButton
+                        color="primary"
+                        onClick={() => handleOpen(biz)}
+                        size="small"
+                      >
+                        <ICONS.edit fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  )}
 
                   {user.role === "superadmin" && (
                     <Tooltip title={t.delete}>

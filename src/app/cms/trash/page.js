@@ -53,6 +53,38 @@ import LoadingState from "@/components/LoadingState";
 import { pickFullName, pickEmail } from "@/utils/customFieldUtils";
 import { toArabicDigits } from "@/utils/arabicDigits";
 import AppCard from "@/components/cards/AppCard";
+
+// Mirrors the backend's TRASH_MODULE_TO_PERMISSION (src/controllers/trashController.js)
+// so the restore button can be hidden — not just disabled — the same way
+// every other module's actions are gated. Modules absent here (business,
+// user, globalconfig) aren't part of the granular catalog, so restore for
+// them stays superadmin-only, same as the backend.
+const TRASH_MODULE_TO_PERMISSION = {
+  "event-eventreg": "eventreg",
+  "registration-eventreg": "eventreg",
+  "promocode-eventreg": "eventreg",
+  "event-checkin": "checkin",
+  "registration-checkin": "checkin",
+  walkin: "checkin",
+  "event-digipass": "digipass",
+  "registration-digipass": "digipass",
+  poll: "votecast",
+  spinwheel: "eventwheel",
+  spinwheelparticipant: "eventwheel",
+  displaymedia: "memorywall",
+  wallconfig: "memorywall",
+  "game-quiznest": "quiznest",
+  qnquestion: "quiznest",
+  "game-tapmatch": "tapmatch",
+  "game-eventduel": "eventduel",
+  "gamesession-eventduel": "eventduel",
+  pvpquestion: "eventduel",
+  "game-crosszero": "crosszero",
+  "gamesession-crosszero": "crosszero",
+  question: "stageq",
+  surveyform: "surveyguru",
+};
+
 const translations = {
   en: {
     title: "Recycle Bin",
@@ -436,6 +468,7 @@ export default function TrashPage() {
       "promocode-eventreg": "Promo Code (EventReg)",
       "game-quiznest": "Game (QuizNest)",
       "game-tapmatch": "Game (TapMatch)",
+      "game-crosszero": "Game (CrossZero)",
       "game-eventduel": "Game (EventDuel)",
       "gamesession-quiznest": "Game Session (QuizNest)",
       "gamesession-eventduel": "Game Session (EventDuel)",
@@ -443,6 +476,7 @@ export default function TrashPage() {
       pvpquestion: "Questions (EventDuel)",
       user: "User",
       business: "Business",
+      role: "Role",
       poll: "Poll",
       spinwheel: "SpinWheel",
       spinwheelparticipant: "SpinWheel Participant",
@@ -704,6 +738,17 @@ export default function TrashPage() {
       ? { [selectedModule]: filteredTrashData[selectedModule] }
       : {};
   }, [filteredTrashData, selectedModule]);
+
+  const canRestoreModule = (moduleKey) => {
+    if (!currentUser) return false;
+    if (currentUser.role === "superadmin" || currentUser.isSuper) return true;
+    const permissionModule = TRASH_MODULE_TO_PERMISSION[moduleKey];
+    if (!permissionModule) return false;
+    return (
+      Array.isArray(currentUser.permissions) &&
+      currentUser.permissions.includes(`${permissionModule}:restore`)
+    );
+  };
 
   const openRestoreConfirm = (module, item) => {
     setPendingAction({ type: "restore", module, frontendModule: module, item });
@@ -1153,21 +1198,23 @@ export default function TrashPage() {
                         mt: { xs: 1, sm: 0 },
                       }}
                     >
-                      <Button
-                        variant="text"
-                        color="success"
-                        size="small"
-                        startIcon={<ICONS.restore />}
-                        onClick={() => openBulkRestoreConfirm(module)}
-                        disabled={filtered.length === 0}
-                        sx={{
-                          ...getStartIconSpacing(dir),
+                      {canRestoreModule(module) && (
+                        <Button
+                          variant="text"
+                          color="success"
+                          size="small"
+                          startIcon={<ICONS.restore />}
+                          onClick={() => openBulkRestoreConfirm(module)}
+                          disabled={filtered.length === 0}
+                          sx={{
+                            ...getStartIconSpacing(dir),
 
-                          width: { xs: "100%", sm: "auto" },
-                        }}
-                      >
-                        {t.restoreAll}
-                      </Button>
+                            width: { xs: "100%", sm: "auto" },
+                          }}
+                        >
+                          {t.restoreAll}
+                        </Button>
+                      )}
                       {currentUser?.role === "superadmin" && (
                         <Button
                           variant="text"
@@ -1324,15 +1371,17 @@ export default function TrashPage() {
                           <CardActions
                             sx={{ mt: 1, justifyContent: "flex-end" }}
                           >
-                            <Tooltip title={t.restore}>
-                              <IconButton
-                                color="success"
-                                onClick={() => openRestoreConfirm(module, item)}
-                                size="small"
-                              >
-                                <ICONS.restore fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
+                            {canRestoreModule(module) && (
+                              <Tooltip title={t.restore}>
+                                <IconButton
+                                  color="success"
+                                  onClick={() => openRestoreConfirm(module, item)}
+                                  size="small"
+                                >
+                                  <ICONS.restore fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            )}
                             {currentUser?.role === "superadmin" && (
                               <Tooltip title={t.permanentDelete}>
                                 <IconButton

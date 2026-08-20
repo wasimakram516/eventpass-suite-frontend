@@ -55,32 +55,6 @@ export const deleteGame = withApiHandler(
   { showSuccess: true }
 );
 
-// Restore a single game
-export const restoreGame = withApiHandler(
-  async (id) => {
-    const { data } = await api.post(`/tapmatch/games/${id}/restore`);
-    return data;
-  },
-  { showSuccess: true }
-);
-
-// Permanently delete a single game
-export const permanentDeleteGame = withApiHandler(
-  async (id) => {
-    const { data } = await api.delete(`/tapmatch/games/${id}/permanent`);
-    return data;
-  },
-  { showSuccess: true }
-);
-
-// Restore all deleted games
-export const restoreAllGames = withApiHandler(async () => {
-  const { data } = await api.post(`/tapmatch/games/restore-all`);
-  return data;
-}, { showSuccess: true });
-
-// Permanently delete all deleted games
-export const permanentDeleteAllGames = withApiHandler(async () => {
-  const { data } = await api.delete(`/tapmatch/games/permanent-all`);
-  return data;
-}, { showSuccess: true });
+// Restore/permanent-delete for tapmatch games go exclusively through the
+// generic Recycle Bin API (src/services/trashService.js) — same as every
+// other module — so no module-specific functions live here.

@@ -98,7 +98,7 @@ import {
 
 // Domain-Specific / App Features
 import {
-  MonetizationOnOutlined as MonetizationOnIcon,
+  MonetizationOn as MonetizationOnIcon,
   AppRegistration as AppRegistrationIcon,
   QrCodeScanner as QrCodeScannerIcon,
   Business as BusinessIcon,

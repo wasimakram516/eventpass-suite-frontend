@@ -37,6 +37,7 @@ import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { useHasPermission } from "@/hooks/usePermission";
 import { toArabicDigits } from "@/utils/arabicDigits";
 import LoadingState from "@/components/LoadingState";
 import NoDataAvailable from "@/components/NoDataAvailable";
@@ -105,6 +106,8 @@ export default function SessionQuestionsPage() {
   const { showMessage } = useMessage();
   const { user } = useAuth();
   const { t, dir, language } = useI18nLayout(translations);
+  const canEdit = useHasPermission("stageq", "edit");
+  const canDelete = useHasPermission("stageq", "delete");
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -370,6 +373,14 @@ export default function SessionQuestionsPage() {
 
                   }}
                 >
+                  {!canEdit ? (
+                    <Chip
+                      size="small"
+                      label={q.answered ? t.answered : t.notAnswered}
+                      color={q.answered ? "success" : "default"}
+                      sx={{ ml: 1 }}
+                    />
+                  ) : (
                   <FormControl size="small" sx={{ minWidth: 140, ml: 1 }}>
                     <Select
                       value={q.answered ? "answered" : "unanswered"}
@@ -386,25 +397,30 @@ export default function SessionQuestionsPage() {
                       <MenuItem value="unanswered">{t.notAnswered}</MenuItem>
                     </Select>
                   </FormControl>
+                  )}
                   <Stack direction="row">
-                    <Tooltip title={t.editQuestionTooltip}>
-                      <IconButton
-                        onClick={() => { setEditData(q); setEditDialogOpen(true); }}
-                        color="warning"
-                        sx={{ "&:hover": { transform: "scale(1.1)" }, transition: "0.2s" }}
-                      >
-                        <ICONS.edit />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title={t.deleteQuestionTooltip}>
-                      <IconButton
-                        onClick={() => setConfirmDelete({ open: true, id: q._id })}
-                        color="error"
-                        sx={{ "&:hover": { transform: "scale(1.1)" }, transition: "0.2s" }}
-                      >
-                        <ICONS.delete />
-                      </IconButton>
-                    </Tooltip>
+                    {canEdit && (
+                      <Tooltip title={t.editQuestionTooltip}>
+                        <IconButton
+                          onClick={() => { setEditData(q); setEditDialogOpen(true); }}
+                          color="warning"
+                          sx={{ "&:hover": { transform: "scale(1.1)" }, transition: "0.2s" }}
+                        >
+                          <ICONS.edit />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                    {canDelete && (
+                      <Tooltip title={t.deleteQuestionTooltip}>
+                        <IconButton
+                          onClick={() => setConfirmDelete({ open: true, id: q._id })}
+                          color="error"
+                          sx={{ "&:hover": { transform: "scale(1.1)" }, transition: "0.2s" }}
+                        >
+                          <ICONS.delete />
+                        </IconButton>
+                      </Tooltip>
+                    )}
                   </Stack>
                 </CardActions>
               </AppCard>

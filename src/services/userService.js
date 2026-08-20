@@ -9,7 +9,7 @@ export const getAllStaffUsers = withApiHandler(async (businessId) => {
 
 // Create a new staff user
 export const createStaffUser = withApiHandler(
-  async (name, email, password, role, business, modulePermissions = [], staffType) => {
+  async (name, email, password, role, business, modulePermissions = [], roleId) => {
     const { data } = await api.post("/users/register/staff", {
       name,
       email,
@@ -17,21 +17,34 @@ export const createStaffUser = withApiHandler(
       role,
       business,
       modulePermissions,
-      staffType,
+      roleId,
     });
     return data;
   },
   { showSuccess: true }
 );
 
-// Create admin user (superadmin only)
+// Create admin user (superadmin only). Pass role: "superadmin" to create
+// another superadmin instead of a regular admin — the backend only allows
+// this for callers who are already superadmin (route is superAdminOnly).
 export const createAdminUser = withApiHandler(
-  async ({ name, email, password, modulePermissions = [] }) => {
+  async ({
+    name,
+    email,
+    password,
+    modulePermissions = [],
+    role = "admin",
+    canManageAccessControl,
+    roleId,
+  }) => {
     const { data } = await api.post("/users/register/admin", {
       name,
       email,
       password,
       modulePermissions,
+      role,
+      canManageAccessControl,
+      roleId,
     });
     return data;
   },
@@ -48,6 +61,9 @@ export const createBusinessUser = withApiHandler(
     attachToExistingBusiness,
     businessId,
     business, // object when creating new business
+    canManageAccessControl,
+    roleId,
+    allowedStaffRoleIds,
   }) => {
     const { data } = await api.post("/users/register/business", {
       name,
@@ -57,6 +73,9 @@ export const createBusinessUser = withApiHandler(
       attachToExistingBusiness,
       businessId,
       business,
+      canManageAccessControl,
+      roleId,
+      allowedStaffRoleIds,
     });
 
     return data;
@@ -64,9 +83,12 @@ export const createBusinessUser = withApiHandler(
   { showSuccess: true }
 );
 
-// Get all users (admin)
-export const getAllUsers = withApiHandler(async () => {
-  const { data } = await api.get("/users");
+// Get all users (admin). Pass `{ scope: "admins" }` for the lightweight
+// superadmin/admin/orphan-only view, or `{ businessId }` to load just one
+// business's users on demand — omit params entirely for the original
+// unfiltered "everyone" shape (relied on by Trash/Logs for name resolution).
+export const getAllUsers = withApiHandler(async (params) => {
+  const { data } = await api.get("/users", { params });
   return data;
 });
 

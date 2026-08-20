@@ -33,6 +33,7 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMessage } from "@/contexts/MessageContext";
+import { useHasPermission } from "@/hooks/usePermission";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import BusinessDrawer from "@/components/drawers/BusinessDrawer";
 import EmptyBusinessState from "@/components/EmptyBusinessState";
@@ -232,6 +233,12 @@ export default function SurveyFormsManagePage() {
   } = useAuth();
   const { showMessage } = useMessage();
   const { t, dir, language } = useI18nLayout(translations);
+  const canView = useHasPermission("surveyguru", "view");
+  const canCreate = useHasPermission("surveyguru", "create");
+  const canEdit = useHasPermission("surveyguru", "edit");
+  const canDelete = useHasPermission("surveyguru", "delete");
+  const canShare = useHasPermission("surveyguru", "share");
+  const canDownload = useHasPermission("surveyguru", "download");
 
   const [bizDrawerOpen, setBizDrawerOpen] = useState(false);
 
@@ -869,7 +876,7 @@ export default function SurveyFormsManagePage() {
               </FormControl>
             )}
 
-            {selectedBusiness && (
+            {selectedBusiness && canCreate && (
               <Button
                 fullWidth={isMobile}
                 sx={
@@ -1041,6 +1048,7 @@ export default function SurveyFormsManagePage() {
                     />
 
                     <CardActions sx={{ justifyContent: "center" }}>
+                      {canShare && (
                       <Tooltip title={t.copyLink}>
                         <IconButton
                           onClick={() => {
@@ -1051,55 +1059,66 @@ export default function SurveyFormsManagePage() {
                           <ICONS.share />
                         </IconButton>
                       </Tooltip>
+                      )}
 
-                      <Tooltip title="View responses">
-                        <IconButton
-                          onClick={() =>
-                            router.push(
-                              `/cms/modules/surveyguru/surveys/forms/${f.slug}/responses`
-                            )
-                          }
-                        >
-                          <ICONS.results fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title={t.insights || "Insights"}>
-                        <IconButton
-                          color="info"
-                          onClick={() =>
-                            router.push(
-                              `/cms/modules/surveyguru/surveys/forms/${f.slug}/insights`
-                            )
-                          }
-                        >
-                          <ICONS.insights fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title={t.editForm}>
-                        <IconButton color="primary" onClick={() => openEdit(f)}>
-                          <ICONS.edit fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title={t.cloneForm}>
-                        <IconButton
-                          color="secondary"
-                          onClick={() =>
-                            setConfirmClone({ open: true, id: f._id })
-                          }
-                        >
-                          <ICONS.copy fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title={t.delete}>
-                        <IconButton
-                          color="error"
-                          onClick={() =>
-                            setConfirmDelete({ open: true, id: f._id })
-                          }
-                        >
-                          <ICONS.delete fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
+                      {canView && (
+                        <Tooltip title="View responses">
+                          <IconButton
+                            onClick={() =>
+                              router.push(
+                                `/cms/modules/surveyguru/surveys/forms/${f.slug}/responses`
+                              )
+                            }
+                          >
+                            <ICONS.results fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                      {canView && (
+                        <Tooltip title={t.insights || "Insights"}>
+                          <IconButton
+                            color="info"
+                            onClick={() =>
+                              router.push(
+                                `/cms/modules/surveyguru/surveys/forms/${f.slug}/insights`
+                              )
+                            }
+                          >
+                            <ICONS.insights fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                      {canEdit && (
+                        <Tooltip title={t.editForm}>
+                          <IconButton color="primary" onClick={() => openEdit(f)}>
+                            <ICONS.edit fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                      {canCreate && (
+                        <Tooltip title={t.cloneForm}>
+                          <IconButton
+                            color="secondary"
+                            onClick={() =>
+                              setConfirmClone({ open: true, id: f._id })
+                            }
+                          >
+                            <ICONS.copy fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                      {canDelete && (
+                        <Tooltip title={t.delete}>
+                          <IconButton
+                            color="error"
+                            onClick={() =>
+                              setConfirmDelete({ open: true, id: f._id })
+                            }
+                          >
+                            <ICONS.delete fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      )}
                     </CardActions>
                   </AppCard>
                 </Grid>
@@ -1649,6 +1668,7 @@ export default function SurveyFormsManagePage() {
         }
         name={formToShare?.title || "survey-form"}
         title={t.copyLink}
+        canDownloadQr={canDownload}
       />
       <MediaUploadProgress
         open={showUploadProgress}

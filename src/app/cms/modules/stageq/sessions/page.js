@@ -18,6 +18,7 @@ import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import ShareLinkModal from "@/components/modals/ShareLinkModal";
 import StageQSessionModal from "@/components/modals/StageQSessionModal";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { useHasPermission } from "@/hooks/usePermission";
 import ICONS from "@/utils/iconUtil";
 import { useAuth } from "@/contexts/AuthContext";
 import { getAllBusinesses } from "@/services/businessService";
@@ -78,6 +79,11 @@ export default function ManageSessionsPage() {
     const router = useRouter();
     const { user, selectedBusiness, setSelectedBusiness } = useAuth();
     const { t, dir, language } = useI18nLayout(translations);
+    const canCreate = useHasPermission("stageq", "create");
+    const canEdit = useHasPermission("stageq", "edit");
+    const canDelete = useHasPermission("stageq", "delete");
+    const canShare = useHasPermission("stageq", "share");
+    const canDownload = useHasPermission("stageq", "download");
 
     const [sessions, setSessions] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -211,7 +217,7 @@ export default function ManageSessionsPage() {
                                 {t.selectBusiness}
                             </Button>
                         )}
-                        {selectedBusiness && (
+                        {selectedBusiness && canCreate && (
                             <Button variant="contained" startIcon={<ICONS.add />} onClick={handleOpenCreate} sx={getStartIconSpacing(dir)}>
                                 {t.createSession}
                             </Button>
@@ -243,9 +249,9 @@ export default function ManageSessionsPage() {
                                 locale={language === "ar" ? "ar-SA" : "en-GB"}
                                 onView={() => router.push(`/cms/modules/stageq/sessions/${session.slug}/questions`)}
                                 onInsights={() => router.push(`/cms/modules/stageq/sessions/${session.slug}/insights`)}
-                                onEdit={() => handleOpenEdit(session)}
-                                onDelete={() => { setSessionToDelete(session); setConfirmOpen(true); }}
-                                onShare={() => { setSessionToShare(session); setShareModalOpen(true); }}
+                                onEdit={canEdit ? () => handleOpenEdit(session) : undefined}
+                                onDelete={canDelete ? () => { setSessionToDelete(session); setConfirmOpen(true); } : undefined}
+                                onShare={canShare ? () => { setSessionToShare(session); setShareModalOpen(true); } : undefined}
                                 onViewFullScreen={() => window.open(`/stageq/${session.slug}/display`, "_blank")}
                             />
                         ))}
@@ -280,6 +286,7 @@ export default function ManageSessionsPage() {
                     }
                     name={sessionToShare?.title}
                     title={t.shareTitle}
+                    canDownloadQr={canDownload}
                 />
             </Container>
         </Box>

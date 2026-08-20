@@ -65,7 +65,18 @@ export default function SettingsPage() {
   const { dir, align, t } = useI18nLayout(translations);
 
   const cards = t?.cards || [];
-  const filteredCards = cards.filter((card) => card.roles.includes(user?.role));
+  // A business-tier user only gets the "Business Details" card pre-business
+  // — it's their one-time self-service create flow (see
+  // businessController.createBusiness). Once they have a business, editing
+  // is admin/superadmin-only, so this card (and the whole Settings nav
+  // entry — see Sidebar.js) disappears for them entirely.
+  const filteredCards = cards.filter((card) => {
+    if (!card.roles.includes(user?.role)) return false;
+    if (user?.role === "business" && card.route === "/cms/settings/business") {
+      return !user?.business?._id;
+    }
+    return true;
+  });
 
   return (
     <Box dir={dir}>

@@ -25,6 +25,7 @@ import {
     getSessionInsightsTimeDistribution,
 } from "@/services/stageq/stageqInsightsService";
 import { getPublicSessionBySlug } from "@/services/stageq/stageqSessionService";
+import { useHasPermission } from "@/hooks/usePermission";
 import ChartVisualization from "@/components/insights/ChartVisualization";
 import ICONS from "@/utils/iconUtil";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
@@ -181,6 +182,7 @@ export default function SessionInsightsDashboard() {
     const FIELD_COLOR = theme.palette.primary.main;
     const { sessionSlug } = useParams();
     const { t, dir, language } = useI18nLayout(translations);
+    const canExport = useHasPermission("stageq", "export");
 
     const [selectedFields, setSelectedFields] = useState([]);
     const [chartData, setChartData] = useState({});
@@ -550,7 +552,7 @@ export default function SessionInsightsDashboard() {
                         width: { xs: "100%", sm: "auto" },
                         gap: { xs: 1, sm: 2 }
                     }}>
-                    {selectedFields.length > 0 && (
+                    {canExport && selectedFields.length > 0 && (
                         <>
                             <Button
                                 variant="outlined"

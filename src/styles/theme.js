@@ -812,15 +812,12 @@ export const getTheme = (mode = "light", direction = "ltr") => {
       users: {
         staffDeskBg: isDark ? "#01579b" : "#4fc3f7",
         staffDoorBg: isDark ? "#4a148c" : "#e1bee7",
-        accordionShadow: isDark
-          ? "0 6px 18px rgba(0,0,0,0.4)"
-          : "0 6px 18px rgba(0,0,0,0.06)",
-        accordionShadowExpanded: isDark
-          ? "0 10px 26px rgba(0,0,0,0.5)"
-          : "0 10px 26px rgba(0,0,0,0.10)",
-        accordionSummaryBg: isDark
-          ? "rgba(0, 119, 182, 0.18)"
-          : "rgba(0, 119, 182, 0.06)",
+        permAllowBg: isDark
+          ? "rgba(76, 175, 80, 0.16)"
+          : "rgba(76, 175, 80, 0.08)",
+        permDenyBg: isDark
+          ? "rgba(244, 67, 54, 0.16)"
+          : "rgba(244, 67, 54, 0.08)",
 
       },
 

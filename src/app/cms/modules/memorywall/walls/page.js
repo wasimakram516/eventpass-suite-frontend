@@ -37,6 +37,7 @@ import BusinessDrawer from "@/components/drawers/BusinessDrawer";
 import EmptyBusinessState from "@/components/EmptyBusinessState";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { useHasPermission } from "@/hooks/usePermission";
 import RecordMetadata from "@/components/RecordMetadata";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
@@ -143,6 +144,11 @@ export default function WallConfigsPage() {
   const [businesses, setBusinesses] = useState([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const { t, dir, align, language } = useI18nLayout(translations);
+  const canCreate = useHasPermission("memorywall", "create");
+  const canEdit = useHasPermission("memorywall", "edit");
+  const canDelete = useHasPermission("memorywall", "delete");
+  const canShare = useHasPermission("memorywall", "share");
+  const canDownload = useHasPermission("memorywall", "download");
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
@@ -318,7 +324,7 @@ export default function WallConfigsPage() {
               {t.selectBusiness}
             </Button>
           )}
-          {selectedBusiness && (
+          {selectedBusiness && canCreate && (
             <Button
               variant="contained"
               startIcon={<ICONS.add />}
@@ -422,6 +428,7 @@ export default function WallConfigsPage() {
               <Divider />
               <CardActions sx={{ justifyContent: "space-between", p: 1.5 }}>
                 <Box>
+                  {canShare && (
                   <Tooltip title={t.showQRCode}>
                     <IconButton
                       size="small"
@@ -431,6 +438,7 @@ export default function WallConfigsPage() {
                       <ICONS.share fontSize="small" />
                     </IconButton>
                   </Tooltip>
+                  )}
                   <Tooltip title={t.openBigScreen}>
                     <IconButton
                       size="small"
@@ -459,27 +467,31 @@ export default function WallConfigsPage() {
                       <ICONS.view fontSize="small" color="primary" />
                     </IconButton>
                   </Tooltip>
-                  <Tooltip title={t.edit}>
-                    <IconButton
-                      size="small"
-                      onClick={() => handleEdit(config)}
-                      aria-label="Edit"
-                    >
-                      <ICONS.edit fontSize="small" color="primary" />
-                    </IconButton>
-                  </Tooltip>
-                  <Tooltip title={t.delete}>
-                    <IconButton
-                      size="small"
-                      onClick={() => {
-                        setWallToDelete(config);
-                        setDeleteDialogOpen(true);
-                      }}
-                      aria-label="Delete"
-                    >
-                      <ICONS.delete fontSize="small" color="error" />
-                    </IconButton>
-                  </Tooltip>
+                  {canEdit && (
+                    <Tooltip title={t.edit}>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleEdit(config)}
+                        aria-label="Edit"
+                      >
+                        <ICONS.edit fontSize="small" color="primary" />
+                      </IconButton>
+                    </Tooltip>
+                  )}
+                  {canDelete && (
+                    <Tooltip title={t.delete}>
+                      <IconButton
+                        size="small"
+                        onClick={() => {
+                          setWallToDelete(config);
+                          setDeleteDialogOpen(true);
+                        }}
+                        aria-label="Delete"
+                      >
+                        <ICONS.delete fontSize="small" color="error" />
+                      </IconButton>
+                    </Tooltip>
+                  )}
                 </Box>
               </CardActions>
             </Card>
@@ -514,6 +526,7 @@ export default function WallConfigsPage() {
         url={uploadUrl}
         qrUrl={qrCodeUrl}
         name={currentSlug}
+        canDownloadQr={canDownload}
       />
       <ConfirmationDialog
         open={deleteDialogOpen}

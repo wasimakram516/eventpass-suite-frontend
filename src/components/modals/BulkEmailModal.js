@@ -140,6 +140,8 @@ const BulkEmailModal = ({
     isApprovalBased = true,
     useApprovedRejected = false,
     showReminderOption = false,
+    canSendEmail = true,
+    canSendWhatsapp = true,
 }) => {
     const { t, dir } = useI18nLayout(translations);
     const [notificationType, setNotificationType] = useState("default");
@@ -471,7 +473,7 @@ const BulkEmailModal = ({
                     py: 2,
                 }}
             >
-                {(notificationType === "default" || notificationType === "reminder") && (
+                {canSendWhatsapp && (notificationType === "default" || notificationType === "reminder") && (
                     <Button
                         variant="contained"
                         color="success"
@@ -483,16 +485,18 @@ const BulkEmailModal = ({
                         {t.sendWhatsApp}
                     </Button>
                 )}
-                <Button
-                    variant="contained"
-                    color="primary"
-                    startIcon={<ICONS.email />}
-                    onClick={handleSendEmail}
-                    disabled={sendingEmails}
-                    sx={getStartIconSpacing(dir)}
-                >
-                    {t.sendEmail}
-                </Button>
+                {canSendEmail && (
+                    <Button
+                        variant="contained"
+                        color="primary"
+                        startIcon={<ICONS.email />}
+                        onClick={handleSendEmail}
+                        disabled={sendingEmails}
+                        sx={getStartIconSpacing(dir)}
+                    >
+                        {t.sendEmail}
+                    </Button>
+                )}
             </DialogActions>
         </Dialog>
     );

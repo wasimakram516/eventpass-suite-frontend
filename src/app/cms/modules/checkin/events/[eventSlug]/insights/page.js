@@ -24,6 +24,7 @@ import {
     getScannedByUserDistribution,
 } from "@/services/eventreg/insightsService";
 import { getCheckInEventBySlug } from "@/services/checkin/checkinEventService";
+import { useHasPermission } from "@/hooks/usePermission";
 import useCheckInSocket from "@/hooks/modules/checkin/useCheckInSocket";
 import ICONS from "@/utils/iconUtil";
 import AppCard from "@/components/cards/AppCard";
@@ -894,6 +895,7 @@ const ChartVisualization = ({
 export default function CheckInAnalyticsDashboard() {
     const { eventSlug } = useParams();
     const { t, dir, language } = useI18nLayout(translations);
+    const canExport = useHasPermission("checkin", "export");
     const theme = useTheme();
     const FIELD_COLOR = theme.palette.primary.main;
     const [selectedFields, setSelectedFields] = useState([]);
@@ -1479,7 +1481,7 @@ export default function CheckInAnalyticsDashboard() {
                             width: { xs: "100%", sm: "auto" },
                             gap: { xs: 1, sm: 2 }
                         }}>
-                        {selectedFields.length > 0 && (
+                        {canExport && selectedFields.length > 0 && (
                             <>
                                 <Button
                                     variant="outlined"

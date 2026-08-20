@@ -46,6 +46,7 @@ import ArabicPagination from "@/components/ArabicPagination";
 import { toArabicDigits } from "@/utils/arabicDigits";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { useHasPermission } from "@/hooks/usePermission";
 import useEventRegSocket from "@/hooks/modules/eventReg/useEventRegSocket";
 import { getPublicEventBySlug } from "@/services/eventreg/eventService";
 import {
@@ -265,6 +266,10 @@ export default function PromoCodesPage() {
   const router = useRouter();
   const { eventSlug } = useParams();
   const { t, dir, language } = useI18nLayout(translations);
+  const canCreate = useHasPermission("eventreg", "create_promo_codes");
+  const canEdit = useHasPermission("eventreg", "edit_promo_codes");
+  const canDelete = useHasPermission("eventreg", "delete_promo_codes");
+  const canExport = useHasPermission("eventreg", "export_promo_codes");
 
   const [event, setEvent] = useState(null);
   const [promoCodes, setPromoCodes] = useState([]);
@@ -535,19 +540,23 @@ export default function PromoCodesPage() {
           >
             {t.registrations}
           </Button>
-          <Button
-            variant="outlined"
-            color="success"
-            onClick={handleExport}
-            disabled={exportLoading}
-            startIcon={exportLoading ? <CircularProgress size={18} color="inherit" /> : <ICONS.download />}
-            sx={getStartIconSpacing(dir)}
-          >
-            {exportLoading ? t.exporting : hasActiveFilters ? t.exportFiltered : t.exportAll}
-          </Button>
-          <Button variant="contained" startIcon={<ICONS.add />} onClick={handleOpenForm}>
-            {t.createCode}
-          </Button>
+          {canExport && (
+            <Button
+              variant="outlined"
+              color="success"
+              onClick={handleExport}
+              disabled={exportLoading}
+              startIcon={exportLoading ? <CircularProgress size={18} color="inherit" /> : <ICONS.download />}
+              sx={getStartIconSpacing(dir)}
+            >
+              {exportLoading ? t.exporting : hasActiveFilters ? t.exportFiltered : t.exportAll}
+            </Button>
+          )}
+          {canCreate && (
+            <Button variant="contained" startIcon={<ICONS.add />} onClick={handleOpenForm}>
+              {t.createCode}
+            </Button>
+          )}
         </Stack>
       </Stack>
 
@@ -715,12 +724,16 @@ export default function PromoCodesPage() {
                         <Typography variant="caption" color="text.secondary">{pc.batchLabel}</Typography>
                       )}
                     </Box>
-                    <FormControlLabel
-                      control={<Switch size="small" checked={pc.isActive} onChange={() => handleToggleActive(pc)} />}
-                      label={<Chip label={pc.isActive ? t.active : t.inactive} color={pc.isActive ? "success" : "default"} size="small" />}
-                      labelPlacement="start"
-                      sx={{ ml: 0, mr: -0.5 }}
-                    />
+                    {canEdit ? (
+                      <FormControlLabel
+                        control={<Switch size="small" checked={pc.isActive} onChange={() => handleToggleActive(pc)} />}
+                        label={<Chip label={pc.isActive ? t.active : t.inactive} color={pc.isActive ? "success" : "default"} size="small" />}
+                        labelPlacement="start"
+                        sx={{ ml: 0, mr: -0.5 }}
+                      />
+                    ) : (
+                      <Chip label={pc.isActive ? t.active : t.inactive} color={pc.isActive ? "success" : "default"} size="small" />
+                    )}
                   </Stack>
 
                   <Divider sx={{ my: 1.5 }} />
@@ -764,11 +777,13 @@ export default function PromoCodesPage() {
                         <ICONS.view fontSize="small" />
                       </IconButton>
                     </Tooltip>
-                    <Tooltip title={t.deleteCode}>
-                      <IconButton size="small" color="error" onClick={() => setDeleteTarget(pc)}>
-                        <ICONS.delete fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
+                    {canDelete && (
+                      <Tooltip title={t.deleteCode}>
+                        <IconButton size="small" color="error" onClick={() => setDeleteTarget(pc)}>
+                          <ICONS.delete fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    )}
                   </Stack>
                 </CardActions>
               </AppCard>

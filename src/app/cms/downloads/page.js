@@ -21,6 +21,7 @@ import EmptyBusinessState from "@/components/EmptyBusinessState";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { useAuth } from "@/contexts/AuthContext";
+import { useHasPermission } from "@/hooks/usePermission";
 import { getAllBusinesses } from "@/services/businessService";
 import {
   getAllFiles,
@@ -37,8 +38,9 @@ import ICONS from "@/utils/iconUtil";
 
 const translations = {
   en: {
-    pageTitle: "Manage Files",
-    pageDescription: "Manage downloadable media files for this business.",
+    pageTitle: "Manage Downloadable Files",
+    pageDescription:
+      "Upload files here to make them publicly downloadable — each file gets its own shareable link at /downloads/[slug].",
     selectBusiness: "Select Business",
     uploadFile: "Upload File",
     noFiles: "No files found.",
@@ -59,8 +61,9 @@ const translations = {
     yesDelete: "Yes, Delete",
   },
   ar: {
-    pageTitle: "إدارة الملفات",
-    pageDescription: "إدارة الملفات القابلة للتنزيل لهذا العمل.",
+    pageTitle: "إدارة الملفات القابلة للتنزيل",
+    pageDescription:
+      "ارفع الملفات هنا لإتاحتها للتنزيل العام — يحصل كل ملف على رابط مشاركة خاص به على /downloads/[slug].",
     selectBusiness: "اختر العمل",
     uploadFile: "تحميل ملف",
     noFiles: "لا توجد ملفات.",
@@ -84,6 +87,14 @@ const translations = {
 
 export default function FileStorePage() {
   const { user } = useAuth();
+  const canCreate = useHasPermission("files", "create");
+  const canEdit = useHasPermission("files", "edit");
+  const canShare = useHasPermission("files", "share");
+  const canDownload = useHasPermission("files", "download");
+  // Deleting a file is a genuine hard delete (no trash step, no recovery),
+  // so unlike every other module it's never a grantable permission — it
+  // stays superadmin-exclusive on the backend too (fileResourceRoutes.js).
+  const canDelete = user?.role === "superadmin";
   const { t, dir, language } = useI18nLayout(translations);
   const theme = useTheme();
   const [allBusinesses, setAllBusinesses] = useState([]);
@@ -123,7 +134,9 @@ export default function FileStorePage() {
     }
     setLoading(true);
     const res = await getAllFiles(selectedBusiness);
-    setFiles(res || []);
+    // A 403 (e.g. this business's staff lack "files:view") resolves to an
+    // error-shaped object, not an array — never let that reach files.map.
+    setFiles(Array.isArray(res) ? res : []);
     setLoading(false);
   };
 
@@ -213,7 +226,7 @@ export default function FileStorePage() {
                 {t.selectBusiness}
               </Button>
             )}
-            {selectedBusiness && (
+            {selectedBusiness && canCreate && (
               <Button
                 variant="contained"
                 startIcon={<ICONS.upload />}
@@ -317,27 +330,32 @@ export default function FileStorePage() {
                         </IconButton>
                       </Tooltip>
 
-                      <Tooltip title={t.edit} arrow>
-                        <IconButton
-                          color="primary"
-                          onClick={() => {
-                            setEditingFile(f);
-                            setOpenDialog(true);
-                          }}
-                        >
-                          <ICONS.edit fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
+                      {canEdit && (
+                        <Tooltip title={t.edit} arrow>
+                          <IconButton
+                            color="primary"
+                            onClick={() => {
+                              setEditingFile(f);
+                              setOpenDialog(true);
+                            }}
+                          >
+                            <ICONS.edit fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      )}
 
-                      <Tooltip title={t.delete} arrow>
-                        <IconButton
-                          color="error"
-                          onClick={() => handleDelete(f._id)}
-                        >
-                          <ICONS.delete fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
+                      {canDelete && (
+                        <Tooltip title={t.delete} arrow>
+                          <IconButton
+                            color="error"
+                            onClick={() => handleDelete(f._id)}
+                          >
+                            <ICONS.delete fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      )}
 
+                      {canShare && (
                       <Tooltip title={t.share} arrow>
                         <IconButton
                           color="primary"
@@ -346,6 +364,7 @@ export default function FileStorePage() {
                           <ICONS.share fontSize="small" />
                         </IconButton>
                       </Tooltip>
+                      )}
                     </Box>
                   </AppCard>
               );
@@ -369,6 +388,7 @@ export default function FileStorePage() {
             onClose={() => setShareData({ open: false, url: "", name: "" })}
             url={shareData.url}
             name={shareData.name}
+            canDownloadQr={canDownload}
           />
         )}
 

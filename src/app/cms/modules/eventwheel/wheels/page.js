@@ -39,6 +39,7 @@ import NoDataAvailable from "@/components/NoDataAvailable";
 import { useAuth } from "@/contexts/AuthContext";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { useHasPermission } from "@/hooks/usePermission";
 import LoadingState from "@/components/LoadingState";
 import RecordMetadata from "@/components/RecordMetadata";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
@@ -150,6 +151,11 @@ const Dashboard = () => {
   const searchParams = useSearchParams();
   const { user, selectedBusiness, setSelectedBusiness } = useAuth();
   const { t, dir, language } = useI18nLayout(translations);
+  const canCreate = useHasPermission("eventwheel", "create");
+  const canEdit = useHasPermission("eventwheel", "edit");
+  const canDelete = useHasPermission("eventwheel", "delete");
+  const canShare = useHasPermission("eventwheel", "share");
+  const canDownload = useHasPermission("eventwheel", "download");
   const { showMessage } = useMessage();
   const [spinWheels, setSpinWheels] = useState([]);
   const [businesses, setBusinesses] = useState([]);
@@ -744,7 +750,7 @@ const Dashboard = () => {
                 {t.selectBusiness}
               </Button>
             )}
-            {selectedBusiness && (
+            {selectedBusiness && canCreate && (
               <Button
                 variant="contained"
                 startIcon={<ICONS.add />}
@@ -880,6 +886,7 @@ const Dashboard = () => {
                     sx={{ justifyContent: "space-between", p: 1.5 }}
                   >
                     <Box>
+                      {canShare && (
                       <Tooltip title={t.shareSpinWheel}>
                         <IconButton
                           size="small"
@@ -891,6 +898,7 @@ const Dashboard = () => {
                           <ICONS.share fontSize="small" />
                         </IconButton>
                       </Tooltip>
+                      )}
                       {["admin", "onspot", "synced"].includes(wheel.type) && (
                         <Tooltip title={t.manageParticipants}>
                           <IconButton
@@ -906,24 +914,28 @@ const Dashboard = () => {
                       )}
                     </Box>
                     <Box>
-                      <Tooltip title={t.editSpinWheel}>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleOpenModal(wheel)}
-                          aria-label={t.edit}
-                        >
-                          <ICONS.edit fontSize="small" color="primary" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title={t.deleteSpinWheel}>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleDeleteEvent(wheel)}
-                          aria-label={t.delete}
-                        >
-                          <ICONS.delete fontSize="small" color="error" />
-                        </IconButton>
-                      </Tooltip>
+                      {canEdit && (
+                        <Tooltip title={t.editSpinWheel}>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleOpenModal(wheel)}
+                            aria-label={t.edit}
+                          >
+                            <ICONS.edit fontSize="small" color="primary" />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                      {canDelete && (
+                        <Tooltip title={t.deleteSpinWheel}>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleDeleteEvent(wheel)}
+                            aria-label={t.delete}
+                          >
+                            <ICONS.delete fontSize="small" color="error" />
+                          </IconButton>
+                        </Tooltip>
+                      )}
                     </Box>
                   </CardActions>
                 </Card>
@@ -938,6 +950,7 @@ const Dashboard = () => {
           url={shareUrl}
           title={shareTitle}
           name={shareTitle}
+          canDownloadQr={canDownload}
         />
 
         {/* Event Creation/Edit Modal */}

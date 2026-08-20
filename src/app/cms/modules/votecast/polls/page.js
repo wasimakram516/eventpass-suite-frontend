@@ -18,6 +18,7 @@ import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import ShareLinkModal from "@/components/modals/ShareLinkModal";
 import PollModal from "@/components/modals/PollModal";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { useHasPermission } from "@/hooks/usePermission";
 import ICONS from "@/utils/iconUtil";
 import { useAuth } from "@/contexts/AuthContext";
 import { getAllBusinesses } from "@/services/businessService";
@@ -82,6 +83,11 @@ export default function ManagePollsPage() {
     const searchParams = useSearchParams();
     const { user, selectedBusiness, setSelectedBusiness } = useAuth();
     const { t, dir, language } = useI18nLayout(translations);
+    const canCreate = useHasPermission("votecast", "create");
+    const canEdit = useHasPermission("votecast", "edit");
+    const canDelete = useHasPermission("votecast", "delete");
+    const canShare = useHasPermission("votecast", "share");
+    const canDownload = useHasPermission("votecast", "download");
 
     const [polls, setPolls] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -235,7 +241,7 @@ export default function ManagePollsPage() {
                                 {t.selectBusiness}
                             </Button>
                         )}
-                        {selectedBusiness && (
+                        {selectedBusiness && canCreate && (
                             <Button variant="contained" startIcon={<ICONS.add />} onClick={handleOpenCreate} sx={getStartIconSpacing(dir)}>
                                 {t.createPoll}
                             </Button>
@@ -268,9 +274,9 @@ export default function ManagePollsPage() {
                                 onView={() => router.push(`/cms/modules/votecast/polls/${poll.slug}/questions`)}
                                 onViewResults={() => router.push(`/cms/modules/votecast/polls/${poll.slug}/results`)}
                                 onInsights={() => router.push(`/cms/modules/votecast/polls/${poll.slug}/insights`)}
-                                onEdit={() => handleOpenEdit(poll)}
-                                onDelete={() => { setPollToDelete(poll); setConfirmOpen(true); }}
-                                onShare={() => { setPollToShare(poll); setShareModalOpen(true); }}
+                                onEdit={canEdit ? () => handleOpenEdit(poll) : undefined}
+                                onDelete={canDelete ? () => { setPollToDelete(poll); setConfirmOpen(true); } : undefined}
+                                onShare={canShare ? () => { setPollToShare(poll); setShareModalOpen(true); } : undefined}
                             />
                         ))}
                     </Box>
@@ -304,6 +310,7 @@ export default function ManagePollsPage() {
                     }
                     name={pollToShare?.title}
                     title={t.shareTitle}
+                    canDownloadQr={canDownload}
                 />
             </Container>
         </Box>

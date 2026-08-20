@@ -34,8 +34,8 @@ const segmentMap = {
     icon: <ICONS.chat fontSize="small" sx={{ mr: 0.5 }} />,
   },
   downloads: {
-    en: "Manage Files",
-    ar: "إدارة الملفات",
+    en: "Manage Downloadable Files",
+    ar: "إدارة الملفات القابلة للتنزيل",
     icon: <ICONS.cloud fontSize="small" sx={{ mr: 0.5 }} />,
   },
   "global-search": {
@@ -97,6 +97,22 @@ const segmentMap = {
     en: "Visitors",
     ar: "الزوار",
     icon: <ICONS.people fontSize="small" sx={{ mr: 0.5 }} />,
+  },
+
+  "access-control": {
+    en: "Access Control",
+    ar: "التحكم بالصلاحيات",
+    icon: <ICONS.adminPanel fontSize="small" sx={{ mr: 0.5 }} />,
+  },
+  roles: {
+    en: "Roles",
+    ar: "الأدوار",
+    icon: <ICONS.adminPanel fontSize="small" sx={{ mr: 0.5 }} />,
+  },
+  permissions: {
+    en: "Permissions",
+    ar: "الصلاحيات",
+    icon: <ICONS.adminPanel fontSize="small" sx={{ mr: 0.5 }} />,
   },
 
   // CMS Modules
@@ -293,6 +309,15 @@ export default function BreadcrumbsNav() {
       return {
         segment: seg,
         href: basePath,
+      };
+    }
+    // "access-control" has no page of its own (only its roles/permissions
+    // sub-pages do) — send it to the roles list, the section's natural
+    // landing page, instead of a 404 on the bare parent path.
+    if (seg === "access-control") {
+      return {
+        segment: seg,
+        href: basePath + "/access-control/roles",
       };
     }
     // Dynamic slugs (not in segmentMap) should link to their parent path

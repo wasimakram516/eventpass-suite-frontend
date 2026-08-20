@@ -28,6 +28,7 @@ import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import { formatDateTimeWithLocale } from "@/utils/dateUtils";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { useHasPermission } from "@/hooks/usePermission";
 import { toArabicDigits } from "@/utils/arabicDigits";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import useMediaSocket from "@/hooks/modules/memorywall/useMemoryWallMediaSocket";
@@ -238,6 +239,7 @@ const CMSUploadsPage = () => {
   const [mediaToDelete, setMediaToDelete] = useState(null);
   const { user } = useAuth();
   const { t, dir, language } = useI18nLayout(translations);
+  const canDelete = useHasPermission("memorywall", "delete");
 
   const userRef = useRef(user);
   const wallSlugRef = useRef(wallSlug);
@@ -513,11 +515,13 @@ const CMSUploadsPage = () => {
                         <ICONS.view fontSize="small" />
                       </IconButton>
                     </Tooltip>
-                    <Tooltip title={t.delete}>
-                      <IconButton color="error" size="small" onClick={() => handleDeleteClick(item)}>
-                        <ICONS.delete fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
+                    {canDelete && (
+                      <Tooltip title={t.delete}>
+                        <IconButton color="error" size="small" onClick={() => handleDeleteClick(item)}>
+                          <ICONS.delete fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    )}
                   </Box>
                 </CardContent>
               </Card>

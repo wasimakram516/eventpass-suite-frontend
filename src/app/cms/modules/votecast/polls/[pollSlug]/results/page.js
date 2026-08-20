@@ -36,6 +36,7 @@ import {
   getPollVoterResults,
 } from "@/services/votecast/pollService";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { useHasPermission } from "@/hooks/usePermission";
 import ICONS from "@/utils/iconUtil";
 import { getFieldIcon } from "@/utils/iconMapper";
 import NoDataAvailable from "@/components/NoDataAvailable";
@@ -502,6 +503,7 @@ export default function PollResultsPage() {
   const { pollSlug } = useParams();
   const { showMessage } = useMessage();
   const { t, dir, align, language } = useI18nLayout(translations);
+  const canExport = useHasPermission("votecast", "export");
 
   const [poll, setPoll] = useState(null);
   const [results, setResults] = useState([]);
@@ -742,14 +744,17 @@ export default function PollResultsPage() {
         <Container maxWidth={false} disableGutters>
           <BreadcrumbsNav />
           <Stack
-            direction={{ xs: "column", sm: "row" }}
-            spacing={2}
+            direction={{ xs: "column", lg: "row" }}
             sx={{
               justifyContent: "space-between",
-              alignItems: { xs: "stretch", sm: "center" },
-              mb: 2
+              alignItems: { xs: "stretch", lg: "center" },
+              mb: 2,
+              flexWrap: "wrap",
+              columnGap: 2,
+              rowGap: 1,
+              "& > *": { flexShrink: 0 },
             }}>
-            <Box>
+            <Box sx={{ flex: 1 }}>
               <Typography variant="h4" sx={{
                 fontWeight: "bold"
               }}>{t.title}</Typography>
@@ -764,15 +769,18 @@ export default function PollResultsPage() {
             </Box>
 
             <Stack
-              direction={{ xs: "column", md: "row" }}
-              spacing={2}
+              direction={{ xs: "column", sm: "row" }}
               sx={{
-                alignItems: { xs: "stretch", md: "center" },
-                width: { xs: "100%", md: "auto" }
+                alignItems: { xs: "stretch", sm: "center" },
+                width: { xs: "100%", lg: "auto" },
+                flexWrap: "wrap",
+                columnGap: 2,
+                rowGap: 1,
+                "& > *": { flexShrink: 0 },
               }}>
               {poll && totalVoters > 0 && (
                 <>
-                  <FormControl size="small" sx={{ minWidth: { xs: "100%", md: 170 } }}>
+                  <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 170 } }}>
                     <InputLabel id="sort-label">{language === "ar" ? "ترتيب حسب" : "Sort By"}</InputLabel>
                     <Select
                       labelId="sort-label"
@@ -785,22 +793,24 @@ export default function PollResultsPage() {
                     </Select>
                   </FormControl>
 
-                  <Button
-                    variant="outlined"
-                    color="success"
-                    onClick={handleExportVoters}
-                    disabled={exportLoading}
-                    startIcon={
-                      exportLoading ? (
-                        <CircularProgress size={20} color="inherit" />
-                      ) : (
-                        <ICONS.description fontSize="small" />
-                      )
-                    }
-                    sx={{ ...getStartIconSpacing(dir), width: { xs: "100%", md: "auto" } }}
-                  >
-                    {exportLoading ? t.exporting : t.exportAll}
-                  </Button>
+                  {canExport && (
+                    <Button
+                      variant="outlined"
+                      color="success"
+                      onClick={handleExportVoters}
+                      disabled={exportLoading}
+                      startIcon={
+                        exportLoading ? (
+                          <CircularProgress size={20} color="inherit" />
+                        ) : (
+                          <ICONS.description fontSize="small" />
+                        )
+                      }
+                      sx={{ ...getStartIconSpacing(dir), width: { xs: "100%", sm: "auto" } }}
+                    >
+                      {exportLoading ? t.exporting : t.exportAll}
+                    </Button>
+                  )}
                 </>
               )}
               {poll && (
@@ -809,7 +819,7 @@ export default function PollResultsPage() {
                   color="primary"
                   onClick={handleViewFullScreen}
                   startIcon={<ICONS.fullscreen fontSize="small" />}
-                  sx={{ ...getStartIconSpacing(dir), width: { xs: "100%", md: "auto" } }}
+                  sx={{ ...getStartIconSpacing(dir), width: { xs: "100%", sm: "auto" } }}
                 >
                   {t.viewFullScreen}
                 </Button>

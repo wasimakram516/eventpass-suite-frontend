@@ -24,16 +24,19 @@ import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import { useAuth } from "@/contexts/AuthContext";
+import { useHasPermission } from "@/hooks/usePermission";
 import { createWalkIn } from "@/services/eventreg/registrationService";
 
-const WalkInModal = ({ open, onClose, registration, onCheckInSuccess, createWalkInFn, isDigiPass = false }) => {
+const WalkInModal = ({ open, onClose, registration, onCheckInSuccess, createWalkInFn, isDigiPass = false, module = null }) => {
   const { user } = useAuth();
   const [checkingIn, setCheckingIn] = useState(false);
+  const canCreateWalkIn = useHasPermission(module, "create");
 
   const canCheckIn =
-    user?.role === "admin" ||
-    user?.role === "superadmin" ||
-    user?.role === "business";
+    (user?.role === "admin" ||
+      user?.role === "superadmin" ||
+      user?.role === "business") &&
+    (!module || canCreateWalkIn);
 
   const walkInsCount = registration?.walkIns?.length || 0;
 

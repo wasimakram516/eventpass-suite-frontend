@@ -45,6 +45,7 @@ import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { useHasPermission } from "@/hooks/usePermission";
 import { toArabicDigits } from "@/utils/arabicDigits";
 import RecordMetadata from "@/components/RecordMetadata";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
@@ -117,6 +118,10 @@ const translations = {
 const ParticipantsAdminPage = () => {
   const router = useRouter();
   const { t, dir, language } = useI18nLayout(translations);
+  const canCreate = useHasPermission("eventwheel", "create");
+  const canDelete = useHasPermission("eventwheel", "delete");
+  const canExport = useHasPermission("eventwheel", "export");
+  const canBulkImport = useHasPermission("eventwheel", "bulk_import");
   const params = useParams();
   const slug = params?.wheelSlug;
   const searchParams = useSearchParams();
@@ -397,6 +402,7 @@ const ParticipantsAdminPage = () => {
         <Box
           sx={{
             display: "flex",
+            flexDirection: { xs: "column", md: "row" },
             justifyContent: "space-between",
             alignItems: { xs: "flex-start", md: "center" },
             flexWrap: "wrap",
@@ -419,50 +425,65 @@ const ParticipantsAdminPage = () => {
               {t.manageParticipants} {event.title}
             </Typography>
           </Box>
-          <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            sx={{
+              width: { xs: "100%", md: "auto" },
+              flexWrap: "wrap",
+              columnGap: 2,
+              rowGap: 1,
+              "& > *": { flexShrink: 0 },
+            }}
+          >
             {event.type === "admin" && (
               <>
-                <Button
-                  variant="contained"
-                  startIcon={<ICONS.add />}
-                  onClick={handleOpenModal}
-                  sx={getStartIconSpacing(dir)}
-                >
-                  {t.addParticipant}
-                </Button>
-                <Button
-                  variant="outlined"
-                  onClick={handleDownloadSample}
-                  startIcon={<ICONS.download />}
-                  sx={getStartIconSpacing(dir)}
-                >
-                  {t.downloadSample}
-                </Button>
-                <Button
-                  variant="outlined"
-                  component="label"
-                  startIcon={
-                    uploading ? <CircularProgress size={20} /> : <ICONS.upload />
-                  }
-                  disabled={uploading}
-                  sx={getStartIconSpacing(dir)}
-                >
-                  {uploading && uploadProgress?.total
-                    ? `${t.uploading} ${toArabicDigits(uploadProgress.uploaded, language)}/${toArabicDigits(uploadProgress.total, language)}`
-                    : uploading
-                      ? t.uploading
-                      : t.uploadFile}
-                  <input
-                    type="file"
-                    hidden
-                    accept=".xlsx,.xls"
-                    onChange={handleUpload}
-                  />
-                </Button>
+                {canCreate && (
+                  <Button
+                    variant="contained"
+                    startIcon={<ICONS.add />}
+                    onClick={handleOpenModal}
+                    sx={getStartIconSpacing(dir)}
+                  >
+                    {t.addParticipant}
+                  </Button>
+                )}
+                {canBulkImport && (
+                  <>
+                    <Button
+                      variant="outlined"
+                      onClick={handleDownloadSample}
+                      startIcon={<ICONS.download />}
+                      sx={getStartIconSpacing(dir)}
+                    >
+                      {t.downloadSample}
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      component="label"
+                      startIcon={
+                        uploading ? <CircularProgress size={20} /> : <ICONS.upload />
+                      }
+                      disabled={uploading}
+                      sx={getStartIconSpacing(dir)}
+                    >
+                      {uploading && uploadProgress?.total
+                        ? `${t.uploading} ${toArabicDigits(uploadProgress.uploaded, language)}/${toArabicDigits(uploadProgress.total, language)}`
+                        : uploading
+                          ? t.uploading
+                          : t.uploadFile}
+                      <input
+                        type="file"
+                        hidden
+                        accept=".xlsx,.xls"
+                        onChange={handleUpload}
+                      />
+                    </Button>
+                  </>
+                )}
               </>
             )}
 
-            {event.type === "synced" && (
+            {event.type === "synced" && canBulkImport && (
               <Button
                 variant="contained"
                 color="info"
@@ -473,15 +494,17 @@ const ParticipantsAdminPage = () => {
               </Button>
             )}
 
-            <Button
-              variant="outlined"
-              color="primary"
-              onClick={handleExport}
-              startIcon={<ICONS.download />}
-              sx={getStartIconSpacing(dir)}
-            >
-              {t.exportParticipants}
-            </Button>
+            {canExport && (
+              <Button
+                variant="outlined"
+                color="primary"
+                onClick={handleExport}
+                startIcon={<ICONS.download />}
+                sx={getStartIconSpacing(dir)}
+              >
+                {t.exportParticipants}
+              </Button>
+            )}
           </Stack>
         </Box>
 
@@ -627,17 +650,19 @@ const ParticipantsAdminPage = () => {
                   />
                   <Divider />
                   <CardActions sx={{ justifyContent: "flex-end", p: 1.5 }}>
-                    <Tooltip title={t.deleteParticipant}>
-                      <IconButton
-                        onClick={() => {
-                          setSelectedParticipant(participant._id);
-                          setConfirmDelete(true);
-                        }}
-                        color="error"
-                      >
-                        <ICONS.delete />
-                      </IconButton>
-                    </Tooltip>
+                    {canDelete && (
+                      <Tooltip title={t.deleteParticipant}>
+                        <IconButton
+                          onClick={() => {
+                            setSelectedParticipant(participant._id);
+                            setConfirmDelete(true);
+                          }}
+                          color="error"
+                        >
+                          <ICONS.delete />
+                        </IconButton>
+                      </Tooltip>
+                    )}
                   </CardActions>
                 </Card>
               ))}

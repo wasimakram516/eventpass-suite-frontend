@@ -61,6 +61,7 @@ import BulkEmailModal from "@/components/modals/BulkEmailModal";
 import SingleNotificationModal from "@/components/modals/SingleNotificationModal";
 import ShareLinkModal from "@/components/modals/ShareLinkModal";
 import { useMessage } from "@/contexts/MessageContext";
+import { useHasPermission } from "@/hooks/usePermission";
 import { formatDateTimeWithLocale } from "@/utils/dateUtils";
 import { toArabicDigits } from "@/utils/arabicDigits";
 import { wrapTextBox } from "@/utils/wrapTextStyles";
@@ -307,6 +308,20 @@ export default function ViewRegistrations() {
   const { t, dir, language } = useI18nLayout(translations);
   const { showMessage } = useMessage();
   const theme = useTheme();
+
+  // Per-action gating (UX only — backend guards are the real enforcement).
+  const canCreate = useHasPermission("checkin", "create");
+  const canEdit = useHasPermission("checkin", "edit");
+  const canDelete = useHasPermission("checkin", "delete");
+  const canPrint = useHasPermission("checkin", "print");
+  const canExport = useHasPermission("checkin", "export");
+  const canBulkImport = useHasPermission("checkin", "bulk_import");
+  const canSendEmail = useHasPermission("checkin", "send_email");
+  const canSendWhatsapp = useHasPermission("checkin", "send_whatsapp");
+  const canApprove = useHasPermission("checkin", "approve");
+  const canReject = useHasPermission("checkin", "reject");
+  const canShare = useHasPermission("checkin", "share");
+  const canDownload = useHasPermission("checkin", "download");
 
   const dynamicFieldsRef = useRef([]);
   const lastLoadedRef = useRef(null);
@@ -1202,50 +1217,62 @@ export default function ViewRegistrations() {
       </Stack>
       <Stack
         direction={{ xs: "column", sm: "row" }}
-        spacing={2}
-        sx={{ mb: 2, width: { xs: "100%", sm: "auto" } }}
+        sx={{
+          mb: 2,
+          width: { xs: "100%", sm: "auto" },
+          flexWrap: "wrap",
+          columnGap: 2,
+          rowGap: { xs: 2, sm: 1 },
+          "& > *": { flexShrink: 0 },
+        }}
       >
-        <Button
-          variant="contained"
-          onClick={() => setCreateModalOpen(true)}
-          startIcon={<ICONS.add />}
-          sx={getStartIconSpacing(dir)}
-        >
-          {t.createRegistration}
-        </Button>
+        {canCreate && (
+          <Button
+            variant="contained"
+            onClick={() => setCreateModalOpen(true)}
+            startIcon={<ICONS.add />}
+            sx={getStartIconSpacing(dir)}
+          >
+            {t.createRegistration}
+          </Button>
+        )}
 
-        <Button
-          variant="outlined"
-          onClick={handleDownloadSample}
-          startIcon={<ICONS.download />}
-          sx={getStartIconSpacing(dir)}
-        >
-          {t.downloadSample}
-        </Button>
+        {canBulkImport && (
+          <Button
+            variant="outlined"
+            onClick={handleDownloadSample}
+            startIcon={<ICONS.download />}
+            sx={getStartIconSpacing(dir)}
+          >
+            {t.downloadSample}
+          </Button>
+        )}
 
-        <Button
-          variant="outlined"
-          component="label"
-          disabled={uploading}
-          startIcon={
-            uploading ? (
-              <CircularProgress size={18} color="inherit" />
-            ) : (
-              <ICONS.upload />
-            )
-          }
-          sx={getStartIconSpacing(dir)}
-        >
-          {uploading ? t.uploading : t.uploadFile}
-          <input
-            hidden
-            type="file"
-            accept=".xlsx,.xls"
-            onChange={(e) => handleUpload(e)}
-          />
-        </Button>
+        {canBulkImport && (
+          <Button
+            variant="outlined"
+            component="label"
+            disabled={uploading}
+            startIcon={
+              uploading ? (
+                <CircularProgress size={18} color="inherit" />
+              ) : (
+                <ICONS.upload />
+              )
+            }
+            sx={getStartIconSpacing(dir)}
+          >
+            {uploading ? t.uploading : t.uploadFile}
+            <input
+              hidden
+              type="file"
+              accept=".xlsx,.xls"
+              onChange={(e) => handleUpload(e)}
+            />
+          </Button>
+        )}
 
-        {totalRegistrations > 0 && (
+        {totalRegistrations > 0 && (canSendEmail || canSendWhatsapp) && (
           <Button
             variant="contained"
             color="secondary"
@@ -1268,7 +1295,7 @@ export default function ViewRegistrations() {
           </Button>
         )}
 
-        {totalRegistrations > 0 && (
+        {totalRegistrations > 0 && canExport && (
           <Button
             variant="outlined"
             color="success"
@@ -1291,7 +1318,7 @@ export default function ViewRegistrations() {
           </Button>
         )}
 
-        {totalRegistrations > 0 && (
+        {totalRegistrations > 0 && canPrint && (
           <Button
             variant="outlined"
             color="primary"
@@ -1315,17 +1342,18 @@ export default function ViewRegistrations() {
       <Box
         sx={{
           display: "flex",
-          flexDirection: { xs: "column", md: "row" },
+          flexDirection: { xs: "column", lg: "row" },
           justifyContent: "space-between",
-          alignItems: { xs: "flex-start", md: "center" },
+          alignItems: { xs: "flex-start", lg: "center" },
           gap: 2,
           mb: 3,
           px: { xs: 1, sm: 2 }
         }}>
+        {/* Left: Record info with loading progress */}
         <Box
           sx={{
             width: "100%",
-            maxWidth: { xs: "100%", md: "50%" }
+            maxWidth: { xs: "100%", lg: "50%" }
           }}>
           {isLoadingMore && (
             <Typography
@@ -1350,6 +1378,7 @@ export default function ViewRegistrations() {
             {totalRegistrations} {t.records}
           </Typography>
 
+          {/* Matching results counter */}
           {(searchTerm || Object.keys(filters).some((k) => filters[k])) && (
             <Typography
               variant="body2"
@@ -1365,11 +1394,11 @@ export default function ViewRegistrations() {
               {filteredRegistrations.length === 1
                 ? t.matchingRecords.replace(
                   "{count}",
-                  filteredRegistrations.length
+                  filteredRegistrations.length,
                 )
                 : t.matchingRecordsPlural.replace(
                   "{count}",
-                  filteredRegistrations.length
+                  filteredRegistrations.length,
                 )}{" "}
               {t.found}
             </Typography>
@@ -1378,12 +1407,14 @@ export default function ViewRegistrations() {
 
         <Stack
           direction={{ xs: "column", sm: "row" }}
-          spacing={1.5}
           sx={[{
             alignItems: { xs: "stretch", sm: "center" },
-            justifyContent: "flex-end",
-            width: "100%"
-          }, dir === "rtl" ? { columnGap: 1.5, rowGap: 1.5 } : {}]}>
+            justifyContent: { xs: "flex-start", lg: "flex-end" },
+            width: "100%",
+            flexWrap: "wrap",
+            columnGap: 1.5,
+            rowGap: 1.5
+          }]}>
           <TextField
             size="small"
             variant="outlined"
@@ -1392,9 +1423,7 @@ export default function ViewRegistrations() {
             onChange={(e) => setRawSearch(e.target.value)}
             sx={{
               flex: 1,
-              minWidth: { xs: "100%", sm: 220 },
-              mr: dir === "rtl" ? 0 : 1.5,
-              ml: dir === "rtl" ? 1.5 : 0,
+              minWidth: { xs: "100%", sm: "100%", lg: 220 },
             }}
             slotProps={{
               input: {
@@ -1408,7 +1437,12 @@ export default function ViewRegistrations() {
                     }}
                   />
                 ),
-                sx: dir === "rtl" ? { paddingRight: 2 } : {},
+                sx:
+                  dir === "rtl"
+                    ? {
+                      paddingRight: 2,
+                    }
+                    : {},
               }
             }}
           />
@@ -1437,6 +1471,7 @@ export default function ViewRegistrations() {
             {t.filters}
           </Button>
 
+          {/* Records per page */}
           <FormControl
             size="small"
             sx={{
@@ -1849,35 +1884,41 @@ export default function ViewRegistrations() {
                         flexWrap: { xs: "wrap", sm: "nowrap" },
                       }}
                     >
-                      <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 140 }, flexShrink: 0 }}>
-                        <Select
-                          value={reg.approvalStatus || "pending"}
-                          onChange={(e) =>
-                            handleApprovalChange(reg._id, e.target.value)
-                          }
-                          sx={{ fontSize: "0.9rem" }}
-                        >
-                          <MenuItem value="pending">{t.pending}</MenuItem>
-                          <MenuItem value="confirmed">{t.confirmed}</MenuItem>
-                          <MenuItem value="not_attending">
-                            {t.notConfirmed}
-                          </MenuItem>
-                        </Select>
-                      </FormControl>
+                      {(canApprove || canReject) && (
+                        <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 140 }, flexShrink: 0 }}>
+                          <Select
+                            value={reg.approvalStatus || "pending"}
+                            onChange={(e) =>
+                              handleApprovalChange(reg._id, e.target.value)
+                            }
+                            sx={{ fontSize: "0.9rem" }}
+                          >
+                            <MenuItem value="pending">{t.pending}</MenuItem>
+                            {canApprove && <MenuItem value="confirmed">{t.confirmed}</MenuItem>}
+                            {canReject && (
+                              <MenuItem value="not_attending">
+                                {t.notConfirmed}
+                              </MenuItem>
+                            )}
+                          </Select>
+                        </FormControl>
+                      )}
 
                       <Box sx={{ display: "flex", gap: 0.5, justifyContent: { xs: "center", sm: "flex-end" }, width: { xs: "100%", sm: "auto" } }}>
-                        <Tooltip title={t.printBadge}>
-                          <IconButton
-                            color="warning"
-                            onClick={() => handlePrintBadge(reg)}
-                            sx={{
-                              "&:hover": { transform: "scale(1.1)" },
-                              transition: "0.2s",
-                            }}
-                          >
-                            <ICONS.print />
-                          </IconButton>
-                        </Tooltip>
+                        {canPrint && (
+                          <Tooltip title={t.printBadge}>
+                            <IconButton
+                              color="warning"
+                              onClick={() => handlePrintBadge(reg)}
+                              sx={{
+                                "&:hover": { transform: "scale(1.1)" },
+                                transition: "0.2s",
+                              }}
+                            >
+                              <ICONS.print />
+                            </IconButton>
+                          </Tooltip>
+                        )}
 
                         <Tooltip title={t.viewWalkIns}>
                           <IconButton
@@ -1895,37 +1936,42 @@ export default function ViewRegistrations() {
                           </IconButton>
                         </Tooltip>
 
-                        <Tooltip title={t.editRegistration}>
-                          <IconButton
-                            color="warning"
-                            onClick={() => {
-                              setEditingReg(reg);
-                              setEditModalOpen(true);
-                            }}
-                            sx={{
-                              "&:hover": { transform: "scale(1.1)" },
-                              transition: "0.2s",
-                            }}
-                          >
-                            <ICONS.edit fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
+                        {canEdit && (
+                          <Tooltip title={t.editRegistration}>
+                            <IconButton
+                              color="warning"
+                              onClick={() => {
+                                setEditingReg(reg);
+                                setEditModalOpen(true);
+                              }}
+                              sx={{
+                                "&:hover": { transform: "scale(1.1)" },
+                                transition: "0.2s",
+                              }}
+                            >
+                              <ICONS.edit fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        )}
 
-                        <Tooltip title={t.deleteRecord}>
-                          <IconButton
-                            color="error"
-                            onClick={() => {
-                              setRegistrationToDelete(reg._id);
-                              setDeleteDialogOpen(true);
-                            }}
-                            sx={{
-                              "&:hover": { transform: "scale(1.1)" },
-                              transition: "0.2s",
-                            }}
-                          >
-                            <ICONS.delete />
-                          </IconButton>
-                        </Tooltip>
+                        {canDelete && (
+                          <Tooltip title={t.deleteRecord}>
+                            <IconButton
+                              color="error"
+                              onClick={() => {
+                                setRegistrationToDelete(reg._id);
+                                setDeleteDialogOpen(true);
+                              }}
+                              sx={{
+                                "&:hover": { transform: "scale(1.1)" },
+                                transition: "0.2s",
+                              }}
+                            >
+                              <ICONS.delete />
+                            </IconButton>
+                          </Tooltip>
+                        )}
+                        {canShare && (
                         <Tooltip title={t.shareLink}>
                           <IconButton
                             color="info"
@@ -1941,8 +1987,10 @@ export default function ViewRegistrations() {
                             <ICONS.share fontSize="small" />
                           </IconButton>
                         </Tooltip>
+                        )}
 
                         {/* NEW: Send single notification */}
+                        {(canSendEmail || canSendWhatsapp) && (
                         <Tooltip title={t.sendNotification || "Send Notification"}>
                           <IconButton
                             color="primary"
@@ -1958,6 +2006,7 @@ export default function ViewRegistrations() {
                             <ICONS.send fontSize="small" />
                           </IconButton>
                         </Tooltip>
+                        )}
 
 
                       </Box>
@@ -2423,6 +2472,7 @@ export default function ViewRegistrations() {
         onClose={() => setWalkInModalOpen(false)}
         registration={selectedRegistration}
         createWalkInFn={createCheckInWalkIn}
+        module="checkin"
         onCheckInSuccess={async () => {
           if (selectedRegistration?._id) {
             const regsRes = await getCheckInInitialRegistrations(eventSlug);
@@ -2447,6 +2497,8 @@ export default function ViewRegistrations() {
       <BulkEmailModal
         open={bulkEmailModalOpen}
         showReminderOption={true}
+        canSendEmail={canSendEmail}
+        canSendWhatsapp={canSendWhatsapp}
         onClose={() => {
           if (!sendingEmails) {
             setBulkEmailModalOpen(false);
@@ -2557,10 +2609,13 @@ export default function ViewRegistrations() {
         }
         title={t.shareLink}
         customQrWrapper={eventDetails?.customQrWrapper}
+        canDownloadQr={canDownload}
       />
       <SingleNotificationModal
         open={notifyModalOpen}
         showReminderOption={true}
+        canSendEmail={canSendEmail}
+        canSendWhatsapp={canSendWhatsapp}
         onClose={() => {
           setNotifyModalOpen(false);
           setRegistrationToNotify(null);

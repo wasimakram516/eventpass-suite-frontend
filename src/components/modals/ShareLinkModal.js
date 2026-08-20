@@ -56,6 +56,7 @@ export default function ShareLinkModal({
   name = "qr-code",
   customQrWrapper,
   useCustomQrCode = false,
+  canDownloadQr = true,
 }) {
   const qrCodeRef = useRef(null);
   const { showMessage } = useMessage();
@@ -208,14 +209,16 @@ export default function ShareLinkModal({
             }}
           />
 
-          <Button
-            variant="contained"
-            startIcon={<ICONS.download />}
-            onClick={handleDownloadQRCode}
-            sx={getStartIconSpacing(dir)}
-          >
-            {t.downloadQR}
-          </Button>
+          {canDownloadQr && (
+            <Button
+              variant="contained"
+              startIcon={<ICONS.download />}
+              onClick={handleDownloadQRCode}
+              sx={getStartIconSpacing(dir)}
+            >
+              {t.downloadQR}
+            </Button>
+          )}
         </Box>
       </DialogContent>
     </Dialog>

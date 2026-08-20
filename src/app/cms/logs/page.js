@@ -524,7 +524,7 @@ export default function LogsPage() {
       return;
     }
 
-    if (module === "VoteCast" && (itemType === "Event" || itemType === "Poll")) {
+    if (moduleName === "VoteCast" && (itemType === "Event" || itemType === "Poll")) {
       try {
         if (log.itemId) {
           const meta = await getPollMeta(log.itemId);
@@ -614,6 +614,16 @@ export default function LogsPage() {
 
     if (moduleName === "StageQ") {
       router.push(`/cms/modules/stageq/queries/questions${searchQuery}`);
+      return;
+    }
+
+    // Role logs are filed under module "User" (see roleController.js's
+    // createLog calls — there's no dedicated "AccessControl" module bucket),
+    // but itemType is "Role", not "User" — must be checked before the
+    // User/Auth branch below, which would otherwise swallow it and fall
+    // through to the generic /cms redirect.
+    if (itemType === "Role") {
+      router.push("/cms/access-control/roles");
       return;
     }
 

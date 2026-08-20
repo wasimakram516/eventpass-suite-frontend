@@ -45,7 +45,15 @@ const translations = {
   },
 };
 
-const SingleNotificationModal = ({ open, onClose, onSent, registration, showReminderOption = false }) => {
+const SingleNotificationModal = ({
+  open,
+  onClose,
+  onSent,
+  registration,
+  showReminderOption = false,
+  canSendEmail = true,
+  canSendWhatsapp = true,
+}) => {
   const { t, dir } = useI18nLayout(translations);
   const [notificationType, setNotificationType] = useState("default");
   const [subject, setSubject] = useState("");
@@ -221,7 +229,7 @@ const SingleNotificationModal = ({ open, onClose, onSent, registration, showRemi
         </Stack>
       </DialogContent>
       <DialogActions sx={{ px: 2, py: 2, gap: 1 }}>
-        {(notificationType === "default" ||
+        {canSendWhatsapp && (notificationType === "default" ||
           notificationType === "reminder") && (
             <Button
               variant="contained"
@@ -235,16 +243,18 @@ const SingleNotificationModal = ({ open, onClose, onSent, registration, showRemi
             </Button>
           )}
 
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<ICONS.email />}
-          disabled={sending}
-          onClick={() => handleSend("email")}
-          sx={getStartIconSpacing(dir)}
-        >
-          {t.sendEmail}
-        </Button>
+        {canSendEmail && (
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<ICONS.email />}
+            disabled={sending}
+            onClick={() => handleSend("email")}
+            sx={getStartIconSpacing(dir)}
+          >
+            {t.sendEmail}
+          </Button>
+        )}
       </DialogActions>
     </Dialog>
   );

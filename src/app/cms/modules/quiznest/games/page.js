@@ -26,6 +26,7 @@ import {
 } from "@/services/quiznest/gameService";
 import { useMessage } from "@/contexts/MessageContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useHasPermission } from "@/hooks/usePermission";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { getAllBusinesses } from "@/services/businessService";
 import BusinessDrawer from "@/components/drawers/BusinessDrawer";
@@ -116,6 +117,11 @@ export default function GamesPage() {
   const searchParams = useSearchParams();
   const { user, selectedBusiness, setSelectedBusiness } = useAuth();
   const { t, dir, align, language } = useI18nLayout(translations);
+  const canCreate = useHasPermission("quiznest", "create");
+  const canEdit = useHasPermission("quiznest", "edit");
+  const canDelete = useHasPermission("quiznest", "delete");
+  const canShare = useHasPermission("quiznest", "share");
+  const canDownload = useHasPermission("quiznest", "download");
 
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -302,7 +308,7 @@ export default function GamesPage() {
                 </Button>
               )}
 
-              {selectedBusiness && (
+              {selectedBusiness && canCreate && (
                 <Button
                   variant="contained"
                   startIcon={<ICONS.add />}
@@ -485,27 +491,32 @@ export default function GamesPage() {
                       gap: 1,
                     }}
                   >
-                    <Tooltip title={t.editTooltip}>
-                      <IconButton
-                        color="info"
-                        onClick={() => handleOpenEdit(g)}
-                      >
-                        <ICONS.edit fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
+                    {canEdit && (
+                      <Tooltip title={t.editTooltip}>
+                        <IconButton
+                          color="info"
+                          onClick={() => handleOpenEdit(g)}
+                        >
+                          <ICONS.edit fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    )}
 
-                    <Tooltip title={t.deleteTooltip}>
-                      <IconButton
-                        color="error"
-                        onClick={() => {
-                          setGameToDelete(g);
-                          setConfirmOpen(true);
-                        }}
-                      >
-                        <ICONS.delete fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
+                    {canDelete && (
+                      <Tooltip title={t.deleteTooltip}>
+                        <IconButton
+                          color="error"
+                          onClick={() => {
+                            setGameToDelete(g);
+                            setConfirmOpen(true);
+                          }}
+                        >
+                          <ICONS.delete fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    )}
 
+                    {canShare && (
                     <Tooltip title={t.shareTooltip}>
                       <IconButton
                         color="primary"
@@ -517,6 +528,7 @@ export default function GamesPage() {
                         <ICONS.share fontSize="small" />
                       </IconButton>
                     </Tooltip>
+                    )}
                   </Box>
                 </Box>
               </AppCard>
@@ -530,6 +542,7 @@ export default function GamesPage() {
           url={`${typeof window !== "undefined" ? window.location.origin : ""
             }/quiznest/${gameToShare?.slug}`}
           name={gameToShare?.title}
+          canDownloadQr={canDownload}
         />
 
         <GameFormModal
