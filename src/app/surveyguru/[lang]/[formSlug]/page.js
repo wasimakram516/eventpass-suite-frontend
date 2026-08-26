@@ -9,9 +9,6 @@ import {
   LinearProgress,
   TextField,
   Typography,
-  Stepper,
-  Step,
-  StepLabel,
   Stack,
 } from "@mui/material";
 import { useParams, useSearchParams } from "next/navigation";
@@ -25,6 +22,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { translateTexts } from "@/services/translationService";
 import LanguageSelector from "@/components/LanguageSelector";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
+import { toArabicDigits } from "@/utils/arabicDigits";
 
 const guessType = (q) => (q?.type || q?.questionType || "").toLowerCase();
 
@@ -59,6 +57,10 @@ export const surveyTranslations = {
 
     // Text question placeholder
     typeYourAnswer: "Type your answer",
+
+    // Description expand/collapse
+    showMore: "Show more",
+    showLess: "Show less",
 
     // Anonymous mode (if needed for any badge)
     anonymousSurvey: "Anonymous Survey",
@@ -95,6 +97,10 @@ export const surveyTranslations = {
     // Text question placeholder
     typeYourAnswer: "اكتب إجابتك هنا",
 
+    // Description expand/collapse
+    showMore: "عرض المزيد",
+    showLess: "عرض أقل",
+
     // Anonymous mode
     anonymousSurvey: "استبيان مجهول الهوية",
   },
@@ -116,6 +122,8 @@ export default function PublicSurveyPage() {
   const [attendeeErr, setAttendeeErr] = useState({});
   const [answers, setAnswers] = useState({});
   const [currentIdx, setCurrentIdx] = useState(0);
+  const [descExpanded, setDescExpanded] = useState(false);
+  const [sideDescExpanded, setSideDescExpanded] = useState(false);
 
   const [progressStep, setProgressStep] = useState(0);
   const progressRef = useRef(0);
@@ -244,9 +252,29 @@ export default function PublicSurveyPage() {
   useEffect(() => {
     if (phase !== "survey") return;
 
+    const findScrollableAncestor = (el) => {
+      let node = el;
+      while (node && node !== document.body) {
+        if (node.matches?.("[data-survey-scroll]")) return node;
+        node = node.parentElement;
+      }
+      return null;
+    };
+
     const handleWheel = (e) => {
       const total = form?.questions?.length || 0;
       if (total <= 0) return;
+
+      const scroller = findScrollableAncestor(e.target);
+      if (scroller) {
+        const atTop = scroller.scrollTop <= 0;
+        const atBottom =
+          scroller.scrollTop + scroller.clientHeight >=
+          scroller.scrollHeight - 1;
+        if ((e.deltaY > 0 && !atBottom) || (e.deltaY < 0 && !atTop)) {
+          return;
+        }
+      }
 
       // prevent native page scroll for consistent gesture handling
       e.preventDefault();
@@ -436,17 +464,26 @@ export default function PublicSurveyPage() {
     return (
       <Box
         sx={{
-          minHeight: "100vh",
+          height: "100vh",
+          overflowY: "auto",
           display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
           position: "relative",
-          p: { xs: 2.5, sm: 4 },
+          width: "100%",
+          p: { xs: 2.5, sm: 5 },
         }}
       >
         <Background />
         <LanguageSelector top={20} right={20} />
-        <Container dir={dir} maxWidth="sm" sx={{ position: "relative" }}>
+        <Box
+          dir={dir}
+          sx={{
+            position: "relative",
+            width: "100%",
+            maxWidth: 520,
+            my: "auto",
+            mx: "auto",
+          }}
+        >
           {/* subtle ambient blobs */}
           <Box
             sx={(theme) => ({
@@ -551,13 +588,14 @@ export default function PublicSurveyPage() {
               {trans.youMayClose}
             </Typography>
           </AppCard>
-        </Container>
+        </Box>
       </Box>
     );
   }
 
   if (phase === "attendee") {
     const isAnonymousMode = Boolean(form?.isAnonymous);
+    const descLong = (tForm?.description || "").length > 280;
     const canStart =
       hasToken ||
       isAnonymousMode ||
@@ -568,13 +606,14 @@ export default function PublicSurveyPage() {
 
     return (
       <Box
+        dir={dir}
         sx={{
-          minHeight: "100vh",
+          height: "100vh",
+          overflowY: "auto",
           display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
           position: "relative",
-          p: { xs: 1.5, sm: 2.5 },
+          width: "100%",
+          p: { xs: 2.5, sm: 4 },
         }}
       >
         <Background />
@@ -584,8 +623,10 @@ export default function PublicSurveyPage() {
           sx={(theme) => ({
             width: "100%",
             maxWidth: { xs: 360, sm: 520, md: 600 },
+            my: "auto",
+            mx: "auto",
             borderRadius: { xs: 2, sm: 3 },
-            p: { xs: 2, sm: 3.5 },
+            p: { xs: 3, sm: 5 },
             ...(isAnonymousMode
               ? {
                 border: `1px solid ${theme.palette.surveyguru.anonymousBorder}`,
@@ -606,7 +647,12 @@ export default function PublicSurveyPage() {
             }}
           >
             <ICONS.appRegister
-              sx={{ fontSize: 40, color: "primary.main", mr: 1.5 }}
+              sx={{
+                fontSize: 40,
+                color: "primary.main",
+                flexShrink: 0,
+                ...(dir === "rtl" ? { ml: 1.5 } : { mr: 1.5 }),
+              }}
             />
             <Typography variant="h5" component="h1" sx={{
               fontWeight: 800
@@ -635,14 +681,40 @@ export default function PublicSurveyPage() {
           )}
 
           {tForm?.description && (
-            <Typography
-              sx={{
-                color: "text.secondary",
-                mb: 3,
-                textAlign: "center"
-              }}>
-              {tForm?.description}
-            </Typography>
+            <>
+              <Typography
+                sx={{
+                  color: "text.secondary",
+                  mb: descLong ? 0.5 : 3,
+                  textAlign: "justify",
+                  wordBreak: "break-word",
+                  ...(descLong && !descExpanded
+                    ? {
+                      display: "-webkit-box",
+                      WebkitLineClamp: 4,
+                      WebkitBoxOrient: "vertical",
+                      overflow: "hidden",
+                    }
+                    : {}),
+                }}>
+                {tForm?.description}
+              </Typography>
+              {descLong && (
+                <Button
+                  size="small"
+                  onClick={() => setDescExpanded((v) => !v)}
+                  sx={{
+                    mb: 2,
+                    mx: "auto",
+                    display: "block",
+                    textTransform: "none",
+                    fontWeight: 700,
+                  }}
+                >
+                  {descExpanded ? trans.showLess : trans.showMore}
+                </Button>
+              )}
+            </>
           )}
           {isAnonymousMode && (
             <Box
@@ -752,7 +824,7 @@ export default function PublicSurveyPage() {
                 variant="contained"
                 fullWidth
                 disabled={!canStart}
-                startIcon={<ICONS.next />}
+                startIcon={dir === "rtl" ? <ICONS.back /> : <ICONS.next />}
                 sx={{
                   py: 1.25,
                   fontWeight: 800,
@@ -772,6 +844,7 @@ export default function PublicSurveyPage() {
   // --- Survey phase ---
   if (phase === "survey") {
     const questions = tForm?.questions || [];
+    const sideDescLong = (tForm?.description || "").length > 280;
     const safeIdx = Math.min(
       Math.max(currentIdx, 0),
       Math.max(questions.length - 1, 0)
@@ -858,15 +931,12 @@ export default function PublicSurveyPage() {
               width: "100%",
               background: rightGradient,
               position: "fixed",
-              top: 0,
-              left: 0,
-              right: 0,
+              inset: 0,
               display: "flex",
-              alignItems: "center",
+              alignItems: "stretch",
               justifyContent: "center",
-              p: 2,
-              minHeight: "100vh",
-              overflowX: "hidden",
+              p: { xs: 1.5, sm: 2 },
+              overflow: "hidden",
             }}
           >
             {/* overlay */}
@@ -885,62 +955,70 @@ export default function PublicSurveyPage() {
                 position: "relative",
                 flex: 1,
                 width: "100%",
+                maxWidth: 720,
+                maxHeight: "100%",
                 bgcolor: "background.paper",
                 borderRadius: 3,
                 p: 2.5,
                 display: "grid",
-                gridTemplateRows: "auto auto 1fr auto", // stepper / header / content / footer
-                gap: 2,
-                minHeight: "70vh",
-                overflowX: "hidden",
+                gridTemplateRows: "auto minmax(0, 1fr) auto", // stepper / scrollable body / footer
+                gap: 1.5,
+                overflow: "hidden",
               }}
             >
               {/* Stepper */}
-              {(() => {
-                const DotIcon = ({ active, completed, icon }) => (
+              <Box
+                sx={(theme) => ({
+                  px: 0.5,
+                  display: "flex",
+                  flexWrap: "wrap",
+                  justifyContent: "center",
+                  columnGap: 0.75,
+                  rowGap: 0.75,
+                  pointerEvents: "none",
+                  "& > *": {
+                    width: 24, height: 24, borderRadius: "50%",
+                    display: "grid", placeItems: "center", boxSizing: "border-box",
+                    border: `2px solid ${actionColor}`,
+                    bgcolor: theme.palette.common.white,
+                    color: actionColor,
+                    fontSize: 12, fontWeight: 700, userSelect: "none",
+                  },
+                })}
+              >
+                {questions.map((_, i) => (
                   <Box
+                    key={i}
                     sx={(theme) => ({
-                      width: 24, height: 24, borderRadius: "50%",
-                      display: "grid", placeItems: "center", boxSizing: "border-box",
-                      border: `2px solid ${actionColor}`,
-                      bgcolor: active || completed ? actionColor : theme.palette.common.white,
-                      color: active || completed ? theme.palette.common.white : actionColor,
-                      fontSize: 12, fontWeight: 700, userSelect: "none",
+                      ...(i <= currentIdx
+                        ? {
+                          bgcolor: actionColor,
+                          color: theme.palette.common.white,
+                        }
+                        : {}),
                     })}
                   >
-                    {icon}
+                    {toArabicDigits(i + 1, language)}
                   </Box>
-                );
-                return (
-                  <Box sx={{ px: 0.5 }}>
-                    <Stepper
-                      activeStep={currentIdx}
-                      connector={null}
-                      sx={{
-                        pointerEvents: "none",
-                        width: "100%",
-                        maxWidth: "100%",
-                        display: "flex",
-                        flexWrap: "wrap",
-                        justifyContent: "center",
-                        columnGap: 0.5,
-                        rowGap: 0.5,
-                        ".MuiStep-root": { p: 0, m: 0, flex: "0 0 auto" },
-                        ".MuiStepLabel-label": { display: "none" },
-                      }}
-                    >
-                      {questions.map((_, i) => (
-                        <Step key={i}>
-                          <StepLabel StepIconComponent={DotIcon} />
-                        </Step>
-                      ))}
-                    </Stepper>
-                  </Box>
-                );
-              })()}
+                ))}
+              </Box>
 
-              {/* Header */}
-              <Box sx={{ wordBreak: "break-word", textAlign: "center", mt: 2 }}>
+              {/* Scrollable body: header + answer */}
+              <Box
+                data-survey-scroll
+                sx={{
+                  minHeight: 0,
+                  overflowY: "auto",
+                  overflowX: "hidden",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 1.5,
+                  px: 0.5,
+                  width: "100%",
+                }}
+              >
+                {/* Header */}
+                <Box sx={{ wordBreak: "break-word", textAlign: "center", pt: 1 }}>
                 <Typography
                   variant="h6"
                   sx={{
@@ -956,33 +1034,22 @@ export default function PublicSurveyPage() {
                   <Typography
                     sx={{
                       color: "text.secondary",
-                      fontSize: 13.5
+                      fontSize: 13.5,
+                      textAlign: "justify",
+                      wordBreak: "break-word",
                     }}>
                     {currentQ.helpText}
                   </Typography>
                 )}
               </Box>
 
-              {/* Content */}
-              <Box
-                sx={{
-                  minHeight: 0,
-                  overflowY: "auto",
-                  overflowX: "hidden",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  px: 0.5,
-                  width: "100%",
-                  maxWidth: "100%",
-                }}
-              >
                 {/* NPS / Rating */}
                 {isNps && (
                   <Box
                     sx={{
                       width: "100%",
                       maxWidth: 640,
+                      mx: "auto",
                       display: "flex",
                       flexWrap: "wrap",
                       justifyContent: "center",
@@ -1014,7 +1081,7 @@ export default function PublicSurveyPage() {
                             },
                           }}
                         >
-                          {num}
+                          {toArabicDigits(num, language)}
                         </Button>
                       );
                     })}
@@ -1027,6 +1094,7 @@ export default function PublicSurveyPage() {
                     sx={{
                       width: "100%",
                       maxWidth: 720,
+                      mx: "auto",
                       display: "flex",
                       flexWrap: "wrap",
                       justifyContent: "center",
@@ -1108,6 +1176,7 @@ export default function PublicSurveyPage() {
                     sx={{
                       width: "100%",
                       maxWidth: 720,
+                      mx: "auto",
                       display: "flex",
                       flexWrap: "wrap",
                       justifyContent: "center",
@@ -1176,13 +1245,11 @@ export default function PublicSurveyPage() {
 
               {/* Footer */}
               <Box
-                sx={(theme) => ({
-                  position: "sticky", bottom: 0, left: 0, right: 0,
-                  background: theme.palette.common.white,
+                sx={{
                   borderTop: "1px solid",
                   borderColor: "divider",
-                  pt: 1, zIndex: 2,
-                })}
+                  pt: 1,
+                }}
               >
                 <Box
                   sx={{
@@ -1243,7 +1310,7 @@ export default function PublicSurveyPage() {
                       variant="contained"
                       color="success"
                       onClick={onSubmit}
-                      startIcon={<ICONS.send />}
+                      startIcon={<ICONS.send sx={dir === "rtl" ? { transform: "scaleX(-1)" } : undefined} />}
                       sx={{
                         width: "100%",
                         minWidth: 0,
@@ -1277,6 +1344,7 @@ export default function PublicSurveyPage() {
         >
           {/* Left Sidebar */}
           <Box
+            data-survey-scroll
             sx={{
               width: "40%",
               p: 4,
@@ -1285,21 +1353,48 @@ export default function PublicSurveyPage() {
               justifyContent: "flex-start",
               height: "100%",
               minHeight: 0,
+              overflowY: "auto",
+              overflowX: "hidden",
             }}
           >
             <Typography variant="h4" gutterBottom sx={{
-              fontWeight: 800
+              fontWeight: 800,
+              wordBreak: "break-word"
             }}>
               {tForm?.title}
             </Typography>
             <Typography
               sx={{
                 color: "text.secondary",
-                mb: 3
+                mb: sideDescLong ? 0.5 : 3,
+                textAlign: "justify",
+                wordBreak: "break-word",
+                ...(sideDescLong && !sideDescExpanded
+                  ? {
+                    display: "-webkit-box",
+                    WebkitLineClamp: 4,
+                    WebkitBoxOrient: "vertical",
+                    overflow: "hidden",
+                  }
+                  : {}),
               }}>
               {tForm?.description}
             </Typography>
-            <Box sx={{ flex: 1, minHeight: 0, overflowY: "auto", pr: 0.5 }}>
+            {sideDescLong && (
+              <Button
+                size="small"
+                onClick={() => setSideDescExpanded((v) => !v)}
+                sx={{
+                  mb: 2,
+                  alignSelf: "center",
+                  textTransform: "none",
+                  fontWeight: 700,
+                }}
+              >
+                {sideDescExpanded ? trans.showLess : trans.showMore}
+              </Button>
+            )}
+            <Box sx={{ flexShrink: 0 }}>
               {questions.map((q, idx) => (
                 <Box
                   key={q._id}
@@ -1384,48 +1479,51 @@ export default function PublicSurveyPage() {
                 borderRadius: "0px 20px 20px 0px",
                 p: 4,
                 display: "grid",
-                gridTemplateRows: "auto 1fr auto", // header / content / footer
+                gridTemplateRows: "minmax(0, 1fr) auto", // scrollable body / footer
                 gap: 3,
                 minHeight: 0,
                 overflow: "hidden",
               }}
             >
-              {/* Header */}
-              <Box>
-                <Typography
-                  variant="h6"
-                  sx={{
-                    fontWeight: 800,
-                    mb: currentQ?.helpText ? 0.5 : 0,
-                    lineHeight: 1.25,
-                    fontSize: 22,
-                  }}
-                >
-                  {currentQ.label}
-                </Typography>
-                {!!currentQ.helpText && (
-                  <Typography
-                    sx={{
-                      color: "text.secondary",
-                      fontSize: 15
-                    }}>
-                    {currentQ.helpText}
-                  </Typography>
-                )}
-              </Box>
-
-              {/* Content */}
+              {/* Scrollable body: header + answer */}
               <Box
+                data-survey-scroll
                 sx={{
                   minHeight: 0,
                   overflowY: "auto",
                   overflowX: "hidden",
                   display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
+                  flexDirection: "column",
+                  gap: 2,
                   px: 1,
+                  width: "100%",
                 }}
               >
+                {/* Header */}
+                <Box>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontWeight: 800,
+                      mb: currentQ?.helpText ? 0.5 : 0,
+                      lineHeight: 1.25,
+                      fontSize: 22,
+                    }}
+                  >
+                    {currentQ.label}
+                  </Typography>
+                  {!!currentQ.helpText && (
+                    <Typography
+                      sx={{
+                        color: "text.secondary",
+                        fontSize: 15,
+                        textAlign: "justify",
+                        wordBreak: "break-word",
+                      }}>
+                      {currentQ.helpText}
+                    </Typography>
+                  )}
+                </Box>
                 {/* NPS / Rating */}
                 {isNps && (
                   <Box
@@ -1461,7 +1559,7 @@ export default function PublicSurveyPage() {
                             },
                           }}
                         >
-                          {num}
+                          {toArabicDigits(num, language)}
                         </Button>
                       );
                     })}
@@ -1676,7 +1774,7 @@ export default function PublicSurveyPage() {
                     variant="contained"
                     color="success"
                     onClick={onSubmit}
-                    startIcon={<ICONS.send />}
+                    startIcon={<ICONS.send sx={dir === "rtl" ? { transform: "scaleX(-1)" } : undefined} />}
                     sx={{
                       minWidth: 160,
                       fontWeight: 800,
