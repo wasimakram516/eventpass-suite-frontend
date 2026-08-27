@@ -969,6 +969,7 @@ export default function PublicSurveyPage() {
               {/* Stepper */}
               <Box
                 sx={(theme) => ({
+                  mt: 4,
                   px: 0.5,
                   display: "flex",
                   flexWrap: "wrap",
