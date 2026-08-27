@@ -8,21 +8,23 @@ const AppCard = ({ children, sx, ...props }) => {
   return (
     <Paper
       elevation={0}
-      sx={(theme) => ({
-        borderRadius: 4,
-        overflow: "hidden",
-        backgroundColor: theme.palette.background.paper,
-        boxShadow: theme.palette.shadow.cardSubtle,
-        transition: "all 0.3s ease",
-        display: "flex",
-        flexDirection: "column",
-        ...wrapTextBox,
-        "&:hover": {
-          transform: "translateY(-2px)",
-          boxShadow: theme.palette.shadow.card,
-        },
-        ...sx,
-      })}
+      sx={[
+        (theme) => ({
+          borderRadius: 4,
+          overflow: "hidden",
+          backgroundColor: theme.palette.background.paper,
+          boxShadow: theme.palette.shadow.cardSubtle,
+          transition: "all 0.3s ease",
+          display: "flex",
+          flexDirection: "column",
+          ...wrapTextBox,
+          "&:hover": {
+            transform: "translateY(-2px)",
+            boxShadow: theme.palette.shadow.card,
+          },
+        }),
+        ...(Array.isArray(sx) ? sx.filter(Boolean) : sx ? [sx] : []),
+      ]}
       {...props}
     >
       {children}
@@ -32,11 +34,13 @@ const AppCard = ({ children, sx, ...props }) => {
 
 export const AppCardText = ({ sx, ...props }) => (
   <Box
-    sx={{
-      minWidth: 0,
-      ...wrapTextBox,
-      ...sx,
-    }}
+    sx={[
+      {
+        minWidth: 0,
+        ...wrapTextBox,
+      },
+      ...(Array.isArray(sx) ? sx.filter(Boolean) : sx ? [sx] : []),
+    ]}
     {...props}
   />
 );

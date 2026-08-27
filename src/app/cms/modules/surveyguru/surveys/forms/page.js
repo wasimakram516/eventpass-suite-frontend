@@ -223,6 +223,8 @@ const emptyQuestion = () => ({
   scale: { min: 1, max: 5, step: 1 },
 });
 
+const MAX_DESCRIPTION_CHARS = 150;
+
 export default function SurveyFormsManagePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -993,11 +995,17 @@ export default function SurveyFormsManagePage() {
 
                       <Typography
                         variant="body2"
+                        title={f.description || ""}
                         sx={{
                           color: "text.secondary",
-                          mt: 1
+                          mt: 1,
+                          wordBreak: "break-word",
                         }}>
-                        {f.description || "—"}
+                        {f.description
+                          ? f.description.length > MAX_DESCRIPTION_CHARS
+                            ? `${f.description.slice(0, MAX_DESCRIPTION_CHARS).trimEnd()}…`
+                            : f.description
+                          : "—"}
                       </Typography>
                       <Stack spacing={0.5} sx={{ mt: 1 }}>
                         <Stack direction="row" sx={{
