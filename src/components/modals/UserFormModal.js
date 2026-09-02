@@ -270,7 +270,13 @@ function UserFormModal({
   const [overridesWorking, setOverridesWorking] = useState({});
   const [actionLabels, setActionLabels] = useState({});
 
-  const isEditingSuperAdmin = isEditMode && selectedUser?.role === "superadmin";
+  // Tracks the CURRENT tier selection, not selectedUser's original role — a
+  // superadmin stepping a target down to admin via the tier Select below
+  // must immediately regain the Roles/Modules tabs (canManageDynamicRoles)
+  // so a roleId can be picked in the same save, matching the backend's
+  // requirement that a non-superadmin never end up role-less (see
+  // usersController.updateUser's role-change block).
+  const isEditingSuperAdmin = isEditMode && form.userType === "superadmin";
   // Same currentUser id-shape caveat as users/page.js's self-card
   // normalization — AuthContext's currentUser carries `.id` (from
   // authController's hand-built /auth/me response), not `._id` like every
@@ -279,6 +285,14 @@ function UserFormModal({
     isEditMode &&
     selectedUser &&
     String(selectedUser._id) === String(currentUser?._id || currentUser?.id);
+
+  // Only a superadmin may re-tier an existing admin/superadmin account, and
+  // only between those two tiers — re-tiering a business/staff user is a
+  // much bigger structural change (business assignment, roleId, etc.) and
+  // is out of scope here. Matches the backend's superadmin-only role-change
+  // guard in usersController.updateUser.
+  const canEditTier =
+    isSuperAdmin && isEditMode && ["admin", "superadmin"].includes(selectedUser?.role);
 
   // Per the access-control design: only superadmin may assign dynamic
   // Roles/overrides to admin/business-tier accounts by default; a business
@@ -357,11 +371,13 @@ function UserFormModal({
         modulePermissions: selectedUser.modulePermissions || [],
         roleId: selectedUser.roleId?._id || selectedUser.roleId || null,
         userType:
-          selectedUser.role === "admin"
-            ? "admin"
-            : selectedUser.role === "business"
-              ? "business"
-              : "staff",
+          selectedUser.role === "superadmin"
+            ? "superadmin"
+            : selectedUser.role === "admin"
+              ? "admin"
+              : selectedUser.role === "business"
+                ? "business"
+                : "staff",
         attachToExistingBusiness: true,
         businessId: selectedUser.business?._id || "",
         businessName: selectedUser.business?.name || "",
@@ -648,6 +664,14 @@ function UserFormModal({
     if (isEditMode) {
       const payload = { ...form };
       if (!form.password) delete payload.password;
+      // Only ever send `role` (the account tier) when the tier Select was
+      // actually rendered for this edit (canEditTier) — the backend now
+      // rejects the WHOLE save for any non-superadmin actor whose payload
+      // carries `role` at all, even a no-op resave of the current value
+      // (see usersController.updateUser). Every other edit flow must never
+      // include this key, since form.userType always mirrors the target's
+      // current tier for those.
+      if (canEditTier) payload.role = form.userType;
       // Only send roleId when this actor is actually allowed to manage it —
       // otherwise every save (even ones that never touched the Role select)
       // would attempt a role reassignment and could be rejected outright.
@@ -933,7 +957,7 @@ function UserFormModal({
           scrollbarColor: `${theme.palette.sharedUI.scrollbarThumb} transparent`,
         }}
       >
-        {isAdminOrSuperAdmin && !isEditMode && (
+        {((isAdminOrSuperAdmin && !isEditMode) || canEditTier) && (
           <FormControl fullWidth margin="normal">
             <InputLabel id="user-type-label">{t.userTypeLabel}</InputLabel>
             <Select
@@ -955,8 +979,8 @@ function UserFormModal({
             >
               {isSuperAdmin && <MenuItem value="superadmin">{t.superAdminUser}</MenuItem>}
               {isSuperAdmin && <MenuItem value="admin">{t.adminUser}</MenuItem>}
-              <MenuItem value="business">{t.businessUser}</MenuItem>
-              <MenuItem value="staff">{t.staffUser}</MenuItem>
+              {!isEditMode && <MenuItem value="business">{t.businessUser}</MenuItem>}
+              {!isEditMode && <MenuItem value="staff">{t.staffUser}</MenuItem>}
             </Select>
           </FormControl>
         )}
