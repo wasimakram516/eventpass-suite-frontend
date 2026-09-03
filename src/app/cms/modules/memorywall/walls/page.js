@@ -181,7 +181,12 @@ export default function WallConfigsPage() {
     };
 
     fetchBusinesses();
-  }, [user, selectedBusiness, setSelectedBusiness]);
+  }, [user?.id,
+  user?.role,
+  user?.business?.slug,
+  user?.business?._id,
+  selectedBusiness
+]);
 
   const fetchWallConfigs = async (businessSlug = "") => {
     setIsLoading(true);

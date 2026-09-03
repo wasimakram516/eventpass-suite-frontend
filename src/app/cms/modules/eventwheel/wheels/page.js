@@ -293,7 +293,12 @@ const Dashboard = () => {
     };
 
     initializeBusinesses();
-  }, [user, selectedBusiness, setSelectedBusiness]);
+  },[user?.id,
+  user?.role,
+  user?.business?.slug,
+  user?.business?._id,
+  selectedBusiness
+]);
 
   const fetchSpinWheels = useCallback(
     async (businessSlug = "") => {
