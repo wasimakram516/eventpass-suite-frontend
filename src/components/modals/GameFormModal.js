@@ -163,6 +163,7 @@ const GameFormModal = ({
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState([]);
+  const hasInitializedForm = useRef(false);
   const [showUploadProgress, setShowUploadProgress] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState({
     open: false,
@@ -189,7 +190,14 @@ const GameFormModal = ({
   const currentGameId = gameId || selectedGame?._id || initialValues?._id;
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      hasInitializedForm.current = false;
+      return;
+    }
+
+    if (hasInitializedForm.current) return;
+
+    hasInitializedForm.current = true;
 
     if (!editMode) {
       setForm({
