@@ -217,6 +217,7 @@ const WallConfigModal = ({
   const [colorAnchorEl, setColorAnchorEl] = useState(null);
   const [textColorAnchorEl, setTextColorAnchorEl] = useState(null);
   const [signatureColorAnchorEl, setSignatureColorAnchorEl] = useState(null);
+  const hasInitializedForm = useRef(false); 
 
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -246,8 +247,12 @@ const WallConfigModal = ({
       if (form.backgroundLogoPreview && form.backgroundLogoPreview.startsWith('blob:')) {
         URL.revokeObjectURL(form.backgroundLogoPreview);
       }
-      return;
+      hasInitializedForm.current = false; return;
     }
+
+    if (hasInitializedForm.current) { return; }
+    
+    hasInitializedForm.current = true;
 
     if (!editMode) {
       setForm({
