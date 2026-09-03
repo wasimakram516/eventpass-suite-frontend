@@ -34,6 +34,7 @@ import { useMessage } from "@/contexts/MessageContext";
 import { fetchMe } from "@/services/authService";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
+import { hasModuleAccess } from "@/hooks/usePermission";
 import { getModuleIcon } from "@/utils/iconMapper";
 import slugify from "@/utils/slugify";
 import {
@@ -335,9 +336,22 @@ function UserFormModal({
   // assertModulePermissionsWithinCeiling, the backend authority here; this
   // is UX only). Superadmin is unrestricted.
   const moduleCeilingActive = !isSuperAdmin && ["business", "admin"].includes(currentUserRole);
+  // The ceiling is the modules the ACTOR can actually grant — resolved from
+  // their effective role-based permissions (falling back to the legacy
+  // modulePermissions array). This lets a self-registered business owner
+  // (whose access comes from their role) grant those same modules after
+  // completing business setup, while still disabling modules the actor
+  // genuinely does not hold. Kept in sync with the backend's
+  // assertModulePermissionsWithinCeiling.
   const ceilingFilteredModules = moduleCeilingActive
-    ? availableModules.filter((m) => currentUser?.modulePermissions?.includes(m.key))
+    ? availableModules.filter((m) => hasModuleAccess(currentUser, m.key))
     : availableModules;
+  // The actor's grantable module keys. When the ceiling is active (business or
+  // admin actor) this is exactly what they can hand out; for superadmin it is
+  // the full catalog. Used to intersect what gets pre-checked on open so a
+  // business owner editing staff can never silently carry a module they don't
+  // hold over into the save payload.
+  const actorCeilingKeys = new Set(ceilingFilteredModules.map((m) => m.key));
 
   // The Role select was only ever scoped to userType (staff/business/admin),
   // never to a business actor's OWN allowedStaffRoleIds whitelist — so a
@@ -364,11 +378,23 @@ function UserFormModal({
 
     if (isEditMode && selectedUser) {
       const businessContact = selectedUser.business?.contact || {};
+      // The Modules tab is a faithful editor of the legacy `modulePermissions`
+      // catalog (the array `checkPermission` actually gates on). Do NOT merge
+      // a role's granular grants in here: a module inherited from the role is
+      // not removable from this tab (the role governs those separately), and
+      // force-checking entries from `selectedUser.permissions` made them
+      // reappear on every reopen even after being unchecked and saved.
+      //
+      // Populate with the STORED modules as-is on open. The ceiling filter is
+      // applied by the dedicated effect below only once the module catalog has
+      // loaded (it is async, so filtering here would blank every box on a hard
+      // refresh where the catalog hasn't resolved yet).
+      const grantableModules = selectedUser.modulePermissions || [];
       setForm({
         name: selectedUser.name,
         email: selectedUser.email,
         password: "",
-        modulePermissions: selectedUser.modulePermissions || [],
+        modulePermissions: grantableModules,
         roleId: selectedUser.roleId?._id || selectedUser.roleId || null,
         userType:
           selectedUser.role === "superadmin"
@@ -439,6 +465,51 @@ function UserFormModal({
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, canManageDynamicRoles, form.userType]);
+
+  // In CREATE mode, pre-check the modules this actor can actually grant once
+  // the module catalog loads. A business owner who holds (say) eventreg +
+  // checkin starts with exactly those checked, so they uncheck what they
+  // don't want instead of ticking everything from scratch. Only fires while
+  // modulePermissions is still at its initial [] value, so it never
+  // overwrites a user's selections. Never in edit mode.
+  useEffect(() => {
+    if (!open || isEditMode || availableModules.length === 0) return;
+    const grantable = availableModules
+      .filter((m) => hasModuleAccess(currentUser, m.key))
+      .map((m) => m.key);
+    setForm((prev) => {
+      if (prev.modulePermissions.length > 0) return prev;
+      return { ...prev, modulePermissions: grantable };
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, isEditMode, availableModules]);
+
+  // In EDIT mode, the ceiling (modules the ACTOR may grant) only becomes
+  // meaningful once the module catalog finishes loading. The populate effect
+  // above stamps in the stored modules immediately on open; this effect applies
+  // the ceiling filter a beat later, once `availableModules` has resolved. This
+  // specifically fixes the hard-refresh race where the catalog is still `[]`
+  // when the dialog opens — previously the async-empty ceiling blanked every
+  // box even though the modules had genuinely saved.
+  //
+  // Only a NON-superadmin actor has a ceiling to enforce: for a superadmin
+  // `availableModules` is scoped to the TARGET's role (e.g. staff →
+  // eventreg/checkin/digipass), so trimming stored modules against it would
+  // wrongly blank every non-target module on first open. Superadmin can grant
+  // anything, so we skip the trim entirely there. Guarded so it only corrects
+  // toward the actor's ceiling and never unwinds edits made since opening.
+  const modulesLoaded = availableModules.length > 0;
+  useEffect(() => {
+    if (!moduleCeilingActive || !open || !isEditMode || !selectedUser || !modulesLoaded) return;
+    setForm((prev) => {
+      const trimmed = (prev.modulePermissions || []).filter((k) => actorCeilingKeys.has(k));
+      // Only refine when the current value is still the untouched stored set —
+      // a length mismatch means the user has already edited it.
+      if (trimmed.length === (prev.modulePermissions || []).length) return prev;
+      return { ...prev, modulePermissions: trimmed };
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [moduleCeilingActive, open, isEditMode, selectedUser, modulesLoaded]);
 
   useEffect(() => {
     if (!form.roleId) {

@@ -11,3 +11,18 @@ export function useHasPermission(moduleKey, action = "view") {
   if (user.isSuper) return true;
   return Array.isArray(user.permissions) && user.permissions.includes(`${moduleKey}:${action}`);
 }
+
+export function hasModuleAccess(user, moduleKey) {
+  if (!user) return false;
+  if (user.isSuper) return true;
+  if (
+    Array.isArray(user.permissions) &&
+    user.permissions.some((p) => p === moduleKey || p.startsWith(`${moduleKey}:`))
+  ) {
+    return true;
+  }
+  return (
+    Array.isArray(user.modulePermissions) &&
+    user.modulePermissions.includes(moduleKey)
+  );
+}

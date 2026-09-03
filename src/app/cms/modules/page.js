@@ -16,6 +16,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { getModules } from "@/services/moduleService";
 import { getModuleIcon } from "@/utils/iconMapper";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { hasModuleAccess } from "@/hooks/usePermission";
 import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
 import LoadingState from "@/components/LoadingState";
 
@@ -43,6 +44,14 @@ export default function Modules() {
   const [modules, setModules] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // A self-registered business user must complete their business profile
+  // before role-granted modules become usable — keep the tiles empty (the
+  // original "no permission" state renders) until then.
+  const needsBusinessSetup =
+    user?.role === "business" &&
+    !user?.business?._id &&
+    !user?.businessId;
+
   useEffect(() => {
     let mounted = true;
 
@@ -56,14 +65,19 @@ export default function Modules() {
           ? modulesPayload
           : [];
 
-        // Business and admin: only show modules they have permission for. Superadmin/staff: show all returned.
+        // Gate a business user behind business-setup first; otherwise show
+        // modules they actually have access to (fresh granular role
+        // permissions, falling back to the legacy modulePermissions array) so
+        // a self-registered owner's modules unlock immediately after they
+        // complete their business profile. Superadmin/staff: show all.
         const permitted =
-          (user?.role === "business" || user?.role === "admin") &&
-            Array.isArray(user?.modulePermissions)
-            ? serverModules.filter((m) =>
-              user.modulePermissions.includes(m.key)
-            )
-            : serverModules;
+          user?.role === "superadmin"
+            ? serverModules
+            : user?.role === "admin"
+              ? serverModules.filter((m) => hasModuleAccess(user, m.key))
+              : needsBusinessSetup
+                ? []
+                : serverModules.filter((m) => hasModuleAccess(user, m.key));
 
         setModules(permitted);
       } catch {
@@ -76,7 +90,7 @@ export default function Modules() {
     return () => {
       mounted = false;
     };
-  }, [user]);
+  }, [user, needsBusinessSetup]);
 
   return (
     <Box dir={dir} sx={{ pb: 8, bgcolor: "background.default" }}>

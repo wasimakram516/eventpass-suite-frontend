@@ -32,6 +32,7 @@ import {
 } from "@/services/businessService";
 
 import { useAuth } from "@/contexts/AuthContext";
+import { fetchMe } from "@/services/authService";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import slugify from "@/utils/slugify";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
@@ -285,11 +286,10 @@ export default function BusinessDetailsPage() {
     fetchBusinesses();
 
     if (user.role === "business") {
-      const updatedUser = {
-        ...user,
-        business: res,
-      };
-      setUser(updatedUser);
+      // Re-fetch the user from the server so AuthContext carries the new
+      // business assignment + any resolved permissions, instead of relying
+      // on a local patch that leaves the JWT's stale claims as-is.
+      fetchMe().then(setUser).catch(() => {});
     }
 
     handleClose();

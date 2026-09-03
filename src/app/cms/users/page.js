@@ -19,6 +19,8 @@ import {
   CircularProgress,
   useTheme,
 } from "@mui/material";
+import ShieldIcon from "@mui/icons-material/Shield";
+import RemoveModeratorIcon from "@mui/icons-material/RemoveModerator";
 
 import { useCallback, useEffect, useState, useMemo, useRef } from "react";
 import { useSearchParams } from "next/navigation";
@@ -86,6 +88,8 @@ const translations = {
     emailInvalid: "Invalid email format",
     passwordRequired: "Password is required",
     businessRequired: "Please select a business",
+    businessSetupRequired:
+      "You must complete your business profile before you can create staff accounts.",
     selectAll: "Select All",
     unselectAll: "Unselect All",
     createdBy: "Created:",
@@ -141,6 +145,7 @@ const translations = {
       "When off, this user cannot log in at all until reactivated. Doesn't affect their data or history.",
     notAuthorizedToCreateUser:
       "You are not authorized to create users. Access Control is not enabled for your account.",
+    setupBusinessForCreate: "Set up your business profile to create users.",
     roleOverridesTitle: "Permission Overrides",
     roleOverridesHint:
       "Checked = currently granted. Click a cell to override the role's default for that action.",
@@ -149,11 +154,13 @@ const translations = {
     deny: "Deny",
     accessControlDisabled:
       "Access Control is not enabled for your account, so you cannot assign a role or manage module/permission access for this user. Contact your administrator to have it enabled.",
-    canManageAccessControl: "Enable Access Control management for this user",
+    canManageAccessControl: "Allow this user to create users and manage permissions",
+    canManageAccessControlLabel: "Allow this business user to create staff and manage permissions",
+    canManageAccessControlLabelAdmin: "Allow this admin to create users and manage permissions",
     canManageAccessControlHint:
-      "When enabled, this business owner can assign roles and permission overrides to their own staff members from this same screen. When disabled, only a superadmin can manage this business's staff permissions.",
+      "Enables this business user to create staff and manage permissions.",
     canManageAccessControlHintAdmin:
-      "When enabled, this admin can assign roles and permission overrides to business and staff users from this same screen. When disabled, only a superadmin can manage those users' permissions.",
+      "Enables this admin to create users and manage permissions.",
   },
   ar: {
     title: "المستخدمون",
@@ -199,6 +206,8 @@ const translations = {
     emailInvalid: "صيغة البريد الإلكتروني غير صحيحة",
     passwordRequired: "كلمة المرور مطلوبة",
     businessRequired: "يرجى اختيار الشركة",
+    businessSetupRequired:
+      "يجب إكمال ملف العمل الخاص بك قبل أن تتمكن من إنشاء حسابات الموظفين.",
     selectAll: "تحديد الكل",
     unselectAll: "إلغاء تحديد الكل",
     businessDetails: "تفاصيل الشركة",
@@ -254,6 +263,7 @@ const translations = {
       "عند الإيقاف، لن يتمكن هذا المستخدم من تسجيل الدخول إطلاقًا حتى يُعاد تفعيله. لا يؤثر هذا على بياناته أو سجله.",
     notAuthorizedToCreateUser:
       "غير مصرح لك بإنشاء مستخدمين. لم يتم تفعيل التحكم بالصلاحيات لحسابك.",
+    setupBusinessForCreate: "قم بإعداد ملف شركتك لإنشاء المستخدمين.",
     roleOverridesTitle: "استثناءات الصلاحيات",
     roleOverridesHint:
       "محدد = ممنوح حاليًا. انقر على الخلية لتجاوز الإعداد الافتراضي للدور لهذا الإجراء.",
@@ -262,11 +272,15 @@ const translations = {
     deny: "رفض",
     accessControlDisabled:
       "التحكم بالصلاحيات غير مفعل لحسابك، لذا لا يمكنك تعيين دور أو إدارة الوحدات/الصلاحيات لهذا المستخدم. تواصل مع المشرف لتفعيله.",
-    canManageAccessControl: "تفعيل إدارة التحكم بالصلاحيات لهذا المستخدم",
+    canManageAccessControl: "السماح لهذا المستخدم بإنشاء المستخدمين وإدارة الصلاحيات",
+    canManageAccessControlLabel:
+      "السماح لمستخدم العمل بإنشاء الموظفين وإدارة الصلاحيات",
+    canManageAccessControlLabelAdmin:
+      "السماح لهذا المشرف بإنشاء المستخدمين وإدارة الصلاحيات",
     canManageAccessControlHint:
-      "عند التفعيل، يمكن لمالك هذا العمل تعيين الأدوار وتجاوزات الصلاحيات لموظفيه من هذه الشاشة نفسها. عند التعطيل، يمكن فقط للمشرف العام إدارة صلاحيات موظفي هذا العمل.",
+      "يتيح لمستخدم العمل إنشاء الموظفين وإدارة الصلاحيات.",
     canManageAccessControlHintAdmin:
-      "عند التفعيل، يمكن لهذا المشرف تعيين الأدوار وتجاوزات الصلاحيات لمستخدمي الأعمال والموظفين من هذه الشاشة نفسها. عند التعطيل، يمكن فقط للمشرف العام إدارة صلاحيات هؤلاء المستخدمين.",
+      "يتيح لهذا المشرف إنشاء المستخدمين وإدارة الصلاحيات.",
   },
 };
 
@@ -287,8 +301,25 @@ export default function UsersPage() {
   const canCreateAnyUser =
     isSuperAdmin ||
     (["business", "admin"].includes(currentUser?.role || "") &&
-      !!currentUser?.canManageAccessControl);
+      !!currentUser?.canManageAccessControl &&
+      // A business actor can only create staff for their own business;
+      // with no business profile yet there is nothing to attach them to.
+      (currentUser?.role !== "business" || !!currentUser?.business?._id));
   const { dir, align, language, t } = useI18nLayout(translations);
+
+  // Concise reason shown on the Create User button's tooltip when creation is
+  // blocked. A business user who hasn't completed business setup is told to
+  // finish setup; if Access Control is also disabled (or it's the sole
+  // blocker), fall back to the existing "not authorized" message.
+  const missingBusiness =
+    isBusinessUser && !currentUser?.business?._id && !currentUser?.businessId;
+  const createBlockTooltip = canCreateAnyUser
+    ? ""
+    : missingBusiness &&
+      !!currentUser?.canManageAccessControl
+      ? t.setupBusinessForCreate
+      : t.notAuthorizedToCreateUser;
+
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
   const [groupedUsers, setGroupedUsers] = useState({});
@@ -341,12 +372,18 @@ export default function UsersPage() {
   const fetchUsers = useCallback(async () => {
     setIsPageLoading(true);
 
+    if (isBusinessUser && !currentUser?.business?._id) {
+      setGroupedUsers({});
+      setIsPageLoading(false);
+      return;
+    }
+
     const rawUsers = isBusinessUser
       ? await getAllStaffUsers(currentUser?.business?._id)
       : await getAllUsers({ scope: "admins" });
 
     if (isBusinessUser) {
-      setGroupedUsers({ [currentUser.business.name]: rawUsers });
+      setGroupedUsers({ [currentUser.business?.name || ""]: Array.isArray(rawUsers) ? rawUsers : [] });
       setIsPageLoading(false);
       return;
     }
@@ -469,6 +506,23 @@ export default function UsersPage() {
     await fetchUsers();
     if (selectedBusiness) await loadBusinessUsers(selectedBusiness);
   }, [fetchUsers, selectedBusiness, loadBusinessUsers]);
+
+  // Re-fetch the user list whenever the modal transitions from open → closed,
+  // catching any saves the modal's own onSaved callback may have missed due
+  // to closure timing or race conditions.
+  const prevModalOpenRef = useRef(modalOpen);
+  useEffect(() => {
+    if (prevModalOpenRef.current && !modalOpen) {
+      refreshUsers();
+    }
+    // Clear any (possibly browser-autofilled) search text when the modal
+    // opens so an edit doesn't silently filter the list to some email the
+    // browser injected.
+    if (!prevModalOpenRef.current && modalOpen) {
+      setSearchQuery("");
+    }
+    prevModalOpenRef.current = modalOpen;
+  }, [modalOpen, refreshUsers]);
 
   const getRoleColor = (role) =>
     ({
@@ -627,6 +681,39 @@ export default function UsersPage() {
                   </Tooltip>
                 </Stack>
               </Box>
+              {(user.role === "business" || user.role === "admin") && (
+                <Tooltip
+                  title={
+                    user.canManageAccessControl
+                      ? language === "ar"
+                        ? "يمكنه إدارة المستخدمين والصلاحيات"
+                        : "Can manage users and permissions"
+                      : language === "ar"
+                        ? "لا يمكنه إدارة المستخدمين أو الصلاحيات"
+                        : "Cannot manage users or permissions"
+                  }
+                >
+                  <Chip
+                    size="small"
+                    label={user.canManageAccessControl ? (language === "ar" ? "ممكّن" : "Enabled") : (language === "ar" ? "معطّل" : "Disabled")}
+                    icon={user.canManageAccessControl ? <ShieldIcon fontSize="small" /> : <RemoveModeratorIcon fontSize="small" />}
+                    color={user.canManageAccessControl ? "success" : "default"}
+                    variant={user.canManageAccessControl ? "filled" : "outlined"}
+                    sx={{
+                      ml: "auto",
+                      alignSelf: "flex-start",
+                      flexShrink: 0,
+                      mt: 0.5,
+                      ...(dir === "rtl" && {
+                        "& .MuiChip-icon": {
+                          marginLeft: "5px",
+                          marginRight: "3px",
+                        },
+                      }),
+                    }}
+                  />
+                </Tooltip>
+              )}
             </Stack>
           </CardContent>
           <RecordMetadata
@@ -845,6 +932,7 @@ export default function UsersPage() {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               fullWidth
+              type="search"
               sx={{
                 flex: { xs: "1 1 100%", sm: "1 1 auto" },
                 width: { xs: "100%", sm: "auto" },
@@ -852,14 +940,21 @@ export default function UsersPage() {
                 minWidth: { sm: 220, md: 280 },
               }}
               slotProps={{
+                htmlInput: {
+                  name: "users-search",
+                  autoComplete: "off",
+                  "data-lpignore": "true",
+                  "data-form-type": "other",
+                },
                 input: {
                   startAdornment: (
                     <InputAdornment position="start">
                       <ICONS.search sx={{ opacity: 0.7 }} />
                     </InputAdornment>
                   ),
+                  autoComplete: "off",
                   sx: { width: "100%", maxWidth: "100%" },
-                }
+                },
               }}
             />
             {!isBusinessUser && (
@@ -939,7 +1034,7 @@ export default function UsersPage() {
                 )}
               />
             )}
-            <Tooltip title={canCreateAnyUser ? "" : t.notAuthorizedToCreateUser}>
+            <Tooltip title={createBlockTooltip}>
               <Box
                 component="span"
                 sx={{
@@ -977,7 +1072,7 @@ export default function UsersPage() {
           const groupContent = (
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, justifyContent: "center" }}>
               {isBusinessUser &&
-                group === currentUser.business.name &&
+                group === currentUser.business?.name &&
                 // /auth/me (authController.js) returns the current user
                 // shaped with `id`, not `_id` — every other user record in
                 // this app (from getAllUsers/getAllStaffUsers) uses
@@ -986,7 +1081,7 @@ export default function UsersPage() {
                 // assumes `_id`, so without this normalization the self-card's
                 // edit save hit PUT /api/users/undefined.
                 renderUserCard({ ...currentUser, _id: currentUser._id || currentUser.id }, true)}
-              {users.map((user) => renderUserCard(user))}
+              {Array.isArray(users) && users.map((user) => renderUserCard(user))}
             </Box>
           );
 

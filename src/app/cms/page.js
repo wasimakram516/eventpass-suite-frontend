@@ -29,6 +29,7 @@ import { getModuleIcon } from "@/utils/iconMapper";
 import ICONS from "@/utils/iconUtil";
 import { resolveModuleColor } from "@/styles/theme";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { hasModuleAccess } from "@/hooks/usePermission";
 import { toArabicDigits } from "@/utils/arabicDigits";
 import { getAllBusinesses } from "@/services/businessService";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
@@ -144,11 +145,25 @@ export default function HomePage() {
         // getModules returns an error object ({ error, message }) on API failure,
         // so guard against a non-array before filtering/mapping.
         const list = Array.isArray(mods) ? mods : [];
+        // A self-registered business user must complete business setup before
+        // any module is usable — phase the tiles out until they do.
+        const needsBusinessSetup =
+          user?.role === "business" &&
+          !user?.business?._id &&
+          !user?.businessId;
+        // Business/admin only see modules they actually hold — resolved from
+        // fresh granular role permissions (falling back to the legacy
+        // modulePermissions array), so a module granted mid-session appears
+        // without re-login and a self-registered owner sees their default
+        // role's modules immediately. Superadmin sees everything.
         const permitted =
-          (user?.role === "admin" || user?.role === "business") &&
-            Array.isArray(user?.modulePermissions)
-            ? list.filter((m) => user.modulePermissions.includes(m.key))
-            : list;
+          user?.role === "superadmin"
+            ? list
+            : user?.role === "admin"
+              ? list.filter((m) => hasModuleAccess(user, m.key))
+              : needsBusinessSetup
+                ? []
+                : list.filter((m) => hasModuleAccess(user, m.key));
         setModules(permitted);
 
         const res = await getDashboardInsights();
