@@ -15,7 +15,7 @@ import {
   Avatar,
   Tooltip,
 } from "@mui/material";
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
@@ -68,6 +68,7 @@ const translations = {
     saveConfirmMessage:
       "This role is currently assigned to {count} user(s). Saving will change their access immediately. Continue?",
     scanQrLabel: "Scan QR",
+    noModulesAssigned: "No modules are assigned to this role yet — assign some in the role's Modules tab first.",
   },
   ar: {
     title: "التحكم بالصلاحيات — الصلاحيات",
@@ -90,6 +91,7 @@ const translations = {
     saveConfirmMessage:
       "هذا الدور مسند حاليًا إلى {count} مستخدم. الحفظ سيغيّر صلاحياتهم فورًا. هل تريد المتابعة؟",
     scanQrLabel: "مسح رمز QR",
+    noModulesAssigned: "لم يتم إسناد أي وحدات لهذا الدور بعد — قم بإسناد بعضها من علامة تبويب الوحدات في الدور أولاً.",
   },
 };
 
@@ -225,6 +227,14 @@ export default function PermissionsMatrixPage() {
   if (loading) return <LoadingState />;
 
   const selectedRole = roles.find((r) => r._id === selectedRoleId);
+  // This page only fine-tunes actions WITHIN modules already assigned to the
+  // role (see the role's own Modules tab, which grants a module's full/
+  // ceiling action set on check) — a module with zero granted actions at
+  // load time isn't "assigned" at all, so it's not offered here, rather than
+  // showing every catalog module with all-unchecked boxes. Based on the
+  // originally loaded grant, not the live in-progress toggles, so a module
+  // doesn't vanish mid-edit just because its last box was unchecked.
+  const assignedPermissions = permissions.filter((perm) => (perm.grantedActions?.length || 0) > 0);
 
   return (
     <Container maxWidth={false} disableGutters sx={{ px: { xs: 2, md: 3 }, py: 3 }} dir={dir}>
@@ -247,12 +257,14 @@ export default function PermissionsMatrixPage() {
           {roles.length === 0 ? (
             <Typography color="text.secondary" sx={{ p: 2 }}>{t.noRoles}</Typography>
           ) : (
-            <List dense>
-              {roles.map((role) => (
+            <List dense disablePadding>
+              {roles.map((role, index) => (
+                <Fragment key={role._id}>
+                  {index > 0 && <Divider component="li" />}
                 <ListItemButton
-                  key={role._id}
                   selected={role._id === selectedRoleId}
                   onClick={() => setSelectedRoleId(role._id)}
+                  sx={{ py: 1.5 }}
                 >
                   <Stack
                     direction="row"
@@ -284,24 +296,10 @@ export default function PermissionsMatrixPage() {
                           <ICONS.badge fontSize="small" sx={{ color: "text.disabled", cursor: "default" }} />
                         )}
                       </Tooltip>
-                      <Tooltip
-                        title={(role.userCount === 1 ? t.usersCount : t.usersCountPlural).replace(
-                          "{count}",
-                          role.userCount ?? 0,
-                        )}
-                      >
-                        <ICONS.people fontSize="small" sx={{ color: "text.secondary", cursor: "default" }} />
-                      </Tooltip>
-                      <Tooltip title={role.isActive ? t.active : t.inactive}>
-                        {role.isActive ? (
-                          <ICONS.checkCircle fontSize="small" sx={{ color: "success.main", cursor: "default" }} />
-                        ) : (
-                          <ICONS.cancel fontSize="small" sx={{ color: "warning.main", cursor: "default" }} />
-                        )}
-                      </Tooltip>
                     </Stack>
                   </Stack>
                 </ListItemButton>
+                </Fragment>
               ))}
             </List>
           )}
@@ -355,8 +353,11 @@ export default function PermissionsMatrixPage() {
               <Divider />
 
               <Box sx={{ p: 2, overflowY: "auto", maxHeight: { md: "calc(100vh - 260px)" } }}>
+                {assignedPermissions.length === 0 ? (
+                  <Typography color="text.secondary">{t.noModulesAssigned}</Typography>
+                ) : (
                 <Stack spacing={2} divider={<Divider />}>
-                  {permissions.map((perm) => {
+                  {assignedPermissions.map((perm) => {
                     const granted = assignments[perm.permissionId] || new Set();
                     const allChecked = perm.allowedActions.every((a) => granted.has(a));
                     const info = moduleData[perm.module] || FALLBACK_MODULE_INFO[perm.module];
@@ -440,6 +441,7 @@ export default function PermissionsMatrixPage() {
                     );
                   })}
                 </Stack>
+                )}
               </Box>
             </>
           )}
