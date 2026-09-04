@@ -147,8 +147,6 @@ const translations = {
       "You are not authorized to create users. Access Control is not enabled for your account.",
     setupBusinessForCreate: "Set up your business profile to create users.",
     roleOverridesTitle: "Permission Overrides",
-    roleOverridesHint:
-      "Checked = currently granted. Click a cell to override the role's default for that action.",
     inherited: "inherited",
     allow: "Allow",
     deny: "Deny",
@@ -265,8 +263,6 @@ const translations = {
       "غير مصرح لك بإنشاء مستخدمين. لم يتم تفعيل التحكم بالصلاحيات لحسابك.",
     setupBusinessForCreate: "قم بإعداد ملف شركتك لإنشاء المستخدمين.",
     roleOverridesTitle: "استثناءات الصلاحيات",
-    roleOverridesHint:
-      "محدد = ممنوح حاليًا. انقر على الخلية لتجاوز الإعداد الافتراضي للدور لهذا الإجراء.",
     inherited: "موروث",
     allow: "سماح",
     deny: "رفض",

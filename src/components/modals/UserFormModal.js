@@ -165,8 +165,11 @@ const PermissionModuleCard = memo(function PermissionModuleCard({
                     : "transparent",
                   borderRadius: 1,
                   pl: isOverridden ? 1 : 0,
+                  pr: 1,
+                  width: "100%",
                   display: "flex",
                   alignItems: "center",
+                  justifyContent: "space-between",
                   gap: 0.5,
                 }}
               >
@@ -466,23 +469,39 @@ function UserFormModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, canManageDynamicRoles, form.userType]);
 
-  // In CREATE mode, pre-check the modules this actor can actually grant once
-  // the module catalog loads. A business owner who holds (say) eventreg +
-  // checkin starts with exactly those checked, so they uncheck what they
-  // don't want instead of ticking everything from scratch. Only fires while
+  // In CREATE mode, pre-check exactly the modules the CHOSEN ROLE already
+  // grants (its own Modules tab — see roleController.getRolePermissions),
+  // capped by whatever this actor can actually grant themselves. The role is
+  // now the source of truth for "what this kind of user gets by default";
+  // the per-user checkboxes here are then an override on top of that
+  // baseline (unchecking one denies it — see syncModulePermissionEnforcement
+  // on the backend), not a from-scratch selection. Waits for both the module
+  // catalog AND the role's own permission rows to load, and only fires while
   // modulePermissions is still at its initial [] value, so it never
-  // overwrites a user's selections. Never in edit mode.
+  // overwrites a selection already made. Never in edit mode — an existing
+  // user's stored modulePermissions is shown as-is there.
   useEffect(() => {
     if (!open || isEditMode || availableModules.length === 0) return;
+    if (!form.roleId || rolePermissionRows.length === 0) return;
+
+    const roleGrantedKeys = new Set(
+      rolePermissionRows
+        .filter((r) => (r.grantedActions || []).length > 0)
+        .map((r) => r.module),
+    );
     const grantable = availableModules
-      .filter((m) => hasModuleAccess(currentUser, m.key))
+      .filter(
+        (m) =>
+          roleGrantedKeys.has(m.key) &&
+          (!moduleCeilingActive || hasModuleAccess(currentUser, m.key)),
+      )
       .map((m) => m.key);
     setForm((prev) => {
       if (prev.modulePermissions.length > 0) return prev;
       return { ...prev, modulePermissions: grantable };
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, isEditMode, availableModules]);
+  }, [open, isEditMode, availableModules, form.roleId, rolePermissionRows, moduleCeilingActive]);
 
   // In EDIT mode, the ceiling (modules the ACTOR may grant) only becomes
   // meaningful once the module catalog finishes loading. The populate effect
@@ -945,6 +964,20 @@ function UserFormModal({
     onClose();
   };
 
+  // Which modules the assigned Role itself grants (has any action for) —
+  // the "inherited" baseline the Modules tab's allow/deny override styling
+  // is drawn against, same "assigned" definition the Role dialog's own
+  // Modules tab and the Permissions page now use.
+  const roleGrantedModuleKeys = useMemo(
+    () =>
+      new Set(
+        rolePermissionRows
+          .filter((perm) => (perm.grantedActions || []).length > 0)
+          .map((perm) => perm.module),
+      ),
+    [rolePermissionRows],
+  );
+
   // Show a Permissions-tab row if the module is currently selected on the
   // Modules tab, OR it has no entry in the older per-role module catalog at
   // all (e.g. "files") — such a module could never be selected there in the
@@ -1354,6 +1387,21 @@ function UserFormModal({
               {t.permissions}
             </Typography>
 
+            {/* A module the assigned Role already grants (see the Role's own
+                Modules tab) is "inherited" here, same concept as the granular
+                Permissions tab below — checking/unchecking a module that
+                disagrees with the role's own grant is an ALLOW/DENY override
+                on this user specifically (see syncModulePermissionEnforcement
+                on the backend, which is what actually makes an unchecked
+                role-granted module stick), not a from-scratch selection. */}
+            {form.roleId && (
+              <Stack direction="row" spacing={1} sx={{ mb: 1.5, flexWrap: "wrap" }}>
+                <Chip size="small" variant="outlined" label={t.legendInherited} />
+                <Chip size="small" color="success" label={t.legendAllow} />
+                <Chip size="small" color="error" label={t.legendDeny} />
+              </Stack>
+            )}
+
             <FormControlLabel
               control={
                 <Checkbox
@@ -1386,30 +1434,69 @@ function UserFormModal({
                 // see the full catalog and understand why a module can't be
                 // granted, rather than it silently not being there.
                 const ceilingOk = !moduleCeilingActive || ceilingFilteredModules.some((m) => m.key === mod.key);
+                const isInherited = roleGrantedModuleKeys.has(mod.key);
+                const isChecked = form.modulePermissions.includes(mod.key);
+                const isOverridden = !!form.roleId && isChecked !== isInherited;
+                const overrideEffect = isOverridden ? (isChecked ? "allow" : "deny") : undefined;
                 return (
                   <Tooltip
                     key={mod.key}
                     title={!ceilingOk ? "Your business does not have this permission" : ""}
                   >
-                    <FormControlLabel
-                      disabled={!ceilingOk}
-                      control={
-                        <Checkbox
-                          checked={form.modulePermissions.includes(mod.key)}
-                          onChange={() => {
-                            if (!ceilingOk) return;
-                            const exists = form.modulePermissions.includes(mod.key);
-                            setForm((prev) => ({
-                              ...prev,
-                              modulePermissions: exists
-                                ? prev.modulePermissions.filter((k) => k !== mod.key)
-                                : [...prev.modulePermissions, mod.key],
-                            }));
-                          }}
+                    <Box
+                      sx={{
+                        borderInlineStart: "3px solid",
+                        borderColor: isOverridden
+                          ? overrideEffect === "allow"
+                            ? "success.main"
+                            : "error.main"
+                          : "transparent",
+                        bgcolor: isOverridden
+                          ? overrideEffect === "allow"
+                            ? theme.palette.users.permAllowBg
+                            : theme.palette.users.permDenyBg
+                          : "transparent",
+                        borderRadius: 1,
+                        pl: isOverridden ? 1 : 0,
+                        pr: 1,
+                        width: "100%",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        gap: 0.5,
+                      }}
+                    >
+                      <FormControlLabel
+                        disabled={!ceilingOk}
+                        sx={{ mr: 0, minWidth: 0 }}
+                        control={
+                          <Checkbox
+                            checked={isChecked}
+                            onChange={() => {
+                              if (!ceilingOk) return;
+                              setForm((prev) => ({
+                                ...prev,
+                                modulePermissions: isChecked
+                                  ? prev.modulePermissions.filter((k) => k !== mod.key)
+                                  : [...prev.modulePermissions, mod.key],
+                              }));
+                            }}
+                          />
+                        }
+                        label={
+                          <Typography variant="body2" sx={{ opacity: overrideEffect === "deny" ? 0.6 : 1 }}>
+                            {mod.labels?.[language] || mod.key}
+                          </Typography>
+                        }
+                      />
+                      {isOverridden && (
+                        <Chip
+                          size="small"
+                          label={overrideEffect === "allow" ? t.allow : t.deny}
+                          color={overrideEffect === "allow" ? "success" : "error"}
                         />
-                      }
-                      label={mod.labels?.[language] || mod.key}
-                    />
+                      )}
+                    </Box>
                   </Tooltip>
                 );
               })}
@@ -1475,38 +1562,87 @@ function UserFormModal({
 
         {currentTabKey === "permissions" && (
           <Box sx={{ mt: 2 }}>
+            {form.roleId && (
+              <Stack direction="row" spacing={1} sx={{ mb: 2, flexWrap: "wrap" }}>
+                <Chip size="small" variant="outlined" label={t.legendInherited} />
+                <Chip size="small" color="success" label={t.legendAllow} />
+                <Chip size="small" color="error" label={t.legendDeny} />
+              </Stack>
+            )}
             {isSuperAdmin && ["business", "admin"].includes(form.userType) && (
               <>
-                <Box sx={{ pb: 2 }}>
-                  <FormControlLabel
-                    sx={{ display: "flex", m: 0 }}
-                    control={
-                      <Switch
-                        checked={form.canManageAccessControl}
-                        onChange={(e) =>
-                          setForm((prev) => ({
-                            ...prev,
-                            canManageAccessControl: e.target.checked,
-                          }))
-                        }
-                      />
-                    }
-                    label={t.canManageAccessControl}
-                  />
-                  <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5 }}>
-                    {form.userType === "admin"
-                      ? t.canManageAccessControlHintAdmin
-                      : t.canManageAccessControlHint}
-                  </Typography>
-                </Box>
+                {(() => {
+                  // The assigned Role now carries its own canManageAccessControl
+                  // default (see the Roles page's Modules tab) — a self-
+                  // registered business owner gets it seeded once at sign-up
+                  // (see authController.registerUser), and this per-user
+                  // switch can otherwise disagree with it at any time. Purely
+                  // an informational comparison, same visual language as the
+                  // module/action overrides below — there's no persisted
+                  // "override row" for this one field, just the two values.
+                  const selectedRole = roles.find((r) => r._id === form.roleId);
+                  const roleAcDefault = selectedRole ? !!selectedRole.canManageAccessControl : null;
+                  const isOverridden = !!form.roleId && roleAcDefault !== null && form.canManageAccessControl !== roleAcDefault;
+                  const overrideEffect = isOverridden ? (form.canManageAccessControl ? "allow" : "deny") : undefined;
+                  return (
+                    <>
+                      <Box
+                        sx={{
+                          pb: 2,
+                          borderInlineStart: "3px solid",
+                          borderColor: isOverridden
+                            ? overrideEffect === "allow"
+                              ? "success.main"
+                              : "error.main"
+                            : "transparent",
+                          bgcolor: isOverridden
+                            ? overrideEffect === "allow"
+                              ? theme.palette.users.permAllowBg
+                              : theme.palette.users.permDenyBg
+                            : "transparent",
+                          borderRadius: 1,
+                          pl: isOverridden ? 1 : 0,
+                          pr: 1,
+                        }}
+                      >
+                        <Stack direction="row" spacing={1} sx={{ alignItems: "center", justifyContent: "space-between" }}>
+                          <FormControlLabel
+                            sx={{ display: "flex", m: 0 }}
+                            control={
+                              <Switch
+                                checked={form.canManageAccessControl}
+                                onChange={(e) =>
+                                  setForm((prev) => ({
+                                    ...prev,
+                                    canManageAccessControl: e.target.checked,
+                                  }))
+                                }
+                              />
+                            }
+                            label={t.canManageAccessControl}
+                          />
+                          {isOverridden && (
+                            <Chip
+                              size="small"
+                              label={overrideEffect === "allow" ? t.allow : t.deny}
+                              color={overrideEffect === "allow" ? "success" : "error"}
+                            />
+                          )}
+                        </Stack>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 0.5 }}>
+                          {form.userType === "admin"
+                            ? t.canManageAccessControlHintAdmin
+                            : t.canManageAccessControlHint}
+                        </Typography>
+                      </Box>
+                    </>
+                  );
+                })()}
                 <Divider sx={{ mb: 3 }} />
               </>
             )}
             <Typography variant="subtitle1" gutterBottom sx={{ textAlign: align }}>
               {t.roleOverridesTitle}
-            </Typography>
-            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1 }}>
-              {t.roleOverridesHint}
             </Typography>
 
             {!form.roleId ? (
@@ -1515,12 +1651,6 @@ function UserFormModal({
               </Typography>
             ) : (
               <>
-                <Stack direction="row" spacing={1} sx={{ mb: 2, flexWrap: "wrap" }}>
-                  <Chip size="small" variant="outlined" label={t.legendInherited} />
-                  <Chip size="small" color="success" label={t.legendAllow} />
-                  <Chip size="small" color="error" label={t.legendDeny} />
-                </Stack>
-
                 {rolePermissionRows.length > 0 && filteredPermissionRows.length === 0 && (
                   <Typography variant="body2" color="text.secondary">
                     {t.selectModulesFirstHint}
