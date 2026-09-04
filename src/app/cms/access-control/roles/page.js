@@ -110,6 +110,8 @@ const translations = {
     selectAllModules: "Select all",
     unselectAllModules: "Unselect all",
     selectUserTypeFirstForModules: "Pick a User Type on the Details tab first to see its module list.",
+    next: "Next",
+    back: "Back",
   },
   ar: {
     title: "التحكم بالصلاحيات — الأدوار",
@@ -158,6 +160,8 @@ const translations = {
     selectAllModules: "تحديد الكل",
     unselectAllModules: "إلغاء تحديد الكل",
     selectUserTypeFirstForModules: "اختر نوع المستخدم من علامة تبويب التفاصيل أولاً لرؤية قائمة الوحدات.",
+    next: "التالي",
+    back: "رجوع",
   },
 };
 
@@ -318,7 +322,10 @@ export default function RolesPage() {
     return setRolePermissions(roleId, payload);
   };
 
-  const handleSubmit = async () => {
+  // Details tab's own validation, run before advancing to Modules — same
+  // fields handleSubmit used to check inline before Save existed only on
+  // the last tab (matching UserFormModal's per-tab Next validation).
+  const validateDetailsTab = () => {
     let hasError = false;
     if (!form.name.trim()) {
       setNameError(t.nameRequired);
@@ -331,7 +338,18 @@ export default function RolesPage() {
       setUserTypeError(t.userTypeRequired);
       hasError = true;
     }
-    if (hasError) return;
+    return !hasError;
+  };
+
+  const handleNext = () => {
+    if (validateDetailsTab()) setActiveTab(1);
+  };
+
+  const handleSubmit = async () => {
+    if (!validateDetailsTab()) {
+      setActiveTab(0);
+      return;
+    }
 
     if (editingRole) {
       // A role is a single shared bundle assignable across every business
@@ -692,7 +710,35 @@ export default function RolesPage() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDialogOpen(false)}>{t.cancel}</Button>
-          <Button variant="contained" onClick={handleSubmit}>{t.save}</Button>
+          {activeTab === 0 ? (
+            <Button
+              variant="contained"
+              onClick={handleNext}
+              startIcon={dir === "rtl" ? <ICONS.back /> : <ICONS.next />}
+              sx={getStartIconSpacing(dir)}
+            >
+              {t.next}
+            </Button>
+          ) : (
+            <>
+              <Button
+                variant="outlined"
+                onClick={() => setActiveTab(0)}
+                startIcon={dir === "rtl" ? <ICONS.next /> : <ICONS.back />}
+                sx={getStartIconSpacing(dir)}
+              >
+                {t.back}
+              </Button>
+              <Button
+                variant="contained"
+                onClick={handleSubmit}
+                startIcon={<ICONS.save />}
+                sx={getStartIconSpacing(dir)}
+              >
+                {t.save}
+              </Button>
+            </>
+          )}
         </DialogActions>
       </Dialog>
 
