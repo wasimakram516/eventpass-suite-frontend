@@ -48,6 +48,7 @@ import {
   getInitialRegistrations,
   exportRegistrations,
   createRegistration,
+  createExternalRegistration,
   createWalkIn,
   trackBadgePrint,
   getRegistrationInvoice,
@@ -66,6 +67,7 @@ import BulkEmailModal from "@/components/modals/BulkEmailModal";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import RecordMetadata from "@/components/RecordMetadata";
 import RegistrationFieldList from "@/components/cards/RegistrationFieldList";
+import RegistrationFieldRow from "@/components/cards/RegistrationFieldRow";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import { wrapTextBox } from "@/utils/wrapTextStyles";
@@ -148,6 +150,7 @@ const translations = {
     paymentLinkCopied: "Payment link copied!",
     paymentPaid: "Payment Paid",
     paymentPending: "Payment Pending",
+    paymentExternal: "External Payment",
     paymentCancelled: "Payment Cancelled",
     paymentFailed: "Payment Failed",
     approve: "Approve",
@@ -262,6 +265,7 @@ const translations = {
     paymentLinkCopied: "تم نسخ رابط الدفع!",
     paymentPaid: "تم الدفع",
     paymentPending: "بانتظار الدفع",
+    paymentExternal: "دفع خارجي",
     paymentCancelled: "تم الإلغاء",
     paymentFailed: "فشل الدفع",
     approve: "موافقة",
@@ -329,6 +333,7 @@ export default function ViewRegistrations() {
   const canPrint = useHasPermission("eventreg", "print");
   const canExport = useHasPermission("eventreg", "export");
   const canBulkImport = useHasPermission("eventreg", "bulk_import");
+  const canRecordExternalPayment = useHasPermission("eventreg", "record_external_payment");
   const canSendEmail = useHasPermission("eventreg", "send_email");
   const canSendWhatsapp = useHasPermission("eventreg", "send_whatsapp");
   const canApprove = useHasPermission("eventreg", "approve");
@@ -737,6 +742,13 @@ export default function ViewRegistrations() {
       return;
     }
 
+    setCreateModalOpen(false);
+    fetchData();
+  };
+
+  const handleCreateExternalRegistration = async (fields) => {
+    const res = await createExternalRegistration(eventSlug, fields);
+    if (res?.error) return;
     setCreateModalOpen(false);
     fetchData();
   };
@@ -2000,6 +2012,7 @@ export default function ViewRegistrations() {
               } else if (key === "paymentStatus") {
                 const paymentLabels = {
                   paid: t.paymentPaid,
+                  external: t.paymentExternal,
                   pending: t.paymentPending,
                   cancelled: t.paymentCancelled,
                   failed: t.paymentFailed,
@@ -2217,10 +2230,11 @@ export default function ViewRegistrations() {
                     )}
 
                     {/* Payment Status - Show for paid events */}
-                    {eventDetails?.isPaid && (() => {
+                    {(eventDetails?.isPaid || reg.paymentStatus === "external") && (() => {
                       const ps = reg.paymentStatus || "pending";
                       const paymentStatusMap = {
                         paid: { label: t.paymentPaid, color: "success.main", icon: <ICONS.payment fontSize="small" sx={{ color: "success.main" }} />, statusIcon: <ICONS.checkCircle fontSize="small" sx={{ color: "success.main" }} /> },
+                        external: { label: t.paymentExternal, color: "info.main", icon: <ICONS.payment fontSize="small" sx={{ color: "info.main" }} />, statusIcon: <ICONS.checkCircle fontSize="small" sx={{ color: "info.main" }} /> },
                         pending: { label: t.paymentPending, color: "warning.main", icon: <ICONS.payment fontSize="small" sx={{ color: "warning.main" }} />, statusIcon: <ICONS.time fontSize="small" sx={{ color: "warning.main" }} /> },
                         cancelled: { label: t.paymentCancelled, color: "text.secondary", icon: <ICONS.payment fontSize="small" sx={{ color: "text.secondary" }} />, statusIcon: <ICONS.cancel fontSize="small" sx={{ color: "text.secondary" }} /> },
                         failed: { label: t.paymentFailed, color: "error.main", icon: <ICONS.payment fontSize="small" sx={{ color: "error.main" }} />, statusIcon: <ICONS.errorOutline fontSize="small" sx={{ color: "error.main" }} /> },
@@ -2404,6 +2418,39 @@ export default function ViewRegistrations() {
                       };
                       })}
                     />
+                    {reg.paymentStatus === "external" && reg.externalPaymentReference && (
+                      <RegistrationFieldRow
+                        dir={dir}
+                        label="External reference"
+                        value={reg.externalPaymentReference}
+                      />
+                    )}
+                    {reg.paymentStatus === "external" && reg.externalPaymentDocumentUrl && (
+                      <RegistrationFieldRow
+                        dir={dir}
+                        label="Payment document"
+                        value={(
+                          <Button
+                            component="a"
+                            href={reg.externalPaymentDocumentUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            size="small"
+                            variant="text"
+                            startIcon={<ICONS.files sx={{ fontSize: 18 }} />}
+                            sx={{
+                              minWidth: 0,
+                              p: 0,
+                              textTransform: "none",
+                              fontWeight: 600,
+                              ...getStartIconSpacing(dir),
+                            }}
+                          >
+                            {t.viewUploadedFile}
+                          </Button>
+                        )}
+                      />
+                    )}
                   </CardContent>
 
                   <RecordMetadata
@@ -2569,6 +2616,7 @@ export default function ViewRegistrations() {
         registration={editingReg}
         formFields={eventDetails?.formFields || []}
         onSave={handleSaveEdit}
+        canRecordExternalPayment={canRecordExternalPayment}
         mode="edit"
         event={eventDetails}
       />
@@ -2582,6 +2630,8 @@ export default function ViewRegistrations() {
           setCreateModalOpen(false);
           fetchData();
         }}
+        onExternalPaymentInitiated={handleCreateExternalRegistration}
+        canRecordExternalPayment={canRecordExternalPayment}
         mode="create"
         event={eventDetails}
       />
@@ -2883,6 +2933,7 @@ export default function ViewRegistrations() {
                     </MenuItem>
                     <MenuItem value="paid">{t.paymentPaid}</MenuItem>
                     <MenuItem value="pending">{t.paymentPending}</MenuItem>
+                    <MenuItem value="external">{t.paymentExternal}</MenuItem>
                     <MenuItem value="cancelled">{t.paymentCancelled}</MenuItem>
                     <MenuItem value="failed">{t.paymentFailed}</MenuItem>
                   </Select>

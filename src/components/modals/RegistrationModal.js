@@ -21,6 +21,7 @@ import {
     CircularProgress,
     IconButton,
     Alert,
+    Checkbox,
 
     ListSubheader,
     InputAdornment,
@@ -35,7 +36,9 @@ import { DEFAULT_COUNTRY_CODE, DEFAULT_ISO_CODE, COUNTRY_CODES, getCountryCodeBy
 import { normalizePhone } from "@/utils/phoneUtils";
 import { validatePhoneNumber } from "@/utils/phoneValidation";
 import { uploadSingleFile } from "@/utils/mediaUpload";
+import MediaUploadProgress from "@/components/MediaUploadProgress";
 import { initiatePayment } from "@/services/eventreg/paymentService";
+import { checkExternalRegistrationDuplicate } from "@/services/eventreg/registrationService";
 import { validatePromoCode } from "@/services/eventreg/promoCodeService";
 import { computePaymentBreakdown, formatOmr } from "@/utils/paymentBreakdown";
 import useI18nLayout from "@/hooks/useI18nLayout";
@@ -129,6 +132,8 @@ export default function RegistrationModal({
     formFields,
     onSave,
     onPaymentInitiated,
+    onExternalPaymentInitiated,
+    canRecordExternalPayment = false,
     mode = "edit",
     title,
     event,
@@ -150,6 +155,10 @@ export default function RegistrationModal({
     const [paymentPayload, setPaymentPayload] = useState(null);
     const [payProcessing, setPayProcessing] = useState(false);
     const [paymentError, setPaymentError] = useState("");
+    const [isExternalPayment, setIsExternalPayment] = useState(false);
+    const [externalPaymentReference, setExternalPaymentReference] = useState("");
+    const [externalPaymentDocumentUrl, setExternalPaymentDocumentUrl] = useState("");
+    const [externalPaymentUpload, setExternalPaymentUpload] = useState(null);
     // Set when initiatePayment reports an existing registration (paid or
     // still-pending) for the same email/phone, instead of creating a new one.
     const [duplicateNotice, setDuplicateNotice] = useState(null);
@@ -349,6 +358,20 @@ export default function RegistrationModal({
         setPromoCodeInput("");
         setAppliedPromoCode(null);
         setPromoCodeError("");
+        setIsExternalPayment(
+            mode === "edit" && registration?.paymentStatus === "external",
+        );
+        setExternalPaymentReference(
+            mode === "edit" && registration?.paymentStatus === "external"
+                ? registration.externalPaymentReference || ""
+                : "",
+        );
+        setExternalPaymentDocumentUrl(
+            mode === "edit" && registration?.paymentStatus === "external"
+                ? registration.externalPaymentDocumentUrl || ""
+                : "",
+        );
+        setExternalPaymentUpload(null);
     }, [registration, fieldsToRender, hasCustomFields, mode, open, registration?.isoCode]);
 
     // Init dependent field values when ticket changes. In edit mode, seed them from
@@ -541,6 +564,25 @@ export default function RegistrationModal({
             normalizedValues[f.inputName] = url;
         }
 
+        if (isExternalPayment && fileData.externalPaymentDocument?.file) {
+            if (!event?.businessSlug) {
+                throw new Error("Business slug not available for file upload.");
+            }
+            setExternalPaymentUpload({ percent: 0, loaded: 0, total: fileData.externalPaymentDocument.file.size });
+            try {
+                normalizedValues.externalPaymentDocumentUrl = await uploadSingleFile({
+                    file: fileData.externalPaymentDocument.file,
+                    businessSlug: event.businessSlug,
+                    moduleName: "eventreg",
+                    onProgress: (percent, loaded, total) => {
+                        setExternalPaymentUpload({ percent, loaded, total });
+                    },
+                });
+            } finally {
+                setExternalPaymentUpload(null);
+            }
+        }
+
         // Phone normalization
         let phoneIsoCode = null;
         allFields.forEach((f) => {
@@ -580,9 +622,39 @@ export default function RegistrationModal({
 
         setLoading(true);
         try {
+            // The payment document lives in storage before the registration API is
+            // called. Check the email first so duplicate attempts cannot leave an
+            // orphaned payment-document upload.
+            if (isPaidEvent && mode === "create" && isExternalPayment) {
+                const fields = [...visibleFields, ...ticketDependentFields];
+                const emailField = fields.find((field) =>
+                    field.inputType === "email" || /e-?mail/i.test(field.inputName || ""),
+                );
+                const duplicateCheck = await checkExternalRegistrationDuplicate(event?.slug, {
+                    email: values.email || values.Email || (emailField ? values[emailField.inputName] : ""),
+                });
+                if (duplicateCheck?.error) {
+                    setFieldErrors({ _global: duplicateCheck.message || "Already registered with this email." });
+                    return;
+                }
+            }
+
             const { normalizedValues, phoneIsoCode } = await buildNormalizedPayload();
             const remappedValues = { ...normalizedValues };
             // ── Paid event: show payment summary dialog instead of saving directly ──
+            if (isPaidEvent && mode === "create" && isExternalPayment) {
+                const classicFallbacks = { "Full Name": "fullName", "Email": "email", "Phone": "phone", "Company": "company" };
+                Object.entries(classicFallbacks).forEach(([label, camelKey]) => {
+                    if (!remappedValues[camelKey] && values[label]) remappedValues[camelKey] = values[label];
+                });
+                await onExternalPaymentInitiated?.({
+                    ...remappedValues,
+                    ticketTypeId: selectedTicketTypeId,
+                    externalPaymentReference: externalPaymentReference.trim() || undefined,
+                });
+                return;
+            }
+
             if (isPaidEvent && mode === "create") {
 
                 const classicFallbacks = {
@@ -628,6 +700,17 @@ export default function RegistrationModal({
             // reject if already paid) — the frontend doesn't replicate that logic.
             if (mode === "edit" && isPaidEvent && selectedTicketTypeId) {
                 normalizedValues.ticketTypeId = selectedTicketTypeId;
+            }
+            if (mode === "edit" && (isExternalPayment || registration?.paymentStatus === "external")) {
+                // The server only permits this transition for a non-gateway-paid
+                // registration and checks the dedicated permission again.
+                normalizedValues.markAsExternalPayment = isExternalPayment;
+                normalizedValues.externalPaymentReference = isExternalPayment
+                    ? externalPaymentReference.trim() || null
+                    : null;
+                normalizedValues.externalPaymentDocumentUrl = isExternalPayment
+                    ? normalizedValues.externalPaymentDocumentUrl || externalPaymentDocumentUrl || null
+                    : null;
             }
             await onSave(normalizedValues);
         } catch (err) {
@@ -828,7 +911,7 @@ export default function RegistrationModal({
     // ── Labels ────────────────────────────────────────────────────────────────
     const displayTitle = title || (mode === "create" ? t.createTitle : t.editTitle);
     const saveButtonText = mode === "create"
-        ? (isPaidEvent ? t.proceedToPayment : t.create)
+        ? (isPaidEvent ? (isExternalPayment ? "Create External Registration" : t.proceedToPayment) : t.create)
         : t.saveChanges;
 
     return (
@@ -850,7 +933,7 @@ export default function RegistrationModal({
                                 <Select
                                     value={selectedTicketTypeId}
                                     label={mode === "create" ? `${t.selectTicket} *` : t.ticket}
-                                    disabled={mode === "edit" && registration?.paymentStatus === "paid"}
+                                    disabled={mode === "edit" && (registration?.paymentStatus === "paid" || isExternalPayment)}
                                     onChange={(e) => handleTicketChange(e.target.value)}
                                     onClose={() => setTicketSearch("")}
                                     sx={{ "& .MuiSelect-select": { display: "flex", justifyContent: "flex-start" } }}
@@ -954,6 +1037,84 @@ export default function RegistrationModal({
                         {visibleFields.map((f) => renderField(f))}
                     </Stack>
                 </DialogContent>
+                {isPaidEvent && mode === "create" && canRecordExternalPayment && (
+                    <Box sx={{ px: 3, pt: 1.5 }}>
+                        <FormControlLabel
+                            control={<Checkbox checked={isExternalPayment}
+                                onChange={(e) => {
+                                    setIsExternalPayment(e.target.checked);
+                                    if (!e.target.checked) setExternalPaymentReference("");
+                                }} />}
+                            label="Record an external payment"
+                        />
+                        {isExternalPayment && (
+                            <>
+                                <TextField label="External payment reference (optional)" value={externalPaymentReference}
+                                    onChange={(e) => setExternalPaymentReference(e.target.value)} inputProps={{ maxLength: 500 }}
+                                    fullWidth size="small"
+                                    helperText="For example, a transaction number or manager approval note." />
+                                <Box sx={{ mt: 2 }}>
+                                    <ModalFileUploadField
+                                        field={{ inputName: "external-payment-document" }}
+                                        fd={fileData.externalPaymentDocument}
+                                        fieldLabel="Payment document (optional)"
+                                        currentValue={externalPaymentDocumentUrl}
+                                        viewLabel="Open current file"
+                                        chooseLabel="Upload invoice, receipt, or other proof"
+                                        replaceLabel="Replace file"
+                                        onFileSelect={(file) => handleFileSelect("externalPaymentDocument", file)}
+                                        onFileRemove={() => handleFileRemove("externalPaymentDocument")}
+                                    />
+                                </Box>
+                            </>
+                        )}
+                    </Box>
+                )}
+                {isPaidEvent && mode === "edit" && canRecordExternalPayment && registration?.paymentStatus !== "paid" && (
+                    <Box sx={{ px: 3, pt: 1.5 }}>
+                        <FormControlLabel
+                            control={<Checkbox checked={isExternalPayment}
+                                onChange={(e) => {
+                                    setIsExternalPayment(e.target.checked);
+                                    if (e.target.checked) {
+                                        // A pending gateway checkout may not change tickets while
+                                        // being converted; its original ticket is the one whose
+                                        // capacity is confirmed as paid externally.
+                                        setSelectedTicketTypeId(String(
+                                            registration?.ticketTypeId ||
+                                            ticketTypes.find((tt) => tt.name === registration?.ticketTypeName)?._id ||
+                                            ""
+                                        ));
+                                    }
+                                    if (!e.target.checked) setExternalPaymentReference("");
+                                }} />}
+                            label={registration?.paymentStatus === "external"
+                                ? "Recorded as an external payment"
+                                : "Record as an external payment"}
+                        />
+                        {isExternalPayment && (
+                            <>
+                                <TextField label="External payment reference (optional)" value={externalPaymentReference}
+                                    onChange={(e) => setExternalPaymentReference(e.target.value)} inputProps={{ maxLength: 500 }}
+                                    fullWidth size="small"
+                                    helperText="For example, a transaction number or manager approval note." />
+                                <Box sx={{ mt: 2 }}>
+                                    <ModalFileUploadField
+                                        field={{ inputName: "external-payment-document" }}
+                                        fd={fileData.externalPaymentDocument}
+                                        fieldLabel="Payment document (optional)"
+                                        currentValue={externalPaymentDocumentUrl}
+                                        viewLabel="Open current file"
+                                        chooseLabel="Upload invoice, receipt, or other proof"
+                                        replaceLabel="Replace file"
+                                        onFileSelect={(file) => handleFileSelect("externalPaymentDocument", file)}
+                                        onFileRemove={() => handleFileRemove("externalPaymentDocument")}
+                                    />
+                                </Box>
+                            </>
+                        )}
+                    </Box>
+                )}
                 <DialogActions>
                     <Button variant="outlined" onClick={onClose} disabled={loading}
                         startIcon={<ICONS.cancel />} sx={getStartIconSpacing("ltr")}>
@@ -966,6 +1127,16 @@ export default function RegistrationModal({
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            <MediaUploadProgress
+                open={Boolean(externalPaymentUpload)}
+                uploads={externalPaymentUpload ? [{
+                    ...externalPaymentUpload,
+                    label: fileData.externalPaymentDocument?.file?.name || "Payment document",
+                    error: null,
+                }] : []}
+                onClose={() => {}}
+            />
 
             {/* ── Payment summary dialog (mirrors public registration page) ── */}
             <Dialog

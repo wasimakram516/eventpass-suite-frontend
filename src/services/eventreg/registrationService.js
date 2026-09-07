@@ -7,6 +7,23 @@ export const createRegistration = withApiHandler(async (payload) => {
   return data;
 }, { showSuccess: true });
 
+// CMS-only: records a ticket paid outside EventPass. The backend enforces the
+// dedicated permission and reserves ticket capacity atomically.
+export const createExternalRegistration = withApiHandler(async (slug, payload) => {
+  const { data } = await api.post(`/eventreg/registrations/event/${slug}/external`, payload);
+  return data;
+}, { showSuccess: true });
+
+// Checks an external-registration identity before uploading an optional payment
+// document. Creation repeats this validation server-side to prevent races.
+export const checkExternalRegistrationDuplicate = withApiHandler(async (slug, payload) => {
+  const { data } = await api.post(
+    `/eventreg/registrations/event/${slug}/external/duplicate-check`,
+    payload,
+  );
+  return data;
+});
+
 // Get count of unsent registration emails for an event (CMS admin use)
 export const getUnsentCount = withApiHandler(async (eventSlug) => {
   const { data } = await api.get(
