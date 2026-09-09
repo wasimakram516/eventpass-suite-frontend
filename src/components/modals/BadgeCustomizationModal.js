@@ -142,7 +142,9 @@ const BadgeRichTextEditor = ({
         if (fontSizeMatch) {
             const sizeStr = fontSizeMatch[1].trim();
             const sizeNum = parseFloat(sizeStr);
-            if (sizeNum && sizeNum >= 8 && sizeNum <= 50) {
+            // Keep any valid configured size — badge layouts can legitimately
+            // need text larger than the editor's former 50px cap.
+            if (Number.isFinite(sizeNum) && sizeNum >= 8) {
                 extractedFontSize = Math.round(sizeNum);
             }
         }
@@ -1234,4 +1236,3 @@ export default function BadgeCustomizationModal({
         </Dialog>
     );
 }
-
