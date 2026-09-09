@@ -39,6 +39,10 @@ export default function PaymentCancelPage() {
       : "You can try again anytime — your spot may still be available",
     tryAgain: isArabic ? "المحاولة مرة أخرى" : "Try Again",
     backToEvent: isArabic ? "العودة إلى الفعالية" : "Back to Event",
+    unableTitle: isArabic ? "تعذر إلغاء الدفع" : "Payment Could Not Be Cancelled",
+    unableMessage: isArabic
+      ? "تمت معالجة هذا التسجيل بالفعل أو لم يعد بالإمكان إلغاؤه."
+      : "This registration has already been processed or can no longer be cancelled.",
   };
 
   const [status, setStatus] = useState("loading");
@@ -50,8 +54,8 @@ export default function PaymentCancelPage() {
     }
 
     const cancel = async () => {
-      await cancelPayment(registrationId);
-      setStatus("cancelled");
+      const result = await cancelPayment(registrationId);
+      setStatus(result?.error ? "failed" : "cancelled");
     };
 
     cancel();
@@ -112,7 +116,7 @@ export default function PaymentCancelPage() {
           )}
 
           {/* ── Cancelled ── */}
-          {status === "cancelled" && (
+          {["cancelled", "failed"].includes(status) && (
             <Paper
               elevation={6}
               sx={{
@@ -148,10 +152,10 @@ export default function PaymentCancelPage() {
                   <ICONS.cancel sx={{ fontSize: 50, color: "common.white" }} />
                 </Box>
                 <Typography variant="h5" fontWeight={800} sx={{ mb: 1, letterSpacing: -0.5 }}>
-                  {t.cancelledTitle}
+                  {status === "failed" ? t.unableTitle : t.cancelledTitle}
                 </Typography>
                 <Typography variant="body2" sx={{ opacity: 0.88, lineHeight: 1.6, maxWidth: 300, mx: "auto" }}>
-                  {t.cancelledMessage}
+                  {status === "failed" ? t.unableMessage : t.cancelledMessage}
                 </Typography>
               </Box>
 
@@ -196,7 +200,7 @@ export default function PaymentCancelPage() {
               {/* Body */}
               <Box sx={{ px: 4, pt: 4, pb: 4 }}>
                 {/* Safe note */}
-                <Box
+                {status === "cancelled" && <Box
                   sx={{
                     display: "flex",
                     alignItems: "flex-start",
@@ -212,9 +216,9 @@ export default function PaymentCancelPage() {
                   <Typography variant="caption" color="text.primary" sx={{ lineHeight: 1.6 }}>
                     {t.safeNote}
                   </Typography>
-                </Box>
+                </Box>}
 
-                <Button
+                {status === "cancelled" && <Button
                   variant="contained"
                   href={`/eventreg/${lang}/event/${eventSlug}/register`}
                   fullWidth
@@ -232,7 +236,7 @@ export default function PaymentCancelPage() {
                   }}
                 >
                   {t.tryAgain}
-                </Button>
+                </Button>}
 
                 <Button
                   variant="outlined"

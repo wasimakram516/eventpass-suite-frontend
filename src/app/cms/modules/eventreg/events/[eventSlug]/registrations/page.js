@@ -151,6 +151,8 @@ const translations = {
     paymentPaid: "Payment Paid",
     paymentPending: "Payment Pending",
     paymentExternal: "External Payment",
+    externalReference: "Payment Reference",
+    paymentDocument: "Payment document",
     paymentCancelled: "Payment Cancelled",
     paymentFailed: "Payment Failed",
     approve: "Approve",
@@ -266,6 +268,8 @@ const translations = {
     paymentPaid: "تم الدفع",
     paymentPending: "بانتظار الدفع",
     paymentExternal: "دفع خارجي",
+    externalReference: "مرجع الدفع",
+    paymentDocument: "مستند الدفع",
     paymentCancelled: "تم الإلغاء",
     paymentFailed: "فشل الدفع",
     approve: "موافقة",
@@ -387,6 +391,7 @@ export default function ViewRegistrations() {
   const [selectedRegistration, setSelectedRegistration] = useState(null);
   const [exportLoading, setExportLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadSummary, setUploadSummary] = useState(null);
   const [exportingBadges, setExportingBadges] = useState(false);
 
   const [rawSearch, setRawSearch] = useState("");
@@ -579,16 +584,31 @@ export default function ViewRegistrations() {
 
   // ---- Upload Progress Handler ----
   const handleUploadProgress = useCallback((data) => {
-    const { uploaded, total } = data;
+    const { uploaded, total, summary } = data;
 
     // When upload completes
     if (uploaded === total && total > 0) {
       setUploading(false);
 
+      if (summary) {
+        if (summary.skippedRows?.length) {
+          const skippedDetails = summary.skippedRows
+            .map(({ row, reason }) => `Row ${row}: ${reason}`)
+            .join(" • ");
+          const message = `Upload completed: ${summary.imported} imported, ${summary.skipped} skipped. ${skippedDetails}`;
+          setUploadSummary({ message, severity: "warning" });
+          showMessage(message, "warning");
+        } else {
+          const message = `Upload completed: ${summary.imported} imported.`;
+          setUploadSummary({ message, severity: "success" });
+          showMessage(message, "success");
+        }
+      }
+
       // Refresh ONLY after upload finishes
       fetchData();
     }
-  }, []);
+  }, [fetchData, showMessage]);
 
   // ---- Email Progress Handler ----
   const handleEmailProgress = useCallback(
@@ -979,6 +999,7 @@ export default function ViewRegistrations() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    setUploadSummary(null);
     setUploading(true);
     try {
       const result = await uploadRegistrations(eventSlug, file);
@@ -1565,6 +1586,11 @@ export default function ViewRegistrations() {
   return (
     <Container dir={dir} maxWidth={false} disableGutters>
       <BreadcrumbsNav />
+      {uploadSummary && (
+        <Alert severity={uploadSummary.severity} onClose={() => setUploadSummary(null)} sx={{ mt: 2 }}>
+          {uploadSummary.message}
+        </Alert>
+      )}
       <Stack
         direction={{ xs: "column", sm: "row" }}
         spacing={2}
@@ -2293,6 +2319,34 @@ export default function ViewRegistrations() {
                               {total != null && total !== base ? ` · ${t.totalLabel}: ${total} OMR` : ""}
                             </Typography>
                           )}
+                          {ps === "external" && (reg.externalPaymentReference || reg.externalPaymentDocumentUrl) && (
+                            <Box sx={{ minWidth: 0 }}>
+                              {reg.externalPaymentReference && (
+                                <Tooltip title={reg.externalPaymentReference}>
+                                  <Typography variant="caption" color="text.secondary" sx={{ overflowWrap: "anywhere" }}>
+                                    {t.externalReference}: {reg.externalPaymentReference}
+                                  </Typography>
+                                </Tooltip>
+                              )}
+                              {reg.externalPaymentDocumentUrl && (
+                                <Box sx={{ lineHeight: 1, mt: reg.externalPaymentReference ? 0.15 : 0 }}>
+                                  <Tooltip title={t.paymentDocument}>
+                                    <Button
+                                      component="a"
+                                      href={reg.externalPaymentDocumentUrl}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      size="small"
+                                      startIcon={<ICONS.files sx={{ fontSize: 14 }} />}
+                                      sx={{ minWidth: 0, p: 0, fontSize: "0.75rem", textTransform: "none", ...getStartIconSpacing(dir) }}
+                                    >
+                                      {t.paymentDocument}
+                                    </Button>
+                                  </Tooltip>
+                                </Box>
+                              )}
+                            </Box>
+                          )}
                         </Box>
                       );
                     })()}
@@ -2418,39 +2472,6 @@ export default function ViewRegistrations() {
                       };
                       })}
                     />
-                    {reg.paymentStatus === "external" && reg.externalPaymentReference && (
-                      <RegistrationFieldRow
-                        dir={dir}
-                        label="External reference"
-                        value={reg.externalPaymentReference}
-                      />
-                    )}
-                    {reg.paymentStatus === "external" && reg.externalPaymentDocumentUrl && (
-                      <RegistrationFieldRow
-                        dir={dir}
-                        label="Payment document"
-                        value={(
-                          <Button
-                            component="a"
-                            href={reg.externalPaymentDocumentUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            size="small"
-                            variant="text"
-                            startIcon={<ICONS.files sx={{ fontSize: 18 }} />}
-                            sx={{
-                              minWidth: 0,
-                              p: 0,
-                              textTransform: "none",
-                              fontWeight: 600,
-                              ...getStartIconSpacing(dir),
-                            }}
-                          >
-                            {t.viewUploadedFile}
-                          </Button>
-                        )}
-                      />
-                    )}
                   </CardContent>
 
                   <RecordMetadata

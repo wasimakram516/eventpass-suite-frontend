@@ -1059,11 +1059,11 @@ export default function RegistrationModal({
                                         fd={fileData.externalPaymentDocument}
                                         fieldLabel="Payment document (optional)"
                                         currentValue={externalPaymentDocumentUrl}
-                                        viewLabel="Open current file"
                                         chooseLabel="Upload invoice, receipt, or other proof"
                                         replaceLabel="Replace file"
                                         onFileSelect={(file) => handleFileSelect("externalPaymentDocument", file)}
                                         onFileRemove={() => handleFileRemove("externalPaymentDocument")}
+                                        onCurrentFileRemove={() => setExternalPaymentDocumentUrl("")}
                                     />
                                 </Box>
                             </>
@@ -1104,11 +1104,11 @@ export default function RegistrationModal({
                                         fd={fileData.externalPaymentDocument}
                                         fieldLabel="Payment document (optional)"
                                         currentValue={externalPaymentDocumentUrl}
-                                        viewLabel="Open current file"
                                         chooseLabel="Upload invoice, receipt, or other proof"
                                         replaceLabel="Replace file"
                                         onFileSelect={(file) => handleFileSelect("externalPaymentDocument", file)}
                                         onFileRemove={() => handleFileRemove("externalPaymentDocument")}
+                                        onCurrentFileRemove={() => setExternalPaymentDocumentUrl("")}
                                     />
                                 </Box>
                             </>
@@ -1439,24 +1439,29 @@ export default function RegistrationModal({
     );
 }
 
-function ModalFileUploadField({ field, fd, fieldLabel, errorMsg, required, currentValue, viewLabel, chooseLabel, replaceLabel, onFileSelect, onFileRemove }) {
+function ModalFileUploadField({ field, fd, fieldLabel, errorMsg, required, currentValue, viewLabel, chooseLabel, replaceLabel, onFileSelect, onFileRemove, onCurrentFileRemove }) {
     const [dragOver, setDragOver] = useState(false);
+    const showCurrentFile = !fd && currentValue && onCurrentFileRemove;
+    const currentFileName = currentValue
+        ? decodeURIComponent(currentValue.split("?")[0].split("/").pop() || "Payment document")
+        : "";
+    const currentFileIsImage = /\.(avif|gif|jpe?g|png|svg|webp)$/i.test(currentFileName);
     return (
         <Box sx={{ mb: 2, textAlign: "left" }}>
             <Typography variant="body2" sx={{ mb: 0.5, fontWeight: 500 }}>
                 {fieldLabel}{required && <span style={{ color: "red" }}> *</span>}
             </Typography>
-            {fd ? (
+            {fd || showCurrentFile ? (
                 <Box sx={{ display: "inline-flex", alignItems: "center", gap: 1.5, p: 1, pr: 2, border: "1px solid", borderColor: "divider", borderRadius: 3, bgcolor: "background.paper" }}>
-                    {fd.file.type.startsWith("image/") ? (
-                        <Box component="img" src={fd.preview} alt="Preview" sx={{ width: 48, height: 48, borderRadius: 1.5, objectFit: "contain", bgcolor: "grey.100" }} />
-                    ) : fd.file.type.startsWith("video/") ? (
+                    {fd?.file.type.startsWith("image/") || (!fd && currentFileIsImage) ? (
+                        <Box component="img" src={fd?.preview || currentValue} alt="Preview" sx={{ width: 48, height: 48, borderRadius: 1.5, objectFit: "contain", bgcolor: "grey.100" }} />
+                    ) : fd?.file.type.startsWith("video/") ? (
                         <Box component="video" src={fd.preview} sx={{ width: 48, height: 48, borderRadius: 1.5, objectFit: "contain", bgcolor: "grey.100" }} />
                     ) : (
                         <ICONS.upload sx={{ fontSize: 28, mx: 0.5, color: "text.secondary" }} />
                     )}
-                    <Typography variant="body2" sx={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{fd.file.name}</Typography>
-                    <IconButton onClick={onFileRemove} size="small" sx={{ bgcolor: "error.main", color: "error.contrastText", "&:hover": { bgcolor: "error.dark" }, width: 28, height: 28, flexShrink: 0 }}>
+                    <Typography variant="body2" sx={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{fd?.file.name || currentFileName}</Typography>
+                    <IconButton onClick={fd ? onFileRemove : onCurrentFileRemove} size="small" sx={{ bgcolor: "error.main", color: "error.contrastText", "&:hover": { bgcolor: "error.dark" }, width: 28, height: 28, flexShrink: 0 }}>
                         <ICONS.delete sx={{ fontSize: 16 }} />
                     </IconButton>
                 </Box>
