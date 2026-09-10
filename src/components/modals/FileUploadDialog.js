@@ -9,6 +9,9 @@ import {
   TextField,
   Stack,
   CircularProgress,
+  FormControlLabel,
+  Switch,
+  Typography,
 } from "@mui/material";
 import slugify from "@/utils/slugify";
 import useI18nLayout from "@/hooks/useI18nLayout";
@@ -31,6 +34,8 @@ export default function FileUploadDialog({
       update: "Update",
       uploading: "Uploading...",
       updating: "Updating...",
+      bypassPreview: "Open file directly",
+      bypassPreviewHelp: "Skip the preview page and let the browser open the file directly.",
     },
     ar: {
       uploadNewFile: "تحميل ملف جديد",
@@ -42,12 +47,17 @@ export default function FileUploadDialog({
       update: "تحديث",
       uploading: "جارٍ التحميل...",
       updating: "جارٍ التحديث...",
+      bypassPreview: "فتح الملف مباشرة",
+      bypassPreviewHelp: "تخطي صفحة المعاينة وفتح الملف مباشرة في المتصفح.",
     },
   });
 
   const [title, setTitle] = useState(editingFile?.title || "");
   const [slug, setSlug] = useState(editingFile?.slug || "");
   const [file, setFile] = useState(null);
+  const [bypassPreview, setBypassPreview] = useState(
+    Boolean(editingFile?.bypassPreview)
+  );
   const [loading, setLoading] = useState(false);
 
   const handleTitleChange = (e) => {
@@ -65,6 +75,7 @@ export default function FileUploadDialog({
       formData.append("title", title);
       formData.append("slug", slug);
       formData.append("businessSlug", businessSlug);
+      formData.append("bypassPreview", String(bypassPreview));
       if (file) formData.append("file", file);
 
       if (editingFile) {
@@ -115,6 +126,19 @@ export default function FileUploadDialog({
             style={{ marginTop: 10 }}
             disabled={loading}
           />
+          <FormControlLabel
+            control={
+              <Switch
+                checked={bypassPreview}
+                onChange={(event) => setBypassPreview(event.target.checked)}
+                disabled={loading}
+              />
+            }
+            label={t.bypassPreview}
+          />
+          <Typography variant="caption" color="text.secondary">
+            {t.bypassPreviewHelp}
+          </Typography>
         </Stack>
       </DialogContent>
       <DialogActions sx={{ direction: dir }}>

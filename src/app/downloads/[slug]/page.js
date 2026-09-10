@@ -41,6 +41,7 @@ export default function FileDownloadPage() {
 
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [redirecting, setRedirecting] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -49,6 +50,11 @@ export default function FileDownloadPage() {
         const res = await getFileBySlug(slug);
         if (!res || !res.fileUrl) {
           setError("File not found or has been removed.");
+          return;
+        }
+        if (res.bypassPreview) {
+          setRedirecting(true);
+          window.location.replace(res.fileUrl);
           return;
         }
         setFile(res);
@@ -63,7 +69,7 @@ export default function FileDownloadPage() {
   }, [slug]);
 
   // ========== Loading State ==========
-  if (loading)
+  if (loading || redirecting)
     return (
       <Box
         sx={{
