@@ -69,7 +69,7 @@ export default function FileDownloadPage() {
   }, [slug]);
 
   // ========== Loading State ==========
-  if (loading || redirecting)
+  if (loading)
     return (
       <Box
         sx={{
@@ -82,6 +82,10 @@ export default function FileDownloadPage() {
         <CircularProgress />
       </Box>
     );
+
+  // A browser may download a direct file without navigating away. Keep this
+  // route blank while that hand-off is in progress.
+  if (redirecting) return null;
 
   // ========== Error / Not Found ==========
   if (error)
@@ -173,21 +177,8 @@ export default function FileDownloadPage() {
           src={`https://docs.google.com/gview?url=${encodeURIComponent(
             file.fileUrl
           )}&embedded=true#view=fitH`}
-          onLoad={(e) => {
-            // force reload if content doesn’t load properly
-            const iframe = e.target;
-            setTimeout(() => {
-              try {
-                const iframeDoc =
-                  iframe.contentDocument || iframe.contentWindow.document;
-                if (!iframeDoc || !iframeDoc.body.innerHTML.trim()) {
-                  iframe.src = iframe.src; // trigger reload once
-                }
-              } catch {
-                // ignore cross-origin access
-              }
-            }, 1500);
-          }}
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+          title={file.title || "PDF preview"}
           style={{
             width: "100%",
             height: "100%",
