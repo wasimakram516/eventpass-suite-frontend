@@ -1343,6 +1343,7 @@ export default function ViewRegistrations() {
         badgeIdentifier: registration.badgeIdentifier || "",
         token: registration.token,
         showQrOnBadge: eventDetails?.showQrOnBadge ?? true,
+        hideTokenOnBadge: eventDetails?.hideTokenOnBadge ?? false,
         customFields: registration.customFields || {},
       };
 
