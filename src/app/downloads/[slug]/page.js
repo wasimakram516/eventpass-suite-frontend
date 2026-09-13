@@ -15,6 +15,7 @@ import CloudOffIcon from "@mui/icons-material/CloudOff";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { getFileBySlug } from "@/services/fileResourceService";
 import ICONS from "@/utils/iconUtil";
+import PdfPreview from "@/components/PdfPreview";
 
 export default function FileDownloadPage() {
   const params = useParams();
@@ -28,6 +29,7 @@ export default function FileDownloadPage() {
       loading: "Loading...",
       download: "Download File",
       preview: "File Preview",
+      pdfPreviewError: "Unable to preview this PDF.",
     },
     ar: {
       fileNotFound: "الملف غير موجود",
@@ -36,6 +38,7 @@ export default function FileDownloadPage() {
       loading: "جارٍ التحميل...",
       download: "تنزيل الملف",
       preview: "معاينة الملف",
+      pdfPreviewError: "تعذر عرض معاينة ملف PDF.",
     },
   });
 
@@ -172,20 +175,11 @@ export default function FileDownloadPage() {
       );
     if (isPdf)
       return (
-        <iframe
-          key={file.fileUrl}
-          src={`https://docs.google.com/gview?url=${encodeURIComponent(
-            file.fileUrl
-          )}&embedded=true#view=fitH`}
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-          title={file.title || "PDF preview"}
-          style={{
-            width: "100%",
-            height: "100%",
-            border: "none",
-            borderRadius: "10px",
-          }}
-        ></iframe>
+        <PdfPreview
+          fileUrl={file.fileUrl}
+          title={file.title}
+          errorMessage={t.pdfPreviewError}
+        />
       );
     return (
       <Box
