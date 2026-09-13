@@ -60,6 +60,7 @@ export async function exportAllBadges(registrations = [], eventDetails) {
 
           token: r.token,
           showQrOnBadge: eventDetails?.showQrOnBadge ?? true,
+          hideTokenOnBadge: eventDetails?.hideTokenOnBadge ?? false,
           customFields: r.customFields || {},
         };
         return (

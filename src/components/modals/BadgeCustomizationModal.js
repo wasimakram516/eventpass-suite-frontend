@@ -21,6 +21,9 @@ import {
 } from "@mui/material";
 import RichTextEditor from "@/components/RichTextEditor";
 import QRCode from "qrcode";
+import FormatAlignLeftIcon from "@mui/icons-material/FormatAlignLeft";
+import FormatAlignCenterIcon from "@mui/icons-material/FormatAlignCenter";
+import FormatAlignRightIcon from "@mui/icons-material/FormatAlignRight";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
@@ -45,6 +48,10 @@ const translations = {
         yAxis: "Y-Axis (%)",
         qrCode: "QR Code",
         qrSize: "Size (px)",
+        alignment: "Alignment",
+        left: "Left",
+        center: "Center",
+        right: "Right",
         save: "Save",
         cancel: "Cancel",
         badgeSize: "Badge Size",
@@ -60,6 +67,10 @@ const translations = {
         yAxis: "المحور Y (%)",
         qrCode: "رمز QR",
         qrSize: "الحجم (بكسل)",
+        alignment: "المحاذاة",
+        left: "يسار",
+        center: "توسيط",
+        right: "يمين",
         save: "حفظ",
         cancel: "إلغاء",
         badgeSize: "حجم الشارة",
@@ -515,6 +526,7 @@ export default function BadgeCustomizationModal({
     selectedFields = [],
     allFields = [],
     showQrOnBadge = false,
+    hideTokenOnBadge = false,
     badgeCustomizations = {},
 }) {
     const { t, dir } = useI18nLayout(translations);
@@ -586,6 +598,7 @@ export default function BadgeCustomizationModal({
                     x: existingQr?.x !== undefined ? existingQr.x : 5,
                     y: existingQr?.y !== undefined ? existingQr.y : 85,
                     size: existingQr?.size !== undefined ? existingQr.size : (existingQr?.width || 70),
+                    alignment: existingQr?.alignment || "left",
                 };
             }
 
@@ -962,9 +975,50 @@ export default function BadgeCustomizationModal({
                                     {t.qrCode}
                                 </Typography>
                                 <Box sx={{ display: "flex", gap: 2 }}>
+                                    <Box
+                                        aria-label={t.alignment}
+                                        sx={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: 0.5,
+                                            border: "1px solid",
+                                            borderColor: "divider",
+                                            borderRadius: 1,
+                                            px: 0.5,
+                                        }}
+                                    >
+                                        <IconButton
+                                            size="small"
+                                            title={t.left}
+                                            aria-label={t.left}
+                                            onClick={() => handleFieldChange("_qrCode", "alignment", "left")}
+                                            sx={{ bgcolor: (customizations._qrCode?.alignment || "left") === "left" ? "action.selected" : "transparent" }}
+                                        >
+                                            <FormatAlignLeftIcon fontSize="small" />
+                                        </IconButton>
+                                        <IconButton
+                                            size="small"
+                                            title={t.center}
+                                            aria-label={t.center}
+                                            onClick={() => handleFieldChange("_qrCode", "alignment", "center")}
+                                            sx={{ bgcolor: customizations._qrCode?.alignment === "center" ? "action.selected" : "transparent" }}
+                                        >
+                                            <FormatAlignCenterIcon fontSize="small" />
+                                        </IconButton>
+                                        <IconButton
+                                            size="small"
+                                            title={t.right}
+                                            aria-label={t.right}
+                                            onClick={() => handleFieldChange("_qrCode", "alignment", "right")}
+                                            sx={{ bgcolor: customizations._qrCode?.alignment === "right" ? "action.selected" : "transparent" }}
+                                        >
+                                            <FormatAlignRightIcon fontSize="small" />
+                                        </IconButton>
+                                    </Box>
                                     <TextField
                                         label={t.xAxis}
                                         type="number"
+                                        disabled={(customizations._qrCode?.alignment || "left") !== "left"}
                                         value={customizations._qrCode?.x !== null && customizations._qrCode?.x !== undefined ? customizations._qrCode.x : 5}
                                         onChange={(e) => {
                                             const inputVal = e.target.value;
@@ -1174,11 +1228,20 @@ export default function BadgeCustomizationModal({
                                     <Box
                                         sx={{
                                             position: "absolute",
-                                            left: `${customizations._qrCode.x ?? 5}%`,
                                             top: `${customizations._qrCode.y ?? 85}%`,
                                             display: "flex",
                                             flexDirection: "column",
                                             alignItems: "center",
+                                            width: `${customizations._qrCode.size ?? 70}px`,
+                                            ...((customizations._qrCode.alignment || "left") === "center"
+                                                ? {
+                                                    left: `${((badgeWidthPx - (customizations._qrCode.size ?? 70)) / badgeWidthPx) * 50}%`,
+                                                }
+                                                : (customizations._qrCode.alignment || "left") === "right"
+                                                    ? {
+                                                        left: `${95 - (((customizations._qrCode.size ?? 70) / badgeWidthPx) * 100)}%`,
+                                                    }
+                                                    : { left: `${customizations._qrCode.x ?? 5}%` }),
                                         }}
                                     >
                                         <Box
@@ -1190,7 +1253,7 @@ export default function BadgeCustomizationModal({
                                                 height: `${customizations._qrCode.size ?? 70}px`,
                                             }}
                                         />
-                                        <Typography
+                                        {!hideTokenOnBadge && <Typography
                                             variant="caption"
                                             sx={{
                                                 fontSize: `${((customizations._qrCode.size ?? 70) / 70) * 9}px`,
@@ -1198,10 +1261,13 @@ export default function BadgeCustomizationModal({
                                                 color: (theme) => theme.palette.primary.main,
                                                 letterSpacing: 0.7,
                                                 marginTop: "2px",
+                                                width: "max-content",
+                                                maxWidth: "none",
+                                                whiteSpace: "nowrap",
                                             }}
                                         >
                                             SAMPLE_TOKEN
-                                        </Typography>
+                                        </Typography>}
                                     </Box>
                                 )}
                             </Box>

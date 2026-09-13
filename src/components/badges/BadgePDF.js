@@ -11,26 +11,27 @@ import {
 import { resolveBadgeDimensions } from "@/utils/badgeSize";
 import { getTheme } from "@/styles/theme";
 
-
 // --------------------------------------------------------------
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 // --------------------------------------------------------------
 // STATIC FONT REGISTRATION (AUTO-GENERATED)
 // --------------------------------------------------------------
+Font.register({
+  family: "IBM Plex Sans Arabic",
+  fonts: [
+    { src: "/fonts/IBMPlexSansArabic/IBMPlexSansArabic-Bold.ttf", fontWeight: 700, fontStyle: 'normal' },
+    { src: "/fonts/IBMPlexSansArabic/IBMPlexSansArabic-Medium.ttf", fontWeight: 500, fontStyle: 'normal' },
+    { src: "/fonts/IBMPlexSansArabic/IBMPlexSansArabic-Regular.ttf", fontWeight: 400, fontStyle: 'normal' }
+  ],
+});
+
+Font.register({
+  family: "Midable",
+  fonts: [
+    { src: "/fonts/Midable/Midable.ttf", fontWeight: 400, fontStyle: 'normal' }
+  ],
+});
+
 Font.register({
   family: "Arial",
   fonts: [
@@ -46,6 +47,7 @@ Font.register({
     { src: "/fonts/futura/FuturaStdBoldOblique.otf", fontWeight: 700, fontStyle: 'italic' },
     { src: "/fonts/futura/FuturaStdBook.otf", fontWeight: 400, fontStyle: 'normal' },
     { src: "/fonts/futura/FuturaStdBookOblique.otf", fontWeight: 400, fontStyle: 'italic' },
+    { src: "/fonts/futura/FuturaStdCondExtraBoldObl.otf", fontWeight: 700, fontStyle: 'italic' },
     { src: "/fonts/futura/FuturaStdCondensed.otf", fontWeight: 400, fontStyle: 'normal' },
     { src: "/fonts/futura/FuturaStdCondensedBold.otf", fontWeight: 700, fontStyle: 'normal' },
     { src: "/fonts/futura/FuturaStdCondensedBoldObl.otf", fontWeight: 700, fontStyle: 'italic' },
@@ -53,7 +55,6 @@ Font.register({
     { src: "/fonts/futura/FuturaStdCondensedLight.otf", fontWeight: 300, fontStyle: 'normal' },
     { src: "/fonts/futura/FuturaStdCondensedLightObl.otf", fontWeight: 300, fontStyle: 'italic' },
     { src: "/fonts/futura/FuturaStdCondensedOblique.otf", fontWeight: 400, fontStyle: 'italic' },
-    { src: "/fonts/futura/FuturaStdCondExtraBoldObl.otf", fontWeight: 700, fontStyle: 'italic' },
     { src: "/fonts/futura/FuturaStdExtraBold.otf", fontWeight: 700, fontStyle: 'normal' },
     { src: "/fonts/futura/FuturaStdExtraBoldOblique.otf", fontWeight: 700, fontStyle: 'italic' },
     { src: "/fonts/futura/FuturaStdHeavy.otf", fontWeight: 800, fontStyle: 'normal' },
@@ -66,25 +67,9 @@ Font.register({
 });
 
 Font.register({
-  family: "IBM Plex Sans Arabic",
-  fonts: [
-    { src: "/fonts/IBMPlexSansArabic/IBMPlexSansArabic-Bold.ttf", fontWeight: 700, fontStyle: 'normal' },
-    { src: "/fonts/IBMPlexSansArabic/IBMPlexSansArabic-Medium.ttf", fontWeight: 500, fontStyle: 'normal' },
-    { src: "/fonts/IBMPlexSansArabic/IBMPlexSansArabic-Regular.ttf", fontWeight: 400, fontStyle: 'normal' }
-  ],
-});
-
-Font.register({
   family: "Love",
   fonts: [
     { src: "/fonts/love/LoveDays-2v7Oe.ttf", fontWeight: 400, fontStyle: 'normal' }
-  ],
-});
-
-Font.register({
-  family: "Midable",
-  fonts: [
-    { src: "/fonts/Midable/Midable.ttf", fontWeight: 400, fontStyle: 'normal' }
   ],
 });
 
@@ -498,7 +483,6 @@ export default function BadgePDF({ data, qrCodeDataUrl, customizations, single =
             }
           }
 
-
           const actualText = fieldValue;
 
           const yPercent = customization.y || 0;
@@ -587,14 +571,27 @@ export default function BadgePDF({ data, qrCodeDataUrl, customizations, single =
 
         {data.showQrOnBadge && customizations._qrCode && qrCodeDataUrl && (
           <View
-            style={{
+            style={(() => {
+              const alignment = customizations._qrCode.alignment || "left";
+              const qrSize = customizations._qrCode.size || 70;
+              const qrSizePt = qrSize * (72 / 96);
+              const horizontalPosition =
+                alignment === "center"
+                  ? { left: (pageWidth - qrSizePt) / 2 }
+                  : alignment === "right"
+                    ? { left: pageWidth * 0.95 - qrSizePt }
+                    : { left: `${customizations._qrCode.x ?? 5}%` };
+
+              return {
               position: "absolute",
-              left: `${customizations._qrCode.x || 5}%`,
               top: `${customizations._qrCode.y || 85}%`,
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
-            }}
+              width: qrSizePt,
+              ...horizontalPosition,
+              };
+            })()}
           >
             <Image
               src={qrCodeDataUrl}
@@ -603,7 +600,8 @@ export default function BadgePDF({ data, qrCodeDataUrl, customizations, single =
                 height: (customizations._qrCode.size || 70) * (72 / 96),
               }}
             />
-            <Text
+            {!data.hideTokenOnBadge && <Text
+              wrap={false}
               style={{
                 fontSize: ((customizations._qrCode.size || 70) / 70) * 9 * (72 / 96),
                 fontWeight: "bold",
@@ -613,7 +611,7 @@ export default function BadgePDF({ data, qrCodeDataUrl, customizations, single =
               }}
             >
               {data.token}
-            </Text>
+            </Text>}
           </View>
         )}
       </>
@@ -707,7 +705,7 @@ export default function BadgePDF({ data, qrCodeDataUrl, customizations, single =
       {data.showQrOnBadge && (
         <View style={styles.qrWrapper}>
           <Image src={qrCodeDataUrl} style={styles.qrImage} />
-          <Text style={styles.token}>{data.token}</Text>
+          {!data.hideTokenOnBadge && <Text wrap={false} style={styles.token}>{data.token}</Text>}
         </View>
       )}
     </Page>

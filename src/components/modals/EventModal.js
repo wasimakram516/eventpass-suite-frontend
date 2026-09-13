@@ -103,6 +103,7 @@ const translations = {
     useInternationalNumbers: "Allow International Numbers",
     showQrToggle: "Show QR code after registration?",
     showQrOnBadgeToggle: "Show QR Code on Printed Badge?",
+    hideTokenOnBadgeToggle: "Hide token on badge",
     showBadgePreviewDuringRegistrationToggle: "Show Badge Preview During Registration?",
     showBadgeCardAfterRegistrationToggle: "Show Badge Card After Registration?",
     showBadgeCardAfterAttendanceConfirmationToggle: "Show Badge Card After Attendance Confirmation?",
@@ -267,6 +268,7 @@ const translations = {
     useInternationalNumbers: "السماح بالأرقام الدولية",
     showQrToggle: "عرض رمز الاستجابة السريعة بعد التسجيل؟",
     showQrOnBadgeToggle: "عرض رمز QR على بطاقة الطباعة؟",
+    hideTokenOnBadgeToggle: "إخفاء رمز التسجيل على الشارة",
     showBadgePreviewDuringRegistrationToggle: "عرض معاينة الشارة أثناء التسجيل؟",
     showBadgeCardAfterRegistrationToggle: "عرض بطاقة الشارة بعد التسجيل؟",
     showBadgeCardAfterAttendanceConfirmationToggle: "عرض معاينة الشارة في صفحة الحضور؟",
@@ -533,6 +535,7 @@ const EventModal = ({
     useInternationalNumbers: false,
     showQrAfterRegistration: false,
     showQrOnBadge: true,
+    hideTokenOnBadge: false,
     showBadgePreviewDuringRegistration: false,
     showBadgeCardAfterRegistration: false,
     showBadgeCardAfterAttendanceConfirmation: false,
@@ -640,6 +643,7 @@ const EventModal = ({
         showQrAfterRegistration:
           initialValues?.showQrAfterRegistration || false,
         showQrOnBadge: initialValues?.showQrOnBadge ?? true,
+        hideTokenOnBadge: initialValues?.hideTokenOnBadge ?? false,
         showBadgePreviewDuringRegistration: initialValues?.showBadgePreviewDuringRegistration || false,
         showBadgeCardAfterRegistration: initialValues?.showBadgeCardAfterRegistration || false,
         showBadgeCardAfterAttendanceConfirmation: initialValues?.showBadgeCardAfterAttendanceConfirmation || false,
@@ -756,6 +760,7 @@ const EventModal = ({
         useInternationalNumbers: false,
         showQrAfterRegistration: false,
         showQrOnBadge: true,
+        hideTokenOnBadge: false,
         showBadgePreviewDuringRegistration: false,
         showBadgeCardAfterRegistration: false,
         showBadgeCardAfterAttendanceConfirmation: false,
@@ -1523,6 +1528,7 @@ const EventModal = ({
         agendaUrl: agendaUrl || null,
         showQrAfterRegistration: formData.showQrAfterRegistration,
         showQrOnBadge: formData.showQrOnBadge,
+        hideTokenOnBadge: formData.hideTokenOnBadge,
         requiresApproval: formData.requiresApproval,
         allowMultipleBadgePrinting: formData.allowMultipleBadgePrinting,
         createCheckinOnFirstPrint: formData.createCheckinOnFirstPrint,
@@ -2054,6 +2060,9 @@ const EventModal = ({
                             setFormData((prev) => ({
                               ...prev,
                               showQrOnBadge: e.target.checked,
+                              hideTokenOnBadge: e.target.checked
+                                ? prev.hideTokenOnBadge
+                                : false,
                             }))
                           }
                           color="primary"
@@ -2063,6 +2072,26 @@ const EventModal = ({
                       sx={{ alignSelf: "start" }}
                     />
                   </Box>
+
+                  {formData.showQrOnBadge && (
+                    <Box sx={{ display: "flex", alignItems: "center", ml: 4 }}>
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={formData.hideTokenOnBadge}
+                            onChange={(e) =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                hideTokenOnBadge: e.target.checked,
+                              }))
+                            }
+                            color="primary"
+                          />
+                        }
+                        label={t.hideTokenOnBadgeToggle}
+                      />
+                    </Box>
+                  )}
 
                   {!isClosed && (
                     <>
@@ -4048,6 +4077,7 @@ const EventModal = ({
           { inputName: "Company" }
         ]}
         showQrOnBadge={formData.showQrOnBadge}
+        hideTokenOnBadge={formData.hideTokenOnBadge}
         badgeCustomizations={formData.badgeCustomizations}
       />
       <DefaultQrWrapperModal
