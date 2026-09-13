@@ -50,6 +50,7 @@ export const uploadMediaFiles = async ({
   moduleName,
   onProgress,
   wallSlug,
+  returnUploadDetails = false,
 }) => {
   if (!files || files.length === 0) return [];
 
@@ -104,6 +105,8 @@ export const uploadMediaFiles = async ({
           if (xhr.status === 200 || xhr.status === 204) {
             upload.percent = 100;
             upload.url = uploadAuthorization.fileUrl;
+            upload.key = uploadAuthorization.key;
+            upload.contentType = upload.file.type || "application/octet-stream";
 
             if (onProgress) {
               onProgress([...uploads]);
@@ -160,7 +163,14 @@ export const uploadMediaFiles = async ({
     }
   });
 
-  return Promise.all(uploadPromises);
+  const urls = await Promise.all(uploadPromises);
+  if (!returnUploadDetails) return urls;
+
+  return uploads.map(({ key, url, contentType }) => ({
+    key,
+    fileUrl: url,
+    contentType,
+  }));
 };
 
 export const uploadSingleFile = async ({
@@ -169,8 +179,9 @@ export const uploadSingleFile = async ({
   moduleName,
   onProgress,
   wallSlug,
+  returnUploadDetails = false,
 }) => {
-  const [url] = await uploadMediaFiles({
+  const [result] = await uploadMediaFiles({
     files: [file],
     businessSlug,
     moduleName,
@@ -180,7 +191,8 @@ export const uploadSingleFile = async ({
       }
     },
     wallSlug,
+    returnUploadDetails,
   });
 
-  return url;
+  return result;
 };

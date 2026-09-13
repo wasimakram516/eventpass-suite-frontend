@@ -150,24 +150,35 @@ export default function FileStorePage() {
   };
 
   const handleCreate = async (formData) => {
-    await createFile(formData);
-    fetchFiles();
+    const result = await createFile(formData);
+    if (result?.error) throw new Error(result.message);
+    await fetchFiles();
   };
 
   const handleUpdate = async (formData, id) => {
-    await updateFile(id, formData);
-    fetchFiles();
+    const result = await updateFile(id, formData);
+    if (result?.error) throw new Error(result.message);
+    await fetchFiles();
   };
 
   const handleDelete = (id) => {
     setConfirmDialog({ open: true, fileId: id });
   };
 
+  const permanentlyDeleteFile = async (id) => {
+    const result = await deleteFile(id);
+    if (result?.error) throw new Error(result.message);
+    await fetchFiles();
+  };
+
   const confirmDelete = async () => {
     if (!confirmDialog.fileId) return;
-    await deleteFile(confirmDialog.fileId);
-    setConfirmDialog({ open: false, fileId: null });
-    fetchFiles();
+    try {
+      await permanentlyDeleteFile(confirmDialog.fileId);
+      setConfirmDialog({ open: false, fileId: null });
+    } catch {
+      // The shared API handler has already displayed the failure message.
+    }
   };
 
   const handleShare = (slug, title) => {

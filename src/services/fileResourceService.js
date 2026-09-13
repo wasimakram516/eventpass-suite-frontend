@@ -1,5 +1,6 @@
 import api from "@/services/api";
 import withApiHandler from "@/utils/withApiHandler";
+import { uploadSingleFile } from "@/utils/mediaUpload";
 
 /* =========================================================
    File Resource Service — S3-based downloadable files
@@ -25,7 +26,16 @@ export const getFileBySlug = withApiHandler(async (slug) => {
   return data;
 });
 
-// Create new file — supports FormData (upload to S3)
+export const uploadFileResource = ({ file, businessSlug, onProgress }) =>
+  uploadSingleFile({
+    file,
+    businessSlug,
+    moduleName: "files",
+    onProgress,
+    returnUploadDetails: true,
+  });
+
+// Create new file from an authorized direct-to-S3 upload.
 export const createFile = withApiHandler(
   async (formData) => {
     const { data } = await api.post("/files", formData, {
@@ -36,7 +46,7 @@ export const createFile = withApiHandler(
   { showSuccess: true }
 );
 
-// Update file — supports FormData (replace existing S3 file)
+// Update file from an authorized direct-to-S3 upload.
 export const updateFile = withApiHandler(
   async (id, formData) => {
     const { data } = await api.put(`/files/${id}`, formData, {
