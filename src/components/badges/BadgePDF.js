@@ -11,6 +11,14 @@ import {
 import { resolveBadgeDimensions } from "@/utils/badgeSize";
 import { getTheme } from "@/styles/theme";
 
+// react-pdf's default hyphenation engine breaks long words mid-word and
+// inserts a visible "-" when a word doesn't fit its container width.
+// Disabling it makes wrapping happen only at word boundaries (spaces).
+// NOTE: keep this above the STATIC FONT REGISTRATION block — everything
+// from that comment down to `const A6_WIDTH` is rewritten by
+// scripts/generateFonts.js and any edit placed inside it will be lost.
+Font.registerHyphenationCallback((word) => [word]);
+
 // --------------------------------------------------------------
 
 
