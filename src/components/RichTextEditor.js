@@ -9,6 +9,7 @@ import {
     Select,
     MenuItem,
     FormControl,
+    Tooltip,
 } from "@mui/material";
 import FormatBoldIcon from "@mui/icons-material/FormatBold";
 import FormatItalicIcon from "@mui/icons-material/FormatItalic";
@@ -564,36 +565,38 @@ const RichTextEditor = ({ value, onChange, placeholder, dir, minHeight, maxHeigh
                 </Box>
 
                 <Box sx={{ display: "flex", gap: 0.5, borderRight: "1px solid", borderColor: "divider", px: 0.5, alignItems: "center" }}>
-                    <FormControl size="small" variant="outlined" sx={{ minWidth: 80 }}>
-                        <Select
-                            value={fontSize}
-                            onChange={handleFontSize}
-                            displayEmpty
-                            inputRef={fontSizeSelectRef}
-                            MenuProps={{
-                                slotProps: {
-                                    paper: {
-                                        style: {
-                                            maxHeight: 240,
+                    <Tooltip title="Font Size">
+                        <FormControl size="small" variant="outlined" sx={{ minWidth: 80 }}>
+                            <Select
+                                value={fontSize}
+                                onChange={handleFontSize}
+                                displayEmpty
+                                inputRef={fontSizeSelectRef}
+                                MenuProps={{
+                                    slotProps: {
+                                        paper: {
+                                            style: {
+                                                maxHeight: 240,
+                                            },
                                         },
                                     },
-                                },
-                            }}
-                            sx={{
-                                height: "32px",
-                                fontSize: "0.875rem",
-                                "& .MuiOutlinedInput-notchedOutline": {
-                                    borderWidth: "1px",
-                                },
-                            }}
-                        >
-                            {Array.from({ length: 93 }, (_, i) => i + 8).map((size) => (
-                                <MenuItem key={size} value={size}>
-                                    {size}px
-                                </MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
+                                }}
+                                sx={{
+                                    height: "32px",
+                                    fontSize: "0.875rem",
+                                    "& .MuiOutlinedInput-notchedOutline": {
+                                        borderWidth: "1px",
+                                    },
+                                }}
+                            >
+                                {Array.from({ length: 93 }, (_, i) => i + 8).map((size) => (
+                                    <MenuItem key={size} value={size}>
+                                        {size}px
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                    </Tooltip>
                 </Box>
 
                 <Box sx={{ display: "flex", gap: 0.5, px: 0.5 }}>

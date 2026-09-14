@@ -13,25 +13,10 @@ import { getTheme } from "@/styles/theme";
 
 // --------------------------------------------------------------
 
+
 // --------------------------------------------------------------
 // STATIC FONT REGISTRATION (AUTO-GENERATED)
 // --------------------------------------------------------------
-Font.register({
-  family: "IBM Plex Sans Arabic",
-  fonts: [
-    { src: "/fonts/IBMPlexSansArabic/IBMPlexSansArabic-Bold.ttf", fontWeight: 700, fontStyle: 'normal' },
-    { src: "/fonts/IBMPlexSansArabic/IBMPlexSansArabic-Medium.ttf", fontWeight: 500, fontStyle: 'normal' },
-    { src: "/fonts/IBMPlexSansArabic/IBMPlexSansArabic-Regular.ttf", fontWeight: 400, fontStyle: 'normal' }
-  ],
-});
-
-Font.register({
-  family: "Midable",
-  fonts: [
-    { src: "/fonts/Midable/Midable.ttf", fontWeight: 400, fontStyle: 'normal' }
-  ],
-});
-
 Font.register({
   family: "Arial",
   fonts: [
@@ -47,7 +32,6 @@ Font.register({
     { src: "/fonts/futura/FuturaStdBoldOblique.otf", fontWeight: 700, fontStyle: 'italic' },
     { src: "/fonts/futura/FuturaStdBook.otf", fontWeight: 400, fontStyle: 'normal' },
     { src: "/fonts/futura/FuturaStdBookOblique.otf", fontWeight: 400, fontStyle: 'italic' },
-    { src: "/fonts/futura/FuturaStdCondExtraBoldObl.otf", fontWeight: 700, fontStyle: 'italic' },
     { src: "/fonts/futura/FuturaStdCondensed.otf", fontWeight: 400, fontStyle: 'normal' },
     { src: "/fonts/futura/FuturaStdCondensedBold.otf", fontWeight: 700, fontStyle: 'normal' },
     { src: "/fonts/futura/FuturaStdCondensedBoldObl.otf", fontWeight: 700, fontStyle: 'italic' },
@@ -55,6 +39,7 @@ Font.register({
     { src: "/fonts/futura/FuturaStdCondensedLight.otf", fontWeight: 300, fontStyle: 'normal' },
     { src: "/fonts/futura/FuturaStdCondensedLightObl.otf", fontWeight: 300, fontStyle: 'italic' },
     { src: "/fonts/futura/FuturaStdCondensedOblique.otf", fontWeight: 400, fontStyle: 'italic' },
+    { src: "/fonts/futura/FuturaStdCondExtraBoldObl.otf", fontWeight: 700, fontStyle: 'italic' },
     { src: "/fonts/futura/FuturaStdExtraBold.otf", fontWeight: 700, fontStyle: 'normal' },
     { src: "/fonts/futura/FuturaStdExtraBoldOblique.otf", fontWeight: 700, fontStyle: 'italic' },
     { src: "/fonts/futura/FuturaStdHeavy.otf", fontWeight: 800, fontStyle: 'normal' },
@@ -67,9 +52,25 @@ Font.register({
 });
 
 Font.register({
+  family: "IBM Plex Sans Arabic",
+  fonts: [
+    { src: "/fonts/IBMPlexSansArabic/IBMPlexSansArabic-Bold.ttf", fontWeight: 700, fontStyle: 'normal' },
+    { src: "/fonts/IBMPlexSansArabic/IBMPlexSansArabic-Medium.ttf", fontWeight: 500, fontStyle: 'normal' },
+    { src: "/fonts/IBMPlexSansArabic/IBMPlexSansArabic-Regular.ttf", fontWeight: 400, fontStyle: 'normal' }
+  ],
+});
+
+Font.register({
   family: "Love",
   fonts: [
     { src: "/fonts/love/LoveDays-2v7Oe.ttf", fontWeight: 400, fontStyle: 'normal' }
+  ],
+});
+
+Font.register({
+  family: "Midable",
+  fonts: [
+    { src: "/fonts/Midable/Midable.ttf", fontWeight: 400, fontStyle: 'normal' }
   ],
 });
 
@@ -419,7 +420,7 @@ export default function BadgePDF({ data, qrCodeDataUrl, customizations, single =
           const fieldValue = getFieldValue(fieldName, data);
           if (!fieldValue) return null;
 
-          let fontSize, color, isBold, isItalic, isUnderline, fontFamily;
+          let fontSize, color, isBold, isItalic, isUnderline, fontFamily, lineHeight;
 
           if (customization.content && typeof customization.content === 'string' && customization.content.includes('<')) {
             const parsed = parseHTMLToText(customization.content);
@@ -428,6 +429,7 @@ export default function BadgePDF({ data, qrCodeDataUrl, customizations, single =
             isBold = parsed.isBold || false;
             isItalic = parsed.isItalic || false;
             isUnderline = parsed.isUnderline || false;
+            lineHeight = customization.lineHeight || 1.2;
             let parsedFontFamily = parsed.fontFamily || "Arial";
             if (typeof parsedFontFamily === 'string') {
               parsedFontFamily = parsedFontFamily
@@ -455,6 +457,7 @@ export default function BadgePDF({ data, qrCodeDataUrl, customizations, single =
             isBold = customization.isBold || false;
             isItalic = customization.isItalic || false;
             isUnderline = customization.isUnderline || false;
+            lineHeight = customization.lineHeight || 1.2;
             let rawFontFamily = customization.fontFamily || "Arial";
             if (typeof rawFontFamily === 'string') {
               rawFontFamily = rawFontFamily
@@ -512,7 +515,7 @@ export default function BadgePDF({ data, qrCodeDataUrl, customizations, single =
             fontSize: fontSizePt,
             color: color,
             textAlign: alignment,
-            lineHeight: 1.0,
+            lineHeight: lineHeight || 1.2,
             fontFamily: finalFontFamily,
             margin: 0,
             padding: 0,

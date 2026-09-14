@@ -60,6 +60,9 @@ const translations = {
         height: "Height",
         unit: "Unit",
         orientation: "Orientation",
+        lineHeight: "Line Height",
+        font: "Font",
+        positionStyle: "Position & Style",
     },
     ar: {
         title: "تخصيص الشارة",
@@ -79,6 +82,9 @@ const translations = {
         height: "الارتفاع",
         unit: "الوحدة",
         orientation: "الاتجاه",
+        lineHeight: "ارتفاع السطر",
+        font: "الخط",
+        positionStyle: "الموضع والنمط",
     },
 };
 
@@ -99,6 +105,8 @@ const BadgeRichTextEditor = ({
     onUnderlineChange,
     onAlignmentChange,
     onFontFamilyChange,
+    lineHeight,
+    onLineHeightChange,
     x,
     y,
     onXChange,
@@ -112,9 +120,6 @@ const BadgeRichTextEditor = ({
 }) => {
     const theme = useTheme();
     const editorContainerRef = useRef(null);
-    const inputsContainerRef = useRef(null);
-    const xInputRef = useRef(null);
-    const yInputRef = useRef(null);
     const lastAlignmentRef = useRef(null);
     const lastFormattingRef = useRef({});
 
@@ -290,179 +295,6 @@ const BadgeRichTextEditor = ({
         }
     }, [onAlignmentChange]);
 
-    useEffect(() => {
-        const injectInputs = () => {
-            const toolbar = editorContainerRef.current?.querySelector('.MuiToolbar-root');
-            const clearFormatBox = toolbar?.querySelector('button[title="Clear Formatting"]')?.parentElement;
-
-            if (clearFormatBox && !inputsContainerRef.current) {
-                if (toolbar) {
-                    toolbar.style.setProperty('padding-top', '12px', 'important');
-                    toolbar.style.setProperty('padding-bottom', '12px', 'important');
-                }
-
-                const inputsBox = document.createElement('div');
-                inputsBox.className = 'badge-position-inputs';
-                inputsBox.style.display = 'flex';
-                inputsBox.style.gap = '12px';
-                inputsBox.style.alignItems = 'center';
-                inputsBox.style.paddingLeft = '8px';
-                inputsBox.style.paddingTop = '8px';
-                inputsBox.style.paddingBottom = '8px';
-                inputsBox.style.borderLeft = '1px solid';
-                inputsBox.style.borderColor = theme.palette.divider;
-                inputsBox.style.marginLeft = '8px';
-                inputsBox.style.marginTop = '8px';
-
-                const xContainer = document.createElement('div');
-                xContainer.style.display = 'flex';
-                xContainer.style.alignItems = 'center';
-                xContainer.style.gap = '6px';
-
-                const xLabel = document.createElement('label');
-                xLabel.textContent = t.xAxis;
-                xLabel.style.fontSize = '0.875rem';
-                xLabel.style.color = theme.palette.text.secondary;
-                xLabel.style.fontWeight = '400';
-                xLabel.style.whiteSpace = 'nowrap';
-
-                const xInput = document.createElement('input');
-                xInput.className = 'x-axis-input';
-                xInput.type = 'number';
-                xInput.min = 0;
-                xInput.max = 100;
-                xInput.step = 0.1;
-                xInput.style.width = '80px';
-                xInput.style.height = '32px';
-                xInput.style.padding = '4px 8px';
-                xInput.style.border = `1px solid ${theme.palette.divider}`;
-                xInput.style.borderRadius = '4px';
-                xInput.style.fontSize = '0.875rem';
-                xInput.value = x;
-                xInput.oninput = (e) => {
-                    const val = parseFloat(e.target.value) || 0;
-                    if (val >= 0 && val <= 100) {
-                        onXChange(val);
-                    }
-                };
-                xInputRef.current = xInput;
-
-                xContainer.appendChild(xLabel);
-                xContainer.appendChild(xInput);
-
-                const yContainer = document.createElement('div');
-                yContainer.style.display = 'flex';
-                yContainer.style.alignItems = 'center';
-                yContainer.style.gap = '6px';
-
-                const yLabel = document.createElement('label');
-                yLabel.textContent = t.yAxis;
-                yLabel.style.fontSize = '0.875rem';
-                yLabel.style.color = theme.palette.text.secondary;
-                yLabel.style.fontWeight = '400';
-                yLabel.style.whiteSpace = 'nowrap';
-
-                const yInput = document.createElement('input');
-                yInput.className = 'y-axis-input';
-                yInput.type = 'number';
-                yInput.min = 0;
-                yInput.max = 100;
-                yInput.step = 0.1;
-                yInput.style.width = '80px';
-                yInput.style.height = '32px';
-                yInput.style.padding = '4px 8px';
-                yInput.style.border = `1px solid ${theme.palette.divider}`;
-                yInput.style.borderRadius = '4px';
-                yInput.style.fontSize = '0.875rem';
-                yInput.value = y;
-                yInput.oninput = (e) => {
-                    const val = parseFloat(e.target.value) || 0;
-                    if (val >= 0 && val <= 100) {
-                        onYChange(val);
-                    }
-                };
-                yInputRef.current = yInput;
-
-                yContainer.appendChild(yLabel);
-                yContainer.appendChild(yInput);
-
-                const fontContainer = document.createElement('div');
-                fontContainer.style.display = 'flex';
-                fontContainer.style.alignItems = 'center';
-                fontContainer.style.gap = '4px';
-                fontContainer.style.flexShrink = '1';
-                fontContainer.style.minWidth = '0';
-
-                const fontLabel = document.createElement('label');
-                fontLabel.textContent = 'Font';
-                fontLabel.style.fontSize = '0.875rem';
-                fontLabel.style.color = theme.palette.text.secondary;
-                fontLabel.style.fontWeight = '400';
-                fontLabel.style.whiteSpace = 'nowrap';
-                fontLabel.style.minWidth = 'auto';
-
-                const fontSelect = document.createElement('select');
-                fontSelect.className = 'font-family-select';
-                fontSelect.style.width = '80px';
-                fontSelect.style.height = '32px';
-                fontSelect.style.padding = '4px 4px';
-                fontSelect.style.border = `1px solid ${theme.palette.divider}`;
-                fontSelect.style.borderRadius = '4px';
-                fontSelect.style.fontSize = '0.75rem';
-                fontSelect.style.backgroundColor = theme.palette.background.paper;
-                fontSelect.value = fontFamily || 'Arial';
-                fontSelect.style.color = theme.palette.text.primary;
-
-                const fontsToUse = availableFonts && availableFonts.length > 0 ? availableFonts : [
-                    { name: "Arial", family: "Arial" },
-                    { name: "Futura", family: "Futura" },
-                    { name: "IBM Plex Sans Arabic", family: "IBM Plex Sans Arabic" }
-                ];
-
-                fontsToUse.forEach(font => {
-                    const option = document.createElement('option');
-                    option.value = font.family || font.name;
-                    option.textContent = font.name || font.family;
-                    option.style.fontFamily = font.family || font.name;
-                    fontSelect.appendChild(option);
-                });
-
-                fontSelect.onchange = (e) => {
-                    if (onFontFamilyChange) {
-                        onFontFamilyChange(e.target.value);
-                    }
-                };
-
-                fontContainer.appendChild(fontLabel);
-                fontContainer.appendChild(fontSelect);
-
-                inputsBox.appendChild(xContainer);
-                inputsBox.appendChild(yContainer);
-                inputsBox.appendChild(fontContainer);
-                clearFormatBox.appendChild(inputsBox);
-                inputsContainerRef.current = inputsBox;
-            }
-        };
-
-        const timeoutId = setTimeout(injectInputs, 100);
-
-        return () => {
-            clearTimeout(timeoutId);
-        };
-    }, [t, onXChange, onYChange, onFontFamilyChange, fontFamily, availableFonts, x, y]);
-
-    useEffect(() => {
-        if (xInputRef.current && document.activeElement !== xInputRef.current) {
-            xInputRef.current.value = x;
-        }
-    }, [x]);
-
-    useEffect(() => {
-        if (yInputRef.current && document.activeElement !== yInputRef.current) {
-            yInputRef.current.value = y;
-        }
-    }, [y]);
-
     const htmlValue = buildHTML(text || "", fontSize || 14, color || theme.palette.text.primary, isBold || false, isItalic || false, isUnderline || false, alignment || "left", fontFamily || "Arial");
 
     const isUpdatingFromPropsRef = useRef(false);
@@ -503,9 +335,36 @@ const BadgeRichTextEditor = ({
         }
     }, []);
 
+    const fontsToUse = availableFonts && availableFonts.length > 0 ? availableFonts : [
+        { name: "Arial", family: "Arial" },
+        { name: "Futura", family: "Futura" },
+        { name: "IBM Plex Sans Arabic", family: "IBM Plex Sans Arabic" },
+    ];
+
+    // Matches the toolbar's own 32px font-size dropdown so every control in
+    // this row reads as the same height. Only padding/font-size are
+    // overridden — MUI computes the label notch itself, so a manual
+    // transform here would fight that and misalign the outline.
+    const compactInputSx = {
+        "& .MuiOutlinedInput-input": { padding: "6px 8px", fontSize: "0.8125rem" },
+        "& .MuiInputLabel-root": { fontSize: "0.8125rem" },
+    };
+
     return (
         <Box>
-            <Box ref={editorContainerRef}>
+            <Box
+                ref={editorContainerRef}
+                sx={{
+                    "& .MuiToolbar-root": {
+                        flexWrap: "nowrap",
+                        overflowX: "auto",
+                    },
+                    "& > div": {
+                        borderBottomLeftRadius: 0,
+                        borderBottomRightRadius: 0,
+                    },
+                }}
+            >
                 <RichTextEditor
                     value={htmlValue}
                     onChange={handleHTMLChange}
@@ -513,6 +372,78 @@ const BadgeRichTextEditor = ({
                     dir={dir}
                     minHeight={minHeight}
                     maxHeight={maxHeight}
+                />
+            </Box>
+            <Box
+                sx={{
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: 1.5,
+                    p: 1.5,
+                    border: "1px solid",
+                    borderTop: "none",
+                    borderColor: "divider",
+                    borderBottomLeftRadius: 1,
+                    borderBottomRightRadius: 1,
+                    bgcolor: "action.hover",
+                }}
+            >
+                <TextField
+                    label={t.xAxis}
+                    type="number"
+                    size="small"
+                    value={x ?? 0}
+                    onChange={(e) => {
+                        const val = parseFloat(e.target.value);
+                        if (Number.isFinite(val) && val >= 0 && val <= 100) {
+                            onXChange(val);
+                        }
+                    }}
+                    slotProps={{ htmlInput: { min: 0, max: 100, step: 0.1 } }}
+                    sx={{ width: 100, ...compactInputSx }}
+                />
+                <TextField
+                    label={t.yAxis}
+                    type="number"
+                    size="small"
+                    value={y ?? 0}
+                    onChange={(e) => {
+                        const val = parseFloat(e.target.value);
+                        if (Number.isFinite(val) && val >= 0 && val <= 100) {
+                            onYChange(val);
+                        }
+                    }}
+                    slotProps={{ htmlInput: { min: 0, max: 100, step: 0.1 } }}
+                    sx={{ width: 100, ...compactInputSx }}
+                />
+                <FormControl size="small" sx={{ width: 120, ...compactInputSx }}>
+                    <InputLabel>{t.font}</InputLabel>
+                    <Select
+                        label={t.font}
+                        value={fontFamily || "Arial"}
+                        onChange={(e) => onFontFamilyChange && onFontFamilyChange(e.target.value)}
+                        sx={{ height: "32px", fontSize: "0.8125rem" }}
+                    >
+                        {fontsToUse.map((font) => (
+                            <MenuItem key={font.family || font.name} value={font.family || font.name}>
+                                {font.name || font.family}
+                            </MenuItem>
+                        ))}
+                    </Select>
+                </FormControl>
+                <TextField
+                    label={t.lineHeight}
+                    type="number"
+                    size="small"
+                    value={lineHeight ?? 1.2}
+                    onChange={(e) => {
+                        const val = parseFloat(e.target.value);
+                        if (Number.isFinite(val) && val >= 0.8 && val <= 3) {
+                            onLineHeightChange(val);
+                        }
+                    }}
+                    slotProps={{ htmlInput: { min: 0.8, max: 3, step: 0.1 } }}
+                    sx={{ width: 100, ...compactInputSx }}
                 />
             </Box>
         </Box>
@@ -563,6 +494,9 @@ export default function BadgeCustomizationModal({
                         const fontFamilyMatch = html.match(/font-family:\s*([^;'"]+)/i);
                         const fontFamily = fontFamilyMatch ? fontFamilyMatch[1].trim().replace(/['"]/g, '') : "Arial";
 
+                        const lineHeightMatch = html.match(/line-height:\s*([^;'"]+)/i);
+                        const lineHeight = lineHeightMatch ? parseFloat(lineHeightMatch[1]) : (existing?.lineHeight ?? 1.2);
+
                         initialCustomizations[fieldName] = {
                             text: text || `Sample ${fieldName}`,
                             fontSize: fontSize || 14,
@@ -571,6 +505,7 @@ export default function BadgeCustomizationModal({
                             isItalic: !!isItalic,
                             isUnderline: !!isUnderline,
                             fontFamily: fontFamily || "Arial",
+                            lineHeight: Number.isFinite(lineHeight) ? lineHeight : 1.2,
                             x: existing?.x !== undefined ? existing.x : 0,
                             y: existing?.y !== undefined ? existing.y : 0,
                             alignment: existing?.alignment || "left",
@@ -584,6 +519,7 @@ export default function BadgeCustomizationModal({
                             isItalic: existing?.isItalic !== undefined ? existing.isItalic : false,
                             isUnderline: existing?.isUnderline !== undefined ? existing.isUnderline : false,
                             fontFamily: existing?.fontFamily || "Arial",
+                            lineHeight: existing?.lineHeight !== undefined ? existing.lineHeight : 1.2,
                             x: existing?.x !== undefined ? existing.x : 0,
                             y: existing?.y !== undefined ? existing.y : 0,
                             alignment: existing?.alignment || "left",
@@ -818,7 +754,7 @@ export default function BadgeCustomizationModal({
                 <Box
                     ref={setScrollableContainerRef}
                     sx={{
-                        width: "50%",
+                        width: "55%",
                         borderRight: "1px solid",
                         borderColor: "divider",
                         overflowY: "auto",
@@ -945,6 +881,7 @@ export default function BadgeCustomizationModal({
                                         isUnderline={customization.isUnderline || false}
                                         alignment={customization.alignment || "left"}
                                         fontFamily={customization.fontFamily || "Arial"}
+                                        lineHeight={customization.lineHeight ?? 1.2}
                                         onTextChange={(text) => handleFieldChange(fieldName, "text", text)}
                                         onFontSizeChange={(size) => handleFieldChange(fieldName, "fontSize", size)}
                                         onColorChange={(color) => handleFieldChange(fieldName, "color", color)}
@@ -953,6 +890,7 @@ export default function BadgeCustomizationModal({
                                         onUnderlineChange={(underline) => handleFieldChange(fieldName, "isUnderline", underline)}
                                         onAlignmentChange={(alignment) => handleFieldChange(fieldName, "alignment", alignment)}
                                         onFontFamilyChange={(fontFamily) => handleFieldChange(fieldName, "fontFamily", fontFamily)}
+                                        onLineHeightChange={(lh) => handleFieldChange(fieldName, "lineHeight", lh)}
                                         x={customization.x}
                                         y={customization.y}
                                         onXChange={(val) => handleFieldChange(fieldName, "x", val)}
@@ -1120,7 +1058,7 @@ export default function BadgeCustomizationModal({
 
                 <Box
                     sx={{
-                        width: "50%",
+                        width: "45%",
                         bgcolor: "action.hover",
                         display: "flex",
                         justifyContent: "center",
@@ -1175,6 +1113,7 @@ export default function BadgeCustomizationModal({
                                     const isItalic = customization.isItalic || false;
                                     const isUnderline = customization.isUnderline || false;
                                     const fontFamily = customization.fontFamily || "Arial";
+                                    const lineHeight = customization.lineHeight || 1.2;
 
                                     let leftStyle = {};
                                     let textAlignStyle = {};
@@ -1203,7 +1142,7 @@ export default function BadgeCustomizationModal({
                                                 top: `${yPercent}%`,
                                                 fontSize: `${fontSize}px`,
                                                 fontFamily: `"${fontFamily}", sans-serif`,
-                                                lineHeight: 1.0,
+                                                lineHeight,
                                                 color: color,
                                                 fontWeight: isBold ? "bold" : "normal",
                                                 fontStyle: isItalic ? "italic" : "normal",
