@@ -28,11 +28,12 @@ import {
   Avatar,
   CircularProgress,
 } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import ConfirmationDialog from "@/components/modals/ConfirmationDialog";
 import LoadingState from "@/components/LoadingState";
+import { getCategoryLabel, groupByModuleCategory, OTHER_MODULE_CATEGORY } from "@/utils/moduleCategories";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { useAuth } from "@/contexts/AuthContext";
 import ICONS from "@/utils/iconUtil";
@@ -53,11 +54,13 @@ import {
 // "files" isn't part of the module-tile catalog GET /modules serves (that
 // catalog also drives the CMS home grid + legacy modulePermissions) — it
 // only exists in the granular Permission catalog. Same gap/fix as the
-// Permissions page's own FALLBACK_MODULE_INFO.
+// Permissions page's own FALLBACK_MODULE_INFO. Its `category` mirrors what
+// the backend constants attach to every catalog module: { id, labels, sort }.
 const FALLBACK_MODULE_INFO = {
   files: {
     labels: { en: "Manage Downloadable Files", ar: "إدارة الملفات القابلة للتنزيل" },
     icon: "files",
+    category: OTHER_MODULE_CATEGORY,
   },
 };
 
@@ -199,6 +202,7 @@ export default function RolesPage() {
   // (create mode, before Save) it's just module/label/icon for display.
   const [moduleRows, setModuleRows] = useState([]);
   const [checkedModules, setCheckedModules] = useState(new Set());
+  const groupedModuleRows = useMemo(() => groupByModuleCategory(moduleRows), [moduleRows]);
   const [modulesLoading, setModulesLoading] = useState(false);
 
   const loadRoles = async () => {
@@ -215,11 +219,15 @@ export default function RolesPage() {
 
   const mergeModuleLabels = (rows, catalogList) => {
     const info = {};
-    catalogList.forEach((m) => { info[m.key] = { labels: m.labels, icon: m.icon }; });
+    catalogList.forEach((m) => { info[m.key] = { labels: m.labels, icon: m.icon, category: m.category }; });
     return rows.map((r) => ({
       ...r,
       labels: info[r.module]?.labels || FALLBACK_MODULE_INFO[r.module]?.labels || { en: r.module, ar: r.module },
       icon: info[r.module]?.icon || FALLBACK_MODULE_INFO[r.module]?.icon,
+      category:
+        info[r.module]?.category ||
+        FALLBACK_MODULE_INFO[r.module]?.category ||
+        OTHER_MODULE_CATEGORY,
     }));
   };
 
@@ -239,7 +247,13 @@ export default function RolesPage() {
     setModulesLoading(true);
     const res = await getModules(userType);
     const list = Array.isArray(res) ? res : res?.data || [];
-    const rows = list.map((m) => ({ module: m.key, labels: m.labels, icon: m.icon, permissionId: null }));
+    const rows = list.map((m) => ({
+      module: m.key,
+      labels: m.labels,
+      icon: m.icon,
+      category: m.category || OTHER_MODULE_CATEGORY,
+      permissionId: null,
+    }));
     if (userType !== "staff") {
       rows.push({ module: "files", ...FALLBACK_MODULE_INFO.files, permissionId: null });
     }
@@ -683,25 +697,39 @@ export default function RolesPage() {
                     label={checkedModules.size > 0 ? t.unselectAllModules : t.selectAllModules}
                   />
                   <Divider />
-                  {moduleRows.map((row) => (
-                    <FormControlLabel
-                      key={row.module}
-                      sx={{ mx: 0 }}
-                      control={
-                        <Checkbox
-                          checked={checkedModules.has(row.module)}
-                          onChange={() => toggleModule(row.module)}
-                        />
-                      }
-                      label={
-                        <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-                          <Avatar sx={{ width: 28, height: 28, bgcolor: "action.hover", color: "primary.main" }}>
-                            {getModuleIcon(row.icon, { fontSize: "small" })}
-                          </Avatar>
-                          <Typography variant="body2">{row.labels?.[language] || row.module}</Typography>
-                        </Stack>
-                      }
-                    />
+                  {groupedModuleRows.map((group) => (
+                    <Box key={group.category.id}>
+                      <Typography
+                        variant="caption"
+                        fontWeight="bold"
+                        color="text.secondary"
+                        sx={{ display: "block", textTransform: "uppercase", letterSpacing: 1, mb: 0.5, mt: 1 }}
+                      >
+                        {getCategoryLabel(group.category, language)}
+                      </Typography>
+                      <Stack spacing={0.5}>
+                        {group.items.map((row) => (
+                              <FormControlLabel
+                                key={row.module}
+                                sx={{ mx: 0 }}
+                                control={
+                                  <Checkbox
+                                    checked={checkedModules.has(row.module)}
+                                    onChange={() => toggleModule(row.module)}
+                                  />
+                                }
+                                label={
+                                  <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+                                    <Avatar sx={{ width: 28, height: 28, bgcolor: "action.hover", color: "primary.main" }}>
+                                      {getModuleIcon(row.icon, { fontSize: "small" })}
+                                    </Avatar>
+                                    <Typography variant="body2">{row.labels?.[language] || row.module}</Typography>
+                                  </Stack>
+                                }
+                              />
+                        ))}
+                      </Stack>
+                    </Box>
                   ))}
                 </Stack>
               )}
