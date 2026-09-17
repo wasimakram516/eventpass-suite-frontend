@@ -19,7 +19,6 @@ import { getTheme } from "@/styles/theme";
 // so anything placed inside it (or referencing its marker text) gets lost.
 Font.registerHyphenationCallback((word) => [word]);
 
-
 // --------------------------------------------------------------
 // STATIC FONT REGISTRATION (AUTO-GENERATED)
 // --------------------------------------------------------------

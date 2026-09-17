@@ -80,7 +80,7 @@ export default function Modules() {
   const { dir, align, language, t } = useI18nLayout(translations);
   const router = useRouter();
   const theme = useTheme();
-const [modules, setModules] = useState([]);
+  const [modules, setModules] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -172,13 +172,23 @@ const [modules, setModules] = useState([]);
         }),
       }))
       .filter((group) => group.items.length > 0);
-  }, [groupedByCategory, language, searchQuery, selectedCategoryId]);
+}, [groupedByCategory, language, searchQuery, selectedCategoryId]);
 
-const coreModule = coreModules[0];
+  const coreModule = coreModules[0];
   // The Core Module banner ignores the search query so it never flickers away
   // while typing — it only hides when drilling into a different category.
   const isCoreVisible = coreModule &&
     (!selectedCategoryId || selectedCategoryId === coreModule.category?.id);
+
+  // Only the empty-state message is search-aware: it appears while a search is
+  // active and BOTH the grouped list and the core banner match nothing, so an
+  // EventReg-only user (or guessing "EventReg") never sees it under the banner.
+  const normalizedQuery = searchQuery.trim().toLocaleLowerCase();
+  const coreMatchesSearch = !normalizedQuery ||
+    (coreModule?.labels?.[language] ?? coreModule?.labels?.en ?? coreModule?.key ?? "")
+      .toLocaleLowerCase()
+      .includes(normalizedQuery);
+  const noSearchMatches = normalizedQuery && visibleGroups.length === 0 && !coreMatchesSearch;
 
   return (
     <Box dir={dir} sx={{ pb: 8, bgcolor: "background.default" }}>
@@ -334,10 +344,14 @@ const coreModule = coreModules[0];
                     <Box>
                       <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.75 }}>
                         {t.attendeeDataConsumers}
-                      </Typography>
-<Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
+</Typography>
+                      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.75 }}>
                         {ATTENDEE_DATA_CONSUMER_KEYS.map((moduleKey) => {
                           const labels = moduleLabelsById[moduleKey];
+                          // Only list modules present in this role's catalog
+                          // (e.g. SurveyGuru is admin-only) — a missing module
+                          // has no label, so rendering it would show a raw key.
+                          if (!labels) return null;
                           return (
                             <Chip
                               key={moduleKey}
@@ -369,9 +383,9 @@ const coreModule = coreModules[0];
                 </Stack>
               </AppCard>
             );
-})()}
+          })()}
 
-{visibleGroups.length === 0 ? (
+          {noSearchMatches ? (
             <Typography color="text.secondary" sx={{ textAlign: align }}>
               {t.noSearchResults}
             </Typography>
