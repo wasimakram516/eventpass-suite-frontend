@@ -12,6 +12,15 @@ import {
   Button,
   CircularProgress,
   Tooltip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
 } from "@mui/material";
 import { useAuth } from "@/contexts/AuthContext";
 import BusinessAlertModal from "@/components/modals/BusinessAlertModal";
@@ -48,6 +57,12 @@ const translations = {
     lastUpdated: "Last updated:",
     globalOverview: "Global Overview",
     trash: "Trash",
+    totalEvents: "Total Events",
+    unknownBusiness: "Unknown business",
+    viewDetails: "View Details",
+    eventBreakdown: "Events by Business",
+    eventCount: "Events",
+    close: "Close",
     users: "Users",
     businesses: "Businesses",
     noTotals: "No totals available.",
@@ -61,6 +76,12 @@ const translations = {
     lastUpdated: "آخر تحديث:",
     globalOverview: "نظرة عامة عالمية",
     trash: "المحذوفات",
+    totalEvents: "إجمالي الفعاليات",
+    unknownBusiness: "شركة غير معروفة",
+    viewDetails: "عرض التفاصيل",
+    eventBreakdown: "الفعاليات حسب الشركة",
+    eventCount: "الفعاليات",
+    close: "إغلاق",
     users: "المستخدمون",
     businesses: "الشركات",
     noTotals: "لا توجد بيانات متاحة.",
@@ -79,6 +100,7 @@ export default function HomePage() {
   const [businessModalDismissed, setBusinessModalDismissed] = useState(false);
   const [computing, setComputing] = useState(false);
   const [animateCharts, setAnimateCharts] = useState(true);
+  const [showEventDetails, setShowEventDetails] = useState(false);
   const effectRan = useRef(false);
 
   const { connected } = useDashboardSocket({
@@ -220,6 +242,7 @@ export default function HomePage() {
   };
 
   const { modules: moduleStats = {}, scope } = insights || {};
+  const eventBusinessBreakdown = moduleStats.global?.totals?.eventsByBusiness || [];
 
   const hours = new Date().getHours();
   const greeting =
@@ -268,14 +291,6 @@ export default function HomePage() {
   const sumValues = (obj = {}) =>
     Object.values(obj).reduce((sum, val) => sum + (Number(val) || 0), 0);
 
-  const buildTrashTotal = (trash = {}) => {
-    return Object.values(trash).reduce((sum, val) => {
-      if (typeof val === "number") return sum + val;
-      if (val && typeof val === "object") return sum + sumValues(val);
-      return sum;
-    }, 0);
-  };
-
   const buildDonutData = (data = [], emptyLabel = "Empty") => {
     const total = data.reduce((sum, item) => sum + (Number(item.value) || 0), 0);
     if (total === 0) {
@@ -301,15 +316,6 @@ export default function HomePage() {
       })),
       total,
     };
-  };
-
-  const buildTrashBreakdown = (trash = {}) => {
-    const entries = Object.entries(trash).map(([key, val]) => {
-      if (typeof val === "number") return { name: key, value: val };
-      if (val && typeof val === "object") return { name: key, value: sumValues(val) };
-      return { name: key, value: 0 };
-    });
-    return entries.filter((e) => e.value > 0);
   };
 
   const DonutStat = ({ data, centerLabel, height = 180 }) => {
@@ -570,11 +576,13 @@ export default function HomePage() {
                     t.noTotals,
                   );
 
-                  const trashBreakdown = buildTrashBreakdown(
-                    moduleStats.global.trash || {},
+                  const { data: eventsDonut, total: eventsTotal } = buildDonutData(
+                    eventBusinessBreakdown.map((business) => ({
+                      name: business.name || t.unknownBusiness,
+                      value: Number(business.count || 0),
+                    })),
+                    t.noTotals,
                   );
-                  const { data: trashDonut, total: trashTotal } =
-                    buildDonutData(trashBreakdown, t.noTotals);
 
                   return (
                     <Grid
@@ -660,13 +668,25 @@ export default function HomePage() {
                           }}
                         >
                           <Typography variant="subtitle1" gutterBottom>
-                            {t.trash}
+                            {t.totalEvents}
                           </Typography>
                           <DonutStat
-                            data={trashDonut}
-                            centerLabel={toArabicDigits(trashTotal, language)}
+                            data={eventsDonut}
+                            centerLabel={toArabicDigits(eventsTotal, language)}
                             height={200}
                           />
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            onClick={() => setShowEventDetails(true)}
+                            sx={{
+                              mt: 1,
+                              width: "50%",
+                              alignSelf: "center",
+                            }}
+                          >
+                            {t.viewDetails}
+                          </Button>
                         </AppCard>
                       </Grid>
                     </Grid>
@@ -828,6 +848,45 @@ export default function HomePage() {
             setShowBusinessModal(false);
           }}
         />
+
+        <Dialog
+          open={showEventDetails}
+          onClose={() => setShowEventDetails(false)}
+          fullWidth
+          maxWidth="sm"
+          dir={dir}
+        >
+          <DialogTitle>{t.eventBreakdown}</DialogTitle>
+          <DialogContent dividers>
+            {eventBusinessBreakdown.length > 0 ? (
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell align={align}>{t.businesses}</TableCell>
+                    <TableCell align={align}>{t.eventCount}</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {eventBusinessBreakdown.map((business) => (
+                    <TableRow key={business.businessId || business.name}>
+                      <TableCell align={align}>
+                        {business.name || t.unknownBusiness}
+                      </TableCell>
+                      <TableCell align={align}>
+                        {toArabicDigits(Number(business.count || 0), language)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <Typography color="text.secondary">{t.noTotals}</Typography>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setShowEventDetails(false)}>{t.close}</Button>
+          </DialogActions>
+        </Dialog>
       </Container>
     </Box>
   );
