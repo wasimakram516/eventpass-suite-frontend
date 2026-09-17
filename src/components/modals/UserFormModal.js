@@ -36,6 +36,7 @@ import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import { hasModuleAccess } from "@/hooks/usePermission";
 import { getModuleIcon } from "@/utils/iconMapper";
+import { getCategoryLabel, groupByModuleCategory, OTHER_MODULE_CATEGORY } from "@/utils/moduleCategories";
 import slugify from "@/utils/slugify";
 import {
   updateUser,
@@ -62,6 +63,7 @@ const FALLBACK_MODULE_INFO = {
   files: {
     labels: { en: "Manage Downloadable Files", ar: "إدارة الملفات القابلة للتنزيل" },
     icon: "files",
+    category: OTHER_MODULE_CATEGORY,
   },
 };
 
@@ -990,6 +992,37 @@ function UserFormModal({
     });
   }, [rolePermissionRows, availableModules, form.modulePermissions]);
 
+  const moduleInfoByKey = useMemo(
+    () => new Map(availableModules.map((module) => [module.key, module])),
+    [availableModules],
+  );
+
+  // Files is granular-permission-only: list it in Other for clarity, but do
+  // not add it to legacy modulePermissions or change its existing override
+  // behavior in the Permissions tab.
+  const moduleRowsForDisplay = useMemo(() => {
+    if (form.userType === "staff" || moduleInfoByKey.has("files")) return availableModules;
+    return [...availableModules, { key: "files", ...FALLBACK_MODULE_INFO.files, isGranularOnly: true }];
+  }, [availableModules, form.userType, moduleInfoByKey]);
+
+  // Module catalog grouped by category. Each module carries its own category
+  // as { id, labels, sort } from the backend payload; groups are sorted by
+  // category.sort (same grouping the /cms/modules page and Role dialog's
+  // Modules tab use).
+  const groupedModules = useMemo(
+    () => groupByModuleCategory(moduleRowsForDisplay),
+    [moduleRowsForDisplay],
+  );
+
+  // Same category grouping for the granular Permissions-tab rows.
+  const groupedPermissionRows = useMemo(
+    () => groupByModuleCategory(
+      filteredPermissionRows,
+      (perm) => moduleInfoByKey.get(perm.module)?.category || FALLBACK_MODULE_INFO[perm.module]?.category,
+    ),
+    [filteredPermissionRows, moduleInfoByKey],
+  );
+
   // Mirrors the backend's assertCanAssignRole ceiling check (roleAssignmentAuthz.js)
   // using data already on hand — rolePermissionRows loads as soon as a role is
   // picked, and currentUser.permissions is the same ceiling set already used
@@ -1426,78 +1459,109 @@ function UserFormModal({
             />
 
             <FormGroup>
-              {availableModules.map((mod) => {
-                // Shown but disabled, not hidden, for modules outside the
-                // actor's own ceiling — same "Your business does not have
-                // this permission" treatment as the granular Permissions
-                // tab (PermissionModuleCard above), so a business owner can
-                // see the full catalog and understand why a module can't be
-                // granted, rather than it silently not being there.
-                const ceilingOk = !moduleCeilingActive || ceilingFilteredModules.some((m) => m.key === mod.key);
-                const isInherited = roleGrantedModuleKeys.has(mod.key);
-                const isChecked = form.modulePermissions.includes(mod.key);
-                const isOverridden = !!form.roleId && isChecked !== isInherited;
-                const overrideEffect = isOverridden ? (isChecked ? "allow" : "deny") : undefined;
+              {groupedModules.map((group) => {
+                const categoryInfo = group.category;
+                const categoryLabel = getCategoryLabel(categoryInfo, language);
                 return (
-                  <Tooltip
-                    key={mod.key}
-                    title={!ceilingOk ? "Your business does not have this permission" : ""}
-                  >
-                    <Box
-                      sx={{
-                        borderInlineStart: "3px solid",
-                        borderColor: isOverridden
-                          ? overrideEffect === "allow"
-                            ? "success.main"
-                            : "error.main"
-                          : "transparent",
-                        bgcolor: isOverridden
-                          ? overrideEffect === "allow"
-                            ? theme.palette.users.permAllowBg
-                            : theme.palette.users.permDenyBg
-                          : "transparent",
-                        borderRadius: 1,
-                        pl: isOverridden ? 1 : 0,
-                        pr: 1,
-                        width: "100%",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        gap: 0.5,
-                      }}
+                  <Box key={categoryInfo?.id ?? "other"} sx={{ mb: 1 }}>
+                    <Typography
+                      variant="caption"
+                      fontWeight="bold"
+                      color="text.secondary"
+                      sx={{ display: "block", textTransform: "uppercase", letterSpacing: 1, mb: 0.5 }}
                     >
-                      <FormControlLabel
-                        disabled={!ceilingOk}
-                        sx={{ mr: 0, minWidth: 0 }}
-                        control={
-                          <Checkbox
-                            checked={isChecked}
-                            onChange={() => {
-                              if (!ceilingOk) return;
-                              setForm((prev) => ({
-                                ...prev,
-                                modulePermissions: isChecked
-                                  ? prev.modulePermissions.filter((k) => k !== mod.key)
-                                  : [...prev.modulePermissions, mod.key],
-                              }));
+                      {categoryLabel}
+                    </Typography>
+                    {group.items.map((mod) => {
+                      if (mod.isGranularOnly) {
+                        return (
+                          <Box
+                            key={mod.key}
+                            sx={{ display: "flex", alignItems: "center", gap: 1, px: 1, py: 0.75 }}
+                          >
+                            <Avatar sx={{ width: 28, height: 28, bgcolor: "action.hover", color: "primary.main" }}>
+                              {getModuleIcon(mod.icon, { fontSize: "small" })}
+                            </Avatar>
+                            <Typography variant="body2">{mod.labels?.[language] || mod.key}</Typography>
+                            <Chip size="small" label={t.permissionsOnly} variant="outlined" />
+                          </Box>
+                        );
+                      }
+
+                      // Shown but disabled, not hidden, for modules outside the
+                      // actor's own ceiling — same "Your business does not have
+                      // this permission" treatment as the granular Permissions
+                      // tab (PermissionModuleCard above), so a business owner can
+                      // see the full catalog and understand why a module can't be
+                      // granted, rather than it silently not being there.
+                      const ceilingOk = !moduleCeilingActive || ceilingFilteredModules.some((m) => m.key === mod.key);
+                      const isInherited = roleGrantedModuleKeys.has(mod.key);
+                      const isChecked = form.modulePermissions.includes(mod.key);
+                      const isOverridden = !!form.roleId && isChecked !== isInherited;
+                      const overrideEffect = isOverridden ? (isChecked ? "allow" : "deny") : undefined;
+                      return (
+                        <Tooltip
+                          key={mod.key}
+                          title={!ceilingOk ? "Your business does not have this permission" : ""}
+                        >
+                          <Box
+                            sx={{
+                              borderInlineStart: "3px solid",
+                              borderColor: isOverridden
+                                ? overrideEffect === "allow"
+                                  ? "success.main"
+                                  : "error.main"
+                                : "transparent",
+                              bgcolor: isOverridden
+                                ? overrideEffect === "allow"
+                                  ? theme.palette.users.permAllowBg
+                                  : theme.palette.users.permDenyBg
+                                : "transparent",
+                              borderRadius: 1,
+                              pl: isOverridden ? 1 : 0,
+                              pr: 1,
+                              width: "100%",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              gap: 0.5,
                             }}
-                          />
-                        }
-                        label={
-                          <Typography variant="body2" sx={{ opacity: overrideEffect === "deny" ? 0.6 : 1 }}>
-                            {mod.labels?.[language] || mod.key}
-                          </Typography>
-                        }
-                      />
-                      {isOverridden && (
-                        <Chip
-                          size="small"
-                          label={overrideEffect === "allow" ? t.allow : t.deny}
-                          color={overrideEffect === "allow" ? "success" : "error"}
-                        />
-                      )}
-                    </Box>
-                  </Tooltip>
+                          >
+                            <FormControlLabel
+                              disabled={!ceilingOk}
+                              sx={{ mr: 0, minWidth: 0 }}
+                              control={
+                                <Checkbox
+                                  checked={isChecked}
+                                  onChange={() => {
+                                    if (!ceilingOk) return;
+                                    setForm((prev) => ({
+                                      ...prev,
+                                      modulePermissions: isChecked
+                                        ? prev.modulePermissions.filter((k) => k !== mod.key)
+                                        : [...prev.modulePermissions, mod.key],
+                                    }));
+                                  }}
+                                />
+                              }
+                              label={
+                                <Typography variant="body2" sx={{ opacity: overrideEffect === "deny" ? 0.6 : 1 }}>
+                                  {mod.labels?.[language] || mod.key}
+                                </Typography>
+                              }
+                            />
+                            {isOverridden && (
+                              <Chip
+                                size="small"
+                                label={overrideEffect === "allow" ? t.allow : t.deny}
+                                color={overrideEffect === "allow" ? "success" : "error"}
+                              />
+                            )}
+                          </Box>
+                        </Tooltip>
+                      );
+                    })}
+                  </Box>
                 );
               })}
             </FormGroup>
@@ -1658,24 +1722,42 @@ function UserFormModal({
                 )}
 
                 <Stack divider={<Divider />}>
-                  {filteredPermissionRows.map((perm) => (
-                    <PermissionModuleCard
-                      key={perm.permissionId}
-                      perm={perm}
-                      info={
-                        availableModules.find((m) => m.key === perm.module) ||
-                        FALLBACK_MODULE_INFO[perm.module]
-                      }
-                      overridesForPermission={overridesWorking[perm.permissionId] || {}}
-                      actionLabels={actionLabels}
-                      language={language}
-                      theme={theme}
-                      t={t}
-                      ceilingPermissions={currentUser?.permissions}
-                      isSuper={currentUser?.isSuper}
-                      onToggle={toggleOverride}
-                    />
-                  ))}
+                  {groupedPermissionRows.map((group) => {
+                    const categoryInfo = group.category;
+                    const categoryLabel = getCategoryLabel(categoryInfo, language);
+                    return (
+                      <Box key={categoryInfo?.id ?? "other"} sx={{ py: 1 }}>
+                        <Typography
+                          variant="caption"
+                          fontWeight="bold"
+                          color="text.secondary"
+                          sx={{ display: "block", textTransform: "uppercase", letterSpacing: 1, mb: 1 }}
+                        >
+                          {categoryLabel}
+                        </Typography>
+                        <Stack divider={<Divider />}>
+                        {group.items.map((perm) => (
+                          <PermissionModuleCard
+                            key={perm.permissionId}
+                            perm={perm}
+                            info={
+                              moduleInfoByKey.get(perm.module) ||
+                              FALLBACK_MODULE_INFO[perm.module]
+                            }
+                            overridesForPermission={overridesWorking[perm.permissionId] || {}}
+                            actionLabels={actionLabels}
+                            language={language}
+                            theme={theme}
+                            t={t}
+                            ceilingPermissions={currentUser?.permissions}
+                            isSuper={currentUser?.isSuper}
+                            onToggle={toggleOverride}
+                          />
+                        ))}
+                        </Stack>
+                      </Box>
+                    );
+                  })}
                 </Stack>
               </>
             )}

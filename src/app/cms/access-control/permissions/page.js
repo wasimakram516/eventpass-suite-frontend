@@ -32,17 +32,20 @@ import {
 } from "@/services/roleService";
 import { getModules } from "@/services/moduleService";
 import { getModuleIcon } from "@/utils/iconMapper";
+import { getCategoryLabel, groupByModuleCategory, OTHER_MODULE_CATEGORY } from "@/utils/moduleCategories";
 
 // "files" (Manage Downloadable Files) isn't part of the older per-role
 // module-tile catalog GET /modules serves (that catalog also drives the CMS
 // home grid + legacy modulePermissions, which "files" was never part of) —
 // it only exists in the granular Permission catalog. This local fallback
 // keeps its row from showing the raw "files" key/a generic icon instead of a
-// proper bilingual label and matching icon.
+// proper bilingual label and matching icon. Its `category` mirrors what the
+// backend attaches to every catalog module: { id, labels, sort }.
 const FALLBACK_MODULE_INFO = {
   files: {
     labels: { en: "Manage Downloadable Files", ar: "إدارة الملفات القابلة للتنزيل" },
     icon: "files",
+    category: OTHER_MODULE_CATEGORY,
   },
 };
 
@@ -110,7 +113,7 @@ export default function PermissionsMatrixPage() {
   const [loading, setLoading] = useState(true);
   const [roles, setRoles] = useState([]);
   const [selectedRoleId, setSelectedRoleId] = useState(searchParams.get("roleId") || null);
-  const [moduleData, setModuleData] = useState({}); // key -> { labels, icon }
+  const [moduleData, setModuleData] = useState({}); // key -> { labels, icon, category }
   const [actionLabels, setActionLabels] = useState({});
   const [permissions, setPermissions] = useState([]); // [{permissionId, module, allowedActions}]
   const [assignments, setAssignments] = useState({}); // permissionId -> Set(actions)
@@ -129,7 +132,7 @@ export default function PermissionsMatrixPage() {
       if (!modulesRes?.error) {
         const list = Array.isArray(modulesRes) ? modulesRes : modulesRes?.data || [];
         const map = {};
-        list.forEach((m) => { map[m.key] = { labels: m.labels, icon: m.icon }; });
+        list.forEach((m) => { map[m.key] = { labels: m.labels, icon: m.icon, category: m.category }; });
         setModuleData(map);
       }
       if (!actionsRes?.error) {
@@ -224,9 +227,6 @@ export default function PermissionsMatrixPage() {
     );
   };
 
-  if (loading) return <LoadingState />;
-
-  const selectedRole = roles.find((r) => r._id === selectedRoleId);
   // This page only fine-tunes actions WITHIN modules already assigned to the
   // role (see the role's own Modules tab, which grants a module's full/
   // ceiling action set on check) — a module with zero granted actions at
@@ -234,7 +234,26 @@ export default function PermissionsMatrixPage() {
   // showing every catalog module with all-unchecked boxes. Based on the
   // originally loaded grant, not the live in-progress toggles, so a module
   // doesn't vanish mid-edit just because its last box was unchecked.
-  const assignedPermissions = permissions.filter((perm) => (perm.grantedActions?.length || 0) > 0);
+  const assignedPermissions = useMemo(
+    () => permissions.filter((perm) => (perm.grantedActions?.length || 0) > 0),
+    [permissions],
+  );
+
+  // Group the assigned modules by category. Each module's category is the
+  // full { id, labels, sort } object from the backend payload (or the local
+  // FALLBACK for files). Groups are sorted by category.sort. Declared above
+  // the early return so hook order stays stable across the loading state.
+  const groupedPermissions = useMemo(
+    () => groupByModuleCategory(
+      assignedPermissions,
+      (perm) => moduleData[perm.module]?.category || FALLBACK_MODULE_INFO[perm.module]?.category,
+    ),
+    [assignedPermissions, moduleData],
+  );
+
+  if (loading) return <LoadingState />;
+
+  const selectedRole = roles.find((r) => r._id === selectedRoleId);
 
   return (
     <Container maxWidth={false} disableGutters sx={{ px: { xs: 2, md: 3 }, py: 3 }} dir={dir}>
@@ -357,86 +376,104 @@ export default function PermissionsMatrixPage() {
                   <Typography color="text.secondary">{t.noModulesAssigned}</Typography>
                 ) : (
                 <Stack spacing={2} divider={<Divider />}>
-                  {assignedPermissions.map((perm) => {
-                    const granted = assignments[perm.permissionId] || new Set();
-                    const allChecked = perm.allowedActions.every((a) => granted.has(a));
-                    const info = moduleData[perm.module] || FALLBACK_MODULE_INFO[perm.module];
-
+                  {groupedPermissions.map((group) => {
+                    const categoryInfo = group.category;
+                    const categoryLabel = getCategoryLabel(categoryInfo, language);
                     return (
-                      <Box key={perm.permissionId}>
-                        <Box
-                          sx={{
-                            display: "flex",
-                            width: "100%",
-                            flexWrap: "wrap",
-                            justifyContent: "space-between",
-                            alignItems: "center",
-                            mb: 2,
-                            rowGap: 1,
-                          }}
+                      <Box key={categoryInfo?.id ?? "other"}>
+                        <Typography
+                          variant="subtitle2"
+                          fontWeight="bold"
+                          color="primary"
+                          sx={{ mb: 1.5, textTransform: "uppercase", letterSpacing: 0.8 }}
                         >
-                          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-                            <Avatar
-                              sx={{
-                                width: 32,
-                                height: 32,
-                                bgcolor: "action.hover",
-                                color: "primary.main",
-                              }}
-                            >
-                              {getModuleIcon(info?.icon, { fontSize: "small" })}
-                            </Avatar>
-                            <Typography fontWeight="bold">
-                              {info?.labels?.[language] || perm.module}
-                            </Typography>
-                          </Box>
-                          <Box sx={{ display: "flex", alignItems: "center", gap: 1, ml: "auto" }}>
-                            <Typography variant="caption" color="text.secondary">{t.selectAll}</Typography>
-                            <Switch
-                              size="small"
-                              checked={allChecked}
-                              onChange={(e) =>
-                                toggleAllForModule(perm.permissionId, perm.allowedActions, e.target.checked)
-                              }
-                            />
-                          </Box>
-                        </Box>
+                          {categoryLabel}
+                        </Typography>
+                        <Stack spacing={2} divider={<Divider />}>
+                        {group.items.map((perm) => {
+                          const granted = assignments[perm.permissionId] || new Set();
+                          const allChecked = perm.allowedActions.every((a) => granted.has(a));
+                          const info = moduleData[perm.module] || FALLBACK_MODULE_INFO[perm.module];
 
-                        <Box
-                          sx={{
-                            display: "grid",
-                            gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))",
-                            columnGap: 3,
-                            rowGap: 1.5,
-                          }}
-                        >
-                          {perm.allowedActions.map((action) => {
-                            const label =
-                              action === "create" &&
-                              selectedRole?.userType === "staff" &&
-                              STAFF_SCAN_MODULES.has(perm.module)
-                                ? t.scanQrLabel
-                                : actionLabels[action]?.[language] || action;
-                            return (
-                              <FormControlLabel
-                                key={action}
-                                sx={{ mr: 0, minWidth: 0 }}
-                                control={
-                                  <Checkbox
-                                    size="small"
-                                    checked={granted.has(action)}
-                                    onChange={() => toggleAction(perm.permissionId, action)}
-                                  />
-                                }
-                                label={
-                                  <Typography variant="body2" noWrap>
-                                    {label}
+                          return (
+                            <Box key={perm.permissionId}>
+                              <Box
+                                sx={{
+                                  display: "flex",
+                                  width: "100%",
+                                  flexWrap: "wrap",
+                                  justifyContent: "space-between",
+                                  alignItems: "center",
+                                  mb: 2,
+                                  rowGap: 1,
+                                }}
+                              >
+                                <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                                  <Avatar
+                                    sx={{
+                                      width: 32,
+                                      height: 32,
+                                      bgcolor: "action.hover",
+                                      color: "primary.main",
+                                    }}
+                                  >
+                                    {getModuleIcon(info?.icon, { fontSize: "small" })}
+                                  </Avatar>
+                                  <Typography fontWeight="bold">
+                                    {info?.labels?.[language] || perm.module}
                                   </Typography>
-                                }
-                              />
-                            );
-                          })}
-                        </Box>
+                                </Box>
+                                <Box sx={{ display: "flex", alignItems: "center", gap: 1, ml: "auto" }}>
+                                  <Typography variant="caption" color="text.secondary">{t.selectAll}</Typography>
+                                  <Switch
+                                    size="small"
+                                    checked={allChecked}
+                                    onChange={(e) =>
+                                      toggleAllForModule(perm.permissionId, perm.allowedActions, e.target.checked)
+                                    }
+                                  />
+                                </Box>
+                              </Box>
+
+                              <Box
+                                sx={{
+                                  display: "grid",
+                                  gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))",
+                                  columnGap: 3,
+                                  rowGap: 1.5,
+                                }}
+                              >
+                                {perm.allowedActions.map((action) => {
+                                  const label =
+                                    action === "create" &&
+                                    selectedRole?.userType === "staff" &&
+                                    STAFF_SCAN_MODULES.has(perm.module)
+                                      ? t.scanQrLabel
+                                      : actionLabels[action]?.[language] || action;
+                                  return (
+                                    <FormControlLabel
+                                      key={action}
+                                      sx={{ mr: 0, minWidth: 0 }}
+                                      control={
+                                        <Checkbox
+                                          size="small"
+                                          checked={granted.has(action)}
+                                          onChange={() => toggleAction(perm.permissionId, action)}
+                                        />
+                                      }
+                                      label={
+                                        <Typography variant="body2" noWrap>
+                                          {label}
+                                        </Typography>
+                                      }
+                                    />
+                                  );
+                                })}
+                              </Box>
+                            </Box>
+                          );
+                        })}
+                        </Stack>
                       </Box>
                     );
                   })}
