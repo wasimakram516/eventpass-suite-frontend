@@ -276,12 +276,12 @@ export default function CoreModuleBanner({
 
           {/* Left column: icon + identity copy */}
           <Stack sx={{ p: { xs: 3, md: 5 }, height: "100%", justifyContent: { md: "center" } }} spacing={2}>
-            <Stack direction="row" spacing={2} sx={{ alignItems: "flex-start" }}>
+            <Stack direction="row" spacing={2} sx={{ alignItems: "center" }}>
               <Box
                 sx={{
-                  width: 56,
-                  height: 56,
-                  borderRadius: 2,
+                  width: { xs: 64, md: 88 },
+                  height: { xs: 64, md: 88 },
+                  borderRadius: 3,
                   background: "linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)",
                   color: BANNER.text,
                   boxShadow: "0 8px 20px -6px rgba(59, 130, 246, 0.6), inset 0 0 0 1px rgba(255, 255, 255, 0.18)",
@@ -291,7 +291,7 @@ export default function CoreModuleBanner({
                   flexShrink: 0,
                 }}
               >
-                {coreModule.icon && getModuleIcon(coreModule.icon, { sx: { fontSize: 30, color: BANNER.text } })}
+                {coreModule.icon && getModuleIcon(coreModule.icon, { sx: { fontSize: { xs: 34, md: 48 }, color: BANNER.text } })}
               </Box>
               <Stack spacing={0.75} sx={{ minWidth: 0 }}>
                 <Box
