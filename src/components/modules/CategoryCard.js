@@ -52,7 +52,22 @@ export function CategoryCard({ group, language, onOpenCategory, onOpenModule, t 
         }}
       >
         {items.map((mod) => (
-          <Box key={mod.key} sx={{ px: 1.5, py: 1, borderRadius: 1, bgcolor: "action.hover", color: "text.primary" }}>
+          <Box
+            key={mod.key}
+            onClick={() => {
+              if (onOpenModule) onOpenModule(mod);
+              else if (mod?.route) window.location.href = mod.route;
+            }}
+            sx={{
+              px: 1.5,
+              py: 1,
+              borderRadius: 1,
+              bgcolor: "action.hover",
+              color: "text.primary",
+              cursor: "pointer",
+              "&:hover": { filter: "brightness(0.95)" },
+            }}
+          >
             <Typography variant="body2" noWrap>
               {mod.labels?.[language] ?? mod.labels?.en ?? mod.key}
             </Typography>

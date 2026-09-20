@@ -263,7 +263,7 @@ export default function Modules() {
 
                   <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(2, 1fr)" }, gap: 3 }}>
                     {searchFilteredGroups.map((group) => (
-                      <CategoryCard key={group.category.id} group={group} language={language} onOpenCategory={handleOpenCategory} t={t} />
+                      <CategoryCard key={group.category.id} group={group} language={language} onOpenCategory={handleOpenCategory} onOpenModule={handleOpenModule} t={t} />
                     ))}
                   </Box>
                 </Box>
