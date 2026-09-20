@@ -1,89 +1,20 @@
 import api from "@/services/api";
 import withApiHandler from "@/utils/withApiHandler";
+import createRegistrationService from "@/services/registrationServiceFactory";
+
+export const {
+  getRegistrationsByEvent, getInitialRegistrations, getAllPublicRegistrationsByEvent,
+  exportRegistrations, getUnsentCount, sendBulkEmails, sendBulkWhatsApp,
+  downloadSampleExcel, downloadCountryReference, uploadRegistrations,
+  deleteRegistration, updateRegistrationApproval, bulkUpdateRegistrationApproval,
+  createWalkIn, getRegistrationMeta, trackBadgePrint, updateRegistration,
+} = createRegistrationService("/eventreg/registrations");
 
 // Create a new public registration (public use)
 export const createRegistration = withApiHandler(async (payload) => {
   const { data } = await api.post("/eventreg/registrations", payload);
   return data;
 }, { showSuccess: true });
-
-// CMS-only: records a ticket paid outside EventPass. The backend enforces the
-// dedicated permission and reserves ticket capacity atomically.
-export const createExternalRegistration = withApiHandler(async (slug, payload) => {
-  const { data } = await api.post(`/eventreg/registrations/event/${slug}/external`, payload);
-  return data;
-}, { showSuccess: true });
-
-// Checks an external-registration identity before uploading an optional payment
-// document. Creation repeats this validation server-side to prevent races.
-export const checkExternalRegistrationDuplicate = withApiHandler(async (slug, payload) => {
-  const { data } = await api.post(
-    `/eventreg/registrations/event/${slug}/external/duplicate-check`,
-    payload,
-  );
-  return data;
-});
-
-// Get count of unsent registration emails for an event (CMS admin use)
-export const getUnsentCount = withApiHandler(async (eventSlug) => {
-  const { data } = await api.get(
-    `/eventreg/registrations/event/${eventSlug}/unsent-count`,
-  );
-  return data;
-});
-
-// Send bulk registration emails for an event (CMS admin use)
-export const sendBulkEmails = withApiHandler(
-  async (slug, customEmail = null, file = null) => {
-    const formData = new FormData();
-
-    if (customEmail) {
-      Object.keys(customEmail).forEach((key) => {
-        if (customEmail[key] !== undefined && customEmail[key] !== null) {
-          formData.append(key, customEmail[key]);
-        }
-      });
-    }
-
-    if (file) {
-      formData.append("file", file);
-    }
-
-    const { data } = await api.post(
-      `/eventreg/registrations/event/${slug}/bulk-email`,
-      formData,
-    );
-    return data;
-  },
-  { showSuccess: true },
-);
-
-// Send bulk WhatsApp messages for an event (CMS admin use)
-export const sendBulkWhatsApp = withApiHandler(
-  async (slug, filters = {}, file = null) => {
-    const formData = new FormData();
-
-    Object.keys(filters).forEach((key) => {
-      if (filters[key] !== undefined && filters[key] !== null) {
-        if (key === "file") {
-          return;
-        }
-        formData.append(key, filters[key]);
-      }
-    });
-
-    if (file) {
-      formData.append("file", file);
-    }
-
-    const { data } = await api.post(
-      `/eventreg/registrations/event/${slug}/bulk-whatsapp`,
-      formData,
-    );
-    return data;
-  },
-  { showSuccess: true },
-);
 
 // Verify registration by QR token (Staff use)
 export const verifyRegistrationByToken = withApiHandler(async (token) => {
@@ -92,150 +23,3 @@ export const verifyRegistrationByToken = withApiHandler(async (token) => {
   );
   return data;
 });
-
-// Download sample Excel template
-export const downloadSampleExcel = async (slug) => {
-  const response = await api.get(
-    `/eventreg/registrations/event/${slug}/sample-excel`,
-    { responseType: "blob" },
-  );
-  return response.data;
-};
-
-// Download country reference Excel file
-export const downloadCountryReference = async () => {
-  const response = await api.get(`/eventreg/registrations/country-reference`, {
-    responseType: "blob",
-  });
-  return response.data;
-};
-
-// Export CSV (with filters)
-export const exportRegistrations = async (slug, query = {}) => {
-  const qs = new URLSearchParams(query).toString();
-
-  const url = `/eventreg/registrations/event/${slug}/export${qs ? `?${qs}` : ""}`;
-
-  // Must use axios native because withApiHandler breaks blob downloads
-  const response = await api.get(url, { responseType: "blob" });
-
-  return response.data;
-};
-
-// Upload filled Excel
-export const uploadRegistrations = withApiHandler(
-  async (slug, file) => {
-    const formData = new FormData();
-    formData.append("file", file);
-
-    const { data } = await api.post(
-      `/eventreg/registrations/event/${slug}/upload`,
-      formData,
-      {
-        headers: { "Content-Type": "multipart/form-data" },
-      },
-    );
-    return data;
-  },
-  { showSuccess: true },
-);
-
-// Get registrations for a specific event (CMS use, by slug)
-export const getRegistrationsByEvent = withApiHandler(
-  async (slug, page = 1, limit = 10, sort = -1) => {
-    const { data } = await api.get(
-      `/eventreg/registrations/event/${slug}?page=${page}&limit=${limit}&sort=${sort}`,
-    );
-    return data;
-  },
-);
-
-// Get initial registrations (first 50)
-export const getInitialRegistrations = withApiHandler(async (slug, sort = -1) => {
-  const { data } = await api.get(`/eventreg/registrations/event/${slug}/all?sort=${sort}`);
-  return data;
-});
-
-// Get all public registrations for export (no pagination)
-export const getAllPublicRegistrationsByEvent = withApiHandler(async (slug) => {
-  const { data } = await api.get(`/eventreg/registrations/event/${slug}/all`);
-  return data;
-});
-
-// Delete a registration by ID (CMS use)
-export const deleteRegistration = withApiHandler(
-  async (id) => {
-    const { data } = await api.delete(`/eventreg/registrations/${id}`);
-    return data;
-  },
-  { showSuccess: true },
-);
-
-// Update a registration by ID (CMS use)
-export const updateRegistration = withApiHandler(
-  async (id, fields) => {
-    const { data } = await api.put(`/eventreg/registrations/${id}`, { fields });
-    return data;
-  },
-  { showSuccess: true },
-);
-
-export const updateRegistrationApproval = withApiHandler(
-  async (id, status) => {
-    const { data } = await api.patch(`/eventreg/registrations/${id}/approval`, {
-      status,
-    });
-    return data;
-  },
-  { showSuccess: true },
-);
-
-export const bulkUpdateRegistrationApproval = withApiHandler(
-  async (slug, payload) => {
-    const { data } = await api.patch(
-      `/eventreg/registrations/event/${slug}/approval/bulk`,
-      payload,
-    );
-    return data;
-  },
-  { showSuccess: true },
-);
-
-export const createWalkIn = withApiHandler(
-  async (id) => {
-    const { data } = await api.post(`/eventreg/registrations/${id}/walkin`);
-    return data;
-  },
-  { showSuccess: true },
-);
-
-export const getRegistrationMeta = withApiHandler(async (id) => {
-  const { data } = await api.get(`/eventreg/registrations/${id}/meta`);
-  return data;
-});
-
-export const trackBadgePrint = withApiHandler(async (id) => {
-  const { data } = await api.patch(`/eventreg/registrations/${id}/track-print`);
-  return data;
-});
-export const getRegistrationInvoice = async (registrationId) => {
-  try {
-    const res = await api.get(
-      `/eventreg/registrations/${registrationId}/invoice`,
-      { responseType: "blob" }
-    );
-    return res.data;
-  } catch (err) {
-    let message = "Failed to load invoice";
-    const errData = err?.response?.data;
-    if (errData instanceof Blob) {
-      try {
-        const text = await errData.text();
-        message = JSON.parse(text)?.message || message;
-      } catch { /* not JSON, keep default */ }
-    } else if (errData?.message) {
-      message = errData.message;
-    }
-    return { error: true, message };
-  }
-};

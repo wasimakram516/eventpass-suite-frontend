@@ -8,13 +8,9 @@ import {
     TextField,
     Button,
     Stack,
-    MenuItem,
     RadioGroup,
     FormControlLabel,
     Radio,
-    FormControl,
-    InputLabel,
-    Select,
     Box,
     Typography,
     FormHelperText,
@@ -23,8 +19,6 @@ import {
     Alert,
     Checkbox,
 
-    ListSubheader,
-    InputAdornment,
 } from "@mui/material";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
@@ -37,10 +31,9 @@ import { normalizePhone } from "@/utils/phoneUtils";
 import { validatePhoneNumber } from "@/utils/phoneValidation";
 import { uploadSingleFile } from "@/utils/mediaUpload";
 import MediaUploadProgress from "@/components/MediaUploadProgress";
-import { initiatePayment } from "@/services/eventreg/paymentService";
-import { checkExternalRegistrationDuplicate } from "@/services/eventreg/registrationService";
-import { validatePromoCode } from "@/services/eventreg/promoCodeService";
-import { computePaymentBreakdown, formatOmr } from "@/utils/paymentBreakdown";
+import { computePaymentBreakdown } from "@/utils/paymentBreakdown";
+import PaymentBreakdown from "@/components/checkout/PaymentBreakdown";
+import TicketTypeSelector from "@/components/checkout/TicketTypeSelector";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
 
@@ -53,6 +46,7 @@ const translations = {
         ticketLockedPaid: "The ticket can't be changed once the payment is completed.",
         soldOut: "Sold Out",
         available: "available",
+        searchTickets: "Search tickets…",
         unlimited: "Unlimited",
         viewCurrentFile: "View current file",
         chooseFile: "Choose File or Drag & Drop",
@@ -83,6 +77,22 @@ const translations = {
         promoCodeApplied: "Code applied",
         promoCodeRemove: "Remove",
         promoCodeDiscountLine: "Discount",
+        subtotal: "Subtotal",
+        vat: "VAT",
+        total: "Total",
+        amountDue: "Amount due",
+        securePayment: "Secure payment via Thawani",
+        omr: "OMR",
+        createExternalRegistration: "Create External Registration",
+        recordExternalPayment: "Record an external payment",
+        externalPaymentRecorded: "Recorded as an external payment",
+        externalReference: "External payment reference (optional)",
+        externalReferenceHint: "For example, a transaction number or manager approval note.",
+        paymentDocument: "Payment document (optional)",
+        paymentDocumentChoose: "Upload invoice, receipt, or other proof",
+        replaceDocument: "Replace file",
+        paymentSummary: "Payment Summary",
+        paymentSummaryHint: "Please review the details below before proceeding to the payment gateway.",
     },
     ar: {
         createTitle: "إنشاء تسجيل",
@@ -92,6 +102,7 @@ const translations = {
         ticketLockedPaid: "لا يمكن تغيير التذكرة بعد إتمام الدفع.",
         soldOut: "نفدت",
         available: "متاح",
+        searchTickets: "بحث عن تذكرة…",
         unlimited: "غير محدود",
         viewCurrentFile: "عرض الملف الحالي",
         chooseFile: "اختر ملفًا أو اسحبه وأفلته",
@@ -122,6 +133,22 @@ const translations = {
         promoCodeApplied: "تم تطبيق الرمز",
         promoCodeRemove: "إزالة",
         promoCodeDiscountLine: "خصم",
+        subtotal: "المجموع الفرعي",
+        vat: "ضريبة القيمة المضافة",
+        total: "الإجمالي",
+        amountDue: "المبلغ المستحق",
+        securePayment: "دفع آمن عبر ثواني",
+        omr: "ر.ع.",
+        createExternalRegistration: "إنشاء تسجيل بدفع خارجي",
+        recordExternalPayment: "تسجيل دفعة خارجية",
+        externalPaymentRecorded: "تم تسجيلها كدفعة خارجية",
+        externalReference: "مرجع الدفع الخارجي (اختياري)",
+        externalReferenceHint: "مثال: رقم المعاملة أو ملاحظة موافقة المدير.",
+        paymentDocument: "مستند الدفع (اختياري)",
+        paymentDocumentChoose: "رفع فاتورة أو إيصال أو إثبات آخر",
+        replaceDocument: "استبدال الملف",
+        paymentSummary: "ملخص الدفع",
+        paymentSummaryHint: "يرجى مراجعة التفاصيل أدناه قبل المتابعة إلى بوابة الدفع.",
     },
 };
 
@@ -134,6 +161,11 @@ export default function RegistrationModal({
     onPaymentInitiated,
     onExternalPaymentInitiated,
     canRecordExternalPayment = false,
+    externalRegistrationDuplicateCheck = null,
+    externalPaymentUploadModule = "eventreg",
+    paymentInitiate = null,
+    promoCodeValidator = null,
+    forceExternalPayment = false,
     mode = "edit",
     title,
     event,
@@ -148,7 +180,6 @@ export default function RegistrationModal({
     // ── Paid-event: ticket selection ──────────────────────────────────────────
     const [selectedTicketTypeId, setSelectedTicketTypeId] = useState("");
     const [ticketTypeError, setTicketTypeError] = useState("");
-    const [ticketSearch, setTicketSearch] = useState("");
 
     // ── Paid-event: payment summary dialog ────────────────────────────────────
     const [showPaymentSummary, setShowPaymentSummary] = useState(false);
@@ -359,7 +390,8 @@ export default function RegistrationModal({
         setAppliedPromoCode(null);
         setPromoCodeError("");
         setIsExternalPayment(
-            mode === "edit" && registration?.paymentStatus === "external",
+            forceExternalPayment ||
+            (mode === "edit" && registration?.paymentStatus === "external"),
         );
         setExternalPaymentReference(
             mode === "edit" && registration?.paymentStatus === "external"
@@ -372,7 +404,7 @@ export default function RegistrationModal({
                 : "",
         );
         setExternalPaymentUpload(null);
-    }, [registration, fieldsToRender, hasCustomFields, mode, open, registration?.isoCode]);
+    }, [registration, fieldsToRender, hasCustomFields, mode, open, registration?.isoCode, forceExternalPayment]);
 
     // Init dependent field values when ticket changes. In edit mode, seed them from
     // the registration's customFields so existing answers (incl. uploaded files) show.
@@ -440,9 +472,13 @@ export default function RegistrationModal({
     const handleApplyPromoCode = async () => {
         const code = promoCodeInput.trim();
         if (!code) return;
+        if (!promoCodeValidator) {
+            setPromoCodeError(t.registrationFailed);
+            return;
+        }
         setPromoCodeValidating(true);
         setPromoCodeError("");
-        const result = await validatePromoCode({
+        const result = await promoCodeValidator({
             eventSlug: event?.slug,
             code,
             ticketTypeId: selectedTicketTypeId,
@@ -559,7 +595,7 @@ export default function RegistrationModal({
             const url = await uploadSingleFile({
                 file: fileData[f.inputName].file,
                 businessSlug: event.businessSlug,
-                moduleName: "eventreg",
+                moduleName: externalPaymentUploadModule,
             });
             normalizedValues[f.inputName] = url;
         }
@@ -573,7 +609,7 @@ export default function RegistrationModal({
                 normalizedValues.externalPaymentDocumentUrl = await uploadSingleFile({
                     file: fileData.externalPaymentDocument.file,
                     businessSlug: event.businessSlug,
-                    moduleName: "eventreg",
+                    moduleName: externalPaymentUploadModule,
                     onProgress: (percent, loaded, total) => {
                         setExternalPaymentUpload({ percent, loaded, total });
                     },
@@ -626,11 +662,15 @@ export default function RegistrationModal({
             // called. Check the email first so duplicate attempts cannot leave an
             // orphaned payment-document upload.
             if (isPaidEvent && mode === "create" && isExternalPayment) {
+                if (!externalRegistrationDuplicateCheck) {
+                    setFieldErrors({ _global: t.registrationFailed });
+                    return;
+                }
                 const fields = [...visibleFields, ...ticketDependentFields];
                 const emailField = fields.find((field) =>
                     field.inputType === "email" || /e-?mail/i.test(field.inputName || ""),
                 );
-                const duplicateCheck = await checkExternalRegistrationDuplicate(event?.slug, {
+                const duplicateCheck = await externalRegistrationDuplicateCheck(event?.slug, {
                     email: values.email || values.Email || (emailField ? values[emailField.inputName] : ""),
                 });
                 if (duplicateCheck?.error) {
@@ -730,11 +770,15 @@ export default function RegistrationModal({
     // drive the UI based on the response flags.
     const handleConfirmPayment = async () => {
         if (!paymentPayload) return;
+        if (!paymentInitiate) {
+            setPaymentError(t.registrationFailed);
+            return;
+        }
         setPayProcessing(true);
         setPaymentError("");
         setDuplicateNotice(null);
         setConflictReason(null);
-        const result = await initiatePayment({
+        const result = await paymentInitiate({
             ...paymentPayload,
             ...(appliedPromoCode?.code ? { promoCode: appliedPromoCode.code } : {}),
         });
@@ -911,7 +955,7 @@ export default function RegistrationModal({
     // ── Labels ────────────────────────────────────────────────────────────────
     const displayTitle = title || (mode === "create" ? t.createTitle : t.editTitle);
     const saveButtonText = mode === "create"
-        ? (isPaidEvent ? (isExternalPayment ? "Create External Registration" : t.proceedToPayment) : t.create)
+        ? (isPaidEvent ? (isExternalPayment ? t.createExternalRegistration : t.proceedToPayment) : t.create)
         : t.saveChanges;
 
     return (
@@ -928,106 +972,20 @@ export default function RegistrationModal({
                         {/* Ticket selector — paid events (create, and edit). In edit it is
                             read-only once paid; editable while the payment is still pending. */}
                         {isPaidEvent && ticketTypes.length > 0 && (
-                            <FormControl fullWidth size="small" error={!!ticketTypeError}>
-                                <InputLabel>{mode === "create" ? `${t.selectTicket} *` : t.ticket}</InputLabel>
-                                <Select
-                                    value={selectedTicketTypeId}
-                                    label={mode === "create" ? `${t.selectTicket} *` : t.ticket}
-                                    disabled={mode === "edit" && (registration?.paymentStatus === "paid" || isExternalPayment)}
-                                    onChange={(e) => handleTicketChange(e.target.value)}
-                                    onClose={() => setTicketSearch("")}
-                                    sx={{ "& .MuiSelect-select": { display: "flex", justifyContent: "flex-start" } }}
-                                    MenuProps={{ autoFocus: false }}
-                                    slotProps={{ paper: { sx: { maxHeight: 360 } } }}
-                                    renderValue={(val) => {
-                                        const tt = ticketTypes.find(x => x._id === val);
-                                        if (!tt) return "";
-                                        return (
-                                            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 1, width: "100%" }}>
-                                                <Typography variant="body2" fontWeight={600} sx={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                                    {tt.name}
-                                                </Typography>
-                                                <Typography variant="body2" color="primary.main" fontWeight={700} sx={{ whiteSpace: "nowrap", flexShrink: 0 }}>
-                                                    {tt.price} OMR
-                                                </Typography>
-                                            </Box>
-                                        );
-                                    }}
-                                >
-                                    {ticketTypes.length > 5 && (
-                                        <ListSubheader sx={{ bgcolor: "background.paper", pt: 1, pb: 0.5 }}>
-                                            <TextField
-                                                size="small"
-                                                fullWidth
-                                                placeholder="Search tickets…"
-                                                value={ticketSearch}
-                                                onChange={(e) => setTicketSearch(e.target.value)}
-                                                onKeyDown={(e) => e.stopPropagation()}
-                                                autoFocus
-                                                slotProps={{
-                                                    input: {
-                                                        startAdornment: (
-                                                            <InputAdornment position="start">
-                                                                <ICONS.search fontSize="small" />
-                                                            </InputAdornment>
-                                                        ),
-                                                    },
-                                                }}
-                                            />
-                                        </ListSubheader>
-                                    )}
-                                    {ticketTypes.map((tt) => {
-                                        const isSoldOut = tt.capacity !== null && tt.sold >= tt.capacity;
-                                        const remaining = tt.capacity !== null ? tt.capacity - (tt.sold || 0) : null;
-                                        const isLowStock = remaining !== null && remaining > 0 && remaining <= 20;
-                                        const q = ticketSearch.toLowerCase().trim();
-                                        const matches = !q || tt.name.toLowerCase().includes(q);
-                                        return (
-                                            <MenuItem
-                                                key={tt._id}
-                                                value={tt._id}
-                                                disabled={isSoldOut}
-                                                style={{ display: ticketTypes.length > 5 ? (matches ? "flex" : "none") : "flex" }}
-                                                sx={{ "&:not(:last-of-type)": { borderBottom: "1px solid", borderColor: "divider" } }}
-                                            >
-                                                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", gap: 2, py: 0.5 }}>
-                                                    {/* Menu Paper width tracks the anchor field's (often wide) width via
-                                                        an inline minWidth MUI sets, which beats a CSS maxWidth on the
-                                                        Paper — so the wrap is forced here at the content level instead. */}
-                                                    <Box sx={{ minWidth: 0, maxWidth: 320 }}>
-                                                        <Typography variant="body2" fontWeight={600} sx={{ whiteSpace: "normal", wordBreak: "break-word" }}>
-                                                            {tt.name}
-                                                        </Typography>
-                                                        {tt.description && (
-                                                            <Typography variant="caption" color="text.secondary" sx={{ display: "block", lineHeight: 1.3, whiteSpace: "normal", wordBreak: "break-word" }}>
-                                                                {tt.description}
-                                                            </Typography>
-                                                        )}
-                                                        {(isSoldOut || remaining !== null) && (
-                                                            <Typography variant="caption" sx={{
-                                                                display: "block",
-                                                                color: isSoldOut ? "error.main" : isLowStock ? "warning.main" : "text.secondary",
-                                                                fontWeight: isSoldOut || isLowStock ? 600 : 400,
-                                                            }}>
-                                                                {isSoldOut ? t.soldOut : `${remaining} ${t.available}`}
-                                                            </Typography>
-                                                        )}
-                                                    </Box>
-                                                    <Typography variant="body2" fontWeight={700}
-                                                        color={isSoldOut ? "text.disabled" : "primary.main"}
-                                                        sx={{ whiteSpace: "nowrap", flexShrink: 0 }}>
-                                                        {isSoldOut ? "—" : `${tt.price} OMR`}
-                                                    </Typography>
-                                                </Box>
-                                            </MenuItem>
-                                        );
-                                    })}
-                                </Select>
-                                {ticketTypeError && <FormHelperText>{ticketTypeError}</FormHelperText>}
-                                {mode === "edit" && registration?.paymentStatus === "paid" && (
-                                    <FormHelperText>{t.ticketLockedPaid}</FormHelperText>
-                                )}
-                            </FormControl>
+                            <TicketTypeSelector
+                                ticketTypes={ticketTypes}
+                                value={selectedTicketTypeId}
+                                onChange={handleTicketChange}
+                                label={mode === "create" ? `${t.selectTicket} *` : t.ticket}
+                                searchPlaceholder={t.searchTickets}
+                                soldOutLabel={t.soldOut}
+                                availableLabel={t.available}
+                                currency={t.omr}
+                                disabled={mode === "edit" && (registration?.paymentStatus === "paid" || isExternalPayment)}
+                                error={!!ticketTypeError}
+                                helperText={ticketTypeError || (mode === "edit" && registration?.paymentStatus === "paid" ? t.ticketLockedPaid : "")}
+                                dir={dir}
+                            />
                         )}
 
                         {/* Ticket-dependent fields — create mode only */}
@@ -1039,28 +997,30 @@ export default function RegistrationModal({
                 </DialogContent>
                 {isPaidEvent && mode === "create" && canRecordExternalPayment && (
                     <Box sx={{ px: 3, pt: 1.5 }}>
-                        <FormControlLabel
-                            control={<Checkbox checked={isExternalPayment}
-                                onChange={(e) => {
-                                    setIsExternalPayment(e.target.checked);
-                                    if (!e.target.checked) setExternalPaymentReference("");
-                                }} />}
-                            label="Record an external payment"
-                        />
+                        {!forceExternalPayment && (
+                            <FormControlLabel
+                                control={<Checkbox checked={isExternalPayment}
+                                    onChange={(e) => {
+                                        setIsExternalPayment(e.target.checked);
+                                        if (!e.target.checked) setExternalPaymentReference("");
+                                    }} />}
+                                label={t.recordExternalPayment}
+                            />
+                        )}
                         {isExternalPayment && (
                             <>
-                                <TextField label="External payment reference (optional)" value={externalPaymentReference}
+                                <TextField label={t.externalReference} value={externalPaymentReference}
                                     onChange={(e) => setExternalPaymentReference(e.target.value)} inputProps={{ maxLength: 500 }}
                                     fullWidth size="small"
-                                    helperText="For example, a transaction number or manager approval note." />
+                                    helperText={t.externalReferenceHint} />
                                 <Box sx={{ mt: 2 }}>
                                     <ModalFileUploadField
                                         field={{ inputName: "external-payment-document" }}
                                         fd={fileData.externalPaymentDocument}
-                                        fieldLabel="Payment document (optional)"
+                                        fieldLabel={t.paymentDocument}
                                         currentValue={externalPaymentDocumentUrl}
-                                        chooseLabel="Upload invoice, receipt, or other proof"
-                                        replaceLabel="Replace file"
+                                        chooseLabel={t.paymentDocumentChoose}
+                                        replaceLabel={t.replaceDocument}
                                         onFileSelect={(file) => handleFileSelect("externalPaymentDocument", file)}
                                         onFileRemove={() => handleFileRemove("externalPaymentDocument")}
                                         onCurrentFileRemove={() => setExternalPaymentDocumentUrl("")}
@@ -1089,23 +1049,23 @@ export default function RegistrationModal({
                                     if (!e.target.checked) setExternalPaymentReference("");
                                 }} />}
                             label={registration?.paymentStatus === "external"
-                                ? "Recorded as an external payment"
-                                : "Record as an external payment"}
+                                ? t.externalPaymentRecorded
+                                : t.recordExternalPayment}
                         />
                         {isExternalPayment && (
                             <>
-                                <TextField label="External payment reference (optional)" value={externalPaymentReference}
+                                <TextField label={t.externalReference} value={externalPaymentReference}
                                     onChange={(e) => setExternalPaymentReference(e.target.value)} inputProps={{ maxLength: 500 }}
                                     fullWidth size="small"
-                                    helperText="For example, a transaction number or manager approval note." />
+                                    helperText={t.externalReferenceHint} />
                                 <Box sx={{ mt: 2 }}>
                                     <ModalFileUploadField
                                         field={{ inputName: "external-payment-document" }}
                                         fd={fileData.externalPaymentDocument}
-                                        fieldLabel="Payment document (optional)"
+                                        fieldLabel={t.paymentDocument}
                                         currentValue={externalPaymentDocumentUrl}
-                                        chooseLabel="Upload invoice, receipt, or other proof"
-                                        replaceLabel="Replace file"
+                                        chooseLabel={t.paymentDocumentChoose}
+                                        replaceLabel={t.replaceDocument}
                                         onFileSelect={(file) => handleFileSelect("externalPaymentDocument", file)}
                                         onFileRemove={() => handleFileRemove("externalPaymentDocument")}
                                         onCurrentFileRemove={() => setExternalPaymentDocumentUrl("")}
@@ -1172,10 +1132,10 @@ export default function RegistrationModal({
                     </Box>
                     <Box sx={{ minWidth: 0 }}>
                         <Typography variant="h6" fontWeight={800} sx={{ lineHeight: 1.2 }}>
-                            Payment Summary
+                            {t.paymentSummary}
                         </Typography>
                         <Typography variant="caption" sx={{ opacity: 0.85, lineHeight: 1.4, display: "block" }}>
-                            Please review the details below before proceeding to the payment gateway.
+                            {t.paymentSummaryHint}
                         </Typography>
                     </Box>
                 </Box>
@@ -1217,91 +1177,23 @@ export default function RegistrationModal({
                                 )}
                             </Box>
 
-                            {/* Ticket base */}
-                            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", py: 1 }}>
-                                <Box sx={{ minWidth: 0 }}>
-                                    <Typography variant="body1" fontWeight={700} noWrap>
-                                        {selectedTicket?.name || "Ticket"}
-                                    </Typography>
-                                    <Typography variant="caption" color="text.secondary">Ticket</Typography>
-                                </Box>
-                                <Typography variant="body1" fontWeight={700} sx={{ whiteSpace: "nowrap", pl: 1 }}>
-                                    {formatOmr(paymentBreakdown.base, "OMR")}
-                                </Typography>
-                            </Box>
+                            <PaymentBreakdown
+                                breakdown={paymentBreakdown}
+                                ticketName={selectedTicket?.name}
+                                currency={t.omr}
+                                labels={{
+                                    ticket: t.ticket,
+                                    discount: appliedPromoCode
+                                        ? `${t.promoCodeDiscountLine} (${appliedPromoCode.code})`
+                                        : t.promoCodeDiscountLine,
+                                    subtotal: t.subtotal,
+                                    vat: t.vat,
+                                    total: t.total,
+                                    amountDue: t.amountDue,
+                                    securePayment: t.securePayment,
+                                }}
+                            />
 
-                            {/* Promo discount */}
-                            {paymentBreakdown.discountAmount > 0 && (
-                                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", py: 0.6 }}>
-                                    <Typography variant="body2" color="success.main">
-                                        {t.promoCodeDiscountLine} ({appliedPromoCode?.code}) <Box component="span" sx={{ opacity: 0.7 }}>· {paymentBreakdown.discountPercentage}%</Box>
-                                    </Typography>
-                                    <Typography variant="body2" color="success.main" sx={{ whiteSpace: "nowrap", pl: 1 }}>
-                                        -{formatOmr(paymentBreakdown.discountAmount, "OMR")}
-                                    </Typography>
-                                </Box>
-                            )}
-
-                            {/* Fees */}
-                            {paymentBreakdown.feeLines.map((fee, i) => (
-                                <Box key={i} sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", py: 0.6 }}>
-                                    <Typography variant="body2" color="text.secondary">
-                                        {fee.name} <Box component="span" sx={{ opacity: 0.7 }}>· {fee.percentage}%</Box>
-                                    </Typography>
-                                    <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: "nowrap", pl: 1 }}>
-                                        {formatOmr(fee.amount, "OMR")}
-                                    </Typography>
-                                </Box>
-                            ))}
-
-                            {/* Subtotal */}
-                            {(paymentBreakdown.feeLines.length > 0 || paymentBreakdown.vatAmount > 0) && (
-                                <Box sx={{ display: "flex", justifyContent: "space-between", py: 0.9, mt: 0.5, borderTop: "1px dashed", borderColor: "divider" }}>
-                                    <Typography variant="body2" color="text.secondary">Subtotal</Typography>
-                                    <Typography variant="body2" fontWeight={600} sx={{ whiteSpace: "nowrap", pl: 1 }}>
-                                        {formatOmr(paymentBreakdown.subtotal, "OMR")}
-                                    </Typography>
-                                </Box>
-                            )}
-
-                            {/* VAT */}
-                            {paymentBreakdown.vatAmount > 0 && (
-                                <Box sx={{ display: "flex", justifyContent: "space-between", py: 0.6 }}>
-                                    <Typography variant="body2" color="text.secondary">
-                                        VAT <Box component="span" sx={{ opacity: 0.7 }}>· {paymentBreakdown.vatPercentage}%</Box>
-                                    </Typography>
-                                    <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: "nowrap", pl: 1 }}>
-                                        {formatOmr(paymentBreakdown.vatAmount, "OMR")}
-                                    </Typography>
-                                </Box>
-                            )}
-
-                            {/* Total */}
-                            <Box sx={{
-                                mt: 1.5, px: 2, py: 1.5, borderRadius: 2.5,
-                                backgroundColor: (theme) => theme.palette.overlay.infoCard,
-                                border: "1px solid",
-                                border: (theme) => `1px solid ${theme.palette.overlay.infoCardBorder}`,
-                                display: "flex", justifyContent: "space-between", alignItems: "center",
-                            }}>
-                                <Box>
-                                    <Typography variant="caption" color="text.secondary" sx={{ display: "block", lineHeight: 1.2 }}>
-                                        Amount due
-                                    </Typography>
-                                    <Typography variant="subtitle1" fontWeight={800}>Total</Typography>
-                                </Box>
-                                <Typography variant="h6" fontWeight={800} color="primary.dark" sx={{ whiteSpace: "nowrap", pl: 1 }}>
-                                    {formatOmr(paymentBreakdown.total, "OMR")}
-                                </Typography>
-                            </Box>
-
-                            {/* Trust note */}
-                            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 0.75, mt: 2 }}>
-                                <ICONS.verified sx={{ fontSize: 16, color: "success.main" }} />
-                                <Typography variant="caption" color="text.secondary">
-                                    Secure payment via Thawani
-                                </Typography>
-                            </Box>
                         </Box>
                     )}
 

@@ -37,6 +37,7 @@ import { RESERVED_CUSTOMIZATION_KEYS } from "@/utils/badgeSize";
 import DefaultQrWrapperModal from "@/components/modals/DefaultQrWrapperModal";
 import { updatePublicEventCustomQrWrapper } from "@/services/eventreg/eventService";
 import { updateCheckInEventCustomQrWrapper } from "@/services/checkin/checkinEventService";
+import { updateCheckoutEventCustomQrWrapper } from "@/services/checkout/eventService";
 import { deleteMedia } from "@/services/deleteMediaService";
 import RichTextEditor from "@/components/RichTextEditor";
 import CountryCodeSelector from "@/components/CountryCodeSelector";
@@ -44,6 +45,8 @@ import { DEFAULT_ISO_CODE, DEFAULT_COUNTRY_CODE, getCountryCodeByIsoCode, COUNTR
 import { validatePhoneNumber } from "@/utils/phoneValidation";
 import { convertTimeToLocal, convertTimeFromLocal } from "@/utils/dateUtils";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
+import TicketTypesEditor from "@/components/checkout/TicketTypesEditor";
+import FeesVatEditor from "@/components/checkout/FeesVatEditor";
 
 const translations = {
   en: {
@@ -468,6 +471,9 @@ const EventModal = ({
   initialValues,
   selectedBusiness,
   isClosed = false,
+  moduleKey = "eventreg",
+  forcePaid = false,
+  allowPaid = false,
 }) => {
   const { t, dir } = useI18nLayout(translations);
   const { showMessage } = useMessage();
@@ -543,7 +549,7 @@ const EventModal = ({
     allowMultipleBadgePrinting: true,
     createCheckinOnFirstPrint: false,
     defaultLanguage: "en",
-    isPaid: false,
+    isPaid: forcePaid,
     ticketTypes: [],
     fees: [],
     vatPercentage: 5,
@@ -666,7 +672,7 @@ const EventModal = ({
         useCustomEmailTemplate: initialValues?.useCustomEmailTemplate || false,
         emailTemplateSubject: initialValues?.emailTemplate?.subject || "",
         emailTemplateBody: initialValues?.emailTemplate?.body || "",
-        isPaid: initialValues?.isPaid || false,
+        isPaid: forcePaid ? true : allowPaid ? initialValues?.isPaid || false : false,
         ticketTypes: initialValues?.ticketTypes?.map((tt) => ({
           _id: tt._id,
           name: tt.name || "",
@@ -774,7 +780,7 @@ const EventModal = ({
         useCustomEmailTemplate: false,
         emailTemplateSubject: "",
         emailTemplateBody: "",
-        isPaid: false,
+        isPaid: forcePaid,
         ticketTypes: [],
         fees: [],
         vatPercentage: 5,
@@ -794,7 +800,7 @@ const EventModal = ({
         organizerOtherDetails: "",
       }));
     }
-  }, [initialValues, isClosed]);
+  }, [initialValues, isClosed, forcePaid, allowPaid]);
 
   useEffect(() => {
     if (!formData.useCustomEmailTemplate) {
@@ -1239,12 +1245,38 @@ const EventModal = ({
     handleFormFieldChange(fieldIndex, "dependents", JSON.stringify(currentDependents));
   };
 
+  const validateRequiredTickets = () => {
+    if (!Array.isArray(formData.ticketTypes) || formData.ticketTypes.length === 0) {
+      showMessage(t.noTicketTypes, "error");
+      return false;
+    }
+    if (formData.ticketTypes.some((ticket) => !ticket.name?.trim())) {
+      showMessage(t.ticketNameRequired, "error");
+      return false;
+    }
+    if (formData.ticketTypes.some((ticket) => ticket.price === "" || ticket.price === null || ticket.price === undefined)) {
+      showMessage(t.ticketPriceRequired, "error");
+      return false;
+    }
+    if (formData.ticketTypes.some((ticket) => isNaN(parseFloat(ticket.price)) || parseFloat(ticket.price) < 0)) {
+      showMessage(t.invalidTicketPrice, "error");
+      return false;
+    }
+    return true;
+  };
+
   const validateCurrentTab = () => {
     if (activeTab === 0) {
       if (!formData.name || !formData.startDate || !formData.endDate || !formData.venue) {
         showMessage(t.required, "error");
         return false;
       }
+    }
+
+    // A Checkout event cannot continue beyond the options tab without a usable
+    // ticket. This matches the final create/update validation.
+    if (activeTab === 2 && forcePaid && !validateRequiredTickets()) {
+      return false;
     }
     return true;
   };
@@ -1268,8 +1300,21 @@ const EventModal = ({
       return;
     }
 
+    const requiresTickets = forcePaid || formData.isPaid;
+    if (requiresTickets && (!Array.isArray(formData.ticketTypes) || formData.ticketTypes.length === 0)) {
+      showMessage(t.noTicketTypes, "error");
+      return;
+    }
+    if (requiresTickets && formData.ticketTypes.some((tt) => !tt.name?.trim())) {
+      showMessage(t.ticketNameRequired, "error");
+      return;
+    }
+    if (requiresTickets && formData.ticketTypes.some((tt) => tt.price === "" || tt.price === null || tt.price === undefined)) {
+      showMessage(t.ticketPriceRequired, "error");
+      return;
+    }
     if (
-      formData.isPaid &&
+      requiresTickets &&
       formData.ticketTypes.some(
         (tt) => isNaN(parseFloat(tt.price)) || parseFloat(tt.price) < 0,
       )
@@ -1584,8 +1629,8 @@ const EventModal = ({
         organizerAddress: formData.organizerAddress || "",
         organizerWebsite: formData.organizerWebsite || "",
         organizerOtherDetails: formData.organizerOtherDetails || "",
-        isPaid: formData.isPaid || false,
-        ticketTypes: formData.isPaid
+        isPaid: forcePaid || formData.isPaid,
+        ticketTypes: (forcePaid || formData.isPaid)
           ? formData.ticketTypes.map((tt) => ({
             ...(tt._id ? { _id: tt._id } : {}),
             name: tt.name,
@@ -1595,12 +1640,12 @@ const EventModal = ({
           }))
           : [],
 
-        fees: formData.isPaid
+        fees: (forcePaid || formData.isPaid)
           ? formData.fees
             .filter((f) => f.name?.trim() && f.percentage !== "" && f.percentage != null)
             .map((f) => ({ name: f.name.trim(), percentage: parseFloat(f.percentage) }))
           : [],
-        vatPercentage: formData.isPaid ? (parseFloat(formData.vatPercentage) || 0) : 0,
+        vatPercentage: (forcePaid || formData.isPaid) ? (parseFloat(formData.vatPercentage) || 0) : 0,
         dependentFieldsEnabled: formData.dependentFieldsEnabled || false,
         globalDependentFields: formData.dependentFieldsEnabled
           ? withDependentFieldRenameHistory(
@@ -1666,6 +1711,17 @@ const EventModal = ({
             <Tabs
               value={activeTab}
               onChange={(e, newValue) => {
+                if (newValue > activeTab && !validateCurrentTab()) {
+                  return;
+                }
+                if (
+                  forcePaid &&
+                  activeTab < 2 &&
+                  newValue > 2 &&
+                  !validateRequiredTickets()
+                ) {
+                  return;
+                }
                 const uploadsTabIndex = 3;
                 const customFieldsTabIndex = 4;
                 const customizeBadgeTabIndex = formData.useCustomFields ? 5 : 4;
@@ -1689,15 +1745,6 @@ const EventModal = ({
                 if (newValue === uploadsTabIndex) {
                   setActiveTab(newValue);
                   return;
-                }
-
-                if (newValue > activeTab) {
-                  if (activeTab === 0) {
-                    if (!formData.name || !formData.startDate || !formData.endDate || !formData.venue) {
-                      showMessage(t.required, "error");
-                      return;
-                    }
-                  }
                 }
 
                 setActiveTab(newValue);
@@ -2153,195 +2200,40 @@ const EventModal = ({
                     />
                   </Box>
 
-                  {/* Paid Event Toggle */}
-                  <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                    <FormControlLabel
-                      control={
-                        <Checkbox
-                          checked={formData.isPaid}
-                          onChange={(e) =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              isPaid: e.target.checked,
-                              ticketTypes: e.target.checked ? prev.ticketTypes : [],
-                              fees: e.target.checked ? prev.fees : [],
-                            }))
-                          }
-                          color="primary"
-                        />
-                      }
-                      label={t.isPaidEvent}
-                      sx={{ alignSelf: "start" }}
-                    />
-                  </Box>
-
-                  {formData.isPaid && (
-                    <Box sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2, p: 2, mt: 1 }}>
-                      <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
-                        {t.ticketTypes}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 2 }}>
-                        {t.isPaidEventDescription}
-                      </Typography>
-
-                      {formData.ticketTypes.map((tt, idx) => (
-                        <Paper key={idx} variant="outlined" sx={{ p: 2, mb: 2, borderRadius: 2 }}>
-                          <Stack direction="row" sx={{ mb: 1.5, justifyContent: "space-between", alignItems: "center" }}>
-                            <Typography variant="body2" fontWeight={600}>#{idx + 1}</Typography>
-                            <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
-                              <Tooltip title={t.moveUp}>
-                                <span>
-                                  <IconButton
-                                    size="small"
-                                    disabled={idx === 0}
-                                    onClick={() =>
-                                      setFormData((prev) => {
-                                        const types = [...prev.ticketTypes];
-                                        [types[idx - 1], types[idx]] = [types[idx], types[idx - 1]];
-                                        return { ...prev, ticketTypes: types };
-                                      })
-                                    }
-                                  >
-                                    <ICONS.up fontSize="small" />
-                                  </IconButton>
-                                </span>
-                              </Tooltip>
-                              <Tooltip title={t.moveDown}>
-                                <span>
-                                  <IconButton
-                                    size="small"
-                                    disabled={idx === formData.ticketTypes.length - 1}
-                                    onClick={() =>
-                                      setFormData((prev) => {
-                                        const types = [...prev.ticketTypes];
-                                        [types[idx], types[idx + 1]] = [types[idx + 1], types[idx]];
-                                        return { ...prev, ticketTypes: types };
-                                      })
-                                    }
-                                  >
-                                    <ICONS.down fontSize="small" />
-                                  </IconButton>
-                                </span>
-                              </Tooltip>
-                              <Tooltip title={t.removeTicket}>
-                                <IconButton
-                                  size="small"
-                                  color="error"
-                                  onClick={() =>
-                                    setFormData((prev) => ({
-                                      ...prev,
-                                      ticketTypes: prev.ticketTypes.filter((_, i) => i !== idx),
-                                    }))
-                                  }
-                                >
-                                  <ICONS.delete fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
-                            </Stack>
-                          </Stack>
-                          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
-                            <Box sx={{ flex: "1 1 200px" }}>
-                              <TextField
-                                fullWidth
-                                size="small"
-                                label={t.ticketName}
-                                required
-                                value={tt.name}
-                                onChange={(e) => {
-                                  const oldTicket = formData.ticketTypes[idx];
-                                  const oldName = oldTicket.name;
-                                  const newName = e.target.value;
-                                  setFormData((prev) => {
-                                    const types = [...prev.ticketTypes];
-                                    types[idx] = { ...types[idx], name: newName };
-                                    const mappings = { ...(prev.globalDependentFieldMappings || {}) };
-                                    // Existing tickets are mapped by their stable _id, so
-                                    // renaming one doesn't touch its mapping at all. Only a
-                                    // brand-new, not-yet-saved ticket (no _id yet) is still
-                                    // keyed by its in-session name, so its mapping key needs
-                                    // to follow the rename until it's actually persisted.
-                                    if (!oldTicket._id && oldName && oldName !== newName && mappings[oldName] !== undefined) {
-                                      mappings[newName] = mappings[oldName];
-                                      delete mappings[oldName];
-                                    }
-
-                                    return { ...prev, ticketTypes: types, globalDependentFieldMappings: mappings };
-                                  });
-                                }}
-                              />
-                            </Box>
-                            <Box sx={{ flex: "1 1 200px" }}>
-                              <TextField
-                                fullWidth
-                                size="small"
-                                label={t.ticketPrice}
-                                required
-                                type="number"
-                                slotProps={{ htmlInput: { min: 0, step: 0.1 } }}
-                                value={tt.price}
-                                onChange={(e) =>
-                                  setFormData((prev) => {
-                                    const types = [...prev.ticketTypes];
-                                    types[idx] = { ...types[idx], price: e.target.value };
-                                    return { ...prev, ticketTypes: types };
-                                  })
-                                }
-                              />
-                            </Box>
-                            <Box sx={{ flex: "1 1 200px" }}>
-                              <TextField
-                                fullWidth
-                                size="small"
-                                label={t.ticketCapacity}
-                                type="number"
-                                slotProps={{ htmlInput: { min: 1 } }}
-                                value={tt.capacity}
-                                onChange={(e) =>
-                                  setFormData((prev) => {
-                                    const types = [...prev.ticketTypes];
-                                    types[idx] = { ...types[idx], capacity: e.target.value };
-                                    return { ...prev, ticketTypes: types };
-                                  })
-                                }
-                              />
-                            </Box>
-                            <Box sx={{ flex: "1 1 200px" }}>
-                              <TextField
-                                fullWidth
-                                size="small"
-                                label={t.ticketDescription}
-                                value={tt.description}
-                                onChange={(e) =>
-                                  setFormData((prev) => {
-                                    const types = [...prev.ticketTypes];
-                                    types[idx] = { ...types[idx], description: e.target.value };
-                                    return { ...prev, ticketTypes: types };
-                                  })
-                                }
-                              />
-                            </Box>
-                          </Box>
-
-
-                        </Paper>
-                      ))}
-
-
-                      <Button
-                        variant="outlined"
-                        size="small"
-                        onClick={() =>
-                          setFormData((prev) => ({
-                            ...prev,
-                            ticketTypes: [
-                              ...prev.ticketTypes,
-                              { name: "", description: "", price: "", capacity: "" },
-                            ],
-                          }))
+                  {allowPaid && !forcePaid && (
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <FormControlLabel
+                        control={
+                          <Checkbox
+                            checked={formData.isPaid}
+                            onChange={(e) =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                isPaid: e.target.checked,
+                                ticketTypes: e.target.checked ? prev.ticketTypes : [],
+                                fees: e.target.checked ? prev.fees : [],
+                              }))
+                            }
+                            color="primary"
+                          />
                         }
-                      >
-                        + {t.addTicketType}
-                      </Button>
+                        label={t.isPaidEvent}
+                        sx={{ alignSelf: "start" }}
+                      />
+                    </Box>
+                  )}
+
+                  {(forcePaid || (allowPaid && formData.isPaid)) && (
+                    <Box sx={{ border: "1px solid", borderColor: "divider", borderRadius: 2, p: 2, mt: 1 }}>
+                      <TicketTypesEditor
+                        ticketTypes={formData.ticketTypes}
+                        globalDependentFieldMappings={formData.globalDependentFieldMappings}
+                        onChange={(updates) =>
+                          setFormData((prev) => ({ ...prev, ...updates }))
+                        }
+                        t={t}
+                        required={forcePaid}
+                      />
 
                       {/* --Ticket dependent field --*/}
 
@@ -2624,143 +2516,15 @@ const EventModal = ({
                       </Box>
 
 
-                      {/* ── Fees (percentage of base ticket price) ── */}
-                      <Box sx={{ mt: 3 }}>
-                        <Typography variant="subtitle2" sx={{ mb: 0.5, fontWeight: 600 }}>
-                          {t.fees}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 2 }}>
-                          {t.feesDescription}
-                        </Typography>
+                      <FeesVatEditor
+                        fees={formData.fees}
+                        vatPercentage={formData.vatPercentage}
+                        onChange={(updates) =>
+                          setFormData((prev) => ({ ...prev, ...updates }))
+                        }
+                        t={t}
+                      />
 
-                        {formData.fees.map((fee, idx) => (
-                          <Paper key={idx} variant="outlined" sx={{ p: 2, mb: 2, borderRadius: 2 }}>
-                            <Stack direction="row" sx={{ mb: 1.5, justifyContent: "space-between", alignItems: "center" }}>
-                              <Typography variant="body2" fontWeight={600}>#{idx + 1}</Typography>
-                              <Stack direction="row" spacing={0.5} sx={{ alignItems: "center" }}>
-                                <Tooltip title={t.moveUp}>
-                                  <span>
-                                    <IconButton
-                                      size="small"
-                                      disabled={idx === 0}
-                                      onClick={() =>
-                                        setFormData((prev) => {
-                                          const fees = [...prev.fees];
-                                          [fees[idx - 1], fees[idx]] = [fees[idx], fees[idx - 1]];
-                                          return { ...prev, fees };
-                                        })
-                                      }
-                                    >
-                                      <ICONS.up fontSize="small" />
-                                    </IconButton>
-                                  </span>
-                                </Tooltip>
-                                <Tooltip title={t.moveDown}>
-                                  <span>
-                                    <IconButton
-                                      size="small"
-                                      disabled={idx === formData.fees.length - 1}
-                                      onClick={() =>
-                                        setFormData((prev) => {
-                                          const fees = [...prev.fees];
-                                          [fees[idx], fees[idx + 1]] = [fees[idx + 1], fees[idx]];
-                                          return { ...prev, fees };
-                                        })
-                                      }
-                                    >
-                                      <ICONS.down fontSize="small" />
-                                    </IconButton>
-                                  </span>
-                                </Tooltip>
-                                <Tooltip title={t.removeFee}>
-                                  <IconButton
-                                    size="small"
-                                    color="error"
-                                    onClick={() =>
-                                      setFormData((prev) => ({
-                                        ...prev,
-                                        fees: prev.fees.filter((_, i) => i !== idx),
-                                      }))
-                                    }
-                                  >
-                                    <ICONS.delete fontSize="small" />
-                                  </IconButton>
-                                </Tooltip>
-                              </Stack>
-                            </Stack>
-                            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
-                              <Box sx={{ flex: "1 1 200px" }}>
-                                <TextField
-                                  fullWidth
-                                  size="small"
-                                  label={t.feeName}
-                                  required
-                                  value={fee.name}
-                                  onChange={(e) =>
-                                    setFormData((prev) => {
-                                      const fees = [...prev.fees];
-                                      fees[idx] = { ...fees[idx], name: e.target.value };
-                                      return { ...prev, fees };
-                                    })
-                                  }
-                                />
-                              </Box>
-                              <Box sx={{ flex: "1 1 200px" }}>
-                                <TextField
-                                  fullWidth
-                                  size="small"
-                                  label={t.feePercentage}
-                                  required
-                                  type="number"
-                                  slotProps={{ htmlInput: { min: 0, step: 0.1 } }}
-                                  value={fee.percentage}
-                                  onChange={(e) =>
-                                    setFormData((prev) => {
-                                      const fees = [...prev.fees];
-                                      fees[idx] = { ...fees[idx], percentage: e.target.value };
-                                      return { ...prev, fees };
-                                    })
-                                  }
-                                />
-                              </Box>
-                            </Box>
-                          </Paper>
-                        ))}
-
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          onClick={() =>
-                            setFormData((prev) => ({
-                              ...prev,
-                              fees: [...prev.fees, { name: "", percentage: "" }],
-                            }))
-                          }
-                        >
-                          + {t.addFee}
-                        </Button>
-                      </Box>
-
-                      {/* ── VAT ── */}
-                      <Box sx={{ mt: 3 }}>
-                        <Typography variant="subtitle2" sx={{ mb: 0.5, fontWeight: 600 }}>
-                          {t.vat}
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 1.5 }}>
-                          {t.vatDescription}
-                        </Typography>
-                        <TextField
-                          size="small"
-                          label={t.vatPercentage}
-                          type="number"
-                          slotProps={{ htmlInput: { min: 0, max: 100, step: 0.1 } }}
-                          value={formData.vatPercentage}
-                          onChange={(e) =>
-                            setFormData((prev) => ({ ...prev, vatPercentage: e.target.value }))
-                          }
-                          sx={{ maxWidth: 220 }}
-                        />
-                      </Box>
                     </Box>
                   )}
                 </>
@@ -4103,7 +3867,11 @@ const EventModal = ({
         includeBrandingMedia={!!formData.customQrIncludeBrandingMedia}
         includeBackground={!!formData.customQrIncludeBackground}
         onSaveEventQrWrapper={async (eventId, payload) => {
-          const updateFn = isClosed ? updateCheckInEventCustomQrWrapper : updatePublicEventCustomQrWrapper;
+          const updateFn = isClosed
+            ? updateCheckInEventCustomQrWrapper
+            : moduleKey === "checkout"
+              ? updateCheckoutEventCustomQrWrapper
+              : updatePublicEventCustomQrWrapper;
           const updatedEvent = await updateFn(eventId, payload);
           if (initialValues?._id && updatedEvent && !updatedEvent.error && updatedEvent._id) {
             Object.assign(initialValues, updatedEvent);

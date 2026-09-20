@@ -88,7 +88,7 @@ export default function Sidebar() {
     ...(user?.role === "superadmin"
       ? [
         { label: "Logs", icon: ICONS.history, path: "/cms/logs" },
-        { label: "Payments", icon: ICONS.payment, path: "/cms/payments" },
+        { label: "Payments", icon: ICONS.payment, path: "/cms/modules/checkout/payments" },
       ]
       : []),
     { label: t.trash, icon: ICONS.delete, path: "/cms/trash" },
