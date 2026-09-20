@@ -12,6 +12,15 @@ import {
   Button,
   CircularProgress,
   Tooltip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
 } from "@mui/material";
 import ArrowForwardOutlinedIcon from "@mui/icons-material/ArrowForwardOutlined";
 import EventAvailableOutlinedIcon from "@mui/icons-material/EventAvailableOutlined";
@@ -59,6 +68,12 @@ const translations = {
     lastUpdated: "Last updated:",
     globalOverview: "Global Overview",
     trash: "Trash",
+    totalEvents: "Total Events",
+    unknownBusiness: "Unknown business",
+    viewDetails: "View Details",
+    eventBreakdown: "Events by Business",
+    eventCount: "Events",
+    close: "Close",
     users: "Users",
     businesses: "Businesses",
     noTotals: "No totals available.",
@@ -78,6 +93,12 @@ const translations = {
     lastUpdated: "آخر تحديث:",
     globalOverview: "نظرة عامة عالمية",
     trash: "المحذوفات",
+    totalEvents: "إجمالي الفعاليات",
+    unknownBusiness: "شركة غير معروفة",
+    viewDetails: "عرض التفاصيل",
+    eventBreakdown: "الفعاليات حسب الشركة",
+    eventCount: "الفعاليات",
+    close: "إغلاق",
     users: "المستخدمون",
     businesses: "الشركات",
     noTotals: "لا توجد بيانات متاحة.",
@@ -102,26 +123,6 @@ function getCategoryIconComponent(categoryId) {
   const meta = getCategoryMeta(categoryId);
   return CATEGORY_ICON_MAP[meta?.iconName] || CategoryOutlinedIcon;
 }
-
-const sumValues = (obj = {}) =>
-  Object.values(obj).reduce((sum, val) => sum + (Number(val) || 0), 0);
-
-const buildTrashTotal = (trash = {}) => {
-  return Object.values(trash).reduce((sum, val) => {
-    if (typeof val === "number") return sum + val;
-    if (val && typeof val === "object") return sum + sumValues(val);
-    return sum;
-  }, 0);
-};
-
-const buildTrashBreakdown = (trash = {}) => {
-  const entries = Object.entries(trash).map(([key, val]) => {
-    if (typeof val === "number") return { name: key, value: val };
-    if (val && typeof val === "object") return { name: key, value: sumValues(val) };
-    return { name: key, value: 0 };
-  });
-  return entries.filter((e) => e.value > 0);
-};
 
 const buildDonutData = (data = [], emptyLabel = "Empty", donutColors = [], donutEmpty = "#e0e0e0") => {
   const total = data.reduce((sum, item) => sum + (Number(item.value) || 0), 0);
@@ -180,7 +181,7 @@ const Clock = React.memo(function Clock({ language, align, color }) {
         textAlign: align,
         color,
       }}>
-      {formattedDate}· {formattedTime}
+      {formattedDate} · {formattedTime}
     </Typography>
   );
 });
@@ -460,6 +461,7 @@ export default function HomePage() {
   const [businessModalDismissed, setBusinessModalDismissed] = useState(false);
   const [computing, setComputing] = useState(false);
   const [animateCharts, setAnimateCharts] = useState(true);
+  const [showEventDetails, setShowEventDetails] = useState(false);
 
   // Module category filtering
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
@@ -590,6 +592,7 @@ export default function HomePage() {
   }, [router]);
 
   const { modules: moduleStats = {} } = insights || {};
+  const eventBusinessBreakdown = moduleStats.global?.totals?.eventsByBusiness || [];
 
   const hours = new Date().getHours();
   const greeting =
@@ -840,11 +843,13 @@ export default function HomePage() {
                     donutEmpty,
                   );
 
-                  const trashBreakdown = buildTrashBreakdown(
-                    moduleStats.global.trash || {},
+                  const { data: eventsDonut, total: eventsTotal } = buildDonutData(
+                    eventBusinessBreakdown.map((business) => ({
+                      name: business.name || t.unknownBusiness,
+                      value: Number(business.count || 0),
+                    })),
+                    t.noTotals,
                   );
-                  const { data: trashDonut, total: trashTotal } =
-                    buildDonutData(trashBreakdown, t.noTotals, donutColors, donutEmpty);
 
                   return (
                     <Grid
@@ -932,14 +937,26 @@ export default function HomePage() {
                           }}
                         >
                           <Typography variant="subtitle1" gutterBottom>
-                            {t.trash}
+                            {t.totalEvents}
                           </Typography>
                           <DonutStat
-                            data={trashDonut}
-                            centerLabel={toArabicDigits(trashTotal, language)}
+                            data={eventsDonut}
+                            centerLabel={toArabicDigits(eventsTotal, language)}
                             height={200}
                             animateCharts={animateCharts}
                           />
+                          <Button
+                            variant="outlined"
+                            size="small"
+                            onClick={() => setShowEventDetails(true)}
+                            sx={{
+                              mt: 1,
+                              width: "50%",
+                              alignSelf: "center",
+                            }}
+                          >
+                            {t.viewDetails}
+                          </Button>
                         </AppCard>
                       </Grid>
                     </Grid>
@@ -1058,94 +1075,94 @@ export default function HomePage() {
                     coreModule.category?.id === group.category.id &&
                     (!selectedCategoryId || selectedCategoryId === group.category.id);
 
-                    return (
-                      <Box key={group.category.id} sx={{ mb: 6 }}>
-                        <Box
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "space-between",
-                            flexWrap: "wrap",
-                            gap: 1.5,
-                            mb: 2,
-                          }}
-                        >
-                          <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
-                            <Box
-                              sx={{
-                                width: 42,
-                                height: 42,
-                                borderRadius: 2,
-                                bgcolor: alpha(theme.palette.primary.main, 0.08),
-                                color: "primary.main",
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                              }}
-                            >
-                              <CategoryIcon fontSize="small" />
-                            </Box>
-                            <Box>
-                              <Typography variant="h6" fontWeight="bold" sx={{ textAlign: align }}>
-                                {categoryLabel}
-                              </Typography>
-                              <Typography variant="body2" color="text.secondary" sx={{ textAlign: align }}>
-                                {meta.descriptions?.[language] ?? meta.descriptions?.en ?? ""}
-                              </Typography>
-                            </Box>
-                          </Stack>
-                          <Chip
-                            size="small"
-                            label={`${group.items.length + (isCoreInCategory ? 1 : 0)}`}
-                            color="primary"
-                            variant="outlined"
-                          />
-                        </Box>
-                        <Divider sx={{ mb: 3 }} />
-
-                        <Box
-                          sx={{
-                            display: "flex",
-                            flexWrap: "wrap",
-                            gap: 3,
-                            justifyContent: { xs: "center", sm: "flex-start" },
-                          }}
-                        >
-                          {isCoreInCategory && (
-                            <DashboardModuleCard
-                              key={coreModule.key}
-                              mod={coreModule}
-                              stats={moduleStats[coreModule.key]}
-                              language={language}
-                              t={t}
-                              themeMode={theme.palette.mode}
-                              donutColors={donutColors}
-                              donutEmpty={donutEmpty}
-                              animateCharts={animateCharts}
-                              dir={dir}
-                              onOpenModule={handleOpenModule}
-                            />
-                          )}
-                          {group.items.map((mod) => (
-                            <DashboardModuleCard
-                              key={mod.key}
-                              mod={mod}
-                              stats={moduleStats[mod.key]}
-                              language={language}
-                              t={t}
-                              themeMode={theme.palette.mode}
-                              donutColors={donutColors}
-                              donutEmpty={donutEmpty}
-                              animateCharts={animateCharts}
-                              dir={dir}
-                              onOpenModule={handleOpenModule}
-                            />
-                          ))}
-                        </Box>
+                  return (
+                    <Box key={group.category.id} sx={{ mb: 6 }}>
+                      <Box
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          flexWrap: "wrap",
+                          gap: 1.5,
+                          mb: 2,
+                        }}
+                      >
+                        <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
+                          <Box
+                            sx={{
+                              width: 42,
+                              height: 42,
+                              borderRadius: 2,
+                              bgcolor: alpha(theme.palette.primary.main, 0.08),
+                              color: "primary.main",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
+                          >
+                            <CategoryIcon fontSize="small" />
+                          </Box>
+                          <Box>
+                            <Typography variant="h6" fontWeight="bold" sx={{ textAlign: align }}>
+                              {categoryLabel}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ textAlign: align }}>
+                              {meta.descriptions?.[language] ?? meta.descriptions?.en ?? ""}
+                            </Typography>
+                          </Box>
+                        </Stack>
+                        <Chip
+                          size="small"
+                          label={`${group.items.length + (isCoreInCategory ? 1 : 0)}`}
+                          color="primary"
+                          variant="outlined"
+                        />
                       </Box>
-                    );
-                  })}
-                </Box>
+                      <Divider sx={{ mb: 3 }} />
+
+                      <Box
+                        sx={{
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: 3,
+                          justifyContent: { xs: "center", sm: "flex-start" },
+                        }}
+                      >
+                        {isCoreInCategory && (
+                          <DashboardModuleCard
+                            key={coreModule.key}
+                            mod={coreModule}
+                            stats={moduleStats[coreModule.key]}
+                            language={language}
+                            t={t}
+                            themeMode={theme.palette.mode}
+                            donutColors={donutColors}
+                            donutEmpty={donutEmpty}
+                            animateCharts={animateCharts}
+                            dir={dir}
+                            onOpenModule={handleOpenModule}
+                          />
+                        )}
+                        {group.items.map((mod) => (
+                          <DashboardModuleCard
+                            key={mod.key}
+                            mod={mod}
+                            stats={moduleStats[mod.key]}
+                            language={language}
+                            t={t}
+                            themeMode={theme.palette.mode}
+                            donutColors={donutColors}
+                            donutEmpty={donutEmpty}
+                            animateCharts={animateCharts}
+                            dir={dir}
+                            onOpenModule={handleOpenModule}
+                          />
+                        ))}
+                      </Box>
+                    </Box>
+                  );
+                })}
+              </Box>
             </Box>
           </>
         )}
@@ -1159,8 +1176,46 @@ export default function HomePage() {
             setShowBusinessModal(false);
           }}
         />
+
+        <Dialog
+          open={showEventDetails}
+          onClose={() => setShowEventDetails(false)}
+          fullWidth
+          maxWidth="sm"
+          dir={dir}
+        >
+          <DialogTitle>{t.eventBreakdown}</DialogTitle>
+          <DialogContent dividers>
+            {eventBusinessBreakdown.length > 0 ? (
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell align={align}>{t.businesses}</TableCell>
+                    <TableCell align={align}>{t.eventCount}</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {eventBusinessBreakdown.map((business) => (
+                    <TableRow key={business.businessId || business.name}>
+                      <TableCell align={align}>
+                        {business.name || t.unknownBusiness}
+                      </TableCell>
+                      <TableCell align={align}>
+                        {toArabicDigits(Number(business.count || 0), language)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <Typography color="text.secondary">{t.noTotals}</Typography>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setShowEventDetails(false)}>{t.close}</Button>
+          </DialogActions>
+        </Dialog>
       </Container>
     </Box>
   );
 }
-
