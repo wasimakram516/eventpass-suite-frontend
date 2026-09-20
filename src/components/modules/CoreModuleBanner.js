@@ -3,21 +3,61 @@
 import { Chip, Stack, Box, Typography, Button } from "@mui/material";
 import ArrowForwardOutlinedIcon from "@mui/icons-material/ArrowForwardOutlined";
 import { useRouter } from "next/navigation";
-import { useTheme, alpha, lighten } from "@mui/material/styles";
+import { useTheme, alpha } from "@mui/material/styles";
 import { getModuleIcon } from "@/utils/iconMapper";
 import { resolveModuleColor } from "@/styles/theme";
-import { ATTENDEE_DATA_CONSUMER_KEYS } from "@/utils/moduleCategories";
+import { ATTENDEE_DATA_CONSUMER_KEYS, getCategoryLabel } from "@/utils/moduleCategories";
 import AppCard from "@/components/cards/AppCard";
 
-// Diameter of the circular notch discs (px).
-// Real circles (borderRadius:"50%") colored to match the page background —
-// the classic "ticket stub" technique. No clip-path needed.
-const NOTCH_D = 18;
+// Radius (px) of the semicircular notches cut into the top and bottom edges of
+// the card, centered on the dotted divider (which sits at 65% of the width).
+const NOTCH_R = 9;
+
+// True cutouts, like a boarding pass: a mask of two half-height layers, each
+// with a transparent semicircle centered on the card edge, so the page shows
+// through the notch. (Painting page-colored discs on top instead reads as full
+// circles that hang outside the card.)
+const NOTCH_MASK = [
+  `radial-gradient(circle ${NOTCH_R}px at 65% 0, transparent ${NOTCH_R}px, #000 ${NOTCH_R + 0.5}px) top / 100% 51% no-repeat`,
+  `radial-gradient(circle ${NOTCH_R}px at 65% 100%, transparent ${NOTCH_R}px, #000 ${NOTCH_R + 0.5}px) bottom / 100% 51% no-repeat`,
+].join(", ");
+
+// The default banner is a deliberate dark "hero" card in BOTH light and dark
+// mode (per the approved mockup), so its colors are fixed rather than derived
+// from the theme. Only the border and shadow treatment changes with the mode.
+const BANNER = {
+  bgLight: "linear-gradient(135deg, #0a1226 0%, #0b1d40 55%, #0d2a5c 100%)",
+  bgDark: "linear-gradient(135deg, #0a1a33 0%, #0b2a52 55%, #0d3a72 100%)",
+  glow: "radial-gradient(120% 140% at 100% 100%, rgba(37, 99, 235, 0.35) 0%, rgba(37, 99, 235, 0) 60%)",
+  accent: "#38bdf8",
+  text: "#ffffff",
+  textMuted: "rgba(203, 213, 225, 0.78)",
+  line: "rgba(255, 255, 255, 0.22)",
+  chipBg: "rgba(255, 255, 255, 0.06)",
+  chipBorder: "rgba(255, 255, 255, 0.16)",
+  chipText: "#e2e8f0",
+  buttonBg: "#ffffff",
+  buttonText: "#0b1730",
+  buttonHoverBg: "#e6eefc",
+};
+
+// What the "Connected modules" row shows and links to (per the approved design):
+// the core module itself, its sibling modules, and two category shortcuts.
+// Modules open their own page; categories open that category on the Modules page.
+const CONNECTED_TARGETS = [
+  { type: "module", key: "eventreg" },
+  { type: "module", key: "checkin" },
+  { type: "module", key: "digipass" },
+  { type: "category", id: "engagement" },
+  { type: "category", id: "post-event" },
+];
 
 export default function CoreModuleBanner({
   coreModule,
   moduleLabelsById,
   moduleRoutesById,
+  categoriesById,
+  onOpenCategory,
   language,
   t,
   onClick,
@@ -127,68 +167,70 @@ export default function CoreModuleBanner({
 
   // -- Default variant ----------------------------------------------------------
   //
-  // Key insight: outer Box uses overflow:visible so notch circles can extend
-  // beyond its bounds. CSS always clips a box's own *background* to its own
-  // border-radius regardless of `overflow` — so the tinted background stays
-  // rounded. The AppCard inside uses overflow:hidden so grid content is clipped
-  // to the card corners. The notch circles are children of the outer Box (not
-  // AppCard), so they are not clipped by the AppCard's overflow:hidden.
+  // Ticket-style card. The notches on the dotted divider are true cutouts: the
+  // AppCard is masked, so the page shows through the semicircles. A mask also
+  // clips a box-shadow, so the raised shadow is a drop-shadow filter on the
+  // wrapper instead; a filter follows the masked alpha, so the shadow wraps
+  // the notches as well.
+
+  // Chips for the "Connected modules" row: each one knows its label and what a
+  // click does (open the module page, or open that category on this page).
+  // A target the current role can't see is skipped rather than shown dead.
+  const connectedChips = CONNECTED_TARGETS.map((target) => {
+    if (target.type === "category") {
+      const category = categoriesById?.[target.id];
+      if (!category) return null;
+      return {
+        id: `category:${target.id}`,
+        label: getCategoryLabel(category, language),
+        onClick: () => onOpenCategory?.(target.id),
+      };
+    }
+
+    const isCore = target.key === coreModule.key;
+    const labels = moduleLabelsById?.[target.key];
+    if (!isCore && !labels) return null;
+    const route = isCore ? coreModule.route : moduleRoutesById?.[target.key];
+    return {
+      id: `module:${target.key}`,
+      label: isCore ? (t.coreModuleTitle ?? "EventReg") : (labels?.[language] ?? labels?.en ?? target.key),
+      onClick: () => handleModuleClick(target.key, route),
+    };
+  }).filter(Boolean);
 
   return (
     <Box
       sx={{
         mb: 6,
-        borderRadius: 2,
-        overflow: "visible",
         position: "relative",
-background: (theme) =>
+        color: BANNER.text,
+        // Raised card: a deep, soft drop shadow (plus a faint blue glow in dark
+        // mode) and a small lift on hover.
+        filter: (theme) =>
           theme.palette.mode === "dark"
-            ? alpha(resolvedColor, 0.12)
-            : lighten(resolvedColor, 0.92),
+            ? "drop-shadow(0 20px 26px rgba(0, 0, 0, 0.6)) drop-shadow(0 0 18px rgba(37, 99, 235, 0.3))"
+            : "drop-shadow(0 18px 22px rgba(9, 20, 45, 0.35)) drop-shadow(0 6px 10px rgba(9, 20, 45, 0.25))",
+        transition: "transform 0.25s ease",
+        "&:hover": { transform: "translateY(-2px)" },
       }}
     >
-      {/* Top notch circle — md+ only */}
-      <Box
-        aria-hidden
-        sx={{
-          display: { xs: "none", md: "block" },
-          position: "absolute",
-          top: -(NOTCH_D / 2),
-          left: "65%",
-          transform: "translateX(-50%)",
-          width: NOTCH_D,
-          height: NOTCH_D,
-          borderRadius: "50%",
-          bgcolor: "background.default",
-          zIndex: 2,
-        }}
-      />
-      {/* Bottom notch circle — md+ only */}
-      <Box
-        aria-hidden
-        sx={{
-          display: { xs: "none", md: "block" },
-          position: "absolute",
-          bottom: -(NOTCH_D / 2),
-          left: "65%",
-          transform: "translateX(-50%)",
-          width: NOTCH_D,
-          height: NOTCH_D,
-          borderRadius: "50%",
-          bgcolor: "background.default",
-          zIndex: 2,
-        }}
-      />
-
-      {/* Inner card — overflow:hidden clips grid content to rounded corners */}
+      {/* Card: gradient, border, and the ticket notches (cut out by the mask) */}
       <AppCard
         sx={{
           p: 0,
           position: "relative",
-          background: "transparent",
-          boxShadow: "none",
           overflow: "hidden",
-          borderRadius: 2,
+          // No borderRadius override: inherit AppCard's own corners so the banner
+          // matches every other card on the page.
+          border: "1px solid",
+          borderColor: (theme) =>
+            theme.palette.mode === "dark" ? "rgba(56, 189, 248, 0.28)" : "rgba(148, 197, 255, 0.18)",
+          background: (theme) =>
+            `${BANNER.glow}, ${theme.palette.mode === "dark" ? BANNER.bgDark : BANNER.bgLight}`,
+          boxShadow: "none",
+          // md+ only: where the mask is transparent the card is cut away.
+          WebkitMask: { xs: "none", md: NOTCH_MASK },
+          mask: { xs: "none", md: NOTCH_MASK },
           "&:hover": { transform: "none", boxShadow: "none" },
         }}
       >
@@ -197,9 +239,25 @@ background: (theme) =>
             display: "grid",
             gridTemplateColumns: { xs: "1fr", md: "65fr 35fr" },
             alignItems: "stretch",
+            minHeight: { md: 250 },
             position: "relative",
           }}
         >
+          {/* Cyan top edge, clipped to the rounded corners by the AppCard */}
+          <Box
+            aria-hidden
+            sx={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              height: "2px",
+              background: `linear-gradient(90deg, rgba(56, 189, 248, 0) 0%, ${BANNER.accent} 50%, rgba(56, 189, 248, 0) 100%)`,
+              opacity: 0.85,
+              zIndex: 1,
+            }}
+          />
+
           {/* Vertical dotted divider — md+ only */}
           <Box
             aria-hidden
@@ -211,29 +269,29 @@ background: (theme) =>
               left: "65%",
               width: "2px",
               transform: "translateX(-50%)",
-              background: (theme) =>
-                `repeating-linear-gradient(to bottom, ${theme.palette.divider} 0, ${theme.palette.divider} 5px, transparent 5px, transparent 12px)`,
+              background: `repeating-linear-gradient(to bottom, ${BANNER.line} 0, ${BANNER.line} 5px, transparent 5px, transparent 12px)`,
               zIndex: 1,
             }}
           />
 
           {/* Left column: icon + identity copy */}
-          <Stack sx={{ p: { xs: 3, md: 4 }, height: "100%" }} spacing={2}>
+          <Stack sx={{ p: { xs: 3, md: 5 }, height: "100%", justifyContent: { md: "center" } }} spacing={2}>
             <Stack direction="row" spacing={2} sx={{ alignItems: "flex-start" }}>
               <Box
                 sx={{
                   width: 56,
                   height: 56,
                   borderRadius: 2,
-                  bgcolor: alpha(resolvedColor, 0.10),
-                  color: resolvedColor,
+                  background: "linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)",
+                  color: BANNER.text,
+                  boxShadow: "0 8px 20px -6px rgba(59, 130, 246, 0.6), inset 0 0 0 1px rgba(255, 255, 255, 0.18)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   flexShrink: 0,
                 }}
               >
-                {coreModule.icon && getModuleIcon(coreModule.icon, { sx: { fontSize: 30, color: resolvedColor } })}
+                {coreModule.icon && getModuleIcon(coreModule.icon, { sx: { fontSize: 30, color: BANNER.text } })}
               </Box>
               <Stack spacing={0.75} sx={{ minWidth: 0 }}>
                 <Box
@@ -244,23 +302,37 @@ background: (theme) =>
                     px: 1.25,
                     py: 0.35,
                     borderRadius: "999px",
-                    bgcolor: alpha(resolvedColor, 0.10),
-                    color: resolvedColor,
-                    fontSize: "0.7rem",
-                    fontWeight: 700,
-                    letterSpacing: 0.4,
-                    textTransform: "uppercase",
+                    gap: 0.75,
+                    bgcolor: "rgba(255, 255, 255, 0.08)",
+                    border: "1px solid",
+                    borderColor: BANNER.chipBorder,
+                    color: BANNER.chipText,
+                    fontSize: "0.72rem",
+                    fontWeight: 600,
+                    letterSpacing: 0.3,
                   }}
                 >
-                  {`\u2022 ${t.coreFoundationBadge ?? "Core foundation"}`}
+                  <Box aria-hidden sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: BANNER.accent }} />
+                  {t.coreFoundationBadge ?? "Core foundation"}
                 </Box>
-                <Typography variant="h4" fontWeight="bold" sx={{ lineHeight: 1.1 }}>
+                {/* Same h4 style as before (font family and weight come from the
+                    theme); only the size is bumped so the title leads. */}
+                <Typography
+                  variant="h4"
+                  component="h3"
+                  fontWeight="bold"
+                  sx={{
+                    fontSize: { xs: "2.25rem", md: "3rem" },
+                    lineHeight: 1.1,
+                    color: BANNER.text,
+                  }}
+                >
                   {t.coreModuleTitle ?? "EventReg"}
                 </Typography>
-                <Typography variant="h6" fontWeight="bold" sx={{ color: "text.primary", pt: 0.5 }}>
+                <Typography variant="h6" fontWeight={600} sx={{ color: BANNER.text, pt: 0.5 }}>
                   {t.coreTagline}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" sx={{ color: BANNER.textMuted }}>
                   {t.coreSubtext}
                 </Typography>
               </Stack>
@@ -278,43 +350,38 @@ background: (theme) =>
                 display: { xs: "block", md: "none" },
                 height: "2px",
                 mx: -3,
-                background: (theme) =>
-                  `repeating-linear-gradient(to right, ${theme.palette.divider} 0, ${theme.palette.divider} 5px, transparent 5px, transparent 12px)`,
+                background: `repeating-linear-gradient(to right, ${BANNER.line} 0, ${BANNER.line} 5px, transparent 5px, transparent 12px)`,
               }}
             />
           </Stack>
 
           {/* Right column: connected modules + CTA */}
-          <Stack sx={{ p: { xs: 3, md: 4 }, height: "100%" }} spacing={2}>
-            <Typography
-              variant="overline"
-              fontWeight="bold"
-              sx={{ color: "text.secondary", letterSpacing: 0.8, lineHeight: 1.4 }}
-            >
+          <Stack sx={{ p: { xs: 3, md: 5 }, height: "100%" }} spacing={2}>
+            <Typography variant="body2" fontWeight={600} sx={{ color: BANNER.textMuted }}>
               {t.connectedModules}
             </Typography>
 
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
-              {[coreModule.key, ...ATTENDEE_DATA_CONSUMER_KEYS].map((moduleKey) => {
-                const labels = moduleLabelsById[moduleKey];
-                if (!labels) return null;
-                const route = moduleKey === coreModule.key ? coreModule.route : moduleRoutesById?.[moduleKey];
+              {connectedChips.map((chip) => {
                 return (
                   <Chip
-                    key={moduleKey}
+                    key={chip.id}
                     size="small"
-                    label={labels?.[language] ?? labels?.en ?? moduleKey}
+                    label={chip.label}
                     variant="outlined"
-                    onClick={() => handleModuleClick(moduleKey, route)}
+                    onClick={chip.onClick}
                     sx={{
                       borderRadius: "999px",
                       fontWeight: 600,
                       cursor: "pointer",
+                      bgcolor: BANNER.chipBg,
+                      borderColor: BANNER.chipBorder,
+                      color: BANNER.chipText,
                       transition: "all 0.2s ease",
                       "&:hover": {
-                        bgcolor: alpha(resolvedColor, 0.12),
-                        borderColor: resolvedColor,
-                        color: resolvedColor,
+                        bgcolor: "rgba(56, 189, 248, 0.16)",
+                        borderColor: BANNER.accent,
+                        color: BANNER.text,
                         transform: "translateY(-1px)",
                       },
                     }}
@@ -329,11 +396,12 @@ background: (theme) =>
                 size="large"
                 fullWidth
                 sx={{
-                  backgroundColor: resolvedColor,
-                  color: theme.palette.getContrastText(resolvedColor),
+                  backgroundColor: BANNER.buttonBg,
+                  color: BANNER.buttonText,
                   fontWeight: "bold",
                   px: 3,
-                  "&:hover": { backgroundColor: resolvedColor, opacity: 0.9 },
+                  boxShadow: "0 8px 18px -8px rgba(0, 0, 0, 0.5)",
+                  "&:hover": { backgroundColor: BANNER.buttonHoverBg, boxShadow: "0 10px 22px -8px rgba(0, 0, 0, 0.55)" },
                 }}
                 onClick={handleClick}
                 endIcon={<ArrowForwardOutlinedIcon fontSize="small" />}
