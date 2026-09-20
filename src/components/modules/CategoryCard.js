@@ -9,6 +9,42 @@ import { resolveModuleColor } from "@/styles/theme";
 import AppCard from "@/components/cards/AppCard";
 import * as MuiIcons from "@mui/icons-material";
 
+// Hover treatment shared by CategoryCard and ModuleCard: a colored border, a
+// small lift, and a soft wash of the category color bleeding in from the
+// top-right corner. The wash is a ::before layer (faded in with opacity, since
+// gradients can't be transitioned) sitting behind the content via
+// `isolation: isolate` + `zIndex: -1`.
+const coloredHoverSx = (color) => ({
+  position: "relative",
+  isolation: "isolate",
+  border: "1px solid transparent",
+  transition: "border-color 0.2s ease, transform 0.2s ease",
+  "&::before": {
+    content: '""',
+    position: "absolute",
+    inset: 0,
+    zIndex: -1,
+    pointerEvents: "none",
+    background: `radial-gradient(ellipse 100% 100% at 100% 0%, ${alpha(color, 0.18)} 0%, ${alpha(color, 0.07)} 40%, transparent 72%)`,
+    opacity: 0,
+    transition: "opacity 0.25s ease",
+  },
+  "&:hover": { borderColor: color, transform: "translateY(-2px)" },
+  "&:hover::before": { opacity: 1 },
+});
+
+// Two-column card grid that centers a lone last card instead of leaving it
+// stranded on the left. It is flex rather than grid so an odd final row can be
+// centered; cards in the same row still stretch to equal height. The 24px in
+// the width is the `gap: 3` below.
+export const cardGridSx = {
+  display: "flex",
+  flexWrap: "wrap",
+  justifyContent: "center",
+  gap: 3,
+  "& > *": { width: { xs: "100%", md: "calc((100% - 24px) / 2)" } },
+};
+
 export function CategoryCard({ group, language, onOpenCategory, onOpenModule, t }) {
   const theme = useTheme();
   const { category, items } = group;
@@ -18,7 +54,7 @@ export function CategoryCard({ group, language, onOpenCategory, onOpenModule, t 
   const CategoryIcon = CategoryIconName ? MuiIcons[CategoryIconName] : null;
 
   return (
-    <AppCard key={category.id} sx={{ p: 3, display: "flex", flexDirection: "column", border: "1px solid transparent", transition: "border-color 0.2s ease, transform 0.2s ease", "&:hover": { borderColor: categoryColor, transform: "translateY(-2px)", "& .category-open-btn": { color: categoryColor } } }}>
+    <AppCard key={category.id} sx={{ p: 3, display: "flex", flexDirection: "column", ...coloredHoverSx(categoryColor) }}>
       <Stack direction="row" sx={{ alignItems: "flex-start", justifyContent: "space-between", mb: 2 }}>
         <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
           <Box
@@ -53,7 +89,7 @@ export function CategoryCard({ group, language, onOpenCategory, onOpenModule, t 
         }}
       >
         {items.map((mod) => (
-          <Box
+          <AppCard
             key={mod.key}
             onClick={() => {
               if (onOpenModule) onOpenModule(mod);
@@ -62,17 +98,17 @@ export function CategoryCard({ group, language, onOpenCategory, onOpenModule, t 
             sx={{
               px: 1.5,
               py: 1,
-              borderRadius: 1,
-              bgcolor: "action.hover",
-              color: "text.primary",
-              cursor: "pointer",
-              display: "flex",
+              borderRadius: 2,
+              border: "1px solid",
+              borderColor: "divider",
+              flexDirection: "row",
               alignItems: "center",
               justifyContent: "space-between",
               gap: 1,
-              transition: "all 0.2s ease",
+              cursor: "pointer",
               "&:hover": {
-                bgcolor: alpha(categoryColor, 0.10),
+                bgcolor: alpha(categoryColor, 0.06),
+                borderColor: alpha(categoryColor, 0.5),
                 color: categoryColor,
                 "& .module-pill-arrow": { opacity: 1, transform: "translateX(0)" },
               },
@@ -92,7 +128,7 @@ export function CategoryCard({ group, language, onOpenCategory, onOpenModule, t 
                 transition: "opacity 0.2s ease, transform 0.2s ease",
               }}
             />
-          </Box>
+          </AppCard>
         ))}
       </Box>
       <Button size="small" className="category-open-btn" onClick={() => onOpenCategory(category.id)} sx={{ textTransform: "none", mt: "auto", alignSelf: "flex-start", color: categoryColor, fontWeight: 600, transition: "color 0.2s ease" }}>
@@ -129,7 +165,7 @@ export function CategoryDetailView({ group, language, t, onBack, onOpenModule })
         {meta.descriptions?.[language] ?? meta.descriptions?.en ?? ""}
       </Typography>
       <Divider sx={{ mb: 3 }} />
-      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(2, 1fr)" }, gap: 3 }}>
+      <Box sx={cardGridSx}>
         {items.map((mod) => (
           <ModuleCard key={mod.key} mod={mod} categoryLabel={getCategoryLabel(category, language)} categoryColor={meta.color} language={language} onClick={onOpenModule} />
         ))}
@@ -148,7 +184,15 @@ export function ModuleCard({ mod, categoryLabel, categoryColor, language, onClic
   };
 
   return (
-    <AppCard key={mod.key} sx={{ p: 3, display: "flex", flexDirection: "column" }}>
+    <AppCard
+      key={mod.key}
+      sx={{
+        p: 3,
+        display: "flex",
+        flexDirection: "column",
+        ...coloredHoverSx(cardColor),
+      }}
+    >
       <Stack direction="row" sx={{ alignItems: "flex-start", justifyContent: "space-between", mb: 2 }}>
         <Box
           sx={{
