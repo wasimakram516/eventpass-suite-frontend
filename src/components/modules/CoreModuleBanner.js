@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useState } from "react";
 import { Chip, Stack, Box, Typography, Button } from "@mui/material";
 import ArrowForwardOutlinedIcon from "@mui/icons-material/ArrowForwardOutlined";
 import { useRouter } from "next/navigation";
@@ -21,6 +22,16 @@ const NOTCH_MASK = [
   `radial-gradient(circle ${NOTCH_R}px at 65% 0, transparent ${NOTCH_R}px, #000 ${NOTCH_R + 0.5}px) top / 100% 51% no-repeat`,
   `radial-gradient(circle ${NOTCH_R}px at 65% 100%, transparent ${NOTCH_R}px, #000 ${NOTCH_R + 0.5}px) bottom / 100% 51% no-repeat`,
 ].join(", ");
+
+// Mobile version of the notches: the layout is stacked, so the dotted divider
+// is horizontal and the notches are cut into the LEFT and RIGHT edges at the
+// divider's height. That height depends on how the text wraps, so it is
+// measured at runtime and passed in. Two half-width layers, one per side.
+const mobileNotchMask = (y) =>
+  [
+    `radial-gradient(circle ${NOTCH_R}px at 0 ${y}px, transparent ${NOTCH_R}px, #000 ${NOTCH_R + 0.5}px) left / 51% 100% no-repeat`,
+    `radial-gradient(circle ${NOTCH_R}px at 100% ${y}px, transparent ${NOTCH_R}px, #000 ${NOTCH_R + 0.5}px) right / 51% 100% no-repeat`,
+  ].join(", ");
 
 // The default banner is a deliberate dark "hero" card in BOTH light and dark
 // mode (per the approved mockup), so its colors are fixed rather than derived
@@ -66,6 +77,34 @@ export default function CoreModuleBanner({
   const router = useRouter();
   const theme = useTheme();
   const resolvedColor = resolveModuleColor(coreModule?.color, theme.palette.mode) || theme.palette.primary.main;
+
+  // Where the mobile dotted divider sits, measured from the card's top edge, so
+  // the notch cutouts can line up with it. Null on desktop, where the divider is
+  // hidden and the top/bottom notches are used instead.
+  const gridRef = useRef(null);
+  const dividerRef = useRef(null);
+  const [mobileNotchY, setMobileNotchY] = useState(null);
+
+  useEffect(() => {
+    const grid = gridRef.current;
+    const divider = dividerRef.current;
+    if (!grid || !divider) return undefined;
+
+    const measure = () => {
+      // offsetParent is null while the divider is display:none (md and up).
+      if (divider.offsetParent === null) {
+        setMobileNotchY(null);
+        return;
+      }
+      // +1 for the card's 1px border, since the mask is measured from its border box.
+      setMobileNotchY(divider.offsetTop + divider.offsetHeight / 2 + 1);
+    };
+
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(grid);
+    return () => observer.disconnect();
+  }, [variant, language]);
 
   const handleClick = () => {
     if (onClick) onClick();
@@ -228,13 +267,15 @@ export default function CoreModuleBanner({
           background: (theme) =>
             `${BANNER.glow}, ${theme.palette.mode === "dark" ? BANNER.bgDark : BANNER.bgLight}`,
           boxShadow: "none",
-          // md+ only: where the mask is transparent the card is cut away.
-          WebkitMask: { xs: "none", md: NOTCH_MASK },
-          mask: { xs: "none", md: NOTCH_MASK },
+          // Where the mask is transparent the card is cut away: top and bottom
+          // notches from md up, side notches on the horizontal divider below.
+          WebkitMask: { xs: mobileNotchY == null ? "none" : mobileNotchMask(mobileNotchY), md: NOTCH_MASK },
+          mask: { xs: mobileNotchY == null ? "none" : mobileNotchMask(mobileNotchY), md: NOTCH_MASK },
           "&:hover": { transform: "none", boxShadow: "none" },
         }}
       >
         <Box
+          ref={gridRef}
           sx={{
             display: "grid",
             gridTemplateColumns: { xs: "1fr", md: "65fr 35fr" },
@@ -345,6 +386,7 @@ export default function CoreModuleBanner({
               Replaces the old solid 1px borderBottom.
             */}
             <Box
+              ref={dividerRef}
               aria-hidden
               sx={{
                 display: { xs: "block", md: "none" },
