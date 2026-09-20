@@ -5,3 +5,4 @@ Vercel only deploys `uat` when the latest commit is authored by a project team m
 Format: `RD <TICKET-ID> <dd MMM yyyy>`
 
 - RD EP-239 17 Sep 2026
+- RD EP-198 20 Sep 2026
