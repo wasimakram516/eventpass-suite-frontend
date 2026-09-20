@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowBackOutlined } from "@mui/icons-material";
+import { ArrowBackOutlined, ArrowForwardOutlined as ArrowForwardOutlinedIcon } from "@mui/icons-material";
 import { Stack, Box, Typography, Chip, Button, Divider } from "@mui/material";
 import { useTheme, alpha } from "@mui/material/styles";
 import { getCategoryLabel, getCategoryMeta } from "@/utils/moduleCategories";
@@ -13,11 +13,12 @@ export function CategoryCard({ group, language, onOpenCategory, onOpenModule, t 
   const theme = useTheme();
   const { category, items } = group;
   const meta = getCategoryMeta(category.id);
+  const categoryColor = meta.color || theme.palette.primary.main;
   const CategoryIconName = meta.iconName;
   const CategoryIcon = CategoryIconName ? MuiIcons[CategoryIconName] : null;
 
   return (
-    <AppCard key={category.id} sx={{ p: 3, display: "flex", flexDirection: "column" }}>
+    <AppCard key={category.id} sx={{ p: 3, display: "flex", flexDirection: "column", border: "1px solid transparent", transition: "border-color 0.2s ease, transform 0.2s ease", "&:hover": { borderColor: categoryColor, transform: "translateY(-2px)", "& .category-open-btn": { color: categoryColor } } }}>
       <Stack direction="row" sx={{ alignItems: "flex-start", justifyContent: "space-between", mb: 2 }}>
         <Stack direction="row" spacing={1.5} sx={{ alignItems: "center" }}>
           <Box
@@ -25,8 +26,8 @@ export function CategoryCard({ group, language, onOpenCategory, onOpenModule, t 
               width: 48,
               height: 48,
               borderRadius: "50%",
-              bgcolor: "action.hover",
-              color: "primary.main",
+              bgcolor: alpha(categoryColor, 0.10),
+              color: categoryColor,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -38,7 +39,7 @@ export function CategoryCard({ group, language, onOpenCategory, onOpenModule, t 
             {getCategoryLabel(category, language)}
           </Typography>
         </Stack>
-        <Chip size="small" label={items.length} color="primary" variant="outlined" />
+        <Chip size="small" label={items.length} sx={{ color: categoryColor, borderColor: alpha(categoryColor, 0.4) }} variant="outlined" />
       </Stack>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
         {meta.descriptions?.[language] ?? meta.descriptions?.en ?? ""}
@@ -65,16 +66,36 @@ export function CategoryCard({ group, language, onOpenCategory, onOpenModule, t 
               bgcolor: "action.hover",
               color: "text.primary",
               cursor: "pointer",
-              "&:hover": { filter: "brightness(0.95)" },
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 1,
+              transition: "all 0.2s ease",
+              "&:hover": {
+                bgcolor: alpha(categoryColor, 0.10),
+                color: categoryColor,
+                "& .module-pill-arrow": { opacity: 1, transform: "translateX(0)" },
+              },
             }}
           >
             <Typography variant="body2" noWrap>
               {mod.labels?.[language] ?? mod.labels?.en ?? mod.key}
             </Typography>
+            <ArrowForwardOutlinedIcon
+              className="module-pill-arrow"
+              sx={{
+                fontSize: 16,
+                color: categoryColor,
+                flexShrink: 0,
+                opacity: 0,
+                transform: "translateX(-4px)",
+                transition: "opacity 0.2s ease, transform 0.2s ease",
+              }}
+            />
           </Box>
         ))}
       </Box>
-      <Button size="small" onClick={() => onOpenCategory(category.id)} sx={{ textTransform: "none", mt: "auto", alignSelf: "flex-start" }}>
+      <Button size="small" className="category-open-btn" onClick={() => onOpenCategory(category.id)} sx={{ textTransform: "none", mt: "auto", alignSelf: "flex-start", color: categoryColor, fontWeight: 600, transition: "color 0.2s ease" }}>
         {t.openCategory} ›
       </Button>
     </AppCard>
@@ -110,16 +131,16 @@ export function CategoryDetailView({ group, language, t, onBack, onOpenModule })
       <Divider sx={{ mb: 3 }} />
       <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(2, 1fr)" }, gap: 3 }}>
         {items.map((mod) => (
-          <ModuleCard key={mod.key} mod={mod} categoryLabel={getCategoryLabel(category, language)} language={language} onClick={onOpenModule} />
+          <ModuleCard key={mod.key} mod={mod} categoryLabel={getCategoryLabel(category, language)} categoryColor={meta.color} language={language} onClick={onOpenModule} />
         ))}
       </Box>
     </Box>
   );
 }
 
-export function ModuleCard({ mod, categoryLabel, language, onClick }) {
+export function ModuleCard({ mod, categoryLabel, categoryColor, language, onClick }) {
   const theme = useTheme();
-  const modColor = resolveModuleColor(mod.color, theme.palette.mode) || theme.palette.primary.main;
+  const cardColor = categoryColor || resolveModuleColor(mod.color, theme.palette.mode) || theme.palette.primary.main;
 
   const handleClick = () => {
     if (onClick) onClick(mod);
@@ -134,15 +155,15 @@ export function ModuleCard({ mod, categoryLabel, language, onClick }) {
             width: 48,
             height: 48,
             borderRadius: 2,
-            bgcolor: alpha(modColor, 0.10),
+            bgcolor: alpha(cardColor, 0.10),
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            color: modColor,
+            color: cardColor,
             flexShrink: 0,
           }}
         >
-          {getModuleIcon(mod.icon, { sx: { fontSize: 26, color: modColor } })}
+          {getModuleIcon(mod.icon, { sx: { fontSize: 26, color: cardColor } })}
         </Box>
         <Chip size="small" label={`• ${categoryLabel}`} variant="outlined" />
       </Stack>
@@ -152,7 +173,7 @@ export function ModuleCard({ mod, categoryLabel, language, onClick }) {
       <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
         {mod.descriptions?.[language] ?? mod.descriptions?.en ?? ""}
       </Typography>
-      <Button size="small" onClick={handleClick} sx={{ textTransform: "none", mt: "auto", alignSelf: "flex-start", pt: 2 }}>
+      <Button size="small" onClick={handleClick} sx={{ textTransform: "none", mt: "auto", alignSelf: "flex-start", pt: 2, color: cardColor, fontWeight: 600 }}>
         Open ›
       </Button>
     </AppCard>

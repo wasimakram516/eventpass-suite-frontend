@@ -45,6 +45,7 @@ export function getCategoryLabel(category, language) {
 const CATEGORY_META = {
   "event-ops": {
     iconName: "EventAvailableOutlined",
+    color: "#2f6bff",
     descriptions: {
       en: "Core event operations: registration, check-in, and digital passes.",
       ar: "عمليات الفعالية الأساسية: التسجيل، تسجيل الدخول، والتذاكر الرقمية.",
@@ -52,6 +53,7 @@ const CATEGORY_META = {
   },
   engagement: {
     iconName: "CampaignOutlined",
+    color: "#00966f",
     descriptions: {
       en: "Live audience tools: polls, questions, and interactive walls.",
       ar: "أدوات جمهور مباشرة: استطلاعات، أسئلة، وجدران تفاعلية.",
@@ -59,6 +61,7 @@ const CATEGORY_META = {
   },
   games: {
     iconName: "SportsEsportsOutlined",
+    color: "#7c4dff",
     descriptions: {
       en: "Gamified experiences: quizzes, duels, and prize wheels.",
       ar: "تجارب ألعاب تفاعلية: اختبارات، مبارزات، وعجلات الجوائز.",
@@ -66,6 +69,7 @@ const CATEGORY_META = {
   },
   "post-event": {
     iconName: "MarkEmailReadOutlined",
+    color: "#d97313",
     descriptions: {
       en: "Follow-up after the event: surveys and thank-you emails.",
       ar: "المتابعة بعد الفعالية: الاستبيانات ورسائل الشكر.",
