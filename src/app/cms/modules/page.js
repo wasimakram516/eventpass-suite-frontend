@@ -24,7 +24,7 @@
   import { useModules, useModuleCategories } from "@/hooks/useModules";
   import { useModuleSearch } from "@/hooks/useModuleSearch";
   import CoreModuleBanner from "@/components/modules/CoreModuleBanner";
-  import { CategoryCard, CategoryDetailView, ModuleCard } from "@/components/modules/CategoryCard";
+  import { CategoryCard, CategoryDetailView, ModuleCard, cardGridSx } from "@/components/modules/CategoryCard";
   import { groupByModuleCategory, getCategoryLabel, getCategoryMeta } from "@/utils/moduleCategories";
   import LoadingState from "@/components/LoadingState";
   import { fillTemplate } from "@/utils/stringUtil";
@@ -97,6 +97,12 @@
       return map;
     }, [modules]);
 
+    // Category objects by id, so the EventReg banner can link its category chips.
+    const categoriesById = useMemo(
+      () => Object.fromEntries(groupedByCategory.map((group) => [group.category.id, group.category])),
+      [groupedByCategory],
+    );
+
     const [selectedCategoryId, setSelectedCategoryId] = useState(null);
     const [detailCategoryId, setDetailCategoryId] = useState(null);
     const [searchQuery, setSearchQuery] = useState("");
@@ -138,19 +144,61 @@
       setDetailCategoryId(categoryId);
     };
 
+    // The search lives in the page header, so it must follow the same rule the
+    // old in-body search did: only while the category overview is on screen.
+    const showSearch = !loading && modules?.length > 0 && !(detailCategoryId && detailGroup);
+
     return (
       <Container
-        maxWidth="lg"
+        maxWidth={false}
         dir={dir}
-        sx={{ pb: 8, bgcolor: "background.default", px: { xs: 0 } }}
+        sx={{ maxWidth: 1400, pb: 8, bgcolor: "background.default", px: { xs: 0 } }}
       >
         <Box sx={{ mb: 3 }}>
-          <Typography variant="h2" gutterBottom sx={{ fontWeight: "bold", textAlign: align }}>
-            {t.title}
-          </Typography>
-          <Typography variant="body1" sx={{ color: "text.secondary", textAlign: align }}>
-            {t.subtitle}
-          </Typography>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: { xs: "column", md: "row" },
+              alignItems: { xs: "stretch", md: "flex-end" },
+              justifyContent: "space-between",
+              gap: 2,
+            }}
+          >
+            <Box sx={{ minWidth: 0 }}>
+              <Typography variant="h2" gutterBottom sx={{ fontWeight: "bold", textAlign: align }}>
+                {t.title}
+              </Typography>
+              <Typography variant="body1" sx={{ color: "text.secondary", textAlign: align }}>
+                {t.subtitle}
+              </Typography>
+            </Box>
+
+            {showSearch && (
+              <TextField
+                size="small"
+                value={searchQuery}
+                onChange={(event) => {
+                  setSearchQuery(event.target.value);
+                  if (event.target.value) {
+                    setSelectedCategoryId(null);
+                    setDetailCategoryId(null);
+                  }
+                }}
+                placeholder={t.searchModules}
+                sx={{ width: { xs: "100%", md: 320 }, flexShrink: 0 }}
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchOutlinedIcon fontSize="small" />
+                      </InputAdornment>
+                    ),
+                  },
+                  htmlInput: { "aria-label": t.searchModules },
+                }}
+              />
+            )}
+          </Box>
           <Divider sx={{ my: 1.5, "&::before, &::after": { borderTopStyle: "dotted" } }} />
         </Box>
 
@@ -195,37 +243,13 @@
           />
         ) : (
           <Box>
-            <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 4 }}>
-              <TextField
-                size="small"
-                value={searchQuery}
-                onChange={(event) => {
-                  setSearchQuery(event.target.value);
-                  if (event.target.value) {
-                    setSelectedCategoryId(null);
-                    setDetailCategoryId(null);
-                  }
-                }}
-                placeholder={t.searchModules}
-                sx={{ width: "100%", maxWidth: 360, flexShrink: 0 }}
-                slotProps={{
-                  input: {
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <SearchOutlinedIcon fontSize="small" />
-                      </InputAdornment>
-                    ),
-                  },
-                  htmlInput: { "aria-label": t.searchModules },
-                }}
-              />
-            </Box>
-
             {isCoreVisible && (
               <CoreModuleBanner
                 coreModule={coreModule}
                 moduleLabelsById={moduleLabelsById}
                 moduleRoutesById={moduleRoutesById}
+                categoriesById={categoriesById}
+                onOpenCategory={handleOpenCategory}
                 language={language}
                 t={t}
               />
@@ -267,7 +291,7 @@
                         {t.openCategory} ›
                       </Button>
                     </Stack>
-                    <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(2, 1fr)" }, gap: 3 }}>
+                    <Box sx={cardGridSx}>
                       {activeGroup.items.map((mod) => (
                         <ModuleCard key={mod.key} mod={mod} categoryLabel={getCategoryLabel(activeGroup.category, language)} categoryColor={getCategoryMeta(activeGroup.category.id)?.color} language={language} onClick={handleOpenModule} />
                       ))}
@@ -289,7 +313,7 @@
                       </Stack>
                     </Stack>
 
-                    <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "repeat(2, 1fr)" }, gap: 3 }}>
+                    <Box sx={cardGridSx}>
                       {searchFilteredGroups.map((group) => (
                         <CategoryCard key={group.category.id} group={group} language={language} onOpenCategory={handleOpenCategory} onOpenModule={handleOpenModule} t={t} />
                       ))}
