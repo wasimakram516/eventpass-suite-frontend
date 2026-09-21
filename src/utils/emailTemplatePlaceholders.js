@@ -13,6 +13,21 @@ export const EMAIL_TEMPLATE_RESERVED = Object.freeze({
   TOKEN: "Token",
   EVENT_NAME: "Event Name",
   LOGO: "Logo",
+  EVENT_DATE: "Event Start and End Date",
+  START_DATE: "Start Date",
+  END_DATE: "End Date",
+  START_TIME: "Start Time",
+  END_TIME: "End Time",
+  VENUE: "Venue",
+  EVENT_DESCRIPTION: "Event Description",
+  ORGANIZER_NAME: "Organizer Name",
+  ORGANIZER_EMAIL: "Organizer Email",
+  ORGANIZER_PHONE: "Organizer Phone",
+  ORGANIZER_ADDRESS: "Organizer Address",
+  ORGANIZER_WEBSITE: "Organizer Website",
+  ORGANIZER_OTHER_DETAILS: "Organizer Other Details",
+  REGISTRATION_DETAILS: "Registration Details",
+  CONFIRMATION_BUTTON: "Confirmation Button",
   PAYMENT_SUMMARY: "Payment Summary",
 });
 
@@ -26,11 +41,14 @@ export const EMAIL_TEMPLATE_DEFAULTS = Object.freeze({
   LOGO_MAX_SIZE: 300,
 });
 
-/** Placeholders that cannot be filled in an email subject (they are visual blocks). */
+/** Placeholders that cannot be filled in an email subject (they are visual or HTML blocks). */
 const SUBJECT_UNSUPPORTED_KEYS = Object.freeze([
   EMAIL_TEMPLATE_RESERVED.QR,
   EMAIL_TEMPLATE_RESERVED.LOGO,
   EMAIL_TEMPLATE_RESERVED.PAYMENT_SUMMARY,
+  EMAIL_TEMPLATE_RESERVED.EVENT_DESCRIPTION,
+  EMAIL_TEMPLATE_RESERVED.REGISTRATION_DETAILS,
+  EMAIL_TEMPLATE_RESERVED.CONFIRMATION_BUTTON,
 ]);
 
 export const EMAIL_TEMPLATE_WARNINGS = Object.freeze({
@@ -112,42 +130,81 @@ function getKnownFieldKeys({ useCustomFields, formFields }) {
   return keys;
 }
 
-/**
- * List the built in placeholders offered next to the field placeholders.
- *
- * @param {{isPaid?: boolean}} options
- * @returns {string[]} Reserved placeholder names available for this event
- */
-export function getReservedPlaceholderNames({ isPaid = false } = {}) {
-  // Derived from the groups, so the built in names are listed in one place only.
-  return getPlaceholderGroups({ useCustomFields: false, formFields: [], isPaid })
-    .filter((group) => group.id !== EMAIL_PLACEHOLDER_GROUPS.ATTENDEE_DETAILS)
-    .flatMap((group) => group.names);
-}
-
 export const EMAIL_PLACEHOLDER_GROUPS = Object.freeze({
   EVENT_DETAILS: "eventDetails",
+  ORGANIZER_DETAILS: "organizerDetails",
   QR_TOKEN: "qrToken",
   ATTENDEE_DETAILS: "attendeeDetails",
   PAYMENT: "payment",
+  LINKS: "links",
 });
 
 /**
- * Split every placeholder an event offers into the groups shown in the tab:
- * event details, QR and token, attendee details (the input fields), and, for
- * paid events only, payment.
+ * The built in placeholders of each group, in display order. This is the one
+ * place they are listed, and the event details follow the event modal: the same
+ * for every module, except start and end time, which the modal only collects for
+ * CheckIn events, and the confirmation button, which only CheckIn has.
  *
- * @param {{useCustomFields?: boolean, formFields?: Array<{inputName?: string}>, isPaid?: boolean}} event
+ * @param {{isPaid: boolean, isCheckIn: boolean}} options
+ * @returns {Record<string, string[]>} Built in names keyed by group id
+ */
+function getBuiltInGroups({ isPaid, isCheckIn }) {
+  const R = EMAIL_TEMPLATE_RESERVED;
+  const G = EMAIL_PLACEHOLDER_GROUPS;
+  return {
+    [G.EVENT_DETAILS]: [
+      R.EVENT_NAME,
+      R.LOGO,
+      R.EVENT_DATE,
+      R.START_DATE,
+      R.END_DATE,
+      ...(isCheckIn ? [R.START_TIME, R.END_TIME] : []),
+      R.VENUE,
+      R.EVENT_DESCRIPTION,
+    ],
+    [G.ORGANIZER_DETAILS]: [
+      R.ORGANIZER_NAME,
+      R.ORGANIZER_EMAIL,
+      R.ORGANIZER_PHONE,
+      R.ORGANIZER_ADDRESS,
+      R.ORGANIZER_WEBSITE,
+      R.ORGANIZER_OTHER_DETAILS,
+    ],
+    [G.QR_TOKEN]: [R.QR, R.TOKEN],
+    [G.ATTENDEE_DETAILS]: [R.REGISTRATION_DETAILS],
+    [G.PAYMENT]: isPaid ? [R.PAYMENT_SUMMARY] : [],
+    [G.LINKS]: isCheckIn ? [R.CONFIRMATION_BUTTON] : [],
+  };
+}
+
+/**
+ * List the built in placeholders offered next to the field placeholders.
+ *
+ * @param {{isPaid?: boolean, isCheckIn?: boolean}} options
+ * @returns {string[]} Reserved placeholder names available for this event
+ */
+export function getReservedPlaceholderNames({ isPaid = false, isCheckIn = false } = {}) {
+  return Object.values(getBuiltInGroups({ isPaid, isCheckIn })).flat();
+}
+
+/**
+ * Split every placeholder an event offers into the groups shown in the tab:
+ * event details, organizer details, QR and token, attendee details (the input
+ * fields plus the registration details table), payment for paid events, and
+ * links for CheckIn events.
+ *
+ * @param {{useCustomFields?: boolean, formFields?: Array<{inputName?: string}>, isPaid?: boolean, isCheckIn?: boolean}} event
  * @returns {Array<{id: string, names: string[]}>} Non empty groups in display order
  */
-export function getPlaceholderGroups({ useCustomFields, formFields, isPaid = false }) {
-  const groups = [
-    { id: EMAIL_PLACEHOLDER_GROUPS.EVENT_DETAILS, names: [EMAIL_TEMPLATE_RESERVED.EVENT_NAME, EMAIL_TEMPLATE_RESERVED.LOGO] },
-    { id: EMAIL_PLACEHOLDER_GROUPS.QR_TOKEN, names: [EMAIL_TEMPLATE_RESERVED.QR, EMAIL_TEMPLATE_RESERVED.TOKEN] },
-    { id: EMAIL_PLACEHOLDER_GROUPS.ATTENDEE_DETAILS, names: getTemplateFieldNames({ useCustomFields, formFields }) },
-    { id: EMAIL_PLACEHOLDER_GROUPS.PAYMENT, names: isPaid ? [EMAIL_TEMPLATE_RESERVED.PAYMENT_SUMMARY] : [] },
-  ];
-  return groups.filter((group) => group.names.length > 0);
+export function getPlaceholderGroups({ useCustomFields, formFields, isPaid = false, isCheckIn = false }) {
+  const builtIn = getBuiltInGroups({ isPaid, isCheckIn });
+  const fieldNames = getTemplateFieldNames({ useCustomFields, formFields });
+  return Object.values(EMAIL_PLACEHOLDER_GROUPS)
+    .map((id) => ({
+      id,
+      names: id === EMAIL_PLACEHOLDER_GROUPS.ATTENDEE_DETAILS ? [...fieldNames, ...builtIn[id]] : builtIn[id],
+    }))
+    .filter((group) => group.names.length > 0);
 }
 
 /**
@@ -184,6 +241,7 @@ export function hasTemplatePlaceholder(text, name) {
  * @param {Array<{inputName?: string, previousNames?: string[]}>} params.formFields - Custom fields
  * @param {string[]} params.selectedFields - Fields the admin ticked in the tab
  * @param {boolean} params.isPaid - Whether the event is paid
+ * @param {boolean} [params.isCheckIn] - Whether the event is a CheckIn event
  * @returns {Array<{code: string, placeholders?: string[]}>}
  */
 export function getTemplateWarnings({
@@ -194,10 +252,13 @@ export function getTemplateWarnings({
   formFields,
   selectedFields = [],
   isPaid = false,
+  isCheckIn = false,
 }) {
   const warnings = [];
   const knownFieldKeys = getKnownFieldKeys({ useCustomFields, formFields });
-  const reservedKeys = new Set(getReservedPlaceholderNames({ isPaid }).map(normalizePlaceholderKey));
+  const reservedKeys = new Set(
+    getReservedPlaceholderNames({ isPaid, isCheckIn }).map(normalizePlaceholderKey),
+  );
   const bodyNames = findPlaceholders(body);
   const headerNames = findPlaceholders(header);
   const subjectNames = findPlaceholders(subject);

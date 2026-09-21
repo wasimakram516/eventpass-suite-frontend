@@ -74,36 +74,103 @@ test("getTemplateFieldNames returns unique custom field names and skips blanks",
   assert.deepEqual(names, ["A"]);
 });
 
-test("getReservedPlaceholderNames offers Payment Summary only for paid events", () => {
-  assert.deepEqual(getReservedPlaceholderNames({ isPaid: false }), ["Event Name", "Logo", "QR", "Token"]);
-  assert.deepEqual(getReservedPlaceholderNames({ isPaid: true }), [
+const EVENT_DETAILS_SHARED = ["Event Name", "Logo", "Event Start and End Date", "Start Date", "End Date", "Venue", "Event Description"];
+const ORGANIZER_DETAILS = [
+  "Organizer Name",
+  "Organizer Email",
+  "Organizer Phone",
+  "Organizer Address",
+  "Organizer Website",
+  "Organizer Other Details",
+];
+
+test("getPlaceholderGroups: every module gets the same event and organizer details from the event modal", () => {
+  const groups = getPlaceholderGroups({ useCustomFields: false });
+  assert.deepEqual(groups, [
+    { id: "eventDetails", names: EVENT_DETAILS_SHARED },
+    { id: "organizerDetails", names: ORGANIZER_DETAILS },
+    { id: "qrToken", names: ["QR", "Token"] },
+    { id: "attendeeDetails", names: ["Full Name", "Email", "Phone", "Registration Details"] },
+  ]);
+});
+
+test("getPlaceholderGroups: start and end time appear only for CheckIn events, like the event modal", () => {
+  const eventDetails = (isCheckIn) =>
+    getPlaceholderGroups({ useCustomFields: false, isCheckIn }).find((group) => group.id === "eventDetails").names;
+
+  assert.equal(eventDetails(false).includes("Start Time"), false);
+  assert.equal(eventDetails(false).includes("End Time"), false);
+  assert.deepEqual(eventDetails(true), [
     "Event Name",
     "Logo",
-    "QR",
-    "Token",
-    "Payment Summary",
+    "Event Start and End Date",
+    "Start Date",
+    "End Date",
+    "Start Time",
+    "End Time",
+    "Venue",
+    "Event Description",
   ]);
 });
 
-test("getPlaceholderGroups: splits placeholders into event details, QR and token, and attendee details", () => {
-  assert.deepEqual(getPlaceholderGroups({ useCustomFields: false }), [
-    { id: "eventDetails", names: ["Event Name", "Logo"] },
-    { id: "qrToken", names: ["QR", "Token"] },
-    { id: "attendeeDetails", names: ["Full Name", "Email", "Phone"] },
-  ]);
+test("getPlaceholderGroups: the confirmation button is a Links group that only CheckIn events have", () => {
+  assert.equal(getPlaceholderGroups({ useCustomFields: false }).some((group) => group.id === "links"), false);
+  assert.deepEqual(getPlaceholderGroups({ useCustomFields: false, isCheckIn: true }).at(-1), {
+    id: "links",
+    names: ["Confirmation Button"],
+  });
 });
 
-test("getPlaceholderGroups: attendee details follow the event's custom fields", () => {
+test("getPlaceholderGroups: attendee details follow the event's custom fields and keep the registration details table", () => {
   const groups = getPlaceholderGroups({ useCustomFields: true, formFields: customFields });
-  assert.deepEqual(groups.find((g) => g.id === "attendeeDetails").names, ["Given Name", "Company"]);
+  assert.deepEqual(groups.find((g) => g.id === "attendeeDetails").names, [
+    "Given Name",
+    "Company",
+    "Registration Details",
+  ]);
 });
 
-test("getPlaceholderGroups: a payment group appears only for paid events, and empty groups are dropped", () => {
-  const free = getPlaceholderGroups({ useCustomFields: true, formFields: [] });
-  assert.equal(free.some((g) => g.id === "payment"), false);
-  assert.equal(free.some((g) => g.id === "attendeeDetails"), false);
-  const paid = getPlaceholderGroups({ useCustomFields: false, isPaid: true });
-  assert.deepEqual(paid.at(-1), { id: "payment", names: ["Payment Summary"] });
+test("getPlaceholderGroups: a payment group appears only for paid events", () => {
+  assert.equal(getPlaceholderGroups({ useCustomFields: false }).some((g) => g.id === "payment"), false);
+  assert.deepEqual(getPlaceholderGroups({ useCustomFields: false, isPaid: true }).at(-1), {
+    id: "payment",
+    names: ["Payment Summary"],
+  });
+});
+
+test("getReservedPlaceholderNames: lists every built in name once, following the same rules as the groups", () => {
+  const base = getReservedPlaceholderNames({});
+  assert.deepEqual(base, [...EVENT_DETAILS_SHARED, ...ORGANIZER_DETAILS, "QR", "Token", "Registration Details"]);
+  assert.equal(new Set(base).size, base.length);
+  assert.ok(getReservedPlaceholderNames({ isPaid: true }).includes("Payment Summary"));
+  assert.ok(getReservedPlaceholderNames({ isCheckIn: true }).includes("Confirmation Button"));
+  assert.ok(getReservedPlaceholderNames({ isCheckIn: true }).includes("Start Time"));
+  assert.equal(base.includes("Start Time"), false);
+});
+
+test("getTemplateWarnings: the new event, organizer and registration placeholders are known, not flagged", () => {
+  const body = "{QR}{Event Start and End Date}{Start Date}{End Date}{Venue}{Event Description}{Organizer Name}{Organizer Other Details}{Registration Details}";
+  assert.deepEqual(warn({ body }), []);
+});
+
+test("getTemplateWarnings: start time and the confirmation button are unknown outside CheckIn, known inside it", () => {
+  const body = "{QR}{Start Time}{Confirmation Button}";
+  const outside = warn({ body, isCheckIn: false });
+  assert.deepEqual(outside, [
+    { code: EMAIL_TEMPLATE_WARNINGS.UNKNOWN_PLACEHOLDER, placeholders: ["Start Time", "Confirmation Button"] },
+  ]);
+  assert.deepEqual(warn({ body, isCheckIn: true }), []);
+});
+
+test("getTemplateWarnings: plain details work in the subject, but description, registration details and the button do not", () => {
+  assert.deepEqual(warn({ subject: "{Venue} on {Start Date}", isCheckIn: true }), []);
+  const result = warn({ subject: "{Event Description}{Registration Details}{Confirmation Button}", isCheckIn: true });
+  assert.deepEqual(result, [
+    {
+      code: EMAIL_TEMPLATE_WARNINGS.SUBJECT_UNSUPPORTED,
+      placeholders: ["Event Description", "Registration Details", "Confirmation Button"],
+    },
+  ]);
 });
 
 test("findPlaceholders lists every placeholder in order", () => {
