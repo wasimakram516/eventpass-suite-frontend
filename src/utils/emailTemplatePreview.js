@@ -15,6 +15,7 @@ import {
   normalizeHeader,
   normalizePlaceholderKey,
 } from "./emailTemplatePlaceholders.js";
+import { getEventDetailSamples, getSampleDescriptionHtml } from "./emailEventDetails.js";
 
 const HEX_COLOR_REGEX = /^#[0-9a-fA-F]{6}$/;
 const PLACEHOLDER_REGEX = /\{([^{}]+)\}/g;
@@ -113,6 +114,29 @@ function buildSamplePaymentHtml(accentColor) {
 }
 
 /**
+ * Sample table for {Registration Details}: one row per attendee field.
+ *
+ * @param {string[]} fieldNames - Attendee field labels
+ * @returns {string} HTML table
+ */
+function buildSampleRegistrationDetailsHtml(fieldNames) {
+  const rows = fieldNames
+    .map((label) => `<tr><td style="padding:4px 0;"><strong>${escapeHtml(label)}:</strong></td><td style="padding:4px 0;">${escapeHtml(getSampleFieldValue(label))}</td></tr>`)
+    .join("");
+  return `<table style="width:100%;font-size:14px;color:#333;">${rows}</table>`;
+}
+
+/**
+ * Sample confirmation button for CheckIn events, in the accent color.
+ *
+ * @param {string} accentColor - Sanitized hex color
+ * @returns {string} HTML button
+ */
+function buildSampleConfirmationButtonHtml(accentColor) {
+  return `<div style="padding:16px 0;text-align:center;"><a href="#" style="display:inline-block;background:${accentColor};color:${getReadableTextColor(accentColor)};text-decoration:none;font-weight:700;font-size:16px;padding:14px 28px;border-radius:10px;">Confirm your attendance</a></div>`;
+}
+
+/**
  * A dashed box standing in for an image that is not available yet, so the
  * designer still sees where the placeholder sits and how big it will be.
  *
@@ -136,6 +160,8 @@ function buildImageStandIn(label, size) {
  * @param {string} [params.logoUrl] - Logo image URL or preview URL, if any
  * @param {string} [params.qrDataUrl] - Sample QR image as a data URL, once generated
  * @param {boolean} [params.isPaid] - Whether the event is paid
+ * @param {boolean} [params.isCheckIn] - Whether the event is a CheckIn event (times and the confirmation button)
+ * @param {object} [params.eventInfo] - Event details from emailEventDetails (dates, venue, organizer, description)
  * @param {"en"|"ar"} [params.language] - Email language, sets the text direction
  * @returns {{subject: string, html: string}} Rendered subject and a full HTML document
  */
@@ -147,6 +173,8 @@ export function buildEmailPreview({
   logoUrl,
   qrDataUrl,
   isPaid = false,
+  isCheckIn = false,
+  eventInfo,
   language = "en",
 }) {
   const accentColor = HEX_COLOR_REGEX.test(template.accentColor || "")
@@ -167,6 +195,9 @@ export function buildEmailPreview({
   }
   setPlaceholderEntry(fieldEntries, EMAIL_TEMPLATE_RESERVED.TOKEN, { value: SAMPLE_TOKEN });
   setPlaceholderEntry(fieldEntries, EMAIL_TEMPLATE_RESERVED.EVENT_NAME, { value: name });
+  for (const detail of getEventDetailSamples({ eventInfo, isCheckIn, language })) {
+    setPlaceholderEntry(fieldEntries, detail.name, { value: detail.value });
+  }
 
   const visualEntries = new Map(fieldEntries);
   setPlaceholderEntry(visualEntries, EMAIL_TEMPLATE_RESERVED.LOGO, {
@@ -186,9 +217,29 @@ export function buildEmailPreview({
     html: true,
   });
 
-  // {QR}, {Logo} and {Payment Summary} are visual blocks that mean nothing in a subject.
+  setPlaceholderEntry(visualEntries, EMAIL_TEMPLATE_RESERVED.EVENT_DESCRIPTION, {
+    value: getSampleDescriptionHtml(eventInfo),
+    html: true,
+  });
+  setPlaceholderEntry(visualEntries, EMAIL_TEMPLATE_RESERVED.REGISTRATION_DETAILS, {
+    value: buildSampleRegistrationDetailsHtml(getTemplateFieldNames({ useCustomFields, formFields })),
+    html: true,
+  });
+  setPlaceholderEntry(visualEntries, EMAIL_TEMPLATE_RESERVED.CONFIRMATION_BUTTON, {
+    value: isCheckIn ? buildSampleConfirmationButtonHtml(accentColor) : "",
+    html: true,
+  });
+
+  // Visual blocks mean nothing in a subject.
   const subjectEntries = new Map(fieldEntries);
-  for (const blockName of [EMAIL_TEMPLATE_RESERVED.QR, EMAIL_TEMPLATE_RESERVED.LOGO, EMAIL_TEMPLATE_RESERVED.PAYMENT_SUMMARY]) {
+  for (const blockName of [
+    EMAIL_TEMPLATE_RESERVED.QR,
+    EMAIL_TEMPLATE_RESERVED.LOGO,
+    EMAIL_TEMPLATE_RESERVED.PAYMENT_SUMMARY,
+    EMAIL_TEMPLATE_RESERVED.EVENT_DESCRIPTION,
+    EMAIL_TEMPLATE_RESERVED.REGISTRATION_DETAILS,
+    EMAIL_TEMPLATE_RESERVED.CONFIRMATION_BUTTON,
+  ]) {
     setPlaceholderEntry(subjectEntries, blockName, { value: "" });
   }
 

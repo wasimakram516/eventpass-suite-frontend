@@ -125,3 +125,35 @@ test("buildEmailPreview: sample values are escaped and Arabic sets right to left
   assert.match(html, /dir="rtl"/);
   assert.doesNotMatch(html, /<p>Sample <i>/);
 });
+
+test("buildEmailPreview: event details use the modal values, with samples for what is missing", () => {
+  const { html, subject } = buildEmailPreview({
+    template: { subject: "{Venue} on {Start Date}", body: "<p>{Event Start and End Date}|{Venue}|{Organizer Name}|{Organizer Email}|{Event Description}</p>" },
+    useCustomFields: false,
+    eventInfo: { startDate: "2026-10-05", endDate: "2026-10-07", venue: "Muscat Hall", description: "<b>About</b>" },
+  });
+  assert.equal(subject, "Muscat Hall on Monday, October 5, 2026");
+  assert.match(html, /Monday, October 5, 2026 – Wednesday, October 7, 2026\|Muscat Hall\|Sample Organizer\|organizer@example\.com\|<b>About<\/b>/);
+});
+
+test("buildEmailPreview: times and the confirmation button appear only for CheckIn events", () => {
+  const template = { subject: "s", body: "<p>{Start Time}|{End Time}</p>{Confirmation Button}" };
+  const other = buildEmailPreview({ template, useCustomFields: false, eventInfo: { startTime: "09:00", endTime: "17:30" } });
+  assert.doesNotMatch(other.html, /AM|PM/);
+  assert.doesNotMatch(other.html, /Confirm your attendance/);
+
+  const checkIn = buildEmailPreview({ template, useCustomFields: false, isCheckIn: true, eventInfo: { startTime: "09:00", endTime: "17:30" } });
+  assert.match(checkIn.html, /9:00 AM\|5:30 PM/);
+  assert.match(checkIn.html, /Confirm your attendance/);
+});
+
+test("buildEmailPreview: registration details lists the attendee fields, and visual blocks are blank in the subject", () => {
+  const { html, subject } = buildEmailPreview({
+    template: { subject: "a{Registration Details}{Event Description}{Confirmation Button}b", body: "{Registration Details}" },
+    useCustomFields: false,
+    isCheckIn: true,
+  });
+  assert.equal(subject, "ab");
+  assert.match(html, /Full Name:<\/strong>/);
+  assert.match(html, /Sara Al Balushi/);
+});
