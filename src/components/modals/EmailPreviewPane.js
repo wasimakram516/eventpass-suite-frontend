@@ -54,9 +54,11 @@ function useDebouncedValue(value, delayMs) {
  * @param {object} props
  * @param {object} props.formData - Event modal form state
  * @param {boolean} props.isPaid - Whether the event is paid (adds a sample payment summary)
+ * @param {boolean} [props.isCheckIn] - Whether the event is a CheckIn event (times and confirmation button)
+ * @param {object} [props.eventInfo] - Event details (see emailEventDetails); samples fill what is missing
  * @returns {JSX.Element}
  */
-const EmailPreviewPane = ({ formData, isPaid }) => {
+const EmailPreviewPane = ({ formData, isPaid, isCheckIn = false, eventInfo }) => {
   const { t } = useI18nLayout(translations);
   const [qrDataUrl, setQrDataUrl] = useState("");
 
@@ -71,6 +73,10 @@ const EmailPreviewPane = ({ formData, isPaid }) => {
       cancelled = true;
     };
   }, []);
+
+  // Callers build eventInfo fresh on every render; keep it stable by value so the preview does not rebuild in a loop.
+  const eventInfoKey = JSON.stringify(eventInfo || {});
+  const stableEventInfo = useMemo(() => JSON.parse(eventInfoKey), [eventInfoKey]);
 
   const usePlaceholders = formData.emailTemplateUsePlaceholders;
   const preview = useMemo(
@@ -90,6 +96,8 @@ const EmailPreviewPane = ({ formData, isPaid }) => {
         logoUrl: formData.logoPreview || formData.organizerLogoPreview || "",
         qrDataUrl,
         isPaid,
+        isCheckIn,
+        eventInfo: stableEventInfo,
         language: formData.defaultLanguage,
       }),
     [
@@ -107,6 +115,8 @@ const EmailPreviewPane = ({ formData, isPaid }) => {
       formData.defaultLanguage,
       qrDataUrl,
       isPaid,
+      isCheckIn,
+      stableEventInfo,
     ],
   );
   const shown = useDebouncedValue(preview, PREVIEW_DEBOUNCE_MS);

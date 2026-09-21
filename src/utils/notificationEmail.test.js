@@ -7,6 +7,7 @@ import {
   buildCustomTemplateForm,
   buildEmailSendFields,
   hasEventEmailTemplate,
+  isCheckInEvent,
   isEventPaid,
   validateCustomTemplateForm,
 } from "./notificationEmail.js";
@@ -110,4 +111,10 @@ test("buildEmailSendFields: a custom send adds the one off template as JSON", ()
 
 test("buildEmailSendFields: a custom type without a template sends nothing custom", () => {
   assert.equal("customTemplate" in buildEmailSendFields({ type: "custom" }), false);
+});
+
+test("isCheckInEvent is true only for closed (CheckIn) events", () => {
+  assert.equal(isCheckInEvent({ eventType: "closed" }), true);
+  assert.equal(isCheckInEvent({ eventType: "public" }), false);
+  assert.equal(isCheckInEvent(null), false);
 });

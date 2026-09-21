@@ -31,6 +31,17 @@ export function isEventPaid(event) {
 }
 
 /**
+ * Whether the event is a CheckIn event, which has start and end times and a
+ * confirmation button in its emails.
+ *
+ * @param {object|null|undefined} event - Event from the API
+ * @returns {boolean}
+ */
+export function isCheckInEvent(event) {
+  return event?.eventType === "closed";
+}
+
+/**
  * Build the starting form for the "Custom" notification: the same shape the
  * event setup tab edits, pre-filled from the event's own template when that
  * template uses placeholders. A template saved in the older layout is not

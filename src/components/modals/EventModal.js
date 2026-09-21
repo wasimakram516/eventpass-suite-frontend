@@ -53,6 +53,7 @@ import CountryCodeSelector from "@/components/CountryCodeSelector";
 import { DEFAULT_ISO_CODE, DEFAULT_COUNTRY_CODE, getCountryCodeByIsoCode, COUNTRY_CODES } from "@/utils/countryCodes";
 import { validatePhoneNumber } from "@/utils/phoneValidation";
 import { convertTimeToLocal, convertTimeFromLocal } from "@/utils/dateUtils";
+import { eventInfoFromEventForm } from "@/utils/emailEventDetails";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import TicketTypesEditor from "@/components/checkout/TicketTypesEditor";
 import FeesVatEditor from "@/components/checkout/FeesVatEditor";
@@ -3616,6 +3617,8 @@ const EventModal = ({
               formData={formData}
               setFormData={setFormData}
               isPaid={forcePaid || formData.isPaid}
+              isCheckIn={isClosed}
+              eventInfo={eventInfoFromEventForm(formData, isClosed)}
               errors={{ subject: emailTemplateSubjectError, body: emailTemplateBodyError }}
               onClearError={(field) =>
                 field === "subject" ? setEmailTemplateSubjectError(false) : setEmailTemplateBodyError(false)

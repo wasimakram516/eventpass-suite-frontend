@@ -3,7 +3,8 @@
 import { Box } from "@mui/material";
 import EmailTemplateWorkspace from "@/components/modals/EmailTemplateWorkspace";
 import AttachmentPicker from "@/components/modals/AttachmentPicker";
-import { isEventPaid } from "@/utils/notificationEmail";
+import { isCheckInEvent, isEventPaid } from "@/utils/notificationEmail";
+import { eventInfoFromEvent } from "@/utils/emailEventDetails";
 
 /**
  * The "Custom" part of a notification modal: the email template form with its
@@ -22,6 +23,8 @@ const CustomNotificationForm = ({ composer, event, attachedFile, onFileChange })
     formData={composer.form}
     setFormData={composer.setForm}
     isPaid={isEventPaid(event)}
+    isCheckIn={isCheckInEvent(event)}
+    eventInfo={eventInfoFromEvent(event)}
     errors={composer.errors}
     onClearError={composer.clearError}
   >

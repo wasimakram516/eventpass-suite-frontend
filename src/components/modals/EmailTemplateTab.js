@@ -38,6 +38,8 @@ const translations = {
     intro: "Tick a placeholder, click it to copy, then paste it into the subject or body.",
     placeholdersTitle: "Placeholders",
     eventDetails: "Event details",
+    organizerDetails: "Organizer details",
+    links: "Links",
     qrToken: "QR and token",
     attendeeDetails: "Attendee details",
     payment: "Payment",
@@ -75,6 +77,8 @@ const translations = {
     intro: "حدد عنصرا نائبا، انقر عليه لنسخه، ثم الصقه في الموضوع أو النص.",
     placeholdersTitle: "العناصر النائبة",
     eventDetails: "تفاصيل الفعالية",
+    organizerDetails: "تفاصيل المنظم",
+    links: "الروابط",
     qrToken: "رمز QR والرمز",
     attendeeDetails: "تفاصيل الحاضر",
     payment: "الدفع",
@@ -210,19 +214,20 @@ const PlaceholderRow = ({ name, checked, onToggle, onCopy, copyLabel }) => (
  * @param {object} props.formData - Event modal form state
  * @param {Function} props.setFormData - Event modal form state setter
  * @param {boolean} props.isPaid - Whether the event is paid (offers {Payment Summary})
+ * @param {boolean} [props.isCheckIn] - Whether the event is a CheckIn event (offers times and {Confirmation Button})
  * @param {{subject: boolean, body: boolean}} props.errors - Required field errors
  * @param {(field: "subject"|"body") => void} props.onClearError - Clears one required error
  * @returns {JSX.Element}
  */
-const EmailTemplateTab = ({ formData, setFormData, isPaid, errors, onClearError }) => {
+const EmailTemplateTab = ({ formData, setFormData, isPaid, isCheckIn = false, errors, onClearError }) => {
   const { t, dir } = useI18nLayout(translations);
   const { showMessage } = useMessage();
 
   const usePlaceholders = formData.emailTemplateUsePlaceholders;
   const selectedFields = formData.emailTemplateSelectedFields || [];
   const placeholderGroups = useMemo(
-    () => getPlaceholderGroups({ useCustomFields: formData.useCustomFields, formFields: formData.formFields, isPaid }),
-    [formData.useCustomFields, formData.formFields, isPaid],
+    () => getPlaceholderGroups({ useCustomFields: formData.useCustomFields, formFields: formData.formFields, isPaid, isCheckIn }),
+    [formData.useCustomFields, formData.formFields, isPaid, isCheckIn],
   );
   const placeholderNames = useMemo(() => placeholderGroups.flatMap((group) => group.names), [placeholderGroups]);
   const warnings = useMemo(
@@ -236,9 +241,10 @@ const EmailTemplateTab = ({ formData, setFormData, isPaid, errors, onClearError 
             formFields: formData.formFields,
             selectedFields,
             isPaid,
+            isCheckIn,
           })
         : [],
-    [usePlaceholders, formData.emailTemplateSubject, formData.emailTemplateBody, formData.emailTemplateHeader, formData.useCustomFields, formData.formFields, selectedFields, isPaid],
+    [usePlaceholders, formData.emailTemplateSubject, formData.emailTemplateBody, formData.emailTemplateHeader, formData.useCustomFields, formData.formFields, selectedFields, isPaid, isCheckIn],
   );
 
   // QR and logo sizing matter once the placeholder is ticked or already used in the header or body.
