@@ -3355,34 +3355,32 @@ const EventModal = ({
                   </List>
                 </Box>
               </Box>
-              {!isClosed && (
-                <Box>
-                  <Button component="label" variant="outlined">
-                    {t.uploadAgenda}
-                    <input
-                      hidden
-                      name="agenda"
-                      type="file"
-                      accept="application/pdf"
-                      onChange={handleInputChange}
-                    />
-                  </Button>
-                  {formData.agendaPreview && (
-                    <Box sx={{ mt: 1 }}>
-                      <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
-                        {initialValues && !formData.agenda
-                          ? t.currentAgenda
-                          : t.selectedAgenda}
-                      </Typography>
-                      <Typography variant="body2" sx={{
-                        color: "text.secondary"
-                      }}>
-                        {formData.agendaPreview}
-                      </Typography>
-                    </Box>
-                  )}
-                </Box>
-              )}
+              <Box>
+                <Button component="label" variant="outlined">
+                  {t.uploadAgenda}
+                  <input
+                    hidden
+                    name="agenda"
+                    type="file"
+                    accept="application/pdf"
+                    onChange={handleInputChange}
+                  />
+                </Button>
+                {formData.agendaPreview && (
+                  <Box sx={{ mt: 1 }}>
+                    <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                      {initialValues && !formData.agenda
+                        ? t.currentAgenda
+                        : t.selectedAgenda}
+                    </Typography>
+                    <Typography variant="body2" sx={{
+                      color: "text.secondary"
+                    }}>
+                      {formData.agendaPreview}
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
             </Box>
           )}
 
