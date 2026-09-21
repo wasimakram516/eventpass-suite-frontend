@@ -7,7 +7,8 @@
     "dev": "node scripts/generateFonts.js && next dev",
     "build": "node scripts/generateFonts.js && next build --webpack",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "node --test \"src/**/*.test.js\""
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

@@ -40,6 +40,15 @@ import { updateCheckInEventCustomQrWrapper } from "@/services/checkin/checkinEve
 import { updateCheckoutEventCustomQrWrapper } from "@/services/checkout/eventService";
 import { deleteMedia } from "@/services/deleteMediaService";
 import RichTextEditor from "@/components/RichTextEditor";
+import EmailTemplateWorkspace from "@/components/modals/EmailTemplateWorkspace";
+import { EMAIL_TEMPLATE_REQUIRED_MESSAGES } from "@/utils/emailTemplateMessages";
+import {
+  EMPTY_EMAIL_TEMPLATE_SETTINGS,
+  buildEmailTemplatePayload,
+  getEmailTemplateSettings,
+  getEventModalTabIndices,
+  isRichTextEmpty,
+} from "@/utils/emailTemplatePlaceholders";
 import CountryCodeSelector from "@/components/CountryCodeSelector";
 import { DEFAULT_ISO_CODE, DEFAULT_COUNTRY_CODE, getCountryCodeByIsoCode, COUNTRY_CODES } from "@/utils/countryCodes";
 import { validatePhoneNumber } from "@/utils/phoneValidation";
@@ -121,12 +130,12 @@ const translations = {
     deleteMediaMessage: "Are you sure you want to delete this media? This action cannot be undone.",
     deleteConfirm: "Delete",
     useCustomEmailTemplate: "Use custom email template",
-    emailSubject: "Email Subject",
-    emailBody: "Email Body",
-    placeholderSubject: "Enter email subject",
-    placeholderBody: "Enter email body...",
-    emailSubjectRequired: "Email subject is required when using custom email template.",
-    emailBodyRequired: "Email body is required when using custom email template.",
+    emailSubjectRequired: EMAIL_TEMPLATE_REQUIRED_MESSAGES.en.subject,
+    emailBodyRequired: EMAIL_TEMPLATE_REQUIRED_MESSAGES.en.body,
+    emailTemplateTab: "Custom Email",
+    customEmailTemplateHint:
+      "The email content is set in the Custom Email tab, after the input fields are set.",
+    customFieldsHint: "The registration fields are set in the Custom Fields tab.",
     eventDetailsTab: "Event Details",
     organizerDetailsTab: "Organizer Details",
     optionsTab: "Options",
@@ -286,12 +295,12 @@ const translations = {
     deleteMediaMessage: "هل أنت متأكد من حذف هذه الوسائط؟ لا يمكن التراجع عن هذا الإجراء.",
     deleteConfirm: "حذف",
     useCustomEmailTemplate: "استخدام قالب بريد إلكتروني مخصص",
-    emailSubject: "موضوع البريد الإلكتروني",
-    emailBody: "نص البريد الإلكتروني",
-    placeholderSubject: "أدخل موضوع البريد الإلكتروني",
-    placeholderBody: "أدخل نص البريد الإلكتروني...",
-    emailSubjectRequired: "موضوع البريد الإلكتروني مطلوب عند استخدام قالب بريد إلكتروني مخصص.",
-    emailBodyRequired: "نص البريد الإلكتروني مطلوب عند استخدام قالب بريد إلكتروني مخصص.",
+    emailSubjectRequired: EMAIL_TEMPLATE_REQUIRED_MESSAGES.ar.subject,
+    emailBodyRequired: EMAIL_TEMPLATE_REQUIRED_MESSAGES.ar.body,
+    emailTemplateTab: "البريد الإلكتروني المخصص",
+    customEmailTemplateHint:
+      "يتم تحديد محتوى البريد في تبويب البريد الإلكتروني المخصص بعد تحديد حقول الإدخال.",
+    customFieldsHint: "يتم تحديد حقول التسجيل في تبويب الحقول المخصصة.",
     eventDetailsTab: "تفاصيل الفعالية",
     organizerDetailsTab: "تفاصيل المنظم",
     optionsTab: "الخيارات",
@@ -563,6 +572,7 @@ const EventModal = ({
     useCustomEmailTemplate: false,
     emailTemplateSubject: "",
     emailTemplateBody: "",
+    ...EMPTY_EMAIL_TEMPLATE_SETTINGS,
     useCustomQrCode: false,
     customQrSelectedFields: {},
     qrWrapperBackground: null,
@@ -674,6 +684,7 @@ const EventModal = ({
         useCustomEmailTemplate: initialValues?.useCustomEmailTemplate || false,
         emailTemplateSubject: initialValues?.emailTemplate?.subject || "",
         emailTemplateBody: initialValues?.emailTemplate?.body || "",
+        ...getEmailTemplateSettings(initialValues?.emailTemplate),
         isPaid: forcePaid ? true : allowPaid ? initialValues?.isPaid || false : false,
         ticketTypes: initialValues?.ticketTypes?.map((tt) => ({
           _id: tt._id,
@@ -783,6 +794,7 @@ const EventModal = ({
         useCustomEmailTemplate: false,
         emailTemplateSubject: "",
         emailTemplateBody: "",
+        ...EMPTY_EMAIL_TEMPLATE_SETTINGS,
         isPaid: forcePaid,
         ticketTypes: [],
         fees: [],
@@ -1281,6 +1293,10 @@ const EventModal = ({
     return true;
   };
 
+  const tabs = getEventModalTabIndices(formData);
+  // The Custom Email tab shows the live preview beside the form.
+  const isEmailTabOpen = formData.useCustomEmailTemplate && activeTab === tabs.emailTemplate;
+
   const validateCurrentTab = () => {
     if (activeTab === 0) {
       if (!formData.name || !formData.startDate || !formData.endDate || !formData.venue) {
@@ -1356,11 +1372,13 @@ const EventModal = ({
     if (formData.useCustomEmailTemplate) {
       if (!formData.emailTemplateSubject || !formData.emailTemplateSubject.trim()) {
         setEmailTemplateSubjectError(true);
+        setActiveTab(tabs.emailTemplate);
         showMessage(t.emailSubjectRequired, "error");
         return;
       }
-      if (!formData.emailTemplateBody || !formData.emailTemplateBody.trim() || formData.emailTemplateBody === "<p><br></p>" || formData.emailTemplateBody === "<p></p>") {
+      if (isRichTextEmpty(formData.emailTemplateBody)) {
         setEmailTemplateBodyError(true);
+        setActiveTab(tabs.emailTemplate);
         showMessage(t.emailBodyRequired, "error");
         return;
       }
@@ -1603,10 +1621,7 @@ const EventModal = ({
         useCustomEmailTemplate: formData.useCustomEmailTemplate,
         ...(formData.useCustomEmailTemplate
           ? {
-            emailTemplate: {
-              subject: formData.emailTemplateSubject,
-              body: formData.emailTemplateBody,
-            },
+            emailTemplate: buildEmailTemplatePayload(formData),
           }
           : {}),
         ...(formData.useCustomFields
@@ -1693,7 +1708,7 @@ const EventModal = ({
   return (
     <>
       {/* <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth dir={dir}> */}
-      <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth dir={dir}
+      <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth dir={dir}
         slotProps={{ paper: { sx: { maxHeight: "90vh" } } }}>
         <DialogTitle
           sx={{
@@ -1740,31 +1755,6 @@ const EventModal = ({
                 ) {
                   return;
                 }
-                const uploadsTabIndex = 3;
-                const customFieldsTabIndex = 4;
-                const customizeBadgeTabIndex = formData.useCustomFields ? 5 : 4;
-                const customQrCodeTabIndex = formData.useCustomFields ? 6 : 5;
-
-                if (formData.useCustomQrCode && newValue === customQrCodeTabIndex) {
-                  setActiveTab(newValue);
-                  return;
-                }
-
-                if (newValue === customizeBadgeTabIndex) {
-                  setActiveTab(newValue);
-                  return;
-                }
-
-                if (newValue === customFieldsTabIndex && formData.useCustomFields) {
-                  setActiveTab(newValue);
-                  return;
-                }
-
-                if (newValue === uploadsTabIndex) {
-                  setActiveTab(newValue);
-                  return;
-                }
-
                 setActiveTab(newValue);
               }}
               aria-label="event tabs"
@@ -1775,6 +1765,7 @@ const EventModal = ({
               <Tab label={t.optionsTab} />
               <Tab label={t.uploadsTab} />
               {formData.useCustomFields && <Tab label={t.customFieldsTab} />}
+              {formData.useCustomEmailTemplate && <Tab label={t.emailTemplateTab} />}
               <Tab label={t.customizeBadgeTab} />
               {formData.useCustomQrCode && <Tab label={t.customQrCodeTab} />}
             </Tabs>
@@ -2651,61 +2642,9 @@ const EventModal = ({
               </Box>
 
               {formData.useCustomEmailTemplate && (
-                <>
-                  <TextField
-                    fullWidth
-                    label={t.emailSubject}
-                    value={formData.emailTemplateSubject}
-                    onChange={(e) => {
-                      setFormData((prev) => ({
-                        ...prev,
-                        emailTemplateSubject: e.target.value,
-                      }));
-                      if (emailTemplateSubjectError) {
-                        setEmailTemplateSubjectError(false);
-                      }
-                    }}
-                    placeholder={t.placeholderSubject}
-                    required
-                    error={emailTemplateSubjectError}
-                    helperText={emailTemplateSubjectError ? t.emailSubjectRequired : ""}
-                  />
-
-                  <Box>
-                    <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
-                      {t.emailBody} {emailTemplateBodyError && (
-                        <Typography component="span" sx={{ color: "error.main" }}>*</Typography>
-                      )}                    </Typography>
-                    <Box
-                      sx={{
-                        border: (theme) =>
-                          emailTemplateBodyError
-                            ? `1px solid ${theme.palette.error.main}`
-                            : "1px solid transparent",
-                        borderRadius: 1,
-                      }}
-                    >
-                      <RichTextEditor
-                        value={formData.emailTemplateBody}
-                        onChange={(html) => {
-                          setFormData((prev) => ({
-                            ...prev,
-                            emailTemplateBody: html,
-                          }));
-                          if (emailTemplateBodyError) {
-                            setEmailTemplateBodyError(false);
-                          }
-                        }}
-                        placeholder={t.placeholderBody}
-                        dir={dir}
-                      />
-                    </Box>
-                    {emailTemplateBodyError && (
-                      <Typography variant="caption" sx={{ color: "error.main", mt: 0.5, display: "block" }}>                        {t.emailBodyRequired}
-                      </Typography>
-                    )}
-                  </Box>
-                </>
+                <Typography variant="caption" color="text.secondary" sx={{ mt: -1 }}>
+                  {t.customEmailTemplateHint}
+                </Typography>
               )}
 
               {/* Use Custom Fields Checkbox */}
@@ -2728,6 +2667,12 @@ const EventModal = ({
                     sx={{ alignSelf: "start" }}
                   />
                 </Box>
+              )}
+
+              {(isClosed || formData.eventType === "public") && formData.useCustomFields && (
+                <Typography variant="caption" color="text.secondary" sx={{ mt: -1 }}>
+                  {t.customFieldsHint}
+                </Typography>
               )}
 
               {initialValues && (
@@ -2757,7 +2702,7 @@ const EventModal = ({
           )}
 
           {/* Tab: Custom QR Code (visible when useCustomQrCode, last tab) */}
-          {formData.useCustomQrCode && activeTab === (formData.useCustomFields ? 6 : 5) && (
+          {formData.useCustomQrCode && activeTab === tabs.customQr && (
             <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 2 }}>
               <Typography
                 variant="body2"
@@ -3421,7 +3366,7 @@ const EventModal = ({
           )}
 
           {/* Tab: Custom Fields (conditional) */}
-          {activeTab === 4 && formData.useCustomFields && (
+          {activeTab === tabs.customFields && formData.useCustomFields && (
             <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 2 }}>
               {(isClosed || formData.eventType === "public") && (
                 <>
@@ -3665,8 +3610,21 @@ const EventModal = ({
             </Box>
           )}
 
+          {/* Tab: Custom Email Template (after the input fields, only when enabled) */}
+          {isEmailTabOpen && (
+            <EmailTemplateWorkspace
+              formData={formData}
+              setFormData={setFormData}
+              isPaid={forcePaid || formData.isPaid}
+              errors={{ subject: emailTemplateSubjectError, body: emailTemplateBodyError }}
+              onClearError={(field) =>
+                field === "subject" ? setEmailTemplateSubjectError(false) : setEmailTemplateBodyError(false)
+              }
+            />
+          )}
+
           {/* Tab: Customize Badge (always visible) */}
-          {activeTab === (formData.useCustomFields ? 5 : 4) && (
+          {activeTab === tabs.badge && (
             <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 2 }}>
               {(() => { if (typeof window !== 'undefined') console.log('[EventModal BadgeTab] bc keys:', Object.keys(formData.badgeCustomizations || {}), 'useCustomFields:', formData.useCustomFields, 'initialValues.customizations:', JSON.stringify(initialValues?.customizations)); return null; })()}
               {formData.useCustomFields && (
@@ -3792,12 +3750,7 @@ const EventModal = ({
                 </Button>
               )}
 
-              {(() => {
-                const maxTab = formData.useCustomFields
-                  ? (formData.useCustomQrCode ? 6 : 5)
-                  : (formData.useCustomQrCode ? 5 : 4);
-                return activeTab < maxTab;
-              })() ? (
+              {activeTab < tabs.last ? (
                 <Button
                   variant="contained"
                   onClick={() => {
