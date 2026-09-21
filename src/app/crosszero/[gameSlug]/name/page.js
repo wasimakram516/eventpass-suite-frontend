@@ -16,6 +16,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { joinGame } from "@/services/crosszero/playerService";
 import CrossZeroFloatingControls from "@/components/crosszero/CrossZeroFloatingControls";
+import { useGameEventRegLink } from "@/hooks/useGameEventRegLink";
+import EventRegRemainingFieldsStep from "@/components/games/EventRegRemainingFieldsStep";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
@@ -43,15 +45,26 @@ export default function CrossZeroNamePage() {
   const { game, loading } = useGame();
   const router = useRouter();
   const { t, dir } = useI18nLayout(translations);
+  const { link, remainingStep, submit, submitWithRemaining } = useGameEventRegLink(game);
   const [form, setForm] = useState({ name: "" });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  const handleSubmit = async () => {
+  const handleJoin = async (remainingValues) => {
     if (!form.name.trim() || submitting) return;
     setSubmitting(true);
     setError("");
-    const res = await joinGame(game._id, form);
+
+    const payload = { name: form.name.trim() };
+
+    const res = remainingValues
+      ? await submitWithRemaining((p) => joinGame(game._id, p), payload, form.name.trim(), remainingValues)
+      : await submit((p) => joinGame(game._id, p), payload, form.name.trim());
+
+    if (res?.needsRemainingFields) {
+      setSubmitting(false);
+      return;
+    }
     if (!res?.error) {
       sessionStorage.setItem(
         "playerInfo",
@@ -61,9 +74,9 @@ export default function CrossZeroNamePage() {
       sessionStorage.setItem("sessionId", res.sessionId);
       sessionStorage.setItem("playerMark", "O");
       router.push(`/crosszero/${game.slug}/play`);
-    } else {
-      setError(res?.message || "Something went wrong. Try again.");
+      return;
     }
+    setError(res?.message || "Something went wrong. Try again.");
     setSubmitting(false);
   };
 
@@ -195,74 +208,93 @@ export default function CrossZeroNamePage() {
             )}
           </Box>
 
-          <TextField
-            label={t.nameLabel}
-            fullWidth
-            required
-            sx={{ mb: 3 }}
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-            slotProps={{
-              input: { sx: { backgroundColor: (theme) => alpha(theme.palette.action.hover, theme.palette.mode === "dark" ? 0.32 : 0.6), color: "text.primary", "& .MuiOutlinedInput-notchedOutline": { borderColor: "divider" } } },
-              inputLabel: { sx: { color: "text.secondary" } }
-            }} />
-          {/* <TextField
-            label={t.companyLabel}
-            fullWidth
-            sx={{ mb: 2.5 }}
-            value={form.company}
-            onChange={(e) => setForm({ ...form, company: e.target.value })}
-            slotProps={{
-              input: { sx: { backgroundColor: "rgba(255,255,255,0.1)", color: "#fff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.25)" } } },
-              inputLabel: { sx: { color: "rgba(255,255,255,0.6)" } }
-            }}
-          />
-          <TextField
-            label={t.departmentLabel}
-            fullWidth
-            sx={{ mb: 3 }}
-            value={form.department}
-            onChange={(e) => setForm({ ...form, department: e.target.value })}
-            slotProps={{
-              input: { sx: { backgroundColor: "rgba(255,255,255,0.1)", color: "#fff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.25)" } } },
-              inputLabel: { sx: { color: "rgba(255,255,255,0.6)" } }
-            }}
-          /> */}
+          {remainingStep ? (
+            <EventRegRemainingFieldsStep
+              fields={remainingStep.fields}
+              submitting={submitting}
+              module="crosszero"
+              onSubmit={(values) => handleJoin(values)}
+            />
+          ) : (
+            <>
+              <TextField
+                label={link ? link.primaryFieldLabel : t.nameLabel}
+                fullWidth
+                required
+                sx={{ mb: 3 }}
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                onKeyDown={(e) => e.key === "Enter" && handleJoin()}
+                slotProps={{
+                  input: {
+                    sx: (theme) => ({
+                      backgroundColor: theme.palette.mode === "dark"
+                        ? alpha(theme.palette.action.hover, 0.32)
+                        : theme.palette.background.paper,
+                      color: "text.primary",
+                      "& .MuiOutlinedInput-notchedOutline": { borderColor: "divider" },
+                    }),
+                  },
+                  inputLabel: { sx: { color: "text.secondary" } }
+                }} />
+              {/* <TextField
+                label={t.companyLabel}
+                fullWidth
+                sx={{ mb: 2.5 }}
+                value={form.company}
+                onChange={(e) => setForm({ ...form, company: e.target.value })}
+                slotProps={{
+                  input: { sx: { backgroundColor: "rgba(255,255,255,0.1)", color: "#fff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.25)" } } },
+                  inputLabel: { sx: { color: "rgba(255,255,255,0.6)" } }
+                }}
+              />
+              <TextField
+                label={t.departmentLabel}
+                fullWidth
+                sx={{ mb: 3 }}
+                value={form.department}
+                onChange={(e) => setForm({ ...form, department: e.target.value })}
+                slotProps={{
+                  input: { sx: { backgroundColor: "rgba(255,255,255,0.1)", color: "#fff", "& .MuiOutlinedInput-notchedOutline": { borderColor: "rgba(255,255,255,0.25)" } } },
+                  inputLabel: { sx: { color: "rgba(255,255,255,0.6)" } }
+                }}
+              /> */}
 
-          <Button
-            variant="contained"
-            size="large"
-            fullWidth
-            onClick={handleSubmit}
-            disabled={submitting || !form.name.trim()}
-            startIcon={
-              submitting ? (
-                <CircularProgress size={20} color="inherit" />
-              ) : (
-                <ICONS.next />
-              )
-            }
-            sx={{
-              ...getStartIconSpacing(dir),
-              mt: 1,
-              py: 1.2,
-              borderRadius: 999,
-              fontWeight: 800,
-              bgcolor: "error.main",
-              color: "error.contrastText",
-              "&:hover": { filter: "brightness(1.08)", bgcolor: "error.main" },
-              "&:disabled": { opacity: 0.5 },
-            }}
-          >
-            {t.startButton}
-          </Button>
+              {error ? (
+                <Typography variant="caption" color="error" sx={{ mt: 1.5, display: "block" }}>
+                  {error}
+                </Typography>
+              ) : null}
 
-          {error ? (
-            <Typography variant="caption" color="error" sx={{ mt: 1.5, display: "block" }}>
-              {error}
-            </Typography>
-          ) : null}
+              <Button
+                variant="contained"
+                size="large"
+                fullWidth
+                onClick={() => handleJoin()}
+                disabled={submitting || !form.name.trim()}
+                startIcon={
+                  submitting ? (
+                    <CircularProgress size={20} color="inherit" />
+                  ) : (
+                    <ICONS.next />
+                  )
+                }
+                sx={{
+                  ...getStartIconSpacing(dir),
+                  mt: 1,
+                  py: 1.2,
+                  borderRadius: 999,
+                  fontWeight: 800,
+                  bgcolor: "error.main",
+                  color: "error.contrastText",
+                  "&:hover": { filter: "brightness(1.08)", bgcolor: "error.main" },
+                  "&:disabled": { opacity: 0.5 },
+                }}
+              >
+                {t.startButton}
+              </Button>
+            </>
+          )}
         </Paper>
       </Box>
     </>

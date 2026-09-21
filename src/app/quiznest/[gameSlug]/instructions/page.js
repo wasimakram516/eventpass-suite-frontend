@@ -110,31 +110,31 @@ export default function InstructionsPage() {
         <Paper
           elevation={8}
           dir={dir}
-          sx={{
+          sx={(theme) => ({
             p: { xs: 3, sm: 4 },
             maxWidth: 800,
             width: "100%",
             textAlign: "center",
             backdropFilter: "blur(16px)",
-            backgroundColor: theme.palette.quiznest.glassBg,
+            backgroundColor: theme.palette.overlay.cardTransparent,
             borderRadius: 6,
             border: `1px solid ${theme.palette.loader.skeleton}`,
             boxShadow: theme.palette.quiznest.dialogShadow,
-          }}
+          })}
         >
           <Typography
             variant="h4"
             sx={{
               fontWeight: 800,
               mb: 0.5,
-              color: theme.palette.common.white,
+              color: "text.primary",
               textTransform: "capitalize",
               wordBreak: "break-word"
             }}>
             {game.title}
           </Typography>
 
-          <Typography sx={(theme) => ({ color: theme.palette.crosszero.instructionText, mb: 4, fontSize: "1rem" })}>
+          <Typography sx={(theme) => ({ color: "text.secondary", mb: 4, fontSize: "1rem" })}>
             {gameInstructionsTranslations[language].welcome}{" "}
             <Box component="span" sx={(theme) => ({ fontWeight: 700, color: theme.palette.quiznest.accent })}>
 
@@ -162,7 +162,7 @@ export default function InstructionsPage() {
                 width: "100%"
               }}>
               <TimerIcon sx={(theme) => ({ color: theme.palette.quiznest.accent })} />
-              <Typography sx={(theme) => ({ color: theme.palette.quiznest.titleText, fontSize: "1rem", textAlign: align, direction: dir })}>
+              <Typography sx={(theme) => ({ color: "text.primary", fontSize: "1rem", textAlign: align, direction: dir })}>
                 {gameInstructionsTranslations[language].quizDuration}{" "}
                 <Box
                   component="span"

@@ -708,14 +708,20 @@ export const getTheme = (mode = "light", direction = "ltr") => {
         playerSlotBorderFilled: "#4caf50",
         playerSlotBorderEmpty: "#ffffff44",
 
-        previousSessionGradient: "linear-gradient(to bottom, #f7f7f7, #ffffff)",
-        previousSessionShadow: "0px 6px 20px rgba(0,0,0,0.1)",
+        previousSessionGradient: isDark
+          ? "linear-gradient(to bottom, #1a2630, #0f172a)"
+          : "linear-gradient(to bottom, #f7f7f7, #ffffff)",
+        previousSessionShadow: isDark
+          ? "0px 6px 20px rgba(0,0,0,0.5)"
+          : "0px 6px 20px rgba(0,0,0,0.1)",
         winnerBannerGradient: "linear-gradient(to right, #4CAF50, #81C784)",
         tieBannerGradient: "linear-gradient(to right, #9E9E9E, #BDBDBD)",
-        winnerCellGradient: "linear-gradient(135deg, #A5D6A7, #C8E6C9)",
-        loserCellBg: "#f5f5f5",
-        vsBadgeBg: "#fff",
-        vsBadgeBorder: "2px solid #ccc",
+        winnerCellGradient: isDark
+          ? "linear-gradient(135deg, #1b5e20, #2e7d32)"
+          : "linear-gradient(135deg, #A5D6A7, #C8E6C9)",
+        loserCellBg: isDark ? "rgba(255,255,255,0.05)" : "#f5f5f5",
+        vsBadgeBg: isDark ? "#ffffff22" : "#fff",
+        vsBadgeBorder: `2px solid ${isDark ? "#ffffff55" : "#ccc"}`,
 
         resultCardO: { color: "#c0392b", bg: "rgba(255,107,107,0.1)", symbolColor: "#ff6b6b" },
         resultCardX: { color: "#0096c7", bg: "rgba(0,180,216,0.1)", symbolColor: "#00e5ff" },
@@ -724,10 +730,13 @@ export const getTheme = (mode = "light", direction = "ltr") => {
         pvpResultMapX: { symbolColor: "#00e5ff", bg: "linear-gradient(to right, #00b4d8, #0077b6)" },
         pvpResultMapO: { symbolColor: "#ff6b6b", bg: "linear-gradient(to right, #ff6b6b, #c0392b)" },
         pvpResultMapDraw: { bg: "linear-gradient(to right, #9E9E9E, #BDBDBD)" },
-        pvpWinnerBgO: "rgba(255,107,107,0.08)",
-        pvpWinnerBgX: "rgba(0,180,216,0.08)",
-        pvpVsBadgeBorder: "2px solid #eee",
-        pvpStatsBorderTop: "1px solid #f0f0f0",
+        pvpWinnerBgO: isDark ? "rgba(255,107,107,0.18)" : "rgba(255,107,107,0.08)",
+        pvpWinnerBgX: isDark ? "rgba(0,180,216,0.18)" : "rgba(0,180,216,0.08)",
+        pvpVsBadgeBorder: `2px solid ${isDark ? "#ffffff55" : "#eee"}`,
+        pvpStatsBorderTop: `1px solid ${isDark ? "rgba(255,255,255,0.12)" : "#f0f0f0"}`,
+        pvpSessionCardShadow: isDark
+          ? "0px 6px 20px rgba(0,0,0,0.5)"
+          : "0px 6px 20px rgba(0,0,0,0.1)",
 
         sessionTextPrimary: "rgba(255,255,255,0.65)",
         sessionTextSecondary: "rgba(255,255,255,0.55)",

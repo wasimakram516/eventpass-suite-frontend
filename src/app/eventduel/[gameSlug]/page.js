@@ -123,7 +123,7 @@ export default function GameHomePage() {
               size="large"
               fullWidth
               onClick={handleStart}
-              startIcon={<ICONS.play />}
+              startIcon={<ICONS.play sx={dir === "rtl" ? { transform: "scaleX(-1)" } : undefined} />}
               disabled={starting}
               sx={{
                 ...getStartIconSpacing(dir),

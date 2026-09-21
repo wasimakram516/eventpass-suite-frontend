@@ -196,7 +196,7 @@ export default function CrossZeroPvPSessionsPage() {
                             xs: 12,
                             sm: 5.5
                           }}>
-                          <Box sx={{ bgcolor: xoStats.result === "O_wins" ? theme.palette.crosszero.pvpWinnerBgO  : "grey.50", borderRadius: 3, p: 2.5, height: "100%", display: "flex", flexDirection: "column", gap: 1 }}>
+                          <Box sx={{ bgcolor: xoStats.result === "O_wins" ? theme.palette.crosszero.pvpWinnerBgO : (theme.palette.mode === "dark" ? "rgba(255,255,255,0.05)" : "grey.50"), borderRadius: 3, p: 2.5, height: "100%", display: "flex", flexDirection: "column", gap: 1 }}>
                             <Box sx={{ display: "flex", alignItems: "center", gap: 0.8 }}>
                               <CrossZeroMarkVisual
                                 mark="O"
@@ -237,7 +237,7 @@ export default function CrossZeroPvPSessionsPage() {
                             xs: 12,
                             sm: 5.5
                           }}>
-                          <Box sx={{ bgcolor: xoStats.result === "X_wins" ?  theme.palette.crosszero.pvpWinnerBgX  : "grey.50", borderRadius: 3, p: 2.5, height: "100%", display: "flex", flexDirection: "column", gap: 1, textAlign: { xs: "left", sm: "right" }, alignItems: { xs: "flex-start", sm: "flex-end" } }}>
+                          <Box sx={{ bgcolor: xoStats.result === "X_wins" ? theme.palette.crosszero.pvpWinnerBgX : (theme.palette.mode === "dark" ? "rgba(255,255,255,0.05)" : "grey.50"), borderRadius: 3, p: 2.5, height: "100%", display: "flex", flexDirection: "column", gap: 1, textAlign: { xs: "left", sm: "right" }, alignItems: { xs: "flex-start", sm: "flex-end" } }}>
                             <Box sx={{ display: "flex", alignItems: "center", gap: 0.8 }}>
                               <CrossZeroMarkVisual
                                 mark="X"

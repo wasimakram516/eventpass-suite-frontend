@@ -14,6 +14,8 @@ import { useGame } from "@/contexts/GameContext";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { joinGame } from "@/services/quiznest/playerService";
+import { useGameEventRegLink } from "@/hooks/useGameEventRegLink";
+import EventRegRemainingFieldsStep from "@/components/games/EventRegRemainingFieldsStep";
 import LanguageSelector from "@/components/LanguageSelector";
 import useI18nLayout from "@/hooks/useI18nLayout";
 const entryDialogTranslations = {
@@ -32,22 +34,35 @@ export default function NamePage() {
   const { game, loading } = useGame();
   const router = useRouter();
   const { t, dir, align } = useI18nLayout(entryDialogTranslations);
+  const { link, remainingStep, submit, submitWithRemaining, reset } = useGameEventRegLink(game);
   const [form, setForm] = useState({ name: "", company: "" });
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSubmit = async () => {
+  const handleJoin = async (remainingValues) => {
     if (!form.name.trim() || submitting) return;
     setSubmitting(true);
-    const res = await joinGame(game._id, form);
+    setError("");
+
+    const payload = { name: form.name.trim(), company: form.company };
+
+    const res = remainingValues
+      ? await submitWithRemaining((p) => joinGame(game._id, p), payload, form.name.trim(), remainingValues)
+      : await submit((p) => joinGame(game._id, p), payload, form.name.trim());
+
+    if (res?.needsRemainingFields) {
+      setSubmitting(false);
+      return;
+    }
     if (!res.error) {
       console.log(res);
-
       sessionStorage.setItem("playerInfo", JSON.stringify(form));
       sessionStorage.setItem("playerId", res.playerId);
       sessionStorage.setItem("sessionId", res.sessionId);
-
       router.push(`/quiznest/${game.slug}/play`);
+      return;
     }
+    setError(res?.message || "Something went wrong. Try again.");
     setSubmitting(false);
   };
 
@@ -110,7 +125,7 @@ export default function NamePage() {
             maxWidth: 800,
             textAlign: "center",
             backdropFilter: "blur(16px)",
-            backgroundColor: theme.palette.quiznest.glassBg,
+            backgroundColor: theme.palette.overlay.cardTransparent,
             borderRadius: 6,
             border: `1px solid ${theme.palette.loader.skeleton}`,
             boxShadow: theme.palette.quiznest.dialogShadow,
@@ -122,7 +137,7 @@ export default function NamePage() {
             sx={(theme) => ({
               fontWeight: 800,
               mb: 3,
-              color: theme.palette.common.white,
+              color: "text.primary",
               textTransform: "capitalize",
               wordBreak: "break-word",
             })}
@@ -130,44 +145,63 @@ export default function NamePage() {
             {game.title}
           </Typography>
 
-          <TextField
-            label={t.nameLabel}
-            fullWidth
-            required
-            sx={{ mb: 3 }}
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-            slotProps={{
-              input: {
-                sx: (theme) => ({
-                  backgroundColor: theme.palette.quiznest.inputBg,
-                  color: theme.palette.common.white,
-                  "& .MuiOutlinedInput-notchedOutline": { borderColor: theme.palette.quiznest.inputBorder },
-                }),
-              },
-              inputLabel: { sx: (theme) => ({ color: theme.palette.quiznest.labelText }) },
-            }}
-          />
+          {remainingStep ? (
+            <EventRegRemainingFieldsStep
+              fields={remainingStep.fields}
+              submitting={submitting}
+              module="quiznest"
+              onSubmit={(values) => handleJoin(values)}
+            />
+          ) : (
+            <>
+              <TextField
+                label={link ? link.primaryFieldLabel : t.nameLabel}
+                fullWidth
+                required
+                sx={{ mb: 3 }}
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                onKeyDown={(e) => e.key === "Enter" && handleJoin()}
+                slotProps={{
+                  input: {
+                    sx: (theme) => ({
+                      backgroundColor: theme.palette.mode === "dark"
+                        ? theme.palette.quiznest.inputBg
+                        : theme.palette.background.paper,
+                      color: "text.primary",
+                      "& .MuiOutlinedInput-notchedOutline": { borderColor: "divider" },
+                    }),
+                  },
+                  inputLabel: { sx: { color: "text.secondary" } },
+                }}
+              />
 
-          <Button
-            variant="contained"
-            size="large"
-            fullWidth
-            onClick={handleSubmit}
-            disabled={submitting || !form.name.trim()}
-            sx={(theme) => ({
-              py: 1.2,
-              borderRadius: 999,
-              fontWeight: 800,
-              bgcolor: theme.palette.quiznest.accent,
-              color: theme.palette.common.black,
-              "&:hover": { filter: "brightness(1.15)", bgcolor: theme.palette.quiznest.accent },
-              "&:disabled": { opacity: 0.5 },
-            })}
-          >
-            {submitting ? <CircularProgress size={24} sx={(theme) => ({ color: theme.palette.common.black })} /> : t.startButton}
-          </Button>
+              <Button
+                variant="contained"
+                size="large"
+                fullWidth
+                onClick={() => handleJoin()}
+                disabled={submitting || !form.name.trim()}
+                sx={(theme) => ({
+                  py: 1.2,
+                  borderRadius: 999,
+                  fontWeight: 800,
+                  bgcolor: theme.palette.quiznest.accent,
+                  color: theme.palette.common.black,
+                  "&:hover": { filter: "brightness(1.15)", bgcolor: theme.palette.quiznest.accent },
+                  "&:disabled": { opacity: 0.5 },
+                })}
+              >
+                {submitting ? <CircularProgress size={24} sx={(theme) => ({ color: theme.palette.common.black })} /> : t.startButton}
+              </Button>
+
+              {error ? (
+                <Typography variant="caption" color="error" sx={{ mt: 1.5, display: "block" }}>
+                  {error}
+                </Typography>
+              ) : null}
+            </>
+          )}
         </Paper>
       </Box>
     </Box>
