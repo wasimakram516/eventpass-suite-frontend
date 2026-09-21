@@ -527,6 +527,7 @@ const EventModal = ({
     clearAllBrandingLogos: false,
     agenda: null,
     agendaPreview: "",
+    removeAgenda: false,
     capacity: "",
     eventType: isClosed ? "closed" : "public",
     formFields: [],
@@ -632,6 +633,7 @@ const EventModal = ({
         clearAllBrandingLogos: false,
         agenda: null,
         agendaPreview: initialValues.agendaUrl || "",
+        removeAgenda: false,
         formFields: (initialValues.formFields || []).map((f) => ({
           ...f,
           _temp: "",
@@ -752,6 +754,7 @@ const EventModal = ({
         clearAllBrandingLogos: false,
         agenda: null,
         agendaPreview: "",
+        removeAgenda: false,
         capacity: "",
         eventType: isClosed ? "closed" : "public",
         formFields: [],
@@ -939,6 +942,7 @@ const EventModal = ({
           ...prev,
           agenda: file,
           agendaPreview: file.name,
+          removeAgenda: false,
         }));
       }
     } else if (name === "qrWrapperBackground" && files?.[0]) {
@@ -1009,6 +1013,16 @@ const EventModal = ({
   };
 
   const handleDeleteMedia = (type, fileUrl, index = null) => {
+    if (type === "agenda" && formData.agenda) {
+      setFormData((prev) => ({
+        ...prev,
+        agenda: null,
+        agendaPreview: "",
+        removeAgenda: false,
+      }));
+      return;
+    }
+
     if (fileUrl && fileUrl.startsWith("blob:")) {
       if (type === "logo") {
         setFormData((prev) => ({
@@ -1038,6 +1052,7 @@ const EventModal = ({
           ...prev,
           agenda: null,
           agendaPreview: "",
+          removeAgenda: false,
         }));
       } else if (type === "qrWrapperBackground") {
         setFormData((prev) => ({
@@ -1117,6 +1132,7 @@ const EventModal = ({
           ...prev,
           agenda: null,
           agendaPreview: "",
+          removeAgenda: true,
         }));
       } else if (deleteConfirm.type === "brandingLogo") {
         setFormData((prev) => {
@@ -1310,11 +1326,13 @@ const EventModal = ({
     let qrWrapperBackgroundUrl = null;
     let organizerLogoUrl = formData.removeOrganizerLogo ? null : (formData.organizerLogo ? null : (formData.organizerLogoPreview || null));
 
-    let agendaUrl = formData.agenda
+    let agendaUrl = formData.removeAgenda
       ? null
-      : (formData.agendaPreview && formData.agendaPreview.startsWith('http')
-        ? formData.agendaPreview
-        : (initialValues?.agendaUrl || null));
+      : (formData.agenda
+        ? null
+        : (formData.agendaPreview && formData.agendaPreview.startsWith('http')
+          ? formData.agendaPreview
+          : (initialValues?.agendaUrl || null)));
 
     setLoading(true);
 
@@ -3603,17 +3621,35 @@ const EventModal = ({
                   />
                 </Button>
                 {formData.agendaPreview && (
-                  <Box sx={{ mt: 1 }}>
+                  <Box sx={{ mt: 1.5 }}>
                     <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
                       {initialValues && !formData.agenda
                         ? t.currentAgenda
                         : t.selectedAgenda}
                     </Typography>
-                    <Typography variant="body2" sx={{
-                      color: "text.secondary"
-                    }}>
-                      {formData.agendaPreview}
-                    </Typography>
+                    <Box sx={{ position: "relative", display: "inline-block" }}>
+                      <Typography variant="body2" sx={{
+                        color: "text.secondary",
+                        wordBreak: "break-word",
+                        pr: 4,
+                      }}>
+                        {formData.agendaPreview}
+                      </Typography>
+                      <IconButton
+                        size="small"
+                        onClick={() => handleDeleteMedia("agenda", formData.agendaPreview)}
+                        sx={{
+                          position: "absolute",
+                          top: -18,
+                          right: 6,
+                          bgcolor: "error.main",
+                          color: "common.white",
+                          "&:hover": { bgcolor: "error.dark" },
+                        }}
+                      >
+                        <ICONS.delete sx={{ fontSize: 18 }} />
+                      </IconButton>
+                    </Box>
                   </Box>
                 )}
               </Box>
