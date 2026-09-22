@@ -371,6 +371,7 @@ test("getEmailTemplateSettings: a saved template without a header has no header"
 
 test("getEventModalTabIndices: classic fields, no extras", () => {
   assert.deepEqual(getEventModalTabIndices({}), {
+    tickets: -1,
     uploads: 3,
     customFields: -1,
     emailTemplate: -1,
@@ -383,7 +384,7 @@ test("getEventModalTabIndices: classic fields, no extras", () => {
 test("getEventModalTabIndices: the email tab follows the custom fields tab and precedes the badge tab", () => {
   assert.deepEqual(
     getEventModalTabIndices({ useCustomFields: true, useCustomEmailTemplate: true, useCustomQrCode: true }),
-    { uploads: 3, customFields: 4, emailTemplate: 5, badge: 6, customQr: 7, last: 7 },
+    { tickets: -1, uploads: 3, customFields: 4, emailTemplate: 5, badge: 6, customQr: 7, last: 7 },
   );
 });
 
@@ -391,4 +392,12 @@ test("getEventModalTabIndices: with classic fields the email tab follows Uploads
   const tabs = getEventModalTabIndices({ useCustomEmailTemplate: true });
   assert.equal(tabs.emailTemplate, 4);
   assert.equal(tabs.badge, 5);
+});
+
+test("getEventModalTabIndices: paid events insert Tickets & Fees after Options", () => {
+  const tabs = getEventModalTabIndices({ hasTicketsTab: true });
+  assert.equal(tabs.tickets, 3);
+  assert.equal(tabs.uploads, 4);
+  assert.equal(tabs.badge, 5);
+  assert.equal(tabs.last, 5);
 });

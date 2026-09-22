@@ -19,14 +19,18 @@ const checkoutTranslations = {
     pageTitle: "Manage Ticketed Events",
     pageDescription: "Create and manage paid events, ticket types, fees, and VAT.",
     createEvent: "Create Ticketed Event",
-    viewRegs: "Manage checkout",
+    viewRegs: "View Registrations",
+    promoCodes: "Promo Codes",
+    payments: "Payments",
   },
   ar: {
     ...eventTranslations.ar,
     pageTitle: "إدارة الفعاليات المدفوعة",
     pageDescription: "أنشئ وأدر الفعاليات المدفوعة وأنواع التذاكر والرسوم وضريبة القيمة المضافة.",
     createEvent: "إنشاء فعالية مدفوعة",
-    viewRegs: "إدارة الدفع",
+    viewRegs: "عرض التسجيلات",
+    promoCodes: "رموز الخصم",
+    payments: "المدفوعات",
   },
 };
 
@@ -47,7 +51,9 @@ export default function CheckoutEventsPage() {
         routeBase="/cms/modules/checkout/events"
         forcePaid
         showEventLinks
-        viewRouteSuffix=""
+        viewRouteSuffix="/registrations"
+        showPromoCodes
+        showPayments
         getPublicEventUrl={(event) =>
           `/checkout/${event.defaultLanguage || "en"}/event/${event.slug}`
         }

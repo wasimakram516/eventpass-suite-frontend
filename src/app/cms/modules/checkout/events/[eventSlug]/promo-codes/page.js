@@ -31,7 +31,7 @@ export default function CheckoutPromoCodesPage() {
         getEventBySlug={getCheckoutEventBySlug}
         moduleKey="checkout"
         eventBase="/cms/modules/checkout/events"
-        showRegistrations={false}
+        showRegistrations
       />
     </PermissionGuard>
   );

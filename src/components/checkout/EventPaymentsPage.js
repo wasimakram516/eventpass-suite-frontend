@@ -29,6 +29,7 @@ import { getCheckoutEventBySlug } from "@/services/checkout/eventService";
 import { formatDate } from "@/utils/dateUtils";
 import { wrapTextBox } from "@/utils/wrapTextStyles";
 import ICONS from "@/utils/iconUtil";
+import usePaymentsSocket from "@/hooks/usePaymentsSocket";
 
 const translations = {
   en: {
@@ -128,6 +129,7 @@ export function PaymentsPage({
   const [statusFilter, setStatusFilter] = useState("");
   const [loading, setLoading] = useState(true);
   const [statsLoading, setStatsLoading] = useState(true);
+  const { latestPayments, clearLatestPayments } = usePaymentsSocket();
 
   // Fetch event metadata once
   useEffect(() => {
@@ -162,9 +164,43 @@ export function PaymentsPage({
     fetchPayments();
   }, [fetchPayments]);
 
+  // Update this event's payment table in place when checkout changes a
+  // payment (including a gateway cancellation) in another browser tab.
+  useEffect(() => {
+    if (!latestPayments?.length) return;
+
+    const eventPayments = latestPayments.filter(
+      (payment) => String(payment.eventId) === String(event?._id)
+    );
+    if (!eventPayments.length) {
+      clearLatestPayments();
+      return;
+    }
+
+    setPayments((previous) => {
+      let next = [...previous];
+      eventPayments.forEach((incoming) => {
+        const index = next.findIndex((payment) => String(payment._id) === String(incoming._id));
+        const matchesStatus = !statusFilter || incoming.status === statusFilter;
+
+        if (index >= 0 && matchesStatus) next[index] = { ...next[index], ...incoming };
+        else if (index >= 0) next.splice(index, 1);
+        else if (matchesStatus) next = [incoming, ...next].slice(0, LIMIT);
+      });
+      return next;
+    });
+
+    // Counts and revenue are derived server-side, so refresh only the small
+    // stats request after a live payment update.
+    fetchPaymentStats(eventSlug).then((res) => {
+      if (!res?.error) setStats(res);
+    });
+    clearLatestPayments();
+  }, [latestPayments, clearLatestPayments, event?._id, eventSlug, statusFilter, fetchPaymentStats]);
+
   const breadcrumbs = [
     { label: moduleLabel || t.moduleLabel, href: eventBase },
-    { label: event?.name || eventSlug, href: `${eventBase}/${eventSlug}` },
+    { label: event?.name || eventSlug, href: `${eventBase}/${eventSlug}/registrations` },
     { label: t.title },
   ];
 

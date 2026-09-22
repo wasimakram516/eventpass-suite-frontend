@@ -432,7 +432,7 @@ export function PromoCodesPage({
 
   const breadcrumbs = [
     { label: moduleLabel || t.moduleLabel, href: eventBase },
-    { label: event?.name || eventSlug, href: `${eventBase}/${eventSlug}` },
+    { label: event?.name || eventSlug, href: `${eventBase}/${eventSlug}/registrations` },
     { label: t.title },
   ];
 

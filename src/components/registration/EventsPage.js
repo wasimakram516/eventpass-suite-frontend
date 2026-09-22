@@ -104,6 +104,8 @@ export function EventsPage({
   viewRouteSuffix = "/registrations",
   showInsights = true,
   showShare = true,
+  showPromoCodes = false,
+  showPayments = false,
   getPublicEventUrl = (event) =>
     `/${event.defaultLanguage || "en"}/event/${event.slug}`,
   translations = eventTranslations,
@@ -125,6 +127,8 @@ export function EventsPage({
   const canDelete = useHasPermission(moduleKey, "delete");
   const canShare = useHasPermission(moduleKey, "share");
   const canDownload = useHasPermission(moduleKey, "download");
+  const canViewPromoCodes = useHasPermission(moduleKey, "view_promo_codes");
+  const canViewPayments = useHasPermission(moduleKey, "view_payments");
 
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -377,6 +381,12 @@ export function EventsPage({
                     router.push(
                       `${routeBase}/${ev.slug}/insights`
                     )
+                  : undefined}
+                  onPromoCodes={showPromoCodes && canViewPromoCodes ? () =>
+                    router.push(`${routeBase}/${ev.slug}/promo-codes`)
+                  : undefined}
+                  onPayments={showPayments && canViewPayments ? () =>
+                    router.push(`${routeBase}/${ev.slug}/payments`)
                   : undefined}
                 />
               );

@@ -408,15 +408,22 @@ export function buildEmailTemplatePayload(formData) {
  * uses classic fields, so the field set is settled before the template is
  * written.
  *
- * @param {{useCustomFields?: boolean, useCustomEmailTemplate?: boolean, useCustomQrCode?: boolean}} flags
- * @returns {{uploads: number, customFields: number, emailTemplate: number, badge: number, customQr: number, last: number}}
+ * @param {{useCustomFields?: boolean, useCustomEmailTemplate?: boolean, useCustomQrCode?: boolean, hasTicketsTab?: boolean}} flags
+ * @returns {{tickets: number, uploads: number, customFields: number, emailTemplate: number, badge: number, customQr: number, last: number}}
  *   Tab index of each tab, or -1 when that tab is not shown
  */
-export function getEventModalTabIndices({ useCustomFields, useCustomEmailTemplate, useCustomQrCode }) {
-  let next = 4;
+export function getEventModalTabIndices({
+  useCustomFields,
+  useCustomEmailTemplate,
+  useCustomQrCode,
+  hasTicketsTab = false,
+}) {
+  const tickets = hasTicketsTab ? 3 : -1;
+  const uploads = hasTicketsTab ? 4 : 3;
+  let next = uploads + 1;
   const customFields = useCustomFields ? next++ : -1;
   const emailTemplate = useCustomEmailTemplate ? next++ : -1;
   const badge = next++;
   const customQr = useCustomQrCode ? next++ : -1;
-  return { uploads: 3, customFields, emailTemplate, badge, customQr, last: next - 1 };
+  return { tickets, uploads, customFields, emailTemplate, badge, customQr, last: next - 1 };
 }

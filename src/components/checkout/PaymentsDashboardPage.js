@@ -282,35 +282,109 @@ export function PaymentsPage({
 
   const isSuperAdmin = user?.role === "superadmin";
 
-  const { latestPayments, clearLatestPayments, removedPayments, clearRemovedPayments } = usePaymentsSocket();
+  const {
+    latestPayments,
+    clearLatestPayments,
+    removedPayments,
+    clearRemovedPayments,
+  } = usePaymentsSocket();
 
   useEffect(() => {
     if (viewPayment) setShowPaymentBreakdown(false);
   }, [viewPayment]);
 
+  const targetBusinessId = isSuperAdmin
+    ? filterBusinessId
+    : user?.businessId?.toString() || user?.business?._id?.toString() || user?.businessId;
+
   // Merge socket-pushed payments into the list (update-in-place or prepend)
   useEffect(() => {
     if (!liveUpdates) return;
     if (!latestPayments?.length) return;
+
     setPayments((prev) => {
       let updated = [...prev];
       let newCount = 0;
+
+      const userBusinessId =
+        user?.businessId?.toString() || user?.business?._id?.toString() || user?.businessId;
+
       latestPayments.forEach((incoming) => {
+        const incomingBusinessId =
+          incoming?.businessId?.toString() ||
+          incoming?.business?._id?.toString() ||
+          incoming?.businessId;
         const idx = updated.findIndex((p) => p._id === incoming._id);
+
         if (idx >= 0) {
+          // Rows already on screen can be updated in place
           updated[idx] = { ...updated[idx], ...incoming };
         } else {
-          updated = [incoming, ...updated];
-          newCount += 1;
+          // New row — check business match
+          if (!isSuperAdmin && userBusinessId && incomingBusinessId && incomingBusinessId !== userBusinessId) {
+            return;
+          }
+          if (isSuperAdmin && filterBusinessId && incomingBusinessId && incomingBusinessId !== filterBusinessId.toString()) {
+            return;
+          }
+
+          // Check active status filter
+          if (filterStatus && incoming.status !== filterStatus) {
+            return;
+          }
+
+          // Check active date range filters
+          if (fromMs && new Date(incoming.createdAt).getTime() < fromMs) {
+            return;
+          }
+          if (toMs && new Date(incoming.createdAt).getTime() > toMs) {
+            return;
+          }
+
+          // Check active search filter
+          if (debouncedSearch) {
+            const term = debouncedSearch.trim().toLowerCase();
+            const matchesSearch = [
+              incoming.customerName,
+              incoming.customerEmail,
+              incoming.customerPhone,
+              incoming.eventName,
+              incoming.ticketTypeName,
+              incoming.sessionId,
+              incoming.clientReferenceId,
+            ].some((field) => field && String(field).toLowerCase().includes(term));
+
+            if (!matchesSearch) return;
+          }
+
+          // Only prepend new rows if on page 1
+          if (page === 1) {
+            updated = [incoming, ...updated];
+            newCount += 1;
+          }
         }
       });
+
       if (newCount > 0) setTotal((t) => t + newCount);
       return updated;
     });
-    clearLatestPayments();
-  }, [liveUpdates, latestPayments, clearLatestPayments]);
 
-  // Drop permanently removed payments (e.g. cancelled paid checkout) instantly.
+    clearLatestPayments();
+  }, [
+    liveUpdates,
+    latestPayments,
+    clearLatestPayments,
+    isSuperAdmin,
+    user,
+    filterBusinessId,
+    filterStatus,
+    fromMs,
+    toMs,
+    debouncedSearch,
+    page,
+  ]);
+
+  // Drop permanently removed payments. Match by paymentIds first.
   useEffect(() => {
     if (!liveUpdates) return;
     if (!removedPayments?.length) return;
@@ -318,12 +392,17 @@ export function PaymentsPage({
       const ids = new Set();
       const regIds = new Set();
       removedPayments.forEach(({ registrationId, paymentIds }) => {
-        (paymentIds || []).forEach((id) => ids.add(id));
-        if (registrationId) regIds.add(registrationId.toString());
+        if (paymentIds?.length) {
+          paymentIds.forEach((id) => ids.add(String(id)));
+        } else if (registrationId) {
+          regIds.add(String(registrationId));
+        }
       });
-      const next = prev.filter(
-        (p) => !ids.has(p._id) && !regIds.has(p.registrationId?.toString())
-      );
+      const next = prev.filter((p) => {
+        if (ids.size > 0 && ids.has(String(p._id))) return false;
+        if (ids.size === 0 && regIds.size > 0 && regIds.has(String(p.registrationId))) return false;
+        return true;
+      });
       const removedCount = prev.length - next.length;
       if (removedCount > 0) setTotal((t) => Math.max(0, t - removedCount));
       return next;

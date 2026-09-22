@@ -384,7 +384,7 @@ export function RegistrationsPage({
   const breadcrumbs = moduleKey === "checkout"
     ? [
       { label: language === "ar" ? "الدفع" : "Checkout", href: routeBase },
-      { label: eventDetails?.name || eventSlug, href: `${routeBase}/${eventSlug}` },
+      { label: eventDetails?.name || eventSlug, href: `${routeBase}/${eventSlug}/registrations` },
       { label: t.registrations },
     ]
     : undefined;
