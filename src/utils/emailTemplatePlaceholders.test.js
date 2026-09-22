@@ -114,11 +114,11 @@ test("getPlaceholderGroups: start and end time appear only for CheckIn events, l
   ]);
 });
 
-test("getPlaceholderGroups: the confirmation button is a Links group that only CheckIn events have", () => {
+test("getPlaceholderGroups: the confirmation button and link are a Links group that only CheckIn events have, independent of each other", () => {
   assert.equal(getPlaceholderGroups({ useCustomFields: false }).some((group) => group.id === "links"), false);
   assert.deepEqual(getPlaceholderGroups({ useCustomFields: false, isCheckIn: true }).at(-1), {
     id: "links",
-    names: ["Confirmation Button"],
+    names: ["Confirmation Button", "Confirmation Link"],
   });
 });
 
@@ -159,6 +159,7 @@ test("getReservedPlaceholderNames: lists every built in name once, following the
   assert.equal(new Set(base).size, base.length);
   assert.ok(getReservedPlaceholderNames({ isPaid: true }).includes("Payment Summary"));
   assert.ok(getReservedPlaceholderNames({ isCheckIn: true }).includes("Confirmation Button"));
+  assert.ok(getReservedPlaceholderNames({ isCheckIn: true }).includes("Confirmation Link"));
   assert.ok(getReservedPlaceholderNames({ isCheckIn: true }).includes("Start Time"));
   assert.equal(base.includes("Start Time"), false);
 });

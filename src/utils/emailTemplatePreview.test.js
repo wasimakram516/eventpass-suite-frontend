@@ -147,6 +147,23 @@ test("buildEmailPreview: times and the confirmation button appear only for Check
   assert.match(checkIn.html, /Confirm your attendance/);
 });
 
+test("buildEmailPreview: {Confirmation Button} and {Confirmation Link} are independent CheckIn only placeholders", () => {
+  const { html } = buildEmailPreview({
+    template: { subject: "s", body: "<div>{Confirmation Button}</div><div>{Confirmation Link}</div>", accentColor: "#112233" },
+    useCustomFields: false,
+    isCheckIn: true,
+  });
+  assert.match(html, /background:#112233;color:#ffffff/);
+  assert.match(html, /<a href="#" style="color:#112233;word-break:break-all;">https:\/\/example\.com\/checkin\/event\/sample-event\?token=A1B2C3D4E5<\/a>/);
+
+  const other = buildEmailPreview({
+    template: { subject: "s", body: "<div>[{Confirmation Button}]</div><div>[{Confirmation Link}]</div>" },
+    useCustomFields: false,
+    isCheckIn: false,
+  });
+  assert.match(other.html, /<div>\[\]<\/div>\s*<div>\[\]<\/div>/);
+});
+
 test("buildEmailPreview: registration details lists the attendee fields, and visual blocks are blank in the subject", () => {
   const { html, subject } = buildEmailPreview({
     template: { subject: "a{Registration Details}{Event Description}{Confirmation Button}b", body: "{Registration Details}" },

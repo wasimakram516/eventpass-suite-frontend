@@ -25,6 +25,7 @@ const DARK_TEXT = "#111111";
 const LIGHT_TEXT = "#ffffff";
 const LUMINANCE_THRESHOLD = 0.6;
 const SAMPLE_EVENT_NAME = "Your Event";
+const SAMPLE_CONFIRMATION_LINK = "https://example.com/checkin/event/sample-event?token=A1B2C3D4E5";
 
 const HTML_ESCAPES = Object.freeze({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" });
 
@@ -138,6 +139,17 @@ function buildSampleConfirmationButtonHtml(accentColor) {
 }
 
 /**
+ * Sample RSVP link for CheckIn events: a separate placeholder from the
+ * confirmation button, not a style of it, shown as the URL itself.
+ *
+ * @param {string} accentColor - Sanitized hex color
+ * @returns {string} HTML link
+ */
+function buildSampleConfirmationLinkHtml(accentColor) {
+  return `<a href="#" style="color:${accentColor};word-break:break-all;">${SAMPLE_CONFIRMATION_LINK}</a>`;
+}
+
+/**
  * A dashed box standing in for an image that is not available yet, so the
  * designer still sees where the placeholder sits and how big it will be.
  *
@@ -154,7 +166,8 @@ function buildImageStandIn(label, size) {
  *
  * @param {object} params
  * @param {{subject?: string, body?: string, header?: string, accentColor?: string,
- *   qrSize?: number|string, logoSize?: number|string}} params.template - Current template settings
+ *   qrSize?: number|string, logoSize?: number|string, customImage?: {url?: string, width?: number|string},
+ *   customLink?: string}} params.template - Current template settings
  * @param {boolean} params.useCustomFields - Whether the event uses custom fields
  * @param {Array<{inputName?: string}>} params.formFields - Custom fields
  * @param {string} [params.eventName] - Event name typed so far
@@ -233,6 +246,10 @@ export function buildEmailPreview({
     value: isCheckIn ? buildSampleConfirmationButtonHtml(accentColor) : "",
     html: true,
   });
+  setPlaceholderEntry(visualEntries, EMAIL_TEMPLATE_RESERVED.CONFIRMATION_LINK, {
+    value: isCheckIn ? buildSampleConfirmationLinkHtml(accentColor) : "",
+    html: true,
+  });
   setPlaceholderEntry(visualEntries, EMAIL_TEMPLATE_RESERVED.CUSTOM_IMAGE, {
     value: customImageUrl
       ? `<img src="${escapeHtml(customImageUrl)}" alt="" width="${customImageWidth}" style="width:${customImageWidth}px;max-width:100%;height:auto;" />`
@@ -255,6 +272,7 @@ export function buildEmailPreview({
     EMAIL_TEMPLATE_RESERVED.EVENT_DESCRIPTION,
     EMAIL_TEMPLATE_RESERVED.REGISTRATION_DETAILS,
     EMAIL_TEMPLATE_RESERVED.CONFIRMATION_BUTTON,
+    EMAIL_TEMPLATE_RESERVED.CONFIRMATION_LINK,
     EMAIL_TEMPLATE_RESERVED.CUSTOM_IMAGE,
     EMAIL_TEMPLATE_RESERVED.CUSTOM_LINK,
   ]) {
