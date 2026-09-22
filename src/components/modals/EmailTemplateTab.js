@@ -1,12 +1,13 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   Alert,
   Box,
   Button,
   Checkbox,
   Chip,
+  CircularProgress,
   FormControlLabel,
   InputAdornment,
   TextField,
@@ -18,15 +19,16 @@ import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { useMessage } from "@/contexts/MessageContext";
 import { EMAIL_TEMPLATE_REQUIRED_MESSAGES } from "@/utils/emailTemplateMessages";
+import { uploadSingleFile } from "@/utils/mediaUpload";
 import {
   EMAIL_TEMPLATE_DEFAULTS,
   EMAIL_TEMPLATE_RESERVED,
   EMAIL_TEMPLATE_WARNINGS,
+  clampCustomImageSize,
   clampLogoSize,
   clampQrSize,
   getPlaceholderGroups,
   getTemplateWarnings,
-  hasTemplatePlaceholder,
   toPlaceholder,
 } from "@/utils/emailTemplatePlaceholders";
 
@@ -43,12 +45,21 @@ const translations = {
     qrToken: "QR and token",
     attendeeDetails: "Attendee details",
     payment: "Payment",
+    customMedia: "Custom image and link",
     selectAll: "Select all",
     copy: "Copy placeholder",
     copied: "Placeholder copied",
     copyFailed: "Could not copy. Select and copy the placeholder manually.",
     qrSize: "QR size",
     logoSize: "Logo width (px)",
+    customImageWidth: "Custom image width (px)",
+    customImageUpload: "Upload image",
+    customImageReplace: "Replace image",
+    customImageRemove: "Remove image",
+    customImageUploading: "Uploading...",
+    customImageUploadFailed: "Could not upload the image. Try again.",
+    customLinkLabel: "Link URL",
+    customLinkPlaceholder: "https://example.com",
     accentColor: "Accent color",
     header: "Header",
     headerHint:
@@ -82,12 +93,21 @@ const translations = {
     qrToken: "رمز QR والرمز",
     attendeeDetails: "تفاصيل الحاضر",
     payment: "الدفع",
+    customMedia: "صورة ورابط مخصصان",
     selectAll: "تحديد الكل",
     copy: "نسخ العنصر النائب",
     copied: "تم نسخ العنصر النائب",
     copyFailed: "تعذر النسخ. حدد العنصر النائب وانسخه يدويا.",
     qrSize: "حجم رمز QR",
     logoSize: "عرض الشعار (بكسل)",
+    customImageWidth: "عرض الصورة المخصصة (بكسل)",
+    customImageUpload: "رفع صورة",
+    customImageReplace: "استبدال الصورة",
+    customImageRemove: "إزالة الصورة",
+    customImageUploading: "جارٍ الرفع...",
+    customImageUploadFailed: "تعذر رفع الصورة. حاول مرة أخرى.",
+    customLinkLabel: "رابط",
+    customLinkPlaceholder: "https://example.com",
     accentColor: "لون التمييز",
     header: "الترويسة",
     headerHint:
@@ -154,8 +174,10 @@ const FieldLabel = ({ children, required = false, error = false }) => (
  * @returns {JSX.Element}
  */
 const SizeField = ({ label, value, min, max, onChange, onCommit }) => (
-  <Box>
-    <FieldLabel>{label}</FieldLabel>
+  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+    <Typography variant="caption" sx={{ fontWeight: 500, whiteSpace: "nowrap" }}>
+      {label}
+    </Typography>
     <TextField
       type="number"
       value={value}
@@ -215,13 +237,15 @@ const PlaceholderRow = ({ name, checked, onToggle, onCopy, copyLabel }) => (
  * @param {Function} props.setFormData - Event modal form state setter
  * @param {boolean} props.isPaid - Whether the event is paid (offers {Payment Summary})
  * @param {boolean} [props.isCheckIn] - Whether the event is a CheckIn event (offers times and {Confirmation Button})
+ * @param {string} [props.businessSlug] - Business slug the custom image uploads under
  * @param {{subject: boolean, body: boolean}} props.errors - Required field errors
  * @param {(field: "subject"|"body") => void} props.onClearError - Clears one required error
  * @returns {JSX.Element}
  */
-const EmailTemplateTab = ({ formData, setFormData, isPaid, isCheckIn = false, errors, onClearError }) => {
+const EmailTemplateTab = ({ formData, setFormData, isPaid, isCheckIn = false, businessSlug, errors, onClearError }) => {
   const { t, dir } = useI18nLayout(translations);
   const { showMessage } = useMessage();
+  const [uploadingCustomImage, setUploadingCustomImage] = useState(false);
 
   const usePlaceholders = formData.emailTemplateUsePlaceholders;
   const selectedFields = formData.emailTemplateSelectedFields || [];
@@ -247,13 +271,12 @@ const EmailTemplateTab = ({ formData, setFormData, isPaid, isCheckIn = false, er
     [usePlaceholders, formData.emailTemplateSubject, formData.emailTemplateBody, formData.emailTemplateHeader, formData.useCustomFields, formData.formFields, selectedFields, isPaid, isCheckIn],
   );
 
-  // QR and logo sizing matter once the placeholder is ticked or already used in the header or body.
-  const isPlaceholderInUse = (name) =>
-    selectedFields.includes(name) ||
-    hasTemplatePlaceholder(formData.emailTemplateBody, name) ||
-    hasTemplatePlaceholder(formData.emailTemplateHeader, name);
-  const showQrSettings = isPlaceholderInUse(EMAIL_TEMPLATE_RESERVED.QR);
-  const showLogoSettings = isPlaceholderInUse(EMAIL_TEMPLATE_RESERVED.LOGO);
+  // Each placeholder's own settings show only while its checkbox is ticked, and
+  // hide again the moment it is unticked.
+  const showQrSettings = selectedFields.includes(EMAIL_TEMPLATE_RESERVED.QR);
+  const showLogoSettings = selectedFields.includes(EMAIL_TEMPLATE_RESERVED.LOGO);
+  const showCustomImageSettings = selectedFields.includes(EMAIL_TEMPLATE_RESERVED.CUSTOM_IMAGE);
+  const showCustomLinkSettings = selectedFields.includes(EMAIL_TEMPLATE_RESERVED.CUSTOM_LINK);
 
   const update = (patch) => setFormData((prev) => ({ ...prev, ...patch }));
 
@@ -275,8 +298,125 @@ const EmailTemplateTab = ({ formData, setFormData, isPaid, isCheckIn = false, er
 
   const commitQrSize = () => update({ emailTemplateQrSize: clampQrSize(formData.emailTemplateQrSize) });
   const commitLogoSize = () => update({ emailTemplateLogoSize: clampLogoSize(formData.emailTemplateLogoSize) });
+  const commitCustomImageWidth = () =>
+    update({ emailTemplateCustomImageWidth: clampCustomImageSize(formData.emailTemplateCustomImageWidth) });
+
+  const uploadCustomImage = async (file) => {
+    if (!file) return;
+    setUploadingCustomImage(true);
+    try {
+      const url = await uploadSingleFile({ file, businessSlug, moduleName: isCheckIn ? "CheckIn" : "EventReg" });
+      update({ emailTemplateCustomImageUrl: url });
+    } catch (error) {
+      console.error("[EmailTemplateTab] Custom image upload failed:", error.message);
+      showMessage(t.customImageUploadFailed, "error");
+    } finally {
+      setUploadingCustomImage(false);
+    }
+  };
 
   const allSelected = placeholderNames.every((name) => selectedFields.includes(name));
+
+  // Each of these settings is only meaningful once its own placeholder is ticked
+  // or already used, so it is shown right under that placeholder's checkbox
+  // instead of in one unlabeled row further down.
+  const renderPlaceholderExtra = (name) => {
+    if (name === EMAIL_TEMPLATE_RESERVED.QR && showQrSettings) {
+      return (
+        <SizeField
+          label={t.qrSize}
+          value={formData.emailTemplateQrSize}
+          min={EMAIL_TEMPLATE_DEFAULTS.QR_MIN_SIZE}
+          max={EMAIL_TEMPLATE_DEFAULTS.QR_MAX_SIZE}
+          onChange={(value) => update({ emailTemplateQrSize: value })}
+          onCommit={commitQrSize}
+        />
+      );
+    }
+    if (name === EMAIL_TEMPLATE_RESERVED.LOGO && showLogoSettings) {
+      return (
+        <SizeField
+          label={t.logoSize}
+          value={formData.emailTemplateLogoSize}
+          min={EMAIL_TEMPLATE_DEFAULTS.LOGO_MIN_SIZE}
+          max={EMAIL_TEMPLATE_DEFAULTS.LOGO_MAX_SIZE}
+          onChange={(value) => update({ emailTemplateLogoSize: value })}
+          onCommit={commitLogoSize}
+        />
+      );
+    }
+    if (name === EMAIL_TEMPLATE_RESERVED.CUSTOM_IMAGE && showCustomImageSettings) {
+      return (
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            {formData.emailTemplateCustomImageUrl && (
+              <Box
+                component="img"
+                src={formData.emailTemplateCustomImageUrl}
+                alt=""
+                sx={{ width: 30, height: 30, objectFit: "contain", border: 1, borderColor: "divider", borderRadius: 1, flexShrink: 0 }}
+              />
+            )}
+            <Button
+              component="label"
+              size="small"
+              variant="outlined"
+              disabled={uploadingCustomImage}
+              startIcon={uploadingCustomImage ? <CircularProgress size={14} /> : <ICONS.upload sx={{ fontSize: 16 }} />}
+              sx={{ height: 36, whiteSpace: "nowrap" }}
+            >
+              {uploadingCustomImage
+                ? t.customImageUploading
+                : formData.emailTemplateCustomImageUrl
+                  ? t.customImageReplace
+                  : t.customImageUpload}
+              <input
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={(e) => {
+                  uploadCustomImage(e.target.files?.[0]);
+                  e.target.value = "";
+                }}
+              />
+            </Button>
+            {formData.emailTemplateCustomImageUrl && (
+              <Tooltip title={t.customImageRemove}>
+                <Button
+                  size="small"
+                  color="error"
+                  onClick={() => update({ emailTemplateCustomImageUrl: "" })}
+                  sx={{ minWidth: 0, width: 36, height: 36, flexShrink: 0 }}
+                >
+                  <ICONS.delete sx={{ fontSize: 18 }} />
+                </Button>
+              </Tooltip>
+            )}
+          </Box>
+          <SizeField
+            label={t.customImageWidth}
+            value={formData.emailTemplateCustomImageWidth}
+            min={EMAIL_TEMPLATE_DEFAULTS.CUSTOM_IMAGE_MIN_SIZE}
+            max={EMAIL_TEMPLATE_DEFAULTS.CUSTOM_IMAGE_MAX_SIZE}
+            onChange={(value) => update({ emailTemplateCustomImageWidth: value })}
+            onCommit={commitCustomImageWidth}
+          />
+        </Box>
+      );
+    }
+    if (name === EMAIL_TEMPLATE_RESERVED.CUSTOM_LINK && showCustomLinkSettings) {
+      return (
+        <TextField
+          value={formData.emailTemplateCustomLink}
+          onChange={(e) => update({ emailTemplateCustomLink: e.target.value })}
+          placeholder={t.customLinkPlaceholder}
+          slotProps={{ htmlInput: { "aria-label": t.customLinkLabel } }}
+          sx={{ width: 260, ...COMPACT_FIELD_SX }}
+        />
+      );
+    }
+    return null;
+  };
 
   return (
     <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 2 }}>
@@ -318,57 +458,40 @@ const EmailTemplateTab = ({ formData, setFormData, isPaid, isCheckIn = false, er
                 <Typography variant="caption" color="text.secondary" sx={{ display: "block", fontWeight: 600 }}>
                   {t[group.id]}
                 </Typography>
-                <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, columnGap: 3 }}>
-                  {group.names.map((name) => (
-                    <PlaceholderRow
-                      key={name}
-                      name={name}
-                      checked={selectedFields.includes(name)}
-                      onToggle={togglePlaceholder}
-                      onCopy={copyPlaceholder}
-                      copyLabel={t.copy}
-                    />
-                  ))}
+                <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, columnGap: 3, rowGap: 0.5 }}>
+                  {group.names.map((name) => {
+                    const extra = renderPlaceholderExtra(name);
+                    return (
+                      <Box key={name}>
+                        <PlaceholderRow
+                          name={name}
+                          checked={selectedFields.includes(name)}
+                          onToggle={togglePlaceholder}
+                          onCopy={copyPlaceholder}
+                          copyLabel={t.copy}
+                        />
+                        {extra && <Box sx={{ pl: 4, pb: 1 }}>{extra}</Box>}
+                      </Box>
+                    );
+                  })}
                 </Box>
               </Box>
             ))}
           </Box>
 
-          <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", gap: 3 }}>
-            {showQrSettings && (
-              <SizeField
-                label={t.qrSize}
-                value={formData.emailTemplateQrSize}
-                min={EMAIL_TEMPLATE_DEFAULTS.QR_MIN_SIZE}
-                max={EMAIL_TEMPLATE_DEFAULTS.QR_MAX_SIZE}
-                onChange={(value) => update({ emailTemplateQrSize: value })}
-                onCommit={commitQrSize}
+          <Box>
+            <FieldLabel>{t.accentColor}</FieldLabel>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, height: 36 }}>
+              <input
+                type="color"
+                aria-label={t.accentColor}
+                value={formData.emailTemplateAccentColor}
+                onChange={(e) => update({ emailTemplateAccentColor: e.target.value })}
+                style={{ width: 36, height: 30, padding: 0, border: "none", background: "none", cursor: "pointer" }}
               />
-            )}
-            {showLogoSettings && (
-              <SizeField
-                label={t.logoSize}
-                value={formData.emailTemplateLogoSize}
-                min={EMAIL_TEMPLATE_DEFAULTS.LOGO_MIN_SIZE}
-                max={EMAIL_TEMPLATE_DEFAULTS.LOGO_MAX_SIZE}
-                onChange={(value) => update({ emailTemplateLogoSize: value })}
-                onCommit={commitLogoSize}
-              />
-            )}
-            <Box>
-              <FieldLabel>{t.accentColor}</FieldLabel>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1, height: 36 }}>
-                <input
-                  type="color"
-                  aria-label={t.accentColor}
-                  value={formData.emailTemplateAccentColor}
-                  onChange={(e) => update({ emailTemplateAccentColor: e.target.value })}
-                  style={{ width: 36, height: 30, padding: 0, border: "none", background: "none", cursor: "pointer" }}
-                />
-                <Typography variant="body2" sx={{ fontFamily: "monospace" }}>
-                  {formData.emailTemplateAccentColor}
-                </Typography>
-              </Box>
+              <Typography variant="body2" sx={{ fontFamily: "monospace" }}>
+                {formData.emailTemplateAccentColor}
+              </Typography>
             </Box>
           </Box>
 
