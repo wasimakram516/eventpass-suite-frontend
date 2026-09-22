@@ -1,5 +1,6 @@
 import api from "@/services/api";
 import withApiHandler from "@/utils/withApiHandler";
+import { getExportFilename } from "@/utils/exportFilename";
 
 // Start a solo game session with localStorage setup and navigation
 export const joinGame = withApiHandler(
@@ -42,7 +43,7 @@ export const getLeaderboard = withApiHandler(async (gameId) => {
 export const exportResults = async (gameId) => {
   try {
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const { data } = await api.get(`/quiznest/players/export/${gameId}`, {
+    const { data, headers } = await api.get(`/quiznest/players/export/${gameId}`, {
       responseType: "blob",
       params: { timezone },
     });
@@ -50,7 +51,7 @@ export const exportResults = async (gameId) => {
     const url = window.URL.createObjectURL(new Blob([data]));
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", `Game results.xlsx`);
+    link.setAttribute("download", getExportFilename(headers, "Game results.xlsx"));
     document.body.appendChild(link);
     link.click();
     link.remove();

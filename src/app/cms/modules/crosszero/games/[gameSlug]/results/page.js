@@ -43,7 +43,10 @@ import { formatDateTimeWithLocale } from "@/utils/dateUtils";
 const translations = {
   en: {
     title: "AI Mode Results",
-    totalRecords: "Total records:",
+    resultsDescription: "Each card is one completed AI game.",
+    totalRecords: "Total plays:",
+    totalPlayers: "Total Players:",
+    playOf: "Play {n} of {m}",
     exportResults: "Export Results",
     exporting: "Exporting...",
     timeTaken: "Time",
@@ -60,7 +63,10 @@ const translations = {
   },
   ar: {
     title: "نتائج وضع الذكاء الاصطناعي",
-    totalRecords: "إجمالي السجلات:",
+    resultsDescription: "كل بطاقة لعبة ذكاء اصطناعي مكتملة واحدة.",
+    totalRecords: "إجمالي الألعاب:",
+    totalPlayers: "إجمالي اللاعبين:",
+    playOf: "اللعبة {n} من {m}",
     exportResults: "تصدير النتائج",
     exporting: "جارٍ التصدير...",
     timeTaken: "الوقت",
@@ -93,6 +99,9 @@ const mapSessionToRecord = (session) => {
     _id: session?._id,
     name: player?.name || "",
     company: player?.company || "",
+    email: player?.eventRegEmail || "",
+    playNumber: player?.eventRegPlayNumber,
+    totalPlays: player?.eventRegTotalPlays,
     result: session?.xoStats?.result || "draw",
     difficulty: session?.xoStats?.difficulty || "",
     moves: session?.xoStats?.moves ?? 0,
@@ -133,6 +142,7 @@ export default function CrossZeroAIResultsPage() {
   const [records, setRecords] = useState([]);
   const [totalPages, setTotalPages] = useState(0);
   const [totalRecords, setTotalRecords] = useState(0);
+  const [uniquePlayers, setUniquePlayers] = useState(0);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [loading, setLoading] = useState(true);
@@ -150,6 +160,7 @@ export default function CrossZeroAIResultsPage() {
         if (!history.error) {
           const mappedRecords = (history.sessions || []).map(mapSessionToRecord);
           setRecords(mappedRecords);
+          setUniquePlayers(history.uniquePlayers ?? 0);
           setTotalPages(history.totalPages || 0);
           setTotalRecords(history.totalCount || mappedRecords.length);
         } else {
@@ -206,7 +217,17 @@ export default function CrossZeroAIResultsPage() {
               <Typography variant="body2" sx={{
                 color: "text.secondary"
               }}>
+                {t.resultsDescription}
+              </Typography>
+              <Typography variant="body2" sx={{
+                color: "text.secondary"
+              }}>
                 {t.totalRecords} <strong>{toArabicDigits(totalRecords, language)}</strong>
+              </Typography>
+              <Typography variant="body2" sx={{
+                color: "text.secondary"
+              }}>
+                {t.totalPlayers} <strong>{toArabicDigits(uniquePlayers, language)}</strong>
               </Typography>
             </Box>
             {canExport && (
@@ -313,6 +334,25 @@ export default function CrossZeroAIResultsPage() {
                         }}>
                         {record.name || "-"}
                       </Typography>
+
+                      {record.email ? (
+                        <Typography variant="body2" sx={{
+                          color: "text.secondary",
+                          wordBreak: "break-word"
+                        }}>
+                          {record.email}
+                        </Typography>
+                      ) : null}
+
+                      {record.playNumber ? (
+                        <Typography variant="caption" sx={{
+                          color: "text.secondary"
+                        }}>
+                          {t.playOf
+                            .replace("{n}", toArabicDigits(record.playNumber, language))
+                            .replace("{m}", toArabicDigits(record.totalPlays, language))}
+                        </Typography>
+                      ) : null}
 
                       {record.company ? (
                         <Typography variant="body2" sx={{

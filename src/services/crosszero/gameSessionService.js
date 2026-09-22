@@ -1,5 +1,6 @@
 import api from "@/services/api";
 import withApiHandler from "@/utils/withApiHandler";
+import { getExportFilename } from "@/utils/exportFilename";
 
 export const getAllSessions = withApiHandler(async (gameSlug, page = 1, limit = 5) => {
   const { data } = await api.get("/crosszero/sessions", { params: { gameSlug, page, limit } });
@@ -54,11 +55,11 @@ export const resetSessions = withApiHandler(
 export const exportResults = async (gameSlug) => {
   try {
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const { data } = await api.get(`/crosszero/sessions/export/${gameSlug}`, { responseType: "blob", params: { timezone } });
+    const { data, headers } = await api.get(`/crosszero/sessions/export/${gameSlug}`, { responseType: "blob", params: { timezone } });
     const url = window.URL.createObjectURL(new Blob([data]));
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", `CrossZero-PvP-Results-${gameSlug}.xlsx`);
+    link.setAttribute("download", getExportFilename(headers, `CrossZero-PvP-Results-${gameSlug}.xlsx`));
     document.body.appendChild(link);
     link.click();
     link.remove();

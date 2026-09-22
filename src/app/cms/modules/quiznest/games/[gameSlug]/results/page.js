@@ -29,12 +29,14 @@ import {
 } from "@/services/quiznest/playerService";
 import ICONS from "@/utils/iconUtil";
 import { formatDateTimeWithLocale } from "@/utils/dateUtils";
+import { toArabicDigits } from "@/utils/arabicDigits";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 const translations = {
   en: {
     resultsTitle: "Results for",
     totalPlayers: "Total Players:",
+    playOf: "Play {n} of {m}",
     exportResults: "Export Results",
     exportTooltip: "Export Results",
     scoreLabel: "Score:",
@@ -47,6 +49,7 @@ const translations = {
   ar: {
     resultsTitle: "نتائج",
     totalPlayers: "إجمالي اللاعبين:",
+    playOf: "اللعبة {n} من {m}",
     exportResults: "تصدير النتائج",
     exportTooltip: "تصدير النتائج",
     scoreLabel: "النقاط:",
@@ -67,12 +70,25 @@ function playerMatchesSearch(player, term) {
   return haystack.includes(t);
 }
 
+// A linked registration counts as one player no matter how many plays; an
+// unlinked play counts on its own.
+function countUniquePlayers(rows) {
+  const linked = new Set();
+  let unlinked = 0;
+  for (const row of rows || []) {
+    if (row.eventRegRegistrationId) linked.add(String(row.eventRegRegistrationId));
+    else unlinked += 1;
+  }
+  return linked.size + unlinked;
+}
+
 export default function ResultsPage() {
   const { gameSlug } = useParams();
   const searchParams = useSearchParams();
   const { showMessage } = useMessage();
   const [game, setGame] = useState(null);
   const [players, setPlayers] = useState([]);
+  const [uniquePlayers, setUniquePlayers] = useState(0);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [searchInitialized, setSearchInitialized] = useState(false);
@@ -96,6 +112,7 @@ export default function ResultsPage() {
 
   const displayPlayers = searchTerm.trim() ? filteredPlayers : players;
   const displayTotal = displayPlayers.length;
+  const displayUniquePlayers = searchTerm.trim() ? countUniquePlayers(filteredPlayers) : uniquePlayers;
 
   // Fetch game and leaderboard from backend
   useEffect(() => {
@@ -104,7 +121,9 @@ export default function ResultsPage() {
       const gameData = await getGameBySlug(gameSlug);
       setGame(gameData);
       const leaderboard = await getLeaderboard(gameData._id);
-      setPlayers(leaderboard || []);
+      const rows = leaderboard?.results || leaderboard || [];
+      setPlayers(rows);
+      setUniquePlayers(leaderboard?.uniquePlayers ?? countUniquePlayers(rows));
       setLoading(false);
     };
     if (gameSlug) fetchGameAndResults();
@@ -160,7 +179,7 @@ export default function ResultsPage() {
                   color: "text.secondary",
                   fontSize: { xs: "0.8rem", sm: "0.875rem" }
                 }}>
-                {t.totalPlayers} <strong>{displayTotal}</strong>
+                {t.totalPlayers} <strong>{toArabicDigits(displayUniquePlayers, language)}</strong>
               </Typography>
             </Box>
 
@@ -227,7 +246,6 @@ export default function ResultsPage() {
                     boxShadow: 2,
                     display: "flex",
                     flexDirection: "column",
-                    justifyContent: "space-between",
                     transition: "0.3s ease",
                     "&:hover": {
                       boxShadow: 4,
@@ -255,9 +273,29 @@ export default function ResultsPage() {
                         overflowWrap: "break-word",
                         whiteSpace: "normal"
                       }}>
-                      #{i + 1} • {p.name}
+                      #{toArabicDigits(i + 1, language)} • {p.name}
                     </Typography>
                   </Box>
+
+                  {p.email ? (
+                    <Typography
+                      variant="body2"
+                      sx={{ display: "block", color: "text.secondary", mb: 1, wordBreak: "break-word" }}
+                    >
+                      {p.email}
+                    </Typography>
+                  ) : null}
+
+                  {p.playNumber ? (
+                    <Typography
+                      variant="caption"
+                      sx={{ display: "block", color: "text.secondary", mb: 1 }}
+                    >
+                      {t.playOf
+                        .replace("{n}", toArabicDigits(p.playNumber, language))
+                        .replace("{m}", toArabicDigits(p.totalPlays, language))}
+                    </Typography>
+                  ) : null}
 
                   {/* Details */}
                   <Box
@@ -280,7 +318,7 @@ export default function ResultsPage() {
                           wordBreak: "break-word",
                         }}
                       >
-                        {t.scoreLabel} <strong>{p.score}</strong>
+                        {t.scoreLabel} <strong>{toArabicDigits(p.score, language)}</strong>
                       </Typography>
                     </Box>
 
@@ -297,7 +335,7 @@ export default function ResultsPage() {
                           wordBreak: "break-word",
                         }}
                       >
-                        {t.timeTakenLabel} <strong>{p.timeTaken}s</strong>
+                        {t.timeTakenLabel} <strong>{toArabicDigits(p.timeTaken, language)}s</strong>
                       </Typography>
                     </Box>
 
@@ -315,7 +353,7 @@ export default function ResultsPage() {
                         }}
                       >
                         {t.attemptedLabel}{" "}
-                        <strong>{p.attemptedQuestions}</strong>
+                        <strong>{toArabicDigits(p.attemptedQuestions, language)}</strong>
                       </Typography>
                     </Box>
 

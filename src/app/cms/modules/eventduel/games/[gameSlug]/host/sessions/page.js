@@ -40,7 +40,7 @@ import { toArabicDigits } from "@/utils/arabicDigits";
 const translations = {
   en: {
     hostDashboard: "PvP Sessions",
-    hostDescription: "View and reset your previous PvP sessions.",
+    hostDescription: "Each card is one completed session (past results are listed here).",
     allSessions: "Reset Sessions",
     sessionId: "Session ID",
     player1: "Player 1",
@@ -63,6 +63,8 @@ const translations = {
     to: "to",
     of: "of",
     records: "sessions",
+    totalPlayers: "Total Players (unique):",
+    playOf: "Play {n} of {m}",
     exportResults: "Export Results",
     exporting: "Exporting...",
     errorLoading: "Error loading data.",
@@ -74,7 +76,7 @@ const translations = {
   },
   ar: {
     hostDashboard: "جلسات PvP",
-    hostDescription: "عرض وإعادة تعيين الجلسات السابقة.",
+    hostDescription: "كل بطاقة هي جلسة مكتملة واحدة (النتائج السابقة معروضة هنا).",
     allSessions: "إعادة تعيين الجلسات",
     sessionId: "معرّف الجلسة",
     player1: "اللاعب 1",
@@ -97,6 +99,8 @@ const translations = {
     to: "إلى",
     of: "من",
     records: "جلسات",
+    totalPlayers: "إجمالي اللاعبين (فريد):",
+    playOf: "اللعبة {n} من {m}",
     exportResults: "تصدير النتائج",
     exporting: "جاري التصدير...",
     errorLoading: "حدث خطأ أثناء تحميل البيانات.",
@@ -133,6 +137,7 @@ export default function PvPSessions() {
   const canExport = useHasPermission("eventduel", "export");
   const [sessions, setSessions] = useState([]);
   const [totalSessions, setTotalSessions] = useState(0);
+  const [uniquePlayers, setUniquePlayers] = useState(0);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(5);
   const [showConfirm, setShowConfirm] = useState(false);
@@ -173,6 +178,7 @@ export default function PvPSessions() {
       const res = await getAllSessions(gameSlug, fetchPage, fetchLimit);
       if (!res.error) {
         setSessions(res.sessions || []);
+        setUniquePlayers(res.uniquePlayers ?? 0);
         setTotalSessions(res.totalCount ?? 0);
       }
       setLoading(false);
@@ -223,6 +229,11 @@ export default function PvPSessions() {
               color: "text.secondary"
             }}>
               {t.hostDescription}
+            </Typography>
+            <Typography variant="body2" sx={{
+              color: "text.secondary"
+            }}>
+              {t.totalPlayers} <strong>{toArabicDigits(uniquePlayers, language)}</strong>
             </Typography>
           </Box>
           <Stack
@@ -413,6 +424,25 @@ export default function PvPSessions() {
                                     {player1?.playerId?.name || t.unknown}
                                   </Typography>
 
+                                  {player1?.playerId?.eventRegEmail ? (
+                                    <Typography variant="body2" sx={{
+                                      color: "text.secondary",
+                                      wordBreak: "break-word"
+                                    }}>
+                                      {player1.playerId.eventRegEmail}
+                                    </Typography>
+                                  ) : null}
+
+                                  {player1?.playerId?.eventRegPlayNumber ? (
+                                    <Typography variant="caption" sx={{
+                                      color: "text.secondary"
+                                    }}>
+                                      {t.playOf
+                                        .replace("{n}", toArabicDigits(player1.playerId.eventRegPlayNumber, language))
+                                        .replace("{m}", toArabicDigits(player1.playerId.eventRegTotalPlays, language))}
+                                    </Typography>
+                                  ) : null}
+
                                   <Box
                                     sx={{
                                       display: "flex",
@@ -538,6 +568,25 @@ export default function PvPSessions() {
                                   }}>
                                     {player2?.playerId?.name || t.unknown}
                                   </Typography>
+
+                                  {player2?.playerId?.eventRegEmail ? (
+                                    <Typography variant="body2" sx={{
+                                      color: "text.secondary",
+                                      wordBreak: "break-word"
+                                    }}>
+                                      {player2.playerId.eventRegEmail}
+                                    </Typography>
+                                  ) : null}
+
+                                  {player2?.playerId?.eventRegPlayNumber ? (
+                                    <Typography variant="caption" sx={{
+                                      color: "text.secondary"
+                                    }}>
+                                      {t.playOf
+                                        .replace("{n}", toArabicDigits(player2.playerId.eventRegPlayNumber, language))
+                                        .replace("{m}", toArabicDigits(player2.playerId.eventRegTotalPlays, language))}
+                                    </Typography>
+                                  ) : null}
 
                                   <Box
                                     sx={{
@@ -706,7 +755,7 @@ export default function PvPSessions() {
                                     }}>
                                     {team.teamName ||
                                       team.teamId?.name ||
-                                      `${t.teams} ${idx + 1}`}
+                                      `${t.teams} ${toArabicDigits(idx + 1, language)}`}
                                   </Typography>
 
                                   {/* Totals */}
@@ -723,7 +772,10 @@ export default function PvPSessions() {
                                       justifyContent: "center",
                                       alignItems: "center",
                                       flexWrap: "wrap",
-                                      bgcolor: "common.white",
+                                      bgcolor: (theme) =>
+                                        theme.palette.mode === "dark"
+                                          ? "rgba(255,255,255,0.08)"
+                                          : "common.white",
                                       borderRadius: 2,
                                       py: 0.7,
                                       px: 1.5
@@ -828,6 +880,30 @@ export default function PvPSessions() {
                                               p.playerId?.name ||
                                               t.unknown}
                                           </Typography>
+                                          {p.email ? (
+                                            <Typography
+                                              variant="caption"
+                                              sx={{
+                                                color: "text.secondary",
+                                                display: "block",
+                                                wordBreak: "break-word"
+                                              }}>
+                                              {p.email}
+                                            </Typography>
+                                          ) : null}
+                                          {p.playNumber ? (
+                                            <Typography
+                                              variant="caption"
+                                              sx={{
+                                                color: "text.secondary",
+                                                display: "block",
+                                                wordBreak: "break-word"
+                                              }}>
+                                              {t.playOf
+                                                .replace("{n}", toArabicDigits(p.playNumber, language))
+                                                .replace("{m}", toArabicDigits(p.totalPlays, language))}
+                                            </Typography>
+                                          ) : null}
                                           <Typography
                                             variant="caption"
                                             sx={{
@@ -847,10 +923,10 @@ export default function PvPSessions() {
                                           sx={{
                                             alignItems: "center",
 
-                                            justifyContent: {
-                                              xs: "flex-start",
-                                              sm: "flex-end",
-                                            },
+                                            justifyContent:
+                                              dir === "rtl"
+                                                ? "flex-end"
+                                                : { xs: "flex-start", sm: "flex-end" },
 
                                             flexWrap: "wrap",
                                             width: { xs: "100%", sm: "auto" }

@@ -1,5 +1,6 @@
 import api from "@/services/api";
 import withApiHandler from "@/utils/withApiHandler";
+import { getExportFilename } from "@/utils/exportFilename";
 
 // Join (start) a TapMatch game
 export const joinGame = withApiHandler(
@@ -40,7 +41,7 @@ export const getLeaderboard = withApiHandler(async (gameId, page = 1, limit = 10
 export const exportResults = async (gameId) => {
   try {
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const { data } = await api.get(`/tapmatch/player/export/${gameId}`, {
+    const { data, headers } = await api.get(`/tapmatch/player/export/${gameId}`, {
       responseType: "blob",
       params: { timezone },
     });
@@ -48,7 +49,7 @@ export const exportResults = async (gameId) => {
     const url = window.URL.createObjectURL(new Blob([data]));
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", `TapMatch-results.xlsx`);
+    link.setAttribute("download", getExportFilename(headers, "TapMatch-results.xlsx"));
     document.body.appendChild(link);
     link.click();
     link.remove();

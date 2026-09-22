@@ -1,5 +1,6 @@
 import api from "@/services/api";
 import withApiHandler from "@/utils/withApiHandler";
+import { getExportFilename } from "@/utils/exportFilename";
 
 export const joinGame = withApiHandler(async (gameId, payload) => {
   const { data } = await api.post(`/crosszero/player/${gameId}`, payload);
@@ -19,11 +20,11 @@ export const getSessionHistory = withApiHandler(async (gameId, page = 1, limit =
 export const exportResults = async (gameId) => {
   try {
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const { data } = await api.get(`/crosszero/player/export/${gameId}`, { responseType: "blob", params: { timezone } });
+    const { data, headers } = await api.get(`/crosszero/player/export/${gameId}`, { responseType: "blob", params: { timezone } });
     const url = window.URL.createObjectURL(new Blob([data]));
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", `CrossZero-AI-Results-${gameId}.xlsx`);
+    link.setAttribute("download", getExportFilename(headers, `CrossZero-AI-Results-${gameId}.xlsx`));
     document.body.appendChild(link);
     link.click();
     link.remove();

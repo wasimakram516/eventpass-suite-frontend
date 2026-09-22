@@ -10,7 +10,6 @@ import {
   Paper,
   CircularProgress,
   Stack,
-  TextField,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import { useGame } from "@/contexts/GameContext";
@@ -19,6 +18,7 @@ import useCrossZeroWebSocketData from "@/hooks/modules/crosszero/useCrossZeroWeb
 import { joinGameSession } from "@/services/crosszero/gameSessionService";
 import { useGameEventRegLink } from "@/hooks/useGameEventRegLink";
 import EventRegRemainingFieldsStep from "@/components/games/EventRegRemainingFieldsStep";
+import EventRegPrimaryField from "@/components/games/EventRegPrimaryField";
 import CrossZeroFloatingControls from "@/components/crosszero/CrossZeroFloatingControls";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
@@ -67,11 +67,12 @@ export default function CrossZeroPlayerPage() {
   const { game, loading } = useGame();
   const { showMessage } = useMessage();
   const { sessions } = useCrossZeroWebSocketData(gameSlug);
-  const { t, dir } = useI18nLayout(translations);
+  const { t, dir, language } = useI18nLayout(translations);
   const { link, remainingStep, submit, submitWithRemaining } = useGameEventRegLink(game);
 
   const [selected, setSelected] = useState("");
-  const [form, setForm] = useState({ name: "" });
+  const [form, setForm] = useState({ name: "", isoCode: "om" });
+  const [primaryValid, setPrimaryValid] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const theme = useTheme();
@@ -115,7 +116,7 @@ export default function CrossZeroPlayerPage() {
       showMessage(t.selectSide, "error");
       return;
     }
-    if (!form.name.trim() || submitting) return;
+    if (!primaryValid || submitting) return;
     if (!pendingSession?._id) {
       showMessage(t.noSession, "error");
       return;
@@ -129,6 +130,7 @@ export default function CrossZeroPlayerPage() {
       sessionId: pendingSession._id,
       name: form.name.trim(),
       playerType: selected,
+      isoCode: form.isoCode,
     };
 
     const response = remainingValues
@@ -344,18 +346,17 @@ export default function CrossZeroPlayerPage() {
             />
           ) : (
             <>
-              <TextField
+              <EventRegPrimaryField
+                link={link}
+                module="crosszero"
                 label={link ? link.primaryFieldLabel : t.nameLabel}
-                fullWidth
-                required
-                sx={{ mb: 2.5, textAlign: "left" }}
                 value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                onKeyDown={(e) => e.key === "Enter" && handleSubmit()}
-                slotProps={{
-                  input: { sx: (theme) => ({ backgroundColor: theme.palette.mode === "dark" ? alpha(theme.palette.action.hover, 0.32) : theme.palette.background.paper, color: "text.primary", "& .MuiOutlinedInput-notchedOutline": { borderColor: "divider" } }) },
-                  inputLabel: { sx: { color: "text.secondary" } }
-                }} />
+                onChange={(v) => setForm((p) => ({ ...p, name: v }))}
+                onIsoCodeChange={(iso) => setForm((p) => ({ ...p, isoCode: iso }))}
+                onValidityChange={setPrimaryValid}
+                dir={dir}
+                language={language}
+              />
               {/* <TextField
                 label={t.companyLabel}
                 fullWidth
@@ -384,7 +385,7 @@ export default function CrossZeroPlayerPage() {
                 size="large"
                 fullWidth
                 onClick={() => handleSubmit()}
-                disabled={!selected || !form.name.trim() || submitting}
+                disabled={!selected || !primaryValid || submitting}
                 startIcon={
                   submitting ? (
                     <CircularProgress size={20} color="inherit" />

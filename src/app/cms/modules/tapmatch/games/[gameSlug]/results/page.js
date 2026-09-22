@@ -36,6 +36,7 @@ import {
   exportResults,
 } from "@/services/tapmatch/playerService";
 import { formatDateTimeWithLocale } from "@/utils/dateUtils";
+import { toArabicDigits } from "@/utils/arabicDigits";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 
@@ -43,6 +44,7 @@ const translations = {
   en: {
     resultsTitle: "Results for",
     totalPlayers: "Total Players:",
+    playOf: "Play {n} of {m}",
     exportResults: "Export Results",
     exportTooltip: "Export Results",
     matchesLabel: "Matches",
@@ -61,6 +63,7 @@ const translations = {
   ar: {
     resultsTitle: "نتائج",
     totalPlayers: "إجمالي اللاعبين:",
+    playOf: "اللعبة {n} من {m}",
     exportResults: "تصدير النتائج",
     exportTooltip: "تصدير النتائج",
     matchesLabel: "التطابقات",
@@ -87,6 +90,18 @@ function playerMatchesSearch(player, term) {
   return haystack.includes(t);
 }
 
+// A linked registration counts as one player no matter how many plays; an
+// unlinked play counts on its own.
+function countUniquePlayers(rows) {
+  const linked = new Set();
+  let unlinked = 0;
+  for (const row of rows || []) {
+    if (row.eventRegRegistrationId) linked.add(String(row.eventRegRegistrationId));
+    else unlinked += 1;
+  }
+  return linked.size + unlinked;
+}
+
 export default function TapMatchResultsPage() {
   const { gameSlug } = useParams();
   const searchParams = useSearchParams();
@@ -104,6 +119,7 @@ export default function TapMatchResultsPage() {
   const [limit, setLimit] = useState(10);
   const [totalPages, setTotalPages] = useState(0);
   const [totalRecords, setTotalRecords] = useState(0);
+  const [uniquePlayers, setUniquePlayers] = useState(0);
 
   useEffect(() => {
     if (!searchInitialized) {
@@ -125,6 +141,7 @@ export default function TapMatchResultsPage() {
   const useSearchMode = Boolean(searchTerm.trim());
   const displayPlayers = useSearchMode ? filteredPlayers : players;
   const displayTotal = useSearchMode ? filteredPlayers.length : totalRecords;
+  const displayUniquePlayers = useSearchMode ? countUniquePlayers(filteredPlayers) : uniquePlayers;
   const displayTotalPages = useSearchMode
     ? Math.ceil(filteredPlayers.length / limit) || 1
     : totalPages;
@@ -138,12 +155,15 @@ export default function TapMatchResultsPage() {
           setGame(gameData);
           if (searchTerm.trim()) {
             const leaderboard = await getLeaderboard(gameData._id, 1, 1000);
-            setPlayers(leaderboard.results || []);
+            const rows = leaderboard.results || [];
+            setPlayers(rows);
+            setUniquePlayers(leaderboard.uniquePlayers ?? countUniquePlayers(rows));
             setTotalPages(1);
-            setTotalRecords((leaderboard.results || []).length);
+            setTotalRecords(rows.length);
           } else {
             const leaderboard = await getLeaderboard(gameData._id, page, limit);
             setPlayers(leaderboard.results || []);
+            setUniquePlayers(leaderboard.uniquePlayers ?? 0);
             setTotalPages(leaderboard.totalPages || 0);
             setTotalRecords(leaderboard.total || 0);
           }
@@ -206,7 +226,7 @@ export default function TapMatchResultsPage() {
               <Typography variant="body2" sx={{
                 color: "text.secondary"
               }}>
-                {t.totalPlayers} <strong>{displayTotal}</strong>
+                {t.totalPlayers} <strong>{toArabicDigits(displayUniquePlayers, language)}</strong>
               </Typography>
             </Box>
 
@@ -324,6 +344,26 @@ export default function TapMatchResultsPage() {
                       }}>
                       #{(page - 1) * limit + (i + 1)} • {p.name}
                     </Typography>
+
+                    {p.email ? (
+                      <Typography
+                        variant="body2"
+                        sx={{ display: "block", color: "text.secondary", mb: 1, wordBreak: "break-word" }}
+                      >
+                        {p.email}
+                      </Typography>
+                    ) : null}
+
+                    {p.playNumber ? (
+                      <Typography
+                        variant="caption"
+                        sx={{ display: "block", color: "text.secondary", mb: 1 }}
+                      >
+                        {t.playOf
+                          .replace("{n}", toArabicDigits(p.playNumber, language))
+                          .replace("{m}", toArabicDigits(p.totalPlays, language))}
+                      </Typography>
+                    ) : null}
 
                     <Box
                       sx={{ display: "flex", flexDirection: "column", gap: 1 }}

@@ -3,7 +3,6 @@
 import {
   Box,
   Typography,
-  TextField,
   Button,
   Paper,
   CircularProgress,
@@ -16,6 +15,7 @@ import { useRouter } from "next/navigation";
 import { joinGame } from "@/services/tapmatch/playerService";
 import { useGameEventRegLink } from "@/hooks/useGameEventRegLink";
 import EventRegRemainingFieldsStep from "@/components/games/EventRegRemainingFieldsStep";
+import EventRegPrimaryField from "@/components/games/EventRegPrimaryField";
 import LanguageSelector from "@/components/LanguageSelector";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { translateTexts } from "@/services/translationService";
@@ -41,7 +41,8 @@ export default function TapMatchNamePage() {
   const { t, dir, align, language } = useI18nLayout(entryDialogTranslations);
   const { link, remainingStep, submit, submitWithRemaining } = useGameEventRegLink(game);
   const [translatedTitle, setTranslatedTitle] = useState("");
-  const [form, setForm] = useState({ name: "", company: "", phone: "" });
+  const [form, setForm] = useState({ name: "", company: "", phone: "", isoCode: "om" });
+  const [primaryValid, setPrimaryValid] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -60,11 +61,16 @@ export default function TapMatchNamePage() {
   }, [game?.title, language]);
 
   const handleJoin = async (remainingValues) => {
-    if (!form.name.trim() || submitting) return;
+    if (!primaryValid || submitting) return;
     setSubmitting(true);
     setError("");
 
-    const payload = { name: form.name.trim(), company: form.company, phone: form.phone };
+    const payload = {
+      name: form.name.trim(),
+      company: form.company,
+      phone: form.phone,
+      isoCode: form.isoCode,
+    };
 
     const res = remainingValues
       ? await submitWithRemaining((p) => joinGame(game._id, p), payload, form.name.trim(), remainingValues)
@@ -170,26 +176,16 @@ export default function TapMatchNamePage() {
           ) : (
             <>
               {/* Name */}
-              <TextField
+              <EventRegPrimaryField
+                link={link}
+                module="tapmatch"
                 label={link ? link.primaryFieldLabel : t.nameLabel}
-                fullWidth
-                required
-                sx={{ mb: 3 }}
                 value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                onKeyDown={(e) => e.key === "Enter" && handleJoin()}
-                slotProps={{
-                  input: {
-                    sx: (theme) => ({
-                      backgroundColor: theme.palette.mode === "dark"
-                        ? theme.palette.quiznest.inputBg
-                        : theme.palette.background.paper,
-                      color: "text.primary",
-                      "& .MuiOutlinedInput-notchedOutline": { borderColor: "divider" },
-                    }),
-                  },
-                  inputLabel: { sx: { color: "text.secondary" } },
-                }}
+                onChange={(v) => setForm((p) => ({ ...p, name: v }))}
+                onIsoCodeChange={(iso) => setForm((p) => ({ ...p, isoCode: iso }))}
+                onValidityChange={setPrimaryValid}
+                dir={dir}
+                language={language}
               />
 
               {/* Phone */}
@@ -223,7 +219,7 @@ export default function TapMatchNamePage() {
                 size="large"
                 fullWidth
                 onClick={() => handleJoin()}
-                disabled={submitting || !form.name.trim()}
+                disabled={submitting || !primaryValid}
                 sx={(theme) => ({
                   py: 1.2, borderRadius: 999, fontWeight: 800,
                   bgcolor: theme.palette.quiznest.accent,

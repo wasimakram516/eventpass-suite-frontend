@@ -7,7 +7,6 @@ import {
   IconButton,
   Paper,
   Stack,
-  TextField,
   Typography,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
@@ -18,6 +17,7 @@ import { joinGame } from "@/services/crosszero/playerService";
 import CrossZeroFloatingControls from "@/components/crosszero/CrossZeroFloatingControls";
 import { useGameEventRegLink } from "@/hooks/useGameEventRegLink";
 import EventRegRemainingFieldsStep from "@/components/games/EventRegRemainingFieldsStep";
+import EventRegPrimaryField from "@/components/games/EventRegPrimaryField";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import ICONS from "@/utils/iconUtil";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
@@ -44,18 +44,19 @@ const translations = {
 export default function CrossZeroNamePage() {
   const { game, loading } = useGame();
   const router = useRouter();
-  const { t, dir } = useI18nLayout(translations);
+  const { t, dir, language } = useI18nLayout(translations);
   const { link, remainingStep, submit, submitWithRemaining } = useGameEventRegLink(game);
-  const [form, setForm] = useState({ name: "" });
+  const [form, setForm] = useState({ name: "", isoCode: "om" });
+  const [primaryValid, setPrimaryValid] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
   const handleJoin = async (remainingValues) => {
-    if (!form.name.trim() || submitting) return;
+    if (!primaryValid || submitting) return;
     setSubmitting(true);
     setError("");
 
-    const payload = { name: form.name.trim() };
+    const payload = { name: form.name.trim(), isoCode: form.isoCode };
 
     const res = remainingValues
       ? await submitWithRemaining((p) => joinGame(game._id, p), payload, form.name.trim(), remainingValues)
@@ -217,26 +218,17 @@ export default function CrossZeroNamePage() {
             />
           ) : (
             <>
-              <TextField
+              <EventRegPrimaryField
+                link={link}
+                module="crosszero"
                 label={link ? link.primaryFieldLabel : t.nameLabel}
-                fullWidth
-                required
-                sx={{ mb: 3 }}
                 value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                onKeyDown={(e) => e.key === "Enter" && handleJoin()}
-                slotProps={{
-                  input: {
-                    sx: (theme) => ({
-                      backgroundColor: theme.palette.mode === "dark"
-                        ? alpha(theme.palette.action.hover, 0.32)
-                        : theme.palette.background.paper,
-                      color: "text.primary",
-                      "& .MuiOutlinedInput-notchedOutline": { borderColor: "divider" },
-                    }),
-                  },
-                  inputLabel: { sx: { color: "text.secondary" } }
-                }} />
+                onChange={(v) => setForm((p) => ({ ...p, name: v }))}
+                onIsoCodeChange={(iso) => setForm((p) => ({ ...p, isoCode: iso }))}
+                onValidityChange={setPrimaryValid}
+                dir={dir}
+                language={language}
+              />
               {/* <TextField
                 label={t.companyLabel}
                 fullWidth
@@ -271,7 +263,7 @@ export default function CrossZeroNamePage() {
                 size="large"
                 fullWidth
                 onClick={() => handleJoin()}
-                disabled={submitting || !form.name.trim()}
+                disabled={submitting || !primaryValid}
                 startIcon={
                   submitting ? (
                     <CircularProgress size={20} color="inherit" />

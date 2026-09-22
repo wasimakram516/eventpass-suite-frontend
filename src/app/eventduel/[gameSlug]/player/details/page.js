@@ -3,7 +3,6 @@
 import {
   Box,
   Typography,
-  TextField,
   Button,
   Paper,
   CircularProgress,
@@ -15,6 +14,7 @@ import { useRouter } from "next/navigation";
 import { joinGameSession } from "@/services/eventduel/gameSessionService";
 import { useGameEventRegLink } from "@/hooks/useGameEventRegLink";
 import EventRegRemainingFieldsStep from "@/components/games/EventRegRemainingFieldsStep";
+import EventRegPrimaryField from "@/components/games/EventRegPrimaryField";
 import LanguageSelector from "@/components/LanguageSelector";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import ICONS from "@/utils/iconUtil";
@@ -38,7 +38,7 @@ const entryDialogTranslations = {
 export default function NamePage() {
   const { game, loading } = useGame();
   const router = useRouter();
-  const { t, dir, align } = useI18nLayout(entryDialogTranslations);
+  const { t, dir, align, language } = useI18nLayout(entryDialogTranslations);
   const { link, remainingStep, submit, submitWithRemaining } = useGameEventRegLink(game);
 
   const [form, setForm] = useState({
@@ -47,7 +47,9 @@ export default function NamePage() {
     company: "",
     playerType: "",
     teamId: "",
+    isoCode: "om",
   });
+  const [primaryValid, setPrimaryValid] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [selectedTeamName, setSelectedTeamName] = useState("");
@@ -70,7 +72,7 @@ export default function NamePage() {
   }, [game]);
 
   const handleJoin = async (remainingValues) => {
-    if (!form.name.trim() || submitting) return;
+    if (!primaryValid || submitting) return;
     setSubmitting(true);
     setError("");
 
@@ -220,22 +222,17 @@ export default function NamePage() {
           ) : (
             <>
               {/* Name */}
-              <TextField
+              <EventRegPrimaryField
+                link={link}
+                module="eventduel"
                 label={link ? link.primaryFieldLabel : t.nameLabel}
-                fullWidth
-                required
-                sx={{ mb: 3 }}
                 value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                onKeyDown={(e) => e.key === "Enter" && handleJoin()}
-                slotProps={{
-                  input: { sx: (theme) => ({
-                    backgroundColor: theme.palette.mode === "dark" ? "rgba(255,255,255,0.08)" : theme.palette.background.paper,
-                    color: "text.primary",
-                    "& .MuiOutlinedInput-notchedOutline": { borderColor: theme.palette.mode === "dark" ? "rgba(255,255,255,0.25)" : "divider" },
-                  }) },
-                  inputLabel: { sx: { color: "text.secondary" } }
-                }} />
+                onChange={(v) => setForm((p) => ({ ...p, name: v }))}
+                onIsoCodeChange={(iso) => setForm((p) => ({ ...p, isoCode: iso }))}
+                onValidityChange={setPrimaryValid}
+                dir={dir}
+                language={language}
+              />
 
               {/* Submit */}
               <Button
@@ -243,7 +240,7 @@ export default function NamePage() {
                 size="large"
                 fullWidth
                 onClick={() => handleJoin()}
-                disabled={submitting || !form.name.trim()}
+                disabled={submitting || !primaryValid}
                 startIcon={
                   submitting ? (
                     <CircularProgress size={24} color="inherit" />

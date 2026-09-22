@@ -476,7 +476,9 @@ export const getTheme = (mode = "light", direction = "ltr") => {
         badge: isDark
           ? "linear-gradient(135deg, #0b4b57 0%, #4fc3d9 58%, #7be7f5 100%)"
           : "linear-gradient(135deg, #005b8c 0%, #0077b6 58%, #40c0d5 100%)",
-        wheelEmpty: "conic-gradient(#666 0deg 360deg)",
+        wheelEmpty: isDark
+          ? "conic-gradient(#8a949c 0deg 360deg)"
+          : "conic-gradient(#666 0deg 360deg)",
         winnerDialog: isDark
           ? "linear-gradient(135deg,#667eea 0%,#764ba2 100%)"
           : "linear-gradient(135deg,#667eea 0%,#764ba2 100%)",
@@ -611,7 +613,7 @@ export const getTheme = (mode = "light", direction = "ltr") => {
         answerWrongBg: "rgba(244,67,54,0.35)",
         answerWrongBorder: "#e57373",
         resultCard: isDark
-          ? "rgba(255,255,255,0.67)"
+          ? "rgba(15,23,42,0.55)"
           : "rgba(255,255,255,0.92)",
         answerDefaultBg: isDark
           ? "rgba(0,0,0,0.04)"
@@ -745,18 +747,24 @@ export const getTheme = (mode = "light", direction = "ltr") => {
         pendingTextShadow: "0 0 10px rgba(255,255,255,0.3)",
         pendingSecondaryText: "#e0f2f1",
 
-        gameCardBorder: "1px solid #eee",
+        gameCardBorder: isDark ? "1px solid rgba(255,255,255,0.12)" : "1px solid #eee",
 
         // === Host Dashboard: active session card ===
-        activeSessionGradient: "linear-gradient(135deg, #e1f5fe, #ffffff)",
-        activeSessionShadow: "0 12px 35px rgba(0,0,0,0.15)",
-        teamBoxBorder: "2px solid #90caf9",
-        teamBoxBg: "#e3f2fd",
+        activeSessionGradient: isDark
+          ? "linear-gradient(135deg, #0f2233, #16293d)"
+          : "linear-gradient(135deg, #e1f5fe, #ffffff)",
+        activeSessionShadow: isDark
+          ? "0 12px 35px rgba(0,0,0,0.45)"
+          : "0 12px 35px rgba(0,0,0,0.15)",
+        teamBoxBorder: isDark ? "2px solid #1565c0" : "2px solid #90caf9",
+        teamBoxBg: isDark ? "rgba(255,255,255,0.06)" : "#e3f2fd",
 
         // === Team-mode player row card (session lists) ===
-        teamPlayerCardBg: "#ffffff",
-        teamPlayerCardShadow: "0 1px 3px rgba(0,0,0,0.05)",
-        teamCardBg: "#fafafa",
+        teamPlayerCardBg: isDark ? "rgba(255,255,255,0.08)" : "#ffffff",
+        teamPlayerCardShadow: isDark
+          ? "0 1px 3px rgba(0,0,0,0.4)"
+          : "0 1px 3px rgba(0,0,0,0.05)",
+        teamCardBg: isDark ? "rgba(255,255,255,0.05)" : "#fafafa",
 
         // === VS badge (team-mode variant, session lists) ===
         vsBadgeShadow: "0 2px 6px rgba(0,0,0,0.1)",
