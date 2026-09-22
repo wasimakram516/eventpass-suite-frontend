@@ -8,6 +8,7 @@
 import {
   EMAIL_TEMPLATE_DEFAULTS,
   EMAIL_TEMPLATE_RESERVED,
+  clampCustomImageSize,
   clampLogoSize,
   clampQrSize,
   getTemplateFieldNames,
@@ -183,6 +184,9 @@ export function buildEmailPreview({
   const header = normalizeHeader(template.header);
   const qrSize = clampQrSize(template.qrSize);
   const logoSize = clampLogoSize(template.logoSize);
+  const customImageUrl = template.customImage?.url || "";
+  const customImageWidth = clampCustomImageSize(template.customImage?.width);
+  const customLink = template.customLink || "";
   const name = (eventName || "").trim() || SAMPLE_EVENT_NAME;
   const usedInBodyOrHeader = (placeholder) =>
     hasTemplatePlaceholder(template.body, placeholder) || hasTemplatePlaceholder(header, placeholder);
@@ -229,6 +233,18 @@ export function buildEmailPreview({
     value: isCheckIn ? buildSampleConfirmationButtonHtml(accentColor) : "",
     html: true,
   });
+  setPlaceholderEntry(visualEntries, EMAIL_TEMPLATE_RESERVED.CUSTOM_IMAGE, {
+    value: customImageUrl
+      ? `<img src="${escapeHtml(customImageUrl)}" alt="" width="${customImageWidth}" style="width:${customImageWidth}px;max-width:100%;height:auto;" />`
+      : buildImageStandIn("Custom image", customImageWidth),
+    html: true,
+  });
+  setPlaceholderEntry(visualEntries, EMAIL_TEMPLATE_RESERVED.CUSTOM_LINK, {
+    value: customLink
+      ? `<a href="${escapeHtml(customLink)}" style="color:${accentColor};word-break:break-all;">${escapeHtml(customLink)}</a>`
+      : `<span style="color:#999;font-size:12px;">[Custom Link not set]</span>`,
+    html: true,
+  });
 
   // Visual blocks mean nothing in a subject.
   const subjectEntries = new Map(fieldEntries);
@@ -239,6 +255,8 @@ export function buildEmailPreview({
     EMAIL_TEMPLATE_RESERVED.EVENT_DESCRIPTION,
     EMAIL_TEMPLATE_RESERVED.REGISTRATION_DETAILS,
     EMAIL_TEMPLATE_RESERVED.CONFIRMATION_BUTTON,
+    EMAIL_TEMPLATE_RESERVED.CUSTOM_IMAGE,
+    EMAIL_TEMPLATE_RESERVED.CUSTOM_LINK,
   ]) {
     setPlaceholderEntry(subjectEntries, blockName, { value: "" });
   }

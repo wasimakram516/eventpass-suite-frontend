@@ -157,3 +157,46 @@ test("buildEmailPreview: registration details lists the attendee fields, and vis
   assert.match(html, /Full Name:<\/strong>/);
   assert.match(html, /Sara Al Balushi/);
 });
+
+test("buildEmailPreview: {Custom Image} shows the uploaded image at its width, or a stand in box until one is uploaded", () => {
+  const template = { subject: "s", body: "<p>{Custom Image}</p>" };
+  const empty = buildEmailPreview({ template, useCustomFields: false });
+  assert.match(empty.html, /Custom image/);
+  assert.doesNotMatch(empty.html, /<img/);
+
+  const withImage = buildEmailPreview({
+    template: { ...template, customImage: { url: "https://cdn.example.com/banner.png", width: 480 } },
+    useCustomFields: false,
+  });
+  assert.match(
+    withImage.html,
+    /<img src="https:\/\/cdn\.example\.com\/banner\.png" alt="" width="480" style="width:480px;max-width:100%;height:auto;" \/>/,
+  );
+});
+
+test("buildEmailPreview: {Custom Link} shows the typed URL independently of the custom image", () => {
+  const { html } = buildEmailPreview({
+    template: {
+      subject: "s",
+      body: "<p>{Custom Link}</p>",
+      customLink: "https://example.com/agenda",
+      accentColor: "#112233",
+    },
+    useCustomFields: false,
+  });
+  assert.match(html, /<a href="https:\/\/example\.com\/agenda" style="color:#112233;word-break:break-all;">https:\/\/example\.com\/agenda<\/a>/);
+  assert.doesNotMatch(html, /<img/);
+});
+
+test("buildEmailPreview: {Custom Image} and {Custom Link} are blank in the subject", () => {
+  const { subject } = buildEmailPreview({
+    template: {
+      subject: "a{Custom Image}{Custom Link}b",
+      body: "b",
+      customImage: { url: "https://cdn.example.com/banner.png", width: 320 },
+      customLink: "https://example.com",
+    },
+    useCustomFields: false,
+  });
+  assert.equal(subject, "ab");
+});
