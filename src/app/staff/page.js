@@ -18,6 +18,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { getModules } from "@/services/moduleService";
 import { getModuleIcon } from "@/utils/iconMapper";
 import useI18nLayout from "@/hooks/useI18nLayout";
+import { hasModuleAccess } from "@/hooks/usePermission";
 import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
 import { useRouter } from "next/navigation";
 
@@ -56,9 +57,13 @@ export default function Modules() {
       const data = Array.isArray(result) ? result : [];
 
       // Filter by user role
+      // Staff: only show modules the user actually holds — resolved from
+      // fresh granular role permissions (falling back to legacy
+      // modulePermissions), so a module granted mid-session is available
+      // immediately without re-login.
       const permitted =
         user?.role === "staff"
-          ? data.filter((mod) => user.modulePermissions.includes(mod.key))
+          ? data.filter((mod) => hasModuleAccess(user, mod.key))
           : null;
 
       if (user?.role === "staff" && permitted?.length === 1) {

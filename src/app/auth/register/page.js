@@ -102,20 +102,19 @@ export default function RegisterPage() {
     if (!validate()) return;
 
     setLoading(true);
-    try {
-      await registerUser(form.name, form.email, form.password);
-      showMessage("Account created successfully. Please login.", "success");
-      router.push("/auth/login");
-    } catch (err) {
-      showMessage(
-        err?.response?.data?.message ||
-        err?.response?.data?.error ||
-        "Registration failed",
-        "error"
-      );
-    } finally {
-      setLoading(false);
-    }
+    // registerUser is wrapped in withApiHandler like every other service call
+    // in this app — it never throws, it resolves { error: true, message }
+    // on failure (and already shows that message via the global message
+    // system). Must check `error` explicitly here rather than try/catch,
+    // otherwise a rejected registration (e.g. no self-registration role
+    // configured) still shows "Account created" and redirects to a login
+    // that then fails with "Invalid credentials" for an account that was
+    // never actually created.
+    const res = await registerUser(form.name, form.email, form.password);
+    setLoading(false);
+    if (res?.error) return;
+    showMessage("Account created successfully. Please login.", "success");
+    router.push("/auth/login");
   };
 
   return (

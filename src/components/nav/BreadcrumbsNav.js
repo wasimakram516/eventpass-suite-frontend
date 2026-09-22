@@ -162,6 +162,11 @@ const segmentMap = {
     ar: "تسجيل الفعالية",
     icon: <ICONS.assignment fontSize="small" sx={{ mr: 0.5 }} />,
   },
+  checkout: {
+    en: "Checkout",
+    ar: "الدفع",
+    icon: <ICONS.payment fontSize="small" sx={{ mr: 0.5 }} />,
+  },
   checkin: {
     en: "Check-In",
     ar: "تسجيل الدخول",
@@ -281,10 +286,10 @@ const formatSegment = (seg, lang, dir) => {
       </Box>
     );
   }
-  return capitalize(seg.replace(/-/g, " "));
+  return capitalize(String(seg || "").replace(/-/g, " "));
 };
 
-export default function BreadcrumbsNav() {
+export default function BreadcrumbsNav({ items }) {
   const pathname = usePathname();
   const router = useRouter();
   const { language } = useLanguage() || {};
@@ -333,6 +338,10 @@ export default function BreadcrumbsNav() {
     };
   });
 
+  const breadcrumbItems = Array.isArray(items) && items.length > 0
+    ? items
+    : paths;
+
   return (
     <Box sx={{ mb: 3 }}>
       <Breadcrumbs separator="›" aria-label="breadcrumb">
@@ -351,11 +360,11 @@ export default function BreadcrumbsNav() {
           </Box>
         </Link>
 
-        {paths.map((p, i) => {
-          const segment = formatSegment(p.segment, lang, dir);
-          const isLast = i === paths.length - 1;
+        {breadcrumbItems.map((item, i) => {
+          const segment = item.label ?? formatSegment(item.segment, lang, dir);
+          const isLast = i === breadcrumbItems.length - 1;
 
-          return isLast ? (
+          return isLast || !item.href ? (
             <Box
               key={i}
               sx={{
@@ -372,10 +381,10 @@ export default function BreadcrumbsNav() {
               key={i}
               underline="hover"
               color="inherit"
-              href={p.href}
+              href={item.href}
               onClick={(e) => {
                 e.preventDefault();
-                router.push(p.href);
+                router.push(item.href);
               }}
               sx={{ display: "flex", alignItems: "center" }}
             >

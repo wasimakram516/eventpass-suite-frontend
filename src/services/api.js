@@ -47,9 +47,7 @@ api.interceptors.response.use(
     if (
       originalRequest.url.includes("/auth/refresh") ||
       originalRequest.url.includes("/auth/login") ||
-      originalRequest.url.includes("/eventreg/payments/initiate") ||
-      originalRequest.url.includes("/eventreg/payments/verify") ||
-      originalRequest.url.includes("/eventreg/payments/cancel")
+      /\/(eventreg|checkout)\/payments\/(initiate|verify|cancel)/.test(originalRequest.url)
     ) {
       return Promise.reject(error);
     }

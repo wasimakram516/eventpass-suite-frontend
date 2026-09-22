@@ -1,5 +1,7 @@
 "use client";
 
+// Reusable Checkout event-payments UI. EventReg no longer exposes payments.
+
 import { useState, useEffect, useCallback } from "react";
 import {
   Box,
@@ -22,11 +24,12 @@ import { useParams } from "next/navigation";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import useI18nLayout from "@/hooks/useI18nLayout";
-import { getPaymentsByEvent, getPaymentStats } from "@/services/eventreg/paymentService";
-import { getPublicEventBySlug } from "@/services/eventreg/eventService";
+import { getPaymentsByEvent, getPaymentStats } from "@/services/checkout/paymentService";
+import { getCheckoutEventBySlug } from "@/services/checkout/eventService";
 import { formatDate } from "@/utils/dateUtils";
 import { wrapTextBox } from "@/utils/wrapTextStyles";
 import ICONS from "@/utils/iconUtil";
+import usePaymentsSocket from "@/hooks/usePaymentsSocket";
 
 const translations = {
   en: {
@@ -59,6 +62,7 @@ const translations = {
     feesCollected: "Fees",
     vatCollected: "VAT",
     inclVat: "incl. VAT",
+    moduleLabel: "Checkout",
   },
   ar: {
     title: "المدفوعات",
@@ -90,6 +94,7 @@ const translations = {
     feesCollected: "الرسوم",
     vatCollected: "ضريبة القيمة المضافة",
     inclVat: "شامل الضريبة",
+    moduleLabel: "الدفع",
   },
 };
 
@@ -101,10 +106,20 @@ const STATUS_COLORS = {
 };
 
 const LIMIT = 20;
+const checkoutPaymentService = { getPaymentsByEvent, getPaymentStats };
 
-export default function PaymentsPage() {
+export function PaymentsPage({
+  paymentService = checkoutPaymentService,
+  getEventBySlug = getCheckoutEventBySlug,
+  moduleLabel,
+  eventBase = "/cms/modules/checkout/events",
+}) {
   const { eventSlug } = useParams();
   const { t, dir } = useI18nLayout(translations);
+  const {
+    getPaymentsByEvent: fetchPaymentsByEvent,
+    getPaymentStats: fetchPaymentStats,
+  } = paymentService;
 
   const [event, setEvent] = useState(null);
   const [stats, setStats] = useState(null);
@@ -114,43 +129,78 @@ export default function PaymentsPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [loading, setLoading] = useState(true);
   const [statsLoading, setStatsLoading] = useState(true);
+  const { latestPayments, clearLatestPayments } = usePaymentsSocket();
 
   // Fetch event metadata once
   useEffect(() => {
-    getPublicEventBySlug(eventSlug).then((res) => {
+    getEventBySlug(eventSlug).then((res) => {
       if (!res?.error) setEvent(res);
     });
-  }, [eventSlug]);
+  }, [eventSlug, getEventBySlug]);
 
   // Fetch stats once
   useEffect(() => {
     setStatsLoading(true);
-    getPaymentStats(eventSlug).then((res) => {
+    fetchPaymentStats(eventSlug).then((res) => {
       if (!res?.error) setStats(res);
       setStatsLoading(false);
     });
-  }, [eventSlug]);
+  }, [eventSlug, fetchPaymentStats]);
 
   // Fetch payments whenever page or filter changes
   const fetchPayments = useCallback(async () => {
     setLoading(true);
     const params = { page, limit: LIMIT };
     if (statusFilter) params.status = statusFilter;
-    const res = await getPaymentsByEvent(eventSlug, params);
+    const res = await fetchPaymentsByEvent(eventSlug, params);
     if (!res?.error) {
       setPayments(res.payments || []);
       setTotal(res.total || 0);
     }
     setLoading(false);
-  }, [eventSlug, page, statusFilter]);
+  }, [eventSlug, page, statusFilter, fetchPaymentsByEvent]);
 
   useEffect(() => {
     fetchPayments();
   }, [fetchPayments]);
 
+  // Update this event's payment table in place when checkout changes a
+  // payment (including a gateway cancellation) in another browser tab.
+  useEffect(() => {
+    if (!latestPayments?.length) return;
+
+    const eventPayments = latestPayments.filter(
+      (payment) => String(payment.eventId) === String(event?._id)
+    );
+    if (!eventPayments.length) {
+      clearLatestPayments();
+      return;
+    }
+
+    setPayments((previous) => {
+      let next = [...previous];
+      eventPayments.forEach((incoming) => {
+        const index = next.findIndex((payment) => String(payment._id) === String(incoming._id));
+        const matchesStatus = !statusFilter || incoming.status === statusFilter;
+
+        if (index >= 0 && matchesStatus) next[index] = { ...next[index], ...incoming };
+        else if (index >= 0) next.splice(index, 1);
+        else if (matchesStatus) next = [incoming, ...next].slice(0, LIMIT);
+      });
+      return next;
+    });
+
+    // Counts and revenue are derived server-side, so refresh only the small
+    // stats request after a live payment update.
+    fetchPaymentStats(eventSlug).then((res) => {
+      if (!res?.error) setStats(res);
+    });
+    clearLatestPayments();
+  }, [latestPayments, clearLatestPayments, event?._id, eventSlug, statusFilter, fetchPaymentStats]);
+
   const breadcrumbs = [
-    { label: "EventReg", href: "/cms/modules/eventreg/events" },
-    { label: event?.name || eventSlug, href: `/cms/modules/eventreg/events/${eventSlug}/registrations` },
+    { label: moduleLabel || t.moduleLabel, href: eventBase },
+    { label: event?.name || eventSlug, href: `${eventBase}/${eventSlug}/registrations` },
     { label: t.title },
   ];
 
@@ -348,3 +398,5 @@ export default function PaymentsPage() {
     </Container>
   );
 }
+
+export default PaymentsPage;

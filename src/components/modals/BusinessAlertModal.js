@@ -42,7 +42,11 @@ const BusinessAlertModal = ({ open, onNavigate }) => {
       dir={dir}
       maxWidth="xs"
       fullWidth
-      disableEscapeKeyDown
+      onKeyDown={(e) => {
+        if (e.key === "Escape") {
+          e.stopPropagation();
+        }
+      }}
       slotProps={{
         paper: {
           sx: {

@@ -61,8 +61,11 @@ import AppCard from "@/components/cards/AppCard";
 // them stays superadmin-only, same as the backend.
 const TRASH_MODULE_TO_PERMISSION = {
   "event-eventreg": "eventreg",
+  "event-checkout": "checkout",
   "registration-eventreg": "eventreg",
+  "registration-checkout": "checkout",
   "promocode-eventreg": "eventreg",
+  "promocode-checkout": "checkout",
   "event-checkin": "checkin",
   "registration-checkin": "checkin",
   walkin: "checkin",
@@ -462,10 +465,13 @@ export default function TrashPage() {
   const getModuleDisplayName = (moduleKey) => {
     const moduleNames = {
       "registration-eventreg": "Registration (EventReg)",
+      "registration-checkout": "Registration (Checkout)",
       "registration-checkin": "Registration (CheckIn)",
       "event-eventreg": "Event (EventReg)",
+      "event-checkout": "Event (Checkout)",
       "event-checkin": "Event (CheckIn)",
       "promocode-eventreg": "Promo Code (EventReg)",
+      "promocode-checkout": "Promo Code (Checkout)",
       "game-quiznest": "Game (QuizNest)",
       "game-tapmatch": "Game (TapMatch)",
       "game-crosszero": "Game (CrossZero)",

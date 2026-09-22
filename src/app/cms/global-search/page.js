@@ -184,7 +184,7 @@ export default function GlobalSearchPage() {
 
     const searchQuery = buildSearchQuery();
 
-    // Registrations (Event Reg / Check-in / DigiPass)
+    // Registrations (Event Reg / Checkout / Check-in / DigiPass)
     if (row.itemType === "Registration") {
       const moduleName = row.module;
       const tokenSearch = row.token
@@ -195,6 +195,10 @@ export default function GlobalSearchPage() {
         if (moduleName === "Check-in") {
           router.push(
             `/cms/modules/checkin/events/${row.eventSlug}/registrations${tokenSearch}`,
+          );
+        } else if (moduleName === "Checkout") {
+          router.push(
+            `/cms/modules/checkout/events/${row.eventSlug}/registrations${tokenSearch}`,
           );
         } else if (moduleName === "DigiPass") {
           router.push(
@@ -208,6 +212,8 @@ export default function GlobalSearchPage() {
       } else {
         if (moduleName === "Check-in") {
           router.push("/cms/modules/checkin/events");
+        } else if (moduleName === "Checkout") {
+          router.push("/cms/modules/checkout/events");
         } else if (moduleName === "DigiPass") {
           router.push("/cms/modules/digipass/events");
         } else {
@@ -303,9 +309,11 @@ export default function GlobalSearchPage() {
     }
 
     // Fallback: go to module root if we know it
-    if (row.module === "Event Reg" || row.module === "Check-in" || row.module === "DigiPass") {
+    if (row.module === "Event Reg" || row.module === "Checkout" || row.module === "Check-in" || row.module === "DigiPass") {
       if (row.module === "Check-in") {
         router.push("/cms/modules/checkin/events");
+      } else if (row.module === "Checkout") {
+        router.push("/cms/modules/checkout/events");
       } else if (row.module === "DigiPass") {
         router.push("/cms/modules/digipass/events");
       } else {

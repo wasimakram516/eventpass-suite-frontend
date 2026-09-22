@@ -65,9 +65,26 @@ export default function Sidebar() {
     ...(user?.role === "superadmin"
       ? [{ label: "Global Search", icon: ICONS.search, path: "/cms/global-search" }]
       : []),
-    { label: t.modules, icon: ICONS.module, path: "/cms/modules" },
+    {
+      label: t.modules,
+      icon: ICONS.module,
+      path: "/cms/modules",
+      // The payment dashboard has its own sidebar item, despite its Checkout
+      // URL being nested below the modules route.
+      excludeActivePaths: ["/cms/modules/checkout/payments"],
+    },
     ...(user?.role === "superadmin"
-      ? [{ label: t.accessControl, icon: ICONS.adminPanel, path: "/cms/access-control/roles" }]
+      ? [{
+        label: t.accessControl,
+        icon: ICONS.adminPanel,
+        path: "/cms/access-control/roles",
+        // Permissions (/cms/access-control/permissions) is a sibling page
+        // under the same section, not a page of its own in the sidebar —
+        // match on the shared parent prefix so this item stays highlighted
+        // there too, while still linking to Roles (the section's actual
+        // landing page; /cms/access-control itself has no page.js).
+        activePath: "/cms/access-control",
+      }]
       : []),
     {
       label: user?.role === "business" ? t.staff : t.users,
@@ -78,7 +95,7 @@ export default function Sidebar() {
     ...(user?.role === "superadmin"
       ? [
         { label: "Logs", icon: ICONS.history, path: "/cms/logs" },
-        { label: "Payments", icon: ICONS.payment, path: "/cms/payments" },
+        { label: "Payments", icon: ICONS.payment, path: "/cms/modules/checkout/payments" },
       ]
       : []),
     { label: t.trash, icon: ICONS.delete, path: "/cms/trash" },
@@ -94,6 +111,12 @@ export default function Sidebar() {
 
   const isActive = (path) =>
     path === "/cms" ? pathname === "/cms" : pathname.startsWith(path);
+  const isNavItemActive = (item) => {
+    if (item.excludeActivePaths?.some((path) => pathname.startsWith(path))) {
+      return false;
+    }
+    return isActive(item.activePath || item.path);
+  };
 
   const drawerContent = (
     <Box
@@ -129,7 +152,10 @@ export default function Sidebar() {
       )}
 
       <List sx={{ width: "100%" }}>
-        {navItems.map(({ path, icon: Icon, label }) => (
+        {navItems.map((item) => {
+          const { path, icon: Icon, label } = item;
+          const active = isNavItemActive(item);
+          return (
           <ListItem
             key={label}
             disablePadding
@@ -161,8 +187,8 @@ export default function Sidebar() {
                   <IconButton
                     size="large"
                     sx={{
-                      color: isActive(path) ? "primary.contrastText" : "text.secondary", 
-                      bgcolor: isActive(path) ? "primary.light" : "transparent",
+                      color: active ? "primary.contrastText" : "text.secondary",
+                      bgcolor: active ? "primary.light" : "transparent",
                       ":hover": {
                         bgcolor: "action.hover",
                         color: "primary.main",
@@ -181,7 +207,8 @@ export default function Sidebar() {
               </Box>
             </Link>
           </ListItem>
-        ))}
+          );
+        })}
       </List>
     </Box>
   );

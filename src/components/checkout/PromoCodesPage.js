@@ -1,5 +1,7 @@
 "use client";
 
+// Reusable Checkout promo-code UI. EventReg no longer exposes promo codes.
+
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Box,
@@ -48,7 +50,7 @@ import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { useHasPermission } from "@/hooks/usePermission";
 import useEventRegSocket from "@/hooks/modules/eventReg/useEventRegSocket";
-import { getPublicEventBySlug } from "@/services/eventreg/eventService";
+import { getCheckoutEventBySlug } from "@/services/checkout/eventService";
 import {
   createPromoCode,
   createPromoCodeBatch,
@@ -57,13 +59,14 @@ import {
   getPromoCodeRedemptions,
   deletePromoCode,
   exportPromoCodes,
-} from "@/services/eventreg/promoCodeService";
+} from "@/services/checkout/promoCodeService";
 import { formatDate, formatDateTimeWithLocale } from "@/utils/dateUtils";
 import ICONS from "@/utils/iconUtil";
 
 const translations = {
   en: {
     title: "Promo Codes",
+    moduleLabel: "Checkout",
     description: "Create discount codes for this paid event, and track how many times each has been used.",
     registrations: "Registrations",
     createCode: "Create Code",
@@ -157,6 +160,7 @@ const translations = {
   },
   ar: {
     title: "رموز الخصم",
+    moduleLabel: "الدفع",
     description: "أنشئ رموز خصم لهذه الفعالية المدفوعة، وتتبع عدد مرات استخدام كل رمز.",
     registrations: "التسجيلات",
     createCode: "إنشاء رمز",
@@ -244,6 +248,16 @@ const translations = {
   },
 };
 
+const checkoutPromoCodeService = {
+  createPromoCode,
+  createPromoCodeBatch,
+  getPromoCodesByEvent,
+  updatePromoCode,
+  getPromoCodeRedemptions,
+  deletePromoCode,
+  exportPromoCodes,
+};
+
 function TicketTypePicker({ ticketTypes, value, onChange, label }) {
   const options = (ticketTypes || []).map((tt) => ({ id: String(tt._id), label: tt.name }));
   const selected = options.filter((o) => value.includes(o.id));
@@ -262,14 +276,30 @@ function TicketTypePicker({ ticketTypes, value, onChange, label }) {
   );
 }
 
-export default function PromoCodesPage() {
+export function PromoCodesPage({
+  promoCodeService = checkoutPromoCodeService,
+  getEventBySlug = getCheckoutEventBySlug,
+  moduleKey = "checkout",
+  moduleLabel,
+  eventBase = "/cms/modules/checkout/events",
+  showRegistrations = true,
+}) {
   const router = useRouter();
   const { eventSlug } = useParams();
   const { t, dir, language } = useI18nLayout(translations);
-  const canCreate = useHasPermission("eventreg", "create_promo_codes");
-  const canEdit = useHasPermission("eventreg", "edit_promo_codes");
-  const canDelete = useHasPermission("eventreg", "delete_promo_codes");
-  const canExport = useHasPermission("eventreg", "export_promo_codes");
+  const canCreate = useHasPermission(moduleKey, "create_promo_codes");
+  const canEdit = useHasPermission(moduleKey, "edit_promo_codes");
+  const canDelete = useHasPermission(moduleKey, "delete_promo_codes");
+  const canExport = useHasPermission(moduleKey, "export_promo_codes");
+  const {
+    createPromoCode: createCode,
+    createPromoCodeBatch: createCodeBatch,
+    getPromoCodesByEvent: fetchPromoCodesByEvent,
+    updatePromoCode: updateCode,
+    getPromoCodeRedemptions: fetchPromoCodeRedemptions,
+    deletePromoCode: removePromoCode,
+    exportPromoCodes: exportCodes,
+  } = promoCodeService;
 
   const [event, setEvent] = useState(null);
   const [promoCodes, setPromoCodes] = useState([]);
@@ -356,20 +386,20 @@ export default function PromoCodesPage() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    getPublicEventBySlug(eventSlug).then((res) => {
+    getEventBySlug(eventSlug).then((res) => {
       if (!res?.error) setEvent(res);
     });
-  }, [eventSlug]);
+  }, [eventSlug, getEventBySlug]);
 
   const fetchPromoCodes = useCallback(async () => {
     setLoading(true);
-    const res = await getPromoCodesByEvent(eventSlug, { page, limit, ...buildQuery() });
+    const res = await fetchPromoCodesByEvent(eventSlug, { page, limit, ...buildQuery() });
     if (!res?.error) {
       setPromoCodes(res.promoCodes || []);
       setTotal(res.total || 0);
     }
     setLoading(false);
-  }, [eventSlug, page, limit, buildQuery]);
+  }, [eventSlug, page, limit, buildQuery, fetchPromoCodesByEvent]);
 
   useEffect(() => {
     fetchPromoCodes();
@@ -401,20 +431,20 @@ export default function PromoCodesPage() {
   useEventRegSocket({ eventId: event?._id, onPromoCodeUpdated: handlePromoCodeUpdated });
 
   const breadcrumbs = [
-    { label: "EventReg", href: "/cms/modules/eventreg/events" },
-    { label: event?.name || eventSlug, href: `/cms/modules/eventreg/events/${eventSlug}/registrations` },
+    { label: moduleLabel || t.moduleLabel, href: eventBase },
+    { label: event?.name || eventSlug, href: `${eventBase}/${eventSlug}/registrations` },
     { label: t.title },
   ];
 
   const ticketTypeName = (id) => (event?.ticketTypes || []).find((tt) => String(tt._id) === String(id))?.name || "";
 
   const handleToggleActive = async (promoCode) => {
-    const res = await updatePromoCode(promoCode._id, { isActive: !promoCode.isActive });
+    const res = await updateCode(promoCode._id, { isActive: !promoCode.isActive });
     if (!res?.error) fetchPromoCodes();
   };
 
   const handleViewRedemptions = async (promoCode) => {
-    const res = await getPromoCodeRedemptions(promoCode._id);
+    const res = await fetchPromoCodeRedemptions(promoCode._id);
     if (!res?.error) {
       setRedemptionsData(res);
       setRedemptionsOpen(true);
@@ -423,14 +453,14 @@ export default function PromoCodesPage() {
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
-    const res = await deletePromoCode(deleteTarget._id);
+    const res = await removePromoCode(deleteTarget._id);
     setDeleteTarget(null);
     if (!res?.error) fetchPromoCodes();
   };
 
   const handleExport = async () => {
     setExportLoading(true);
-    const blob = await exportPromoCodes(eventSlug, buildQuery());
+    const blob = await exportCodes(eventSlug, buildQuery());
     setExportLoading(false);
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -476,7 +506,7 @@ export default function PromoCodesPage() {
         return;
       }
       setSubmitting(true);
-      const res = await createPromoCode({
+      const res = await createCode({
         eventSlug,
         code: form.code?.trim() || undefined,
         discountPercentage: form.isFullDiscount ? 100 : Number(form.discountPercentage),
@@ -503,7 +533,7 @@ export default function PromoCodesPage() {
       return;
     }
     setSubmitting(true);
-    const res = await createPromoCodeBatch({
+    const res = await createCodeBatch({
       eventSlug,
       discountPercentage: form.isFullDiscount ? 100 : Number(form.discountPercentage),
       isFullDiscount: form.isFullDiscount,
@@ -532,14 +562,14 @@ export default function PromoCodesPage() {
           <Typography variant="body2" color="text.secondary">{t.description}</Typography>
         </Box>
         <Stack direction={{ xs: "column", sm: "row" }} spacing={1} sx={{ width: { xs: "100%", sm: "auto" } }}>
-          <Button
+          {showRegistrations && <Button
             variant="outlined"
             startIcon={<ICONS.people />}
-            onClick={() => router.push(`/cms/modules/eventreg/events/${eventSlug}/registrations`)}
+            onClick={() => router.push(`${eventBase}/${eventSlug}/registrations`)}
             sx={getStartIconSpacing(dir)}
           >
             {t.registrations}
-          </Button>
+          </Button>}
           {canExport && (
             <Button
               variant="outlined"
@@ -1118,3 +1148,5 @@ export default function PromoCodesPage() {
     </Container>
   );
 }
+
+export default PromoCodesPage;

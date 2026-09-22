@@ -56,7 +56,7 @@ import useLogsSocket from "@/hooks/useLogsSocket";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import LogSnapshotModal from "@/components/modals/LogSnapshotModal";
 import { getRegistrationMeta } from "@/services/eventreg/registrationService";
-import { getPromoCodeMeta } from "@/services/eventreg/promoCodeService";
+import { getPromoCodeMeta } from "@/services/checkout/promoCodeService";
 import { getPollMeta } from "@/services/votecast/pollService";
 import { getQuestionMeta as getQuiznestQuestionMeta } from "@/services/quiznest/questionService";
 import { getQuestionMeta as getEventduelQuestionMeta } from "@/services/eventduel/questionService";
@@ -439,7 +439,8 @@ export default function LogsPage() {
       try {
         const meta = await getPromoCodeMeta(log.itemId);
         if (meta && !meta.error && meta.eventSlug) {
-          router.push(`/cms/modules/eventreg/events/${meta.eventSlug}/promo-codes${searchQuery}`);
+          const basePath = meta.eventType === "checkout" ? "checkout" : "eventreg";
+          router.push(`/cms/modules/${basePath}/events/${meta.eventSlug}/promo-codes${searchQuery}`);
           return;
         }
       } catch {
@@ -459,7 +460,9 @@ export default function LogsPage() {
               ? `?search=${encodeURIComponent(String(token))}`
               : searchQuery;
             const basePath =
-              eventType === "closed"
+              eventType === "checkout"
+                ? "checkout"
+                : eventType === "closed"
                 ? "checkin"
                 : eventType === "digipass"
                   ? "digipass"
@@ -489,7 +492,9 @@ export default function LogsPage() {
               ? `?search=${encodeURIComponent(String(registrationRow.token))}`
               : searchQuery;
             const basePath =
-              moduleName === "Check-in"
+              moduleName === "Checkout"
+                ? "checkout"
+                : moduleName === "Check-in"
                 ? "checkin"
                 : moduleName === "DigiPass"
                   ? "digipass"
@@ -503,7 +508,9 @@ export default function LogsPage() {
       } catch {
       }
 
-      if (moduleName === "CheckIn") {
+      if (moduleName === "Checkout") {
+        router.push(`/cms/modules/checkout/events${searchQuery}`);
+      } else if (moduleName === "CheckIn") {
         router.push(`/cms/modules/checkin/events${searchQuery}`);
       } else if (moduleName === "DigiPass") {
         router.push(`/cms/modules/digipass/events${searchQuery}`);
@@ -513,9 +520,11 @@ export default function LogsPage() {
       return;
     }
 
-    if (moduleName === "EventReg" || moduleName === "CheckIn" || moduleName === "DigiPass") {
+    if (moduleName === "EventReg" || moduleName === "Checkout" || moduleName === "CheckIn" || moduleName === "DigiPass") {
       const basePath =
-        moduleName === "CheckIn"
+        moduleName === "Checkout"
+          ? "checkout"
+          : moduleName === "CheckIn"
           ? "checkin"
           : moduleName === "DigiPass"
             ? "digipass"
@@ -1478,4 +1487,3 @@ export default function LogsPage() {
     </Box>
   );
 }
-

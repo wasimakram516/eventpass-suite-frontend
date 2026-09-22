@@ -20,8 +20,14 @@ export const getRoleById = withApiHandler(async (id) => {
 });
 
 export const createRole = withApiHandler(
-  async ({ name, description, userType }) => {
-    const { data } = await api.post("/roles", { name, description, userType });
+  async ({ name, description, userType, isSelfRegistrationDefault, canManageAccessControl }) => {
+    const { data } = await api.post("/roles", {
+      name,
+      description,
+      userType,
+      isSelfRegistrationDefault,
+      canManageAccessControl,
+    });
     return data;
   },
   { showSuccess: true }

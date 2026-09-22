@@ -1,5 +1,7 @@
 "use client";
 
+// Reusable Checkout payments-dashboard UI. The legacy global route is removed.
+
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { alpha } from "@mui/material/styles";
 import {
@@ -42,7 +44,12 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import ICONS from "@/utils/iconUtil";
 import { useAuth } from "@/contexts/AuthContext";
-import { getAllPayments, getPaymentLink, exportPayments, exportInvoices } from "@/services/eventreg/paymentService";
+import {
+  getAllPayments,
+  getPaymentLink,
+  exportPayments,
+  exportInvoices,
+} from "@/services/checkout/paymentService";
 import usePaymentsSocket from "@/hooks/usePaymentsSocket";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { formatDateTimeWithLocale } from "@/utils/dateUtils";
@@ -51,7 +58,7 @@ import ArabicPagination from "@/components/ArabicPagination";
 import BreadcrumbsNav from "@/components/nav/BreadcrumbsNav";
 import LoadingState from "@/components/LoadingState";
 import { getAllBusinesses } from "@/services/businessService";
-import { getRegistrationInvoice } from "@/services/eventreg/registrationService";
+import { getRegistrationInvoice as getCheckoutRegistrationInvoice } from "@/services/checkout/registrationService";
 dayjs.extend(utc);
 
 const translations = {
@@ -187,7 +194,26 @@ const STATUS_CHIP = {
   failed: { label: "Failed", labelAr: "فاشل", color: "error" },
 };
 
-export default function PaymentsPage() {
+const checkoutPaymentService = {
+  getAllPayments,
+  getPaymentLink,
+  exportPayments,
+  exportInvoices,
+};
+
+export function PaymentsPage({
+  paymentService = checkoutPaymentService,
+  getRegistrationInvoice = getCheckoutRegistrationInvoice,
+  liveUpdates = true,
+  canViewInvoice = true,
+  canExport = true,
+}) {
+  const {
+    getAllPayments,
+    getPaymentLink,
+    exportPayments,
+    exportInvoices,
+  } = paymentService;
   const { user } = useAuth();
   const { dir, align, language, t } = useI18nLayout(translations);
   const isAr = language === "ar";
@@ -256,52 +282,133 @@ export default function PaymentsPage() {
 
   const isSuperAdmin = user?.role === "superadmin";
 
-  const { latestPayments, clearLatestPayments, removedPayments, clearRemovedPayments } = usePaymentsSocket();
+  const {
+    latestPayments,
+    clearLatestPayments,
+    removedPayments,
+    clearRemovedPayments,
+  } = usePaymentsSocket();
 
   useEffect(() => {
     if (viewPayment) setShowPaymentBreakdown(false);
   }, [viewPayment]);
 
+  const targetBusinessId = isSuperAdmin
+    ? filterBusinessId
+    : user?.businessId?.toString() || user?.business?._id?.toString() || user?.businessId;
+
   // Merge socket-pushed payments into the list (update-in-place or prepend)
   useEffect(() => {
+    if (!liveUpdates) return;
     if (!latestPayments?.length) return;
+
     setPayments((prev) => {
       let updated = [...prev];
       let newCount = 0;
+
+      const userBusinessId =
+        user?.businessId?.toString() || user?.business?._id?.toString() || user?.businessId;
+
       latestPayments.forEach((incoming) => {
+        const incomingBusinessId =
+          incoming?.businessId?.toString() ||
+          incoming?.business?._id?.toString() ||
+          incoming?.businessId;
         const idx = updated.findIndex((p) => p._id === incoming._id);
+
         if (idx >= 0) {
+          // Rows already on screen can be updated in place
           updated[idx] = { ...updated[idx], ...incoming };
         } else {
-          updated = [incoming, ...updated];
-          newCount += 1;
+          // New row — check business match
+          if (!isSuperAdmin && userBusinessId && incomingBusinessId && incomingBusinessId !== userBusinessId) {
+            return;
+          }
+          if (isSuperAdmin && filterBusinessId && incomingBusinessId && incomingBusinessId !== filterBusinessId.toString()) {
+            return;
+          }
+
+          // Check active status filter
+          if (filterStatus && incoming.status !== filterStatus) {
+            return;
+          }
+
+          // Check active date range filters
+          if (fromMs && new Date(incoming.createdAt).getTime() < fromMs) {
+            return;
+          }
+          if (toMs && new Date(incoming.createdAt).getTime() > toMs) {
+            return;
+          }
+
+          // Check active search filter
+          if (debouncedSearch) {
+            const term = debouncedSearch.trim().toLowerCase();
+            const matchesSearch = [
+              incoming.customerName,
+              incoming.customerEmail,
+              incoming.customerPhone,
+              incoming.eventName,
+              incoming.ticketTypeName,
+              incoming.sessionId,
+              incoming.clientReferenceId,
+            ].some((field) => field && String(field).toLowerCase().includes(term));
+
+            if (!matchesSearch) return;
+          }
+
+          // Only prepend new rows if on page 1
+          if (page === 1) {
+            updated = [incoming, ...updated];
+            newCount += 1;
+          }
         }
       });
+
       if (newCount > 0) setTotal((t) => t + newCount);
       return updated;
     });
-    clearLatestPayments();
-  }, [latestPayments, clearLatestPayments]);
 
-  // Drop permanently removed payments (e.g. cancelled paid checkout) instantly.
+    clearLatestPayments();
+  }, [
+    liveUpdates,
+    latestPayments,
+    clearLatestPayments,
+    isSuperAdmin,
+    user,
+    filterBusinessId,
+    filterStatus,
+    fromMs,
+    toMs,
+    debouncedSearch,
+    page,
+  ]);
+
+  // Drop permanently removed payments. Match by paymentIds first.
   useEffect(() => {
+    if (!liveUpdates) return;
     if (!removedPayments?.length) return;
     setPayments((prev) => {
       const ids = new Set();
       const regIds = new Set();
       removedPayments.forEach(({ registrationId, paymentIds }) => {
-        (paymentIds || []).forEach((id) => ids.add(id));
-        if (registrationId) regIds.add(registrationId.toString());
+        if (paymentIds?.length) {
+          paymentIds.forEach((id) => ids.add(String(id)));
+        } else if (registrationId) {
+          regIds.add(String(registrationId));
+        }
       });
-      const next = prev.filter(
-        (p) => !ids.has(p._id) && !regIds.has(p.registrationId?.toString())
-      );
+      const next = prev.filter((p) => {
+        if (ids.size > 0 && ids.has(String(p._id))) return false;
+        if (ids.size === 0 && regIds.size > 0 && regIds.has(String(p.registrationId))) return false;
+        return true;
+      });
       const removedCount = prev.length - next.length;
       if (removedCount > 0) setTotal((t) => Math.max(0, t - removedCount));
       return next;
     });
     clearRemovedPayments();
-  }, [removedPayments, clearRemovedPayments]);
+  }, [liveUpdates, removedPayments, clearRemovedPayments]);
 
   // Load businesses for superadmin filter
   useEffect(() => {
@@ -508,10 +615,11 @@ export default function PaymentsPage() {
     ? { customer: "العميل", event: "الفعالية", item: "العنصر", amount: "المبلغ", status: "الحالة", date: "التاريخ", business: "الشركة", actions: "إجراءات" }
     : { customer: "Customer", event: "Event", item: "Item", amount: "Amount (OMR)", status: "Status", date: "Date", business: "Business", actions: "Actions" };
 
-  // Returns the item label and value based on module — extend as new modules are added
+  // Returns the item label and value based on the payment's owning module.
   const getItemLabel = (p) => {
     const module = p.module || "EventReg";
     if (module === "EventReg") return { prefix: isAr ? "تذكرة" : "Ticket", value: p.ticketTypeName };
+    if (module === "Checkout") return { prefix: isAr ? "تذكرة الدفع" : "Checkout Ticket", value: p.ticketTypeName };
     return { prefix: module, value: p.ticketTypeName };
   };
 
@@ -596,7 +704,7 @@ export default function PaymentsPage() {
                   <ICONS.view sx={{ fontSize: 16 }} />
                 </IconButton>
               </Tooltip>
-              {p.status === "paid" && (
+              {canViewInvoice && p.status === "paid" && (
                 <Tooltip title={t.viewInvoice}>
                   <IconButton
                     size="small"
@@ -722,7 +830,7 @@ export default function PaymentsPage() {
               <ICONS.view fontSize="small" />
             </IconButton>
           </Tooltip>
-          {p.status === "paid" && (
+          {canViewInvoice && p.status === "paid" && (
             <Tooltip title={t.viewInvoice}>
               <IconButton
                 size="small"
@@ -1041,27 +1149,31 @@ export default function PaymentsPage() {
               spacing={1}
               sx={{ alignItems: { xs: "stretch", md: "center" }, width: { xs: "100%", md: "auto" } }}
             >
-              <Button
-                variant="outlined"
-                startIcon={exporting ? <CircularProgress size={16} /> : <ICONS.download />}
-                onClick={handleExport}
-                disabled={exporting || total === 0}
-                sx={{ borderRadius: 999, px: 2.5, textTransform: "none", fontWeight: 600, width: { xs: "100%", md: "auto" } }}
-              >
-                {exporting ? t.exporting : t.export}
-              </Button>
+              {canExport && (
+                <>
+                  <Button
+                    variant="outlined"
+                    startIcon={exporting ? <CircularProgress size={16} /> : <ICONS.download />}
+                    onClick={handleExport}
+                    disabled={exporting || total === 0}
+                    sx={{ borderRadius: 999, px: 2.5, textTransform: "none", fontWeight: 600, width: { xs: "100%", md: "auto" } }}
+                  >
+                    {exporting ? t.exporting : t.export}
+                  </Button>
 
-              <Button
-                variant="outlined"
-                startIcon={downloadingInvoices ? <CircularProgress size={16} /> : <ICONS.receipt />}
-                onClick={handleDownloadInvoices}
-                // Invoices exist only for paid rows, so also disable when the
-                // active status filter can't contain any (pending/cancelled/failed).
-                disabled={downloadingInvoices || total === 0 || (!!filterStatus && filterStatus !== "paid")}
-                sx={{ borderRadius: 999, px: 2.5, textTransform: "none", fontWeight: 600, width: { xs: "100%", md: "auto" } }}
-              >
-                {downloadingInvoices ? t.downloadingInvoices : t.downloadInvoices}
-              </Button>
+                  <Button
+                    variant="outlined"
+                    startIcon={downloadingInvoices ? <CircularProgress size={16} /> : <ICONS.receipt />}
+                    onClick={handleDownloadInvoices}
+                    // Invoices exist only for paid rows, so also disable when the
+                    // active status filter can't contain any (pending/cancelled/failed).
+                    disabled={downloadingInvoices || total === 0 || (!!filterStatus && filterStatus !== "paid")}
+                    sx={{ borderRadius: 999, px: 2.5, textTransform: "none", fontWeight: 600, width: { xs: "100%", md: "auto" } }}
+                  >
+                    {downloadingInvoices ? t.downloadingInvoices : t.downloadInvoices}
+                  </Button>
+                </>
+              )}
 
               <Button
                 variant="outlined"
@@ -1226,3 +1338,5 @@ export default function PaymentsPage() {
     </Box>
   );
 }
+
+export default PaymentsPage;

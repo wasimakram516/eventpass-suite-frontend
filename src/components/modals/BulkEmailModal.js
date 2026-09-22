@@ -1,17 +1,11 @@
 "use client";
 
-import React, { useRef, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
     Dialog,
     DialogTitle,
     DialogContent,
-    DialogActions,
     IconButton,
-    RadioGroup,
-    FormControlLabel,
-    Radio,
-    Button,
-    TextField,
     Box,
     Typography,
     Stack,
@@ -22,22 +16,16 @@ import {
 } from "@mui/material";
 import ICONS from "@/utils/iconUtil";
 import useI18nLayout from "@/hooks/useI18nLayout";
-import getStartIconSpacing from "@/utils/getStartIconSpacing";
-import RichTextEditor from "@/components/RichTextEditor";
+import useNotificationDraft from "@/hooks/useNotificationDraft";
+import MessageTypeSelector from "@/components/modals/MessageTypeSelector";
+import NotificationActions from "@/components/modals/NotificationActions";
+import CustomNotificationForm from "@/components/modals/CustomNotificationForm";
+import DefaultNotificationInfo from "@/components/modals/DefaultNotificationInfo";
 
 const translations = {
     en: {
         title: "Send Notifications",
         messageType: "Message Type",
-        default: "Default",
-        custom: "Custom",
-        reminder: "Reminder",
-        subject: "Subject",
-        body: "Body",
-        sendEmail: "Send Email",
-        sendWhatsApp: "Send WhatsApp",
-        placeholderSubject: "Enter email subject",
-        placeholderBody: "Enter email body...",
         confirmed: "Confirmed",
         notConfirmed: "Not Attending",
         approved: "Approved",
@@ -49,24 +37,10 @@ const translations = {
         emailNotSent: "Email Not Sent",
         whatsappSent: "WhatsApp Sent",
         whatsappNotSent: "WhatsApp Not Sent",
-        defaultEmailInfo: "When sending default bulk messages, the system will use the default Email and WhatsApp invitation templates.",
-        uploadFile: "Upload File",
-        attachedFile: "Attached File",
-        removeFile: "Remove",
-        uploadHelperText: "Optional: Attach media files (Image, Video, or PDF) to include with your message",
     },
     ar: {
         title: "إرسال الإشعارات",
         messageType: "نوع الرسالة",
-        default: "افتراضي",
-        custom: "مخصص",
-        reminder: "تذكير",
-        subject: "الموضوع",
-        body: "المحتوى",
-        sendEmail: "إرسال بريد إلكتروني",
-        sendWhatsApp: "إرسال واتساب",
-        placeholderSubject: "أدخل موضوع البريد الإلكتروني",
-        placeholderBody: "أدخل محتوى البريد الإلكتروني...",
         confirmed: "مؤكد",
         notConfirmed: "غير مؤكد",
         approved: "موافق عليه",
@@ -78,11 +52,6 @@ const translations = {
         emailNotSent: "لم يتم إرسال البريد",
         whatsappSent: "تم إرسال واتساب",
         whatsappNotSent: "لم يتم إرسال واتساب",
-        defaultEmailInfo: "عند إرسال رسائل جماعية افتراضية، سيستخدم النظام قوالب الدعوة الافتراضية للبريد الإلكتروني والواتساب.",
-        uploadFile: "رفع ملف",
-        attachedFile: "الملف المرفق",
-        removeFile: "إزالة",
-        uploadHelperText: "اختياري: يمكنك إرفاق ملفات الوسائط (صورة أو فيديو أو PDF) لتضمينها مع رسالتك",
     },
 };
 
@@ -131,11 +100,26 @@ const getFilterStates = (selectedFilter) => {
     }
 };
 
+/**
+ * Send Notifications modal for an event's registrations. "Default" sends what is
+ * configured for the event (its custom email template if it has one, else the
+ * system default). "Custom" composes a one off email with the same options as the
+ * event setup Custom Email tab, pre-filled from the event and never saved to it.
+ *
+ * @param {object} props
+ * @param {boolean} props.open - Whether the modal is open
+ * @param {Function} props.onClose - Called to close the modal
+ * @param {Function} props.onSendEmail - Called with {type, customTemplate, file, ...filters}
+ * @param {Function} props.onSendWhatsApp - Called with {type, ...filters}
+ * @param {object|null} [props.event] - The event being notified about
+ * @returns {JSX.Element}
+ */
 const BulkEmailModal = ({
     open,
     onClose,
     onSendEmail,
     onSendWhatsApp,
+    event = null,
     sendingEmails = false,
     isApprovalBased = true,
     useApprovedRejected = false,
@@ -144,92 +128,40 @@ const BulkEmailModal = ({
     canSendWhatsapp = true,
 }) => {
     const { t, dir } = useI18nLayout(translations);
-    const [notificationType, setNotificationType] = useState("default");
-    const [subject, setSubject] = useState("");
-    const [body, setBody] = useState("");
     const [selectedFilter, setSelectedFilter] = useState("all");
-    const [subjectError, setSubjectError] = useState(false);
-    const [attachedFile, setAttachedFile] = useState(null);
-    const fileInputRef = useRef(null);
+    const draft = useNotificationDraft(event, open);
+    const { notificationType, composer } = draft;
 
     useEffect(() => {
         setSelectedFilter("all");
     }, [isApprovalBased]);
 
     useEffect(() => {
-        if (!open) {
-            setNotificationType("default");
-            setSubject("");
-            setBody("");
-            setSelectedFilter("all");
-            setSubjectError(false);
-            setAttachedFile(null);
-            if (fileInputRef.current) {
-                fileInputRef.current.value = "";
-            }
-        }
+        if (!open) setSelectedFilter("all");
     }, [open]);
 
     const handleClose = () => {
-        setNotificationType("default");
-        setSubject("");
-        setBody("");
+        draft.reset();
         setSelectedFilter("all");
-        setSubjectError(false);
-        setAttachedFile(null);
-        if (fileInputRef.current) {
-            fileInputRef.current.value = "";
-        }
         onClose();
     };
 
-    const handleFileChange = (e) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setAttachedFile(file);
-        }
-    };
-
-    const handleRemoveFile = () => {
-        setAttachedFile(null);
-        if (fileInputRef.current) {
-            fileInputRef.current.value = "";
-        }
-    };
-
     const handleSendEmail = () => {
-        if (notificationType === "custom" && !subject.trim()) {
-            setSubjectError(true);
-            return;
-        }
-        setSubjectError(false);
-
-        const filterStates = getFilterStates(selectedFilter);
+        const isCustom = notificationType === "custom";
+        if (isCustom && !composer.validate()) return;
 
         onSendEmail({
             type: notificationType === "reminder" ? "default" : notificationType,
-            subject: notificationType === "custom" ? subject : undefined,
-            body: notificationType === "custom" ? body : undefined,
-            file: notificationType === "custom" ? attachedFile : undefined,
-            ...filterStates,
+            customTemplate: isCustom ? composer.buildTemplate() : undefined,
+            file: isCustom ? draft.attachedFile : undefined,
+            ...getFilterStates(selectedFilter),
         });
     };
 
     const handleSendWhatsApp = () => {
-        if (notificationType === "custom" && !subject.trim()) {
-            setSubjectError(true);
-            return;
-        }
-        setSubjectError(false);
-
-        const filterStates = getFilterStates(selectedFilter);
-
         onSendWhatsApp({
             type: notificationType,
-            subject: notificationType === "custom" ? subject : undefined,
-            body: notificationType === "custom" ? body : undefined,
-            file: notificationType === "custom" ? attachedFile : undefined,
-            ...filterStates,
+            ...getFilterStates(selectedFilter),
         });
     };
 
@@ -238,7 +170,7 @@ const BulkEmailModal = ({
             open={open}
             onClose={handleClose}
             dir={dir}
-            maxWidth="md"
+            maxWidth={notificationType === "custom" ? "lg" : "md"}
             fullWidth
             slotProps={{
                 paper: {}
@@ -309,198 +241,35 @@ const BulkEmailModal = ({
                         <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
                             {t.messageType}:
                         </Typography>
-                        <RadioGroup
+                        <MessageTypeSelector
                             value={notificationType}
-                            onChange={(e) => setNotificationType(e.target.value)}
-                            row={true}
-                            sx={{
-                                flexDirection: dir === "rtl" ? "row-reverse" : "row",
-                                direction: dir,
-                                marginLeft: dir === "rtl" ? "auto" : 0,
-                                marginRight: dir === "rtl" ? 0 : "auto",
-                                width: "fit-content",
-                            }}
-                        >
-                            <FormControlLabel
-                                value="default"
-                                control={<Radio color="primary" />}
-                                label={t.default}
-                                labelPlacement={dir === "rtl" ? "start" : "end"}
-                                sx={{
-                                    direction: dir,
-                                    marginRight: dir === "rtl" ? 2 : 0,
-                                    marginLeft: dir === "rtl" ? 0 : 2,
-                                    "&:first-of-type": {
-                                        marginLeft: dir === "rtl" ? 2 : 0,
-                                        marginRight: dir === "rtl" ? 0 : 2,
-                                    },
-                                }}
-                            />
-                            <FormControlLabel
-                                value="custom"
-                                control={<Radio color="primary" />}
-                                label={t.custom}
-                                labelPlacement={dir === "rtl" ? "start" : "end"}
-                                sx={{
-                                    direction: dir,
-                                    marginRight: dir === "rtl" ? 2 : 0,
-                                    marginLeft: dir === "rtl" ? 0 : 2,
-                                }}
-                            />
-                            {showReminderOption && (
-                                <FormControlLabel
-                                    value="reminder"
-                                    control={<Radio color="primary" />}
-                                    label={t.reminder}
-                                    labelPlacement={dir === "rtl" ? "start" : "end"}
-                                    sx={{
-                                        direction: dir,
-                                        marginRight: dir === "rtl" ? 2 : 0,
-                                        marginLeft: dir === "rtl" ? 0 : 2,
-                                    }}
-                                />
-                            )}
-                        </RadioGroup>
+                            onChange={draft.setNotificationType}
+                            showReminderOption={showReminderOption}
+                        />
                     </Box>
 
-                    {notificationType === "default" && (
-                        <Typography
-                            variant="body2"
-                            sx={{
-                                color: "text.secondary",
-                                mt: 1,
-                                maxWidth: 520,
-                                fontSize: "0.85rem",
-                                lineHeight: 1.6
-                            }}>
-                            {t.defaultEmailInfo}
-                        </Typography>
-                    )}
+                    {notificationType === "default" && <DefaultNotificationInfo event={event} />}
 
                     {notificationType === "custom" && (
-                        <>
-                            <TextField
-                                fullWidth
-                                label={t.subject}
-                                value={subject}
-                                onChange={(e) => {
-                                    setSubject(e.target.value);
-                                    if (subjectError) {
-                                        setSubjectError(false);
-                                    }
-                                }}
-                                placeholder={t.placeholderSubject}
-                                required
-                                error={subjectError}
-                                helperText={subjectError ? "Subject is required" : ""}
-                            />
-
-                            <Box>
-                                <Typography variant="body2" sx={{ mb: 1, fontWeight: 500 }}>
-                                    {t.body}
-                                </Typography>
-                                <RichTextEditor
-                                    value={body}
-                                    onChange={setBody}
-                                    placeholder={t.placeholderBody}
-                                    dir={dir}
-                                />
-                            </Box>
-
-                            <Box>
-                                <input
-                                    ref={fileInputRef}
-                                    type="file"
-                                    accept="*/*"
-                                    onChange={handleFileChange}
-                                    style={{ display: "none" }}
-                                />
-                                <Stack direction="row" spacing={2} sx={{
-                                    alignItems: "center"
-                                }}>
-                                    <Button
-                                        variant="outlined"
-                                        component="label"
-                                        onClick={() => fileInputRef.current?.click()}
-                                        size="small"
-                                        startIcon={<ICONS.upload />}
-                                        sx={getStartIconSpacing(dir)}
-                                    >
-                                        {t.uploadFile}
-                                    </Button>
-                                    {attachedFile && (
-                                        <Stack
-                                            direction="row"
-                                            spacing={1}
-                                            sx={{
-                                                alignItems: "center",
-                                                flex: 1
-                                            }}>
-                                            <Typography variant="body2" sx={{
-                                                color: "text.secondary"
-                                            }}>
-                                                {attachedFile.name}
-                                            </Typography>
-                                            <IconButton
-                                                size="small"
-                                                onClick={handleRemoveFile}
-                                                color="error"
-                                            >
-                                                <ICONS.close />
-                                            </IconButton>
-                                        </Stack>
-                                    )}
-                                </Stack>
-                                <Typography
-                                    variant="caption"
-                                    sx={{
-                                        color: "text.secondary",
-                                        mt: 0.5,
-                                        display: "block"
-                                    }}>
-                                    {t.uploadHelperText}
-                                </Typography>
-                            </Box>
-                        </>
+                        <CustomNotificationForm
+                            composer={composer}
+                            event={event}
+                            attachedFile={draft.attachedFile}
+                            onFileChange={draft.setAttachedFile}
+                        />
                     )}
                 </Stack>
             </DialogContent>
-            <DialogActions
-                sx={{
-                    justifyContent: "flex-end",
-                    gap: 1,
-                    px: 2,
-                    py: 2,
-                }}
-            >
-                {canSendWhatsapp && (notificationType === "default" || notificationType === "reminder") && (
-                    <Button
-                        variant="contained"
-                        color="success"
-                        startIcon={<ICONS.whatsapp />}
-                        onClick={handleSendWhatsApp}
-                        disabled={sendingEmails}
-                        sx={getStartIconSpacing(dir)}
-                    >
-                        {t.sendWhatsApp}
-                    </Button>
-                )}
-                {canSendEmail && (
-                    <Button
-                        variant="contained"
-                        color="primary"
-                        startIcon={<ICONS.email />}
-                        onClick={handleSendEmail}
-                        disabled={sendingEmails}
-                        sx={getStartIconSpacing(dir)}
-                    >
-                        {t.sendEmail}
-                    </Button>
-                )}
-            </DialogActions>
+            <NotificationActions
+                notificationType={notificationType}
+                canSendEmail={canSendEmail}
+                canSendWhatsapp={canSendWhatsapp}
+                disabled={sendingEmails}
+                onSendEmail={handleSendEmail}
+                onSendWhatsApp={handleSendWhatsApp}
+            />
         </Dialog>
     );
 };
 
 export default BulkEmailModal;
-

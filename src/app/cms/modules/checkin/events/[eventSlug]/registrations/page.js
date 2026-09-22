@@ -58,6 +58,7 @@ import useCheckInSocket from "@/hooks/modules/checkin/useCheckInSocket";
 import RegistrationModal from "@/components/modals/RegistrationModal";
 import WalkInModal from "@/components/modals/WalkInModal";
 import BulkEmailModal from "@/components/modals/BulkEmailModal";
+import useEmailNotificationSender from "@/hooks/useEmailNotificationSender";
 import SingleNotificationModal from "@/components/modals/SingleNotificationModal";
 import ShareLinkModal from "@/components/modals/ShareLinkModal";
 import { useMessage } from "@/contexts/MessageContext";
@@ -362,6 +363,13 @@ export default function ViewRegistrations() {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [bulkEmailModalOpen, setBulkEmailModalOpen] = useState(false);
   const [sendingEmails, setSendingEmails] = useState(false);
+  const handleSendEmailNotification = useEmailNotificationSender({
+    sendEmails: sendCheckInBulkEmails,
+    eventSlug,
+    setSending: setSendingEmails,
+    closeModal: () => setBulkEmailModalOpen(false),
+    showMessage,
+  });
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [registrationToShare, setRegistrationToShare] = useState(null);
   const [notifyModalOpen, setNotifyModalOpen] = useState(false);
@@ -2497,6 +2505,7 @@ export default function ViewRegistrations() {
       />
       <BulkEmailModal
         open={bulkEmailModalOpen}
+        event={eventDetails}
         showReminderOption={true}
         canSendEmail={canSendEmail}
         canSendWhatsapp={canSendWhatsapp}
@@ -2505,57 +2514,7 @@ export default function ViewRegistrations() {
             setBulkEmailModalOpen(false);
           }
         }}
-        onSendEmail={async (data) => {
-          if (data.type === "default") {
-            setSendingEmails(true);
-            setBulkEmailModalOpen(false);
-            const result = await sendCheckInBulkEmails(eventSlug, {
-              statusFilter: data.statusFilter || "all",
-              emailSentFilter: data.emailSentFilter || "all",
-              whatsappSentFilter: data.whatsappSentFilter || "all",
-            });
-            if (result?.error) {
-              setSendingEmails(false);
-              setBulkEmailModalOpen(false);
-              showMessage(
-                result.message || "Failed to send notifications",
-                "error"
-              );
-            }
-            // Progress will be handled by socket callback
-          } else {
-            // Custom email
-            if (!data.subject || !data.body) {
-              showMessage(
-                "Subject and body are required for custom notifications",
-                "error"
-              );
-              return;
-            }
-            setSendingEmails(true);
-            setBulkEmailModalOpen(false);
-            const result = await sendCheckInBulkEmails(
-              eventSlug,
-              {
-                subject: data.subject,
-                body: data.body,
-                statusFilter: data.statusFilter || "all",
-                emailSentFilter: data.emailSentFilter || "all",
-                whatsappSentFilter: data.whatsappSentFilter || "all",
-              },
-              data.file
-            );
-            if (result?.error) {
-              setSendingEmails(false);
-              setBulkEmailModalOpen(false);
-              showMessage(
-                result.message || "Failed to send notifications",
-                "error"
-              );
-            }
-            // Progress will be handled by socket callback
-          }
-        }}
+        onSendEmail={handleSendEmailNotification}
         onSendWhatsApp={async (data) => {
           if (data.type === "custom") {
             if (!data.subject || !data.body) {
@@ -2614,6 +2573,7 @@ export default function ViewRegistrations() {
       />
       <SingleNotificationModal
         open={notifyModalOpen}
+        event={eventDetails}
         showReminderOption={true}
         canSendEmail={canSendEmail}
         canSendWhatsapp={canSendWhatsapp}
