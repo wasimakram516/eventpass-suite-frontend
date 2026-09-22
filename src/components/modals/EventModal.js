@@ -3618,6 +3618,7 @@ const EventModal = ({
               setFormData={setFormData}
               isPaid={forcePaid || formData.isPaid}
               isCheckIn={isClosed}
+              businessSlug={selectedBusiness}
               eventInfo={eventInfoFromEventForm(formData, isClosed)}
               errors={{ subject: emailTemplateSubjectError, body: emailTemplateBodyError }}
               onClearError={(field) =>

@@ -15,13 +15,14 @@ import EmailPreviewPane from "@/components/modals/EmailPreviewPane";
  * @param {Function} props.setFormData - Form state setter
  * @param {boolean} props.isPaid - Whether the event is paid
  * @param {boolean} [props.isCheckIn] - Whether the event is a CheckIn event
+ * @param {string} [props.businessSlug] - Business slug the custom image uploads under
  * @param {object} [props.eventInfo] - Event details for the preview (see emailEventDetails)
  * @param {{subject: boolean, body: boolean}} props.errors - Required field errors
  * @param {(field: "subject"|"body") => void} props.onClearError - Clears one required error
  * @param {React.ReactNode} [props.children] - Extra controls shown under the form (for example an attachment picker)
  * @returns {JSX.Element}
  */
-const EmailTemplateWorkspace = ({ formData, setFormData, isPaid, isCheckIn = false, eventInfo, errors, onClearError, children }) => (
+const EmailTemplateWorkspace = ({ formData, setFormData, isPaid, isCheckIn = false, businessSlug, eventInfo, errors, onClearError, children }) => (
   <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, alignItems: "flex-start", gap: 2 }}>
     <Box sx={{ flex: { md: "7 1 0" }, minWidth: 0, width: "100%" }}>
       <EmailTemplateTab
@@ -29,6 +30,7 @@ const EmailTemplateWorkspace = ({ formData, setFormData, isPaid, isCheckIn = fal
         setFormData={setFormData}
         isPaid={isPaid}
         isCheckIn={isCheckIn}
+        businessSlug={businessSlug}
         errors={errors}
         onClearError={onClearError}
       />

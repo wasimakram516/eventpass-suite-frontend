@@ -24,6 +24,7 @@ const CustomNotificationForm = ({ composer, event, attachedFile, onFileChange })
     setFormData={composer.setForm}
     isPaid={isEventPaid(event)}
     isCheckIn={isCheckInEvent(event)}
+    businessSlug={event?.businessSlug}
     eventInfo={eventInfoFromEvent(event)}
     errors={composer.errors}
     onClearError={composer.clearError}
