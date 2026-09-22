@@ -91,6 +91,7 @@ test("getPlaceholderGroups: every module gets the same event and organizer detai
     { id: "organizerDetails", names: ORGANIZER_DETAILS },
     { id: "qrToken", names: ["QR", "Token"] },
     { id: "attendeeDetails", names: ["Full Name", "Email", "Phone", "Registration Details"] },
+    { id: "customMedia", names: ["Custom Image", "Custom Link"] },
   ]);
 });
 
@@ -132,15 +133,29 @@ test("getPlaceholderGroups: attendee details follow the event's custom fields an
 
 test("getPlaceholderGroups: a payment group appears only for paid events", () => {
   assert.equal(getPlaceholderGroups({ useCustomFields: false }).some((g) => g.id === "payment"), false);
-  assert.deepEqual(getPlaceholderGroups({ useCustomFields: false, isPaid: true }).at(-1), {
-    id: "payment",
-    names: ["Payment Summary"],
+  const groups = getPlaceholderGroups({ useCustomFields: false, isPaid: true });
+  assert.deepEqual(groups.find((g) => g.id === "payment"), { id: "payment", names: ["Payment Summary"] });
+});
+
+test("getPlaceholderGroups: the custom image and link group is offered to every module", () => {
+  const groups = getPlaceholderGroups({ useCustomFields: false });
+  assert.deepEqual(groups.find((g) => g.id === "customMedia"), {
+    id: "customMedia",
+    names: ["Custom Image", "Custom Link"],
   });
 });
 
 test("getReservedPlaceholderNames: lists every built in name once, following the same rules as the groups", () => {
   const base = getReservedPlaceholderNames({});
-  assert.deepEqual(base, [...EVENT_DETAILS_SHARED, ...ORGANIZER_DETAILS, "QR", "Token", "Registration Details"]);
+  assert.deepEqual(base, [
+    ...EVENT_DETAILS_SHARED,
+    ...ORGANIZER_DETAILS,
+    "QR",
+    "Token",
+    "Registration Details",
+    "Custom Image",
+    "Custom Link",
+  ]);
   assert.equal(new Set(base).size, base.length);
   assert.ok(getReservedPlaceholderNames({ isPaid: true }).includes("Payment Summary"));
   assert.ok(getReservedPlaceholderNames({ isCheckIn: true }).includes("Confirmation Button"));
@@ -268,6 +283,8 @@ test("getEmailTemplateSettings: reads every saved placeholder setting", () => {
       logoSize: 200,
       accentColor: "#112233",
       header: "{Logo}",
+      customImage: { url: "https://cdn.example.com/banner.png", width: 480 },
+      customLink: "https://example.com/agenda",
     }),
     {
       emailTemplateUsePlaceholders: true,
@@ -276,8 +293,18 @@ test("getEmailTemplateSettings: reads every saved placeholder setting", () => {
       emailTemplateLogoSize: 200,
       emailTemplateAccentColor: "#112233",
       emailTemplateHeader: "{Logo}",
+      emailTemplateCustomImageUrl: "https://cdn.example.com/banner.png",
+      emailTemplateCustomImageWidth: 480,
+      emailTemplateCustomLink: "https://example.com/agenda",
     },
   );
+});
+
+test("getEmailTemplateSettings: a saved template without a custom image or link defaults to none", () => {
+  const settings = getEmailTemplateSettings({ subject: "S", body: "B", usePlaceholders: true });
+  assert.equal(settings.emailTemplateCustomImageUrl, "");
+  assert.equal(settings.emailTemplateCustomImageWidth, 320);
+  assert.equal(settings.emailTemplateCustomLink, "");
 });
 
 test("buildEmailTemplatePayload: maps form state to the API shape and clamps the QR size", () => {
@@ -290,6 +317,9 @@ test("buildEmailTemplatePayload: maps form state to the API shape and clamps the
     emailTemplateLogoSize: "5",
     emailTemplateAccentColor: "#112233",
     emailTemplateHeader: "  <p>{Logo}</p><p>{Event Name}</p>  ",
+    emailTemplateCustomImageUrl: "https://cdn.example.com/banner.png",
+    emailTemplateCustomImageWidth: "9999",
+    emailTemplateCustomLink: "https://example.com/agenda",
   });
   assert.deepEqual(payload, {
     subject: "S",
@@ -300,6 +330,8 @@ test("buildEmailTemplatePayload: maps form state to the API shape and clamps the
     logoSize: 40,
     accentColor: "#112233",
     header: "<p>{Logo}</p><p>{Event Name}</p>",
+    customImage: { url: "https://cdn.example.com/banner.png", width: 600 },
+    customLink: "https://example.com/agenda",
   });
 });
 

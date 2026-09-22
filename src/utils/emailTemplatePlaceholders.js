@@ -29,6 +29,8 @@ export const EMAIL_TEMPLATE_RESERVED = Object.freeze({
   REGISTRATION_DETAILS: "Registration Details",
   CONFIRMATION_BUTTON: "Confirmation Button",
   PAYMENT_SUMMARY: "Payment Summary",
+  CUSTOM_IMAGE: "Custom Image",
+  CUSTOM_LINK: "Custom Link",
 });
 
 export const EMAIL_TEMPLATE_DEFAULTS = Object.freeze({
@@ -39,6 +41,9 @@ export const EMAIL_TEMPLATE_DEFAULTS = Object.freeze({
   LOGO_SIZE: 140,
   LOGO_MIN_SIZE: 40,
   LOGO_MAX_SIZE: 300,
+  CUSTOM_IMAGE_SIZE: 320,
+  CUSTOM_IMAGE_MIN_SIZE: 40,
+  CUSTOM_IMAGE_MAX_SIZE: 600,
 });
 
 /** Placeholders that cannot be filled in an email subject (they are visual or HTML blocks). */
@@ -49,6 +54,8 @@ const SUBJECT_UNSUPPORTED_KEYS = Object.freeze([
   EMAIL_TEMPLATE_RESERVED.EVENT_DESCRIPTION,
   EMAIL_TEMPLATE_RESERVED.REGISTRATION_DETAILS,
   EMAIL_TEMPLATE_RESERVED.CONFIRMATION_BUTTON,
+  EMAIL_TEMPLATE_RESERVED.CUSTOM_IMAGE,
+  EMAIL_TEMPLATE_RESERVED.CUSTOM_LINK,
 ]);
 
 export const EMAIL_TEMPLATE_WARNINGS = Object.freeze({
@@ -136,6 +143,7 @@ export const EMAIL_PLACEHOLDER_GROUPS = Object.freeze({
   QR_TOKEN: "qrToken",
   ATTENDEE_DETAILS: "attendeeDetails",
   PAYMENT: "payment",
+  CUSTOM_MEDIA: "customMedia",
   LINKS: "links",
 });
 
@@ -173,6 +181,7 @@ function getBuiltInGroups({ isPaid, isCheckIn }) {
     [G.QR_TOKEN]: [R.QR, R.TOKEN],
     [G.ATTENDEE_DETAILS]: [R.REGISTRATION_DETAILS],
     [G.PAYMENT]: isPaid ? [R.PAYMENT_SUMMARY] : [],
+    [G.CUSTOM_MEDIA]: [R.CUSTOM_IMAGE, R.CUSTOM_LINK],
     [G.LINKS]: isCheckIn ? [R.CONFIRMATION_BUTTON] : [],
   };
 }
@@ -300,6 +309,9 @@ export const EMPTY_EMAIL_TEMPLATE_SETTINGS = Object.freeze({
   emailTemplateLogoSize: EMAIL_TEMPLATE_DEFAULTS.LOGO_SIZE,
   emailTemplateAccentColor: EMAIL_TEMPLATE_DEFAULTS.ACCENT_COLOR,
   emailTemplateHeader: "",
+  emailTemplateCustomImageUrl: "",
+  emailTemplateCustomImageWidth: EMAIL_TEMPLATE_DEFAULTS.CUSTOM_IMAGE_SIZE,
+  emailTemplateCustomLink: "",
 });
 
 /**
@@ -320,6 +332,9 @@ export function getEmailTemplateSettings(saved) {
     emailTemplateLogoSize: saved.logoSize ?? EMAIL_TEMPLATE_DEFAULTS.LOGO_SIZE,
     emailTemplateAccentColor: saved.accentColor || EMAIL_TEMPLATE_DEFAULTS.ACCENT_COLOR,
     emailTemplateHeader: saved.header || "",
+    emailTemplateCustomImageUrl: saved.customImage?.url || "",
+    emailTemplateCustomImageWidth: saved.customImage?.width ?? EMAIL_TEMPLATE_DEFAULTS.CUSTOM_IMAGE_SIZE,
+    emailTemplateCustomLink: saved.customLink || "",
   };
 }
 
@@ -337,6 +352,14 @@ export const clampLogoSize = (value) =>
     min: EMAIL_TEMPLATE_DEFAULTS.LOGO_MIN_SIZE,
     max: EMAIL_TEMPLATE_DEFAULTS.LOGO_MAX_SIZE,
     fallback: EMAIL_TEMPLATE_DEFAULTS.LOGO_SIZE,
+  });
+
+/** Clamp the custom image width to the supported range. */
+export const clampCustomImageSize = (value) =>
+  clampSize(value, {
+    min: EMAIL_TEMPLATE_DEFAULTS.CUSTOM_IMAGE_MIN_SIZE,
+    max: EMAIL_TEMPLATE_DEFAULTS.CUSTOM_IMAGE_MAX_SIZE,
+    fallback: EMAIL_TEMPLATE_DEFAULTS.CUSTOM_IMAGE_SIZE,
   });
 
 /**
@@ -358,7 +381,8 @@ export function normalizeHeader(value) {
  *
  * @param {object} formData - Event modal form state
  * @returns {{subject: string, body: string, usePlaceholders: boolean, selectedFields: string[],
- *   qrSize: number, logoSize: number, accentColor: string, header: string}}
+ *   qrSize: number, logoSize: number, accentColor: string, header: string,
+ *   customImage: {url: string, width: number}, customLink: string}}
  */
 export function buildEmailTemplatePayload(formData) {
   return {
@@ -370,6 +394,11 @@ export function buildEmailTemplatePayload(formData) {
     logoSize: clampLogoSize(formData.emailTemplateLogoSize),
     accentColor: formData.emailTemplateAccentColor,
     header: normalizeHeader(formData.emailTemplateHeader),
+    customImage: {
+      url: formData.emailTemplateCustomImageUrl || "",
+      width: clampCustomImageSize(formData.emailTemplateCustomImageWidth),
+    },
+    customLink: formData.emailTemplateCustomLink || "",
   };
 }
 
