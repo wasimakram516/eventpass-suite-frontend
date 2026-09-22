@@ -614,6 +614,14 @@ const ParticipantsAdminPage = () => {
                     sx={{ pb: 0 }}
                   />
                   <CardContent sx={{ flexGrow: 1 }}>
+                    {participant.email ? (
+                      <Typography
+                        variant="body2"
+                        sx={{ display: "block", color: "text.secondary", wordBreak: "break-word" }}
+                      >
+                        {participant.email}
+                      </Typography>
+                    ) : null}
                     {participant.phone && (
                       <Typography variant="body2" sx={{
                         color: "text.secondary"

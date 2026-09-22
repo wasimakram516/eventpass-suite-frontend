@@ -25,6 +25,7 @@ import {
   TextField,
   useTheme,
 } from "@mui/material";
+import { ThemeProvider as MuiThemeProvider, createTheme } from "@mui/material/styles";
 import {
   Shuffle as ShuffleIcon,
   Sort as SortIcon,
@@ -65,6 +66,9 @@ const translations = {
     sort: "Sort",
     ready: "Ready",
     noWinners: "No winners yet",
+    loading: "Loading...",
+    menu: "Menu",
+    entriesPlaceholder: "Enter participant names, one per line",
     alertMessage: "Please enter at least one participant name!",
   },
   ar: {
@@ -81,6 +85,9 @@ const translations = {
     sort: "ترتيب",
     ready: "جاهز",
     noWinners: "لا يوجد فائزون بعد",
+    loading: "جارٍ التحميل...",
+    menu: "القائمة",
+    entriesPlaceholder: "أدخل أسماء المشاركين، اسم في كل سطر",
     alertMessage: "يرجى إدخال اسم مشارك واحد على الأقل!",
   },
 };
@@ -115,6 +122,7 @@ const SpinningPage = () => {
 
   const { t, dir, align } = useI18nLayout(translations);
   const { language } = useLanguage();
+  const drawerTheme = useMemo(() => createTheme(theme, { direction: "ltr" }), [theme]);
 
   const fetchParticipants = useCallback(async () => {
     const data = await getParticipantsBySlug(shortName);
@@ -529,10 +537,14 @@ const SpinningPage = () => {
             left: { xs: 10, sm: 20 },
             zIndex: 9999,
             textTransform: "none",
+            "& .MuiButton-startIcon": {
+              marginRight: dir === "rtl" ? 0 : "0.5rem",
+              marginLeft: dir === "rtl" ? "0.5rem" : 0,
+            },
           }}
           onClick={() => router.push(`/eventwheel/wheels/${shortName}`)}
         >
-          Menu
+          {t.menu}
         </Button>
       )}
       {/* Drawer button (for onspot, admin, and sync types) */}
@@ -546,10 +558,14 @@ const SpinningPage = () => {
             right: { xs: 10, sm: 20 },
             zIndex: 9999,
             textTransform: "none",
+            "& .MuiButton-startIcon": {
+              marginRight: dir === "rtl" ? 0 : "0.5rem",
+              marginLeft: dir === "rtl" ? "0.5rem" : 0,
+            },
           }}
           onClick={handleDrawerOpen}
         >
-          Menu
+          {t.menu}
         </Button>
       )}
       {selectedWinner && <Confetti numberOfPieces={500} recycle={false} />}
@@ -567,7 +583,10 @@ const SpinningPage = () => {
           <Typography
             variant="h4"
             sx={{
-              color: "white",
+              color: (theme) =>
+                theme.palette.mode === "dark"
+                  ? theme.palette.common.white
+                  : theme.palette.text.primary,
               opacity: 0.85,
               letterSpacing: 1.5,
               animation: "pulse 1.2s ease-in-out infinite",
@@ -582,7 +601,10 @@ const SpinningPage = () => {
           <Typography
             variant="h4"
             sx={{
-              color: "white",
+              color: (theme) =>
+                theme.palette.mode === "dark"
+                  ? theme.palette.common.white
+                  : theme.palette.text.primary,
               opacity: 0.8,
               letterSpacing: 1.5,
             }}
@@ -836,8 +858,9 @@ const SpinningPage = () => {
       </Dialog>
       {/* Drawer for onspot, admin, and sync types */}
       {["onspot", "admin", "synced"].includes(eventData?.type) && (
-        <Drawer
-          anchor="right"
+        <MuiThemeProvider theme={drawerTheme}>
+          <Drawer
+            anchor="right"
           open={drawerOpen}
           onClose={handleDrawerClose}
           slotProps={{
@@ -937,7 +960,7 @@ const SpinningPage = () => {
                     value={entriesText}
                     onChange={(e) => setEntriesText(e.target.value)}
                     variant="outlined"
-                    placeholder={t.placeholder}
+                    placeholder={t.entriesPlaceholder}
                   />
                   {/* Ready Button */}
                   <Button
@@ -964,7 +987,7 @@ const SpinningPage = () => {
                       <Typography variant="body2" sx={{
                         color: "text.secondary"
                       }}>
-                        Loading...
+{t.loading}
                       </Typography>
                     </Box>
                   ) : winners.length === 0 ? (
@@ -1002,11 +1025,9 @@ const SpinningPage = () => {
                                 ? formatDateTimeWithLocale(winner.createdAt, language === "ar" ? "ar-SA" : "en-GB")
                                 : undefined
                             }
-                            primaryTypographyProps={{
-                              sx: { fontWeight: 500 },
-                            }}
-                            secondaryTypographyProps={{
-                              sx: { color: "text.secondary" },
+                            slotProps={{
+                              primary: { sx: { fontWeight: 500, color: "text.primary" } },
+                              secondary: { sx: { color: "text.secondary" } },
                             }}
                           />
                         </ListItem>
@@ -1018,6 +1039,7 @@ const SpinningPage = () => {
             </Box>
           </Box>
         </Drawer>
+        </MuiThemeProvider>
       )}
     </Box>
   );
