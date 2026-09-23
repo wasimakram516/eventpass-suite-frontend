@@ -41,14 +41,27 @@ import { updateCheckoutEventCustomQrWrapper } from "@/services/checkout/eventSer
 import { deleteMedia } from "@/services/deleteMediaService";
 import RichTextEditor from "@/components/RichTextEditor";
 import EmailTemplateWorkspace from "@/components/modals/EmailTemplateWorkspace";
+import TabOptionCheckbox from "@/components/modals/TabOptionCheckbox";
 import { EMAIL_TEMPLATE_REQUIRED_MESSAGES } from "@/utils/emailTemplateMessages";
 import {
   EMPTY_EMAIL_TEMPLATE_SETTINGS,
   buildEmailTemplatePayload,
   getEmailTemplateSettings,
   getEventModalTabIndices,
+  getTemplateFieldNames,
   isRichTextEmpty,
 } from "@/utils/emailTemplatePlaceholders";
+import WhatsAppMessagesTab from "@/components/whatsapp/WhatsAppMessagesTab";
+import useWhatsAppCatalog from "@/hooks/useWhatsAppCatalog";
+import {
+  toEditableMessages,
+  toMessagesPayload,
+  validateWhatsAppMessages,
+  moduleKeyForEventType,
+  whatsappEventTypeFor,
+} from "@/utils/whatsappMessages";
+import { useHasPermission } from "@/hooks/usePermission";
+import { useAuth } from "@/contexts/AuthContext";
 import CountryCodeSelector from "@/components/CountryCodeSelector";
 import { DEFAULT_ISO_CODE, DEFAULT_COUNTRY_CODE, getCountryCodeByIsoCode, COUNTRY_CODES } from "@/utils/countryCodes";
 import { validatePhoneNumber } from "@/utils/phoneValidation";
@@ -134,6 +147,10 @@ const translations = {
     emailSubjectRequired: EMAIL_TEMPLATE_REQUIRED_MESSAGES.en.subject,
     emailBodyRequired: EMAIL_TEMPLATE_REQUIRED_MESSAGES.en.body,
     emailTemplateTab: "Custom Email",
+    whatsappTab: "WhatsApp Messages",
+    useCustomWhatsAppMessages: "Use custom WhatsApp messages",
+    customWhatsAppMessagesHint:
+      "The WhatsApp messages are set in the WhatsApp Messages tab. When off, the platform default messages are used.",
     customEmailTemplateHint:
       "The email content is set in the Custom Email tab, after the input fields are set.",
     customFieldsHint: "The registration fields are set in the Custom Fields tab.",
@@ -300,6 +317,10 @@ const translations = {
     emailSubjectRequired: EMAIL_TEMPLATE_REQUIRED_MESSAGES.ar.subject,
     emailBodyRequired: EMAIL_TEMPLATE_REQUIRED_MESSAGES.ar.body,
     emailTemplateTab: "البريد الإلكتروني المخصص",
+    whatsappTab: "رسائل واتساب",
+    useCustomWhatsAppMessages: "استخدام رسائل واتساب مخصصة",
+    customWhatsAppMessagesHint:
+      "يتم إعداد رسائل واتساب في تبويب رسائل واتساب. عند إيقافه، تستخدم الرسائل الافتراضية للمنصة.",
     customEmailTemplateHint:
       "يتم تحديد محتوى البريد في تبويب البريد الإلكتروني المخصص بعد تحديد حقول الإدخال.",
     customFieldsHint: "يتم تحديد حقول التسجيل في تبويب الحقول المخصصة.",
@@ -576,6 +597,8 @@ const EventModal = ({
     emailTemplateSubject: "",
     emailTemplateBody: "",
     ...EMPTY_EMAIL_TEMPLATE_SETTINGS,
+    useCustomWhatsAppMessages: false,
+    whatsappMessages: [],
     useCustomQrCode: false,
     customQrSelectedFields: {},
     qrWrapperBackground: null,
@@ -688,6 +711,8 @@ const EventModal = ({
         emailTemplateSubject: initialValues?.emailTemplate?.subject || "",
         emailTemplateBody: initialValues?.emailTemplate?.body || "",
         ...getEmailTemplateSettings(initialValues?.emailTemplate),
+        useCustomWhatsAppMessages: initialValues?.useCustomWhatsAppMessages || false,
+        whatsappMessages: toEditableMessages(initialValues?.whatsappMessages),
         isPaid: forcePaid ? true : allowPaid ? initialValues?.isPaid || false : false,
         ticketTypes: initialValues?.ticketTypes?.map((tt) => ({
           _id: tt._id,
@@ -798,6 +823,8 @@ const EventModal = ({
         emailTemplateSubject: "",
         emailTemplateBody: "",
         ...EMPTY_EMAIL_TEMPLATE_SETTINGS,
+        useCustomWhatsAppMessages: false,
+        whatsappMessages: [],
         isPaid: forcePaid,
         ticketTypes: [],
         fees: [],
@@ -853,7 +880,20 @@ const EventModal = ({
 
   // The Tickets & Fees tab is injected between Options and Uploads for paid events.
   const hasTicketsTab = forcePaid || (allowPaid && formData.isPaid);
-  const tabs = getEventModalTabIndices({ ...formData, hasTicketsTab });
+  const whatsappEventType = whatsappEventTypeFor({ isClosed, moduleKey });
+  // Configuring an event's WhatsApp messages is for admins and superadmin with
+  // the module's send_whatsapp permission; for anyone else the option is
+  // hidden and the fields are not sent (the backend ignores them too).
+  const { user: currentUser } = useAuth();
+  const hasWhatsAppSend = useHasPermission(moduleKeyForEventType(whatsappEventType), "send_whatsapp");
+  const canConfigureWhatsApp = ["admin", "superadmin"].includes(currentUser?.role) && hasWhatsAppSend;
+  const showWhatsAppTab = canConfigureWhatsApp && formData.useCustomWhatsAppMessages;
+  const tabs = getEventModalTabIndices({ ...formData, useCustomWhatsAppMessages: showWhatsAppTab, hasTicketsTab });
+  const whatsappCatalog = useWhatsAppCatalog([whatsappEventType], open && showWhatsAppTab);
+  const whatsappFieldNames = getTemplateFieldNames(formData);
+  // Messages can only be checked and saved once the library has loaded; until
+  // then the saved messages are left untouched.
+  const whatsappReady = !whatsappCatalog.loading && whatsappCatalog.templatesById.size > 0;
   const ticketsTabIdx = tabs.tickets;
   const uploadsTabIdx = tabs.uploads;
   const customFieldsTabIdx = tabs.customFields;
@@ -1380,6 +1420,19 @@ const EventModal = ({
       }
     }
 
+    if (showWhatsAppTab && whatsappReady) {
+      const whatsappError = validateWhatsAppMessages(formData.whatsappMessages, {
+        templatesById: whatsappCatalog.templatesById,
+        placeholders: whatsappCatalog.placeholders,
+        fieldNames: whatsappFieldNames,
+      });
+      if (whatsappError) {
+        setActiveTab(tabs.whatsapp);
+        showMessage(whatsappError, "error");
+        return;
+      }
+    }
+
     if (formData.useCustomEmailTemplate) {
       if (!formData.emailTemplateSubject || !formData.emailTemplateSubject.trim()) {
         setEmailTemplateSubjectError(true);
@@ -1630,6 +1683,10 @@ const EventModal = ({
         defaultLanguage: formData.defaultLanguage,
         useInternationalNumbers: formData.useInternationalNumbers,
         useCustomEmailTemplate: formData.useCustomEmailTemplate,
+        ...(canConfigureWhatsApp ? { useCustomWhatsAppMessages: formData.useCustomWhatsAppMessages } : {}),
+        ...(showWhatsAppTab && whatsappReady
+          ? { whatsappMessages: toMessagesPayload(formData.whatsappMessages, whatsappCatalog.templatesById) }
+          : {}),
         ...(formData.useCustomEmailTemplate
           ? {
             emailTemplate: buildEmailTemplatePayload(formData),
@@ -1778,6 +1835,7 @@ const EventModal = ({
               <Tab label={t.uploadsTab} />
               {formData.useCustomFields && <Tab label={t.customFieldsTab} />}
               {formData.useCustomEmailTemplate && <Tab label={t.emailTemplateTab} />}
+              {showWhatsAppTab && <Tab label={t.whatsappTab} />}
               <Tab label={t.customizeBadgeTab} />
               {formData.useCustomQrCode && <Tab label={t.customQrCodeTab} />}
             </Tabs>
@@ -2325,33 +2383,29 @@ const EventModal = ({
               </Box>
 
               {/* Custom Email Template */}
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      checked={formData.useCustomEmailTemplate}
-                      onChange={(e) => {
-                        setFormData((prev) => ({
-                          ...prev,
-                          useCustomEmailTemplate: e.target.checked,
-                        }));
-                        if (!e.target.checked) {
-                          setEmailTemplateSubjectError(false);
-                          setEmailTemplateBodyError(false);
-                        }
-                      }}
-                      color="primary"
-                    />
+              <TabOptionCheckbox
+                checked={formData.useCustomEmailTemplate}
+                onChange={(checked) => {
+                  setFormData((prev) => ({ ...prev, useCustomEmailTemplate: checked }));
+                  if (!checked) {
+                    setEmailTemplateSubjectError(false);
+                    setEmailTemplateBodyError(false);
                   }
-                  label={t.useCustomEmailTemplate}
-                  sx={{ alignSelf: "start" }}
-                />
-              </Box>
+                }}
+                label={t.useCustomEmailTemplate}
+                hint={t.customEmailTemplateHint}
+              />
 
-              {formData.useCustomEmailTemplate && (
-                <Typography variant="caption" color="text.secondary" sx={{ mt: -1 }}>
-                  {t.customEmailTemplateHint}
-                </Typography>
+              {/* Custom WhatsApp Messages */}
+              {canConfigureWhatsApp && (
+                <TabOptionCheckbox
+                  checked={formData.useCustomWhatsAppMessages}
+                  onChange={(checked) =>
+                    setFormData((prev) => ({ ...prev, useCustomWhatsAppMessages: checked }))
+                  }
+                  label={t.useCustomWhatsAppMessages}
+                  hint={t.customWhatsAppMessagesHint}
+                />
               )}
 
               {/* Use Custom Fields Checkbox */}
@@ -3624,6 +3678,15 @@ const EventModal = ({
           )}
 
           {/* Tab: Customize Badge (always visible) */}
+          {showWhatsAppTab && activeTab === tabs.whatsapp && (
+            <WhatsAppMessagesTab
+              messages={formData.whatsappMessages}
+              onChange={(whatsappMessages) => setFormData((prev) => ({ ...prev, whatsappMessages }))}
+              catalog={whatsappCatalog}
+              fieldNames={whatsappFieldNames}
+            />
+          )}
+
           {activeTab === badgeTabIdx && (
             <Box sx={{ mt: 2, display: "flex", flexDirection: "column", gap: 2 }}>
               {(() => { if (typeof window !== 'undefined') console.log('[EventModal BadgeTab] bc keys:', Object.keys(formData.badgeCustomizations || {}), 'useCustomFields:', formData.useCustomFields, 'initialValues.customizations:', JSON.stringify(initialValues?.customizations)); return null; })()}

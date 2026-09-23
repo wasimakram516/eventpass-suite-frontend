@@ -421,6 +421,14 @@ export default function LogsPage() {
       return;
     }
 
+    if (moduleName === "WhatsApp") {
+      const params = new URLSearchParams();
+      if (searchValue) params.set("search", searchValue);
+      if (itemType === "WhatsAppDefaultMessage") params.set("tab", "defaults");
+      router.push(`/cms/settings/whatsapp-templates${params.toString() ? `?${params.toString()}` : ""}`);
+      return;
+    }
+
     if (logType === "delete") {
       const trashKey = getTrashModuleKey(moduleName, itemType);
       const params = new URLSearchParams();
@@ -635,6 +643,7 @@ export default function LogsPage() {
       router.push("/cms/access-control/roles");
       return;
     }
+
 
     if ((moduleName === "User" || moduleName === "Auth") && itemType === "User") {
       router.push(`/cms/users${searchQuery}`);

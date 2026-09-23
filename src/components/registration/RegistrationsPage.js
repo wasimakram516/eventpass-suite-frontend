@@ -2763,6 +2763,7 @@ export function RegistrationsPage({
             eventSlug,
             {
               type: data.type || "default",
+              messageId: data.messageId,
               subject: data.subject,
               body: data.body,
               statusFilter: data.statusFilter || "all",

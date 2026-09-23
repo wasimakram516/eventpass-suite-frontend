@@ -376,6 +376,7 @@ test("getEventModalTabIndices: classic fields, no extras", () => {
     uploads: 3,
     customFields: -1,
     emailTemplate: -1,
+    whatsapp: -1,
     badge: 4,
     customQr: -1,
     last: 4,
@@ -385,8 +386,18 @@ test("getEventModalTabIndices: classic fields, no extras", () => {
 test("getEventModalTabIndices: the email tab follows the custom fields tab and precedes the badge tab", () => {
   assert.deepEqual(
     getEventModalTabIndices({ useCustomFields: true, useCustomEmailTemplate: true, useCustomQrCode: true }),
-    { tickets: -1, uploads: 3, customFields: 4, emailTemplate: 5, badge: 6, customQr: 7, last: 7 },
+    { tickets: -1, uploads: 3, customFields: 4, emailTemplate: 5, whatsapp: -1, badge: 6, customQr: 7, last: 7 },
   );
+});
+
+test("getEventModalTabIndices: the WhatsApp tab follows the email tab and precedes the badge tab", () => {
+  assert.deepEqual(
+    getEventModalTabIndices({ useCustomFields: true, useCustomEmailTemplate: true, useCustomQrCode: true, useCustomWhatsAppMessages: true }),
+    { tickets: -1, uploads: 3, customFields: 4, emailTemplate: 5, whatsapp: 6, badge: 7, customQr: 8, last: 8 },
+  );
+  const classic = getEventModalTabIndices({ useCustomWhatsAppMessages: true });
+  assert.equal(classic.whatsapp, 4);
+  assert.equal(classic.badge, 5);
 });
 
 test("getEventModalTabIndices: with classic fields the email tab follows Uploads", () => {

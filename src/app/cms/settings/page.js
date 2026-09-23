@@ -4,6 +4,7 @@ import { Box, Typography, Divider, Container } from "@mui/material";
 import DashboardCard from "@/components/cards/DashboardCard";
 import SettingsIcon from "@mui/icons-material/Settings";
 import BusinessIcon from "@mui/icons-material/Business";
+import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import { useAuth } from "@/contexts/AuthContext";
 import useI18nLayout from "@/hooks/useI18nLayout";
 import { NEUTRAL_ACCENT } from "@/styles/theme";
@@ -32,6 +33,15 @@ const translations = {
         color: NEUTRAL_ACCENT,
         roles: ["admin", "superadmin", "business"],
       },
+      {
+        title: "WhatsApp Templates",
+        description: "Import approved Twilio templates and set the platform default messages.",
+        route: "/cms/settings/whatsapp-templates",
+        icon: <WhatsAppIcon />,
+        buttonLabel: "Open Templates",
+        color: NEUTRAL_ACCENT,
+        roles: ["admin", "superadmin"],
+      },
     ],
   },
   ar: {
@@ -55,6 +65,15 @@ const translations = {
         buttonLabel: "تعديل التفاصيل",
         color: NEUTRAL_ACCENT,
         roles: ["admin", "superadmin", "business"],
+      },
+      {
+        title: "قوالب واتساب",
+        description: "استيراد قوالب Twilio المعتمدة وتحديد الرسائل الافتراضية للمنصة.",
+        route: "/cms/settings/whatsapp-templates",
+        icon: <WhatsAppIcon />,
+        buttonLabel: "فتح القوالب",
+        color: NEUTRAL_ACCENT,
+        roles: ["admin", "superadmin"],
       },
     ],
   },
