@@ -1,10 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   Alert,
   Box,
   Button,
+  CardActions,
   CardContent,
   Checkbox,
   Chip,
@@ -69,7 +71,8 @@ const translations = {
     title: "WhatsApp Templates",
     subtitle:
       "Import approved Twilio templates into the library and choose the default messages events use when they have none of their own.",
-    superadminOnly: "Only a superadmin can manage WhatsApp templates.",
+    adminsOnly: "Only admins can view WhatsApp templates.",
+    readOnly: "View only. A superadmin manages templates and default messages.",
     library: "Template library",
     searchTemplates: "Search templates",
     searchDefaults: "Search default messages",
@@ -93,6 +96,8 @@ const translations = {
     searchTwilio: "Search Twilio templates",
     imported: "Imported",
     import: "Import",
+    rejected: "Rejected",
+    rejectedHelp: "WhatsApp rejected this template, so it cannot be imported.",
     close: "Close",
     defaults: "Default messages",
     defaultsHint: "Used by events that have custom WhatsApp messages switched off, per event type.",
@@ -113,7 +118,8 @@ const translations = {
     title: "قوالب واتساب",
     subtitle:
       "استورد قوالب Twilio المعتمدة إلى المكتبة واختر الرسائل الافتراضية التي تستخدمها الفعاليات التي ليس لها رسائل خاصة.",
-    superadminOnly: "يمكن للمشرف العام فقط إدارة قوالب واتساب.",
+    adminsOnly: "يمكن للمشرفين فقط عرض قوالب واتساب.",
+    readOnly: "للعرض فقط. يدير المشرف العام القوالب والرسائل الافتراضية.",
     library: "مكتبة القوالب",
     searchTemplates: "البحث في القوالب",
     searchDefaults: "البحث في الرسائل الافتراضية",
@@ -137,6 +143,8 @@ const translations = {
     searchTwilio: "البحث في قوالب Twilio",
     imported: "تم الاستيراد",
     import: "استيراد",
+    rejected: "مرفوض",
+    rejectedHelp: "رفض واتساب هذا القالب، لذلك لا يمكن استيراده.",
     close: "إغلاق",
     defaults: "الرسائل الافتراضية",
     defaultsHint: "تستخدمها الفعاليات التي أوقفت رسائل واتساب المخصصة، حسب نوع الفعالية.",
@@ -271,6 +279,20 @@ function TwilioImportDialog({ open, onClose, onImported, t, dir }) {
                   {template.category && <Chip size="small" label={template.category} />}
                   {template.imported ? (
                     <Chip size="small" color="primary" icon={<ICONS.check fontSize="small" />} label={t.imported} />
+                  ) : template.approvalStatus === "rejected" ? (
+                    <Tooltip title={t.rejectedHelp}>
+                      <span>
+                        <Button
+                          size="small"
+                          variant="contained"
+                          disabled
+                          startIcon={<ICONS.cancel fontSize="small" />}
+                          sx={getStartIconSpacing(dir)}
+                        >
+                          {t.rejected}
+                        </Button>
+                      </span>
+                    </Tooltip>
                   ) : (
                     <Button
                       size="small"
@@ -290,7 +312,7 @@ function TwilioImportDialog({ open, onClose, onImported, t, dir }) {
                     </Button>
                   )}
                 </Stack>
-                {!template.imported && (
+                {!template.imported && template.approvalStatus !== "rejected" && (
                   <TextField
                     size="small"
                     fullWidth
@@ -466,10 +488,37 @@ function RenameTemplateDialog({ template, onClose, onSaved, t, dir }) {
 }
 
 /**
- * One library template: name, actions, status chips and the highlighted body.
+ * One icon action in a card's footer, styled like the Users page cards.
+ */
+function CardActionIcon({ title, color = "primary", onClick, disabled = false, children }) {
+  return (
+    <Tooltip title={title}>
+      <span>
+        <IconButton color={color} onClick={onClick} disabled={disabled} aria-label={title}>
+          {children}
+        </IconButton>
+      </span>
+    </Tooltip>
+  );
+}
+
+/**
+ * Footer row of card actions below the audit details, aligned to the end like
+ * the Users page cards.
+ */
+function CardFooterActions({ children }) {
+  return (
+    <CardActions sx={{ px: 2, pb: 2, pt: 0, justifyContent: "flex-end", mt: "auto" }}>
+      {children}
+    </CardActions>
+  );
+}
+
+/**
+ * One library template: name, status chips, the highlighted body, audit details
+ * and (for superadmin) the actions.
  */
 function TemplateCard({ template, t, locale, defaultTypes, syncing, onSync, onRename, onSetDefault, onRemove }) {
-  const record = template;
   return (
     <AppCard sx={{ borderRadius: 2, height: "100%" }}>
       <CardContent sx={{ p: 2, display: "flex", flexDirection: "column", gap: 1.25, flexGrow: 1 }}>
@@ -483,28 +532,6 @@ function TemplateCard({ template, t, locale, defaultTypes, syncing, onSync, onRe
               </Typography>
             )}
           </Box>
-          <Tooltip title={t.rename}>
-            <IconButton size="small" onClick={onRename} aria-label={t.rename}>
-              <ICONS.edit fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title={t.setAsDefault}>
-            <IconButton size="small" color="primary" onClick={onSetDefault} aria-label={t.setAsDefault}>
-              {defaultTypes.length ? <ICONS.star fontSize="small" /> : <ICONS.starBorder fontSize="small" />}
-            </IconButton>
-          </Tooltip>
-          <Tooltip title={t.refresh}>
-            <span>
-              <IconButton size="small" onClick={onSync} disabled={syncing} aria-label={t.refresh}>
-                {syncing ? <CircularProgress size={16} /> : <ICONS.refresh fontSize="small" />}
-              </IconButton>
-            </span>
-          </Tooltip>
-          <Tooltip title={t.remove}>
-            <IconButton size="small" color="error" onClick={onRemove} aria-label={t.remove}>
-              <ICONS.delete fontSize="small" />
-            </IconButton>
-          </Tooltip>
         </Stack>
         <Stack direction="row" sx={{ flexWrap: "wrap", gap: 0.75 }}>
           <ApprovalChip status={template.approvalStatus} />
@@ -525,43 +552,46 @@ function TemplateCard({ template, t, locale, defaultTypes, syncing, onSync, onRe
         <TemplateBody body={template.body} />
       </CardContent>
       <RecordMetadata
-        createdByName={record.createdBy}
-        updatedByName={record.updatedBy}
-        createdAt={record.createdAt}
-        updatedAt={record.updatedAt}
+        createdByName={template.createdBy}
+        updatedByName={template.updatedBy}
+        createdAt={template.createdAt}
+        updatedAt={template.updatedAt}
         locale={locale}
-        sx={{ mt: 0, mx: 2, mb: 1.5 }}
       />
+      {onRename && (
+        <CardFooterActions>
+          <CardActionIcon title={t.rename} onClick={onRename}>
+            <ICONS.edit />
+          </CardActionIcon>
+          <CardActionIcon title={t.setAsDefault} onClick={onSetDefault}>
+            {defaultTypes.length ? <ICONS.star /> : <ICONS.starBorder />}
+          </CardActionIcon>
+          <CardActionIcon title={t.refresh} color="secondary" onClick={onSync} disabled={syncing}>
+            {syncing ? <CircularProgress size={20} /> : <ICONS.refresh />}
+          </CardActionIcon>
+          <CardActionIcon title={t.remove} color="error" onClick={onRemove}>
+            <ICONS.delete />
+          </CardActionIcon>
+        </CardFooterActions>
+      )}
     </AppCard>
   );
 }
 
 /**
- * One platform default message: name, template, event types and actions.
+ * One platform default message: name, template, event types, audit details
+ * and (for superadmin) the actions.
  */
 function DefaultMessageCard({ message, t, locale, onEdit, onRemove }) {
-  const record = message;
   return (
     <AppCard sx={{ borderRadius: 2, height: "100%" }}>
-      <CardContent sx={{ p: 2, display: "flex", flexDirection: "column", gap: 1.25 }}>
-        <Stack direction="row" spacing={1} sx={{ alignItems: "flex-start" }}>
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <Typography sx={{ fontWeight: 600 }}>{message.label}</Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ wordBreak: "break-word" }}>
-              {templateLabel(message.template) || t.missingTemplate}
-            </Typography>
-          </Box>
-          <Tooltip title={t.editDefault}>
-            <IconButton size="small" onClick={onEdit} aria-label={t.editDefault}>
-              <ICONS.edit fontSize="small" />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title={t.removeDefaultTitle}>
-            <IconButton size="small" color="error" onClick={onRemove} aria-label={t.removeDefaultTitle}>
-              <ICONS.delete fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        </Stack>
+      <CardContent sx={{ p: 2, display: "flex", flexDirection: "column", gap: 1.25, flexGrow: 1 }}>
+        <Box sx={{ minWidth: 0 }}>
+          <Typography sx={{ fontWeight: 600 }}>{message.label}</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ wordBreak: "break-word" }}>
+            {templateLabel(message.template) || t.missingTemplate}
+          </Typography>
+        </Box>
         <Stack direction="row" sx={{ flexWrap: "wrap", gap: 0.75 }}>
           {message.template && <ApprovalChip status={message.template.approvalStatus} />}
           {message.eventTypes.map((type) => (
@@ -576,13 +606,22 @@ function DefaultMessageCard({ message, t, locale, onEdit, onRemove }) {
         )}
       </CardContent>
       <RecordMetadata
-        createdByName={record.createdBy}
-        updatedByName={record.updatedBy}
-        createdAt={record.createdAt}
-        updatedAt={record.updatedAt}
+        createdByName={message.createdBy}
+        updatedByName={message.updatedBy}
+        createdAt={message.createdAt}
+        updatedAt={message.updatedAt}
         locale={locale}
-        sx={{ mt: 0, mx: 2, mb: 1.5 }}
       />
+      {onEdit && (
+        <CardFooterActions>
+          <CardActionIcon title={t.editDefault} onClick={onEdit}>
+            <ICONS.edit />
+          </CardActionIcon>
+          <CardActionIcon title={t.removeDefaultTitle} color="error" onClick={onRemove}>
+            <ICONS.delete />
+          </CardActionIcon>
+        </CardFooterActions>
+      )}
     </AppCard>
   );
 }
@@ -592,6 +631,8 @@ export default function WhatsAppTemplatesPage() {
   const { t, dir, align, language } = useI18nLayout(translations);
   const locale = language === "ar" ? "ar-SA" : "en-GB";
   const isSuperadmin = user?.role === "superadmin";
+  // Admins can view the library and defaults; only superadmin changes them.
+  const canView = isSuperadmin || user?.role === "admin";
 
   const [templates, setTemplates] = useState(null);
   const [defaults, setDefaults] = useState([]);
@@ -602,6 +643,14 @@ export default function WhatsAppTemplatesPage() {
   const [confirm, setConfirm] = useState(null);
   const [syncingId, setSyncingId] = useState(null);
   const [renaming, setRenaming] = useState(null);
+  const searchParams = useSearchParams();
+
+  // Links from other pages (e.g. Activity Logs) open a filtered record: ?search=<name>&tab=defaults
+  useEffect(() => {
+    const initialSearch = searchParams.get("search");
+    if (initialSearch) setSearch(initialSearch.trim());
+    if (searchParams.get("tab") === "defaults") setActiveTab(TAB_DEFAULTS);
+  }, [searchParams]);
 
   const load = useCallback(async () => {
     const [templateList, defaultList] = await Promise.all([getWhatsAppTemplates(), getWhatsAppDefaultMessages()]);
@@ -610,8 +659,8 @@ export default function WhatsAppTemplatesPage() {
   }, []);
 
   useEffect(() => {
-    if (isSuperadmin) load();
-  }, [isSuperadmin, load]);
+    if (canView) load();
+  }, [canView, load]);
 
   const visibleTemplates = useMemo(
     () =>
@@ -670,12 +719,12 @@ export default function WhatsAppTemplatesPage() {
     load();
   };
 
-  if (!isSuperadmin) {
+  if (!canView) {
     return (
       <Container dir={dir} maxWidth={false} sx={{ px: { xs: 2, md: 3 } }}>
         <BreadcrumbsNav />
         <Alert severity="info" sx={{ mt: 2 }}>
-          {t.superadminOnly}
+          {t.adminsOnly}
         </Alert>
       </Container>
     );
@@ -721,7 +770,7 @@ export default function WhatsAppTemplatesPage() {
             name="whatsapp-templates-search"
             sx={{ minWidth: { sm: 240, md: 280 } }}
           />
-          {isLibrary ? (
+          {!isSuperadmin ? null : isLibrary ? (
             <Button
               variant="contained"
               startIcon={<ICONS.download />}
@@ -755,6 +804,12 @@ export default function WhatsAppTemplatesPage() {
         <Tab value={TAB_DEFAULTS} label={`${t.defaults} (${defaults.length})`} />
       </Tabs>
 
+      {!isSuperadmin && (
+        <Alert severity="info" sx={{ mb: 2 }}>
+          {t.readOnly}
+        </Alert>
+      )}
+
       {templates === null ? (
         <LoadingState />
       ) : (
@@ -777,9 +832,9 @@ export default function WhatsAppTemplatesPage() {
                   t={t}
                   locale={locale}
                   syncing={syncingId === template._id}
-                  onSync={() => handleSync(template._id)}
+                  onSync={isSuperadmin ? () => handleSync(template._id) : undefined}
                   defaultTypes={defaultTypesByTemplate.get(String(template._id)) || []}
-                  onRename={() => setRenaming(template)}
+                  onRename={isSuperadmin ? () => setRenaming(template) : undefined}
                   onSetDefault={() =>
                     setEditing({ open: true, initial: null, presetTemplateId: String(template._id) })
                   }
@@ -801,7 +856,9 @@ export default function WhatsAppTemplatesPage() {
                         message={message}
                         t={t}
                         locale={locale}
-                        onEdit={() => setEditing({ open: true, initial: message, presetTemplateId: "" })}
+                        onEdit={
+                          isSuperadmin ? () => setEditing({ open: true, initial: message, presetTemplateId: "" }) : undefined
+                        }
                         onRemove={() => setConfirm({ kind: "default", id: message._id })}
                       />
                     ))}
