@@ -57,8 +57,11 @@ import {
   toEditableMessages,
   toMessagesPayload,
   validateWhatsAppMessages,
+  moduleKeyForEventType,
   whatsappEventTypeFor,
 } from "@/utils/whatsappMessages";
+import { useHasPermission } from "@/hooks/usePermission";
+import { useAuth } from "@/contexts/AuthContext";
 import CountryCodeSelector from "@/components/CountryCodeSelector";
 import { DEFAULT_ISO_CODE, DEFAULT_COUNTRY_CODE, getCountryCodeByIsoCode, COUNTRY_CODES } from "@/utils/countryCodes";
 import { validatePhoneNumber } from "@/utils/phoneValidation";
@@ -877,9 +880,16 @@ const EventModal = ({
 
   // The Tickets & Fees tab is injected between Options and Uploads for paid events.
   const hasTicketsTab = forcePaid || (allowPaid && formData.isPaid);
-  const tabs = getEventModalTabIndices({ ...formData, hasTicketsTab });
   const whatsappEventType = whatsappEventTypeFor({ isClosed, moduleKey });
-  const whatsappCatalog = useWhatsAppCatalog([whatsappEventType], open && formData.useCustomWhatsAppMessages);
+  // Configuring an event's WhatsApp messages is for admins and superadmin with
+  // the module's send_whatsapp permission; for anyone else the option is
+  // hidden and the fields are not sent (the backend ignores them too).
+  const { user: currentUser } = useAuth();
+  const hasWhatsAppSend = useHasPermission(moduleKeyForEventType(whatsappEventType), "send_whatsapp");
+  const canConfigureWhatsApp = ["admin", "superadmin"].includes(currentUser?.role) && hasWhatsAppSend;
+  const showWhatsAppTab = canConfigureWhatsApp && formData.useCustomWhatsAppMessages;
+  const tabs = getEventModalTabIndices({ ...formData, useCustomWhatsAppMessages: showWhatsAppTab, hasTicketsTab });
+  const whatsappCatalog = useWhatsAppCatalog([whatsappEventType], open && showWhatsAppTab);
   const whatsappFieldNames = getTemplateFieldNames(formData);
   // Messages can only be checked and saved once the library has loaded; until
   // then the saved messages are left untouched.
@@ -1410,7 +1420,7 @@ const EventModal = ({
       }
     }
 
-    if (formData.useCustomWhatsAppMessages && whatsappReady) {
+    if (showWhatsAppTab && whatsappReady) {
       const whatsappError = validateWhatsAppMessages(formData.whatsappMessages, {
         templatesById: whatsappCatalog.templatesById,
         placeholders: whatsappCatalog.placeholders,
@@ -1673,8 +1683,8 @@ const EventModal = ({
         defaultLanguage: formData.defaultLanguage,
         useInternationalNumbers: formData.useInternationalNumbers,
         useCustomEmailTemplate: formData.useCustomEmailTemplate,
-        useCustomWhatsAppMessages: formData.useCustomWhatsAppMessages,
-        ...(formData.useCustomWhatsAppMessages && whatsappReady
+        ...(canConfigureWhatsApp ? { useCustomWhatsAppMessages: formData.useCustomWhatsAppMessages } : {}),
+        ...(showWhatsAppTab && whatsappReady
           ? { whatsappMessages: toMessagesPayload(formData.whatsappMessages, whatsappCatalog.templatesById) }
           : {}),
         ...(formData.useCustomEmailTemplate
@@ -1825,7 +1835,7 @@ const EventModal = ({
               <Tab label={t.uploadsTab} />
               {formData.useCustomFields && <Tab label={t.customFieldsTab} />}
               {formData.useCustomEmailTemplate && <Tab label={t.emailTemplateTab} />}
-              {formData.useCustomWhatsAppMessages && <Tab label={t.whatsappTab} />}
+              {showWhatsAppTab && <Tab label={t.whatsappTab} />}
               <Tab label={t.customizeBadgeTab} />
               {formData.useCustomQrCode && <Tab label={t.customQrCodeTab} />}
             </Tabs>
@@ -2387,14 +2397,16 @@ const EventModal = ({
               />
 
               {/* Custom WhatsApp Messages */}
-              <TabOptionCheckbox
-                checked={formData.useCustomWhatsAppMessages}
-                onChange={(checked) =>
-                  setFormData((prev) => ({ ...prev, useCustomWhatsAppMessages: checked }))
-                }
-                label={t.useCustomWhatsAppMessages}
-                hint={t.customWhatsAppMessagesHint}
-              />
+              {canConfigureWhatsApp && (
+                <TabOptionCheckbox
+                  checked={formData.useCustomWhatsAppMessages}
+                  onChange={(checked) =>
+                    setFormData((prev) => ({ ...prev, useCustomWhatsAppMessages: checked }))
+                  }
+                  label={t.useCustomWhatsAppMessages}
+                  hint={t.customWhatsAppMessagesHint}
+                />
+              )}
 
               {/* Use Custom Fields Checkbox */}
               {(isClosed || formData.eventType === "public") && (
@@ -3666,7 +3678,7 @@ const EventModal = ({
           )}
 
           {/* Tab: Customize Badge (always visible) */}
-          {formData.useCustomWhatsAppMessages && activeTab === tabs.whatsapp && (
+          {showWhatsAppTab && activeTab === tabs.whatsapp && (
             <WhatsAppMessagesTab
               messages={formData.whatsappMessages}
               onChange={(whatsappMessages) => setFormData((prev) => ({ ...prev, whatsappMessages }))}
