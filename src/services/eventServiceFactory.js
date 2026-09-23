@@ -12,6 +12,10 @@ export default function createEventService(basePath) {
       const { data } = await api.get(`${basePath}/slug/${slug}`);
       return data;
     }),
+    getEventBySlugForCms: withApiHandler(async (slug) => {
+      const { data } = await api.get(`${basePath}/cms/slug/${slug}`);
+      return data;
+    }),
     getEventById: withApiHandler(async (id) => {
       const { data } = await api.get(`${basePath}/${id}`);
       return data;

@@ -5,6 +5,7 @@ import createEventService from "@/services/eventServiceFactory";
 export const {
   getAllEventsByBusiness: getAllPublicEventsByBusiness,
   getEventBySlug: getPublicEventBySlug,
+  getEventBySlugForCms: getPublicEventBySlugForCms,
   getEventById: getPublicEventById,
   createEvent: createPublicEvent,
   updateEvent: updatePublicEvent,

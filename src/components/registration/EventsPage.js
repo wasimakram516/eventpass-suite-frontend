@@ -28,6 +28,7 @@ import NoDataAvailable from "@/components/NoDataAvailable";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import InitialsPlaceholder from "@/components/InitialsPlaceholder";
 import EventCardBase from "@/components/cards/EventCard";
+import { fetchCmsEvents } from "@/utils/fetchCmsEvents";
 
 export const eventTranslations = {
   en: {
@@ -112,6 +113,7 @@ export function EventsPage({
 }) {
   const {
     getAllEventsByBusiness,
+    getEventBySlugForCms,
     createEvent,
     updateEvent,
     deleteEvent,
@@ -119,6 +121,7 @@ export function EventsPage({
   } = eventService;
   const router = useRouter();
   const searchParams = useSearchParams();
+  const requestedEventSlug = searchParams.get("event");
   const { user, selectedBusiness, setSelectedBusiness } = useAuth();
   const { t, dir, align, language } = useI18nLayout(translations);
   const canCreate = useHasPermission(moduleKey, "create");
@@ -190,17 +193,17 @@ export function EventsPage({
   }, [user, selectedBusiness, setSelectedBusiness]);
 
   const fetchEvents = useCallback(async ({ silent = false } = {}) => {
-    if (!selectedBusiness) {
-      setEvents([]);
-      setLoading(false);
-      return;
-    }
     if (!silent) setLoading(true);
-    const result = await getAllEventsByBusiness(selectedBusiness);
-    if (!result?.error) setEvents(result.events || []);
+    const { events: fetchedEvents, error, missingBusiness } = await fetchCmsEvents({
+      eventSlug: requestedEventSlug,
+      businessSlug: selectedBusiness,
+      getEventBySlugForCms,
+      getAllEventsByBusiness,
+    });
+    if (!error) setEvents(fetchedEvents);
     else if (!silent) setEvents([]);
-    if (!silent) setLoading(false);
-  }, [getAllEventsByBusiness, selectedBusiness]);
+    if (!silent || missingBusiness) setLoading(false);
+  }, [getAllEventsByBusiness, getEventBySlugForCms, requestedEventSlug, selectedBusiness]);
 
   useEffect(() => {
     fetchEvents();
@@ -335,7 +338,7 @@ export function EventsPage({
 
         <Divider sx={{ mb: 3 }} />
 
-        {!selectedBusiness ? (
+        {!selectedBusiness && !requestedEventSlug ? (
           <EmptyBusinessState />
         ) : loading ? (
           <Box sx={{ textAlign: "center", mt: 8 }}>
