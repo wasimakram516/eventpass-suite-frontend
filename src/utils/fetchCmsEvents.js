@@ -1,19 +1,10 @@
-// Resolves the Events-page data source consistently. A dashboard deep link
-// uses the protected CMS lookup; a normal Events page uses the business list.
+// Events pages always load the selected business's complete list. Dashboard
+// navigation uses ?search= to highlight one event without locking the page to
+// a single-record response.
 export async function fetchCmsEvents({
-  eventSlug,
   businessSlug,
-  getEventBySlugForCms,
   getAllEventsByBusiness,
 }) {
-  if (eventSlug) {
-    const result = await getEventBySlugForCms(eventSlug);
-    return {
-      error: Boolean(result?.error),
-      events: result?.error || !result ? [] : [result],
-    };
-  }
-
   if (!businessSlug) return { error: false, events: [], missingBusiness: true };
 
   const result = await getAllEventsByBusiness(businessSlug);

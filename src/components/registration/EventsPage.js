@@ -36,6 +36,7 @@ export const eventTranslations = {
     pageDescription: "Manage all public registration events for this business.",
     createEvent: "Create Event",
     selectBusiness: "Select Business",
+    showAllEvents: "Show All Events",
     noEvents: "No events found.",
     noBusinesses: "No businesses found.",
     eventCreated: "Event created!",
@@ -69,6 +70,7 @@ export const eventTranslations = {
     pageDescription: "إدارة جميع فعاليات التسجيل العام لهذا العمل.",
     createEvent: "إنشاء فعالية",
     selectBusiness: "اختر العمل",
+    showAllEvents: "عرض جميع الفعاليات",
     noEvents: "لا توجد فعاليات.",
     noBusinesses: "لم يتم العثور على أي عمل.",
     eventCreated: "تم إنشاء الفعالية!",
@@ -113,7 +115,6 @@ export function EventsPage({
 }) {
   const {
     getAllEventsByBusiness,
-    getEventBySlugForCms,
     createEvent,
     updateEvent,
     deleteEvent,
@@ -121,7 +122,6 @@ export function EventsPage({
   } = eventService;
   const router = useRouter();
   const searchParams = useSearchParams();
-  const requestedEventSlug = searchParams.get("event");
   const { user, selectedBusiness, setSelectedBusiness } = useAuth();
   const { t, dir, align, language } = useI18nLayout(translations);
   const canCreate = useHasPermission(moduleKey, "create");
@@ -195,15 +195,13 @@ export function EventsPage({
   const fetchEvents = useCallback(async ({ silent = false } = {}) => {
     if (!silent) setLoading(true);
     const { events: fetchedEvents, error, missingBusiness } = await fetchCmsEvents({
-      eventSlug: requestedEventSlug,
       businessSlug: selectedBusiness,
-      getEventBySlugForCms,
       getAllEventsByBusiness,
     });
     if (!error) setEvents(fetchedEvents);
     else if (!silent) setEvents([]);
     if (!silent || missingBusiness) setLoading(false);
-  }, [getAllEventsByBusiness, getEventBySlugForCms, requestedEventSlug, selectedBusiness]);
+  }, [getAllEventsByBusiness, selectedBusiness]);
 
   useEffect(() => {
     fetchEvents();
@@ -221,7 +219,14 @@ export function EventsPage({
 
   const handleBusinessSelect = (slug) => {
     setSelectedBusiness(slug);
+    setSearchTerm("");
     setDrawerOpen(false);
+    router.replace(routeBase);
+  };
+
+  const handleShowAllEvents = () => {
+    setSearchTerm("");
+    router.replace(routeBase);
   };
 
   const handleOpenCreate = () => {
@@ -313,6 +318,14 @@ export function EventsPage({
               width: { xs: "100%", sm: "auto" },
             }}
           >
+            {searchTerm && (
+              <Button
+                variant="outlined"
+                onClick={handleShowAllEvents}
+              >
+                {t.showAllEvents}
+              </Button>
+            )}
             {(user?.role === "admin" || user?.role === "superadmin") && (
               <Button
                 variant="outlined"
@@ -338,7 +351,7 @@ export function EventsPage({
 
         <Divider sx={{ mb: 3 }} />
 
-        {!selectedBusiness && !requestedEventSlug ? (
+        {!selectedBusiness ? (
           <EmptyBusinessState />
         ) : loading ? (
           <Box sx={{ textAlign: "center", mt: 8 }}>
@@ -380,16 +393,16 @@ export function EventsPage({
                     setEventToShare(ev);
                     setShareModalOpen(true);
                   } : undefined}
-                  onInsights={showInsights && canView ? () =>
-                    router.push(
-                      `${routeBase}/${ev.slug}/insights`
-                    )
-                  : undefined}
                   onPromoCodes={showPromoCodes && canViewPromoCodes ? () =>
                     router.push(`${routeBase}/${ev.slug}/promo-codes`)
                   : undefined}
                   onPayments={showPayments && canViewPayments ? () =>
                     router.push(`${routeBase}/${ev.slug}/payments`)
+                  : undefined}
+                  onInsights={showInsights && canView ? () =>
+                    router.push(
+                      `${routeBase}/${ev.slug}/insights`
+                    )
                   : undefined}
                 />
               );
