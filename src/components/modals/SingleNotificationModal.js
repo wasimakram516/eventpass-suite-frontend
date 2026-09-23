@@ -7,6 +7,8 @@ import MessageTypeSelector from "@/components/modals/MessageTypeSelector";
 import NotificationActions from "@/components/modals/NotificationActions";
 import CustomNotificationForm from "@/components/modals/CustomNotificationForm";
 import DefaultNotificationInfo from "@/components/modals/DefaultNotificationInfo";
+import WhatsAppMessagePicker, { canSendWhatsAppChoice } from "@/components/whatsapp/WhatsAppMessagePicker";
+import useWhatsAppMessageChoice from "@/hooks/useWhatsAppMessageChoice";
 import { sendCheckInSingleNotification } from "@/services/checkin/checkinRegistrationService";
 
 const translations = {
@@ -34,7 +36,6 @@ const SingleNotificationModal = ({
   onSent,
   registration,
   event = null,
-  showReminderOption = false,
   canSendEmail = true,
   canSendWhatsapp = true,
 }) => {
@@ -42,6 +43,11 @@ const SingleNotificationModal = ({
   const [sending, setSending] = useState(false);
   const draft = useNotificationDraft(event, open);
   const { notificationType, composer } = draft;
+  const whatsappChoice = useWhatsAppMessageChoice({
+    event,
+    enabled: open && canSendWhatsapp,
+    registrationId: registration?._id,
+  });
 
   const handleClose = () => {
     draft.reset();
@@ -52,13 +58,9 @@ const SingleNotificationModal = ({
     const isCustom = notificationType === "custom";
     if (channel === "email" && isCustom && !composer.validate()) return;
 
-    // Email has no separate reminder template; emailProcessor infers
-    // "is this a reminder" from the recipient's own emailSent flag.
-    // WhatsApp has a real, distinct reminder template.
-    const type =
-      channel === "email"
-        ? notificationType === "reminder" ? "default" : notificationType
-        : notificationType;
+    // Which WhatsApp message goes out is chosen explicitly (messageId); email
+    // infers "is this a reminder" from the recipient's own emailSent flag.
+    const type = notificationType;
 
     const customFields =
       channel === "email" && isCustom
@@ -69,7 +71,12 @@ const SingleNotificationModal = ({
     try {
       await sendCheckInSingleNotification(
         registration._id,
-        { channel, type, ...customFields },
+        {
+          channel,
+          type,
+          ...(channel === "whatsapp" ? { messageId: whatsappChoice.messageId } : {}),
+          ...customFields,
+        },
         isCustom ? draft.attachedFile : undefined
       );
       onSent?.(channel);
@@ -96,10 +103,13 @@ const SingleNotificationModal = ({
           <MessageTypeSelector
             value={notificationType}
             onChange={draft.setNotificationType}
-            showReminderOption={showReminderOption}
           />
 
           {notificationType === "default" && <DefaultNotificationInfo event={event} />}
+
+          {canSendWhatsapp && notificationType !== "custom" && (
+            <WhatsAppMessagePicker choice={whatsappChoice} forSingleRecipient />
+          )}
 
           {notificationType === "custom" && (
             <CustomNotificationForm
@@ -116,6 +126,7 @@ const SingleNotificationModal = ({
         canSendEmail={canSendEmail}
         canSendWhatsapp={canSendWhatsapp}
         disabled={sending}
+        whatsappDisabled={!canSendWhatsAppChoice(whatsappChoice)}
         onSendEmail={() => handleSend("email")}
         onSendWhatsApp={() => handleSend("whatsapp")}
       />

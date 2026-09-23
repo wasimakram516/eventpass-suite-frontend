@@ -2506,7 +2506,6 @@ export default function ViewRegistrations() {
       <BulkEmailModal
         open={bulkEmailModalOpen}
         event={eventDetails}
-        showReminderOption={true}
         canSendEmail={canSendEmail}
         canSendWhatsapp={canSendWhatsapp}
         onClose={() => {
@@ -2531,6 +2530,7 @@ export default function ViewRegistrations() {
             eventSlug,
             {
               type: data.type,
+              messageId: data.messageId,
               subject: data.subject,
               body: data.body,
               statusFilter: data?.statusFilter || "all",
@@ -2574,7 +2574,6 @@ export default function ViewRegistrations() {
       <SingleNotificationModal
         open={notifyModalOpen}
         event={eventDetails}
-        showReminderOption={true}
         canSendEmail={canSendEmail}
         canSendWhatsapp={canSendWhatsapp}
         onClose={() => {

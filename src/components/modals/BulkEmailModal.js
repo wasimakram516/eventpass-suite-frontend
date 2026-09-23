@@ -21,6 +21,8 @@ import MessageTypeSelector from "@/components/modals/MessageTypeSelector";
 import NotificationActions from "@/components/modals/NotificationActions";
 import CustomNotificationForm from "@/components/modals/CustomNotificationForm";
 import DefaultNotificationInfo from "@/components/modals/DefaultNotificationInfo";
+import WhatsAppMessagePicker, { canSendWhatsAppChoice } from "@/components/whatsapp/WhatsAppMessagePicker";
+import useWhatsAppMessageChoice from "@/hooks/useWhatsAppMessageChoice";
 
 const translations = {
     en: {
@@ -123,7 +125,6 @@ const BulkEmailModal = ({
     sendingEmails = false,
     isApprovalBased = true,
     useApprovedRejected = false,
-    showReminderOption = false,
     canSendEmail = true,
     canSendWhatsapp = true,
 }) => {
@@ -131,6 +132,10 @@ const BulkEmailModal = ({
     const [selectedFilter, setSelectedFilter] = useState("all");
     const draft = useNotificationDraft(event, open);
     const { notificationType, composer } = draft;
+    const whatsappChoice = useWhatsAppMessageChoice({
+        event,
+        enabled: open && canSendWhatsapp,
+    });
 
     useEffect(() => {
         setSelectedFilter("all");
@@ -151,7 +156,7 @@ const BulkEmailModal = ({
         if (isCustom && !composer.validate()) return;
 
         onSendEmail({
-            type: notificationType === "reminder" ? "default" : notificationType,
+            type: notificationType,
             customTemplate: isCustom ? composer.buildTemplate() : undefined,
             file: isCustom ? draft.attachedFile : undefined,
             ...getFilterStates(selectedFilter),
@@ -161,6 +166,7 @@ const BulkEmailModal = ({
     const handleSendWhatsApp = () => {
         onSendWhatsApp({
             type: notificationType,
+            messageId: whatsappChoice.messageId,
             ...getFilterStates(selectedFilter),
         });
     };
@@ -244,11 +250,14 @@ const BulkEmailModal = ({
                         <MessageTypeSelector
                             value={notificationType}
                             onChange={draft.setNotificationType}
-                            showReminderOption={showReminderOption}
                         />
                     </Box>
 
                     {notificationType === "default" && <DefaultNotificationInfo event={event} />}
+
+                    {canSendWhatsapp && notificationType !== "custom" && (
+                        <WhatsAppMessagePicker choice={whatsappChoice} />
+                    )}
 
                     {notificationType === "custom" && (
                         <CustomNotificationForm
@@ -265,6 +274,7 @@ const BulkEmailModal = ({
                 canSendEmail={canSendEmail}
                 canSendWhatsapp={canSendWhatsapp}
                 disabled={sendingEmails}
+                whatsappDisabled={!canSendWhatsAppChoice(whatsappChoice)}
                 onSendEmail={handleSendEmail}
                 onSendWhatsApp={handleSendWhatsApp}
             />

@@ -4,29 +4,27 @@ import { FormControlLabel, Radio, RadioGroup } from "@mui/material";
 import useI18nLayout from "@/hooks/useI18nLayout";
 
 const translations = {
-  en: { default: "Default", custom: "Custom", reminder: "Reminder" },
-  ar: { default: "افتراضي", custom: "مخصص", reminder: "تذكير" },
+  en: { default: "Default", custom: "Custom" },
+  ar: { default: "افتراضي", custom: "مخصص" },
 };
 
 /**
- * The Default, Custom and (optionally) Reminder choice at the top of a
+ * The Default and Custom choice at the top of a
  * notification modal, laid out for both left to right and right to left.
  * Shared by the bulk and single notification modals.
  *
  * @param {object} props
- * @param {"default"|"custom"|"reminder"} props.value - The selected message type
+ * @param {"default"|"custom"} props.value - The selected message type
  * @param {(type: string) => void} props.onChange - Called with the newly selected type
- * @param {boolean} [props.showReminderOption] - Whether to offer Reminder
  * @returns {JSX.Element}
  */
-const MessageTypeSelector = ({ value, onChange, showReminderOption = false }) => {
+const MessageTypeSelector = ({ value, onChange }) => {
   const { t, dir } = useI18nLayout(translations);
   const isRtl = dir === "rtl";
 
   const options = [
     { type: "default", label: t.default },
     { type: "custom", label: t.custom },
-    ...(showReminderOption ? [{ type: "reminder", label: t.reminder }] : []),
   ];
 
   // The first option hugs the start edge; the rest are spaced from their neighbour.
