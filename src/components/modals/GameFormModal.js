@@ -61,6 +61,7 @@ const translations = {
     loadFields: "Load Fields",
     loadingFields: "Loading Fields...",
     selectPrimaryField: "Select Primary Field",
+    primaryFieldHint: "Only required (non-empty) fields of the linked event can be used as the primary key.",
     errors: {
       titleRequired: "Title is required",
       slugRequired: "Slug is required",
@@ -112,6 +113,7 @@ const translations = {
     loadFields: "تحميل الحقول",
     loadingFields: "جارٍ تحميل الحقول...",
     selectPrimaryField: "اختر الحقل الأساسي",
+    primaryFieldHint: "يمكن استخدام الحقول الإلزامية (غير الفارغة) من الحدث المرتبط فقط كمفتاح أساسي.",
     errors: {
       titleRequired: "العنوان مطلوب",
       slugRequired: "المعرف مطلوب",
@@ -1210,6 +1212,9 @@ const GameFormModal = ({
                         sx={{ fontWeight: 600, color: "text.secondary" }}
                       >
                         {t.selectPrimaryField} *
+                      </Typography>
+                      <Typography variant="caption" sx={{ color: "text.secondary", display: "block" }}>
+                        {t.primaryFieldHint}
                       </Typography>
                       <FormGroup sx={{ mt: 0.5, my: 1 }}>
                         {linkedEventFields.map((f) => (
