@@ -408,16 +408,18 @@ export function buildEmailTemplatePayload(formData) {
  * Compute the event modal tab positions. The email template tab sits right
  * after the input fields tab (custom fields), or after Uploads when the event
  * uses classic fields, so the field set is settled before the template is
- * written.
+ * written. The WhatsApp messages tab follows the email template tab for the
+ * same reason (its variables map to the event's fields).
  *
- * @param {{useCustomFields?: boolean, useCustomEmailTemplate?: boolean, useCustomQrCode?: boolean, hasTicketsTab?: boolean}} flags
- * @returns {{tickets: number, uploads: number, customFields: number, emailTemplate: number, badge: number, customQr: number, last: number}}
+ * @param {{useCustomFields?: boolean, useCustomEmailTemplate?: boolean, useCustomWhatsAppMessages?: boolean, useCustomQrCode?: boolean, hasTicketsTab?: boolean}} flags
+ * @returns {{tickets: number, uploads: number, customFields: number, emailTemplate: number, whatsapp: number, badge: number, customQr: number, last: number}}
  *   Tab index of each tab, or -1 when that tab is not shown
  */
 export function getEventModalTabIndices({
   useCustomFields,
   useCustomEmailTemplate,
   useCustomQrCode,
+  useCustomWhatsAppMessages,
   hasTicketsTab = false,
 }) {
   const tickets = hasTicketsTab ? 3 : -1;
@@ -425,7 +427,8 @@ export function getEventModalTabIndices({
   let next = uploads + 1;
   const customFields = useCustomFields ? next++ : -1;
   const emailTemplate = useCustomEmailTemplate ? next++ : -1;
+  const whatsapp = useCustomWhatsAppMessages ? next++ : -1;
   const badge = next++;
   const customQr = useCustomQrCode ? next++ : -1;
-  return { tickets, uploads, customFields, emailTemplate, badge, customQr, last: next - 1 };
+  return { tickets, uploads, customFields, emailTemplate, whatsapp, badge, customQr, last: next - 1 };
 }
