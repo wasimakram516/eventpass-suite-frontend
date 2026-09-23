@@ -424,7 +424,8 @@ export default function PvPSessions() {
                                     {player1?.playerId?.name || t.unknown}
                                   </Typography>
 
-                                  {player1?.playerId?.eventRegEmail ? (
+                                  {player1?.playerId?.eventRegEmail &&
+                                  player1.playerId.eventRegEmail !== player1?.playerId?.name ? (
                                     <Typography variant="body2" sx={{
                                       color: "text.secondary",
                                       wordBreak: "break-word"
@@ -569,7 +570,8 @@ export default function PvPSessions() {
                                     {player2?.playerId?.name || t.unknown}
                                   </Typography>
 
-                                  {player2?.playerId?.eventRegEmail ? (
+                                  {player2?.playerId?.eventRegEmail &&
+                                  player2.playerId.eventRegEmail !== player2?.playerId?.name ? (
                                     <Typography variant="body2" sx={{
                                       color: "text.secondary",
                                       wordBreak: "break-word"
@@ -880,7 +882,8 @@ export default function PvPSessions() {
                                               p.playerId?.name ||
                                               t.unknown}
                                           </Typography>
-                                          {p.email ? (
+                                          {p.email &&
+                                          p.email !== (p.name || p.playerId?.name) ? (
                                             <Typography
                                               variant="caption"
                                               sx={{

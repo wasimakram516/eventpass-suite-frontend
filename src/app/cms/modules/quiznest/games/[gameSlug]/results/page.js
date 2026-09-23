@@ -277,7 +277,7 @@ export default function ResultsPage() {
                     </Typography>
                   </Box>
 
-                  {p.email ? (
+                  {p.email && p.email !== p.name ? (
                     <Typography
                       variant="body2"
                       sx={{ display: "block", color: "text.secondary", mb: 1, wordBreak: "break-word" }}

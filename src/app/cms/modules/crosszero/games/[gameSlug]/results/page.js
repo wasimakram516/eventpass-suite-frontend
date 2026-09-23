@@ -335,7 +335,7 @@ export default function CrossZeroAIResultsPage() {
                         {record.name || "-"}
                       </Typography>
 
-                      {record.email ? (
+                      {record.email && record.email !== record.name ? (
                         <Typography variant="body2" sx={{
                           color: "text.secondary",
                           wordBreak: "break-word"
