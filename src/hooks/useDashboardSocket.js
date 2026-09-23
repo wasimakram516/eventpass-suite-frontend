@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import useSocket from "@/utils/useSocket";
 
 /**
@@ -6,17 +6,26 @@ import useSocket from "@/utils/useSocket";
  */
 const useDashboardSocket = ({ onMetricsUpdate }) => {
   const [lastUpdate, setLastUpdate] = useState(null);
+  const onMetricsUpdateRef = useRef(onMetricsUpdate);
 
-  const { socket, connected, connectionError } = useSocket({
+  useEffect(() => {
+    onMetricsUpdateRef.current = onMetricsUpdate;
+  }, [onMetricsUpdate]);
+
+  // A dashboard update re-renders the page. Keep this listener stable so a
+  // render never creates a gap in which a live metrics update is missed.
+  const events = useMemo(() => ({
     metricsUpdated: (metrics) => {
       console.log("📊 Received metricsUpdated:", metrics);
       setLastUpdate(new Date());
-      if (onMetricsUpdate) onMetricsUpdate(metrics);
+      onMetricsUpdateRef.current?.(metrics);
     },
     metricsError: (msg) => {
       console.error("❌ Metrics error:", msg);
     },
-  });
+  }), []);
+
+  const { socket, connected, connectionError } = useSocket(events);
 
   return {
     socket,

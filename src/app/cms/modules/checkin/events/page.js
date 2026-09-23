@@ -24,6 +24,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { getAllBusinesses } from "@/services/businessService";
 import {
   getAllCheckInEvents,
+  getCheckInEventBySlugForCms,
   createCheckInEvent,
   updateCheckInEvent,
   deleteCheckInEvent,
@@ -33,6 +34,7 @@ import EmptyBusinessState from "@/components/EmptyBusinessState";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import EventCardBase from "@/components/cards/EventCard";
+import { fetchCmsEvents } from "@/utils/fetchCmsEvents";
 
 const translations = {
   en: {
@@ -109,6 +111,7 @@ const translations = {
 export default function EventsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const requestedEventSlug = searchParams.get("event");
   const { user, selectedBusiness, setSelectedBusiness } = useAuth();
   const { t, dir, align, language } = useI18nLayout(translations);
   const canCreate = useHasPermission("checkin", "create");
@@ -178,16 +181,17 @@ export default function EventsPage() {
   }, [user, selectedBusiness, setSelectedBusiness]);
 
   const fetchEvents = useCallback(async ({ silent = false } = {}) => {
-    if (!selectedBusiness) {
-      setEvents([]);
-      return;
-    }
     if (!silent) setLoading(true);
-    const result = await getAllCheckInEvents(selectedBusiness);
-    if (!result?.error) setEvents(result?.events ?? []);
+    const { events: fetchedEvents, error, missingBusiness } = await fetchCmsEvents({
+      eventSlug: requestedEventSlug,
+      businessSlug: selectedBusiness,
+      getEventBySlugForCms: getCheckInEventBySlugForCms,
+      getAllEventsByBusiness: getAllCheckInEvents,
+    });
+    if (!error) setEvents(fetchedEvents);
     else if (!silent) setEvents([]);
-    if (!silent) setLoading(false);
-  }, [selectedBusiness]);
+    if (!silent || missingBusiness) setLoading(false);
+  }, [requestedEventSlug, selectedBusiness]);
 
   useEffect(() => {
     fetchEvents();
@@ -328,7 +332,7 @@ export default function EventsPage() {
           <Divider sx={{ mt: 2 }} />
         </Box>
 
-        {!selectedBusiness ? (
+        {!selectedBusiness && !requestedEventSlug ? (
           <EmptyBusinessState />
         ) : loading ? (
           <Box sx={{ textAlign: "center", mt: 8 }}>

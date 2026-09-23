@@ -5,6 +5,7 @@ import withApiHandler from "@/utils/withApiHandler";
 export const {
   getAllEventsByBusiness: getAllCheckoutEventsByBusiness,
   getEventBySlug: getCheckoutEventBySlug,
+  getEventBySlugForCms: getCheckoutEventBySlugForCms,
   getEventById: getCheckoutEventById,
   createEvent: createCheckoutEvent,
   updateEvent: updateCheckoutEvent,

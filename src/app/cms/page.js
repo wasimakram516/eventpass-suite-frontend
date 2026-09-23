@@ -10,19 +10,20 @@ import {
   Chip,
   Stack,
   Button,
+  IconButton,
   CircularProgress,
   Tooltip,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
 } from "@mui/material";
 import ArrowForwardOutlinedIcon from "@mui/icons-material/ArrowForwardOutlined";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import OpenInNewIcon from "@mui/icons-material/OpenInNew";
 import EventAvailableOutlinedIcon from "@mui/icons-material/EventAvailableOutlined";
 import CampaignOutlinedIcon from "@mui/icons-material/CampaignOutlined";
 import SportsEsportsOutlinedIcon from "@mui/icons-material/SportsEsportsOutlined";
@@ -73,6 +74,16 @@ const translations = {
     viewDetails: "View Details",
     eventBreakdown: "Events by Business",
     eventCount: "Events",
+    current: "Current",
+    upcoming: "Upcoming",
+    expired: "Expired",
+    registrations: "Registrations",
+    paid: "Paid",
+    free: "Free",
+    eventregType: "Event Registration",
+    checkinType: "Check-In",
+    checkoutType: "Checkout",
+    digipassType: "DigiPass",
     close: "Close",
     users: "Users",
     businesses: "Businesses",
@@ -98,6 +109,16 @@ const translations = {
     viewDetails: "عرض التفاصيل",
     eventBreakdown: "الفعاليات حسب الشركة",
     eventCount: "الفعاليات",
+    current: "حالية",
+    upcoming: "قادمة",
+    expired: "منتهية",
+    registrations: "التسجيلات",
+    paid: "مدفوعة",
+    free: "مجانية",
+    eventregType: "تسجيل الفعاليات",
+    checkinType: "تسجيل الدخول",
+    checkoutType: "الدفع",
+    digipassType: "التمرير الرقمي",
     close: "إغلاق",
     users: "المستخدمون",
     businesses: "الشركات",
@@ -593,6 +614,17 @@ export default function HomePage() {
 
   const { modules: moduleStats = {} } = insights || {};
   const eventBusinessBreakdown = moduleStats.global?.totals?.eventsByBusiness || [];
+  const eventStatusCounts = moduleStats.global?.totals?.eventStatusCounts || {};
+  const eventStatusLabel = (status) => t[status] || status;
+  const eventStatusColor = (status) => (
+    status === "expired" ? "error" : status === "current" ? "primary" : "success"
+  );
+  const eventTypeLabel = (eventType) => ({
+    public: t.eventregType,
+    closed: t.checkinType,
+    checkout: t.checkoutType,
+    digipass: t.digipassType,
+  }[eventType] || eventType || "Event");
 
   const hours = new Date().getHours();
   const greeting =
@@ -1181,32 +1213,105 @@ export default function HomePage() {
           open={showEventDetails}
           onClose={() => setShowEventDetails(false)}
           fullWidth
-          maxWidth="sm"
+          maxWidth="md"
           dir={dir}
+          PaperProps={{ sx: { borderRadius: 3, overflow: "hidden" } }}
         >
-          <DialogTitle>{t.eventBreakdown}</DialogTitle>
-          <DialogContent dividers>
+          <DialogTitle sx={{ px: 3, py: 2.5, color: "common.white", textAlign: align, background: (theme) => theme.palette.home.heroGradient }}>
+            <Typography variant="h6" fontWeight={750}>{t.eventBreakdown}</Typography>
+            <Typography variant="body2" sx={{ opacity: 0.8, mt: 0.25 }}>
+              {toArabicDigits(`${eventBusinessBreakdown.reduce((sum, business) => sum + Number(business.count || 0), 0)} ${t.eventCount}`, language)}
+            </Typography>
+          </DialogTitle>
+          <DialogContent sx={{ p: { xs: 2, sm: 3 }, pt: { xs: 4, sm: 4.5 }, bgcolor: "action.hover" }}>
             {eventBusinessBreakdown.length > 0 ? (
-              <Table size="small">
-                <TableHead>
-                  <TableRow>
-                    <TableCell align={align}>{t.businesses}</TableCell>
-                    <TableCell align={align}>{t.eventCount}</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {eventBusinessBreakdown.map((business) => (
-                    <TableRow key={business.businessId || business.name}>
-                      <TableCell align={align}>
-                        {business.name || t.unknownBusiness}
-                      </TableCell>
-                      <TableCell align={align}>
-                        {toArabicDigits(Number(business.count || 0), language)}
-                      </TableCell>
-                    </TableRow>
+              <Stack spacing={1.5} sx={{ mt: 2 }}>
+                <Stack direction="row" spacing={0.75} sx={{ flexWrap: "wrap", gap: 0.75, justifyContent: align === "right" ? "flex-end" : "flex-start" }}>
+                  {["current", "upcoming", "expired"].map((status) => (
+                    <Chip key={status} size="small" color={eventStatusColor(status)} variant="outlined" label={toArabicDigits(`${eventStatusLabel(status)}: ${Number(eventStatusCounts[status] || 0)}`, language)} />
                   ))}
-                </TableBody>
-              </Table>
+                </Stack>
+                {eventBusinessBreakdown.map((business) => (
+                  <Accordion
+                    key={business.businessId || business.name}
+                    disableGutters
+                    elevation={0}
+                    sx={{ border: "1px solid", borderColor: "divider", borderRadius: "12px !important", overflow: "hidden", "&:before": { display: "none" }, "&.Mui-expanded": { mt: 1.5, mb: 0 } }}
+                  >
+                    <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ px: 2, minHeight: 76, "&.Mui-expanded": { minHeight: 76 }, "& .MuiAccordionSummary-content": { my: 1.25 }, "& .MuiAccordionSummary-content.Mui-expanded": { my: 1.25 } }}>
+                      <Stack direction={dir === "rtl" ? "row-reverse" : "row"} spacing={1.25} alignItems="center" sx={{ width: "100%", minWidth: 0, pr: 1, textAlign: align }}>
+                        <Avatar sx={{ width: 40, height: 40, bgcolor: "primary.main", fontWeight: 700 }}>
+                          {(business.name || t.unknownBusiness).charAt(0).toUpperCase()}
+                        </Avatar>
+                        <Box sx={{ flex: 1, minWidth: 0 }}>
+                          <Typography fontWeight={750} noWrap>{business.name || t.unknownBusiness}</Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {toArabicDigits(`${Number(business.current || 0)} ${t.current} · ${Number(business.upcoming || 0)} ${t.upcoming} · ${Number(business.expired || 0)} ${t.expired}`, language)}
+                          </Typography>
+                        </Box>
+                        <Chip
+                          size="small"
+                          color="primary"
+                          label={toArabicDigits(Number(business.count || 0), language)}
+                          sx={{ alignSelf: "center", flexShrink: 0 }}
+                        />
+                      </Stack>
+                    </AccordionSummary>
+                    <AccordionDetails sx={{ p: { xs: 1, sm: 1.5 }, borderTop: "1px solid", borderColor: "divider", bgcolor: "background.default" }}>
+                      <Stack spacing={0.75}>
+                        {(business.events || []).map((event) => (
+                          <Box key={event._id || event.slug} sx={{ p: { xs: 1.25, sm: 1.5 }, borderRadius: 1.5, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", textAlign: align, transition: "border-color 160ms ease", "&:hover": { borderColor: "common.black" } }}>
+                            <Stack direction={{ xs: "column", sm: dir === "rtl" ? "row-reverse" : "row" }} justifyContent="space-between" spacing={1}>
+                              <Box sx={{ minWidth: 0 }}>
+                                <Typography fontWeight={750} noWrap>{event.name || event.slug}</Typography>
+                                <Typography variant="caption" color="text.secondary">{eventTypeLabel(event.eventType)} · {event.slug}</Typography>
+                              </Box>
+                              <Stack direction={dir === "rtl" ? "row-reverse" : "row"} spacing={0.5} sx={{ flexWrap: "wrap", gap: 0.5, justifyContent: { xs: align === "right" ? "flex-end" : "flex-start", sm: "flex-end" }, alignItems: "center" }}>
+                                <Chip size="small" color={eventStatusColor(event.status)} variant="outlined" label={eventStatusLabel(event.status)} />
+                                <Chip size="small" variant="outlined" label={eventTypeLabel(event.eventType)} />
+                                {event.slug && ["public", "closed", "checkout", "digipass"].includes(event.eventType) && (
+                                  <Tooltip title={t.openModule}>
+                                    <IconButton
+                                      size="small"
+                                      color="primary"
+                                      aria-label={t.openModule}
+                                      onClick={(clickEvent) => {
+                                        clickEvent.stopPropagation();
+                                        const moduleByEventType = {
+                                          public: "eventreg",
+                                          closed: "checkin",
+                                          checkout: "checkout",
+                                          digipass: "digipass",
+                                        };
+                                        router.push(`/cms/modules/${moduleByEventType[event.eventType]}/events?event=${encodeURIComponent(event.slug)}`);
+                                      }}
+                                      sx={{ ml: { sm: 0.25 }, border: "1px solid", borderColor: "divider", borderRadius: 1, "&:hover": { borderColor: "primary.main" } }}
+                                    >
+                                      <OpenInNewIcon fontSize="small" />
+                                    </IconButton>
+                                  </Tooltip>
+                                )}
+                              </Stack>
+                            </Stack>
+                            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "minmax(0, 1fr) auto" }, columnGap: 2, rowGap: 0.6, mt: 1.25, color: "text.secondary" }}>
+                              <Typography variant="body2" sx={{ display: "flex", flexDirection: dir === "rtl" ? "row-reverse" : "row", gap: 0.75, alignItems: "center", minWidth: 0 }}>
+                                <ICONS.event fontSize="small" />
+                                {event.startDate ? formatDateTimeWithLocale(event.startDate, language === "ar" ? "ar-SA" : "en-GB") : "—"}{event.endDate ? ` → ${formatDateTimeWithLocale(event.endDate, language === "ar" ? "ar-SA" : "en-GB")}` : ""}
+                              </Typography>
+                              <Typography variant="body2" sx={{ display: "flex", flexDirection: dir === "rtl" ? "row-reverse" : "row", gap: 0.75, alignItems: "center", whiteSpace: "nowrap", justifySelf: { sm: "end" } }}>
+                                <ICONS.people fontSize="small" />{t.registrations}: {toArabicDigits(Number(event.registrations || 0), language)}{event.capacity ? ` / ${toArabicDigits(Number(event.capacity), language)}` : ""}
+                              </Typography>
+                              <Typography variant="body2" sx={{ gridColumn: { sm: "1 / -1" }, display: "flex", flexDirection: dir === "rtl" ? "row-reverse" : "row", gap: 0.75, alignItems: "center" }}>
+                                <ICONS.location fontSize="small" />{event.venue || "—"}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        ))}
+                      </Stack>
+                    </AccordionDetails>
+                  </Accordion>
+                ))}
+              </Stack>
             ) : (
               <Typography color="text.secondary">{t.noTotals}</Typography>
             )}

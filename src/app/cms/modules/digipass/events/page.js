@@ -23,6 +23,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { getAllBusinesses } from "@/services/businessService";
 import {
   getAllDigipassEvents,
+  getDigipassEventBySlugForCms,
   createDigipassEvent,
   updateDigipassEvent,
   deleteDigipassEvent,
@@ -31,6 +32,7 @@ import EmptyBusinessState from "@/components/EmptyBusinessState";
 import NoDataAvailable from "@/components/NoDataAvailable";
 import getStartIconSpacing from "@/utils/getStartIconSpacing";
 import EventCardBase from "@/components/cards/EventCard";
+import { fetchCmsEvents } from "@/utils/fetchCmsEvents";
 
 const translations = {
   en: {
@@ -94,6 +96,7 @@ const translations = {
 export default function EventsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const requestedEventSlug = searchParams.get("event");
   const { user, selectedBusiness, setSelectedBusiness } = useAuth();
   const { t, dir, align, language } = useI18nLayout(translations);
   const canCreate = useHasPermission("digipass", "create");
@@ -135,22 +138,20 @@ export default function EventsPage() {
   }, [user, selectedBusiness, setSelectedBusiness]);
 
   useEffect(() => {
-    if (!selectedBusiness) {
-      setEvents([]);
-      setLoading(false);
-      return;
-    }
-
     const fetchEvents = async () => {
       setLoading(true);
-      const result = await getAllDigipassEvents(selectedBusiness);
-      if (!result?.error) setEvents(result.events || []);
-      else setEvents([]);
+      const { events: fetchedEvents, error } = await fetchCmsEvents({
+        eventSlug: requestedEventSlug,
+        businessSlug: selectedBusiness,
+        getEventBySlugForCms: getDigipassEventBySlugForCms,
+        getAllEventsByBusiness: getAllDigipassEvents,
+      });
+      setEvents(error ? [] : fetchedEvents);
       setLoading(false);
     };
 
     fetchEvents();
-  }, [selectedBusiness]);
+  }, [requestedEventSlug, selectedBusiness]);
 
   const filteredEvents = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
@@ -281,7 +282,7 @@ export default function EventsPage() {
 
         <Divider sx={{ mb: 3 }} />
 
-        {!selectedBusiness ? (
+        {!selectedBusiness && !requestedEventSlug ? (
           <EmptyBusinessState />
         ) : loading ? (
           <Box sx={{ textAlign: "center", mt: 8 }}>
@@ -363,4 +364,3 @@ export default function EventsPage() {
     </Box>
   );
 }
-
