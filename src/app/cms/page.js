@@ -20,6 +20,8 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  TextField,
+  InputAdornment,
 } from "@mui/material";
 import ArrowForwardOutlinedIcon from "@mui/icons-material/ArrowForwardOutlined";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
@@ -37,7 +39,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useGlobalConfig } from "@/contexts/GlobalConfigContext";
 import BusinessAlertModal from "@/components/modals/BusinessAlertModal";
 import { useRouter } from "next/navigation";
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { useTheme, alpha } from "@mui/material/styles";
 import {
   getDashboardInsights,
@@ -80,7 +82,7 @@ const translations = {
     registrations: "Registrations",
     paid: "Paid",
     free: "Free",
-    eventregType: "Event Registration",
+    eventregType: "EventReg",
     checkinType: "Check-In",
     checkoutType: "Checkout",
     digipassType: "DigiPass",
@@ -88,6 +90,8 @@ const translations = {
     users: "Users",
     businesses: "Businesses",
     noTotals: "No totals available.",
+    searchBusinesses: "Search businesses...",
+    noMatchingBusinesses: "No matching businesses.",
     modulesSectionTitle: "Modules & Analytics",
     allCategories: "All categories",
     coreModule: "Core Module",
@@ -115,7 +119,7 @@ const translations = {
     registrations: "التسجيلات",
     paid: "مدفوعة",
     free: "مجانية",
-    eventregType: "تسجيل الفعاليات",
+    eventregType: "EventReg",
     checkinType: "تسجيل الدخول",
     checkoutType: "الدفع",
     digipassType: "التمرير الرقمي",
@@ -123,6 +127,8 @@ const translations = {
     users: "المستخدمون",
     businesses: "الشركات",
     noTotals: "لا توجد بيانات متاحة.",
+    searchBusinesses: "ابحث عن الشركات...",
+    noMatchingBusinesses: "لا توجد شركات مطابقة.",
     modulesSectionTitle: "الوحدات والتحليلات",
     allCategories: "كل الفئات",
     coreModule: "الوحدة الأساسية",
@@ -472,7 +478,7 @@ const DashboardModuleCard = React.memo(function DashboardModuleCard({
 });
 
 export default function HomePage() {
-  const { user } = useAuth();
+  const { user, setSelectedBusiness } = useAuth();
   const { globalConfig } = useGlobalConfig();
   const { dir, align, language, t } = useI18nLayout(translations);
   const router = useRouter();
@@ -483,6 +489,8 @@ export default function HomePage() {
   const [computing, setComputing] = useState(false);
   const [animateCharts, setAnimateCharts] = useState(true);
   const [showEventDetails, setShowEventDetails] = useState(false);
+  const [eventBusinessSearch, setEventBusinessSearch] = useState("");
+  const [businessesInDrawerOrder, setBusinessesInDrawerOrder] = useState([]);
 
   // Module category filtering
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
@@ -556,6 +564,12 @@ export default function HomePage() {
     return () => clearTimeout(timer);
   }, []);
 
+  useEffect(() => {
+    getAllBusinesses()
+      .then((businesses) => setBusinessesInDrawerOrder(Array.isArray(businesses) ? businesses : []))
+      .catch(() => setBusinessesInDrawerOrder([]));
+  }, []);
+
   // Load insights
   useEffect(() => {
     (async () => {
@@ -614,6 +628,22 @@ export default function HomePage() {
 
   const { modules: moduleStats = {} } = insights || {};
   const eventBusinessBreakdown = moduleStats.global?.totals?.eventsByBusiness || [];
+  const orderedEventBusinesses = useMemo(() => {
+    const indexByBusinessId = new Map(
+      businessesInDrawerOrder.map((business, index) => [String(business._id), index]),
+    );
+    return [...eventBusinessBreakdown].sort((a, b) =>
+      (indexByBusinessId.get(String(a.businessId)) ?? Number.MAX_SAFE_INTEGER) -
+      (indexByBusinessId.get(String(b.businessId)) ?? Number.MAX_SAFE_INTEGER),
+    );
+  }, [businessesInDrawerOrder, eventBusinessBreakdown]);
+  const visibleEventBusinesses = useMemo(() => {
+    const query = eventBusinessSearch.trim().toLowerCase();
+    if (!query) return orderedEventBusinesses;
+    return orderedEventBusinesses.filter((business) =>
+      `${business.name || ""} ${business.businessSlug || ""}`.toLowerCase().includes(query),
+    );
+  }, [eventBusinessSearch, orderedEventBusinesses]);
   const eventStatusCounts = moduleStats.global?.totals?.eventStatusCounts || {};
   const eventStatusLabel = (status) => t[status] || status;
   const eventStatusColor = (status) => (
@@ -1211,7 +1241,10 @@ export default function HomePage() {
 
         <Dialog
           open={showEventDetails}
-          onClose={() => setShowEventDetails(false)}
+          onClose={() => {
+            setShowEventDetails(false);
+            setEventBusinessSearch("");
+          }}
           fullWidth
           maxWidth="md"
           dir={dir}
@@ -1231,7 +1264,24 @@ export default function HomePage() {
                     <Chip key={status} size="small" color={eventStatusColor(status)} variant="outlined" label={toArabicDigits(`${eventStatusLabel(status)}: ${Number(eventStatusCounts[status] || 0)}`, language)} />
                   ))}
                 </Stack>
-                {eventBusinessBreakdown.map((business) => (
+                <TextField
+                  fullWidth
+                  size="small"
+                  value={eventBusinessSearch}
+                  onChange={(event) => setEventBusinessSearch(event.target.value)}
+                  placeholder={t.searchBusinesses}
+                  inputProps={{ "aria-label": t.searchBusinesses }}
+                  slotProps={{
+                    input: {
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <ICONS.search fontSize="small" />
+                        </InputAdornment>
+                      ),
+                    },
+                  }}
+                />
+                {visibleEventBusinesses.map((business) => (
                   <Accordion
                     key={business.businessId || business.name}
                     disableGutters
@@ -1239,7 +1289,7 @@ export default function HomePage() {
                     sx={{ border: "1px solid", borderColor: "divider", borderRadius: "12px !important", overflow: "hidden", "&:before": { display: "none" }, "&.Mui-expanded": { mt: 1.5, mb: 0 } }}
                   >
                     <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ px: 2, minHeight: 76, "&.Mui-expanded": { minHeight: 76 }, "& .MuiAccordionSummary-content": { my: 1.25 }, "& .MuiAccordionSummary-content.Mui-expanded": { my: 1.25 } }}>
-                      <Stack direction={dir === "rtl" ? "row-reverse" : "row"} spacing={1.25} alignItems="center" sx={{ width: "100%", minWidth: 0, pr: 1, textAlign: align }}>
+                      <Stack direction={dir === "rtl" ? "row-reverse" : "row"} spacing={1.25} alignItems="center" justifyContent="space-between" sx={{ width: "100%", minWidth: 0, pr: 1, textAlign: align }}>
                         <Avatar sx={{ width: 40, height: 40, bgcolor: "primary.main", fontWeight: 700 }}>
                           {(business.name || t.unknownBusiness).charAt(0).toUpperCase()}
                         </Avatar>
@@ -1253,7 +1303,7 @@ export default function HomePage() {
                           size="small"
                           color="primary"
                           label={toArabicDigits(Number(business.count || 0), language)}
-                          sx={{ alignSelf: "center", flexShrink: 0 }}
+                          sx={{ alignSelf: "center", flexShrink: 0, marginInlineStart: "auto" }}
                         />
                       </Stack>
                     </AccordionSummary>
@@ -1261,12 +1311,12 @@ export default function HomePage() {
                       <Stack spacing={0.75}>
                         {(business.events || []).map((event) => (
                           <Box key={event._id || event.slug} sx={{ p: { xs: 1.25, sm: 1.5 }, borderRadius: 1.5, bgcolor: "background.paper", border: "1px solid", borderColor: "divider", textAlign: align, transition: "border-color 160ms ease", "&:hover": { borderColor: "common.black" } }}>
-                            <Stack direction={{ xs: "column", sm: dir === "rtl" ? "row-reverse" : "row" }} justifyContent="space-between" spacing={1}>
-                              <Box sx={{ minWidth: 0 }}>
+                            <Box sx={{ display: "flex", flexDirection: dir === "rtl" ? "row-reverse" : "row", justifyContent: "space-between", alignItems: "flex-start", gap: 1, flexWrap: "wrap" }}>
+                              <Box sx={{ minWidth: 0, flex: "1 1 180px" }}>
                                 <Typography fontWeight={750} noWrap>{event.name || event.slug}</Typography>
                                 <Typography variant="caption" color="text.secondary">{eventTypeLabel(event.eventType)} · {event.slug}</Typography>
                               </Box>
-                              <Stack direction={dir === "rtl" ? "row-reverse" : "row"} spacing={0.5} sx={{ flexWrap: "wrap", gap: 0.5, justifyContent: { xs: align === "right" ? "flex-end" : "flex-start", sm: "flex-end" }, alignItems: "center" }}>
+                              <Box sx={{ display: "flex", flexDirection: dir === "rtl" ? "row-reverse" : "row", flexWrap: "wrap", gap: 1, alignItems: "center", justifyContent: "space-between", flexShrink: 0 }}>
                                 <Chip size="small" color={eventStatusColor(event.status)} variant="outlined" label={eventStatusLabel(event.status)} />
                                 <Chip size="small" variant="outlined" label={eventTypeLabel(event.eventType)} />
                                 {event.slug && ["public", "closed", "checkout", "digipass"].includes(event.eventType) && (
@@ -1283,26 +1333,31 @@ export default function HomePage() {
                                           checkout: "checkout",
                                           digipass: "digipass",
                                         };
-                                        router.push(`/cms/modules/${moduleByEventType[event.eventType]}/events?event=${encodeURIComponent(event.slug)}`);
+                                        if (business.businessSlug) {
+                                          setSelectedBusiness(business.businessSlug);
+                                        }
+                                        router.push(`/cms/modules/${moduleByEventType[event.eventType]}/events?search=${encodeURIComponent(event.slug)}`);
                                       }}
-                                      sx={{ ml: { sm: 0.25 }, border: "1px solid", borderColor: "divider", borderRadius: 1, "&:hover": { borderColor: "primary.main" } }}
+                                      sx={{ border: "1px solid", borderColor: "divider", borderRadius: 1, "&:hover": { borderColor: "primary.main" } }}
                                     >
                                       <OpenInNewIcon fontSize="small" />
                                     </IconButton>
                                   </Tooltip>
                                 )}
+                              </Box>
+                            </Box>
+                            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "minmax(0, 1fr) auto" }, columnGap: 2, mt: 1.25, color: "text.secondary" }}>
+                              <Stack spacing={0.6} sx={{ minWidth: 0 }}>
+                                <Typography variant="body2" sx={{ display: "flex", flexDirection: dir === "rtl" ? "row-reverse" : "row", gap: 0.75, alignItems: "center", minWidth: 0 }}>
+                                  <ICONS.event fontSize="small" />
+                                  {event.startDate ? formatDateTimeWithLocale(event.startDate, language === "ar" ? "ar-SA" : "en-GB") : "—"}{event.endDate ? ` → ${formatDateTimeWithLocale(event.endDate, language === "ar" ? "ar-SA" : "en-GB")}` : ""}
+                                </Typography>
+                                <Typography variant="body2" sx={{ display: "flex", flexDirection: dir === "rtl" ? "row-reverse" : "row", gap: 0.75, alignItems: "center", minWidth: 0 }}>
+                                  <ICONS.location fontSize="small" />{event.venue || "—"}
+                                </Typography>
                               </Stack>
-                            </Stack>
-                            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "minmax(0, 1fr) auto" }, columnGap: 2, rowGap: 0.6, mt: 1.25, color: "text.secondary" }}>
-                              <Typography variant="body2" sx={{ display: "flex", flexDirection: dir === "rtl" ? "row-reverse" : "row", gap: 0.75, alignItems: "center", minWidth: 0 }}>
-                                <ICONS.event fontSize="small" />
-                                {event.startDate ? formatDateTimeWithLocale(event.startDate, language === "ar" ? "ar-SA" : "en-GB") : "—"}{event.endDate ? ` → ${formatDateTimeWithLocale(event.endDate, language === "ar" ? "ar-SA" : "en-GB")}` : ""}
-                              </Typography>
-                              <Typography variant="body2" sx={{ display: "flex", flexDirection: dir === "rtl" ? "row-reverse" : "row", gap: 0.75, alignItems: "center", whiteSpace: "nowrap", justifySelf: { sm: "end" } }}>
+                              <Typography variant="body2" sx={{ display: "flex", flexDirection: dir === "rtl" ? "row-reverse" : "row", gap: 0.75, alignItems: "center", whiteSpace: "nowrap", justifySelf: { sm: "end" }, alignSelf: "end" }}>
                                 <ICONS.people fontSize="small" />{t.registrations}: {toArabicDigits(Number(event.registrations || 0), language)}{event.capacity ? ` / ${toArabicDigits(Number(event.capacity), language)}` : ""}
-                              </Typography>
-                              <Typography variant="body2" sx={{ gridColumn: { sm: "1 / -1" }, display: "flex", flexDirection: dir === "rtl" ? "row-reverse" : "row", gap: 0.75, alignItems: "center" }}>
-                                <ICONS.location fontSize="small" />{event.venue || "—"}
                               </Typography>
                             </Box>
                           </Box>
@@ -1311,13 +1366,21 @@ export default function HomePage() {
                     </AccordionDetails>
                   </Accordion>
                 ))}
+                {visibleEventBusinesses.length === 0 && (
+                  <Typography color="text.secondary" sx={{ py: 3, textAlign: align }}>
+                    {t.noMatchingBusinesses}
+                  </Typography>
+                )}
               </Stack>
             ) : (
               <Typography color="text.secondary">{t.noTotals}</Typography>
             )}
           </DialogContent>
           <DialogActions>
-            <Button onClick={() => setShowEventDetails(false)}>{t.close}</Button>
+            <Button onClick={() => {
+              setShowEventDetails(false);
+              setEventBusinessSearch("");
+            }}>{t.close}</Button>
           </DialogActions>
         </Dialog>
       </Container>

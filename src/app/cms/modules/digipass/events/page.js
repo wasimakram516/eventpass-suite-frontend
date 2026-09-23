@@ -23,7 +23,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { getAllBusinesses } from "@/services/businessService";
 import {
   getAllDigipassEvents,
-  getDigipassEventBySlugForCms,
   createDigipassEvent,
   updateDigipassEvent,
   deleteDigipassEvent,
@@ -40,6 +39,7 @@ const translations = {
     pageDescription: "Manage all DigiPass events for this business.",
     createEvent: "Create Event",
     selectBusiness: "Select Business",
+    showAllEvents: "Show All Events",
     noEvents: "No events found.",
     noBusinesses: "No businesses found.",
     eventCreated: "Event created!",
@@ -68,6 +68,7 @@ const translations = {
     pageDescription: "إدارة جميع فعاليات DigiPass لهذا العمل.",
     createEvent: "إنشاء فعالية",
     selectBusiness: "اختر العمل",
+    showAllEvents: "عرض جميع الفعاليات",
     noEvents: "لا توجد فعاليات.",
     noBusinesses: "لم يتم العثور على أي عمل.",
     eventCreated: "تم إنشاء الفعالية!",
@@ -96,7 +97,6 @@ const translations = {
 export default function EventsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const requestedEventSlug = searchParams.get("event");
   const { user, selectedBusiness, setSelectedBusiness } = useAuth();
   const { t, dir, align, language } = useI18nLayout(translations);
   const canCreate = useHasPermission("digipass", "create");
@@ -141,9 +141,7 @@ export default function EventsPage() {
     const fetchEvents = async () => {
       setLoading(true);
       const { events: fetchedEvents, error } = await fetchCmsEvents({
-        eventSlug: requestedEventSlug,
         businessSlug: selectedBusiness,
-        getEventBySlugForCms: getDigipassEventBySlugForCms,
         getAllEventsByBusiness: getAllDigipassEvents,
       });
       setEvents(error ? [] : fetchedEvents);
@@ -151,7 +149,7 @@ export default function EventsPage() {
     };
 
     fetchEvents();
-  }, [requestedEventSlug, selectedBusiness]);
+  }, [selectedBusiness]);
 
   const filteredEvents = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
@@ -165,7 +163,14 @@ export default function EventsPage() {
 
   const handleBusinessSelect = (slug) => {
     setSelectedBusiness(slug);
+    setSearchTerm("");
     setDrawerOpen(false);
+    router.replace("/cms/modules/digipass/events");
+  };
+
+  const handleShowAllEvents = () => {
+    setSearchTerm("");
+    router.replace("/cms/modules/digipass/events");
   };
 
   const handleOpenCreate = () => {
@@ -257,6 +262,11 @@ export default function EventsPage() {
               width: { xs: "100%", sm: "auto" },
             }}
           >
+            {searchTerm && (
+              <Button variant="outlined" onClick={handleShowAllEvents}>
+                {t.showAllEvents}
+              </Button>
+            )}
             {(user?.role === "admin" || user?.role === "superadmin") && (
               <Button
                 variant="outlined"
@@ -282,7 +292,7 @@ export default function EventsPage() {
 
         <Divider sx={{ mb: 3 }} />
 
-        {!selectedBusiness && !requestedEventSlug ? (
+        {!selectedBusiness ? (
           <EmptyBusinessState />
         ) : loading ? (
           <Box sx={{ textAlign: "center", mt: 8 }}>
