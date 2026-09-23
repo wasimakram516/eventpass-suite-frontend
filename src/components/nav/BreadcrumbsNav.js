@@ -266,6 +266,11 @@ const segmentMap = {
     ar: "العجلات",
     icon: <ICONS.trophy fontSize="small" />,
   },
+  "whatsapp-templates": {
+    en: "WhatsApp Templates",
+    ar: "قوالب واتساب",
+    icon: <ICONS.whatsapp fontSize="small" sx={{ mr: 0.5 }} />,
+  },
   configs: {
     en: "Configurations",
     ar: "التكوينات",
